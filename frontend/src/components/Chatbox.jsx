@@ -36,9 +36,39 @@ const FEATURED_QUESTIONS = [
   "Where can I get tutoring for intro CS courses like COSC 111?",
   "What scholarships are available for CS majors at Morgan State?",
 ];
+const CODING_TUTOR_QUESTIONS = [
+  "Review my code and point out the most important issue first.",
+  "Help me debug this error without giving me the full solution.",
+  "Trace this function step by step with a small example.",
+  "Suggest edge cases I should test for this algorithm.",
+  "Explain the time and space complexity of my approach.",
+  "Give me hints for solving this problem in Python, Java, C++, or JavaScript.",
+  "Help me improve the readability and style of this code.",
+  "Quiz me on data structures using one short coding prompt.",
+];
+
+const REGULAR_THINKING_MESSAGES = [
+  "Understanding your question",
+  "Searching knowledge base",
+  "Analyzing results",
+  "Preparing response"
+];
+
+const CODING_THINKING_MESSAGES = [
+  "Reading the code or prompt",
+  "Checking logic and edge cases",
+  "Planning hints and tests",
+  "Preparing coding feedback"
+];
 
 import { getApiBase } from "../lib/apiBase";
 const API_BASE = getApiBase();
+const PRACTICE_LANGUAGE_API = {
+  Python: "python",
+  Java: "java",
+  JavaScript: "javascript",
+  "C++": "cpp",
+};
 
 // Helper for icons
 const getFileIcon = (filename) => {
@@ -66,6 +96,8 @@ export default function Chatbox({ initialMessages = [], onSessionChange, session
   // 🔥 Dynamic Suggestions State
   const [suggestions, setSuggestions] = useState(FEATURED_QUESTIONS);
   const [suggestionsLoading, setSuggestionsLoading] = useState(true);
+  const [dailyChallenge, setDailyChallenge] = useState(null);
+  const [dailyChallengeLoading, setDailyChallengeLoading] = useState(false);
 
   // 🔥 Voice Mode State
   const [isVoiceMode, setIsVoiceMode] = useState(false);
@@ -81,6 +113,23 @@ export default function Chatbox({ initialMessages = [], onSessionChange, session
     { id: "inav-1.1", name: "iNav", desc: "Fast & accurate" },
     { id: "inav-2.0", name: "iNav Pro", desc: "Deeper thinking, may take longer" },
   ];
+
+  const CHAT_MODES = [
+    { id: "regular", name: "Regular Tutor" },
+    { id: "coding_tutor", name: "Coding Tutor" },
+  ];
+  const [chatMode, setChatMode] = useState("regular");
+  const CODE_LANGUAGES = ["Python", "Java", "JavaScript", "C++"];
+  const [workspaceCode, setWorkspaceCode] = useState("");
+  const [workspaceNote, setWorkspaceNote] = useState("");
+  const [workspaceLanguage, setWorkspaceLanguage] = useState("Python");
+  const [rewriteLanguage, setRewriteLanguage] = useState("JavaScript");
+  const [workspaceVisible, setWorkspaceVisible] = useState(true);
+  const [practiceDifficulty, setPracticeDifficulty] = useState("easy");
+  const [practiceLanguage, setPracticeLanguage] = useState("Python");
+  const [localPractice, setLocalPractice] = useState(null);
+  const [localPracticeLoading, setLocalPracticeLoading] = useState(false);
+  const [revealedHints, setRevealedHints] = useState(0);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -105,12 +154,7 @@ export default function Chatbox({ initialMessages = [], onSessionChange, session
   // Thinking status - step index drives everything
   const [thinkingStepIndex, setThinkingStepIndex] = useState(0);
   const [thinkingTimer, setThinkingTimer] = useState(0);
-  const thinkingMessages = [
-    "Understanding your question",
-    "Searching knowledge base",
-    "Analyzing results",
-    "Preparing response"
-  ];
+  const thinkingMessages = chatMode === "coding_tutor" ? CODING_THINKING_MESSAGES : REGULAR_THINKING_MESSAGES;
   // Derived: completed steps are all before current index, active is current
   const thinkingStatus = thinkingMessages[thinkingStepIndex] || thinkingMessages[0];
 
@@ -226,13 +270,21 @@ export default function Chatbox({ initialMessages = [], onSessionChange, session
     fetchUserProfile();
   }, []);
 
-  // 6. Fetch randomized featured questions from backend
+  // 6. Fetch mode-specific welcome content
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (messages.length > 0) {
         setSuggestionsLoading(false);
         return;
       }
+
+      if (chatMode === "coding_tutor") {
+        setSuggestions(CODING_TUTOR_QUESTIONS);
+        setSuggestionsLoading(false);
+        return;
+      }
+
+      setSuggestionsLoading(true);
       try {
         const response = await fetch(`${API_BASE}/api/popular-questions`);
         if (response.ok) {
@@ -243,12 +295,66 @@ export default function Chatbox({ initialMessages = [], onSessionChange, session
         }
       } catch (error) {
         console.error("Failed to fetch suggestions:", error);
+        setSuggestions(FEATURED_QUESTIONS);
       } finally {
         setSuggestionsLoading(false);
       }
     };
     fetchSuggestions();
-  }, []);
+  }, [chatMode, messages.length]);
+
+  useEffect(() => {
+    if (chatMode !== "coding_tutor" || messages.length > 0) return;
+
+    let cancelled = false;
+    const fetchDailyChallenge = async () => {
+      setDailyChallengeLoading(true);
+      try {
+        const response = await fetch(`${API_BASE}/api/coding/daily-challenge`);
+        const data = await response.json();
+        if (!cancelled) setDailyChallenge(data);
+      } catch (error) {
+        console.error("Failed to fetch daily coding challenge:", error);
+        if (!cancelled) {
+          setDailyChallenge({
+            available: false,
+            message: "Daily challenge is unavailable right now. Ask me for a practice prompt instead.",
+            url: "https://leetcode.com/problemset/"
+          });
+        }
+      } finally {
+        if (!cancelled) setDailyChallengeLoading(false);
+      }
+    };
+
+    fetchDailyChallenge();
+    return () => { cancelled = true; };
+  }, [chatMode, messages.length]);
+
+  useEffect(() => {
+    if (chatMode !== "coding_tutor") return;
+
+    let cancelled = false;
+    const fetchLocalPractice = async () => {
+      setLocalPracticeLoading(true);
+      setRevealedHints(0);
+      try {
+        const language = PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
+        const response = await fetch(`${API_BASE}/api/coding/practice/daily?difficulty=${practiceDifficulty}&language=${language}`);
+        if (!response.ok) throw new Error(`Practice request failed: ${response.status}`);
+        const data = await response.json();
+        if (!cancelled) setLocalPractice(data);
+      } catch (error) {
+        console.error("Failed to fetch local coding practice:", error);
+        if (!cancelled) setLocalPractice(null);
+      } finally {
+        if (!cancelled) setLocalPracticeLoading(false);
+      }
+    };
+
+    fetchLocalPractice();
+    return () => { cancelled = true; };
+  }, [chatMode, practiceDifficulty, practiceLanguage]);
 
   // 7. Cleanup voice mode on unmount
   useEffect(() => {
@@ -292,7 +398,7 @@ export default function Chatbox({ initialMessages = [], onSessionChange, session
       clearInterval(statusInterval);
       clearInterval(timerInterval);
     };
-  }, [showThinking]);
+  }, [showThinking, chatMode]);
 
   // --- HANDLERS ---
 
@@ -524,7 +630,8 @@ export default function Chatbox({ initialMessages = [], onSessionChange, session
         body: JSON.stringify({
           query: transcript,
           session_id: sessionId || "default",
-          model: selectedModel
+          model: selectedModel,
+          mode: chatMode
         })
       });
 
@@ -658,6 +765,92 @@ export default function Chatbox({ initialMessages = [], onSessionChange, session
       }
   };
 
+  const buildWorkspacePrompt = (action) => {
+    const note = workspaceNote.trim();
+    const code = workspaceCode.trim();
+    if (!code) return "";
+
+    const base = [
+      `Coding Workspace action: ${action}.`,
+      `Current language: ${workspaceLanguage}.`,
+      note ? `Student note: ${note}` : "Student note: none.",
+      "Keep the student's approach intact. Be specific and concise.",
+      "Do not provide a final full assignment answer for submission; use guided help, explanation, and checkpoints.",
+      "Code:",
+      "```",
+      code,
+      "```",
+    ];
+
+    if (action === "Review") {
+      base.splice(3, 0, "Review this code for bugs, risky lines, and improvement opportunities. Point to likely line/section issues.");
+    } else if (action === "Guided Code") {
+      base.splice(3, 0, "Draft starter code or small missing snippets only where helpful, then explain the next steps the student should complete.");
+    } else if (action === "Rewrite") {
+      base.splice(3, 0, `Rewrite this into ${rewriteLanguage} while preserving the student's structure and ideas. Include a short mapping of what changed.`);
+    }
+
+    return base.join("\n");
+  };
+
+  const handleWorkspaceAction = (action) => {
+    const prompt = buildWorkspacePrompt(action);
+    if (!prompt || isLoading) return;
+    setChatMode("coding_tutor");
+    handleSend(null, prompt, false);
+  };
+
+  const handleDailyChallengePractice = () => {
+    const title = dailyChallenge?.title || "today's LeetCode daily challenge";
+    const prompt = dailyChallenge?.available
+      ? `Help me solve today's LeetCode daily challenge, "${title}", with hints only. Start by asking me for my approach, then guide me step by step without giving the full solution upfront.`
+      : "Give me a short algorithm practice problem with hints only.";
+    handleSuggestion(prompt);
+  };
+
+  const formatPracticePrompt = (practice) => {
+    const question = practice?.question;
+    if (!question) return "";
+    const examples = (question.examples || [])
+      .map((example, index) => `Example ${index + 1}: input ${example.input}; output ${example.output}`)
+      .join("\n");
+    const constraints = (question.constraints || []).map(item => `- ${item}`).join("\n");
+    return [
+      `${question.title} (${question.difficulty})`,
+      `Topic: ${question.topic}`,
+      "",
+      question.prompt,
+      examples ? `\n${examples}` : "",
+      constraints ? `\nConstraints:\n${constraints}` : "",
+    ].join("\n").trim();
+  };
+
+  const handleLoadPracticeProblem = () => {
+    if (!localPractice?.question) return;
+    const starter = localPractice.solution?.starter_code || "";
+    const prompt = formatPracticePrompt(localPractice);
+    setWorkspaceVisible(true);
+    setWorkspaceLanguage(practiceLanguage);
+    setWorkspaceCode(starter);
+    setWorkspaceNote(`Practice problem:\n${prompt}\n\nUse hints first. Preserve my approach when reviewing.`);
+    toast.success("Practice problem loaded into the workspace");
+  };
+
+  const handlePracticeWithTutor = () => {
+    const prompt = formatPracticePrompt(localPractice);
+    if (!prompt) return;
+    handleSuggestion(`Guide me through this CS Navigator practice problem with level-by-level hints only. Do not give the full final solution upfront.\n\n${prompt}`);
+  };
+
+  const showNextPracticeHint = () => {
+    const count = localPractice?.question?.hints?.length || 0;
+    setRevealedHints(prev => Math.min(prev + 1, count));
+  };
+
+  const showAllPracticeHints = () => {
+    setRevealedHints(localPractice?.question?.hints?.length || 0);
+  };
+
   // 🔥 FEEDBACK HANDLERS
   const handleFeedback = async (messageIndex, feedbackType, messageText) => {
     const token = localStorage.getItem("token");
@@ -785,7 +978,8 @@ export default function Chatbox({ initialMessages = [], onSessionChange, session
                 query: finalMessage,
                 session_id: sessionId || "default",
                 skip_cache: skipCache,
-                model: selectedModel
+                model: selectedModel,
+                mode: chatMode
             }),
         });
 
@@ -1029,7 +1223,7 @@ export default function Chatbox({ initialMessages = [], onSessionChange, session
   };
 
   // Code block renderer for ReactMarkdown
-  const codeRenderer = ({ node, className, children, ...props }) => {
+  const codeRenderer = ({ className, children, ...props }) => {
     const match = /language-(\w+)/.exec(className || '');
     const codeString = String(children).replace(/\n$/, '');
     const isBlock = match || codeString.includes('\n');
@@ -1064,6 +1258,21 @@ export default function Chatbox({ initialMessages = [], onSessionChange, session
     return <code className={className} {...props}>{children}</code>;
   };
 
+  const latestWorkspaceFeedback = chatMode === "coding_tutor"
+    ? messages.slice().reverse().find((msg) => msg.sender === "bot" && msg.text)?.text || ""
+    : "";
+  const suggestedCodeBlock = latestWorkspaceFeedback.match(/```(?:\w+)?\n([\s\S]*?)```/)?.[1]?.trim() || "";
+
+  const copyToClipboard = async (text, label = "Copied") => {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(label);
+    } catch {
+      toast.error("Copy failed");
+    }
+  };
+
   return (
     <div
       className={`chat-main ${isDragging ? 'drag-active' : ''}`}
@@ -1071,41 +1280,70 @@ export default function Chatbox({ initialMessages = [], onSessionChange, session
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* Model selector dropdown */}
-      <div className="model-selector-header" ref={modelDropdownRef}>
-        <button
-          className="model-selector-trigger"
-          onClick={() => setModelDropdownOpen(prev => !prev)}
-          disabled={isLoading}
-        >
-          <span className="model-selector-name">
-            {MODEL_OPTIONS.find(m => m.id === selectedModel)?.name || "iNav"}
-          </span>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ opacity: 0.5, marginLeft: 4 }}>
-            <path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-        {modelDropdownOpen && (
-          <div className="model-dropdown">
-            {MODEL_OPTIONS.map(model => (
+      {/* Model selector and tutor mode controls */}
+      <div className="model-selector-header">
+        <div className="chat-controls-header">
+          <div className="model-selector-wrap" ref={modelDropdownRef}>
+            <button
+              className="model-selector-trigger"
+              onClick={() => setModelDropdownOpen(prev => !prev)}
+              disabled={isLoading}
+            >
+              <span className="model-selector-name">
+                {MODEL_OPTIONS.find(m => m.id === selectedModel)?.name || "iNav"}
+              </span>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ opacity: 0.5, marginLeft: 4 }}>
+                <path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            {modelDropdownOpen && (
+              <div className="model-dropdown">
+                {MODEL_OPTIONS.map(model => (
+                  <button
+                    key={model.id}
+                    className={`model-dropdown-item ${selectedModel === model.id ? 'active' : ''}`}
+                    onClick={() => { setSelectedModel(model.id); setModelDropdownOpen(false); }}
+                  >
+                    <div className="model-dropdown-info">
+                      <span className="model-dropdown-name">{model.name}</span>
+                      <span className="model-dropdown-desc">{model.desc}</span>
+                    </div>
+                    {selectedModel === model.id && (
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" className="model-dropdown-check">
+                        <path d="M6.5 12.5L2 8l1.5-1.5L6.5 9.5 12.5 3.5 14 5z"/>
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="mode-segmented" role="group" aria-label="Tutor mode">
+            {CHAT_MODES.map(mode => (
               <button
-                key={model.id}
-                className={`model-dropdown-item ${selectedModel === model.id ? 'active' : ''}`}
-                onClick={() => { setSelectedModel(model.id); setModelDropdownOpen(false); }}
+                key={mode.id}
+                type="button"
+                className={`mode-segmented-btn ${chatMode === mode.id ? 'active' : ''}`}
+                onClick={() => setChatMode(mode.id)}
+                disabled={isLoading}
               >
-                <div className="model-dropdown-info">
-                  <span className="model-dropdown-name">{model.name}</span>
-                  <span className="model-dropdown-desc">{model.desc}</span>
-                </div>
-                {selectedModel === model.id && (
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" className="model-dropdown-check">
-                    <path d="M6.5 12.5L2 8l1.5-1.5L6.5 9.5 12.5 3.5 14 5z"/>
-                  </svg>
-                )}
+                {mode.name}
               </button>
             ))}
           </div>
-        )}
+
+          {chatMode === "coding_tutor" && (
+            <button
+              type="button"
+              className="workspace-toggle-btn"
+              onClick={() => setWorkspaceVisible(prev => !prev)}
+              disabled={isLoading}
+            >
+              {workspaceVisible ? "Hide Workspace" : "Show Workspace"}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Hidden audio element for TTS playback */}
@@ -1123,7 +1361,7 @@ export default function Chatbox({ initialMessages = [], onSessionChange, session
 
       <div className="chat-messages">
         <AnimatePresence initial={false}>
-        {messages.length === 0 ? (
+        {messages.length === 0 && (
           <motion.div
             className="welcome-container"
             initial={{ opacity: 0, y: 20 }}
@@ -1132,7 +1370,120 @@ export default function Chatbox({ initialMessages = [], onSessionChange, session
           >
             <img src="/msu_logo.webp" alt="MSU Logo" className="welcome-logo" />
             <h1 className="welcome-title">Morgan State CS Navigator</h1>
-            <p className="welcome-subtitle">How can I assist with your academic journey today?</p>
+            <p className="welcome-subtitle">{chatMode === "coding_tutor" ? "Bring code, an error, or an algorithm idea. I will help you debug, reason, and improve without handing over full assignment solutions." : "How can I assist with your academic journey today?"}</p>
+            {chatMode === "coding_tutor" && (
+              <div className={`daily-challenge-card ${dailyChallenge?.available ? "" : "unavailable"}`}>
+                <div className="daily-challenge-header">
+                  <span className="daily-challenge-kicker">Daily Coding Challenge</span>
+                  {dailyChallenge?.source && <span className="daily-challenge-source">{dailyChallenge.source}</span>}
+                </div>
+                {dailyChallengeLoading ? (
+                  <div className="daily-challenge-loading">Loading today&apos;s challenge...</div>
+                ) : dailyChallenge?.available ? (
+                  <>
+                    <div className="daily-challenge-title-row">
+                      <h2 className="daily-challenge-title">
+                        {dailyChallenge.frontend_id ? `${dailyChallenge.frontend_id}. ` : ""}{dailyChallenge.title}
+                      </h2>
+                      <span className={`daily-difficulty ${String(dailyChallenge.difficulty || "unknown").toLowerCase()}`}>
+                        {dailyChallenge.difficulty || "Unknown"}
+                      </span>
+                    </div>
+                    {dailyChallenge.tags?.length > 0 && (
+                      <div className="daily-tags">
+                        {dailyChallenge.tags.map(tag => <span key={tag}>{tag}</span>)}
+                      </div>
+                    )}
+                    <div className="daily-actions">
+                      <a href={dailyChallenge.url} target="_blank" rel="noopener noreferrer" className="daily-link">Open on LeetCode</a>
+                      <button type="button" className="daily-practice-btn" onClick={handleDailyChallengePractice} disabled={isLoading}>
+                        Solve today&apos;s challenge with hints
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="daily-challenge-message">{dailyChallenge?.message || "Daily challenge is unavailable right now."}</p>
+                    <button type="button" className="daily-practice-btn" onClick={handleDailyChallengePractice} disabled={isLoading}>
+                      Ask for a practice prompt
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+            {chatMode === "coding_tutor" && (
+              <div className="practice-card">
+                <div className="daily-challenge-header">
+                  <span className="daily-challenge-kicker">CS Navigator Practice</span>
+                  <span className="daily-challenge-source">Local quiz bank</span>
+                </div>
+                <div className="practice-controls">
+                  <label>
+                    Difficulty
+                    <select className="coding-select" value={practiceDifficulty} onChange={(e) => setPracticeDifficulty(e.target.value)}>
+                      <option value="easy">Easy</option>
+                      <option value="medium">Medium</option>
+                      <option value="hard">Hard</option>
+                    </select>
+                  </label>
+                  <label>
+                    Language
+                    <select className="coding-select" value={practiceLanguage} onChange={(e) => setPracticeLanguage(e.target.value)}>
+                      {CODE_LANGUAGES.map((language) => (
+                        <option key={language} value={language}>{language}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                {localPracticeLoading ? (
+                  <div className="daily-challenge-loading">Loading CS Navigator practice...</div>
+                ) : localPractice?.question ? (
+                  <>
+                    <div className="daily-challenge-title-row">
+                      <h2 className="daily-challenge-title">{localPractice.question.title}</h2>
+                      <span className={`daily-difficulty ${String(localPractice.question.difficulty || "easy").toLowerCase()}`}>
+                        {localPractice.question.difficulty}
+                      </span>
+                    </div>
+                    <p className="practice-prompt">{localPractice.question.prompt}</p>
+                    <div className="daily-tags">
+                      <span>{localPractice.question.topic}</span>
+                      {localPractice.solution?.function_name && <span>{localPractice.solution.function_name}</span>}
+                    </div>
+                    <div className="daily-actions">
+                      <button type="button" className="daily-practice-btn" onClick={handleLoadPracticeProblem} disabled={isLoading}>
+                        Load Practice Problem
+                      </button>
+                      <button type="button" className="daily-practice-btn secondary" onClick={handlePracticeWithTutor} disabled={isLoading}>
+                        Practice with hints
+                      </button>
+                    </div>
+                    <div className="practice-hints">
+                      <div className="daily-actions">
+                        <button type="button" className="daily-practice-btn secondary" onClick={showNextPracticeHint} disabled={revealedHints >= (localPractice.question.hints?.length || 0)}>
+                          Show Hint
+                        </button>
+                        <button type="button" className="daily-practice-btn secondary" onClick={showNextPracticeHint} disabled={revealedHints >= (localPractice.question.hints?.length || 0)}>
+                          Show Next Hint
+                        </button>
+                        <button type="button" className="daily-practice-btn secondary" onClick={showAllPracticeHints} disabled={!localPractice.question.hints?.length}>
+                          Show All
+                        </button>
+                      </div>
+                      {revealedHints > 0 && (
+                        <ol>
+                          {localPractice.question.hints.slice(0, revealedHints).map((hint, index) => (
+                            <li key={`${localPractice.question.id}-hint-${index}`}>{hint}</li>
+                          ))}
+                        </ol>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <p className="daily-challenge-message">Local practice is unavailable right now.</p>
+                )}
+              </div>
+            )}
             <div className="suggestions">
               {suggestionsLoading ? (
                 <>
@@ -1149,8 +1500,108 @@ export default function Chatbox({ initialMessages = [], onSessionChange, session
               )}
             </div>
           </motion.div>
-        ) : (
-          messages.map((msg, i) => (
+        )}
+        {chatMode === "coding_tutor" && workspaceVisible && (
+          <motion.section
+            className="coding-workspace"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+          >
+            <div className="coding-pane coding-editor-pane">
+              <div className="coding-pane-header">
+                <div>
+                  <span className="coding-kicker">Coding Workspace</span>
+                  <h2>Your code</h2>
+                </div>
+                <select
+                  className="coding-select"
+                  value={workspaceLanguage}
+                  onChange={(e) => setWorkspaceLanguage(e.target.value)}
+                  aria-label="Code language"
+                >
+                  {CODE_LANGUAGES.map((language) => (
+                    <option key={language} value={language}>{language}</option>
+                  ))}
+                </select>
+              </div>
+              <textarea
+                className="coding-editor"
+                value={workspaceCode}
+                onChange={(e) => setWorkspaceCode(e.target.value)}
+                placeholder="Paste code, starter logic, or an erroring snippet here."
+                spellCheck="false"
+              />
+              <textarea
+                className="coding-note"
+                value={workspaceNote}
+                onChange={(e) => setWorkspaceNote(e.target.value)}
+                placeholder="Optional note: what are you trying to fix or understand?"
+              />
+            </div>
+
+            <div className="coding-pane coding-output-pane">
+              <div className="coding-pane-header">
+                <div>
+                  <span className="coding-kicker">AI review</span>
+                  <h2>Guidance</h2>
+                </div>
+                <select
+                  className="coding-select"
+                  value={rewriteLanguage}
+                  onChange={(e) => setRewriteLanguage(e.target.value)}
+                  aria-label="Rewrite language"
+                >
+                  {CODE_LANGUAGES.map((language) => (
+                    <option key={language} value={language}>{language}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="coding-action-grid">
+                <button type="button" onClick={() => handleWorkspaceAction("Review")} disabled={isLoading || !workspaceCode.trim()}>
+                  Review
+                </button>
+                <button type="button" onClick={() => handleWorkspaceAction("Guided Code")} disabled={isLoading || !workspaceCode.trim()}>
+                  Guided Code
+                </button>
+                <button type="button" onClick={() => handleWorkspaceAction("Rewrite")} disabled={isLoading || !workspaceCode.trim()}>
+                  Rewrite
+                </button>
+              </div>
+              <div className="coding-secondary-actions">
+                <button type="button" onClick={() => copyToClipboard(workspaceCode, "Code copied")} disabled={!workspaceCode.trim()}>
+                  Copy Code
+                </button>
+                <button type="button" onClick={() => copyToClipboard(latestWorkspaceFeedback, "Review copied")} disabled={!latestWorkspaceFeedback}>
+                  Copy Review
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWorkspaceCode(suggestedCodeBlock)}
+                  disabled={!suggestedCodeBlock}
+                  title={suggestedCodeBlock ? "Replace editor text with the first code block from the AI review" : "No code block found in the latest AI review"}
+                >
+                  Apply Code Block
+                </button>
+              </div>
+              <div className="coding-output-hint">
+                {latestWorkspaceFeedback ? (
+                  <div className="coding-output-markdown">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{ code: codeRenderer }}
+                    >
+                      {latestWorkspaceFeedback}
+                    </ReactMarkdown>
+                  </div>
+                ) : (
+                  "Review, Guided Code, and Rewrite responses will appear here beside your code."
+                )}
+              </div>
+            </div>
+          </motion.section>
+        )}
+        {messages.length > 0 && messages.map((msg, i) => (
             <motion.div
               key={i}
               className={`message ${msg.sender}`}
@@ -1300,8 +1751,7 @@ export default function Chatbox({ initialMessages = [], onSessionChange, session
                 <div className="timestamp">{msg.time}</div>
               </div>
             </motion.div>
-          ))
-        )}
+          ))}
         </AnimatePresence>
 
         {/* Old regenerate button removed - now inline with bot message actions */}
@@ -1436,7 +1886,7 @@ export default function Chatbox({ initialMessages = [], onSessionChange, session
                 type="file"
                 ref={fileInputRef}
                 style={{ display: 'none' }}
-                accept=".png,.jpg,.jpeg,.gif,.pdf,.txt,.doc,.docx"
+                accept={chatMode === "coding_tutor" ? ".py,.java,.cpp,.c,.h,.hpp,.js,.jsx,.ts,.tsx,.json,.txt,.md" : ".png,.jpg,.jpeg,.gif,.pdf,.txt,.doc,.docx"}
                 onChange={handleFileSelect}
             />
 
@@ -1463,7 +1913,7 @@ export default function Chatbox({ initialMessages = [], onSessionChange, session
                     handleSend(e);
                   }
                 }}
-                placeholder={isVoiceMode ? (voiceStatus === "listening" ? "Listening..." : voiceStatus === "speaking" ? "Speaking..." : "Speak now...") : pendingFile ? "Add a message..." : "Type your message..."}
+                placeholder={isVoiceMode ? (voiceStatus === "listening" ? "Listening..." : voiceStatus === "speaking" ? "Speaking..." : "Speak now...") : pendingFile ? "Add a message..." : chatMode === "coding_tutor" ? "Paste code, an error, or ask for a review..." : "Type your message..."}
                 disabled={isLoading || isVoiceMode}
             />
 

@@ -19,7 +19,7 @@ import pypdf
 import docx
 from langchain.schema import SystemMessage, HumanMessage 
 
-from fastapi import FastAPI, HTTPException, Depends, status, File, UploadFile, Request
+from fastapi import FastAPI, HTTPException, Depends, status, File, UploadFile, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -69,7 +69,7 @@ print(f"[KEY] JWT_SECRET Check: {'FOUND' if os.getenv('JWT_SECRET') else 'MISSIN
 # SQLAlchemy Imports
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import OperationalError, ProgrammingError
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, text
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, text, or_
 
 # Vertex AI Agent Engine (replaces Pinecone + OpenAI RAG pipeline)
 from vertex_agent import query_agent, query_agent_stream, check_agent_health, reset_session
@@ -174,7 +174,11 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "4320
 UPLOAD_FOLDER = os.path.join(BACKEND_DIR, "uploads", "profile_pictures")
 CHAT_FILES_FOLDER = os.path.join(BACKEND_DIR, "uploads", "chat_files") #  NEW: Chat files folder
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'txt', 'docx', 'doc', 'mov', 'mp4'} #  NEW: Added Docs
+ALLOWED_EXTENSIONS = {
+    'png', 'jpg', 'jpeg', 'gif', 'pdf', 'txt', 'docx', 'doc', 'mov', 'mp4',
+    'py', 'java', 'cpp', 'c', 'h', 'hpp', 'js', 'jsx', 'ts', 'tsx', 'json',
+    'md', 'html', 'css'
+}
 
 # Create folders if not exist
 for folder in [UPLOAD_FOLDER, CHAT_FILES_FOLDER]:
@@ -247,6 +251,9 @@ def init_db():
             ("verification_token", "VARCHAR(255)"),
             ("reset_token", "VARCHAR(255)"),
             ("reset_token_expires", "DATETIME"),
+            ("is_disabled", "BOOLEAN DEFAULT FALSE"),
+            ("disabled_at", "DATETIME"),
+            ("disabled_reason", "TEXT"),
         ]:
             try:
                 conn.execute(text(f"SELECT {col} FROM users LIMIT 1"))
@@ -530,6 +537,8 @@ def get_current_user(
         user = db.query(User).filter(User.email == user_email).first()
         if not user:
             raise HTTPException(status_code=403, detail="User not found")
+        if getattr(user, "is_disabled", False):
+            raise HTTPException(status_code=403, detail="Account disabled")
 
         return {
             "user_id": user.id,
@@ -572,12 +581,40 @@ class LoginRequest(BaseModel):
     password: str
 
 VALID_MODELS = {"", "inav-1.0", "inav-1.1"}
+VALID_CHAT_MODES = {"regular", "coding_tutor"}
+
+CODING_TUTOR_CONTEXT = """
+CODING TUTOR MODE:
+- Stay focused on programming help, debugging, code review, algorithm practice, and learning Python, Java, C++, and JavaScript.
+- Use balanced tutoring: explain concepts clearly, ask useful questions, point out likely bugs, and give small examples or snippets when needed.
+- Do not provide full assignment solutions, full files, or copy-paste-ready homework answers.
+- If a student asks for a full solution, politely refuse that part and offer a plan, hints, tests, or the next small step.
+- When code is pasted or uploaded, identify the likely intent, explain what is happening, point to the suspicious lines/logic, and suggest how the student can verify the fix.
+- Prefer debugging steps, test cases, complexity notes, edge cases, and style/readability feedback over general academic advising.
+- Avoid course scheduling, degree requirements, department contacts, scholarships, and other regular tutor topics unless the student explicitly asks for that context.
+- Use available course or student context lightly only when it directly improves the coding lesson.
+"""
+
+_leetcode_daily_cache = {"date": None, "data": None}
+_practice_cache: dict[str, Any] = {}
+QUIZ_DIR = os.path.join(BACKEND_DIR, "data_sources", "quiz")
+QUIZ_QUESTIONS_DIR = os.path.join(QUIZ_DIR, "questions")
+QUIZ_ANSWERS_DIR = os.path.join(QUIZ_DIR, "answers")
+PRACTICE_DIFFICULTIES = {"easy", "medium", "hard"}
+PRACTICE_LANGUAGES = {
+    "python": "Python",
+    "java": "Java",
+    "javascript": "JavaScript",
+    "cpp": "C++",
+    "c++": "C++",
+}
 
 class QueryRequest(BaseModel):
     query: str
     session_id: str = "default"
     skip_cache: bool = False
     model: str = ""              # "inav-1.0" (fast) or "inav-1.1" (pro)
+    mode: str = "regular"        # "regular" or "coding_tutor"
 
     @field_validator("model", mode="before")
     @classmethod
@@ -585,6 +622,20 @@ class QueryRequest(BaseModel):
         if v not in VALID_MODELS:
             return ""
         return v
+
+    @field_validator("mode", mode="before")
+    @classmethod
+    def validate_mode(cls, v):
+        if v not in VALID_CHAT_MODES:
+            return "regular"
+        return v
+
+
+def build_mode_context(mode: str) -> str:
+    """Return extra instruction context for optional chat modes."""
+    if mode == "coding_tutor":
+        return CODING_TUTOR_CONTEXT
+    return ""
 
 class GuestQueryRequest(BaseModel):
     query: str
@@ -851,6 +902,8 @@ def get_optional_user(
             return None
         user = db.query(User).filter(User.email == user_email).first()
         if not user:
+            return None
+        if getattr(user, "is_disabled", False):
             return None
         return {"user_id": user.id, "email": user.email, "role": user.role}
     except JWTError:
@@ -2010,9 +2063,13 @@ async def get_banner_data(user: dict = Depends(get_current_user), db: Session = 
 
 
 def extract_file_content(filepath: str) -> str:
-    """Reads text from PDF, DOCX, or TXT files."""
+    """Reads text from PDF, DOCX, TXT, and common source code files."""
     ext = filepath.split('.')[-1].lower()
     text = ""
+    plain_text_extensions = {
+        'txt', 'py', 'java', 'cpp', 'c', 'h', 'hpp', 'js', 'jsx', 'ts', 'tsx',
+        'json', 'md', 'html', 'css'
+    }
     try:
         if ext == 'pdf':
             #  UPDATED: Uses pypdf instead of PyPDF2
@@ -2023,7 +2080,7 @@ def extract_file_content(filepath: str) -> str:
             doc = docx.Document(filepath)
             for para in doc.paragraphs:
                 text += para.text + "\n"
-        elif ext == 'txt':
+        elif ext in plain_text_extensions:
             with open(filepath, 'r', encoding='utf-8') as f:
                 text = f.read()
         else:
@@ -2044,6 +2101,19 @@ class CanvasSyncRequest(BaseModel):
     password: str
 
 _canvas_sync_timestamps: dict[int, list] = {}
+
+
+def _canvas_error_message(error: Exception, fallback: str = "Canvas sync failed. Please try again.") -> str:
+    """Return a user-safe Canvas sync error with useful local/cloud hints."""
+    raw = str(error).strip()
+    lowered = raw.lower()
+    if "csrf" in lowered or "authenticity" in lowered:
+        return "Canvas login page changed or could not be reached. Please try again later, and check backend Canvas logs if this continues."
+    if "login failed" in lowered or "authentication failed" in lowered or "invalid" in lowered:
+        return "Canvas login failed. Use your Morgan State Canvas username and password, not your CS Navigator password."
+    if "timeout" in lowered or "server error" in lowered or "http" in lowered:
+        return f"Canvas server/network issue: {raw[:180]}"
+    return raw[:220] if raw else fallback
 
 @app.post("/api/canvas/sync")
 async def sync_canvas_data(
@@ -2081,8 +2151,9 @@ async def sync_canvas_data(
 
             try:
                 client = await canvas_authenticate(req.username, req.password)
-            except ValueError as e:
-                yield f"data: {json.dumps({'type': 'error', 'detail': str(e)})}\n\n"
+            except Exception as e:
+                print(f"[ERROR] Canvas auth failed: {e}")
+                yield f"data: {json.dumps({'type': 'error', 'detail': _canvas_error_message(e)})}\n\n"
                 return
 
             yield f"data: {json.dumps({'type': 'progress', 'detail': 'Fetching courses...'})}\n\n"
@@ -2091,7 +2162,7 @@ async def sync_canvas_data(
                 data = await fetch_canvas_data(client)
             except Exception as e:
                 print(f"[ERROR] Canvas fetch failed: {e}")
-                yield f"data: {json.dumps({'type': 'error', 'detail': 'Failed to fetch Canvas data. Please try again.'})}\n\n"
+                yield f"data: {json.dumps({'type': 'error', 'detail': _canvas_error_message(e, 'Failed to fetch Canvas data. Please try again.')})}\n\n"
                 await client.aclose()
                 return
 
@@ -2136,7 +2207,7 @@ async def sync_canvas_data(
                 db.commit()
             except Exception as e:
                 print(f"[ERROR] Canvas DB save failed: {e}")
-                yield f"data: {json.dumps({'type': 'error', 'detail': 'Failed to save Canvas data. Please try again.'})}\n\n"
+                yield f"data: {json.dumps({'type': 'error', 'detail': f'Failed to save Canvas data: {str(e)[:160]}'})}\n\n"
                 return
 
             # Build summary
@@ -2153,7 +2224,7 @@ async def sync_canvas_data(
 
         except Exception as e:
             print(f"[ERROR] Canvas sync failed: {e}")
-            yield f"data: {json.dumps({'type': 'error', 'detail': 'Canvas sync failed. Please try again.'})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'detail': _canvas_error_message(e)})}\n\n"
 
     return StreamingResponse(
         generate_sse(),
@@ -2457,6 +2528,10 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
         set_planner_state(user["user_id"], session_id, planner_state)
         student_context += build_planner_context(planner_state)
 
+    mode_context = build_mode_context(req.mode)
+    if mode_context:
+        student_context += f"\n{mode_context}"
+
     if file_match and USE_VERTEX_AGENT:
         # File uploaded -> include file content as context for the agent
         filename = file_match.group(1)
@@ -2665,6 +2740,10 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
         set_planner_state(user_id, session_id, planner_state)
         student_context += build_planner_context(planner_state)
 
+    mode_context = build_mode_context(req.mode)
+    if mode_context:
+        student_context += f"\n{mode_context}"
+
     agent_context = student_context  # DegreeWorks + course analysis + planner (stable, for session reuse)
 
     # =========================================================================
@@ -2675,7 +2754,7 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
         import hashlib as _hl
         _dw_key = f"{dw_dict.get('overall_gpa','')}{dw_dict.get('total_credits_earned','')}{dw_dict.get('credits_remaining','')}"
         _dw_hash = _hl.md5(_dw_key.encode()).hexdigest()[:8]
-    context_hash = get_context_hash(user_id, has_degreeworks=bool(dw_dict), model=req.model, has_canvas=bool(canvas_dict), dw_hash=_dw_hash)
+    context_hash = get_context_hash(user_id, has_degreeworks=bool(dw_dict), model=req.model, has_canvas=bool(canvas_dict), dw_hash=_dw_hash, mode=req.mode)
 
     # Skip cache when user taps "Regenerate" for a fresh answer
     if req.skip_cache:
@@ -3024,6 +3103,182 @@ async def text_to_speech(req: TTSRequest, _user=Depends(get_current_user)):
         print(f"TTS Error: {e}")
         raise HTTPException(500, f"TTS generation failed: {str(e)}")
 
+@app.get("/api/coding/daily-challenge")
+async def get_daily_coding_challenge():
+    """Return safe metadata for LeetCode's daily challenge without copying the full prompt."""
+    today = datetime.now(timezone.utc).date().isoformat()
+    if _leetcode_daily_cache.get("date") == today and _leetcode_daily_cache.get("data"):
+        return _leetcode_daily_cache["data"]
+
+    fallback = {
+        "available": False,
+        "source": "LeetCode",
+        "date": today,
+        "message": "Daily challenge metadata is unavailable right now. You can still practice by asking Coding Tutor for a debugging or algorithm exercise.",
+        "url": "https://leetcode.com/problemset/",
+    }
+
+    graphql_query = """
+    query questionOfToday {
+      activeDailyCodingChallengeQuestion {
+        date
+        link
+        question {
+          questionFrontendId
+          title
+          titleSlug
+          difficulty
+          topicTags {
+            name
+            slug
+          }
+        }
+      }
+    }
+    """
+
+    try:
+        import requests
+        response = requests.post(
+            "https://leetcode.com/graphql",
+            json={"query": graphql_query},
+            headers={
+                "Content-Type": "application/json",
+                "User-Agent": "CSNavigator/1.0 (+https://cs.inavigator.ai)",
+            },
+            timeout=10,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        daily = payload.get("data", {}).get("activeDailyCodingChallengeQuestion")
+        question = (daily or {}).get("question") or {}
+        if not daily or not question:
+            raise ValueError("LeetCode daily challenge missing from response")
+
+        link = daily.get("link") or f"/problems/{question.get('titleSlug', '')}/"
+        url = f"https://leetcode.com{link}" if link.startswith("/") else link
+        data = {
+            "available": True,
+            "source": "LeetCode",
+            "date": daily.get("date") or today,
+            "title": question.get("title") or "Daily Challenge",
+            "slug": question.get("titleSlug") or "",
+            "frontend_id": question.get("questionFrontendId") or "",
+            "difficulty": question.get("difficulty") or "Unknown",
+            "tags": [tag.get("name") for tag in question.get("topicTags", []) if tag.get("name")][:6],
+            "url": url,
+        }
+        _leetcode_daily_cache["date"] = today
+        _leetcode_daily_cache["data"] = data
+        return data
+    except Exception as e:
+        print(f"[WARN] LeetCode daily challenge unavailable: {e}")
+        _leetcode_daily_cache["date"] = today
+        _leetcode_daily_cache["data"] = fallback
+        return fallback
+
+def _read_quiz_json(path: str) -> Any:
+    cached = _practice_cache.get(path)
+    if cached is not None:
+        return cached
+    if not os.path.exists(path):
+        raise HTTPException(status_code=500, detail=f"Practice data file missing: {os.path.basename(path)}")
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            data = json.load(handle)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail=f"Practice data file is invalid JSON: {os.path.basename(path)}") from exc
+    _practice_cache[path] = data
+    return data
+
+def _practice_questions_for_difficulty(difficulty: str) -> list[dict[str, Any]]:
+    normalized = difficulty.lower().strip()
+    if normalized not in PRACTICE_DIFFICULTIES:
+        raise HTTPException(status_code=400, detail="Difficulty must be easy, medium, or hard.")
+    path = os.path.join(QUIZ_QUESTIONS_DIR, f"{normalized}.json")
+    data = _read_quiz_json(path)
+    return data.get("questions", data if isinstance(data, list) else [])
+
+def _all_practice_questions() -> list[dict[str, Any]]:
+    questions: list[dict[str, Any]] = []
+    for difficulty in ("easy", "medium", "hard"):
+        questions.extend(_practice_questions_for_difficulty(difficulty))
+    return questions
+
+def _find_practice_question(question_id: str) -> dict[str, Any]:
+    wanted = question_id.lower().strip()
+    for question in _all_practice_questions():
+        if str(question.get("id", "")).lower() == wanted:
+            return question
+    raise HTTPException(status_code=404, detail="Practice question not found.")
+
+def _normalize_practice_language(language: str) -> tuple[str, str]:
+    normalized = language.lower().strip()
+    label = PRACTICE_LANGUAGES.get(normalized)
+    if not label:
+        raise HTTPException(status_code=400, detail="Language must be python, java, javascript, or cpp.")
+    key = "cpp" if normalized in {"cpp", "c++"} else normalized
+    return key, label
+
+def _find_language_solution(question_id: str, language: str) -> dict[str, Any]:
+    language_key, language_label = _normalize_practice_language(language)
+    path = os.path.join(QUIZ_ANSWERS_DIR, f"{language_key}.json")
+    data = _read_quiz_json(path)
+    items = data.get("items", data if isinstance(data, list) else [])
+    defaults = data.get("defaults", {}) if isinstance(data, dict) else {}
+    for item in items:
+        if str(item.get("question_id", "")).lower() == question_id.lower().strip():
+            return {"language": language_label, **defaults, **item}
+    raise HTTPException(status_code=404, detail="Practice solution not found for that question and language.")
+
+@app.get("/api/coding/practice/daily")
+async def get_daily_practice_question(
+    difficulty: str = Query("easy", pattern="^(easy|medium|hard)$"),
+    language: str = Query("python"),
+):
+    """Return a deterministic local practice question for today."""
+    questions = _practice_questions_for_difficulty(difficulty)
+    if not questions:
+        raise HTTPException(status_code=404, detail="No practice questions are available for that difficulty.")
+    day_index = datetime.now(timezone.utc).toordinal() % len(questions)
+    question = questions[day_index]
+    solution = _find_language_solution(question["id"], language)
+    return {
+        "source": "CS Navigator Practice",
+        "date": datetime.now(timezone.utc).date().isoformat(),
+        "question": question,
+        "solution": solution,
+    }
+
+@app.get("/api/coding/practice/questions")
+async def list_practice_questions(difficulty: str = Query("easy", pattern="^(easy|medium|hard)$")):
+    return {
+        "difficulty": difficulty,
+        "questions": _practice_questions_for_difficulty(difficulty),
+    }
+
+@app.get("/api/coding/practice/questions/{question_id}")
+async def get_practice_question(question_id: str):
+    return _find_practice_question(question_id)
+
+@app.get("/api/coding/practice/questions/{question_id}/hints")
+async def get_practice_question_hints(question_id: str, level: str = Query("1")):
+    question = _find_practice_question(question_id)
+    hints = question.get("hints", [])
+    if level.lower() == "all":
+        return {"question_id": question["id"], "hints": hints}
+    try:
+        requested = int(level)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Hint level must be 1, 2, 3, or all.") from exc
+    if requested < 1 or requested > len(hints):
+        raise HTTPException(status_code=400, detail=f"Hint level must be between 1 and {len(hints)} for this question.")
+    return {"question_id": question["id"], "level": requested, "hint": hints[requested - 1]}
+
+@app.get("/api/coding/practice/questions/{question_id}/solution")
+async def get_practice_question_solution(question_id: str, language: str = Query("python")):
+    _find_practice_question(question_id)
+    return _find_language_solution(question_id, language)
 @app.get("/api/popular-questions")
 async def get_popular_questions():
     """Returns 8 randomly selected questions from a curated pool."""
@@ -3206,6 +3461,9 @@ async def get_all_users(
                 "student_id": u.student_id,
                 "major": u.major,
                 "morgan_connected": u.morgan_connected,
+                "is_disabled": bool(getattr(u, "is_disabled", False)),
+                "disabled_at": u.disabled_at.isoformat() if getattr(u, "disabled_at", None) else None,
+                "disabled_reason": getattr(u, "disabled_reason", None),
                 "created_at": u.created_at.isoformat() if u.created_at else None
             }
             for u in users
@@ -3263,6 +3521,44 @@ async def update_user_role(
 
     return {"message": f"User {target_user.email} role updated to {new_role}"}
 
+@app.patch("/api/admin/users/{user_id}/status")
+async def update_user_status(
+    user_id: int,
+    request: Request,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Enable or disable a user account (admin only)."""
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    body = await request.json()
+    disabled = bool(body.get("disabled"))
+    reason = (body.get("reason") or "").strip() or None
+
+    if disabled and target_user.id == user.get("user_id"):
+        raise HTTPException(status_code=400, detail="You cannot disable your own active admin account")
+
+    if disabled and target_user.role == "admin":
+        active_admin_count = db.query(User).filter(
+            User.role == "admin",
+            or_(User.is_disabled == False, User.is_disabled.is_(None))
+        ).count()
+        if active_admin_count <= 1:
+            raise HTTPException(status_code=400, detail="Cannot disable the last active admin account")
+
+    target_user.is_disabled = disabled
+    target_user.disabled_at = datetime.now(timezone.utc) if disabled else None
+    target_user.disabled_reason = reason if disabled else None
+    db.commit()
+
+    status_label = "disabled" if disabled else "enabled"
+    return {"message": f"User {target_user.email} {status_label}", "is_disabled": disabled}
+
 # --- Admin: System Health ---
 @app.get("/api/admin/health")
 async def get_system_health(user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -3274,6 +3570,8 @@ async def get_system_health(user: dict = Depends(get_current_user), db: Session 
         "database": {"status": "unknown", "message": ""},
         "vertex_agent": {"status": "unknown", "message": ""},
         "openai_tts": {"status": "unknown", "message": ""},
+        "email_verification": {"status": "unknown", "message": ""},
+        "auth_urls": {"status": "unknown", "message": ""},
         "mode": "vertex_ai" if USE_VERTEX_AGENT else "legacy_rag",
         "last_check": datetime.now(timezone.utc).isoformat()
     }
@@ -3310,6 +3608,28 @@ async def get_system_health(user: dict = Depends(get_current_user), db: Session 
             health_status["openai_tts"] = {"status": "not_configured", "message": "TTS unavailable (no OpenAI key)"}
     except Exception as e:
         health_status["openai_tts"] = {"status": "error", "message": str(e)[:100]}
+
+    # Check email verification readiness
+    try:
+        from email_service import is_email_configured
+
+        if is_email_configured():
+            health_status["email_verification"] = {"status": "configured", "message": "SMTP credentials present"}
+        else:
+            health_status["email_verification"] = {
+                "status": "not_configured",
+                "message": "SMTP is not configured. Local dev will show a verification link; cloud users need SMTP.",
+            }
+    except Exception as e:
+        health_status["email_verification"] = {"status": "error", "message": str(e)[:100]}
+
+    api_url = os.getenv("API_URL", "")
+    app_url = os.getenv("APP_URL", "")
+    missing_urls = [name for name, value in {"API_URL": api_url, "APP_URL": app_url}.items() if not value]
+    health_status["auth_urls"] = {
+        "status": "configured" if not missing_urls else "not_configured",
+        "message": "Verification and reset links have app/API URLs" if not missing_urls else f"Missing: {', '.join(missing_urls)}",
+    }
 
     return health_status
 

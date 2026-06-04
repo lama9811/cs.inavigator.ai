@@ -1,0 +1,24 @@
+{
+  "language": "python",
+  "defaults": {
+    "starter_code": "def solve(data):\n    # Read the prompt, choose clear variables, and replace this with your approach.\n    return None",
+    "guided_steps": ["Restate the input and output in your own words.", "Choose the data structure named in the hints.", "Write one small test before filling in the full logic."],
+    "reference_solution": "Use the prompt's hints to build a focused solve function. Prefer readable loops and helper functions before optimizing.",
+    "complexity": "Depends on the chosen approach; most Easy/Medium prompts should be O(n) or O(n log n).",
+    "tests": ["Try the provided example.", "Try an empty or smallest valid input.", "Try a case with duplicates, ties, or no valid answer when relevant."]
+  },
+  "items": [
+    {"question_id":"easy-01","function_name":"count_vowels"},{"question_id":"easy-02","function_name":"reverse_words"},{"question_id":"easy-03","function_name":"maximum_score"},{"question_id":"easy-04","function_name":"is_palindrome"},{"question_id":"easy-05","function_name":"sum_even_numbers"},
+    {"question_id":"easy-06","function_name":"first_repeated_character"},{"question_id":"easy-07","function_name":"grade_bucket"},{"question_id":"easy-08","function_name":"remove_duplicates_keep_order"},{"question_id":"easy-09","function_name":"count_words"},{"question_id":"easy-10","function_name":"smallest_positive"},
+    {"question_id":"easy-11","function_name":"running_total"},{"question_id":"easy-12","function_name":"valid_course_code_shape"},{"question_id":"easy-13","function_name":"find_index"},{"question_id":"easy-14","function_name":"merge_names"},{"question_id":"easy-15","function_name":"temperature_above_threshold"},
+    {"question_id":"easy-16","function_name":"last_digit"},{"question_id":"easy-17","function_name":"truthy_attendance"},{"question_id":"easy-18","function_name":"initials"},{"question_id":"easy-19","function_name":"clamp_score"},{"question_id":"easy-20","function_name":"every_other_item"},
+    {"question_id":"medium-01","function_name":"two_sum_indexes"},{"question_id":"medium-02","function_name":"balanced_brackets"},{"question_id":"medium-03","function_name":"longest_unique_window"},{"question_id":"medium-04","function_name":"group_anagrams"},{"question_id":"medium-05","function_name":"merge_sorted_lists"},
+    {"question_id":"medium-06","function_name":"course_prerequisite_chain"},{"question_id":"medium-07","function_name":"top_k_frequent"},{"question_id":"medium-08","function_name":"matrix_row_sums"},{"question_id":"medium-09","function_name":"rotate_list_right"},{"question_id":"medium-10","function_name":"first_missing_positive_small"},
+    {"question_id":"medium-11","function_name":"compress_runs"},{"question_id":"medium-12","function_name":"valid_study_schedule"},{"question_id":"medium-13","function_name":"binary_search_insert_position"},{"question_id":"medium-14","function_name":"count_islands"},{"question_id":"medium-15","function_name":"min_stack_operations"},
+    {"question_id":"medium-16","function_name":"normalize_email_list"},{"question_id":"medium-17","function_name":"prefix_search"},{"question_id":"medium-18","function_name":"window_average"},{"question_id":"medium-19","function_name":"nested_list_depth_sum"},{"question_id":"medium-20","function_name":"most_recent_unique"},
+    {"question_id":"hard-01","function_name":"shortest_path_in_campus_grid"},{"question_id":"hard-02","function_name":"course_plan_topological_order"},{"question_id":"hard-03","function_name":"longest_increasing_subsequence_length"},{"question_id":"hard-04","function_name":"edit_distance"},{"question_id":"hard-05","function_name":"lru_cache_simulation"},
+    {"question_id":"hard-06","function_name":"median_of_two_sorted_lists"},{"question_id":"hard-07","function_name":"word_ladder_steps"},{"question_id":"hard-08","function_name":"expression_evaluator"},{"question_id":"hard-09","function_name":"trie_prefix_counts"},{"question_id":"hard-10","function_name":"union_find_components"},
+    {"question_id":"hard-11","function_name":"kth_largest_stream"},{"question_id":"hard-12","function_name":"decode_ways"},{"question_id":"hard-13","function_name":"minimum_meeting_rooms"},{"question_id":"hard-14","function_name":"clone_graph"},{"question_id":"hard-15","function_name":"maximum_subarray_with_one_deletion"},
+    {"question_id":"hard-16","function_name":"serialize_binary_tree"},{"question_id":"hard-17","function_name":"alien_dictionary_order"},{"question_id":"hard-18","function_name":"subarray_sum_equals_k"},{"question_id":"hard-19","function_name":"maximal_square"},{"question_id":"hard-20","function_name":"rate_limiter"}
+  ]
+}

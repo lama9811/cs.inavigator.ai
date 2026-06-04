@@ -49,6 +49,9 @@ class User(Base):
     verification_token = Column(String(255), nullable=True)
     reset_token = Column(String(255), nullable=True)
     reset_token_expires = Column(DateTime, nullable=True)
+    is_disabled = Column(Boolean, nullable=False, default=False)
+    disabled_at = Column(DateTime, nullable=True)
+    disabled_reason = Column(Text, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     # Relationship to DegreeWorks data

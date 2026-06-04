@@ -116,11 +116,15 @@ export default function Signup({ onRegistered }) {
         body: JSON.stringify({ email: email.trim(), password, name: name.trim() || undefined, student_id: studentId.trim() || undefined }),
       });
 
-      if (!res.ok) throw new Error(await parseResponseError(res));
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.detail || data?.message || await parseResponseError(res));
 
       // Success - redirect to login
       navigate("/login", {
-        state: { message: "Account created successfully! Please log in." }
+        state: {
+          message: data?.message || "Account created successfully! Please verify your email, then log in.",
+          devVerificationUrl: data?.dev_verification_url || null,
+        }
       });
     } catch (err) {
       setError(err?.message || "Registration failed");

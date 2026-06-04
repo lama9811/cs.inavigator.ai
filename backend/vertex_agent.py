@@ -533,7 +533,7 @@ def get_last_grounding() -> dict:
 def check_agent_health() -> dict:
     """Check if the ADK agent server is healthy."""
     try:
-        resp = requests.get(f"{ADK_BASE_URL}/list-apps", timeout=15)
+        resp = requests.get(f"{ADK_BASE_URL}/list-apps", headers=_get_auth_headers(), timeout=15)
         if resp.status_code == 200:
             apps = resp.json()
             has_navigator = any(

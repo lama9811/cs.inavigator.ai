@@ -1202,6 +1202,14 @@ export default function ProfilePage({ userEmail, onLogout }) {
       {showCanvasModal && (
         <div className="modal-overlay" onClick={() => !canvasSyncing && setShowCanvasModal(false)}>
           <div className="modal-content degreeworks-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="modal-close"
+              onClick={() => !canvasSyncing && setShowCanvasModal(false)}
+              disabled={canvasSyncing}
+              title={canvasSyncing ? "Sync in progress" : "Close Canvas sync"}
+            >
+              <FaTimes />
+            </button>
             <div className="modal-header">
               <FaBook className="modal-icon" />
               <h2>Sync Canvas LMS</h2>

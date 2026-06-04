@@ -9,10 +9,11 @@
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.32s cubic-bezier(0.22, 1, 0.36, 1);
   z-index: 500;
   color: var(--text-main);
   overflow: hidden;
+  contain: layout paint style;
 }
 
 /* ─── COLLAPSED STATE ─── */
@@ -20,23 +21,69 @@ body.sidebar-collapsed .chat-sidebar {
   width: 64px;
 }
 
-/* Hide everything except icons */
-body.sidebar-collapsed .sidebar-action-btn span,
-body.sidebar-collapsed .search-container,
-body.sidebar-collapsed .chat-history-list,
-body.sidebar-collapsed .chat-history-section,
-body.sidebar-collapsed .section-header,
-body.sidebar-collapsed .empty-state,
-body.sidebar-collapsed .sidebar-settings-wrapper,
-body.sidebar-collapsed .user-info,
-body.sidebar-collapsed .logout-icon-btn,
-body.sidebar-collapsed .sidebar-opensource-badge,
-body.sidebar-collapsed .archived-toggle,
-body.sidebar-collapsed .sidebar-middle,
-body.sidebar-collapsed .context-menu,
-body.sidebar-collapsed .setting-btn span,
-body.sidebar-collapsed .support-btn span {
+body.sidebar-custom-width:not(.sidebar-collapsed) .chat-sidebar {
+  width: var(--sidebar-width, 280px);
+}
+
+/* Collapsed state keeps labels measurable so resize preview can reveal them smoothly. */
+body.sidebar-collapsed:not(.sidebar-resizing) .search-container,
+body.sidebar-collapsed:not(.sidebar-resizing) .chat-history-list,
+body.sidebar-collapsed:not(.sidebar-resizing) .chat-history-section,
+body.sidebar-collapsed:not(.sidebar-resizing) .section-header,
+body.sidebar-collapsed:not(.sidebar-resizing) .empty-state,
+body.sidebar-collapsed:not(.sidebar-resizing) .sidebar-settings-wrapper,
+body.sidebar-collapsed:not(.sidebar-resizing) .user-info,
+body.sidebar-collapsed:not(.sidebar-resizing) .logout-icon-btn,
+body.sidebar-collapsed:not(.sidebar-resizing) .sidebar-opensource-badge,
+body.sidebar-collapsed:not(.sidebar-resizing) .archived-toggle,
+body.sidebar-collapsed:not(.sidebar-resizing) .sidebar-middle,
+body.sidebar-collapsed:not(.sidebar-resizing) .context-menu {
   display: none !important;
+}
+
+body.sidebar-collapsed:not(.sidebar-resizing) .sidebar-action-btn span,
+body.sidebar-collapsed:not(.sidebar-resizing) .setting-btn span,
+body.sidebar-collapsed:not(.sidebar-resizing) .support-btn span {
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transform: none;
+  transition: opacity 0.18s ease, max-width 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.chat-sidebar .sidebar-action-btn span,
+.chat-sidebar .setting-btn span,
+.chat-sidebar .support-btn span,
+.chat-sidebar .user-info,
+.chat-sidebar .search-container,
+.chat-sidebar .sidebar-middle,
+.chat-sidebar .sidebar-settings-wrapper,
+.chat-sidebar .sidebar-opensource-badge {
+  transition: opacity 0.18s ease, max-width 0.18s ease, transform 0.18s ease;
+}
+
+body.sidebar-resizing .chat-sidebar .sidebar-action-btn span,
+body.sidebar-resizing .chat-sidebar .setting-btn span,
+body.sidebar-resizing .chat-sidebar .support-btn span,
+body.sidebar-resizing .chat-sidebar .user-info,
+body.sidebar-resizing .chat-sidebar .sidebar-opensource-badge {
+  display: inline-flex !important;
+  opacity: 1;
+  max-width: calc(var(--sidebar-preview-width, 64px) - 72px);
+  overflow: hidden;
+  white-space: nowrap;
+  transform: none;
+  transition: none;
+}
+
+body.sidebar-resizing .chat-sidebar .search-container,
+body.sidebar-resizing .chat-sidebar .sidebar-middle,
+body.sidebar-resizing .chat-sidebar .sidebar-settings-wrapper {
+  display: flex !important;
+  opacity: 1;
+  pointer-events: none;
+  transition: none;
 }
 
 /* Top section */
@@ -134,6 +181,7 @@ body.sidebar-collapsed .user-avatar img {
   cursor: pointer;
   transition: background 0.15s;
   width: 100%;
+  overflow: hidden;
 }
 
 .sidebar-action-btn:hover {
@@ -485,6 +533,7 @@ body.dark .sidebar-action-btn:hover {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  overflow: hidden;
 }
 
 .setting-btn:hover {
@@ -1175,4 +1224,91 @@ body.dark .sidebar-toggle-btn:hover {
 }
 [data-theme="dark"] .sidebar-opensource-badge {
   color: var(--text-tertiary, #555);
+}
+
+.sidebar-drag-handle {
+  position: absolute;
+  top: 0;
+  right: -6px;
+  width: 12px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 20;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+
+.sidebar-drag-handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  width: 3px;
+  height: 54px;
+  border-radius: 999px;
+  background: var(--border-color, #d8dee8);
+  opacity: 0;
+  transform: translateY(-50%);
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.chat-sidebar:hover .sidebar-drag-handle::after,
+.sidebar-drag-handle:focus-visible::after {
+  opacity: 1;
+}
+
+.sidebar-drag-handle:hover::after {
+  background: var(--msu-blue, #4285f4);
+  opacity: 1;
+}
+
+body.sidebar-collapsed .sidebar-drag-handle {
+  right: -10px;
+  width: 20px;
+}
+
+body.sidebar-resizing,
+body.sidebar-resizing * {
+  cursor: ew-resize !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+body.sidebar-resizing .chat-sidebar {
+  width: var(--sidebar-preview-width, 280px);
+  transition: width 80ms linear;
+  will-change: width;
+}
+
+body.sidebar-resizing .chat-sidebar * {
+  animation-play-state: paused;
+}
+
+body.sidebar-resizing .chat-sidebar .sidebar-drag-handle::after {
+  opacity: 1;
+  background: var(--msu-blue, #4285f4);
+}
+
+body.sidebar-resizing .sidebar-top-row {
+  flex-direction: row;
+  align-items: center;
+}
+
+body.sidebar-resizing .sidebar-action-btn,
+body.sidebar-resizing .sidebar-action-btn.new-chat {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 10px 12px;
+  gap: 12px;
+}
+
+body.sidebar-resizing .sidebar-top {
+  padding: 16px;
+  align-items: stretch;
+  gap: 8px;
+}
+
+body.sidebar-resizing .sidebar-toggle-btn {
+  flex-shrink: 0;
 }

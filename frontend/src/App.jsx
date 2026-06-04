@@ -62,7 +62,8 @@ function ChatLayout({
   onRename,
   darkMode,
   onToggleTheme,
-  onCollapse
+  onCollapseSidebar,
+  onSidebarResize
 }) {
   const activeSession = sessions.find((s) => s.id === activeId) || { messages: [] };
   return (
@@ -80,7 +81,8 @@ function ChatLayout({
         onRename={onRename}
         darkMode={darkMode}
         onToggleTheme={onToggleTheme}
-        onCollapse={onCollapse}
+        onCollapseSidebar={onCollapseSidebar}
+        onSidebarResize={onSidebarResize}
       />
       {/* 🔥 UPDATE: Passing sessionId to Chatbox so it knows where to save */}
       <Chatbox
@@ -106,7 +108,8 @@ function SidebarLayout({
   onRename,
   darkMode,
   onToggleTheme,
-  onCollapse,
+  onCollapseSidebar,
+  onSidebarResize,
   children
 }) {
   return (
@@ -124,7 +127,8 @@ function SidebarLayout({
         onRename={onRename}
         darkMode={darkMode}
         onToggleTheme={onToggleTheme}
-        onCollapse={onCollapse}
+        onCollapseSidebar={onCollapseSidebar}
+        onSidebarResize={onSidebarResize}
       />
       <div className="page-content">
         {children}
@@ -356,9 +360,38 @@ export default function App() {
     );
   };
 
-  // Sidebar toggle function
+  // Sidebar controls
   const toggleSidebar = () => {
-    setSidebarCollapsed(prev => !prev);
+    setSidebarCollapsed(prev => {
+      const nextCollapsed = !prev;
+      const savedWidth = Number(localStorage.getItem("sidebar_width"));
+
+      if (nextCollapsed) {
+        document.body.classList.add("sidebar-collapsed");
+        document.body.classList.remove("sidebar-custom-width");
+        document.documentElement.style.setProperty("--sidebar-width", "64px");
+        localStorage.setItem("sidebar_width", "64");
+      } else if (Number.isFinite(savedWidth) && savedWidth > 72 && savedWidth < 280) {
+        document.body.classList.remove("sidebar-collapsed");
+        document.documentElement.style.setProperty("--sidebar-width", `${savedWidth}px`);
+        document.body.classList.add("sidebar-custom-width");
+      } else {
+        document.body.classList.remove("sidebar-collapsed");
+        document.body.classList.remove("sidebar-custom-width");
+        document.documentElement.style.setProperty("--sidebar-width", "280px");
+        localStorage.setItem("sidebar_width", "280");
+      }
+
+      return nextCollapsed;
+    });
+  };
+
+  const handleSidebarResize = ({ collapsed, width }) => {
+    const savedWidth = Number(width) || 64;
+    document.documentElement.style.setProperty("--sidebar-width", `${savedWidth}px`);
+    document.body.classList.toggle("sidebar-custom-width", !collapsed && savedWidth < 280);
+    localStorage.setItem("sidebar_width", String(savedWidth));
+    setSidebarCollapsed(Boolean(collapsed));
   };
 
   // Theme toggle function
@@ -454,7 +487,8 @@ export default function App() {
                 onRename={handleRename}
                 darkMode={darkMode}
                 onToggleTheme={toggleTheme}
-                onCollapse={toggleSidebar}
+                onCollapseSidebar={toggleSidebar}
+                onSidebarResize={handleSidebarResize}
               />
             </RequireAuth>
           }
@@ -478,7 +512,8 @@ export default function App() {
                 onRename={handleRename}
                 darkMode={darkMode}
                 onToggleTheme={toggleTheme}
-                onCollapse={toggleSidebar}
+                onCollapseSidebar={toggleSidebar}
+                onSidebarResize={handleSidebarResize}
               >
                 <MyClassesPage />
               </SidebarLayout>
@@ -504,7 +539,8 @@ export default function App() {
                 onRename={handleRename}
                 darkMode={darkMode}
                 onToggleTheme={toggleTheme}
-                onCollapse={toggleSidebar}
+                onCollapseSidebar={toggleSidebar}
+                onSidebarResize={handleSidebarResize}
               >
                 <GradeSurgeon />
               </SidebarLayout>
@@ -530,7 +566,8 @@ export default function App() {
                 onRename={handleRename}
                 darkMode={darkMode}
                 onToggleTheme={toggleTheme}
-                onCollapse={toggleSidebar}
+                onCollapseSidebar={toggleSidebar}
+                onSidebarResize={handleSidebarResize}
               >
                 <RippleEffect />
               </SidebarLayout>
@@ -556,7 +593,8 @@ export default function App() {
                 onRename={handleRename}
                 darkMode={darkMode}
                 onToggleTheme={toggleTheme}
-                onCollapse={toggleSidebar}
+                onCollapseSidebar={toggleSidebar}
+                onSidebarResize={handleSidebarResize}
               >
                 <CurriculumPage />
               </SidebarLayout>
@@ -582,7 +620,8 @@ export default function App() {
                 onRename={handleRename}
                 darkMode={darkMode}
                 onToggleTheme={toggleTheme}
-                onCollapse={toggleSidebar}
+                onCollapseSidebar={toggleSidebar}
+                onSidebarResize={handleSidebarResize}
               >
                 <ProfilePage userEmail={userEmail} onLogout={handleLogout} />
               </SidebarLayout>

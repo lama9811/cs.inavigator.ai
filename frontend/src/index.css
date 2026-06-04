@@ -146,13 +146,13 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: 'cv11', 'ss01';
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.12s ease, color 0.12s ease;
   overflow-x: hidden;
 }
 
 /* Smooth theme transitions (only on colors, not layout) */
 body * {
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, fill 0.12s ease, stroke 0.12s ease;
 }
 
 #root {
