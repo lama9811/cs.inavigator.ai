@@ -386,7 +386,7 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
 
         resp = requests.post(
             f"{ADK_BASE_URL}/run_sse",
-            headers={"Content-Type": "application/json"},
+            headers=_get_auth_headers(),
             json=payload,
             stream=True,
             timeout=120,
@@ -612,7 +612,7 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
 
         resp = requests.post(
             f"{ADK_BASE_URL}/run_sse",
-            headers={"Content-Type": "application/json"},
+            headers=_get_auth_headers(),
             json=payload,
             stream=True,
             timeout=120,

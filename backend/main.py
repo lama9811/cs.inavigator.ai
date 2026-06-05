@@ -144,7 +144,7 @@ except ImportError:
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -608,6 +608,24 @@ PRACTICE_LANGUAGES = {
     "cpp": "C++",
     "c++": "C++",
 }
+
+VALID_PRACTICE_STATUSES = {"not_started", "in_progress", "solved"}
+
+class PracticeProgressUpdate(BaseModel):
+    language: str = "python"
+    status: Optional[str] = None
+    code: Optional[str] = None
+    increment_attempt: bool = False
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value):
+        if value is None:
+            return value
+        normalized = value.lower().strip()
+        if normalized not in VALID_PRACTICE_STATUSES:
+            raise ValueError("Status must be not_started, in_progress, or solved")
+        return normalized
 
 class QueryRequest(BaseModel):
     query: str
@@ -3231,6 +3249,47 @@ def _find_language_solution(question_id: str, language: str) -> dict[str, Any]:
             return {"language": language_label, **defaults, **item}
     raise HTTPException(status_code=404, detail="Practice solution not found for that question and language.")
 
+def _serialize_practice_progress(progress: CodingPracticeProgress) -> dict[str, Any]:
+    return {
+        "id": progress.id,
+        "question_id": progress.question_id,
+        "language": progress.language,
+        "status": progress.status,
+        "code": progress.code or "",
+        "attempt_count": progress.attempt_count or 0,
+        "last_attempt_at": progress.last_attempt_at.isoformat() if progress.last_attempt_at else None,
+        "solved_at": progress.solved_at.isoformat() if progress.solved_at else None,
+        "updated_at": progress.updated_at.isoformat() if progress.updated_at else None,
+    }
+
+def _get_or_create_practice_progress(
+    db: Session,
+    user_id: int,
+    question_id: str,
+    language: str,
+) -> CodingPracticeProgress:
+    language_key, _ = _normalize_practice_language(language)
+    progress = (
+        db.query(CodingPracticeProgress)
+        .filter(
+            CodingPracticeProgress.user_id == user_id,
+            CodingPracticeProgress.question_id == question_id,
+            CodingPracticeProgress.language == language_key,
+        )
+        .first()
+    )
+    if progress:
+        return progress
+
+    progress = CodingPracticeProgress(
+        user_id=user_id,
+        question_id=question_id,
+        language=language_key,
+        status="in_progress",
+    )
+    db.add(progress)
+    return progress
+
 @app.get("/api/coding/practice/daily")
 async def get_daily_practice_question(
     difficulty: str = Query("easy", pattern="^(easy|medium|hard)$"),
@@ -3279,6 +3338,90 @@ async def get_practice_question_hints(question_id: str, level: str = Query("1"))
 async def get_practice_question_solution(question_id: str, language: str = Query("python")):
     _find_practice_question(question_id)
     return _find_language_solution(question_id, language)
+
+@app.get("/api/coding/practice/progress")
+async def list_practice_progress(
+    difficulty: Optional[str] = Query(None, pattern="^(easy|medium|hard)$"),
+    language: str = Query("python"),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    language_key, _ = _normalize_practice_language(language)
+    query = db.query(CodingPracticeProgress).filter(
+        CodingPracticeProgress.user_id == user["user_id"],
+        CodingPracticeProgress.language == language_key,
+    )
+    if difficulty:
+        question_ids = {question["id"] for question in _practice_questions_for_difficulty(difficulty)}
+        if question_ids:
+            query = query.filter(CodingPracticeProgress.question_id.in_(question_ids))
+        else:
+            return {"items": []}
+    items = query.order_by(CodingPracticeProgress.updated_at.desc()).all()
+    return {"items": [_serialize_practice_progress(item) for item in items]}
+
+@app.get("/api/coding/practice/questions/{question_id}/progress")
+async def get_practice_progress(
+    question_id: str,
+    language: str = Query("python"),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _find_practice_question(question_id)
+    language_key, _ = _normalize_practice_language(language)
+    progress = (
+        db.query(CodingPracticeProgress)
+        .filter(
+            CodingPracticeProgress.user_id == user["user_id"],
+            CodingPracticeProgress.question_id == question_id,
+            CodingPracticeProgress.language == language_key,
+        )
+        .first()
+    )
+    if not progress:
+        return {
+            "question_id": question_id,
+            "language": language_key,
+            "status": "not_started",
+            "code": "",
+            "attempt_count": 0,
+            "last_attempt_at": None,
+            "solved_at": None,
+            "updated_at": None,
+        }
+    return _serialize_practice_progress(progress)
+
+@app.patch("/api/coding/practice/questions/{question_id}/progress")
+async def update_practice_progress(
+    question_id: str,
+    req: PracticeProgressUpdate,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _find_practice_question(question_id)
+    language_key, _ = _normalize_practice_language(req.language)
+    progress = _get_or_create_practice_progress(db, user["user_id"], question_id, language_key)
+
+    if req.code is not None:
+        progress.code = req.code
+    if req.increment_attempt:
+        progress.attempt_count = (progress.attempt_count or 0) + 1
+        progress.last_attempt_at = datetime.now(timezone.utc)
+        if progress.status == "not_started":
+            progress.status = "in_progress"
+    if req.status:
+        progress.status = req.status
+        if req.status == "solved":
+            progress.solved_at = datetime.now(timezone.utc)
+        elif req.status != "solved":
+            progress.solved_at = None
+    elif progress.status == "not_started":
+        progress.status = "in_progress"
+
+    progress.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(progress)
+    return _serialize_practice_progress(progress)
 @app.get("/api/popular-questions")
 async def get_popular_questions():
     """Returns 8 randomly selected questions from a curated pool."""

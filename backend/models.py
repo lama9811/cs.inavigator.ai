@@ -1,5 +1,5 @@
 # backend/models.py
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Float, ForeignKey, func
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Float, ForeignKey, UniqueConstraint, func
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from db import Base
@@ -215,6 +215,28 @@ class UserMemory(Base):
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = relationship("User", backref="memories")
+
+
+class CodingPracticeProgress(Base):
+    """Per-user progress for the local CS Navigator coding practice bank."""
+    __tablename__ = "coding_practice_progress"
+    __table_args__ = (
+        UniqueConstraint("user_id", "question_id", "language", name="uq_coding_practice_user_question_language"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    question_id = Column(String(80), nullable=False, index=True)
+    language = Column(String(30), nullable=False, default="python")
+    status = Column(String(30), nullable=False, default="in_progress")
+    code = Column(Text, nullable=True)
+    attempt_count = Column(Integer, nullable=False, default=0)
+    last_attempt_at = Column(DateTime, nullable=True)
+    solved_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", backref="coding_practice_progress")
 
 
 class FailedQuery(Base):
