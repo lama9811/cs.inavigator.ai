@@ -146,11 +146,18 @@ export default function ChatSidebar({
     fetchUserProfile();
   }, [fetchUserProfile]);
 
-  // Filter logic - PRESERVED
-  const filteredSessions = sessions.filter(s =>
-    !s.archived && s.title.toLowerCase().includes(searchQuery.toLowerCase())
+  // Coding Tutor creates the next session boundary when its widget closes.
+  // Keep that empty draft out of history until the user sends a real message.
+  const isVisibleHistorySession = (session) => {
+    const isCodingSession = session.mode === "coding_tutor" || String(session.id).startsWith("coding-");
+    return !isCodingSession || (session.messages?.length ?? 0) > 0;
+  };
+
+  const visibleSessions = sessions.filter(isVisibleHistorySession);
+  const filteredSessions = visibleSessions.filter(s =>
+    !s.archived && String(s.title || "New Chat").toLowerCase().includes(searchQuery.toLowerCase())
   );
-  const archivedSessions = sessions.filter(s => s.archived);
+  const archivedSessions = visibleSessions.filter(s => s.archived);
   const pinnedSessions = filteredSessions.filter(s => s.pinned);
   const regularSessions = filteredSessions.filter(s => !s.pinned);
 

@@ -19,6 +19,7 @@ import pypdf
 import docx
 from langchain.schema import SystemMessage, HumanMessage 
 from coding_runner import (
+    check_practice_run_rate_limit,
     empty_practice_run_response,
     get_cached_practice_run,
     run_javascript_practice_tests,
@@ -3685,6 +3686,14 @@ async def run_practice_solution(
     user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    retry_after = check_practice_run_rate_limit(str(user["user_id"]))
+    if retry_after is not None:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many code runs. Wait briefly before trying again.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
     language_key, _ = _normalize_practice_language(req.language)
     if language_key not in {"python", "javascript"}:
         return empty_practice_run_response("The V2.1 runner supports Python and JavaScript. Java and C++ runners are coming later.")
