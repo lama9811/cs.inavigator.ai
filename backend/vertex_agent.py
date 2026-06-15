@@ -112,6 +112,50 @@ _SKIP_GROUNDING_RE = re.compile(
 # Detects when Gemini self-reports a KB access failure (transient Vertex AI Search issue)
 _KB_FAIL_RE = re.compile(r"having trouble (accessing|connecting to) my knowledge base", re.IGNORECASE)
 
+# Coding Tutor code-generation requests sometimes stream a useful code block,
+# then end with a prose-only final event. Preserve the code-first contract.
+_CODE_FIRST_REQUEST_RE = re.compile(
+    r"\b(rewrite|convert|translate|refactor|generate|write|draft|implement)\b"
+    r"|Code-first mode|Rewrite mode|Detected student intent:\s*(Rewrite|Generate Code)",
+    re.IGNORECASE,
+)
+_FENCED_CODE_RE = re.compile(r"```(?:[a-zA-Z0-9_+\-.#]*)?\s*\n[\s\S]*?\n```")
+
+
+def _is_code_first_request(message: str) -> bool:
+    return bool(message and _CODE_FIRST_REQUEST_RE.search(message))
+
+
+def _extract_code_block(text: str) -> str:
+    match = _FENCED_CODE_RE.search(text or "")
+    return match.group(0).strip() if match else ""
+
+
+def _short_code_notes(text: str) -> str:
+    """Keep code-generation follow-up brief so rewrites do not become lectures."""
+    cleaned = re.sub(r"\s+", " ", (text or "")).strip()
+    if not cleaned:
+        return ""
+    sentences = re.split(r"(?<=[.!?])\s+", cleaned)
+    notes = [sentence.strip(" -") for sentence in sentences if sentence.strip(" -")]
+    return "\n".join(f"- {note}" for note in notes[:3])
+
+
+def _preserve_code_first_response(message: str, final_text: str, code_candidate: str = "") -> str:
+    if not _is_code_first_request(message) or _extract_code_block(final_text):
+        return final_text
+
+    code_block = _extract_code_block(code_candidate)
+    if not code_block:
+        return final_text
+
+    notes = _short_code_notes(final_text)
+    return f"{code_block}\n\n{notes}" if notes else code_block
+
+
+def _chat_mode_for_message(message: str) -> str:
+    return "coding_tutor" if "CODING TUTOR MODE:" in (message or "") else "regular"
+
 # =============================================================================
 # FAITHFULNESS GATE: Entity Whitelist
 # =============================================================================
@@ -261,7 +305,7 @@ def _create_session(user_id: str, state: Optional[dict] = None) -> str:
     return ""
 
 
-def _get_valid_session(user_id: str, context: str = "", model: str = "", canvas_context: str = "") -> Optional[str]:
+def _get_valid_session(user_id: str, context: str = "", model: str = "", canvas_context: str = "", chat_mode: str = "regular") -> Optional[str]:
     """Return a cached session ID if it exists, hasn't expired, and context/model matches."""
     cached = _session_cache.get(user_id)
     if not cached:
@@ -291,11 +335,16 @@ def _get_valid_session(user_id: str, context: str = "", model: str = "", canvas_
         _session_cache.pop(user_id, None)
         return None
 
+    if cached.get("chat_mode", "regular") != chat_mode:
+        print(f"   ADK session chat mode changed ({cached.get('chat_mode', 'regular')} -> {chat_mode}), creating new")
+        _session_cache.pop(user_id, None)
+        return None
+
     print(f"   ADK session reused: {cached['session_id']} (age={age:.0f}s)")
     return cached["session_id"]
 
 
-def _cache_session(user_id: str, session_id: str, context: str = "", model: str = "", canvas_context: str = ""):
+def _cache_session(user_id: str, session_id: str, context: str = "", model: str = "", canvas_context: str = "", chat_mode: str = "regular"):
     """Store a session in the reuse cache."""
     _session_cache[user_id] = {
         "session_id": session_id,
@@ -303,6 +352,7 @@ def _cache_session(user_id: str, session_id: str, context: str = "", model: str 
         "context_hash": _compute_context_hash(context),
         "canvas_hash": _compute_context_hash(canvas_context),
         "model": model,
+        "chat_mode": chat_mode,
     }
 
 
@@ -322,7 +372,8 @@ def query_agent(query: str, user_id: str = "default", context: str = "", model: 
         memory_context: Long-term user memory (sent via state_delta, volatile)
     """
     # Session reuse: hash DegreeWorks + Canvas for invalidation
-    session_id = _get_valid_session(user_id, context, model, canvas_context=canvas_context)
+    chat_mode = _chat_mode_for_message(query)
+    session_id = _get_valid_session(user_id, context, model, canvas_context=canvas_context, chat_mode=chat_mode)
 
     if not session_id:
         state = {}
@@ -334,10 +385,11 @@ def query_agent(query: str, user_id: str = "default", context: str = "", model: 
             state["memory"] = memory_context
         if model:
             state["model_preference"] = model
+        state["chat_mode"] = chat_mode
         session_id = _create_session(user_id, state=state if state else None)
         if not session_id:
             return _OUTAGE_MSG
-        _cache_session(user_id, session_id, context, model, canvas_context=canvas_context)
+        _cache_session(user_id, session_id, context, model, canvas_context=canvas_context, chat_mode=chat_mode)
 
     return _run_query(query, user_id, session_id, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context)
 
@@ -375,6 +427,8 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
         }
         # Send volatile data via state_delta (Canvas/memory change often, model per-request)
         state_delta = {}
+        chat_mode = _chat_mode_for_message(message)
+        state_delta["chat_mode"] = chat_mode
         if model:
             state_delta["model_preference"] = model
         if canvas_context:
@@ -405,9 +459,10 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
                 state["memory"] = memory_context
             if model:
                 state["model_preference"] = model
+            state["chat_mode"] = chat_mode
             new_session_id = _create_session(user_id, state=state if state else None)
             if new_session_id:
-                _cache_session(user_id, new_session_id, context, model, canvas_context=canvas_context)
+                _cache_session(user_id, new_session_id, context, model, canvas_context=canvas_context, chat_mode=chat_mode)
                 return _run_query(message, user_id, new_session_id, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context)
             return _OUTAGE_MSG
 
@@ -415,6 +470,7 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
 
         # Parse SSE events and extract the final text response + grounding metadata
         final_text = ""
+        code_candidate = ""
         grounding_chunks = 0
         grounding_coverage = 0.0
         for line in resp.iter_lines():
@@ -460,7 +516,10 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
             parts = content.get("parts", [])
             for part in parts:
                 if isinstance(part, dict) and "text" in part:
-                    final_text = part["text"]  # Keep last model text (the final answer)
+                    text = part["text"]
+                    if _extract_code_block(text):
+                        code_candidate = text
+                    final_text = text  # Keep last model text (the final answer)
 
         # Store grounding signal for research_agent to read (thread-local)
         _set_grounding(grounding_chunks > 0, grounding_chunks, grounding_coverage)
@@ -468,6 +527,7 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
         if final_text:
             # Clean up citation artifacts from Gemini grounding
             final_text = re.sub(r'\s*\[cite:\s*[^\]]*\]', '', final_text).strip()
+            final_text = _preserve_code_first_response(message, final_text, code_candidate)
 
             # Strip empty code blocks (Gemini 2.0 Flash sometimes returns ``` with nothing)
             if final_text.strip() in ("```", "``` ```", "``````"):
@@ -562,7 +622,8 @@ def query_agent_stream(query: str, user_id: str = "default", context: str = "", 
     Session reuse based on DegreeWorks (stable). Canvas + memory sent via state_delta (volatile).
     """
     # Session reuse: hash DegreeWorks + Canvas for invalidation
-    session_id = _get_valid_session(user_id, context, model, canvas_context=canvas_context)
+    chat_mode = _chat_mode_for_message(query)
+    session_id = _get_valid_session(user_id, context, model, canvas_context=canvas_context, chat_mode=chat_mode)
 
     if not session_id:
         state = {}
@@ -574,11 +635,12 @@ def query_agent_stream(query: str, user_id: str = "default", context: str = "", 
             state["memory"] = memory_context
         if model:
             state["model_preference"] = model
+        state["chat_mode"] = chat_mode
         session_id = _create_session(user_id, state=state if state else None)
         if not session_id:
             yield {"type": "error", "content": _OUTAGE_MSG}
             return
-        _cache_session(user_id, session_id, context, model, canvas_context=canvas_context)
+        _cache_session(user_id, session_id, context, model, canvas_context=canvas_context, chat_mode=chat_mode)
 
     yield from _run_query_stream(query, user_id, session_id, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context)
 
@@ -601,6 +663,8 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
             },
         }
         state_delta = {}
+        chat_mode = _chat_mode_for_message(message)
+        state_delta["chat_mode"] = chat_mode
         if model:
             state_delta["model_preference"] = model
         if canvas_context:
@@ -631,9 +695,10 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
                 state["memory"] = memory_context
             if model:
                 state["model_preference"] = model
+            state["chat_mode"] = chat_mode
             new_session_id = _create_session(user_id, state=state if state else None)
             if new_session_id:
-                _cache_session(user_id, new_session_id, context, model, canvas_context=canvas_context)
+                _cache_session(user_id, new_session_id, context, model, canvas_context=canvas_context, chat_mode=chat_mode)
                 yield from _run_query_stream(message, user_id, new_session_id, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context)
                 return
             yield {"type": "error", "content": _OUTAGE_MSG}
@@ -649,6 +714,7 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
 
         # Stream SSE events and yield text chunks + status updates
         full_text = ""
+        code_candidate = ""
         grounding_chunks = 0
         grounding_coverage = 0.0
         for line in resp.iter_lines():
@@ -709,6 +775,8 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
                 if isinstance(part, dict) and "text" in part:
                     text = part["text"]
                     text = re.sub(r'\s*\[cite:\s*[^\]]*\]', '', text)
+                    if _extract_code_block(text):
+                        code_candidate = text
                     if text.strip():
                         if len(text) > len(full_text):
                             chunk = text[len(full_text):]
@@ -730,6 +798,7 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
 
         # Post-process: catch 429 errors and empty code blocks in streamed text
         cleaned = full_text.strip()
+        cleaned = _preserve_code_first_response(message, cleaned, code_candidate)
         if cleaned in ("```", "``` ```", "``````", ""):
             cleaned = "I wasn't able to generate a proper response. Please try asking again."
             yield {"type": "chunk", "content": cleaned}

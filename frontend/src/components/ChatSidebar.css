@@ -5,8 +5,8 @@
   left: 0;
   width: 280px;
   height: calc(100vh - 70px);
-  background: var(--bg-card);
-  border-right: 1px solid var(--border-color);
+  background: var(--bg-surface, var(--bg-card));
+  border-right: 1px solid var(--border-soft, var(--border-color));
   display: flex;
   flex-direction: column;
   transition: width 0.32s cubic-bezier(0.22, 1, 0.36, 1);
@@ -192,6 +192,131 @@ body.dark .sidebar-action-btn:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* Token theme polish */
+.sidebar-top {
+  border-bottom-color: var(--border-subtle);
+}
+
+.sidebar-action-btn,
+.setting-btn,
+.support-btn,
+.chat-history-item {
+  color: var(--text-main);
+}
+
+.sidebar-action-btn:hover,
+.setting-btn:hover,
+.support-btn:hover,
+.chat-history-item:hover {
+  background: var(--primary-soft, var(--msu-blue-100)) !important;
+  color: var(--primary, var(--msu-blue)) !important;
+}
+
+.sidebar-action-btn.new-chat,
+.chat-history-item.active {
+  background: linear-gradient(135deg, var(--primary, var(--msu-blue)), var(--primary-hover, var(--msu-blue-hover))) !important;
+  color: #ffffff !important;
+}
+
+.chat-history-item.active {
+  border-left: 4px solid var(--accent, var(--msu-gold)) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent, var(--msu-gold)) 28%, transparent);
+}
+
+.sidebar-action-btn.curriculum-link.active,
+.sidebar-action-btn.curriculum-link:hover {
+  color: var(--accent, var(--msu-gold)) !important;
+  background: var(--accent-soft, var(--msu-gold-50)) !important;
+}
+
+.chat-history-item.active *,
+.chat-history-item.active .chat-title,
+.chat-history-item.active .chat-date {
+  color: #ffffff !important;
+}
+
+.search-input {
+  background: var(--bg-surface-soft, var(--bg-input)) !important;
+  border-color: var(--border-soft, var(--border-color)) !important;
+  color: var(--text-main) !important;
+}
+
+body.dark .chat-sidebar {
+  background: color-mix(in srgb, var(--bg-surface, var(--bg-card)) 94%, transparent);
+  border-right-color: var(--border-soft, var(--border-color));
+}
+
+body.dark .sidebar-action-btn:hover,
+body.dark .setting-btn:hover,
+body.dark .support-btn:hover,
+body.dark .chat-history-item:hover {
+  background: var(--primary-soft, var(--msu-blue-100)) !important;
+  color: var(--primary, var(--msu-blue)) !important;
+}
+
+/* Smaller-screen sidebar history ergonomics */
+.sidebar-middle {
+  flex: 1 1 auto;
+  min-height: 0;
+  overscroll-behavior: contain;
+}
+
+.chat-history-section {
+  min-height: 0;
+}
+
+.chat-history-list {
+  min-height: 0;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong, var(--border-color)) transparent;
+}
+
+.chat-history-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-history-list::-webkit-scrollbar-thumb {
+  background: var(--border-strong, var(--border-color));
+  border-radius: 999px;
+}
+
+@media (max-height: 760px), (max-width: 900px) {
+  .chat-sidebar {
+    height: calc(100dvh - 70px);
+  }
+
+  .sidebar-top {
+    flex: 0 0 auto;
+    padding: 10px 12px;
+    gap: 6px;
+  }
+
+  .sidebar-middle {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding-bottom: 8px;
+  }
+
+  .chat-history-list {
+    max-height: none;
+    overflow-y: visible;
+    padding-right: 3px;
+  }
+
+  .chat-history-item {
+    min-height: 42px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .sidebar-bottom {
+    flex: 0 0 auto;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+}
+
 .sidebar-action-btn.new-chat {
   background: var(--msu-blue);
   color: white;
@@ -214,6 +339,26 @@ body.dark .sidebar-action-btn:hover {
   color: var(--text-secondary, #666);
   font-size: 0.85rem;
   padding: 9px 12px;
+}
+
+.sidebar-action-btn.curriculum-link.active,
+.sidebar-action-btn.curriculum-link:hover {
+  background: rgba(66, 133, 244, 0.1);
+  color: var(--text-primary, #111);
+}
+
+body.dark .sidebar-action-btn.curriculum-link.active,
+body.dark .sidebar-action-btn.curriculum-link:hover {
+  background: rgba(138, 180, 248, 0.16);
+  color: #e5e7eb;
+  border-color: rgba(138, 180, 248, 0.28);
+}
+
+body.dark .sidebar-action-btn.curriculum-link.active svg,
+body.dark .sidebar-action-btn.curriculum-link:hover svg,
+body.dark .sidebar-action-btn.curriculum-link.active span,
+body.dark .sidebar-action-btn.curriculum-link:hover span {
+  color: #e5e7eb;
 }
 
 /* Search Container */
@@ -966,6 +1111,12 @@ body.dark .chat-history-item.active {
   background: linear-gradient(90deg, rgba(138,180,248,0.14), rgba(138,180,248,0.04));
   color: #8ab4f8;
   border-left-color: #8ab4f8;
+}
+
+body.dark .chat-history-item.active *,
+body.dark .chat-history-item.active .chat-title,
+body.dark .chat-history-item.active .chat-date {
+  color: inherit;
 }
 
 /* Mobile - Tablet */

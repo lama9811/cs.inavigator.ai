@@ -7,8 +7,8 @@ print("[OK] main.py loaded successfully")
 import os
 import re
 import json
+import time
 import asyncio
-# import time  # Commented: currently unused, kept for potential future use
 import shutil #  NEW: For file operations
 from typing import List, Dict, Any, Optional
 from contextlib import asynccontextmanager
@@ -18,6 +18,13 @@ from datetime import datetime, timezone, timedelta
 import pypdf 
 import docx
 from langchain.schema import SystemMessage, HumanMessage 
+from coding_runner import (
+    empty_practice_run_response,
+    get_cached_practice_run,
+    run_javascript_practice_tests,
+    run_python_practice_tests,
+    set_cached_practice_run,
+)
 
 from fastapi import FastAPI, HTTPException, Depends, status, File, UploadFile, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -587,16 +594,46 @@ CODING_TUTOR_CONTEXT = """
 CODING TUTOR MODE:
 - Stay focused on programming help, debugging, code review, algorithm practice, and learning Python, Java, C++, and JavaScript.
 - Use balanced tutoring: explain concepts clearly, ask useful questions, point out likely bugs, and give small examples or snippets when needed.
-- Do not provide full assignment solutions, full files, or copy-paste-ready homework answers.
-- If a student asks for a full solution, politely refuse that part and offer a plan, hints, tests, or the next small step.
+- Do not provide full unknown homework solutions from scratch when the student only gives an assignment prompt.
+- If the student provides their own workspace code, starter code, or a partial attempt, you MAY generate, rewrite, convert, refactor, or complete small focused code blocks that build on that attempt.
+- For rewrite, convert, translate, refactor, generate-code, or starter-code requests: output the code first in a fenced code block. Do not start with an explanation. After the code block, add at most 3 short bullets explaining the changes.
+- For debug requests: answer in small chunks. Give the first likely issue, why it matters, and one quick check/test before moving on.
+- For hint requests: give hints progressively and avoid dumping a full final solution unless the student explicitly asks after attempting.
+- If a student asks for a full solution without showing work, politely refuse that part and offer a plan, hints, tests, or the next small step.
 - When code is pasted or uploaded, identify the likely intent, explain what is happening, point to the suspicious lines/logic, and suggest how the student can verify the fix.
 - Prefer debugging steps, test cases, complexity notes, edge cases, and style/readability feedback over general academic advising.
 - Avoid course scheduling, degree requirements, department contacts, scholarships, and other regular tutor topics unless the student explicitly asks for that context.
-- Use available course or student context lightly only when it directly improves the coding lesson.
+- Do not search or rely on the Morgan CS knowledge base for ordinary coding questions. Use it only if the student explicitly asks for Morgan-specific academic, course, faculty, policy, or department information.
 """
 
+def build_coding_tutor_query(user_query: str) -> str:
+    """Make coding tutor behavior explicit in the request body.
+
+    The ADK agent treats backend context as student data, so mode behavior must
+    also travel with the actual coding query.
+    """
+    return f"""{CODING_TUTOR_CONTEXT}
+
+RESPONSE PRIORITY:
+- If this request is asking to rewrite, convert, translate, refactor, or generate code, respond like a coding assistant: code block first, concise notes second.
+- If this request is asking for debugging, keep the response short and step-by-step.
+- If this request is asking for hints, guide without giving the entire answer immediately.
+
+STUDENT CODING REQUEST:
+{user_query}"""
+
+
+def _coding_tutor_query_has_workspace_code(query: str) -> bool:
+    """Detect Coding Tutor prompts that include live editor code."""
+    return (
+        "Current coding workspace context:" in query
+        and "Current code:" in query
+        and "Current code: none provided yet." not in query
+        and "```" in query
+    )
+
 _leetcode_daily_cache = {"date": None, "data": None}
-_practice_cache: dict[str, Any] = {}
+_practice_cache: dict[str, dict[str, Any]] = {}
 QUIZ_DIR = os.path.join(BACKEND_DIR, "data_sources", "quiz")
 QUIZ_QUESTIONS_DIR = os.path.join(QUIZ_DIR, "questions")
 QUIZ_ANSWERS_DIR = os.path.join(QUIZ_DIR, "answers")
@@ -627,8 +664,23 @@ class PracticeProgressUpdate(BaseModel):
             raise ValueError("Status must be not_started, in_progress, or solved")
         return normalized
 
+class PracticeRunRequest(BaseModel):
+    question_id: str
+    language: str = "python"
+    code: str
+
+    @field_validator("code")
+    @classmethod
+    def validate_code(cls, value):
+        if not value or not value.strip():
+            raise ValueError("code is required")
+        if len(value) > 20000:
+            raise ValueError("code is too large for this lightweight runner")
+        return value
+
 class QueryRequest(BaseModel):
     query: str
+    display_query: Optional[str] = None
     session_id: str = "default"
     skip_cache: bool = False
     model: str = ""              # "inav-1.0" (fast) or "inav-1.1" (pro)
@@ -2471,7 +2523,7 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
     if not user: raise HTTPException(401, "Unauthorized")
 
     user_q = req.query.strip()
-    original_q = user_q  # Preserve original for chat history (before rewrite)
+    original_q = (req.display_query or user_q).strip()  # Preserve user-facing text for chat history
     session_id = req.session_id or "default"
 
     # Detect file upload early to decide what data we need
@@ -2549,6 +2601,8 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
     mode_context = build_mode_context(req.mode)
     if mode_context:
         student_context += f"\n{mode_context}"
+    if req.mode == "coding_tutor":
+        user_q = build_coding_tutor_query(user_q)
 
     if file_match and USE_VERTEX_AGENT:
         # File uploaded -> include file content as context for the agent
@@ -2687,10 +2741,17 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
     if not user:
         raise HTTPException(401, "Unauthorized")
 
+    request_started = time.perf_counter()
+    timings: dict[str, int] = {}
+
+    def mark_timing(label: str):
+        timings[label] = int((time.perf_counter() - request_started) * 1000)
+
     user_q = req.query.strip()
-    original_q = user_q  # Keep original for cache key + chat history
+    original_q = (req.display_query or user_q).strip()  # Keep user-facing text for chat history
     session_id = req.session_id or "default"
     user_id = user["user_id"]
+    is_coding_tutor = req.mode == "coding_tutor"
 
     # Lazy-load: only fetch Canvas if query mentions grades/assignments/deadlines/course codes
     CANVAS_KEYWORDS = {"grade", "assignment", "due", "deadline", "missing", "class",
@@ -2698,69 +2759,89 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                        "test", "exam", "gpa", "taking", "enrolled", "recommend",
                        "suggest", "should i take", "what to take", "schedule"}
     has_course_code = bool(re.search(r'\b[A-Z]{2,4}\s*\d{3}\b', user_q, re.IGNORECASE))
-    needs_canvas = has_course_code or any(kw in user_q.lower() for kw in CANVAS_KEYWORDS)
+    needs_canvas = (not is_coding_tutor) and (has_course_code or any(kw in user_q.lower() for kw in CANVAS_KEYWORDS))
 
-    # Non-blocking parallel fetch: DegreeWorks + Canvas (if needed) + history (for rewriting) + memory
-    fetch_tasks = [
-        asyncio.to_thread(_fetch_dw_sync, user_id),
-        asyncio.to_thread(_fetch_history_sync, user_id, session_id, 5),
-        asyncio.to_thread(fetch_user_memories_sync, user_id, 10),
-    ]
-    if needs_canvas:
-        fetch_tasks.append(asyncio.to_thread(_fetch_canvas_sync, user_id))
+    # Coding Tutor is intentionally lean: session history only. Regular tutor
+    # keeps the full academic context stack.
+    if is_coding_tutor:
+        fetch_tasks = [asyncio.to_thread(_fetch_history_sync, user_id, session_id, 5)]
+    else:
+        fetch_tasks = [
+            asyncio.to_thread(_fetch_dw_sync, user_id),
+            asyncio.to_thread(_fetch_history_sync, user_id, session_id, 5),
+            asyncio.to_thread(fetch_user_memories_sync, user_id, 10),
+        ]
+        if needs_canvas:
+            fetch_tasks.append(asyncio.to_thread(_fetch_canvas_sync, user_id))
 
     results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
+    mark_timing("context_fetch")
 
-    dw_dict = results[0] if not isinstance(results[0], Exception) else None
-    history_dicts = results[1] if not isinstance(results[1], Exception) else []
-    memory_dicts = results[2] if not isinstance(results[2], Exception) else []
-    canvas_dict = results[3] if needs_canvas and len(results) > 3 and not isinstance(results[3], Exception) else None
+    if is_coding_tutor:
+        dw_dict = None
+        history_dicts = results[0] if not isinstance(results[0], Exception) else []
+        memory_dicts = []
+        canvas_dict = None
+    else:
+        dw_dict = results[0] if not isinstance(results[0], Exception) else None
+        history_dicts = results[1] if not isinstance(results[1], Exception) else []
+        memory_dicts = results[2] if not isinstance(results[2], Exception) else []
+        canvas_dict = results[3] if needs_canvas and len(results) > 3 and not isinstance(results[3], Exception) else None
 
     # Tier 1: Rewrite follow-up queries (resolve pronouns before KB search)
-    if history_dicts and is_likely_followup(user_q):
+    if not is_coding_tutor and history_dicts and is_likely_followup(user_q):
         user_q = await asyncio.to_thread(rewrite_query, user_q, history_dicts)
+    mark_timing("rewrite")
 
-    student_context = _build_student_context(dw_dict) if dw_dict else ""
-    canvas_context = _build_canvas_context(canvas_dict) if canvas_dict else ""
-    memory_context = build_memory_context(memory_dicts)
+    student_context = ""
+    canvas_context = ""
+    memory_context = ""
 
-    # Inject basic profile info (email, name, student ID) so agent knows who they're talking to
-    profile_parts = []
-    if user.get("name"): profile_parts.append(f"Name: {user['name']}")
-    if user.get("email"): profile_parts.append(f"Email: {user['email']}")
-    if user.get("student_id"): profile_parts.append(f"Student ID: {user['student_id']}")
-    if profile_parts:
-        profile_ctx = "STUDENT PROFILE (from account):\n" + "\n".join(profile_parts) + "\n"
-        student_context = profile_ctx + student_context
+    if not is_coding_tutor:
+        student_context = _build_student_context(dw_dict) if dw_dict else ""
+        canvas_context = _build_canvas_context(canvas_dict) if canvas_dict else ""
+        memory_context = build_memory_context(memory_dicts)
 
-    # Pre-compute course context (prereq analysis, schedule, eligibility)
-    course_context = build_course_context(dw_dict, user_q) if dw_dict else ""
-    if course_context:
-        student_context += f"\n{course_context}"
+        # Inject basic profile info (email, name, student ID) so agent knows who they're talking to
+        profile_parts = []
+        if user.get("name"): profile_parts.append(f"Name: {user['name']}")
+        if user.get("email"): profile_parts.append(f"Email: {user['email']}")
+        if user.get("student_id"): profile_parts.append(f"Student ID: {user['student_id']}")
+        if profile_parts:
+            profile_ctx = "STUDENT PROFILE (from account):\n" + "\n".join(profile_parts) + "\n"
+            student_context = profile_ctx + student_context
 
-    # Schedule planner state machine (conversational course planning)
-    from services.schedule_planner import (
-        detect_planning_intent, get_planner_state, set_planner_state,
-        clear_planner_state, process_planner_turn, build_planner_context,
-    )
-    from services.course_context import _SCHEDULES
+        # Pre-compute course context (prereq analysis, schedule, eligibility)
+        course_context = build_course_context(dw_dict, user_q) if dw_dict else ""
+        if course_context:
+            student_context += f"\n{course_context}"
 
-    planner_state = get_planner_state(user_id, session_id)
-    if planner_state:
-        planner_state = process_planner_turn(planner_state, user_q, dw_dict, _SCHEDULES)
+        # Schedule planner state machine (conversational course planning)
+        from services.schedule_planner import (
+            detect_planning_intent, get_planner_state, set_planner_state,
+            clear_planner_state, process_planner_turn, build_planner_context,
+        )
+        from services.course_context import _SCHEDULES
+
+        planner_state = get_planner_state(user_id, session_id)
         if planner_state:
+            planner_state = process_planner_turn(planner_state, user_q, dw_dict, _SCHEDULES)
+            if planner_state:
+                set_planner_state(user_id, session_id, planner_state)
+                student_context += build_planner_context(planner_state)
+            else:
+                clear_planner_state(user_id, session_id)
+        elif detect_planning_intent(user_q) and dw_dict:
+            planner_state = {"phase": "ask_semester"}
             set_planner_state(user_id, session_id, planner_state)
             student_context += build_planner_context(planner_state)
-        else:
-            clear_planner_state(user_id, session_id)
-    elif detect_planning_intent(user_q) and dw_dict:
-        planner_state = {"phase": "ask_semester"}
-        set_planner_state(user_id, session_id, planner_state)
-        student_context += build_planner_context(planner_state)
 
     mode_context = build_mode_context(req.mode)
     if mode_context:
         student_context += f"\n{mode_context}"
+    if is_coding_tutor:
+        user_q = build_coding_tutor_query(user_q)
+    mark_timing("context_build")
 
     agent_context = student_context  # DegreeWorks + course analysis + planner (stable, for session reuse)
 
@@ -2773,17 +2854,23 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
         _dw_key = f"{dw_dict.get('overall_gpa','')}{dw_dict.get('total_credits_earned','')}{dw_dict.get('credits_remaining','')}"
         _dw_hash = _hl.md5(_dw_key.encode()).hexdigest()[:8]
     context_hash = get_context_hash(user_id, has_degreeworks=bool(dw_dict), model=req.model, has_canvas=bool(canvas_dict), dw_hash=_dw_hash, mode=req.mode)
+    mark_timing("cache_ready")
 
-    # Skip cache when user taps "Regenerate" for a fresh answer
-    if req.skip_cache:
-        print(f"[CACHE] SKIP (regenerate) for query: {user_q[:50]}...")
+    skip_response_cache = req.skip_cache or (is_coding_tutor and _coding_tutor_query_has_workspace_code(user_q))
+
+    # Skip cache when user taps "Regenerate" or when Coding Tutor includes live workspace code.
+    if skip_response_cache:
+        reason = "workspace code" if is_coding_tutor and _coding_tutor_query_has_workspace_code(user_q) else "regenerate"
+        print(f"[CACHE] SKIP ({reason}) for query: {user_q[:50]}...")
         cached_response = None
-        # Force new ADK session so agent re-queries the search index fresh
-        import time as _time
-        context_hash = f"regen_{int(_time.time())}"
-        reset_session(str(user_id))
+        if req.skip_cache:
+            # Force new ADK session so agent re-queries the search index fresh
+            import time as _time
+            context_hash = f"regen_{int(_time.time())}"
+            reset_session(str(user_id))
     else:
         cached_response = query_cache.get(user_q, context_hash)
+    mark_timing("cache_lookup")
 
     if cached_response:
         print(f"[CACHE] HIT for query: {user_q[:50]}...")
@@ -2794,6 +2881,13 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
             yield f"data: {json.dumps({'type': 'status', 'content': 'Retrieved from cache'})}\n\n"
             # Send the full response immediately
             yield f"data: {json.dumps({'type': 'done', 'content': cached_response})}\n\n"
+            mark_timing("total")
+            print(
+                "[CHAT_TIMING] "
+                f"mode={req.mode} session={session_id} cached=true "
+                f"chars={len(original_q)} context={len(agent_context)} "
+                f"timings={timings}"
+            )
 
             # Still save to chat history (save original query, not rewritten)
             try:
@@ -2829,6 +2923,7 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
         """SSE generator that streams text chunks from the agent."""
         nonlocal stream_had_error
         full_response = ""
+        first_event = True
         try:
             for event in query_agent_stream(
                 query=user_q,
@@ -2838,6 +2933,9 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                 canvas_context=canvas_context,
                 memory_context=memory_context,
             ):
+                if first_event:
+                    mark_timing("agent_first_event")
+                    first_event = False
                 event_type = event.get("type", "")
                 content = event.get("content", "")
 
@@ -2868,7 +2966,7 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                 full_response = "An error occurred during streaming."
 
         # Cache the successful response
-        if full_response and "error" not in full_response.lower()[:50] and "I may not have complete information" not in full_response:
+        if (not skip_response_cache) and full_response and "error" not in full_response.lower()[:50] and "I may not have complete information" not in full_response:
             if query_cache.set(user_q, full_response, context_hash):
                 print(f"[CACHE] Stored response for: {user_q[:50]}...")
 
@@ -2891,9 +2989,18 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
         if full_response and not stream_had_error and "error" not in full_response.lower()[:50]:
             try:
                 from research_agent import detect_and_log_failed_query
-                detect_and_log_failed_query(original_q, full_response, user_id, has_student_data=bool(agent_context))
+                if not is_coding_tutor:
+                    detect_and_log_failed_query(original_q, full_response, user_id, has_student_data=bool(agent_context))
             except Exception:
                 pass
+
+        mark_timing("total")
+        print(
+            "[CHAT_TIMING] "
+            f"mode={req.mode} session={session_id} "
+            f"chars={len(original_q)} context={len(agent_context)} "
+            f"timings={timings}"
+        )
 
     return StreamingResponse(
         generate_sse(),
@@ -3196,17 +3303,18 @@ async def get_daily_coding_challenge():
         return fallback
 
 def _read_quiz_json(path: str) -> Any:
-    cached = _practice_cache.get(path)
-    if cached is not None:
-        return cached
     if not os.path.exists(path):
         raise HTTPException(status_code=500, detail=f"Practice data file missing: {os.path.basename(path)}")
+    mtime = os.path.getmtime(path)
+    cached = _practice_cache.get(path)
+    if cached is not None and cached.get("mtime") == mtime:
+        return cached["data"]
     try:
         with open(path, "r", encoding="utf-8") as handle:
             data = json.load(handle)
     except json.JSONDecodeError as exc:
         raise HTTPException(status_code=500, detail=f"Practice data file is invalid JSON: {os.path.basename(path)}") from exc
-    _practice_cache[path] = data
+    _practice_cache[path] = {"mtime": mtime, "data": data}
     return data
 
 def _practice_questions_for_difficulty(difficulty: str) -> list[dict[str, Any]]:
@@ -3238,7 +3346,228 @@ def _normalize_practice_language(language: str) -> tuple[str, str]:
     key = "cpp" if normalized in {"cpp", "c++"} else normalized
     return key, label
 
-def _find_language_solution(question_id: str, language: str) -> dict[str, Any]:
+def _practice_signature_shape(question: dict[str, Any], function_name: str) -> dict[str, str]:
+    text = " ".join([
+        str(question.get("title", "")),
+        str(question.get("topic", "")),
+        str(question.get("prompt", "")),
+        function_name,
+    ]).lower()
+
+    if any(word in text for word in ["grid", "matrix", "island", "square"]):
+        param_kind = "grid"
+    elif any(word in text for word in ["string", "word", "vowel", "palindrome", "bracket", "email", "prefix", "anagram", "character", "expression", "decode"]):
+        param_kind = "text"
+    elif any(word in text for word in ["graph", "course plan", "prerequisite", "path"]):
+        param_kind = "graph"
+    elif any(word in text for word in ["list", "array", "score", "number", "temperature", "window", "subarray", "median", "kth", "duplicate"]):
+        param_kind = "numbers"
+    else:
+        param_kind = "items"
+
+    return_kind = "object"
+    if any(word in function_name.lower() for word in ["is_", "valid", "balanced", "truthy", "every"]):
+        return_kind = "bool"
+    elif any(word in function_name.lower() for word in ["count", "sum", "index", "score", "rooms", "distance", "ways", "length", "depth", "largest", "smallest", "missing"]):
+        return_kind = "int"
+    elif any(word in function_name.lower() for word in ["reverse", "bucket", "initials", "compress", "serialize", "order"]):
+        return_kind = "string"
+    elif any(word in function_name.lower() for word in ["group", "merge", "running", "remove", "top_k", "two_sum", "normalize", "rotate"]):
+        return_kind = "list"
+
+    return {"param_kind": param_kind, "return_kind": return_kind}
+
+def _practice_variable_hint(question: dict[str, Any], function_name: str) -> str:
+    param_kind = _practice_signature_shape(question, function_name)["param_kind"]
+    return {
+        "grid": "Start with rows, columns, a visited set, and direction offsets.",
+        "text": "Start with a normalized string, left/right pointers, a count, or a lookup set depending on the prompt.",
+        "graph": "Start with a graph map, visited/indegree tracking, and a queue when order matters.",
+        "numbers": "Start with a list variable, a total/best value, window bounds, or a hash map.",
+        "items": "Start by naming the input, expected output, and helper state.",
+    }.get(param_kind, "Start by naming the input, expected output, and helper state.")
+
+PYTHON_PRACTICE_SIGNATURES = {
+    "count_vowels": ("text: str", "int"),
+    "reverse_words": ("sentence: str", "str"),
+    "maximum_score": ("scores: list[int]", "int | None"),
+    "is_palindrome": ("text: str", "bool"),
+    "sum_even_numbers": ("nums: list[int]", "int"),
+    "first_repeated_character": ("text: str", "str | None"),
+    "grade_bucket": ("score: int", "str"),
+    "remove_duplicates_keep_order": ("nums: list[int]", "list[int]"),
+    "count_words": ("sentence: str", "int"),
+    "smallest_positive": ("nums: list[int]", "int | None"),
+    "running_total": ("nums: list[int]", "list[int]"),
+    "valid_course_code_shape": ("code: str", "bool"),
+    "find_index": ("items: list, target: object", "int"),
+    "merge_names": ("first_names: list[str], second_names: list[str]", "list[str]"),
+    "temperature_above_threshold": ("readings: list[int], threshold: int", "int"),
+    "last_digit": ("number: int", "int"),
+    "truthy_attendance": ("attendance: list[bool]", "int"),
+    "initials": ("full_name: str", "str"),
+    "clamp_score": ("score: int", "int"),
+    "every_other_item": ("items: list", "list"),
+}
+
+JAVASCRIPT_PRACTICE_SIGNATURES = {
+    "countVowels": ("text", "number"),
+    "reverseWords": ("sentence", "string"),
+    "maximumScore": ("scores", "number|null"),
+    "isPalindrome": ("text", "boolean"),
+    "sumEvenNumbers": ("nums", "number"),
+    "firstRepeatedCharacter": ("text", "string|null"),
+    "gradeBucket": ("score", "string"),
+    "removeDuplicatesKeepOrder": ("nums", "Array"),
+    "countWords": ("sentence", "number"),
+    "smallestPositive": ("nums", "number|null"),
+    "runningTotal": ("nums", "Array"),
+    "validCourseCodeShape": ("code", "boolean"),
+    "findIndex": ("items, target", "number"),
+    "mergeNames": ("firstNames, secondNames", "Array"),
+    "temperatureAboveThreshold": ("readings, threshold", "number"),
+    "lastDigit": ("number", "number"),
+    "truthyAttendance": ("attendance", "number"),
+    "initials": ("fullName", "string"),
+    "clampScore": ("score", "number"),
+    "everyOtherItem": ("items", "Array"),
+}
+
+def _build_practice_starter_code(language_key: str, function_name: str, question: dict[str, Any]) -> str:
+    shape = _practice_signature_shape(question, function_name)
+    param_kind = shape["param_kind"]
+    return_kind = shape["return_kind"]
+
+    if language_key == "python":
+        exact_signature = PYTHON_PRACTICE_SIGNATURES.get(function_name)
+        if exact_signature:
+            params, return_type = exact_signature
+            return (
+                "from typing import Any\n\n"
+                f"def {function_name}({params}) -> {return_type}:\n"
+                "    raise NotImplementedError(\"Finish this guided starter.\")"
+            )
+        param_type = {
+            "grid": "list[list[int]]",
+            "text": "str",
+            "graph": "dict[str, list[str]]",
+            "numbers": "list[int]",
+            "items": "list",
+        }[param_kind]
+        return_type = {
+            "bool": "bool",
+            "int": "int",
+            "string": "str",
+            "list": "list",
+            "object": "object",
+        }[return_kind]
+        return (
+            "from typing import Any\n\n"
+            f"def {function_name}(data: {param_type}) -> {return_type}:\n"
+            "    raise NotImplementedError(\"Finish this guided starter.\")"
+        )
+
+    if language_key == "java":
+        param_type = {
+            "grid": "int[][] grid",
+            "text": "String text",
+            "graph": "Map<String, List<String>> graph",
+            "numbers": "List<Integer> nums",
+            "items": "List<Object> items",
+        }[param_kind]
+        return_type = {
+            "bool": "boolean",
+            "int": "int",
+            "string": "String",
+            "list": "List<Object>",
+            "object": "Object",
+        }[return_kind]
+        default_return = {
+            "boolean": "false",
+            "int": "0",
+            "String": "\"\"",
+            "List<Object>": "new ArrayList<>()",
+            "Object": "null",
+        }[return_type]
+        return (
+            "import java.util.*;\n\n"
+            "class Solution {\n"
+            f"    public {return_type} {function_name}({param_type}) {{\n"
+            f"        return {default_return};\n"
+            "    }\n"
+            "}"
+        )
+
+    if language_key == "javascript":
+        exact_signature = JAVASCRIPT_PRACTICE_SIGNATURES.get(function_name)
+        if exact_signature:
+            params, return_type = exact_signature
+            return (
+                "/**\n"
+                f" * @returns {{{return_type}}}\n"
+                " */\n"
+                f"function {function_name}({params}) {{\n"
+                "  return null;\n"
+                "}\n\n"
+                f"export {{ {function_name} }};"
+            )
+        param_type = {
+            "grid": "number[][]",
+            "text": "string",
+            "graph": "Record<string, string[]>",
+            "numbers": "number[]",
+            "items": "unknown[]",
+        }[param_kind]
+        return_type = {
+            "bool": "boolean",
+            "int": "number",
+            "string": "string",
+            "list": "unknown[]",
+            "object": "unknown",
+        }[return_kind]
+        return (
+            "/**\n"
+            f" * @param {{{param_type}}} data\n"
+            f" * @returns {{{return_type}}}\n"
+            " */\n"
+            f"function {function_name}(data) {{\n"
+            "  return null;\n"
+            "}\n\n"
+            f"export {{ {function_name} }};"
+        )
+
+    param_type = {
+        "grid": "vector<vector<int>>& grid",
+        "text": "string text",
+        "graph": "unordered_map<string, vector<string>>& graph",
+        "numbers": "vector<int>& nums",
+        "items": "vector<string>& items",
+    }[param_kind]
+    return_type = {
+        "bool": "bool",
+        "int": "int",
+        "string": "string",
+        "list": "vector<int>",
+        "object": "string",
+    }[return_kind]
+    default_return = {
+        "bool": "false",
+        "int": "0",
+        "string": "\"\"",
+        "vector<int>": "{}",
+    }[return_type]
+    return (
+        "#include <bits/stdc++.h>\n"
+        "using namespace std;\n\n"
+        "class Solution {\n"
+        "public:\n"
+        f"    {return_type} {function_name}({param_type}) {{\n"
+        f"        return {default_return};\n"
+        "    }\n"
+        "};"
+    )
+
+def _find_language_solution(question_id: str, language: str, question: Optional[dict[str, Any]] = None) -> dict[str, Any]:
     language_key, language_label = _normalize_practice_language(language)
     path = os.path.join(QUIZ_ANSWERS_DIR, f"{language_key}.json")
     data = _read_quiz_json(path)
@@ -3246,7 +3575,18 @@ def _find_language_solution(question_id: str, language: str) -> dict[str, Any]:
     defaults = data.get("defaults", {}) if isinstance(data, dict) else {}
     for item in items:
         if str(item.get("question_id", "")).lower() == question_id.lower().strip():
-            return {"language": language_label, **defaults, **item}
+            solution = {"language": language_label, **defaults, **item}
+            function_name = str(solution.get("function_name") or "solve")
+            if question:
+                solution["starter_code"] = _build_practice_starter_code(language_key, function_name, question)
+                solution["starter_guidance"] = _practice_variable_hint(question, function_name)
+                solution["guided_steps"] = [
+                    "Identify the input shape and rename the parameter if a clearer name helps.",
+                    "Create the starter variables from the scaffold comment before writing the full loop.",
+                    "Trace one provided example by hand, then add only the next small piece of logic.",
+                    *(solution.get("guided_steps") or [])[:1],
+                ]
+            return solution
     raise HTTPException(status_code=404, detail="Practice solution not found for that question and language.")
 
 def _serialize_practice_progress(progress: CodingPracticeProgress) -> dict[str, Any]:
@@ -3336,8 +3676,60 @@ async def get_practice_question_hints(question_id: str, level: str = Query("1"))
 
 @app.get("/api/coding/practice/questions/{question_id}/solution")
 async def get_practice_question_solution(question_id: str, language: str = Query("python")):
-    _find_practice_question(question_id)
-    return _find_language_solution(question_id, language)
+    question = _find_practice_question(question_id)
+    return _find_language_solution(question_id, language, question)
+
+@app.post("/api/coding/practice/run")
+async def run_practice_solution(
+    req: PracticeRunRequest,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    language_key, _ = _normalize_practice_language(req.language)
+    if language_key not in {"python", "javascript"}:
+        return empty_practice_run_response("The V2.1 runner supports Python and JavaScript. Java and C++ runners are coming later.")
+
+    question = _find_practice_question(req.question_id)
+    solution = _find_language_solution(question["id"], language_key, question)
+    function_name = str(solution.get("function_name") or "solve")
+    tests = solution.get("runner_tests") or []
+    if not tests:
+        return empty_practice_run_response("Executable local tests are not available for this question yet. Use Mark Solved as a manual fallback after review.")
+
+    cached_run = get_cached_practice_run(question["id"], language_key, req.code, function_name, tests)
+    if cached_run:
+        run_result = cached_run
+    elif language_key == "javascript":
+        run_result = run_javascript_practice_tests(req.code, function_name, tests)
+    else:
+        run_result = run_python_practice_tests(req.code, function_name, tests)
+    if not cached_run:
+        set_cached_practice_run(question["id"], language_key, req.code, function_name, tests, run_result)
+    status_value = run_result.get("status", "error")
+    progress_saved = False
+    serialized_progress = None
+    progress = _get_or_create_practice_progress(db, user["user_id"], question["id"], language_key)
+    progress.code = req.code
+    progress.attempt_count = (progress.attempt_count or 0) + 1
+    progress.last_attempt_at = datetime.now(timezone.utc)
+
+    if status_value == "passed" and run_result.get("total", 0) > 0:
+        progress.status = "solved"
+        progress.solved_at = datetime.now(timezone.utc)
+        progress_saved = True
+    elif progress.status == "not_started":
+        progress.status = "in_progress"
+
+    db.commit()
+    db.refresh(progress)
+    serialized_progress = _serialize_practice_progress(progress)
+
+    return {
+        **run_result,
+        "progress_saved": progress_saved,
+        "progress": serialized_progress,
+        "message": "All local tests passed." if status_value == "passed" else "Review the failed tests and try again.",
+    }
 
 @app.get("/api/coding/practice/progress")
 async def list_practice_progress(

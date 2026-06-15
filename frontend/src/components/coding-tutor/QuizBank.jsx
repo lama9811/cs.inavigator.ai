@@ -4,6 +4,38 @@ function titleCase(value = "") {
   return value ? value[0].toUpperCase() + value.slice(1).replace("_", " ") : "";
 }
 
+const TOPIC_INSIGHTS = {
+  strings: {
+    objectives: ["String normalization", "Character comparison", "Edge case handling"],
+    mistakes: ["Forgetting lowercase conversion", "Ignoring spaces or punctuation", "Using extra loops when a two-pointer pass fits"],
+  },
+  arrays: {
+    objectives: ["Index tracking", "Single-pass updates", "Boundary checks"],
+    mistakes: ["Skipping the first or last item", "Mutating input unexpectedly", "Using nested loops without needing them"],
+  },
+  "two pointers": {
+    objectives: ["Pointer movement rules", "Loop stopping conditions", "Pair comparison"],
+    mistakes: ["Moving both pointers too early", "Missing equal-value cases", "Not testing short inputs"],
+  },
+  loops: {
+    objectives: ["Loop invariants", "Accumulator updates", "Manual tracing"],
+    mistakes: ["Off-by-one ranges", "Resetting counters inside loops", "Returning before the loop finishes"],
+  },
+  hashmaps: {
+    objectives: ["Frequency counting", "Lookup-first reasoning", "Key normalization"],
+    mistakes: ["Checking after overwriting values", "Using the wrong key shape", "Forgetting default counts"],
+  },
+};
+
+function insightForTopic(topic = "") {
+  const normalized = topic.toLowerCase();
+  const key = Object.keys(TOPIC_INSIGHTS).find(name => normalized.includes(name));
+  return TOPIC_INSIGHTS[key] || {
+    objectives: [`Practice ${topic || "problem"} reasoning`, "Trace examples by hand", "Test edge cases before finalizing"],
+    mistakes: ["Skipping the smallest input", "Not explaining the approach first", "Changing too much code at once"],
+  };
+}
+
 export default function QuizBank({
   questions,
   progressByQuestion,
@@ -16,7 +48,15 @@ export default function QuizBank({
   onLanguageChange,
   onSelectProblem,
 }) {
-  const topics = [...new Set(questions.slice(0, 8).map(question => question.topic))];
+  const personalizedQuestions = questions.filter((question) => {
+    const progress = progressByQuestion[question.id];
+    return progress?.status === "solved" || progress?.status === "in_progress" || (progress?.attempt_count || 0) > 0;
+  });
+  const insightQuestions = personalizedQuestions.length ? personalizedQuestions : questions.slice(0, 8);
+  const topics = [...new Set(insightQuestions.map(question => question.topic).filter(Boolean))];
+  const objectives = [...new Set(topics.flatMap(topic => insightForTopic(topic).objectives))].slice(0, 5);
+  const mistakes = [...new Set(topics.flatMap(topic => insightForTopic(topic).mistakes))].slice(0, 5);
+  const hasPersonalizedInsights = personalizedQuestions.length > 0;
 
   return (
     <section className="coding-page-panel quiz-bank-page">
@@ -72,19 +112,15 @@ export default function QuizBank({
         <aside className="quiz-insight-panel">
           <section>
             <h3>Topics Covered</h3>
-            {topics.map(topic => <p key={topic}>Done {topic}</p>)}
+            {topics.length ? topics.map(topic => <p key={topic}>Done {topic}</p>) : <p>Load or attempt a question to populate topics.</p>}
           </section>
           <section>
             <h3>Learning Objectives</h3>
-            <p>String normalization</p>
-            <p>Character comparison</p>
-            <p>Edge case reasoning</p>
+            {hasPersonalizedInsights ? objectives.map(item => <p key={item}>{item}</p>) : <p>Attempt a question to personalize objectives from your progress.</p>}
           </section>
           <section>
             <h3>Common Mistakes</h3>
-            <p>Forgetting lowercase conversion</p>
-            <p>Ignoring spaces or punctuation</p>
-            <p>Using extra loops when two pointers would work</p>
+            {hasPersonalizedInsights ? mistakes.map(item => <p key={item}>{item}</p>) : <p>Solve or run a problem first, then this panel will show likely mistakes for your topics.</p>}
           </section>
         </aside>
       </div>

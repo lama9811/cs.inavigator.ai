@@ -58,8 +58,9 @@ UNIFIED_KB_ID = os.getenv(
     f'{DS_PREFIX}/csnavigator-kb-v7',
 )
 
-# Default model (fallback when no preference set)
-AGENT_MODEL = os.getenv('AGENT_MODEL', 'gemini-2.0-flash-lite-001')
+# Default model (fallback when no preference set). Keep this aligned with the
+# primary iNav model so local ADK does not fall back to unavailable Flash-Lite.
+AGENT_MODEL = os.getenv('AGENT_MODEL', 'gemini-2.5-flash')
 
 # Model selector: maps frontend choice to Gemini model ID
 # Note: Gemini 3 models only available in 'global' region, not us-central1 (where our datastore is)
@@ -79,6 +80,21 @@ def _select_model(callback_context, llm_request):
     pref = callback_context.state.get("model_preference", "")
     if pref in MODEL_MAP:
         llm_request.model = MODEL_MAP[pref]
+
+    if callback_context.state.get("chat_mode") == "coding_tutor":
+        # Coding Tutor should focus on workspace code and programming concepts.
+        # Remove KB tools/prefetch so ordinary code help does not ingest or search
+        # Morgan academic documents unless routed through Regular Tutor.
+        llm_request.tools_dict.clear()
+        if hasattr(llm_request.config, "tools"):
+            llm_request.config.tools = []
+        llm_request.append_instructions([
+            "CODING TUTOR TOOL POLICY:",
+            "- Do not call knowledge-base/search tools for this request.",
+            "- Use the student's workspace code, prompt, selected language, and message as the source of truth.",
+            "- If the student asks Morgan-specific academic questions, tell them to switch to Regular Tutor.",
+        ])
+        return None
 
     # Inject pre-fetched KB docs on first turn (belt-and-suspenders grounding)
     # Uses Discovery Engine API (NOT Gemini), cached in memory for 5 min. Zero LLM quota impact.
@@ -106,7 +122,7 @@ def _select_model(callback_context, llm_request):
                 from .kb_prefetch import prefetch_kb_context
                 kb_ctx = prefetch_kb_context(user_text)
                 if kb_ctx:
-                    llm_request.append_instructions(kb_ctx)
+                    llm_request.append_instructions([kb_ctx])
             except Exception:
                 pass  # Fail silently, agent still has VertexAiSearchTool
 

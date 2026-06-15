@@ -124,6 +124,7 @@ VALID_CHAT_MODES = {"regular", "coding_tutor"}
 
 class QueryRequest(BaseModel):
     query: str
+    display_query: Optional[str] = None
     session_id: str = "default"
     skip_cache: bool = False
     model: str = ""

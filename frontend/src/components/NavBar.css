@@ -4,14 +4,45 @@
   top: 0;
   z-index: 1000;
   width: 100%;
-  background: rgba(255, 255, 255, 0.82);
+  background: color-mix(in srgb, var(--bg-surface, #ffffff) 84%, transparent);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.06));
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   height: 70px;
   display: flex;
   align-items: center;
+}
+
+/* Token theme polish */
+.navbar {
+  color: var(--text-main);
+}
+
+.navbar-title,
+.navbar-link,
+.profile-icon-btn,
+.admin-nav-btn {
+  color: var(--text-main);
+}
+
+.navbar-link:hover,
+.profile-icon-btn:hover,
+.admin-nav-btn:hover {
+  background: var(--primary-soft, rgba(29, 78, 216, 0.1)) !important;
+  color: var(--primary, var(--msu-blue)) !important;
+}
+
+body.dark .navbar {
+  background: color-mix(in srgb, var(--bg-surface, #111827) 88%, transparent) !important;
+  border-bottom-color: var(--border-soft, var(--border-color)) !important;
+}
+
+body.dark .profile-icon-btn,
+body.dark .admin-nav-btn {
+  background: var(--bg-surface-soft, var(--bg-input)) !important;
+  border-color: var(--border-soft, var(--border-color)) !important;
+  color: var(--text-main) !important;
 }
 
 .navbar.scrolled {

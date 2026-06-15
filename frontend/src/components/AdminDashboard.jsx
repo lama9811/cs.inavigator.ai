@@ -85,16 +85,16 @@ export default function AdminDashboard() {
   const [healthLoading, setHealthLoading] = useState(false);
 
   // Knowledge Base State
-  const [kbFiles, setKbFiles] = useState([]);
-  const [selectedKbFile, setSelectedKbFile] = useState(null);
+  const [_kbFiles, setKbFiles] = useState([]);
+  const [selectedKbFile, _setSelectedKbFile] = useState(null);
   const [kbContent, setKbContent] = useState("");
-  const [kbLoading, setKbLoading] = useState(false);
-  const [ingesting, setIngesting] = useState(false);
+  const [_kbLoading, setKbLoading] = useState(false);
+  const [_ingesting, setIngesting] = useState(false);
   const [kbSearch, setKbSearch] = useState("");
-  const [kbSearchResults, setKbSearchResults] = useState([]);
-  const [isListening, setIsListening] = useState(false);
-  const [voiceSupported, setVoiceSupported] = useState(false);
-  const [highlightTerm, setHighlightTerm] = useState("");
+  const [_kbSearchResults, setKbSearchResults] = useState([]);
+  const [_isListening, setIsListening] = useState(false);
+  const [_voiceSupported, setVoiceSupported] = useState(false);
+  const [_highlightTerm, setHighlightTerm] = useState("");
 
   // Format doc ID into a clean readable title
   // "academic_11_course_prerequisites" -> "Course Prerequisites"
@@ -135,14 +135,14 @@ export default function AdminDashboard() {
   const [showFindReplace, setShowFindReplace] = useState(false);
   const [matchCount, setMatchCount] = useState(0);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
-  const [matchedFiles, setMatchedFiles] = useState([]); // Files with matches
-  const [showMatchedFiles, setShowMatchedFiles] = useState(false);
+  const [_matchedFiles, setMatchedFiles] = useState([]); // Files with matches
+  const [_showMatchedFiles, setShowMatchedFiles] = useState(false);
   const textareaRef = useRef(null);
   const highlightRef = useRef(null);
 
   // Analytics State
   const [analytics, setAnalytics] = useState(null);
-  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [_analyticsLoading, setAnalyticsLoading] = useState(false);
 
   // Cloud KB State
   const [cloudKbDocs, setCloudKbDocs] = useState([]);
@@ -170,11 +170,11 @@ export default function AdminDashboard() {
   const [docViewerMode, setDocViewerMode] = useState("docs"); // "docs" or "roadmap"
 
   // Feedback State
-  const [feedbackData, setFeedbackData] = useState([]);
+  const [_feedbackData, setFeedbackData] = useState([]);
   const [feedbackStats, setFeedbackStats] = useState({ total: 0, helpful: 0, not_helpful: 0, reports: 0, satisfaction_rate: 0 });
-  const [feedbackFilter, setFeedbackFilter] = useState("all");
-  const [feedbackLoading, setFeedbackLoading] = useState(false);
-  const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const [_feedbackFilter, _setFeedbackFilter] = useState("all");
+  const [_feedbackLoading, setFeedbackLoading] = useState(false);
+  const [_selectedFeedback, _setSelectedFeedback] = useState(null);
 
   // ===========================================
   // DATA LOADING FUNCTIONS
@@ -255,7 +255,7 @@ export default function AdminDashboard() {
     } catch (err) { console.error("Failed to load KB files:", err); }
   };
 
-  const loadKbFileContent = async (filename) => {
+  const _loadKbFileContent = async (filename) => {
     setKbLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/admin/knowledge-base/${filename}`, { headers: { Authorization: `Bearer ${token}` } });
@@ -358,7 +358,7 @@ export default function AdminDashboard() {
       } else {
         setCloudKbContent("Failed to load content.");
       }
-    } catch (err) { setCloudKbContent("Error loading content."); }
+    } catch { setCloudKbContent("Error loading content."); }
   };
 
   const searchCloudKb = async (query) => {
@@ -398,7 +398,7 @@ export default function AdminDashboard() {
     if (!files || files.length === 0) return;
     setCloudKbUploading(true);
     let successCount = 0;
-    let failCount = 0;
+    let _failCount = 0;
     for (const file of files) {
       const formData = new FormData();
       formData.append("file", file);
@@ -411,12 +411,12 @@ export default function AdminDashboard() {
         if (res.ok) {
           successCount++;
         } else {
-          failCount++;
+          _failCount++;
           const data = await res.json();
           toast.error(`Failed: ${file.name}`, { description: data.detail || "Unknown error" });
         }
-      } catch (err) {
-        failCount++;
+      } catch {
+        _failCount++;
         toast.error(`Upload error: ${file.name}`);
       }
     }
@@ -516,7 +516,7 @@ export default function AdminDashboard() {
     } catch (err) { console.error("Failed to load feedback stats:", err); }
   };
 
-  const loadAllFeedback = async (filterType = null) => {
+  const _loadAllFeedback = async (filterType = null) => {
     setFeedbackLoading(true);
     try {
       let url = `${API_BASE}/api/feedback/all`;
@@ -566,7 +566,7 @@ export default function AdminDashboard() {
   };
 
   // Voice Search Functions
-  const startVoiceSearch = () => {
+  const _startVoiceSearch = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       toast.error("Voice search is not supported in your browser. Please use Chrome or Edge.");
@@ -648,7 +648,7 @@ export default function AdminDashboard() {
     return words.slice(0, 3).join(' ');
   };
 
-  const stopVoiceSearch = () => {
+  const _stopVoiceSearch = () => {
     setIsListening(false);
   };
 
@@ -834,7 +834,7 @@ export default function AdminDashboard() {
     } catch (err) { setMessage(`Error: ${err.message}`); }
   };
 
-  const handleClearIndex = async () => {
+  const _handleClearIndex = async () => {
     if (!window.confirm("Clear all vectors from index? This cannot be undone.")) return;
     setMessage("Clearing index...");
     try {
@@ -893,7 +893,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleSaveKbFile = async () => {
+  const _handleSaveKbFile = async () => {
     if (!selectedKbFile) return;
     setKbLoading(true);
     try {
@@ -915,7 +915,7 @@ export default function AdminDashboard() {
     } finally { setKbLoading(false); }
   };
 
-  const handleTriggerIngestion = async () => {
+  const _handleTriggerIngestion = async () => {
     setIngesting(true);
     try {
       const res = await fetch(`${API_BASE}/api/admin/knowledge-base/ingest`, {

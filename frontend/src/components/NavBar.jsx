@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { FaBars } from "@react-icons/all-files/fa/FaBars";
 import { FaUser } from "@react-icons/all-files/fa/FaUser";
+import { FaUserShield } from "@react-icons/all-files/fa/FaUserShield";
 import "../index.css";
 import "./NavBar.css";
 
@@ -114,6 +115,18 @@ export default function NavBar({ role, onToggleSidebar }) {
         {/* Right side - Profile icon when authenticated */}
         {isAuthed && (
           <div className="navbar-right">
+            {role === "admin" && (
+              <button
+                type="button"
+                className="admin-nav-btn"
+                onClick={() => navigate("/admin")}
+                title="Open admin dashboard"
+                aria-label="Open admin dashboard"
+              >
+                <FaUserShield size={16} />
+                <span>Admin</span>
+              </button>
+            )}
             <button
               className="profile-icon-btn"
               onClick={() => navigate("/profile")}

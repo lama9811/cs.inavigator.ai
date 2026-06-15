@@ -1,0 +1,204 @@
+.coding-app.coding-workspace-active {
+  min-height: calc(100vh - 72px);
+  align-content: stretch;
+}
+
+.coding-app.coding-workspace-active .coding-app-main,
+.coding-app.coding-workspace-active .coding-app-content,
+.coding-app.coding-workspace-active .coding-workbench,
+.coding-app.coding-workspace-active .coding-workbench-main {
+  min-height: 0;
+}
+
+.coding-app.terminal-open .coding-workbench-main {
+  min-height: clamp(500px, calc(100vh - 390px), 740px) !important;
+}
+
+.coding-app.terminal-closed .coding-workbench-main {
+  min-height: clamp(680px, calc(100vh - 150px), 980px) !important;
+}
+
+.coding-app.coding-workspace-active .coding-problem-panel,
+.coding-app.coding-workspace-active .coding-editor-center {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  box-shadow: 0 8px 18px rgba(24, 36, 64, 0.08) !important;
+}
+
+.coding-app.coding-workspace-active .coding-problem-content,
+.coding-app.coding-workspace-active .coding-problem-empty,
+.coding-app.coding-workspace-active .workspace-tab-body {
+  min-height: 0;
+  overflow: auto;
+}
+
+.coding-app.coding-workspace-active .coding-editor-center {
+  display: flex;
+  flex-direction: column;
+}
+
+.coding-app.coding-workspace-active .workspace-tab-body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.coding-app.coding-workspace-active .workspace-tab-body .leetcode-editor {
+  flex: 1 1 auto;
+  min-height: 420px;
+}
+
+.coding-app.terminal-closed .workspace-tab-body .leetcode-editor {
+  min-height: 560px;
+}
+
+.coding-app.coding-workspace-active .workspace-actions {
+  padding-top: 8px;
+}
+
+.coding-app.coding-workspace-active .workspace-actions button {
+  box-shadow: 0 4px 10px rgba(24, 36, 64, 0.08) !important;
+}
+
+.workspace-tabs .terminal-tab {
+  margin-left: auto;
+}
+
+.workspace-tabs .terminal-tab.active {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ct-primary) 88%, #ffffff 12%), color-mix(in srgb, var(--ct-primary) 72%, var(--ct-accent) 28%)) !important;
+  color: #ffffff !important;
+}
+
+body.dark .coding-app.coding-workspace-active .coding-problem-panel,
+body.dark .coding-app.coding-workspace-active .coding-editor-center {
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22) !important;
+}
+
+body.dark .workspace-tabs .terminal-tab.active {
+  background: linear-gradient(135deg, #243a67, #d89a43) !important;
+  color: #f8f1e8 !important;
+}
+
+@media (max-width: 900px) {
+  .workspace-tabs .terminal-tab {
+    margin-left: 0;
+  }
+
+  .coding-app.terminal-open .coding-workbench-main,
+  .coding-app.terminal-closed .coding-workbench-main,
+  .coding-app.coding-workspace-active .workspace-tab-body .leetcode-editor,
+  .coding-app.terminal-closed .workspace-tab-body .leetcode-editor {
+    min-height: auto !important;
+  }
+}
+
+/* V2 workspace sizing: let the editor/problem area fill the viewport and
+   reserve space only when the VS Code-style terminal is actually open. */
+.coding-app.coding-workspace-active {
+  height: calc(100vh - 112px) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  align-content: stretch;
+}
+
+.coding-app.coding-workspace-active .coding-app-main,
+.coding-app.coding-workspace-active .coding-app-content,
+.coding-app.coding-workspace-active .coding-workbench,
+.coding-app.coding-workspace-active .coding-workbench-main {
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.coding-app.terminal-open .coding-workbench-main,
+.coding-app.terminal-closed .coding-workbench-main {
+  min-height: 0 !important;
+}
+
+.coding-app.coding-workspace-active .coding-workbench {
+  display: flex;
+  flex-direction: column;
+}
+
+.coding-app.coding-workspace-active .coding-workbench-main {
+  flex: 1 1 auto;
+  gap: 14px;
+}
+
+.coding-app.coding-workspace-active .coding-problem-panel,
+.coding-app.coding-workspace-active .coding-editor-center {
+  min-height: 0 !important;
+  max-height: 100%;
+}
+
+.coding-app.coding-workspace-active .workspace-tab-body {
+  min-height: 0 !important;
+}
+
+.coding-app.coding-workspace-active .workspace-tab-body .leetcode-editor,
+.coding-app.terminal-closed .workspace-tab-body .leetcode-editor,
+.coding-app.terminal-open .workspace-tab-body .leetcode-editor {
+  flex: 1 1 auto;
+  min-height: 0 !important;
+}
+
+.coding-app .workspace-action-apply:not(:disabled) {
+  background: linear-gradient(135deg, var(--ct-accent, #f58220), color-mix(in srgb, var(--ct-accent, #f58220) 72%, #ffd29b 28%)) !important;
+  border-color: color-mix(in srgb, var(--ct-accent, #f58220) 70%, var(--ct-border, #d8cbb8)) !important;
+  color: #172033 !important;
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--ct-accent, #f58220) 18%, transparent) !important;
+}
+
+.coding-app .workspace-action-apply:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--ct-primary, #002d72), color-mix(in srgb, var(--ct-primary, #002d72) 70%, #5f7fae 30%)) !important;
+  color: #ffffff !important;
+  border-color: color-mix(in srgb, var(--ct-primary, #002d72) 70%, var(--ct-border, #d8cbb8)) !important;
+}
+
+body.dark .coding-app .workspace-action-apply:not(:disabled) {
+  background: linear-gradient(135deg, #e7a05b, #c98242) !important;
+  border-color: rgba(231, 160, 91, 0.52) !important;
+  color: #172033 !important;
+}
+
+body.dark .coding-app .workspace-action-apply:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5f7fae, #466995) !important;
+  border-color: rgba(143, 174, 215, 0.42) !important;
+  color: #f8f3ea !important;
+}
+
+/* Keep the docked terminal visible on laptop-height screens. */
+.coding-app.coding-workspace-active.terminal-open {
+  height: calc(100dvh - 96px) !important;
+  grid-template-rows: minmax(0, 1fr) auto !important;
+}
+
+.coding-app.coding-workspace-active.terminal-open .coding-workbench-main {
+  flex: 1 1 auto;
+  min-height: 0 !important;
+}
+
+.coding-app.coding-workspace-active.terminal-open .coding-problem-panel,
+.coding-app.coding-workspace-active.terminal-open .coding-editor-center {
+  min-height: 0 !important;
+}
+
+@media (max-height: 780px), (max-width: 1180px) {
+  .coding-app.coding-workspace-active {
+    height: calc(100dvh - 88px) !important;
+  }
+
+  .coding-app.coding-workspace-active .coding-app-content {
+    padding-bottom: 8px !important;
+  }
+
+  .coding-app.coding-workspace-active .coding-workbench-main {
+    gap: 10px;
+  }
+
+  .coding-app.coding-workspace-active .workspace-actions {
+    gap: 8px;
+    padding-top: 6px;
+  }
+}

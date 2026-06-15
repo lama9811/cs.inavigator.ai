@@ -2,6 +2,7 @@
 .env
 backend/.env
 frontend/.env
+STARTUP.local.md
 
 # Virtual environments
 .venv/

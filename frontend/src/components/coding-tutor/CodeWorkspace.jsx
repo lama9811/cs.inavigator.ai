@@ -3,27 +3,27 @@ import remarkGfm from "remark-gfm";
 import CodeEditor from "./CodeEditor";
 import HintPanel from "./HintPanel";
 import RunControls from "./RunControls";
-import TestOutput from "./TestOutput";
+import "./CodeWorkspace.css";
 
-const WORKSPACE_TABS = ["Editor", "Output", "Hints", "Discussion"];
+const WORKSPACE_TABS = ["Editor", "Hints", "Discussion"];
 
 export default function CodeWorkspace({
   activeProblem,
   code,
-  note,
   selectedLanguage,
   languageOptions,
   languageFormat,
   workspaceTab,
   hints,
   revealedHints,
-  testOutput,
+  isRunning,
   latestFeedback,
   suggestedCodeBlock,
+  terminalOpen,
   onCodeChange,
-  onNoteChange,
   onLanguageChange,
   onTabChange,
+  onToggleTerminal,
   onRun,
   onMarkSolved,
   onCopyCode,
@@ -33,7 +33,6 @@ export default function CodeWorkspace({
   codeRenderer,
 }) {
   const renderTab = () => {
-    if (workspaceTab === "Output") return <TestOutput testOutput={testOutput} expanded />;
     if (workspaceTab === "Hints") {
       return (
         <HintPanel
@@ -56,7 +55,7 @@ export default function CodeWorkspace({
         </div>
       );
     }
-    return <CodeEditor code={code} note={note} onCodeChange={onCodeChange} onNoteChange={onNoteChange} />;
+    return <CodeEditor code={code} onCodeChange={onCodeChange} />;
   };
 
   return (
@@ -78,12 +77,16 @@ export default function CodeWorkspace({
             {tab}
           </button>
         ))}
+        <button type="button" className={terminalOpen ? "active terminal-tab" : "terminal-tab"} onClick={onToggleTerminal}>
+          Terminal
+        </button>
       </div>
       <div className="workspace-tab-body">{renderTab()}</div>
       <RunControls
         code={code}
         activeProblem={activeProblem}
         suggestedCodeBlock={suggestedCodeBlock}
+        isRunning={isRunning}
         onRun={onRun}
         onMarkSolved={onMarkSolved}
         onCopyCode={onCopyCode}

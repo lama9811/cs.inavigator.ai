@@ -1,7 +1,7 @@
 FROM python:3.11-slim
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends gcc libffi-dev build-essential default-mysql-client \
+ && apt-get install -y --no-install-recommends gcc libffi-dev build-essential default-mysql-client nodejs \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app/backend

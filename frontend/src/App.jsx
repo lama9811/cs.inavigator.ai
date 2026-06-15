@@ -24,7 +24,19 @@ import ResetPassword from "./ResetPassword";
 import "./index.css";
 
 import { getApiBase } from "./lib/apiBase";
+import { generateChatTitle, shouldAutoRenameSession } from "./lib/chatTitles";
 const API_BASE = getApiBase();
+const ACTIVE_CHAT_SESSION_KEY = "active_chat_session_id";
+
+function getDisplayChatText(text) {
+  if (typeof text !== "string") return text;
+  const marker = "Student message:";
+  if (text.includes("Current coding workspace context:") && text.includes(marker)) {
+    return text.slice(text.lastIndexOf(marker) + marker.length).trim();
+  }
+  return text;
+}
+
 function parseJwt(token) {
   try {
     const b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
@@ -55,6 +67,9 @@ function ChatLayout({
   onSelect,
   onDelete,
   onSessionChange,
+  onCreateSession,
+  pendingChatAction,
+  onPendingChatActionHandled,
   onLogout,
   userEmail,
   onPin,
@@ -63,7 +78,8 @@ function ChatLayout({
   darkMode,
   onToggleTheme,
   onCollapseSidebar,
-  onSidebarResize
+  onSidebarResize,
+  initialChatMode,
 }) {
   const activeSession = sessions.find((s) => s.id === activeId) || { messages: [] };
   return (
@@ -87,9 +103,13 @@ function ChatLayout({
       {/* 🔥 UPDATE: Passing sessionId to Chatbox so it knows where to save */}
       <Chatbox
         key={activeId}
-        sessionId={activeId} 
+        sessionId={activeId}
         initialMessages={activeSession.messages}
         onSessionChange={onSessionChange}
+        onCreateSession={onCreateSession}
+        pendingChatAction={pendingChatAction}
+        onPendingChatActionHandled={onPendingChatActionHandled}
+        initialChatMode={initialChatMode}
       />
     </div>
   );
@@ -144,8 +164,6 @@ export default function App() {
   const [role, setRole]   = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [cmdkOpen, setCmdkOpen] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(false); // disabled
-
   // Dark mode state
   const [darkMode, setDarkMode] = useState(
     () => localStorage.getItem("theme") === "dark"
@@ -157,6 +175,24 @@ export default function App() {
       localStorage.setItem("token", token);
       const { role: r } = parseJwt(token);
       setRole(r || null);
+
+      let cancelled = false;
+      fetch(`${API_BASE}/api/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((profile) => {
+          if (!cancelled && profile?.role) {
+            setRole(profile.role);
+          }
+        })
+        .catch((error) => {
+          console.warn("Could not refresh profile role:", error);
+        });
+
+      return () => {
+        cancelled = true;
+      };
     } else {
       localStorage.removeItem("token");
       setRole(null);
@@ -176,9 +212,6 @@ export default function App() {
     document.body.classList.toggle('sidebar-collapsed', shouldCollapse);
   }, [sidebarCollapsed, token]);
 
-  // Welcome modal disabled
-  const dismissWelcome = () => setShowWelcome(false);
-
   // Cmd+K listener
   useEffect(() => {
     const handler = (e) => {
@@ -197,20 +230,35 @@ export default function App() {
     const saved = JSON.parse(localStorage.getItem("chat_sessions") || "[]");
     if (!saved.length) {
       const id = Date.now().toString();
-      return [{ id, title: "New Chat", messages: [], pinned: false, archived: false }];
+      return [{ id, title: "New Chat", messages: [], pinned: false, archived: false, mode: "regular" }];
     }
     return saved.map(s => ({
       ...s,
       pinned: s.pinned || false,
-      archived: s.archived || false
+      archived: s.archived || false,
+      autoTitle: s.autoTitle ?? shouldAutoRenameSession(s, s.messages || []),
+      title: shouldAutoRenameSession(s, s.messages || []) ? generateChatTitle(s.messages || [], s.mode || "regular") : s.title,
+      mode: s.mode || (String(s.id).startsWith("coding-") ? "coding_tutor" : "regular")
     }));
   });
   
-  const [activeId, setActiveId] = useState(sessions[0]?.id || "");
+  const [activeId, setActiveId] = useState(() => {
+    const savedActiveId = localStorage.getItem(ACTIVE_CHAT_SESSION_KEY);
+    return sessions.some((session) => session.id === savedActiveId)
+      ? savedActiveId
+      : sessions[0]?.id || "";
+  });
+  const [pendingChatAction, setPendingChatAction] = useState(null);
   
   useEffect(() => {
     localStorage.setItem("chat_sessions", JSON.stringify(sessions));
   }, [sessions]);
+
+  useEffect(() => {
+    if (activeId) {
+      localStorage.setItem(ACTIVE_CHAT_SESSION_KEY, activeId);
+    }
+  }, [activeId]);
 
   // 🔥 NEW: Fetch Chat History from RDS & GROUP BY SESSION ID
   useEffect(() => {
@@ -233,7 +281,7 @@ export default function App() {
 
                   // Add User Message
                   grouped[sid].push({
-                    text: item.user,
+                    text: getDisplayChatText(item.user),
                     sender: "user",
                     time: new Date(item.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
                   });
@@ -249,25 +297,28 @@ export default function App() {
               // Convert the groups into your Session Objects
               const dbSessions = Object.keys(grouped).map(sid => ({
                   id: sid,
-                  // Use the first message as the title (capped at 30 chars)
-                  title: grouped[sid][0]?.text.slice(0, 30) || "Chat",
+                  title: generateChatTitle(grouped[sid], String(sid).startsWith("coding-") ? "coding_tutor" : "regular"),
                   messages: grouped[sid],
                   pinned: false,
-                  archived: false
+                  archived: false,
+                  autoTitle: true,
+                  mode: String(sid).startsWith("coding-") ? "coding_tutor" : "regular"
               }));
 
               // Update state with database sessions
               setSessions(dbSessions);
 
-              // Set the active chat to the most recent one (last in the list)
+              // Keep the user's selected chat after refresh when it still exists.
               if (dbSessions.length > 0) {
-                setActiveId(dbSessions[dbSessions.length - 1].id);
+                const savedActiveId = localStorage.getItem(ACTIVE_CHAT_SESSION_KEY);
+                const savedSession = dbSessions.find((session) => session.id === savedActiveId);
+                setActiveId(savedSession?.id || dbSessions[dbSessions.length - 1].id);
               }
           } else {
               // New account or no history - reset to a fresh session
               // This clears any stale sessions from a previous account
               const freshId = Date.now().toString();
-              setSessions([{ id: freshId, title: "New Chat", messages: [], pinned: false, archived: false }]);
+              setSessions([{ id: freshId, title: "New Chat", messages: [], pinned: false, archived: false, mode: "regular" }]);
               setActiveId(freshId);
           }
         }
@@ -279,17 +330,42 @@ export default function App() {
   }, [token]); // Run once when token changes (login)
 
   // FIXED: session handlers
-  const handleNew = () => {
-    const id = Date.now().toString();
-    const newChat = { id, title: "New Chat", messages: [], pinned: false, archived: false };
+  const handleNew = (options = {}) => {
+    const config = options && !options.preventDefault ? options : {};
+    const mode = config.mode || "regular";
+    const id = config.id || (mode === "coding_tutor" ? `coding-${Date.now()}` : Date.now().toString());
+    const newChat = {
+      id,
+      title: config.title || "New Chat",
+      messages: [],
+      pinned: false,
+      archived: false,
+      autoTitle: !config.title,
+      mode,
+    };
     setSessions((prev) => [...prev, newChat]); // Append to end
     setActiveId(id);
-    navigate("/chat");
+    if (config.pendingAction) {
+      setPendingChatAction({
+        ...config.pendingAction,
+        id: config.pendingAction.id || `pending-${id}-${Date.now()}`,
+        sessionId: id,
+        mode,
+      });
+    }
+    navigate(config.route || (mode === "coding_tutor" ? "/coding" : "/chat"));
+    return id;
   };
 
   const handleSelect = (id) => {
     setActiveId(id);
-    navigate("/chat");
+    localStorage.setItem(ACTIVE_CHAT_SESSION_KEY, id);
+    const selected = sessions.find((s) => s.id === id);
+    navigate(selected?.mode === "coding_tutor" || String(id).startsWith("coding-") ? "/chat/coding" : "/chat");
+  };
+
+  const handlePendingChatActionHandled = (id) => {
+    setPendingChatAction((current) => current?.id === id ? null : current);
   };
   
   const handleDelete = async (id) => {
@@ -322,7 +398,10 @@ export default function App() {
           ? {
               ...s,
               messages: msgs,
-              title: msgs.length > 0 ? (msgs[0]?.text.slice(0, 30) || "New Chat") : "New Chat",
+              title: msgs.length > 0 && shouldAutoRenameSession(s, msgs)
+                ? generateChatTitle(msgs, s.mode)
+                : s.title,
+              autoTitle: shouldAutoRenameSession(s, msgs),
             }
           : s
       );
@@ -355,7 +434,7 @@ export default function App() {
   const handleRename = (id, newTitle) => {
     setSessions((prev) =>
       prev.map((s) =>
-        s.id === id ? { ...s, title: newTitle } : s
+        s.id === id ? { ...s, title: newTitle, autoTitle: false } : s
       )
     );
   };
@@ -404,9 +483,10 @@ export default function App() {
     setToken(null);
     localStorage.removeItem("token");
     localStorage.removeItem("chat_sessions");
+    localStorage.removeItem(ACTIVE_CHAT_SESSION_KEY);
     // Clear UI and reset to a fresh chat
     const freshId = Date.now().toString();
-    setSessions([{ id: freshId, title: "New Chat", messages: [], pinned: false, archived: false }]);
+    setSessions([{ id: freshId, title: "New Chat", messages: [], pinned: false, archived: false, mode: "regular" }]);
     setActiveId(freshId);
     navigate("/login", { replace: true });
   };
@@ -480,6 +560,9 @@ export default function App() {
                 onSelect={handleSelect}
                 onDelete={handleDelete}
                 onSessionChange={handleUpdateSession}
+                onCreateSession={handleNew}
+                pendingChatAction={pendingChatAction}
+                onPendingChatActionHandled={handlePendingChatActionHandled}
                 onLogout={handleLogout}
                 userEmail={userEmail}
                 onPin={handlePin}
@@ -489,6 +572,63 @@ export default function App() {
                 onToggleTheme={toggleTheme}
                 onCollapseSidebar={toggleSidebar}
                 onSidebarResize={handleSidebarResize}
+              />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/coding"
+          element={
+            <RequireAuth>
+              <ChatLayout
+                sessions={sessions}
+                activeId={activeId}
+                onNew={handleNew}
+                onSelect={handleSelect}
+                onDelete={handleDelete}
+                onSessionChange={handleUpdateSession}
+                onCreateSession={handleNew}
+                pendingChatAction={pendingChatAction}
+                onPendingChatActionHandled={handlePendingChatActionHandled}
+                onLogout={handleLogout}
+                userEmail={userEmail}
+                onPin={handlePin}
+                onArchive={handleArchive}
+                onRename={handleRename}
+                darkMode={darkMode}
+                onToggleTheme={toggleTheme}
+                onCollapseSidebar={toggleSidebar}
+                onSidebarResize={handleSidebarResize}
+                initialChatMode="coding_tutor"
+              />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/chat/coding"
+          element={
+            <RequireAuth>
+              <ChatLayout
+                sessions={sessions}
+                activeId={activeId}
+                onNew={handleNew}
+                onSelect={handleSelect}
+                onDelete={handleDelete}
+                onSessionChange={handleUpdateSession}
+                onCreateSession={handleNew}
+                pendingChatAction={pendingChatAction}
+                onPendingChatActionHandled={handlePendingChatActionHandled}
+                onLogout={handleLogout}
+                userEmail={userEmail}
+                onPin={handlePin}
+                onArchive={handleArchive}
+                onRename={handleRename}
+                darkMode={darkMode}
+                onToggleTheme={toggleTheme}
+                onCollapseSidebar={toggleSidebar}
+                onSidebarResize={handleSidebarResize}
+                initialChatMode="coding_tutor"
               />
             </RequireAuth>
           }

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from 'sonner';
 import { FaPlus } from "@react-icons/all-files/fa/FaPlus";
 import { FaSearch } from "@react-icons/all-files/fa/FaSearch";
@@ -7,6 +7,7 @@ import { FaBook } from "@react-icons/all-files/fa/FaBook";
 import { FaChalkboardTeacher } from "@react-icons/all-files/fa/FaChalkboardTeacher";
 import { FaChartLine } from "@react-icons/all-files/fa/FaChartLine";
 import { FaProjectDiagram } from "@react-icons/all-files/fa/FaProjectDiagram";
+import { FaLaptopCode } from "@react-icons/all-files/fa/FaLaptopCode";
 import { FaTrash } from "@react-icons/all-files/fa/FaTrash";
 import { FaUser } from "@react-icons/all-files/fa/FaUser";
 import { FaSignOutAlt } from "@react-icons/all-files/fa/FaSignOutAlt";
@@ -74,10 +75,11 @@ export default function ChatSidebar({
   const [ticketSuccess, setTicketSuccess] = useState(false);
 
   const API_BASE = getApiBase();
+  const location = useLocation();
+  const codingTutorActive = location.pathname === "/coding";
 
   // PWA install prompt
   const deferredPromptRef = useRef(null);
-  const [canInstall, setCanInstall] = useState(false);
 
   useEffect(() => {
     const savedWidth = Number(localStorage.getItem("sidebar_width"));
@@ -99,18 +101,12 @@ export default function ChatSidebar({
     const handler = (e) => {
       e.preventDefault();
       deferredPromptRef.current = e;
-      setCanInstall(true);
     };
     window.addEventListener('beforeinstallprompt', handler);
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
-  // 🔥 Fetch user profile on mount - PRESERVED
-  useEffect(() => {
-    fetchUserProfile();
-  }, []);
-
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
@@ -143,7 +139,12 @@ export default function ChatSidebar({
     } catch (error) {
       console.error("❌ Error fetching profile:", error);
     }
-  };
+  }, [API_BASE]);
+
+  // 🔥 Fetch user profile on mount - PRESERVED
+  useEffect(() => {
+    fetchUserProfile();
+  }, [fetchUserProfile]);
 
   // Filter logic - PRESERVED
   const filteredSessions = sessions.filter(s =>
@@ -163,7 +164,7 @@ export default function ChatSidebar({
     const groups = { "Today": [], "Yesterday": [], "Previous 7 Days": [], "Older": [] };
 
     sessions.forEach(s => {
-      const ts = parseInt(s.id);
+      const ts = Number(String(s.id).match(/\d+/)?.[0]);
       if (isNaN(ts)) { groups["Older"].push(s); return; }
       const date = new Date(ts);
       if (date >= today) groups["Today"].push(s);
@@ -212,7 +213,6 @@ export default function ChatSidebar({
       const { outcome } = await deferredPromptRef.current.userChoice;
       if (outcome === 'accepted') {
         toast.success("App installed!");
-        setCanInstall(false);
       }
       deferredPromptRef.current = null;
     } else {
@@ -529,6 +529,14 @@ export default function ChatSidebar({
         >
           <FaChalkboardTeacher size={16} />
           <span>My Classes</span>
+        </button>
+        <button
+          className={`sidebar-action-btn curriculum-link ${codingTutorActive ? 'active' : ''}`}
+          onClick={(e) => { e.preventDefault(); navigate("/coding"); }}
+          title="Open Morgan State Coding Tutor"
+        >
+          <FaLaptopCode size={16} />
+          <span>Coding Tutor</span>
         </button>
         <button
           className="sidebar-action-btn curriculum-link"

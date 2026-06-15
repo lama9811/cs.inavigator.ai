@@ -1,4 +1,15 @@
-export default function ProblemPanel({ problem, solution, attempts, problemLoading, onShowHint, onShowAllHints, onOpenQuizBank }) {
+export default function ProblemPanel({
+  problem,
+  solution,
+  problemLoading,
+  canGoPrevious = false,
+  canGoNext = false,
+  onPreviousProblem,
+  onNextProblem,
+  onShowHint,
+  onShowAllHints,
+  onOpenQuizBank,
+}) {
   return (
     <aside className="coding-problem-panel">
       {problemLoading ? <div className="coding-problem-empty">Loading problem...</div> : problem ? (
@@ -10,9 +21,23 @@ export default function ProblemPanel({ problem, solution, attempts, problemLoadi
           <div className="daily-tags">
             <span>{problem.topic}</span>
             {solution?.function_name && <span>{solution.function_name}</span>}
-            <span>{attempts} attempts</span>
           </div>
+          {problem.source !== "leetcode" && (
+            <div className="problem-navigation">
+              <button type="button" onClick={onPreviousProblem} disabled={!canGoPrevious}>Back</button>
+              <button type="button" onClick={onNextProblem} disabled={!canGoNext}>Next</button>
+            </div>
+          )}
           <p>{problem.prompt}</p>
+          {(solution?.starter_guidance || solution?.guided_steps?.length > 0) && (
+            <section className="starter-guidance-panel">
+              <h3>Starter Guidance</h3>
+              {solution?.starter_guidance && <p>{solution.starter_guidance}</p>}
+              {solution?.guided_steps?.length > 0 && (
+                <ul>{solution.guided_steps.slice(0, 3).map((step, index) => <li key={index}>{step}</li>)}</ul>
+              )}
+            </section>
+          )}
           {problem.examples?.length > 0 && (
             <section>
               <h3>Examples</h3>
@@ -25,7 +50,7 @@ export default function ProblemPanel({ problem, solution, attempts, problemLoadi
             </section>
           )}
           {problem.constraints?.length > 0 && (
-            <section>
+            <section className="problem-constraints-card">
               <h3>Constraints</h3>
               <ul>{problem.constraints.map((constraint, index) => <li key={index}>{constraint}</li>)}</ul>
             </section>

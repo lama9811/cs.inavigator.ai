@@ -16,7 +16,6 @@ export default function QuizProblemCard({ question, progress, onSelect }) {
       </div>
       <small>{question.topic} / {titleCase(question.difficulty)}</small>
       <div className="quiz-meta-row">
-        <span>{progress?.attempt_count || 0}/5 attempts</span>
         <span>{statusLabel(progress)}</span>
       </div>
     </button>

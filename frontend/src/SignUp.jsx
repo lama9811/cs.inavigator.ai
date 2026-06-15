@@ -73,7 +73,7 @@ function getPasswordStrength(password) {
   return { level: 3, label: "Strong", class: "strong" };
 }
 
-export default function Signup({ onRegistered }) {
+export default function Signup() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [studentId, setStudentId] = useState("");

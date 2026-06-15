@@ -1,12 +1,42 @@
 .coding-app {
+  --ct-bg: var(--bg-app);
+  --ct-panel: var(--bg-surface);
+  --ct-panel-soft: var(--bg-surface-soft);
+  --ct-panel-raised: var(--bg-surface-raised);
+  --ct-border: var(--border-soft);
+  --ct-border-strong: var(--border-strong);
+  --ct-text: var(--text-main);
+  --ct-muted: var(--text-muted);
+  --ct-soft: var(--text-soft);
+  --ct-primary: var(--primary);
+  --ct-primary-hover: var(--primary-hover);
+  --ct-primary-soft: var(--primary-soft);
+  --ct-accent: var(--accent);
+  --ct-accent-soft: var(--accent-soft);
+  --ct-success: var(--success);
+  --ct-warning: var(--warning);
+  --ct-danger: var(--danger);
+  --ct-editor-bg: #0f172a;
+  --ct-editor-text: #e5e7eb;
+  --ct-terminal-bg: #090f1f;
+  --ct-terminal-text: #dbeafe;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  grid-template-columns: 150px minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) auto;
-  min-height: 100vh;
-  padding: 24px 20px 20px;
-  background: linear-gradient(135deg, #f8fbff 0%, #f9fafb 45%, #f4f7ff 100%);
-  color: #111827;
-  gap: 18px;
+  display: grid;
+  grid-template-columns: 176px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  min-height: calc(100vh - 72px);
+  padding: 10px 12px 12px;
+  background:
+    radial-gradient(circle at top left, var(--ct-primary-soft), transparent 34%),
+    linear-gradient(135deg, var(--ct-bg) 0%, var(--ct-panel-soft) 54%, var(--ct-bg) 100%);
+  color: var(--ct-text);
+  gap: 14px;
+  overflow: visible;
+  transition: grid-template-columns 0.16s ease;
+}
+
+.coding-app.mini-sidebar-collapsed {
+  grid-template-columns: 58px minmax(0, 1fr);
 }
 
 .coding-app *,
@@ -54,32 +84,107 @@
   grid-row: 1 / 3;
   align-self: start;
   position: sticky;
-  top: 24px;
+  top: 18px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 18px 14px;
-  background: rgba(255, 255, 255, 0.94);
+  padding: 16px 12px;
+  background: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(148, 163, 184, 0.18);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-  border-radius: 20px;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+  border-radius: 24px;
+  min-width: 0;
 }
 
 .coding-section-nav button {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
   width: 100%;
   text-align: left;
-  padding: 12px 14px;
+  padding: 11px 12px;
   background: transparent;
   border: 1px solid transparent;
   color: #1f2937;
+  font-size: 0.94rem;
   cursor: pointer;
+  border-radius: 18px;
+  white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.coding-section-nav button .coding-nav-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.coding-nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  border-radius: 12px;
+  background: rgba(66, 133, 244, 0.1);
+  color: #1e3a8a;
+  font-size: 0.92rem;
+  font-weight: 750;
+}
+
+.coding-nav-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.coding-app.mini-sidebar-collapsed .coding-section-nav {
+  width: 58px;
+  min-height: 0;
+  padding: 8px 5px;
+  align-items: center;
+  border-radius: 18px;
+  gap: 8px;
+}
+
+.coding-app.mini-sidebar-collapsed .coding-section-nav button {
+  justify-content: center;
+  width: 44px;
+  min-height: 42px;
+  padding: 6px;
+  border-radius: 14px;
+  flex: 0 0 auto;
+}
+
+.coding-app.mini-sidebar-collapsed .coding-nav-icon {
+  flex-basis: 26px;
+  width: 26px;
+  height: 26px;
+  border-radius: 10px;
+}
+
+.coding-app.mini-sidebar-collapsed .coding-nav-label {
+  width: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.coding-nav-collapse,
+.coding-nav-workspace-toggle {
+  background: rgba(66, 133, 244, 0.08) !important;
+  border-color: rgba(66, 133, 244, 0.18) !important;
+}
+
+.coding-nav-workspace-toggle {
+  margin-top: 4px;
+  color: #047857 !important;
 }
 
 .coding-section-nav button:hover,
 .coding-section-nav button:focus-visible {
-  background: rgba(66, 133, 244, 0.08);
-  border-color: rgba(66, 133, 244, 0.22);
+  background: rgba(66, 133, 244, 0.1);
+  border-color: rgba(66, 133, 244, 0.24);
 }
 
 .coding-section-nav button.active {
@@ -89,25 +194,43 @@
   box-shadow: 0 10px 22px rgba(66, 133, 244, 0.12);
 }
 
-.coding-app-content {
-  grid-column: 2;
-  grid-row: 1;
-  padding-bottom: 14px;
+.coding-app.mini-sidebar-collapsed .coding-section-nav button.active {
+  box-shadow: none;
 }
 
+.coding-app-content {
+  padding-bottom: 0;
+  min-height: 0;
+  width: 100%;
+}
+
+.coding-app-main {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow: visible;
+  padding-right: 4px;
+  scrollbar-gutter: stable;
+}
+
+
 .coding-workbench {
-  min-height: calc(100vh - 146px);
-  display: grid;
-  grid-template-rows: minmax(430px, 1fr) minmax(250px, auto);
-  gap: 16px;
+  min-height: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .coding-workbench-main,
 .coding-workspace-page {
-  min-height: 0;
+  min-height: clamp(360px, calc(100vh - 340px), 560px);
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: minmax(280px, 0.34fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: stretch;
 }
 
 .coding-workbench-main > *,
@@ -131,7 +254,6 @@
 .coding-problem-panel,
 .coding-editor-center,
 .tutor-panel,
-.coding-dashboard-card,
 .quiz-problem-card,
 .practice-question-row {
   border-radius: 18px;
@@ -144,21 +266,66 @@
   padding: 22px;
 }
 
-.coding-dashboard {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 18px;
-  margin-bottom: 10px;
+.coding-page-panel,
+.coding-problem-panel,
+.coding-editor-center,
+.quiz-library,
+.quiz-insight-panel,
+.practice-progress-overview,
+.daily-feature-card {
+  position: relative;
+}
+
+.coding-page-panel::before,
+.coding-problem-panel::before,
+.coding-editor-center::before,
+.quiz-library::before,
+.quiz-insight-panel::before,
+.practice-progress-overview::before,
+.daily-feature-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(66, 133, 244, 0.72), rgba(52, 168, 83, 0.48), rgba(251, 188, 5, 0.5));
+  pointer-events: none;
 }
 
 .practice-progress-overview {
-  display: grid;
-  gap: 14px;
-  padding: 20px;
+  display: flex !important;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  grid-template-columns: minmax(150px, 0.6fr) minmax(160px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(148, 163, 184, 0.18);
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.coding-app .practice-progress-overview {
+  margin-bottom: 0;
+  width: 100%;
+}
+
+.coding-app .practice-progress-overview > div:first-child {
+  display: grid;
+  gap: 4px;
+  align-items: center;
+  justify-content: start;
+}
+
+.coding-app .practice-progress-overview .progress-bar {
+  flex: 1 1 320px;
+  min-width: min(320px, 100%);
+}
+
+.coding-app .progress-overview-stats {
+  flex: 0 1 auto;
 }
 
 .progress-bar {
@@ -180,15 +347,84 @@
 .progress-overview-stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 12px;
   color: #475569;
+  font-size: 0.84rem;
+  white-space: nowrap;
 }
 
 .coding-dashboard {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 18px;
-  margin-bottom: 10px;
+  display: flex !important;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1080px;
+  margin: 0 auto;
+  width: min(100%, 1080px);
+  min-height: auto;
+  overflow: visible;
+  padding: 8px 0 36px;
+}
+
+.coding-dashboard-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(100%, 820px);
+}
+
+.coding-dashboard-section {
+  width: 100%;
+}
+
+.coding-blurb-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.coding-prompt-card {
+  width: 100%;
+  min-height: 76px;
+  padding: 18px 24px;
+  text-align: left;
+  color: #202124;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-left: 4px solid #5b7cfa;
+  border-radius: 18px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.save-quiz-pdf-btn {
+  align-self: flex-start;
+  min-height: 42px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(66, 133, 244, 0.24);
+  background: rgba(66, 133, 244, 0.08);
+  color: #1d4ed8;
+  cursor: pointer;
+}
+
+.coding-prompt-card.red {
+  border-left-color: #ef4444;
+}
+
+.coding-prompt-card.gold {
+  border-left-color: #eab308;
+}
+
+.coding-prompt-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(66, 133, 244, 0.28);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.1);
 }
 
 .daily-feature-card {
@@ -196,16 +432,32 @@
   flex-direction: column;
   gap: 12px;
   padding: 22px;
+  min-height: 180px;
   border-top: 4px solid transparent;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .daily-feature-card.dashboard-daily {
-  border-image: linear-gradient(90deg, #54a8ff 0%, #8dd8ff 100%) 1;
+  border-top-color: #4285f4;
+  min-height: 240px;
+  background:
+    linear-gradient(135deg, rgba(66, 133, 244, 0.12), rgba(52, 168, 83, 0.08)),
+    rgba(255, 255, 255, 0.96);
+}
+
+.dashboard-daily h2 {
+  font-size: clamp(1.45rem, 2.6vw, 2.4rem);
+  line-height: 1.15;
+  max-width: 760px;
+}
+
+.dashboard-daily p {
+  max-width: 760px;
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
 .daily-feature-card:hover,
-.coding-dashboard-card:hover,
 .quiz-problem-card:hover,
 .practice-question-row:hover,
 .quiz-insight-panel:hover {
@@ -213,31 +465,7 @@
   box-shadow: 0 14px 40px rgba(15, 23, 42, 0.1);
 }
 
-.coding-dashboard-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 20px 20px 22px;
-  text-align: left;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.coding-dashboard-card:nth-of-type(1) {
-  border-top: 4px solid rgba(94, 152, 255, 0.28);
-}
-
-.coding-dashboard-card:nth-of-type(2) {
-  border-top: 4px solid rgba(131, 102, 255, 0.28);
-}
-
-.coding-dashboard-card:nth-of-type(3) {
-  border-top: 4px solid rgba(94, 196, 143, 0.28);
-}
-
-.coding-dashboard-card strong,
-.daily-feature-card strong,
-.quiz-problem-card strong {
+.daily-feature-card {
   color: #111827;
 }
 
@@ -281,32 +509,174 @@
 .daily-practice-btn,
 .coding-chat-dock-header button,
 .tutor-chat-dock .tutor-chat-input button,
-.tutor-action-button,
-.coding-dashboard-card {
+.tutor-action-button {
   transition: all 0.2s ease;
 }
 
 .daily-practice-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 10px 14px;
   border-radius: 12px;
   border: 1px solid rgba(66, 133, 244, 0.18);
-  background: rgba(66, 133, 244, 0.1);
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: #fff;
+  font-weight: 750;
+  box-shadow: 0 12px 26px rgba(29, 78, 216, 0.2);
+}
+
+.coding-app .dashboard-daily .daily-actions {
+  margin-top: 10px;
+}
+
+.coding-app .dashboard-daily .daily-practice-btn,
+.coding-app .dashboard-daily .daily-link {
+  min-width: 128px;
+  min-height: 46px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  font-size: 0.95rem;
+}
+
+.coding-app .dashboard-daily .daily-link {
+  border-color: rgba(52, 168, 83, 0.28);
+  background: linear-gradient(135deg, rgba(52, 168, 83, 0.13), rgba(66, 133, 244, 0.08));
+  color: #166534;
+}
+
+.coding-app .dashboard-daily .daily-link::after {
+  content: ">";
+  margin-left: 8px;
+  font-size: 0.86rem;
+}
+
+.daily-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: auto;
+}
+
+.daily-meta-row,
+.problem-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.daily-meta-row {
+  margin: 12px 0 4px;
+  color: #475569;
+  font-weight: 650;
+}
+
+.problem-navigation {
+  margin: 14px 0 12px;
+}
+
+.problem-navigation button {
+  flex: 1 1 110px;
+  min-height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(66, 133, 244, 0.24);
+  background: linear-gradient(135deg, rgba(66, 133, 244, 0.14), rgba(66, 133, 244, 0.06));
   color: #1d4ed8;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+}
+
+.problem-navigation button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border-color: rgba(29, 78, 216, 0.38);
+  color: #fff;
+  box-shadow: 0 12px 24px rgba(29, 78, 216, 0.22);
+}
+
+.problem-navigation button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.starter-guidance-panel {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(66, 133, 244, 0.08);
+  border: 1px solid rgba(66, 133, 244, 0.16);
+}
+
+.starter-guidance-panel h3 {
+  margin: 0 0 6px;
+}
+
+.starter-guidance-panel p,
+.starter-guidance-panel ul {
+  margin: 0;
+}
+
+.starter-guidance-panel ul {
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
+
+.problem-constraints-card {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.problem-constraints-card h3 {
+  margin: 0;
+}
+
+.problem-constraints-card ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.problem-constraints-card li {
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.daily-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.94);
+  color: #1e3a8a;
+  text-decoration: none;
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
 }
 
 .daily-practice-btn.secondary {
-  background: rgba(148, 163, 184, 0.1);
-  border-color: rgba(148, 163, 184, 0.2);
-  color: #334155;
+  background: rgba(248, 250, 252, 0.98);
+  border-color: rgba(66, 133, 244, 0.2);
+  color: #1e3a8a;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
 }
 
 .daily-practice-btn:hover,
-.daily-practice-btn.secondary:hover {
+.daily-practice-btn.secondary:hover,
+.daily-link:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 12px 26px rgba(29, 78, 216, 0.18);
 }
 
 .quiz-problem-card {
@@ -365,14 +735,16 @@
 
 .coding-problem-content,
 .coding-problem-empty {
-  padding: 20px;
+  padding: 14px;
 }
 
 .coding-editor-center {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 20px;
+  gap: 9px;
+  padding: 12px;
+  overflow: visible;
+  min-height: 0;
 }
 
 .coding-pane-header h2 {
@@ -388,69 +760,245 @@
 }
 
 .workspace-tab-body {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-height: 0;
 }
 
 .leetcode-editor {
-  flex: 1 1 auto;
-  min-height: 260px;
-  max-height: 46vh;
+  flex: 0 0 auto;
+  min-height: clamp(260px, calc(100vh - 470px), 460px);
+  max-height: none;
   font-family: "Cascadia Code", "Fira Code", Consolas, "Liberation Mono", monospace;
   font-size: 0.92rem;
   line-height: 1.55;
 }
 
-.coding-note.compact-note {
+.coding-app .workspace-actions {
   flex: 0 0 auto;
-  min-height: 42px;
-  max-height: 72px;
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  grid-template-columns: none !important;
 }
 
-.workspace-actions {
+.coding-app .workspace-actions button {
+  flex: 1 1 140px;
+  min-width: 150px;
+  min-height: 42px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(66, 133, 244, 0.22);
+  background: rgba(255, 255, 255, 0.96);
+  color: #1e3a8a;
+  font-weight: 750;
+  white-space: nowrap;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+}
+
+.coding-app .workspace-actions .workspace-action-primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border-color: rgba(29, 78, 216, 0.38);
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(29, 78, 216, 0.24);
+}
+
+.coding-app .workspace-actions .workspace-action-success {
+  background: linear-gradient(135deg, #22c55e, #15803d);
+  border-color: rgba(21, 128, 61, 0.36);
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(21, 128, 61, 0.2);
+}
+
+.coding-app .workspace-actions .workspace-action-secondary {
+  background: rgba(248, 250, 252, 0.96);
+  color: #1f2937;
+}
+
+.coding-app .workspace-actions button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.coding-app .workspace-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: rgba(148, 163, 184, 0.1);
+  color: #64748b;
+}
+
+.coding-workbench-terminal {
+  min-width: 0;
+}
+
+.coding-workbench-terminal .coding-terminal {
   flex: 0 0 auto;
+  border: 1px solid rgba(15, 23, 42, 0.18);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0f172a;
+  color: #e5e7eb;
+}
+
+.coding-workbench-terminal .coding-terminal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.07);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.terminal-status.passed {
+  color: #86efac;
+}
+
+.terminal-status.failed,
+.terminal-status.error {
+  color: #fca5a5;
+}
+
+.terminal-status.running {
+  color: #bfdbfe;
+}
+
+.terminal-message,
+.terminal-summary,
+.terminal-tests {
+  margin: 0;
+  padding: 10px 12px;
+}
+
+.terminal-message {
+  color: #cbd5e1;
+  line-height: 1.45;
+}
+
+.terminal-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  color: #cbd5e1;
+}
+
+.terminal-summary strong {
+  color: #f8fafc;
+}
+
+.terminal-tests {
+  display: grid;
+  gap: 8px;
+  max-height: 220px;
+  overflow: auto;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.terminal-test-row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 8px 10px;
+  align-items: start;
+  padding: 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.terminal-test-detail {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.terminal-test-detail code {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 5px 7px;
+  border-radius: 7px;
+  background: rgba(15, 23, 42, 0.55);
+  color: #dbeafe;
+  font-family: "Cascadia Code", "Fira Code", Consolas, monospace;
+  font-size: 0.75rem;
+  white-space: pre;
+}
+
+.terminal-test-row span {
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.terminal-test-row.passed span {
+  color: #86efac;
+}
+
+.terminal-test-row.failed span {
+  color: #fca5a5;
+}
+
+.terminal-test-row small {
+  color: #cbd5e1;
+}
+
+.coding-workbench-terminal .coding-terminal pre {
+  margin: 0;
+  min-height: 0;
+  max-height: 170px;
+  overflow: auto;
+  padding: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  white-space: pre-wrap;
+  color: #e5e7eb;
 }
 
 .tutor-panel {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr) 320px;
-  grid-template-rows: auto minmax(120px, 1fr);
+  grid-template-columns: minmax(280px, 1fr) minmax(360px, 0.9fr);
+  grid-template-rows: auto;
   align-items: stretch;
-  gap: 16px;
+  align-content: start;
+  gap: 18px;
   padding: 18px;
+  min-height: 0;
 }
 
 .tutor-panel .ai-status-card {
   grid-column: 1;
-  grid-row: 1 / 3;
-  min-height: 0;
+  grid-row: 1;
+  min-height: 186px;
+  height: 100%;
 }
 
-.tutor-quick-actions {
+.coding-app .tutor-quick-actions {
   grid-column: 2;
   grid-row: 1;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(96px, 1fr));
   align-content: start;
-  align-items: center;
-  gap: 8px;
+  align-items: stretch;
+  gap: 12px;
+  min-width: 0;
 }
 
-.tutor-action-button,
-.tutor-quick-actions .tutor-action-button {
-  width: auto;
+.coding-app .tutor-action-button,
+.coding-app .tutor-quick-actions .tutor-action-button {
+  width: 100%;
   min-width: 0;
-  min-height: 34px;
+  min-height: 38px;
   border-radius: 999px;
-  padding: 8px 14px;
+  padding: 8px 12px;
+  font-size: 0.86rem;
   white-space: nowrap;
   line-height: 1;
+  text-align: center;
   border: 1px solid rgba(148, 163, 184, 0.2);
   background: rgba(248, 250, 252, 0.96);
 }
 
-.tutor-action-button:hover,
-.tutor-quick-actions .tutor-action-button:hover {
+.coding-app .tutor-action-button:hover,
+.coding-app .tutor-quick-actions .tutor-action-button:hover {
   background: rgba(66, 133, 244, 0.12);
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
 }
@@ -585,23 +1133,358 @@
   font-weight: 650;
 }
 
-.coding-terminal.expanded {
-  min-height: 220px;
+.floating-coding-chat {
+  position: fixed;
+  z-index: 1000;
+  touch-action: none;
 }
 
-.coding-terminal.expanded pre {
-  min-height: 200px;
+.floating-coding-chat.closed {
+  right: 24px;
+  bottom: 24px;
+}
+
+.floating-coding-chat.open {
+  right: auto;
+  bottom: auto;
+}
+
+.floating-coding-chat.dragging {
+  cursor: grabbing;
+}
+
+.floating-chat-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 18px;
+  border: 1px solid rgba(66, 133, 244, 0.26);
+  border-radius: 999px;
+  background: #1d4ed8;
+  color: #fff;
+  box-shadow: 0 18px 44px rgba(29, 78, 216, 0.24);
+  cursor: pointer;
+  font-weight: 650;
+  user-select: none;
+  touch-action: none;
+}
+
+.floating-chat-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.floating-chat-window {
+  width: 380px;
+  height: 520px;
+  max-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  overflow: hidden;
+}
+
+.floating-chat-window.maximized {
+  width: min(900px, calc(100vw - 48px));
+  height: min(720px, calc(100vh - 48px));
+  max-height: calc(100vh - 48px);
+}
+
+.floating-chat-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.floating-chat-header strong {
+  display: block;
+  color: #111827;
+  font-size: 0.98rem;
+  line-height: 1.25;
+}
+
+.floating-chat-window-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.floating-chat-control,
+.floating-chat-icon-btn,
+.floating-chat-send,
+.floating-attachment-preview button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(248, 250, 252, 0.95);
+  color: #334155;
+  cursor: pointer;
+}
+
+.floating-chat-control {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+}
+
+.floating-chat-control.danger {
+  color: #b91c1c;
+}
+
+.floating-chat-window .ai-status-card {
+  flex: 0 0 auto;
+  min-height: 0;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(66, 133, 244, 0.14);
+  background: rgba(66, 133, 244, 0.06);
+}
+
+.floating-chat-window .ai-status-card dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+  margin: 8px 0 0;
+}
+
+.floating-chat-window .ai-status-card dt,
+.floating-chat-window .ai-status-card dd {
+  font-size: 0.78rem;
+}
+
+.floating-chat-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.floating-chat-action {
+  border-radius: 999px;
+  padding: 7px 12px;
+  white-space: nowrap;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(248, 250, 252, 0.96);
+  color: #1f2937;
+  cursor: pointer;
+  font-size: 0.82rem;
+  flex: 0 0 auto;
+}
+
+.floating-chat-action:disabled,
+.floating-chat-send:disabled,
+.floating-chat-icon-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.floating-chat-messages {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 16px;
+  background: rgba(247, 248, 250, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.floating-chat-message {
+  max-width: 92%;
+  padding: 9px 11px;
+  border-radius: 14px;
+  font-size: 0.86rem;
+  line-height: 1.42;
+  overflow-wrap: anywhere;
+}
+
+.floating-chat-message.user {
+  align-self: flex-end;
+  background: rgba(66, 133, 244, 0.14);
+  color: #1e3a8a;
+}
+
+.floating-chat-message.bot {
+  align-self: flex-start;
+  background: #fff;
+  color: #111827;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.floating-chat-message.bot pre,
+.floating-chat-message.bot code,
+.floating-chat-message.bot blockquote,
+.floating-chat-message.bot table {
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  color: #111827;
+}
+
+.floating-chat-message.bot pre {
+  padding: 10px;
+  border-radius: 10px;
+  overflow-x: auto;
+}
+
+.floating-chat-message.bot code {
+  border-radius: 6px;
+  padding: 1px 4px;
+}
+
+.floating-chat-message p {
+  margin: 0 0 0.5rem;
+}
+
+.floating-chat-message p:last-child {
+  margin-bottom: 0;
+}
+
+.floating-chat-empty {
+  margin: auto;
+  max-width: 260px;
+  color: #64748b;
+  text-align: center;
+  font-size: 0.88rem;
+}
+
+.floating-thinking-steps {
+  display: grid;
+  gap: 7px;
+  min-width: 220px;
+}
+
+.floating-thinking-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  font-size: 0.82rem;
+}
+
+.floating-thinking-step.active {
+  color: #1d4ed8;
+  font-weight: 650;
+}
+
+.floating-thinking-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(66, 133, 244, 0.24);
+  background: rgba(66, 133, 244, 0.08);
+  color: #1d4ed8;
+  font-size: 0.72rem;
+}
+
+.floating-thinking-step.active .floating-thinking-check {
+  background: linear-gradient(135deg, #60a5fa, #2563eb);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.floating-chat-form {
+  flex: 0 0 auto;
+  display: grid;
+  gap: 8px;
+}
+
+.floating-attachment-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(66, 133, 244, 0.08);
+  color: #1f2937;
+  font-size: 0.82rem;
+}
+
+.floating-attachment-preview span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.floating-attachment-preview button {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+}
+
+.floating-chat-input-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+}
+
+.floating-chat-icon-btn,
+.floating-chat-send {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+}
+
+.floating-chat-input-row textarea {
+  min-height: 42px;
+  max-height: 120px;
+  resize: vertical;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(255, 255, 255, 0.96);
+  padding: 10px 12px;
+  font: inherit;
+  color: #111827;
+}
+
+.floating-chat-send {
+  color: #1d4ed8;
+  font-size: 1.25rem;
+}
+
+.coding-terminal.expanded {
+  min-height: 150px;
+}
+
+.coding-workbench-terminal .coding-terminal.expanded pre {
+  min-height: 0;
 }
 
 .quiz-problem-card strong,
-.coding-dashboard-card strong,
 .daily-feature-card strong {
   font-weight: 650;
 }
 
 @media (max-width: 1180px) {
+  .coding-dashboard-prompts {
+    width: 100%;
+  }
+
   .tutor-panel {
-    grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-columns: minmax(260px, 1fr) minmax(320px, 0.9fr);
+  }
+
+  .coding-app .tutor-quick-actions {
+    grid-template-columns: repeat(3, minmax(96px, 1fr));
   }
 
   .tutor-chat-input {
@@ -618,6 +1501,13 @@
   .coding-app {
     grid-template-columns: 1fr;
     grid-template-rows: auto minmax(0, 1fr) auto;
+    height: auto;
+    min-height: calc(100vh - 112px);
+    overflow: visible;
+  }
+
+  .coding-app.mini-sidebar-collapsed {
+    grid-template-columns: 1fr;
   }
 
   .coding-section-nav,
@@ -628,6 +1518,12 @@
 
   .coding-section-nav {
     grid-row: 1;
+    position: sticky;
+    top: 8px;
+  }
+
+  .coding-app.mini-sidebar-collapsed .coding-section-nav {
+    width: 42px;
   }
 
   .coding-app-content {
@@ -640,8 +1536,6 @@
   }
 
   .coding-workbench,
-  .coding-workbench-main,
-  .coding-workspace-page,
   .tutor-panel {
     grid-template-columns: 1fr;
     grid-template-rows: auto;
@@ -655,8 +1549,1677 @@
     grid-row: auto;
   }
 
+  .tutor-panel .ai-status-card {
+    min-height: auto;
+  }
+
+  .coding-app .tutor-quick-actions {
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
+  }
+
   .leetcode-editor {
-    min-height: 300px;
+    min-height: clamp(280px, calc(100vh - 500px), 480px);
     max-height: none;
+  }
+
+  .practice-progress-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .progress-overview-stats {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 700px) {
+  .coding-workbench-main,
+  .coding-workspace-page {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Coding Tutor dark mode lives here so regular Chatbox styles stay cleaner. */
+body.dark .coding-app {
+  --ct-bg: #0b1120;
+  --ct-surface: rgba(17, 24, 39, 0.94);
+  --ct-surface-strong: rgba(15, 23, 42, 0.98);
+  --ct-surface-soft: rgba(30, 41, 59, 0.72);
+  --ct-border: rgba(148, 163, 184, 0.22);
+  --ct-border-strong: rgba(96, 165, 250, 0.36);
+  --ct-text: #e5e7eb;
+  --ct-muted: #a7b3c6;
+  --ct-faint: #7c8aa3;
+  --ct-blue: #8ab4f8;
+  --ct-blue-strong: #60a5fa;
+  --ct-green: #86efac;
+  --ct-red: #fca5a5;
+  --ct-gold: #facc15;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(37, 99, 235, 0.18), transparent 32%),
+    linear-gradient(135deg, #08111f 0%, #0f172a 48%, #111827 100%);
+  color: var(--ct-text);
+}
+
+body.dark .coding-app h1,
+body.dark .coding-app h2,
+body.dark .coding-app h3,
+body.dark .coding-app strong,
+body.dark .coding-app p,
+body.dark .coding-app li,
+body.dark .coding-app span,
+body.dark .coding-app small,
+body.dark .coding-app label {
+  color: inherit;
+}
+
+body.dark .coding-app small,
+body.dark .coding-app .coding-kicker,
+body.dark .coding-app .problem-meta,
+body.dark .coding-app .problem-guidance,
+body.dark .coding-app .terminal-test-row small {
+  color: var(--ct-muted);
+}
+
+body.dark .coding-section-nav,
+body.dark .practice-progress-overview,
+body.dark .daily-feature-card,
+body.dark .coding-page-panel,
+body.dark .quiz-library,
+body.dark .quiz-insight-panel,
+body.dark .quiz-problem-card,
+body.dark .coding-problem-panel,
+body.dark .coding-editor-center,
+body.dark .workspace-hints-panel,
+body.dark .workspace-discussion-panel,
+body.dark .workspace-hidden-panel,
+body.dark .ai-status-card,
+body.dark .tutor-panel,
+body.dark .floating-chat-window,
+body.dark .floating-chat-context,
+body.dark .floating-chat-message.bot {
+  background: var(--ct-surface);
+  border-color: var(--ct-border);
+  color: var(--ct-text);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34);
+}
+
+body.dark .coding-editor-center,
+body.dark .coding-problem-panel,
+body.dark .quiz-library,
+body.dark .coding-page-panel {
+  background: var(--ct-surface-strong);
+}
+
+body.dark .coding-section-nav button {
+  color: var(--ct-text);
+}
+
+body.dark .coding-nav-icon,
+body.dark .language-format-card span,
+body.dark .daily-meta-row span,
+body.dark .practice-status,
+body.dark .problem-topic,
+body.dark .problem-difficulty,
+body.dark .workspace-tabs button,
+body.dark .floating-chat-action,
+body.dark .tutor-action-button,
+body.dark .coding-app .tutor-quick-actions .tutor-action-button,
+body.dark .coding-app .workspace-actions button {
+  background: rgba(96, 165, 250, 0.12);
+  border-color: rgba(96, 165, 250, 0.24);
+  color: var(--ct-blue);
+}
+
+body.dark .coding-section-nav button:hover,
+body.dark .coding-section-nav button:focus-visible,
+body.dark .coding-section-nav button.active,
+body.dark .workspace-tabs button.active,
+body.dark .coding-app .workspace-actions button:hover:not(:disabled),
+body.dark .floating-chat-action:hover:not(:disabled),
+body.dark .tutor-action-button:hover:not(:disabled) {
+  background: rgba(96, 165, 250, 0.2);
+  border-color: var(--ct-border-strong);
+  color: #dbeafe;
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
+}
+
+body.dark .coding-nav-workspace-toggle {
+  color: var(--ct-green) !important;
+}
+
+body.dark .coding-select,
+body.dark .coding-app textarea,
+body.dark .floating-chat-input textarea,
+body.dark .floating-chat-input-row textarea,
+body.dark .leetcode-editor {
+  background: rgba(2, 6, 23, 0.72);
+  border-color: var(--ct-border);
+  color: var(--ct-text);
+  caret-color: var(--ct-blue);
+}
+
+body.dark .coding-select {
+  color-scheme: dark;
+}
+
+body.dark .coding-app textarea::placeholder,
+body.dark .floating-chat-input textarea::placeholder,
+body.dark .floating-chat-input-row textarea::placeholder {
+  color: var(--ct-faint);
+}
+
+body.dark .coding-prompt-card,
+body.dark .save-quiz-pdf-btn,
+body.dark .daily-practice-btn,
+body.dark .daily-link,
+body.dark .problem-nav-btn,
+body.dark .practice-question-row,
+body.dark .quiz-filter-card,
+body.dark .quiz-insight-list li,
+body.dark .coding-progress-stats div,
+body.dark .problem-example,
+body.dark .problem-constraints-card,
+body.dark .hint-card,
+body.dark .floating-chat-control,
+body.dark .floating-chat-send,
+body.dark .floating-chat-button {
+  background: var(--ct-surface-soft);
+  border-color: var(--ct-border);
+  color: var(--ct-text);
+}
+
+body.dark .coding-prompt-card.blue,
+body.dark .coding-prompt-card.red,
+body.dark .coding-prompt-card.gold {
+  background:
+    linear-gradient(90deg, rgba(96, 165, 250, 0.28) 0 4px, transparent 4px),
+    var(--ct-surface);
+}
+
+body.dark .coding-prompt-card.red {
+  background:
+    linear-gradient(90deg, rgba(248, 113, 113, 0.3) 0 4px, transparent 4px),
+    var(--ct-surface);
+}
+
+body.dark .coding-prompt-card.gold {
+  background:
+    linear-gradient(90deg, rgba(250, 204, 21, 0.32) 0 4px, transparent 4px),
+    var(--ct-surface);
+}
+
+body.dark .daily-feature-card.dashboard-daily {
+  background:
+    linear-gradient(90deg, var(--ct-gold) 0 3px, transparent 3px),
+    linear-gradient(180deg, rgba(96, 165, 250, 0.16), transparent 38%),
+    var(--ct-surface-strong);
+}
+
+body.dark .progress-bar {
+  background: rgba(148, 163, 184, 0.18);
+}
+
+body.dark .progress-bar span {
+  background: linear-gradient(90deg, #8ab4f8 0%, #22d3ee 100%);
+}
+
+body.dark .practice-status.solved,
+body.dark .terminal-status.passed,
+body.dark .terminal-test-row.passed span {
+  color: var(--ct-green);
+}
+
+body.dark .practice-status.in_progress,
+body.dark .terminal-status.running {
+  color: var(--ct-gold);
+}
+
+body.dark .practice-status.not_started,
+body.dark .terminal-test-row small {
+  color: var(--ct-muted);
+}
+
+body.dark .terminal-status.failed,
+body.dark .terminal-status.error,
+body.dark .terminal-test-row.failed span,
+body.dark .floating-chat-error {
+  color: var(--ct-red);
+}
+
+body.dark .coding-workbench-terminal .coding-terminal {
+  background: #050816;
+  border-color: rgba(96, 165, 250, 0.18);
+  color: #e5e7eb;
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.3);
+}
+
+body.dark .coding-workbench-terminal .coding-terminal-header,
+body.dark .terminal-test-row {
+  background: rgba(15, 23, 42, 0.72);
+  border-color: rgba(148, 163, 184, 0.14);
+}
+
+body.dark .terminal-test-detail,
+body.dark .coding-workbench-terminal .coding-terminal pre {
+  background: rgba(2, 6, 23, 0.68);
+  color: #dbeafe;
+}
+
+body.dark .coding-app .workspace-actions button:disabled,
+body.dark .floating-chat-action:disabled {
+  background: rgba(51, 65, 85, 0.62);
+  border-color: rgba(100, 116, 139, 0.28);
+  color: #7c8aa3;
+}
+
+body.dark .floating-chat-button,
+body.dark .floating-chat-send,
+body.dark .daily-practice-btn {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border-color: rgba(147, 197, 253, 0.32);
+  color: #fff;
+}
+
+body.dark .coding-app .dashboard-daily .daily-link {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.24), rgba(59, 130, 246, 0.16));
+  border-color: rgba(134, 239, 172, 0.34);
+  color: #dcfce7;
+}
+
+body.dark .problem-constraints-card {
+  background: rgba(15, 23, 42, 0.72);
+  border-color: rgba(148, 163, 184, 0.24);
+  color: var(--ct-text);
+}
+
+body.dark .daily-practice-btn.secondary,
+body.dark .daily-link,
+body.dark .problem-navigation button,
+body.dark .coding-app .workspace-actions .workspace-action-secondary {
+  background: rgba(30, 41, 59, 0.88);
+  border-color: rgba(148, 163, 184, 0.28);
+  color: #dbeafe;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+}
+
+body.dark .problem-navigation button:hover:not(:disabled),
+body.dark .daily-practice-btn.secondary:hover,
+body.dark .daily-link:hover,
+body.dark .coding-app .workspace-actions .workspace-action-secondary:hover:not(:disabled) {
+  background: rgba(96, 165, 250, 0.2);
+  border-color: rgba(147, 197, 253, 0.38);
+  color: #fff;
+}
+
+body.dark .coding-app .workspace-actions .workspace-action-primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border-color: rgba(147, 197, 253, 0.36);
+  color: #fff;
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.26);
+}
+
+body.dark .coding-app .workspace-actions .workspace-action-success {
+  background: linear-gradient(135deg, #22c55e, #15803d);
+  border-color: rgba(134, 239, 172, 0.32);
+  color: #fff;
+  box-shadow: 0 14px 30px rgba(21, 128, 61, 0.22);
+}
+
+body.dark .floating-chat-message.user {
+  background: rgba(37, 99, 235, 0.82);
+  color: #fff;
+}
+
+body.dark .floating-chat-window .ai-status-card,
+body.dark .floating-chat-message.bot {
+  background: rgba(15, 23, 42, 0.96);
+  border-color: rgba(148, 163, 184, 0.28);
+  color: #e5e7eb;
+}
+
+body.dark .floating-chat-message.bot pre,
+body.dark .floating-chat-message.bot code,
+body.dark .floating-chat-message.bot blockquote,
+body.dark .floating-chat-message.bot table {
+  background: rgba(2, 6, 23, 0.94);
+  border-color: rgba(96, 165, 250, 0.24);
+  color: #dbeafe;
+}
+
+body.dark .floating-chat-message.bot a {
+  color: #93c5fd;
+}
+
+body.dark .floating-chat-messages,
+body.dark .floating-chat-window .floating-chat-body {
+  background: rgba(2, 6, 23, 0.58);
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
+/* Token-based theme polish */
+.coding-section-nav,
+.coding-page-panel,
+.daily-feature-card,
+.quiz-library,
+.quiz-insight-panel,
+.practice-progress-overview,
+.coding-problem-panel,
+.coding-editor-center,
+.tutor-panel,
+.quiz-problem-card,
+.practice-question-row,
+.workspace-hints-panel,
+.workspace-discussion-panel,
+.workspace-hidden-panel,
+.floating-chat-window,
+.floating-chat-context,
+.floating-chat-message.bot {
+  background: color-mix(in srgb, var(--ct-panel) 94%, transparent) !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.coding-app h1,
+.coding-app h2,
+.coding-app h3,
+.coding-app strong,
+.coding-app .coding-kicker {
+  color: var(--ct-text);
+}
+
+.coding-app p,
+.coding-app li,
+.coding-app small,
+.coding-app label,
+.problem-meta,
+.problem-guidance,
+.daily-meta-row span {
+  color: var(--ct-muted);
+}
+
+.coding-section-nav button,
+.workspace-tabs button,
+.floating-chat-action,
+.tutor-action-button,
+.coding-app .workspace-actions button,
+.problem-navigation button,
+.daily-link,
+.daily-practice-btn.secondary,
+.save-quiz-pdf-btn {
+  background: color-mix(in srgb, var(--ct-panel-soft) 82%, transparent) !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text) !important;
+}
+
+.coding-section-nav button:hover,
+.coding-section-nav button:focus-visible,
+.workspace-tabs button:hover,
+.floating-chat-action:hover:not(:disabled),
+.tutor-action-button:hover:not(:disabled),
+.coding-app .workspace-actions button:hover:not(:disabled),
+.problem-navigation button:hover:not(:disabled),
+.daily-link:hover,
+.daily-practice-btn.secondary:hover,
+.save-quiz-pdf-btn:hover {
+  background: var(--ct-primary-soft) !important;
+  border-color: color-mix(in srgb, var(--ct-primary) 42%, var(--ct-border)) !important;
+  color: var(--ct-primary) !important;
+}
+
+.coding-section-nav button.active,
+.workspace-tabs button.active {
+  background: linear-gradient(135deg, var(--ct-primary-soft), var(--ct-accent-soft)) !important;
+  border-color: color-mix(in srgb, var(--ct-primary) 52%, var(--ct-border)) !important;
+  color: var(--ct-primary) !important;
+}
+
+.coding-nav-icon,
+.language-format-card span,
+.problem-topic,
+.problem-difficulty {
+  background: var(--ct-primary-soft) !important;
+  color: var(--ct-primary) !important;
+}
+
+.coding-prompt-card {
+  background: color-mix(in srgb, var(--ct-panel) 96%, transparent) !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text) !important;
+}
+
+.coding-prompt-card.blue {
+  border-left-color: var(--ct-primary) !important;
+  color: var(--ct-primary) !important;
+}
+
+.coding-prompt-card.red {
+  border-left-color: var(--ct-danger) !important;
+}
+
+.coding-prompt-card.gold {
+  border-left-color: var(--ct-warning) !important;
+}
+
+.daily-feature-card.dashboard-daily {
+  background:
+    linear-gradient(135deg, var(--ct-primary-soft), var(--ct-accent-soft)),
+    var(--ct-panel) !important;
+  border-top-color: var(--ct-primary) !important;
+}
+
+.daily-practice-btn,
+.coding-app .workspace-actions .workspace-action-primary,
+.floating-chat-button,
+.floating-chat-send {
+  background: linear-gradient(135deg, var(--ct-primary), var(--ct-primary-hover)) !important;
+  border-color: color-mix(in srgb, var(--ct-primary) 72%, transparent) !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 26px color-mix(in srgb, var(--ct-primary) 24%, transparent) !important;
+}
+
+.coding-app .workspace-actions .workspace-action-success {
+  background: linear-gradient(135deg, var(--ct-success), color-mix(in srgb, var(--ct-success) 72%, #064e3b)) !important;
+  border-color: color-mix(in srgb, var(--ct-success) 58%, transparent) !important;
+  color: #ffffff !important;
+}
+
+.coding-select,
+.coding-app textarea,
+.floating-chat-input textarea,
+.floating-chat-input-row textarea {
+  background: var(--ct-panel-soft) !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text) !important;
+}
+
+.leetcode-editor {
+  background: var(--ct-editor-bg) !important;
+  color: var(--ct-editor-text) !important;
+  border-color: color-mix(in srgb, var(--ct-primary) 22%, var(--ct-border)) !important;
+}
+
+.coding-workbench-terminal .coding-terminal {
+  background: var(--ct-terminal-bg) !important;
+  color: var(--ct-terminal-text) !important;
+  border-color: color-mix(in srgb, var(--ct-primary) 22%, var(--ct-border)) !important;
+}
+
+.coding-workbench-terminal .coding-terminal-header,
+.terminal-test-row,
+.problem-example,
+.problem-constraints-card,
+.hint-card,
+.quiz-filter-card,
+.quiz-insight-list li,
+.coding-progress-stats div {
+  background: color-mix(in srgb, var(--ct-panel-soft) 88%, transparent) !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text) !important;
+}
+
+.practice-status.solved,
+.terminal-status.passed,
+.terminal-test-row.passed span {
+  color: var(--ct-success) !important;
+}
+
+.practice-status.in_progress,
+.terminal-status.running {
+  color: var(--ct-warning) !important;
+}
+
+.terminal-status.failed,
+.terminal-status.error,
+.terminal-test-row.failed span,
+.floating-chat-error {
+  color: var(--ct-danger) !important;
+}
+
+body.dark .coding-app {
+  --ct-editor-bg: #020617;
+  --ct-editor-text: #e5edf7;
+  --ct-terminal-bg: #050816;
+  --ct-terminal-text: #dbeafe;
+}
+
+body.dark .floating-chat-window {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--ct-panel) 88%, transparent), color-mix(in srgb, var(--ct-panel-raised) 88%, transparent)) !important;
+}
+
+body.dark .floating-chat-message.user {
+  background: linear-gradient(135deg, var(--ct-primary), var(--ct-accent)) !important;
+  color: #07111f !important;
+}
+
+/* Warm theme opaque surface pass */
+.coding-app {
+  --ct-primary: var(--primary);
+  --ct-primary-hover: var(--primary-hover);
+  --ct-primary-soft: var(--primary-soft);
+  --ct-accent: var(--accent);
+  --ct-accent-soft: var(--accent-soft);
+  background:
+    var(--gradient-mesh),
+    linear-gradient(135deg, var(--bg-body) 0%, var(--bg-surface-soft) 54%, var(--bg-body) 100%);
+}
+
+.coding-section-nav,
+.coding-page-panel,
+.daily-feature-card,
+.quiz-library,
+.quiz-insight-panel,
+.practice-progress-overview,
+.coding-problem-panel,
+.coding-editor-center,
+.tutor-panel,
+.quiz-problem-card,
+.practice-question-row,
+.workspace-hints-panel,
+.workspace-discussion-panel,
+.workspace-hidden-panel,
+.floating-chat-window,
+.floating-chat-context,
+.floating-chat-message.bot,
+.floating-chat-window .ai-status-card {
+  background: var(--ct-panel) !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.coding-section-nav,
+.coding-editor-center,
+.coding-problem-panel,
+.floating-chat-window {
+  background: var(--ct-panel-raised) !important;
+}
+
+.coding-page-panel::before,
+.coding-problem-panel::before,
+.coding-editor-center::before,
+.quiz-library::before,
+.quiz-insight-panel::before,
+.practice-progress-overview::before,
+.daily-feature-card::before {
+  background: linear-gradient(90deg, var(--ct-accent), var(--ct-primary)) !important;
+}
+
+.coding-section-nav button.active,
+.workspace-tabs button.active {
+  background: var(--ct-accent-soft) !important;
+  border-color: color-mix(in srgb, var(--ct-accent) 54%, var(--ct-border)) !important;
+  color: var(--ct-accent) !important;
+}
+
+.coding-section-nav button:hover,
+.coding-section-nav button:focus-visible,
+.workspace-tabs button:hover,
+.floating-chat-action:hover:not(:disabled),
+.tutor-action-button:hover:not(:disabled),
+.coding-app .workspace-actions button:hover:not(:disabled),
+.problem-navigation button:hover:not(:disabled),
+.daily-link:hover,
+.daily-practice-btn.secondary:hover,
+.save-quiz-pdf-btn:hover {
+  background: var(--ct-accent-soft) !important;
+  border-color: color-mix(in srgb, var(--ct-accent) 46%, var(--ct-border)) !important;
+  color: var(--ct-accent) !important;
+}
+
+.coding-prompt-card.blue,
+.coding-prompt-card.red,
+.coding-prompt-card.gold {
+  border-left-color: var(--ct-accent) !important;
+}
+
+.daily-feature-card.dashboard-daily {
+  background:
+    linear-gradient(135deg, var(--ct-accent-soft), transparent 60%),
+    var(--ct-panel-raised) !important;
+  border-top-color: var(--ct-accent) !important;
+}
+
+.daily-practice-btn,
+.coding-app .workspace-actions .workspace-action-primary,
+.floating-chat-button,
+.floating-chat-send {
+  background: linear-gradient(135deg, var(--ct-primary), var(--ct-primary-hover)) !important;
+}
+
+.daily-link,
+.daily-practice-btn.secondary,
+.problem-navigation button,
+.coding-app .workspace-actions .workspace-action-secondary {
+  background: var(--ct-panel-soft) !important;
+}
+
+body.dark .coding-app {
+  background:
+    var(--gradient-mesh),
+    linear-gradient(135deg, var(--bg-body) 0%, #121d2e 54%, var(--bg-body) 100%);
+}
+
+body.dark .floating-chat-window {
+  background: var(--ct-panel-raised) !important;
+}
+
+/* Force Coding Tutor to use solid academic surfaces, not glass panels. */
+.coding-app,
+body.dark .coding-app {
+  --ct-panel: var(--bg-surface) !important;
+  --ct-panel-soft: var(--bg-surface-soft) !important;
+  --ct-panel-raised: var(--bg-surface-raised) !important;
+  --ct-surface: var(--bg-surface) !important;
+  --ct-surface-strong: var(--bg-surface-raised) !important;
+  --ct-surface-soft: var(--bg-surface-soft) !important;
+}
+
+.coding-section-nav,
+.practice-progress-overview,
+.daily-feature-card,
+.coding-page-panel,
+.quiz-library,
+.quiz-insight-panel,
+.quiz-problem-card,
+.coding-problem-panel,
+.coding-editor-center,
+.workspace-hints-panel,
+.workspace-discussion-panel,
+.workspace-hidden-panel,
+.ai-status-card,
+.tutor-panel,
+.floating-chat-window,
+.floating-chat-context,
+.floating-chat-message.bot,
+.floating-chat-window .floating-chat-body,
+.floating-chat-window .ai-status-card {
+  background-color: var(--ct-panel) !important;
+  background-image: none !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text) !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+}
+
+.coding-editor-center,
+.coding-problem-panel,
+.coding-section-nav,
+.floating-chat-window {
+  background-color: var(--ct-panel-raised) !important;
+}
+
+.coding-prompt-card,
+.practice-question-row,
+.quiz-filter-card,
+.quiz-insight-list li,
+.coding-progress-stats div,
+.problem-example,
+.problem-constraints-card,
+.hint-card,
+.floating-chat-control,
+.floating-chat-send,
+.floating-chat-button {
+  background-color: var(--ct-panel-soft) !important;
+  background-image: none !important;
+  opacity: 1 !important;
+}
+
+.daily-feature-card.dashboard-daily {
+  background-image: linear-gradient(180deg, var(--ct-accent-soft), transparent 48%) !important;
+  background-color: var(--ct-panel-raised) !important;
+}
+
+.daily-practice-btn,
+.coding-app .workspace-actions .workspace-action-primary,
+.floating-chat-send,
+.floating-chat-button {
+  background: var(--ct-primary) !important;
+  color: #ffffff !important;
+}
+
+/* Solid floating chat and themed chips in both modes. */
+.floating-chat-window,
+.floating-chat-context,
+.floating-chat-window .floating-chat-body,
+.floating-chat-window .ai-status-card,
+.floating-chat-messages,
+.floating-chat-form {
+  background: var(--ct-panel-raised) !important;
+  background-color: var(--ct-panel-raised) !important;
+  background-image: none !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text) !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.floating-chat-window {
+  overflow: hidden;
+}
+
+.floating-chat-header {
+  background: var(--ct-panel-raised) !important;
+  border-bottom: 1px solid var(--ct-border) !important;
+}
+
+.floating-chat-window .ai-status-card {
+  overflow: hidden;
+  box-shadow: none !important;
+}
+
+.floating-chat-window .ai-status-card dl {
+  grid-template-columns: minmax(72px, max-content) minmax(0, 1fr);
+  gap: 8px 12px;
+}
+
+.floating-chat-window .ai-status-card dt,
+.floating-chat-window .ai-status-card dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.floating-chat-messages {
+  background: var(--ct-panel-soft) !important;
+}
+
+.floating-chat-message,
+.floating-chat-message p {
+  overflow-wrap: anywhere;
+}
+
+.floating-chat-empty {
+  background: var(--ct-panel-raised) !important;
+  border: 1px solid var(--ct-border) !important;
+}
+
+.coding-nav-icon,
+.language-format-card span,
+.daily-meta-row span,
+.problem-topic,
+.problem-difficulty,
+.practice-status,
+.quiz-topic-pill,
+.quiz-difficulty-pill,
+.quiz-status-pill,
+.coding-tag,
+.coding-pill {
+  background: linear-gradient(135deg, var(--ct-primary-soft), var(--ct-accent-soft)) !important;
+  border: 1px solid color-mix(in srgb, var(--ct-accent) 28%, var(--ct-border)) !important;
+  color: var(--ct-primary) !important;
+}
+
+.floating-chat-action:hover:not(:disabled),
+.tutor-action-button:hover:not(:disabled),
+.coding-section-nav button:hover:not(:disabled),
+.workspace-tabs button:hover:not(:disabled),
+.problem-navigation button:hover:not(:disabled),
+.daily-link:hover,
+.daily-practice-btn.secondary:hover,
+.save-quiz-pdf-btn:hover,
+.floating-chat-control:hover,
+.floating-chat-icon-btn:hover:not(:disabled) {
+  background: var(--ct-accent-soft) !important;
+  border-color: color-mix(in srgb, var(--ct-accent) 42%, var(--ct-border)) !important;
+  color: var(--ct-accent) !important;
+}
+
+body.dark .daily-practice-btn,
+body.dark .coding-app .workspace-actions .workspace-action-primary,
+body.dark .floating-chat-send,
+body.dark .floating-chat-button {
+  color: #07111f !important;
+}
+
+/* Dark mode solid Morgan theme pass. Keep Coding Tutor opaque and readable. */
+body.dark .coding-app {
+  --ct-primary: #789dca;
+  --ct-primary-hover: #8faed7;
+  --ct-primary-soft: rgba(120, 157, 202, 0.18);
+  --ct-accent: #e7a05b;
+  --ct-accent-soft: rgba(231, 160, 91, 0.18);
+  --ct-panel: #172235 !important;
+  --ct-panel-soft: #152033 !important;
+  --ct-panel-raised: #1c2a3f !important;
+  --ct-surface: #172235 !important;
+  --ct-surface-soft: #152033 !important;
+  --ct-surface-strong: #1c2a3f !important;
+  --ct-text: #f4efe6;
+  --ct-muted: #b7c1cf;
+  --ct-faint: #8d9aac;
+  --ct-border: #31415a;
+  --ct-border-strong: #435a78;
+  --ct-editor-bg: #101826;
+  --ct-editor-text: #f1eadf;
+  --ct-terminal-bg: #111a2a;
+  --ct-terminal-text: #f1eadf;
+}
+
+body.dark .coding-app,
+body.dark .coding-page,
+body.dark .coding-dashboard-home,
+body.dark .coding-workspace-shell {
+  color: var(--ct-text) !important;
+}
+
+body.dark .coding-section-nav,
+body.dark .practice-progress-overview,
+body.dark .daily-feature-card,
+body.dark .coding-page-panel,
+body.dark .quiz-library,
+body.dark .quiz-insight-panel,
+body.dark .quiz-problem-card,
+body.dark .coding-problem-panel,
+body.dark .coding-editor-center,
+body.dark .workspace-hints-panel,
+body.dark .workspace-discussion-panel,
+body.dark .workspace-hidden-panel,
+body.dark .ai-status-card,
+body.dark .tutor-panel,
+body.dark .floating-chat-window,
+body.dark .floating-chat-context,
+body.dark .floating-chat-window .floating-chat-body,
+body.dark .floating-chat-window .ai-status-card,
+body.dark .floating-chat-messages,
+body.dark .floating-chat-form {
+  background: var(--ct-panel) !important;
+  background-color: var(--ct-panel) !important;
+  background-image: none !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text) !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.dark .coding-section-nav,
+body.dark .coding-editor-center,
+body.dark .coding-problem-panel,
+body.dark .floating-chat-window {
+  background: var(--ct-panel-raised) !important;
+}
+
+body.dark .floating-chat-window {
+  border: 1px solid var(--ct-border-strong) !important;
+  box-shadow: 0 24px 56px rgba(5, 10, 18, 0.58) !important;
+  overflow: hidden;
+}
+
+body.dark .floating-chat-header {
+  background: var(--ct-panel-raised) !important;
+  border-bottom: 1px solid var(--ct-border) !important;
+  color: var(--ct-text) !important;
+}
+
+body.dark .floating-chat-header strong,
+body.dark .floating-chat-window h3,
+body.dark .floating-chat-window h4,
+body.dark .floating-chat-window strong,
+body.dark .coding-app h1,
+body.dark .coding-app h2,
+body.dark .coding-app h3,
+body.dark .coding-app strong {
+  color: #f8f1e8 !important;
+}
+
+body.dark .floating-chat-window .ai-status-card {
+  display: block;
+  overflow: hidden;
+  border-radius: 14px;
+  box-shadow: none !important;
+}
+
+body.dark .floating-chat-window .ai-status-card dl {
+  grid-template-columns: minmax(72px, max-content) minmax(0, 1fr);
+  gap: 8px 12px;
+}
+
+body.dark .floating-chat-window .ai-status-card dt,
+body.dark .floating-chat-window .ai-status-card dd {
+  color: var(--ct-text) !important;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+body.dark .floating-chat-messages {
+  background: var(--ct-panel-soft) !important;
+  border-color: var(--ct-border) !important;
+}
+
+body.dark .floating-chat-message {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+body.dark .floating-chat-message.user {
+  background: linear-gradient(135deg, #5f7fae, #466995) !important;
+  color: #f8f3ea !important;
+  border: 1px solid rgba(143, 174, 215, 0.26) !important;
+}
+
+body.dark .floating-chat-message.bot {
+  background: var(--ct-panel-raised) !important;
+  color: var(--ct-text) !important;
+  border: 1px solid var(--ct-border) !important;
+}
+
+body.dark .floating-chat-message.bot pre,
+body.dark .floating-chat-message.bot code,
+body.dark .floating-chat-message.bot blockquote,
+body.dark .floating-chat-message.bot table {
+  background: #101826 !important;
+  border-color: var(--ct-border) !important;
+  color: #f1eadf !important;
+}
+
+body.dark .floating-chat-empty {
+  background: var(--ct-panel-raised) !important;
+  color: var(--ct-muted) !important;
+  border: 1px solid var(--ct-border) !important;
+}
+
+body.dark .floating-chat-input-row,
+body.dark .floating-chat-input-row textarea,
+body.dark .floating-chat-input textarea,
+body.dark .coding-select,
+body.dark .coding-app textarea {
+  background: var(--ct-panel-soft) !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text) !important;
+}
+
+body.dark .floating-chat-input-row textarea::placeholder,
+body.dark .floating-chat-input textarea::placeholder,
+body.dark .coding-app textarea::placeholder {
+  color: #98a4b5 !important;
+}
+
+body.dark .floating-chat-action,
+body.dark .tutor-action-button,
+body.dark .coding-section-nav button,
+body.dark .workspace-tabs button,
+body.dark .problem-navigation button,
+body.dark .daily-link,
+body.dark .daily-practice-btn.secondary,
+body.dark .save-quiz-pdf-btn,
+body.dark .floating-chat-control,
+body.dark .floating-chat-icon-btn {
+  background: var(--ct-panel-soft) !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text) !important;
+}
+
+body.dark .floating-chat-action:hover:not(:disabled),
+body.dark .tutor-action-button:hover:not(:disabled),
+body.dark .coding-section-nav button:hover:not(:disabled),
+body.dark .workspace-tabs button:hover:not(:disabled),
+body.dark .problem-navigation button:hover:not(:disabled),
+body.dark .daily-link:hover,
+body.dark .daily-practice-btn.secondary:hover,
+body.dark .save-quiz-pdf-btn:hover,
+body.dark .floating-chat-control:hover,
+body.dark .floating-chat-icon-btn:hover:not(:disabled) {
+  background: rgba(231, 160, 91, 0.17) !important;
+  border-color: rgba(231, 160, 91, 0.42) !important;
+  color: #f5c58e !important;
+}
+
+body.dark .coding-section-nav button.active,
+body.dark .workspace-tabs button.active,
+body.dark .floating-chat-action.active {
+  background: linear-gradient(135deg, rgba(120, 157, 202, 0.24), rgba(231, 160, 91, 0.16)) !important;
+  border-color: rgba(231, 160, 91, 0.36) !important;
+  color: #f7efe3 !important;
+}
+
+body.dark .daily-practice-btn,
+body.dark .coding-app .workspace-actions .workspace-action-primary,
+body.dark .floating-chat-send,
+body.dark .floating-chat-button {
+  background: #5f7fae !important;
+  border-color: rgba(143, 174, 215, 0.36) !important;
+  color: #f8f3ea !important;
+}
+
+body.dark .daily-practice-btn:hover:not(:disabled),
+body.dark .coding-app .workspace-actions .workspace-action-primary:hover:not(:disabled),
+body.dark .floating-chat-send:hover:not(:disabled),
+body.dark .floating-chat-button:hover {
+  background: #e7a05b !important;
+  border-color: rgba(241, 182, 120, 0.46) !important;
+  color: #182033 !important;
+}
+
+body.dark .coding-nav-icon,
+body.dark .language-format-card span,
+body.dark .daily-meta-row span,
+body.dark .problem-topic,
+body.dark .problem-difficulty,
+body.dark .practice-status,
+body.dark .quiz-topic-pill,
+body.dark .quiz-difficulty-pill,
+body.dark .quiz-status-pill,
+body.dark .coding-tag,
+body.dark .coding-pill {
+  background: linear-gradient(135deg, rgba(120, 157, 202, 0.24), rgba(231, 160, 91, 0.14)) !important;
+  border: 1px solid rgba(231, 160, 91, 0.26) !important;
+  color: #f3dcc2 !important;
+}
+
+body.dark .coding-prompt-card,
+body.dark .practice-question-row,
+body.dark .problem-example,
+body.dark .problem-constraints-card,
+body.dark .hint-card,
+body.dark .quiz-filter-card,
+body.dark .quiz-insight-list li,
+body.dark .coding-progress-stats div {
+  background: var(--ct-panel-soft) !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text) !important;
+}
+
+body.dark .coding-prompt-card:hover,
+body.dark .practice-question-row:hover {
+  background: rgba(231, 160, 91, 0.13) !important;
+  border-color: rgba(231, 160, 91, 0.36) !important;
+}
+
+@media (max-width: 640px) {
+  .floating-coding-chat {
+    max-width: calc(100vw - 32px);
+  }
+
+  .floating-coding-chat.closed {
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .floating-chat-window {
+    width: calc(100vw - 32px);
+    height: min(560px, calc(100vh - 32px));
+    max-height: calc(100vh - 32px);
+  }
+
+  .floating-chat-button span {
+    display: none;
+  }
+
+  .floating-chat-button {
+    width: 54px;
+    min-height: 54px;
+    justify-content: center;
+    padding: 0;
+  }
+}
+
+/* Final cascade lock: remove remaining glass overrides and make hover states visible. */
+.coding-app {
+  --ct-solid-panel: var(--ct-panel);
+  --ct-solid-soft: var(--ct-panel-soft);
+  --ct-solid-raised: var(--ct-panel-raised);
+  --ct-hover-bg: var(--ct-accent-soft);
+  --ct-hover-border: color-mix(in srgb, var(--ct-accent) 48%, var(--ct-border));
+  --ct-hover-text: var(--ct-accent);
+}
+
+body.dark .coding-app {
+  --ct-solid-panel: #172235;
+  --ct-solid-soft: #152033;
+  --ct-solid-raised: #1c2a3f;
+  --ct-hover-bg: rgba(231, 160, 91, 0.18);
+  --ct-hover-border: rgba(231, 160, 91, 0.44);
+  --ct-hover-text: #f2bd83;
+}
+
+.coding-app :is(
+  .coding-section-nav,
+  .practice-progress-overview,
+  .daily-feature-card,
+  .coding-page-panel,
+  .quiz-library,
+  .quiz-insight-panel,
+  .quiz-problem-card,
+  .coding-problem-panel,
+  .coding-editor-center,
+  .workspace-hints-panel,
+  .workspace-discussion-panel,
+  .workspace-hidden-panel,
+  .tutor-panel,
+  .ai-status-card,
+  .floating-chat-window,
+  .floating-chat-context,
+  .floating-chat-window .floating-chat-body,
+  .floating-chat-window .ai-status-card,
+  .floating-chat-messages,
+  .floating-chat-form,
+  .floating-chat-message.bot
+) {
+  background: var(--ct-solid-panel) !important;
+  background-color: var(--ct-solid-panel) !important;
+  background-image: none !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text) !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.coding-app :is(
+  .coding-section-nav,
+  .coding-problem-panel,
+  .coding-editor-center,
+  .floating-chat-window,
+  .daily-feature-card.dashboard-daily
+) {
+  background: var(--ct-solid-raised) !important;
+  background-color: var(--ct-solid-raised) !important;
+}
+
+.coding-app :is(
+  .coding-prompt-card,
+  .practice-question-row,
+  .quiz-filter-card,
+  .quiz-insight-list li,
+  .coding-progress-stats div,
+  .problem-example,
+  .problem-constraints-card,
+  .hint-card,
+  .floating-chat-empty,
+  .terminal-test-row,
+  .coding-workbench-terminal .coding-terminal-header
+) {
+  background: var(--ct-solid-soft) !important;
+  background-color: var(--ct-solid-soft) !important;
+  background-image: none !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text) !important;
+}
+
+.coding-app :is(
+  button,
+  .daily-practice-btn,
+  .daily-link,
+  .save-quiz-pdf-btn,
+  .coding-prompt-card,
+  .quiz-problem-card,
+  .practice-question-row,
+  .floating-chat-action,
+  .floating-chat-control,
+  .floating-chat-icon-btn,
+  .floating-chat-send,
+  .tutor-action-button,
+  .problem-navigation button,
+  .workspace-tabs button,
+  .workspace-actions button
+) {
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    box-shadow 120ms ease,
+    transform 120ms ease !important;
+}
+
+.coding-app :is(
+  button,
+  .daily-practice-btn,
+  .daily-link,
+  .save-quiz-pdf-btn,
+  .coding-prompt-card,
+  .quiz-problem-card,
+  .practice-question-row,
+  .floating-chat-action,
+  .floating-chat-control,
+  .floating-chat-icon-btn,
+  .tutor-action-button,
+  .problem-navigation button,
+  .workspace-tabs button,
+  .workspace-actions button
+):hover:not(:disabled) {
+  background: var(--ct-hover-bg) !important;
+  background-color: var(--ct-hover-bg) !important;
+  border-color: var(--ct-hover-border) !important;
+  color: var(--ct-hover-text) !important;
+  box-shadow: 0 12px 26px color-mix(in srgb, var(--ct-accent) 18%, transparent) !important;
+  transform: translateY(-1px);
+}
+
+.coding-app :is(
+  .daily-practice-btn,
+  .workspace-action-primary,
+  .floating-chat-send,
+  .floating-chat-button
+) {
+  background: var(--ct-primary) !important;
+  border-color: color-mix(in srgb, var(--ct-primary) 64%, var(--ct-border)) !important;
+  color: #ffffff !important;
+}
+
+.coding-app :is(
+  .daily-practice-btn,
+  .workspace-action-primary,
+  .floating-chat-send,
+  .floating-chat-button
+):hover:not(:disabled) {
+  background: var(--ct-accent) !important;
+  border-color: var(--ct-hover-border) !important;
+  color: #182033 !important;
+}
+
+body.dark .coding-app :is(
+  .daily-practice-btn,
+  .workspace-action-primary,
+  .floating-chat-send,
+  .floating-chat-button
+) {
+  background: #5f7fae !important;
+  color: #f8f3ea !important;
+}
+
+body.dark .coding-app :is(
+  .daily-practice-btn,
+  .workspace-action-primary,
+  .floating-chat-send,
+  .floating-chat-button
+):hover:not(:disabled) {
+  background: #e7a05b !important;
+  color: #172033 !important;
+}
+
+.coding-app :is(
+  .coding-nav-icon,
+  .language-format-card span,
+  .daily-meta-row span,
+  .problem-topic,
+  .problem-difficulty,
+  .practice-status,
+  .quiz-topic-pill,
+  .quiz-difficulty-pill,
+  .quiz-status-pill,
+  .coding-tag,
+  .coding-pill
+) {
+  background: linear-gradient(135deg, var(--ct-primary-soft), var(--ct-accent-soft)) !important;
+  border: 1px solid color-mix(in srgb, var(--ct-accent) 32%, var(--ct-border)) !important;
+  color: var(--ct-primary) !important;
+}
+
+body.dark .coding-app :is(
+  .coding-nav-icon,
+  .language-format-card span,
+  .daily-meta-row span,
+  .problem-topic,
+  .problem-difficulty,
+  .practice-status,
+  .quiz-topic-pill,
+  .quiz-difficulty-pill,
+  .quiz-status-pill,
+  .coding-tag,
+  .coding-pill
+) {
+  color: #f3dcc2 !important;
+}
+
+.coding-app .floating-chat-window {
+  width: min(430px, calc(100vw - 32px));
+  border: 1px solid var(--ct-border-strong) !important;
+  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.18) !important;
+  overflow: hidden;
+}
+
+body.dark .coding-app .floating-chat-window {
+  box-shadow: 0 24px 60px rgba(5, 10, 18, 0.6) !important;
+}
+
+.coding-app .floating-chat-header {
+  background: var(--ct-solid-raised) !important;
+  border-bottom: 1px solid var(--ct-border) !important;
+}
+
+.coding-app .floating-chat-window .ai-status-card {
+  padding: 12px !important;
+  border-radius: 14px !important;
+  overflow: hidden;
+  box-shadow: none !important;
+}
+
+.coding-app .floating-chat-window .ai-status-card dl {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 8px 12px;
+  margin: 0;
+}
+
+.coding-app .floating-chat-window .ai-status-card dt,
+.coding-app .floating-chat-window .ai-status-card dd,
+.coding-app .floating-chat-message,
+.coding-app .floating-chat-message p {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.coding-app .floating-chat-messages {
+  background: var(--ct-solid-soft) !important;
+  border-color: var(--ct-border) !important;
+}
+
+.coding-app .floating-chat-input-row,
+.coding-app .floating-chat-input-row textarea {
+  background: var(--ct-solid-soft) !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text) !important;
+}
+
+@media (max-width: 640px) {
+  .coding-app .floating-chat-window {
+    width: calc(100vw - 32px);
+  }
+
+  .coding-app .floating-chat-window .ai-status-card dl {
+    grid-template-columns: 78px minmax(0, 1fr);
+  }
+}
+
+/* Floating chat is rendered outside .coding-app, so lock it by its own root. */
+.floating-coding-chat {
+  --ct-float-panel: var(--bg-surface-raised, #fffdf7);
+  --ct-float-panel-soft: var(--bg-surface-soft, #f7f0e6);
+  --ct-float-panel-base: var(--bg-surface, #fffdf7);
+  --ct-float-text: var(--text-main, #172033);
+  --ct-float-muted: var(--text-secondary, #596273);
+  --ct-float-border: var(--border-color, #ddd1c0);
+  --ct-float-border-strong: var(--border-strong, #b7c6d8);
+  --ct-float-primary: var(--primary, #002d72);
+  --ct-float-accent: var(--accent, #f58220);
+  --ct-float-accent-soft: var(--accent-soft, rgba(245, 130, 32, 0.14));
+}
+
+body.dark .floating-coding-chat {
+  --ct-float-panel: #1c2a3f;
+  --ct-float-panel-soft: #152033;
+  --ct-float-panel-base: #172235;
+  --ct-float-text: #f4efe6;
+  --ct-float-muted: #b7c1cf;
+  --ct-float-border: #31415a;
+  --ct-float-border-strong: #435a78;
+  --ct-float-primary: #5f7fae;
+  --ct-float-accent: #e7a05b;
+  --ct-float-accent-soft: rgba(231, 160, 91, 0.18);
+}
+
+.floating-coding-chat :is(
+  .floating-chat-window,
+  .floating-chat-header,
+  .floating-chat-window .floating-chat-body,
+  .floating-chat-context,
+  .floating-chat-window .ai-status-card,
+  .floating-chat-messages,
+  .floating-chat-form,
+  .floating-chat-message.bot
+) {
+  background: var(--ct-float-panel-base) !important;
+  background-color: var(--ct-float-panel-base) !important;
+  background-image: none !important;
+  border-color: var(--ct-float-border) !important;
+  color: var(--ct-float-text) !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.floating-coding-chat .floating-chat-window {
+  background: var(--ct-float-panel) !important;
+  background-color: var(--ct-float-panel) !important;
+  border: 1px solid var(--ct-float-border-strong) !important;
+  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.22) !important;
+  overflow: hidden !important;
+}
+
+body.dark .floating-coding-chat .floating-chat-window {
+  box-shadow: 0 24px 60px rgba(5, 10, 18, 0.62) !important;
+}
+
+.floating-coding-chat .floating-chat-header {
+  background: var(--ct-float-panel) !important;
+  border-bottom: 1px solid var(--ct-float-border) !important;
+}
+
+.floating-coding-chat .floating-chat-header strong,
+.floating-coding-chat .floating-chat-window strong,
+.floating-coding-chat .floating-chat-window h3,
+.floating-coding-chat .floating-chat-window h4 {
+  color: var(--ct-float-text) !important;
+}
+
+.floating-coding-chat .floating-chat-messages,
+.floating-coding-chat .floating-chat-input-row,
+.floating-coding-chat .floating-chat-input-row textarea {
+  background: var(--ct-float-panel-soft) !important;
+  background-color: var(--ct-float-panel-soft) !important;
+  border-color: var(--ct-float-border) !important;
+  color: var(--ct-float-text) !important;
+}
+
+.floating-coding-chat .floating-chat-window .ai-status-card {
+  background: var(--ct-float-panel-base) !important;
+  border: 1px solid var(--ct-float-border) !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  box-shadow: none !important;
+}
+
+.floating-coding-chat .floating-chat-window .ai-status-card dl {
+  display: grid !important;
+  grid-template-columns: 88px minmax(0, 1fr) !important;
+  gap: 8px 12px !important;
+  margin: 0 !important;
+}
+
+.floating-coding-chat .floating-chat-window .ai-status-card dt,
+.floating-coding-chat .floating-chat-window .ai-status-card dd,
+.floating-coding-chat .floating-chat-message,
+.floating-coding-chat .floating-chat-message p {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+}
+
+.floating-coding-chat .floating-chat-action,
+.floating-coding-chat .floating-chat-control,
+.floating-coding-chat .floating-chat-icon-btn {
+  background: var(--ct-float-panel-soft) !important;
+  border: 1px solid var(--ct-float-border) !important;
+  color: var(--ct-float-text) !important;
+}
+
+.floating-coding-chat .floating-chat-action:hover:not(:disabled),
+.floating-coding-chat .floating-chat-control:hover,
+.floating-coding-chat .floating-chat-icon-btn:hover:not(:disabled) {
+  background: var(--ct-float-accent-soft) !important;
+  border-color: color-mix(in srgb, var(--ct-float-accent) 48%, var(--ct-float-border)) !important;
+  color: var(--ct-float-accent) !important;
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--ct-float-accent) 18%, transparent) !important;
+}
+
+.floating-coding-chat .floating-chat-send,
+.floating-coding-chat .floating-chat-button {
+  background: var(--ct-float-primary) !important;
+  border-color: color-mix(in srgb, var(--ct-float-primary) 60%, var(--ct-float-border)) !important;
+  color: #ffffff !important;
+}
+
+.floating-coding-chat .floating-chat-send:hover:not(:disabled),
+.floating-coding-chat .floating-chat-button:hover {
+  background: var(--ct-float-accent) !important;
+  border-color: color-mix(in srgb, var(--ct-float-accent) 58%, var(--ct-float-border)) !important;
+  color: #182033 !important;
+}
+
+body.dark .floating-coding-chat .floating-chat-send,
+body.dark .floating-coding-chat .floating-chat-button {
+  color: #f8f3ea !important;
+}
+
+body.dark .floating-coding-chat .floating-chat-send:hover:not(:disabled),
+body.dark .floating-coding-chat .floating-chat-button:hover {
+  color: #172033 !important;
+}
+
+/* Floating chat layout repair: visible status, actions, messages, and input. */
+.floating-coding-chat .floating-chat-window {
+  width: min(470px, calc(100vw - 32px)) !important;
+  height: min(680px, calc(100vh - 36px)) !important;
+  max-height: calc(100vh - 36px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.floating-coding-chat .floating-chat-window.maximized {
+  width: min(920px, calc(100vw - 48px)) !important;
+  height: min(760px, calc(100vh - 48px)) !important;
+}
+
+.floating-coding-chat .floating-chat-header {
+  flex: 0 0 auto !important;
+  gap: 12px !important;
+  padding: 14px 16px 10px !important;
+}
+
+.floating-coding-chat .floating-chat-window-controls {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  gap: 8px !important;
+}
+
+.floating-coding-chat .floating-chat-window .ai-status-card {
+  flex: 0 0 auto !important;
+  margin: 12px 14px 10px !important;
+  padding: 12px 14px !important;
+}
+
+.floating-coding-chat .floating-chat-window .ai-status-card dl {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px 16px !important;
+  margin: 8px 0 0 !important;
+}
+
+.floating-coding-chat .floating-chat-window .ai-status-card dl div {
+  display: grid !important;
+  grid-template-columns: minmax(72px, max-content) minmax(0, 1fr) !important;
+  align-items: start !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+}
+
+.floating-coding-chat .floating-chat-window .ai-status-card dt,
+.floating-coding-chat .floating-chat-window .ai-status-card dd {
+  line-height: 1.25 !important;
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+}
+
+.floating-coding-chat .floating-chat-window .ai-status-card dd {
+  overflow-wrap: anywhere !important;
+}
+
+.floating-coding-chat .floating-chat-actions {
+  flex: 0 0 auto !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  padding: 0 14px 10px !important;
+}
+
+.floating-coding-chat .floating-chat-action {
+  min-width: 0 !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+}
+
+.floating-coding-chat .floating-chat-action:not(:disabled) {
+  background: linear-gradient(135deg, var(--ct-float-primary), color-mix(in srgb, var(--ct-float-primary) 76%, var(--ct-float-accent))) !important;
+  border-color: color-mix(in srgb, var(--ct-float-primary) 62%, var(--ct-float-border)) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--ct-float-primary) 16%, transparent) !important;
+}
+
+.floating-coding-chat .floating-chat-action:not(:disabled):hover {
+  background: var(--ct-float-accent) !important;
+  border-color: color-mix(in srgb, var(--ct-float-accent) 58%, var(--ct-float-border)) !important;
+  color: #182033 !important;
+}
+
+.floating-coding-chat .floating-chat-action:disabled {
+  background: transparent !important;
+  border-color: var(--ct-float-border) !important;
+  color: var(--ct-float-muted) !important;
+  opacity: 0.62 !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+}
+
+.floating-coding-chat .floating-chat-messages {
+  flex: 1 1 190px !important;
+  min-height: 150px !important;
+  margin: 0 14px 10px !important;
+  padding: 12px !important;
+  overflow-y: auto !important;
+}
+
+.floating-coding-chat .floating-chat-form {
+  flex: 0 0 auto !important;
+  padding: 0 14px 14px !important;
+  gap: 8px !important;
+}
+
+.floating-coding-chat .floating-chat-input-row {
+  display: grid !important;
+  grid-template-columns: 40px 40px minmax(0, 1fr) 40px !important;
+  align-items: end !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+}
+
+.floating-coding-chat .floating-chat-icon-btn,
+.floating-coding-chat .floating-chat-send {
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  flex: 0 0 40px !important;
+}
+
+.floating-coding-chat .floating-chat-voice-btn.listening {
+  background: var(--ct-float-accent) !important;
+  color: #182033 !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ct-float-accent) 22%, transparent) !important;
+}
+
+.floating-coding-chat .floating-chat-input-row textarea {
+  width: 100% !important;
+  min-height: 48px !important;
+  max-height: 128px !important;
+  resize: vertical !important;
+}
+
+@media (max-width: 520px) {
+  .floating-coding-chat .floating-chat-window {
+    width: calc(100vw - 24px) !important;
+    height: min(660px, calc(100vh - 24px)) !important;
+  }
+
+  .floating-coding-chat .floating-chat-window .ai-status-card dl {
+    grid-template-columns: 1fr !important;
+  }
+
+  .floating-coding-chat .floating-chat-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
