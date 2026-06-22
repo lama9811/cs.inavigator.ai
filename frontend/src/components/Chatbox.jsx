@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
@@ -22,8 +22,24 @@ import CodeBlock from "./chatbox/CodeBlock";
 import { getFileIcon } from "./chatbox/FileIcon";
 import ReportModal from "./chatbox/ReportModal";
 import WelcomePanel from "./chatbox/WelcomePanel";
+import YouTubeEmbed from "./chatbox/YouTubeEmbed";
+import { getYouTubeVideoId } from "../lib/youtube";
 import "./Chatbox.css";
 import "./chatbox/ChatHeader.css";
+
+const REMARK_PLUGINS = [remarkGfm];
+
+// Memoized message body. Re-renders only when the message text or the markdown
+// components change — NOT on every keystroke in the chat input. This keeps the
+// YouTube iframes mounted and stable instead of flashing/black-screening while
+// the user types a follow-up question.
+const MessageMarkdown = React.memo(function MessageMarkdown({ text, components }) {
+  return (
+    <ReactMarkdown remarkPlugins={REMARK_PLUGINS} components={components}>
+      {text}
+    </ReactMarkdown>
+  );
+});
 
 // Featured questions that showcase chatbot capabilities
 const FEATURED_QUESTIONS = [
@@ -35,6 +51,18 @@ const FEATURED_QUESTIONS = [
   "Tell me about the 4+1 accelerated B.S./M.S. program",
   "Where can I get tutoring for intro CS courses like COSC 111?",
   "What scholarships are available for CS majors at Morgan State?",
+];
+
+// General (non-Morgan) starter questions for General mode.
+const GENERAL_SUGGESTIONS = [
+  "What is a solar eclipse?",
+  "Explain Big O notation simply",
+  "How does photosynthesis work?",
+  "What's the difference between HTTP and HTTPS?",
+  "Give me study tips for exams",
+  "Explain recursion with an example",
+  "What caused the French Revolution?",
+  "How do I write a strong thesis statement?",
 ];
 
 const REGULAR_THINKING_MESSAGES = [
@@ -49,6 +77,14 @@ const CODING_THINKING_MESSAGES = [
   "Checking logic and edge cases",
   "Planning hints and tests",
   "Preparing coding feedback"
+];
+
+// General (non-Morgan) questions never search the knowledge base, so this set
+// has no "Searching knowledge base" step.
+const GENERAL_THINKING_MESSAGES = [
+  "Understanding your question",
+  "Thinking it through",
+  "Preparing response"
 ];
 
 import { getApiBase } from "../lib/apiBase";
@@ -76,7 +112,12 @@ export default function Chatbox({
   // --- STATE ---
   const navigate = useNavigate();
   const location = useLocation();
-  const [messages, setMessages] = useState(initialMessages);
+  const messageIdRef = useRef(0);
+  const [messages, setMessages] = useState(() =>
+    (initialMessages || []).map((m) =>
+      m && m.id ? m : { ...m, id: `m${(messageIdRef.current += 1)}` }
+    )
+  );
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -114,7 +155,8 @@ export default function Chatbox({
   const isCodingWorkspaceRoute = location.pathname === "/coding";
   const isCodingChatRoute = location.pathname === "/chat/coding";
   const hasStartedChat = messages.length > 0;
-  const showTutorModeToggle = hasStartedChat || isCodingWorkspaceRoute || isCodingChatRoute;
+  const showChatHeader = !isCodingWorkspaceRoute;
+  const showTutorModeToggle = hasStartedChat || isCodingChatRoute;
   const showFloatingCodingChat = isCodingWorkspaceRoute
     && chatMode === "coding_tutor"
     && ["dashboard", "workspace"].includes(activeCodingPage);
@@ -135,6 +177,12 @@ export default function Chatbox({
       setChatMode(initialChatMode);
     }
   }, [initialChatMode]);
+
+  useEffect(() => {
+    if (isCodingWorkspaceRoute && chatMode !== "coding_tutor") {
+      setChatMode("coding_tutor");
+    }
+  }, [chatMode, isCodingWorkspaceRoute]);
 
   useEffect(() => {
     if (!isCodingWorkspaceRoute || !String(sessionId || "").startsWith("coding-")) return;
@@ -194,6 +242,10 @@ export default function Chatbox({
       `Active tab: ${context.workspaceTab || "Unknown"}`,
       context.note ? `Student note: ${context.note}` : "",
       context.code?.trim() ? `Current code:\n\`\`\`\n${context.code}\n\`\`\`` : "Current code: none provided yet.",
+      context.runnerSummary ? `Latest runner output:\n${context.runnerSummary}` : "",
+      context.workspaceSnapshots?.starter ? `Starter code snapshot:\n\`\`\`\n${context.workspaceSnapshots.starter}\n\`\`\`` : "",
+      context.workspaceSnapshots?.lastPassing ? `Last passing solution snapshot:\n\`\`\`\n${context.workspaceSnapshots.lastPassing}\n\`\`\`` : "",
+      context.workspaceSnapshots?.aiRewrite ? `Latest AI rewrite snapshot:\n\`\`\`\n${context.workspaceSnapshots.aiRewrite}\n\`\`\`` : "",
       codeFirstInstruction,
       debugInstruction,
       "",
@@ -219,6 +271,16 @@ export default function Chatbox({
 
   const startFreshCodingWidgetSession = useCallback((action = {}) => {
     const nextSessionId = `coding-${Date.now()}`;
+    if (action.type === "closed") {
+      setChatMode("coding_tutor");
+      setCodingWidgetStartIndex(messages.length);
+      setCodingWidgetSessionId(nextSessionId);
+      setFloatingCodingChatOpen(false);
+      setFloatingCodingChatMaximized(false);
+      setInput("");
+      setPendingFile(null);
+      return nextSessionId;
+    }
     if (onCreateSession) {
       onCreateSession({
         id: nextSessionId,
@@ -241,7 +303,7 @@ export default function Chatbox({
     setInput("");
     setPendingFile(null);
     return nextSessionId;
-  }, [onCreateSession]);
+  }, [messages.length, onCreateSession]);
 
   const sendFloatingQuickAction = (action) => {
     const hasWorkspaceCode = Boolean(codingTutorContext?.code?.trim());
@@ -301,10 +363,20 @@ export default function Chatbox({
   // Thinking status - step index drives everything
   const [thinkingStepIndex, setThinkingStepIndex] = useState(0);
   const [thinkingTimer, setThinkingTimer] = useState(0);
-  const getThinkingMessagesForMode = useCallback((mode) => (
-    mode === "coding_tutor" ? CODING_THINKING_MESSAGES : REGULAR_THINKING_MESSAGES
-  ), []);
-  const thinkingMessages = getThinkingMessagesForMode(chatMode);
+  // The backend tells us the real track per request ("regular" = uses KB,
+  // "general" = non-Morgan no-KB, "coding"). Until it does, fall back to the
+  // current chat mode. This is what removes the misleading "Searching knowledge
+  // base" step for non-Morgan questions.
+  const [thinkingTrack, setThinkingTrack] = useState(null);
+  const getThinkingMessagesForTrack = useCallback((track, mode) => {
+    const modeDefault =
+      mode === "coding_tutor" ? "coding" : mode === "general_tutor" ? "general" : "regular";
+    const resolved = track || modeDefault;
+    if (resolved === "coding") return CODING_THINKING_MESSAGES;
+    if (resolved === "general") return GENERAL_THINKING_MESSAGES;
+    return REGULAR_THINKING_MESSAGES;
+  }, []);
+  const thinkingMessages = getThinkingMessagesForTrack(thinkingTrack, chatMode);
   // Map status text to contextual SVG icon
   const getStatusIcon = (status) => {
     const s = (status || "").toLowerCase();
@@ -407,7 +479,13 @@ export default function Chatbox({
           if (data.profilePicture) {
              // Handle base64 data URLs, full URLs, and relative paths
              let picUrl = data.profilePicture;
-             if (picUrl.startsWith("data:")) {
+             // Legacy default avatars are bundled in the frontend's /public, not
+             // served by the backend. Normalize the old .jpg default to the
+             // existing .webp and load it from the app origin (avoids a 404 to
+             // the API for /user_icon.jpg on every render).
+             if (picUrl === "/user_icon.jpg" || picUrl === "/user_icon.webp") {
+                setUserProfilePicture("/user_icon.webp");
+             } else if (picUrl.startsWith("data:")) {
                 // Base64 data URL - use directly
                 setUserProfilePicture(picUrl);
              } else if (picUrl.startsWith("http")) {
@@ -431,6 +509,12 @@ export default function Chatbox({
     const fetchSuggestions = async () => {
       if (chatMode === "coding_tutor") {
         setSuggestions([]);
+        setSuggestionsLoading(false);
+        return;
+      }
+
+      if (chatMode === "general_tutor") {
+        setSuggestions(GENERAL_SUGGESTIONS);
         setSuggestionsLoading(false);
         return;
       }
@@ -507,10 +591,19 @@ export default function Chatbox({
 
   // --- HANDLERS ---
 
+  // Stable, monotonic id for each message so React keys never depend on the
+  // array index. Index keys remount the streaming bubble on every chunk (the
+  // YouTube iframe flashes and won't play) and can mismatch a bot bubble to the
+  // user sender when the list shifts.
+  const nextMessageId = () => {
+    messageIdRef.current += 1;
+    return `m${messageIdRef.current}`;
+  };
+
   // Helper to add message to local state
   const addMessage = (text, sender) => {
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    setMessages((prev) => [...prev, { text, sender, time }]);
+    setMessages((prev) => [...prev, { id: nextMessageId(), text, sender, time }]);
   };
 
   // 🔥 Enhanced TTS using OpenAI API
@@ -972,8 +1065,6 @@ export default function Chatbox({
             }
         }
 
-        const apiMessage = buildCodingTutorQuery(finalMessage, effectiveMode);
-
         // 2. Optimistic UI Update
         addMessage(finalMessage, "user");
         if (!overrideText) {
@@ -983,10 +1074,21 @@ export default function Chatbox({
             if (inputRef.current) inputRef.current.style.height = 'auto';
         }
 
+        // Verified video requests are handled server-side: the backend injects
+        // real, checked YouTube links (curated + YouTube Data API) into the agent
+        // context and the AI weaves the embedded link into its reply.
+        const apiMessage = buildCodingTutorQuery(finalMessage, effectiveMode);
+
         // 3. Add placeholder bot message for streaming
         const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
         setThinkingStepIndex(0);
-        setMessages((prev) => [...prev, { text: "", sender: "bot", time, isStreaming: true, mode: effectiveMode }]);
+        // Reset to the mode default; the backend's thinking_track event refines it.
+        setThinkingTrack(
+          effectiveMode === "coding_tutor" ? "coding"
+          : effectiveMode === "general_tutor" ? "general"
+          : null
+        );
+        setMessages((prev) => [...prev, { id: nextMessageId(), text: "", sender: "bot", time, isStreaming: true, mode: effectiveMode }]);
 
         // 4. Stream from Chat API using fetch with ReadableStream
         const res = await fetch(`${API_BASE}/chat/stream`, {
@@ -1040,7 +1142,12 @@ export default function Chatbox({
                     try {
                         const event = JSON.parse(line.slice(6));
 
-                        if (event.type === "status") {
+                        if (event.type === "thinking_track") {
+                            // Backend tells us whether this request hits the KB.
+                            // Switch the animation so non-Morgan questions don't
+                            // show a "Searching knowledge base" step.
+                            setThinkingTrack(event.content);
+                        } else if (event.type === "status") {
                             // Real-time status from ADK tool calls - advance step
                             setThinkingStepIndex(prev => Math.min(prev + 1, thinkingMessages.length - 1));
                         } else if (event.type === "chunk") {
@@ -1189,7 +1296,7 @@ export default function Chatbox({
                         isStreaming: false
                     };
                 } else {
-                    newMessages.push({ text: "Something went wrong. Please try again.", sender: "bot", time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) });
+                    newMessages.push({ id: nextMessageId(), text: "Something went wrong. Please try again.", sender: "bot", time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) });
                 }
                 return newMessages;
             });
@@ -1278,6 +1385,49 @@ export default function Chatbox({
   };
 
   const codeRenderer = CodeBlock;
+  // Memoized so ReactMarkdown receives a STABLE components object. Recreating it
+  // every render (e.g. on each keystroke in the input) makes ReactMarkdown rebuild
+  // the whole tree and remount YouTube iframes — that is what caused the chat to
+  // flash/black-screen while typing. Deps are all module-level/stable, so [].
+  const markdownComponents = useMemo(() => ({
+    code: codeRenderer,
+    // A YouTube embed renders an <iframe>, which is INVALID inside a <p>. The
+    // browser auto-closes the <p>, orphaning the iframe so it never plays. When a
+    // paragraph contains a YouTube link, render a <div> wrapper instead of <p>.
+    p: ({ node, children, ...props }) => {
+      const hasYouTube = (node?.children || []).some(
+        (child) =>
+          child?.tagName === "a" &&
+          child?.properties?.href &&
+          getYouTubeVideoId(child.properties.href)
+      );
+      if (hasYouTube) {
+        return <div className="message-para-with-video" {...props}>{children}</div>;
+      }
+      return <p {...props}>{children}</p>;
+    },
+    a: ({ node: _node, href, children, ...props }) => {
+      if (href && getYouTubeVideoId(href)) {
+        return <YouTubeEmbed href={href}>{children}</YouTubeEmbed>;
+      }
+      const isFile = href && (href.includes("uploads/chat_files") || href.includes("uploads/profile_pictures"));
+
+      if (isFile) {
+        return (
+          <a href={href} target="_blank" rel="noopener noreferrer" className="file-card">
+            <div className="file-icon-wrapper">
+              {getFileIcon(children[0])}
+            </div>
+            <div className="file-info">
+              <span className="file-name">{children}</span>
+              <span className="file-action">Click to view file</span>
+            </div>
+          </a>
+        );
+      }
+      return <a href={href} target="_blank" rel="noopener noreferrer" className="message-link" {...props}>{children}</a>;
+    },
+  }), [codeRenderer]);
 
   return (
     <div
@@ -1286,22 +1436,24 @@ export default function Chatbox({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <ChatHeader
-        modelDropdownRef={modelDropdownRef}
-        modelDropdownOpen={modelDropdownOpen}
-        setModelDropdownOpen={setModelDropdownOpen}
-        modelOptions={MODEL_OPTIONS}
-        selectedModel={selectedModel}
-        setSelectedModel={setSelectedModel}
-        isLoading={isLoading}
-        showTutorModeToggle={showTutorModeToggle}
-        chatMode={chatMode}
-        onTutorModeChange={switchTutorMode}
-        isCodingWorkspaceRoute={isCodingWorkspaceRoute}
-        isCodingChatRoute={isCodingChatRoute}
-        onBackHome={goBackHome}
-        onOpenCodingWorkspace={() => navigate("/coding?page=workspace")}
-      />
+      {showChatHeader && (
+        <ChatHeader
+          modelDropdownRef={modelDropdownRef}
+          modelDropdownOpen={modelDropdownOpen}
+          setModelDropdownOpen={setModelDropdownOpen}
+          modelOptions={MODEL_OPTIONS}
+          selectedModel={selectedModel}
+          setSelectedModel={setSelectedModel}
+          isLoading={isLoading}
+          showTutorModeToggle={showTutorModeToggle}
+          chatMode={chatMode}
+          onTutorModeChange={switchTutorMode}
+          isCodingWorkspaceRoute={isCodingWorkspaceRoute}
+          isCodingChatRoute={isCodingChatRoute}
+          onBackHome={goBackHome}
+          onOpenCodingWorkspace={() => navigate("/coding?page=workspace")}
+        />
+      )}
 
       {/* Hidden audio element for TTS playback */}
       <audio ref={audioRef} style={{ display: 'none' }} />
@@ -1343,6 +1495,7 @@ export default function Chatbox({
           fileInputRef={fileInputRef}
           context={codingTutorContext}
           codeRenderer={codeRenderer}
+          markdownComponents={markdownComponents}
           getFileIcon={getFileIcon}
           hasCode={Boolean(codingTutorContext?.code?.trim())}
           suggestedCodeBlock={codingTutorContext?.suggestedCodeBlock || ""}
@@ -1386,7 +1539,7 @@ export default function Chatbox({
         )}
         {messages.length > 0 && messages.map((msg, i) => (
             <MotionDiv
-              key={i}
+              key={msg.id ?? i}
               className={`message ${msg.sender}`}
               variants={messageVariants}
               initial="hidden"
@@ -1402,32 +1555,10 @@ export default function Chatbox({
                 <div className="message-bubble-wrapper">
                   <div className="message-bubble">
 
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                          code: codeRenderer,
-                          a: ({node: _node, href, children, ...props}) => {
-                              const isFile = href && (href.includes("uploads/chat_files") || href.includes("uploads/profile_pictures"));
-
-                              if (isFile) {
-                                  return (
-                                      <a href={href} target="_blank" rel="noopener noreferrer" className="file-card">
-                                          <div className="file-icon-wrapper">
-                                              {getFileIcon(children[0])}
-                                          </div>
-                                          <div className="file-info">
-                                              <span className="file-name">{children}</span>
-                                              <span className="file-action">Click to view file</span>
-                                          </div>
-                                      </a>
-                                  );
-                              }
-                              return <a href={href} target="_blank" rel="noopener noreferrer" className="message-link" {...props}>{children}</a>;
-                          }
-                      }}
-                    >
-                      {msg.sender === "user" ? getDisplayMessageText(msg.text) : msg.text}
-                    </ReactMarkdown>
+                    <MessageMarkdown
+                      text={msg.sender === "user" ? getDisplayMessageText(msg.text) : msg.text}
+                      components={markdownComponents}
+                    />
 
                     {/* Streaming indicator - show steps when no text, cursor when text is streaming */}
                     {msg.isStreaming && !msg.text && (
@@ -1631,7 +1762,17 @@ export default function Chatbox({
               handleSend(e);
             }
           }}
-          placeholder={isVoiceMode ? (voiceStatus === "listening" ? "Listening..." : voiceStatus === "speaking" ? "Speaking..." : "Speak now...") : pendingFile ? "Add a message..." : chatMode === "coding_tutor" ? "Paste code, an error, or ask for a review..." : "Type your message..."}
+          placeholder={
+            isVoiceMode
+              ? (voiceStatus === "listening" ? "Listening..." : voiceStatus === "speaking" ? "Speaking..." : "Speak now...")
+              : pendingFile
+                ? "Add a message..."
+                : chatMode === "coding_tutor"
+                  ? "Paste code, an error, or ask for a review..."
+                  : chatMode === "general_tutor"
+                    ? "Ask any academic or general question..."
+                    : "Ask about Morgan State CS — courses, advising, requirements..."
+          }
           onVoiceInput={handleVoiceInput}
           onToggleVoiceMode={toggleVoiceMode}
         />

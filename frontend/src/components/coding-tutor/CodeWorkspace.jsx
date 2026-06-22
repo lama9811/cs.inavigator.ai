@@ -20,6 +20,7 @@ export default function CodeWorkspace({
   latestFeedback,
   suggestedCodeBlock,
   terminalOpen,
+  canMarkSolved = true,
   onCodeChange,
   onLanguageChange,
   onTabChange,
@@ -28,6 +29,7 @@ export default function CodeWorkspace({
   onMarkSolved,
   onCopyCode,
   onApplyAICode,
+  onClearWorkspace,
   onShowHint,
   onShowAllHints,
   codeRenderer,
@@ -69,7 +71,6 @@ export default function CodeWorkspace({
       <div className="language-format-card">
         <span>{languageFormat.file}</span>
         <span>{languageFormat.style}</span>
-        <span>{languageFormat.indent}</span>
       </div>
       <div className="workspace-tabs">
         {WORKSPACE_TABS.map(tab => (
@@ -87,10 +88,12 @@ export default function CodeWorkspace({
         activeProblem={activeProblem}
         suggestedCodeBlock={suggestedCodeBlock}
         isRunning={isRunning}
+        canMarkSolved={canMarkSolved}
         onRun={onRun}
         onMarkSolved={onMarkSolved}
         onCopyCode={onCopyCode}
         onApplyAICode={onApplyAICode}
+        onClearWorkspace={onClearWorkspace}
       />
     </main>
   );

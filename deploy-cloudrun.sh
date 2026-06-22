@@ -38,6 +38,7 @@ if [ -z "${PROJECT_ID}" ]; then
 fi
 
 REGION="${REGION:-us-central1}"
+AGENT_MODEL="${AGENT_MODEL:-gemini-2.5-flash}"
 REPO_NAME="${REPO_NAME:-csnavigator}"
 MAX_INSTANCES="${MAX_INSTANCES:-3}"
 CLOUD_SQL_INSTANCE="${CLOUD_SQL_INSTANCE:-${PROJECT_ID}:${REGION}:csnavigator-db}"
@@ -175,7 +176,7 @@ deploy_adk() {
         --concurrency 80 \
         --no-allow-unauthenticated \
         --service-account "csnavigator-backend@${PROJECT_ID}.iam.gserviceaccount.com" \
-        --set-env-vars "GOOGLE_CLOUD_PROJECT=${PROJECT_ID},UNIFIED_DATASTORE_ID=${DATASTORE_ID}"
+        --set-env-vars "GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${REGION},GOOGLE_GENAI_USE_VERTEXAI=TRUE,AGENT_MODEL=${AGENT_MODEL},UNIFIED_DATASTORE_ID=${DATASTORE_ID}"
 
     ADK_URL=$(gcloud run services describe ${ADK_SERVICE} \
         --region=${REGION} \
@@ -238,6 +239,7 @@ USE_VERTEX_AGENT=true,\
 ADK_BASE_URL=${ADK_URL},\
 ADK_APP_NAME=cs_navigator_unified,\
 GOOGLE_CLOUD_PROJECT=${PROJECT_ID},\
+GOOGLE_CLOUD_LOCATION=${REGION},\
 VERTEX_AI_DATASTORE_ID=${DATASTORE_ID},\
 UNIFIED_DATASTORE_ID=${DATASTORE_ID},\
 TRUSTED_HOSTS=*.run.app${CORS_ENV}" \

@@ -639,6 +639,34 @@ body.sidebar-custom-width:not(.sidebar-collapsed) .chat-main {
   color: #4b5563;
 }
 
+.problem-meta-pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.problem-solved-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: rgba(16, 185, 129, 0.14);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  white-space: nowrap;
+}
+
+body.dark .problem-solved-badge {
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.36);
+}
+
 .daily-difficulty.easy {
   background: rgba(16, 185, 129, 0.12);
   color: #047857;
@@ -1653,6 +1681,148 @@ body.dark .workspace-discussion-panel {
   margin-bottom: 0;
 }
 
+.youtube-resource-card {
+  display: block;
+  width: min(100%, 560px);
+  margin: 0.75rem 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border-color, #d8dee9) 78%, var(--primary-blue, #173d7a) 22%);
+  border-radius: 16px;
+  background: var(--bg-card, #fff);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.12);
+}
+
+.youtube-resource-frame {
+  display: block;
+  position: relative;
+  width: 100%;
+  min-height: 200px;
+  aspect-ratio: 16 / 9;
+  background: #0f172a;
+}
+
+/* aspect-ratio is ignored on inline boxes; this padding ratio guarantees the
+   frame keeps a 16:9 height even where aspect-ratio does not apply. */
+@supports not (aspect-ratio: 16 / 9) {
+  .youtube-resource-frame {
+    height: 0;
+    padding-bottom: 56.25%;
+  }
+}
+
+.youtube-resource-frame iframe,
+.youtube-resource-iframe {
+  position: absolute !important;
+  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  border: 0;
+  display: block;
+}
+
+/* Click-to-play thumbnail (facade before the iframe is mounted). */
+.youtube-resource-thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  background-color: #0f172a;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: filter 0.15s ease;
+}
+
+.youtube-resource-thumb:hover {
+  filter: brightness(1.06);
+}
+
+.youtube-resource-play {
+  display: inline-flex;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45));
+  opacity: 0.92;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.youtube-resource-thumb:hover .youtube-resource-play {
+  transform: scale(1.08);
+  opacity: 1;
+}
+
+.youtube-resource-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  color: var(--text-main);
+}
+
+.youtube-resource-meta strong {
+  min-width: 0;
+  font-size: 0.92rem;
+  line-height: 1.25;
+}
+
+.youtube-resource-meta a {
+  flex: 0 0 auto;
+  color: var(--primary-blue, #173d7a);
+  font-size: 0.84rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.youtube-resource-meta a:hover {
+  color: var(--accent-orange, #f58220);
+  text-decoration: underline;
+}
+
+body.dark .youtube-resource-card {
+  border-color: color-mix(in srgb, var(--accent-orange, #f4a261) 34%, #26354d 66%);
+  background: color-mix(in srgb, var(--bg-card, #111827) 92%, #f4a261 8%);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.32);
+}
+
+body.dark .youtube-resource-meta,
+body.dark .youtube-resource-meta strong {
+  color: var(--text-main);
+}
+
+body.dark .youtube-resource-meta a {
+  color: color-mix(in srgb, var(--accent-orange, #f4a261) 80%, #fff 20%);
+}
+
+.floating-coding-chat .youtube-resource-card {
+  width: 100%;
+  margin: 0.55rem 0;
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+.floating-coding-chat .youtube-resource-meta {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+}
+
+.floating-coding-chat .youtube-resource-meta strong {
+  font-size: 0.82rem;
+}
+
+.floating-coding-chat .youtube-resource-meta a {
+  font-size: 0.78rem;
+}
+
 /* List Styling - Professional Indentation */
 .message-bubble ul,
 .message-bubble ol {
@@ -1888,10 +2058,9 @@ body.dark .message.bot .message-bubble strong {
   bottom: 0;
   left: 280px;
   right: 0;
-  background: linear-gradient(180deg, transparent 0%, var(--bg-body) 20%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid rgba(226, 232, 240, 0.5);
+  /* Solid ivory so chat bubbles never show through behind the input bar. */
+  background: var(--bg-body);
+  border-top: 1px solid var(--border-subtle, rgba(226, 232, 240, 0.5));
   padding: 20px 24px 24px;
   z-index: 100;
   width: calc(100% - 280px);
@@ -1966,15 +2135,10 @@ body.sidebar-collapsed .chat-input-container {
 
 /* Model toggle button */
 /* ── Model Selector Dropdown (ChatGPT-style) ───────────────────── */
+/* Layout + background of the secondary header live in ChatHeader.css. These
+   base rules only keep the transition and border token; the old absolute,
+   transparent-gradient version was removed because it showed chat through. */
 .model-selector-header {
-  position: absolute;
-  top: -6px;
-  left: 0;
-  right: 0;
-  z-index: 20;
-  padding: 6px 24px 18px;
-  background: linear-gradient(to bottom, var(--bg-body, #fff) 50%, transparent 100%);
-  pointer-events: none;
   transition: padding 0.32s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.12s ease;
 }
 
@@ -1989,7 +2153,6 @@ body.sidebar-collapsed .chat-input-container {
 
 /* CS Navigator token theme polish */
 .model-selector-header {
-  background: color-mix(in srgb, var(--bg-surface, var(--bg-card)) 88%, transparent) !important;
   border-color: var(--border-subtle) !important;
 }
 
@@ -2063,7 +2226,7 @@ body.sidebar-collapsed .chat-input-container {
 }
 
 body.dark .model-selector-header {
-  background: color-mix(in srgb, var(--bg-body) 72%, transparent) !important;
+  background: var(--bg-body) !important;
 }
 
 body.dark .chat-input-wrapper,
@@ -2144,8 +2307,7 @@ body.dark .message.bot .message-bubble h3 {
 }
 
 body.dark .model-selector-header {
-  background:
-    linear-gradient(to bottom, var(--bg-body) 72%, rgba(15, 23, 36, 0)) !important;
+  background: var(--bg-body) !important;
 }
 
 body.dark .model-selector-trigger,
@@ -2237,7 +2399,7 @@ body.dark .send-btn:hover:not(:disabled) {
 
 [data-theme="dark"] .model-selector-header,
 body.dark .model-selector-header {
-  background: linear-gradient(to bottom, var(--bg-body, #1a1a1a) 50%, transparent 100%);
+  background: var(--bg-body, #1a1a1a);
 }
 
 .model-selector-trigger {
@@ -4306,15 +4468,12 @@ body.dark .drag-overlay-content {
     width: 100%;
   }
 
+  /* The fixed secondary header reserves its space via .chat-main padding-top
+     (ChatHeader.css). Messages only need side/bottom padding here — adding top
+     padding would double-count and the header layout is owned by ChatHeader.css,
+     so no position/background override belongs here. */
   .chat-messages {
-    padding: 76px 12px 118px;
-  }
-
-  .model-selector-header {
-    position: sticky;
-    top: 0;
-    padding: 4px 10px 8px;
-    background: var(--bg-body, #fff);
+    padding: 16px 12px 118px;
   }
 
   .chat-controls-header {
@@ -4456,68 +4615,12 @@ body.dark .model-selector-header :is(.header-home-btn, .workspace-toggle-btn):fo
   color: #172033 !important;
 }
 
-/* Keep the shared iNav header pinned while chat/coding content scrolls. */
-.chat-main > .model-selector-header {
-  position: sticky !important;
-  top: 0 !important;
-  left: auto !important;
-  right: auto !important;
-  z-index: 120 !important;
-  flex-shrink: 0;
-  width: 100%;
-  padding: 8px 24px !important;
-  border-bottom: 1px solid var(--border-soft, var(--border-color)) !important;
-  background: color-mix(in srgb, var(--bg-body, #fff) 94%, transparent) !important;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.coding-chat-main {
-  padding-top: 0 !important;
-}
-
-.chat-main > .model-selector-header .chat-controls-header {
-  min-height: 34px;
-  gap: 8px;
-}
-
-.chat-main > .model-selector-header .model-selector-trigger {
-  min-height: 32px;
-  padding: 5px 10px;
-  border-radius: 9px;
-}
-
-.chat-main > .model-selector-header .model-selector-name {
-  font-size: 14px;
-}
-
-.chat-main > .model-selector-header .mode-segmented {
-  padding: 3px;
-  border-radius: 9px;
-  box-shadow: none !important;
-}
-
-.chat-main > .model-selector-header .mode-segmented-btn {
-  min-height: 28px;
-  padding: 4px 9px;
-  border-radius: 7px;
-  font-size: 12px;
-}
-
-.chat-main > .model-selector-header :is(.header-home-btn, .workspace-toggle-btn) {
-  min-height: 30px;
-  padding: 6px 10px;
-  border-radius: 9px;
-  font-size: 12px;
-  box-shadow: 0 6px 14px color-mix(in srgb, var(--primary, #002d72) 14%, transparent) !important;
-}
-
-body.dark .chat-main > .model-selector-header {
-  background: color-mix(in srgb, var(--bg-body, #111827) 94%, transparent) !important;
-  border-bottom-color: rgba(143, 174, 215, 0.18) !important;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
-}
+/* The secondary iNav/tutor-mode header is styled ENTIRELY in ChatHeader.css
+   (its own component file): fixed-on-scroll, opaque ivory background, sizing,
+   and dark mode. The duplicate copy that used to live here had the SAME
+   selector + !important and only differed by being semi-transparent with a
+   backdrop-blur — on a specificity tie the later-loaded file won, which made
+   the bar see-through. Removed so ChatHeader.css is the single source. */
 
 @media (max-width: 1100px) {
   .welcome-container {

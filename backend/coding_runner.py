@@ -592,6 +592,29 @@ function displayValue(value) {
   return raw.length <= MAX_VALUE_CHARS ? value : `${raw.slice(0, MAX_VALUE_CHARS)}... value truncated ...`;
 }
 
+function canonicalValue(value, orderInsensitive = false) {
+  if (Array.isArray(value)) {
+    const items = value.map((item) => canonicalValue(item, orderInsensitive));
+    if (orderInsensitive) {
+      return items.sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
+    }
+    return items;
+  }
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.keys(value)
+        .sort()
+        .map((key) => [key, canonicalValue(value[key], orderInsensitive)])
+    );
+  }
+  return value;
+}
+
+function valuesEqual(actual, expected, orderInsensitive = false) {
+  return JSON.stringify(canonicalValue(actual, orderInsensitive)) ===
+    JSON.stringify(canonicalValue(expected, orderInsensitive));
+}
+
 const sandbox = {
   console: {
     log: (...args) => appendLog(args.map((arg) => typeof arg === "string" ? arg : JSON.stringify(arg)).join(" ")),
@@ -625,27 +648,55 @@ function captureFinalExpression(source) {
   return { source: lines.join("\n"), capturesExpression: false };
 }
 
+function safeIdentifier(name) {
+  return /^[A-Za-z_$][\w$]*$/.test(String(name || ""));
+}
+
+function getNamedFunction(name) {
+  if (!safeIdentifier(name)) return undefined;
+  if (typeof sandbox[name] === "function") return sandbox[name];
+  try {
+    const value = vm.runInContext(`typeof ${name} !== "undefined" ? ${name} : undefined`, sandbox, { timeout: 100 });
+    return typeof value === "function" ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function findDeclaredFunctionNames(source) {
+  const names = new Set();
+  const text = String(source || "");
+  for (const match of text.matchAll(/\bfunction\s+([A-Za-z_$][\w$]*)\s*\(/g)) {
+    names.add(match[1]);
+  }
+  for (const match of text.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:function\b|\([^)]*\)\s*=>|[A-Za-z_$][\w$]*\s*=>)/g)) {
+    names.add(match[1]);
+  }
+  return Array.from(names);
+}
+
 try {
   vm.createContext(sandbox, {
     codeGeneration: { strings: false, wasm: false },
   });
   sandbox.__csnavLastValue = undefined;
-  const prepared = captureFinalExpression(cleanStudentCode(fs.readFileSync("solution.js", "utf8")));
+  const studentSource = cleanStudentCode(fs.readFileSync("solution.js", "utf8"));
+  const prepared = captureFinalExpression(studentSource);
   vm.runInContext(prepared.source, sandbox, { timeout: 1000 });
   if (prepared.capturesExpression && typeof sandbox.__csnavLastValue !== "undefined") {
     appendLog(typeof sandbox.__csnavLastValue === "string" ? sandbox.__csnavLastValue : JSON.stringify(sandbox.__csnavLastValue));
   }
 
-  let target = sandbox[functionName];
+  let target = getNamedFunction(functionName);
   let warning = "";
-  if (typeof target !== "function" && typeof sandbox.solve === "function") {
-    target = sandbox.solve;
+  if (typeof target !== "function" && typeof getNamedFunction("solve") === "function") {
+    target = getNamedFunction("solve");
     warning = `Expected function '${functionName}' was not found, so the runner used 'solve' instead. Rename your function to '${functionName}' for this problem.`;
   }
   if (typeof target !== "function") {
-    const available = Object.keys(sandbox).filter((key) => typeof sandbox[key] === "function");
+    const available = findDeclaredFunctionNames(studentSource);
     if (available.length === 1) {
-      target = sandbox[available[0]];
+      target = getNamedFunction(available[0]);
       warning = `Expected function '${functionName}' was not found, so the runner used your only defined function. Rename it to '${functionName}' for this problem.`;
     } else {
       throw new Error(`Could not find function '${functionName}'. Available student functions: ${available.join(", ") || "none"}`);
@@ -656,9 +707,10 @@ try {
     const name = test.name || `Test ${index + 1}`;
     const args = test.args || [];
     const expected = test.expected;
+    const orderInsensitive = Boolean(test.order_insensitive);
     try {
       const actual = target(...args);
-      const passed = JSON.stringify(actual) === JSON.stringify(expected);
+      const passed = valuesEqual(actual, expected, orderInsensitive);
       return { name, passed, args, expected, actual: displayValue(actual) };
     } catch (error) {
       return { name, passed: false, args, expected, actual: null, error: String(error.message || error) };
@@ -770,3 +822,333 @@ try {
         "stderr": _truncate_text(payload.get("error") or payload.get("warning") or stderr_text),
         "duration_ms": payload.get("duration_ms", round((time.perf_counter() - started) * 1000, 2)),
     }
+
+
+def _empty_free_run_response(message: str, status_value: str = "error") -> dict[str, Any]:
+    """Free-run response with no test cases, used for personal workspace code."""
+    return {
+        "status": status_value,
+        "free_run": True,
+        "tests": [],
+        "stdout": "",
+        "stderr": message,
+        "duration_ms": 0,
+    }
+
+
+def _parse_free_run_output(
+    completed: subprocess.CompletedProcess[str],
+    started: float,
+    fallback_error: str,
+) -> dict[str, Any]:
+    """Shared parser for free-run subprocess output (Python and JavaScript)."""
+    stdout_text = completed.stdout.strip()
+    stderr_text = _truncate_text(completed.stderr.strip())
+    if completed.returncode != 0 and not stdout_text:
+        return _empty_free_run_response(stderr_text or fallback_error)
+
+    try:
+        payload = json.loads(stdout_text.splitlines()[-1])
+    except Exception:
+        return {
+            "status": "error",
+            "free_run": True,
+            "tests": [],
+            "stdout": _truncate_text(stdout_text),
+            "stderr": stderr_text or "Runner output could not be parsed.",
+            "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+        }
+
+    return {
+        "status": payload.get("status", "error"),
+        "free_run": True,
+        "tests": [],
+        "stdout": _truncate_text(payload.get("stdout", "")),
+        "stderr": _truncate_text(payload.get("error") or stderr_text),
+        "duration_ms": payload.get("duration_ms", round((time.perf_counter() - started) * 1000, 2)),
+    }
+
+
+def run_python_freeform(code: str) -> dict[str, Any]:
+    """Execute student Python without tests or grading and capture stdout."""
+    try:
+        validate_python_code(code)
+    except RunnerSecurityError as exc:
+        response = _security_error_response(exc)
+        response["free_run"] = True
+        return response
+
+    runner_source = """
+import ast
+import builtins
+import contextlib
+import io
+import json
+import sys
+import time
+import types
+
+started = time.perf_counter()
+MAX_OUTPUT_CHARS = 12000
+ALLOWED_IMPORTS = {
+    "bisect", "collections", "functools", "heapq", "itertools", "math",
+    "operator", "re", "statistics", "string", "typing",
+}
+SAFE_MODULE_CACHE = {}
+
+class CappedTextIO(io.TextIOBase):
+    def __init__(self, limit):
+        self.limit = limit
+        self.parts = []
+        self.length = 0
+        self.truncated = False
+
+    def write(self, value):
+        text = str(value)
+        remaining = self.limit - self.length
+        if remaining > 0:
+            chunk = text[:remaining]
+            self.parts.append(chunk)
+            self.length += len(chunk)
+        if len(text) > max(remaining, 0):
+            self.truncated = True
+        return len(text)
+
+    def getvalue(self):
+        text = "".join(self.parts)
+        if self.truncated:
+            text += "\\n... output truncated by CS Navigator ..."
+        return text
+
+stdout_buffer = CappedTextIO(MAX_OUTPUT_CHARS)
+
+def safe_import(name, globals=None, locals=None, fromlist=(), level=0):
+    root = str(name).split(".", 1)[0]
+    if root not in ALLOWED_IMPORTS:
+        raise ImportError(f"Importing '{root}' is not available in the practice runner.")
+    if root not in SAFE_MODULE_CACHE:
+        source_module = builtins.__import__(root)
+        safe_exports = {
+            export_name: getattr(source_module, export_name)
+            for export_name in dir(source_module)
+            if not export_name.startswith("_")
+            and not isinstance(getattr(source_module, export_name), types.ModuleType)
+            and export_name not in {"attrgetter", "methodcaller"}
+        }
+        SAFE_MODULE_CACHE[root] = types.SimpleNamespace(**safe_exports)
+    return SAFE_MODULE_CACHE[root]
+
+SAFE_BUILTINS = {
+    "__build_class__": builtins.__build_class__,
+    "__import__": safe_import,
+    "abs": abs, "all": all, "any": any, "bool": bool, "callable": callable,
+    "chr": chr, "complex": complex, "dict": dict, "divmod": divmod,
+    "enumerate": enumerate, "filter": filter, "float": float, "format": format,
+    "frozenset": frozenset, "hash": hash, "hex": hex, "int": int, "isinstance": isinstance,
+    "issubclass": issubclass, "iter": iter, "len": len, "list": list, "map": map,
+    "max": max, "min": min, "next": next, "object": object, "oct": oct,
+    "ord": ord, "pow": pow, "print": print, "range": range, "repr": repr,
+    "reversed": reversed, "round": round, "set": set, "slice": slice,
+    "sorted": sorted, "str": str, "sum": sum, "super": super, "tuple": tuple,
+    "zip": zip,
+    "ArithmeticError": ArithmeticError, "AssertionError": AssertionError,
+    "Exception": Exception, "IndexError": IndexError, "KeyError": KeyError,
+    "LookupError": LookupError, "RuntimeError": RuntimeError, "StopIteration": StopIteration,
+    "TypeError": TypeError, "ValueError": ValueError, "ZeroDivisionError": ZeroDivisionError,
+}
+
+def execute_student_module(path):
+    with open(path, "r", encoding="utf-8") as handle:
+        source = handle.read()
+    tree = ast.parse(source, filename=path)
+    module = types.ModuleType("student_solution")
+    module.__file__ = path
+    module.__name__ = "student_solution"
+    module.__dict__["__builtins__"] = SAFE_BUILTINS
+    sys.modules[module.__name__] = module
+
+    final_expr = tree.body[-1] if tree.body and isinstance(tree.body[-1], ast.Expr) else None
+    if final_expr and isinstance(final_expr.value, ast.Constant) and isinstance(final_expr.value.value, str):
+        final_expr = None
+
+    setup_body = tree.body[:-1] if final_expr else tree.body
+    setup_tree = ast.Module(body=setup_body, type_ignores=tree.type_ignores)
+    ast.fix_missing_locations(setup_tree)
+    exec(compile(setup_tree, path, "exec"), module.__dict__)
+
+    if final_expr:
+        expr_tree = ast.Expression(final_expr.value)
+        ast.fix_missing_locations(expr_tree)
+        result = eval(compile(expr_tree, path, "eval"), module.__dict__)
+        if result is not None:
+            stdout_buffer.write(repr(result))
+            stdout_buffer.write("\\n")
+
+try:
+    with contextlib.redirect_stdout(stdout_buffer):
+        execute_student_module("solution.py")
+    print(json.dumps({
+        "status": "ran",
+        "stdout": stdout_buffer.getvalue(),
+        "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+    }))
+except Exception as exc:
+    print(json.dumps({
+        "status": "error",
+        "error": f"{type(exc).__name__}: {exc}",
+        "stdout": stdout_buffer.getvalue(),
+        "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+    }))
+"""
+    started = time.perf_counter()
+    try:
+        with tempfile.TemporaryDirectory(prefix="csnav_freerun_") as temp_dir:
+            solution_path = os.path.join(temp_dir, "solution.py")
+            runner_path = os.path.join(temp_dir, "runner.py")
+            with open(solution_path, "w", encoding="utf-8") as handle:
+                handle.write(code)
+            with open(runner_path, "w", encoding="utf-8") as handle:
+                handle.write(runner_source)
+
+            completed = _run_isolated_process(
+                [sys.executable, "-I", "-S", runner_path],
+                cwd=temp_dir,
+                input_text="",
+                env={"PYTHONIOENCODING": "utf-8"},
+            )
+    except subprocess.TimeoutExpired:
+        return _empty_free_run_response(
+            f"The run timed out after {RUN_TIMEOUT_SECONDS} seconds. Check for infinite loops or very slow logic."
+        )
+    except Exception as exc:
+        return _empty_free_run_response(f"Runner setup failed: {exc}")
+
+    return _parse_free_run_output(completed, started, "Python returned an error before it could run.")
+
+
+def run_javascript_freeform(code: str) -> dict[str, Any]:
+    """Execute student JavaScript without tests or grading and capture console output."""
+    try:
+        validate_javascript_code(code)
+    except RunnerSecurityError as exc:
+        response = _security_error_response(exc)
+        response["free_run"] = True
+        return response
+
+    runner_source = r"""
+const fs = require("fs");
+const vm = require("vm");
+const { performance } = require("perf_hooks");
+
+const started = performance.now();
+const logs = [];
+const MAX_OUTPUT_CHARS = 12000;
+let logLength = 0;
+let logsTruncated = false;
+
+function appendLog(value) {
+  const text = String(value);
+  const remaining = MAX_OUTPUT_CHARS - logLength;
+  if (remaining > 0) {
+    logs.push(text.slice(0, remaining));
+    logLength += Math.min(text.length, remaining);
+  }
+  if (text.length > Math.max(remaining, 0)) logsTruncated = true;
+}
+
+const sandbox = {
+  console: {
+    log: (...args) => appendLog(args.map((arg) => typeof arg === "string" ? arg : JSON.stringify(arg)).join(" ")),
+    error: (...args) => appendLog(args.map(String).join(" ")),
+  },
+};
+
+function cleanStudentCode(source) {
+  return String(source)
+    .replace(/^\s*export\s+\{\s*[\w\s,]+\s*\};?\s*$/gm, "")
+    .replace(/^\s*export\s+default\s+/gm, "")
+    .replace(/^\s*export\s+(function|const|let|var|class)\s+/gm, "$1 ");
+}
+
+function captureFinalExpression(source) {
+  const lines = String(source).replace(/\s+$/g, "").split(/\r?\n/);
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    const rawLine = lines[index];
+    const line = rawLine.trim();
+    if (!line || line.startsWith("//")) continue;
+    if (/^(function|class|const|let|var|if|for|while|switch|return|throw|try|catch|finally)\b/.test(line)) {
+      return { source: lines.join("\n"), capturesExpression: false };
+    }
+    if (/^[}\])]/.test(line)) {
+      return { source: lines.join("\n"), capturesExpression: false };
+    }
+    const expression = line.replace(/;$/, "");
+    lines[index] = `${rawLine.slice(0, rawLine.length - rawLine.trimStart().length)}__csnavLastValue = (${expression});`;
+    return { source: lines.join("\n"), capturesExpression: true };
+  }
+  return { source: lines.join("\n"), capturesExpression: false };
+}
+
+try {
+  vm.createContext(sandbox, {
+    codeGeneration: { strings: false, wasm: false },
+  });
+  sandbox.__csnavLastValue = undefined;
+  const studentSource = cleanStudentCode(fs.readFileSync("solution.js", "utf8"));
+  const prepared = captureFinalExpression(studentSource);
+  vm.runInContext(prepared.source, sandbox, { timeout: 2000 });
+  if (prepared.capturesExpression && typeof sandbox.__csnavLastValue !== "undefined") {
+    appendLog(typeof sandbox.__csnavLastValue === "string" ? sandbox.__csnavLastValue : JSON.stringify(sandbox.__csnavLastValue));
+  }
+  process.stdout.write(JSON.stringify({
+    status: "ran",
+    stdout: logs.join("\n") + (logsTruncated ? "\n... output truncated by CS Navigator ..." : ""),
+    duration_ms: Math.round((performance.now() - started) * 100) / 100,
+  }));
+} catch (error) {
+  process.stdout.write(JSON.stringify({
+    status: "error",
+    error: String(error.message || error),
+    stdout: logs.join("\n") + (logsTruncated ? "\n... output truncated by CS Navigator ..." : ""),
+    duration_ms: Math.round((performance.now() - started) * 100) / 100,
+  }));
+}
+"""
+    started = time.perf_counter()
+    try:
+        with tempfile.TemporaryDirectory(prefix="csnav_freerun_js_") as temp_dir:
+            solution_path = os.path.join(temp_dir, "solution.js")
+            runner_path = os.path.join(temp_dir, "runner.js")
+            with open(solution_path, "w", encoding="utf-8") as handle:
+                handle.write(code)
+            with open(runner_path, "w", encoding="utf-8") as handle:
+                handle.write(runner_source)
+
+            node_env = {
+                key: value
+                for key, value in os.environ.items()
+                if key.upper() in {"PATH", "PATHEXT", "SYSTEMROOT", "WINDIR", "TEMP", "TMP"}
+            }
+            node_env["NODE_DISABLE_COLORS"] = "1"
+            completed = _run_isolated_process(
+                [
+                    "node",
+                    "--max-old-space-size=128",
+                    "--disable-proto=delete",
+                    "--disallow-code-generation-from-strings",
+                    runner_path,
+                ],
+                cwd=temp_dir,
+                input_text="",
+                env=node_env,
+            )
+    except FileNotFoundError:
+        return _empty_free_run_response("Node.js was not found, so JavaScript code cannot run locally yet.")
+    except subprocess.TimeoutExpired:
+        return _empty_free_run_response(
+            f"The JavaScript run timed out after {RUN_TIMEOUT_SECONDS} seconds. Check for infinite loops or very slow logic."
+        )
+    except Exception as exc:
+        return _empty_free_run_response(f"JavaScript runner setup failed: {exc}")
+
+    return _parse_free_run_output(completed, started, "Node returned an error before it could run.")

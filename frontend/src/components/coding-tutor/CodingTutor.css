@@ -22,21 +22,25 @@
   --ct-terminal-text: #dbeafe;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   display: grid;
-  grid-template-columns: 176px minmax(0, 1fr);
+  grid-template-columns: 162px minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   min-height: calc(100vh - 72px);
-  padding: 10px 12px 12px;
+  padding: 16px 10px 12px;
   background:
     radial-gradient(circle at top left, var(--ct-primary-soft), transparent 34%),
     linear-gradient(135deg, var(--ct-bg) 0%, var(--ct-panel-soft) 54%, var(--ct-bg) 100%);
   color: var(--ct-text);
-  gap: 14px;
+  gap: 10px;
   overflow: visible;
   transition: grid-template-columns 0.16s ease;
 }
 
 .coding-app.mini-sidebar-collapsed {
-  grid-template-columns: 58px minmax(0, 1fr);
+  grid-template-columns: 50px minmax(0, 1fr);
+  gap: 8px;
+  padding-top: 18px;
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 .coding-app *,
@@ -87,8 +91,8 @@
   top: 18px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 16px 12px;
+  gap: 8px;
+  padding: 14px 10px;
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid rgba(148, 163, 184, 0.18);
   box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
@@ -100,10 +104,10 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
   text-align: left;
-  padding: 11px 12px;
+  padding: 10px 10px;
   background: transparent;
   border: 1px solid transparent;
   color: #1f2937;
@@ -140,27 +144,27 @@
 }
 
 .coding-app.mini-sidebar-collapsed .coding-section-nav {
-  width: 58px;
+  width: 50px;
   min-height: 0;
-  padding: 8px 5px;
+  padding: 7px 4px;
   align-items: center;
   border-radius: 18px;
-  gap: 8px;
+  gap: 7px;
 }
 
 .coding-app.mini-sidebar-collapsed .coding-section-nav button {
   justify-content: center;
-  width: 44px;
-  min-height: 42px;
-  padding: 6px;
+  width: 40px;
+  min-height: 40px;
+  padding: 5px;
   border-radius: 14px;
   flex: 0 0 auto;
 }
 
 .coding-app.mini-sidebar-collapsed .coding-nav-icon {
-  flex-basis: 26px;
-  width: 26px;
-  height: 26px;
+  flex-basis: 24px;
+  width: 24px;
+  height: 24px;
   border-radius: 10px;
 }
 
@@ -214,6 +218,16 @@
   overflow: visible;
   padding-right: 4px;
   scrollbar-gutter: stable;
+}
+
+.coding-app.mini-sidebar-collapsed .coding-app-main {
+  padding-right: 0;
+}
+
+.coding-app.mini-sidebar-collapsed .quiz-bank-page,
+.coding-app.mini-sidebar-collapsed .progress-page,
+.coding-app.mini-sidebar-collapsed .coding-page-panel {
+  max-width: none;
 }
 
 
@@ -363,6 +377,70 @@
   min-height: auto;
   overflow: visible;
   padding: 8px 0 36px;
+}
+
+.topic-filter-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 12px 0 14px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--ct-accent) 34%, var(--ct-border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ct-accent) 10%, var(--ct-panel-soft));
+  color: var(--ct-text);
+}
+
+.topic-filter-banner span {
+  color: var(--ct-text);
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.topic-filter-banner button {
+  min-height: 34px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 38%, var(--ct-border));
+  background: var(--ct-primary);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.topic-filter-banner button:hover:not(:disabled) {
+  background: var(--ct-accent);
+  border-color: color-mix(in srgb, var(--ct-accent) 58%, var(--ct-border));
+  color: #172033;
+}
+
+.interview-prep-page {
+  display: grid;
+  gap: 20px;
+  max-width: 1120px;
+  width: min(100%, 1120px);
+  margin: 0 auto;
+}
+
+.interview-prep-hero {
+  display: grid;
+  gap: 8px;
+  max-width: 720px;
+}
+
+.interview-prep-hero h2 {
+  margin: 0;
+  color: var(--ct-text);
+  font-size: clamp(1.45rem, 2.5vw, 2.2rem);
+}
+
+.interview-prep-hero p {
+  margin: 0;
+  color: var(--ct-muted);
+  font-size: 0.98rem;
+  line-height: 1.55;
 }
 
 .coding-dashboard-prompts {
@@ -572,6 +650,18 @@
   margin: 12px 0 4px;
   color: #475569;
   font-weight: 650;
+}
+
+/* Estimated-time reads as a rounded pill to match the difficulty pill. */
+.daily-eta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .problem-navigation {
@@ -2615,7 +2705,8 @@ body.dark .problem-constraints-card,
 body.dark .hint-card,
 body.dark .quiz-filter-card,
 body.dark .quiz-insight-list li,
-body.dark .coding-progress-stats div {
+body.dark .coding-progress-stats div,
+body.dark .topic-filter-banner {
   background: var(--ct-panel-soft) !important;
   border-color: var(--ct-border) !important;
   color: var(--ct-text) !important;

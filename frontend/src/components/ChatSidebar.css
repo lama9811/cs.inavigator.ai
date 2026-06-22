@@ -1,3 +1,8 @@
+/* Mobile drawer backdrop (hidden on larger screens) */
+.sidebar-backdrop {
+  display: none;
+}
+
 /* Chat Sidebar - Theme-aware */
 .chat-sidebar {
   position: fixed;
@@ -314,6 +319,45 @@ body.dark .chat-history-item:hover {
     flex: 0 0 auto;
     padding-top: 8px;
     padding-bottom: 8px;
+  }
+}
+
+/* ─── MOBILE OFF-CANVAS DRAWER ─── */
+/* On phones the chat is full-width; the sidebar slides in over it as a drawer
+   with a tap-to-close backdrop, so opening it never hides the chat for good. */
+@media (max-width: 767px) {
+  .chat-sidebar {
+    width: min(86vw, 320px) !important;
+    transform: translateX(0);
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 6px 0 32px rgba(15, 23, 42, 0.32);
+    z-index: 1200;
+  }
+
+  body.sidebar-collapsed .chat-sidebar {
+    width: min(86vw, 320px) !important;
+    transform: translateX(-100%);
+    box-shadow: none;
+  }
+
+  /* Touch drawers should not be drag-resized. */
+  .chat-sidebar .sidebar-drag-handle {
+    display: none;
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 70px 0 0 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 1100;
+    opacity: 1;
+    transition: opacity 0.24s ease;
+  }
+
+  body.sidebar-collapsed .sidebar-backdrop {
+    opacity: 0;
+    pointer-events: none;
   }
 }
 

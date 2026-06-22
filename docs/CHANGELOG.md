@@ -2,6 +2,31 @@
 
 All notable changes to CS Navigator are documented here.
 
+## [6.0] - 2026-06-19
+### Added
+- Coding Tutor: in-browser practice workspace with a Monaco-style editor, Quiz Bank, Interview Prep packs, and a Progress view
+- Sandboxed Python and JavaScript code runners (subprocess isolation, security validation, timeouts, rate limiting) with local test execution for the quiz bank
+- Personal free-run mode: run arbitrary user code with no autograding
+- VS Code-style docked terminal footer showing program output and test results
+- Floating Coding Tutor chat with response-mode awareness (hint, debug, review, rewrite, generate) and an Apply AI Code flow
+- Workspace snapshots (starter / current / AI rewrite / last passing) and a post-run code-quality checklist
+- Progressive hint ladder and "Explain this error" / "Explain failed tests" handoff to the tutor
+- Verified YouTube video resources: live YouTube Data API v3 search (safe-search, embeddable-only, quota cache) combined with a curated local catalog, played inline in chat with a click-to-play facade and an Open-on-YouTube fallback
+- Explicit "General" tutor mode plus a third tutor toggle (CS Nav / General / Coding)
+
+### Changed
+- Question routing flipped to a deny-list: the knowledge base is prioritized for Morgan and student-record questions, and any other self-contained question goes to Gemini directly
+- Conversation-aware routing with session tracks: ambiguous follow-ups inherit the prior track while self-contained questions reclassify on their own content; greetings stay track-neutral
+- Three-tier caching (L1 / L2 / semantic) now covers non-Morgan answers, namespaced by context hash
+- "Thinking" animation now reflects the real track (regular / general / coding) instead of always showing a knowledge-base step
+
+### Fixed
+- Cross-chat ADK memory blending: agent session keys now include both user id and chat session id so separate chats do not share hidden memory
+- Inline video playback failures (iframe orphaned inside a paragraph, player resetting to the thumbnail on re-render)
+- Chat flashing / black screen while typing a follow-up, and bot replies occasionally rendered as the user's message
+- Gemini 429 / empty responses now surface a clean retryable error instead of garbled partial text
+- Responsive chat on small screens (off-canvas sidebar drawer no longer hides the chat)
+
 ## [5.0] - 2026-04-04
 ### Added
 - DatabaseSessionService for multi-instance session persistence

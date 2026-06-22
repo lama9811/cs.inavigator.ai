@@ -162,7 +162,11 @@ export default function App() {
 
   const [token, setToken] = useState(() => localStorage.getItem("token"));
   const [role, setRole]   = useState(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Start collapsed on small screens so the chat is fully visible; on phones the
+  // sidebar opens as an overlay drawer instead of pushing/covering the chat.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < 768
+  );
   const [cmdkOpen, setCmdkOpen] = useState(false);
   // Dark mode state
   const [darkMode, setDarkMode] = useState(

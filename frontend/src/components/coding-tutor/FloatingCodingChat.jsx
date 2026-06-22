@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { BsArrowUpCircleFill } from "react-icons/bs";
@@ -6,6 +6,18 @@ import { FaCommentDots, FaCompress, FaExpand, FaExternalLinkAlt, FaMicrophone, F
 import TutorStatusCard from "./TutorStatusCard";
 import WorkspaceCodeContext from "./WorkspaceCodeContext";
 import "./FloatingCodingChat.css";
+
+const REMARK_PLUGINS = [remarkGfm];
+
+// Memoized so a message's markdown (and any YouTube iframe in it) does not
+// re-render on every keystroke the user types in the floating chat input.
+const FloatingMessageMarkdown = memo(function FloatingMessageMarkdown({ text, components }) {
+  return (
+    <ReactMarkdown remarkPlugins={REMARK_PLUGINS} components={components}>
+      {text}
+    </ReactMarkdown>
+  );
+});
 
 const POSITION_KEY = "coding_floating_chat_position";
 const DEFAULT_POSITION = { x: null, y: null };
@@ -105,6 +117,7 @@ function FloatingChatWindow({
   fileInputRef,
   context,
   codeRenderer,
+  markdownComponents,
   getFileIcon,
   hasCode,
   suggestedCodeBlock,
@@ -133,14 +146,20 @@ function FloatingChatWindow({
   const tutorMode = context?.tutorMode || "Guided Tutor";
   const topic = activeProblem?.title ? `Helping with: ${activeProblem.title}` : "Personal Code Help";
   const visibleMessages = isMaximized ? messages.slice(-24) : messages.slice(-10);
+  // Stable components object so message markdown / iframes don't remount on keystrokes.
+  const mdComponents = useMemo(
+    () => markdownComponents || { code: codeRenderer },
+    [markdownComponents, codeRenderer]
+  );
   const showThinking = isLoading && !visibleMessages.some(msg => msg.isStreaming && msg.text);
 
   return (
     <section className={`floating-chat-window ${isMaximized ? "maximized" : ""}`} aria-label="Coding tutor floating chat">
       <header className="floating-chat-header" onPointerDown={onDragStart}>
-        <div>
+        <div className="floating-chat-heading">
           <span className="coding-kicker">Coding Tutor Chat</span>
           <strong>{topic}</strong>
+          <span className="floating-response-mode">Mode: {tutorMode}</span>
         </div>
         <div className="floating-chat-window-controls">
           <button type="button" className="floating-chat-control" onClick={onResetPosition} aria-label="Reset chat position" title="Reset position">
@@ -206,9 +225,7 @@ function FloatingChatWindow({
             {msg.isStreaming && !msg.text ? (
               <FloatingThinkingSteps steps={thinkingMessages} />
             ) : (
-              <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ code: codeRenderer }}>
-                {msg.text || ""}
-              </ReactMarkdown>
+              <FloatingMessageMarkdown text={msg.text || ""} components={mdComponents} />
             )}
           </div>
         )) : showThinking ? (
@@ -283,6 +300,8 @@ export default function FloatingCodingChat({ isOpen, isMaximized, onOpen, ...win
   const [isDragging, setIsDragging] = useState(false);
   const wasMaximizedRef = useRef(isMaximized);
   const lastNormalPositionRef = useRef(readSavedPosition(isOpen, false));
+  const dragFrameRef = useRef(null);
+  const dragPositionRef = useRef(null);
 
   const safePosition = useMemo(() => clampPosition(position, isOpen, isMaximized), [isMaximized, isOpen, position]);
 
@@ -321,30 +340,44 @@ export default function FloatingCodingChat({ isOpen, isMaximized, onOpen, ...win
   const startDrag = (event) => {
     if (event.button !== 0 || event.target.closest?.("textarea, input, a, .floating-chat-window-controls button, .floating-chat-form button")) return;
     event.preventDefault();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
     setIsDragging(true);
     const startX = event.clientX;
     const startY = event.clientY;
     const startPosition = safePosition;
 
     const handleMove = (moveEvent) => {
-      setPosition(clampPosition({
+      dragPositionRef.current = clampPosition({
         x: startPosition.x + moveEvent.clientX - startX,
         y: startPosition.y + moveEvent.clientY - startY,
-      }, isOpen, isMaximized));
+      }, isOpen, isMaximized);
+      if (dragFrameRef.current) return;
+      dragFrameRef.current = window.requestAnimationFrame(() => {
+        dragFrameRef.current = null;
+        if (dragPositionRef.current) setPosition(dragPositionRef.current);
+      });
     };
 
     const handleUp = (upEvent) => {
+      if (dragFrameRef.current) {
+        window.cancelAnimationFrame(dragFrameRef.current);
+        dragFrameRef.current = null;
+      }
       setIsDragging(false);
-      savePosition({
+      const finalPosition = clampPosition({
         x: startPosition.x + upEvent.clientX - startX,
         y: startPosition.y + upEvent.clientY - startY,
-      });
+      }, isOpen, isMaximized);
+      dragPositionRef.current = null;
+      savePosition(finalPosition);
       window.removeEventListener("pointermove", handleMove);
       window.removeEventListener("pointerup", handleUp);
+      window.removeEventListener("pointercancel", handleUp);
     };
 
     window.addEventListener("pointermove", handleMove);
     window.addEventListener("pointerup", handleUp);
+    window.addEventListener("pointercancel", handleUp);
   };
 
   return (

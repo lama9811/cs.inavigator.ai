@@ -5,7 +5,7 @@ export default function WorkspaceCodeContext({ code, activeProblem }) {
   const label = activeProblem?.title ? `Workspace code: ${activeProblem.title}` : "Workspace code";
 
   return (
-    <details className="floating-code-context" open>
+    <details className="floating-code-context">
       <summary>
         <span>{label}</span>
       </summary>

@@ -4,9 +4,8 @@
   top: 0;
   z-index: 1000;
   width: 100%;
-  background: color-mix(in srgb, var(--bg-surface, #ffffff) 84%, transparent);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  /* Solid surface so chat content never shows through the navbar. */
+  background: var(--bg-surface, #ffffff);
   border-bottom: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.06));
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   height: 70px;
@@ -34,7 +33,7 @@
 }
 
 body.dark .navbar {
-  background: color-mix(in srgb, var(--bg-surface, #111827) 88%, transparent) !important;
+  background: var(--bg-surface, #111827) !important;
   border-bottom-color: var(--border-soft, var(--border-color)) !important;
 }
 
@@ -308,9 +307,7 @@ body.dark .admin-nav-btn {
 
 /* ========== DARK MODE SUPPORT ========== */
 .dark .navbar {
-  background: rgba(31, 31, 31, 0.88);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: var(--bg-surface, #1f1f1f);
   border-bottom-color: rgba(255, 255, 255, 0.06);
 }
 

@@ -488,6 +488,13 @@ export default function ChatSidebar({
   };
 
   return (
+    <>
+      {/* Mobile-only backdrop: tap to close the drawer so it never traps the chat. */}
+      <div
+        className="sidebar-backdrop"
+        aria-hidden="true"
+        onClick={() => onCollapseSidebar?.()}
+      />
     <div className="chat-sidebar" ref={sidebarRef}>
       <div
         className="sidebar-drag-handle"
@@ -835,5 +842,6 @@ export default function ChatSidebar({
         </div>
       )}
     </div>
+    </>
   );
 }

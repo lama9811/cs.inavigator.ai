@@ -10,8 +10,11 @@
   min-height: 0;
 }
 
+/* Fill the space down to the fixed terminal footer. The reserved area is the
+   navbar (72px) + the app's top padding/gaps (~30px) + the terminal height, so
+   the workspace grows to cover the gap that the old hardcoded 390px left. */
 .coding-app.terminal-open .coding-workbench-main {
-  min-height: clamp(500px, calc(100vh - 390px), 740px) !important;
+  min-height: calc(100vh - 72px - 30px - var(--ct-terminal-h, 245px)) !important;
 }
 
 .coding-app.terminal-closed .coding-workbench-main {
@@ -143,6 +146,49 @@ body.dark .workspace-tabs .terminal-tab.active {
   min-height: 0 !important;
 }
 
+.coding-app .workspace-action-clear:not(:disabled) {
+  background: color-mix(in srgb, var(--ct-danger, #dc2626) 8%, #ffffff) !important;
+  border-color: color-mix(in srgb, var(--ct-danger, #dc2626) 28%, var(--ct-border, #d8cbb8)) !important;
+  color: color-mix(in srgb, var(--ct-danger, #dc2626) 72%, #1c2436) !important;
+}
+
+.coding-app .workspace-action-clear:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ct-danger, #dc2626) 16%, #ffffff) !important;
+  border-color: var(--ct-danger, #dc2626) !important;
+  color: var(--ct-danger, #dc2626) !important;
+}
+
+body.dark .coding-app .workspace-action-clear:not(:disabled) {
+  background: rgba(220, 38, 38, 0.16) !important;
+  border-color: rgba(220, 38, 38, 0.4) !important;
+  color: #fca5a5 !important;
+}
+
+body.dark .coding-app .workspace-action-clear:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.26) !important;
+  border-color: rgba(248, 113, 113, 0.6) !important;
+  color: #fecaca !important;
+}
+
+/* Scoped with .workspace-actions so it beats the generic secondary-button
+   background (also !important) — otherwise the solid red fill is hidden and only
+   the border shows in light mode. Solid, clearly-visible red in both themes
+   (the dark theme override below was over-saturated). */
+.coding-app .workspace-actions .workspace-action-clear-confirm:not(:disabled),
+body.dark .coding-app .workspace-actions .workspace-action-clear-confirm:not(:disabled) {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 18px rgba(220, 38, 38, 0.28) !important;
+}
+
+.coding-app .workspace-actions .workspace-action-clear-confirm:hover:not(:disabled),
+body.dark .coding-app .workspace-actions .workspace-action-clear-confirm:hover:not(:disabled) {
+  background: #b91c1c !important;
+  border-color: #b91c1c !important;
+  color: #ffffff !important;
+}
+
 .coding-app .workspace-action-apply:not(:disabled) {
   background: linear-gradient(135deg, var(--ct-accent, #f58220), color-mix(in srgb, var(--ct-accent, #f58220) 72%, #ffd29b 28%)) !important;
   border-color: color-mix(in srgb, var(--ct-accent, #f58220) 70%, var(--ct-border, #d8cbb8)) !important;
@@ -200,5 +246,31 @@ body.dark .coding-app .workspace-action-apply:hover:not(:disabled) {
   .coding-app.coding-workspace-active .workspace-actions {
     gap: 8px;
     padding-top: 6px;
+  }
+}
+
+/* Keep the editor usable when the docked terminal is open: trim the terminal
+   height and let the editor/problem panels scroll internally instead of
+   clipping their content. */
+.coding-shell-terminal .terminal-panel {
+  height: clamp(150px, 20vh, 205px) !important;
+}
+
+.coding-app.coding-workspace-active.terminal-open .coding-editor-center,
+.coding-app.coding-workspace-active.terminal-open .coding-problem-panel {
+  overflow: auto !important;
+}
+
+.coding-app.coding-workspace-active .workspace-tab-body .leetcode-editor {
+  min-height: 200px !important;
+}
+
+@media (max-height: 780px) {
+  .coding-shell-terminal .terminal-panel {
+    height: clamp(130px, 22vh, 175px) !important;
+  }
+
+  .coding-app.coding-workspace-active .workspace-tab-body .leetcode-editor {
+    min-height: 150px !important;
   }
 }

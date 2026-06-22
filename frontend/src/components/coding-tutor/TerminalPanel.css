@@ -1,5 +1,10 @@
+/* The terminal is fixed to the viewport (see below), so the workspace grid only
+   needs its single content row. Bottom padding reserves space for the fixed
+   terminal footer. --ct-terminal-h keeps the panel height and the reserved space
+   in sync (override it in media queries to change both at once). */
 .coding-app.coding-workspace-active {
-  grid-template-rows: minmax(0, 1fr) auto !important;
+  --ct-terminal-h: clamp(175px, 24vh, 245px);
+  grid-template-rows: minmax(0, 1fr) !important;
 }
 
 .coding-app.coding-workspace-active .coding-section-nav {
@@ -11,39 +16,69 @@
   grid-row: 1;
 }
 
+/* Dock the terminal to the bottom of the VIEWPORT as a footer: full width from
+   the right edge of the global sidebar to the screen edge (it must NOT cover the
+   sidebar). The left offset mirrors the sidebar width like the chat input does. */
 .coding-app.coding-workspace-active .coding-shell-terminal {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  width: 100%;
-  max-width: 100%;
-  justify-self: stretch;
-  align-self: stretch;
-  min-width: 0;
+  position: fixed !important;
+  left: 280px !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: auto !important;
+  max-width: none !important;
   margin: 0 !important;
-  position: relative !important;
-  bottom: auto !important;
-  z-index: 20;
+  z-index: 1200;
+}
+
+body.sidebar-collapsed .coding-app.coding-workspace-active .coding-shell-terminal {
+  left: 64px !important;
+}
+
+body.sidebar-custom-width:not(.sidebar-collapsed) .coding-app.coding-workspace-active .coding-shell-terminal {
+  left: var(--sidebar-width, 280px) !important;
+}
+
+body.sidebar-resizing .coding-app.coding-workspace-active .coding-shell-terminal {
+  left: var(--sidebar-preview-width, 280px) !important;
+}
+
+@media (max-width: 640px) {
+  /* Sidebar is an overlay drawer on small screens, so the footer spans full width. */
+  .coding-app.coding-workspace-active .coding-shell-terminal,
+  body.sidebar-collapsed .coding-app.coding-workspace-active .coding-shell-terminal,
+  body.sidebar-custom-width:not(.sidebar-collapsed) .coding-app.coding-workspace-active .coding-shell-terminal,
+  body.sidebar-resizing .coding-app.coding-workspace-active .coding-shell-terminal {
+    left: 0 !important;
+  }
+}
+
+/* Because the terminal is now fixed (removed from flow), reserve space at the
+   bottom of the workspace so the last content is not hidden behind it. */
+.coding-app.coding-workspace-active {
+  padding-bottom: var(--ct-terminal-h) !important;
 }
 
 .coding-terminal-reopen {
   display: none !important;
 }
 
+/* ONE real terminal docked as a footer: a single dark surface that sits flush
+   from the sidebar edge to the screen edge and down to the very bottom. Straight
+   edges, no rounding, no side margins, no bottom gap. */
 .coding-shell-terminal .terminal-panel {
   width: 100%;
-  height: clamp(175px, 24vh, 245px) !important;
+  height: var(--ct-terminal-h, clamp(175px, 24vh, 245px)) !important;
   min-height: 0 !important;
   max-height: none !important;
   display: flex;
   flex-direction: column;
   border-radius: 0 !important;
-  border-left: 0 !important;
-  border-right: 0 !important;
-  border-bottom: 0 !important;
-  background: #f8f4ec !important;
-  color: #1c2436 !important;
-  border-color: #d8cbb8 !important;
-  box-shadow: 0 -6px 16px rgba(24, 36, 64, 0.08) !important;
+  border: 0 !important;
+  border-top: 1px solid #060a12 !important;
+  margin: 0 !important;
+  background: #0d1424 !important;
+  color: #e6edf3 !important;
+  box-shadow: 0 -8px 22px rgba(0, 0, 0, 0.3) !important;
   overflow: hidden !important;
 }
 
@@ -56,9 +91,10 @@
   justify-content: space-between;
   gap: 12px;
   border-radius: 0 !important;
-  background: #eee8dd !important;
-  color: #1c2436 !important;
-  border-bottom: 1px solid #d8cbb8 !important;
+  /* Slightly lighter than the body, like a terminal title bar. */
+  background: #161f33 !important;
+  color: #e6edf3 !important;
+  border-bottom: 1px solid #0b1220 !important;
 }
 
 .coding-terminal-tabs {
@@ -68,17 +104,17 @@
   min-width: 0;
   text-transform: uppercase;
   font-size: 0.75rem;
-  letter-spacing: 0;
+  letter-spacing: 0.02em;
 }
 
 .coding-terminal-tabs span {
   padding: 9px 0 8px;
-  color: #4b5565;
+  color: #8b98a9;
   border-bottom: 2px solid transparent;
 }
 
 .coding-terminal-tabs span.active {
-  color: #002d72;
+  color: #e6edf3;
   border-color: #f58220;
 }
 
@@ -90,12 +126,12 @@
 }
 
 .coding-terminal-controls button {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 999px;
-  border: 1px solid #d8cbb8;
-  background: #fffaf1;
-  color: #1c2436;
+  border: 1px solid rgba(230, 237, 243, 0.18);
+  background: rgba(230, 237, 243, 0.06);
+  color: #e6edf3;
   cursor: pointer;
   font-weight: 800;
   line-height: 1;
@@ -111,10 +147,11 @@
   flex: 1 1 auto;
   display: grid;
   grid-template-columns: minmax(0, 7fr) minmax(260px, 3fr);
-  gap: 12px;
+  gap: 0;
   min-height: 0;
-  padding: 10px 12px 12px;
+  padding: 0;
   overflow: hidden;
+  background: #0d1424;
 }
 
 .terminal-panel-output,
@@ -122,11 +159,11 @@
   min-width: 0;
   min-height: 0;
   overflow: auto;
+  padding: 10px 12px;
 }
 
 .terminal-panel-output {
-  border-right: 1px solid #d8cbb8;
-  padding-right: 12px;
+  border-right: 1px solid rgba(230, 237, 243, 0.1);
 }
 
 .terminal-panel-heading {
@@ -135,95 +172,162 @@
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 8px;
-  color: #4b5565;
-  font-size: 0.78rem;
+  color: #8b98a9;
+  font-size: 0.74rem;
   font-weight: 800;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .terminal-panel-heading strong {
-  color: #1c2436;
-  font-size: 0.85rem;
+  color: #e6edf3;
+  font-size: 0.82rem;
   text-transform: none;
 }
 
 .terminal-panel-heading em {
-  color: #647084;
-  font-size: 0.82rem;
+  color: #9aa7b8;
+  font-size: 0.8rem;
   font-style: normal;
   text-transform: none;
 }
 
+.terminal-explain-btn {
+  margin-left: auto;
+  border: 1px solid rgba(245, 130, 32, 0.5);
+  border-radius: 999px;
+  background: rgba(245, 130, 32, 0.16);
+  color: #f9b572;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 900;
+  padding: 0.32rem 0.66rem;
+  text-transform: none;
+}
+
+.terminal-explain-btn:hover {
+  border-color: #f58220;
+  background: rgba(245, 130, 32, 0.28);
+  color: #ffd29b;
+}
+
 .terminal-panel-message {
   margin: 0 0 8px;
-  color: #334155;
-  font-size: 0.9rem;
+  color: #c2cad6;
+  font-size: 0.88rem;
+}
+
+.terminal-quality-checklist {
+  border: 1px solid rgba(230, 237, 243, 0.12);
+  border-radius: 8px;
+  background: rgba(230, 237, 243, 0.04);
+  color: #e6edf3;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+}
+
+.terminal-quality-checklist strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.84rem;
+}
+
+.terminal-quality-checklist ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.terminal-quality-checklist li {
+  margin: 0.18rem 0;
+  color: #9aa7b8;
+  font-size: 0.82rem;
+  line-height: 1.35;
 }
 
 .terminal-output-kind {
   display: inline-flex;
   width: fit-content;
   margin: 0 0 6px;
-  padding: 3px 8px;
-  border: 1px solid #ddd1c0;
+  padding: 2px 8px;
+  border: 1px solid rgba(230, 237, 243, 0.16);
   border-radius: 999px;
-  background: #fffaf1;
-  color: #4b5565;
-  font-size: 0.72rem;
+  background: rgba(230, 237, 243, 0.06);
+  color: #9aa7b8;
+  font-size: 0.7rem;
   font-weight: 800;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .terminal-panel-empty {
-  border: 1px dashed #d8cbb8;
-  border-radius: 8px;
-  color: #647084;
-  font-size: 0.86rem;
-  line-height: 1.45;
-  padding: 12px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #6b7888;
+  font-family: "JetBrains Mono", "Fira Code", "SF Mono", Consolas, "Courier New", monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  padding: 2px 0;
 }
 
 .terminal-panel pre {
   width: 100%;
+  /* Size to content; the output COLUMN scrolls, not the <pre>. No min-height so
+     short output does not leave a big empty scroll area. Text sits directly on
+     the terminal surface — no nested box. */
+  min-height: 0 !important;
   max-height: none !important;
-  min-height: 86px;
   margin: 0 !important;
-  padding: 12px;
-  overflow: auto;
+  padding: 0;
+  overflow: visible;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  border: 1px solid #ddd1c0;
-  border-radius: 8px;
-  background: #fffaf1 !important;
-  color: #1c2436 !important;
-  font-size: 0.86rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent !important;
+  color: #e6edf3 !important;
+  font-family: "JetBrains Mono", "Fira Code", "SF Mono", Consolas, "Courier New", monospace;
+  font-size: 0.84rem;
+  line-height: 1.55;
 }
 
 .terminal-panel-test-list {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   min-height: 0;
 }
 
+/* Subtle row, not a card: a thin left accent + faint divider on the dark surface. */
 .terminal-panel-test {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 8px;
-  padding: 8px;
-  border: 1px solid #ddd1c0;
-  border-radius: 8px;
-  background: #fffaf1;
-  color: #1c2436;
+  padding: 7px 8px 7px 10px;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-bottom: 1px solid rgba(230, 237, 243, 0.08);
+  border-radius: 0;
+  background: transparent;
+  color: #e6edf3;
+}
+
+.terminal-panel-test.passed {
+  border-left-color: #3fb950;
+}
+
+.terminal-panel-test.failed {
+  border-left-color: #f85149;
 }
 
 .terminal-panel-test > span {
-  color: #2e7d46;
+  color: #3fb950;
   font-size: 0.72rem;
   font-weight: 900;
 }
 
 .terminal-panel-test.failed > span {
-  color: #b42318;
+  color: #f85149;
 }
 
 .terminal-panel-test-detail {
@@ -233,7 +337,7 @@
 }
 
 .terminal-panel-test-detail strong {
-  color: #1c2436;
+  color: #f0f6fc;
   font-size: 0.9rem;
 }
 
@@ -242,90 +346,49 @@
   max-width: 100%;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  color: #4b5565;
+  color: #9aa7b8;
+  font-family: "JetBrains Mono", "Fira Code", "SF Mono", Consolas, "Courier New", monospace;
   font-size: 0.78rem;
 }
 
 .terminal-panel-test-detail small {
-  color: #b42318;
+  color: #ff7b72;
   font-size: 0.78rem;
 }
 
+/* The terminal uses the SAME dark look in light and dark themes (it's a real
+   terminal). Only nudge the outer chrome a touch in dark mode so it blends with
+   the darker page; all inner element colors come from the base rules above. */
 body.dark .coding-shell-terminal .terminal-panel {
-  background: #172033 !important;
-  color: #f4eadb !important;
-  border-color: rgba(216, 203, 184, 0.28) !important;
-  box-shadow: 0 -10px 24px rgba(0, 0, 0, 0.28) !important;
+  background: #0b1220 !important;
+  border-color: #060a12 !important;
+  box-shadow: 0 -10px 26px rgba(0, 0, 0, 0.4) !important;
 }
 
 body.dark .coding-shell-terminal .terminal-panel .coding-terminal-header {
-  background: #121b2b !important;
-  color: #f4eadb !important;
-  border-color: rgba(216, 203, 184, 0.22) !important;
+  background: #111a2b !important;
 }
 
-body.dark .coding-terminal-tabs span {
-  color: #b8c0ce;
-}
-
-body.dark .coding-terminal-tabs span.active {
-  color: #f4eadb;
-  border-color: #d89a43;
-}
-
-body.dark .coding-terminal-controls button,
-body.dark .terminal-panel pre,
-body.dark .terminal-panel-test {
-  background: #101827 !important;
-  color: #f4eadb !important;
-  border-color: rgba(216, 203, 184, 0.22) !important;
-}
-
-body.dark .terminal-panel-heading,
-body.dark .terminal-panel-heading em,
-body.dark .terminal-panel-test-detail code {
-  color: #b8c0ce;
-}
-
-body.dark .terminal-panel-heading strong,
-body.dark .terminal-panel-test-detail strong {
-  color: #f4eadb;
-}
-
-body.dark .terminal-output-kind {
-  background: #101827;
-  color: #b8c0ce;
-  border-color: rgba(216, 203, 184, 0.22);
-}
-
-body.dark .terminal-panel-message {
-  color: #d9dfeb;
-}
-
-body.dark .terminal-panel-output {
-  border-right-color: rgba(216, 203, 184, 0.22);
-}
-
-body.dark .terminal-panel-empty {
-  border-color: rgba(216, 203, 184, 0.24);
-  color: #b8c0ce;
+body.dark .terminal-panel-body {
+  background: #0b1220;
 }
 
 @media (max-height: 760px) {
-  .coding-shell-terminal .terminal-panel {
-    height: clamp(145px, 27vh, 205px) !important;
+  .coding-app.coding-workspace-active {
+    --ct-terminal-h: clamp(145px, 27vh, 205px);
   }
 
-  .terminal-panel-body {
-    gap: 10px;
-    padding: 8px 10px 10px;
+  .terminal-panel-output,
+  .terminal-panel-tests {
+    padding: 8px 10px;
   }
 }
 
 @media (max-width: 900px) {
+  /* Terminal is fixed full-width (footer); the grid only stacks nav + main. */
   .coding-app.coding-workspace-active {
     grid-template-columns: 1fr !important;
-    grid-template-rows: auto minmax(0, 1fr) auto !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
   }
 
   .coding-app.coding-workspace-active .coding-section-nav {
@@ -338,22 +401,14 @@ body.dark .terminal-panel-empty {
     grid-row: 2 !important;
   }
 
-  .coding-app.coding-workspace-active .coding-shell-terminal {
-    grid-column: 1 !important;
-    grid-row: 3 !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-  }
-
   .terminal-panel-body {
     grid-template-columns: minmax(0, 7fr) minmax(220px, 3fr);
   }
 }
 
 @media (max-width: 640px) {
-  .coding-shell-terminal .terminal-panel {
-    height: clamp(210px, 32vh, 300px) !important;
+  .coding-app.coding-workspace-active {
+    --ct-terminal-h: clamp(210px, 32vh, 300px);
   }
 
   .terminal-panel-body {
@@ -363,12 +418,6 @@ body.dark .terminal-panel-empty {
   .terminal-panel-output {
     min-height: 72px;
     border-right: 0;
-    border-bottom: 1px solid #d8cbb8;
-    padding-right: 0;
-    padding-bottom: 10px;
-  }
-
-  body.dark .terminal-panel-output {
-    border-bottom-color: rgba(216, 203, 184, 0.22);
+    border-bottom: 1px solid rgba(230, 237, 243, 0.1);
   }
 }

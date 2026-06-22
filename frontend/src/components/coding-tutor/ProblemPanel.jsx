@@ -2,6 +2,9 @@ export default function ProblemPanel({
   problem,
   solution,
   problemLoading,
+  isSolved = false,
+  solvedLanguages = [],
+  showProblemNavigation = false,
   canGoPrevious = false,
   canGoNext = false,
   onPreviousProblem,
@@ -16,16 +19,26 @@ export default function ProblemPanel({
         <div className="coding-problem-content">
           <div className="daily-challenge-title-row">
             <h2>{problem.title}</h2>
-            <span className={`daily-difficulty ${String(problem.difficulty || "easy").toLowerCase()}`}>{problem.difficulty}</span>
+            <span className="problem-meta-pills">
+              <span className={`daily-difficulty ${String(problem.difficulty || "easy").toLowerCase()}`}>{problem.difficulty}</span>
+              {isSolved && (
+                <span
+                  className="problem-solved-badge"
+                  title={solvedLanguages.length ? `Solved in ${solvedLanguages.join(", ")}` : "You have solved this problem"}
+                >
+                  Solved
+                </span>
+              )}
+            </span>
           </div>
           <div className="daily-tags">
             <span>{problem.topic}</span>
             {solution?.function_name && <span>{solution.function_name}</span>}
           </div>
-          {problem.source !== "leetcode" && (
+          {showProblemNavigation && (
             <div className="problem-navigation">
-              <button type="button" onClick={onPreviousProblem} disabled={!canGoPrevious}>Back</button>
-              <button type="button" onClick={onNextProblem} disabled={!canGoNext}>Next</button>
+              <button type="button" onClick={onPreviousProblem} disabled={!canGoPrevious} title="Previous unsolved problem (solved problems are skipped)">Back</button>
+              <button type="button" onClick={onNextProblem} disabled={!canGoNext} title="Next unsolved problem (solved problems are skipped)">Next</button>
             </div>
           )}
           <p>{problem.prompt}</p>
@@ -63,10 +76,11 @@ export default function ProblemPanel({
       ) : (
         <div className="coding-problem-empty">
           <h2>No problem loaded</h2>
-          <p>Open Quiz Bank or Daily Challenge to start working.</p>
+          <p>Open Quiz Bank for a graded problem, or write your own code and press Run.</p>
           <button type="button" onClick={onOpenQuizBank}>Open Quiz Bank</button>
         </div>
       )}
     </aside>
   );
 }
+

@@ -3,6 +3,7 @@ function statusLabel(status) {
   if (status === "failed") return "Failed";
   if (status === "running") return "Running";
   if (status === "error") return "Error";
+  if (status === "ran") return "Done";
   return "Ready";
 }
 
@@ -15,7 +16,7 @@ function formatValue(value) {
   }
 }
 
-function TerminalOutputPane({ output, tests }) {
+function TerminalOutputPane({ output, tests, onExplainError }) {
   const capturedOutput = [output.stdout, output.stderr].filter(Boolean).join("\n");
   const hasRunResults = ["passed", "failed", "error"].includes(output.status) && tests.length > 0;
   const returnOutput = hasRunResults
@@ -24,20 +25,27 @@ function TerminalOutputPane({ output, tests }) {
         return formatValue(test.actual);
       }).join("\n")
     : "";
+  // An actual crash/runtime/syntax error: status "error" or stderr present.
+  const hasError = output.status === "error" || Boolean(output.stderr);
 
   return (
     <section className="terminal-panel-output" aria-label="Terminal output">
       <div className="terminal-panel-heading">
         <span>Output</span>
+        {hasError && onExplainError && (
+          <button type="button" className="terminal-explain-btn" onClick={onExplainError}>
+            Explain this error
+          </button>
+        )}
       </div>
       {capturedOutput ? (
         <>
-          <span className="terminal-output-kind">stdout / stderr</span>
+          <span className="terminal-output-kind">Program output</span>
           <pre>{capturedOutput}</pre>
         </>
       ) : returnOutput ? (
         <>
-          <span className="terminal-output-kind">workspace output</span>
+          <span className="terminal-output-kind">Return value</span>
           <pre>{returnOutput}</pre>
         </>
       ) : (
@@ -49,8 +57,23 @@ function TerminalOutputPane({ output, tests }) {
   );
 }
 
-function TerminalTestsPane({ output, tests }) {
+function TerminalTestsPane({ output, tests, onExplainFailedTests }) {
   const hasSummary = typeof output.passed === "number" && typeof output.total === "number";
+  const hasFailedTests = tests.some(test => !test.passed);
+  const checklist = Array.isArray(output.quality_checklist) ? output.quality_checklist : [];
+
+  if (output.free_run) {
+    return (
+      <section className="terminal-panel-tests" aria-label="Run summary">
+        <div className="terminal-panel-heading">
+          <span>Run</span>
+          {typeof output.duration_ms === "number" && <em>{Math.round(output.duration_ms)} ms</em>}
+        </div>
+        {output.message && <p className="terminal-panel-message">{output.message}</p>}
+        <p className="terminal-panel-message">Personal code runs are not auto-graded. Use the floating Coding Tutor for review or hints.</p>
+      </section>
+    );
+  }
 
   return (
     <section className="terminal-panel-tests" aria-label="Test cases">
@@ -62,8 +85,19 @@ function TerminalTestsPane({ output, tests }) {
           </strong>
         )}
         {typeof output.duration_ms === "number" && <em>{Math.round(output.duration_ms)} ms</em>}
+        {hasFailedTests && onExplainFailedTests && (
+          <button type="button" className="terminal-explain-btn" onClick={onExplainFailedTests}>
+            Explain failed tests
+          </button>
+        )}
       </div>
       {output.message && <p className="terminal-panel-message">{output.message}</p>}
+      {checklist.length > 0 && (
+        <div className="terminal-quality-checklist">
+          <strong>Code quality checklist</strong>
+          <ul>{checklist.map((item, index) => <li key={index}>{item}</li>)}</ul>
+        </div>
+      )}
       {tests.length > 0 ? (
         <div className="terminal-panel-test-list">
           {tests.map((test, index) => (
@@ -88,7 +122,7 @@ function TerminalTestsPane({ output, tests }) {
   );
 }
 
-export default function TerminalPanel({ testOutput, expanded = false, onClose }) {
+export default function TerminalPanel({ testOutput, expanded = false, onClose, onExplainFailedTests, onExplainError }) {
   const output = typeof testOutput === "string" ? { status: "ready", message: testOutput } : (testOutput || {});
   const tests = output.tests || [];
 
@@ -108,8 +142,8 @@ export default function TerminalPanel({ testOutput, expanded = false, onClose })
         </div>
       </div>
       <div className="terminal-panel-body">
-        <TerminalOutputPane output={output} tests={tests} />
-        <TerminalTestsPane output={output} tests={tests} />
+        <TerminalOutputPane output={output} tests={tests} onExplainError={onExplainError} />
+        <TerminalTestsPane output={output} tests={tests} onExplainFailedTests={onExplainFailedTests} />
       </div>
     </div>
   );

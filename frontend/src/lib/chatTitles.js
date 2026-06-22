@@ -27,8 +27,10 @@ export function generateChatTitle(messages = [], mode = "regular") {
   }
 
   if (mode === "coding_tutor") {
+    if (/\b(rewrite|convert|translate|refactor)\b/.test(normalized)) return "Code Rewrite";
+    if (/\b(generate|write|create|draft|starter|template|implement)\b/.test(normalized)) return "Code Generation";
     if (/\b(debug|error|traceback|exception|bug|fix)\b/.test(normalized)) return "Debug Help";
-    if (/\b(review|feedback|improve|refactor)\b/.test(normalized) || /\b(def|function|class|const|let|var)\b/.test(firstText)) return "Code Review";
+    if (/\b(review|feedback|improve)\b/.test(normalized) || /\b(def|function|class|const|let|var)\b/.test(firstText)) return "Code Review";
     if (/\b(quiz|practice quiz|questions)\b/.test(normalized)) return "Practice Quiz";
     if (/\b(interview|technical interview)\b/.test(normalized)) return "Interview Prep";
     if (/\b(leetcode|challenge|problem|algorithm)\b/.test(normalized)) return "Coding Practice";

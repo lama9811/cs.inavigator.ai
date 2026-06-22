@@ -95,6 +95,12 @@ _OUTAGE_MSG = (
     "Please try again in a minute. If the problem persists, contact the CS department at (443) 885-3962."
 )
 
+# Rate-limit / transient-empty message. Contains "temporarily" so the frontend's
+# outage detector silently retries it once instead of showing a dead-end bubble.
+_BUSY_MSG = (
+    "The system is temporarily busy. Please try your question again in a moment."
+)
+
 # Grounding validation: minimum thresholds before flagging a response
 _GROUNDING_MIN_CHUNKS = 2       # At least 2 KB docs must be cited
 _GROUNDING_DISCLAIMER = (
@@ -153,8 +159,26 @@ def _preserve_code_first_response(message: str, final_text: str, code_candidate:
     return f"{code_block}\n\n{notes}" if notes else code_block
 
 
+def _code_first_stream_text(message: str, text: str, code_candidate: str = "") -> str:
+    """Prevent prose-only replacement events from hiding streamed rewrite code."""
+    if not _is_code_first_request(message):
+        return text
+    if _extract_code_block(text):
+        return text
+    code_block = _extract_code_block(code_candidate)
+    if not code_block:
+        return text
+    notes = _short_code_notes(text)
+    return f"{code_block}\n\n{notes}" if notes else code_block
+
+
 def _chat_mode_for_message(message: str) -> str:
-    return "coding_tutor" if "CODING TUTOR MODE:" in (message or "") else "regular"
+    text = message or ""
+    if "CODING TUTOR MODE:" in text:
+        return "coding_tutor"
+    if "GENERAL TUTOR MODE:" in text:
+        return "general_tutor"
+    return "regular"
 
 # =============================================================================
 # FAITHFULNESS GATE: Entity Whitelist
@@ -197,7 +221,7 @@ def _check_faculty_faithfulness(text: str) -> list[str]:
     return hallucinated
 
 
-def _apply_grounding_gate(text: str, chunks: int, coverage: float = 0.0, has_student_data: bool = False) -> str:
+def _apply_grounding_gate(text: str, chunks: int, coverage: float = 0.0, has_student_data: bool = False, chat_mode: str = "regular") -> str:
     """Append a disclaimer when the agent answered with insufficient data sources.
 
     Checks both chunk count AND coverage ratio. A response needs either:
@@ -207,6 +231,8 @@ def _apply_grounding_gate(text: str, chunks: int, coverage: float = 0.0, has_stu
 
     This prevents responses that cite 1 chunk but are 90% hallucinated from passing.
     """
+    if chat_mode in {"coding_tutor", "general_tutor"}:
+        return text
     if not text or _SKIP_GROUNDING_RE.match(text):
         return text
     if has_student_data:
@@ -533,9 +559,14 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
             if final_text.strip() in ("```", "``` ```", "``````"):
                 final_text = "I wasn't able to generate a proper response. Please try asking again."
 
-            # Catch 429 rate limit errors leaked into response
+            # Catch 429 rate limit errors leaked into response. Retry once with a
+            # short backoff before giving up (non-stream path has no client retry).
             if "429" in final_text and "RESOURCE_EXHAUSTED" in final_text:
-                final_text = "The system is busy right now. Please try again in a moment."
+                if not retried:
+                    print("   [RATE_LIMIT] Gemini 429, retrying once after backoff...")
+                    time_module.sleep(3)
+                    return _run_query(message, user_id, session_id, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context)
+                final_text = _BUSY_MSG
 
             # Strip self-disclosure phrases (Gemini sometimes ignores instruction)
             final_text = re.sub(r'I am programmed to be a helpful[^.]*\.', 'I can only help with Morgan State University academic questions.', final_text)
@@ -550,7 +581,7 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
 
             # Grounding validation gate: flag low-grounded responses
             has_data = bool(context or canvas_context)
-            final_text = _apply_grounding_gate(final_text, grounding_chunks, coverage=grounding_coverage, has_student_data=has_data)
+            final_text = _apply_grounding_gate(final_text, grounding_chunks, coverage=grounding_coverage, has_student_data=has_data, chat_mode=chat_mode)
 
             # Inject procedure guide Drive links if the agent omitted them
             final_text = _inject_procedure_links(final_text)
@@ -774,17 +805,29 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
             for part in parts:
                 if isinstance(part, dict) and "text" in part:
                     text = part["text"]
+                    # Rate-limit errors from Gemini can leak into a streamed text
+                    # part. Catch them immediately and surface a clean retryable
+                    # error instead of appending the raw error onto partial text.
+                    if "429" in text and "RESOURCE_EXHAUSTED" in text:
+                        print("   [RATE_LIMIT] Gemini 429 during stream")
+                        yield {"type": "error", "content": _BUSY_MSG}
+                        return
                     text = re.sub(r'\s*\[cite:\s*[^\]]*\]', '', text)
                     if _extract_code_block(text):
                         code_candidate = text
+                    text = _code_first_stream_text(message, text, code_candidate)
                     if text.strip():
                         if len(text) > len(full_text):
                             chunk = text[len(full_text):]
                             full_text = text
                             yield {"type": "chunk", "content": chunk}
                         elif text != full_text:
+                            # ADK sometimes sends a replacement/final draft rather
+                            # than an append-only delta. The frontend appends chunk
+                            # events, so do not stream full replacements as chunks.
+                            # The final `done` event below will replace the visible
+                            # text safely.
                             full_text = text
-                            yield {"type": "chunk", "content": text}
 
         # Store grounding signal for research_agent (thread-local)
         _set_grounding(grounding_chunks > 0, grounding_chunks, grounding_coverage)
@@ -796,19 +839,24 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
             yield {"type": "error", "content": _OUTAGE_MSG}
             return
 
-        # Post-process: catch 429 errors and empty code blocks in streamed text
+        # Post-process: catch 429 errors and empty code blocks in streamed text.
         cleaned = full_text.strip()
         cleaned = _preserve_code_first_response(message, cleaned, code_candidate)
-        if cleaned in ("```", "``` ```", "``````", ""):
-            cleaned = "I wasn't able to generate a proper response. Please try asking again."
-            yield {"type": "chunk", "content": cleaned}
+        # A leaked rate-limit error -> clean retryable error (not visible text).
         if "429" in cleaned and "RESOURCE_EXHAUSTED" in cleaned:
-            cleaned = "The system is busy right now. Please try again in a moment."
-            yield {"type": "chunk", "content": cleaned}
+            print("   [RATE_LIMIT] Gemini 429 in final stream text")
+            yield {"type": "error", "content": _BUSY_MSG}
+            return
+        # Empty/blank response -> retryable error so the client can re-ask cleanly
+        # instead of rendering an apologetic dead-end in the chat bubble.
+        if cleaned in ("```", "``` ```", "``````", ""):
+            print("   [EMPTY] Stream produced no usable text")
+            yield {"type": "error", "content": _BUSY_MSG}
+            return
 
         # Grounding validation gate: append disclaimer if low-grounded
         has_data = bool(context or canvas_context)
-        final = _apply_grounding_gate(cleaned, grounding_chunks, coverage=grounding_coverage, has_student_data=has_data)
+        final = _apply_grounding_gate(cleaned, grounding_chunks, coverage=grounding_coverage, has_student_data=has_data, chat_mode=chat_mode)
         if final != cleaned:
             disclaimer = final[len(cleaned):]
             yield {"type": "chunk", "content": disclaimer}

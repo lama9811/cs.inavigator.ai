@@ -38,14 +38,17 @@ function insightForTopic(topic = "") {
 
 export default function QuizBank({
   questions,
+  allQuestions = [],
   progressByQuestion,
   listLoading,
   difficulty,
   selectedLanguage,
   languageOptions,
   progressSummary,
+  selectedTopicPack,
   onDifficultyChange,
   onLanguageChange,
+  onClearTopicPack,
   onSelectProblem,
 }) {
   const personalizedQuestions = questions.filter((question) => {
@@ -57,6 +60,9 @@ export default function QuizBank({
   const objectives = [...new Set(topics.flatMap(topic => insightForTopic(topic).objectives))].slice(0, 5);
   const mistakes = [...new Set(topics.flatMap(topic => insightForTopic(topic).mistakes))].slice(0, 5);
   const hasPersonalizedInsights = personalizedQuestions.length > 0;
+  const visibleQuestions = selectedTopicPack
+    ? (allQuestions.length ? allQuestions : questions).filter(question => (question.topic || "").toLowerCase() === selectedTopicPack.toLowerCase())
+    : questions;
 
   return (
     <section className="coding-page-panel quiz-bank-page">
@@ -79,7 +85,7 @@ export default function QuizBank({
           <div className="quiz-bank-header">
             <div>
               <span className="coding-kicker">Question Library</span>
-              <h2>{titleCase(difficulty)} Practice</h2>
+              <h2>{selectedTopicPack ? `${titleCase(selectedTopicPack)} Pack` : `${titleCase(difficulty)} Practice`}</h2>
             </div>
             <div className="practice-controls compact">
               <label>Difficulty
@@ -96,9 +102,15 @@ export default function QuizBank({
               </label>
             </div>
           </div>
+          {selectedTopicPack && (
+            <div className="topic-filter-banner">
+              <span>Showing {visibleQuestions.length} {titleCase(selectedTopicPack)} problems across all difficulties</span>
+              <button type="button" onClick={onClearTopicPack}>Show all topics</button>
+            </div>
+          )}
           {listLoading ? <div className="daily-challenge-loading">Loading CS Navigator practice...</div> : (
             <div className="quiz-card-grid">
-              {questions.map(question => (
+              {visibleQuestions.map(question => (
                 <QuizProblemCard
                   key={question.id}
                   question={question}
@@ -106,6 +118,9 @@ export default function QuizBank({
                   onSelect={onSelectProblem}
                 />
               ))}
+              {!visibleQuestions.length && (
+                <div className="daily-challenge-loading">No questions found for this topic yet.</div>
+              )}
             </div>
           )}
         </div>

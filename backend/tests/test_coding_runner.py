@@ -4,6 +4,8 @@ from coding_runner import (
     run_javascript_practice_tests,
     run_python_practice_tests,
 )
+from pathlib import Path
+import json
 
 
 COUNT_VOWELS_TESTS = [
@@ -81,6 +83,37 @@ countVowels("hello");
     assert result["stdout"].strip() == "2"
 
 
+def test_javascript_runner_supports_const_arrow_functions():
+    code = """
+const countVowels = (text) => {
+  return [...text.toLowerCase()].filter((char) => "aeiou".includes(char)).length;
+};
+"""
+
+    result = run_javascript_practice_tests(code, "countVowels", COUNT_VOWELS_TESTS)
+
+    assert result["status"] == "passed"
+    assert result["passed"] == 2
+
+
+def test_javascript_runner_supports_order_insensitive_tests():
+    code = """
+function groupAnagrams(words) {
+  return [["tan"], ["tea", "ate", "eat"]];
+}
+"""
+    tests = [{
+        "name": "groups can be returned in any order",
+        "args": [["eat", "tea", "tan", "ate"]],
+        "expected": [["eat", "tea", "ate"], ["tan"]],
+        "order_insensitive": True,
+    }]
+
+    result = run_javascript_practice_tests(code, "groupAnagrams", tests)
+
+    assert result["status"] == "passed"
+
+
 def test_javascript_runner_reports_missing_function():
     code = "const value = 42;"
 
@@ -88,6 +121,32 @@ def test_javascript_runner_reports_missing_function():
 
     assert result["status"] == "error"
     assert "countVowels" in result["stderr"]
+
+
+def test_all_javascript_practice_questions_have_executable_tests():
+    answers_path = Path(__file__).resolve().parents[1] / "data_sources" / "quiz" / "answers" / "javascript.json"
+    data = json.loads(answers_path.read_text(encoding="utf-8"))
+
+    missing = [
+        item.get("question_id")
+        for item in data.get("items", [])
+        if not item.get("runner_tests")
+    ]
+
+    assert missing == []
+
+
+def test_javascript_practice_runner_tests_have_expected_shape():
+    answers_path = Path(__file__).resolve().parents[1] / "data_sources" / "quiz" / "answers" / "javascript.json"
+    data = json.loads(answers_path.read_text(encoding="utf-8"))
+
+    malformed = []
+    for item in data.get("items", []):
+        for index, test in enumerate(item.get("runner_tests") or [], start=1):
+            if "args" not in test or "expected" not in test:
+                malformed.append(f"{item.get('question_id')} test {index}")
+
+    assert malformed == []
 
 
 def test_python_runner_allows_safe_standard_library_imports():

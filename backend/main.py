@@ -22,7 +22,9 @@ from coding_runner import (
     check_practice_run_rate_limit,
     empty_practice_run_response,
     get_cached_practice_run,
+    run_javascript_freeform,
     run_javascript_practice_tests,
+    run_python_freeform,
     run_python_practice_tests,
     set_cached_practice_run,
 )
@@ -591,6 +593,15 @@ class LoginRequest(BaseModel):
 VALID_MODELS = {"", "inav-1.0", "inav-1.1"}
 VALID_CHAT_MODES = {"regular", "coding_tutor"}
 
+GENERAL_TUTOR_CONTEXT = """
+GENERAL TUTOR MODE:
+- The student's question is not asking for Morgan State, Morgan CS department, course, faculty, policy, registration, advisor, Canvas, DegreeWorks, or campus-specific facts.
+- Do not use the Morgan CS knowledge base for this request.
+- Answer as a helpful academic and student-success tutor using general knowledge.
+- If the student asks for facts that may change over time, legal/medical/financial advice, or school-specific policy, ask them to verify with an official source.
+- If the question becomes Morgan-specific, switch back to Morgan-grounded behavior and use the knowledge base.
+"""
+
 CODING_TUTOR_CONTEXT = """
 CODING TUTOR MODE:
 - Stay focused on programming help, debugging, code review, algorithm practice, and learning Python, Java, C++, and JavaScript.
@@ -633,11 +644,249 @@ def _coding_tutor_query_has_workspace_code(query: str) -> bool:
         and "```" in query
     )
 
+_MORGAN_SPECIFIC_RE = re.compile(
+    r"\b("
+    r"morgan|msu|bear|bears|cs\s*department|computer\s*science\s*department|"
+    r"cosc\s*\d{3}|websis|degreeworks|degree\s*works|canvas|navigate|advisor|adviser|"
+    r"registrar|registration|override|catalog|curriculum|graduation|financial\s*aid|fafsa|"
+    r"scholarshipuniverse|department\s*chair|chair|dean|provost|president|faculty|professor|"
+    r"office\s*hours|mcmechen|scmns|course\s*sequence|prerequisite|prereq|tuition|bursar|"
+    r"forms?|transcript|academic\s*calendar|student\s*organization|club|"
+    r"campus|library|dining|housing|dorm|residence\s*hall|shuttle|parking|bookstore|"
+    r"recreation|health\s*center|career\s*center|writing\s*center|tutoring\s*center"
+    r")\b",
+    re.IGNORECASE,
+)
+
+_GENERAL_ACADEMIC_RE = re.compile(
+    r"\b("
+    # Common question forms (factual + conceptual). \w* tails catch
+    # explains/explained/explaining, describes, summarizing, etc.
+    r"explain\w*|define\w*|describe\w*|summari[sz]e\w*|"
+    r"what\s+(is|are|was|were|causes?|happens|happened)|what'?s|"
+    r"how\s+(do|does|did|to|can|could|would|should|many|much|long|far|old)|"
+    r"when\s+(is|are|was|were|will|do|does|did)|"
+    r"who\s+(is|are|was|were|won|wrote|made|invented|discovered|created)|"
+    r"where\s+(is|are|was|were|do|does|can)|"
+    r"why\s+(is|are|do|does|did|was|were)|"
+    r"tell\s+me\s+(about|more)|difference\s+between|compare|"
+    # Resource / explainer requests (videos, tutorials, examples)
+    r"video|youtube|tutorial|walkthrough|overview|example|give\s+me|show\s+me|find\s+me|"
+    # Study / learning skills
+    r"study|learn|prepare|practice|essay|research|homework\s+help|"
+    # General subjects / topics
+    r"math|calculus|algebra|geometry|trigonometry|statistics|physics|chemistry|biology|"
+    r"history|geography|astronomy|eclipse|supernova|planet|solar|galaxy|"
+    r"economics|psychology|philosophy|writing|grammar|literature|"
+    # Programming concepts (no Morgan grounding needed)
+    r"algorithm|data\s*structure|programming|python|javascript|java|c\+\+|recursion|"
+    r"binary\s*search|linked\s*list|tree|graph|database|sql|operating\s*system"
+    r")\b",
+    re.IGNORECASE,
+)
+
+# Terms that signal a question about the student's own Morgan academic path. These
+# keep KB/DegreeWorks/Canvas grounding even when no explicit Morgan keyword appears.
+_STUDENT_RECORD_RE = re.compile(
+    r"\b("
+    r"my\s|i\s+(have|am|took|need|enrolled|failed|passed|completed)|should\s+i|can\s+i\s+take|"
+    r"do\s+i\s+need|am\s+i\s+|what\s+(class|course)es?\s+(should|do|to)|"
+    r"class(es)?|semester|register|enroll|graduat|gpa|major|minor|degree|credits?|"
+    r"schedule|advis(or|er|ing)|transcript|prereq|section|syllabus|assignment|grade"
+    r")\b",
+    re.IGNORECASE,
+)
+
+# Remembers the last routing track (general vs regular) per chat session so a
+# context-dependent follow-up ("a video on it", "explain that more") stays on the
+# same track instead of flipping modes and resetting the ADK conversation/context.
+_SESSION_TRACK: dict[str, str] = {}
+
+# Pure greetings / pleasantries. These should not lock the conversation onto a
+# KB-or-general track, so the NEXT real question routes freely.
+_GREETING_RE = re.compile(
+    r"^(?:hi+|hey+|hello+|helo|howdy|sup|yo|hola|greetings|good\s+(?:morning|afternoon|evening)|"
+    r"how\s+are\s+you|what'?s\s+up|thanks?|thank\s+you|ok(?:ay)?|cool|nice|bye|goodbye)"
+    r"[\s,!.]*$",
+    re.IGNORECASE,
+)
+
+
+def resolve_general_tutor(user_q: str, session_id: str, is_coding_tutor: bool,
+                          force_general: bool = False) -> bool:
+    """Decide if a request should use the no-KB general tutor.
+
+    - Coding mode -> never general (returns False, KB skipped separately).
+    - force_general (explicit General mode toggle) -> always general.
+    - Greetings -> stay on whatever track exists; never write a new track.
+    - Otherwise classify, with ambiguous follow-ups inheriting the prior track.
+    """
+    if is_coding_tutor:
+        _SESSION_TRACK[session_id] = "coding"
+        return False
+
+    # Explicit user choice (General mode toggle) always wins.
+    if force_general:
+        _SESSION_TRACK[session_id] = "general"
+        return True
+
+    # A bare greeting must not poison the track. Route it to the friendly general
+    # path (no KB) but leave the saved track untouched so the next real question
+    # is classified on its own merits.
+    if _GREETING_RE.match((user_q or "").strip()):
+        return True
+
+    general = is_general_non_morgan_query(user_q)
+    # Only AMBIGUOUS follow-ups ("a video on it", "tell me more", "their email")
+    # stick to the conversation's existing track, so a pronoun-only message never
+    # flips modes and resets the ADK session/context. A self-contained question
+    # ("explain photosynthesis") switches track based on its own content instead
+    # of being dragged back to the KB by a prior Morgan turn.
+    if _is_ambiguous_followup(user_q):
+        prev = _SESSION_TRACK.get(session_id)
+        if prev == "general":
+            general = True
+        elif prev == "regular":
+            general = False
+    _SESSION_TRACK[session_id] = "general" if general else "regular"
+    if len(_SESSION_TRACK) > 5000:
+        _SESSION_TRACK.clear()
+    return general
+
+def is_general_non_morgan_query(query: str) -> bool:
+    """Route non-Morgan questions to Gemini directly; keep Morgan topics on the KB.
+
+    Deny-list model (KB is the priority for Morgan, everything else is general):
+    1. Morgan-specific terms -> KB (regular tutor).
+    2. Student-record / academic-planning terms -> KB (needs DegreeWorks/Canvas).
+    3. Pronoun-only / ambiguous follow-ups -> defer (let the session track decide
+       in resolve_general_tutor); do NOT force general here.
+    4. Otherwise -> general (no-KB Gemini). This is the flipped default: a
+       self-contained question that is not about Morgan or the student's record
+       (e.g. "what is an eclipse", "who painted the mona lisa") goes to Gemini.
+    """
+    text = (query or "").strip()
+    if not text:
+        return False
+    if _MORGAN_SPECIFIC_RE.search(text):
+        return False
+    if _STUDENT_RECORD_RE.search(text):
+        return False
+    # Ambiguous follow-ups ("it", "tell me more", "why", "that one") carry no
+    # topic of their own. Defer to the session track in resolve_general_tutor
+    # instead of guessing a track here.
+    if _is_ambiguous_followup(text):
+        return False
+    # Default: not Morgan, not a student record, has its own content -> general.
+    return True
+
+
+# Short messages that only make sense with prior context. These should inherit
+# the conversation's track rather than forcing a general/KB decision on their own.
+_AMBIGUOUS_FOLLOWUP_RE = re.compile(
+    r"^(?:"
+    r"(?:tell me more|more|go on|continue|and\??|ok(?:ay)?|thanks?|"
+    r"(?:what|how|why|and|but|so|then|ok)\s+(?:about|is|are|do(?:es)?)?\s*"
+    r"(?:it|that|this|those|these|them|they|one|ones))"
+    r")[\s?.!]*$",
+    re.IGNORECASE,
+)
+
+
+def _is_ambiguous_followup(text: str) -> bool:
+    body = (text or "").strip()
+    if not body:
+        return True
+    # Matches explicit ambiguous patterns ("tell me more", "what about it", "why").
+    if _AMBIGUOUS_FOLLOWUP_RE.match(body):
+        return True
+    # A very short message is ambiguous ONLY if it has no substantive content word
+    # of its own (i.e. it's all pronouns/fillers). "explain photosynthesis" has a
+    # real topic and is self-contained; "and that?" does not.
+    words = re.findall(r"[a-z0-9+#]+", body.lower())
+    if len(words) <= 2:
+        filler = {
+            "it", "that", "this", "them", "those", "these", "one", "ones", "they",
+            "tell", "me", "more", "and", "but", "so", "then", "ok", "okay", "why",
+            "how", "what", "the", "a", "an", "about", "is", "are", "do", "does",
+            "yes", "no", "thanks", "thank", "you", "please", "go", "on", "continue",
+        }
+        if all(w in filler for w in words):
+            return True
+    return False
+
+def build_general_tutor_query(user_query: str) -> str:
+    return f"""{GENERAL_TUTOR_CONTEXT}
+
+STUDENT GENERAL QUESTION:
+{user_query}"""
+
+def fast_general_tutor_answer(query: str) -> Optional[str]:
+    """Instant answers for common broad academic questions.
+
+    This keeps simple non-Morgan questions from paying the full ADK latency
+    cost. Open-ended or high-variance questions still fall through to Gemini.
+    """
+    text = (query or "").strip().lower()
+    if not text or _MORGAN_SPECIFIC_RE.search(text):
+        return None
+
+    concept_answers = [
+        (
+            re.compile(r"\b(what\s+is|explain|define)\b.*\brecursion\b"),
+            "Recursion is when a function solves a problem by calling itself on a smaller version of the same problem.\n\nA good recursive solution usually has:\n- a **base case** that stops the calls\n- a **recursive step** that makes the problem smaller\n- a return value that combines the smaller result\n\nTiny example:\n```python\ndef factorial(n):\n    if n == 0:\n        return 1\n    return n * factorial(n - 1)\n```"
+        ),
+        (
+            re.compile(r"\b(what\s+is|explain|define)\b.*\b(binary\s*search)\b"),
+            "Binary search is a search strategy for **sorted** data. It checks the middle item, then discards the half that cannot contain the answer.\n\nCore idea:\n- keep `left` and `right` boundaries\n- check `mid`\n- move one boundary based on whether the target is smaller or larger\n\nTime complexity is **O(log n)** because the search space is cut in half each step."
+        ),
+        (
+            re.compile(r"\b(what\s+is|explain|define)\b.*\b(big\s*o|time\s*complexity|complexity)\b"),
+            "Big O describes how an algorithm's work grows as input size grows.\n\nCommon examples:\n- **O(1)**: constant time, like reading one array index\n- **O(n)**: one pass through input\n- **O(n²)**: nested loops over the same input\n- **O(log n)**: repeatedly cutting the problem in half\n\nIt focuses on growth rate, not exact seconds."
+        ),
+        (
+            re.compile(r"\b(what\s+is|explain|define)\b.*\b(hash\s*map|hash\s*table|dictionary)\b"),
+            "A hash map stores key-value pairs so you can usually look up a value by key in **O(1)** average time.\n\nUse it when you need:\n- fast lookup\n- frequency counts\n- tracking seen items\n- mapping one value to another\n\nExample uses: two-sum, duplicate detection, counting letters, grouping records."
+        ),
+        (
+            re.compile(r"\b(what\s+is|explain|define)\b.*\b(stack|queue)\b"),
+            "A **stack** is last-in, first-out: the last item added is removed first. Think undo history or matching brackets.\n\nA **queue** is first-in, first-out: the first item added is removed first. Think lines, task scheduling, or BFS traversal.\n\nQuick rule: stack uses `push/pop`; queue uses `enqueue/dequeue`."
+        ),
+    ]
+    for pattern, answer in concept_answers:
+        if pattern.search(text):
+            return answer
+
+    if re.search(r"\b(how\s+do\s+i|how\s+to|tips?|advice)\b.*\b(study|prepare|exam|test|quiz)\b", text):
+        return (
+            "A strong study plan is usually simple and repeatable:\n\n"
+            "1. **List the topics** you need to know.\n"
+            "2. **Do active recall**: close notes and explain each topic from memory.\n"
+            "3. **Practice problems** under light time pressure.\n"
+            "4. **Review mistakes** and write down the pattern you missed.\n"
+            "5. **Repeat weak areas** the next day.\n\n"
+            "For CS courses, spend more time writing and tracing code than rereading slides."
+        )
+
+    if re.search(r"\b(how\s+do\s+i|how\s+to|tips?|advice)\b.*\b(time\s*management|manage\s*time|procrastination)\b", text):
+        return (
+            "A practical time-management setup:\n\n"
+            "- Pick the **next concrete task**, not the whole project.\n"
+            "- Work in 25-45 minute blocks.\n"
+            "- Keep a short daily list: 1 priority, 2 supporting tasks, 1 backup task.\n"
+            "- Start assignments the day they are given, even if only for 10 minutes.\n"
+            "- Put deadlines on a calendar with reminders 7 days, 3 days, and 1 day before.\n\n"
+            "The goal is less pressure at the end, not perfect productivity."
+        )
+
+    return None
+
 _leetcode_daily_cache = {"date": None, "data": None}
 _practice_cache: dict[str, dict[str, Any]] = {}
 QUIZ_DIR = os.path.join(BACKEND_DIR, "data_sources", "quiz")
 QUIZ_QUESTIONS_DIR = os.path.join(QUIZ_DIR, "questions")
 QUIZ_ANSWERS_DIR = os.path.join(QUIZ_DIR, "answers")
+STUDY_RESOURCES_PATH = os.path.join(BACKEND_DIR, "data_sources", "study_resources.json")
 PRACTICE_DIFFICULTIES = {"easy", "medium", "hard"}
 PRACTICE_LANGUAGES = {
     "python": "Python",
@@ -679,6 +928,38 @@ class PracticeRunRequest(BaseModel):
             raise ValueError("code is too large for this lightweight runner")
         return value
 
+class PracticeFreeRunRequest(BaseModel):
+    language: str = "python"
+    code: str
+
+    @field_validator("code")
+    @classmethod
+    def validate_code(cls, value):
+        if not value or not value.strip():
+            raise ValueError("code is required")
+        if len(value) > 20000:
+            raise ValueError("code is too large for this lightweight runner")
+        return value
+
+class StudyResourceSearchRequest(BaseModel):
+    query: str
+    resource_type: str = "youtube_video"
+    language: Optional[str] = None
+    level: Optional[str] = None
+    limit: int = 3
+
+    @field_validator("query")
+    @classmethod
+    def validate_query(cls, value):
+        if not value or not value.strip():
+            raise ValueError("query is required")
+        return value.strip()[:240]
+
+    @field_validator("limit")
+    @classmethod
+    def validate_limit(cls, value):
+        return max(1, min(int(value or 3), 5))
+
 class QueryRequest(BaseModel):
     query: str
     display_query: Optional[str] = None
@@ -700,6 +981,17 @@ class QueryRequest(BaseModel):
         if v not in VALID_CHAT_MODES:
             return "regular"
         return v
+
+
+def agent_user_key(user_id: Any, session_id: str) -> str:
+    """Scope ADK conversation memory to one frontend chat session.
+
+    vertex_agent.py caches ADK sessions by user_id. Passing only the account id
+    lets separate sidebar chats share model memory. Including the chat session id
+    keeps each conversation isolated.
+    """
+    raw = f"{user_id}:{session_id or 'default'}"
+    return re.sub(r"[^A-Za-z0-9_.:-]", "_", raw)[:180]
 
 
 def build_mode_context(mode: str) -> str:
@@ -2497,6 +2789,9 @@ from services.query_rewriter import rewrite_query, is_likely_followup
 from services.memory_service import fetch_user_memories_sync, build_memory_context
 from services.course_context import build_course_context
 
+# Verified YouTube video search (curated + YouTube Data API)
+from youtube_search import search_youtube_videos, youtube_api_available
+
 
 def _fetch_history_sync(user_id: int, session_id: str, limit: int = 10) -> list:
     """Fetch chat history in a separate DB session for parallel execution."""
@@ -2526,6 +2821,26 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
     user_q = req.query.strip()
     original_q = (req.display_query or user_q).strip()  # Preserve user-facing text for chat history
     session_id = req.session_id or "default"
+    agent_user_id = agent_user_key(user["user_id"], session_id)
+    is_coding_tutor = req.mode == "coding_tutor"
+    is_general_tutor = resolve_general_tutor(
+        user_q, session_id, is_coding_tutor,
+        force_general=(req.mode == "general_tutor"),
+    )
+    fast_general_answer = fast_general_tutor_answer(original_q) if is_general_tutor else None
+    if fast_general_answer:
+        try:
+            new_chat = ChatHistory(
+                user_id=user["user_id"],
+                session_id=session_id,
+                user_query=original_q,
+                bot_response=fast_general_answer
+            )
+            db.add(new_chat)
+            db.commit()
+        except Exception as e:
+            print(f"[ERROR] Failed to save fast general chat history: {e}")
+        return {"response": fast_general_answer}
 
     # Detect file upload early to decide what data we need
     file_match = re.search(r'uploads/chat_files/([^\)]+)', user_q)
@@ -2538,72 +2853,117 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
                        "test", "exam", "gpa", "taking", "enrolled", "recommend",
                        "suggest", "should i take", "what to take", "schedule"}
     has_course_code = bool(re.search(r'\b[A-Z]{2,4}\s*\d{3}\b', user_q, re.IGNORECASE))
-    needs_canvas = has_course_code or any(kw in user_q.lower() for kw in CANVAS_KEYWORDS)
+    needs_canvas = (not is_coding_tutor) and (not is_general_tutor) and (has_course_code or any(kw in user_q.lower() for kw in CANVAS_KEYWORDS))
 
     # Parallel fetch: DegreeWorks + Canvas (if needed) + chat history (for rewriting) + long-term memory
-    fetch_tasks = [
-        asyncio.to_thread(_fetch_dw_sync, user["user_id"]),
-        asyncio.to_thread(_fetch_history_sync, user["user_id"], session_id, 5),
-        asyncio.to_thread(fetch_user_memories_sync, user["user_id"], 10),
-    ]
-    if needs_canvas:
-        fetch_tasks.append(asyncio.to_thread(_fetch_canvas_sync, user["user_id"]))
+    if is_coding_tutor or is_general_tutor:
+        fetch_tasks = [asyncio.to_thread(_fetch_history_sync, user["user_id"], session_id, 5)]
+    else:
+        fetch_tasks = [
+            asyncio.to_thread(_fetch_dw_sync, user["user_id"]),
+            asyncio.to_thread(_fetch_history_sync, user["user_id"], session_id, 5),
+            asyncio.to_thread(fetch_user_memories_sync, user["user_id"], 10),
+        ]
+        if needs_canvas:
+            fetch_tasks.append(asyncio.to_thread(_fetch_canvas_sync, user["user_id"]))
 
     results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
 
-    dw_dict = results[0] if not isinstance(results[0], Exception) else None
-    history_dicts = results[1] if not isinstance(results[1], Exception) else []
-    memory_dicts = results[2] if not isinstance(results[2], Exception) else []
-    canvas_dict = results[3] if needs_canvas and len(results) > 3 and not isinstance(results[3], Exception) else None
+    if is_coding_tutor or is_general_tutor:
+        dw_dict = None
+        history_dicts = results[0] if not isinstance(results[0], Exception) else []
+        memory_dicts = []
+        canvas_dict = None
+    else:
+        dw_dict = results[0] if not isinstance(results[0], Exception) else None
+        history_dicts = results[1] if not isinstance(results[1], Exception) else []
+        memory_dicts = results[2] if not isinstance(results[2], Exception) else []
+        canvas_dict = results[3] if needs_canvas and len(results) > 3 and not isinstance(results[3], Exception) else None
 
     # Tier 1: Rewrite follow-up queries to be self-contained (fixes pronoun resolution)
-    if USE_VERTEX_AGENT and history_dicts and is_likely_followup(user_q):
+    if USE_VERTEX_AGENT and history_dicts and not is_coding_tutor and not is_general_tutor and is_likely_followup(user_q):
         user_q = await asyncio.to_thread(rewrite_query, user_q, history_dicts)
 
-    student_context = _build_student_context(dw_dict) if dw_dict else ""
-    canvas_context = _build_canvas_context(canvas_dict) if canvas_dict else ""
-    memory_context = build_memory_context(memory_dicts)
+    student_context = ""
+    canvas_context = ""
+    memory_context = ""
     conversation_context = _build_conversation_context(history_dicts)
 
-    # Inject basic profile info so agent knows who they're talking to
-    profile_parts = []
-    if user.get("name"): profile_parts.append(f"Name: {user['name']}")
-    if user.get("email"): profile_parts.append(f"Email: {user['email']}")
-    if user.get("student_id"): profile_parts.append(f"Student ID: {user['student_id']}")
-    if profile_parts:
-        profile_ctx = "STUDENT PROFILE (from account):\n" + "\n".join(profile_parts) + "\n"
-        student_context = profile_ctx + student_context
+    if not is_coding_tutor and not is_general_tutor:
+        student_context = _build_student_context(dw_dict) if dw_dict else ""
+        canvas_context = _build_canvas_context(canvas_dict) if canvas_dict else ""
+        memory_context = build_memory_context(memory_dicts)
 
-    # Pre-compute course context (prereq analysis, schedule, eligibility)
-    course_context = build_course_context(dw_dict, user_q) if dw_dict else ""
-    if course_context:
-        student_context += f"\n{course_context}"
+        # Inject basic profile info so agent knows who they're talking to
+        profile_parts = []
+        if user.get("name"): profile_parts.append(f"Name: {user['name']}")
+        if user.get("email"): profile_parts.append(f"Email: {user['email']}")
+        if user.get("student_id"): profile_parts.append(f"Student ID: {user['student_id']}")
+        if profile_parts:
+            profile_ctx = "STUDENT PROFILE (from account):\n" + "\n".join(profile_parts) + "\n"
+            student_context = profile_ctx + student_context
 
-    # Schedule planner state machine
-    from services.schedule_planner import (
-        detect_planning_intent, get_planner_state, set_planner_state,
-        clear_planner_state, process_planner_turn, build_planner_context,
-    )
-    from services.course_context import _SCHEDULES
+        # Pre-compute course context (prereq analysis, schedule, eligibility)
+        course_context = build_course_context(dw_dict, user_q) if dw_dict else ""
+        if course_context:
+            student_context += f"\n{course_context}"
 
-    planner_state = get_planner_state(user["user_id"], session_id)
-    if planner_state:
-        planner_state = process_planner_turn(planner_state, user_q, dw_dict, _SCHEDULES)
+        # Schedule planner state machine
+        from services.schedule_planner import (
+            detect_planning_intent, get_planner_state, set_planner_state,
+            clear_planner_state, process_planner_turn, build_planner_context,
+        )
+        from services.course_context import _SCHEDULES
+
+        planner_state = get_planner_state(user["user_id"], session_id)
         if planner_state:
+            planner_state = process_planner_turn(planner_state, user_q, dw_dict, _SCHEDULES)
+            if planner_state:
+                set_planner_state(user["user_id"], session_id, planner_state)
+                student_context += build_planner_context(planner_state)
+            else:
+                clear_planner_state(user["user_id"], session_id)
+        elif detect_planning_intent(user_q) and dw_dict:
+            planner_state = {"phase": "ask_semester"}
             set_planner_state(user["user_id"], session_id, planner_state)
             student_context += build_planner_context(planner_state)
-        else:
-            clear_planner_state(user["user_id"], session_id)
-    elif detect_planning_intent(user_q) and dw_dict:
-        planner_state = {"phase": "ask_semester"}
-        set_planner_state(user["user_id"], session_id, planner_state)
-        student_context += build_planner_context(planner_state)
 
     mode_context = build_mode_context(req.mode)
     if mode_context:
         student_context += f"\n{mode_context}"
     if req.mode == "coding_tutor":
         user_q = build_coding_tutor_query(user_q)
+    elif is_general_tutor:
+        user_q = build_general_tutor_query(user_q)
+
+    # Verified video resources (curated + YouTube Data API) for explicit video asks.
+    if is_video_request(original_q):
+        resolved_topic = resolve_video_topic(original_q, history_dicts)
+        topic_is_vague = _topic_is_pronoun_only(clean_video_topic_label(original_q, fallback=""))
+        if is_coding_tutor and topic_is_vague:
+            video_query = build_video_search_query(original_q, user_q, is_coding_tutor)
+        else:
+            video_query = resolved_topic
+        verified_videos = await asyncio.to_thread(find_verified_videos, video_query, None, 3)
+        video_block = build_video_context(verified_videos)
+        # "explain X and give me a video" -> inject links and let the AI explain.
+        # Pure "give me a video" -> return the canned card immediately.
+        if video_block and wants_explanation_with_video(original_q):
+            student_context += f"\n{video_block}"
+        elif video_block:
+            answer = build_video_response(verified_videos, resolved_topic)
+            try:
+                new_chat = ChatHistory(
+                    user_id=user["user_id"],
+                    session_id=session_id,
+                    user_query=original_q,
+                    bot_response=answer
+                )
+                db.add(new_chat)
+                db.commit()
+            except Exception as e:
+                print(f"[ERROR] Failed to save video chat history: {e}")
+            return {"response": answer}
 
     if file_match and USE_VERTEX_AGENT:
         # File uploaded -> include file content as context for the agent
@@ -2618,7 +2978,7 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
             file_context = f"{student_context}{canvas_context}{conversation_context}File Content:\n{file_content}\n"
             answer = query_agent(
                 query=clean_query,
-                user_id=str(user["user_id"]),
+                user_id=agent_user_id,
                 context=file_context,
                 model=req.model,
                 canvas_context=canvas_context,
@@ -2666,7 +3026,7 @@ Use the provided file content and conversation history to answer the user's ques
             print(f" Vertex AI query: '{user_q[:50]}...' (user={user['user_id']}, context={len(agent_context)} chars, memory={len(memory_context)} chars, model={req.model})")
             answer = query_agent(
                 query=user_q,
-                user_id=str(user["user_id"]),
+                user_id=agent_user_id,
                 context=agent_context,
                 model=req.model,
                 canvas_context=canvas_context,
@@ -2752,7 +3112,47 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
     original_q = (req.display_query or user_q).strip()  # Keep user-facing text for chat history
     session_id = req.session_id or "default"
     user_id = user["user_id"]
+    agent_user_id = agent_user_key(user_id, session_id)
     is_coding_tutor = req.mode == "coding_tutor"
+    is_general_tutor = resolve_general_tutor(
+        user_q, session_id, is_coding_tutor,
+        force_general=(req.mode == "general_tutor"),
+    )
+    route = "coding" if is_coding_tutor else ("general/Gemini" if is_general_tutor else "regular/KB")
+    print(f"[ROUTE] mode={req.mode!r} -> {route} | q={user_q[:50]!r}")
+    fast_general_answer = fast_general_tutor_answer(original_q) if is_general_tutor else None
+    if fast_general_answer:
+        async def generate_fast_general_sse():
+            yield f"data: {json.dumps({'type': 'status', 'content': 'Answered from general tutor fast path'})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'content': fast_general_answer})}\n\n"
+            try:
+                with SessionLocal() as save_db:
+                    new_chat = ChatHistory(
+                        user_id=user_id,
+                        session_id=session_id,
+                        user_query=original_q,
+                        bot_response=fast_general_answer
+                    )
+                    save_db.add(new_chat)
+                    save_db.commit()
+            except Exception as e:
+                print(f"[ERROR] Failed to save fast general chat history: {e}")
+            mark_timing("total")
+            print(
+                "[CHAT_TIMING] "
+                f"mode=general_tutor_fast session={session_id} "
+                f"chars={len(original_q)} context=0 timings={timings}"
+            )
+
+        return StreamingResponse(
+            generate_fast_general_sse(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no"
+            }
+        )
 
     # Lazy-load: only fetch Canvas if query mentions grades/assignments/deadlines/course codes
     CANVAS_KEYWORDS = {"grade", "assignment", "due", "deadline", "missing", "class",
@@ -2760,11 +3160,11 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                        "test", "exam", "gpa", "taking", "enrolled", "recommend",
                        "suggest", "should i take", "what to take", "schedule"}
     has_course_code = bool(re.search(r'\b[A-Z]{2,4}\s*\d{3}\b', user_q, re.IGNORECASE))
-    needs_canvas = (not is_coding_tutor) and (has_course_code or any(kw in user_q.lower() for kw in CANVAS_KEYWORDS))
+    needs_canvas = (not is_coding_tutor) and (not is_general_tutor) and (has_course_code or any(kw in user_q.lower() for kw in CANVAS_KEYWORDS))
 
     # Coding Tutor is intentionally lean: session history only. Regular tutor
     # keeps the full academic context stack.
-    if is_coding_tutor:
+    if is_coding_tutor or is_general_tutor:
         fetch_tasks = [asyncio.to_thread(_fetch_history_sync, user_id, session_id, 5)]
     else:
         fetch_tasks = [
@@ -2778,7 +3178,7 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
     results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
     mark_timing("context_fetch")
 
-    if is_coding_tutor:
+    if is_coding_tutor or is_general_tutor:
         dw_dict = None
         history_dicts = results[0] if not isinstance(results[0], Exception) else []
         memory_dicts = []
@@ -2790,7 +3190,7 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
         canvas_dict = results[3] if needs_canvas and len(results) > 3 and not isinstance(results[3], Exception) else None
 
     # Tier 1: Rewrite follow-up queries (resolve pronouns before KB search)
-    if not is_coding_tutor and history_dicts and is_likely_followup(user_q):
+    if not is_coding_tutor and not is_general_tutor and history_dicts and is_likely_followup(user_q):
         user_q = await asyncio.to_thread(rewrite_query, user_q, history_dicts)
     mark_timing("rewrite")
 
@@ -2798,7 +3198,7 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
     canvas_context = ""
     memory_context = ""
 
-    if not is_coding_tutor:
+    if not is_coding_tutor and not is_general_tutor:
         student_context = _build_student_context(dw_dict) if dw_dict else ""
         canvas_context = _build_canvas_context(canvas_dict) if canvas_dict else ""
         memory_context = build_memory_context(memory_dicts)
@@ -2840,8 +3240,80 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
     mode_context = build_mode_context(req.mode)
     if mode_context:
         student_context += f"\n{mode_context}"
+    # Cache on the real question text (before mode-prefix wrapping) so L1/L2 keys
+    # and the semantic embedding reflect the actual question, not the boilerplate
+    # GENERAL/CODING TUTOR MODE prefix shared by every request in that mode.
+    cache_query = user_q
     if is_coding_tutor:
         user_q = build_coding_tutor_query(user_q)
+    elif is_general_tutor:
+        user_q = build_general_tutor_query(user_q)
+
+    # Verified video resources: when the student asks for a video, fetch real,
+    # checked links (curated + YouTube Data API) and let the agent weave one in
+    # instead of inventing a URL. Works in every tutor mode.
+    if is_video_request(original_q):
+        # Resolve pronoun follow-ups ("show me a video about it") to the real topic
+        # from the previous turn so we never search/label on "it".
+        resolved_topic = resolve_video_topic(original_q, history_dicts)
+        # When the student named a clear topic in their message, search on that.
+        # Only fall back to Coding Tutor workspace context if the message itself
+        # had no real topic (e.g. "show me a video on this problem").
+        topic_is_vague = _topic_is_pronoun_only(clean_video_topic_label(original_q, fallback=""))
+        if is_coding_tutor and topic_is_vague:
+            video_query = build_video_search_query(original_q, user_q, is_coding_tutor)
+        else:
+            video_query = resolved_topic
+        verified_videos = await asyncio.to_thread(find_verified_videos, video_query, None, 3)
+        print(
+            f"[VIDEO] request detected | key_loaded={youtube_api_available()} "
+            f"topic={resolved_topic[:40]!r} query={video_query[:60]!r} found={len(verified_videos)}"
+        )
+        video_block = build_video_context(verified_videos)
+        # If the student also asked for an explanation ("explain X and give me a
+        # video"), DON'T short-circuit. Inject the verified links into the agent
+        # context and let the AI both explain the concept and weave in the real
+        # video link. Only a pure "give me a video" request uses the fast path.
+        wants_explanation = wants_explanation_with_video(original_q)
+        if video_block and wants_explanation:
+            student_context += f"\n{video_block}"
+            print("[VIDEO] explanation+video -> AI answers with links injected")
+        elif video_block:
+            # Use the resolved topic for the visible label so it reads "video for
+            # eclipses", never "video for it".
+            video_answer = build_video_response(verified_videos, resolved_topic)
+
+            async def generate_video_sse():
+                yield f"data: {json.dumps({'type': 'status', 'content': 'Found a verified video'})}\n\n"
+                yield f"data: {json.dumps({'type': 'done', 'content': video_answer})}\n\n"
+                try:
+                    with SessionLocal() as save_db:
+                        new_chat = ChatHistory(
+                            user_id=user_id,
+                            session_id=session_id,
+                            user_query=original_q,
+                            bot_response=video_answer
+                        )
+                        save_db.add(new_chat)
+                        save_db.commit()
+                except Exception as e:
+                    print(f"[ERROR] Failed to save video chat history: {e}")
+                mark_timing("total")
+                print(
+                    "[CHAT_TIMING] "
+                    f"mode={req.mode} session={session_id} video=true "
+                    f"chars={len(original_q)} context=0 timings={timings}"
+                )
+
+            return StreamingResponse(
+                generate_video_sse(),
+                media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    "X-Accel-Buffering": "no"
+                }
+            )
     mark_timing("context_build")
 
     agent_context = student_context  # DegreeWorks + course analysis + planner (stable, for session reuse)
@@ -2855,6 +3327,9 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
         _dw_key = f"{dw_dict.get('overall_gpa','')}{dw_dict.get('total_credits_earned','')}{dw_dict.get('credits_remaining','')}"
         _dw_hash = _hl.md5(_dw_key.encode()).hexdigest()[:8]
     context_hash = get_context_hash(user_id, has_degreeworks=bool(dw_dict), model=req.model, has_canvas=bool(canvas_dict), dw_hash=_dw_hash, mode=req.mode)
+    # Personalized (student-data) answers should not be semantically matched. General,
+    # coding, and non-personalized academic answers can use all three cache tiers.
+    allow_semantic = not (bool(dw_dict) or bool(canvas_dict))
     mark_timing("cache_ready")
 
     skip_response_cache = req.skip_cache or (is_coding_tutor and _coding_tutor_query_has_workspace_code(user_q))
@@ -2868,9 +3343,9 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
             # Force new ADK session so agent re-queries the search index fresh
             import time as _time
             context_hash = f"regen_{int(_time.time())}"
-            reset_session(str(user_id))
+            reset_session(agent_user_id)
     else:
-        cached_response = query_cache.get(user_q, context_hash)
+        cached_response = query_cache.get(cache_query, context_hash, allow_semantic=allow_semantic)
     mark_timing("cache_lookup")
 
     if cached_response:
@@ -2925,10 +3400,15 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
         nonlocal stream_had_error
         full_response = ""
         first_event = True
+        # Tell the client which "thinking" track to animate. Non-Morgan (general)
+        # and coding questions never hit the knowledge base, so the client should
+        # not show a "Searching knowledge base" step for them.
+        thinking_track = "coding" if is_coding_tutor else ("general" if is_general_tutor else "regular")
+        yield f"data: {json.dumps({'type': 'thinking_track', 'content': thinking_track})}\n\n"
         try:
             for event in query_agent_stream(
                 query=user_q,
-                user_id=str(user_id),
+                user_id=agent_user_id,
                 context=agent_context,
                 model=req.model,
                 canvas_context=canvas_context,
@@ -2968,8 +3448,8 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
 
         # Cache the successful response
         if (not skip_response_cache) and full_response and "error" not in full_response.lower()[:50] and "I may not have complete information" not in full_response:
-            if query_cache.set(user_q, full_response, context_hash):
-                print(f"[CACHE] Stored response for: {user_q[:50]}...")
+            if query_cache.set(cache_query, full_response, context_hash, allow_semantic=allow_semantic):
+                print(f"[CACHE] Stored response for: {cache_query[:50]}...")
 
         # Save to chat history after stream completes (save original query, not rewritten)
         try:
@@ -3318,6 +3798,351 @@ def _read_quiz_json(path: str) -> Any:
     _practice_cache[path] = {"mtime": mtime, "data": data}
     return data
 
+def _tokenize_resource_query(text: str) -> set[str]:
+    stop_words = {
+        "a", "an", "and", "are", "can", "for", "give", "help", "me", "on",
+        "please", "show", "specific", "the", "to", "video", "videos", "with",
+        "youtube", "yt", "about", "regarding", "find", "resource", "resources",
+        # Generic question/filler words. Without these, a stop-word like "is" in a
+        # curated video's description falsely matches "what is solar eclipse" and
+        # surfaces unrelated CS videos.
+        "is", "be", "am", "was", "were", "what", "whats", "which", "who", "whom",
+        "how", "why", "when", "where", "of", "in", "it", "this", "that", "these",
+        "those", "do", "does", "did", "i", "you", "we", "they", "my", "your",
+        "explain", "explains", "tell", "us", "or", "but", "if", "as", "at", "by",
+        "tutorial", "tutorials", "lesson", "lessons", "clip", "clips", "watch",
+        "want", "need", "provide", "get", "recommend", "suggest", "link", "play",
+    }
+    return {
+        token
+        for token in re.findall(r"[a-z0-9+#]+", (text or "").lower())
+        if token not in stop_words and len(token) > 1
+    }
+
+def _read_study_resources() -> list[dict[str, Any]]:
+    data = _read_quiz_json(STUDY_RESOURCES_PATH)
+    return data.get("resources", data if isinstance(data, list) else [])
+
+
+# A request asks for a video when it mentions a video/tutorial noun (singular or
+# plural) together with an asking verb, e.g. "can you provide me with a video",
+# "show me videos", "pull up a youtube clip". The noun pattern allows trailing
+# plural/letters (video -> videos, tutorial -> tutorials) and the verb list is
+# broad so small wording changes ("provide" vs "show" vs "get") behave the same.
+_VIDEO_NOUN_RE = re.compile(
+    r"\b(youtube|video|videos|vid|watch|tutorial|tutorials|lesson|lessons|clip|clips)\b",
+    re.IGNORECASE,
+)
+_VIDEO_VERB_RE = re.compile(
+    r"\b(find|show|recommend|give|provide|get|grab|send|share|need|want|watch|"
+    r"learn|explain|suggest|link|play|pull|fetch|look)\b",
+    re.IGNORECASE,
+)
+
+
+def is_video_request(text: str) -> bool:
+    body = text or ""
+    noun = _VIDEO_NOUN_RE.search(body)
+    if not noun:
+        return False
+    # "youtube" or an explicit "video/tutorial/clip" noun is already a clear ask.
+    # Otherwise (e.g. just "watch") require a request verb to avoid false hits.
+    strong_noun = re.search(r"\b(youtube|video|videos|vid|tutorial|tutorials|clip|clips)\b", body, re.IGNORECASE)
+    return bool(strong_noun) or bool(_VIDEO_VERB_RE.search(body))
+
+
+# Verbs that mean the student also wants a written answer, not ONLY a video link,
+# e.g. "explain Big O and give me videos", "what is recursion, show me a video".
+_EXPLAIN_INTENT_RE = re.compile(
+    r"\b(explain|describe|teach|walk\s+me\s+through|break\s+(?:it|this)\s+down|"
+    r"what\s+is|what\s+are|what'?s|how\s+(?:do(?:es)?|to|can)|why|define|"
+    r"help\s+me\s+understand|tell\s+me\s+about|give\s+me\s+an?\s+(?:example|overview|summary)|"
+    r"summar(?:y|ize)|overview|difference\s+between)\b",
+    re.IGNORECASE,
+)
+
+
+def wants_explanation_with_video(text: str) -> bool:
+    """True when the message asks for an explanation AND a video, so we should let
+    the AI answer (with the verified links injected) instead of returning only a
+    canned video card."""
+    return bool(is_video_request(text) and _EXPLAIN_INTENT_RE.search(text or ""))
+
+
+def build_video_search_query(display_query: str, full_query: str, is_coding_tutor: bool) -> str:
+    """Use workspace topic context for Coding Tutor video lookups.
+
+    The frontend sends the user's short visible message as display_query and the
+    full Coding Tutor prompt as full_query. For requests like "show me a video on
+    this", the useful topic is in the workspace context, not the short message.
+    """
+    if not is_coding_tutor:
+        return display_query
+
+    parts = [display_query]
+    for label in ("Problem", "Description", "Language", "Detected student intent"):
+        match = re.search(rf"^{label}:\s*(.+)$", full_query or "", re.MULTILINE)
+        if match:
+            parts.append(match.group(1).strip())
+    return " ".join(part for part in parts if part).strip()
+
+
+# Words that carry no topic on their own. If a video request reduces to only
+# these ("a video about it", "show me this"), the real subject is in the prior turn.
+_PRONOUN_TOPIC_RE = re.compile(
+    r"^(?:it|this|that|them|those|these|one|ones|the topic|the subject|the same|same)$",
+    re.IGNORECASE,
+)
+
+
+def _topic_is_pronoun_only(topic: str) -> bool:
+    """True when the extracted topic is just a pronoun/filler with no real subject."""
+    cleaned = re.sub(r"\s+", " ", (topic or "")).strip(" ?!.:").lower()
+    return not cleaned or bool(_PRONOUN_TOPIC_RE.match(cleaned))
+
+
+def _topic_from_history(history: list[dict[str, Any]] | None) -> str:
+    """Pull the most recent real topic the student asked about, for follow-ups
+    like "show me a video about it" where "it" refers to the previous question."""
+    if not history:
+        return ""
+    for turn in reversed(history):
+        prev_q = (turn.get("user_query") or "").strip()
+        if not prev_q or is_video_request(prev_q):
+            continue  # skip empty turns and prior video asks
+        topic = clean_video_topic_label(prev_q, fallback="")
+        if topic and not _topic_is_pronoun_only(topic):
+            return topic
+    return ""
+
+
+def resolve_video_topic(display_query: str, history: list[dict[str, Any]] | None) -> str:
+    """Resolve the real video topic, falling back to the previous turn when the
+    current request only references it with a pronoun ("a video about it")."""
+    topic = clean_video_topic_label(display_query, fallback="")
+    if _topic_is_pronoun_only(topic):
+        prior = _topic_from_history(history)
+        if prior:
+            return prior
+    return topic or display_query
+
+
+def find_verified_videos(query: str, language: str | None = None, limit: int = 3) -> list[dict[str, Any]]:
+    """Return verified videos: curated (hand-checked) first, then live YouTube API.
+
+    Curated entries cover coding/algorithm topics; the live YouTube Data API
+    covers everything else. Both return only real, existing links.
+    """
+    terms = _tokenize_resource_query(query)
+    curated = [r for r in _read_study_resources() if r.get("type") == "youtube_video"]
+
+    # A curated video only counts when it actually matches the query CONTENT
+    # (title/channel/why/topics). Matching on type alone would surface unrelated
+    # CS videos for non-CS questions like "supernova", so we ignore the type/
+    # language/level bonuses here and require real term overlap.
+    def _content_score(resource: dict[str, Any]) -> int:
+        searchable = " ".join([
+            str(resource.get("title", "")),
+            str(resource.get("channel", "")),
+            str(resource.get("why", "")),
+            " ".join(str(topic) for topic in resource.get("topics", [])),
+        ]).lower()
+        topics = {str(topic).lower() for topic in resource.get("topics", [])}
+        score = 0
+        for term in terms:
+            if term in searchable:
+                score += 4
+            if term in topics:
+                score += 3
+        return score
+
+    scored = sorted(
+        ((_content_score(r), r) for r in curated),
+        key=lambda item: item[0],
+        reverse=True,
+    )
+    curated_hits = [r for score, r in scored if score > 0][:limit]
+    live = search_youtube_videos(query, max_results=limit) if youtube_api_available() else []
+
+    # Prefer live API first for topics the curated CS list doesn't cover, then
+    # back-fill with strong curated matches; dedup by url and cap at limit.
+    ordered = (live + curated_hits) if not curated_hits else (curated_hits + live)
+    combined: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for resource in ordered:
+        url = resource.get("url")
+        if url and url not in seen:
+            seen.add(url)
+            combined.append(resource)
+    return combined[:limit]
+
+
+def build_video_context(videos: list[dict[str, Any]]) -> str:
+    """Build an instruction block of verified links for the agent to weave in."""
+    if not videos:
+        return ""
+    lines = [
+        "VERIFIED VIDEO RESOURCES (the student asked for a video; these links are real and checked):",
+    ]
+    for video in videos:
+        meta = " - ".join(part for part in [video.get("channel"), video.get("duration")] if part)
+        title = video.get("title") or "Video"
+        url = video.get("url")
+        lines.append(f"- [{title}]({url})" + (f" ({meta})" if meta else ""))
+    lines.append("")
+    lines.append(
+        "Recommend the single most relevant video and embed it as a Markdown link using its EXACT url above. "
+        "You may add one or two alternatives as a short bulleted list. "
+        "NEVER invent, guess, shorten, or modify a YouTube URL. "
+        "If none of these fit the question, say you do not have a verified video for that specific topic."
+    )
+    return "\n".join(lines)
+
+
+def _strip_topic_filler(text: str) -> str:
+    """Remove request/question boilerplate, leaving the substantive topic words.
+
+    Used as a fallback when "after the last preposition" yields only a pronoun,
+    e.g. "explain Big O and give me videos for it" -> "Big O".
+    """
+    out = text or ""
+    # Drop a leading request stem ("can you give me", "show me", "explain").
+    # "u"/"ya" are treated as "you". Loop so stacked stems peel ("can u explain").
+    for _ in range(3):
+        new = re.sub(
+            r"^(?:can\s+(?:you|u)|could\s+(?:you|u)|would\s+(?:you|u)|do\s+(?:you|u)|please|pls|"
+            r"i\s+need|i\s+want|i'?d\s+like|show\s+me|give\s+me|find\s+me|get\s+me|send\s+me|"
+            r"recommend|provide|explain|tell\s+me\s+about|teach\s+me)\s+",
+            "",
+            out,
+            flags=re.IGNORECASE,
+        )
+        if new == out:
+            break
+        out = new
+    # Drop a leading question stem ("what is", "how do", "why").
+    out = re.sub(
+        r"^(?:what(?:'s| is| are)?|who(?:'s| is)?|how(?:\s+do(?:es)?|\s+to)?|why(?:\s+do(?:es)?)?|"
+        r"when(?:\s+do(?:es)?)?|where(?:\s+do(?:es)?)?)\s+",
+        "",
+        out,
+        flags=re.IGNORECASE,
+    )
+    # Drop the trailing video-ask clause so "Big O and give me videos for it" -> "Big O".
+    out = re.sub(
+        r"\b(?:and|then|also|please|can you|could you)?\s*"
+        r"(?:give|show|find|get|send|provide|recommend|share|pull up|play)\s+"
+        r"(?:me\s+)?(?:a|an|some|the)?\s*"
+        r"(?:youtube\s+)?(?:videos?|tutorials?|clips?|lessons?)\b.*$",
+        "",
+        out,
+        flags=re.IGNORECASE,
+    )
+    # Remove remaining filler words.
+    out = re.sub(
+        r"\b(?:the concept of|concept of|a|an|the|some|youtube|video|videos|tutorial|tutorials|"
+        r"lesson|lessons|clip|clips|that|this|it|explains?|explain|teach(?:es)?|me|please|pls|"
+        r"for|about|on|of)\b",
+        " ",
+        out,
+        flags=re.IGNORECASE,
+    )
+    return re.sub(r"\s+", " ", out).strip(" ?!.:,")
+
+
+def clean_video_topic_label(query: str, fallback: str = "that topic") -> str:
+    """Turn a video request into a short display topic.
+
+    Examples:
+      "Can you give me a video on supernovas?" -> "supernovas"
+      "Explain Big O and give me videos for it" -> "Big O"  (not "it")
+    """
+    text = re.sub(r"\s+", " ", (query or "")).strip(" ?!.")
+    if not text:
+        return fallback
+
+    # Candidate 1: content after a topic preposition ("a video ON supernovas").
+    prep = re.findall(r"\b(?:about|on|regarding|covering)\s+(.+)$", text, re.IGNORECASE)
+    candidate = prep[-1].strip(" ?!.") if prep else ""
+    candidate = _strip_topic_filler(candidate) if candidate else ""
+
+    # If that candidate is empty or just a pronoun ("for it"), fall back to the
+    # substantive words of the whole message ("Big O").
+    if _topic_is_pronoun_only(candidate):
+        candidate = _strip_topic_filler(text)
+
+    # Keep only the first clause if upstream context got appended.
+    candidate = re.split(r"[?!.]\s+", candidate, 1)[0].strip(" ?!.:,")
+    return candidate or fallback
+
+
+def build_video_response(videos: list[dict[str, Any]], query: str) -> str:
+    """Return a deterministic video answer instead of relying on the LLM.
+
+    Video requests should never produce "I can't provide a video" when the
+    backend has already verified real links.
+    """
+    if not videos:
+        return (
+            "I could not find a verified YouTube video for that exact topic right now. "
+            "Try naming the topic a little more specifically, like `recursion in Python`, "
+            "`Fibonacci dynamic programming`, or `two pointers palindrome`."
+        )
+
+    topic = clean_video_topic_label(query)
+    primary = videos[0]
+    title = primary.get("title") or "YouTube video"
+    url = primary.get("url") or ""
+    channel = primary.get("channel") or "YouTube"
+    meta = " - ".join(part for part in [channel, primary.get("duration")] if part)
+    lines = [
+        f"Here is a verified video for **{topic}**. You can play it here, then open it on YouTube later if you want:",
+        "",
+        f"[{title}]({url})" + (f" ({meta})" if meta else ""),
+    ]
+    alternatives = videos[1:3]
+    if alternatives:
+        lines.extend(["", "A couple more options:"])
+        for video in alternatives:
+            alt_title = video.get("title") or "YouTube video"
+            alt_url = video.get("url") or ""
+            alt_channel = video.get("channel") or "YouTube"
+            lines.append(f"- [{alt_title}]({alt_url}) ({alt_channel})")
+    return "\n".join(lines)
+
+
+def attach_video_context_to_query(query: str, video_block: str) -> str:
+    """Attach verified video links to the user-visible prompt.
+
+    The ADK agent reliably sees the query text on every turn, while state/context
+    can be treated as auxiliary data. Keeping video resources in the prompt makes
+    video requests work the same way in Regular, General, and Coding Tutor modes.
+    """
+    if not video_block:
+        return query
+    return f"{query}\n\n{video_block}"
+
+def _score_study_resource(resource: dict[str, Any], terms: set[str], req: StudyResourceSearchRequest) -> int:
+    searchable = " ".join([
+        str(resource.get("title", "")),
+        str(resource.get("channel", "")),
+        str(resource.get("why", "")),
+        " ".join(str(topic) for topic in resource.get("topics", [])),
+    ]).lower()
+    score = 0
+    for term in terms:
+        if term in searchable:
+            score += 4
+        if term in {str(topic).lower() for topic in resource.get("topics", [])}:
+            score += 3
+    if req.resource_type and resource.get("type") == req.resource_type:
+        score += 2
+    if req.language and req.language.lower() in {str(lang).lower() for lang in resource.get("languages", [])}:
+        score += 1
+    if req.level and str(resource.get("level", "")).lower() == req.level.lower():
+        score += 1
+    return score
+
 def _practice_questions_for_difficulty(difficulty: str) -> list[dict[str, Any]]:
     normalized = difficulty.lower().strip()
     if normalized not in PRACTICE_DIFFICULTIES:
@@ -3432,6 +4257,46 @@ JAVASCRIPT_PRACTICE_SIGNATURES = {
     "initials": ("fullName", "string"),
     "clampScore": ("score", "number"),
     "everyOtherItem": ("items", "Array"),
+    "twoSumIndexes": ("nums, target", "Array"),
+    "balancedBrackets": ("text", "boolean"),
+    "longestUniqueWindow": ("text", "number"),
+    "groupAnagrams": ("words", "Array"),
+    "mergeSortedLists": ("left, right", "Array"),
+    "coursePrerequisiteChain": ("pairs, course, prereq", "boolean"),
+    "topKFrequent": ("items, k", "Array"),
+    "matrixRowSums": ("matrix", "Array"),
+    "rotateListRight": ("items, k", "Array"),
+    "firstMissingPositiveSmall": ("nums", "number"),
+    "compressRuns": ("text", "string"),
+    "validStudySchedule": ("intervals", "boolean"),
+    "binarySearchInsertPosition": ("nums, target", "number"),
+    "countIslands": ("grid", "number"),
+    "minStackOperations": ("commands", "Array"),
+    "normalizeEmailList": ("emails", "Array"),
+    "prefixSearch": ("words, prefix", "Array"),
+    "windowAverage": ("nums, k", "Array"),
+    "nestedListDepthSum": ("items", "number"),
+    "mostRecentUnique": ("events", "string|null"),
+    "shortestPathInCampusGrid": ("grid", "number"),
+    "coursePlanTopologicalOrder": ("courses, prereqs", "Array"),
+    "longestIncreasingSubsequenceLength": ("nums", "number"),
+    "editDistance": ("source, target", "number"),
+    "lruCacheSimulation": ("capacity, commands", "Array"),
+    "medianOfTwoSortedLists": ("left, right", "number"),
+    "wordLadderSteps": ("start, end, dictionary", "number"),
+    "expressionEvaluator": ("expression", "number"),
+    "triePrefixCounts": ("commands", "Array"),
+    "unionFindComponents": ("n, pairs", "number"),
+    "kthLargestStream": ("k, stream", "Array"),
+    "decodeWays": ("digits", "number"),
+    "minimumMeetingRooms": ("intervals", "number"),
+    "cloneGraph": ("graph", "Object"),
+    "maximumSubarrayWithOneDeletion": ("nums", "number"),
+    "serializeBinaryTree": ("root", "string"),
+    "alienDictionaryOrder": ("words", "string"),
+    "subarraySumEqualsK": ("nums, k", "number"),
+    "maximalSquare": ("matrix", "number"),
+    "rateLimiter": ("limit, windowSeconds, actions", "Array"),
 }
 
 def _build_practice_starter_code(language_key: str, function_name: str, question: dict[str, Any]) -> str:
@@ -3680,6 +4545,36 @@ async def get_practice_question_solution(question_id: str, language: str = Query
     question = _find_practice_question(question_id)
     return _find_language_solution(question_id, language, question)
 
+@app.post("/api/coding/resources/search")
+async def search_coding_study_resources(
+    req: StudyResourceSearchRequest,
+    user: dict = Depends(get_current_user),
+):
+    """Return curated coding study resources for Coding Tutor requests."""
+    terms = _tokenize_resource_query(req.query)
+    resources = [
+        resource
+        for resource in _read_study_resources()
+        if not req.resource_type or resource.get("type") == req.resource_type
+    ]
+    scored = [
+        (_score_study_resource(resource, terms, req), resource)
+        for resource in resources
+    ]
+    ranked = [
+        resource
+        for score, resource in sorted(scored, key=lambda item: item[0], reverse=True)
+        if score > 0
+    ]
+    if not ranked:
+        ranked = resources[:req.limit]
+    return {
+        "query": req.query,
+        "resource_type": req.resource_type,
+        "results": ranked[:req.limit],
+        "source": "curated_cs_navigator_resources",
+    }
+
 @app.post("/api/coding/practice/run")
 async def run_practice_solution(
     req: PracticeRunRequest,
@@ -3739,6 +4634,44 @@ async def run_practice_solution(
         "progress": serialized_progress,
         "message": "All local tests passed." if status_value == "passed" else "Review the failed tests and try again.",
     }
+
+@app.post("/api/coding/practice/freerun")
+async def free_run_practice_solution(
+    req: PracticeFreeRunRequest,
+    user: dict = Depends(get_current_user),
+):
+    """Run personal/workspace code without tests, grading, or saved progress."""
+    retry_after = check_practice_run_rate_limit(str(user["user_id"]))
+    if retry_after is not None:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many code runs. Wait briefly before trying again.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
+    language_key, _ = _normalize_practice_language(req.language)
+    if language_key not in {"python", "javascript"}:
+        return {
+            "status": "error",
+            "free_run": True,
+            "tests": [],
+            "stdout": "",
+            "stderr": "Free run supports Python and JavaScript. Java and C++ runners are coming later.",
+            "duration_ms": 0,
+            "message": "Switch to Python or JavaScript to run personal code.",
+        }
+
+    if language_key == "javascript":
+        run_result = run_javascript_freeform(req.code)
+    else:
+        run_result = run_python_freeform(req.code)
+
+    message = (
+        "Ran your code. Output is shown below (not graded)."
+        if run_result.get("status") == "ran"
+        else "The run reported an error. Check the output below."
+    )
+    return {**run_result, "message": message}
 
 @app.get("/api/coding/practice/progress")
 async def list_practice_progress(
