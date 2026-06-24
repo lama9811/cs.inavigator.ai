@@ -1,100 +1,37 @@
-/* The terminal is fixed to the viewport (see below), so the workspace grid only
-   needs its single content row. Bottom padding reserves space for the fixed
-   terminal footer. --ct-terminal-h keeps the panel height and the reserved space
-   in sync (override it in media queries to change both at once). */
-.coding-app.coding-workspace-active {
-  --ct-terminal-h: clamp(175px, 24vh, 245px);
-  grid-template-rows: minmax(0, 1fr) !important;
-}
-
-.coding-app.coding-workspace-active .coding-section-nav {
-  grid-row: 1;
-}
-
-.coding-app.coding-workspace-active .coding-app-main {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-/* Dock the terminal to the bottom of the VIEWPORT as a footer: full width from
-   the right edge of the global sidebar to the screen edge (it must NOT cover the
-   sidebar). The left offset mirrors the sidebar width like the chat input does. */
-.coding-app.coding-workspace-active .coding-shell-terminal {
-  position: fixed !important;
-  left: 280px !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: auto !important;
-  max-width: none !important;
-  margin: 0 !important;
-  z-index: 1200;
-}
-
-body.sidebar-collapsed .coding-app.coding-workspace-active .coding-shell-terminal {
-  left: 64px !important;
-}
-
-body.sidebar-custom-width:not(.sidebar-collapsed) .coding-app.coding-workspace-active .coding-shell-terminal {
-  left: var(--sidebar-width, 280px) !important;
-}
-
-body.sidebar-resizing .coding-app.coding-workspace-active .coding-shell-terminal {
-  left: var(--sidebar-preview-width, 280px) !important;
-}
-
-@media (max-width: 640px) {
-  /* Sidebar is an overlay drawer on small screens, so the footer spans full width. */
-  .coding-app.coding-workspace-active .coding-shell-terminal,
-  body.sidebar-collapsed .coding-app.coding-workspace-active .coding-shell-terminal,
-  body.sidebar-custom-width:not(.sidebar-collapsed) .coding-app.coding-workspace-active .coding-shell-terminal,
-  body.sidebar-resizing .coding-app.coding-workspace-active .coding-shell-terminal {
-    left: 0 !important;
-  }
-}
-
-/* Because the terminal is now fixed (removed from flow), reserve space at the
-   bottom of the workspace so the last content is not hidden behind it. */
-.coding-app.coding-workspace-active {
-  padding-bottom: var(--ct-terminal-h) !important;
-}
-
-.coding-terminal-reopen {
-  display: none !important;
-}
-
-/* ONE real terminal docked as a footer: a single dark surface that sits flush
-   from the sidebar edge to the screen edge and down to the very bottom. Straight
-   edges, no rounding, no side margins, no bottom gap. */
-.coding-shell-terminal .terminal-panel {
+/* The terminal is now an IN-FLOW dock inside the editor column (see
+   .coding-dock-terminal in CodeWorkspace.css), not a fixed viewport footer. Its
+   height is controlled by the dock wrapper (drag-resizable); the panel just
+   fills that wrapper. This keeps editor + terminal feeling like one unit. */
+.coding-dock-terminal .terminal-panel {
   width: 100%;
-  height: var(--ct-terminal-h, clamp(175px, 24vh, 245px)) !important;
+  height: 100% !important;
   min-height: 0 !important;
   max-height: none !important;
   display: flex;
   flex-direction: column;
   border-radius: 0 !important;
   border: 0 !important;
-  border-top: 1px solid #060a12 !important;
   margin: 0 !important;
-  background: #0d1424 !important;
+  /* Terminal has its OWN, darkest surface — distinct from the editor + panels. */
+  background: #0a101e !important;
   color: #e6edf3 !important;
-  box-shadow: 0 -8px 22px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: none !important;
   overflow: hidden !important;
 }
 
-.coding-shell-terminal .terminal-panel .coding-terminal-header {
+.coding-dock-terminal .terminal-panel .coding-terminal-header {
   flex: 0 0 auto;
-  min-height: 34px !important;
-  padding: 0 12px !important;
+  min-height: 36px !important;
+  padding: 0 10px 0 14px !important;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   border-radius: 0 !important;
-  /* Slightly lighter than the body, like a terminal title bar. */
-  background: #161f33 !important;
+  /* Darker, terminal-style title bar — sits just above the darkest body. */
+  background: #0e1626 !important;
   color: #e6edf3 !important;
-  border-bottom: 1px solid #0b1220 !important;
+  border-bottom: 1px solid #050a14 !important;
 }
 
 .coding-terminal-tabs {
@@ -102,9 +39,10 @@ body.sidebar-resizing .coding-app.coding-workspace-active .coding-shell-terminal
   align-items: center;
   gap: 20px;
   min-width: 0;
+  font-family: "Cascadia Code", "Fira Code", Consolas, "Liberation Mono", monospace;
   text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.02em;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
 }
 
 .coding-terminal-tabs span {
@@ -118,20 +56,24 @@ body.sidebar-resizing .coding-app.coding-workspace-active .coding-shell-terminal
   border-color: #f58220;
 }
 
+/* The right-hand group: status pill + action icons, all by the close button. */
 .coding-terminal-controls {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex: 0 0 auto;
 }
 
 .coding-terminal-controls button {
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  border: 1px solid rgba(230, 237, 243, 0.18);
-  background: rgba(230, 237, 243, 0.06);
-  color: #e6edf3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: 1px solid rgba(230, 237, 243, 0.16);
+  background: rgba(230, 237, 243, 0.05);
+  color: #cdd6e4;
   cursor: pointer;
   font-weight: 800;
   line-height: 1;
@@ -142,6 +84,85 @@ body.sidebar-resizing .coding-app.coding-workspace-active .coding-shell-terminal
   border-color: #f58220 !important;
   color: #172033 !important;
 }
+
+/* Stop button — red accent, sits left of the close button while a run is active. */
+.coding-terminal-controls .terminal-stop-btn {
+  border-color: rgba(248, 81, 73, 0.5) !important;
+  background: rgba(248, 81, 73, 0.16) !important;
+  color: #ff8a82 !important;
+}
+
+.coding-terminal-controls .terminal-stop-btn:hover {
+  background: #f85149 !important;
+  border-color: #f85149 !important;
+  color: #fff !important;
+}
+
+/* Estimated time-complexity card in the Tests pane. */
+.terminal-complexity {
+  display: grid;
+  gap: 2px;
+  margin: 2px 0 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(130, 170, 255, 0.28);
+  border-left: 3px solid #82aaff;
+  background: rgba(130, 170, 255, 0.08);
+}
+
+.terminal-complexity-kind {
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8b98a9;
+}
+
+.terminal-complexity strong {
+  font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+  font-size: 0.96rem;
+  color: #cfe0ff;
+}
+
+.terminal-complexity-why {
+  font-size: 0.78rem;
+  color: #9aa7b8;
+  line-height: 1.35;
+}
+
+.terminal-complexity.confidence-low {
+  border-left-color: #c89bff;
+}
+
+/* Terminal state pill: monospace, colored by run state (READY / Passed / etc). */
+.terminal-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-family: "Cascadia Code", "Fira Code", Consolas, "Liberation Mono", monospace;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.terminal-status::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.terminal-status.ready { color: #8b98a9; background: rgba(139, 152, 169, 0.12); border-color: rgba(139, 152, 169, 0.3); }
+.terminal-status.running { color: #f0b429; background: rgba(240, 180, 41, 0.12); border-color: rgba(240, 180, 41, 0.35); }
+.terminal-status.passed,
+.terminal-status.ran { color: #3fb950; background: rgba(63, 185, 80, 0.12); border-color: rgba(63, 185, 80, 0.35); }
+.terminal-status.failed,
+.terminal-status.error { color: #f85149; background: rgba(248, 81, 73, 0.12); border-color: rgba(248, 81, 73, 0.35); }
 
 .terminal-panel-body {
   flex: 1 1 auto;
@@ -359,25 +380,19 @@ body.sidebar-resizing .coding-app.coding-workspace-active .coding-shell-terminal
 /* The terminal uses the SAME dark look in light and dark themes (it's a real
    terminal). Only nudge the outer chrome a touch in dark mode so it blends with
    the darker page; all inner element colors come from the base rules above. */
-body.dark .coding-shell-terminal .terminal-panel {
-  background: #0b1220 !important;
-  border-color: #060a12 !important;
-  box-shadow: 0 -10px 26px rgba(0, 0, 0, 0.4) !important;
+body.dark .coding-dock-terminal .terminal-panel {
+  background: #080d18 !important;
 }
 
-body.dark .coding-shell-terminal .terminal-panel .coding-terminal-header {
-  background: #111a2b !important;
+body.dark .coding-dock-terminal .terminal-panel .coding-terminal-header {
+  background: #0b1322 !important;
 }
 
 body.dark .terminal-panel-body {
-  background: #0b1220;
+  background: #080d18;
 }
 
 @media (max-height: 760px) {
-  .coding-app.coding-workspace-active {
-    --ct-terminal-h: clamp(145px, 27vh, 205px);
-  }
-
   .terminal-panel-output,
   .terminal-panel-tests {
     padding: 8px 10px;
@@ -385,32 +400,12 @@ body.dark .terminal-panel-body {
 }
 
 @media (max-width: 900px) {
-  /* Terminal is fixed full-width (footer); the grid only stacks nav + main. */
-  .coding-app.coding-workspace-active {
-    grid-template-columns: 1fr !important;
-    grid-template-rows: auto minmax(0, 1fr) !important;
-  }
-
-  .coding-app.coding-workspace-active .coding-section-nav {
-    grid-column: 1 !important;
-    grid-row: 1 !important;
-  }
-
-  .coding-app.coding-workspace-active .coding-app-main {
-    grid-column: 1 !important;
-    grid-row: 2 !important;
-  }
-
   .terminal-panel-body {
     grid-template-columns: minmax(0, 7fr) minmax(220px, 3fr);
   }
 }
 
 @media (max-width: 640px) {
-  .coding-app.coding-workspace-active {
-    --ct-terminal-h: clamp(210px, 32vh, 300px);
-  }
-
   .terminal-panel-body {
     grid-template-columns: 1fr;
   }

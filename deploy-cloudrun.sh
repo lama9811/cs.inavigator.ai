@@ -215,9 +215,16 @@ deploy_backend() {
         --region=${REGION} \
         --format='value(status.url)' 2>/dev/null || echo "")
     CORS_ENV=""
+    APP_URL_ENV=""
     if [ -n "$FRONTEND_URL" ]; then
         CORS_ENV=",ALLOWED_ORIGINS=${FRONTEND_URL}"
+        # APP_URL is the FRONTEND origin: verification success redirects here, and
+        # email links point users back to the app.
+        APP_URL_ENV=",APP_URL=${FRONTEND_URL}"
     fi
+
+    # API_URL is this backend's own URL — used to build the verification link in
+    # emails. It is set AFTER deploy (we don't know it yet) via a follow-up update.
 
     # Optional future: add OPENAI_API_KEY=OPENAI_API_KEY:latest to --set-secrets for TTS/OpenAI features.
     gcloud run deploy ${BACKEND_SERVICE} \
@@ -242,13 +249,16 @@ GOOGLE_CLOUD_PROJECT=${PROJECT_ID},\
 GOOGLE_CLOUD_LOCATION=${REGION},\
 VERTEX_AI_DATASTORE_ID=${DATASTORE_ID},\
 UNIFIED_DATASTORE_ID=${DATASTORE_ID},\
-TRUSTED_HOSTS=*.run.app${CORS_ENV}" \
+APP_ENV=production,\
+TRUSTED_HOSTS=*.run.app${CORS_ENV}${APP_URL_ENV}" \
         --set-secrets "\
 DATABASE_URL=DATABASE_URL:latest,\
 JWT_SECRET=JWT_SECRET:latest,\
 ADMIN_EMAIL=ADMIN_EMAIL:latest,\
 ADMIN_PASSWORD=ADMIN_PASSWORD:latest,\
-RESEARCH_SECRET=RESEARCH_SECRET:latest"
+RESEARCH_SECRET=RESEARCH_SECRET:latest,\
+SMTP_USER=SMTP_USER:latest,\
+SMTP_PASS=SMTP_PASS:latest"
 
     BACKEND_URL=$(gcloud run services describe ${BACKEND_SERVICE} \
         --region=${REGION} \
@@ -256,6 +266,15 @@ RESEARCH_SECRET=RESEARCH_SECRET:latest"
 
     log "Backend deployed at: ${BACKEND_URL}"
     echo "${BACKEND_URL}" > "${SCRIPT_DIR}/.backend-url"
+
+    # Now that the backend URL is known, set API_URL so verification emails build
+    # the correct link (https://<backend>/api/verify-email?token=...).
+    if [ -n "$BACKEND_URL" ]; then
+        log "Setting API_URL=${BACKEND_URL} on the backend..."
+        gcloud run services update ${BACKEND_SERVICE} \
+            --region ${REGION} \
+            --update-env-vars "API_URL=${BACKEND_URL}" >/dev/null
+    fi
 }
 
 deploy_frontend() {
@@ -292,8 +311,10 @@ setup_secrets() {
         error ".env file not found"
     fi
 
-    # List of secrets to create
-    SECRETS=("JWT_SECRET" "ADMIN_EMAIL" "ADMIN_PASSWORD" "RESEARCH_SECRET")
+    # List of secrets to create. SMTP_USER/SMTP_PASS power email verification —
+    # set them in .env (Gmail app password or Morgan SMTP) before deploying, or
+    # they'll be skipped with a warning and email verification won't work.
+    SECRETS=("JWT_SECRET" "ADMIN_EMAIL" "ADMIN_PASSWORD" "RESEARCH_SECRET" "SMTP_USER" "SMTP_PASS")
 
     for SECRET_NAME in "${SECRETS[@]}"; do
         SECRET_VALUE=$(grep "^${SECRET_NAME}=" "${SCRIPT_DIR}/.env" | cut -d'=' -f2-)

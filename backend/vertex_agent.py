@@ -745,6 +745,9 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
 
         # Stream SSE events and yield text chunks + status updates
         full_text = ""
+        # Longest substantive text ever seen, kept as a safety net so a trailing
+        # whitespace/partial replacement part from ADK can never wipe the answer.
+        best_text = ""
         code_candidate = ""
         grounding_chunks = 0
         grounding_coverage = 0.0
@@ -821,13 +824,16 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
                             chunk = text[len(full_text):]
                             full_text = text
                             yield {"type": "chunk", "content": chunk}
-                        elif text != full_text:
+                        elif text != full_text and len(text.strip()) >= len(full_text.strip()):
                             # ADK sometimes sends a replacement/final draft rather
-                            # than an append-only delta. The frontend appends chunk
-                            # events, so do not stream full replacements as chunks.
-                            # The final `done` event below will replace the visible
-                            # text safely.
+                            # than an append-only delta. Only accept it when it is at
+                            # least as substantial as what we have, so a trailing
+                            # whitespace/partial part can NEVER wipe a good answer.
+                            # The final `done` event below replaces the visible text.
                             full_text = text
+                        # Remember the longest substantive text regardless of order.
+                        if len(text.strip()) > len(best_text.strip()):
+                            best_text = text
 
         # Store grounding signal for research_agent (thread-local)
         _set_grounding(grounding_chunks > 0, grounding_chunks, grounding_coverage)
@@ -840,6 +846,10 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
             return
 
         # Post-process: catch 429 errors and empty code blocks in streamed text.
+        # Fall back to the longest text seen if the running buffer ended up shorter
+        # (ADK delta/replacement ordering can leave full_text truncated).
+        if len(best_text.strip()) > len(full_text.strip()):
+            full_text = best_text
         cleaned = full_text.strip()
         cleaned = _preserve_code_first_response(message, cleaned, code_candidate)
         # A leaked rate-limit error -> clean retryable error (not visible text).
@@ -847,9 +857,18 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
             print("   [RATE_LIMIT] Gemini 429 in final stream text")
             yield {"type": "error", "content": _BUSY_MSG}
             return
-        # Empty/blank response -> retryable error so the client can re-ask cleanly
-        # instead of rendering an apologetic dead-end in the chat bubble.
+        # Empty/blank response -> the agent occasionally returns no text on a fresh
+        # session (most often for general/non-KB questions). Retry once with a new
+        # session before surfacing an error. Safe because no chunks were streamed.
         if cleaned in ("```", "``` ```", "``````", ""):
+            if not retried:
+                print("   [EMPTY] No usable text, retrying once with a fresh session...")
+                _session_cache.pop(user_id, None)
+                new_sid = _create_session(user_id)
+                if new_sid:
+                    _cache_session(user_id, new_sid, context, model, canvas_context=canvas_context, chat_mode=chat_mode)
+                    yield from _run_query_stream(message, user_id, new_sid, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context)
+                    return
             print("   [EMPTY] Stream produced no usable text")
             yield {"type": "error", "content": _BUSY_MSG}
             return

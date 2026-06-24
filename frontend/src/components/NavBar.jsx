@@ -68,6 +68,22 @@ export default function NavBar({ role, onToggleSidebar }) {
   return (
     <nav className={`navbar ${scrolled ? "scrolled" : ""}`}>
       <div className="nav-container">
+        {/* Always-visible sidebar toggle so users can find it without hovering. */}
+        {isAuthed && (
+          <button
+            type="button"
+            className="sidebar-menu-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSidebar();
+            }}
+            title="Toggle sidebar"
+            aria-label="Toggle sidebar"
+          >
+            <FaBars size={20} />
+          </button>
+        )}
+
         {/* Left side - logo and title - CLICKABLE */}
         <div
           className="navbar-left"
@@ -75,37 +91,12 @@ export default function NavBar({ role, onToggleSidebar }) {
           style={{ cursor: 'pointer' }}
           title={isAuthed ? "Go to Chat" : "Return to Home"}
         >
-          {isAuthed && (
-            <button 
-              type="button"
-              className="logo-hamburger-toggle" 
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleSidebar();
-              }}
-              title="Toggle Sidebar" // 🔥 NEW: Hover Text
-              aria-label="Toggle sidebar"
-            >
-              <img 
-                src="/msu_logo.webp" 
-                alt="Morgan State University" 
-                className="nav-logo-image"
-              />
-              <div className="hamburger-overlay">
-                <FaBars size={24} />
-              </div>
-            </button>
-          )}
-          
-          {!isAuthed && (
-            <img 
-              src="/msu_logo.webp" 
-              alt="Morgan State University" 
-              className="nav-logo" 
-              title="Return to Home" // 🔥 NEW: Hover Text
-            />
-          )}
-          
+          <img
+            src="/msu_logo.webp"
+            alt="Morgan State University"
+            className="nav-logo"
+          />
+
           <div className="nav-title">
             <span className="brand-main">CS NAVIGATOR</span>
             <span className="brand-sub">Morgan State University</span>

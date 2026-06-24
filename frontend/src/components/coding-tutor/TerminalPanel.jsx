@@ -1,3 +1,6 @@
+import { FaStop } from "react-icons/fa";
+import { estimateComplexity } from "../../lib/complexity";
+
 function statusLabel(status) {
   if (status === "passed") return "Passed";
   if (status === "failed") return "Failed";
@@ -57,7 +60,22 @@ function TerminalOutputPane({ output, tests, onExplainError }) {
   );
 }
 
-function TerminalTestsPane({ output, tests, onExplainFailedTests }) {
+// Estimated time complexity from the current code (heuristic). Shown so the
+// student gets a sense of efficiency without needing a separate "Complexity"
+// button or an AI call.
+function ComplexityEstimate({ code, language }) {
+  const est = code && code.trim() ? estimateComplexity(code, language) : null;
+  if (!est) return null;
+  return (
+    <div className={`terminal-complexity confidence-${est.confidence}`}>
+      <span className="terminal-complexity-kind">Est. time complexity</span>
+      <strong>{est.label}</strong>
+      <span className="terminal-complexity-why">{est.rationale}</span>
+    </div>
+  );
+}
+
+function TerminalTestsPane({ output, tests, code, language, onExplainFailedTests, onRequestReview }) {
   const hasSummary = typeof output.passed === "number" && typeof output.total === "number";
   const hasFailedTests = tests.some(test => !test.passed);
   const checklist = Array.isArray(output.quality_checklist) ? output.quality_checklist : [];
@@ -68,8 +86,14 @@ function TerminalTestsPane({ output, tests, onExplainFailedTests }) {
         <div className="terminal-panel-heading">
           <span>Run</span>
           {typeof output.duration_ms === "number" && <em>{Math.round(output.duration_ms)} ms</em>}
+          {onRequestReview && (
+            <button type="button" className="terminal-explain-btn" onClick={onRequestReview}>
+              Ask for a review
+            </button>
+          )}
         </div>
         {output.message && <p className="terminal-panel-message">{output.message}</p>}
+        <ComplexityEstimate code={code} language={language} />
         <p className="terminal-panel-message">Personal code runs are not auto-graded. Use the floating Coding Tutor for review or hints.</p>
       </section>
     );
@@ -90,8 +114,14 @@ function TerminalTestsPane({ output, tests, onExplainFailedTests }) {
             Explain failed tests
           </button>
         )}
+        {!hasFailedTests && onRequestReview && (
+          <button type="button" className="terminal-explain-btn" onClick={onRequestReview}>
+            Ask for a review
+          </button>
+        )}
       </div>
       {output.message && <p className="terminal-panel-message">{output.message}</p>}
+      <ComplexityEstimate code={code} language={language} />
       {checklist.length > 0 && (
         <div className="terminal-quality-checklist">
           <strong>Code quality checklist</strong>
@@ -122,9 +152,21 @@ function TerminalTestsPane({ output, tests, onExplainFailedTests }) {
   );
 }
 
-export default function TerminalPanel({ testOutput, expanded = false, onClose, onExplainFailedTests, onExplainError }) {
+export default function TerminalPanel({
+  testOutput,
+  code,
+  language,
+  isRunning = false,
+  expanded = false,
+  onClose,
+  onStop,
+  onExplainFailedTests,
+  onExplainError,
+  onRequestReview,
+}) {
   const output = typeof testOutput === "string" ? { status: "ready", message: testOutput } : (testOutput || {});
   const tests = output.tests || [];
+  const running = isRunning || output.status === "running";
 
   return (
     <div className={`coding-terminal terminal-panel ${expanded ? "expanded" : ""}`} aria-live="polite">
@@ -134,6 +176,17 @@ export default function TerminalPanel({ testOutput, expanded = false, onClose, o
         </div>
         <div className="coding-terminal-controls">
           <span className={`terminal-status ${output.status || "ready"}`}>{statusLabel(output.status)}</span>
+          {running && onStop && (
+            <button
+              type="button"
+              className="terminal-stop-btn"
+              onClick={onStop}
+              aria-label="Stop running"
+              title="Stop (use if the run is stuck or looping)"
+            >
+              <FaStop aria-hidden="true" />
+            </button>
+          )}
           {onClose && (
             <button type="button" onClick={onClose} aria-label="Close terminal" title="Close terminal">
               x
@@ -143,7 +196,14 @@ export default function TerminalPanel({ testOutput, expanded = false, onClose, o
       </div>
       <div className="terminal-panel-body">
         <TerminalOutputPane output={output} tests={tests} onExplainError={onExplainError} />
-        <TerminalTestsPane output={output} tests={tests} onExplainFailedTests={onExplainFailedTests} />
+        <TerminalTestsPane
+          output={output}
+          tests={tests}
+          code={code}
+          language={language}
+          onExplainFailedTests={onExplainFailedTests}
+          onRequestReview={onRequestReview}
+        />
       </div>
     </div>
   );

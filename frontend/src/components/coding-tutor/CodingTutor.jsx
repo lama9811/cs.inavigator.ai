@@ -3,8 +3,7 @@ import { useLocation } from "react-router-dom";
 import {
   FaBook,
   FaChartLine,
-  FaChevronLeft,
-  FaChevronRight,
+  FaChevronDown,
   FaEye,
   FaEyeSlash,
   FaHome,
@@ -14,13 +13,14 @@ import {
 import { toast } from "sonner";
 import CodeWorkspace from "./CodeWorkspace";
 import DailyChallengeCard from "./DailyChallengeCard";
+import PersonalPanel from "./PersonalPanel";
 import ProblemPanel from "./ProblemPanel";
 import ProgressBadges from "./ProgressBadges";
 import QuizBank from "./QuizBank";
-import TerminalPanel from "./TerminalPanel";
+import StatTiles from "./StatTiles";
 import TopicPracticePacks from "./TopicPracticePacks";
+import { listSnippets, saveSnippet, deleteSnippet, syncSnippetsFromServer, extractCodeFromFile, languageFromFilename } from "../../lib/snippets";
 import "./CodingTutor.css";
-import "./TerminalPanel.css";
 
 const CODE_LANGUAGES = ["Python", "Java", "JavaScript", "C++"];
 const PRACTICE_LANGUAGE_API = {
@@ -32,8 +32,8 @@ const PRACTICE_LANGUAGE_API = {
 const PRACTICE_LANGUAGE_KEYS = ["python", "java", "javascript", "cpp"];
 const PRACTICE_DIFFICULTIES = ["easy", "medium", "hard"];
 
+// Home is NOT in this list — it has its own "Back to Home" button beside the nav.
 const CODING_PAGES = [
-  { id: "dashboard", label: "Home", icon: FaHome },
   { id: "quiz", label: "Quiz Bank", icon: FaBook },
   { id: "interview", label: "Interview Prep", icon: FaUserGraduate },
   { id: "workspace", label: "Workspace", icon: FaLaptopCode },
@@ -229,20 +229,92 @@ function buildHintSteps(problem, solution, attempts) {
   ];
 }
 
-function ProgressOverview({ progressSummary }) {
+// Three distinct dashboard cards:
+//  1. Resume   — the most recent IN-PROGRESS problem (or a prompt to start one)
+//  2. Up Next  — the recommended next problem to try
+//  3. My Snippets — the personal workspace (accented so it stands out)
+function RecentActivity({ questions, progressByQuestion, nextUpQuestion, onResume, onSelect, onOpenSnippets }) {
+  // Most recent in-progress problem (not solved).
+  const resumeItem = Object.entries(progressByQuestion || {})
+    .map(([id, p]) => ({ id, progress: p, question: questions.find(q => q.id === id) }))
+    .filter(item => item.question && item.progress
+      && item.progress.status !== "solved"
+      && (item.progress.attempt_count > 0 || item.progress.status === "in_progress"))
+    .sort((a, b) => new Date(b.progress.updated_at || 0) - new Date(a.progress.updated_at || 0))[0] || null;
+
+  // Don't recommend the same problem the user is already resuming.
+  const upNext = nextUpQuestion && (!resumeItem || nextUpQuestion.id !== resumeItem.question.id)
+    ? nextUpQuestion
+    : null;
+
   return (
-    <section className="practice-progress-overview">
-      <div>
-        <span className="coding-kicker">Progress Overview</span>
-        <strong>{progressSummary.completionPercent}% complete</strong>
-      </div>
-      <div className="progress-bar" aria-label={`${progressSummary.completionPercent}% complete`}>
-        <span style={{ width: `${progressSummary.completionPercent}%` }} />
-      </div>
-      <div className="progress-overview-stats">
-        <span>{progressSummary.solvedCount} Solved</span>
-        <span>{progressSummary.attemptedCount} Attempted</span>
-        <span>{progressSummary.displayStreak} Day Streak</span>
+    <section className="coding-recent-activity coding-dashboard-section" aria-label="Your coding shortcuts">
+      <span className="coding-kicker">Jump back in</span>
+      <div className="coding-recent-grid">
+        {/* 1. Resume */}
+        <article className="coding-recent-card">
+          <div className="coding-recent-card-top">
+            <span className="coding-recent-label">Resume</span>
+            {resumeItem ? (
+              <>
+                <strong className="coding-recent-title">{resumeItem.question.title}</strong>
+                <span className="coding-recent-category">
+                  <span className={`recent-diff ${String(resumeItem.question.difficulty || "easy").toLowerCase()}`}>{resumeItem.question.difficulty || "Easy"}</span>
+                  {resumeItem.question.topic && <span className="recent-topic">{resumeItem.question.topic}</span>}
+                </span>
+              </>
+            ) : (
+              <span className="coding-recent-empty">No problem in progress yet.</span>
+            )}
+          </div>
+          <div className="coding-recent-card-bottom">
+            {resumeItem ? (
+              <>
+                <button type="button" className="coding-recent-resume-btn" onClick={() => onResume(resumeItem.question)}>Resume</button>
+                <span className="recent-status in-progress">In progress</span>
+              </>
+            ) : (
+              <button type="button" className="coding-recent-resume-btn" onClick={() => upNext && onSelect(upNext)} disabled={!upNext}>Start one</button>
+            )}
+          </div>
+        </article>
+
+        {/* 2. Up Next */}
+        <article className="coding-recent-card coding-upnext-card">
+          <div className="coding-recent-card-top">
+            <span className="coding-recent-label">Up Next</span>
+            {upNext ? (
+              <>
+                <strong className="coding-recent-title">{upNext.title}</strong>
+                <span className="coding-recent-category">
+                  <span className={`recent-diff ${String(upNext.difficulty || "easy").toLowerCase()}`}>{upNext.difficulty || "Easy"}</span>
+                  {upNext.topic && <span className="recent-topic">{upNext.topic}</span>}
+                </span>
+              </>
+            ) : (
+              <span className="coding-recent-empty">You&apos;ve started everything — nice!</span>
+            )}
+          </div>
+          <div className="coding-recent-card-bottom">
+            <button type="button" className="coding-recent-resume-btn upnext-start-btn" onClick={() => upNext && onSelect(upNext)} disabled={!upNext}>Start</button>
+          </div>
+        </article>
+
+        {/* 3. My Snippets — accented personal workspace card */}
+        <article className="coding-recent-card coding-snippets-card">
+          <div className="coding-recent-card-top">
+            <span className="coding-recent-label">Personal</span>
+            <strong className="coding-recent-title">My Snippets</strong>
+            <span className="coding-recent-category">
+              <span className="recent-topic">Write, run &amp; save your own code.</span>
+            </span>
+          </div>
+          <div className="coding-recent-card-bottom">
+            <button type="button" className="coding-recent-resume-btn snippets-open-btn" onClick={onOpenSnippets}>
+              Open Workspace
+            </button>
+          </div>
+        </article>
       </div>
     </section>
   );
@@ -254,16 +326,15 @@ export default function CodingTutor({
   messages = [],
   onContextChange,
   onActivePageChange,
-  onPrefillChat,
   onStartFreshChat,
   onSendToChat,
-  tutorModeRequest,
 }) {
   const location = useLocation();
   const [activePage, setActivePage] = useState("dashboard");
   const [lastNonWorkspacePage, setLastNonWorkspacePage] = useState("dashboard");
   const [workspaceVisible, setWorkspaceVisible] = useState(true);
   const [miniSidebarCollapsed, setMiniSidebarCollapsed] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [workspaceTab, setWorkspaceTab] = useState("Editor");
   const [dailyChallenge, setDailyChallenge] = useState(null);
   const [dailyChallengeLoading, setDailyChallengeLoading] = useState(false);
@@ -279,11 +350,33 @@ export default function CodingTutor({
   const [activeSolution, setActiveSolution] = useState(null);
   const [problemLoading, setProblemLoading] = useState(false);
   const [listLoading, setListLoading] = useState(false);
+  // Personal "My Snippets" workspace: a fresh, non-graded space separate from the
+  // Quiz Bank. snippets are stored per-device in localStorage.
+  const [snippets, setSnippets] = useState(() => listSnippets());
+  const [activeSnippetId, setActiveSnippetId] = useState(null);
+  const personalFileInputRef = useRef(null);
+  // The code as it was last saved/loaded, used to detect unsaved changes in the
+  // personal workspace so we can warn before the student loses work.
+  const [personalSavedCode, setPersonalSavedCode] = useState("");
+  // A pending navigation action held while the "unsaved changes" prompt is shown.
+  const [unsavedPrompt, setUnsavedPrompt] = useState(null);
   const [code, setCode] = useState("");
   const [note, setNote] = useState("");
-  const [testOutput, setTestOutput] = useState({ status: "ready", message: "Load a Quiz Bank problem to run graded tests, or just write Python/JavaScript here and press Run to test your own code." });
+  const [testOutput, setTestOutput] = useState({ status: "ready", message: "" });
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+  // Lets the Stop button abort an in-flight run. The backend's hard CPU/time
+  // limit also kills a truly stuck process, so this frees the UI immediately.
+  const runAbortRef = useRef(null);
+
+  const stopRun = useCallback(() => {
+    if (runAbortRef.current) {
+      runAbortRef.current.abort();
+      runAbortRef.current = null;
+    }
+    setIsRunning(false);
+    setTestOutput({ status: "error", free_run: true, tests: [], stdout: "", stderr: "Run stopped.", message: "You stopped the run." });
+  }, []);
   const [revealedHints, setRevealedHints] = useState(0);
   const [tutorMode, setTutorMode] = useState("Guided Tutor");
   const [quizPdfStartIndex, setQuizPdfStartIndex] = useState(null);
@@ -305,6 +398,7 @@ export default function CodingTutor({
     ? questions.findIndex(question => question.id === activeProblem?.id)
     : -1;
   const isQuizBankProblem = Boolean(activeProblem && activeQuestionIndex >= 0 && activeProblem.source !== "personal");
+  const isPersonalMode = activeProblem?.source === "personal";
   // Next/Back cycle only through unsolved problems. Solved problems can still be
   // opened directly from Quiz Bank, but are skipped here to focus on what is left.
   const findAdjacentUnsolvedIndex = useCallback((fromIndex, direction) => {
@@ -334,6 +428,22 @@ export default function CodingTutor({
   const completionPercent = progressQuestions.length ? Math.round((solvedCount / progressQuestions.length) * 100) : 0;
   const displayStreak = Math.min(5, Math.max(0, solvedCount || attemptedCount ? Math.ceil((solvedCount + attemptedCount) / 4) : 0));
   const progressSummary = { solvedCount, attemptedCount, totalAttempts, completionPercent, displayStreak };
+
+  // "Up Next" recommendation: the first question the student hasn't started yet
+  // (not solved, no attempts). Falls back to the first non-solved if every
+  // question has at least been touched. Easy problems come first when ordered.
+  const nextUpQuestion = useMemo(() => {
+    const ordered = [...progressQuestions].sort((a, b) => {
+      const rank = { easy: 0, medium: 1, hard: 2 };
+      return (rank[String(a.difficulty || "easy").toLowerCase()] ?? 1)
+        - (rank[String(b.difficulty || "easy").toLowerCase()] ?? 1);
+    });
+    const untouched = ordered.find(q => {
+      const p = progressByQuestion[q.id];
+      return !p || (p.status !== "solved" && (p.attempt_count || 0) === 0 && p.status !== "in_progress");
+    });
+    return untouched || ordered.find(q => progressByQuestion[q.id]?.status !== "solved") || null;
+  }, [progressQuestions, progressByQuestion]);
   const topicPacks = useMemo(() => {
     const grouped = new Map();
     allQuestions.forEach((question) => {
@@ -400,18 +510,42 @@ export default function CodingTutor({
     ].join("\n"), true);
   }, [onSendToChat, testOutput, selectedLanguage]);
 
+  const requestReview = useCallback(() => {
+    if (!code || !code.trim()) {
+      toast.info("Write some code first so the tutor has something to review.");
+      return;
+    }
+    setTutorMode("Reviewing");
+    onSendToChat?.("Review my current code for correctness and style. Point out the single biggest issue first, then any smaller ones. Don't rewrite the whole thing — guide me.", true);
+  }, [onSendToChat, code]);
+
   useEffect(() => {
-    const isWorkspaceContext = activePage === "workspace" && workspaceVisible;
+    // Pull the account's saved snippets from the server once on load and merge
+    // them into the local cache, so My Snippets follows the user across devices.
+    // No-op (keeps local cache) when signed out or offline.
+    let cancelled = false;
+    syncSnippetsFromServer().then(() => {
+      if (!cancelled) setSnippets(listSnippets());
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    // The chat should use the student's workspace code whenever there IS code (or
+    // a loaded problem) — not only while the Workspace tab is the active page. This
+    // keeps the floating chat grounded in the current attempt from any sub-page.
+    const hasWorkspaceCode = Boolean(code && code.trim());
+    const useWorkspace = hasWorkspaceCode || Boolean(activeProblem);
     onContextChange?.({
-      activeProblem: isWorkspaceContext ? activeProblem : null,
+      activeProblem: useWorkspace ? activeProblem : null,
       selectedLanguage,
-      code: isWorkspaceContext ? code : "",
-      attempts: isWorkspaceContext ? attempts : 0,
-      workspaceTab: isWorkspaceContext ? workspaceTab : activePage,
-      note: isWorkspaceContext ? note : "",
+      code: useWorkspace ? code : "",
+      attempts: useWorkspace ? attempts : 0,
+      workspaceTab: activePage === "workspace" && workspaceVisible ? workspaceTab : activePage,
+      note: useWorkspace ? note : "",
       tutorMode,
-      runnerSummary: isWorkspaceContext ? runnerSummary : "",
-      workspaceSnapshots: isWorkspaceContext ? activeSnapshots : {},
+      runnerSummary: useWorkspace ? runnerSummary : "",
+      workspaceSnapshots: useWorkspace ? activeSnapshots : {},
       suggestedCodeBlock,
       onApplyAICode: suggestedCodeBlock ? applyAiCode : null,
     });
@@ -432,10 +566,6 @@ export default function CodingTutor({
     if (requestedPage === "workspace") setWorkspaceVisible(true);
     setActivePage(requestedPage);
   }, [location.search]);
-
-  useEffect(() => {
-    if (tutorModeRequest?.mode) setTutorMode(tutorModeRequest.mode);
-  }, [tutorModeRequest]);
 
   useEffect(() => {
     if (!activeProblem || !code) return;
@@ -665,9 +795,7 @@ export default function CodingTutor({
       },
     }));
     setNote(`Practice problem: ${problem.title}`);
-    const runnerLabel = language === "python" || language === "javascript"
-      ? `${languageName} local tests can run from the terminal below the editor.`
-      : `${languageName} starter loaded. Java and C++ runners are coming later.`;
+    const runnerLabel = `${languageName} local tests can run from the terminal below the editor.`;
     setTestOutput({ status: "ready", message: `${problem.title} loaded in ${languageName}. ${runnerLabel}` });
     setTerminalOpen(false);
     setActivePage("workspace");
@@ -676,9 +804,25 @@ export default function CodingTutor({
     setRevealedHints(0);
   };
 
+  // Persist the CURRENT quiz problem as in-progress if its code changed from the
+  // starter, so editing a problem (even without running it) makes it show up under
+  // "Continue where you left off". Skips personal/leetcode/solved.
+  const savePendingProblemProgress = async () => {
+    if (!activeProblem || !isQuizBankProblem) return;
+    if (activeLanguageProgress?.status === "solved") return;
+    if (!hasStarterCodeChanged(code, activeSolution?.starter_code)) return;
+    try {
+      await saveProgress(activeProblem.id, { status: "in_progress", code }, selectedLanguageKey);
+    } catch (error) {
+      console.warn("[coding-practice] save pending progress failed", error);
+    }
+  };
+
   const selectQuestion = async (problem) => {
     setProblemLoading(true);
     try {
+      // Save edits to the problem we're leaving before loading the new one.
+      await savePendingProblemProgress();
       await loadQuestionSolution(problem, practiceLanguage);
     } catch (error) {
       console.error("[coding-practice] select failed", error);
@@ -736,17 +880,115 @@ export default function CodingTutor({
     setRevealedHints(0);
   };
 
-  const openPersonalWorkspace = () => {
-    setTutorMode("Code Review");
-    if (onStartFreshChat) {
-      onStartFreshChat({
-        type: "prefill",
-        title: "Review my code",
-        text: "Review this code and point out the most important issue first:\n\n",
-      });
+  // Open the fresh PERSONAL workspace (My Snippets) — a synthetic personal
+  // "problem" so the existing workspace renders the editor/terminal, but the left
+  // panel shows the snippets list instead of quiz guidance. Reachable ONLY from
+  // the home button, not the nav.
+  const openPersonalWorkspace = (snippet = null) => {
+    setActiveSolution(null);
+    setActiveProblem({ id: "personal", source: "personal", title: snippet?.name || "My Snippet" });
+    setActiveSnippetId(snippet?.id || null);
+    setCode(snippet?.code || "");
+    setPersonalSavedCode(snippet?.code || ""); // baseline for unsaved-change detection
+    if (snippet?.language) {
+      setSelectedLanguage(snippet.language);
+      setPracticeLanguage(snippet.language);
+    }
+    setNote("");
+    setRevealedHints(0);
+    setWorkspaceTab("Editor");
+    setTerminalOpen(false);
+    setTestOutput({ status: "ready", message: "" });
+    setWorkspaceVisible(true);
+    setActivePage("workspace");
+    setSnippets(listSnippets());
+  };
+
+  // True when in the personal workspace and the code differs from what was last
+  // saved/loaded (and there's actually something to lose).
+  const hasUnsavedPersonalChanges = isPersonalMode
+    && code.trim() !== ""
+    && normalizeCodeForCompare(code) !== normalizeCodeForCompare(personalSavedCode);
+
+  // Run `proceed` immediately if there's nothing unsaved; otherwise stash it and
+  // show the "unsaved changes" prompt (Save / Discard / Cancel).
+  const guardPersonalNav = (proceed) => {
+    if (hasUnsavedPersonalChanges) {
+      setUnsavedPrompt(() => proceed);
       return;
     }
-    onPrefillChat?.("Review this code and point out the most important issue first:\n\n");
+    proceed();
+  };
+
+  const newSnippet = () => openPersonalWorkspace(null);
+
+  // Home "My Snippets" card: reopen the most recently saved snippet (so the user
+  // resumes what they were working on); if none saved, open a clean workspace.
+  const openMySnippets = () => {
+    const saved = listSnippets();
+    openPersonalWorkspace(saved.length ? saved[0] : null);
+  };
+
+  // Returns the saved record, or null if the user cancelled the name prompt.
+  const handleSaveSnippet = () => {
+    if (!code.trim()) {
+      toast.info("Write some code before saving.");
+      return null;
+    }
+    const suggested = activeProblem?.title && activeProblem.title !== "My Snippet"
+      ? activeProblem.title
+      : "My snippet";
+    const name = window.prompt("Name this snippet:", suggested);
+    if (name === null) return null; // cancelled
+    const record = saveSnippet({ id: activeSnippetId, name, language: selectedLanguage, code });
+    setActiveSnippetId(record.id);
+    setActiveProblem(prev => (prev ? { ...prev, title: record.name } : prev));
+    setPersonalSavedCode(code); // baseline updated — no longer "unsaved"
+    setSnippets(listSnippets());
+    toast.success("Snippet saved.");
+    return record;
+  };
+
+  const handleDeleteSnippet = (id) => {
+    if (!window.confirm("Delete this snippet? This cannot be undone.")) return;
+    deleteSnippet(id);
+    setSnippets(listSnippets());
+    if (id === activeSnippetId) {
+      setActiveSnippetId(null);
+    }
+    toast.success("Snippet deleted.");
+  };
+
+  const handleUploadSnippetFile = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = ""; // allow re-uploading the same file
+    if (!file) return;
+    const lower = file.name.toLowerCase();
+    const allowed = [".py", ".ipynb", ".js", ".jsx", ".ts", ".tsx", ".java", ".cpp", ".cc", ".c", ".h", ".hpp", ".txt"];
+    if (!allowed.some(ext => lower.endsWith(ext))) {
+      toast.error("Unsupported file. Upload a .py, .ipynb, or other code/text file.");
+      return;
+    }
+    if (file.size > 512 * 1024) {
+      toast.error("That file is too large (max 512 KB).");
+      return;
+    }
+    try {
+      const text = await file.text();
+      const extracted = extractCodeFromFile(file.name, text);
+      setCode(extracted);
+      const lang = languageFromFilename(file.name);
+      if (lang) {
+        setSelectedLanguage(lang);
+        setPracticeLanguage(lang);
+      }
+      setActiveSnippetId(null);
+      setActiveProblem(prev => (prev ? { ...prev, title: file.name } : prev));
+      toast.success(`Loaded ${file.name} into the editor.`);
+    } catch (error) {
+      console.error("[snippets] upload failed", error);
+      toast.error("Could not read that file.");
+    }
   };
 
   const sendDashboardPrompt = (text, options = {}) => {
@@ -831,8 +1073,8 @@ export default function CodingTutor({
   };
 
   const runFreeform = async () => {
-    if (!["python", "javascript"].includes(selectedLanguageKey)) {
-      setTestOutput({ status: "error", message: "Free run supports Python and JavaScript. Switch to one of those languages to run personal code." });
+    if (!["python", "javascript", "java", "cpp"].includes(selectedLanguageKey)) {
+      setTestOutput({ status: "error", message: "Free run supports Python, JavaScript, Java, and C++." });
       setTerminalOpen(true);
       return;
     }
@@ -845,6 +1087,8 @@ export default function CodingTutor({
     setIsRunning(true);
     setTerminalOpen(true);
     setTestOutput({ status: "running", message: `Running your ${selectedLanguage} code...` });
+    const controller = new AbortController();
+    runAbortRef.current = controller;
     try {
       const response = await fetch(`${apiBase}/api/coding/practice/freerun`, {
         method: "POST",
@@ -853,6 +1097,7 @@ export default function CodingTutor({
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ language: selectedLanguageKey, code }),
+        signal: controller.signal,
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || `runner ${response.status}`);
@@ -866,9 +1111,11 @@ export default function CodingTutor({
         },
       }));
     } catch (error) {
+      if (error.name === "AbortError") return; // stopRun already set the message
       console.error("[coding-freerun] failed", error);
       setTestOutput({ status: "error", free_run: true, message: "The local runner could not complete.", stderr: String(error.message || error) });
     } finally {
+      if (runAbortRef.current === controller) runAbortRef.current = null;
       setIsRunning(false);
     }
   };
@@ -913,6 +1160,8 @@ export default function CodingTutor({
     setIsRunning(true);
     setTerminalOpen(true);
     setTestOutput({ status: "running", message: `Running local ${selectedLanguage} tests...` });
+    const controller = new AbortController();
+    runAbortRef.current = controller;
     try {
       const response = await fetch(`${apiBase}/api/coding/practice/run`, {
         method: "POST",
@@ -921,6 +1170,7 @@ export default function CodingTutor({
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ question_id: activeProblem.id, language: selectedLanguageKey, code }),
+        signal: controller.signal,
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || `runner ${response.status}`);
@@ -978,9 +1228,11 @@ export default function CodingTutor({
         toast.success("All local tests passed. Problem marked solved.");
       }
     } catch (error) {
+      if (error.name === "AbortError") return; // stopRun already set the message
       console.error("[coding-runner] failed", error);
       setTestOutput({ status: "error", message: "The local runner could not complete.", stderr: String(error.message || error) });
     } finally {
+      if (runAbortRef.current === controller) runAbortRef.current = null;
       setIsRunning(false);
     }
   };
@@ -1038,9 +1290,30 @@ export default function CodingTutor({
   };
 
   const openPage = (pageId) => {
-    if (pageId !== "workspace") setLastNonWorkspacePage(pageId);
-    if (pageId === "workspace") setWorkspaceVisible(true);
-    setActivePage(pageId);
+    // Guard: leaving the personal workspace with unsaved code prompts to save first.
+    guardPersonalNav(() => {
+      // Record edits to a quiz problem before navigating away (so it appears under
+      // "Continue where you left off" even if it was never run).
+      savePendingProblemProgress();
+      if (pageId !== "workspace") setLastNonWorkspacePage(pageId);
+      if (pageId === "workspace") {
+        setWorkspaceVisible(true);
+        // The nav "Workspace" tab is the CODING (Quiz Bank) workspace. If we were in
+        // the personal "My Snippets" workspace, leave it so this shows the quiz
+        // empty state with "Open Quiz Bank" — the personal workspace is reached only
+        // from the Home button.
+        if (activeProblem?.source === "personal") {
+          setActiveProblem(null);
+          setActiveSolution(null);
+          setActiveSnippetId(null);
+          setCode("");
+          setPersonalSavedCode("");
+          setTestOutput({ status: "ready", message: "" });
+          setTerminalOpen(false);
+        }
+      }
+      setActivePage(pageId);
+    });
   };
 
   const toggleWorkspace = () => {
@@ -1055,14 +1328,19 @@ export default function CodingTutor({
 
   const renderDashboard = () => (
     <section className="coding-dashboard">
-      <ProgressOverview progressSummary={progressSummary} />
+      <StatTiles progressSummary={progressSummary} />
+      <RecentActivity
+        questions={allQuestions.length ? allQuestions : questions}
+        progressByQuestion={progressByQuestion}
+        nextUpQuestion={nextUpQuestion}
+        onResume={selectQuestion}
+        onSelect={selectQuestion}
+        onOpenSnippets={openMySnippets}
+      />
       <section className="coding-blurb-section">
         <div className="coding-dashboard-prompts" aria-label="Coding tutor prompt suggestions">
           <button type="button" className="coding-prompt-card blue" onClick={() => sendDashboardPrompt("Can you generate a practice quiz for me on arrays, strings, and loops?", { quizPdf: true, title: "Practice quiz" })}>
             Can you generate a practice quiz for me?
-          </button>
-          <button type="button" className="coding-prompt-card red" onClick={() => openPersonalWorkspace()}>
-            Review my code and explain the biggest issue.
           </button>
           <button type="button" className="coding-prompt-card gold" onClick={() => sendDashboardPrompt("Help me prepare for a technical interview problem with hints first.", { title: "Interview prep" })}>
             Help me prepare for a technical interview problem.
@@ -1097,24 +1375,34 @@ export default function CodingTutor({
   );
 
   const renderWorkspace = () => (
-    <section className={`coding-workbench ${terminalOpen ? "terminal-open" : "terminal-closed"}`}>
+    <section className={`coding-workbench ${terminalOpen ? "terminal-open" : "terminal-closed"} ${isPersonalMode ? "personal-workspace" : ""}`}>
       <div className="coding-workbench-main">
-        <ProblemPanel
-          problem={activeProblem}
-          solution={activeSolution}
-          attempts={attempts}
-          problemLoading={problemLoading}
-          isSolved={isActiveProblemSolved}
-          solvedLanguages={activeSolvedLanguages}
-          showProblemNavigation={isQuizBankProblem}
-          canGoPrevious={canGoPrevious}
-          canGoNext={canGoNext}
-          onPreviousProblem={() => navigatePracticeProblem(-1)}
-          onNextProblem={() => navigatePracticeProblem(1)}
-          onShowHint={showNextHint}
-          onShowAllHints={showAllHints}
-          onOpenQuizBank={() => openPage("quiz")}
-        />
+        {isPersonalMode ? (
+          <PersonalPanel
+            snippets={snippets}
+            activeSnippetId={activeSnippetId}
+            onNewSnippet={() => guardPersonalNav(() => newSnippet())}
+            onOpenSnippet={(snippet) => guardPersonalNav(() => openPersonalWorkspace(snippet))}
+            onDeleteSnippet={handleDeleteSnippet}
+          />
+        ) : (
+          <ProblemPanel
+            problem={activeProblem}
+            solution={activeSolution}
+            attempts={attempts}
+            problemLoading={problemLoading}
+            isSolved={isActiveProblemSolved}
+            solvedLanguages={activeSolvedLanguages}
+            showProblemNavigation={isQuizBankProblem}
+            canGoPrevious={canGoPrevious}
+            canGoNext={canGoNext}
+            onPreviousProblem={() => navigatePracticeProblem(-1)}
+            onNextProblem={() => navigatePracticeProblem(1)}
+            onShowHint={showNextHint}
+            onShowAllHints={showAllHints}
+            onOpenQuizBank={() => openPage("quiz")}
+          />
+        )}
         <CodeWorkspace
           activeProblem={activeProblem}
           code={code}
@@ -1128,11 +1416,14 @@ export default function CodingTutor({
           latestFeedback={latestFeedback}
           suggestedCodeBlock={suggestedCodeBlock}
           terminalOpen={terminalOpen}
+          testOutput={testOutput}
           canMarkSolved={isQuizBankProblem}
+          isPersonalMode={isPersonalMode}
           onCodeChange={setCode}
           onLanguageChange={changeSelectedLanguage}
           onTabChange={setWorkspaceTab}
-          onToggleTerminal={() => setTerminalOpen(true)}
+          onToggleTerminal={() => setTerminalOpen(prev => !prev)}
+          onCloseTerminal={() => setTerminalOpen(false)}
           onRun={runAttempt}
           onMarkSolved={markSolved}
           onCopyCode={() => navigator.clipboard.writeText(code)}
@@ -1140,16 +1431,28 @@ export default function CodingTutor({
           onClearWorkspace={clearWorkspace}
           onShowHint={showNextHint}
           onShowAllHints={showAllHints}
+          onExplainFailedTests={explainFailedTests}
+          onExplainError={explainError}
+          onStopRun={stopRun}
+          onRequestReview={requestReview}
+          onSaveSnippet={handleSaveSnippet}
+          onUploadFile={() => personalFileInputRef.current?.click()}
           codeRenderer={codeRenderer}
         />
       </div>
+      <input
+        ref={personalFileInputRef}
+        type="file"
+        accept=".py,.ipynb,.js,.jsx,.ts,.tsx,.java,.cpp,.cc,.c,.h,.hpp,.txt"
+        style={{ display: "none" }}
+        onChange={handleUploadSnippetFile}
+      />
     </section>
   );
 
   const renderProgress = () => (
     <section className="coding-page-panel progress-page">
-      <ProgressOverview progressSummary={progressSummary} />
-      <div className="coding-progress-stats"><div><strong>{solvedCount}</strong><span>Solved</span></div><div><strong>{attemptedCount}</strong><span>Attempted</span></div><div><strong>{completionPercent}%</strong><span>Complete</span></div></div>
+      <StatTiles progressSummary={progressSummary} />
       <ProgressBadges
         questions={allQuestions.length ? allQuestions : questions}
         progressByQuestion={progressByQuestion}
@@ -1226,15 +1529,41 @@ export default function CodingTutor({
 
   return (
     <div className={`coding-app ${miniSidebarCollapsed ? "mini-sidebar-collapsed" : ""} ${activePage === "workspace" ? "coding-workspace-active" : ""} ${terminalOpen ? "terminal-open" : "terminal-closed"}`}>
-      <nav className="coding-section-nav" aria-label="Coding tutor navigation">
+      <div className="coding-nav-row">
         <button
           type="button"
-          className="coding-nav-collapse"
-          onClick={() => setMiniSidebarCollapsed(prev => !prev)}
-          title={miniSidebarCollapsed ? "Expand coding navigation" : "Collapse coding navigation"}
+          className={`coding-back-home-btn ${activePage === "dashboard" ? "active" : ""}`}
+          onClick={() => { openPage("dashboard"); setMobileNavOpen(false); }}
+          title="Back to Home"
         >
-          {miniSidebarCollapsed ? <FaChevronRight aria-hidden="true" /> : <FaChevronLeft aria-hidden="true" />}
+          <FaHome aria-hidden="true" />
+          <span className="coding-back-home-label">Back to Home</span>
         </button>
+        <nav className={`coding-section-nav ${mobileNavOpen ? "mobile-open" : ""}`} aria-label="Coding tutor navigation">
+        {/* Single dropdown toggle on every screen. The bar shows the active tab's
+            icon + name (name hidden on mobile via CSS). Clicking opens the menu;
+            the chevron rotates; picking a section navigates and closes. */}
+        {(() => {
+          const current = CODING_PAGES.find(p => p.id === activePage);
+          const CurrentIcon = current?.icon;
+          // On Home (not in the section list) show a neutral "Sections" label.
+          return (
+            <button
+              type="button"
+              className="coding-nav-mobile-toggle"
+              onClick={() => setMobileNavOpen(prev => !prev)}
+              aria-expanded={mobileNavOpen}
+              aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+            >
+              {CurrentIcon && (
+                <span className="coding-nav-icon coding-nav-current-icon" aria-hidden="true"><CurrentIcon /></span>
+              )}
+              <span className="coding-nav-mobile-current">{current?.label || "Sections"}</span>
+              <FaChevronDown className="coding-nav-chevron" aria-hidden="true" />
+            </button>
+          );
+        })()}
+
         {CODING_PAGES.map(page => {
           const Icon = page.icon;
           return (
@@ -1242,7 +1571,7 @@ export default function CodingTutor({
             key={page.id}
             type="button"
             className={activePage === page.id ? "active" : ""}
-            onClick={() => openPage(page.id)}
+            onClick={() => { openPage(page.id); setMobileNavOpen(false); }}
             title={page.label}
           >
             <span className="coding-nav-icon" aria-hidden="true"><Icon /></span>
@@ -1250,26 +1579,51 @@ export default function CodingTutor({
           </button>
           );
         })}
-        <button type="button" className="coding-nav-workspace-toggle" onClick={toggleWorkspace} title={workspaceVisible ? "Hide Workspace" : "Show Workspace"}>
+        <button type="button" className="coding-nav-workspace-toggle" onClick={() => { toggleWorkspace(); setMobileNavOpen(false); }} title={workspaceVisible ? "Hide Workspace" : "Show Workspace"}>
           <span className="coding-nav-icon" aria-hidden="true">{workspaceVisible ? <FaEyeSlash /> : <FaEye />}</span>
           <span className="coding-nav-label">{activePage === "workspace" && workspaceVisible ? "Hide Workspace" : "Show Workspace"}</span>
         </button>
-      </nav>
+        </nav>
+      </div>
       <div className="coding-app-main">
         <div className="coding-app-content">{renderPage()}</div>
       </div>
-      {activePage === "workspace" && workspaceVisible && (
-        terminalOpen && (
-          <div className="coding-shell-terminal">
-            <TerminalPanel
-              testOutput={testOutput}
-              expanded
-              onClose={() => setTerminalOpen(false)}
-              onExplainFailedTests={explainFailedTests}
-              onExplainError={explainError}
-            />
+
+      {unsavedPrompt && (
+        <div className="unsaved-overlay" role="dialog" aria-modal="true" aria-labelledby="unsaved-title">
+          <div className="unsaved-modal">
+            <h3 id="unsaved-title">Unsaved changes</h3>
+            <p>You have unsaved code in this workspace. Save it as a snippet before leaving, or discard your changes.</p>
+            <div className="unsaved-actions">
+              <button
+                type="button"
+                className="unsaved-btn unsaved-save"
+                onClick={() => {
+                  const proceed = unsavedPrompt;
+                  const saved = handleSaveSnippet();
+                  if (saved) { setUnsavedPrompt(null); proceed(); }
+                  // if the name prompt was cancelled, keep the dialog open
+                }}
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                className="unsaved-btn unsaved-discard"
+                onClick={() => { const proceed = unsavedPrompt; setUnsavedPrompt(null); proceed(); }}
+              >
+                Discard
+              </button>
+              <button
+                type="button"
+                className="unsaved-btn unsaved-cancel"
+                onClick={() => setUnsavedPrompt(null)}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-        )
+        </div>
       )}
     </div>
   );

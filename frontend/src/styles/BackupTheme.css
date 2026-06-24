@@ -47,6 +47,9 @@
   --bg-surface: var(--bg-card);
   --bg-surface-soft: var(--bg-input);
   --bg-surface-raised: var(--bg-elevated);
+  /* Soft warm page wash for the chat/landing backdrop — complements the ivory
+     paper instead of the old cold blue tint. */
+  --page-wash: rgba(245, 130, 32, 0.06);
   --text-muted: var(--text-secondary);
   --text-soft: var(--text-tertiary);
   --border-soft: var(--border-color);
@@ -115,6 +118,8 @@ body.dark {
   --bg-surface: var(--bg-card);
   --bg-surface-soft: var(--bg-input);
   --bg-surface-raised: var(--bg-elevated);
+  /* Dark mode: a very faint warm wash so the backdrop isn't dead flat. */
+  --page-wash: rgba(245, 130, 32, 0.05);
   --text-muted: var(--text-secondary);
   --text-soft: var(--text-tertiary);
   --border-soft: var(--border-color);

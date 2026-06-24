@@ -239,6 +239,29 @@ class CodingPracticeProgress(Base):
     user = relationship("User", backref="coding_practice_progress")
 
 
+class CodingSnippet(Base):
+    """Per-user personal code snippets ("My Snippets") — the student's own code,
+    not tied to a graded quiz problem. Synced from the browser localStorage."""
+    __tablename__ = "coding_snippets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    # Client-generated id (e.g. "snip-...") used to match the local copy. Unique
+    # per user so the same client id can't collide across accounts.
+    client_id = Column(String(80), nullable=False, index=True)
+    name = Column(String(120), nullable=False, default="Untitled snippet")
+    language = Column(String(30), nullable=False, default="Python")
+    code = Column(Text, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "client_id", name="uq_coding_snippet_user_client"),
+    )
+
+    user = relationship("User", backref="coding_snippets")
+
+
 class FailedQuery(Base):
     """Tracks questions the chatbot couldn't answer (KB misses).
     Used by the auto-research agent to find and fill knowledge gaps."""

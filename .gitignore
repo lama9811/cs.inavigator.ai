@@ -58,6 +58,11 @@ CLAUDE.md
 AGENTS.md
 ROADMAP.md
 
+# Presentation / talk notes (kept local, not for public repo)
+docs/aaas_talk.md
+docs/*_talk.md
+docs/presentation*.md
+
 # Text extraction service (cloned repo)
 text-extract-api/
 

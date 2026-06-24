@@ -9,8 +9,6 @@ export default function ProblemPanel({
   canGoNext = false,
   onPreviousProblem,
   onNextProblem,
-  onShowHint,
-  onShowAllHints,
   onOpenQuizBank,
 }) {
   return (
@@ -68,10 +66,6 @@ export default function ProblemPanel({
               <ul>{problem.constraints.map((constraint, index) => <li key={index}>{constraint}</li>)}</ul>
             </section>
           )}
-          <div className="daily-actions">
-            <button type="button" className="daily-practice-btn secondary" onClick={onShowHint}>Show Hint</button>
-            <button type="button" className="daily-practice-btn secondary" onClick={onShowAllHints}>Show All</button>
-          </div>
         </div>
       ) : (
         <div className="coding-problem-empty">

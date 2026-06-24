@@ -6,10 +6,10 @@
 /* Chat Sidebar - Theme-aware */
 .chat-sidebar {
   position: fixed;
-  top: 70px;
+  top: var(--nav-h, 70px);
   left: 0;
   width: 280px;
-  height: calc(100vh - 70px);
+  height: calc(100vh - var(--nav-h, 70px));
   background: var(--bg-surface, var(--bg-card));
   border-right: 1px solid var(--border-soft, var(--border-color));
   display: flex;
@@ -40,7 +40,6 @@ body.sidebar-collapsed:not(.sidebar-resizing) .sidebar-settings-wrapper,
 body.sidebar-collapsed:not(.sidebar-resizing) .user-info,
 body.sidebar-collapsed:not(.sidebar-resizing) .logout-icon-btn,
 body.sidebar-collapsed:not(.sidebar-resizing) .sidebar-opensource-badge,
-body.sidebar-collapsed:not(.sidebar-resizing) .archived-toggle,
 body.sidebar-collapsed:not(.sidebar-resizing) .sidebar-middle,
 body.sidebar-collapsed:not(.sidebar-resizing) .context-menu {
   display: none !important;
@@ -235,8 +234,7 @@ body.dark .sidebar-action-btn:hover {
 }
 
 .chat-history-item.active *,
-.chat-history-item.active .chat-title,
-.chat-history-item.active .chat-date {
+.chat-history-item.active .chat-title {
   color: #ffffff !important;
 }
 
@@ -288,7 +286,7 @@ body.dark .chat-history-item:hover {
 
 @media (max-height: 760px), (max-width: 900px) {
   .chat-sidebar {
-    height: calc(100dvh - 70px);
+    height: calc(100dvh - var(--nav-h, 70px));
   }
 
   .sidebar-top {
@@ -348,7 +346,7 @@ body.dark .chat-history-item:hover {
   .sidebar-backdrop {
     display: block;
     position: fixed;
-    inset: 70px 0 0 0;
+    inset: var(--nav-h, 70px) 0 0 0;
     background: rgba(15, 23, 42, 0.45);
     z-index: 1100;
     opacity: 1;
@@ -699,14 +697,6 @@ body.dark .sidebar-action-btn.curriculum-link:hover span {
   gap: 8px;
 }
 
-/* Legacy - keep for compatibility */
-.sidebar-settings {
-  display: flex;
-  gap: 8px;
-  padding: 12px;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
 .setting-btn {
   flex: 1;
   display: flex;
@@ -844,18 +834,6 @@ body.dark .sidebar-action-btn.curriculum-link:hover span {
 
 .chat-history-list::-webkit-scrollbar-thumb:hover {
   background: var(--text-tertiary);
-}
-
-/* Documentation Button Style */
-.setting-btn.doc-btn {
-  border-color: var(--msu-blue);
-  color: var(--text-secondary);
-}
-
-.setting-btn.doc-btn:hover {
-  background: var(--msu-blue-50);
-  border-color: var(--msu-blue);
-  color: var(--msu-blue);
 }
 
 /* Support Button Style */
@@ -1158,12 +1136,24 @@ body.dark .chat-history-item.active {
 }
 
 body.dark .chat-history-item.active *,
-body.dark .chat-history-item.active .chat-title,
-body.dark .chat-history-item.active .chat-date {
+body.dark .chat-history-item.active .chat-title {
   color: inherit;
 }
 
 /* Mobile - Tablet */
+/* Tablet: a narrower sidebar so pushing the content still leaves the workspace
+   a balanced amount of room (the full 280px is too much at this width). The
+   matching content offsets in Chatbox.css use this same width. */
+@media (max-width: 1023px) and (min-width: 769px) {
+  .chat-sidebar {
+    width: 220px;
+  }
+
+  body.sidebar-custom-width:not(.sidebar-collapsed) .chat-sidebar {
+    width: 220px;
+  }
+}
+
 @media (max-width: 768px) {
   .chat-sidebar {
     transform: translateX(-280px);
@@ -1171,11 +1161,6 @@ body.dark .chat-history-item.active .chat-date {
 
   body:not(.sidebar-collapsed) .chat-sidebar {
     transform: translateX(0);
-  }
-
-  .sidebar-settings {
-    flex-direction: column;
-    gap: 6px;
   }
 
   .setting-btn {

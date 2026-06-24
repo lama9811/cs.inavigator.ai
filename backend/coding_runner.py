@@ -75,6 +75,29 @@ JAVASCRIPT_BLOCKED_PATTERNS = (
     (re.compile(r"\b(?:eval|Function)\s*\("), "Dynamic code generation is not available in the practice runner."),
 )
 
+# Compiled-language guards. Java/C++ are compiled then run, so we block source
+# patterns that touch the filesystem, network, processes, or reflection before
+# they ever reach the compiler.
+JAVA_BLOCKED_PATTERNS = (
+    (re.compile(r"\bimport\s+(?!java\.(?:util|lang|math|text)\b)"), "Only java.util, java.lang, java.math, and java.text imports are available in the practice runner."),
+    (re.compile(r"\b(?:Runtime|ProcessBuilder|System\s*\.\s*exit)\b"), "Process and runtime access is not available in the practice runner."),
+    (re.compile(r"\b(?:java\s*\.\s*io|FileReader|FileWriter|FileInputStream|FileOutputStream|RandomAccessFile|Files)\b"), "File access is not available in the practice runner."),
+    (re.compile(r"\b(?:java\s*\.\s*net|Socket|ServerSocket|URL|URLConnection|HttpClient)\b"), "Network access is not available in the practice runner."),
+    (re.compile(r"\b(?:java\s*\.\s*lang\s*\.\s*reflect|getClass\s*\(|Class\s*\.\s*forName)\b"), "Reflection is not available in the practice runner."),
+    (re.compile(r"\bThread\b|\bRuntime\.getRuntime\b"), "Threads and runtime access are not available in the practice runner."),
+)
+CPP_BLOCKED_PATTERNS = (
+    (re.compile(r"#\s*include\s*<\s*(?:fstream|filesystem)\s*>"), "File stream access is not available in the practice runner."),
+    (re.compile(r"\b(?:system|popen|fork|exec[lv][pe]?|remove|rename)\s*\("), "Process and filesystem calls are not available in the practice runner."),
+    (re.compile(r"#\s*include\s*<\s*(?:cstdio|stdio\.h)\s*>.*\b(?:fopen|fread|fwrite|freopen)\b", re.DOTALL), "File access is not available in the practice runner."),
+    (re.compile(r"\b(?:socket|connect|bind|listen|accept)\s*\("), "Network access is not available in the practice runner."),
+    (re.compile(r"\b(?:asm|__asm__|__asm)\b"), "Inline assembly is not available in the practice runner."),
+    (re.compile(r"#\s*include\s*<\s*thread\s*>|\bstd\s*::\s*thread\b"), "Threads are not available in the practice runner."),
+)
+
+# Compile step gets its own (longer) timeout than execution.
+COMPILE_TIMEOUT_SECONDS = 10
+
 _run_result_cache: dict[str, tuple[float, dict[str, Any]]] = {}
 _run_result_cache_lock = Lock()
 _run_rate_limits: dict[str, deque[float]] = defaultdict(deque)
@@ -148,6 +171,28 @@ def validate_javascript_code(code: str) -> None:
             raise RunnerSecurityError(message)
 
 
+def validate_java_code(code: str) -> None:
+    for pattern, message in JAVA_BLOCKED_PATTERNS:
+        if pattern.search(code):
+            raise RunnerSecurityError(message)
+
+
+def validate_cpp_code(code: str) -> None:
+    for pattern, message in CPP_BLOCKED_PATTERNS:
+        if pattern.search(code):
+            raise RunnerSecurityError(message)
+
+
+def _find_executable(*names: str) -> str | None:
+    """Return the first available executable from `names`, or None."""
+    import shutil
+    for name in names:
+        path = shutil.which(name)
+        if path:
+            return path
+    return None
+
+
 def _security_error_response(exc: RunnerSecurityError) -> dict[str, Any]:
     message = f"Runner security check blocked this code: {exc}"
     return {
@@ -166,23 +211,34 @@ def _truncate_text(value: Any, limit: int = RUN_MAX_OUTPUT_CHARS) -> str:
     return f"{text[:limit]}\n... output truncated by CS Navigator ..."
 
 
-def _limit_subprocess_resources() -> None:
-    """Apply Linux resource limits in the child before student code starts."""
-    if os.name != "posix":
-        return
-    import resource
+# The JVM reserves a very large VIRTUAL address space at startup (code cache,
+# metaspace, thread stacks, mapped libs) — far more than its physical heap — so a
+# tight RLIMIT_AS kills javac/java before they run. JVM memory is bounded instead
+# by -Xmx on the java command. C++ binaries are fine with the strict AS cap.
+def _make_resource_limiter(*, as_bytes: int | None, nofile: int = 16):
+    def _apply() -> None:
+        if os.name != "posix":
+            return
+        import resource
+        resource.setrlimit(resource.RLIMIT_CPU, (5, 6))
+        if as_bytes is not None:
+            resource.setrlimit(resource.RLIMIT_AS, (as_bytes, as_bytes))
+        resource.setrlimit(resource.RLIMIT_FSIZE, (RUN_FILE_SIZE_LIMIT_BYTES, RUN_FILE_SIZE_LIMIT_BYTES))
+        resource.setrlimit(resource.RLIMIT_NOFILE, (nofile, nofile))
+        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+    return _apply
 
-    resource.setrlimit(resource.RLIMIT_CPU, (2, 3))
-    resource.setrlimit(resource.RLIMIT_AS, (RUN_MEMORY_LIMIT_BYTES, RUN_MEMORY_LIMIT_BYTES))
-    resource.setrlimit(resource.RLIMIT_FSIZE, (RUN_FILE_SIZE_LIMIT_BYTES, RUN_FILE_SIZE_LIMIT_BYTES))
-    resource.setrlimit(resource.RLIMIT_NOFILE, (16, 16))
-    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+
+# Default profile: strict address-space cap (Python/JS/native binaries).
+_limit_subprocess_resources = _make_resource_limiter(as_bytes=RUN_MEMORY_LIMIT_BYTES, nofile=16)
+# JVM profile: no RLIMIT_AS (JVM self-limits via -Xmx), more file descriptors.
+_limit_jvm_resources = _make_resource_limiter(as_bytes=None, nofile=256)
 
 
-def _subprocess_security_kwargs() -> dict[str, Any]:
+def _subprocess_security_kwargs(limiter=None) -> dict[str, Any]:
     kwargs: dict[str, Any] = {"start_new_session": True}
     if os.name == "posix":
-        kwargs["preexec_fn"] = _limit_subprocess_resources
+        kwargs["preexec_fn"] = limiter or _limit_subprocess_resources
     return kwargs
 
 
@@ -192,6 +248,7 @@ def _run_isolated_process(
     cwd: str,
     input_text: str,
     env: dict[str, str],
+    limiter=None,
 ) -> subprocess.CompletedProcess[str]:
     process = subprocess.Popen(
         command,
@@ -201,13 +258,43 @@ def _run_isolated_process(
         stderr=subprocess.PIPE,
         text=True,
         env=env,
-        **_subprocess_security_kwargs(),
+        **_subprocess_security_kwargs(limiter),
     )
     try:
         stdout, stderr = process.communicate(
             input=input_text,
             timeout=RUN_TIMEOUT_SECONDS,
         )
+    except subprocess.TimeoutExpired:
+        if os.name == "posix":
+            os.killpg(process.pid, signal.SIGKILL)
+        else:
+            process.kill()
+        process.communicate()
+        raise
+    return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+
+
+def _compile_source(
+    command: list[str],
+    *,
+    cwd: str,
+    env: dict[str, str] | None = None,
+    limiter=None,
+) -> subprocess.CompletedProcess[str]:
+    """Compile step for Java/C++. Longer timeout than execution; no stdin."""
+    process = subprocess.Popen(
+        command,
+        cwd=cwd,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        env=env,
+        **_subprocess_security_kwargs(limiter),
+    )
+    try:
+        stdout, stderr = process.communicate(timeout=COMPILE_TIMEOUT_SECONDS)
     except subprocess.TimeoutExpired:
         if os.name == "posix":
             os.killpg(process.pid, signal.SIGKILL)
@@ -447,14 +534,27 @@ except Exception as exc:
     }))
     raise SystemExit(0)
 
+def _oi_canon(value):
+    # Recursively sort lists so order-insensitive tests (e.g. Group Anagrams)
+    # compare by content, not order.
+    if isinstance(value, list):
+        return sorted((_oi_canon(v) for v in value), key=lambda x: json.dumps(x, sort_keys=True, default=str))
+    if isinstance(value, dict):
+        return {k: _oi_canon(v) for k, v in value.items()}
+    return value
+
 for index, test in enumerate(tests, start=1):
     name = test.get("name") or f"Test {index}"
     args = test.get("args", [])
     expected = test.get("expected")
+    order_insensitive = bool(test.get("order_insensitive"))
     try:
         with contextlib.redirect_stdout(stdout_buffer):
             actual = target(*args)
-        passed = actual == expected
+        if order_insensitive:
+            passed = _oi_canon(actual) == _oi_canon(expected)
+        else:
+            passed = actual == expected
         results.append({
             "name": name,
             "passed": passed,
@@ -821,6 +921,472 @@ try {
         "stdout": _truncate_text(payload.get("stdout", "")),
         "stderr": _truncate_text(payload.get("error") or payload.get("warning") or stderr_text),
         "duration_ms": payload.get("duration_ms", round((time.perf_counter() - started) * 1000, 2)),
+    }
+
+
+# =============================================================================
+# JAVA / C++ PRACTICE RUNNERS (compiled languages)
+# =============================================================================
+# These compile the student's code with a generated test harness, then run it.
+# The harness compares the student's function output to each expected value and
+# prints ONE JSON line per test plus a final summary line, matching the same
+# result contract as the Python/JS runners (status / passed / total / tests).
+
+def _java_literal(value: Any) -> str:
+    """Render a Python value as a Java expression (Object-typed)."""
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return f"{value}L"  # long, widest integer the harness compares loosely
+    if isinstance(value, float):
+        return repr(value)
+    if isinstance(value, str):
+        return json.dumps(value)  # valid Java string literal (same escaping as JSON)
+    if isinstance(value, (list, tuple)):
+        inner = ", ".join(_java_literal(item) for item in value)
+        return f"new Object[]{{{inner}}}"
+    # Fallback: stringify
+    return json.dumps(str(value))
+
+
+def _cpp_literal(value: Any) -> str:
+    """Render a Python value as a C++ Value() expression (see Value variant below)."""
+    if value is None:
+        return "Value()"
+    if isinstance(value, bool):
+        return f"Value({'true' if value else 'false'})"
+    if isinstance(value, int):
+        return f"Value((long long){value})"
+    if isinstance(value, float):
+        return f"Value((double){value!r})"
+    if isinstance(value, str):
+        return f"Value(std::string({json.dumps(value)}))"
+    if isinstance(value, (list, tuple)):
+        inner = ", ".join(_cpp_literal(item) for item in value)
+        return f"Value(std::vector<Value>{{{inner}}})"
+    return f"Value(std::string({json.dumps(str(value))}))"
+
+
+def _finalize_compiled_result(
+    payload_lines: list[str],
+    *,
+    started: float,
+    stderr_text: str,
+) -> dict[str, Any]:
+    """Parse the per-test JSON lines + summary line from a compiled harness."""
+    tests: list[dict[str, Any]] = []
+    status = "error"
+    for line in payload_lines:
+        line = line.strip()
+        if not line.startswith("{"):
+            continue
+        try:
+            obj = json.loads(line)
+        except Exception:
+            continue
+        if obj.get("__summary__"):
+            status = obj.get("status", "error")
+            continue
+        tests.append(obj)
+    passed = sum(1 for item in tests if item.get("passed"))
+    total = len(tests)
+    if total and status == "error":
+        status = "passed" if passed == total else "failed"
+    return {
+        "status": status,
+        "passed": passed,
+        "total": total,
+        "tests": tests,
+        "stdout": "",
+        "stderr": _truncate_text(stderr_text),
+        "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+    }
+
+
+def run_java_practice_tests(code: str, function_name: str, tests: list[dict[str, Any]]) -> dict[str, Any]:
+    try:
+        validate_java_code(code)
+    except RunnerSecurityError as exc:
+        return _security_error_response(exc)
+
+    javac = _find_executable("javac")
+    java = _find_executable("java")
+    if not javac or not java:
+        return empty_practice_run_response(
+            "Java is not installed on this machine, so Java tests cannot run locally yet. "
+            "Install a JDK (javac + java on PATH), or use Python/JavaScript for now."
+        )
+
+    # Build the test invocations as inlined Java literals.
+    invocations = []
+    for index, test in enumerate(tests, start=1):
+        name = test.get("name") or f"Test {index}"
+        args = test.get("args", []) or []
+        expected = test.get("expected")
+        arg_list = ", ".join(_java_literal(a) for a in args)
+        invocations.append(
+            f'        runTest({json.dumps(name)}, new Object[]{{{arg_list}}}, '
+            f'{_java_literal(expected)});'
+        )
+    invocations_src = "\n".join(invocations)
+
+    harness = f"""
+import java.util.*;
+
+public class Runner {{
+    static int passed = 0, total = 0;
+
+    static String esc(String s) {{
+        StringBuilder b = new StringBuilder();
+        for (char c : s.toCharArray()) {{
+            if (c == '"' || c == '\\\\') b.append('\\\\').append(c);
+            else if (c == '\\n') b.append("\\\\n");
+            else b.append(c);
+        }}
+        return b.toString();
+    }}
+    static String show(Object o) {{
+        if (o == null) return "null";
+        if (o instanceof Object[]) return Arrays.deepToString((Object[]) o);
+        return o.toString();
+    }}
+    static boolean eq(Object a, Object b) {{
+        if (a == null || b == null) return a == b;
+        if (a instanceof Object[] && b instanceof Object[])
+            return Arrays.deepEquals((Object[]) a, (Object[]) b);
+        if (a instanceof Number && b instanceof Number)
+            return ((Number) a).doubleValue() == ((Number) b).doubleValue();
+        return a.toString().equals(b.toString());
+    }}
+
+    static void runTest(String name, Object[] args, Object expected) {{
+        total++;
+        try {{
+            Object actual = Solution.{function_name}(args);
+            boolean ok = eq(actual, expected);
+            if (ok) passed++;
+            System.out.println("{{\\"name\\":\\"" + esc(name) + "\\",\\"passed\\":" + ok
+                + ",\\"expected\\":\\"" + esc(show(expected)) + "\\",\\"actual\\":\\"" + esc(show(actual)) + "\\"}}");
+        }} catch (Throwable t) {{
+            System.out.println("{{\\"name\\":\\"" + esc(name) + "\\",\\"passed\\":false,\\"expected\\":\\""
+                + esc(show(expected)) + "\\",\\"actual\\":null,\\"error\\":\\"" + esc(String.valueOf(t)) + "\\"}}");
+        }}
+    }}
+
+    public static void main(String[] argv) {{
+{invocations_src}
+        String status = (passed == total) ? "passed" : "failed";
+        System.out.println("{{\\"__summary__\\":true,\\"status\\":\\"" + status + "\\"}}");
+    }}
+}}
+""".lstrip()
+
+    # The student writes their function inside a Solution class. To keep the
+    # harness simple, the function receives an Object[] of args (the harness
+    # passes them packed). Students writing `static Object {function_name}(Object[] a)`.
+    started = time.perf_counter()
+    try:
+        with tempfile.TemporaryDirectory(prefix="csnav_java_") as temp_dir:
+            with open(os.path.join(temp_dir, "Solution.java"), "w", encoding="utf-8") as h:
+                h.write(code)
+            with open(os.path.join(temp_dir, "Runner.java"), "w", encoding="utf-8") as h:
+                h.write(harness)
+
+            # javac IS a JVM, so it also needs the relaxed (no RLIMIT_AS) profile.
+            compiled = _compile_source(
+                [javac, "-J-Xmx256m", "-d", temp_dir, "Solution.java", "Runner.java"],
+                cwd=temp_dir,
+                env={"PATH": os.environ.get("PATH", "")},
+                limiter=_limit_jvm_resources,
+            )
+            if compiled.returncode != 0:
+                return {
+                    "status": "error",
+                    "passed": 0,
+                    "total": 0,
+                    "tests": [],
+                    "stdout": "",
+                    "stderr": _truncate_text(compiled.stderr.strip() or "Java compilation failed."),
+                    "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+                }
+
+            run = _run_isolated_process(
+                [java, "-cp", temp_dir, "-Xss8m", "-Xmx128m", "Runner"],
+                cwd=temp_dir,
+                input_text="",
+                env={"PATH": os.environ.get("PATH", "")},
+                limiter=_limit_jvm_resources,
+            )
+    except subprocess.TimeoutExpired:
+        return {
+            "status": "error", "passed": 0, "total": 0, "tests": [],
+            "stdout": "",
+            "stderr": f"The Java run timed out after {RUN_TIMEOUT_SECONDS} seconds. Check for infinite loops or very slow logic.",
+            "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+        }
+    except Exception as exc:
+        return empty_practice_run_response(f"Java runner setup failed: {exc}")
+
+    return _finalize_compiled_result(
+        run.stdout.splitlines(),
+        started=started,
+        stderr_text=run.stderr.strip(),
+    )
+
+
+def run_cpp_practice_tests(code: str, function_name: str, tests: list[dict[str, Any]]) -> dict[str, Any]:
+    try:
+        validate_cpp_code(code)
+    except RunnerSecurityError as exc:
+        return _security_error_response(exc)
+
+    compiler = _find_executable("g++", "clang++")
+    if not compiler:
+        return empty_practice_run_response(
+            "A C++ compiler (g++ or clang++) is not installed on this machine, so C++ tests "
+            "cannot run locally yet. Install one, or use Python/JavaScript for now."
+        )
+
+    invocations = []
+    for index, test in enumerate(tests, start=1):
+        name = test.get("name") or f"Test {index}"
+        args = test.get("args", []) or []
+        expected = test.get("expected")
+        arg_list = ", ".join(_cpp_literal(a) for a in args)
+        invocations.append(
+            f'    runTest({json.dumps(name)}, {{{arg_list}}}, {_cpp_literal(expected)});'
+        )
+    invocations_src = "\n".join(invocations)
+
+    # A tiny tagged-union Value type so student code can accept a vector<Value>.
+    harness = f"""
+#include <bits/stdc++.h>
+using namespace std;
+
+struct Value {{
+    enum Kind {{ NUL, BOOL, INT, DBL, STR, ARR }} kind = NUL;
+    bool b=false; long long i=0; double d=0; string s; vector<Value> a;
+    Value() {{}}
+    Value(bool x): kind(BOOL), b(x) {{}}
+    Value(long long x): kind(INT), i(x) {{}}
+    Value(double x): kind(DBL), d(x) {{}}
+    Value(const string& x): kind(STR), s(x) {{}}
+    Value(const vector<Value>& x): kind(ARR), a(x) {{}}
+    string show() const {{
+        switch (kind) {{
+            case NUL: return "null";
+            case BOOL: return b ? "true" : "false";
+            case INT: return to_string(i);
+            case DBL: {{ ostringstream o; o<<d; return o.str(); }}
+            case STR: return s;
+            case ARR: {{ string r="["; for(size_t k=0;k<a.size();k++){{ if(k) r+=", "; r+=a[k].show(); }} return r+"]"; }}
+        }}
+        return "";
+    }}
+    bool eq(const Value& o) const {{
+        if ((kind==INT||kind==DBL) && (o.kind==INT||o.kind==DBL)) {{
+            double x = kind==INT? (double)i : d, y = o.kind==INT? (double)o.i : o.d; return x==y;
+        }}
+        if (kind != o.kind) return show()==o.show();
+        switch (kind) {{
+            case NUL: return true;
+            case BOOL: return b==o.b;
+            case STR: return s==o.s;
+            case ARR: {{ if(a.size()!=o.a.size()) return false; for(size_t k=0;k<a.size();k++) if(!a[k].eq(o.a[k])) return false; return true; }}
+            default: return show()==o.show();
+        }}
+    }}
+}};
+
+// Student provides: Value {function_name}(vector<Value> args)
+Value {function_name}(vector<Value> args);
+
+{code}
+
+static int passed_=0, total_=0;
+static string esc(const string& s){{ string r; for(char c:s){{ if(c=='"'||c=='\\\\') r+='\\\\'; if(c=='\\n'){{ r+="\\\\n"; continue; }} r+=c; }} return r; }}
+
+static void runTest(const string& name, vector<Value> args, Value expected){{
+    total_++;
+    try {{
+        Value actual = {function_name}(args);
+        bool ok = actual.eq(expected);
+        if (ok) passed_++;
+        cout << "{{\\"name\\":\\"" << esc(name) << "\\",\\"passed\\":" << (ok?"true":"false")
+             << ",\\"expected\\":\\"" << esc(expected.show()) << "\\",\\"actual\\":\\"" << esc(actual.show()) << "\\"}}" << "\\n";
+    }} catch (const exception& e) {{
+        cout << "{{\\"name\\":\\"" << esc(name) << "\\",\\"passed\\":false,\\"expected\\":\\""
+             << esc(expected.show()) << "\\",\\"actual\\":null,\\"error\\":\\"" << esc(e.what()) << "\\"}}" << "\\n";
+    }}
+}}
+
+int main(){{
+{invocations_src}
+    cout << "{{\\"__summary__\\":true,\\"status\\":\\"" << (passed_==total_?"passed":"failed") << "\\"}}" << "\\n";
+    return 0;
+}}
+""".lstrip()
+
+    started = time.perf_counter()
+    try:
+        with tempfile.TemporaryDirectory(prefix="csnav_cpp_") as temp_dir:
+            src_path = os.path.join(temp_dir, "main.cpp")
+            bin_path = os.path.join(temp_dir, "a.out")
+            with open(src_path, "w", encoding="utf-8") as h:
+                h.write(harness)
+
+            compiled = _compile_source(
+                [compiler, "-std=c++17", "-O1", "-w", "-o", bin_path, src_path],
+                cwd=temp_dir,
+            )
+            if compiled.returncode != 0:
+                return {
+                    "status": "error", "passed": 0, "total": 0, "tests": [],
+                    "stdout": "",
+                    "stderr": _truncate_text(compiled.stderr.strip() or "C++ compilation failed."),
+                    "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+                }
+
+            run = _run_isolated_process(
+                [bin_path],
+                cwd=temp_dir,
+                input_text="",
+                env={"PATH": os.environ.get("PATH", "")},
+            )
+    except subprocess.TimeoutExpired:
+        return {
+            "status": "error", "passed": 0, "total": 0, "tests": [],
+            "stdout": "",
+            "stderr": f"The C++ run timed out after {RUN_TIMEOUT_SECONDS} seconds. Check for infinite loops or very slow logic.",
+            "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+        }
+    except Exception as exc:
+        return empty_practice_run_response(f"C++ runner setup failed: {exc}")
+
+    return _finalize_compiled_result(
+        run.stdout.splitlines(),
+        started=started,
+        stderr_text=run.stderr.strip(),
+    )
+
+
+def run_java_freeform(code: str) -> dict[str, Any]:
+    """Compile and run a complete Java program (with a main method); capture stdout.
+    The student's code must declare a public class `Main` with a `main` method.
+    """
+    try:
+        validate_java_code(code)
+    except RunnerSecurityError as exc:
+        response = _security_error_response(exc)
+        response["free_run"] = True
+        return response
+
+    javac = _find_executable("javac")
+    java = _find_executable("java")
+    if not javac or not java:
+        return _empty_free_run_response(
+            "Java is not installed on this machine, so Java code cannot run locally yet. "
+            "Install a JDK, or use Python/JavaScript."
+        )
+
+    started = time.perf_counter()
+    try:
+        with tempfile.TemporaryDirectory(prefix="csnav_javafree_") as temp_dir:
+            with open(os.path.join(temp_dir, "Main.java"), "w", encoding="utf-8") as h:
+                h.write(code)
+            compiled = _compile_source(
+                [javac, "-J-Xmx256m", "-d", temp_dir, "Main.java"],
+                cwd=temp_dir,
+                env={"PATH": os.environ.get("PATH", "")},
+                limiter=_limit_jvm_resources,
+            )
+            if compiled.returncode != 0:
+                return _empty_free_run_response(
+                    _truncate_text(compiled.stderr.strip() or "Java compilation failed.")
+                )
+            run = _run_isolated_process(
+                [java, "-cp", temp_dir, "-Xss8m", "-Xmx128m", "Main"],
+                cwd=temp_dir,
+                input_text="",
+                env={"PATH": os.environ.get("PATH", "")},
+                limiter=_limit_jvm_resources,
+            )
+    except subprocess.TimeoutExpired:
+        return _empty_free_run_response(
+            f"The Java run timed out after {RUN_TIMEOUT_SECONDS} seconds. Check for infinite loops or very slow logic."
+        )
+    except Exception as exc:
+        return _empty_free_run_response(f"Java runner setup failed: {exc}")
+
+    stdout_text = _truncate_text(run.stdout)
+    stderr_text = _truncate_text(run.stderr.strip())
+    status = "ran" if run.returncode == 0 else "error"
+    return {
+        "status": status,
+        "free_run": True,
+        "tests": [],
+        "stdout": stdout_text,
+        "stderr": stderr_text if status == "error" else "",
+        "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+    }
+
+
+def run_cpp_freeform(code: str) -> dict[str, Any]:
+    """Compile and run a complete C++ program (with a main function); capture stdout."""
+    try:
+        validate_cpp_code(code)
+    except RunnerSecurityError as exc:
+        response = _security_error_response(exc)
+        response["free_run"] = True
+        return response
+
+    compiler = _find_executable("g++", "clang++")
+    if not compiler:
+        return _empty_free_run_response(
+            "A C++ compiler (g++ or clang++) is not installed on this machine, so C++ code "
+            "cannot run locally yet. Install one, or use Python/JavaScript."
+        )
+
+    started = time.perf_counter()
+    try:
+        with tempfile.TemporaryDirectory(prefix="csnav_cppfree_") as temp_dir:
+            src_path = os.path.join(temp_dir, "main.cpp")
+            bin_path = os.path.join(temp_dir, "a.out")
+            with open(src_path, "w", encoding="utf-8") as h:
+                h.write(code)
+            compiled = _compile_source(
+                [compiler, "-std=c++17", "-O1", "-w", "-o", bin_path, src_path],
+                cwd=temp_dir,
+            )
+            if compiled.returncode != 0:
+                return _empty_free_run_response(
+                    _truncate_text(compiled.stderr.strip() or "C++ compilation failed.")
+                )
+            run = _run_isolated_process(
+                [bin_path],
+                cwd=temp_dir,
+                input_text="",
+                env={"PATH": os.environ.get("PATH", "")},
+            )
+    except subprocess.TimeoutExpired:
+        return _empty_free_run_response(
+            f"The C++ run timed out after {RUN_TIMEOUT_SECONDS} seconds. Check for infinite loops or very slow logic."
+        )
+    except Exception as exc:
+        return _empty_free_run_response(f"C++ runner setup failed: {exc}")
+
+    stdout_text = _truncate_text(run.stdout)
+    stderr_text = _truncate_text(run.stderr.strip())
+    status = "ran" if run.returncode == 0 else "error"
+    return {
+        "status": status,
+        "free_run": True,
+        "tests": [],
+        "stdout": stdout_text,
+        "stderr": stderr_text if status == "error" else "",
+        "duration_ms": round((time.perf_counter() - started) * 1000, 2),
     }
 
 

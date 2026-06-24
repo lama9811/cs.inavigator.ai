@@ -22,6 +22,10 @@ from coding_runner import (
     check_practice_run_rate_limit,
     empty_practice_run_response,
     get_cached_practice_run,
+    run_cpp_freeform,
+    run_cpp_practice_tests,
+    run_java_freeform,
+    run_java_practice_tests,
     run_javascript_freeform,
     run_javascript_practice_tests,
     run_python_freeform,
@@ -154,7 +158,7 @@ except ImportError:
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingSnippet
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -4334,32 +4338,23 @@ def _build_practice_starter_code(language_key: str, function_name: str, question
         )
 
     if language_key == "java":
-        param_type = {
-            "grid": "int[][] grid",
-            "text": "String text",
-            "graph": "Map<String, List<String>> graph",
-            "numbers": "List<Integer> nums",
-            "items": "List<Object> items",
+        # The runner harness calls Solution.<fn>(Object[] args). Show students how
+        # to read args[0] for the kind of input this problem uses.
+        read_hint = {
+            "grid": "// int[][] grid = (int[][]) args[0];",
+            "text": "// String text = (String) args[0];",
+            "graph": "// Object[] graph = (Object[]) args[0];",
+            "numbers": "// Object[] nums = (Object[]) args[0];  // each item is a Number",
+            "items": "// Object[] items = (Object[]) args[0];",
         }[param_kind]
-        return_type = {
-            "bool": "boolean",
-            "int": "int",
-            "string": "String",
-            "list": "List<Object>",
-            "object": "Object",
-        }[return_kind]
-        default_return = {
-            "boolean": "false",
-            "int": "0",
-            "String": "\"\"",
-            "List<Object>": "new ArrayList<>()",
-            "Object": "null",
-        }[return_type]
         return (
             "import java.util.*;\n\n"
             "class Solution {\n"
-            f"    public {return_type} {function_name}({param_type}) {{\n"
-            f"        return {default_return};\n"
+            f"    // The runner calls {function_name}(args) with the test inputs.\n"
+            f"    {read_hint}\n"
+            f"    static Object {function_name}(Object[] args) {{\n"
+            "        // Replace this with your approach and return the answer.\n"
+            "        return null;\n"
             "    }\n"
             "}"
         )
@@ -4402,35 +4397,23 @@ def _build_practice_starter_code(language_key: str, function_name: str, question
             f"export {{ {function_name} }};"
         )
 
-    param_type = {
-        "grid": "vector<vector<int>>& grid",
-        "text": "string text",
-        "graph": "unordered_map<string, vector<string>>& graph",
-        "numbers": "vector<int>& nums",
-        "items": "vector<string>& items",
+    # The runner harness provides a tagged-union Value type and calls
+    # <fn>(vector<Value> args). Show how to read args[0] for this problem's input.
+    read_hint = {
+        "grid": "// args[0].a is the grid: a vector<Value> of row Values.",
+        "text": "// string text = args[0].s;",
+        "graph": "// args[0].a is the adjacency data (vector<Value>).",
+        "numbers": "// vector<Value> nums = args[0].a;  // each item: .i (int)",
+        "items": "// vector<Value> items = args[0].a;",
     }[param_kind]
-    return_type = {
-        "bool": "bool",
-        "int": "int",
-        "string": "string",
-        "list": "vector<int>",
-        "object": "string",
-    }[return_kind]
-    default_return = {
-        "bool": "false",
-        "int": "0",
-        "string": "\"\"",
-        "vector<int>": "{}",
-    }[return_type]
     return (
-        "#include <bits/stdc++.h>\n"
-        "using namespace std;\n\n"
-        "class Solution {\n"
-        "public:\n"
-        f"    {return_type} {function_name}({param_type}) {{\n"
-        f"        return {default_return};\n"
-        "    }\n"
-        "};"
+        f"// The runner calls {function_name}(args) with the test inputs.\n"
+        f"{read_hint}\n"
+        "// Return a Value, e.g. Value((long long)result) or Value(std::string(result)).\n"
+        f"Value {function_name}(std::vector<Value> args) {{\n"
+        "    // Replace this with your approach and return the answer.\n"
+        "    return Value();\n"
+        "}"
     )
 
 def _find_language_solution(question_id: str, language: str, question: Optional[dict[str, Any]] = None) -> dict[str, Any]:
@@ -4590,8 +4573,8 @@ async def run_practice_solution(
         )
 
     language_key, _ = _normalize_practice_language(req.language)
-    if language_key not in {"python", "javascript"}:
-        return empty_practice_run_response("The V2.1 runner supports Python and JavaScript. Java and C++ runners are coming later.")
+    if language_key not in {"python", "javascript", "java", "cpp"}:
+        return empty_practice_run_response("Graded runs support Python, JavaScript, Java, and C++.")
 
     question = _find_practice_question(req.question_id)
     solution = _find_language_solution(question["id"], language_key, question)
@@ -4605,6 +4588,10 @@ async def run_practice_solution(
         run_result = cached_run
     elif language_key == "javascript":
         run_result = run_javascript_practice_tests(req.code, function_name, tests)
+    elif language_key == "java":
+        run_result = run_java_practice_tests(req.code, function_name, tests)
+    elif language_key == "cpp":
+        run_result = run_cpp_practice_tests(req.code, function_name, tests)
     else:
         run_result = run_python_practice_tests(req.code, function_name, tests)
     if not cached_run:
@@ -4650,19 +4637,23 @@ async def free_run_practice_solution(
         )
 
     language_key, _ = _normalize_practice_language(req.language)
-    if language_key not in {"python", "javascript"}:
+    if language_key not in {"python", "javascript", "java", "cpp"}:
         return {
             "status": "error",
             "free_run": True,
             "tests": [],
             "stdout": "",
-            "stderr": "Free run supports Python and JavaScript. Java and C++ runners are coming later.",
+            "stderr": "Free run supports Python, JavaScript, Java, and C++.",
             "duration_ms": 0,
-            "message": "Switch to Python or JavaScript to run personal code.",
+            "message": "Pick a supported language to run personal code.",
         }
 
     if language_key == "javascript":
         run_result = run_javascript_freeform(req.code)
+    elif language_key == "java":
+        run_result = run_java_freeform(req.code)
+    elif language_key == "cpp":
+        run_result = run_cpp_freeform(req.code)
     else:
         run_result = run_python_freeform(req.code)
 
@@ -4756,6 +4747,99 @@ async def update_practice_progress(
     db.commit()
     db.refresh(progress)
     return _serialize_practice_progress(progress)
+
+
+# ---------------------------------------------------------------------------
+# Personal code snippets ("My Snippets") — per-user, synced from localStorage
+# ---------------------------------------------------------------------------
+class SnippetUpsertRequest(BaseModel):
+    client_id: str
+    name: Optional[str] = "Untitled snippet"
+    language: Optional[str] = "Python"
+    code: Optional[str] = ""
+
+
+def _serialize_snippet(snippet: CodingSnippet) -> dict[str, Any]:
+    # Shape matches the frontend lib/snippets.js record so the client can use it
+    # directly (id is the client_id; the DB row id is internal).
+    return {
+        "id": snippet.client_id,
+        "name": snippet.name,
+        "language": snippet.language,
+        "code": snippet.code or "",
+        "updatedAt": snippet.updated_at.isoformat() if snippet.updated_at else None,
+    }
+
+
+@app.get("/api/coding/snippets")
+async def list_snippets(
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    items = (
+        db.query(CodingSnippet)
+        .filter(CodingSnippet.user_id == user["user_id"])
+        .order_by(CodingSnippet.updated_at.desc())
+        .all()
+    )
+    return {"items": [_serialize_snippet(item) for item in items]}
+
+
+@app.post("/api/coding/snippets")
+async def upsert_snippet(
+    req: SnippetUpsertRequest,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    client_id = (req.client_id or "").strip()
+    if not client_id:
+        raise HTTPException(status_code=400, detail="client_id is required")
+    # Guard against oversized payloads (mirrors the client's local cap).
+    code = req.code or ""
+    if len(code) > 200_000:
+        raise HTTPException(status_code=413, detail="Snippet is too large.")
+
+    snippet = (
+        db.query(CodingSnippet)
+        .filter(
+            CodingSnippet.user_id == user["user_id"],
+            CodingSnippet.client_id == client_id,
+        )
+        .first()
+    )
+    if not snippet:
+        snippet = CodingSnippet(user_id=user["user_id"], client_id=client_id)
+        db.add(snippet)
+
+    snippet.name = (req.name or "Untitled snippet").strip()[:120] or "Untitled snippet"
+    snippet.language = (req.language or "Python")[:30]
+    snippet.code = code
+    snippet.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(snippet)
+    return _serialize_snippet(snippet)
+
+
+@app.delete("/api/coding/snippets/{client_id}")
+async def delete_snippet(
+    client_id: str,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    snippet = (
+        db.query(CodingSnippet)
+        .filter(
+            CodingSnippet.user_id == user["user_id"],
+            CodingSnippet.client_id == client_id,
+        )
+        .first()
+    )
+    if snippet:
+        db.delete(snippet)
+        db.commit()
+    return {"deleted": True}
+
+
 @app.get("/api/popular-questions")
 async def get_popular_questions():
     """Returns 8 randomly selected questions from a curated pool."""

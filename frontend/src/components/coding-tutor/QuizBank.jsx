@@ -1,4 +1,5 @@
 import QuizProblemCard from "./QuizProblemCard";
+import StatTiles from "./StatTiles";
 
 function titleCase(value = "") {
   return value ? value[0].toUpperCase() + value.slice(1).replace("_", " ") : "";
@@ -66,20 +67,7 @@ export default function QuizBank({
 
   return (
     <section className="coding-page-panel quiz-bank-page">
-      <section className="practice-progress-overview">
-        <div>
-          <span className="coding-kicker">Progress Overview</span>
-          <strong>{progressSummary.completionPercent}% complete</strong>
-        </div>
-        <div className="progress-bar" aria-label={`${progressSummary.completionPercent}% complete`}>
-          <span style={{ width: `${progressSummary.completionPercent}%` }} />
-        </div>
-        <div className="progress-overview-stats">
-          <span>{progressSummary.solvedCount} Solved</span>
-          <span>{progressSummary.attemptedCount} Attempted</span>
-          <span>{progressSummary.displayStreak} Day Streak</span>
-        </div>
-      </section>
+      <StatTiles progressSummary={progressSummary} />
       <div className="quiz-bank-layout">
         <div className="quiz-library">
           <div className="quiz-bank-header">

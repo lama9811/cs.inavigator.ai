@@ -21,14 +21,11 @@ const FloatingMessageMarkdown = memo(function FloatingMessageMarkdown({ text, co
 
 const POSITION_KEY = "coding_floating_chat_position";
 const DEFAULT_POSITION = { x: null, y: null };
-const QUICK_ACTIONS = [
-  { label: "Hint", description: "Switches the tutor into guided hint mode for your current code." },
-  { label: "Debug", description: "Focuses the tutor on finding bugs and explaining likely causes." },
-  { label: "Review", description: "Asks the tutor to review structure, correctness, and the biggest issue." },
-  { label: "Complexity", description: "Focuses on time and space complexity reasoning." },
-  { label: "Edge Cases", description: "Focuses on tricky inputs and tests you may have missed." },
-  { label: "Rewrite", description: "Focuses on rewriting while preserving your approach." },
-];
+// Two optional one-tap accelerators at the top of the chat. Debug sends its
+// request immediately; Rewrite first lets the student pick a target language
+// (so they can convert), then sends. They are shortcuts, not a required step —
+// the student can always just type a question instead.
+const REWRITE_LANGUAGES = ["Same language", "Python", "JavaScript", "Java", "C++"];
 const DEFAULT_THINKING_STEPS = ["Reading workspace", "Checking code/context", "Preparing tutor guidance"];
 
 function getFloatingDimensions(isOpen, isMaximized) {
@@ -146,6 +143,7 @@ function FloatingChatWindow({
   const tutorMode = context?.tutorMode || "Guided Tutor";
   const topic = activeProblem?.title ? `Helping with: ${activeProblem.title}` : "Personal Code Help";
   const visibleMessages = isMaximized ? messages.slice(-24) : messages.slice(-10);
+  const [rewriteOpen, setRewriteOpen] = useState(false);
   // Stable components object so message markdown / iframes don't remount on keystrokes.
   const mdComponents = useMemo(
     () => markdownComponents || { code: codeRenderer },
@@ -194,19 +192,44 @@ function FloatingChatWindow({
         activeProblem={activeProblem}
       />
 
-      <div className="floating-chat-actions" aria-label="Coding tutor mode controls">
-        {QUICK_ACTIONS.map(action => (
-          <button
-            key={action.label}
-            type="button"
-            className="floating-chat-action"
-            onClick={() => onQuickAction(action.label)}
-            disabled={isLoading || !hasCode}
-            title={hasCode ? action.description : "Write or paste code in the workspace before choosing a tutor mode."}
-          >
-            {action.label}
-          </button>
-        ))}
+      {/* Two optional shortcuts at the top. Debug sends immediately; Rewrite opens
+          a language choice first so the student can convert before sending. You
+          can always just type a question instead. */}
+      <div className="floating-focus-chips" aria-label="Quick actions">
+        <button
+          type="button"
+          className="floating-focus-chip"
+          onClick={() => onQuickAction("Debug")}
+          disabled={isLoading}
+          title="Find the likely bug and how to check it."
+        >
+          Debug
+        </button>
+        <button
+          type="button"
+          className={`floating-focus-chip ${rewriteOpen ? "active" : ""}`}
+          onClick={() => setRewriteOpen(v => !v)}
+          disabled={isLoading}
+          aria-expanded={rewriteOpen}
+          title="Rewrite your code — pick a target language."
+        >
+          Rewrite…
+        </button>
+        {rewriteOpen && (
+          <span className="floating-rewrite-langs">
+            {REWRITE_LANGUAGES.map(lang => (
+              <button
+                key={lang}
+                type="button"
+                className="floating-rewrite-lang"
+                onClick={() => { setRewriteOpen(false); onQuickAction("Rewrite", lang); }}
+                disabled={isLoading}
+              >
+                {lang}
+              </button>
+            ))}
+          </span>
+        )}
       </div>
 
       {suggestedCodeBlock && onApplyAICode && (
@@ -232,12 +255,22 @@ function FloatingChatWindow({
           <FloatingThinkingSteps steps={thinkingMessages} />
         ) : (
           <div className="floating-chat-empty">
-            Paste code in the workspace, choose a tutor mode, then ask a focused question here.
+            <strong>Ask me anything about your code.</strong>
+            <p>
+              {hasCode
+                ? "I can see your current workspace code — just describe what you're stuck on, or tap a shortcut below."
+                : "Describe what you're working on or paste a snippet. Load a problem in the workspace and I'll use that code automatically."}
+            </p>
           </div>
         )}
       </div>
 
       <form className="floating-chat-form" onSubmit={onSend}>
+        {hasCode && (
+          <span className="floating-code-indicator" title="Your current workspace code is sent with each message">
+            Using your current code
+          </span>
+        )}
         {pendingFile && (
           <div className="floating-attachment-preview">
             {getFileIcon?.(pendingFile.name)}

@@ -150,7 +150,6 @@ export default function Chatbox({
   const [floatingCodingChatMaximized, setFloatingCodingChatMaximized] = useState(false);
   const [codingWidgetSessionId, setCodingWidgetSessionId] = useState(() => `coding-widget-${Date.now()}`);
   const [codingWidgetStartIndex, setCodingWidgetStartIndex] = useState(0);
-  const [codingTutorModeRequest, setCodingTutorModeRequest] = useState(null);
   const [activeCodingPage, setActiveCodingPage] = useState("dashboard");
   const isCodingWorkspaceRoute = location.pathname === "/coding";
   const isCodingChatRoute = location.pathname === "/chat/coding";
@@ -189,13 +188,17 @@ export default function Chatbox({
 
     setChatMode("coding_tutor");
     setCodingWidgetSessionId(sessionId);
-    setCodingWidgetStartIndex(0);
+    // Start the widget's view at the END of the current history so regular-chat
+    // messages from before entering the Coding Tutor are NOT shown in the widget.
+    setCodingWidgetStartIndex(messages.length);
     setFloatingCodingChatMaximized(false);
-
-    if (initialMessages.length > 0) {
-      setFloatingCodingChatOpen(true);
-    }
-  }, [isCodingWorkspaceRoute, sessionId, initialMessages.length]);
+    // The widget stays CLOSED on load — just the launcher button. The user opens
+    // it when they want it (so reloading the page doesn't force it open).
+    // Intentionally NOT depending on messages.length: we snapshot it once when the
+    // coding session begins; re-running on every new message would reset the
+    // session boundary and re-show prior history.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCodingWorkspaceRoute, sessionId]);
 
   useEffect(() => {
     if (isCodingWorkspaceRoute || isCodingChatRoute || hasStartedChat || chatMode !== "coding_tutor") return;
@@ -305,34 +308,30 @@ export default function Chatbox({
     return nextSessionId;
   }, [messages.length, onCreateSession]);
 
-  const sendFloatingQuickAction = (action) => {
-    const hasWorkspaceCode = Boolean(codingTutorContext?.code?.trim());
-    if (!hasWorkspaceCode) {
-      toast.info("Write or paste code in the workspace before choosing a tutor mode.");
-      return;
+  // Optional shortcuts. Debug sends a debug request immediately; Rewrite sends a
+  // rewrite request in the chosen target language. The tutor infers the mode and
+  // auto-attaches the workspace code, so no "pick a mode first" step is needed.
+  const sendFloatingQuickAction = (action, language = null) => {
+    if (isLoading) return;
+    let messageToSend;
+    let nextTutorMode;
+    if (action === "Rewrite") {
+      nextTutorMode = "Rewriting";
+      const target = language && language !== "Same language"
+        ? `into ${language}`
+        : "in the same language";
+      messageToSend = `Rewrite my current code ${target}, keeping my overall approach. Return the code first, then a few short notes on what changed.`;
+    } else {
+      // Debug (default)
+      nextTutorMode = "Debugging";
+      messageToSend = "Help me debug my current code. What's the most likely issue, why does it matter, and one quick check I can run?";
     }
-    const modeByAction = {
-      Hint: "Hinting",
-      Debug: "Debugging",
-      Review: "Reviewing",
-      Complexity: "Complexity",
-      "Edge Cases": "Testing",
-      Rewrite: "Rewriting",
-    };
-    const nextTutorMode = modeByAction[action] || "Guided Tutor";
+
     setChatMode("coding_tutor");
-    setCodingTutorModeRequest({
-      mode: nextTutorMode,
-      action,
-      requestedAt: Date.now(),
-    });
     setCodingTutorContext(prev => ({ ...(prev || {}), tutorMode: nextTutorMode }));
     setFloatingCodingChatOpen(true);
-    toast.info(`${action} mode enabled. Ask your question when you're ready.`);
-    setTimeout(() => {
-      inputRef.current?.focus();
-      resizeTextarea();
-    }, 0);
+    setInput("");
+    handleSend(null, messageToSend, false, "coding_tutor", codingWidgetSessionId);
   };
 
   const closeCodingWidgetSession = () => {
@@ -1477,7 +1476,6 @@ export default function Chatbox({
           onActivePageChange={setActiveCodingPage}
           onPrefillChat={prefillSharedChat}
           onStartFreshChat={startFreshCodingWidgetSession}
-          tutorModeRequest={codingTutorModeRequest}
           onSendToChat={(text, skipCache = true, widgetSessionId = codingWidgetSessionId) => handleSend(null, text, skipCache, "coding_tutor", widgetSessionId)}
         />
       )}
