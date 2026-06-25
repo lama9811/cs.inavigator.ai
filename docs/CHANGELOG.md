@@ -2,6 +2,18 @@
 
 All notable changes to CS Navigator are documented here.
 
+## [6.3] - 2026-06-24
+### Security
+- Hardened the compiled-binary (Java/C++) coding runners for production. Cloud Run's sandbox forbids nsjail / privileged network namespaces, so we added app-level defenses that work there: a best-effort `unshare(CLONE_NEWNET)` network isolation that degrades gracefully when the kernel denies it (the run still proceeds under the other guards), `PR_SET_NO_NEW_PRIVS` to block privilege escalation on exec, a scrubbed child environment (PATH only — no secrets inherited) with blackholed DNS/proxy so a stray socket reaches nothing, and tighter source blocklists (raw `syscall`/`dlopen`/`getenv`/`ptrace`/`mmap`, low-level network/system headers for C++; `System.getenv`/classloaders/`Unsafe`/native methods for Java). Added an `ALLOW_COMPILED_RUNNERS` env flag (default on) to disable Java/C++ entirely in any environment where running native code is unacceptable. Verified 0 false positives across all 120 Java + C++ reference solutions; 24 runner tests pass (full backend suite: 27)
+
+### Changed
+- iNav / tutor-mode header is now visually transparent: the secondary bar (iNav model dropdown + CS Nav / General / Coding Tutor toggle) dropped its solid background, border, and shadow so only the controls float over the chat — like the floating chat input. The controls stay fixed in place; the empty parts of the bar no longer block the chat behind them (scroll/selection pass through). A soft backdrop blur is scoped to just the controls chip so the dropdown + pills stay legible when chat text scrolls behind them
+
+### Added
+- Daily-challenge streak: practicing the daily challenge now records the day and the Home "day streak" tile shows a real consecutive-day count (counting back from today, or yesterday so an unfinished today doesn't break the streak) instead of a derived guess. The daily card shows a "Done today ✓ · N-day streak 🔥" badge once today is logged. Per-device (localStorage), no backend needed
+- Language personalization: the dashboard surfaces the student's most-used language and offers a one-click "Try a <other> problem" that opens the recommended next problem in a language they've used less. Reuses the existing per-language progress data
+- Warm empty state for brand-new users: when there's no progress yet (nothing solved/attempted, no saved snippets, no streak), the dashboard shows a friendly "Let's solve your first problem" hero with a one-click start on a beginner-friendly problem, plus shortcuts to the Quiz Bank and a blank workspace — instead of empty zero-value stat tiles
+
 ## [6.2] - 2026-06-23
 ### Added
 - Conjoined workspace layout: the problem guide, editor, and terminal now read as one unit. The terminal is docked inside the editor column (no longer a detached floating footer) with a draggable divider — drag to resize, height is remembered, and the editor always keeps priority so it can't be crushed

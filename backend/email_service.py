@@ -40,8 +40,9 @@ def build_verification_url(token: str) -> str:
 def _send_email(to_email: str, subject: str, html_body: str) -> bool:
     """Send an email via SMTP. Returns True on success."""
     if not is_email_configured():
-        log.warning(f"[EMAIL] SMTP not configured. Would send to {to_email}: {subject}")
-        log.info(f"[EMAIL] Body preview: {html_body[:200]}")
+        # Never log message bodies: verification and reset URLs contain bearer
+        # tokens that must not appear in local or Cloud Run logs.
+        log.warning("[EMAIL] SMTP not configured; email delivery was skipped (%s).", subject)
         return False
 
     try:
