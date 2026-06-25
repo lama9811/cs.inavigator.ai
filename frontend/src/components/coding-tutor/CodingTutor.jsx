@@ -333,7 +333,6 @@ export default function CodingTutor({
   const [activePage, setActivePage] = useState("dashboard");
   const [lastNonWorkspacePage, setLastNonWorkspacePage] = useState("dashboard");
   const [workspaceVisible, setWorkspaceVisible] = useState(true);
-  const [miniSidebarCollapsed, setMiniSidebarCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [workspaceTab, setWorkspaceTab] = useState("Editor");
   const [dailyChallenge, setDailyChallenge] = useState(null);
@@ -1528,7 +1527,7 @@ export default function CodingTutor({
   };
 
   return (
-    <div className={`coding-app ${miniSidebarCollapsed ? "mini-sidebar-collapsed" : ""} ${activePage === "workspace" ? "coding-workspace-active" : ""} ${terminalOpen ? "terminal-open" : "terminal-closed"}`}>
+    <div className={`coding-app ${activePage === "workspace" ? "coding-workspace-active" : ""} ${terminalOpen ? "terminal-open" : "terminal-closed"}`}>
       <div className="coding-nav-row">
         <button
           type="button"

@@ -16,6 +16,7 @@ substitutions:
   _BACKEND_SERVICE: csnavigator-backend
   _FRONTEND_SERVICE: csnavigator-frontend
   _ADK_SERVICE: csnavigator-adk
+  _PUBLIC_API_URL: https://api.inavigator.ai
 
 options:
   logging: CLOUD_LOGGING_ONLY
@@ -58,7 +59,7 @@ steps:
     args:
       - 'build'
       - '--platform=linux/amd64'
-      - '--build-arg=VITE_API_BASE_URL='
+      - '--build-arg=VITE_API_BASE_URL=${_PUBLIC_API_URL}'
       - '-t'
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/frontend:${SHORT_SHA}'
       - '-t'
@@ -105,7 +106,7 @@ steps:
       - '--concurrency=80'
       - '--no-allow-unauthenticated'
       - '--service-account=csnavigator-backend@${PROJECT_ID}.iam.gserviceaccount.com'
-      - '--set-env-vars=GOOGLE_CLOUD_PROJECT=${PROJECT_ID},UNIFIED_DATASTORE_ID=projects/${PROJECT_ID}/locations/us/collections/default_collection/dataStores/csnavigator-kb-v7'
+      - '--set-env-vars=GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${_REGION},GOOGLE_GENAI_USE_VERTEXAI=TRUE,AGENT_MODEL=gemini-2.5-flash,UNIFIED_DATASTORE_ID=projects/${PROJECT_ID}/locations/us/collections/default_collection/dataStores/csnavigator-kb-v7'
     waitFor: ['push-adk']
 
   # =============================================================================
@@ -140,8 +141,8 @@ steps:
           --allow-unauthenticated \
           --service-account=csnavigator-backend@${PROJECT_ID}.iam.gserviceaccount.com \
           --add-cloudsql-instances=${PROJECT_ID}:${_REGION}:csnavigator-db \
-          --set-env-vars="USE_VERTEX_AGENT=true,ADK_BASE_URL=$$ADK_URL,ADK_APP_NAME=cs_navigator_unified,GOOGLE_CLOUD_PROJECT=${PROJECT_ID},VERTEX_AI_DATASTORE_ID=projects/${PROJECT_ID}/locations/us/collections/default_collection/dataStores/csnavigator-kb-v7,UNIFIED_DATASTORE_ID=projects/${PROJECT_ID}/locations/us/collections/default_collection/dataStores/csnavigator-kb-v7,SMTP_HOST=smtp.gmail.com,SMTP_PORT=587,FROM_EMAIL=noreplyinavigator@gmail.com,APP_URL=https://cs.inavigator.ai,API_URL=https://api.inavigator.ai,ALLOW_TEST_EMAILS=false,ACCESS_TOKEN_EXPIRE_MINUTES=240,SHOW_DASHBOARD_LOGS=false,TRUSTED_HOSTS=*.run.app$$CORS_ENV" \
-          --set-secrets="DATABASE_URL=DATABASE_URL:latest,JWT_SECRET=JWT_SECRET:latest,ADMIN_EMAIL=ADMIN_EMAIL:latest,ADMIN_PASSWORD=ADMIN_PASSWORD:latest,RESEARCH_SECRET=RESEARCH_SECRET:latest"
+          --set-env-vars="USE_VERTEX_AGENT=true,ADK_BASE_URL=$$ADK_URL,ADK_APP_NAME=cs_navigator_unified,GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${_REGION},VERTEX_AI_DATASTORE_ID=projects/${PROJECT_ID}/locations/us/collections/default_collection/dataStores/csnavigator-kb-v7,UNIFIED_DATASTORE_ID=projects/${PROJECT_ID}/locations/us/collections/default_collection/dataStores/csnavigator-kb-v7,SMTP_HOST=smtp.gmail.com,SMTP_PORT=587,FROM_EMAIL=noreplyinavigator@gmail.com,APP_URL=https://cs.inavigator.ai,API_URL=https://api.inavigator.ai,APP_ENV=production,ALLOW_TEST_EMAILS=false,ACCESS_TOKEN_EXPIRE_MINUTES=240,SHOW_DASHBOARD_LOGS=false,TRUSTED_HOSTS=*.run.app$$CORS_ENV" \
+          --set-secrets="DATABASE_URL=DATABASE_URL:latest,JWT_SECRET=JWT_SECRET:latest,ADMIN_EMAIL=ADMIN_EMAIL:latest,ADMIN_PASSWORD=ADMIN_PASSWORD:latest,RESEARCH_SECRET=RESEARCH_SECRET:latest,SMTP_USER=SMTP_USER:latest,SMTP_PASS=SMTP_PASS:latest,YOUTUBE_API_KEY=YOUTUBE_API_KEY:latest"
     waitFor: ['deploy-adk', 'push-backend']
 
   # =============================================================================

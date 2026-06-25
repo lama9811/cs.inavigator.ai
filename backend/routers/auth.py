@@ -4,6 +4,7 @@
 import os
 import re
 import time as time_module
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, HTTPException, Depends, Request, status
 from sqlalchemy.orm import Session
@@ -19,6 +20,8 @@ router = APIRouter(tags=["auth"])
 # ---------------------------------------------------------------------------
 ALLOWED_EMAIL_DOMAINS = ["morgan.edu"]
 _register_timestamps: dict[str, list] = {}
+_resend_timestamps: dict[str, list] = {}
+VERIFICATION_TOKEN_TTL_HOURS = 24
 
 
 def _allow_dev_verification_link() -> bool:
@@ -43,6 +46,35 @@ def _verification_response(message: str, token: str | None = None, request: Requ
     return response
 
 
+def _rate_limit_email(
+    timestamps: dict[str, list],
+    email: str,
+    *,
+    limit: int,
+    window_seconds: int,
+) -> bool:
+    """Return True when an email-specific action exceeds its rolling limit."""
+    now_ts = time_module.time()
+    recent = [t for t in timestamps.get(email, []) if now_ts - t < window_seconds]
+    if len(recent) >= limit:
+        timestamps[email] = recent
+        return True
+    recent.append(now_ts)
+    timestamps[email] = recent
+    if len(timestamps) > 10000:
+        stale = [key for key, values in timestamps.items() if not values or now_ts - values[-1] >= window_seconds]
+        for key in stale:
+            timestamps.pop(key, None)
+    return False
+
+
+def _verification_token_is_expired(expires: datetime | None) -> bool:
+    if not expires:
+        return False
+    normalized = expires if expires.tzinfo else expires.replace(tzinfo=timezone.utc)
+    return normalized < datetime.now(timezone.utc)
+
+
 # ---------------------------------------------------------------------------
 # POST /api/register
 # ---------------------------------------------------------------------------
@@ -57,13 +89,8 @@ def register(req: RegisterRequest, request: Request, db: Session = Depends(get_d
 
     # Rate limit per EMAIL (not per IP). On campus WiFi all students share one IP,
     # so IP-based limiting blocks innocent users. 3 attempts per email per hour.
-    now_ts = time_module.time()
-    reg_ts = _register_timestamps.get(email, [])
-    reg_ts = [t for t in reg_ts if now_ts - t < 3600]
-    if len(reg_ts) >= 3:
+    if _rate_limit_email(_register_timestamps, email, limit=3, window_seconds=3600):
         raise HTTPException(status_code=429, detail="Too many attempts for this email. Try again in an hour.")
-    reg_ts.append(now_ts)
-    _register_timestamps[email] = reg_ts
 
     # Only allow Morgan State email for new registrations
     email_domain = email.split("@")[-1].lower()
@@ -84,6 +111,7 @@ def register(req: RegisterRequest, request: Request, db: Session = Depends(get_d
         role="student",
         email_verified=False,
         verification_token=token,
+        verification_token_expires=datetime.now(timezone.utc) + timedelta(hours=VERIFICATION_TOKEN_TTL_HOURS),
         name=req.name.strip() if req.name else None,
         student_id=req.student_id.strip() if req.student_id else None,
     )
@@ -108,8 +136,15 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.verification_token == token).first()
     if not user:
         raise HTTPException(status_code=400, detail="Invalid or expired verification link")
+    expires = getattr(user, "verification_token_expires", None)
+    if _verification_token_is_expired(expires):
+        user.verification_token = None
+        user.verification_token_expires = None
+        db.commit()
+        raise HTTPException(status_code=400, detail="Invalid or expired verification link")
     user.email_verified = True
     user.verification_token = None
+    user.verification_token_expires = None
     db.commit()
     # Redirect to login with success flag
     app_url = os.getenv("APP_URL", "https://cs.inavigator.ai")
@@ -130,8 +165,11 @@ async def resend_verification(request: Request, db: Session = Depends(get_db)):
         return {"message": "If an account exists, a verification email has been sent."}
     if user.email_verified:
         return {"message": "Email already verified."}
+    if _rate_limit_email(_resend_timestamps, email, limit=3, window_seconds=3600):
+        raise HTTPException(status_code=429, detail="Too many verification emails requested. Try again in an hour.")
     token = generate_token()
     user.verification_token = token
+    user.verification_token_expires = datetime.now(timezone.utc) + timedelta(hours=VERIFICATION_TOKEN_TTL_HOURS)
     db.commit()
     sent = send_verification_email(email, token)
     response = _verification_response("Verification email sent. Check your inbox.", token, request)
