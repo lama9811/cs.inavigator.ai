@@ -85,18 +85,46 @@ JAVA_BLOCKED_PATTERNS = (
     (re.compile(r"\b(?:java\s*\.\s*net|Socket|ServerSocket|URL|URLConnection|HttpClient)\b"), "Network access is not available in the practice runner."),
     (re.compile(r"\b(?:java\s*\.\s*lang\s*\.\s*reflect|getClass\s*\(|Class\s*\.\s*forName)\b"), "Reflection is not available in the practice runner."),
     (re.compile(r"\bThread\b|\bRuntime\.getRuntime\b"), "Threads and runtime access are not available in the practice runner."),
+    # Environment snooping, classloading, native methods, and internal JDK access
+    # are routes around the guards above; block them at the source.
+    (re.compile(r"\bSystem\s*\.\s*(?:getenv|getProperties|getProperty|load|loadLibrary)\b"), "System environment and library access is not available in the practice runner."),
+    (re.compile(r"\b(?:ClassLoader|URLClassLoader|MethodHandles|VarHandle)\b"), "Classloading and method-handle access is not available in the practice runner."),
+    (re.compile(r"\b(?:sun\s*\.|jdk\s*\.\s*internal|Unsafe)\b"), "Internal JDK access is not available in the practice runner."),
+    (re.compile(r"\bnative\s+\w"), "Native methods are not available in the practice runner."),
 )
 CPP_BLOCKED_PATTERNS = (
     (re.compile(r"#\s*include\s*<\s*(?:fstream|filesystem)\s*>"), "File stream access is not available in the practice runner."),
     (re.compile(r"\b(?:system|popen|fork|exec[lv][pe]?|remove|rename)\s*\("), "Process and filesystem calls are not available in the practice runner."),
     (re.compile(r"#\s*include\s*<\s*(?:cstdio|stdio\.h)\s*>.*\b(?:fopen|fread|fwrite|freopen)\b", re.DOTALL), "File access is not available in the practice runner."),
-    (re.compile(r"\b(?:socket|connect|bind|listen|accept)\s*\("), "Network access is not available in the practice runner."),
+    (re.compile(r"\b(?:socket|connect|bind|listen|accept|getaddrinfo|gethostbyname|inet_addr|inet_pton)\s*\("), "Network access is not available in the practice runner."),
     (re.compile(r"\b(?:asm|__asm__|__asm)\b"), "Inline assembly is not available in the practice runner."),
     (re.compile(r"#\s*include\s*<\s*thread\s*>|\bstd\s*::\s*thread\b"), "Threads are not available in the practice runner."),
+    # Raw syscalls + dynamic loading + environment snooping let native code bypass
+    # the higher-level guards above, so block them at the source.
+    (re.compile(r"\bsyscall\s*\("), "Raw system calls are not available in the practice runner."),
+    (re.compile(r"\b(?:dlopen|dlsym|dlmopen)\s*\("), "Dynamic library loading is not available in the practice runner."),
+    (re.compile(r"\b(?:getenv|secure_getenv|setenv|putenv|environ)\b"), "Environment access is not available in the practice runner."),
+    (re.compile(r"#\s*include\s*<\s*(?:sys/socket\.h|netinet/|arpa/inet\.h|netdb\.h|dlfcn\.h|sys/ptrace\.h|sys/syscall\.h|unistd\.h)\s*>?"), "Low-level system headers are not available in the practice runner."),
+    (re.compile(r"\b(?:ptrace|mmap|mprotect)\s*\("), "Low-level memory and process calls are not available in the practice runner."),
 )
 
 # Compile step gets its own (longer) timeout than execution.
 COMPILE_TIMEOUT_SECONDS = 10
+
+# Compiled-binary runners (Java/C++) execute native machine code, so they get an
+# extra layer of OS-level hardening beyond the source blocklists. This gate lets
+# an operator turn them OFF entirely in an environment where running native code
+# is unacceptable (set ALLOW_COMPILED_RUNNERS=false). Default ON — the hardening
+# below makes them safe for Cloud Run.
+def compiled_runners_enabled() -> bool:
+    raw = os.getenv("ALLOW_COMPILED_RUNNERS", "true").strip().lower()
+    return raw not in {"false", "0", "no", "off"}
+
+
+COMPILED_RUNNERS_DISABLED_MESSAGE = (
+    "Compiled-language runners (Java and C++) are disabled in this environment. "
+    "Use Python or JavaScript, which run in a stricter in-process sandbox."
+)
 
 _run_result_cache: dict[str, tuple[float, dict[str, Any]]] = {}
 _run_result_cache_lock = Lock()
@@ -211,15 +239,67 @@ def _truncate_text(value: Any, limit: int = RUN_MAX_OUTPUT_CHARS) -> str:
     return f"{text[:limit]}\n... output truncated by CS Navigator ..."
 
 
+# Best-effort kernel-level network isolation for the child process. On Linux,
+# unshare(CLONE_NEWNET) drops the child into a fresh, empty network namespace
+# (loopback only, no route out) — so even if native code opens a socket, packets
+# go nowhere. It needs an unprivileged-user-namespace kernel (CLONE_NEWUSER) on
+# locked-down hosts; where that's unavailable (e.g. some Cloud Run kernels) the
+# call raises and we continue WITHOUT it — the source blocklists, scrubbed env,
+# and blackholed DNS still apply, so we never weaken on failure, we just can't add
+# this extra layer. Returns True if the namespace was created.
+_CLONE_NEWNET = 0x40000000
+_CLONE_NEWUSER = 0x10000000
+
+
+def _try_unshare_network() -> bool:
+    if os.name != "posix":
+        return False
+    try:
+        import ctypes
+        libc = ctypes.CDLL("libc.so.6", use_errno=True)
+        # Try a user namespace first (lets an unprivileged process get NEWNET on
+        # many hardened kernels); ignore failure and still attempt NEWNET alone.
+        libc.unshare(_CLONE_NEWUSER)
+        if libc.unshare(_CLONE_NEWNET) == 0:
+            return True
+    except Exception:
+        pass
+    return False
+
+
+# Process-hardening flags applied in the child before exec, regardless of net.
+def _apply_no_new_privs() -> None:
+    # PR_SET_NO_NEW_PRIVS=1: the child (and anything it execs) can never gain
+    # privileges via setuid/setgid binaries — closes a privilege-escalation path.
+    if os.name != "posix":
+        return
+    try:
+        import ctypes
+        libc = ctypes.CDLL("libc.so.6", use_errno=True)
+        PR_SET_NO_NEW_PRIVS = 38
+        libc.prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)
+    except Exception:
+        pass
+
+
 # The JVM reserves a very large VIRTUAL address space at startup (code cache,
 # metaspace, thread stacks, mapped libs) — far more than its physical heap — so a
 # tight RLIMIT_AS kills javac/java before they run. JVM memory is bounded instead
 # by -Xmx on the java command. C++ binaries are fine with the strict AS cap.
-def _make_resource_limiter(*, as_bytes: int | None, nofile: int = 16):
+#
+# harden=True adds the no-new-privs flag and a best-effort network-namespace
+# unshare — used for compiled (native-code) runs, which warrant the extra OS-level
+# defense beyond the source blocklists.
+def _make_resource_limiter(*, as_bytes: int | None, nofile: int = 16, harden: bool = False):
     def _apply() -> None:
         if os.name != "posix":
             return
         import resource
+        if harden:
+            # Drop privileges-on-exec and isolate the network before limits, so
+            # the rest still applies even if these are no-ops on this kernel.
+            _apply_no_new_privs()
+            _try_unshare_network()
         resource.setrlimit(resource.RLIMIT_CPU, (5, 6))
         if as_bytes is not None:
             resource.setrlimit(resource.RLIMIT_AS, (as_bytes, as_bytes))
@@ -233,6 +313,10 @@ def _make_resource_limiter(*, as_bytes: int | None, nofile: int = 16):
 _limit_subprocess_resources = _make_resource_limiter(as_bytes=RUN_MEMORY_LIMIT_BYTES, nofile=16)
 # JVM profile: no RLIMIT_AS (JVM self-limits via -Xmx), more file descriptors.
 _limit_jvm_resources = _make_resource_limiter(as_bytes=None, nofile=256)
+# Hardened profiles for COMPILED runs (native code): same limits + no-new-privs
+# + best-effort network unshare. C++ keeps the strict AS cap; Java/JVM does not.
+_limit_cpp_hardened = _make_resource_limiter(as_bytes=RUN_MEMORY_LIMIT_BYTES, nofile=16, harden=True)
+_limit_jvm_hardened = _make_resource_limiter(as_bytes=None, nofile=256, harden=True)
 
 
 def _subprocess_security_kwargs(limiter=None) -> dict[str, Any]:
@@ -240,6 +324,25 @@ def _subprocess_security_kwargs(limiter=None) -> dict[str, Any]:
     if os.name == "posix":
         kwargs["preexec_fn"] = limiter or _limit_subprocess_resources
     return kwargs
+
+
+def _hardened_compiled_env(base: dict[str, str]) -> dict[str, str]:
+    """Minimal env for compiled (native) runs: PATH only, plus DNS/proxy values
+    pointed at dead addresses so a resolver or HTTP client reaches nothing even
+    if the network namespace unshare wasn't available on this kernel. We never
+    inherit the parent's full environment, so no secrets/tokens leak to the child.
+    """
+    env = {"PATH": base.get("PATH", os.environ.get("PATH", ""))}
+    # Blackhole common egress paths. These are belt-and-suspenders on top of the
+    # network unshare + source blocklists.
+    env["http_proxy"] = "http://127.0.0.1:9"
+    env["https_proxy"] = "http://127.0.0.1:9"
+    env["HTTP_PROXY"] = "http://127.0.0.1:9"
+    env["HTTPS_PROXY"] = "http://127.0.0.1:9"
+    env["no_proxy"] = ""
+    # Keep locale sane for compilers; nothing security-relevant.
+    env["LC_ALL"] = base.get("LC_ALL", "C")
+    return env
 
 
 def _run_isolated_process(
@@ -1006,6 +1109,8 @@ def _finalize_compiled_result(
 
 
 def run_java_practice_tests(code: str, function_name: str, tests: list[dict[str, Any]]) -> dict[str, Any]:
+    if not compiled_runners_enabled():
+        return empty_practice_run_response(COMPILED_RUNNERS_DISABLED_MESSAGE)
     try:
         validate_java_code(code)
     except RunnerSecurityError as exc:
@@ -1116,8 +1221,8 @@ public class Runner {{
                 [java, "-cp", temp_dir, "-Xss8m", "-Xmx128m", "Runner"],
                 cwd=temp_dir,
                 input_text="",
-                env={"PATH": os.environ.get("PATH", "")},
-                limiter=_limit_jvm_resources,
+                env=_hardened_compiled_env({"PATH": os.environ.get("PATH", "")}),
+                limiter=_limit_jvm_hardened,
             )
     except subprocess.TimeoutExpired:
         return {
@@ -1137,6 +1242,8 @@ public class Runner {{
 
 
 def run_cpp_practice_tests(code: str, function_name: str, tests: list[dict[str, Any]]) -> dict[str, Any]:
+    if not compiled_runners_enabled():
+        return empty_practice_run_response(COMPILED_RUNNERS_DISABLED_MESSAGE)
     try:
         validate_cpp_code(code)
     except RunnerSecurityError as exc:
@@ -1240,6 +1347,7 @@ int main(){{
             compiled = _compile_source(
                 [compiler, "-std=c++17", "-O1", "-w", "-o", bin_path, src_path],
                 cwd=temp_dir,
+                env=_hardened_compiled_env({"PATH": os.environ.get("PATH", "")}),
             )
             if compiled.returncode != 0:
                 return {
@@ -1253,7 +1361,8 @@ int main(){{
                 [bin_path],
                 cwd=temp_dir,
                 input_text="",
-                env={"PATH": os.environ.get("PATH", "")},
+                env=_hardened_compiled_env({"PATH": os.environ.get("PATH", "")}),
+                limiter=_limit_cpp_hardened,
             )
     except subprocess.TimeoutExpired:
         return {
@@ -1276,6 +1385,8 @@ def run_java_freeform(code: str) -> dict[str, Any]:
     """Compile and run a complete Java program (with a main method); capture stdout.
     The student's code must declare a public class `Main` with a `main` method.
     """
+    if not compiled_runners_enabled():
+        return _empty_free_run_response(COMPILED_RUNNERS_DISABLED_MESSAGE)
     try:
         validate_java_code(code)
     except RunnerSecurityError as exc:
@@ -1310,8 +1421,8 @@ def run_java_freeform(code: str) -> dict[str, Any]:
                 [java, "-cp", temp_dir, "-Xss8m", "-Xmx128m", "Main"],
                 cwd=temp_dir,
                 input_text="",
-                env={"PATH": os.environ.get("PATH", "")},
-                limiter=_limit_jvm_resources,
+                env=_hardened_compiled_env({"PATH": os.environ.get("PATH", "")}),
+                limiter=_limit_jvm_hardened,
             )
     except subprocess.TimeoutExpired:
         return _empty_free_run_response(
@@ -1335,6 +1446,8 @@ def run_java_freeform(code: str) -> dict[str, Any]:
 
 def run_cpp_freeform(code: str) -> dict[str, Any]:
     """Compile and run a complete C++ program (with a main function); capture stdout."""
+    if not compiled_runners_enabled():
+        return _empty_free_run_response(COMPILED_RUNNERS_DISABLED_MESSAGE)
     try:
         validate_cpp_code(code)
     except RunnerSecurityError as exc:
@@ -1359,6 +1472,7 @@ def run_cpp_freeform(code: str) -> dict[str, Any]:
             compiled = _compile_source(
                 [compiler, "-std=c++17", "-O1", "-w", "-o", bin_path, src_path],
                 cwd=temp_dir,
+                env=_hardened_compiled_env({"PATH": os.environ.get("PATH", "")}),
             )
             if compiled.returncode != 0:
                 return _empty_free_run_response(
@@ -1368,7 +1482,8 @@ def run_cpp_freeform(code: str) -> dict[str, Any]:
                 [bin_path],
                 cwd=temp_dir,
                 input_text="",
-                env={"PATH": os.environ.get("PATH", "")},
+                env=_hardened_compiled_env({"PATH": os.environ.get("PATH", "")}),
+                limiter=_limit_cpp_hardened,
             )
     except subprocess.TimeoutExpired:
         return _empty_free_run_response(

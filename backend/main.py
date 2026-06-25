@@ -263,6 +263,7 @@ def init_db():
         for col, col_type in [
             ("email_verified", "BOOLEAN DEFAULT TRUE"),
             ("verification_token", "VARCHAR(255)"),
+            ("verification_token_expires", "DATETIME"),
             ("reset_token", "VARCHAR(255)"),
             ("reset_token_expires", "DATETIME"),
             ("is_disabled", "BOOLEAN DEFAULT FALSE"),

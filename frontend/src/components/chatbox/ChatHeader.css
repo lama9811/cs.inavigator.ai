@@ -24,12 +24,36 @@
   align-items: center !important;
   flex-shrink: 0;
   padding: 0 18px !important;
-  background: var(--bg-body, #fffdf7) !important;
-  border-bottom: 1px solid var(--border-soft, var(--border-color, #d8cbb8)) !important;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05) !important;
-  pointer-events: auto !important;
+  /* Invisible bar: no solid band, border, or shadow — only the controls (model
+     dropdown + tutor-mode toggle, which carry their own backgrounds) float over
+     the chat, like the floating chat input below. The bar's layout (position /
+     height / padding) is unchanged, so the buttons stay exactly where they were. */
+  background: transparent !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  /* The empty parts of the bar must NOT block the chat behind them (scroll,
+     text selection). Only the controls re-enable pointer events (below). */
+  pointer-events: none !important;
+}
+
+/* Re-enable interaction on the actual controls inside the now-transparent bar.
+   A soft backdrop blur (scoped to ONLY the controls, not the empty bar) keeps the
+   dropdown + tutor-mode pills legible when chat text scrolls behind them, while
+   the empty parts of the bar stay fully see-through. The pill/rounded radius and
+   slight inset padding give the blur a tidy floating-chip edge. */
+.chat-main > .model-selector-header .chat-controls-header {
+  pointer-events: auto !important;
+  padding: 3px 6px !important;
+  border-radius: 12px !important;
+  background: color-mix(in srgb, var(--bg-body, #fffdf7) 55%, transparent) !important;
+  backdrop-filter: blur(8px) saturate(1.05) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(1.05) !important;
+}
+
+body.dark .chat-main > .model-selector-header .chat-controls-header {
+  background: color-mix(in srgb, var(--bg-body, #111827) 55%, transparent) !important;
 }
 
 /* Follow the sidebar width so the bar lines up with the chat area. */
@@ -94,9 +118,9 @@ body.sidebar-resizing .chat-main > .model-selector-header {
 }
 
 body.dark .chat-main > .model-selector-header {
-  background: var(--bg-body, #111827) !important;
-  border-bottom-color: rgba(216, 203, 184, 0.2) !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22) !important;
+  background: transparent !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
 }
 
 @media (max-width: 900px) {

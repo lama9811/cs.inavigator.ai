@@ -7,9 +7,11 @@
 // write localStorage immediately and fire the matching API call in the
 // background. syncSnippetsFromServer() merges the server copy into the cache.
 
+import { getApiBase } from "./apiBase";
+
 const STORAGE_KEY = "csnav.snippets";
 const MAX_SNIPPETS = 50;
-const API_BASE = ""; // same-origin; the dev server proxies /api to the backend
+const API_BASE = getApiBase();
 
 function authHeaders() {
   const token = (() => {
