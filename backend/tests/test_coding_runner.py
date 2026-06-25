@@ -1,11 +1,19 @@
 from coding_runner import (
     RUN_MAX_OUTPUT_CHARS,
+    RunnerSecurityError,
     check_practice_run_rate_limit,
+    compiled_runners_enabled,
+    run_cpp_practice_tests,
+    run_java_practice_tests,
     run_javascript_practice_tests,
     run_python_practice_tests,
+    validate_cpp_code,
+    validate_java_code,
 )
 from pathlib import Path
 import json
+
+import pytest
 
 
 COUNT_VOWELS_TESTS = [
@@ -248,6 +256,75 @@ def count_vowels(text: str) -> int:
 
     assert result["status"] == "error"
     assert "timed out" in result["stderr"].lower()
+
+
+# ---------------------------------------------------------------------------
+# Compiled-runner hardening (Java / C++): these test the SOURCE validators and
+# the prod gate, which are pure Python — no JDK/g++ needed to run them.
+# ---------------------------------------------------------------------------
+
+def test_cpp_validator_blocks_low_level_escape_routes():
+    blocked = [
+        "long f(std::vector<long> a){ return syscall(1); }",
+        "long f(std::vector<long> a){ void* h = dlopen(\"x\", 2); return 0; }",
+        "long f(std::vector<long> a){ return getenv(\"SECRET\") ? 1 : 0; }",
+        "#include <netdb.h>\nlong f(std::vector<long> a){ return 0; }",
+        "long f(std::vector<long> a){ getaddrinfo(0,0,0,0); return 0; }",
+        "long f(std::vector<long> a){ ptrace(0,0,0,0); return 0; }",
+    ]
+    for code in blocked:
+        with pytest.raises(RunnerSecurityError):
+            validate_cpp_code(code)
+
+
+def test_cpp_validator_still_allows_normal_algorithm_code():
+    # A plain algorithm solution must NOT trip the tightened blocklist.
+    validate_cpp_code(
+        "Value solve(std::vector<Value> a){ int n = a.size(); "
+        "std::vector<int> v; for(int i=0;i<n;i++) v.push_back(i); return Value((long long)n); }"
+    )
+
+
+def test_java_validator_blocks_env_classloader_and_native():
+    blocked = [
+        "class Solution { static Object f(Object[] a){ return System.getenv(\"X\"); } }",
+        "class Solution { static Object f(Object[] a){ return new URLClassLoader(null); } }",
+        "class Solution { static Object f(Object[] a){ return sun.misc.Unsafe.class; } }",
+        "class Solution { native int f(); }",
+        "class Solution { static Object f(Object[] a){ System.loadLibrary(\"x\"); return null; } }",
+    ]
+    for code in blocked:
+        with pytest.raises(RunnerSecurityError):
+            validate_java_code(code)
+
+
+def test_java_validator_still_allows_normal_algorithm_code():
+    validate_java_code(
+        "class Solution { static Object f(Object[] a){ "
+        "java.util.List<Integer> xs = new java.util.ArrayList<>(); return xs.size(); } }"
+    )
+
+
+def test_compiled_runners_gate_disables_java_and_cpp(monkeypatch):
+    monkeypatch.setenv("ALLOW_COMPILED_RUNNERS", "false")
+    # Re-evaluate the gate with the env applied.
+    assert compiled_runners_enabled() is False
+
+    java_result = run_java_practice_tests(
+        "class Solution { static Object f(Object[] a){ return 0L; } }", "f", []
+    )
+    cpp_result = run_cpp_practice_tests(
+        "Value solve(std::vector<Value> a){ return Value((long long)0); }", "solve", []
+    )
+    assert java_result["status"] == "error"
+    assert "disabled" in java_result["stderr"].lower()
+    assert cpp_result["status"] == "error"
+    assert "disabled" in cpp_result["stderr"].lower()
+
+
+def test_compiled_runners_gate_on_by_default(monkeypatch):
+    monkeypatch.delenv("ALLOW_COMPILED_RUNNERS", raising=False)
+    assert compiled_runners_enabled() is True
 
 
 def test_runner_rate_limit_returns_retry_after():

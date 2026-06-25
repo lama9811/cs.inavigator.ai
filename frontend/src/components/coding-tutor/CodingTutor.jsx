@@ -77,6 +77,99 @@ function clearLocalProgress(questionId, language) {
   }
 }
 
+// ── Daily-challenge streak (gamification, #8) ─────────────────────────────
+// We record the local date (YYYY-MM-DD) each day the student practices the daily
+// challenge, then count back from today to get a real consecutive-day streak.
+// Per-device only (localStorage) — no backend needed.
+const DAILY_STREAK_KEY = "coding_daily_streak_days";
+
+function localDateKey(date = new Date()) {
+  // Local calendar date, not UTC, so "today" matches the student's clock.
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function readDailyStreakDays() {
+  try {
+    const raw = localStorage.getItem(DAILY_STREAK_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+  } catch (error) {
+    console.warn("[coding-streak] read failed", error);
+    return [];
+  }
+}
+
+// Mark today as a daily-challenge completion. Returns the updated day list.
+function recordDailyChallengeDay() {
+  const today = localDateKey();
+  const days = readDailyStreakDays();
+  if (!days.includes(today)) days.push(today);
+  // Keep the list bounded — a year of dates is plenty for a streak count.
+  const trimmed = days.sort().slice(-370);
+  try {
+    localStorage.setItem(DAILY_STREAK_KEY, JSON.stringify(trimmed));
+  } catch (error) {
+    console.warn("[coding-streak] write failed", error);
+  }
+  return trimmed;
+}
+
+// Count consecutive days ending today (or yesterday — so an unfinished today
+// doesn't break a streak until the day actually rolls over).
+function computeDailyStreak(days = readDailyStreakDays()) {
+  if (!days.length) return 0;
+  const set = new Set(days);
+  const cursor = new Date();
+  // If today isn't done yet but yesterday was, the streak still stands.
+  if (!set.has(localDateKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+  let streak = 0;
+  while (set.has(localDateKey(cursor))) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+// True only when today's daily challenge is already recorded.
+function isDailyDoneToday(days = readDailyStreakDays()) {
+  return days.includes(localDateKey());
+}
+
+// ── Language personalization (#6) ─────────────────────────────────────────
+// From the per-language progress map, find the language the student has touched
+// most (solved counts double), and suggest a different language to try next.
+const LANGUAGE_LABELS = { python: "Python", java: "Java", javascript: "JavaScript", cpp: "C++" };
+
+function computeLanguageStats(progressByLanguage = {}) {
+  const counts = { python: 0, java: 0, javascript: 0, cpp: 0 };
+  Object.values(progressByLanguage).forEach((perLanguage) => {
+    Object.entries(perLanguage || {}).forEach(([language, item]) => {
+      if (!(language in counts) || !item) return;
+      const solved = item.status === "solved" ? 2 : 0;
+      const attempted = (item.attempt_count || 0) > 0 || item.status === "in_progress" ? 1 : 0;
+      counts[language] += solved + attempted;
+    });
+  });
+  const ranked = Object.entries(counts)
+    .filter(([, score]) => score > 0)
+    .sort((a, b) => b[1] - a[1]);
+  if (!ranked.length) return null;
+  const [topLanguage] = ranked[0];
+  // Suggest the first language the student has used LEAST (or not at all).
+  const suggestion = ["python", "javascript", "java", "cpp"].find(
+    (language) => language !== topLanguage && (counts[language] || 0) < counts[topLanguage]
+  ) || null;
+  return {
+    topLanguage,
+    topLabel: LANGUAGE_LABELS[topLanguage],
+    suggestionKey: suggestion,
+    suggestionLabel: suggestion ? LANGUAGE_LABELS[suggestion] : null,
+  };
+}
+
 function normalizeSnippet(text = "") {
   return String(text).split("\n").filter(line => line.trim()).slice(0, 5).join("\n");
 }
@@ -333,11 +426,13 @@ export default function CodingTutor({
   const [activePage, setActivePage] = useState("dashboard");
   const [lastNonWorkspacePage, setLastNonWorkspacePage] = useState("dashboard");
   const [workspaceVisible, setWorkspaceVisible] = useState(true);
-  const [miniSidebarCollapsed, setMiniSidebarCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [workspaceTab, setWorkspaceTab] = useState("Editor");
   const [dailyChallenge, setDailyChallenge] = useState(null);
   const [dailyChallengeLoading, setDailyChallengeLoading] = useState(false);
+  // Recorded local dates (YYYY-MM-DD) the student practiced the daily challenge.
+  // Drives the real "day streak" tile instead of a derived guess.
+  const [dailyStreakDays, setDailyStreakDays] = useState(() => readDailyStreakDays());
   const [difficulty, setDifficulty] = useState("easy");
   const [selectedTopicPack, setSelectedTopicPack] = useState("");
   const [practiceLanguage, setPracticeLanguage] = useState("Python");
@@ -350,6 +445,10 @@ export default function CodingTutor({
   const [activeSolution, setActiveSolution] = useState(null);
   const [problemLoading, setProblemLoading] = useState(false);
   const [listLoading, setListLoading] = useState(false);
+  // True once the first practice-progress fetch has settled. Until then we don't
+  // know if a signed-in user is actually new, so we must NOT show the new-user
+  // hero — otherwise it flashes on every tab switch before progress loads.
+  const [progressLoaded, setProgressLoaded] = useState(false);
   // Personal "My Snippets" workspace: a fresh, non-graded space separate from the
   // Quiz Bank. snippets are stored per-device in localStorage.
   const [snippets, setSnippets] = useState(() => listSnippets());
@@ -426,8 +525,20 @@ export default function CodingTutor({
   const attemptedCount = progressItems.filter(item => (item.progress?.attempt_count || 0) > 0 || item.progress?.status === "solved").length;
   const totalAttempts = progressItems.reduce((sum, item) => sum + (item.progress?.attempt_count || 0), 0);
   const completionPercent = progressQuestions.length ? Math.round((solvedCount / progressQuestions.length) * 100) : 0;
-  const displayStreak = Math.min(5, Math.max(0, solvedCount || attemptedCount ? Math.ceil((solvedCount + attemptedCount) / 4) : 0));
+  // Real consecutive-day streak from daily-challenge completions.
+  const displayStreak = useMemo(() => computeDailyStreak(dailyStreakDays), [dailyStreakDays]);
+  const dailyDoneToday = useMemo(() => isDailyDoneToday(dailyStreakDays), [dailyStreakDays]);
+  const languageStats = useMemo(() => computeLanguageStats(progressByLanguage), [progressByLanguage]);
   const progressSummary = { solvedCount, attemptedCount, totalAttempts, completionPercent, displayStreak };
+  // Brand-new user: nothing solved, nothing attempted, no saved snippets, and no
+  // daily streak. We show a warm "Start here" hero instead of empty stat tiles.
+  // Gate on progressLoaded so the hero never flashes for a returning user before
+  // their saved progress comes back from the server on a tab switch / mount.
+  const isNewUser = progressLoaded
+    && solvedCount === 0
+    && attemptedCount === 0
+    && snippets.length === 0
+    && dailyStreakDays.length === 0;
 
   // "Up Next" recommendation: the first question the student hasn't started yet
   // (not solved, no attempts). Falls back to the first non-solved if every
@@ -682,7 +793,10 @@ export default function CodingTutor({
           setProgressByQuestion({});
         }
       } finally {
-        if (!cancelled) setListLoading(false);
+        if (!cancelled) {
+          setListLoading(false);
+          setProgressLoaded(true);
+        }
       }
     };
     fetchPractice();
@@ -853,6 +967,8 @@ export default function CodingTutor({
   };
 
   const startDailyChallenge = (withHints = false) => {
+    // Practicing the daily challenge counts toward the day streak (gamification).
+    setDailyStreakDays(recordDailyChallengeDay());
     const title = dailyChallenge?.title || "Daily coding challenge";
     const prompt = dailyChallenge?.available
       ? `Solve today's LeetCode daily challenge: ${title}. Open the LeetCode link for the full prompt, then use this workspace for notes and code.`
@@ -921,6 +1037,26 @@ export default function CodingTutor({
   };
 
   const newSnippet = () => openPersonalWorkspace(null);
+
+  // Language personalization (#6): open the recommended next problem in the
+  // suggested language, so "try a Java problem?" lands the student in Java.
+  const tryLanguageOnNext = async (languageName) => {
+    const target = nextUpQuestion || progressQuestions.find(q => progressByQuestion[q.id]?.status !== "solved");
+    if (!target) {
+      toast.info("No practice problem available to open right now.");
+      return;
+    }
+    setPracticeLanguage(languageName);
+    setProblemLoading(true);
+    try {
+      await loadQuestionSolution(target, languageName);
+    } catch (error) {
+      console.error("[coding-practice] try-language failed", error);
+      toast.error("Could not open that problem.");
+    } finally {
+      setProblemLoading(false);
+    }
+  };
 
   // Home "My Snippets" card: reopen the most recently saved snippet (so the user
   // resumes what they were working on); if none saved, open a clean workspace.
@@ -1328,7 +1464,37 @@ export default function CodingTutor({
 
   const renderDashboard = () => (
     <section className="coding-dashboard">
-      <StatTiles progressSummary={progressSummary} />
+      {isNewUser ? (
+        <section className="coding-welcome-hero coding-dashboard-section" aria-label="Get started">
+          <span className="coding-kicker">Welcome to the Coding Tutor</span>
+          <h2 className="coding-welcome-title">Let&apos;s solve your first problem.</h2>
+          <p className="coding-welcome-sub">
+            Pick a short, beginner-friendly problem and the tutor will guide you with
+            hints — no full solutions, just nudges. You can run your code right here.
+          </p>
+          <div className="coding-welcome-actions">
+            <button
+              type="button"
+              className="coding-welcome-primary"
+              onClick={() => nextUpQuestion && selectQuestion(nextUpQuestion)}
+              disabled={!nextUpQuestion}
+            >
+              {nextUpQuestion ? `Start: ${nextUpQuestion.title}` : "Loading a starter problem…"}
+            </button>
+            <button type="button" className="coding-welcome-secondary" onClick={() => openPage("quiz")}>
+              Browse the Quiz Bank
+            </button>
+            <button type="button" className="coding-welcome-secondary" onClick={openMySnippets}>
+              Open a blank workspace
+            </button>
+          </div>
+          <p className="coding-welcome-hint">
+            Tip: try today&apos;s challenge to start a daily streak 🔥
+          </p>
+        </section>
+      ) : (
+        <StatTiles progressSummary={progressSummary} />
+      )}
       <RecentActivity
         questions={allQuestions.length ? allQuestions : questions}
         progressByQuestion={progressByQuestion}
@@ -1337,6 +1503,22 @@ export default function CodingTutor({
         onSelect={selectQuestion}
         onOpenSnippets={openMySnippets}
       />
+      {languageStats?.suggestionLabel && (
+        <section className="coding-language-personalization coding-dashboard-section" aria-label="Language suggestion">
+          <span className="coding-kicker">Personalized for you</span>
+          <p className="coding-language-line">
+            You&apos;re strongest in <strong>{languageStats.topLabel}</strong>.
+            Ready to stretch? Try the next problem in <strong>{languageStats.suggestionLabel}</strong>.
+          </p>
+          <button
+            type="button"
+            className="coding-language-try-btn"
+            onClick={() => tryLanguageOnNext(languageStats.suggestionLabel)}
+          >
+            Try a {languageStats.suggestionLabel} problem
+          </button>
+        </section>
+      )}
       <section className="coding-blurb-section">
         <div className="coding-dashboard-prompts" aria-label="Coding tutor prompt suggestions">
           <button type="button" className="coding-prompt-card blue" onClick={() => sendDashboardPrompt("Can you generate a practice quiz for me on arrays, strings, and loops?", { quizPdf: true, title: "Practice quiz" })}>
@@ -1358,6 +1540,9 @@ export default function CodingTutor({
         <div className="daily-meta-row">
           <span className={`daily-difficulty ${String(dailyChallenge?.difficulty || "Easy").toLowerCase()}`}>{dailyChallenge?.difficulty || "Easy"}</span>
           <span className="daily-eta-pill">Estimated Time: {estimateChallengeTime(dailyChallenge?.difficulty)}</span>
+          {dailyDoneToday
+            ? <span className="daily-streak-pill done">Done today ✓ · {displayStreak}-day streak 🔥</span>
+            : displayStreak > 0 && <span className="daily-streak-pill">{displayStreak}-day streak 🔥 · keep it going</span>}
         </div>
         {dailyChallenge?.available === false && <p>{dailyChallenge.message}</p>}
         <div className="daily-actions">
@@ -1528,7 +1713,7 @@ export default function CodingTutor({
   };
 
   return (
-    <div className={`coding-app ${miniSidebarCollapsed ? "mini-sidebar-collapsed" : ""} ${activePage === "workspace" ? "coding-workspace-active" : ""} ${terminalOpen ? "terminal-open" : "terminal-closed"}`}>
+    <div className={`coding-app ${activePage === "workspace" ? "coding-workspace-active" : ""} ${terminalOpen ? "terminal-open" : "terminal-closed"}`}>
       <div className="coding-nav-row">
         <button
           type="button"

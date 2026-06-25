@@ -47,6 +47,7 @@ class User(Base):
     morgan_connected_at = Column(DateTime, nullable=True)  # When DegreeWorks was synced
     email_verified = Column(Boolean, nullable=False, default=False)
     verification_token = Column(String(255), nullable=True)
+    verification_token_expires = Column(DateTime, nullable=True)
     reset_token = Column(String(255), nullable=True)
     reset_token_expires = Column(DateTime, nullable=True)
     is_disabled = Column(Boolean, nullable=False, default=False)

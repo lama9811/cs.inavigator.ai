@@ -68,6 +68,38 @@ log() { echo -e "${GREEN}[$(date +'%H:%M:%S')]${NC} $1"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1" >&2; exit 1; }
 
+read_env_value() {
+    local name="$1"
+    grep -m 1 "^${name}=" "${SCRIPT_DIR}/.env" 2>/dev/null \
+        | cut -d'=' -f2- \
+        | tr -d '\r' \
+        || true
+}
+
+ensure_backend_secrets() {
+    local required=(DATABASE_URL JWT_SECRET ADMIN_EMAIL ADMIN_PASSWORD RESEARCH_SECRET SMTP_USER SMTP_PASS YOUTUBE_API_KEY)
+    local missing=()
+    for secret_name in "${required[@]}"; do
+        if ! gcloud secrets describe "${secret_name}" --project "${PROJECT_ID}" >/dev/null 2>&1; then
+            missing+=("${secret_name}")
+        fi
+    done
+    if [ ${#missing[@]} -gt 0 ]; then
+        error "Missing Secret Manager secrets: ${missing[*]}. Run './deploy-cloudrun.sh secrets' after configuring .env."
+    fi
+}
+
+ensure_cloud_sql_running() {
+    local instance_name="${CLOUD_SQL_INSTANCE##*:}"
+    local sql_state
+    sql_state="$(gcloud sql instances describe "${instance_name}" \
+        --project "${PROJECT_ID}" \
+        --format='value(state)' 2>/dev/null || true)"
+    if [ "${sql_state}" != "RUNNABLE" ]; then
+        error "Cloud SQL instance ${instance_name} is ${sql_state:-unavailable}. Start it before deploying the backend."
+    fi
+}
+
 # =============================================================================
 # Prerequisites Check
 # =============================================================================
@@ -189,6 +221,9 @@ deploy_adk() {
 deploy_backend() {
     log "Deploying backend service..."
 
+    ensure_backend_secrets
+    ensure_cloud_sql_running
+
     # Get ADK service URL
     ADK_URL=$(gcloud run services describe ${ADK_SERVICE} \
         --region=${REGION} \
@@ -196,19 +231,6 @@ deploy_backend() {
 
     if [ -z "$ADK_URL" ]; then
         error "ADK service not deployed. Run: ./deploy-cloudrun.sh adk"
-    fi
-
-    # Load env vars from .env file
-    if [ -f "${SCRIPT_DIR}/.env" ]; then
-        log "Loading environment variables from .env..."
-
-        # Read specific vars we need
-        DATABASE_URL=$(grep "^DATABASE_URL=" "${SCRIPT_DIR}/.env" | cut -d'=' -f2-)
-        JWT_SECRET=$(grep "^JWT_SECRET=" "${SCRIPT_DIR}/.env" | cut -d'=' -f2-)
-        ADMIN_EMAIL=$(grep "^ADMIN_EMAIL=" "${SCRIPT_DIR}/.env" | cut -d'=' -f2-)
-        ADMIN_PASSWORD=$(grep "^ADMIN_PASSWORD=" "${SCRIPT_DIR}/.env" | cut -d'=' -f2-)
-    else
-        error ".env file not found"
     fi
 
     FRONTEND_URL=$(gcloud run services describe ${FRONTEND_SERVICE} \
@@ -250,6 +272,9 @@ GOOGLE_CLOUD_LOCATION=${REGION},\
 VERTEX_AI_DATASTORE_ID=${DATASTORE_ID},\
 UNIFIED_DATASTORE_ID=${DATASTORE_ID},\
 APP_ENV=production,\
+ALLOW_TEST_EMAILS=false,\
+ACCESS_TOKEN_EXPIRE_MINUTES=240,\
+SHOW_DASHBOARD_LOGS=false,\
 TRUSTED_HOSTS=*.run.app${CORS_ENV}${APP_URL_ENV}" \
         --set-secrets "\
 DATABASE_URL=DATABASE_URL:latest,\
@@ -258,7 +283,8 @@ ADMIN_EMAIL=ADMIN_EMAIL:latest,\
 ADMIN_PASSWORD=ADMIN_PASSWORD:latest,\
 RESEARCH_SECRET=RESEARCH_SECRET:latest,\
 SMTP_USER=SMTP_USER:latest,\
-SMTP_PASS=SMTP_PASS:latest"
+SMTP_PASS=SMTP_PASS:latest,\
+YOUTUBE_API_KEY=YOUTUBE_API_KEY:latest"
 
     BACKEND_URL=$(gcloud run services describe ${BACKEND_SERVICE} \
         --region=${REGION} \
@@ -314,13 +340,15 @@ setup_secrets() {
     # List of secrets to create. SMTP_USER/SMTP_PASS power email verification —
     # set them in .env (Gmail app password or Morgan SMTP) before deploying, or
     # they'll be skipped with a warning and email verification won't work.
-    SECRETS=("JWT_SECRET" "ADMIN_EMAIL" "ADMIN_PASSWORD" "RESEARCH_SECRET" "SMTP_USER" "SMTP_PASS")
+    SECRETS=("JWT_SECRET" "ADMIN_EMAIL" "ADMIN_PASSWORD" "RESEARCH_SECRET" "SMTP_USER" "SMTP_PASS" "YOUTUBE_API_KEY")
 
     for SECRET_NAME in "${SECRETS[@]}"; do
-        SECRET_VALUE=$(grep "^${SECRET_NAME}=" "${SCRIPT_DIR}/.env" | cut -d'=' -f2-)
+        # `|| true` so a missing/blank var doesn't abort the script under
+        # `set -euo pipefail` (grep exits 1 on no match). We skip it below.
+        SECRET_VALUE=$(read_env_value "${SECRET_NAME}")
 
         if [ -z "$SECRET_VALUE" ]; then
-            warn "Secret ${SECRET_NAME} not found in .env, skipping..."
+            warn "Secret ${SECRET_NAME} not found in .env, skipping (it may already exist in Secret Manager)..."
             continue
         fi
 
@@ -394,6 +422,8 @@ quick_deploy() {
 
     case $service in
         backend)
+            ensure_backend_secrets
+            ensure_cloud_sql_running
             build_backend
             deploy_backend
             ;;
@@ -421,6 +451,10 @@ deploy_all() {
 
     check_prerequisites
     setup_artifact_registry
+    setup_iam
+    setup_secrets
+    ensure_backend_secrets
+    ensure_cloud_sql_running
 
     # Build all images
     build_adk
@@ -428,7 +462,6 @@ deploy_all() {
 
     # Deploy in order (ADK first, then backend, then frontend)
     deploy_adk
-    setup_iam
     deploy_backend
 
     # Build frontend with backend URL
