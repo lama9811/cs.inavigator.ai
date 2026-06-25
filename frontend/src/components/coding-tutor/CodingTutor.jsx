@@ -445,6 +445,10 @@ export default function CodingTutor({
   const [activeSolution, setActiveSolution] = useState(null);
   const [problemLoading, setProblemLoading] = useState(false);
   const [listLoading, setListLoading] = useState(false);
+  // True once the first practice-progress fetch has settled. Until then we don't
+  // know if a signed-in user is actually new, so we must NOT show the new-user
+  // hero — otherwise it flashes on every tab switch before progress loads.
+  const [progressLoaded, setProgressLoaded] = useState(false);
   // Personal "My Snippets" workspace: a fresh, non-graded space separate from the
   // Quiz Bank. snippets are stored per-device in localStorage.
   const [snippets, setSnippets] = useState(() => listSnippets());
@@ -526,6 +530,15 @@ export default function CodingTutor({
   const dailyDoneToday = useMemo(() => isDailyDoneToday(dailyStreakDays), [dailyStreakDays]);
   const languageStats = useMemo(() => computeLanguageStats(progressByLanguage), [progressByLanguage]);
   const progressSummary = { solvedCount, attemptedCount, totalAttempts, completionPercent, displayStreak };
+  // Brand-new user: nothing solved, nothing attempted, no saved snippets, and no
+  // daily streak. We show a warm "Start here" hero instead of empty stat tiles.
+  // Gate on progressLoaded so the hero never flashes for a returning user before
+  // their saved progress comes back from the server on a tab switch / mount.
+  const isNewUser = progressLoaded
+    && solvedCount === 0
+    && attemptedCount === 0
+    && snippets.length === 0
+    && dailyStreakDays.length === 0;
 
   // "Up Next" recommendation: the first question the student hasn't started yet
   // (not solved, no attempts). Falls back to the first non-solved if every
@@ -780,7 +793,10 @@ export default function CodingTutor({
           setProgressByQuestion({});
         }
       } finally {
-        if (!cancelled) setListLoading(false);
+        if (!cancelled) {
+          setListLoading(false);
+          setProgressLoaded(true);
+        }
       }
     };
     fetchPractice();
@@ -1448,7 +1464,37 @@ export default function CodingTutor({
 
   const renderDashboard = () => (
     <section className="coding-dashboard">
-      <StatTiles progressSummary={progressSummary} />
+      {isNewUser ? (
+        <section className="coding-welcome-hero coding-dashboard-section" aria-label="Get started">
+          <span className="coding-kicker">Welcome to the Coding Tutor</span>
+          <h2 className="coding-welcome-title">Let&apos;s solve your first problem.</h2>
+          <p className="coding-welcome-sub">
+            Pick a short, beginner-friendly problem and the tutor will guide you with
+            hints — no full solutions, just nudges. You can run your code right here.
+          </p>
+          <div className="coding-welcome-actions">
+            <button
+              type="button"
+              className="coding-welcome-primary"
+              onClick={() => nextUpQuestion && selectQuestion(nextUpQuestion)}
+              disabled={!nextUpQuestion}
+            >
+              {nextUpQuestion ? `Start: ${nextUpQuestion.title}` : "Loading a starter problem…"}
+            </button>
+            <button type="button" className="coding-welcome-secondary" onClick={() => openPage("quiz")}>
+              Browse the Quiz Bank
+            </button>
+            <button type="button" className="coding-welcome-secondary" onClick={openMySnippets}>
+              Open a blank workspace
+            </button>
+          </div>
+          <p className="coding-welcome-hint">
+            Tip: try today&apos;s challenge to start a daily streak 🔥
+          </p>
+        </section>
+      ) : (
+        <StatTiles progressSummary={progressSummary} />
+      )}
       <RecentActivity
         questions={allQuestions.length ? allQuestions : questions}
         progressByQuestion={progressByQuestion}
