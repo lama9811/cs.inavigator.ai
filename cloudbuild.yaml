@@ -16,7 +16,7 @@ substitutions:
   _BACKEND_SERVICE: csnavigator-backend
   _FRONTEND_SERVICE: csnavigator-frontend
   _ADK_SERVICE: csnavigator-adk
-  _PUBLIC_API_URL: https://api.inavigator.ai
+  _PUBLIC_API_URL: https://csnavigator-backend-900141432581.us-central1.run.app
 
 options:
   logging: CLOUD_LOGGING_ONLY

@@ -7,6 +7,7 @@ export function getApiBase() {
   if (hostname === "localhost" || hostname === "127.0.0.1") {
     return "http://127.0.0.1:8000";
   }
-  // Cloud Run: frontend and backend are separate services
-  return "https://api.inavigator.ai";
+  // Cloud Run: frontend and backend are separate services.
+  // Use the backend's own run.app URL (api.inavigator.ai is not mapped to the backend).
+  return "https://csnavigator-backend-900141432581.us-central1.run.app";
 }
