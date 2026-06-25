@@ -2,6 +2,11 @@
 
 All notable changes to CS Navigator are documented here.
 
+## [6.3] - 2026-06-24
+### Added
+- Daily-challenge streak: practicing the daily challenge now records the day and the Home "day streak" tile shows a real consecutive-day count (counting back from today, or yesterday so an unfinished today doesn't break the streak) instead of a derived guess. The daily card shows a "Done today ✓ · N-day streak 🔥" badge once today is logged. Per-device (localStorage), no backend needed
+- Language personalization: the dashboard surfaces the student's most-used language and offers a one-click "Try a <other> problem" that opens the recommended next problem in a language they've used less. Reuses the existing per-language progress data
+
 ## [6.2] - 2026-06-23
 ### Added
 - Conjoined workspace layout: the problem guide, editor, and terminal now read as one unit. The terminal is docked inside the editor column (no longer a detached floating footer) with a draggable divider — drag to resize, height is remembered, and the editor always keeps priority so it can't be crushed

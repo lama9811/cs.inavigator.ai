@@ -612,6 +612,70 @@ body.dark .coding-back-home-btn.active svg {
   width: 100%;
 }
 
+/* ── Language personalization (#6): suggest a new language to try ─────────── */
+.coding-language-personalization {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: var(--ct-panel-soft);
+  border: 1px solid var(--ct-border);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+}
+
+.coding-language-line {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--ct-text);
+}
+
+.coding-language-line strong {
+  color: var(--ct-primary);
+}
+
+.coding-language-try-btn {
+  padding: 7px 18px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 50%, transparent);
+  background: color-mix(in srgb, var(--ct-primary) 92%, #000);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.14s ease, border-color 0.14s ease, transform 0.1s ease;
+}
+
+.coding-language-try-btn:hover {
+  background: var(--ct-accent);
+  border-color: var(--ct-accent);
+  transform: translateY(-1px);
+}
+
+/* ── Daily streak pill (#8): shows real consecutive-day streak ───────────── */
+.daily-streak-pill {
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--ct-primary) 14%, transparent);
+  color: var(--ct-primary);
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 30%, transparent);
+  white-space: nowrap;
+}
+
+.daily-streak-pill.done {
+  background: color-mix(in srgb, #16a34a 16%, transparent);
+  color: #15803d;
+  border-color: color-mix(in srgb, #16a34a 34%, transparent);
+}
+
+body.dark .daily-streak-pill.done {
+  color: #4ade80;
+}
+
 /* ── Dashboard stat tiles (#3): at-a-glance momentum ─────────────────────── */
 .coding-stat-tiles {
   display: grid;
