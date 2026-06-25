@@ -14,6 +14,11 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      // Self-destroying SW: unregisters the old service worker and clears its
+      // cache on every existing visitor, then stops caching. This permanently
+      // fixes "stale cached app -> failed to fetch" for returning users.
+      // (The app is a normal web app; it does not need offline/PWA caching.)
+      selfDestroying: true,
       registerType: 'autoUpdate',
       // Keep the service worker OFF during `npm run dev` so it never caches and
       // hides live CSS/JS edits. It still builds normally for production.
