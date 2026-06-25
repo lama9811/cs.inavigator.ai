@@ -105,7 +105,7 @@ steps:
       - '--concurrency=80'
       - '--no-allow-unauthenticated'
       - '--service-account=csnavigator-backend@${PROJECT_ID}.iam.gserviceaccount.com'
-      - '--set-env-vars=GOOGLE_CLOUD_PROJECT=${PROJECT_ID},UNIFIED_DATASTORE_ID=projects/${PROJECT_ID}/locations/us/collections/default_collection/dataStores/csnavigator-kb-v7'
+      - '--set-env-vars=GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_GENAI_USE_VERTEXAI=true,GOOGLE_CLOUD_LOCATION=us-central1,AGENT_MODEL=gemini-2.5-flash,UNIFIED_DATASTORE_ID=projects/${PROJECT_ID}/locations/us/collections/default_collection/dataStores/csnavigator-kb-v7'
     waitFor: ['push-adk']
 
   # =============================================================================
