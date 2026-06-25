@@ -121,7 +121,8 @@ steps:
         echo "ADK URL: $$ADK_URL"
         FRONTEND_URL=$(gcloud run services describe ${_FRONTEND_SERVICE} --region=${_REGION} --format='value(status.url)' 2>/dev/null || true)
         # Always allow the custom domain; append the frontend run.app URL if available.
-        CORS_ENV=",ALLOWED_ORIGINS=https://cs.inavigator.ai,https://api.inavigator.ai"
+        # NOTE: env vars below use the ^##^ delimiter so ALLOWED_ORIGINS can hold commas.
+        CORS_ENV="##ALLOWED_ORIGINS=https://cs.inavigator.ai,https://api.inavigator.ai"
         if [ -n "$$FRONTEND_URL" ]; then
           CORS_ENV="$$CORS_ENV,$$FRONTEND_URL"
         fi
@@ -141,7 +142,7 @@ steps:
           --allow-unauthenticated \
           --service-account=csnavigator-backend@${PROJECT_ID}.iam.gserviceaccount.com \
           --add-cloudsql-instances=${PROJECT_ID}:${_REGION}:csnavigator-db \
-          --set-env-vars="USE_VERTEX_AGENT=true,ADK_BASE_URL=$$ADK_URL,ADK_APP_NAME=cs_navigator_unified,GOOGLE_CLOUD_PROJECT=${PROJECT_ID},VERTEX_AI_DATASTORE_ID=projects/${PROJECT_ID}/locations/us/collections/default_collection/dataStores/csnavigator-kb-v7,UNIFIED_DATASTORE_ID=projects/${PROJECT_ID}/locations/us/collections/default_collection/dataStores/csnavigator-kb-v7,SMTP_HOST=smtp.gmail.com,SMTP_PORT=587,FROM_EMAIL=noreplyinavigator@gmail.com,APP_URL=https://cs.inavigator.ai,API_URL=https://api.inavigator.ai,ALLOW_TEST_EMAILS=false,ACCESS_TOKEN_EXPIRE_MINUTES=240,SHOW_DASHBOARD_LOGS=false,TRUSTED_HOSTS=*.run.app$$CORS_ENV" \
+          --set-env-vars="^##^USE_VERTEX_AGENT=true##ADK_BASE_URL=$$ADK_URL##ADK_APP_NAME=cs_navigator_unified##GOOGLE_CLOUD_PROJECT=${PROJECT_ID}##VERTEX_AI_DATASTORE_ID=projects/${PROJECT_ID}/locations/us/collections/default_collection/dataStores/csnavigator-kb-v7##UNIFIED_DATASTORE_ID=projects/${PROJECT_ID}/locations/us/collections/default_collection/dataStores/csnavigator-kb-v7##SMTP_HOST=smtp.gmail.com##SMTP_PORT=587##FROM_EMAIL=noreplyinavigator@gmail.com##APP_URL=https://cs.inavigator.ai##API_URL=https://api.inavigator.ai##ALLOW_TEST_EMAILS=false##ACCESS_TOKEN_EXPIRE_MINUTES=240##SHOW_DASHBOARD_LOGS=false##TRUSTED_HOSTS=*.run.app$$CORS_ENV" \
           --set-secrets="DATABASE_URL=DATABASE_URL:latest,JWT_SECRET=JWT_SECRET:latest,ADMIN_EMAIL=ADMIN_EMAIL:latest,ADMIN_PASSWORD=ADMIN_PASSWORD:latest,RESEARCH_SECRET=RESEARCH_SECRET:latest,SMTP_USER=SMTP_USER:latest,SMTP_PASS=SMTP_PASS:latest,YOUTUBE_API_KEY=YOUTUBE_API_KEY:latest"
     waitFor: ['deploy-adk', 'push-backend']
 
