@@ -151,12 +151,13 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     if getattr(user, "is_disabled", False):
         raise HTTPException(status_code=403, detail="This account has been disabled. Contact an administrator.")
 
-    # Require email verification (skip for admins and existing test accounts)
-    if not getattr(user, "email_verified", True) and user.role != "admin":
-        raise HTTPException(
-            status_code=403,
-            detail="Please verify your email first. Check your inbox for the verification link.",
-        )
+    # Email verification disabled — all accounts may log in without verifying.
+    # (Previously: blocked unverified non-admin accounts. Re-enable by restoring this check.)
+    # if not getattr(user, "email_verified", True) and user.role != "admin":
+    #     raise HTTPException(
+    #         status_code=403,
+    #         detail="Please verify your email first. Check your inbox for the verification link.",
+    #     )
 
     token = create_access_token(
         {"user_id": user.id, "role": user.role, "email": user.email}
