@@ -3,6 +3,11 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { FaBars } from "@react-icons/all-files/fa/FaBars";
 import { FaUser } from "@react-icons/all-files/fa/FaUser";
 import { FaUserShield } from "@react-icons/all-files/fa/FaUserShield";
+import { FaChalkboardTeacher } from "@react-icons/all-files/fa/FaChalkboardTeacher";
+import { FaLaptopCode } from "@react-icons/all-files/fa/FaLaptopCode";
+import { FaBook } from "@react-icons/all-files/fa/FaBook";
+import { FaChartLine } from "@react-icons/all-files/fa/FaChartLine";
+import { FaProjectDiagram } from "@react-icons/all-files/fa/FaProjectDiagram";
 import "../index.css";
 import "./NavBar.css";
 
@@ -63,7 +68,17 @@ export default function NavBar({ role, onToggleSidebar }) {
   };
 
   const linkClass = ({ isActive }) => "nav-link" + (isActive ? " active" : "");
+  const pillClass = ({ isActive }) => "nav-pill" + (isActive ? " active" : "");
   const isAuthed = useMemo(() => Boolean(role), [role]);
+
+  // Primary feature nav — moved out of the sidebar into the top bar (ORA style)
+  const primaryNav = [
+    { to: "/my-classes", label: "My Classes", Icon: FaChalkboardTeacher },
+    { to: "/coding", label: "Coding Tutor", Icon: FaLaptopCode },
+    { to: "/curriculum", label: "Curriculum", Icon: FaBook },
+    { to: "/grade-analysis", label: "Grade Surgeon", Icon: FaChartLine },
+    { to: "/ripple-effect", label: "Ripple Effect", Icon: FaProjectDiagram },
+  ];
 
   return (
     <nav className={`navbar ${scrolled ? "scrolled" : ""}`}>
@@ -102,6 +117,18 @@ export default function NavBar({ role, onToggleSidebar }) {
             <span className="brand-sub">Morgan State University</span>
           </div>
         </div>
+
+        {/* Primary feature nav as pills (top bar, ORA style) */}
+        {isAuthed && (
+          <nav className="nav-primary-links" aria-label="Primary navigation">
+            {primaryNav.map(({ to, label, Icon }) => (
+              <NavLink key={to} to={to} className={pillClass} title={label}>
+                <Icon size={15} />
+                <span>{label}</span>
+              </NavLink>
+            ))}
+          </nav>
+        )}
 
         {/* Right side - Profile icon when authenticated */}
         {isAuthed && (

@@ -43,6 +43,53 @@
   color: var(--msu-blue);
 }
 
+/* Primary feature nav, moved to the top bar as pills (ORA style).
+   Two margin-left:auto groups (this + .navbar-right) cluster everything
+   to the right next to the avatar. */
+.nav-primary-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.nav-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+.nav-pill:hover {
+  color: var(--msu-blue);
+  border-color: var(--msu-blue-light);
+  background: var(--msu-blue-50);
+}
+.nav-pill.active {
+  color: #fff;
+  background: var(--msu-blue);
+  border-color: var(--msu-blue);
+}
+.nav-pill svg { flex-shrink: 0; }
+/* navbar-right sits right after the pills with a small gap, not a second push */
+.nav-primary-links + .navbar-right { margin-left: 12px; }
+
+/* Collapse pill labels to icons on tighter widths so the bar never overflows */
+@media (max-width: 1180px) {
+  .nav-pill span { display: none; }
+  .nav-pill { padding: 8px 11px; }
+}
+@media (max-width: 560px) {
+  .nav-primary-links { gap: 4px; }
+}
+
 /* ---------- Left sidebar: dark navy rail ---------- */
 .chat-sidebar {
   background: var(--sidebar-bg);
@@ -54,14 +101,17 @@
 .sidebar-settings-wrapper { border-color: var(--sidebar-border); }
 .sidebar-bottom { background: var(--sidebar-bg-2); }
 
-/* New Chat → orange pill (the one bold accent) */
+/* New Chat → orange pill (the one bold accent).
+   !important needed: ChatSidebar.css:219 forces new-chat + active to a navy
+   gradient with !important (and --primary is remapped to navy). */
 .sidebar-action-btn.new-chat {
-  background: var(--gradient-gold);
-  color: #fff;
+  background: var(--gradient-gold) !important;
+  color: #fff !important;
   font-weight: 700;
   box-shadow: 0 2px 10px rgba(243, 112, 33, 0.30);
 }
 .sidebar-action-btn.new-chat:hover {
+  background: var(--gradient-gold) !important;
   box-shadow: 0 4px 16px rgba(243, 112, 33, 0.40);
   transform: translateY(-1px);
 }
@@ -94,16 +144,43 @@
 .date-group-header { color: var(--sidebar-text-muted); }
 
 /* Chat history items */
-.chat-history-item { color: var(--sidebar-text); }
+.chat-history-item {
+  color: var(--sidebar-text);
+  position: relative;
+  margin: 1px 0;
+}
 .chat-history-item:hover { background: var(--sidebar-hover); transform: none; }
+/* Active = subtle filled rounded box (matches ORA), not a bright gradient,
+   no orange edge — orange is reserved for the New Chat button. */
 .chat-history-item.active {
-  background: var(--sidebar-active);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.11) !important;
+  color: #fff !important;
   font-weight: 600;
-  border-left: 3px solid var(--msu-gold);
+  border-left: none;
+  border-radius: var(--radius-md);
 }
 .chat-title { color: inherit; }
 .chat-menu-btn { color: var(--sidebar-text-muted); }
+
+/* Right-side timestamp on each chat item (time today, short date older).
+   The 3-dot menu overlays it on hover. */
+.chat-item-time {
+  margin-left: auto;
+  padding-left: 10px;
+  font-size: 0.72rem;
+  color: var(--sidebar-text-muted);
+  flex-shrink: 0;
+  white-space: nowrap;
+  transition: opacity 0.15s ease;
+}
+.chat-history-item.active .chat-item-time { color: rgba(255, 255, 255, 0.72); }
+.chat-history-item:hover .chat-item-time { opacity: 0; }
+.chat-menu-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+}
 .archived-header,
 .archived-section-container { color: var(--sidebar-text); border-color: var(--sidebar-border); }
 
