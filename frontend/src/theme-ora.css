@@ -191,13 +191,15 @@
   color: var(--sidebar-text);
 }
 .setting-btn:hover { background: var(--sidebar-hover); color: #fff; }
+/* Contact Support / Install App — plain subtle navy, no orange highlight */
 .setting-btn.install-app-btn,
 .setting-btn.support-btn {
-  border-color: rgba(243, 112, 33, 0.55);
-  color: #F9B98C;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--sidebar-border);
+  color: var(--sidebar-text);
 }
 .setting-btn.install-app-btn:hover,
-.setting-btn.support-btn:hover { background: var(--msu-gold-50); }
+.setting-btn.support-btn:hover { background: var(--sidebar-hover); color: #fff; }
 
 /* User profile block */
 .user-profile:hover { background: var(--sidebar-hover); }
