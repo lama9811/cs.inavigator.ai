@@ -1573,7 +1573,9 @@ export default function Chatbox({
                           <div className="step-icon-wrap active-icon">
                             {getStatusIcon(thinkingMessages[thinkingStepIndex])}
                           </div>
+                          <span className="thinking-line" aria-hidden="true"></span>
                           <span className="thinking-text-shimmer">{thinkingMessages[thinkingStepIndex]}</span>
+                          <span className="thinking-timer">{thinkingTimer}s</span>
                         </div>
                       </div>
                     )}
@@ -1687,6 +1689,7 @@ export default function Chatbox({
                     <div className="step-icon-wrap active-icon">
                       {getStatusIcon(thinkingMessages[thinkingStepIndex])}
                     </div>
+                    <span className="thinking-line" aria-hidden="true"></span>
                     <span className="thinking-text-shimmer">{thinkingMessages[thinkingStepIndex]}</span>
                     <span className="thinking-timer">{thinkingTimer}s</span>
                   </div>
