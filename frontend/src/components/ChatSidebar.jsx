@@ -367,6 +367,18 @@ export default function ChatSidebar({
     }
   }, [contextMenu.visible]);
 
+  // Each session id embeds its creation time (epoch ms) — same source the
+  // date grouping uses. Show a clock time for today, a short date for older.
+  const formatChatItemTime = (id) => {
+    const ts = Number(String(id).match(/\d+/)?.[0]);
+    if (!ts || isNaN(ts)) return "";
+    const d = new Date(ts);
+    const sameDay = d.toDateString() === new Date().toDateString();
+    return sameDay
+      ? d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+      : d.toLocaleDateString([], { month: "short", day: "numeric" });
+  };
+
   const renderChatItem = (s, isArchived = false) => {
     if (renamingId === s.id) {
       return (
@@ -397,6 +409,7 @@ export default function ChatSidebar({
       >
         {s.pinned && <FaThumbtack className="pin-icon" size={10} />}
         <span className="chat-title">{s.title}</span>
+        {!isArchived && <span className="chat-item-time">{formatChatItemTime(s.id)}</span>}
         <button
           className="chat-menu-btn"
           onClick={(e) => {
@@ -535,47 +548,6 @@ export default function ChatSidebar({
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-
-        <button
-          className="sidebar-action-btn curriculum-link"
-          onClick={handleMyClassesClick}
-          title="View your Canvas courses, assignments, and grades"
-        >
-          <FaChalkboardTeacher size={16} />
-          <span>My Classes</span>
-        </button>
-        <button
-          className={`sidebar-action-btn curriculum-link ${codingTutorActive ? 'active' : ''}`}
-          onClick={(e) => { e.preventDefault(); navigate("/coding"); }}
-          title="Open Morgan State Coding Tutor"
-        >
-          <FaLaptopCode size={16} />
-          <span>Coding Tutor</span>
-        </button>
-        <button
-          className="sidebar-action-btn curriculum-link"
-          onClick={handleCurriculumClick}
-          title="View Computer Science curriculum"
-        >
-          <FaBook size={16} />
-          <span>Curriculum</span>
-        </button>
-        <button
-          className="sidebar-action-btn curriculum-link"
-          onClick={(e) => { e.preventDefault(); navigate("/grade-analysis"); }}
-          title="Grade analysis and strategy"
-        >
-          <FaChartLine size={16} />
-          <span>Grade Surgeon</span>
-        </button>
-        <button
-          className="sidebar-action-btn curriculum-link"
-          onClick={(e) => { e.preventDefault(); navigate("/ripple-effect"); }}
-          title="Prerequisite dependency map"
-        >
-          <FaProjectDiagram size={16} />
-          <span>Ripple Effect</span>
-        </button>
       </div>
 
       <div className="sidebar-middle">
