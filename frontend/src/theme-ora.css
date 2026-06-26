@@ -1,0 +1,389 @@
+/* ============================================================
+   ORA Navigator look — component overrides
+   Loaded AFTER theme.css so these win the cascade over the
+   legacy index.css design system. Tokens come from theme.css.
+   Selectors mirror the existing component class specificity so
+   they win by source order (no !important needed).
+   ============================================================ */
+
+:root {
+  /* Remap legacy brand aliases (used by Chatbox, the .coding-app tutor, etc.)
+     onto the ORA navy + orange identity. This single remap recolors the
+     coding tutor's whole --ct-* token chain. */
+  --primary: var(--msu-blue);
+  --primary-hover: var(--msu-blue-hover);
+  --primary-soft: var(--msu-blue-50);
+  --accent: var(--msu-gold);
+  --accent-soft: var(--msu-gold-50);
+  /* Leftover blue button-hover glow → navy (MyClasses .mc-primary-btn etc.) */
+  --shadow-glow: 0 0 18px rgba(11, 37, 69, 0.16);
+
+  /* Navy sidebar surface (dark rail against the off-white canvas) */
+  --sidebar-bg: #0E2240;
+  --sidebar-bg-2: #0B1C36;
+  --sidebar-hover: rgba(255, 255, 255, 0.06);
+  --sidebar-active: rgba(255, 255, 255, 0.10);
+  --sidebar-text: #C8D5E8;
+  --sidebar-text-muted: #7E92B0;
+  --sidebar-border: rgba(255, 255, 255, 0.09);
+}
+
+/* ---------- Top bar ---------- */
+.navbar {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: none;
+}
+.navbar.scrolled { box-shadow: var(--shadow-sm); }
+.brand-main { color: var(--text-main); letter-spacing: var(--tracking-tight); }
+.brand-sub { color: var(--text-secondary); letter-spacing: var(--tracking-eyebrow); }
+.sidebar-menu-btn {
+  background: var(--msu-blue-50);
+  border: 1px solid var(--border-color);
+  color: var(--msu-blue);
+}
+
+/* ---------- Left sidebar: dark navy rail ---------- */
+.chat-sidebar {
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  color: var(--sidebar-text);
+}
+.sidebar-top,
+.sidebar-bottom,
+.sidebar-settings-wrapper { border-color: var(--sidebar-border); }
+.sidebar-bottom { background: var(--sidebar-bg-2); }
+
+/* New Chat → orange pill (the one bold accent) */
+.sidebar-action-btn.new-chat {
+  background: var(--gradient-gold);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(243, 112, 33, 0.30);
+}
+.sidebar-action-btn.new-chat:hover {
+  box-shadow: 0 4px 16px rgba(243, 112, 33, 0.40);
+  transform: translateY(-1px);
+}
+
+/* Search */
+.search-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--sidebar-border);
+  border-radius: var(--radius-lg);
+  color: var(--sidebar-text);
+}
+.search-input::placeholder { color: var(--sidebar-text-muted); }
+.search-input:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--msu-blue-light);
+  box-shadow: 0 0 0 3px rgba(42, 78, 134, 0.25);
+}
+.search-icon { color: var(--sidebar-text-muted); }
+
+/* Nav/section links inside the rail */
+.sidebar-action-btn { color: var(--sidebar-text); }
+.sidebar-action-btn:hover { background: var(--sidebar-hover); color: #fff; }
+.sidebar-action-btn.curriculum-link.active {
+  color: var(--msu-gold);
+  background: var(--msu-gold-50);
+}
+
+/* TODAY / OLDER group labels */
+.section-header,
+.date-group-header { color: var(--sidebar-text-muted); }
+
+/* Chat history items */
+.chat-history-item { color: var(--sidebar-text); }
+.chat-history-item:hover { background: var(--sidebar-hover); transform: none; }
+.chat-history-item.active {
+  background: var(--sidebar-active);
+  color: #fff;
+  font-weight: 600;
+  border-left: 3px solid var(--msu-gold);
+}
+.chat-title { color: inherit; }
+.chat-menu-btn { color: var(--sidebar-text-muted); }
+.archived-header,
+.archived-section-container { color: var(--sidebar-text); border-color: var(--sidebar-border); }
+
+/* Bottom settings buttons on navy */
+.setting-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--sidebar-border);
+  color: var(--sidebar-text);
+}
+.setting-btn:hover { background: var(--sidebar-hover); color: #fff; }
+.setting-btn.install-app-btn,
+.setting-btn.support-btn {
+  border-color: rgba(243, 112, 33, 0.55);
+  color: #F9B98C;
+}
+.setting-btn.install-app-btn:hover,
+.setting-btn.support-btn:hover { background: var(--msu-gold-50); }
+
+/* User profile block */
+.user-profile:hover { background: var(--sidebar-hover); }
+.user-email { color: #fff; }
+.user-status { color: var(--sidebar-text-muted); }
+.logout-icon-btn { color: var(--sidebar-text-muted); }
+.sidebar-opensource-badge { color: var(--sidebar-text-muted); }
+
+/* Navy rail scrollbar */
+.chat-sidebar ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.14); }
+.chat-sidebar ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.24); }
+
+/* ---------- Chat canvas ---------- */
+.chat-main {
+  background: var(--bg-body);
+}
+
+/* Assistant message → clean white editorial card */
+.message.bot .message-bubble {
+  background: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-left: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+/* User message → solid navy bubble */
+.message.user .message-bubble {
+  background: var(--msu-blue);
+  color: #fff;
+  border: none;
+  border-radius: 16px 16px 4px 16px;
+  box-shadow: 0 2px 8px rgba(11, 37, 69, 0.28);
+}
+
+/* Markdown accents → navy instead of legacy google-blue */
+.message-bubble code {
+  background: var(--msu-blue-50);
+  color: var(--msu-blue);
+}
+.message.user .message-bubble code {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+.message-bubble blockquote {
+  border-left: 4px solid var(--msu-blue);
+  background: var(--msu-blue-50);
+}
+.message-bubble a { color: var(--msu-blue-light); }
+.message-bubble th { background: var(--msu-blue-50); }
+.message-bubble h1 { border-bottom-color: var(--border-color); }
+
+/* ---------- Input bar ---------- */
+.chat-input-wrapper {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+}
+.chat-input-wrapper:focus-within {
+  border-color: var(--msu-blue-light);
+  box-shadow: 0 0 0 3px var(--msu-blue-50);
+  animation: none;
+}
+.action-btn-icon.send-btn { color: var(--msu-blue); }
+.live-mode-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--msu-blue);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.live-mode-btn:hover { background: var(--msu-blue-hover); }
+.live-mode-btn.active { background: var(--gradient-gold); }
+
+/* Suggestion cards → navy/orange editorial accents */
+.suggestion-btn { border-radius: var(--radius-lg); }
+.suggestion-btn:nth-child(4n+1) { border-left-color: var(--msu-blue); }
+.suggestion-btn:nth-child(4n+2) { border-left-color: var(--msu-gold); }
+.suggestion-btn:nth-child(4n+3) { border-left-color: var(--msu-blue-light); }
+.suggestion-btn:nth-child(4n+4) { border-left-color: var(--msu-gold-hover); }
+.welcome-title {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ============================================================
+   Working spinner — "Searching knowledge base" (image #2)
+   Single clean card: icon · gradient line · label · elapsed
+   ============================================================ */
+.message-bubble.thinking-bubble {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-left: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  padding: 14px 20px;
+}
+
+/* Show only the active step (single-line look) */
+.stream-step.completed { display: none; }
+
+.stream-step.active {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.step-icon-wrap.active-icon {
+  background: transparent;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stream-step.active .status-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--text-secondary);
+  animation: none;
+}
+
+/* The thin gradient progress line between icon and label */
+.thinking-line {
+  position: relative;
+  width: 72px;
+  height: 2px;
+  flex-shrink: 0;
+  border-radius: 2px;
+  overflow: hidden;
+  background: linear-gradient(90deg,
+    var(--msu-blue) 0%,
+    var(--msu-blue-light) 45%,
+    rgba(42, 78, 134, 0.12) 100%);
+}
+.thinking-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.85), transparent);
+  transform: translateX(-100%);
+  animation: thinkingLineSweep 1.5s ease-in-out infinite;
+}
+@keyframes thinkingLineSweep {
+  to { transform: translateX(180%); }
+}
+
+.thinking-text-shimmer {
+  color: var(--text-main);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+.thinking-timer {
+  margin-left: auto;
+  padding-left: 16px;
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thinking-line::after { animation: none; }
+}
+
+/* ============================================================
+   Guest chat (/trychat) — its own guest-* classes, hardcoded
+   google-blue in the legacy CSS, so override explicitly.
+   ============================================================ */
+.guest-chat-main { background: var(--bg-body); }
+
+.guest-message.bot .guest-message-bubble {
+  background: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+.guest-message.user .guest-message-bubble {
+  background: var(--msu-blue);
+  color: #fff;
+  border-radius: 16px 16px 4px 16px;
+}
+.guest-message.user .guest-message-bubble code {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.guest-chat-input-wrapper {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-full);
+}
+.guest-chat-input-wrapper:focus-within {
+  border-color: var(--msu-blue-light);
+  box-shadow: 0 0 0 3px var(--msu-blue-50);
+}
+.guest-send-btn { color: var(--msu-blue); }
+.guest-send-btn:hover:not(:disabled) { color: var(--msu-blue-hover); }
+.guest-dot { background: var(--msu-blue); }
+
+.guest-suggestion-btn { border-radius: var(--radius-lg); }
+.guest-welcome-title {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ============================================================
+   Curriculum page (/curriculum) — mostly token-driven already
+   (navy header, orange GPA badge inherit). These fix the few
+   hardcoded google-blue spots: the progress bar + focus glows.
+   ============================================================ */
+.progress-bar-fill {
+  background: linear-gradient(90deg,
+    var(--msu-blue) 0%,
+    var(--msu-blue-light) 50%,
+    var(--msu-gold) 100%);
+  background-size: 200% 100%;
+  animation: gradientShift 3s ease infinite, glowNavy 2s ease-in-out infinite alternate;
+  box-shadow:
+    0 0 18px rgba(11, 37, 69, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.30);
+}
+@keyframes glowNavy {
+  from {
+    box-shadow:
+      0 0 14px rgba(11, 37, 69, 0.30),
+      0 0 28px rgba(243, 112, 33, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.30);
+  }
+  to {
+    box-shadow:
+      0 0 24px rgba(11, 37, 69, 0.45),
+      0 0 44px rgba(243, 112, 33, 0.20),
+      inset 0 1px 0 rgba(255, 255, 255, 0.30);
+  }
+}
+
+.search-input:focus { box-shadow: 0 0 0 3px var(--msu-blue-50); }
+.connect-btn {
+  background: var(--gradient-primary);
+  box-shadow: 0 4px 12px rgba(11, 37, 69, 0.30);
+}
+.connect-btn:hover { box-shadow: 0 6px 16px rgba(11, 37, 69, 0.40); }
+/* Keep the "supporting" category distinct, but in the navy family */
+.category-title.supporting { color: var(--msu-blue-light); }
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-bar-fill { animation: none; }
+}
+
+/* ============================================================
+   My Classes page (/my-classes) — already ORA token-driven
+   (--gradient-primary buttons, --msu-blue/gold accents). The
+   only fix was --shadow-glow above; status colors (red/amber/
+   green) are intentional and kept.
+   ============================================================ */
