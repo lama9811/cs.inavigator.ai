@@ -1,0 +1,183 @@
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* Primary palette — institutional navy + orange accent */
+  --msu-blue: #0B2545;
+  --msu-blue-hover: #123257;
+  --msu-blue-light: #2A4E86;
+  --msu-blue-50: rgba(11, 37, 69, 0.05);
+  --msu-blue-100: rgba(11, 37, 69, 0.12);
+  --msu-gold: #F37021;
+  --msu-gold-hover: #D85F12;
+  --msu-gold-50: rgba(243, 112, 33, 0.10);
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #0B2545 0%, #123257 100%);
+  --gradient-gold: linear-gradient(135deg, #F37021 0%, #D85F12 100%);
+  --gradient-subtle: linear-gradient(180deg, #F6F8FB 0%, #EEF2F7 100%);
+  --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(246,248,251,0.86) 100%);
+
+  /* Light mode surfaces */
+  --bg-body: #F6F8FB;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #EEF2F7;
+  --bg-elevated: #FFFFFF;
+  --bg-input: #FFFFFF;
+  --text-main: #0B2545;
+  --text-secondary: #64748B;
+  --text-tertiary: #94A3B8;
+  --border-color: #E2E8F0;
+  --border-subtle: #EDF1F6;
+  --border-focus: #2A4E86;
+
+  /* Semantic status */
+  --success-500: #1F9254;
+  --warn-500: #E08600;
+  --danger-500: #D64545;
+
+  /* Cool navy-tinted shadows (never neutral gray) */
+  --shadow-xs: 0 1px 2px rgba(11, 30, 63, 0.06);
+  --shadow-sm: 0 1px 3px rgba(11, 30, 63, 0.08), 0 1px 2px rgba(11, 30, 63, 0.05);
+  --shadow-md: 0 4px 10px rgba(11, 30, 63, 0.08), 0 1px 3px rgba(11, 30, 63, 0.05);
+  --shadow-lg: 0 8px 24px rgba(11, 30, 63, 0.10), 0 2px 6px rgba(11, 30, 63, 0.06);
+  --shadow-xl: 0 18px 40px rgba(11, 30, 63, 0.12), 0 4px 10px rgba(11, 30, 63, 0.06);
+
+  /* Motion */
+  --transition-fast: 0.12s ease;
+  --transition-normal: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.36s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Fonts */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Menlo', monospace;
+
+  /* Spacing (8px base) */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+  --space-12: 48px; --space-16: 64px;
+
+  /* Radius (sharp, editorial) */
+  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 10px;
+  --radius-xl: 14px; --radius-2xl: 18px; --radius-full: 999px;
+
+  /* Tracking */
+  --tracking-tight: -0.02em;
+  --tracking-eyebrow: 0.14em;
+}
+
+/* Dark mode — Midnight library */
+body.dark {
+  --bg-body: #0E1626;
+  --bg-card: #15203A;
+  --bg-card-hover: #1C2A48;
+  --bg-elevated: #1A2640;
+  --bg-input: #1C2A48;
+  --text-main: #ECE5D7;
+  --text-secondary: #B3A989;
+  --text-tertiary: #7A7363;
+  --border-color: #2B3858;
+  --border-subtle: #1F2A45;
+  --border-focus: #C9A24C;
+  --gradient-primary: linear-gradient(135deg, #1E4480 0%, #15203A 100%);
+  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.50);
+}
+
+/* Reset & base */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { font-size: 16px; -webkit-text-size-adjust: 100%; overflow-x: hidden; }
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-body);
+  color: var(--text-main);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
+}
+
+/* Headings use the display font with tight tracking */
+h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: var(--tracking-tight); color: var(--text-main); line-height: 1.15; }
+h1 { font-size: 3rem; font-weight: 800; }
+h2 { font-size: 2.25rem; font-weight: 800; }
+h3 { font-size: 1.75rem; font-weight: 700; }
+h4 { font-size: 1.375rem; font-weight: 700; }
+
+/* Uppercase orange eyebrow */
+.eyebrow {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--msu-gold-hover);
+}
+
+/* Buttons */
+.btn-primary {
+  background: var(--gradient-primary);
+  color: #fff;
+  padding: 10px 24px;
+  border-radius: var(--radius-md);
+  border: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-primary:active { transform: translateY(0); }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-main);
+  padding: 10px 24px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border-color);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+.btn-secondary:hover { border-color: var(--msu-blue); color: var(--msu-blue); }
+
+/* Card */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+}
+.card:hover { box-shadow: var(--shadow-md); }
+
+/* Inputs */
+input, textarea, select {
+  background: var(--bg-input);
+  color: var(--text-main);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  transition: all var(--transition-normal);
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--msu-blue-50);
+}
+input::placeholder, textarea::placeholder { color: var(--text-tertiary); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+body.dark ::-webkit-scrollbar-thumb { background: #3c4043; }
