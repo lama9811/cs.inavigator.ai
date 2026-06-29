@@ -220,7 +220,6 @@ function CampusDailyMission({ dailyChallenge, dailyDoneToday, displayStreak, onP
   const isLeetCode = (dailyChallenge?.source || "").toLowerCase() === "leetcode";
   const problemNumber = dailyChallenge?.frontend_id;
   const tags = Array.isArray(dailyChallenge?.tags) ? dailyChallenge.tags.filter(Boolean) : [];
-  const practiceTags = tags.slice(0, 3);
   return (
     <section className="campus-daily-mission" aria-label="LeetCode daily challenge">
       <div>
