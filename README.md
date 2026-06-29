@@ -359,9 +359,7 @@ cs-chatbot-morganstate/
       retrieval_gate.py         Pre-agent KB search (admin utility)
       verification_gate.py      Post-agent claim verification (admin utility)
       fast_retrieval.py         In-memory TF-IDF search (admin utility)
-      hybrid_retrieval.py       Pinecone + Vertex AI RRF (admin utility)
-    kb_structured/              71 JSON knowledge base documents
-    legacy_rag/                 Archived Pinecone-era scripts (v1.0-v2.0)
+    kb_structured/              JSON knowledge base documents
     Dockerfile                  Cloud Run container
 
   adk_agent/                    Google ADK Agent

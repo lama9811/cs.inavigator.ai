@@ -19,13 +19,6 @@ from dataclasses import dataclass, field
 from google.cloud import discoveryengine_v1 as discoveryengine
 from google.api_core.client_options import ClientOptions
 
-# Hybrid retrieval: Pinecone + Vertex AI Search (Plan B+)
-try:
-    from services.hybrid_retrieval import hybrid_search, is_pinecone_available
-    _HYBRID_AVAILABLE = True
-except ImportError:
-    _HYBRID_AVAILABLE = False
-
 log = logging.getLogger(__name__)
 
 # Configuration
@@ -199,22 +192,7 @@ def evaluate_retrieval(query: str) -> RetrievalResult:
     if _BYPASS_RE.match(query.strip()):
         return RetrievalResult(quality="bypass")
 
-    # Try hybrid retrieval first (Pinecone + Vertex AI)
-    if _HYBRID_AVAILABLE and is_pinecone_available():
-        try:
-            hybrid = hybrid_search(query)
-            if hybrid.doc_texts:
-                quality = "high" if len(hybrid.doc_texts) >= HIGH_CONFIDENCE_DOCS else "low"
-                log.info(f"[RETRIEVAL] Hybrid: {quality} ({len(hybrid.doc_texts)} docs: {hybrid.pinecone_count} Pinecone + {hybrid.vertex_count} Vertex)")
-                return RetrievalResult(
-                    quality=quality,
-                    doc_texts=hybrid.doc_texts,
-                    summary=f"Hybrid: {hybrid.pinecone_count} Pinecone + {hybrid.vertex_count} Vertex AI docs",
-                )
-        except Exception as e:
-            log.warning(f"[RETRIEVAL] Hybrid search failed, falling back to Vertex-only: {e}")
-
-    # Fallback: Vertex AI Search only (original path)
+    # Vertex AI Search
     results = search_kb(query)
     doc_texts = [_extract_doc_text(r) for r in results]
     doc_texts = [t for t in doc_texts if t]  # filter empties

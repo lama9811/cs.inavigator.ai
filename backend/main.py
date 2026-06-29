@@ -15,9 +15,8 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone, timedelta
 
 #  FIXED IMPORTS: Use 'pypdf' which you installed, not 'PyPDF2'
-import pypdf 
+import pypdf
 import docx
-from langchain.schema import SystemMessage, HumanMessage 
 from coding_runner import (
     check_practice_run_rate_limit,
     empty_practice_run_response,
@@ -143,19 +142,6 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
     return bad
 
 
-# Legacy imports kept for /ingest endpoint and file analysis fallback
-try:
-    from langchain.text_splitter import TokenTextSplitter
-    from langchain_openai import OpenAIEmbeddings
-    from langchain_pinecone import PineconeVectorStore
-    from langchain_community.chat_models import ChatOpenAI
-    from langchain.chains import RetrievalQA
-    from pinecone import Pinecone
-    LEGACY_RAG_AVAILABLE = True
-except ImportError:
-    LEGACY_RAG_AVAILABLE = False
-    print("   Legacy RAG imports not available (Pinecone/LangChain not installed)")
-
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
 from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingSnippet, ReminderSubscription, SentReminder
@@ -174,12 +160,7 @@ _banner_sync_timestamps: dict[int, list] = {}
 USE_VERTEX_AGENT   = os.getenv("USE_VERTEX_AGENT", "true").lower() == "true"
 ADK_BASE_URL       = os.getenv("ADK_BASE_URL", "http://127.0.0.1:8080")
 
-# Legacy Pinecone + OpenAI config (kept for /ingest and TTS)
-PINECONE_API_KEY   = os.getenv("PINECONE_API_KEY")
-PINECONE_ENV       = os.getenv("PINECONE_ENV")
-PINECONE_INDEX     = os.getenv("PINECONE_INDEX_NAME")
-PINECONE_NAMESPACE = os.getenv("PINECONE_NAMESPACE", "docs")
-OPENAI_API_KEY     = os.getenv("OPENAI_API_KEY")  # Still needed for TTS
+OPENAI_API_KEY     = os.getenv("OPENAI_API_KEY")  # Used for text-to-speech (/api/tts)
 JWT_SECRET         = os.getenv("JWT_SECRET")
 ALGORITHM          = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "4320"))  # 3 days default
@@ -203,8 +184,8 @@ for folder in [UPLOAD_FOLDER, CHAT_FILES_FOLDER]:
 # Safety check for keys
 if USE_VERTEX_AGENT:
     print(f"[INFO] Using Vertex AI Agent Engine at {ADK_BASE_URL}")
-elif not all([PINECONE_API_KEY, PINECONE_ENV, PINECONE_INDEX, OPENAI_API_KEY]):
-    print("[WARN] WARNING: Some API keys are missing. Chatbot features will be limited.")
+else:
+    print("[WARN] USE_VERTEX_AGENT is disabled; the chat agent will be offline.")
 
 # ==============================================================================
 # 3. DATABASE MODELS
@@ -483,51 +464,15 @@ init_db()
 # ==============================================================================
 # 4. FASTAPI APP SETUP
 # ==============================================================================
-# AI System globals (initialized in lifespan)
-pc = None
-retriever = None
-qa = None
-llm = None
-
 def build_qa_chain():
-    """Initialize legacy AI components on startup (only when not using Vertex AI)"""
-    global retriever, qa, llm, pc
+    """Check Vertex AI Agent health on startup."""
     if USE_VERTEX_AGENT:
-        # Check Vertex AI Agent health
         health = check_agent_health()
         print(f" Vertex AI Agent: {health['status']} - {health['message']}")
         if health["status"] != "connected":
-            print("[WARN] ADK server not running. Start it with:")
-            print("   cd google-ai-engine-research/adk_deploy && python -m google.adk.cli web . --port 8080")
-        return
-
-    if not LEGACY_RAG_AVAILABLE:
-        print("[WARN] Legacy RAG libraries not installed. Chatbot will be offline.")
-        return
-    if not all([PINECONE_API_KEY, OPENAI_API_KEY, PINECONE_INDEX]):
-        print("[WARN] API Keys missing. Chatbot will be offline.")
-        return
-    try:
-        pc = Pinecone(api_key=PINECONE_API_KEY)
-        embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=OPENAI_API_KEY)
-        store = PineconeVectorStore.from_existing_index(
-            index_name=PINECONE_INDEX,
-            embedding=embeddings,
-            namespace=PINECONE_NAMESPACE,
-        )
-        retriever = store.as_retriever(
-            search_type="mmr",
-            search_kwargs={
-                "k": 10,
-                "fetch_k": 30,
-                "lambda_mult": 0.5
-            }
-        )
-        llm = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model_name="gpt-3.5-turbo", temperature=0)
-        qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=True)
-        print("[OK] Legacy AI System Initialized (Pinecone + OpenAI)")
-    except Exception as e:
-        print(f"[ERROR] AI Init Failed: {e}")
+            print("[WARN] ADK server not reachable. Chat will be degraded until it is up.")
+    else:
+        print("[WARN] USE_VERTEX_AGENT is disabled; the chat agent is offline.")
 
 @asynccontextmanager
 async def lifespan(app):
@@ -3123,33 +3068,6 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
         else:
             answer = "I received the file link, but I cannot find the file on the server to read it."
 
-    elif file_match and llm:
-        # Legacy: File uploaded with old LLM pipeline
-        filename = file_match.group(1)
-        filepath = os.path.join(CHAT_FILES_FOLDER, filename)
-
-        if os.path.exists(filepath):
-            file_content = extract_file_content(filepath)
-            system_msg = f"""You are a helpful academic assistant for Morgan State University's Computer Science department.
-Use the provided file content and conversation history to answer the user's question.
-{student_context}"""
-
-            clean_query = re.sub(r'\[.*?\]\(.*?\)', '', user_q).strip()
-            if not clean_query: clean_query = "Summarize this file."
-
-            user_msg = f"{conversation_context}File Content:\n{file_content}\n\nCurrent Question: {clean_query}"
-
-            try:
-                response = llm([
-                    SystemMessage(content=system_msg),
-                    HumanMessage(content=user_msg)
-                ])
-                answer = response.content
-            except Exception as e:
-                answer = f"I read the file, but had trouble analyzing it: {e}"
-        else:
-            answer = "I received the file link, but I cannot find the file on the server to read it."
-
     elif USE_VERTEX_AGENT:
         # Vertex AI Agent Engine path
         # Tier 1: Query already rewritten above (follow-ups resolved)
@@ -3171,31 +3089,6 @@ Use the provided file content and conversation history to answer the user's ques
         except Exception as e:
             print(f"   Vertex AI Chat Error: {e}")
             answer = "I'm having trouble processing your request. Please try again."
-    elif llm and retriever:
-        # Legacy Pinecone + OpenAI RAG path (fallback)
-        norm = re.sub(r'[\s\W]+', '', user_q.lower())
-        if re.match(r'^(hi|hello|hey)\b', user_q.lower()):
-            answer = "Hello! How can I help you today?"
-        elif re.match(r'^(bye|goodbye|see you)\b', user_q.lower()):
-            answer = "Goodbye! Have a great day."
-        elif re.search(r'\b(thankyou|thanks|thanx|thx|ty)\b', norm):
-            answer = "You're welcome! Let me know if you have any other questions."
-        else:
-            try:
-                docs = retriever.get_relevant_documents(user_q)
-                context_docs = "\n\n".join([doc.page_content for doc in docs[:8]])
-                system_prompt = f"""You are CS Navigator, an academic assistant for Morgan State University's CS department.
-{student_context}
-ONLY answer based on the KNOWLEDGE BASE CONTEXT provided. If info is not found, say so honestly."""
-                full_message = f"{conversation_context}Knowledge base:\n{context_docs}\n\nQuestion: {user_q}"
-                response = llm([
-                    SystemMessage(content=system_prompt),
-                    HumanMessage(content=full_message)
-                ])
-                answer = response.content.strip()
-            except Exception as e:
-                print(f"   Legacy Chat Error: {e}")
-                answer = "I'm having trouble processing your request."
     else:
         answer = "AI system is initializing. Please try again in a moment."
 
@@ -3744,22 +3637,6 @@ async def chat_guest(req: GuestQueryRequest, request: Request):
 
         except Exception as e:
             print(f"   Guest Vertex AI Error: {e}")
-            answer = "I'm having trouble processing your request. Please try again."
-    elif llm and retriever:
-        # Legacy Pinecone + OpenAI RAG path (fallback)
-        try:
-            docs = retriever.get_relevant_documents(user_q)
-            context_docs = "\n\n".join([doc.page_content for doc in docs[:8]])
-            if not context_docs.strip():
-                answer = "I don't have specific information about that. Contact the CS department at compsci@morgan.edu or (443) 885-3962."
-            else:
-                response = llm([
-                    SystemMessage(content="You are CS Navigator for Morgan State University's CS department. ONLY answer from the provided context."),
-                    HumanMessage(content=f"Context:\n{context_docs}\n\nQuestion: {user_q}")
-                ])
-                answer = response.content.strip()
-        except Exception as e:
-            print(f"   Guest Legacy Error: {e}")
             answer = "I'm having trouble processing your request. Please try again."
     else:
         answer = "AI system is initializing. Please try again in a moment."
@@ -5015,42 +4892,21 @@ async def get_popular_questions():
     return {"questions": random.sample(QUESTION_POOL, 8)}
 
 # --- Admin / Ingest Routes ---
+# The legacy Pinecone ingest/clear endpoints are retired. The knowledge base now
+# lives in the Vertex AI Search datastore, managed from the admin dashboard
+# (see /api/admin/cloud-kb/* and datastore_manager.py). These stubs remain so old
+# clients get a clear message instead of a 404.
 @app.post("/ingest")
 async def ingest_data_endpoint(user=Depends(get_current_user)):
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admins only")
-
-    files = [os.path.join(DATA_DIR, fn) for fn in sorted(os.listdir(DATA_DIR)) if fn.lower().endswith(".json")]
-    raw = []
-    for p in files:
-        raw.extend(load_json_documents([p]))
-
-    splitter = TokenTextSplitter(chunk_size=800, chunk_overlap=160, model_name="gpt-3.5-turbo")
-    texts, metas = [], []
-    for doc in raw:
-        for chunk in splitter.split_text(doc["text"]):
-            texts.append(chunk)
-            metas.append({"source": os.path.basename(doc["source"])})
-
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=OPENAI_API_KEY)
-    PineconeVectorStore.from_texts(
-        texts=texts,
-        embedding=embeddings,
-        metadatas=metas,
-        index_name=PINECONE_INDEX,
-        namespace=PINECONE_NAMESPACE,
-    )
-    return {"message": f"Ingested into {PINECONE_INDEX}:{PINECONE_NAMESPACE}", "chunks": len(texts)}
+    return {"message": "Deprecated. The KB now lives in the Vertex AI Search datastore — manage it from the admin dashboard (instant updates, no re-index)."}
 
 @app.delete("/clear-index")
 async def clear_index(user=Depends(get_current_user)):
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admins only")
-    if not pc:
-        raise HTTPException(status_code=500, detail="Pinecone not initialized")
-    idx = pc.Index(PINECONE_INDEX)
-    idx.delete(delete_all=True, namespace=PINECONE_NAMESPACE)
-    return {"message": f"Cleared namespace '{PINECONE_NAMESPACE}' in index {PINECONE_INDEX}"}
+    return {"message": "Deprecated. Pinecone has been removed; the Vertex AI Search datastore is managed from the admin dashboard."}
 
 # --- Curriculum Routes ---
 @app.post("/api/curriculum/add")
@@ -5111,7 +4967,7 @@ def health():
         except Exception:
             ai_status = "offline"
         return {"status": "ok", "db": "connected", "ai": "ready" if ai_status == "connected" else "offline"}
-    return {"status": "ok", "db": "connected", "ai": "ready" if qa else "offline"}
+    return {"status": "ok", "db": "connected", "ai": "ready" if USE_VERTEX_AGENT else "offline"}
 
 # ==============================================================================
 # ADMIN DASHBOARD ENDPOINTS
@@ -5265,7 +5121,7 @@ async def get_system_health(user: dict = Depends(get_current_user), db: Session 
         "openai_tts": {"status": "unknown", "message": ""},
         "email_verification": {"status": "unknown", "message": ""},
         "auth_urls": {"status": "unknown", "message": ""},
-        "mode": "vertex_ai" if USE_VERTEX_AGENT else "legacy_rag",
+        "mode": "vertex_ai" if USE_VERTEX_AGENT else "offline",
         "last_check": datetime.now(timezone.utc).isoformat()
     }
 
@@ -5280,18 +5136,7 @@ async def get_system_health(user: dict = Depends(get_current_user), db: Session 
     if USE_VERTEX_AGENT:
         health_status["vertex_agent"] = check_agent_health()
     else:
-        # Legacy: check Pinecone
-        try:
-            if PINECONE_API_KEY and PINECONE_INDEX and LEGACY_RAG_AVAILABLE:
-                pc_check = Pinecone(api_key=PINECONE_API_KEY)
-                idx = pc_check.Index(PINECONE_INDEX)
-                stats = idx.describe_index_stats()
-                vector_count = stats.get("total_vector_count", 0)
-                health_status["vertex_agent"] = {"status": "n/a (legacy mode)", "message": f"Pinecone: {vector_count} vectors"}
-            else:
-                health_status["vertex_agent"] = {"status": "not_configured", "message": "Legacy mode, keys missing"}
-        except Exception as e:
-            health_status["vertex_agent"] = {"status": "error", "message": str(e)[:100]}
+        health_status["vertex_agent"] = {"status": "offline", "message": "USE_VERTEX_AGENT disabled"}
 
     # Check OpenAI TTS
     try:
@@ -5514,29 +5359,14 @@ async def trigger_ingestion(user: dict = Depends(get_current_user)):
 
 @app.post("/api/admin/knowledge-base/sync-all")
 async def sync_all_kb(user: dict = Depends(get_current_user)):
-    """One-click: Re-index Pinecone from Vertex AI datastore + clear all caches.
-    Call this after updating KB docs to ensure both search systems are in sync."""
+    """One-click: clear all caches so KB edits take effect immediately.
+    The Vertex AI Search datastore updates instantly on edit (no re-index step)."""
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
-    results = {"pinecone": None, "cache": None}
+    results = {"cache": None}
 
-    # Step 1: Re-ingest KB docs to Pinecone (hybrid search index)
-    try:
-        from services.hybrid_retrieval import reingest_to_pinecone, is_pinecone_available
-        if is_pinecone_available():
-            ingest_result = await asyncio.to_thread(reingest_to_pinecone)
-            results["pinecone"] = {
-                "status": "ok" if ingest_result.get("failed", 0) == 0 else "partial",
-                "upserted": ingest_result.get("upserted", 0),
-                "failed": ingest_result.get("failed", 0),
-            }
-        else:
-            results["pinecone"] = {"status": "skipped", "reason": "Pinecone not configured"}
-    except Exception as e:
-        results["pinecone"] = {"status": "error", "reason": str(e)[:200]}
-
-    # Step 2: Clear all caches (L1 + L2 + semantic)
+    # Clear all caches (L1 + L2 + semantic) so updated KB docs are served fresh.
     try:
         cleared = query_cache.clear()
         results["cache"] = {"status": "ok", "cleared": cleared}
@@ -5545,7 +5375,7 @@ async def sync_all_kb(user: dict = Depends(get_current_user)):
 
     return {
         "success": True,
-        "message": f"Pinecone: {results['pinecone'].get('upserted', 0)} docs synced. Cache: cleared.",
+        "message": "Caches cleared. Vertex AI datastore is always in sync (instant updates).",
         "details": results,
     }
 
