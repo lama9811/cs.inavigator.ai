@@ -2,6 +2,28 @@
 
 All notable changes to CS Navigator are documented here.
 
+## [6.4] - 2026-06-29
+### Changed
+- Coding Tutor Home redesigned from a "dashboard" into an academic coding lab. The marketing-slogan hero + fake code-preview card were removed in favor of a state-first hero (Welcome back + streak / solved / % complete + one primary action that resumes in-progress work or starts the recommended problem). Removed the duplicate "Recommended" surfaces (it appeared up to three times) and the standalone progress strip (the hero already shows the same stats). Heavy navy panel borders softened to thinner warm accent rails with lighter shadows; the LeetCode daily challenge is now the full-width focal point. "Ask the Tutor" compacted from three tall passive rows into a tight 3-up command row (Generate Quiz · Review Code · Mock Interview). The progress-bar ticks were evened out and the topic-mastery pills got a clean full-width baseline. Re-checked responsive layout for split-screen laptop and mobile (single-column collapse, wrapping hero stats/actions)
+- Today's challenge card now accurately reads as a LeetCode problem (kicker "LeetCode Daily Problem", problem number in the title, LeetCode badge) and dropped the misleading flat per-difficulty time estimate (the LeetCode API gives no signal to estimate solve time)
+
+### Added
+- "Today's plan" strip under the hero: one concrete, data-driven next step (finish your in-progress problem, solve today's LeetCode daily, or start the recommended problem) instead of generic copy
+- Subtle Morgan State CS identity cue in the hero kicker
+- Coding Tutor progress bar animated with a flowing blue-dominant gradient + sheen sweep and pulsing glow (gaming-HUD feel)
+- Test-case explorer in the workspace terminal: failing cases sort first and are expandable, each with an "Ask the tutor about this case" action that sends just that input/expected/actual to the tutor
+
+### Removed
+- The "General" tutor toggle (CS Nav routes non-Morgan questions to general answers on its own; the manual override is gone)
+- The new-user landing variant in the Coding Tutor (it caused a flash where the existing-user hero swapped out after progress loaded); one landing now serves everyone
+
+### Fixed
+- Coding Tutor scoped "Morgan Coding Lab" theme: the section now reads as a warm academic-lab sub-brand (warm-paper surfaces in light, layered warm-slate in dark) while keeping the Morgan navy / orange / green identity, without affecting Regular Tutor, Admin, Profile, advising, auth, or the app shell (all rules scoped under `.coding-app`). Replaced the Progress momentum tiles' emoji with real icons from the existing `react-icons/fa` set, and warmed the cool-slate shadows on stat tiles and badge cards
+- Coding Tutor dark mode tuned: lifted the base canvas off near-black, spread the panel surfaces into distinct elevation steps so they no longer read as one flat slab, and brightened the navy/orange accents, borders, and muted text so they stop looking muddy on the dark slate
+- Coding Tutor collapsed sub-nav: the active pill in light mode rendered as a blank filled navy disc (navy icon on navy fill); the active icon now shows white
+- Main chat sidebar (navy rail): hovering a chat name, the Install app, Dark mode, and Contact support buttons turned the label navy-on-navy and made the text vanish — a leftover hover rule written for the old white sidebar. Re-asserted the rail's light-on-navy hover so labels stay readable; New Chat and the install/support orange hover are unchanged
+- Theme toggle no longer "oozes": light↔dark now swaps instantly instead of cross-fading, so nested panels can't finish their color fade at staggered times (which read as a slow, delayed transition with light-mode remnants). Color transitions are suppressed for the single frame the theme flips; hover transitions are unaffected
+
 ## [6.3] - 2026-06-24
 ### Security
 - Hardened the compiled-binary (Java/C++) coding runners for production. Cloud Run's sandbox forbids nsjail / privileged network namespaces, so we added app-level defenses that work there: a best-effort `unshare(CLONE_NEWNET)` network isolation that degrades gracefully when the kernel denies it (the run still proceeds under the other guards), `PR_SET_NO_NEW_PRIVS` to block privilege escalation on exec, a scrubbed child environment (PATH only — no secrets inherited) with blackholed DNS/proxy so a stray socket reaches nothing, and tighter source blocklists (raw `syscall`/`dlopen`/`getenv`/`ptrace`/`mmap`, low-level network/system headers for C++; `System.getenv`/classloaders/`Unsafe`/native methods for Java). Added an `ALLOW_COMPILED_RUNNERS` env flag (default on) to disable Java/C++ entirely in any environment where running native code is unacceptable. Verified 0 false positives across all 120 Java + C++ reference solutions; 24 runner tests pass (full backend suite: 27)

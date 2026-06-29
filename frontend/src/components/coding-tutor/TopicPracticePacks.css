@@ -128,17 +128,17 @@
   box-shadow: 0 12px 24px color-mix(in srgb, var(--ct-accent) 18%, transparent);
 }
 
-body.dark .topic-pack-card {
+body.coding-dark .topic-pack-card {
   background: var(--ct-solid-raised, #1c2a3f);
 }
 
-body.dark .topic-pack-actions button,
-body.dark .topic-pack-actions a {
+body.coding-dark .topic-pack-actions button,
+body.coding-dark .topic-pack-actions a {
   background: #5f7fae;
   color: #f8f3ea;
 }
 
-body.dark .topic-pack-actions .topic-video-btn {
+body.coding-dark .topic-pack-actions .topic-video-btn {
   background: linear-gradient(135deg, #e7a05b, #c98242);
   color: #172033;
 }

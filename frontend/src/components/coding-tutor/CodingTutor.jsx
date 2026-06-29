@@ -3,15 +3,17 @@ import { useLocation } from "react-router-dom";
 import {
   FaBook,
   FaChartLine,
-  FaChevronDown,
   FaEye,
   FaEyeSlash,
   FaHome,
   FaLaptopCode,
+  FaMoon,
+  FaSun,
   FaUserGraduate,
 } from "react-icons/fa";
 import { toast } from "sonner";
 import CodeWorkspace from "./CodeWorkspace";
+import CampusLabHome from "./CampusLabHome";
 import DailyChallengeCard from "./DailyChallengeCard";
 import PersonalPanel from "./PersonalPanel";
 import ProblemPanel from "./ProblemPanel";
@@ -21,6 +23,9 @@ import StatTiles from "./StatTiles";
 import TopicPracticePacks from "./TopicPracticePacks";
 import { listSnippets, saveSnippet, deleteSnippet, syncSnippetsFromServer, extractCodeFromFile, languageFromFilename } from "../../lib/snippets";
 import "./CodingTutor.css";
+// Scoped "Morgan Coding Lab" sub-brand palette — imported AFTER CodingTutor.css
+// so its --ct-* token re-points win over the inherited global chain.
+import "./CodingTutorTheme.css";
 
 const CODE_LANGUAGES = ["Python", "Java", "JavaScript", "C++"];
 const PRACTICE_LANGUAGE_API = {
@@ -32,8 +37,8 @@ const PRACTICE_LANGUAGE_API = {
 const PRACTICE_LANGUAGE_KEYS = ["python", "java", "javascript", "cpp"];
 const PRACTICE_DIFFICULTIES = ["easy", "medium", "hard"];
 
-// Home is NOT in this list — it has its own "Back to Home" button beside the nav.
 const CODING_PAGES = [
+  { id: "dashboard", label: "Home", icon: FaHome },
   { id: "quiz", label: "Quiz Bank", icon: FaBook },
   { id: "interview", label: "Interview Prep", icon: FaUserGraduate },
   { id: "workspace", label: "Workspace", icon: FaLaptopCode },
@@ -138,38 +143,6 @@ function isDailyDoneToday(days = readDailyStreakDays()) {
   return days.includes(localDateKey());
 }
 
-// ── Language personalization (#6) ─────────────────────────────────────────
-// From the per-language progress map, find the language the student has touched
-// most (solved counts double), and suggest a different language to try next.
-const LANGUAGE_LABELS = { python: "Python", java: "Java", javascript: "JavaScript", cpp: "C++" };
-
-function computeLanguageStats(progressByLanguage = {}) {
-  const counts = { python: 0, java: 0, javascript: 0, cpp: 0 };
-  Object.values(progressByLanguage).forEach((perLanguage) => {
-    Object.entries(perLanguage || {}).forEach(([language, item]) => {
-      if (!(language in counts) || !item) return;
-      const solved = item.status === "solved" ? 2 : 0;
-      const attempted = (item.attempt_count || 0) > 0 || item.status === "in_progress" ? 1 : 0;
-      counts[language] += solved + attempted;
-    });
-  });
-  const ranked = Object.entries(counts)
-    .filter(([, score]) => score > 0)
-    .sort((a, b) => b[1] - a[1]);
-  if (!ranked.length) return null;
-  const [topLanguage] = ranked[0];
-  // Suggest the first language the student has used LEAST (or not at all).
-  const suggestion = ["python", "javascript", "java", "cpp"].find(
-    (language) => language !== topLanguage && (counts[language] || 0) < counts[topLanguage]
-  ) || null;
-  return {
-    topLanguage,
-    topLabel: LANGUAGE_LABELS[topLanguage],
-    suggestionKey: suggestion,
-    suggestionLabel: suggestion ? LANGUAGE_LABELS[suggestion] : null,
-  };
-}
-
 function normalizeSnippet(text = "") {
   return String(text).split("\n").filter(line => line.trim()).slice(0, 5).join("\n");
 }
@@ -234,13 +207,6 @@ function aggregateProgressMap(progressByLanguage = {}) {
       .map(([questionId, languageProgress]) => [questionId, aggregateQuestionProgress(languageProgress)])
       .filter(([, progress]) => progress)
   );
-}
-
-function estimateChallengeTime(difficulty = "Easy") {
-  const normalized = String(difficulty).toLowerCase();
-  if (normalized === "hard") return "25 min";
-  if (normalized === "medium") return "15 min";
-  return "5 min";
 }
 
 function summarizeRunForTutor(output = {}) {
@@ -322,97 +288,6 @@ function buildHintSteps(problem, solution, attempts) {
   ];
 }
 
-// Three distinct dashboard cards:
-//  1. Resume   — the most recent IN-PROGRESS problem (or a prompt to start one)
-//  2. Up Next  — the recommended next problem to try
-//  3. My Snippets — the personal workspace (accented so it stands out)
-function RecentActivity({ questions, progressByQuestion, nextUpQuestion, onResume, onSelect, onOpenSnippets }) {
-  // Most recent in-progress problem (not solved).
-  const resumeItem = Object.entries(progressByQuestion || {})
-    .map(([id, p]) => ({ id, progress: p, question: questions.find(q => q.id === id) }))
-    .filter(item => item.question && item.progress
-      && item.progress.status !== "solved"
-      && (item.progress.attempt_count > 0 || item.progress.status === "in_progress"))
-    .sort((a, b) => new Date(b.progress.updated_at || 0) - new Date(a.progress.updated_at || 0))[0] || null;
-
-  // Don't recommend the same problem the user is already resuming.
-  const upNext = nextUpQuestion && (!resumeItem || nextUpQuestion.id !== resumeItem.question.id)
-    ? nextUpQuestion
-    : null;
-
-  return (
-    <section className="coding-recent-activity coding-dashboard-section" aria-label="Your coding shortcuts">
-      <span className="coding-kicker">Jump back in</span>
-      <div className="coding-recent-grid">
-        {/* 1. Resume */}
-        <article className="coding-recent-card">
-          <div className="coding-recent-card-top">
-            <span className="coding-recent-label">Resume</span>
-            {resumeItem ? (
-              <>
-                <strong className="coding-recent-title">{resumeItem.question.title}</strong>
-                <span className="coding-recent-category">
-                  <span className={`recent-diff ${String(resumeItem.question.difficulty || "easy").toLowerCase()}`}>{resumeItem.question.difficulty || "Easy"}</span>
-                  {resumeItem.question.topic && <span className="recent-topic">{resumeItem.question.topic}</span>}
-                </span>
-              </>
-            ) : (
-              <span className="coding-recent-empty">No problem in progress yet.</span>
-            )}
-          </div>
-          <div className="coding-recent-card-bottom">
-            {resumeItem ? (
-              <>
-                <button type="button" className="coding-recent-resume-btn" onClick={() => onResume(resumeItem.question)}>Resume</button>
-                <span className="recent-status in-progress">In progress</span>
-              </>
-            ) : (
-              <button type="button" className="coding-recent-resume-btn" onClick={() => upNext && onSelect(upNext)} disabled={!upNext}>Start one</button>
-            )}
-          </div>
-        </article>
-
-        {/* 2. Up Next */}
-        <article className="coding-recent-card coding-upnext-card">
-          <div className="coding-recent-card-top">
-            <span className="coding-recent-label">Up Next</span>
-            {upNext ? (
-              <>
-                <strong className="coding-recent-title">{upNext.title}</strong>
-                <span className="coding-recent-category">
-                  <span className={`recent-diff ${String(upNext.difficulty || "easy").toLowerCase()}`}>{upNext.difficulty || "Easy"}</span>
-                  {upNext.topic && <span className="recent-topic">{upNext.topic}</span>}
-                </span>
-              </>
-            ) : (
-              <span className="coding-recent-empty">You&apos;ve started everything — nice!</span>
-            )}
-          </div>
-          <div className="coding-recent-card-bottom">
-            <button type="button" className="coding-recent-resume-btn upnext-start-btn" onClick={() => upNext && onSelect(upNext)} disabled={!upNext}>Start</button>
-          </div>
-        </article>
-
-        {/* 3. My Snippets — accented personal workspace card */}
-        <article className="coding-recent-card coding-snippets-card">
-          <div className="coding-recent-card-top">
-            <span className="coding-recent-label">Personal</span>
-            <strong className="coding-recent-title">My Snippets</strong>
-            <span className="coding-recent-category">
-              <span className="recent-topic">Write, run &amp; save your own code.</span>
-            </span>
-          </div>
-          <div className="coding-recent-card-bottom">
-            <button type="button" className="coding-recent-resume-btn snippets-open-btn" onClick={onOpenSnippets}>
-              Open Workspace
-            </button>
-          </div>
-        </article>
-      </div>
-    </section>
-  );
-}
-
 export default function CodingTutor({
   apiBase,
   codeRenderer,
@@ -423,10 +298,16 @@ export default function CodingTutor({
   onSendToChat,
 }) {
   const location = useLocation();
+  // Dark mode is scoped to the Coding Tutor only (the rest of the app stays
+  // light). We drive it with `body.coding-dark` instead of the global
+  // `body.dark`, so it survives main removing the app-wide dark toggle. Persist
+  // separately under "codingTheme".
+  const [codingDark, setCodingDark] = useState(
+    () => localStorage.getItem("codingTheme") === "dark"
+  );
   const [activePage, setActivePage] = useState("dashboard");
   const [lastNonWorkspacePage, setLastNonWorkspacePage] = useState("dashboard");
   const [workspaceVisible, setWorkspaceVisible] = useState(true);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [workspaceTab, setWorkspaceTab] = useState("Editor");
   const [dailyChallenge, setDailyChallenge] = useState(null);
   const [dailyChallengeLoading, setDailyChallengeLoading] = useState(false);
@@ -445,10 +326,6 @@ export default function CodingTutor({
   const [activeSolution, setActiveSolution] = useState(null);
   const [problemLoading, setProblemLoading] = useState(false);
   const [listLoading, setListLoading] = useState(false);
-  // True once the first practice-progress fetch has settled. Until then we don't
-  // know if a signed-in user is actually new, so we must NOT show the new-user
-  // hero — otherwise it flashes on every tab switch before progress loads.
-  const [progressLoaded, setProgressLoaded] = useState(false);
   // Personal "My Snippets" workspace: a fresh, non-graded space separate from the
   // Quiz Bank. snippets are stored per-device in localStorage.
   const [snippets, setSnippets] = useState(() => listSnippets());
@@ -528,17 +405,7 @@ export default function CodingTutor({
   // Real consecutive-day streak from daily-challenge completions.
   const displayStreak = useMemo(() => computeDailyStreak(dailyStreakDays), [dailyStreakDays]);
   const dailyDoneToday = useMemo(() => isDailyDoneToday(dailyStreakDays), [dailyStreakDays]);
-  const languageStats = useMemo(() => computeLanguageStats(progressByLanguage), [progressByLanguage]);
   const progressSummary = { solvedCount, attemptedCount, totalAttempts, completionPercent, displayStreak };
-  // Brand-new user: nothing solved, nothing attempted, no saved snippets, and no
-  // daily streak. We show a warm "Start here" hero instead of empty stat tiles.
-  // Gate on progressLoaded so the hero never flashes for a returning user before
-  // their saved progress comes back from the server on a tab switch / mount.
-  const isNewUser = progressLoaded
-    && solvedCount === 0
-    && attemptedCount === 0
-    && snippets.length === 0
-    && dailyStreakDays.length === 0;
 
   // "Up Next" recommendation: the first question the student hasn't started yet
   // (not solved, no attempts). Falls back to the first non-solved if every
@@ -602,6 +469,24 @@ export default function CodingTutor({
     ].join("\n"), true);
   }, [onSendToChat, testOutput]);
 
+  const explainOneTest = useCallback((test, index) => {
+    if (!test) return;
+    setTutorMode("Debugging");
+    const label = test.name || `Test ${index + 1}`;
+    const lines = [
+      `Help me with one specific failing test case. Focus only on this case — explain why my code gives the wrong answer here and give one focused next step. Do not rewrite my whole program.`,
+      "",
+      `Failing case: ${label}`,
+      `Input: ${JSON.stringify(test.args)}`,
+      `Expected: ${JSON.stringify(test.expected)}`,
+      `Actual: ${JSON.stringify(test.actual)}`,
+      test.error ? `Error: ${test.error}` : "",
+      "",
+      `Language: ${selectedLanguage}`,
+    ].filter(Boolean);
+    onSendToChat?.(lines.join("\n"), true);
+  }, [onSendToChat, selectedLanguage]);
+
   const explainError = useCallback(() => {
     const out = testOutput || {};
     const errorText = [out.stderr, out.message].filter(Boolean).join("\n").trim();
@@ -629,6 +514,30 @@ export default function CodingTutor({
     setTutorMode("Reviewing");
     onSendToChat?.("Review my current code for correctness and style. Point out the single biggest issue first, then any smaller ones. Don't rewrite the whole thing — guide me.", true);
   }, [onSendToChat, code]);
+
+  // Apply the scoped dark signal to <body> while CodingTutor is mounted, and
+  // strip it on unmount so leaving the section returns the rest of the app to
+  // light. We reuse the `theme-switching` one-frame transition suppressor so the
+  // swap snaps instead of cross-fading.
+  useEffect(() => {
+    const body = document.body;
+    body.classList.add("theme-switching");
+    body.classList.toggle("coding-dark", codingDark);
+    localStorage.setItem("codingTheme", codingDark ? "dark" : "light");
+    void body.offsetWidth;
+    const raf = requestAnimationFrame(() => {
+      body.classList.remove("theme-switching");
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [codingDark]);
+
+  useEffect(() => {
+    // Always clear the scoped dark class when the Coding Tutor unmounts, so the
+    // rest of the app never inherits the coding-only dark theme.
+    return () => {
+      document.body.classList.remove("coding-dark");
+    };
+  }, []);
 
   useEffect(() => {
     // Pull the account's saved snippets from the server once on load and merge
@@ -795,7 +704,6 @@ export default function CodingTutor({
       } finally {
         if (!cancelled) {
           setListLoading(false);
-          setProgressLoaded(true);
         }
       }
     };
@@ -1037,26 +945,6 @@ export default function CodingTutor({
   };
 
   const newSnippet = () => openPersonalWorkspace(null);
-
-  // Language personalization (#6): open the recommended next problem in the
-  // suggested language, so "try a Java problem?" lands the student in Java.
-  const tryLanguageOnNext = async (languageName) => {
-    const target = nextUpQuestion || progressQuestions.find(q => progressByQuestion[q.id]?.status !== "solved");
-    if (!target) {
-      toast.info("No practice problem available to open right now.");
-      return;
-    }
-    setPracticeLanguage(languageName);
-    setProblemLoading(true);
-    try {
-      await loadQuestionSolution(target, languageName);
-    } catch (error) {
-      console.error("[coding-practice] try-language failed", error);
-      toast.error("Could not open that problem.");
-    } finally {
-      setProblemLoading(false);
-    }
-  };
 
   // Home "My Snippets" card: reopen the most recently saved snippet (so the user
   // resumes what they were working on); if none saved, open a clean workspace.
@@ -1463,100 +1351,23 @@ export default function CodingTutor({
   };
 
   const renderDashboard = () => (
-    <section className="coding-dashboard">
-      {isNewUser ? (
-        <section className="coding-welcome-hero coding-dashboard-section" aria-label="Get started">
-          <span className="coding-kicker">Welcome to the Coding Tutor</span>
-          <h2 className="coding-welcome-title">Let&apos;s solve your first problem.</h2>
-          <p className="coding-welcome-sub">
-            Pick a short, beginner-friendly problem and the tutor will guide you with
-            hints — no full solutions, just nudges. You can run your code right here.
-          </p>
-          <div className="coding-welcome-actions">
-            <button
-              type="button"
-              className="coding-welcome-primary"
-              onClick={() => nextUpQuestion && selectQuestion(nextUpQuestion)}
-              disabled={!nextUpQuestion}
-            >
-              {nextUpQuestion ? `Start: ${nextUpQuestion.title}` : "Loading a starter problem…"}
-            </button>
-            <button type="button" className="coding-welcome-secondary" onClick={() => openPage("quiz")}>
-              Browse the Quiz Bank
-            </button>
-            <button type="button" className="coding-welcome-secondary" onClick={openMySnippets}>
-              Open a blank workspace
-            </button>
-          </div>
-          <p className="coding-welcome-hint">
-            Tip: try today&apos;s challenge to start a daily streak 🔥
-          </p>
-        </section>
-      ) : (
-        <StatTiles progressSummary={progressSummary} />
-      )}
-      <RecentActivity
-        questions={allQuestions.length ? allQuestions : questions}
-        progressByQuestion={progressByQuestion}
-        nextUpQuestion={nextUpQuestion}
-        onResume={selectQuestion}
-        onSelect={selectQuestion}
-        onOpenSnippets={openMySnippets}
-      />
-      {languageStats?.suggestionLabel && (
-        <section className="coding-language-personalization coding-dashboard-section" aria-label="Language suggestion">
-          <span className="coding-kicker">Personalized for you</span>
-          <p className="coding-language-line">
-            You&apos;re strongest in <strong>{languageStats.topLabel}</strong>.
-            Ready to stretch? Try the next problem in <strong>{languageStats.suggestionLabel}</strong>.
-          </p>
-          <button
-            type="button"
-            className="coding-language-try-btn"
-            onClick={() => tryLanguageOnNext(languageStats.suggestionLabel)}
-          >
-            Try a {languageStats.suggestionLabel} problem
-          </button>
-        </section>
-      )}
-      <section className="coding-blurb-section">
-        <div className="coding-dashboard-prompts" aria-label="Coding tutor prompt suggestions">
-          <button type="button" className="coding-prompt-card blue" onClick={() => sendDashboardPrompt("Can you generate a practice quiz for me on arrays, strings, and loops?", { quizPdf: true, title: "Practice quiz" })}>
-            Can you generate a practice quiz for me?
-          </button>
-          <button type="button" className="coding-prompt-card gold" onClick={() => sendDashboardPrompt("Help me prepare for a technical interview problem with hints first.", { title: "Interview prep" })}>
-            Help me prepare for a technical interview problem.
-          </button>
-        </div>
-        {latestQuizResponse && (
-          <button type="button" className="save-quiz-pdf-btn" onClick={saveLatestQuizAsPdf}>
-            Save generated quiz as PDF
-          </button>
-        )}
-      </section>
-      <section className="daily-feature-card dashboard-daily coding-dashboard-section">
-        <span className="coding-kicker">Today&apos;s Challenge</span>
-        <h2>{dailyChallenge?.title || "Daily practice"}</h2>
-        <div className="daily-meta-row">
-          <span className={`daily-difficulty ${String(dailyChallenge?.difficulty || "Easy").toLowerCase()}`}>{dailyChallenge?.difficulty || "Easy"}</span>
-          <span className="daily-eta-pill">Estimated Time: {estimateChallengeTime(dailyChallenge?.difficulty)}</span>
-          {dailyDoneToday
-            ? <span className="daily-streak-pill done">Done today ✓ · {displayStreak}-day streak 🔥</span>
-            : displayStreak > 0 && <span className="daily-streak-pill">{displayStreak}-day streak 🔥 · keep it going</span>}
-        </div>
-        {dailyChallenge?.available === false && <p>{dailyChallenge.message}</p>}
-        <div className="daily-actions">
-          <button type="button" className="daily-practice-btn" onClick={() => startDailyChallenge(true)}>
-            Practice
-          </button>
-          {dailyChallenge?.url && (
-            <a href={dailyChallenge.url} target="_blank" rel="noopener noreferrer" className="daily-link">
-              Source
-            </a>
-          )}
-        </div>
-      </section>
-    </section>
+    <CampusLabHome
+      progressSummary={progressSummary}
+      topicPacks={topicPacks}
+      questions={allQuestions.length ? allQuestions : questions}
+      progressByQuestion={progressByQuestion}
+      nextUpQuestion={nextUpQuestion}
+      dailyChallenge={dailyChallenge}
+      dailyDoneToday={dailyDoneToday}
+      displayStreak={displayStreak}
+      latestQuizResponse={latestQuizResponse}
+      onStartDaily={() => startDailyChallenge(true)}
+      onOpenSnippets={openMySnippets}
+      onSelectQuestion={selectQuestion}
+      onOpenQuizBank={() => openPage("quiz")}
+      onPrompt={sendDashboardPrompt}
+      onSaveQuiz={saveLatestQuizAsPdf}
+    />
   );
 
   const renderWorkspace = () => (
@@ -1618,6 +1429,7 @@ export default function CodingTutor({
           onShowAllHints={showAllHints}
           onExplainFailedTests={explainFailedTests}
           onExplainError={explainError}
+          onExplainOneTest={explainOneTest}
           onStopRun={stopRun}
           onRequestReview={requestReview}
           onSaveSnippet={handleSaveSnippet}
@@ -1715,40 +1527,7 @@ export default function CodingTutor({
   return (
     <div className={`coding-app ${activePage === "workspace" ? "coding-workspace-active" : ""} ${terminalOpen ? "terminal-open" : "terminal-closed"}`}>
       <div className="coding-nav-row">
-        <button
-          type="button"
-          className={`coding-back-home-btn ${activePage === "dashboard" ? "active" : ""}`}
-          onClick={() => { openPage("dashboard"); setMobileNavOpen(false); }}
-          title="Back to Home"
-        >
-          <FaHome aria-hidden="true" />
-          <span className="coding-back-home-label">Back to Home</span>
-        </button>
-        <nav className={`coding-section-nav ${mobileNavOpen ? "mobile-open" : ""}`} aria-label="Coding tutor navigation">
-        {/* Single dropdown toggle on every screen. The bar shows the active tab's
-            icon + name (name hidden on mobile via CSS). Clicking opens the menu;
-            the chevron rotates; picking a section navigates and closes. */}
-        {(() => {
-          const current = CODING_PAGES.find(p => p.id === activePage);
-          const CurrentIcon = current?.icon;
-          // On Home (not in the section list) show a neutral "Sections" label.
-          return (
-            <button
-              type="button"
-              className="coding-nav-mobile-toggle"
-              onClick={() => setMobileNavOpen(prev => !prev)}
-              aria-expanded={mobileNavOpen}
-              aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
-            >
-              {CurrentIcon && (
-                <span className="coding-nav-icon coding-nav-current-icon" aria-hidden="true"><CurrentIcon /></span>
-              )}
-              <span className="coding-nav-mobile-current">{current?.label || "Sections"}</span>
-              <FaChevronDown className="coding-nav-chevron" aria-hidden="true" />
-            </button>
-          );
-        })()}
-
+        <nav className="coding-section-nav campus-section-nav" aria-label="Coding tutor sections">
         {CODING_PAGES.map(page => {
           const Icon = page.icon;
           return (
@@ -1756,15 +1535,33 @@ export default function CodingTutor({
             key={page.id}
             type="button"
             className={activePage === page.id ? "active" : ""}
-            onClick={() => { openPage(page.id); setMobileNavOpen(false); }}
+            onClick={() => openPage(page.id)}
             title={page.label}
+            aria-label={page.label}
           >
             <span className="coding-nav-icon" aria-hidden="true"><Icon /></span>
             <span className="coding-nav-label">{page.label}</span>
           </button>
           );
         })}
-        <button type="button" className="coding-nav-workspace-toggle" onClick={() => { toggleWorkspace(); setMobileNavOpen(false); }} title={workspaceVisible ? "Hide Workspace" : "Show Workspace"}>
+        <button
+          type="button"
+          className="coding-nav-theme-toggle"
+          onClick={() => setCodingDark(prev => !prev)}
+          title={codingDark ? "Switch to light mode" : "Switch to dark mode"}
+          aria-label={codingDark ? "Switch to light mode" : "Switch to dark mode"}
+          aria-pressed={codingDark}
+        >
+          <span className="coding-nav-icon" aria-hidden="true">{codingDark ? <FaSun /> : <FaMoon />}</span>
+          <span className="coding-nav-label">{codingDark ? "Light Mode" : "Dark Mode"}</span>
+        </button>
+        <button
+          type="button"
+          className="coding-nav-workspace-toggle"
+          onClick={toggleWorkspace}
+          title={workspaceVisible ? "Hide Workspace" : "Show Workspace"}
+          aria-label={workspaceVisible ? "Hide Workspace" : "Show Workspace"}
+        >
           <span className="coding-nav-icon" aria-hidden="true">{workspaceVisible ? <FaEyeSlash /> : <FaEye />}</span>
           <span className="coding-nav-label">{activePage === "workspace" && workspaceVisible ? "Hide Workspace" : "Show Workspace"}</span>
         </button>

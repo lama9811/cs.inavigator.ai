@@ -139,6 +139,34 @@
   background: var(--msu-gold-50);
 }
 
+/* Hover fix for the dark navy rail.
+   ChatSidebar.css:211-217 forces a hover of `background: --primary-soft` +
+   `color: --primary` with !important — those were written for the legacy WHITE
+   sidebar. On the ORA navy rail, --primary is deep navy (#0B2545), so the text
+   turns navy-on-navy and disappears, and --primary-soft (5% navy) is invisible.
+   Re-assert the rail's own light-on-navy hover with matching !important so the
+   labels stay readable. (New Chat is unaffected — its own orange !important rule
+   above already overrides; install-app/support keep their orange-50 hover below.) */
+.sidebar-action-btn:not(.new-chat):hover,
+.setting-btn:not(.install-app-btn):not(.support-btn):hover,
+.chat-history-item:hover {
+  background: var(--sidebar-hover) !important;
+  color: #fff !important;
+}
+.setting-btn:not(.install-app-btn):not(.support-btn):hover svg,
+.sidebar-action-btn:not(.new-chat):hover svg,
+.chat-history-item:hover .chat-title {
+  color: #fff !important;
+}
+/* Install-app / Support keep their warm orange hover, but readable. */
+.setting-btn.install-app-btn:hover,
+.setting-btn.support-btn:hover {
+  background: var(--msu-gold-50) !important;
+  color: #F9B98C !important;
+}
+.setting-btn.install-app-btn:hover svg,
+.setting-btn.support-btn:hover svg { color: #F9B98C !important; }
+
 /* TODAY / OLDER group labels */
 .section-header,
 .date-group-header { color: var(--sidebar-text-muted); }

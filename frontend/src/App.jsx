@@ -169,9 +169,11 @@ export default function App() {
   );
   const [cmdkOpen, setCmdkOpen] = useState(false);
   // Dark mode state
-  const [darkMode, setDarkMode] = useState(
-    () => localStorage.getItem("theme") === "dark"
-  );
+  // Global (app-wide) dark mode has been retired — only the Coding Tutor has a
+  // scoped dark theme now (driven by `body.coding-dark`, toggled inside
+  // CodingTutor). We keep this state pinned to `false` so the `darkMode` prop
+  // threaded through the tree stays valid, but it never turns the whole app dark.
+  const darkMode = false;
 
   // sync token ↔ localStorage & extract role
   useEffect(() => {
@@ -203,11 +205,15 @@ export default function App() {
     }
   }, [token]);
 
-  // Manage dark mode
+  // Retire global dark mode. Always strip the app-wide `body.dark` class and the
+  // stale "theme" key on mount, so a value persisted before this change (e.g. a
+  // user who toggled dark, then merged a build with no global toggle) can never
+  // leave the whole app stuck dark with no way back. Coding Tutor's scoped dark
+  // theme (`body.coding-dark` / "codingTheme") is independent and unaffected.
   useEffect(() => {
-    document.body.classList.toggle("dark", darkMode);
-    localStorage.setItem("theme", darkMode ? "dark" : "light");
-  }, [darkMode]);
+    document.body.classList.remove("dark");
+    localStorage.removeItem("theme");
+  }, []);
 
   // Toggle sidebar CSS class on body
   // IMPORTANT: Also collapse sidebar when not authenticated to prevent overlay on login page
@@ -477,10 +483,11 @@ export default function App() {
     setSidebarCollapsed(Boolean(collapsed));
   };
 
-  // Theme toggle function
-  const toggleTheme = () => {
-    setDarkMode(prev => !prev);
-  };
+  // Theme toggle function.
+  // Global dark mode is retired — this is now a no-op kept only so the
+  // `onToggleTheme` prop threaded through the tree stays valid. Dark mode lives
+  // exclusively inside the Coding Tutor now (its own scoped toggle).
+  const toggleTheme = () => {};
 
   // logout
   const handleLogout = () => {
