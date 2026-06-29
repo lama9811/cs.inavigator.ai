@@ -44,8 +44,8 @@ CS Navigator is a full-stack AI chatbot application that helps Morgan State Univ
 | Frontend | React 19 + Vite + Tailwind CSS |
 | Backend | Python FastAPI + Uvicorn |
 | Database | AWS RDS MySQL |
-| Vector DB | Pinecone (cloud-hosted) |
-| AI/LLM | OpenAI GPT-3.5 |
+| Knowledge base / search | Vertex AI Search datastore (`csnavigator-kb-v7`) |
+| AI/LLM | Gemini on Vertex AI (via Google ADK agent) |
 | Containerization | Docker + Docker Compose |
 | Hosting | AWS EC2 |
 | Web Server | Nginx (frontend) |
@@ -93,10 +93,10 @@ This guide walks you through deploying CS Navigator on a **new AWS account**, in
                     │                               │                   │
                     ▼                               ▼                   ▼
         ┌───────────────────┐         ┌─────────────────┐    ┌─────────────────┐
-        │   AWS RDS MySQL   │         │    Pinecone     │    │     OpenAI      │
-        │                   │         │   Vector DB     │    │    GPT-3.5      │
+        │   AWS RDS MySQL   │         │ Vertex AI Search│    │   Gemini (ADK)  │
+        │                   │         │   datastore     │    │   on Vertex AI  │
         │  - Users          │         │                 │    │                 │
-        │  - DegreeWorks    │         │  - Embeddings   │    │  - Chat         │
+        │  - DegreeWorks    │         │  - KB docs      │    │  - Chat         │
         │  - Tickets        │         │  - RAG Search   │    │  - Responses    │
         └───────────────────┘         └─────────────────┘    └─────────────────┘
 ```
@@ -154,8 +154,8 @@ Local Machine                    Docker Hub                     EC2 Instance
 |------------|-----------------|----------|
 | Docker Hub password | hub.docker.com | Pushing/pulling images |
 | AWS Console access | aws.amazon.com | Creating infrastructure |
-| OpenAI API key | Already in .env | AI responses (keep same) |
-| Pinecone API key | Already in .env | Vector search (keep same) |
+| Google Cloud ADC | gcloud auth / service account | Vertex AI Search + Gemini (RAG) |
+| OpenAI API key | Already in .env | Text-to-speech (`/api/tts`) only |
 
 ---
 
@@ -300,14 +300,9 @@ VITE_API_URL=http://YOUR_EC2_IP:5000
 
 #### Values That Stay The Same:
 ```ini
-# These can remain unchanged - they work across AWS accounts
-OPENAI_API_KEY=sk-proj-... (keep existing)
-PINECONE_API_KEY=pcsk_... (keep existing)
-PINECONE_INDEX_NAME=vectorized-datasource
-PINECONE_CLOUD=aws
-PINECONE_ENV=us-east-1
-PINECONE_NAMESPACE=docs
-PINECONE_HOST=https://vectorized-datasource-ivvl76a.svc.aped-4627-b74a.pinecone.io
+# RAG is served by Vertex AI Search + Gemini via Application Default Credentials
+# (no API key). Pinecone has been removed. OpenAI is only used for text-to-speech.
+OPENAI_API_KEY=sk-proj-... (optional; /api/tts only)
 
 DB_HOST=db
 DB_PORT=3306
