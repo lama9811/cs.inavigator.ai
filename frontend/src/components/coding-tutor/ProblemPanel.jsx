@@ -70,8 +70,8 @@ export default function ProblemPanel({
       ) : (
         <div className="coding-problem-empty">
           <h2>No problem loaded</h2>
-          <p>Open Quiz Bank for a graded problem, or write your own code and press Run.</p>
-          <button type="button" onClick={onOpenQuizBank}>Open Quiz Bank</button>
+          <p>Open the Practice Library for a graded problem, or write your own code and press Run.</p>
+          <button type="button" onClick={onOpenQuizBank}>Open Practice Library</button>
         </div>
       )}
     </aside>

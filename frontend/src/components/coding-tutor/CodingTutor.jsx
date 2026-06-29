@@ -39,7 +39,7 @@ const PRACTICE_DIFFICULTIES = ["easy", "medium", "hard"];
 
 const CODING_PAGES = [
   { id: "dashboard", label: "Home", icon: FaHome },
-  { id: "quiz", label: "Quiz Bank", icon: FaBook },
+  { id: "quiz", label: "Practice Library", icon: FaBook },
   { id: "interview", label: "Interview Prep", icon: FaUserGraduate },
   { id: "workspace", label: "Workspace", icon: FaLaptopCode },
   { id: "progress", label: "Progress", icon: FaChartLine },
@@ -880,7 +880,7 @@ export default function CodingTutor({
     const title = dailyChallenge?.title || "Daily coding challenge";
     const prompt = dailyChallenge?.available
       ? `Solve today's LeetCode daily challenge: ${title}. Open the LeetCode link for the full prompt, then use this workspace for notes and code.`
-      : "Daily challenge is unavailable. Use this workspace for a short practice prompt or open Quiz Bank.";
+      : "Daily challenge is unavailable. Use this workspace for a short practice prompt or open the Practice Library.";
     setActiveProblem({
       id: `daily-${new Date().toISOString().slice(0, 10)}`,
       title,
@@ -1293,7 +1293,7 @@ export default function CodingTutor({
     setWorkspaceTab("Editor");
     setTerminalOpen(false);
     setTestOutput({ status: "ready", message: "Workspace cleared. Write your own Python or JavaScript and press Run to test it (not graded)." });
-    toast.success("Workspace cleared. Reopen a problem from Quiz Bank to restore it.");
+    toast.success("Workspace cleared. Reopen a problem from the Practice Library to restore it.");
   };
 
   const showNextHint = () => {
@@ -1465,7 +1465,7 @@ export default function CodingTutor({
         <span className="coding-kicker">Interview Prep</span>
         <h2>Practice by topic</h2>
         <p>
-          Pick a topic pack to filter Quiz Bank across Easy, Medium, and Hard problems.
+          Pick a topic pack to filter the Practice Library across Easy, Medium, and Hard problems.
           Use the video link when you want a quick refresher before practicing.
         </p>
       </div>

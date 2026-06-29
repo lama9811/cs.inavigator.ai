@@ -2,6 +2,23 @@
 
 All notable changes to CS Navigator are documented here.
 
+## [6.5] - 2026-06-29
+### Changed
+- Quiz Bank renamed to **Practice Library** across all user-facing copy (mini-nav label, page header, empty workspace states, editor placeholder, run-control tooltips, and chat/action messages). Internal route/component names (`quiz`, `QuizBank.jsx`) are unchanged
+- Practice Library top area replaced the four large stat cards with a slim inline progress strip (streak · solved · attempted · % complete) so the problem grid rises into view. The Home dashboard has no stat tiles (replaced in the 6.4 lab redesign); the Progress page keeps the full stat cards
+- Practice Library header strengthened: "Practice Library" title + subtitle "Choose a problem by topic, difficulty, or progress."
+- Right-side insight panel reworked into a **Practice Guide** (navy heading, accent top rail so it reads as part of the library): Topics in view (chips), Topic progress with clear "Strings: 2/9 solved" labels (top 5 + "Show more" revealing 5 at a time), and contextual Common mistakes. Replaces the old vague "Done strings" copy
+- Problem cards rebuilt: brighter/bolder title, smaller muted topic + difficulty tags, a status pill (Not Started / In Progress / Solved) replacing the tiny gray dot, language-availability pills (Py · JS · Java · C++), and a status-aware primary action (Start / Resume / Review) that fills orange on hover. Per-status left-rail accent (slate / orange / green) plus a stronger accent for the recommended problem so the grid is scannable. Tightened spacing and clear hover intent (navy/orange border, lift, action fill)
+
+### Added
+- Practice Library search (by problem title or topic) and filters for Difficulty, Topic, and Status (All / Not Started / In Progress / Solved). Problems group by topic when nothing is filtered and switch to a flat result list when searching or filtering, with section headings ("Arrays · 11 problems" + a "N solved" pill), an empty state when filters match nothing, and removable active-filter chips
+- Client-side "Show more" pagination on the problem grid (renders 24 cards at a time, reveals 24 more per click, resets to the first page when filters change) so the grid stays fast as the question bank grows; group headings still show full per-topic totals while only a slice is rendered
+
+### Removed
+- The Language filter from the Practice Library (all problems support all four languages, so it never narrowed the list)
+- Estimated-time on problem cards and the per-difficulty time estimate (no reliable signal; the same call was made for the LeetCode daily card in 6.4)
+- "Recommended Next" strip from the Practice Library and "Recommended next" from the Practice Guide — the Home hero already owns "what to do right now," so these duplicated it
+
 ## [6.4] - 2026-06-29
 ### Changed
 - Coding Tutor Home redesigned from a "dashboard" into an academic coding lab. The marketing-slogan hero + fake code-preview card were removed in favor of a state-first hero (Welcome back + streak / solved / % complete + one primary action that resumes in-progress work or starts the recommended problem). Removed the duplicate "Recommended" surfaces (it appeared up to three times) and the standalone progress strip (the hero already shows the same stats). Heavy navy panel borders softened to thinner warm accent rails with lighter shadows; the LeetCode daily challenge is now the full-width focal point. "Ask the Tutor" compacted from three tall passive rows into a tight 3-up command row (Generate Quiz · Review Code · Mock Interview). The progress-bar ticks were evened out and the topic-mastery pills got a clean full-width baseline. Re-checked responsive layout for split-screen laptop and mobile (single-column collapse, wrapping hero stats/actions)

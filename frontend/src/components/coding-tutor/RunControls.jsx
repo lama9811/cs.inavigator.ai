@@ -109,7 +109,7 @@ export default function RunControls({
             className="editor-action-btn editor-action-confirm-yes"
             onClick={handleConfirmClear}
             disabled={isRunning}
-            title="Confirm clear — the loaded problem stays saved in Quiz Bank"
+            title="Confirm clear — the loaded problem stays saved in the Practice Library"
             aria-label="Confirm clear workspace"
           >
             <FaCheck aria-hidden="true" />

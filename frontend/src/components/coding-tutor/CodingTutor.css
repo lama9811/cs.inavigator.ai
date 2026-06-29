@@ -1345,6 +1345,383 @@ body.coding-dark .recent-status.solved { color: #5bd178; }
   color: #111827;
 }
 
+/* ── Practice Library header + compact progress strip ──────────────────────
+   The page title block + a one-row progress strip (replaces the big StatTiles
+   cards on this page only). Title/subtitle on the left, strip on the right;
+   wrap on narrow widths. */
+.practice-library-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.practice-library-heading h2 {
+  margin: 2px 0 4px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--ct-text);
+}
+
+.practice-library-heading p {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--ct-muted, #6b7280);
+}
+
+/* Slim progress strip: a low-profile band under the title (icon + number +
+   label). Reuses the StatTiles per-stat accent colors. Kept light and thin so
+   it integrates with the header instead of reading as a chunky panel. */
+.practice-progress-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 20px;
+  padding: 7px 14px;
+  margin-bottom: 14px;
+  border: 1px solid var(--ct-border, rgba(148, 163, 184, 0.25));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ct-panel) 55%, transparent);
+}
+
+.practice-progress-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--ct-muted, #6b7280);
+  white-space: nowrap;
+}
+
+.practice-progress-item svg {
+  align-self: center;
+  font-size: 0.9rem;
+}
+
+.practice-progress-item strong {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--ct-text);
+}
+
+.practice-progress-item.progress-streak svg { color: var(--ct-accent); }
+.practice-progress-item.progress-solved svg { color: var(--ct-success); }
+.practice-progress-item.progress-attempted svg { color: var(--ct-primary); }
+.practice-progress-item.progress-complete svg { color: var(--ct-primary); }
+
+/* Smaller "Easy Practice" / "Strings Pack" context label under the header. */
+.coding-subheading {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ct-text);
+}
+
+/* ── Practice Library toolbar: a compact filter bar (not a section) ─────────
+   Search field + the three selects on a single row. It reads as a toolbar:
+   short, tight, no surrounding panel eating vertical space. */
+.practice-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin-bottom: 14px;
+}
+
+.practice-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 260px;
+  min-width: 200px;
+}
+
+.practice-search svg {
+  position: absolute;
+  left: 14px;
+  font-size: 0.85rem;
+  color: var(--ct-muted, #6b7280);
+  pointer-events: none;
+}
+
+/* The search field is the primary control, but it should not shout. Soft 1px
+   border at rest; the accent ring only appears on focus. */
+.practice-search input {
+  width: 100%;
+  padding: 8px 14px 8px 36px;
+  border: 1px solid var(--ct-border, rgba(148, 163, 184, 0.4));
+  border-radius: 10px;
+  background: var(--ct-panel, #fff);
+  color: var(--ct-text);
+  font-size: 0.92rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.practice-search input::placeholder {
+  color: var(--ct-soft, #9aa3b2);
+}
+
+.practice-search input:hover {
+  border-color: color-mix(in srgb, var(--ct-primary) 30%, var(--ct-border));
+}
+
+.practice-search input:focus {
+  outline: none;
+  border-color: var(--ct-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ct-primary) 18%, transparent);
+}
+
+/* Dark mode: a touch more contrast so the field reads on the dark canvas, but
+   still calm at rest — accent only on focus. */
+body.coding-dark .practice-search input {
+  background: color-mix(in srgb, #ffffff 5%, var(--ct-panel));
+  border-color: color-mix(in srgb, #ffffff 16%, var(--ct-border));
+}
+
+body.coding-dark .practice-search svg {
+  color: var(--ct-soft, #a6b0c2);
+}
+
+body.coding-dark .practice-search input:focus {
+  border-color: var(--ct-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ct-accent) 24%, transparent);
+}
+
+/* The three filter selects sit inline to the right of the search field. They
+   keep a steady width; the search field takes the slack. */
+.practice-toolbar .practice-controls.compact {
+  flex: 0 1 auto;
+  gap: 8px;
+}
+
+/* Compact label: tiny inline caption + select, so the row stays short. */
+.practice-toolbar .practice-controls.compact label {
+  flex: 0 0 auto;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.practice-toolbar .practice-controls.compact .coding-select {
+  min-width: 116px;
+  padding: 8px 10px;
+}
+
+/* Warm focus accent on the filter selects (matches the search field). */
+.coding-select:focus-visible {
+  outline: none;
+  border-color: var(--ct-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ct-primary) 18%, transparent);
+}
+
+/* ── Active-filter chips: removable pills that say *why* the list is narrowed ── */
+.practice-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.practice-chips-count {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ct-muted, #6b7280);
+}
+
+.practice-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border: 1px solid color-mix(in srgb, var(--ct-accent) 55%, var(--ct-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-accent) 18%, var(--ct-panel));
+  color: color-mix(in srgb, var(--ct-accent) 60%, var(--ct-text));
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.practice-chip span {
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--ct-accent);
+}
+
+.practice-chip:hover {
+  background: color-mix(in srgb, var(--ct-accent) 28%, var(--ct-panel));
+  border-color: var(--ct-accent);
+}
+
+body.coding-dark .practice-chip {
+  background: color-mix(in srgb, var(--ct-accent) 22%, var(--ct-panel));
+  border-color: color-mix(in srgb, var(--ct-accent) 50%, var(--ct-border));
+  color: color-mix(in srgb, var(--ct-accent) 35%, var(--ct-text));
+}
+
+.practice-chips-clear {
+  padding: 5px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--ct-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ── Topic groups (shown when no search/topic filter is active) ────────────── */
+.practice-topic-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* ── "Show more" grid pagination ──────────────────────────────────────────── */
+.practice-show-more-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.practice-show-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 22px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 32%, var(--ct-border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ct-primary) 6%, var(--ct-panel));
+  color: var(--ct-primary);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: padding 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.practice-show-more:hover {
+  padding: 12px 26px;
+  background: color-mix(in srgb, var(--ct-primary) 12%, var(--ct-panel));
+  border-color: var(--ct-primary);
+}
+
+/* "24 of 60" counter — muted, lighter than the label. */
+.practice-show-more span {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--ct-muted, #6b7280);
+}
+
+body.coding-dark .practice-show-more {
+  color: var(--ct-accent);
+  border-color: color-mix(in srgb, var(--ct-accent) 35%, var(--ct-border));
+  background: color-mix(in srgb, var(--ct-accent) 8%, var(--ct-panel));
+}
+
+body.coding-dark .practice-show-more:hover {
+  background: color-mix(in srgb, var(--ct-accent) 16%, var(--ct-panel));
+  border-color: var(--ct-accent);
+}
+
+body.coding-dark .practice-show-more span {
+  color: var(--ct-soft, #a6b0c2);
+}
+
+.practice-topic-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding-left: 10px;
+  border-left: 3px solid var(--ct-accent);
+}
+
+.practice-topic-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  text-transform: capitalize;
+  color: var(--ct-text);
+}
+
+.practice-topic-dot {
+  color: var(--ct-soft, #9aa3b2);
+}
+
+.practice-topic-meta {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ct-muted, #6b7280);
+}
+
+/* "N solved" as a small pill, pushed to the right end of the heading row. */
+.practice-topic-count {
+  margin-left: auto;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-success) 14%, var(--ct-panel));
+  border: 1px solid color-mix(in srgb, var(--ct-success) 30%, var(--ct-border));
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--ct-success) 55%, var(--ct-text));
+}
+
+/* ── Empty state when filters match nothing ───────────────────────────────── */
+.practice-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 36px 20px;
+  border: 1px dashed var(--ct-border-strong, rgba(148, 163, 184, 0.5));
+  border-radius: 16px;
+  text-align: center;
+  color: var(--ct-muted, #6b7280);
+}
+
+.practice-empty-state strong {
+  font-size: 1.05rem;
+  color: var(--ct-text);
+}
+
+.practice-empty-state p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.practice-empty-state button {
+  margin-top: 6px;
+  padding: 8px 16px;
+  border: 1px solid var(--ct-primary);
+  border-radius: 10px;
+  background: var(--ct-primary);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .practice-progress-strip {
+    width: 100%;
+    justify-content: space-between;
+    border-radius: 14px;
+  }
+
+  .practice-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .practice-search {
+    flex-basis: auto;
+  }
+}
+
 /* Quiz Bank header: title on the left, difficulty/language controls on the
    right. Wrap to a new line when space is tight so the dropdowns are never
    clipped at tablet width. */
@@ -1589,29 +1966,178 @@ body.coding-dark .recent-status.solved { color: #5bd178; }
 .quiz-problem-card {
   width: 100%;
   text-align: left;
-  padding: 18px 18px 16px;
-  margin-bottom: 14px;
-  border-radius: 18px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  background: rgba(255, 255, 255, 0.94);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.quiz-problem-card:hover {
-  border-color: rgba(66, 133, 244, 0.24);
-}
-
-.quiz-problem-title {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  margin-bottom: 0;
+  min-height: 0;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  /* Status accent lives on the LEFT rail (set per-status below); the TOP rail is
+     reserved for hover + the recommended problem. */
+  border-left: 3px solid color-mix(in srgb, var(--ct-muted, #94a3b8) 30%, var(--ct-border));
+  border-top: 3px solid transparent;
+  background: rgba(255, 255, 255, 0.94);
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+/* ── Per-status left-rail accent (hierarchy: scan by color) ── */
+.quiz-problem-card.status-not_started {
+  border-left-color: color-mix(in srgb, var(--ct-muted, #94a3b8) 35%, var(--ct-border));
+}
+
+.quiz-problem-card.status-in_progress {
+  border-left-color: var(--ct-accent);
+}
+
+.quiz-problem-card.status-solved {
+  border-left-color: var(--ct-success);
+}
+
+/* Recommended problem: stronger — accent top rail + a soft ring so it stands
+   out from the uniform grid even before hover. */
+.quiz-problem-card.is-recommended {
+  border-top-color: var(--ct-accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ct-accent) 35%, transparent),
+    0 8px 20px color-mix(in srgb, var(--ct-primary) 10%, transparent);
+}
+
+/* Hover: clearly "clickable" — navy/orange border, lift, accent top rail, and
+   the action label fills in to an orange button. */
+.quiz-problem-card:hover {
+  border-color: color-mix(in srgb, var(--ct-primary) 30%, var(--ct-border));
+  border-top-color: var(--ct-accent);
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--ct-primary) 18%, transparent);
+}
+
+.quiz-problem-card:focus-visible {
+  outline: none;
+  border-top-color: var(--ct-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ct-primary) 18%, transparent);
+}
+
+/* ── Card title + status pill row ── */
+.quiz-problem-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 10px;
 }
 
-.quiz-status-dot {
-  width: 10px;
-  height: 10px;
+.quiz-problem-name {
+  font-size: 1.02rem;
+  font-weight: 750;
+  line-height: 1.25;
+  color: var(--ct-text);
+}
+
+/* Status pill — replaces the tiny gray dot. */
+.quiz-status-pill {
+  flex: 0 0 auto;
+  padding: 3px 9px;
   border-radius: 999px;
-  background: #60a5fa;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.quiz-status-pill.status-not_started {
+  background: color-mix(in srgb, #64748b 16%, var(--ct-panel));
+  color: color-mix(in srgb, #475569 70%, var(--ct-text));
+  border-color: color-mix(in srgb, #64748b 30%, var(--ct-border));
+}
+
+.quiz-status-pill.status-in_progress {
+  background: color-mix(in srgb, var(--ct-accent) 20%, var(--ct-panel));
+  color: color-mix(in srgb, var(--ct-accent) 70%, var(--ct-text));
+  border-color: color-mix(in srgb, var(--ct-accent) 50%, var(--ct-border));
+}
+
+.quiz-status-pill.status-solved {
+  background: color-mix(in srgb, var(--ct-success) 20%, var(--ct-panel));
+  color: color-mix(in srgb, var(--ct-success) 65%, var(--ct-text));
+  border-color: color-mix(in srgb, var(--ct-success) 50%, var(--ct-border));
+}
+
+/* ── Topic / difficulty tags (smaller, muted) ── */
+.quiz-problem-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.quiz-tag {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 650;
+  background: color-mix(in srgb, var(--ct-primary) 7%, var(--ct-panel-soft, #eef));
+  color: var(--ct-muted, #6b7280);
+}
+
+.quiz-tag-difficulty {
+  background: color-mix(in srgb, var(--ct-primary) 12%, var(--ct-panel-soft, #eef));
+  color: color-mix(in srgb, var(--ct-primary) 70%, var(--ct-text));
+}
+
+/* ── Footer: language pills on the left, action on the right ── */
+.quiz-problem-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--ct-border) 60%, transparent);
+}
+
+/* Tiny language pills (Py · JS · Java · C++). Unavailable runners render muted. */
+.quiz-lang-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.quiz-lang-pill {
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: color-mix(in srgb, var(--ct-primary) 9%, var(--ct-panel-soft, #eef));
+  color: color-mix(in srgb, var(--ct-primary) 62%, var(--ct-text));
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 12%, var(--ct-border));
+}
+
+.quiz-lang-pill.is-muted {
+  background: transparent;
+  color: var(--ct-soft, #9aa3b2);
+  border-color: var(--ct-border);
+  opacity: 0.6;
+}
+
+/* Action label — quiet at rest, fills to an orange button on card hover. */
+.quiz-problem-action {
+  flex: 0 0 auto;
+  padding: 5px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--ct-primary);
+  background: transparent;
+  color: var(--ct-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.quiz-problem-card:hover .quiz-problem-action,
+.quiz-problem-card:focus-visible .quiz-problem-action {
+  background: var(--ct-accent);
+  border-color: var(--ct-accent);
+  color: #fff;
 }
 
 .quiz-insight-panel {
@@ -1623,6 +2149,7 @@ body.coding-dark .recent-status.solved { color: #5bd178; }
 .quiz-bank-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 280px;
+  align-items: start;
   gap: 18px;
 }
 
@@ -1646,15 +2173,149 @@ body.coding-dark .recent-status.solved { color: #5bd178; }
    rounded with a subtle accent so it draws the eye as a helpful sidebar. */
 .quiz-bank-page .quiz-insight-panel {
   align-self: start;
+  /* Stick the guide while the student scrolls the problem grid. Capped height +
+     internal scroll so a long guide never clips behind the viewport edge. */
+  position: sticky;
+  top: 88px;
+  max-height: calc(100vh - 108px);
+  overflow-y: auto;
   border-radius: 18px !important;
   padding: 18px 20px !important;
   background: linear-gradient(180deg, color-mix(in srgb, var(--ct-accent) 8%, var(--ct-panel)), var(--ct-panel)) !important;
   border: 1px solid color-mix(in srgb, var(--ct-accent) 26%, var(--ct-border)) !important;
+  /* Deliberate accent top rail so the Practice Guide reads as a helpful sidebar. */
+  border-top: 3px solid var(--ct-accent) !important;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Below 1180px the layout is single-column — drop sticky so the guide flows
+   normally under the grid instead of pinning over it. */
+@media (max-width: 1180px) {
+  .quiz-bank-page .quiz-insight-panel {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
 }
 
 .quiz-bank-page .quiz-insight-panel::before {
   display: none !important;
+}
+
+/* ── Practice Guide (right sidebar) ──────────────────────────────────────── */
+.practice-guide-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--ct-primary);
+  margin-bottom: 4px;
+}
+
+body.coding-dark .practice-guide-title {
+  color: var(--ct-text);
+}
+
+.practice-guide-section h3 {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ct-muted, #6b7280);
+}
+
+.practice-guide-section p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ct-muted, #6b7280);
+}
+
+/* Topics-in-view chips. */
+.practice-guide-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.practice-guide-chips span {
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 650;
+  background: color-mix(in srgb, var(--ct-primary) 8%, var(--ct-panel-soft, #eef));
+  color: var(--ct-muted, #6b7280);
+}
+
+/* Topic progress list — "Strings · 2/9 solved" style. */
+.practice-guide-progress {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.practice-guide-progress li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: var(--ct-text);
+}
+
+.practice-guide-progress strong {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--ct-success);
+  white-space: nowrap;
+}
+
+/* "Show N more" / "Show less" toggle under the topic progress list — a real
+   button that grows a little on hover for a clearer click target. */
+.practice-guide-viewall {
+  margin-top: 10px;
+  width: 100%;
+  padding: 9px 14px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 30%, var(--ct-border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ct-primary) 6%, var(--ct-panel));
+  color: var(--ct-primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: padding 0.15s ease, background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.practice-guide-viewall:hover {
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--ct-primary) 12%, var(--ct-panel));
+  border-color: var(--ct-primary);
+}
+
+body.coding-dark .practice-guide-viewall {
+  color: var(--ct-accent);
+  border-color: color-mix(in srgb, var(--ct-accent) 35%, var(--ct-border));
+  background: color-mix(in srgb, var(--ct-accent) 8%, var(--ct-panel));
+}
+
+body.coding-dark .practice-guide-viewall:hover {
+  background: color-mix(in srgb, var(--ct-accent) 16%, var(--ct-panel));
+  border-color: var(--ct-accent);
+}
+
+/* Common mistakes list. */
+.practice-guide-mistakes {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.practice-guide-mistakes li {
+  font-size: 0.82rem;
+  color: var(--ct-muted, #6b7280);
 }
 
 body.coding-dark .quiz-bank-page .quiz-insight-panel {
@@ -1663,10 +2324,10 @@ body.coding-dark .quiz-bank-page .quiz-insight-panel {
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3) !important;
 }
 
-/* Breathing room so the library header + first card row + the insight panel are
-   not crammed up against the stat tiles above. */
+/* The progress strip + toolbar already carry their own bottom margins, so the
+   grid sits right under the controls — no large empty band under the title. */
 .quiz-bank-page .quiz-bank-layout {
-  margin-top: 24px;
+  margin-top: 0;
 }
 
 .quiz-bank-page .quiz-bank-header {
@@ -5121,3 +5782,141 @@ body.coding-dark .campus-code-preview {
     justify-content: center;
   }
 }
+
+/* ============================================================
+   Small-screen responsiveness for the Coding Tutor landing page.
+   These rules live at the END of the file ON PURPOSE: the ORA polish block
+   above re-declares the 3-up queue grid, the compact action list, and the
+   two-column daily card OUTSIDE any media query, so it was winning on source
+   order and the earlier (max-width:900px) collapse never took effect. By
+   re-asserting the collapses here — after the ORA block — source order favors
+   them. Tiers: <=620px (single column), <=490px (clip fixes), <=375px (daily
+   card single column).
+   ============================================================ */
+
+/* --- <=620px: the three "Coding Path" cards and the tutor command row stack
+   into a single column so the kickers/titles stop clipping. --- */
+@media (max-width: 620px) {
+  .campus-queue-grid,
+  .campus-queue-grid.two-up,
+  .campus-queue-grid.three-up {
+    grid-template-columns: 1fr;
+  }
+
+  .campus-action-list.compact {
+    grid-template-columns: 1fr;
+  }
+
+  /* Single-column cards no longer need the tall min-height that left dead space. */
+  .campus-queue-item {
+    min-height: 0;
+  }
+
+  /* Let the action labels wrap instead of clipping ("Generate a 5-ques…"). */
+  .campus-action-list.compact button {
+    min-height: 0;
+    padding: 12px 14px;
+  }
+
+  .campus-action-list.compact button span {
+    white-space: normal;
+  }
+}
+
+/* --- <=490px: tighten padding/typography so nothing is cramped or clipped. --- */
+@media (max-width: 490px) {
+  .campus-lab-home {
+    gap: 16px;
+  }
+
+  .campus-lab-hero,
+  .campus-progress-strip,
+  .campus-learning-queue,
+  .campus-daily-mission,
+  .campus-new-user-card,
+  .campus-tutor-actions {
+    border-radius: 18px;
+    padding: 16px;
+  }
+
+  /* Headings scale down so long titles don't tower in narrow columns. */
+  .campus-hero-copy h2,
+  .campus-new-user-card h2 {
+    font-size: clamp(1.5rem, 7vw, 1.9rem);
+  }
+
+  .campus-section-heading h3 {
+    font-size: 1.05rem;
+    line-height: 1.3;
+  }
+
+  .campus-queue-item strong,
+  .campus-queue-item.featured strong {
+    font-size: 1.05rem;
+  }
+
+  /* Queue card kickers were clipping ("RECOMMENDE…") — let them wrap. */
+  .campus-queue-item > span {
+    white-space: normal;
+  }
+
+  /* Queue card buttons go full width so they don't overhang the card edge. */
+  .campus-queue-item button {
+    width: 100%;
+  }
+}
+
+/* --- <=490px: the daily card's two columns squeeze the title into a one-word-
+   per-line stack (the left column gets too narrow for the long LeetCode name).
+   Drop to a single column so the title gets the full card width. --- */
+@media (max-width: 490px) {
+  .campus-daily-mission {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .campus-daily-mission .daily-mission-aside {
+    padding-left: 0;
+    border-left: 0;
+    border-top: 1px solid color-mix(in srgb, var(--ct-accent) 22%, var(--ct-border));
+    padding-top: 14px;
+  }
+
+  .campus-daily-mission h2 {
+    font-size: 1.4rem;
+    line-height: 1.15;
+  }
+
+  .campus-daily-mission .daily-mission-aside .daily-actions {
+    flex-direction: column;
+  }
+
+  .campus-daily-mission .daily-mission-aside .daily-practice-btn,
+  .campus-daily-mission .daily-mission-aside .daily-link {
+    width: 100%;
+  }
+}
+
+/* ── Dark-mode Practice Library card surface ───────────────────────────────
+   Earlier dark rules paint every panel with the same --ct-panel, so the
+   problem cards blend into the canvas. Lift them onto a slightly lighter,
+   warmer surface with a faint orange border, and add an orange top rail + glow
+   on hover. Placed at end-of-file so it wins over the grouped panel rules. */
+body.coding-dark .quiz-bank-page .quiz-problem-card {
+  background: #1f2a44 !important;
+  background-color: #1f2a44 !important;
+  border: 1px solid rgba(245, 176, 92, 0.18) !important;
+  border-top: 3px solid transparent !important;
+}
+
+body.coding-dark .quiz-bank-page .quiz-problem-card:hover {
+  border-color: rgba(245, 176, 92, 0.45) !important;
+  border-top-color: var(--ct-accent) !important;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(245, 176, 92, 0.12) !important;
+}
+
+body.coding-dark .quiz-bank-page .quiz-problem-card:focus-visible {
+  border-top-color: var(--ct-accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ct-accent) 28%, transparent) !important;
+}
+
