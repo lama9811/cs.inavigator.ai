@@ -158,7 +158,7 @@ except ImportError:
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingSnippet
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingSnippet, ReminderSubscription, SentReminder
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -392,6 +392,53 @@ def init_db():
                 print("[OK] Successfully created 'banner_student_data' table!")
             except Exception as e:
                 print(f"[ERROR] Failed to create banner_student_data table: {e}")
+
+        # 8. Check if reminder_subscriptions table exists (Canvas deadline reminders)
+        try:
+            conn.execute(text("SELECT id FROM reminder_subscriptions LIMIT 1"))
+            print("[OK] reminder_subscriptions table exists")
+        except (OperationalError, ProgrammingError):
+            print("[WARN] 'reminder_subscriptions' table missing. Creating it now...")
+            try:
+                conn.execute(text("""
+                    CREATE TABLE reminder_subscriptions (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        user_id INT NOT NULL,
+                        course_id VARCHAR(64) NOT NULL,
+                        course_code VARCHAR(100),
+                        enabled BOOLEAN NOT NULL DEFAULT TRUE,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        UNIQUE KEY uq_reminder_sub_user_course (user_id, course_id),
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                """))
+                conn.commit()
+                print("[OK] Successfully created 'reminder_subscriptions' table!")
+            except Exception as e:
+                print(f"[ERROR] Failed to create reminder_subscriptions table: {e}")
+
+        # 9. Check if sent_reminders table exists (deadline reminder dedup ledger)
+        try:
+            conn.execute(text("SELECT id FROM sent_reminders LIMIT 1"))
+            print("[OK] sent_reminders table exists")
+        except (OperationalError, ProgrammingError):
+            print("[WARN] 'sent_reminders' table missing. Creating it now...")
+            try:
+                conn.execute(text("""
+                    CREATE TABLE sent_reminders (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        user_id INT NOT NULL,
+                        reminder_key VARCHAR(255) NOT NULL,
+                        sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE KEY uq_sent_reminder_user_key (user_id, reminder_key),
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                """))
+                conn.commit()
+                print("[OK] Successfully created 'sent_reminders' table!")
+            except Exception as e:
+                print(f"[ERROR] Failed to create sent_reminders table: {e}")
 
     # 8. Create/Update admin account
     try:
@@ -2630,6 +2677,90 @@ async def disconnect_canvas(user: dict = Depends(get_current_user), db: Session 
         db.delete(canvas)
         db.commit()
     return {"success": True, "message": "Canvas disconnected"}
+
+
+# ==============================================================================
+# DEADLINE REMINDERS - Per-class opt-in for assignment due-date emails
+# ==============================================================================
+class ReminderSubscriptionUpdate(BaseModel):
+    course_id: str
+    enabled: bool
+
+
+@app.get("/api/reminders/subscriptions")
+async def get_reminder_subscriptions(user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """List the student's Canvas classes with their reminder opt-in state.
+
+    Classes default to OFF (opt-in): a class is only ON if a subscription row
+    exists AND enabled is true."""
+    canvas = db.query(CanvasStudentData).filter(CanvasStudentData.user_id == user["user_id"]).first()
+    if not canvas or not canvas.courses:
+        return {"connected": False, "classes": []}
+
+    try:
+        courses = json.loads(canvas.courses) if canvas.courses else []
+    except (ValueError, TypeError):
+        courses = []
+
+    subs = db.query(ReminderSubscription).filter(
+        ReminderSubscription.user_id == user["user_id"]
+    ).all()
+    enabled_map = {str(s.course_id): s.enabled for s in subs}
+
+    classes = []
+    for c in courses:
+        cid = str(c.get("id"))
+        classes.append({
+            "course_id": cid,
+            "course_code": c.get("code"),
+            "name": c.get("name"),
+            "enabled": bool(enabled_map.get(cid, False)),
+        })
+
+    return {"connected": True, "classes": classes}
+
+
+@app.post("/api/reminders/subscriptions")
+async def set_reminder_subscription(
+    req: ReminderSubscriptionUpdate,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Turn deadline reminders on/off for one class (upsert)."""
+    course_id = str(req.course_id)
+
+    # Look up the course code from the stored snapshot for nicer emails/labels.
+    course_code = None
+    canvas = db.query(CanvasStudentData).filter(CanvasStudentData.user_id == user["user_id"]).first()
+    if canvas and canvas.courses:
+        try:
+            for c in json.loads(canvas.courses):
+                if str(c.get("id")) == course_id:
+                    course_code = c.get("code")
+                    break
+        except (ValueError, TypeError):
+            pass
+
+    sub = db.query(ReminderSubscription).filter(
+        ReminderSubscription.user_id == user["user_id"],
+        ReminderSubscription.course_id == course_id,
+    ).first()
+
+    if sub:
+        sub.enabled = req.enabled
+        if course_code:
+            sub.course_code = course_code
+    else:
+        sub = ReminderSubscription(
+            user_id=user["user_id"],
+            course_id=course_id,
+            course_code=course_code,
+            enabled=req.enabled,
+        )
+        db.add(sub)
+
+    db.commit()
+    return {"success": True, "course_id": course_id, "enabled": req.enabled}
 
 
 # ==============================================================================
@@ -6063,6 +6194,76 @@ async def internal_degreeworks_sync(request: Request):
             "fresh_last_30d": len(fresh),
             "stale_over_30d": len(stale),
         }
+    finally:
+        db.close()
+
+
+@app.post("/api/internal/reminders/dispatch")
+async def internal_reminders_dispatch(request: Request):
+    """Triggered hourly by Cloud Scheduler. Emails students ~24h before an
+    assignment in an opted-in class is due. Idempotent: a SentReminder ledger
+    prevents the same assignment from being emailed twice. Computes purely from
+    each student's last Canvas sync (no Canvas re-fetch / no stored credentials)."""
+    secret = request.headers.get("X-Research-Secret", "")
+    expected = os.getenv("RESEARCH_SECRET", "")
+    if not expected or secret != expected:
+        raise HTTPException(status_code=403, detail="Invalid research secret")
+
+    from services import reminder_engine
+    from email_service import send_deadline_reminder_email, is_email_configured
+
+    if not is_email_configured():
+        return {"status": "skipped", "reason": "SMTP not configured"}
+
+    now = datetime.now(timezone.utc)
+    sent_count = 0
+    users_processed = 0
+
+    db = SessionLocal()
+    try:
+        # Map user_id -> set of opted-in course ids (only enabled rows).
+        subs = db.query(ReminderSubscription).filter(ReminderSubscription.enabled == True).all()  # noqa: E712
+        enabled_by_user: dict[int, set] = {}
+        for s in subs:
+            enabled_by_user.setdefault(s.user_id, set()).add(str(s.course_id))
+
+        if not enabled_by_user:
+            return {"status": "ok", "users_processed": 0, "reminders_sent": 0}
+
+        for user_id, enabled_course_ids in enabled_by_user.items():
+            canvas = db.query(CanvasStudentData).filter(CanvasStudentData.user_id == user_id).first()
+            if not canvas or not canvas.upcoming_assignments:
+                continue
+            try:
+                assignments = json.loads(canvas.upcoming_assignments)
+            except (ValueError, TypeError):
+                continue
+
+            sent_keys = {
+                r.reminder_key for r in db.query(SentReminder).filter(
+                    SentReminder.user_id == user_id
+                ).all()
+            }
+
+            due = reminder_engine.select_due_reminders(
+                assignments, enabled_course_ids, sent_keys, now
+            )
+            if not due:
+                continue
+
+            user = db.query(User).filter(User.id == user_id).first()
+            if not user or not user.email:
+                continue
+
+            users_processed += 1
+            for item in due:
+                ok = send_deadline_reminder_email(user.email, item["assignment"])
+                if ok:
+                    db.add(SentReminder(user_id=user_id, reminder_key=item["key"]))
+                    sent_count += 1
+            db.commit()
+
+        return {"status": "ok", "users_processed": users_processed, "reminders_sent": sent_count}
     finally:
         db.close()
 

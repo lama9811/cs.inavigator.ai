@@ -95,6 +95,70 @@ def send_verification_email(to_email: str, token: str) -> bool:
     return _send_email(to_email, "Verify your CS Navigator account", html)
 
 
+def _format_due(due_at: str) -> str:
+    """Best-effort human-friendly due time; falls back to the raw string."""
+    if not due_at or not isinstance(due_at, str):
+        return "soon"
+    raw = due_at.strip()
+    if raw.endswith("Z"):
+        raw = raw[:-1] + "+00:00"
+    try:
+        from datetime import datetime
+        return datetime.fromisoformat(raw).strftime("%a, %b %-d at %-I:%M %p UTC")
+    except (ValueError, TypeError):
+        return due_at
+
+
+def send_deadline_reminder_email(to_email: str, assignment: dict) -> bool:
+    """Email a student ~24h before a Canvas assignment in an opted-in class is due.
+
+    `assignment` is one item from CanvasStudentData.upcoming_assignments:
+    {title, course_name, due_at, url, ...}. Reminders are based on the student's
+    last Canvas sync, so we say so explicitly."""
+    title = assignment.get("title") or "An assignment"
+    course = assignment.get("course_name") or "your class"
+    due = _format_due(assignment.get("due_at"))
+    canvas_url = assignment.get("url")
+    classes_url = f"{APP_URL}/my-classes"
+
+    open_btn = ""
+    if canvas_url:
+        open_btn = f"""
+            <div style="text-align: center; margin: 24px 0;">
+                <a href="{canvas_url}" style="display: inline-block; padding: 12px 32px; background: #4285F4; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px;">
+                    Open in Canvas
+                </a>
+            </div>"""
+
+    html = f"""
+    <div style="font-family: 'Google Sans', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #4285F4; font-size: 24px; margin: 0;">CS Navigator</h1>
+            <p style="color: #5f6368; font-size: 14px;">Deadline reminder</p>
+        </div>
+        <div style="background: #f8f9fa; border-radius: 12px; padding: 24px; border: 1px solid #dadce0;">
+            <h2 style="color: #202124; font-size: 18px; margin: 0 0 12px;">Due in about 24 hours</h2>
+            <p style="color: #202124; font-size: 15px; line-height: 1.6; margin: 0 0 4px;">
+                <strong>{title}</strong>
+            </p>
+            <p style="color: #5f6368; font-size: 14px; line-height: 1.6; margin: 0;">
+                {course} &middot; due {due}
+            </p>
+            {open_btn}
+            <p style="color: #9aa0a6; font-size: 12px; line-height: 1.5; margin: 16px 0 0;">
+                Based on your last Canvas sync &mdash; if your professor changed the
+                deadline, <a href="{classes_url}" style="color: #4285F4;">re-sync</a> to stay accurate.
+            </p>
+        </div>
+        <p style="color: #9aa0a6; font-size: 11px; text-align: center; margin-top: 16px;">
+            You're getting this because you turned on reminders for this class.
+            Manage them on your <a href="{classes_url}" style="color: #9aa0a6;">My Classes</a> page.
+        </p>
+    </div>
+    """
+    return _send_email(to_email, f"Reminder: {title} is due soon", html)
+
+
 def send_password_reset_email(to_email: str, token: str) -> bool:
     """Send password reset link."""
     reset_url = f"{APP_URL}/reset-password?token={token}"
