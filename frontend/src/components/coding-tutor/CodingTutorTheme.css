@@ -21,8 +21,15 @@
    or the widget root.
    ============================================================ */
 
-/* ---------- Light mode: warm academic paper ---------- */
-.coding-app {
+/* ---------- Light mode: warm academic paper ----------
+   Scoped to `body .coding-app` (specificity 0,1,1) — NOT a bare `.coding-app`
+   (0,1,0). The base token block in CodingTutor.css (`.coding-app { --ct-bg:
+   var(--bg-app) }`) has equal specificity, so whichever file the Vite bundle
+   happens to emit LAST would win. In practice CodingTutor.css was landing after
+   this file, so --ct-bg fell back to the cool global #F6F8FB and the warm paper
+   canvas never applied (the "still light gray" bug). The extra `body` ancestor
+   makes this win regardless of bundle order. */
+body .coding-app {
   /* Warm paper canvas + panels instead of the cool #F6F8FB / pure-white
      portal surfaces. These replace the inherited --bg-app / --bg-surface
      chain for the coding section only. */
@@ -62,7 +69,7 @@
 
 /* ---------- Dark mode: warm-slate coding environment ----------
    NOTE: a warm-slate dark lab palette ALREADY exists in CodingTutor.css
-   (the `body.dark .coding-app` block around line 2925: navy #789dca,
+   (the `body.coding-dark .coding-app` block around line 2925: navy #789dca,
    accent #e7a05b, panels #172235 with !important, warm ink #f4efe6,
    editor #101826). Those panel/surface assignments use !important and
    own the dark surfaces — we do NOT re-declare them here, to avoid a
@@ -70,10 +77,10 @@
    adjacent tokens that block does not already define, and otherwise
    defers to it. If the dark lab look ever needs tuning, edit that
    existing block, not this file. */
-body.dark .coding-app {
+body.coding-dark .coding-app {
   /* Soft success + paper accents to match the existing dark lab block.
      (--ct-primary / --ct-accent / panels / text / border / editor are
-     owned by the existing body.dark .coding-app block in CodingTutor.css.) */
+     owned by the existing body.coding-dark .coding-app block in CodingTutor.css.) */
   --ct-success: #79d99b;
   --ct-soft: #a6b0c2;
   --ct-paper: #1b2942;
@@ -90,10 +97,96 @@ body.dark .coding-app {
    `body.theme-switching` transition-suppressor in index.css + App.jsx.
    NOTE: --ct-bg lives on .coding-app (a child), so we can't read it on the
    parent .chat-main — the literals below mirror --ct-bg in each mode
-   (light #f6f0e7 / dark #131d30). Keep them in sync if --ct-bg changes. */
+   (light #f6f0e7 / dark #0c1422). Keep them in sync if --ct-bg changes. */
 .chat-main.coding-chat-main {
   background: #f6f0e7;
 }
-body.dark .chat-main.coding-chat-main {
-  background: #131d30;
+body.coding-dark .chat-main.coding-chat-main {
+  background: #0c1422;
+}
+
+/* ------------------------------------------------------------------
+   Dark-mode shell canvas (fixes the "dark cards on a light-gray void").
+   In dark mode .chat-main is dark, but the layers BEHIND/AROUND it —
+   `body` and `.app-layout` (index.css paint --bg-body, which stays light
+   now that global dark is retired) — still show the cool portal gray.
+   That gray peeks through the 70px top strip and the app-layout gutter,
+   so the dark cards look like they float on a bright background.
+   Repaint just those two shell layers to the coding canvas, but ONLY
+   when body.coding-dark is on (i.e. only inside the Coding Tutor route).
+   The global app theme is untouched in light mode and on every other
+   route. Mirror of --ct-bg dark literal (#0c1422). */
+html:has(body.coding-dark),
+body.coding-dark,
+body.coding-dark #root,
+body.coding-dark .app-layout,
+body.coding-dark .chat-main,
+body.coding-dark .coding-app {
+  background: #0c1422 !important;
+}
+
+/* The global top NavBar renders on /coding too (App.jsx). It paints the light
+   --bg-surface, which is the thin light strip above the coding icon row in dark
+   mode. Darken just the navbar shell + its inner container while coding-dark is
+   on, so the whole top of the route is dark. Scoped to coding-dark only. */
+body.coding-dark .navbar,
+body.coding-dark .navbar .nav-container {
+  background: #0c1422 !important;
+  border-color: #1e2d49 !important;
+}
+
+/* ---- NavBar contrast in coding dark mode ----
+   The navbar's text/icons default to dark navy (var(--text-main)/--primary),
+   which vanishes on the dark navy shell above. Re-color everything to light so
+   the header is legible. All scoped to body.coding-dark — the global navbar in
+   light mode and on other routes is untouched. */
+
+/* Brand wordmark + subtitle. */
+body.coding-dark .navbar .brand-main {
+  color: #f1f5fb !important;
+}
+body.coding-dark .navbar .brand-sub {
+  color: #aab8cc !important;
+}
+
+/* Sidebar (hamburger) toggle — was deep navy on navy. */
+body.coding-dark .navbar .sidebar-menu-btn {
+  color: #e6eefb !important;
+  border-color: rgba(143, 174, 215, 0.45) !important;
+}
+body.coding-dark .navbar .sidebar-menu-btn:hover {
+  background: rgba(143, 174, 215, 0.16) !important;
+  border-color: #8fb4e0 !important;
+  color: #fff !important;
+}
+
+/* Feature pills: dark face, light text + icon, visible border (was a white
+   chip that clashed). Active keeps the brand-blue fill. */
+body.coding-dark .navbar .nav-pill {
+  background: #16223a !important;
+  border-color: #32466a !important;
+  color: #d7e2f2 !important;
+}
+body.coding-dark .navbar .nav-pill svg {
+  color: #d7e2f2 !important;
+}
+body.coding-dark .navbar .nav-pill:hover {
+  background: #1e2d49 !important;
+  border-color: #8fb4e0 !important;
+  color: #fff !important;
+}
+body.coding-dark .navbar .nav-pill.active {
+  background: #2f6fd6 !important;
+  border-color: #2f6fd6 !important;
+  color: #fff !important;
+}
+body.coding-dark .navbar .nav-pill.active svg {
+  color: #fff !important;
+}
+
+/* Admin button stays readable (it already uses white text in its own dark
+   styles; just make sure the resting border reads on the dark shell). */
+body.coding-dark .navbar .admin-nav-btn {
+  color: #fff !important;
+  border-color: #3a4c6b !important;
 }

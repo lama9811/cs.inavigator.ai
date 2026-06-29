@@ -160,33 +160,33 @@
 /* Dark mode, NON-active tabs: the glass pill was hard to see. Make it light blue
    so it clearly stands out as the way back Home. (Active keeps the gradient below
    to signify the user is already on Home.) */
-body.dark .coding-back-home-btn {
+body.coding-dark .coding-back-home-btn {
   background: #8ab4f8;
   border-color: #8ab4f8;
   color: #0b1322;
 }
 
-body.dark .coding-back-home-btn svg {
+body.coding-dark .coding-back-home-btn svg {
   color: #0b1322;
 }
 
-body.dark .coding-back-home-btn:hover {
+body.coding-dark .coding-back-home-btn:hover {
   background: #aecbfa;
   border-color: #aecbfa;
   color: #0b1322;
 }
 
-body.dark .coding-back-home-btn:hover svg {
+body.coding-dark .coding-back-home-btn:hover svg {
   color: #0b1322;
 }
 
-body.dark .coding-back-home-btn.active {
+body.coding-dark .coding-back-home-btn.active {
   background: linear-gradient(135deg, #243a67, #d89a43);
   border-color: transparent;
   color: #f8f1e8;
 }
 
-body.dark .coding-back-home-btn.active svg {
+body.coding-dark .coding-back-home-btn.active svg {
   color: #f8f1e8;
 }
 
@@ -330,6 +330,20 @@ body.dark .coding-back-home-btn.active svg {
   border-color: rgba(66, 133, 244, 0.18) !important;
   margin-top: 4px;
   color: #047857 !important;
+}
+
+/* Coding-Tutor-scoped dark-mode toggle. Tinted with the section accent (orange)
+   so it reads as a theme control distinct from the blue section pills. */
+.coding-nav-theme-toggle {
+  background: var(--ct-accent-soft, rgba(243, 112, 33, 0.1)) !important;
+  border-color: color-mix(in srgb, var(--ct-accent, #f37021) 32%, transparent) !important;
+  color: var(--ct-accent, #f37021) !important;
+}
+
+.coding-nav-theme-toggle:hover,
+.coding-nav-theme-toggle:focus-visible {
+  background: color-mix(in srgb, var(--ct-accent, #f37021) 18%, transparent) !important;
+  border-color: color-mix(in srgb, var(--ct-accent, #f37021) 48%, transparent) !important;
 }
 
 .coding-section-nav button:hover,
@@ -756,7 +770,7 @@ body.dark .coding-back-home-btn.active svg {
   border-color: color-mix(in srgb, #16a34a 34%, transparent);
 }
 
-body.dark .daily-streak-pill.done {
+body.coding-dark .daily-streak-pill.done {
   color: #4ade80;
 }
 
@@ -1060,7 +1074,7 @@ body.dark .daily-streak-pill.done {
   cursor: not-allowed;
 }
 
-body.dark .coding-upnext-card {
+body.coding-dark .coding-upnext-card {
   background: linear-gradient(160deg, color-mix(in srgb, var(--ct-primary) 16%, var(--ct-panel)), var(--ct-panel)) !important;
 }
 
@@ -1146,7 +1160,7 @@ body.dark .coding-upnext-card {
   background: color-mix(in srgb, var(--ct-accent) 86%, #000) !important;
 }
 
-body.dark .coding-snippets-card {
+body.coding-dark .coding-snippets-card {
   background: linear-gradient(160deg, color-mix(in srgb, var(--ct-accent) 20%, var(--ct-panel)), var(--ct-panel)) !important;
 }
 
@@ -1229,15 +1243,15 @@ body.dark .coding-snippets-card {
 
 .unsaved-cancel:hover { background: var(--ct-panel-soft); }
 
-body.dark .coding-stat-tile,
-body.dark .coding-recent-card {
+body.coding-dark .coding-stat-tile,
+body.coding-dark .coding-recent-card {
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
 }
 
-body.dark .recent-diff.easy { color: #5bd178; }
-body.dark .recent-diff.medium { color: #f0c662; }
-body.dark .recent-diff.hard { color: #ff8a82; }
-body.dark .recent-status.solved { color: #5bd178; }
+body.coding-dark .recent-diff.easy { color: #5bd178; }
+body.coding-dark .recent-diff.medium { color: #f0c662; }
+body.coding-dark .recent-diff.hard { color: #ff8a82; }
+body.coding-dark .recent-status.solved { color: #5bd178; }
 
 .coding-blurb-section {
   display: flex;
@@ -1643,7 +1657,7 @@ body.dark .recent-status.solved { color: #5bd178; }
   display: none !important;
 }
 
-body.dark .quiz-bank-page .quiz-insight-panel {
+body.coding-dark .quiz-bank-page .quiz-insight-panel {
   background: linear-gradient(180deg, color-mix(in srgb, var(--ct-accent) 14%, var(--ct-panel)), var(--ct-panel)) !important;
   border-color: color-mix(in srgb, var(--ct-accent) 38%, var(--ct-border)) !important;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3) !important;
@@ -1950,20 +1964,20 @@ body.dark .quiz-bank-page .quiz-insight-panel {
 }
 
 /* Dark mode: lighten the blue so the chips read on the dark chat panel. */
-body.dark .floating-focus-chip {
+body.coding-dark .floating-focus-chip {
   border-color: color-mix(in srgb, var(--ct-primary, #789dca) 55%, transparent);
   background: color-mix(in srgb, var(--ct-primary, #789dca) 18%, transparent);
   color: color-mix(in srgb, var(--ct-primary, #789dca) 80%, #fff);
 }
 
-body.dark .floating-focus-chip:hover:not(:disabled),
-body.dark .floating-focus-chip.active {
+body.coding-dark .floating-focus-chip:hover:not(:disabled),
+body.coding-dark .floating-focus-chip.active {
   background: color-mix(in srgb, var(--ct-accent, #e7a05b) 24%, transparent);
   border-color: var(--ct-accent, #e7a05b);
   color: color-mix(in srgb, var(--ct-accent, #e7a05b) 88%, #fff);
 }
 
-body.dark .floating-rewrite-lang {
+body.coding-dark .floating-rewrite-lang {
   color: var(--ct-muted, #b7c1cf);
 }
 
@@ -2264,13 +2278,13 @@ body.dark .floating-rewrite-lang {
     min-height: 0 !important;
   }
 
-  body.dark .coding-nav-mobile-toggle {
+  body.coding-dark .coding-nav-mobile-toggle {
     color: var(--ct-text, #e5e7eb);
   }
 }
 
 /* Coding Tutor dark mode lives here so regular Chatbox styles stay cleaner. */
-body.dark .coding-app {
+body.coding-dark .coding-app {
   --ct-bg: #0b1120;
   --ct-surface: rgba(17, 24, 39, 0.94);
   --ct-surface-strong: rgba(15, 23, 42, 0.98);
@@ -2290,230 +2304,230 @@ body.dark .coding-app {
   color: var(--ct-text);
 }
 
-body.dark .coding-app h1,
-body.dark .coding-app h2,
-body.dark .coding-app h3,
-body.dark .coding-app strong,
-body.dark .coding-app p,
-body.dark .coding-app li,
-body.dark .coding-app span,
-body.dark .coding-app small,
-body.dark .coding-app label {
+body.coding-dark .coding-app h1,
+body.coding-dark .coding-app h2,
+body.coding-dark .coding-app h3,
+body.coding-dark .coding-app strong,
+body.coding-dark .coding-app p,
+body.coding-dark .coding-app li,
+body.coding-dark .coding-app span,
+body.coding-dark .coding-app small,
+body.coding-dark .coding-app label {
   color: inherit;
 }
 
-body.dark .coding-app small,
-body.dark .coding-app .coding-kicker {
+body.coding-dark .coding-app small,
+body.coding-dark .coding-app .coding-kicker {
   color: var(--ct-muted);
 }
 
-body.dark .coding-section-nav,
-body.dark .practice-progress-overview,
-body.dark .daily-feature-card,
-body.dark .coding-page-panel,
-body.dark .quiz-library,
-body.dark .quiz-insight-panel,
-body.dark .quiz-problem-card,
-body.dark .coding-problem-panel,
-body.dark .coding-editor-center,
-body.dark .workspace-hints-panel,
-body.dark .workspace-discussion-panel,
-body.dark .workspace-hidden-panel,
-body.dark .ai-status-card,
-body.dark .floating-chat-window,
-body.dark .floating-chat-message.bot {
+body.coding-dark .coding-section-nav,
+body.coding-dark .practice-progress-overview,
+body.coding-dark .daily-feature-card,
+body.coding-dark .coding-page-panel,
+body.coding-dark .quiz-library,
+body.coding-dark .quiz-insight-panel,
+body.coding-dark .quiz-problem-card,
+body.coding-dark .coding-problem-panel,
+body.coding-dark .coding-editor-center,
+body.coding-dark .workspace-hints-panel,
+body.coding-dark .workspace-discussion-panel,
+body.coding-dark .workspace-hidden-panel,
+body.coding-dark .ai-status-card,
+body.coding-dark .floating-chat-window,
+body.coding-dark .floating-chat-message.bot {
   background: var(--ct-surface);
   border-color: var(--ct-border);
   color: var(--ct-text);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34);
 }
 
-body.dark .coding-editor-center,
-body.dark .coding-problem-panel,
-body.dark .quiz-library,
-body.dark .coding-page-panel {
+body.coding-dark .coding-editor-center,
+body.coding-dark .coding-problem-panel,
+body.coding-dark .quiz-library,
+body.coding-dark .coding-page-panel {
   background: var(--ct-surface-strong);
 }
 
-body.dark .coding-section-nav button {
+body.coding-dark .coding-section-nav button {
   color: var(--ct-text);
 }
 
-body.dark .coding-nav-icon,
-body.dark .daily-meta-row span,
-body.dark .workspace-tabs button,
-body.dark .floating-chat-action {
+body.coding-dark .coding-nav-icon,
+body.coding-dark .daily-meta-row span,
+body.coding-dark .workspace-tabs button,
+body.coding-dark .floating-chat-action {
   background: rgba(96, 165, 250, 0.12);
   border-color: rgba(96, 165, 250, 0.24);
   color: var(--ct-blue);
 }
 
-body.dark .coding-section-nav button:hover,
-body.dark .coding-section-nav button:focus-visible,
-body.dark .coding-section-nav button.active,
-body.dark .workspace-tabs button.active,
-body.dark .floating-chat-action:hover:not(:disabled) {
+body.coding-dark .coding-section-nav button:hover,
+body.coding-dark .coding-section-nav button:focus-visible,
+body.coding-dark .coding-section-nav button.active,
+body.coding-dark .workspace-tabs button.active,
+body.coding-dark .floating-chat-action:hover:not(:disabled) {
   background: rgba(96, 165, 250, 0.2);
   border-color: var(--ct-border-strong);
   color: #dbeafe;
   box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
 }
 
-body.dark .coding-nav-workspace-toggle {
+body.coding-dark .coding-nav-workspace-toggle {
   color: var(--ct-green) !important;
 }
 
-body.dark .coding-select,
-body.dark .coding-app textarea,
-body.dark .floating-chat-input-row textarea,
-body.dark .leetcode-editor {
+body.coding-dark .coding-select,
+body.coding-dark .coding-app textarea,
+body.coding-dark .floating-chat-input-row textarea,
+body.coding-dark .leetcode-editor {
   background: rgba(2, 6, 23, 0.72);
   border-color: var(--ct-border);
   color: var(--ct-text);
   caret-color: var(--ct-blue);
 }
 
-body.dark .coding-select {
+body.coding-dark .coding-select {
   color-scheme: dark;
 }
 
-body.dark .coding-app textarea::placeholder,
-body.dark .floating-chat-input-row textarea::placeholder {
+body.coding-dark .coding-app textarea::placeholder,
+body.coding-dark .floating-chat-input-row textarea::placeholder {
   color: var(--ct-faint);
 }
 
-body.dark .coding-prompt-card,
-body.dark .save-quiz-pdf-btn,
-body.dark .daily-practice-btn,
-body.dark .daily-link,
-body.dark .coding-progress-stats div,
-body.dark .problem-example,
-body.dark .problem-constraints-card,
-body.dark .floating-chat-control,
-body.dark .floating-chat-send,
-body.dark .floating-chat-button {
+body.coding-dark .coding-prompt-card,
+body.coding-dark .save-quiz-pdf-btn,
+body.coding-dark .daily-practice-btn,
+body.coding-dark .daily-link,
+body.coding-dark .coding-progress-stats div,
+body.coding-dark .problem-example,
+body.coding-dark .problem-constraints-card,
+body.coding-dark .floating-chat-control,
+body.coding-dark .floating-chat-send,
+body.coding-dark .floating-chat-button {
   background: var(--ct-surface-soft);
   border-color: var(--ct-border);
   color: var(--ct-text);
 }
 
-body.dark .coding-prompt-card.blue,
-body.dark .coding-prompt-card.red,
-body.dark .coding-prompt-card.gold {
+body.coding-dark .coding-prompt-card.blue,
+body.coding-dark .coding-prompt-card.red,
+body.coding-dark .coding-prompt-card.gold {
   background:
     linear-gradient(90deg, rgba(96, 165, 250, 0.28) 0 4px, transparent 4px),
     var(--ct-surface);
 }
 
-body.dark .coding-prompt-card.red {
+body.coding-dark .coding-prompt-card.red {
   background:
     linear-gradient(90deg, rgba(248, 113, 113, 0.3) 0 4px, transparent 4px),
     var(--ct-surface);
 }
 
-body.dark .coding-prompt-card.gold {
+body.coding-dark .coding-prompt-card.gold {
   background:
     linear-gradient(90deg, rgba(250, 204, 21, 0.32) 0 4px, transparent 4px),
     var(--ct-surface);
 }
 
-body.dark .daily-feature-card.dashboard-daily {
+body.coding-dark .daily-feature-card.dashboard-daily {
   background:
     linear-gradient(90deg, var(--ct-gold) 0 3px, transparent 3px),
     linear-gradient(180deg, rgba(96, 165, 250, 0.16), transparent 38%),
     var(--ct-surface-strong);
 }
 
-body.dark .progress-bar {
+body.coding-dark .progress-bar {
   background: rgba(148, 163, 184, 0.18);
 }
 
-body.dark .progress-bar span {
+body.coding-dark .progress-bar span {
   background: linear-gradient(90deg, #8ab4f8 0%, #22d3ee 100%);
 }
 
-body.dark .terminal-status.passed {
+body.coding-dark .terminal-status.passed {
   color: var(--ct-green);
 }
 
-body.dark .terminal-status.running {
+body.coding-dark .terminal-status.running {
   color: var(--ct-gold);
 }
 
-body.dark .terminal-status.failed,
-body.dark .terminal-status.error {
+body.coding-dark .terminal-status.failed,
+body.coding-dark .terminal-status.error {
   color: var(--ct-red);
 }
 
-body.dark .floating-chat-action:disabled {
+body.coding-dark .floating-chat-action:disabled {
   background: rgba(51, 65, 85, 0.62);
   border-color: rgba(100, 116, 139, 0.28);
   color: #7c8aa3;
 }
 
-body.dark .floating-chat-button,
-body.dark .floating-chat-send,
-body.dark .daily-practice-btn {
+body.coding-dark .floating-chat-button,
+body.coding-dark .floating-chat-send,
+body.coding-dark .daily-practice-btn {
   background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   border-color: rgba(147, 197, 253, 0.32);
   color: #fff;
 }
 
-body.dark .coding-app .dashboard-daily .daily-link {
+body.coding-dark .coding-app .dashboard-daily .daily-link {
   background: linear-gradient(135deg, rgba(34, 197, 94, 0.24), rgba(59, 130, 246, 0.16));
   border-color: rgba(134, 239, 172, 0.34);
   color: #dcfce7;
 }
 
-body.dark .problem-constraints-card {
+body.coding-dark .problem-constraints-card {
   background: rgba(15, 23, 42, 0.72);
   border-color: rgba(148, 163, 184, 0.24);
   color: var(--ct-text);
 }
 
-body.dark .daily-practice-btn.secondary,
-body.dark .daily-link,
-body.dark .problem-navigation button {
+body.coding-dark .daily-practice-btn.secondary,
+body.coding-dark .daily-link,
+body.coding-dark .problem-navigation button {
   background: rgba(30, 41, 59, 0.88);
   border-color: rgba(148, 163, 184, 0.28);
   color: #dbeafe;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
 }
 
-body.dark .problem-navigation button:hover:not(:disabled),
-body.dark .daily-practice-btn.secondary:hover,
-body.dark .daily-link:hover {
+body.coding-dark .problem-navigation button:hover:not(:disabled),
+body.coding-dark .daily-practice-btn.secondary:hover,
+body.coding-dark .daily-link:hover {
   background: rgba(96, 165, 250, 0.2);
   border-color: rgba(147, 197, 253, 0.38);
   color: #fff;
 }
 
-body.dark .floating-chat-message.user {
+body.coding-dark .floating-chat-message.user {
   background: rgba(37, 99, 235, 0.82);
   color: #fff;
 }
 
-body.dark .floating-chat-window .ai-status-card,
-body.dark .floating-chat-message.bot {
+body.coding-dark .floating-chat-window .ai-status-card,
+body.coding-dark .floating-chat-message.bot {
   background: rgba(15, 23, 42, 0.96);
   border-color: rgba(148, 163, 184, 0.28);
   color: #e5e7eb;
 }
 
-body.dark .floating-chat-message.bot pre,
-body.dark .floating-chat-message.bot code,
-body.dark .floating-chat-message.bot blockquote,
-body.dark .floating-chat-message.bot table {
+body.coding-dark .floating-chat-message.bot pre,
+body.coding-dark .floating-chat-message.bot code,
+body.coding-dark .floating-chat-message.bot blockquote,
+body.coding-dark .floating-chat-message.bot table {
   background: rgba(2, 6, 23, 0.94);
   border-color: rgba(96, 165, 250, 0.24);
   color: #dbeafe;
 }
 
-body.dark .floating-chat-message.bot a {
+body.coding-dark .floating-chat-message.bot a {
   color: #93c5fd;
 }
 
-body.dark .floating-chat-messages {
+body.coding-dark .floating-chat-messages {
   background: rgba(2, 6, 23, 0.58);
   border-color: rgba(148, 163, 184, 0.22);
 }
@@ -2664,19 +2678,19 @@ body.dark .floating-chat-messages {
   color: var(--ct-danger) !important;
 }
 
-body.dark .coding-app {
+body.coding-dark .coding-app {
   --ct-editor-bg: #020617;
   --ct-editor-text: #e5edf7;
   --ct-terminal-bg: #050816;
   --ct-terminal-text: #dbeafe;
 }
 
-body.dark .floating-chat-window {
+body.coding-dark .floating-chat-window {
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--ct-panel) 88%, transparent), color-mix(in srgb, var(--ct-panel-raised) 88%, transparent)) !important;
 }
 
-body.dark .floating-chat-message.user {
+body.coding-dark .floating-chat-message.user {
   background: linear-gradient(135deg, var(--ct-primary), var(--ct-accent)) !important;
   color: #07111f !important;
 }
@@ -2779,17 +2793,17 @@ body.dark .floating-chat-message.user {
   background: var(--ct-panel-soft) !important;
 }
 
-body.dark .coding-app {
+body.coding-dark .coding-app {
   background: var(--bg-body);
 }
 
-body.dark .floating-chat-window {
+body.coding-dark .floating-chat-window {
   background: var(--ct-panel-raised) !important;
 }
 
 /* Force Coding Tutor to use solid academic surfaces, not glass panels. */
 .coding-app,
-body.dark .coding-app {
+body.coding-dark .coding-app {
   --ct-panel: var(--bg-surface) !important;
   --ct-panel-soft: var(--bg-surface-soft) !important;
   --ct-panel-raised: var(--bg-surface-raised) !important;
@@ -2928,9 +2942,9 @@ body.dark .coding-app {
   color: var(--ct-accent) !important;
 }
 
-body.dark .daily-practice-btn,
-body.dark .floating-chat-send,
-body.dark .floating-chat-button {
+body.coding-dark .daily-practice-btn,
+body.coding-dark .floating-chat-send,
+body.coding-dark .floating-chat-button {
   color: #07111f !important;
 }
 
@@ -2939,19 +2953,19 @@ body.dark .floating-chat-button {
    three panel levels into distinct steps so the section reads as a layered warm
    lab instead of one flat too-dark slab. Accents (navy/orange) and borders are
    pushed brighter so they stop looking muddy on the dark slate. */
-body.dark .coding-app {
-  --ct-bg: #131d30 !important;          /* lifted base canvas (was near-black #0b1120) */
+body.coding-dark .coding-app {
+  --ct-bg: #0c1422 !important;          /* deep canvas — pushed DOWN so panels clearly float above it */
   --ct-primary: #8fb4e0;               /* brighter navy-blue (was muddy #789dca) */
   --ct-primary-hover: #a6c5ea;
   --ct-primary-soft: rgba(143, 180, 224, 0.20);
   --ct-accent: #f0a868;                /* warmer, punchier orange (was dull #e7a05b) */
   --ct-accent-soft: rgba(240, 168, 104, 0.20);
-  --ct-panel: #1b2942 !important;       /* +elevation step 1 */
-  --ct-panel-soft: #18243a !important;  /* recessed */
-  --ct-panel-raised: #223150 !important;/* +elevation step 2 (clearly above panel) */
-  --ct-surface: #1b2942 !important;
-  --ct-surface-soft: #18243a !important;
-  --ct-surface-strong: #223150 !important;
+  --ct-panel: #1e2d49 !important;       /* +elevation step 1 — lifted for clear contrast vs canvas */
+  --ct-panel-soft: #182338 !important;  /* recessed */
+  --ct-panel-raised: #283a5c !important;/* +elevation step 2 (clearly above panel) */
+  --ct-surface: #1e2d49 !important;
+  --ct-surface-soft: #182338 !important;
+  --ct-surface-strong: #283a5c !important;
   --ct-text: #f6f1e8;
   --ct-muted: #c2cbd9;                  /* lifted muted for readability */
   --ct-faint: #95a2b6;
@@ -2963,27 +2977,27 @@ body.dark .coding-app {
   --ct-terminal-text: #f1eadf;
 }
 
-body.dark .coding-app {
+body.coding-dark .coding-app {
   color: var(--ct-text) !important;
 }
 
-body.dark .coding-section-nav,
-body.dark .practice-progress-overview,
-body.dark .daily-feature-card,
-body.dark .coding-page-panel,
-body.dark .quiz-library,
-body.dark .quiz-insight-panel,
-body.dark .quiz-problem-card,
-body.dark .coding-problem-panel,
-body.dark .coding-editor-center,
-body.dark .workspace-hints-panel,
-body.dark .workspace-discussion-panel,
-body.dark .workspace-hidden-panel,
-body.dark .ai-status-card,
-body.dark .floating-chat-window,
-body.dark .floating-chat-window .ai-status-card,
-body.dark .floating-chat-messages,
-body.dark .floating-chat-form {
+body.coding-dark .coding-section-nav,
+body.coding-dark .practice-progress-overview,
+body.coding-dark .daily-feature-card,
+body.coding-dark .coding-page-panel,
+body.coding-dark .quiz-library,
+body.coding-dark .quiz-insight-panel,
+body.coding-dark .quiz-problem-card,
+body.coding-dark .coding-problem-panel,
+body.coding-dark .coding-editor-center,
+body.coding-dark .workspace-hints-panel,
+body.coding-dark .workspace-discussion-panel,
+body.coding-dark .workspace-hidden-panel,
+body.coding-dark .ai-status-card,
+body.coding-dark .floating-chat-window,
+body.coding-dark .floating-chat-window .ai-status-card,
+body.coding-dark .floating-chat-messages,
+body.coding-dark .floating-chat-form {
   background: var(--ct-panel) !important;
   background-color: var(--ct-panel) !important;
   background-image: none !important;
@@ -2994,176 +3008,176 @@ body.dark .floating-chat-form {
   -webkit-backdrop-filter: none !important;
 }
 
-body.dark .coding-section-nav,
-body.dark .coding-editor-center,
-body.dark .coding-problem-panel,
-body.dark .floating-chat-window {
+body.coding-dark .coding-section-nav,
+body.coding-dark .coding-editor-center,
+body.coding-dark .coding-problem-panel,
+body.coding-dark .floating-chat-window {
   background: var(--ct-panel-raised) !important;
 }
 
-body.dark .floating-chat-window {
+body.coding-dark .floating-chat-window {
   border: 1px solid var(--ct-border-strong) !important;
   box-shadow: 0 24px 56px rgba(5, 10, 18, 0.58) !important;
   overflow: hidden;
 }
 
-body.dark .floating-chat-header {
+body.coding-dark .floating-chat-header {
   background: var(--ct-panel-raised) !important;
   border-bottom: 1px solid var(--ct-border) !important;
   color: var(--ct-text) !important;
 }
 
-body.dark .floating-chat-header strong,
-body.dark .floating-chat-window h3,
-body.dark .floating-chat-window h4,
-body.dark .floating-chat-window strong,
-body.dark .coding-app h1,
-body.dark .coding-app h2,
-body.dark .coding-app h3,
-body.dark .coding-app strong {
+body.coding-dark .floating-chat-header strong,
+body.coding-dark .floating-chat-window h3,
+body.coding-dark .floating-chat-window h4,
+body.coding-dark .floating-chat-window strong,
+body.coding-dark .coding-app h1,
+body.coding-dark .coding-app h2,
+body.coding-dark .coding-app h3,
+body.coding-dark .coding-app strong {
   color: #f8f1e8 !important;
 }
 
-body.dark .floating-chat-window .ai-status-card {
+body.coding-dark .floating-chat-window .ai-status-card {
   display: block;
   overflow: hidden;
   border-radius: 14px;
   box-shadow: none !important;
 }
 
-body.dark .floating-chat-window .ai-status-card dl {
+body.coding-dark .floating-chat-window .ai-status-card dl {
   grid-template-columns: minmax(72px, max-content) minmax(0, 1fr);
   gap: 8px 12px;
 }
 
-body.dark .floating-chat-window .ai-status-card dt,
-body.dark .floating-chat-window .ai-status-card dd {
+body.coding-dark .floating-chat-window .ai-status-card dt,
+body.coding-dark .floating-chat-window .ai-status-card dd {
   color: var(--ct-text) !important;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
-body.dark .floating-chat-messages {
+body.coding-dark .floating-chat-messages {
   background: var(--ct-panel-soft) !important;
   border-color: var(--ct-border) !important;
 }
 
-body.dark .floating-chat-message {
+body.coding-dark .floating-chat-message {
   max-width: 100%;
   overflow-wrap: anywhere;
 }
 
-body.dark .floating-chat-message.user {
+body.coding-dark .floating-chat-message.user {
   background: linear-gradient(135deg, #5f7fae, #466995) !important;
   color: #f8f3ea !important;
   border: 1px solid rgba(143, 174, 215, 0.26) !important;
 }
 
-body.dark .floating-chat-message.bot {
+body.coding-dark .floating-chat-message.bot {
   background: var(--ct-panel-raised) !important;
   color: var(--ct-text) !important;
   border: 1px solid var(--ct-border) !important;
 }
 
-body.dark .floating-chat-message.bot pre,
-body.dark .floating-chat-message.bot code,
-body.dark .floating-chat-message.bot blockquote,
-body.dark .floating-chat-message.bot table {
+body.coding-dark .floating-chat-message.bot pre,
+body.coding-dark .floating-chat-message.bot code,
+body.coding-dark .floating-chat-message.bot blockquote,
+body.coding-dark .floating-chat-message.bot table {
   background: #101826 !important;
   border-color: var(--ct-border) !important;
   color: #f1eadf !important;
 }
 
-body.dark .floating-chat-empty {
+body.coding-dark .floating-chat-empty {
   background: var(--ct-panel-raised) !important;
   color: var(--ct-muted) !important;
   border: 1px solid var(--ct-border) !important;
 }
 
-body.dark .floating-chat-input-row,
-body.dark .floating-chat-input-row textarea,
-body.dark .coding-select,
-body.dark .coding-app textarea {
+body.coding-dark .floating-chat-input-row,
+body.coding-dark .floating-chat-input-row textarea,
+body.coding-dark .coding-select,
+body.coding-dark .coding-app textarea {
   background: var(--ct-panel-soft) !important;
   border-color: var(--ct-border) !important;
   color: var(--ct-text) !important;
 }
 
-body.dark .floating-chat-input-row textarea::placeholder,
-body.dark .coding-app textarea::placeholder {
+body.coding-dark .floating-chat-input-row textarea::placeholder,
+body.coding-dark .coding-app textarea::placeholder {
   color: #98a4b5 !important;
 }
 
-body.dark .floating-chat-action,
-body.dark .coding-section-nav button,
-body.dark .workspace-tabs button,
-body.dark .problem-navigation button,
-body.dark .daily-link,
-body.dark .daily-practice-btn.secondary,
-body.dark .save-quiz-pdf-btn,
-body.dark .floating-chat-control,
-body.dark .floating-chat-icon-btn {
+body.coding-dark .floating-chat-action,
+body.coding-dark .coding-section-nav button,
+body.coding-dark .workspace-tabs button,
+body.coding-dark .problem-navigation button,
+body.coding-dark .daily-link,
+body.coding-dark .daily-practice-btn.secondary,
+body.coding-dark .save-quiz-pdf-btn,
+body.coding-dark .floating-chat-control,
+body.coding-dark .floating-chat-icon-btn {
   background: var(--ct-panel-soft) !important;
   border-color: var(--ct-border) !important;
   color: var(--ct-text) !important;
 }
 
-body.dark .floating-chat-action:hover:not(:disabled),
-body.dark .coding-section-nav button:hover:not(:disabled),
-body.dark .workspace-tabs button:hover:not(:disabled),
-body.dark .problem-navigation button:hover:not(:disabled),
-body.dark .daily-link:hover,
-body.dark .daily-practice-btn.secondary:hover,
-body.dark .save-quiz-pdf-btn:hover,
-body.dark .floating-chat-control:hover,
-body.dark .floating-chat-icon-btn:hover:not(:disabled) {
+body.coding-dark .floating-chat-action:hover:not(:disabled),
+body.coding-dark .coding-section-nav button:hover:not(:disabled),
+body.coding-dark .workspace-tabs button:hover:not(:disabled),
+body.coding-dark .problem-navigation button:hover:not(:disabled),
+body.coding-dark .daily-link:hover,
+body.coding-dark .daily-practice-btn.secondary:hover,
+body.coding-dark .save-quiz-pdf-btn:hover,
+body.coding-dark .floating-chat-control:hover,
+body.coding-dark .floating-chat-icon-btn:hover:not(:disabled) {
   background: rgba(231, 160, 91, 0.17) !important;
   border-color: rgba(231, 160, 91, 0.42) !important;
   color: #f5c58e !important;
 }
 
-body.dark .coding-section-nav button.active,
-body.dark .workspace-tabs button.active,
-body.dark .floating-chat-action.active {
+body.coding-dark .coding-section-nav button.active,
+body.coding-dark .workspace-tabs button.active,
+body.coding-dark .floating-chat-action.active {
   background: linear-gradient(135deg, rgba(120, 157, 202, 0.24), rgba(231, 160, 91, 0.16)) !important;
   border-color: rgba(231, 160, 91, 0.36) !important;
   color: #f7efe3 !important;
 }
 
-body.dark .daily-practice-btn,
-body.dark .floating-chat-send,
-body.dark .floating-chat-button {
+body.coding-dark .daily-practice-btn,
+body.coding-dark .floating-chat-send,
+body.coding-dark .floating-chat-button {
   background: #5f7fae !important;
   border-color: rgba(143, 174, 215, 0.36) !important;
   color: #f8f3ea !important;
 }
 
-body.dark .daily-practice-btn:hover:not(:disabled),
-body.dark .floating-chat-send:hover:not(:disabled),
-body.dark .floating-chat-button:hover {
+body.coding-dark .daily-practice-btn:hover:not(:disabled),
+body.coding-dark .floating-chat-send:hover:not(:disabled),
+body.coding-dark .floating-chat-button:hover {
   background: #e7a05b !important;
   border-color: rgba(241, 182, 120, 0.46) !important;
   color: #182033 !important;
 }
 
-body.dark .coding-nav-icon,
-body.dark .daily-meta-row span {
+body.coding-dark .coding-nav-icon,
+body.coding-dark .daily-meta-row span {
   background: linear-gradient(135deg, rgba(120, 157, 202, 0.24), rgba(231, 160, 91, 0.14)) !important;
   border: 1px solid rgba(231, 160, 91, 0.26) !important;
   color: #f3dcc2 !important;
 }
 
-body.dark .coding-prompt-card,
-body.dark .problem-example,
-body.dark .problem-constraints-card,
-body.dark .coding-progress-stats div,
-body.dark .topic-filter-banner {
+body.coding-dark .coding-prompt-card,
+body.coding-dark .problem-example,
+body.coding-dark .problem-constraints-card,
+body.coding-dark .coding-progress-stats div,
+body.coding-dark .topic-filter-banner {
   background: var(--ct-panel-soft) !important;
   border-color: var(--ct-border) !important;
   color: var(--ct-text) !important;
 }
 
-body.dark .coding-prompt-card:hover {
+body.coding-dark .coding-prompt-card:hover {
   background: rgba(231, 160, 91, 0.13) !important;
   border-color: rgba(231, 160, 91, 0.36) !important;
 }
@@ -3206,7 +3220,7 @@ body.dark .coding-prompt-card:hover {
   --ct-hover-text: var(--ct-accent);
 }
 
-body.dark .coding-app {
+body.coding-dark .coding-app {
   --ct-solid-panel: #172235;
   --ct-solid-soft: #152033;
   --ct-solid-raised: #1c2a3f;
@@ -3333,7 +3347,7 @@ body.dark .coding-app {
   color: #182033 !important;
 }
 
-body.dark .coding-app :is(
+body.coding-dark .coding-app :is(
   .daily-practice-btn,
   .floating-chat-send,
   .floating-chat-button
@@ -3342,7 +3356,7 @@ body.dark .coding-app :is(
   color: #f8f3ea !important;
 }
 
-body.dark .coding-app :is(
+body.coding-dark .coding-app :is(
   .daily-practice-btn,
   .floating-chat-send,
   .floating-chat-button
@@ -3360,7 +3374,7 @@ body.dark .coding-app :is(
   color: var(--ct-primary) !important;
 }
 
-body.dark .coding-app .daily-meta-row span {
+body.coding-dark .coding-app .daily-meta-row span {
   color: #f3dcc2 !important;
 }
 
@@ -3371,7 +3385,7 @@ body.dark .coding-app .daily-meta-row span {
   overflow: hidden;
 }
 
-body.dark .coding-app .floating-chat-window {
+body.coding-dark .coding-app .floating-chat-window {
   box-shadow: 0 24px 60px rgba(5, 10, 18, 0.6) !important;
 }
 
@@ -3440,7 +3454,7 @@ body.dark .coding-app .floating-chat-window {
   --ct-float-accent-soft: var(--accent-soft, rgba(245, 130, 32, 0.14));
 }
 
-body.dark .floating-coding-chat {
+body.coding-dark .floating-coding-chat {
   --ct-float-panel: #1c2a3f;
   --ct-float-panel-soft: #152033;
   --ct-float-panel-base: #172235;
@@ -3479,7 +3493,7 @@ body.dark .floating-coding-chat {
   overflow: hidden !important;
 }
 
-body.dark .floating-coding-chat .floating-chat-window {
+body.coding-dark .floating-coding-chat .floating-chat-window {
   box-shadow: 0 24px 60px rgba(5, 10, 18, 0.62) !important;
 }
 
@@ -3560,13 +3574,13 @@ body.dark .floating-coding-chat .floating-chat-window {
   color: #182033 !important;
 }
 
-body.dark .floating-coding-chat .floating-chat-send,
-body.dark .floating-coding-chat .floating-chat-button {
+body.coding-dark .floating-coding-chat .floating-chat-send,
+body.coding-dark .floating-coding-chat .floating-chat-button {
   color: #f8f3ea !important;
 }
 
-body.dark .floating-coding-chat .floating-chat-send:hover:not(:disabled),
-body.dark .floating-coding-chat .floating-chat-button:hover {
+body.coding-dark .floating-coding-chat .floating-chat-send:hover:not(:disabled),
+body.coding-dark .floating-coding-chat .floating-chat-button:hover {
   color: #172033 !important;
 }
 
@@ -3829,15 +3843,32 @@ body.dark .floating-coding-chat .floating-chat-button:hover {
 
 /* Active = filled navy pill, matching the main top NavBar's active .nav-pill.
    When collapsed to icon-only (<=1180px) the pill is a circle, so this reads as a
-   filled navy circle around the active icon. */
+   filled navy circle around the active icon. A subtle orange ring + glow marks
+   the selected one without recoloring the whole pill. */
 .coding-app .campus-section-nav > button.active {
   background: var(--ct-primary) !important;
-  border-color: var(--ct-primary) !important;
+  border-color: color-mix(in srgb, var(--ct-accent) 65%, var(--ct-primary)) !important;
   color: #fff !important;
-  box-shadow: none !important;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--ct-accent) 40%, transparent),
+    0 4px 12px color-mix(in srgb, var(--ct-accent) 22%, transparent) !important;
 }
 
-body.dark .coding-app .campus-section-nav > button.active {
+/* Orange dot indicator under the active pill (hidden when collapsed to a circle,
+   where the orange ring already does the job). */
+.coding-app .campus-section-nav > button.active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 16px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--ct-accent);
+  transform: translateX(-50%);
+}
+
+body.coding-dark .coding-app .campus-section-nav > button.active {
   background: var(--msu-blue, #8ab4f8) !important;
   border-color: var(--msu-blue, #8ab4f8) !important;
   color: #0b1322 !important;
@@ -4322,21 +4353,58 @@ body.dark .coding-app .campus-section-nav > button.active {
     var(--ct-panel);
 }
 
-body.dark .coding-app .campus-section-nav,
-body.dark .campus-lab-hero,
-body.dark .campus-progress-strip,
-body.dark .campus-learning-queue,
-body.dark .campus-language-card,
-body.dark .campus-daily-mission,
-body.dark .campus-new-user-card,
-body.dark .campus-queue-item,
-body.dark .campus-recommendation-card,
-body.dark .campus-action-list button {
+body.coding-dark .coding-app .campus-section-nav,
+body.coding-dark .campus-progress-strip,
+body.coding-dark .campus-learning-queue,
+body.coding-dark .campus-language-card,
+body.coding-dark .campus-queue-item,
+body.coding-dark .campus-recommendation-card,
+body.coding-dark .campus-action-list button {
   background-color: var(--ct-panel);
   border-color: var(--ct-border);
 }
 
-body.dark .coding-app .campus-section-nav > button.active {
+/* Gradient cards (hero / daily / new-user) carry a multi-layer `background`
+   shorthand tuned for the light warm-paper palette. In dark mode we must
+   re-declare the FULL `background` — setting only `background-color` leaves the
+   light gradient *images* painted on top (orange→paper over a dark base), which
+   reads as a muddy metallic sheen. Re-point each gradient to the dark tokens. */
+body.coding-dark .campus-lab-hero {
+  background:
+    radial-gradient(circle at 88% 30%, color-mix(in srgb, var(--ct-accent) 16%, transparent), transparent 44%),
+    linear-gradient(100deg, color-mix(in srgb, var(--ct-primary) 14%, var(--ct-panel)) 0%, var(--ct-panel) 62%, var(--ct-panel-raised) 100%);
+  border-color: var(--ct-border);
+}
+
+body.coding-dark .campus-daily-mission {
+  background:
+    radial-gradient(circle at 85% 20%, color-mix(in srgb, var(--ct-accent) 16%, transparent), transparent 44%),
+    linear-gradient(90deg, color-mix(in srgb, var(--ct-accent) 14%, var(--ct-panel)), var(--ct-panel) 60%),
+    var(--ct-panel);
+  border-color: color-mix(in srgb, var(--ct-accent) 30%, var(--ct-border));
+}
+
+body.coding-dark .campus-new-user-card {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--ct-accent) 16%, transparent), transparent 52%),
+    var(--ct-panel);
+  border-color: var(--ct-border);
+}
+
+/* Depth on dark: a soft drop shadow + 1px top highlight so panels read as
+   FLOATING above the deep canvas instead of melting into one flat navy slab. */
+body.coding-dark .campus-lab-hero,
+body.coding-dark .campus-daily-mission,
+body.coding-dark .campus-new-user-card,
+body.coding-dark .campus-progress-strip,
+body.coding-dark .campus-learning-queue,
+body.coding-dark .campus-language-card {
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+body.coding-dark .coding-app .campus-section-nav > button.active {
   background: color-mix(in srgb, var(--ct-primary) 76%, #111827) !important;
   color: #fff !important;
 }
@@ -4354,13 +4422,36 @@ body.dark .coding-app .campus-section-nav > button.active {
     grid-template-columns: 1fr;
   }
 
+  /* Daily card: stack the two columns. The right rail loses its divider line and
+     becomes a full-width row under the main content. */
   .campus-daily-mission {
-    flex-direction: column;
-    align-items: flex-start;
+    grid-template-columns: 1fr;
+    align-items: stretch;
   }
 
-  .campus-daily-mission .daily-actions {
+  .campus-daily-mission .daily-mission-aside {
+    padding-left: 0;
+    border-left: 0;
+    border-top: 1px solid color-mix(in srgb, var(--ct-accent) 22%, var(--ct-border));
+    padding-top: 16px;
+  }
+
+  .campus-daily-mission .daily-mission-facts {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 18px 28px;
+  }
+
+  .campus-daily-mission .daily-mission-aside .daily-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
     width: 100%;
+  }
+
+  .campus-daily-mission .daily-mission-aside .daily-practice-btn,
+  .campus-daily-mission .daily-mission-aside .daily-link {
+    width: auto;
+    flex: 1 1 auto;
   }
 }
 
@@ -4467,21 +4558,22 @@ body.dark .coding-app .campus-section-nav > button.active {
     linear-gradient(180deg, color-mix(in srgb, var(--ct-paper) 88%, transparent), color-mix(in srgb, var(--ct-panel) 90%, var(--ct-paper))),
     var(--ct-paper);
   /* T2-b: thinner, warmer border + lighter shadow — "academic lab", not boxed-in. */
-  border-color: color-mix(in srgb, var(--ct-accent) 16%, var(--ct-border));
+  border-color: color-mix(in srgb, var(--ct-accent) 12%, var(--ct-border));
   box-shadow:
-    0 10px 24px color-mix(in srgb, var(--ct-primary) 6%, transparent),
-    inset 0 1px 0 color-mix(in srgb, #fff 55%, transparent);
+    0 6px 16px color-mix(in srgb, var(--ct-primary) 5%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 45%, transparent);
 }
 
+/* Welcome = command center: navy-led, calm. A navy top rail (not the daily
+   card's orange) and a cooler navy wash distinguish it from the mission card. */
 .campus-lab-hero {
   position: relative;
   display: block;
   min-height: 0;
-  /* Thin warm gold top rail instead of a heavy 5px navy slab. */
-  border-top: 3px solid color-mix(in srgb, var(--ct-accent) 70%, var(--ct-gold-line));
+  border-top: 3px solid color-mix(in srgb, var(--ct-primary) 70%, var(--ct-gold-line));
   background:
-    radial-gradient(circle at 88% 30%, color-mix(in srgb, var(--ct-accent) 14%, transparent), transparent 42%),
-    linear-gradient(100deg, color-mix(in srgb, var(--ct-primary) 10%, var(--ct-paper)) 0%, var(--ct-paper) 60%, var(--ct-panel) 100%);
+    radial-gradient(circle at 88% 30%, color-mix(in srgb, var(--ct-primary) 12%, transparent), transparent 44%),
+    linear-gradient(100deg, color-mix(in srgb, var(--ct-primary) 12%, var(--ct-paper)) 0%, var(--ct-paper) 58%, var(--ct-panel) 100%);
 }
 
 .campus-hero-copy {
@@ -4730,7 +4822,8 @@ body.dark .coding-app .campus-section-nav > button.active {
 }
 
 .campus-queue-item {
-  min-height: 150px;
+  /* Tighter so the cards size to their content instead of leaving dead space. */
+  min-height: 132px;
   border-radius: 16px;
 }
 
@@ -4770,19 +4863,81 @@ body.dark .coding-app .campus-section-nav > button.active {
    from the top rail + warm wash, NOT a heavy all-around orange outline (which read
    like a warning box). The surrounding border is soft; the top rail carries the
    accent. */
+/* Daily = mission/challenge card: two columns on desktop.
+   left (.daily-mission-main) = identity, meta, tags;
+   right (.daily-mission-aside) = effort estimate, focus skills, actions. */
 .campus-daily-mission {
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(190px, 24%, 250px);
+  gap: clamp(16px, 2.4vw, 32px);
+  align-items: stretch;
   border-radius: 20px;
-  border: 1px solid color-mix(in srgb, var(--ct-accent) 22%, var(--ct-border));
+  border: 1px solid color-mix(in srgb, var(--ct-accent) 18%, var(--ct-border));
   border-top: 4px solid var(--ct-accent);
   padding: clamp(20px, 2.6vw, 28px);
   background:
     radial-gradient(circle at 85% 20%, color-mix(in srgb, var(--ct-accent) 14%, transparent), transparent 42%),
     linear-gradient(90deg, color-mix(in srgb, var(--ct-accent) 18%, var(--ct-paper)), transparent 58%),
     color-mix(in srgb, var(--ct-panel) 82%, var(--ct-paper));
+  /* T2-b: lighter shadow so the focal card reads "raised", not boxed-in. */
   box-shadow:
-    0 14px 34px color-mix(in srgb, var(--ct-accent) 13%, transparent),
-    inset 0 1px 0 color-mix(in srgb, #fff 55%, transparent);
+    0 8px 22px color-mix(in srgb, var(--ct-accent) 10%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 50%, transparent);
+}
+
+.campus-daily-mission .daily-mission-main {
+  min-width: 0;
+}
+
+/* Right rail: a quiet facts panel + the actions, divided from the main column. */
+.campus-daily-mission .daily-mission-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: space-between;
+  padding-left: clamp(16px, 2vw, 24px);
+  border-left: 1px solid color-mix(in srgb, var(--ct-accent) 22%, var(--ct-border));
+}
+
+.campus-daily-mission .daily-mission-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+}
+
+.campus-daily-mission .daily-mission-facts > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.campus-daily-mission .daily-mission-facts dt {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ct-accent);
+}
+
+.campus-daily-mission .daily-mission-facts dd {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ct-primary);
+}
+
+.campus-daily-mission .daily-mission-aside .daily-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.campus-daily-mission .daily-mission-aside .daily-practice-btn,
+.campus-daily-mission .daily-mission-aside .daily-link {
+  width: 100%;
+  text-align: center;
 }
 
 /* Tighter focal heading so the card reads full, not oversized for its content. */
@@ -4863,21 +5018,30 @@ body.dark .coding-app .campus-section-nav > button.active {
   white-space: nowrap;
 }
 
+/* Primary = the live, confident action. A brighter blue face (lifted off the
+   deep navy base) so it reads "clickable", not disabled, plus crisp white text. */
 .campus-primary-action,
 .campus-recommendation-card button,
 .campus-queue-item.featured button,
 .campus-daily-mission .daily-practice-btn {
-  background: linear-gradient(135deg, var(--ct-primary), color-mix(in srgb, var(--ct-primary) 78%, #000));
-  border-color: var(--ct-primary);
-  box-shadow: 0 12px 26px color-mix(in srgb, var(--ct-primary) 20%, transparent);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ct-primary) 84%, #2f6fd6), var(--ct-primary));
+  border-color: color-mix(in srgb, var(--ct-primary) 70%, #2f6fd6);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--ct-primary) 26%, transparent);
 }
 
+/* Secondary = present but quiet: a flat tinted face, readable navy text, a
+   visible-but-light border. Lighter than primary, still clearly a button. */
 .campus-secondary-action,
 .campus-queue-item button,
 .campus-language-card button,
 .campus-daily-mission .daily-link {
-  background: color-mix(in srgb, var(--ct-panel) 78%, var(--ct-paper));
-  border-color: color-mix(in srgb, var(--ct-primary) 28%, var(--ct-border));
+  background: color-mix(in srgb, var(--ct-primary) 6%, var(--ct-panel));
+  border-color: color-mix(in srgb, var(--ct-primary) 24%, var(--ct-border));
+  color: var(--ct-primary);
+  font-weight: 650;
+  box-shadow: none;
 }
 
 .campus-primary-action:hover,
@@ -4894,46 +5058,48 @@ body.dark .coding-app .campus-section-nav > button.active {
   color: #17213a !important;
 }
 
-body.dark .coding-app {
+body.coding-dark .coding-app {
   --ct-paper: color-mix(in srgb, var(--ct-panel) 84%, #281b11);
   --ct-paper-strong: color-mix(in srgb, var(--ct-panel) 74%, #3a2817);
   --ct-gold-line: color-mix(in srgb, var(--ct-accent) 68%, #f6c66d);
 }
 
-body.dark .campus-lab-hero,
-body.dark .campus-progress-strip,
-body.dark .campus-learning-queue,
-body.dark .campus-language-card,
-body.dark .campus-daily-mission,
-body.dark .campus-new-user-card,
-body.dark .campus-recommendation-card,
-body.dark .campus-queue-item,
-body.dark .campus-action-list button,
-body.dark .campus-stat-chip,
-body.dark .campus-topic-pill {
+/* Smaller surfaces only. The big gradient cards (hero / daily / new-user) are
+   owned by the authoritative dark block above (full `background` re-declared +
+   deeper float shadow) — listing them here again with a `background-color`-only
+   override re-introduced the muddy sheen and flattened the shadow, so they are
+   deliberately excluded. */
+body.coding-dark .campus-progress-strip,
+body.coding-dark .campus-learning-queue,
+body.coding-dark .campus-language-card,
+body.coding-dark .campus-recommendation-card,
+body.coding-dark .campus-queue-item,
+body.coding-dark .campus-action-list button,
+body.coding-dark .campus-stat-chip,
+body.coding-dark .campus-topic-pill {
   background-color: var(--ct-paper);
   border-color: color-mix(in srgb, var(--ct-accent) 20%, var(--ct-border));
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
 }
 
-body.dark .campus-hero-copy h2,
-body.dark .campus-new-user-card h2,
-body.dark .campus-recommendation-card strong,
-body.dark .campus-section-heading h3,
-body.dark .campus-queue-item strong,
-body.dark .campus-daily-mission h2,
-body.dark .campus-stat-chip strong {
+body.coding-dark .campus-hero-copy h2,
+body.coding-dark .campus-new-user-card h2,
+body.coding-dark .campus-recommendation-card strong,
+body.coding-dark .campus-section-heading h3,
+body.coding-dark .campus-queue-item strong,
+body.coding-dark .campus-daily-mission h2,
+body.coding-dark .campus-stat-chip strong {
   color: color-mix(in srgb, var(--ct-text) 90%, #fff);
 }
 
-body.dark .campus-hero-copy p,
-body.dark .campus-new-user-card p,
-body.dark .campus-queue-item p,
-body.dark .campus-language-card p {
+body.coding-dark .campus-hero-copy p,
+body.coding-dark .campus-new-user-card p,
+body.coding-dark .campus-queue-item p,
+body.coding-dark .campus-language-card p {
   color: color-mix(in srgb, var(--ct-muted) 86%, #f2dfc5);
 }
 
-body.dark .campus-code-preview {
+body.coding-dark .campus-code-preview {
   background: #090f1f;
   border-color: color-mix(in srgb, var(--ct-accent) 42%, #1f2a44);
 }

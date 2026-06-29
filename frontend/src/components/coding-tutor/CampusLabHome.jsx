@@ -220,9 +220,11 @@ function CampusDailyMission({ dailyChallenge, dailyDoneToday, displayStreak, onP
   const isLeetCode = (dailyChallenge?.source || "").toLowerCase() === "leetcode";
   const problemNumber = dailyChallenge?.frontend_id;
   const tags = Array.isArray(dailyChallenge?.tags) ? dailyChallenge.tags.filter(Boolean) : [];
+  const focusSkills = tags.slice(0, 3);
   return (
     <section className="campus-daily-mission" aria-label="LeetCode daily challenge">
-      <div>
+      {/* Left column: identity + meta. */}
+      <div className="daily-mission-main">
         <span className="coding-kicker">
           {isLeetCode ? "LeetCode Daily Problem" : "Today’s Challenge"}
         </span>
@@ -238,27 +240,31 @@ function CampusDailyMission({ dailyChallenge, dailyDoneToday, displayStreak, onP
             ? <span className="daily-streak-pill done">Done today - {displayStreak}-day streak</span>
             : displayStreak > 0 && <span className="daily-streak-pill">{displayStreak}-day streak - keep it going</span>}
         </div>
-        {tags.length > 0 && (
-          <>
-            <p className="daily-practice-for">
-              Good for practicing:
-            </p>
-            <div className="daily-tags">
-              {tags.map(tag => <span key={tag}>{tag}</span>)}
+      </div>
+
+      {/* Right column: focus skills + the actions. (Tags now live ONLY here as
+          "Focus skills" — the left-column "Good for practicing" list was the same
+          data shown twice, so it was removed.) */}
+      <aside className="daily-mission-aside">
+        {focusSkills.length > 0 && (
+          <dl className="daily-mission-facts">
+            <div>
+              <dt>Focus skills</dt>
+              <dd>{focusSkills.join(" · ")}</dd>
             </div>
-          </>
+          </dl>
         )}
-      </div>
-      <div className="daily-actions">
-        <button type="button" className="daily-practice-btn" onClick={onPractice}>
-          Practice Now
-        </button>
-        {dailyChallenge?.url && (
-          <a href={dailyChallenge.url} target="_blank" rel="noopener noreferrer" className="daily-link">
-            View Source
-          </a>
-        )}
-      </div>
+        <div className="daily-actions">
+          <button type="button" className="daily-practice-btn" onClick={onPractice}>
+            Practice Now
+          </button>
+          {dailyChallenge?.url && (
+            <a href={dailyChallenge.url} target="_blank" rel="noopener noreferrer" className="daily-link">
+              View Source
+            </a>
+          )}
+        </div>
+      </aside>
     </section>
   );
 }

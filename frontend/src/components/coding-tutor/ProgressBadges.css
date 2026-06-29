@@ -96,11 +96,11 @@
   color: color-mix(in srgb, var(--ct-accent) 82%, #172033);
 }
 
-body.dark .progress-badge-card {
+body.coding-dark .progress-badge-card {
   background: var(--ct-solid-raised, #1c2a3f);
 }
 
-body.dark .progress-badge-card strong {
+body.coding-dark .progress-badge-card strong {
   color: #f3dcc2;
 }
 

@@ -119,13 +119,13 @@
   overflow-y: auto !important;
 }
 
-body.dark .floating-coding-chat .floating-chat-form,
-body.dark .floating-coding-chat .floating-chat-input-row {
+body.coding-dark .floating-coding-chat .floating-chat-form,
+body.coding-dark .floating-coding-chat .floating-chat-input-row {
   background: var(--ct-float-panel-base) !important;
   border-color: var(--ct-float-border) !important;
 }
 
-body.dark .floating-coding-chat .floating-chat-input-row textarea {
+body.coding-dark .floating-coding-chat .floating-chat-input-row textarea {
   background: color-mix(in srgb, var(--ct-float-panel-soft) 90%, #07111f 10%) !important;
   color: var(--ct-float-text) !important;
 }
@@ -273,7 +273,7 @@ body.dark .floating-coding-chat .floating-chat-input-row textarea {
   overflow-x: auto !important;
 }
 
-body.dark .floating-coding-chat .floating-chat-message li::marker {
+body.coding-dark .floating-coding-chat .floating-chat-message li::marker {
   color: color-mix(in srgb, var(--ct-accent) 74%, #fff 26%) !important;
 }
 
@@ -308,14 +308,14 @@ body.dark .floating-coding-chat .floating-chat-message li::marker {
   color: #ffffff !important;
 }
 
-body.dark .floating-coding-chat .floating-apply-code-btn {
+body.coding-dark .floating-coding-chat .floating-apply-code-btn {
   background: linear-gradient(135deg, #e7a05b, #c98242) !important;
   border-color: rgba(231, 160, 91, 0.55) !important;
   color: #172033 !important;
 }
 
-body.dark .floating-coding-chat .floating-apply-code-btn:hover:not(:disabled),
-body.dark .floating-coding-chat .floating-apply-code-btn:focus-visible {
+body.coding-dark .floating-coding-chat .floating-apply-code-btn:hover:not(:disabled),
+body.coding-dark .floating-coding-chat .floating-apply-code-btn:focus-visible {
   background: linear-gradient(135deg, #5f7fae, #466995) !important;
   border-color: rgba(143, 174, 215, 0.45) !important;
   color: #f8f3ea !important;

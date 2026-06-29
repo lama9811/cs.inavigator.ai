@@ -431,15 +431,15 @@
 /* The terminal uses the SAME dark look in light and dark themes (it's a real
    terminal). Only nudge the outer chrome a touch in dark mode so it blends with
    the darker page; all inner element colors come from the base rules above. */
-body.dark .coding-dock-terminal .terminal-panel {
+body.coding-dark .coding-dock-terminal .terminal-panel {
   background: #080d18 !important;
 }
 
-body.dark .coding-dock-terminal .terminal-panel .coding-terminal-header {
+body.coding-dark .coding-dock-terminal .terminal-panel .coding-terminal-header {
   background: #0b1322 !important;
 }
 
-body.dark .terminal-panel-body {
+body.coding-dark .terminal-panel-body {
   background: #080d18;
 }
 

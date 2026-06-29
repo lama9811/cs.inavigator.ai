@@ -122,12 +122,12 @@ body.ct-terminal-resizing * {
   color: #ffffff !important;
 }
 
-body.dark .coding-app.coding-workspace-active .coding-problem-panel,
-body.dark .coding-app.coding-workspace-active .coding-editor-center {
+body.coding-dark .coding-app.coding-workspace-active .coding-problem-panel,
+body.coding-dark .coding-app.coding-workspace-active .coding-editor-center {
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22) !important;
 }
 
-body.dark .workspace-tabs .terminal-tab.active {
+body.coding-dark .workspace-tabs .terminal-tab.active {
   background: linear-gradient(135deg, #243a67, #d89a43) !important;
   color: #f8f1e8 !important;
 }
@@ -461,7 +461,7 @@ body.dark .workspace-tabs .terminal-tab.active {
 
 /* The transparent input layer. Text is invisible (the overlay shows it colored)
    but the caret and selection stay visible. Scoped under .coding-app .code-editor-window
-   so it OUTRANKS `body.dark .coding-app textarea { background; color }` (0,2,2) —
+   so it OUTRANKS `body.coding-dark .coding-app textarea { background; color }` (0,2,2) —
    that dark rule was painting an OPAQUE panel background over the colored overlay,
    which is why the code was invisible in dark mode but fine in light mode. */
 .coding-app .code-editor-window .code-editor-textarea,

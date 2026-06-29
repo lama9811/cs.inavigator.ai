@@ -7,6 +7,8 @@ import {
   FaEyeSlash,
   FaHome,
   FaLaptopCode,
+  FaMoon,
+  FaSun,
   FaUserGraduate,
 } from "react-icons/fa";
 import { toast } from "sonner";
@@ -296,6 +298,13 @@ export default function CodingTutor({
   onSendToChat,
 }) {
   const location = useLocation();
+  // Dark mode is scoped to the Coding Tutor only (the rest of the app stays
+  // light). We drive it with `body.coding-dark` instead of the global
+  // `body.dark`, so it survives main removing the app-wide dark toggle. Persist
+  // separately under "codingTheme".
+  const [codingDark, setCodingDark] = useState(
+    () => localStorage.getItem("codingTheme") === "dark"
+  );
   const [activePage, setActivePage] = useState("dashboard");
   const [lastNonWorkspacePage, setLastNonWorkspacePage] = useState("dashboard");
   const [workspaceVisible, setWorkspaceVisible] = useState(true);
@@ -505,6 +514,30 @@ export default function CodingTutor({
     setTutorMode("Reviewing");
     onSendToChat?.("Review my current code for correctness and style. Point out the single biggest issue first, then any smaller ones. Don't rewrite the whole thing — guide me.", true);
   }, [onSendToChat, code]);
+
+  // Apply the scoped dark signal to <body> while CodingTutor is mounted, and
+  // strip it on unmount so leaving the section returns the rest of the app to
+  // light. We reuse the `theme-switching` one-frame transition suppressor so the
+  // swap snaps instead of cross-fading.
+  useEffect(() => {
+    const body = document.body;
+    body.classList.add("theme-switching");
+    body.classList.toggle("coding-dark", codingDark);
+    localStorage.setItem("codingTheme", codingDark ? "dark" : "light");
+    void body.offsetWidth;
+    const raf = requestAnimationFrame(() => {
+      body.classList.remove("theme-switching");
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [codingDark]);
+
+  useEffect(() => {
+    // Always clear the scoped dark class when the Coding Tutor unmounts, so the
+    // rest of the app never inherits the coding-only dark theme.
+    return () => {
+      document.body.classList.remove("coding-dark");
+    };
+  }, []);
 
   useEffect(() => {
     // Pull the account's saved snippets from the server once on load and merge
@@ -1511,6 +1544,17 @@ export default function CodingTutor({
           </button>
           );
         })}
+        <button
+          type="button"
+          className="coding-nav-theme-toggle"
+          onClick={() => setCodingDark(prev => !prev)}
+          title={codingDark ? "Switch to light mode" : "Switch to dark mode"}
+          aria-label={codingDark ? "Switch to light mode" : "Switch to dark mode"}
+          aria-pressed={codingDark}
+        >
+          <span className="coding-nav-icon" aria-hidden="true">{codingDark ? <FaSun /> : <FaMoon />}</span>
+          <span className="coding-nav-label">{codingDark ? "Light Mode" : "Dark Mode"}</span>
+        </button>
         <button
           type="button"
           className="coding-nav-workspace-toggle"
