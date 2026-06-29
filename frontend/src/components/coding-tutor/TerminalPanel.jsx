@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { FaStop } from "react-icons/fa";
 import { estimateComplexity } from "../../lib/complexity";
 
@@ -75,7 +76,41 @@ function ComplexityEstimate({ code, language }) {
   );
 }
 
-function TerminalTestsPane({ output, tests, code, language, onExplainFailedTests, onRequestReview }) {
+// A single test case in the explorer. Failing cases start open; passing cases
+// start collapsed so the student focuses on what went wrong first.
+function TestCaseRow({ test, index, onAsk }) {
+  const [open, setOpen] = useState(!test.passed);
+  const label = test.name || `Test ${index + 1}`;
+  return (
+    <article className={`terminal-panel-test ${test.passed ? "passed" : "failed"} ${open ? "open" : ""}`}>
+      <button
+        type="button"
+        className="terminal-panel-test-summary"
+        onClick={() => setOpen(prev => !prev)}
+        aria-expanded={open}
+      >
+        <span className="terminal-panel-test-status">{test.passed ? "PASS" : "FAIL"}</span>
+        <strong>{label}</strong>
+        <span className="terminal-panel-test-caret" aria-hidden="true">{open ? "−" : "+"}</span>
+      </button>
+      {open && (
+        <div className="terminal-panel-test-detail">
+          <code>Input: {formatValue(test.args)}</code>
+          <code>Expected: {formatValue(test.expected)}</code>
+          <code className={test.passed ? "" : "terminal-actual-bad"}>Actual: {formatValue(test.actual)}</code>
+          {test.error && <small>{test.error}</small>}
+          {!test.passed && onAsk && (
+            <button type="button" className="terminal-ask-case-btn" onClick={() => onAsk(test, index)}>
+              Ask the tutor about this case
+            </button>
+          )}
+        </div>
+      )}
+    </article>
+  );
+}
+
+function TerminalTestsPane({ output, tests, code, language, onExplainFailedTests, onRequestReview, onExplainOneTest }) {
   const hasSummary = typeof output.passed === "number" && typeof output.total === "number";
   const hasFailedTests = tests.some(test => !test.passed);
   const checklist = Array.isArray(output.quality_checklist) ? output.quality_checklist : [];
@@ -130,18 +165,19 @@ function TerminalTestsPane({ output, tests, code, language, onExplainFailedTests
       )}
       {tests.length > 0 ? (
         <div className="terminal-panel-test-list">
-          {tests.map((test, index) => (
-            <article key={`${test.name || "test"}-${index}`} className={`terminal-panel-test ${test.passed ? "passed" : "failed"}`}>
-              <span>{test.passed ? "PASS" : "FAIL"}</span>
-              <div className="terminal-panel-test-detail">
-                <strong>{test.name || `Test ${index + 1}`}</strong>
-                <code>Input: {formatValue(test.args)}</code>
-                <code>Expected: {formatValue(test.expected)}</code>
-                <code>Actual: {formatValue(test.actual)}</code>
-                {test.error && <small>{test.error}</small>}
-              </div>
-            </article>
-          ))}
+          {tests
+            // Keep original index for stable labels/keys, then surface failing
+            // cases first so the student sees what to fix without scrolling.
+            .map((test, index) => ({ test, index }))
+            .sort((a, b) => Number(a.test.passed) - Number(b.test.passed))
+            .map(({ test, index }) => (
+              <TestCaseRow
+                key={`${test.name || "test"}-${index}`}
+                test={test}
+                index={index}
+                onAsk={onExplainOneTest}
+              />
+            ))}
         </div>
       ) : (
         <div className="terminal-panel-empty">
@@ -162,6 +198,7 @@ export default function TerminalPanel({
   onStop,
   onExplainFailedTests,
   onExplainError,
+  onExplainOneTest,
   onRequestReview,
 }) {
   const output = typeof testOutput === "string" ? { status: "ready", message: testOutput } : (testOutput || {});
@@ -203,6 +240,7 @@ export default function TerminalPanel({
           language={language}
           onExplainFailedTests={onExplainFailedTests}
           onRequestReview={onRequestReview}
+          onExplainOneTest={onExplainOneTest}
         />
       </div>
     </div>

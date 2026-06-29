@@ -1068,6 +1068,9 @@ body.dark .workspace-discussion-panel {
   flex-direction: column;
   gap: 6px;
   max-width: none;
+  /* Allow this flex child to shrink below its content width so wide code
+     blocks scroll inside the bubble instead of stretching the whole row. */
+  min-width: 0;
 }
 
 /* Message bubble - Enhanced */
@@ -2479,16 +2482,15 @@ body.dark .send-btn:hover:not(:disabled) {
 
   .chat-input-container {
     left: 0 !important;
+    /* Must also reset the width: the base rule reserves the sidebar space
+       (calc(100% - 280px)), which left the input bar ~132px wide on a phone. */
+    width: 100% !important;
     padding-bottom: env(safe-area-inset-bottom, 16px);
   }
 
   .chat-messages {
     padding: 20px 16px 110px 16px;
     gap: 16px;
-  }
-
-  .message-bubble {
-    max-width: 85%;
   }
 
   .welcome-title {
@@ -2505,16 +2507,23 @@ body.dark .send-btn:hover:not(:disabled) {
     flex-wrap: nowrap !important;
   }
 
+  /* The content column must be allowed to take the full row and SHRINK below
+     its content width (min-width:0), so wide children (code, YouTube cards)
+     scroll/wrap inside it instead of stretching the row off-screen. */
   .message-content {
-    flex: 0 1 auto !important;
-    max-width: 80% !important;
+    flex: 1 1 auto !important;
+    max-width: 100% !important;
     min-width: 0 !important;
   }
 
+  /* Cap the bubble to its container. Do NOT use min-width:fit-content here —
+     that forces the bubble to grow to its widest child (a 560px YouTube card
+     or a long code line) and clips everything off the right edge. */
   .message-bubble {
+    max-width: 100% !important;
     width: auto !important;
-    min-width: fit-content !important;
-    display: inline-block !important;
+    min-width: 0 !important;
+    display: block !important;
   }
 
   .message-bubble p {
@@ -2598,8 +2607,8 @@ body.dark .send-btn:hover:not(:disabled) {
   }
 
   .message-content {
-    flex: 0 1 auto !important;
-    max-width: 75% !important;
+    flex: 1 1 auto !important;
+    max-width: 100% !important;
     min-width: 0 !important;
     width: auto !important;
   }
@@ -2617,8 +2626,8 @@ body.dark .send-btn:hover:not(:disabled) {
     border-radius: 16px !important;
     max-width: 100% !important;
     width: auto !important;
-    min-width: fit-content !important;
-    display: inline-block !important;
+    min-width: 0 !important;
+    display: block !important;
   }
 
   .message-bubble p {
@@ -2684,6 +2693,20 @@ body.dark .send-btn:hover:not(:disabled) {
   .message-bubble pre {
     padding: 0.75rem;
     font-size: 0.8rem;
+  }
+
+  /* On phones the bubble must fill the row and never exceed it, so generated
+     code + long explanations stay readable instead of being clipped on the
+     right edge. Wide code scrolls inside the bubble; prose wraps. */
+  .message-bubble {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .message.bot,
+  .message.user {
+    /* Let the message row use the full content width on small screens. */
+    width: 100%;
   }
 
   .message-bubble table {
@@ -3654,9 +3677,19 @@ body.dark .report-textarea:focus {
 /* ===== Code Block Styles ===== */
 .code-block-wrapper {
   border-radius: 8px;
+  /* Clip only the rounded corners vertically; let long lines scroll
+     horizontally instead of being cut off (see the highlighter rule below). */
   overflow: hidden;
   margin: 12px 0;
   border: 1px solid var(--border-color);
+  max-width: 100%;
+}
+
+/* The syntax highlighter renders a wide <div> (PreTag="div"). Without this it
+   overflows the bubble on narrow screens and gets clipped. Make it scroll. */
+.code-block-wrapper > div:last-child {
+  overflow-x: auto;
+  max-width: 100%;
 }
 
 .code-block-header {

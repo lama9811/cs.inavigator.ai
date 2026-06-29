@@ -54,17 +54,6 @@ const FEATURED_QUESTIONS = [
 ];
 
 // General (non-Morgan) starter questions for General mode.
-const GENERAL_SUGGESTIONS = [
-  "What is a solar eclipse?",
-  "Explain Big O notation simply",
-  "How does photosynthesis work?",
-  "What's the difference between HTTP and HTTPS?",
-  "Give me study tips for exams",
-  "Explain recursion with an example",
-  "What caused the French Revolution?",
-  "How do I write a strong thesis statement?",
-];
-
 const REGULAR_THINKING_MESSAGES = [
   "Understanding your question",
   "Searching knowledge base",
@@ -156,9 +145,11 @@ export default function Chatbox({
   const hasStartedChat = messages.length > 0;
   const showChatHeader = !isCodingWorkspaceRoute;
   const showTutorModeToggle = hasStartedChat || isCodingChatRoute;
+  // The floating tutor lives ONLY in the workspace — not on the home/dashboard
+  // or other coding sub-pages, where it overlapped the page's own CTAs.
   const showFloatingCodingChat = isCodingWorkspaceRoute
     && chatMode === "coding_tutor"
-    && ["dashboard", "workspace"].includes(activeCodingPage);
+    && activeCodingPage === "workspace";
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -369,7 +360,7 @@ export default function Chatbox({
   const [thinkingTrack, setThinkingTrack] = useState(null);
   const getThinkingMessagesForTrack = useCallback((track, mode) => {
     const modeDefault =
-      mode === "coding_tutor" ? "coding" : mode === "general_tutor" ? "general" : "regular";
+      mode === "coding_tutor" ? "coding" : "regular";
     const resolved = track || modeDefault;
     if (resolved === "coding") return CODING_THINKING_MESSAGES;
     if (resolved === "general") return GENERAL_THINKING_MESSAGES;
@@ -508,12 +499,6 @@ export default function Chatbox({
     const fetchSuggestions = async () => {
       if (chatMode === "coding_tutor") {
         setSuggestions([]);
-        setSuggestionsLoading(false);
-        return;
-      }
-
-      if (chatMode === "general_tutor") {
-        setSuggestions(GENERAL_SUGGESTIONS);
         setSuggestionsLoading(false);
         return;
       }
@@ -1083,9 +1068,7 @@ export default function Chatbox({
         setThinkingStepIndex(0);
         // Reset to the mode default; the backend's thinking_track event refines it.
         setThinkingTrack(
-          effectiveMode === "coding_tutor" ? "coding"
-          : effectiveMode === "general_tutor" ? "general"
-          : null
+          effectiveMode === "coding_tutor" ? "coding" : null
         );
         setMessages((prev) => [...prev, { id: nextMessageId(), text: "", sender: "bot", time, isStreaming: true, mode: effectiveMode }]);
 
@@ -1770,9 +1753,7 @@ export default function Chatbox({
                 ? "Add a message..."
                 : chatMode === "coding_tutor"
                   ? "Paste code, an error, or ask for a review..."
-                  : chatMode === "general_tutor"
-                    ? "Ask any academic or general question..."
-                    : "Ask about Morgan State CS — courses, advising, requirements..."
+                  : "Ask about Morgan State CS — courses, advising, requirements..."
           }
           onVoiceInput={handleVoiceInput}
           onToggleVoiceMode={toggleVoiceMode}

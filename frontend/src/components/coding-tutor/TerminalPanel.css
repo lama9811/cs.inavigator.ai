@@ -321,10 +321,6 @@
 
 /* Subtle row, not a card: a thin left accent + faint divider on the dark surface. */
 .terminal-panel-test {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 8px;
-  padding: 7px 8px 7px 10px;
   border: 0;
   border-left: 2px solid transparent;
   border-bottom: 1px solid rgba(230, 237, 243, 0.08);
@@ -341,20 +337,75 @@
   border-left-color: #f85149;
 }
 
-.terminal-panel-test > span {
+/* Clickable header row that toggles the case open/closed. */
+.terminal-panel-test-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 8px 7px 10px;
+  border: 0;
+  background: transparent;
+  color: #f0f6fc;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.terminal-panel-test-summary:hover {
+  background: rgba(230, 237, 243, 0.04);
+}
+
+.terminal-panel-test-summary strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-panel-test-status {
   color: #3fb950;
   font-size: 0.72rem;
   font-weight: 900;
 }
 
-.terminal-panel-test.failed > span {
+.terminal-panel-test.failed .terminal-panel-test-status {
   color: #f85149;
+}
+
+.terminal-panel-test-caret {
+  color: #9aa7b8;
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
 .terminal-panel-test-detail {
   display: grid;
   gap: 4px;
   min-width: 0;
+  padding: 0 8px 8px 10px;
+}
+
+.terminal-panel-test-detail code.terminal-actual-bad {
+  color: #ff9a93;
+}
+
+.terminal-ask-case-btn {
+  justify-self: start;
+  margin-top: 4px;
+  padding: 3px 9px;
+  border: 1px solid rgba(248, 81, 73, 0.4);
+  border-radius: 6px;
+  background: rgba(248, 81, 73, 0.12);
+  color: #ffb3ad;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.terminal-ask-case-btn:hover {
+  background: rgba(248, 81, 73, 0.22);
 }
 
 .terminal-panel-test-detail strong {

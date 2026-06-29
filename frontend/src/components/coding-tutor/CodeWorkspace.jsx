@@ -57,6 +57,7 @@ export default function CodeWorkspace({
   onShowAllHints,
   onExplainFailedTests,
   onExplainError,
+  onExplainOneTest,
   onStopRun,
   onRequestReview,
   onSaveSnippet,
@@ -250,6 +251,7 @@ export default function CodeWorkspace({
                 onStop={onStopRun}
                 onExplainFailedTests={onExplainFailedTests}
                 onExplainError={onExplainError}
+                onExplainOneTest={onExplainOneTest}
                 onRequestReview={onRequestReview}
               />
             </div>

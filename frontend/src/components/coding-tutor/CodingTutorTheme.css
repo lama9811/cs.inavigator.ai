@@ -1,0 +1,99 @@
+/* ============================================================
+   Coding Tutor scoped theme — "Morgan Coding Lab" sub-brand
+   ------------------------------------------------------------
+   Scope: ONLY .coding-app (Home, Practice Library, Interview Prep,
+   Workspace, Progress, Daily Challenge, Progress, terminal/editor
+   wrappers). The floating Coding Tutor widget is themed via its own
+   root class lower in this file.
+
+   This file is imported AFTER CodingTutor.css so these token
+   assignments win the cascade over the inherited global chain at the
+   top of CodingTutor.css (same .coding-app specificity → source order
+   decides). It re-points ONLY the surface / border / paper / editor
+   tokens to a warm academic-lab palette. Navy (--ct-primary), orange
+   (--ct-accent), and green (--ct-success) stay on the global CS
+   Navigator / Morgan ORA identity, so the section reads as a sub-brand
+   rather than a separate product.
+
+   Nothing here touches the global app theme (index.css / theme.css /
+   theme-ora.css). Regular Tutor, Admin, Profile, advising, and the app
+   shell are unaffected because every rule is scoped under .coding-app
+   or the widget root.
+   ============================================================ */
+
+/* ---------- Light mode: warm academic paper ---------- */
+.coding-app {
+  /* Warm paper canvas + panels instead of the cool #F6F8FB / pure-white
+     portal surfaces. These replace the inherited --bg-app / --bg-surface
+     chain for the coding section only. */
+  --ct-bg: #f6f0e7;            /* warm academic paper (page canvas) */
+  --ct-panel: #fffaf1;         /* warm panel (cards / surfaces) */
+  --ct-panel-soft: #f4ecdf;    /* secondary panel / hover wash */
+  --ct-panel-raised: #fffdf8;  /* raised / popover surface */
+
+  /* Warm parchment borders instead of cool gray (#E2E8F0). */
+  --ct-border: #ddccb6;
+  --ct-border-strong: #c9b596;
+
+  /* Keep the Morgan ORA identity for structure + accent + success. */
+  --ct-primary: #0b2545;       /* deep Morgan navy (matches --msu-blue) */
+  --ct-primary-hover: #123257;
+  --ct-primary-soft: rgba(11, 37, 69, 0.06);
+  --ct-accent: #f37021;        /* ORA orange (matches --msu-gold) */
+  --ct-accent-soft: rgba(243, 112, 33, 0.10);
+  --ct-success: #2f8f4e;       /* solved / pass / success only */
+
+  /* Text stays high-contrast navy/ink on warm paper. */
+  --ct-text: #0b2545;
+  --ct-muted: #6a5f50;         /* warm muted (was cool slate) */
+  --ct-soft: #8a7d6a;
+
+  /* Paper accents already referenced by the ORA polish block. */
+  --ct-paper: #fffaf1;
+  --ct-paper-strong: #f4ecdf;
+  --ct-gold-line: color-mix(in srgb, var(--ct-accent) 38%, var(--ct-border));
+
+  /* Editor / terminal: lab-dark, but a touch warmer/readable than pure slate. */
+  --ct-editor-bg: #11192c;
+  --ct-editor-text: #e7ecf5;
+  --ct-terminal-bg: #0c1322;
+  --ct-terminal-text: #d8e2f4;
+}
+
+/* ---------- Dark mode: warm-slate coding environment ----------
+   NOTE: a warm-slate dark lab palette ALREADY exists in CodingTutor.css
+   (the `body.dark .coding-app` block around line 2925: navy #789dca,
+   accent #e7a05b, panels #172235 with !important, warm ink #f4efe6,
+   editor #101826). Those panel/surface assignments use !important and
+   own the dark surfaces — we do NOT re-declare them here, to avoid a
+   third competing dark palette. This block only sets the warm-paper
+   adjacent tokens that block does not already define, and otherwise
+   defers to it. If the dark lab look ever needs tuning, edit that
+   existing block, not this file. */
+body.dark .coding-app {
+  /* Soft success + paper accents to match the existing dark lab block.
+     (--ct-primary / --ct-accent / panels / text / border / editor are
+     owned by the existing body.dark .coding-app block in CodingTutor.css.) */
+  --ct-success: #79d99b;
+  --ct-soft: #a6b0c2;
+  --ct-paper: #1b2942;
+  --ct-paper-strong: #223150;
+  --ct-gold-line: color-mix(in srgb, var(--ct-accent) 42%, var(--ct-border));
+}
+
+/* ------------------------------------------------------------------
+   Coding-route backdrop.
+   Paint the coding route's .chat-main (it carries `coding-chat-main` — see
+   Chatbox.jsx:1416) with the section's own canvas color so there's no
+   warm-paper page backdrop showing behind/around the coding app in either mode.
+   The actual theme-toggle snap (no slow cross-fade) is handled globally by the
+   `body.theme-switching` transition-suppressor in index.css + App.jsx.
+   NOTE: --ct-bg lives on .coding-app (a child), so we can't read it on the
+   parent .chat-main — the literals below mirror --ct-bg in each mode
+   (light #f6f0e7 / dark #131d30). Keep them in sync if --ct-bg changes. */
+.chat-main.coding-chat-main {
+  background: #f6f0e7;
+}
+body.dark .chat-main.coding-chat-main {
+  background: #131d30;
+}

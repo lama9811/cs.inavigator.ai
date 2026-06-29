@@ -205,8 +205,22 @@ export default function App() {
 
   // Manage dark mode
   useEffect(() => {
-    document.body.classList.toggle("dark", darkMode);
+    // Suppress color transitions for the single frame the theme flips, so the
+    // page swaps light<->dark instantly instead of cross-fading. The staggered
+    // cross-fade of nested panels (each animating background-color at its own
+    // 0.12s) is what reads as a "delayed / weird" transition. Hover transitions
+    // resume on the next frame once `theme-switching` is removed.
+    const body = document.body;
+    body.classList.add("theme-switching");
+    body.classList.toggle("dark", darkMode);
     localStorage.setItem("theme", darkMode ? "dark" : "light");
+    // Force a reflow so the class + new theme are committed without a transition,
+    // then drop the suppressor on the next frame.
+    void body.offsetWidth;
+    const raf = requestAnimationFrame(() => {
+      body.classList.remove("theme-switching");
+    });
+    return () => cancelAnimationFrame(raf);
   }, [darkMode]);
 
   // Toggle sidebar CSS class on body

@@ -5,11 +5,6 @@ const CHAT_MODES = [
     hint: "Morgan State CS questions — courses, advising, requirements, and campus info.",
   },
   {
-    id: "general_tutor",
-    name: "General",
-    hint: "Any academic or general question (non-Morgan), answered directly.",
-  },
-  {
     id: "coding_tutor",
     name: "Coding Tutor",
     hint: "Practice, run, debug, and review code with a guided tutor.",

@@ -777,13 +777,24 @@ body.dark .daily-streak-pill.done {
   border-radius: 16px;
   background: var(--ct-panel-soft);
   border: 1px solid var(--ct-border);
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--ct-primary) 8%, transparent);
 }
 
 .coding-stat-icon {
-  font-size: 1.2rem;
+  display: inline-flex;
+  align-items: center;
+  font-size: 1.05rem;
   line-height: 1;
+  /* Default glyph color; per-tile tones below give the row restrained color
+     (now that these are real icons, not colored emoji). */
+  color: var(--ct-muted);
 }
+
+/* Restrained tones — one meaningful accent per metric, not a rainbow. */
+.coding-stat-tile.stat-streak .coding-stat-icon { color: var(--ct-accent); }
+.coding-stat-tile.stat-solved .coding-stat-icon { color: var(--ct-success); }
+.coding-stat-tile.stat-attempted .coding-stat-icon { color: var(--ct-primary); }
+.coding-stat-tile.stat-complete .coding-stat-icon { color: var(--ct-primary); }
 
 .coding-stat-value {
   font-size: 1.7rem;
@@ -1442,7 +1453,7 @@ body.dark .recent-status.solved { color: #5bd178; }
 }
 
 /* Estimated-time reads as a rounded pill to match the difficulty pill. */
-.daily-eta-pill {
+.daily-source-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1451,6 +1462,9 @@ body.dark .recent-status.solved { color: #5bd178; }
   font-size: 0.78rem;
   font-weight: 700;
   white-space: nowrap;
+  color: var(--ct-accent);
+  background: color-mix(in srgb, var(--ct-accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ct-accent) 36%, transparent);
 }
 
 .problem-navigation {
@@ -2183,36 +2197,10 @@ body.dark .floating-rewrite-lang {
 }
 
 @media (max-width: 900px) {
-  /* Tablet + phone: the dropdown bar spans the FULL width (vs the compact
-     left-aligned bar on desktop). The base is already single-column top-bar. */
-  .coding-section-nav,
-  .coding-app.coding-workspace-active .coding-section-nav {
-    width: 100% !important;
-    justify-self: stretch !important;
-  }
-
-  /* Closed dropdown shows only the bar; list buttons hidden until opened. */
-  .coding-section-nav > button:not(.coding-nav-mobile-toggle) {
-    display: none !important;
-  }
-
-  .coding-section-nav.mobile-open > button:not(.coding-nav-mobile-toggle) {
-    display: flex !important;
-    width: 100% !important;
-    border-radius: 0 !important;
-    border: 0 !important;
-    border-top: 1px solid rgba(148, 163, 184, 0.16) !important;
-    background: transparent !important;
-  }
-
-  .coding-section-nav.mobile-open > button.active {
-    background: var(--ct-accent-soft, rgba(245, 130, 32, 0.14)) !important;
-  }
-
-  body.dark .coding-section-nav.mobile-open > button:not(.coding-nav-mobile-toggle) {
-    border-top-color: rgba(148, 163, 184, 0.18);
-    color: var(--ct-text, #e5e7eb);
-  }
+  /* (The old dropdown-bar rules here — full-width column, list hidden until
+     .mobile-open, etc. — were removed. That dropdown toggle no longer exists in
+     the markup; the sub-header is a labeled pill row that collapses to icon-only
+     circles at 1180px, the same pattern as the main top NavBar.) */
 
   .coding-app-content {
     grid-row: 2;
@@ -2531,7 +2519,9 @@ body.dark .floating-chat-messages {
 }
 
 /* Token-based theme polish */
-.coding-section-nav,
+/* NOTE: .coding-section-nav intentionally NOT in this card-surface group — the
+   section nav is a row of floating icon pills with no wrapping bar (see the
+   .coding-app .campus-section-nav rules). */
 .coding-page-panel,
 .daily-feature-card,
 .quiz-library,
@@ -2698,10 +2688,12 @@ body.dark .floating-chat-message.user {
   --ct-primary-soft: var(--primary-soft);
   --ct-accent: var(--accent);
   --ct-accent-soft: var(--accent-soft);
-  /* FLAT ivory — the old gradient-mesh + warm linear-gradient added the orange
-     wash that made the section cards look like "cards on a card". The page should
-     be a single clean ivory surface. */
-  background: var(--bg-body);
+  /* FLAT warm paper — the old gradient-mesh + warm linear-gradient added the
+     orange wash that made the section cards look like "cards on a card". The page
+     should be a single clean surface. Uses the scoped --ct-bg (warm academic
+     paper from CodingTutorTheme.css) so the canvas matches the lab sub-brand
+     instead of the cool global app canvas. */
+  background: var(--ct-bg);
 }
 
 .coding-section-nav,
@@ -2942,27 +2934,32 @@ body.dark .floating-chat-button {
   color: #07111f !important;
 }
 
-/* Dark mode solid Morgan theme pass. Keep Coding Tutor opaque and readable. */
+/* Dark mode solid Morgan theme pass. Keep Coding Tutor opaque and readable.
+   Light-tune (2026-06): lifted the base surface off near-black and spread the
+   three panel levels into distinct steps so the section reads as a layered warm
+   lab instead of one flat too-dark slab. Accents (navy/orange) and borders are
+   pushed brighter so they stop looking muddy on the dark slate. */
 body.dark .coding-app {
-  --ct-primary: #789dca;
-  --ct-primary-hover: #8faed7;
-  --ct-primary-soft: rgba(120, 157, 202, 0.18);
-  --ct-accent: #e7a05b;
-  --ct-accent-soft: rgba(231, 160, 91, 0.18);
-  --ct-panel: #172235 !important;
-  --ct-panel-soft: #152033 !important;
-  --ct-panel-raised: #1c2a3f !important;
-  --ct-surface: #172235 !important;
-  --ct-surface-soft: #152033 !important;
-  --ct-surface-strong: #1c2a3f !important;
-  --ct-text: #f4efe6;
-  --ct-muted: #b7c1cf;
-  --ct-faint: #8d9aac;
-  --ct-border: #31415a;
-  --ct-border-strong: #435a78;
-  --ct-editor-bg: #101826;
+  --ct-bg: #131d30 !important;          /* lifted base canvas (was near-black #0b1120) */
+  --ct-primary: #8fb4e0;               /* brighter navy-blue (was muddy #789dca) */
+  --ct-primary-hover: #a6c5ea;
+  --ct-primary-soft: rgba(143, 180, 224, 0.20);
+  --ct-accent: #f0a868;                /* warmer, punchier orange (was dull #e7a05b) */
+  --ct-accent-soft: rgba(240, 168, 104, 0.20);
+  --ct-panel: #1b2942 !important;       /* +elevation step 1 */
+  --ct-panel-soft: #18243a !important;  /* recessed */
+  --ct-panel-raised: #223150 !important;/* +elevation step 2 (clearly above panel) */
+  --ct-surface: #1b2942 !important;
+  --ct-surface-soft: #18243a !important;
+  --ct-surface-strong: #223150 !important;
+  --ct-text: #f6f1e8;
+  --ct-muted: #c2cbd9;                  /* lifted muted for readability */
+  --ct-faint: #95a2b6;
+  --ct-border: #3a4c6b !important;      /* brighter divider so panels separate */
+  --ct-border-strong: #51688c !important;
+  --ct-editor-bg: #121c2e;
   --ct-editor-text: #f1eadf;
-  --ct-terminal-bg: #111a2a;
+  --ct-terminal-bg: #131e30;
   --ct-terminal-text: #f1eadf;
 }
 
@@ -3354,19 +3351,16 @@ body.dark .coding-app :is(
   color: #172033 !important;
 }
 
-.coding-app :is(
-  .coding-nav-icon,
-  .daily-meta-row span
-) {
+/* NOTE: .coding-nav-icon was removed from this group — the sub-header pills carry
+   their own background, so a gradient box behind each icon turned them into
+   overlapping circles. Only the daily difficulty badge keeps the pill treatment. */
+.coding-app .daily-meta-row span {
   background: linear-gradient(135deg, var(--ct-primary-soft), var(--ct-accent-soft)) !important;
   border: 1px solid color-mix(in srgb, var(--ct-accent) 32%, var(--ct-border)) !important;
   color: var(--ct-primary) !important;
 }
 
-body.dark .coding-app :is(
-  .coding-nav-icon,
-  .daily-meta-row span
-) {
+body.dark .coding-app .daily-meta-row span {
   color: #f3dcc2 !important;
 }
 
@@ -3726,5 +3720,1238 @@ body.dark .floating-coding-chat .floating-chat-button:hover {
 
   .floating-coding-chat .floating-chat-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Campus Lab Home refresh
+   -------------------------------------------------------------------------- */
+.coding-app .coding-nav-row {
+  align-items: center;
+  justify-content: center;
+  padding: 2px 18px 8px;
+}
+
+/* No wrapping bar: the icon pills float directly on the page background, the
+   same way the main top-nav pills do. No container bg / border / shadow.
+   High-specificity + !important so this beats the several card-surface groups
+   elsewhere in this file that also match .coding-section-nav. */
+.coding-app .coding-section-nav.campus-section-nav,
+.coding-app .campus-section-nav {
+  width: auto !important;
+  max-width: 100%;
+  flex: 0 1 auto;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 10px;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.coding-app .campus-section-nav::-webkit-scrollbar {
+  display: none;
+}
+
+/* Labeled pills, same structure as the main top nav (icon + text). */
+.coding-app .campus-section-nav > button,
+.coding-app .campus-section-nav > button:not(.coding-nav-mobile-toggle),
+.coding-app .campus-section-nav.mobile-open > button:not(.coding-nav-mobile-toggle) {
+  position: relative;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  width: auto;
+  height: auto;
+  min-height: 38px;
+  padding: 8px 14px !important;
+  border: 1px solid var(--ct-border) !important;
+  border-radius: 999px !important;
+  background: var(--ct-panel) !important;
+  color: var(--ct-muted) !important;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: none !important;
+  cursor: pointer;
+}
+
+.coding-app .campus-section-nav .coding-nav-icon {
+  width: auto;
+  height: auto;
+  flex: 0 0 auto;
+  /* !important so the lower-specificity .coding-nav-icon rules (left over from the
+     old dropdown list-item icons) can't re-box these into tinted circles. The
+     color !important is essential: rules at ~2581 / ~2899 force the icon color to
+     navy (--ct-primary) with !important — on the active (navy-filled) pill that
+     paints a navy icon on a navy circle = an invisible filled disc. Forcing
+     currentColor here makes the icon inherit the button's color (white when
+     active, muted otherwise) so the glyph is always visible. */
+  background: transparent !important;
+  border: 0 !important;
+  color: currentColor !important;
+  font-size: 1rem;
+}
+
+/* Belt-and-suspenders: make the glyph itself follow the button color so the
+   active (white) icon is never lost to an inherited navy fill. */
+.coding-app .campus-section-nav .coding-nav-icon svg {
+  fill: currentColor;
+  color: currentColor;
+}
+
+/* Labels are visible now (was screen-reader-only). */
+.coding-app .campus-section-nav .coding-nav-label {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  white-space: nowrap;
+}
+
+.coding-app .campus-section-nav > button:hover,
+.coding-app .campus-section-nav > button:focus-visible {
+  background: color-mix(in srgb, var(--ct-accent) 16%, var(--ct-panel)) !important;
+  border-color: color-mix(in srgb, var(--ct-accent) 52%, var(--ct-border)) !important;
+  color: var(--ct-primary) !important;
+  /* No translateY lift — it made the pill shift off its resting spot on hover,
+     which read as the orange tint "sliding out" of the pill. */
+  transform: none;
+}
+
+/* Active = filled navy pill, matching the main top NavBar's active .nav-pill.
+   When collapsed to icon-only (<=1180px) the pill is a circle, so this reads as a
+   filled navy circle around the active icon. */
+.coding-app .campus-section-nav > button.active {
+  background: var(--ct-primary) !important;
+  border-color: var(--ct-primary) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+body.dark .coding-app .campus-section-nav > button.active {
+  background: var(--msu-blue, #8ab4f8) !important;
+  border-color: var(--msu-blue, #8ab4f8) !important;
+  color: #0b1322 !important;
+}
+
+.coding-app .campus-section-nav .coding-nav-workspace-toggle {
+  margin: 0;
+}
+
+/* Responsive collapse — the SAME pattern as the main top NavBar (.nav-pill span
+   { display:none } at 1180px). Below 1180px the labels hide and each pill becomes
+   a clean, equal-size icon circle. No clipped text, no horizontal scroll. */
+@media (max-width: 1180px) {
+  .coding-app .campus-section-nav .coding-nav-label {
+    display: none;
+  }
+
+  .coding-app .campus-section-nav > button,
+  .coding-app .campus-section-nav > button:not(.coding-nav-mobile-toggle) {
+    width: 42px;
+    min-width: 42px;
+    height: 42px;
+    min-height: 42px;
+    padding: 0 !important;
+    gap: 0;
+  }
+
+  .coding-app .campus-section-nav {
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+.campus-lab-home {
+  gap: 22px;
+  padding-top: 10px;
+}
+
+/* The "Today's focus" next-step line now lives inside the hero
+   (.campus-hero-focus, in the ORA block) instead of a separate strip below it. */
+
+/* T3-d: subtle Morgan State CS identity cue in the hero kicker (not a logo). */
+.campus-hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.campus-hero-org {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 28%, var(--ct-border));
+  background: color-mix(in srgb, var(--ct-primary) 8%, transparent);
+  color: var(--ct-primary);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.campus-lab-hero,
+.campus-progress-strip,
+.campus-learning-queue,
+.campus-language-card,
+.campus-daily-mission,
+.campus-tutor-actions,
+.campus-new-user-card {
+  border: 1px solid var(--ct-border);
+  background: color-mix(in srgb, var(--ct-panel) 94%, transparent);
+  box-shadow: 0 16px 38px color-mix(in srgb, var(--ct-primary) 8%, transparent);
+}
+
+.campus-lab-hero {
+  display: block;
+  padding: clamp(20px, 3vw, 32px);
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--ct-primary) 10%, transparent), transparent 48%),
+    linear-gradient(160deg, color-mix(in srgb, var(--ct-accent) 12%, var(--ct-panel)), var(--ct-panel) 58%);
+  overflow: hidden;
+}
+
+.campus-hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.campus-hero-copy h2,
+.campus-new-user-card h2 {
+  max-width: 760px;
+  margin: 0;
+  color: var(--ct-text);
+  font-size: clamp(1.5rem, 2.4vw, 2.1rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.campus-new-user-card p {
+  max-width: 68ch;
+  margin: 0;
+  color: var(--ct-muted);
+  font-size: clamp(1rem, 1.4vw, 1.12rem);
+  line-height: 1.65;
+}
+
+/* State-first hero stat row (replaces the marketing slogan + paragraph). */
+.campus-hero-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  align-items: baseline;
+}
+
+.campus-hero-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.campus-hero-stat strong {
+  font-family: var(--font-mono, ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace);
+  font-size: 1.7rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ct-text);
+}
+
+.campus-hero-stat.accent strong { color: var(--ct-accent); }
+.campus-hero-stat.success strong { color: var(--ct-success); }
+
+.campus-hero-stat i {
+  font-style: normal;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ct-muted);
+}
+
+.campus-hero-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 2px 0 0;
+  color: var(--ct-muted);
+  font-size: 0.88rem;
+}
+
+.campus-hero-actions,
+.daily-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.campus-primary-action,
+.campus-secondary-action,
+.campus-recommendation-card button,
+.campus-queue-item button,
+.campus-language-card button,
+.campus-action-list button,
+.campus-daily-mission .daily-practice-btn,
+.campus-daily-mission .daily-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 11px 18px;
+  border-radius: 999px;
+  font-weight: 780;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.campus-primary-action,
+.campus-recommendation-card button,
+.campus-queue-item.featured button,
+.campus-daily-mission .daily-practice-btn {
+  border-color: var(--ct-primary);
+  background: var(--ct-primary);
+  color: #fff;
+}
+
+.campus-secondary-action,
+.campus-queue-item button,
+.campus-language-card button,
+.campus-daily-mission .daily-link {
+  border-color: color-mix(in srgb, var(--ct-primary) 28%, var(--ct-border));
+  background: var(--ct-panel);
+  color: var(--ct-primary);
+}
+
+.campus-primary-action:hover,
+.campus-secondary-action:hover,
+.campus-recommendation-card button:hover,
+.campus-queue-item button:hover,
+.campus-language-card button:hover,
+.campus-action-list button:hover,
+.campus-daily-mission .daily-practice-btn:hover,
+.campus-daily-mission .daily-link:hover {
+  border-color: var(--ct-accent);
+  background: linear-gradient(135deg, var(--ct-accent), color-mix(in srgb, var(--ct-accent) 78%, var(--ct-primary))) !important;
+  color: #182033 !important;
+  transform: translateY(-1px);
+}
+
+.campus-recommendation-card {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 24px;
+  border-radius: 24px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 24%, var(--ct-border));
+  background: color-mix(in srgb, var(--ct-panel) 82%, var(--ct-primary-soft));
+}
+
+.campus-recommendation-card strong {
+  color: var(--ct-text);
+  font-size: clamp(1.25rem, 2vw, 1.9rem);
+  line-height: 1.12;
+}
+
+.campus-rec-meta,
+.campus-daily-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--ct-muted);
+  font-size: 0.9rem;
+}
+
+.campus-daily-note {
+  padding-top: 8px;
+  border-top: 1px solid var(--ct-border);
+}
+
+.campus-progress-strip {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) repeat(3, minmax(96px, auto));
+  gap: 12px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 22px;
+}
+
+.campus-progress-meter {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.campus-progress-meter strong {
+  color: var(--ct-text);
+  font-size: 1.35rem;
+}
+
+.campus-progress-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-muted) 18%, transparent);
+  overflow: hidden;
+}
+
+.campus-progress-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--ct-primary), var(--ct-success));
+}
+
+.campus-stat-chip {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  min-width: 96px;
+  padding: 11px 14px;
+  border-radius: 18px;
+  background: var(--ct-panel-soft);
+  border: 1px solid var(--ct-border);
+}
+
+.campus-stat-chip strong {
+  color: var(--ct-text);
+  font-size: 1.35rem;
+}
+
+.campus-stat-chip span {
+  color: var(--ct-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.campus-topic-strip {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.campus-topic-pill {
+  position: relative;
+  overflow: hidden;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--ct-border);
+  color: var(--ct-text);
+  background: var(--ct-panel);
+  font-size: 0.82rem;
+  font-weight: 760;
+}
+
+/* T2-c: full-width faint baseline so the mastery fill reads as a tiny progress
+   bar, not a stray orange nub at low percentages. */
+.campus-topic-pill::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 3px;
+  background: color-mix(in srgb, var(--ct-muted) 22%, transparent);
+}
+
+.campus-topic-pill i {
+  position: absolute;
+  inset: auto auto 0 0;
+  z-index: 1;
+  height: 3px;
+  min-width: 6px;
+  background: var(--ct-accent);
+}
+
+.campus-learning-queue,
+.campus-tutor-actions {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border-radius: 24px;
+}
+
+.campus-section-heading {
+  display: grid;
+  gap: 4px;
+}
+
+.campus-section-heading h3 {
+  margin: 0;
+  color: var(--ct-text);
+  font-size: 1.35rem;
+}
+
+.campus-queue-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.campus-queue-item {
+  display: grid;
+  align-content: space-between;
+  gap: 10px;
+  min-height: 170px;
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid var(--ct-border);
+  background: var(--ct-panel);
+}
+
+.campus-queue-item > span {
+  color: var(--ct-muted);
+  font-size: 0.74rem;
+  font-weight: 820;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.campus-queue-item strong {
+  color: var(--ct-text);
+  font-size: 1.15rem;
+}
+
+.campus-queue-item p,
+.campus-language-card p {
+  margin: 0;
+  color: var(--ct-muted);
+  line-height: 1.5;
+}
+
+.campus-queue-item.featured {
+  border-color: color-mix(in srgb, var(--ct-primary) 34%, var(--ct-border));
+  background: color-mix(in srgb, var(--ct-primary) 8%, var(--ct-panel));
+}
+
+.campus-queue-item.personal {
+  border-color: color-mix(in srgb, var(--ct-accent) 38%, var(--ct-border));
+  background: color-mix(in srgb, var(--ct-accent) 10%, var(--ct-panel));
+}
+
+.campus-language-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  border-radius: 22px;
+}
+
+.campus-language-card p {
+  flex: 1 1 420px;
+}
+
+.campus-language-card strong {
+  color: var(--ct-primary);
+}
+
+.campus-daily-mission {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 26px;
+  border-radius: 26px;
+  border-color: color-mix(in srgb, var(--ct-accent) 34%, var(--ct-border));
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--ct-accent) 14%, transparent), transparent 48%),
+    var(--ct-panel);
+}
+
+.campus-daily-mission h2 {
+  margin: 4px 0 0;
+  color: var(--ct-text);
+  font-size: clamp(1.65rem, 3vw, 2.8rem);
+  line-height: 1.08;
+}
+
+.campus-tutor-actions {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.campus-action-list {
+  display: grid;
+  gap: 10px;
+  max-width: 920px;
+}
+
+.campus-action-list button {
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 58px;
+  border: 1px solid var(--ct-border);
+  background: var(--ct-panel);
+  color: var(--ct-text);
+  border-left: 4px solid var(--ct-accent);
+  border-radius: 18px;
+}
+
+.campus-action-list svg {
+  color: var(--ct-primary);
+}
+
+.campus-new-user-card {
+  display: grid;
+  gap: 14px;
+  padding: clamp(24px, 4vw, 42px);
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--ct-accent) 14%, transparent), transparent 52%),
+    var(--ct-panel);
+}
+
+body.dark .coding-app .campus-section-nav,
+body.dark .campus-lab-hero,
+body.dark .campus-progress-strip,
+body.dark .campus-learning-queue,
+body.dark .campus-language-card,
+body.dark .campus-daily-mission,
+body.dark .campus-new-user-card,
+body.dark .campus-queue-item,
+body.dark .campus-recommendation-card,
+body.dark .campus-action-list button {
+  background-color: var(--ct-panel);
+  border-color: var(--ct-border);
+}
+
+body.dark .coding-app .campus-section-nav > button.active {
+  background: color-mix(in srgb, var(--ct-primary) 76%, #111827) !important;
+  color: #fff !important;
+}
+
+/* Tablet / small-laptop and split-screen: collapse the multi-column blocks to a
+   single column so cards don't get squeezed. */
+@media (max-width: 900px) {
+  .campus-queue-grid,
+  .campus-queue-grid.two-up,
+  .campus-queue-grid.three-up {
+    grid-template-columns: 1fr;
+  }
+
+  .campus-action-list.compact {
+    grid-template-columns: 1fr;
+  }
+
+  .campus-daily-mission {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .campus-daily-mission .daily-actions {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .coding-app .coding-nav-row {
+    padding: 0 6px 6px;
+  }
+
+  /* Labels are already collapsed to icon-only by the 1180px rule below, so the
+     pills are compact circles here — center them as a tidy row (no fixed 42px
+     squares, which used to clip the labels into "Hor / Qui / Inte"). */
+  .coding-app .campus-section-nav {
+    justify-content: center;
+  }
+
+  .campus-lab-home {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .campus-lab-hero,
+  .campus-progress-strip,
+  .campus-learning-queue,
+  .campus-daily-mission,
+  .campus-new-user-card {
+    border-radius: 22px;
+    padding: 20px;
+  }
+}
+
+/* ORA academic lab polish: warmer, less clinical Coding Tutor home */
+.coding-app {
+  --ct-paper: color-mix(in srgb, var(--ct-panel) 82%, #f7eadb);
+  --ct-paper-strong: color-mix(in srgb, var(--ct-panel) 70%, #f2ddc6);
+  --ct-ink: var(--ct-primary);
+  --ct-gold-line: color-mix(in srgb, var(--ct-accent) 72%, #f6d29f);
+}
+
+.campus-lab-home {
+  gap: 24px;
+}
+
+/* T3-a: progress + daily side-by-side band. Daily gets a touch more width as
+   the focal point. Stacks to one column on narrow screens. */
+.campus-focus-band {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.campus-focus-band > * {
+  margin: 0;
+  height: 100%;
+}
+
+/* T2-d: language suggestion as a slim inline note, not a full panel. */
+.campus-language-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0;
+  padding: 10px 16px;
+  border: 1px solid var(--ct-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ct-primary) 5%, var(--ct-paper));
+  color: var(--ct-muted);
+  font-size: 0.9rem;
+}
+
+.campus-language-note .coding-kicker {
+  margin-right: 2px;
+}
+
+.campus-language-note strong {
+  color: var(--ct-primary);
+}
+
+.campus-language-note button {
+  margin-left: auto;
+  padding: 6px 14px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 28%, var(--ct-border));
+  border-radius: 999px;
+  background: var(--ct-panel);
+  color: var(--ct-primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.campus-language-note button:hover {
+  border-color: var(--ct-accent);
+  background: color-mix(in srgb, var(--ct-accent) 14%, var(--ct-panel));
+}
+
+.campus-lab-hero,
+.campus-progress-strip,
+.campus-learning-queue,
+.campus-language-card,
+.campus-daily-mission,
+.campus-new-user-card {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--ct-paper) 88%, transparent), color-mix(in srgb, var(--ct-panel) 90%, var(--ct-paper))),
+    var(--ct-paper);
+  /* T2-b: thinner, warmer border + lighter shadow — "academic lab", not boxed-in. */
+  border-color: color-mix(in srgb, var(--ct-accent) 16%, var(--ct-border));
+  box-shadow:
+    0 10px 24px color-mix(in srgb, var(--ct-primary) 6%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 55%, transparent);
+}
+
+.campus-lab-hero {
+  position: relative;
+  display: block;
+  min-height: 0;
+  /* Thin warm gold top rail instead of a heavy 5px navy slab. */
+  border-top: 3px solid color-mix(in srgb, var(--ct-accent) 70%, var(--ct-gold-line));
+  background:
+    radial-gradient(circle at 88% 30%, color-mix(in srgb, var(--ct-accent) 14%, transparent), transparent 42%),
+    linear-gradient(100deg, color-mix(in srgb, var(--ct-primary) 10%, var(--ct-paper)) 0%, var(--ct-paper) 60%, var(--ct-panel) 100%);
+}
+
+.campus-hero-copy {
+  padding-left: 4px;
+}
+
+.campus-hero-copy h2,
+.campus-new-user-card h2 {
+  color: var(--ct-primary);
+  max-width: 820px;
+}
+
+.campus-hero-copy p,
+.campus-new-user-card p,
+.campus-section-heading h3 + p,
+.campus-queue-item p,
+.campus-language-card p {
+  color: color-mix(in srgb, var(--ct-muted) 82%, var(--ct-primary));
+}
+
+/* "Today's focus" — the hero's one concrete next step (merged in from the old
+   standalone strip). A slim accent-railed row, not a separate boxed card. */
+.campus-hero-focus {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+  margin-top: 2px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--ct-accent) 22%, var(--ct-border));
+  border-left: 3px solid var(--ct-accent);
+  background: color-mix(in srgb, var(--ct-accent) 8%, var(--ct-paper));
+}
+
+.campus-hero-focus-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ct-accent);
+}
+
+.campus-hero-focus-label svg {
+  font-size: 0.85rem;
+}
+
+.campus-hero-focus-text {
+  flex: 1 1 240px;
+  min-width: 0;
+  color: var(--ct-text);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.campus-code-preview {
+  align-self: center;
+  min-width: 0;
+  border-radius: 22px;
+  overflow: hidden;
+  background: #101827;
+  border: 1px solid color-mix(in srgb, var(--ct-accent) 32%, #101827);
+  box-shadow: 0 20px 42px color-mix(in srgb, var(--ct-primary) 30%, transparent);
+}
+
+.campus-code-preview-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 14px;
+  background: color-mix(in srgb, #111827 88%, var(--ct-accent));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.campus-code-preview-top span {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+}
+
+.campus-code-preview-top span:nth-child(1) { background: #f37021; }
+.campus-code-preview-top span:nth-child(2) { background: #f0b84b; }
+.campus-code-preview-top span:nth-child(3) { background: #3f9d63; }
+
+.campus-code-preview-top strong {
+  margin-left: auto;
+  color: #d9e3f4;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.campus-code-preview pre {
+  margin: 0;
+  padding: 18px;
+  color: #dce7f7;
+  font-family: var(--font-mono, "JetBrains Mono", Consolas, monospace);
+  font-size: clamp(0.78rem, 1vw, 0.92rem);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.campus-recommendation-card,
+.campus-queue-item,
+.campus-action-list button,
+.campus-stat-chip,
+.campus-topic-pill {
+  background: color-mix(in srgb, var(--ct-panel) 76%, var(--ct-paper));
+  border-color: color-mix(in srgb, var(--ct-primary) 18%, var(--ct-border));
+}
+
+.campus-recommendation-card {
+  border-top: 4px solid var(--ct-primary);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--ct-accent) 26%, transparent);
+}
+
+.campus-recommendation-card strong,
+.campus-section-heading h3,
+.campus-queue-item strong,
+.campus-daily-mission h2 {
+  color: var(--ct-primary);
+}
+
+.coding-app .coding-kicker {
+  color: var(--ct-primary);
+  letter-spacing: 0.09em;
+}
+
+.campus-progress-strip {
+  border-radius: 18px;
+  /* Softer, thinner accent rail (was a heavy 5px navy slab). */
+  border-left: 3px solid color-mix(in srgb, var(--ct-accent) 60%, var(--ct-primary));
+}
+
+.campus-progress-bar {
+  height: 12px;
+  /* T2-c: even ticks (6px tick / 6px gap) so the track reads intentional, not
+     broken. The lighter base shows through the gaps. */
+  background:
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--ct-primary) 9%, transparent) 0 6px, transparent 6px 12px),
+    color-mix(in srgb, var(--ct-primary) 8%, var(--ct-paper));
+}
+
+/* Animated fill — "gaming HUD" vibe: a mostly-blue gradient with orange accents
+   that flows continuously, plus a brighter sheen streak sweeping across and a
+   pulsing glow. Blue is dominant; orange is a highlight. Width still transitions
+   when the percentage updates. */
+.campus-progress-bar span {
+  position: relative;
+  overflow: hidden;
+  /* Blue-dominant gradient: orange only appears as a narrow accent band. */
+  background: linear-gradient(
+    90deg,
+    var(--ct-primary) 0%,
+    color-mix(in srgb, var(--ct-primary) 80%, var(--ct-accent)) 38%,
+    var(--ct-accent) 50%,
+    color-mix(in srgb, var(--ct-primary) 80%, var(--ct-accent)) 62%,
+    var(--ct-primary) 100%
+  );
+  background-size: 300% 100%;
+  transition: width 1s ease-out;
+  animation:
+    campusProgressFlow 3.2s linear infinite,
+    campusProgressGlow 1.8s ease-in-out infinite alternate;
+  box-shadow:
+    0 0 14px color-mix(in srgb, var(--ct-primary) 50%, transparent),
+    0 0 26px color-mix(in srgb, var(--ct-primary) 28%, transparent);
+}
+
+/* Moving sheen streak swept across the fill, like a charging/loading bar. */
+.campus-progress-bar span::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    transparent 35%,
+    color-mix(in srgb, #ffffff 55%, transparent) 50%,
+    transparent 65%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  animation: campusProgressSheen 2.4s linear infinite;
+}
+
+/* Flowing gradient — blue → orange accent → blue, drifting left to right. */
+@keyframes campusProgressFlow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+
+/* The bright streak sweeping across. */
+@keyframes campusProgressSheen {
+  0% { background-position: 120% 0; }
+  100% { background-position: -120% 0; }
+}
+
+/* Blue-led glow pulse. */
+@keyframes campusProgressGlow {
+  from {
+    box-shadow:
+      0 0 10px color-mix(in srgb, var(--ct-primary) 42%, transparent),
+      0 0 20px color-mix(in srgb, var(--ct-primary) 20%, transparent);
+  }
+  to {
+    box-shadow:
+      0 0 18px color-mix(in srgb, var(--ct-primary) 62%, transparent),
+      0 0 34px color-mix(in srgb, var(--ct-accent) 26%, transparent);
+  }
+}
+
+.campus-stat-chip {
+  border-radius: 14px;
+}
+
+.campus-stat-chip strong {
+  color: var(--ct-primary);
+}
+
+.campus-topic-pill {
+  border-radius: 10px;
+  color: var(--ct-primary);
+}
+
+.campus-topic-pill i {
+  height: 4px;
+  background: linear-gradient(90deg, var(--ct-primary), var(--ct-accent));
+}
+
+.campus-learning-queue {
+  border-top: 3px solid color-mix(in srgb, var(--ct-primary) 55%, var(--ct-accent));
+}
+
+.campus-queue-grid {
+  gap: 16px;
+}
+
+/* Three intentional cards: Recommended Next (featured) · Personal Code Lab ·
+   Recommended Focus. Featured dominates; the other two recede. */
+.campus-queue-grid.three-up {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.campus-queue-item {
+  min-height: 150px;
+  border-radius: 16px;
+}
+
+/* Featured = the dominant card: navy left rail + a touch more weight. */
+.campus-queue-item.featured {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--ct-primary) 9%, transparent), transparent 58%),
+    color-mix(in srgb, var(--ct-panel) 76%, var(--ct-paper));
+  border-color: color-mix(in srgb, var(--ct-primary) 42%, var(--ct-border));
+  border-left: 3px solid color-mix(in srgb, var(--ct-primary) 70%, var(--ct-accent));
+}
+
+.campus-queue-item.featured strong {
+  font-size: 1.22rem;
+}
+
+.campus-queue-item.personal {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--ct-accent) 10%, transparent), transparent 58%),
+    color-mix(in srgb, var(--ct-panel) 76%, var(--ct-paper));
+  border-color: color-mix(in srgb, var(--ct-accent) 34%, var(--ct-border));
+}
+
+/* Recommended Focus = a quiet guidance card, distinct from the other two. */
+.campus-queue-item.focus {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--ct-success) 7%, transparent), transparent 58%),
+    color-mix(in srgb, var(--ct-panel) 80%, var(--ct-paper));
+  border-color: color-mix(in srgb, var(--ct-success) 26%, var(--ct-border));
+}
+
+.campus-queue-item.focus > span {
+  color: var(--ct-success);
+}
+
+/* T3-b: the LeetCode daily card is the page's focal point. Accent presence comes
+   from the top rail + warm wash, NOT a heavy all-around orange outline (which read
+   like a warning box). The surrounding border is soft; the top rail carries the
+   accent. */
+.campus-daily-mission {
+  align-items: flex-start;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--ct-accent) 22%, var(--ct-border));
+  border-top: 4px solid var(--ct-accent);
+  padding: clamp(20px, 2.6vw, 28px);
+  background:
+    radial-gradient(circle at 85% 20%, color-mix(in srgb, var(--ct-accent) 14%, transparent), transparent 42%),
+    linear-gradient(90deg, color-mix(in srgb, var(--ct-accent) 18%, var(--ct-paper)), transparent 58%),
+    color-mix(in srgb, var(--ct-panel) 82%, var(--ct-paper));
+  box-shadow:
+    0 14px 34px color-mix(in srgb, var(--ct-accent) 13%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 55%, transparent);
+}
+
+/* Tighter focal heading so the card reads full, not oversized for its content. */
+.campus-daily-mission h2 {
+  font-size: clamp(1.4rem, 2.2vw, 1.9rem);
+}
+
+/* "Good for practicing: …" — a one-line purpose cue from real LeetCode tags. */
+.campus-daily-mission .daily-practice-for {
+  margin: 12px 0 0;
+  color: color-mix(in srgb, var(--ct-muted) 78%, var(--ct-primary));
+  font-size: 0.86rem;
+  font-weight: 650;
+}
+
+/* Topic tag chips (reuses the DailyChallengeCard .daily-tags pattern). */
+.campus-daily-mission .daily-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.campus-daily-mission .daily-tags span {
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-family: var(--font-mono, ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace);
+  font-size: 0.74rem;
+  font-weight: 650;
+  color: var(--ct-primary);
+  background: color-mix(in srgb, var(--ct-primary) 8%, var(--ct-panel));
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 20%, var(--ct-border));
+  white-space: nowrap;
+}
+
+.campus-action-list {
+  max-width: 1040px;
+}
+
+.campus-action-list button {
+  border-radius: 14px;
+  border-left: 5px solid var(--ct-accent);
+}
+
+.campus-action-list button:hover svg {
+  color: #182033;
+}
+
+/* T2-a: compact 3-up row instead of three tall full-width bars. */
+.campus-action-list.compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  max-width: none;
+}
+
+.campus-action-list.compact button {
+  justify-content: center;
+  gap: 9px;
+  min-height: 48px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 18%, var(--ct-border));
+  border-left: 1px solid color-mix(in srgb, var(--ct-primary) 18%, var(--ct-border));
+  border-radius: 12px;
+  font-weight: 700;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.campus-action-list.compact button:hover {
+  border-color: var(--ct-accent);
+  transform: translateY(-1px);
+}
+
+.campus-action-list.compact button:focus-visible {
+  outline: 2px solid var(--ct-accent);
+  outline-offset: 2px;
+}
+
+.campus-action-list.compact button span {
+  white-space: nowrap;
+}
+
+.campus-primary-action,
+.campus-recommendation-card button,
+.campus-queue-item.featured button,
+.campus-daily-mission .daily-practice-btn {
+  background: linear-gradient(135deg, var(--ct-primary), color-mix(in srgb, var(--ct-primary) 78%, #000));
+  border-color: var(--ct-primary);
+  box-shadow: 0 12px 26px color-mix(in srgb, var(--ct-primary) 20%, transparent);
+}
+
+.campus-secondary-action,
+.campus-queue-item button,
+.campus-language-card button,
+.campus-daily-mission .daily-link {
+  background: color-mix(in srgb, var(--ct-panel) 78%, var(--ct-paper));
+  border-color: color-mix(in srgb, var(--ct-primary) 28%, var(--ct-border));
+}
+
+.campus-primary-action:hover,
+.campus-secondary-action:hover,
+.campus-recommendation-card button:hover,
+.campus-queue-item button:hover,
+.campus-language-card button:hover,
+.campus-action-list button:hover,
+.campus-daily-mission .daily-practice-btn:hover,
+.campus-daily-mission .daily-link:hover,
+.floating-chat-button:hover {
+  background: linear-gradient(135deg, var(--ct-accent), color-mix(in srgb, var(--ct-accent) 70%, #ffcf80)) !important;
+  border-color: color-mix(in srgb, var(--ct-accent) 80%, var(--ct-primary)) !important;
+  color: #17213a !important;
+}
+
+body.dark .coding-app {
+  --ct-paper: color-mix(in srgb, var(--ct-panel) 84%, #281b11);
+  --ct-paper-strong: color-mix(in srgb, var(--ct-panel) 74%, #3a2817);
+  --ct-gold-line: color-mix(in srgb, var(--ct-accent) 68%, #f6c66d);
+}
+
+body.dark .campus-lab-hero,
+body.dark .campus-progress-strip,
+body.dark .campus-learning-queue,
+body.dark .campus-language-card,
+body.dark .campus-daily-mission,
+body.dark .campus-new-user-card,
+body.dark .campus-recommendation-card,
+body.dark .campus-queue-item,
+body.dark .campus-action-list button,
+body.dark .campus-stat-chip,
+body.dark .campus-topic-pill {
+  background-color: var(--ct-paper);
+  border-color: color-mix(in srgb, var(--ct-accent) 20%, var(--ct-border));
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
+}
+
+body.dark .campus-hero-copy h2,
+body.dark .campus-new-user-card h2,
+body.dark .campus-recommendation-card strong,
+body.dark .campus-section-heading h3,
+body.dark .campus-queue-item strong,
+body.dark .campus-daily-mission h2,
+body.dark .campus-stat-chip strong {
+  color: color-mix(in srgb, var(--ct-text) 90%, #fff);
+}
+
+body.dark .campus-hero-copy p,
+body.dark .campus-new-user-card p,
+body.dark .campus-queue-item p,
+body.dark .campus-language-card p {
+  color: color-mix(in srgb, var(--ct-muted) 86%, #f2dfc5);
+}
+
+body.dark .campus-code-preview {
+  background: #090f1f;
+  border-color: color-mix(in srgb, var(--ct-accent) 42%, #1f2a44);
+}
+
+/* Phone: hero stats and actions wrap cleanly. */
+@media (max-width: 560px) {
+  .campus-hero-stats {
+    gap: 16px;
+  }
+
+  .campus-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .campus-hero-actions .campus-primary-action,
+  .campus-hero-actions .campus-secondary-action {
+    width: 100%;
+    justify-content: center;
   }
 }

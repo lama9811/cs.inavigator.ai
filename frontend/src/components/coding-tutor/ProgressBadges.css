@@ -39,7 +39,7 @@
   border-radius: 18px;
   background: var(--ct-solid-raised, var(--ct-panel-raised));
   color: var(--ct-text);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--ct-primary) 9%, transparent);
 }
 
 .progress-badge-card.locked {
@@ -55,11 +55,11 @@
   height: 46px;
   border-radius: 16px;
   color: #fff;
-  background: linear-gradient(135deg, #2563eb, #f58220);
+  background: linear-gradient(135deg, #2563eb, #f37021);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
 }
 
-.progress-badge-card.orange .progress-badge-icon { background: linear-gradient(135deg, #f58220, #fbbf24); color: #172033; }
+.progress-badge-card.orange .progress-badge-icon { background: linear-gradient(135deg, #f37021, #fbbf24); color: #172033; }
 .progress-badge-card.green .progress-badge-icon { background: linear-gradient(135deg, #15803d, #22c55e); }
 .progress-badge-card.purple .progress-badge-icon { background: linear-gradient(135deg, #6d28d9, #a78bfa); }
 .progress-badge-card.gold .progress-badge-icon { background: linear-gradient(135deg, #ca8a04, #fde047); color: #172033; }
