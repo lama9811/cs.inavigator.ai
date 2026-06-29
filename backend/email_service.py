@@ -9,6 +9,8 @@ import os
 import smtplib
 import secrets
 import logging
+from html import escape as _html_escape
+from urllib.parse import urlparse
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -109,23 +111,46 @@ def _format_due(due_at: str) -> str:
         return due_at
 
 
+def _safe_http_url(url) -> str | None:
+    """Return `url` only if it's a syntactically valid http(s) URL, else None.
+
+    Blocks `javascript:`, `data:`, and other schemes that could turn an email
+    link into an injection vector."""
+    if not url or not isinstance(url, str):
+        return None
+    try:
+        parsed = urlparse(url.strip())
+    except (ValueError, TypeError):
+        return None
+    if parsed.scheme in ("http", "https") and parsed.netloc:
+        return url.strip()
+    return None
+
+
 def send_deadline_reminder_email(to_email: str, assignment: dict) -> bool:
     """Email a student ~24h before a Canvas assignment in an opted-in class is due.
 
     `assignment` is one item from CanvasStudentData.upcoming_assignments:
-    {title, course_name, due_at, url, ...}. Reminders are based on the student's
-    last Canvas sync, so we say so explicitly."""
-    title = assignment.get("title") or "An assignment"
-    course = assignment.get("course_name") or "your class"
-    due = _format_due(assignment.get("due_at"))
-    canvas_url = assignment.get("url")
-    classes_url = f"{APP_URL}/my-classes"
+    {title, course_name, due_at, url, ...}. These values originate from Canvas
+    (instructor-controlled), so every interpolated value is HTML-escaped and the
+    link is scheme-validated before it reaches the outbound email."""
+    # Raw, untrusted values.
+    raw_title = assignment.get("title") or "An assignment"
+    raw_course = assignment.get("course_name") or "your class"
 
+    # Escaped for safe interpolation into HTML text / attribute contexts.
+    title = _html_escape(str(raw_title))
+    course = _html_escape(str(raw_course))
+    due = _html_escape(_format_due(assignment.get("due_at")))
+    classes_url = _html_escape(f"{APP_URL}/my-classes", quote=True)
+
+    safe_url = _safe_http_url(assignment.get("url"))
     open_btn = ""
-    if canvas_url:
+    if safe_url:
+        href = _html_escape(safe_url, quote=True)
         open_btn = f"""
             <div style="text-align: center; margin: 24px 0;">
-                <a href="{canvas_url}" style="display: inline-block; padding: 12px 32px; background: #4285F4; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px;">
+                <a href="{href}" style="display: inline-block; padding: 12px 32px; background: #4285F4; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px;">
                     Open in Canvas
                 </a>
             </div>"""
@@ -156,7 +181,9 @@ def send_deadline_reminder_email(to_email: str, assignment: dict) -> bool:
         </p>
     </div>
     """
-    return _send_email(to_email, f"Reminder: {title} is due soon", html)
+    # Subject is a header: collapse whitespace/newlines to prevent header injection.
+    subject_title = " ".join(str(raw_title).split())[:120] or "An assignment"
+    return _send_email(to_email, f"Reminder: {subject_title} is due soon", html)
 
 
 def send_password_reset_email(to_email: str, token: str) -> bool:
