@@ -515,7 +515,7 @@ export default function Chatbox({
         if (response.ok) {
           const data = await response.json();
           if (data.questions && data.questions.length > 0) {
-            setSuggestions(data.questions.slice(0, 8));
+            setSuggestions(data.questions.slice(0, 10));
           }
         }
       } catch (error) {
