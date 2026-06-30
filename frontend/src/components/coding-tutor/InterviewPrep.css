@@ -1,0 +1,637 @@
+/* Interview Prep — a guided practice experience (not just a directory): progress
+   strip, recommended path, search, topic cards with difficulty breakdown +
+   review progress, and a refined expand view. Reuses the --ct-* theme tokens and
+   the Topic Practice Pack card language. */
+
+.interview-prep-page {
+  /* Let the panel shrink to its content instead of leaving a big blank tail. */
+  display: grid;
+  gap: 16px;
+  align-content: start;
+  /* Warmer off-white than the default sterile panel, scoped to this page. */
+  background: linear-gradient(180deg, #fbf7f1, #fdfbf8) !important;
+}
+
+.interview-prep-hero {
+  display: grid;
+  gap: 6px;
+}
+
+.interview-prep-hero h2 {
+  margin: 2px 0 0;
+  color: var(--ct-text);
+  font-size: clamp(1.3rem, 2.6vw, 1.7rem);
+}
+
+.interview-prep-hero p {
+  margin: 2px 0 0;
+  max-width: 72ch;
+  color: var(--ct-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+/* ── Progress strip (stat pill-cards + mock CTA) ──────────────────────────── */
+.iv-progress-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.iv-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.iv-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--ct-border);
+  border-radius: 14px;
+  background: var(--ct-solid-raised, var(--ct-panel-raised));
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+}
+
+.iv-stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--ct-primary-soft), var(--ct-accent-soft));
+  color: var(--ct-primary);
+  font-size: 0.9rem;
+}
+
+.iv-stat-body { display: grid; gap: 1px; }
+
+.iv-stat-num {
+  color: var(--ct-text);
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.iv-stat-num.iv-stat-text { font-size: 1rem; }
+.iv-stat-den { color: var(--ct-muted); font-size: 0.85rem; font-weight: 700; }
+
+.iv-stat-label {
+  color: var(--ct-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Scoped + !important on color: a global `.coding-app button` rule otherwise
+   forces dark text, making the label invisible on this dark gradient button. */
+/* This button uses HARD navy literals (not var(--ct-primary)) on purpose: the
+   theme's primary resolves to a medium/light blue in light mode, which washed out
+   the white label — especially on hover. A fixed deep navy guarantees the white
+   text stays readable in every theme; the orange accent ring is the hover signal. */
+.coding-app .iv-mock-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0b2545, #14315c);
+  color: #fff !important;
+  cursor: pointer;
+  text-align: left;
+}
+
+.coding-app .iv-mock-btn svg { font-size: 1.1rem; color: #f7b955 !important; }
+.coding-app .iv-mock-btn strong { display: block; font-size: 0.95rem; color: #fff !important; }
+.coding-app .iv-mock-btn small { display: block; font-size: 0.76rem; color: #fff !important; opacity: 0.9; }
+
+/* Hover uses the shared coding-app hover treatment: a soft PEACH fill with ORANGE
+   text + border (the same language as the "Solve" buttons). The base button is deep
+   navy with a white label; on hover the whole label group turns orange. */
+.coding-app .iv-mock-btn:hover,
+.coding-app .iv-mock-btn:focus-visible {
+  transform: translateY(-1px);
+  outline: none;
+}
+.coding-app .iv-mock-btn:hover strong,
+.coding-app .iv-mock-btn:hover small,
+.coding-app .iv-mock-btn:hover svg,
+.coding-app .iv-mock-btn:focus-visible strong,
+.coding-app .iv-mock-btn:focus-visible small,
+.coding-app .iv-mock-btn:focus-visible svg { color: var(--ct-accent, #f58220) !important; }
+
+/* ── Recommended path ─────────────────────────────────────────────────────── */
+.iv-path-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  padding: 12px 16px;
+  border: 1px dashed color-mix(in srgb, var(--ct-accent, #f58220) 42%, var(--ct-border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ct-accent, #f58220) 6%, transparent);
+}
+
+.iv-path-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ct-text);
+  font-weight: 750;
+  font-size: 0.9rem;
+}
+
+.iv-path-chain {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.iv-path-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.iv-path-chip {
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 28%, var(--ct-border));
+  background: var(--ct-solid-raised, #fff);
+  color: var(--ct-text);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.iv-path-chip:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--ct-accent) 55%, var(--ct-border));
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--ct-accent) 14%, transparent);
+}
+
+.iv-path-chip.is-next {
+  border-color: color-mix(in srgb, var(--ct-accent) 60%, var(--ct-border));
+  background: color-mix(in srgb, var(--ct-accent) 14%, transparent);
+  color: var(--ct-text);
+}
+
+.iv-path-arrow { color: var(--ct-muted); font-size: 0.72rem; }
+
+.iv-path-cta {
+  margin-left: auto;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ct-accent, #f58220) 48%, var(--ct-border));
+  background: var(--ct-accent, #f58220);
+  color: #172033;
+  cursor: pointer;
+  font-weight: 750;
+  font-size: 0.85rem;
+}
+
+.iv-path-cta:hover { transform: translateY(-1px); }
+
+/* ── Search ───────────────────────────────────────────────────────────────── */
+.iv-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid var(--ct-border);
+  border-radius: 12px;
+  background: var(--ct-solid-raised, var(--ct-panel-raised));
+}
+
+.iv-search svg { color: var(--ct-muted); flex-shrink: 0; }
+
+.iv-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 0;
+  border: 0;
+  background: transparent;
+  color: var(--ct-text);
+  font-size: 0.92rem;
+  outline: none;
+}
+
+.iv-search-clear {
+  border: 0;
+  background: transparent;
+  color: var(--ct-muted);
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.iv-search-wrap { display: grid; gap: 8px; }
+
+.iv-search-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-left: 4px;
+  color: var(--ct-muted);
+  font-size: 0.85rem;
+}
+
+.iv-search-summary strong { color: var(--ct-text); }
+.iv-search-chips { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+
+.iv-search-chip {
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 30%, var(--ct-border));
+  background: color-mix(in srgb, var(--ct-primary) 8%, transparent);
+  color: var(--ct-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Difficulty legend above the topic grid. */
+.iv-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-left: 4px;
+  color: var(--ct-muted);
+  font-size: 0.8rem;
+}
+
+.iv-legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+.iv-legend-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.iv-legend-key.b-easy { background: color-mix(in srgb, #22c55e 18%, transparent); color: #15803d; }
+.iv-legend-key.b-med { background: color-mix(in srgb, #f59e0b 20%, transparent); color: #b45309; }
+.iv-legend-key.b-hard { background: color-mix(in srgb, #ef4444 18%, transparent); color: #b91c1c; }
+
+.iv-empty {
+  padding: 28px 16px;
+  border: 1px dashed var(--ct-border);
+  border-radius: 14px;
+  color: var(--ct-muted);
+  text-align: center;
+}
+
+/* ── Topic grid + cards ───────────────────────────────────────────────────── */
+.iv-topic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.iv-topic-card.open { grid-column: 1 / -1; }
+
+.iv-topic-card {
+  min-width: 0;
+  border: 1px solid var(--ct-border);
+  border-radius: 18px;
+  background: var(--ct-solid-raised, var(--ct-panel-raised));
+  color: var(--ct-text);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.07);
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.iv-topic-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: linear-gradient(180deg, #5f7fae, #f58220);
+  transition: width 0.16s ease, filter 0.16s ease;
+}
+
+.iv-topic-card.tone-1::before { background: linear-gradient(180deg, #2563eb, #22c55e); }
+.iv-topic-card.tone-2::before { background: linear-gradient(180deg, #7c3aed, #f59e0b); }
+.iv-topic-card.tone-3::before { background: linear-gradient(180deg, #0891b2, #fb7185); }
+.iv-topic-card.tone-4::before { background: linear-gradient(180deg, #15803d, #eab308); }
+
+/* Hover: lift, brighten the rail, nudge the chevron. */
+.iv-topic-card:not(.open):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.12);
+  border-color: color-mix(in srgb, var(--ct-accent) 40%, var(--ct-border));
+}
+
+.iv-topic-card:not(.open):hover::before { width: 7px; filter: saturate(1.3) brightness(1.08); }
+.iv-topic-card:not(.open):hover .iv-topic-chevron { color: var(--ct-accent); transform: translateY(2px); }
+
+.iv-topic-card.open {
+  border-color: color-mix(in srgb, var(--ct-primary) 38%, var(--ct-accent));
+  box-shadow: 0 16px 34px color-mix(in srgb, var(--ct-accent) 12%, transparent);
+}
+
+/* Subtle warm tint on the open card's header so the active state reads clearly
+   without a harsh outline. */
+.iv-topic-card.open .iv-topic-head {
+  background: color-mix(in srgb, var(--ct-accent, #f58220) 6%, transparent);
+}
+
+.iv-topic-card.open::before { width: 6px; filter: saturate(1.2); }
+
+.iv-topic-head {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 16px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.iv-topic-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--ct-primary-soft), var(--ct-accent-soft));
+  color: var(--ct-primary);
+  font-size: 1.05rem;
+}
+
+.iv-topic-meta { min-width: 0; }
+.iv-topic-meta h3 { margin: 0; color: var(--ct-text); font-size: 1.02rem; line-height: 1.2; }
+
+.iv-topic-counts {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 0;
+  color: var(--ct-muted);
+  font-size: 0.82rem;
+}
+
+.iv-topic-breakdown { display: inline-flex; gap: 5px; flex-wrap: wrap; }
+
+.iv-bd-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.01em;
+}
+
+.iv-bd-chip.b-easy { background: color-mix(in srgb, #22c55e 16%, transparent); color: #15803d; }
+.iv-bd-chip.b-med { background: color-mix(in srgb, #f59e0b 18%, transparent); color: #b45309; }
+.iv-bd-chip.b-hard { background: color-mix(in srgb, #ef4444 16%, transparent); color: #b91c1c; }
+
+.iv-topic-progress {
+  display: block;
+  height: 5px;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-border) 80%, transparent);
+  overflow: hidden;
+}
+
+.iv-topic-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--ct-success, #22c55e), color-mix(in srgb, var(--ct-success, #22c55e) 70%, #4ade80));
+  transition: width 0.2s ease;
+}
+
+.iv-topic-aside {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  align-self: start;
+  padding-top: 2px;
+}
+
+.iv-topic-reviewed { color: var(--ct-muted); font-size: 0.82rem; font-weight: 750; }
+.iv-topic-chevron { color: var(--ct-muted); transition: transform 0.18s ease, color 0.16s ease; }
+.iv-topic-card.open .iv-topic-chevron { transform: rotate(180deg); }
+
+/* ── Expanded body ────────────────────────────────────────────────────────── */
+.iv-topic-body { padding: 0 16px 14px; display: grid; gap: 10px; }
+
+.iv-topic-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.iv-diff-pill {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--ct-border);
+  background: transparent;
+  color: var(--ct-muted);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.iv-diff-pill.on {
+  border-color: color-mix(in srgb, var(--ct-primary) 50%, var(--ct-border));
+  background: color-mix(in srgb, var(--ct-primary) 12%, transparent);
+  color: var(--ct-primary);
+}
+
+.iv-question-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+
+.iv-question-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border: 1px solid var(--ct-border);
+  border-radius: 12px;
+  background: var(--ct-panel, rgba(255, 255, 255, 0.5));
+}
+
+.iv-question-row.reviewed { background: color-mix(in srgb, var(--ct-success, #22c55e) 8%, transparent); }
+
+.iv-review-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--ct-border);
+  background: transparent;
+  color: var(--ct-muted);
+  cursor: pointer;
+}
+
+.iv-review-check.on {
+  border-color: color-mix(in srgb, var(--ct-success, #22c55e) 55%, transparent);
+  background: color-mix(in srgb, var(--ct-success, #22c55e) 16%, transparent);
+  color: #15803d;
+}
+
+.iv-question-main { display: flex; align-items: center; gap: 10px; min-width: 0; flex-wrap: wrap; }
+.iv-question-title { color: var(--ct-text); font-weight: 650; font-size: 0.92rem; }
+
+.iv-question-diff {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.iv-question-diff.diff-easy { background: color-mix(in srgb, #22c55e 18%, transparent); color: #15803d; }
+.iv-question-diff.diff-medium { background: color-mix(in srgb, #f59e0b 20%, transparent); color: #b45309; }
+.iv-question-diff.diff-hard { background: color-mix(in srgb, #ef4444 18%, transparent); color: #b91c1c; }
+
+.iv-question-actions { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.iv-question-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 34%, var(--ct-border));
+  background: var(--ct-primary);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.iv-question-action.icon-only {
+  padding: 6px;
+  width: 34px;
+  justify-content: center;
+  background: transparent;
+  border-color: color-mix(in srgb, var(--ct-accent) 46%, var(--ct-border));
+  color: var(--ct-text);
+}
+
+.iv-question-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--ct-accent) 18%, transparent);
+}
+
+.iv-question-action.is-disabled {
+  background: transparent;
+  border-color: var(--ct-border);
+  color: var(--ct-muted);
+  cursor: default;
+  pointer-events: none;
+}
+
+.iv-show-all {
+  justify-self: start;
+  padding: 6px 14px;
+  border: 1px solid var(--ct-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ct-primary);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+.iv-show-all:hover { background: color-mix(in srgb, var(--ct-primary) 8%, transparent); }
+
+/* ── How it works — visual flow ───────────────────────────────────────────── */
+.iv-howto {
+  padding: 16px 18px;
+  border: 1px solid var(--ct-border);
+  border-radius: 16px;
+  background: var(--ct-panel-soft, rgba(248, 250, 252, 0.7));
+}
+
+.iv-howto h3 { margin: 0 0 12px; color: var(--ct-text); font-size: 1rem; }
+
+.iv-flow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+
+.iv-flow-step { display: inline-flex; align-items: center; gap: 12px; }
+
+.iv-flow-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--ct-primary), color-mix(in srgb, var(--ct-primary) 70%, #2b3f63));
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.82rem;
+  flex-shrink: 0;
+}
+
+.iv-flow-body { display: grid; gap: 0; }
+.iv-flow-body strong { color: var(--ct-text); font-size: 0.92rem; }
+.iv-flow-body small { color: var(--ct-muted); font-size: 0.78rem; }
+.iv-flow-arrow { color: var(--ct-muted); font-size: 0.8rem; margin-left: 4px; }
+
+/* ── Dark mode ────────────────────────────────────────────────────────────── */
+body.coding-dark .interview-prep-page { background: linear-gradient(180deg, #18233a, #1b2840) !important; }
+
+body.coding-dark .iv-stat,
+body.coding-dark .iv-search,
+body.coding-dark .iv-path-chip,
+body.coding-dark .iv-topic-card { background: var(--ct-solid-raised, #1c2a3f); }
+
+body.coding-dark .iv-path-chip { color: #f1e9dc; }
+body.coding-dark .iv-topic-card.open .iv-topic-head { background: rgba(231, 160, 91, 0.08); }
+
+body.coding-dark .iv-question-row { background: #16233a; border-color: rgba(148, 163, 184, 0.22); }
+body.coding-dark .iv-question-action { background: #5f7fae; color: #f8f3ea; }
+body.coding-dark .iv-question-action.icon-only { background: transparent; border-color: rgba(231, 160, 91, 0.5); color: #f1e9dc; }
+body.coding-dark .iv-howto { background: #16233a; }
+
+body.coding-dark .iv-bd-chip.b-easy,
+body.coding-dark .iv-question-diff.diff-easy,
+body.coding-dark .iv-review-check.on { color: #5ee69a; }
+body.coding-dark .iv-bd-chip.b-med,
+body.coding-dark .iv-question-diff.diff-medium { color: #f1b551; }
+body.coding-dark .iv-bd-chip.b-hard,
+body.coding-dark .iv-question-diff.diff-hard { color: #f4807d; }
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .iv-progress-stat { min-width: 78px; padding-right: 8px; }
+  .iv-mock-btn { margin-left: 0; width: 100%; justify-content: center; }
+  .iv-path-cta { margin-left: 0; }
+}
+
+@media (max-width: 560px) {
+  .iv-topic-grid { grid-template-columns: 1fr; }
+  .iv-question-row { grid-template-columns: auto minmax(0, 1fr); }
+  .iv-question-actions { grid-column: 1 / -1; justify-content: flex-end; }
+}

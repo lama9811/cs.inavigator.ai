@@ -1359,7 +1359,7 @@ export default function AdminDashboard() {
                   className={`filter-btn ${userRoleFilter === role ? "active" : ""}`}
                   onClick={() => setUserRoleFilter(role)}
                 >
-                  {role === "all" ? "All" : role.charAt(0).toUpperCase() + role.slice(1)}s
+                  {role === "all" ? "All" : `${role.charAt(0).toUpperCase()}${role.slice(1)}s`}
                 </button>
               ))}
             </div>

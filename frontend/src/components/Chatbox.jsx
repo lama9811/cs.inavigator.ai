@@ -140,7 +140,15 @@ export default function Chatbox({
   const [codingWidgetSessionId, setCodingWidgetSessionId] = useState(() => `coding-widget-${Date.now()}`);
   const [codingWidgetStartIndex, setCodingWidgetStartIndex] = useState(0);
   const [activeCodingPage, setActiveCodingPage] = useState("dashboard");
-  const isCodingWorkspaceRoute = location.pathname === "/coding";
+  // True while a Mock Interview is running (signalled from CodingTutor via a
+  // window event + body class, since the two components share no state). We hide
+  // the floating tutor during a mock so the simulation has no AI assist.
+  const [mockInterviewActive, setMockInterviewActive] = useState(false);
+  // Matches /coding AND every nested section (/coding/practice, /coding/workspace,
+  // …) so the Coding Tutor renders across all of them. /chat/coding is handled
+  // separately below and is intentionally excluded.
+  const isCodingWorkspaceRoute = location.pathname === "/coding"
+    || location.pathname.startsWith("/coding/");
   const isCodingChatRoute = location.pathname === "/chat/coding";
   const hasStartedChat = messages.length > 0;
   const showChatHeader = !isCodingWorkspaceRoute;
@@ -149,7 +157,8 @@ export default function Chatbox({
   // or other coding sub-pages, where it overlapped the page's own CTAs.
   const showFloatingCodingChat = isCodingWorkspaceRoute
     && chatMode === "coding_tutor"
-    && activeCodingPage === "workspace";
+    && activeCodingPage === "workspace"
+    && !mockInterviewActive;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -160,6 +169,16 @@ export default function Chatbox({
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Listen for mock-interview start/end from CodingTutor (separate component) so
+  // we can hide the floating tutor during a mock. Sync the initial value from the
+  // body class in case a session was already running when this mounted.
+  useEffect(() => {
+    setMockInterviewActive(document.body.classList.contains("coding-mock-active"));
+    const onMockChange = (e) => setMockInterviewActive(Boolean(e.detail?.active));
+    window.addEventListener("coding-mock-change", onMockChange);
+    return () => window.removeEventListener("coding-mock-change", onMockChange);
   }, []);
 
   useEffect(() => {
@@ -1433,7 +1452,7 @@ export default function Chatbox({
           isCodingWorkspaceRoute={isCodingWorkspaceRoute}
           isCodingChatRoute={isCodingChatRoute}
           onBackHome={goBackHome}
-          onOpenCodingWorkspace={() => navigate("/coding?page=workspace")}
+          onOpenCodingWorkspace={() => navigate("/coding/workspace")}
         />
       )}
 

@@ -235,6 +235,11 @@ body.coding-dark .workspace-tabs .terminal-tab.active {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  /* Allow the window to shrink below its titlebar's intrinsic width on narrow
+     panes — without this the editor overflows its column and clips on the right
+     (the JAVASCRIPT label + closing brace get cut off at split-screen widths). */
+  min-width: 0;
+  max-width: 100%;
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--ed-border);
@@ -268,6 +273,11 @@ body.coding-dark .workspace-tabs .terminal-tab.active {
   font-size: 0.8rem;
   letter-spacing: 0.02em;
   color: color-mix(in srgb, var(--ed-text) 78%, transparent);
+  /* Truncate rather than push the titlebar wider on narrow panes. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Language switch styled like LeetCode's: plain orange text + a subtle chevron,

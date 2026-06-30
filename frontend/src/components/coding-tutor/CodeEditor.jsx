@@ -221,7 +221,7 @@ export default function CodeEditor({ code, onCodeChange, onCursorChange, languag
           onClick={reportCaret}
           onKeyUp={reportCaret}
           onSelect={reportCaret}
-          placeholder="Paste code for review, or load a Quiz Bank problem and write your attempt here."
+          placeholder="Paste code for review, or load a Practice Library problem and write your attempt here."
           spellCheck="false"
           wrap="off"
         />

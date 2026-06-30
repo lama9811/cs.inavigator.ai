@@ -44,6 +44,7 @@ export default function CodeWorkspace({
   testOutput,
   canMarkSolved = true,
   isPersonalMode = false,
+  languageLocked = false,
   onCodeChange,
   onLanguageChange,
   onTabChange,
@@ -174,7 +175,8 @@ export default function CodeWorkspace({
               className="code-editor-lang-select"
               value={selectedLanguage}
               onChange={(event) => onLanguageChange(event.target.value)}
-              title="Change language"
+              disabled={languageLocked}
+              title={languageLocked ? "Language is locked once you start coding this problem" : "Change language"}
             >
               {languageOptions.map(language => <option key={language} value={language}>{language}</option>)}
             </select>

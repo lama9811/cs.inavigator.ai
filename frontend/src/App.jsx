@@ -589,7 +589,11 @@ export default function App() {
         />
 
         <Route
-          path="/coding"
+          /* Coding Tutor sections are nested routes under /coding (e.g.
+             /coding/practice, /coding/workspace). The "/*" lets every sub-section
+             render the same ChatLayout; CodingTutor derives the active section
+             from the path while staying mounted (shared state is preserved). */
+          path="/coding/*"
           element={
             <RequireAuth>
               <ChatLayout
