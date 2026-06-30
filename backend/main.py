@@ -82,7 +82,7 @@ print(f"[KEY] JWT_SECRET Check: {'FOUND' if os.getenv('JWT_SECRET') else 'MISSIN
 # SQLAlchemy Imports
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import OperationalError, ProgrammingError
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, text, or_
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, text, or_, func
 
 # Vertex AI Agent Engine (replaces Pinecone + OpenAI RAG pipeline)
 from vertex_agent import query_agent, query_agent_stream, check_agent_health, reset_session
@@ -4849,9 +4849,32 @@ async def delete_snippet(
     return {"deleted": True}
 
 
+# Filler/greeting messages excluded from the popular-questions ranking. Pure
+# frequency otherwise — this is the only filter (see spec
+# docs/superpowers/specs/2026-06-30-popular-questions-design.md).
+_POPULAR_Q_STOPLIST = {
+    "hi", "hii", "hiii", "hey", "heya", "hello", "helo", "yo", "sup", "wsup", "wassup",
+    "thanks", "thank you", "thx", "ty", "thank u", "ok", "okay", "k", "kk", "cool",
+    "yes", "yep", "yeah", "ya", "no", "nope", "nah", "sure", "great", "nice", "lol",
+    "test", "testing", "morning", "good morning", "hi there", "bye", "goodbye",
+}
+_POPULAR_Q_MIN_LEN = 15  # trimmed-length floor; shorter messages are treated as filler
+
+# Module-level cache: (epoch_seconds, questions). 5-minute TTL.
+_popular_q_cache = {"ts": 0.0, "questions": None}
+_POPULAR_Q_TTL = 300
+
+
 @app.get("/api/popular-questions")
-async def get_popular_questions():
-    """Returns 8 randomly selected questions from a curated pool."""
+async def get_popular_questions(db: Session = Depends(get_db)):
+    """Returns up to 10 of the questions most frequently asked by users.
+
+    Ranking = exact-match (case-insensitive, trimmed) frequency over
+    ChatHistory.user_query. Greetings/filler are excluded; otherwise it is pure
+    frequency with no quality threshold and no curated padding. Falls back to a
+    sample of the curated pool only when there is no real usage yet (or on error).
+    """
+    import time
     import random
 
     QUESTION_POOL = [
@@ -4889,7 +4912,39 @@ async def get_popular_questions():
         "How do I register for CS courses?",
     ]
 
-    return {"questions": random.sample(QUESTION_POOL, 8)}
+    # Serve from cache if fresh.
+    now = time.time()
+    if _popular_q_cache["questions"] is not None and (now - _popular_q_cache["ts"]) < _POPULAR_Q_TTL:
+        return {"questions": _popular_q_cache["questions"]}
+
+    questions = []
+    try:
+        normalized = func.lower(func.trim(ChatHistory.user_query))
+        rows = (
+            db.query(
+                func.max(ChatHistory.user_query).label("display"),
+                func.count().label("freq"),
+            )
+            .filter(ChatHistory.user_query.isnot(None))
+            .filter(func.char_length(func.trim(ChatHistory.user_query)) >= _POPULAR_Q_MIN_LEN)
+            .filter(normalized.notin_(sorted(_POPULAR_Q_STOPLIST)))
+            .group_by(normalized)
+            .order_by(func.count().desc())
+            .limit(10)
+            .all()
+        )
+        questions = [r.display.strip() for r in rows if r.display and r.display.strip()]
+    except Exception as e:
+        print(f"⚠️ popular-questions aggregation failed, using curated fallback: {e}")
+        questions = []
+
+    # Fallback only when there is no real usage yet (or the query failed).
+    if not questions:
+        questions = random.sample(QUESTION_POOL, 10)
+
+    _popular_q_cache["ts"] = now
+    _popular_q_cache["questions"] = questions
+    return {"questions": questions}
 
 # --- Admin / Ingest Routes ---
 # The legacy Pinecone ingest/clear endpoints are retired. The knowledge base now
