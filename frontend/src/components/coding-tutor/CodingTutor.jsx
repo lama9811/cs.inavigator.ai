@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   FaBook,
   FaChartLine,
@@ -47,6 +47,60 @@ const CODING_PAGES = [
   { id: "workspace", label: "Workspace", icon: FaLaptopCode },
   { id: "progress", label: "Progress", icon: FaChartLine },
 ];
+
+// Each Coding Tutor section is a real route under /coding. `activePage` (the
+// existing internal id) is derived FROM the URL; navigation writes the URL.
+// The component stays mounted across these routes, so shared state (active
+// problem, code, mock session, …) is never lost — only the rendered section
+// changes. "daily" has no nav button but is reachable from the Home card.
+const PAGE_TO_PATH = {
+  dashboard: "/coding",
+  quiz: "/coding/practice",
+  interview: "/coding/interview-prep",
+  workspace: "/coding/workspace",
+  progress: "/coding/progress",
+  daily: "/coding/daily",
+};
+const PATH_TO_PAGE = {
+  "/coding": "dashboard",
+  "/coding/practice": "quiz",
+  "/coding/interview-prep": "interview",
+  "/coding/workspace": "workspace",
+  "/coding/progress": "progress",
+  "/coding/daily": "daily",
+};
+// Back-compat: old links used /coding?page=<id>. Map those ids to the new paths.
+const LEGACY_PAGE_QUERY_TO_PATH = {
+  dashboard: "/coding",
+  quiz: "/coding/practice",
+  interview: "/coding/interview-prep",
+  workspace: "/coding/workspace",
+  progress: "/coding/progress",
+};
+function pageFromPath(pathname) {
+  // Trim a trailing slash (except the root) so "/coding/practice/" still maps.
+  const clean = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+  // Any /coding/workspace/* sub-path (personal, problem/:id) is still the
+  // "workspace" section — the suffix selects what's open WITHIN the workspace.
+  if (clean === "/coding/workspace" || clean.startsWith("/coding/workspace/")) return "workspace";
+  return PATH_TO_PAGE[clean] || "dashboard";
+}
+
+// Parse the workspace sub-route: which thing is open inside the workspace.
+// → { kind: "personal" } | { kind: "problem", id } | { kind: "none" }
+function workspaceTargetFromPath(pathname) {
+  const clean = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+  if (clean === "/coding/workspace/personal") return { kind: "personal" };
+  const problemMatch = clean.match(/^\/coding\/workspace\/problem\/(.+)$/);
+  if (problemMatch) return { kind: "problem", id: decodeURIComponent(problemMatch[1]) };
+  return { kind: "none" };
+}
+// Interview-set ids are prefixed "iv-" (e.g. iv-easy-01); everything else is the
+// practice set. Lets a cold-loaded /problem/:id fetch from the right library.
+function questionSetForId(id) {
+  return String(id || "").startsWith("iv-") ? "interview" : "practice";
+}
+const workspacePathForProblem = (id) => `/coding/workspace/problem/${encodeURIComponent(id)}`;
 
 const LANGUAGE_FORMATS = {
   Python: { file: "solution.py", style: "Function-focused" },
@@ -324,6 +378,7 @@ export default function CodingTutor({
   onSendToChat,
 }) {
   const location = useLocation();
+  const navigate = useNavigate();
   // Dark mode is scoped to the Coding Tutor only (the rest of the app stays
   // light). We drive it with `body.coding-dark` instead of the global
   // `body.dark`, so it survives main removing the app-wide dark toggle. Persist
@@ -331,7 +386,13 @@ export default function CodingTutor({
   const [codingDark, setCodingDark] = useState(
     () => localStorage.getItem("codingTheme") === "dark"
   );
-  const [activePage, setActivePage] = useState("dashboard");
+  // The active section is DERIVED from the URL (each section is a real route
+  // under /coding). Navigating changes the URL via goToPage(); React re-derives
+  // activePage. No setActivePage — use goToPage(id) to switch sections.
+  const activePage = pageFromPath(location.pathname);
+  const goToPage = useCallback((pageId) => {
+    navigate(PAGE_TO_PATH[pageId] || "/coding");
+  }, [navigate]);
   const [lastNonWorkspacePage, setLastNonWorkspacePage] = useState("dashboard");
   const [workspaceVisible, setWorkspaceVisible] = useState(true);
   const [workspaceTab, setWorkspaceTab] = useState("Editor");
@@ -399,6 +460,9 @@ export default function CodingTutor({
   const [workspaceSnapshots, setWorkspaceSnapshots] = useState({});
   const questionCacheRef = useRef({});
   const solutionCacheRef = useRef({});
+  // Tracks which /coding/workspace/problem/:id we've already restored, so the
+  // cold-load effect opens a problem once per id (not on every render).
+  const restoredWorkspaceTargetRef = useRef(null);
   const selectedLanguageKey = PRACTICE_LANGUAGE_API[selectedLanguage] || "python";
   const activeLanguageProgress = activeProblem ? progressByLanguage[activeProblem.id]?.[selectedLanguageKey] : null;
   const activeProgress = activeLanguageProgress || (activeProblem ? progressByQuestion[activeProblem.id] : null);
@@ -628,17 +692,20 @@ export default function CodingTutor({
     onActivePageChange?.(activePage);
   }, [activePage, onActivePageChange]);
 
+  // Back-compat shim: old links used /coding?page=<id>. Redirect them once to the
+  // new path equivalent (replace: true so back doesn't bounce to the legacy URL).
   useEffect(() => {
     const requestedPage = new URLSearchParams(location.search).get("page");
     if (!requestedPage) return;
+    const target = LEGACY_PAGE_QUERY_TO_PATH[requestedPage];
+    if (target) navigate(target, { replace: true });
+  }, [location.search, navigate]);
 
-    const allowedPages = new Set(["dashboard", "quiz", "interview", "workspace", "progress"]);
-    if (!allowedPages.has(requestedPage)) return;
-
-    if (requestedPage !== "workspace") setLastNonWorkspacePage(requestedPage);
-    if (requestedPage === "workspace") setWorkspaceVisible(true);
-    setActivePage(requestedPage);
-  }, [location.search]);
+  // Keep "last non-workspace section" in sync as the URL changes, so toggling the
+  // workspace off returns to wherever the student was (Home/Practice/…).
+  useEffect(() => {
+    if (activePage !== "workspace") setLastNonWorkspacePage(activePage);
+  }, [activePage]);
 
   useEffect(() => {
     if (!activeProblem || !code) return;
@@ -903,10 +970,10 @@ export default function CodingTutor({
     const runnerLabel = `${languageName} local tests can run from the terminal below the editor.`;
     setTestOutput({ status: "ready", message: `${problem.title} loaded in ${languageName}. ${runnerLabel}` });
     setTerminalOpen(false);
-    setActivePage("workspace");
     setWorkspaceVisible(true);
     setWorkspaceTab("Editor");
     setRevealedHints(0);
+    navigate(workspacePathForProblem(problem.id));
   };
 
   // Persist the CURRENT quiz problem as in-progress if its code changed from the
@@ -924,6 +991,9 @@ export default function CodingTutor({
   };
 
   const selectQuestion = async (problem) => {
+    // Opening a regular practice problem leaves any mock session behind (a mock is
+    // a focused round; picking another problem ends it — silently, no summary).
+    abandonMockIfActive();
     setProblemLoading(true);
     try {
       // Save edits to the problem we're leaving before loading the new one.
@@ -999,10 +1069,10 @@ export default function CodingTutor({
     setTestOutput({ status: "ready", message: "Daily challenge loaded. LeetCode daily problems are source-linked practice only; local auto-grading is for CS Navigator quiz-bank questions." });
     setTerminalOpen(false);
     setTutorMode(withHints ? "Hinting" : "Guided Tutor");
-    setActivePage("workspace");
     setWorkspaceVisible(true);
     setWorkspaceTab("Editor");
     setRevealedHints(0);
+    goToPage("workspace");
   };
 
   // Open an Interview Prep problem in the workspace. Modeled on the daily challenge:
@@ -1014,6 +1084,9 @@ export default function CodingTutor({
   // problem panel. opts.mock tags it as part of a timed mock session.
   const openInterviewProblem = (question, opts = {}) => {
     if (!question) return;
+    // Opening a normal interview problem (not part of a mock) ends any lingering
+    // mock session silently. Mock problems pass opts.mock and keep the session.
+    if (!opts.mock) abandonMockIfActive();
     setActiveProblem({
       id: question.id,
       title: question.title,
@@ -1037,11 +1110,15 @@ export default function CodingTutor({
     });
     setTerminalOpen(false);
     setTutorMode("Guided Tutor");
-    setActivePage("workspace");
     setLastNonWorkspacePage("interview");
     setWorkspaceVisible(true);
     setWorkspaceTab("Editor");
     setRevealedHints(0);
+    // A mock problem stays on the plain /coding/workspace URL (the mock session is
+    // in-memory, not addressable); a normal interview problem gets a shareable
+    // /problem/:id URL like practice problems.
+    if (opts.mock) goToPage("workspace");
+    else navigate(workspacePathForProblem(question.id));
   };
 
   // ── Mock Interview ────────────────────────────────────────────────────────
@@ -1228,6 +1305,15 @@ export default function CodingTutor({
     setActiveProblem((prev) => (prev?.mock ? { ...prev, mock: false } : prev));
   };
 
+  // Silently abandon a mock session (no summary popup) — used when the student
+  // deliberately leaves the mock by opening a different (non-mock) problem. Without
+  // this the timer would keep ticking on a regular problem and could fire
+  // "time's up" mid-practice.
+  const abandonMockIfActive = () => {
+    setMockSession((prev) => (prev ? null : prev));
+    setActiveProblem((prev) => (prev?.mock ? { ...prev, mock: false } : prev));
+  };
+
   // Confirm before ending (the round can't be resumed once closed).
   const confirmEndMock = () => {
     if (window.confirm("End mock interview?\nYou'll see your summary and can review solutions.")) {
@@ -1277,6 +1363,7 @@ export default function CodingTutor({
   // panel shows the snippets list instead of quiz guidance. Reachable ONLY from
   // the home button, not the nav.
   const openPersonalWorkspace = (snippet = null) => {
+    abandonMockIfActive(); // leaving a mock for the personal scratch workspace ends it
     setActiveSolution(null);
     setActiveProblem({ id: "personal", source: "personal", title: snippet?.name || "My Snippet" });
     setActiveSnippetId(snippet?.id || null);
@@ -1292,8 +1379,8 @@ export default function CodingTutor({
     setTerminalOpen(false);
     setTestOutput({ status: "ready", message: "" });
     setWorkspaceVisible(true);
-    setActivePage("workspace");
     setSnippets(listSnippets());
+    navigate("/coding/workspace/personal");
   };
 
   // True when in the personal workspace and the code differs from what was last
@@ -1320,6 +1407,55 @@ export default function CodingTutor({
     const saved = listSnippets();
     openPersonalWorkspace(saved.length ? saved[0] : null);
   };
+
+  // Fetch a single problem by id from the right library (practice vs interview)
+  // and open it in the workspace. Used to RESTORE a /coding/workspace/problem/:id
+  // URL on a cold load / refresh, when the problem isn't already active.
+  const restoreWorkspaceProblem = useCallback(async (problemId) => {
+    const set = questionSetForId(problemId);
+    try {
+      const response = await fetch(
+        `${apiBase}/api/coding/practice/questions/${encodeURIComponent(problemId)}?set=${set}`
+      );
+      if (!response.ok) throw new Error(`question ${response.status}`);
+      const question = await response.json();
+      if (set === "interview") {
+        openInterviewProblem(question);
+      } else {
+        await loadQuestionSolution(question, practiceLanguage);
+      }
+    } catch (error) {
+      console.warn("[coding-workspace] could not restore problem from URL", problemId, error);
+      toast.error("That problem could not be opened. Showing the workspace instead.");
+      restoredWorkspaceTargetRef.current = null;
+      navigate("/coding/workspace", { replace: true });
+    }
+    // openInterviewProblem / loadQuestionSolution are stable closures over setState
+    // (recreated each render but behaviourally identical); excluded on purpose.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiBase, practiceLanguage, navigate]);
+
+  // Cold-load / refresh restore for workspace sub-routes. Runs when the URL points
+  // at a specific workspace target but the workspace isn't already showing it.
+  // Guards: never hijack a running mock; open each problem id only once.
+  useEffect(() => {
+    if (activePage !== "workspace") return;
+    const target = workspaceTargetFromPath(location.pathname);
+
+    if (target.kind === "personal") {
+      if (!isPersonalMode) openPersonalWorkspace(null);
+      return;
+    }
+    if (target.kind === "problem") {
+      // Already on this problem, or a mock owns the workspace → leave it alone.
+      if (mockSession && activeProblem?.mock) return;
+      if (activeProblem?.id === target.id) return;
+      if (restoredWorkspaceTargetRef.current === target.id) return;
+      restoredWorkspaceTargetRef.current = target.id;
+      restoreWorkspaceProblem(target.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, activePage]);
 
   // Returns the saved record, or null if the user cancelled the name prompt.
   const handleSaveSnippet = () => {
@@ -1679,7 +1815,6 @@ export default function CodingTutor({
       // Record edits to a quiz problem before navigating away (so it appears under
       // "Continue where you left off" even if it was never run).
       savePendingProblemProgress();
-      if (pageId !== "workspace") setLastNonWorkspacePage(pageId);
       if (pageId === "workspace") {
         setWorkspaceVisible(true);
         // The nav "Workspace" tab is the CODING (Quiz Bank) workspace. If we were in
@@ -1696,18 +1831,18 @@ export default function CodingTutor({
           setTerminalOpen(false);
         }
       }
-      setActivePage(pageId);
+      goToPage(pageId);
     });
   };
 
   const toggleWorkspace = () => {
     if (activePage === "workspace" && workspaceVisible) {
       setWorkspaceVisible(false);
-      setActivePage(lastNonWorkspacePage || "dashboard");
+      goToPage(lastNonWorkspacePage || "dashboard");
       return;
     }
     setWorkspaceVisible(true);
-    setActivePage("workspace");
+    goToPage("workspace");
   };
 
   const renderDashboard = () => (
@@ -1732,8 +1867,11 @@ export default function CodingTutor({
 
   const renderWorkspace = () => (
     <section className={`coding-workbench ${terminalOpen ? "terminal-open" : "terminal-closed"} ${isPersonalMode ? "personal-workspace" : ""}`}>
+      {/* Only show the mock bar while actually ON a mock problem. A mock session
+          can linger in state after opening a regular problem; gating on
+          activeProblem?.mock keeps the timer off non-mock problems. */}
       <MockInterviewBar
-        session={mockSession}
+        session={mockSession && activeProblem?.mock ? mockSession : null}
         now={mockNow}
         canGoPrev={canGoPrevMock}
         onPrev={goToPreviousMockProblem}

@@ -144,7 +144,11 @@ export default function Chatbox({
   // window event + body class, since the two components share no state). We hide
   // the floating tutor during a mock so the simulation has no AI assist.
   const [mockInterviewActive, setMockInterviewActive] = useState(false);
-  const isCodingWorkspaceRoute = location.pathname === "/coding";
+  // Matches /coding AND every nested section (/coding/practice, /coding/workspace,
+  // …) so the Coding Tutor renders across all of them. /chat/coding is handled
+  // separately below and is intentionally excluded.
+  const isCodingWorkspaceRoute = location.pathname === "/coding"
+    || location.pathname.startsWith("/coding/");
   const isCodingChatRoute = location.pathname === "/chat/coding";
   const hasStartedChat = messages.length > 0;
   const showChatHeader = !isCodingWorkspaceRoute;
@@ -1448,7 +1452,7 @@ export default function Chatbox({
           isCodingWorkspaceRoute={isCodingWorkspaceRoute}
           isCodingChatRoute={isCodingChatRoute}
           onBackHome={goBackHome}
-          onOpenCodingWorkspace={() => navigate("/coding?page=workspace")}
+          onOpenCodingWorkspace={() => navigate("/coding/workspace")}
         />
       )}
 

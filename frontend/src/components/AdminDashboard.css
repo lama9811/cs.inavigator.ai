@@ -880,29 +880,45 @@ body.dark .search-box:focus-within {
   flex-wrap: wrap;
 }
 
+/* Scoped under .admin-table so these beat the generic `.admin-table button`
+   rule (which forces a red fill + white text on every table button — that made
+   "Enable" render as green text on a red fill, i.e. unreadable). Disable = red,
+   Enable = green, each as a proper solid action button. */
+.admin-table .user-status-btn,
 .user-status-btn {
   border: 1px solid var(--border-color);
   border-radius: 7px;
-  padding: 7px 10px;
+  padding: 7px 12px;
   background: var(--bg-card);
   color: var(--text-secondary);
   font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
+.admin-table .user-status-btn.disable,
 .user-status-btn.disable {
-  color: #dc2626;
-  border-color: rgba(220, 38, 38, 0.3);
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+.admin-table .user-status-btn.disable:hover,
+.user-status-btn.disable:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
 }
 
+.admin-table .user-status-btn.enable,
 .user-status-btn.enable {
-  color: #16a34a;
-  border-color: rgba(22, 163, 74, 0.35);
+  background: #16a34a;
+  color: #ffffff;
+  border-color: #16a34a;
 }
-
-.user-status-btn:hover {
-  background: var(--bg-card-hover);
+.admin-table .user-status-btn.enable:hover,
+.user-status-btn.enable:hover {
+  background: #15803d;
+  border-color: #15803d;
 }
 
 .role-select {
