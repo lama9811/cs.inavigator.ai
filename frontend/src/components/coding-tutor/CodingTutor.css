@@ -1352,14 +1352,20 @@ body.coding-dark .recent-status.solved { color: #5bd178; }
 .practice-library-header {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 12px;
+  gap: 14px 24px;
+  margin-bottom: 16px;
+}
+
+/* Let the title block take the slack so the progress strip is pushed to the
+   right edge of the header row, filling the empty space beside the title. */
+.practice-library-heading {
+  flex: 1 1 280px;
 }
 
 .practice-library-heading h2 {
-  margin: 2px 0 4px;
+  margin: 0 0 4px;
   font-size: 1.5rem;
   font-weight: 800;
   color: var(--ct-text);
@@ -1371,19 +1377,26 @@ body.coding-dark .recent-status.solved { color: #5bd178; }
   color: var(--ct-muted, #6b7280);
 }
 
-/* Slim progress strip: a low-profile band under the title (icon + number +
-   label). Reuses the StatTiles per-stat accent colors. Kept light and thin so
-   it integrates with the header instead of reading as a chunky panel. */
+/* Slim progress strip: sits beside the title on wide screens (pushed right by
+   the heading's flex-grow) and wraps to its own full-width row below the title
+   on narrow screens. */
 .practice-progress-strip {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px 20px;
-  padding: 7px 14px;
-  margin-bottom: 14px;
+  padding: 8px 16px;
   border: 1px solid var(--ct-border, rgba(148, 163, 184, 0.25));
   border-radius: 10px;
   background: color-mix(in srgb, var(--ct-panel) 55%, transparent);
+}
+
+/* Narrow: strip drops below the title and spans the full width. */
+@media (max-width: 760px) {
+  .practice-progress-strip {
+    flex-basis: 100%;
+    justify-content: space-between;
+  }
 }
 
 .practice-progress-item {
@@ -1418,15 +1431,15 @@ body.coding-dark .recent-status.solved { color: #5bd178; }
   color: var(--ct-text);
 }
 
-/* ── Practice Library toolbar: a compact filter bar (not a section) ─────────
-   Search field + the three selects on a single row. It reads as a toolbar:
-   short, tight, no surrounding panel eating vertical space. */
+/* ── Practice Library toolbar: search + Filters button + Sort, one row ──────
+   Airbnb-style: the search grows to fill the row, with a Filters button (opens
+   the checkbox panel) and a Sort control beside it. */
 .practice-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 10px;
-  margin-bottom: 14px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .practice-search {
@@ -1435,6 +1448,338 @@ body.coding-dark .recent-status.solved { color: #5bd178; }
   align-items: center;
   flex: 1 1 260px;
   min-width: 200px;
+}
+
+/* Filters button (with active-count badge). */
+.practice-filters-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border: 1px solid var(--ct-border, rgba(148, 163, 184, 0.4));
+  border-radius: 10px;
+  background: var(--ct-panel, #fff);
+  color: var(--ct-text);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.practice-filters-btn svg { font-size: 0.85rem; }
+
+.practice-filters-btn:hover {
+  border-color: color-mix(in srgb, var(--ct-primary) 35%, var(--ct-border));
+}
+
+.practice-filters-btn.has-active,
+.practice-filters-btn.is-open {
+  border-color: var(--ct-primary);
+  box-shadow: 0 0 0 1px var(--ct-primary);
+}
+
+.practice-filters-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--ct-accent);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+/* Sort control: inline caption + select. */
+.practice-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ct-muted, #6b7280);
+}
+
+.practice-sort .coding-select {
+  width: auto;
+  min-width: 150px;
+  padding: 9px 12px;
+}
+
+body.coding-dark .practice-filters-btn,
+body.coding-dark .practice-sort .coding-select {
+  background: color-mix(in srgb, #ffffff 5%, var(--ct-panel));
+  border-color: color-mix(in srgb, #ffffff 16%, var(--ct-border));
+}
+
+/* ── Filter drawer: slide-over panel over a dimmed page ────────────────────── */
+.practice-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  border: 0;
+  padding: 0;
+  background: rgba(8, 15, 30, 0.45);
+  cursor: pointer;
+  animation: practice-overlay-in 0.18s ease;
+}
+
+@keyframes practice-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.practice-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  width: min(420px, 92vw);
+  height: 100vh;
+  background: var(--ct-panel, #fff);
+  border-left: 1px solid var(--ct-border, rgba(148, 163, 184, 0.4));
+  box-shadow: -16px 0 48px rgba(8, 15, 30, 0.22);
+  animation: practice-drawer-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes practice-drawer-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.practice-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--ct-border, rgba(148, 163, 184, 0.3));
+}
+
+.practice-drawer-head strong {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--ct-text);
+}
+
+.practice-drawer-close {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ct-muted, #6b7280);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.practice-drawer-close:hover {
+  background: color-mix(in srgb, var(--ct-muted, #6b7280) 12%, transparent);
+  color: var(--ct-text);
+}
+
+/* Scrollable middle so the head + footer stay pinned. */
+.practice-drawer-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.practice-filter-group h4 {
+  margin: 0 0 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ct-muted, #6b7280);
+}
+
+.practice-topic-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.practice-topic-head h4 { margin: 0; }
+
+.practice-topic-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.practice-topic-search svg {
+  position: absolute;
+  left: 10px;
+  font-size: 0.75rem;
+  color: var(--ct-soft, #9aa3b2);
+  pointer-events: none;
+}
+
+.practice-topic-search input {
+  width: 150px;
+  padding: 6px 10px 6px 28px;
+  border: 1px solid var(--ct-border, rgba(148, 163, 184, 0.4));
+  border-radius: 8px;
+  background: var(--ct-panel, #fff);
+  color: var(--ct-text);
+  font-size: 0.82rem;
+}
+
+.practice-topic-search input:focus {
+  outline: none;
+  border-color: var(--ct-primary);
+}
+
+/* ── Toggle pills (replace the checkboxes) ── */
+.practice-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Scoped under .coding-app so these win over `.coding-app button { border:
+   transparent; border-radius: 12px }` (which was flattening the pills into plain
+   text — no border/shape/affordance). */
+.coding-app .practice-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border: 1px solid var(--ct-border, rgba(148, 163, 184, 0.5)) !important;
+  border-radius: 999px !important;
+  background: var(--ct-panel, #fff);
+  color: var(--ct-text);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+}
+
+/* Clear hover affordance: border darkens, faint tint, slight lift. */
+.coding-app .practice-pill:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ct-primary) 55%, var(--ct-border)) !important;
+  background: color-mix(in srgb, var(--ct-primary) 6%, var(--ct-panel));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--ct-primary) 12%, transparent) !important;
+}
+
+.coding-app .practice-pill:focus-visible {
+  outline: none;
+  border-color: var(--ct-primary) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ct-primary) 20%, transparent) !important;
+}
+
+.practice-pill-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ct-soft, #9aa3b2);
+}
+
+/* Selected: navy fill, white text + count, and a leading check so it's obvious
+   the pill is chosen (the affordance the plain-text version was missing). */
+.coding-app .practice-pill.is-on {
+  background: var(--ct-primary);
+  border-color: var(--ct-primary) !important;
+  color: #fff;
+}
+
+.coding-app .practice-pill.is-on::before {
+  content: "✓";
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.coding-app .practice-pill.is-on:hover:not(:disabled) {
+  background: var(--ct-primary);
+}
+
+.practice-pill.is-on .practice-pill-count {
+  color: color-mix(in srgb, #fff 75%, var(--ct-primary));
+}
+
+/* Zero results given the other filters: muted but still clickable. */
+.practice-pill.is-empty {
+  opacity: 0.4;
+}
+
+/* Sticky footer with the live result count. */
+.practice-drawer-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--ct-border, rgba(148, 163, 184, 0.3));
+  background: var(--ct-panel, #fff);
+}
+
+.practice-panel-clear {
+  padding: 8px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--ct-primary);
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.practice-panel-clear:disabled {
+  color: var(--ct-soft, #9aa3b2);
+  text-decoration: none;
+  cursor: default;
+}
+
+.practice-drawer-show {
+  flex: 1 1 auto;
+  max-width: 240px;
+  padding: 11px 20px;
+  border: 1px solid var(--ct-primary);
+  border-radius: 10px;
+  background: var(--ct-primary);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.practice-drawer-show:hover {
+  background: var(--ct-primary-hover, color-mix(in srgb, var(--ct-primary) 85%, #000));
+}
+
+body.coding-dark .practice-drawer,
+body.coding-dark .practice-drawer-foot {
+  background: var(--ct-panel-raised, var(--ct-panel));
+}
+
+body.coding-dark .practice-pill {
+  background: color-mix(in srgb, #ffffff 5%, var(--ct-panel));
+  border-color: color-mix(in srgb, #ffffff 18%, var(--ct-border)) !important;
+}
+
+body.coding-dark .practice-pill.is-on {
+  background: var(--ct-accent);
+  border-color: var(--ct-accent) !important;
+  color: #11151c;
+}
+
+body.coding-dark .practice-pill.is-on .practice-pill-count {
+  color: color-mix(in srgb, #11151c 70%, var(--ct-accent));
 }
 
 .practice-search svg {
@@ -1486,29 +1831,6 @@ body.coding-dark .practice-search svg {
 body.coding-dark .practice-search input:focus {
   border-color: var(--ct-accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--ct-accent) 24%, transparent);
-}
-
-/* The three filter selects sit inline to the right of the search field. They
-   keep a steady width; the search field takes the slack. */
-.practice-toolbar .practice-controls.compact {
-  flex: 0 1 auto;
-  gap: 8px;
-}
-
-/* Compact label: tiny inline caption + select, so the row stays short. */
-.practice-toolbar .practice-controls.compact label {
-  flex: 0 0 auto;
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.practice-toolbar .practice-controls.compact .coding-select {
-  min-width: 116px;
-  padding: 8px 10px;
 }
 
 /* Warm focus accent on the filter selects (matches the search field). */
@@ -1587,7 +1909,25 @@ body.coding-dark .practice-chip {
 .practice-show-more-wrap {
   display: flex;
   justify-content: center;
+  gap: 10px;
   margin-top: 20px;
+}
+
+/* "Show less" — a quieter text button next to "Show more". */
+.practice-show-less {
+  padding: 10px 18px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ct-muted, #6b7280);
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.practice-show-less:hover {
+  background: color-mix(in srgb, var(--ct-muted, #6b7280) 10%, transparent);
 }
 
 .practice-show-more {
@@ -1635,8 +1975,8 @@ body.coding-dark .practice-show-more span {
 
 .practice-topic-heading {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  align-items: center;
+  gap: 12px;
   margin: 0 0 12px;
   padding-left: 10px;
   border-left: 3px solid var(--ct-accent);
@@ -1659,9 +1999,9 @@ body.coding-dark .practice-show-more span {
   color: var(--ct-muted, #6b7280);
 }
 
-/* "N solved" as a small pill, pushed to the right end of the heading row. */
+/* "N solved" as a small pill, sitting right next to the topic name (not pushed
+   to the far edge, where it floated disconnected past the card columns). */
 .practice-topic-count {
-  margin-left: auto;
   padding: 2px 10px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--ct-success) 14%, var(--ct-panel));
@@ -1694,15 +2034,31 @@ body.coding-dark .practice-show-more span {
   font-size: 0.9rem;
 }
 
-.practice-empty-state button {
-  margin-top: 6px;
+.practice-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.practice-empty-actions button {
   padding: 8px 16px;
-  border: 1px solid var(--ct-primary);
   border-radius: 10px;
-  background: var(--ct-primary);
-  color: #fff;
   font-weight: 700;
   cursor: pointer;
+}
+
+.practice-empty-primary {
+  border: 1px solid var(--ct-primary);
+  background: var(--ct-primary);
+  color: #fff;
+}
+
+.practice-empty-secondary {
+  border: 1px solid var(--ct-border, rgba(148, 163, 184, 0.5));
+  background: transparent;
+  color: var(--ct-primary);
 }
 
 @media (max-width: 640px) {
@@ -1713,8 +2069,13 @@ body.coding-dark .practice-show-more span {
   }
 
   .practice-toolbar {
-    flex-direction: column;
     align-items: stretch;
+  }
+
+  .practice-filters-btn,
+  .practice-sort {
+    flex: 1 1 auto;
+    justify-content: center;
   }
 
   .practice-search {
@@ -1968,17 +2329,19 @@ body.coding-dark .practice-show-more span {
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   padding: 14px 16px;
   margin-bottom: 0;
   min-height: 0;
   border-radius: 14px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--ct-border, rgba(148, 163, 184, 0.28));
   /* Status accent lives on the LEFT rail (set per-status below); the TOP rail is
      reserved for hover + the recommended problem. */
   border-left: 3px solid color-mix(in srgb, var(--ct-muted, #94a3b8) 30%, var(--ct-border));
   border-top: 3px solid transparent;
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--ct-panel, #fff);
+  /* Light-mode lift: cards read as distinct objects on the warm canvas. */
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.05);
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
@@ -2032,6 +2395,30 @@ body.coding-dark .practice-show-more span {
   font-weight: 750;
   line-height: 1.25;
   color: var(--ct-text);
+  /* Reserve up to 2 title lines and clamp longer titles, so a 2-line title
+     doesn't make its card taller than its 1-line row-mates. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Problem description (from question.prompt) fills the card middle with real
+   content instead of dead space. A FIXED 2-line slot (height = line-height × 2)
+   so every card is the same height regardless of description length — uniform
+   grid rows, clean ellipsis, no mid-word bleed. */
+.quiz-problem-desc {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  height: calc(0.82rem * 1.45 * 2);
+  color: var(--ct-muted, #6b7280);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* Status pill — replaces the tiny gray dot. */
@@ -2045,10 +2432,13 @@ body.coding-dark .practice-show-more span {
   border: 1px solid transparent;
 }
 
+/* Not Started is the common case, so keep it very subtle — no fill/border, just
+   faint muted text — so the eye is drawn to In Progress / Solved instead. */
 .quiz-status-pill.status-not_started {
-  background: color-mix(in srgb, #64748b 16%, var(--ct-panel));
-  color: color-mix(in srgb, #475569 70%, var(--ct-text));
-  border-color: color-mix(in srgb, #64748b 30%, var(--ct-border));
+  background: transparent;
+  color: var(--ct-soft, #9aa3b2);
+  border-color: transparent;
+  font-weight: 600;
 }
 
 .quiz-status-pill.status-in_progress {
@@ -2067,7 +2457,9 @@ body.coding-dark .practice-show-more span {
 .quiz-problem-tags {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
+  min-width: 0;
 }
 
 .quiz-tag {
@@ -2077,6 +2469,7 @@ body.coding-dark .practice-show-more span {
   font-weight: 650;
   background: color-mix(in srgb, var(--ct-primary) 7%, var(--ct-panel-soft, #eef));
   color: var(--ct-muted, #6b7280);
+  white-space: nowrap;
 }
 
 .quiz-tag-difficulty {
@@ -2084,7 +2477,7 @@ body.coding-dark .practice-show-more span {
   color: color-mix(in srgb, var(--ct-primary) 70%, var(--ct-text));
 }
 
-/* ── Footer: language pills on the left, action on the right ── */
+/* ── Footer: tags on the left; languages (hover-reveal) + action on the right ── */
 .quiz-problem-foot {
   display: flex;
   align-items: center;
@@ -2095,11 +2488,38 @@ body.coding-dark .practice-show-more span {
   border-top: 1px solid color-mix(in srgb, var(--ct-border) 60%, transparent);
 }
 
-/* Tiny language pills (Py · JS · Java · C++). Unavailable runners render muted. */
+.quiz-foot-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+/* Language pills are identical on every card → hidden at rest, revealed on
+   card hover/focus so they confirm support without cluttering every card. */
 .quiz-lang-pills {
   display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
+  flex-wrap: nowrap;
+  gap: 4px;
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  transition: opacity 0.18s ease, max-width 0.18s ease;
+}
+
+.quiz-problem-card:hover .quiz-lang-pills,
+.quiz-problem-card:focus-visible .quiz-lang-pills,
+.quiz-problem-card:focus-within .quiz-lang-pills {
+  opacity: 1;
+  max-width: 220px;
+}
+
+/* Touch devices have no hover — always show the language pills there. */
+@media (hover: none) {
+  .quiz-lang-pills {
+    opacity: 1;
+    max-width: 220px;
+  }
 }
 
 .quiz-lang-pill {
@@ -2108,6 +2528,7 @@ body.coding-dark .practice-show-more span {
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.02em;
+  white-space: nowrap;
   background: color-mix(in srgb, var(--ct-primary) 9%, var(--ct-panel-soft, #eef));
   color: color-mix(in srgb, var(--ct-primary) 62%, var(--ct-text));
   border: 1px solid color-mix(in srgb, var(--ct-primary) 12%, var(--ct-border));
@@ -2227,6 +2648,22 @@ body.coding-dark .practice-guide-title {
   margin: 0;
   font-size: 0.85rem;
   color: var(--ct-muted, #6b7280);
+}
+
+/* Weakest-topic "Focus next" callout. */
+.practice-guide-weakest {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--ct-accent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ct-accent) 8%, var(--ct-panel));
+  font-size: 0.84rem;
+  line-height: 1.4;
+  color: var(--ct-muted, #6b7280);
+}
+
+.practice-guide-weakest strong {
+  color: var(--ct-text);
 }
 
 /* Topics-in-view chips. */
@@ -5907,6 +6344,12 @@ body.coding-dark .quiz-bank-page .quiz-problem-card {
   background-color: #1f2a44 !important;
   border: 1px solid rgba(245, 176, 92, 0.18) !important;
   border-top: 3px solid transparent !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Dark mode: lift the description + tag readability on the deeper card surface. */
+body.coding-dark .quiz-bank-page .quiz-problem-desc {
+  color: var(--ct-soft, #a6b0c2);
 }
 
 body.coding-dark .quiz-bank-page .quiz-problem-card:hover {

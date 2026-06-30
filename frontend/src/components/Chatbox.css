@@ -735,9 +735,13 @@ body.dark .ai-status-card {
   font-size: 1.1rem;
 }
 
+/* The Practice Library toolbar filters (Difficulty / Topic / Status) lay out as
+   one even row. The authoritative 3-column grid lives in CodingTutor.css
+   (.practice-toolbar .practice-controls.compact); this older 2-column rule used
+   to override it because Chatbox.css loads later in the bundle. Keep it neutral
+   here so it no longer fights that rule. */
 .practice-controls.compact {
-  grid-template-columns: repeat(2, minmax(120px, 1fr));
-  min-width: min(360px, 100%);
+  min-width: 0;
 }
 
 .quiz-card-grid {
