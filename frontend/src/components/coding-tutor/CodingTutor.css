@@ -388,6 +388,300 @@ body.coding-dark .coding-back-home-btn.active svg {
 }
 
 
+/* ── Mock Interview session header (sits atop the workbench during a session) ─ */
+.mock-bar {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 9px 14px;
+  border-radius: 12px;
+  /* A clean raised paper surface with a crisp navy rail — avoids the muddy
+     navy-over-paper wash a transparent tint produced in light mode. */
+  border: 1px solid var(--ct-gold-line, color-mix(in srgb, var(--ct-primary, #2b3f63) 22%, var(--ct-border, rgba(148,163,184,0.3))));
+  border-left: 4px solid var(--ct-primary, #2b3f63);
+  background: var(--ct-solid-raised, #fffdf8);
+  box-shadow: 0 2px 10px rgba(43, 63, 99, 0.07);
+}
+
+/* Urgency tiers tint the left rail + timer; expired adds a faint red wash. */
+.mock-bar.tier-orange { border-left-color: #f59e0b; }
+.mock-bar.tier-red { border-left-color: #ef4444; }
+.mock-bar.tier-expired {
+  border-left-color: #ef4444;
+  background: color-mix(in srgb, #ef4444 6%, var(--ct-solid-raised, #fffdf8));
+}
+
+.mock-bar-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.mock-bar-row-sub { font-size: 0.8rem; }
+
+.mock-bar-label {
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: 0.01em;
+  color: var(--ct-primary, #2b3f63);
+}
+
+.mock-bar-stepper { display: inline-flex; gap: 5px; }
+.mock-step {
+  width: 26px;
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-border, #cbd5e1) 80%, transparent);
+}
+.mock-step.current { background: var(--ct-primary, #2b3f63); }
+.mock-step.solved { background: #22c55e; }
+.mock-step.attempted { background: #f59e0b; }
+.mock-step.skipped { background: #94a3b8; }
+
+.mock-bar-timer {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-left: auto;
+  font-size: 1.15rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ct-text, #172033);
+}
+.mock-bar-timer svg { font-size: 0.8rem; align-self: center; }
+.mock-bar-timer small { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--ct-muted); letter-spacing: 0.04em; }
+
+.mock-bar.tier-orange .mock-bar-timer { color: #b45309; }
+.mock-bar.tier-red .mock-bar-timer,
+.mock-bar.tier-expired .mock-bar-timer { color: #b91c1c; }
+
+.mock-bar-meta { color: var(--ct-muted, #6b7280); font-weight: 650; font-variant-numeric: tabular-nums; }
+
+.mock-bar-progress { display: inline-flex; gap: 10px; }
+.mock-bar-progress .mp { font-weight: 750; }
+.mock-bar-progress .mp.solved { color: #15803d; }
+.mock-bar-progress .mp.att { color: #b45309; }
+.mock-bar-progress .mp.rem { color: var(--ct-muted); }
+
+.mock-bar-actions { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+
+.coding-app .mock-bar-actions button,
+.coding-app .mock-bar-row-main .mock-bar-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary, #2b3f63) 34%, var(--ct-border, rgba(148,163,184,0.3)));
+  background: transparent;
+  color: var(--ct-text, #172033) !important;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.coding-app .mock-bar-next {
+  background: var(--ct-primary, #2b3f63);
+  border-color: var(--ct-primary, #2b3f63);
+  color: #fff !important;
+}
+
+.coding-app .mock-bar-solved.on {
+  background: color-mix(in srgb, #22c55e 18%, transparent);
+  border-color: color-mix(in srgb, #22c55e 50%, transparent);
+  color: #15803d !important;
+}
+
+.coding-app .mock-bar-end {
+  border-color: color-mix(in srgb, #ef4444 46%, var(--ct-border, rgba(148,163,184,0.3)));
+  color: #b91c1c !important;
+}
+
+.coding-app .mock-bar button:disabled { opacity: 0.45; cursor: default; }
+.coding-app .mock-bar button:not(:disabled):hover { transform: translateY(-1px); }
+
+body.coding-dark .mock-bar { box-shadow: 0 2px 12px rgba(0, 0, 0, 0.28); }
+body.coding-dark .mock-bar-label { color: #9db8e0; }
+body.coding-dark .mock-bar-timer { color: #f1e9dc; }
+body.coding-dark .coding-app .mock-bar button { color: #f1e9dc !important; }
+body.coding-dark .coding-app .mock-bar-next { color: #fff !important; }
+body.coding-dark .coding-app .mock-bar-end { color: #f4807d !important; }
+
+/* Mock mode: problem-panel rules label + locked solution + compact examples. */
+.mock-rules {
+  display: grid;
+  gap: 2px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--ct-accent, #f58220) 36%, var(--ct-border));
+  background: color-mix(in srgb, var(--ct-accent, #f58220) 8%, transparent);
+}
+.mock-rules strong { font-size: 0.85rem; color: var(--ct-text); }
+.mock-rules span { font-size: 0.78rem; color: var(--ct-muted); }
+.mock-rules .mock-rules-note {
+  margin-top: 3px;
+  font-weight: 650;
+  color: color-mix(in srgb, var(--ct-accent, #f58220) 78%, var(--ct-text));
+}
+
+.problem-examples-compact summary {
+  cursor: pointer;
+  font-weight: 750;
+  font-size: 0.9rem;
+  color: var(--ct-text, #172033);
+  padding: 4px 0;
+}
+
+.coding-app .problem-solution-locked {
+  display: inline-flex;
+  align-self: start;
+  margin-top: 4px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px dashed color-mix(in srgb, var(--ct-muted, #6b7280) 50%, var(--ct-border));
+  background: transparent;
+  color: var(--ct-muted, #6b7280) !important;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.coding-app .problem-solution-locked:hover { border-style: solid; color: var(--ct-text) !important; }
+
+/* ── Mock Interview results overlay ───────────────────────────────────────── */
+.mock-summary-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.mock-summary {
+  width: min(560px, 100%);
+  max-height: 88vh;
+  overflow: auto;
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border-radius: 18px;
+  background: var(--ct-solid-raised, #fff);
+  border: 1px solid var(--ct-border, rgba(148,163,184,0.25));
+  box-shadow: 0 30px 70px rgba(15, 23, 42, 0.3);
+}
+
+.mock-summary-head { display: flex; align-items: center; gap: 14px; }
+.mock-summary-trophy {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 48px; height: 48px; border-radius: 14px;
+  background: linear-gradient(135deg, var(--ct-accent, #f58220), #ffd29b);
+  color: #172033; font-size: 1.3rem; flex-shrink: 0;
+}
+.mock-summary-head h2 { margin: 0; font-size: 1.25rem; color: var(--ct-text); }
+.mock-summary-head p { margin: 2px 0 0; color: var(--ct-muted); font-size: 0.86rem; }
+
+.mock-summary-stats { display: flex; gap: 12px; flex-wrap: wrap; }
+.mss {
+  flex: 1; min-width: 110px;
+  display: grid; gap: 2px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--ct-border);
+  background: var(--ct-panel-soft, rgba(248,250,252,0.7));
+}
+.mss-num { font-size: 1.5rem; font-weight: 800; color: var(--ct-text); font-variant-numeric: tabular-nums; }
+.mss-num small { font-size: 0.9rem; color: var(--ct-muted); font-weight: 700; }
+.mss-lbl { font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ct-muted); }
+
+.mock-summary-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.mock-summary-item {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--ct-border);
+  background: var(--ct-panel, rgba(255,255,255,0.5));
+}
+.mock-summary-outcome { display: inline-flex; align-items: center; gap: 6px; font-weight: 750; font-size: 0.8rem; }
+.mock-summary-outcome.solved { color: #15803d; }
+.mock-summary-outcome.skipped { color: #64748b; }
+.mock-summary-outcome.attempted { color: #b45309; }
+.mock-summary-outcome.unattempted { color: var(--ct-muted); }
+.mock-summary-title { flex: 1; min-width: 0; font-weight: 650; color: var(--ct-text); font-size: 0.9rem; }
+.mock-summary-diff { padding: 2px 9px; border-radius: 999px; font-size: 0.7rem; font-weight: 750; text-transform: uppercase; }
+.mock-summary-diff.diff-easy { background: color-mix(in srgb, #22c55e 18%, transparent); color: #15803d; }
+.mock-summary-diff.diff-medium { background: color-mix(in srgb, #f59e0b 20%, transparent); color: #b45309; }
+.mock-summary-diff.diff-hard { background: color-mix(in srgb, #ef4444 18%, transparent); color: #b91c1c; }
+.coding-app .mock-summary-review {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px; border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ct-accent) 46%, var(--ct-border));
+  background: transparent; color: var(--ct-text) !important;
+  text-decoration: none; font-weight: 700; font-size: 0.78rem;
+}
+
+.mock-summary-foot { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+.coding-app .mock-summary-close,
+.coding-app .mock-summary-again {
+  padding: 9px 16px; border-radius: 999px; cursor: pointer; font-weight: 750; font-size: 0.86rem;
+  border: 1px solid var(--ct-border); background: transparent; color: var(--ct-text) !important;
+}
+.coding-app .mock-summary-again {
+  background: var(--ct-primary, #2b3f63); border-color: var(--ct-primary, #2b3f63); color: #fff !important;
+}
+
+body.coding-dark .mock-summary { background: #1c2a3f; }
+body.coding-dark .mss,
+body.coding-dark .mock-summary-item { background: #16233a; border-color: rgba(148,163,184,0.22); }
+
+/* ── Mock confirm modal (skip / view-solution) ────────────────────────────── */
+.mock-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.mock-confirm {
+  width: min(420px, 100%);
+  display: grid;
+  gap: 10px;
+  padding: 22px;
+  text-align: center;
+  border-radius: 16px;
+  background: var(--ct-solid-raised, #fff);
+  border: 1px solid var(--ct-border, rgba(148,163,184,0.25));
+  box-shadow: 0 28px 64px rgba(15, 23, 42, 0.3);
+}
+
+.mock-confirm-icon {
+  justify-self: center;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: 50%;
+  font-size: 1.2rem;
+}
+.mock-confirm-icon.tone-warn { background: color-mix(in srgb, #f59e0b 18%, transparent); color: #b45309; }
+.mock-confirm-icon.tone-danger { background: color-mix(in srgb, #ef4444 18%, transparent); color: #b91c1c; }
+
+.mock-confirm h3 { margin: 0; color: var(--ct-text); font-size: 1.1rem; }
+.mock-confirm p { margin: 0; color: var(--ct-muted); font-size: 0.9rem; line-height: 1.5; }
+
+.mock-confirm-actions { display: flex; gap: 10px; justify-content: center; margin-top: 6px; flex-wrap: wrap; }
+.coding-app .mock-confirm-cancel,
+.coding-app .mock-confirm-go {
+  padding: 9px 18px; border-radius: 999px; cursor: pointer; font-weight: 750; font-size: 0.88rem;
+  border: 1px solid var(--ct-border); background: transparent; color: var(--ct-text) !important;
+}
+.coding-app .mock-confirm-go.tone-warn { background: #f59e0b; border-color: #f59e0b; color: #172033 !important; }
+.coding-app .mock-confirm-go.tone-danger { background: #ef4444; border-color: #ef4444; color: #fff !important; }
+.coding-app .mock-confirm-go:hover { transform: translateY(-1px); }
+
+body.coding-dark .mock-confirm { background: #1c2a3f; }
+
 .coding-workbench {
   min-height: auto;
   display: flex;
@@ -2290,6 +2584,33 @@ body.coding-dark .practice-show-more span {
   gap: 6px;
 }
 
+/* Interview-prep escape hatch: link to the external worked solution. */
+.problem-solution-link {
+  display: inline-flex;
+  align-items: center;
+  align-self: start;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ct-accent, #f58220) 46%, var(--ct-border, rgba(148, 163, 184, 0.3)));
+  background: transparent;
+  color: var(--ct-text, #172033);
+  font-weight: 700;
+  font-size: 0.88rem;
+  text-decoration: none;
+}
+
+.problem-solution-link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--ct-accent, #f58220) 16%, transparent);
+}
+
+body.coding-dark .problem-solution-link {
+  border-color: rgba(231, 160, 91, 0.5);
+  color: #f1e9dc;
+}
+
 .problem-constraints-card li {
   line-height: 1.45;
   overflow-wrap: anywhere;
@@ -2472,10 +2793,15 @@ body.coding-dark .practice-show-more span {
   white-space: nowrap;
 }
 
-.quiz-tag-difficulty {
-  background: color-mix(in srgb, var(--ct-primary) 12%, var(--ct-panel-soft, #eef));
-  color: color-mix(in srgb, var(--ct-primary) 70%, var(--ct-text));
-}
+/* Per-difficulty chip colors, matching the Interview Prep difficulty chips
+   (green / amber / red) so difficulty reads at a glance in both libraries. */
+.quiz-tag-difficulty.diff-easy { background: color-mix(in srgb, #22c55e 18%, transparent); color: #15803d; }
+.quiz-tag-difficulty.diff-medium { background: color-mix(in srgb, #f59e0b 20%, transparent); color: #b45309; }
+.quiz-tag-difficulty.diff-hard { background: color-mix(in srgb, #ef4444 18%, transparent); color: #b91c1c; }
+
+body.coding-dark .quiz-tag-difficulty.diff-easy { color: #5ee69a; }
+body.coding-dark .quiz-tag-difficulty.diff-medium { color: #f1b551; }
+body.coding-dark .quiz-tag-difficulty.diff-hard { color: #f4807d; }
 
 /* ── Footer: tags on the left; languages (hover-reveal) + action on the right ── */
 .quiz-problem-foot {

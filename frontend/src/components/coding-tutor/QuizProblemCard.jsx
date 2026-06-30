@@ -39,7 +39,7 @@ export default function QuizProblemCard({ question, progress, onSelect, recommen
       <div className="quiz-problem-foot">
         <span className="quiz-problem-tags">
           <span className="quiz-tag quiz-tag-topic">{titleCase(question.topic)}</span>
-          <span className="quiz-tag quiz-tag-difficulty">{titleCase(question.difficulty)}</span>
+          <span className={`quiz-tag quiz-tag-difficulty diff-${(question.difficulty || "easy").toLowerCase()}`}>{titleCase(question.difficulty)}</span>
         </span>
         <span className="quiz-problem-action">{meta.action}</span>
       </div>

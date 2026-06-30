@@ -891,7 +891,19 @@ _practice_cache: dict[str, dict[str, Any]] = {}
 QUIZ_DIR = os.path.join(BACKEND_DIR, "data_sources", "quiz")
 QUIZ_QUESTIONS_DIR = os.path.join(QUIZ_DIR, "questions")
 QUIZ_ANSWERS_DIR = os.path.join(QUIZ_DIR, "answers")
+INTERVIEW_DIR = os.path.join(BACKEND_DIR, "data_sources", "interview")
+INTERVIEW_QUESTIONS_DIR = os.path.join(INTERVIEW_DIR, "questions")
 STUDY_RESOURCES_PATH = os.path.join(BACKEND_DIR, "data_sources", "study_resources.json")
+
+# Question-library registry. Each "set" (library) maps to a folder of per-difficulty
+# JSON shards ({easy,medium,hard}.json). Adding a new library is config here, not new
+# loader code — the loaders below are parameterized by set. "practice" is the existing
+# autograded Practice Library; "interview" is the link-only Interview Prep set.
+DEFAULT_QUESTION_SET = "practice"
+QUESTION_LIBRARIES = {
+    "practice": QUIZ_QUESTIONS_DIR,
+    "interview": INTERVIEW_QUESTIONS_DIR,
+}
 PRACTICE_DIFFICULTIES = {"easy", "medium", "hard"}
 PRACTICE_LANGUAGES = {
     "python": "Python",
@@ -4148,26 +4160,90 @@ def _score_study_resource(resource: dict[str, Any], terms: set[str], req: StudyR
         score += 1
     return score
 
-def _practice_questions_for_difficulty(difficulty: str) -> list[dict[str, Any]]:
+def _resolve_question_set(question_set: str | None) -> tuple[str, str]:
+    """Map a set/library name to its questions dir. Defaults to the practice set."""
+    name = (question_set or DEFAULT_QUESTION_SET).lower().strip()
+    directory = QUESTION_LIBRARIES.get(name)
+    if directory is None:
+        valid = ", ".join(sorted(QUESTION_LIBRARIES))
+        raise HTTPException(status_code=400, detail=f"Unknown question set '{name}'. Valid sets: {valid}.")
+    return name, directory
+
+def _normalize_question(raw: dict[str, Any], *, difficulty: str, question_set: str) -> dict[str, Any]:
+    """Apply the canonical question schema with safe defaults.
+
+    This is the ONE place defaults live, so existing data files (which only carry
+    id/title/difficulty/topic/prompt/examples/constraints/hints) keep working
+    untouched while new fields (topics, patterns, languages, has_tests, source,
+    pack, set, answer_url/kind) are filled in for every question. Back-compat is a
+    hard requirement, so this never drops unknown keys from the source file.
+    """
+    question = dict(raw)
+    topic = str(question.get("topic", "") or "").strip()
+    question["topic"] = topic
+    # File-level difficulty wins only when the question omits its own.
+    question["difficulty"] = str(question.get("difficulty") or difficulty or "").lower().strip()
+
+    # topics[] enriches the canonical singular topic; default to [topic] so anything
+    # reading topics[] always has at least the primary tag.
+    topics = question.get("topics")
+    if not isinstance(topics, list) or not topics:
+        question["topics"] = [topic] if topic else []
+    else:
+        question["topics"] = [str(t).strip() for t in topics if str(t).strip()]
+
+    languages = question.get("languages")
+    if not isinstance(languages, list) or not languages:
+        question["languages"] = ["python", "java", "javascript", "cpp"]
+
+    patterns = question.get("patterns")
+    if not isinstance(patterns, list):
+        question["patterns"] = []
+
+    question["has_tests"] = bool(question.get("has_tests", True))
+    question["source"] = str(question.get("source") or "cs-navigator")
+    question["set"] = str(question.get("set") or question_set)
+    if "pack" not in question:
+        question["pack"] = None
+    if "answer_url" not in question:
+        question["answer_url"] = None
+    if "answer_kind" not in question:
+        question["answer_kind"] = None
+    return question
+
+def _questions_for_difficulty(difficulty: str, question_set: str | None = None) -> list[dict[str, Any]]:
     normalized = difficulty.lower().strip()
     if normalized not in PRACTICE_DIFFICULTIES:
         raise HTTPException(status_code=400, detail="Difficulty must be easy, medium, or hard.")
-    path = os.path.join(QUIZ_QUESTIONS_DIR, f"{normalized}.json")
+    set_name, directory = _resolve_question_set(question_set)
+    path = os.path.join(directory, f"{normalized}.json")
     data = _read_quiz_json(path)
-    return data.get("questions", data if isinstance(data, list) else [])
+    raw = data.get("questions", data if isinstance(data, list) else [])
+    return [_normalize_question(item, difficulty=normalized, question_set=set_name) for item in raw]
 
-def _all_practice_questions() -> list[dict[str, Any]]:
+def _all_questions(question_set: str | None = None) -> list[dict[str, Any]]:
     questions: list[dict[str, Any]] = []
     for difficulty in ("easy", "medium", "hard"):
-        questions.extend(_practice_questions_for_difficulty(difficulty))
+        questions.extend(_questions_for_difficulty(difficulty, question_set))
     return questions
 
-def _find_practice_question(question_id: str) -> dict[str, Any]:
+def _find_question(question_id: str, question_set: str | None = None) -> dict[str, Any]:
     wanted = question_id.lower().strip()
-    for question in _all_practice_questions():
+    for question in _all_questions(question_set):
         if str(question.get("id", "")).lower() == wanted:
             return question
     raise HTTPException(status_code=404, detail="Practice question not found.")
+
+# Back-compat aliases: existing callers use the practice-specific names. These keep
+# the default-practice behavior so nothing else has to change.
+def _practice_questions_for_difficulty(difficulty: str) -> list[dict[str, Any]]:
+    return _questions_for_difficulty(difficulty, DEFAULT_QUESTION_SET)
+
+def _all_practice_questions() -> list[dict[str, Any]]:
+    return _all_questions(DEFAULT_QUESTION_SET)
+
+def _find_practice_question(question_id: str) -> dict[str, Any]:
+    return _find_question(question_id, DEFAULT_QUESTION_SET)
 
 def _normalize_practice_language(language: str) -> tuple[str, str]:
     normalized = language.lower().strip()
@@ -4500,15 +4576,21 @@ async def get_daily_practice_question(
     }
 
 @app.get("/api/coding/practice/questions")
-async def list_practice_questions(difficulty: str = Query("easy", pattern="^(easy|medium|hard)$")):
+async def list_practice_questions(
+    difficulty: str = Query("easy", pattern="^(easy|medium|hard)$"),
+    set: str = Query(DEFAULT_QUESTION_SET),
+):
+    set_name, _ = _resolve_question_set(set)
     return {
+        "set": set_name,
         "difficulty": difficulty,
-        "questions": _practice_questions_for_difficulty(difficulty),
+        "questions": _questions_for_difficulty(difficulty, set_name),
     }
 
 @app.get("/api/coding/practice/questions/{question_id}")
-async def get_practice_question(question_id: str):
-    return _find_practice_question(question_id)
+async def get_practice_question(question_id: str, set: str = Query(DEFAULT_QUESTION_SET)):
+    set_name, _ = _resolve_question_set(set)
+    return _find_question(question_id, set_name)
 
 @app.get("/api/coding/practice/questions/{question_id}/hints")
 async def get_practice_question_hints(question_id: str, level: str = Query("1")):

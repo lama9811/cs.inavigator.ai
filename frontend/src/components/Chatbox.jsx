@@ -140,6 +140,10 @@ export default function Chatbox({
   const [codingWidgetSessionId, setCodingWidgetSessionId] = useState(() => `coding-widget-${Date.now()}`);
   const [codingWidgetStartIndex, setCodingWidgetStartIndex] = useState(0);
   const [activeCodingPage, setActiveCodingPage] = useState("dashboard");
+  // True while a Mock Interview is running (signalled from CodingTutor via a
+  // window event + body class, since the two components share no state). We hide
+  // the floating tutor during a mock so the simulation has no AI assist.
+  const [mockInterviewActive, setMockInterviewActive] = useState(false);
   const isCodingWorkspaceRoute = location.pathname === "/coding";
   const isCodingChatRoute = location.pathname === "/chat/coding";
   const hasStartedChat = messages.length > 0;
@@ -149,7 +153,8 @@ export default function Chatbox({
   // or other coding sub-pages, where it overlapped the page's own CTAs.
   const showFloatingCodingChat = isCodingWorkspaceRoute
     && chatMode === "coding_tutor"
-    && activeCodingPage === "workspace";
+    && activeCodingPage === "workspace"
+    && !mockInterviewActive;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -160,6 +165,16 @@ export default function Chatbox({
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Listen for mock-interview start/end from CodingTutor (separate component) so
+  // we can hide the floating tutor during a mock. Sync the initial value from the
+  // body class in case a session was already running when this mounted.
+  useEffect(() => {
+    setMockInterviewActive(document.body.classList.contains("coding-mock-active"));
+    const onMockChange = (e) => setMockInterviewActive(Boolean(e.detail?.active));
+    window.addEventListener("coding-mock-change", onMockChange);
+    return () => window.removeEventListener("coding-mock-change", onMockChange);
   }, []);
 
   useEffect(() => {
