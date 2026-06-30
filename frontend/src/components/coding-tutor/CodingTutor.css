@@ -4741,7 +4741,8 @@ body.coding-dark .coding-app {
   .floating-chat-control,
   .floating-chat-icon-btn,
   .problem-navigation button,
-  .workspace-tabs button
+  .workspace-tabs button,
+  .iv-mock-btn
 ):hover:not(:disabled) {
   background: var(--ct-hover-bg) !important;
   background-color: var(--ct-hover-bg) !important;

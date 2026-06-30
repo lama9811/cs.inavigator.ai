@@ -92,6 +92,10 @@
 
 /* Scoped + !important on color: a global `.coding-app button` rule otherwise
    forces dark text, making the label invisible on this dark gradient button. */
+/* This button uses HARD navy literals (not var(--ct-primary)) on purpose: the
+   theme's primary resolves to a medium/light blue in light mode, which washed out
+   the white label — especially on hover. A fixed deep navy guarantees the white
+   text stays readable in every theme; the orange accent ring is the hover signal. */
 .coding-app .iv-mock-btn {
   display: inline-flex;
   align-items: center;
@@ -100,24 +104,30 @@
   padding: 10px 18px;
   border: 0;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--ct-primary), color-mix(in srgb, var(--ct-primary) 70%, #2b3f63));
+  background: linear-gradient(135deg, #0b2545, #14315c);
   color: #fff !important;
   cursor: pointer;
   text-align: left;
 }
 
-.coding-app .iv-mock-btn svg { font-size: 1.1rem; color: var(--ct-accent, #f7b955) !important; }
+.coding-app .iv-mock-btn svg { font-size: 1.1rem; color: #f7b955 !important; }
 .coding-app .iv-mock-btn strong { display: block; font-size: 0.95rem; color: #fff !important; }
-.coding-app .iv-mock-btn small { display: block; font-size: 0.76rem; color: #fff !important; opacity: 0.85; }
+.coding-app .iv-mock-btn small { display: block; font-size: 0.76rem; color: #fff !important; opacity: 0.9; }
 
-.coding-app .iv-mock-btn:hover {
+/* Hover uses the shared coding-app hover treatment: a soft PEACH fill with ORANGE
+   text + border (the same language as the "Solve" buttons). The base button is deep
+   navy with a white label; on hover the whole label group turns orange. */
+.coding-app .iv-mock-btn:hover,
+.coding-app .iv-mock-btn:focus-visible {
   transform: translateY(-1px);
-  /* Keep the fill DARK on hover (mix toward black, not toward a lighter navy) so
-     the white label stays readable. The orange accent ring is the "hover" signal. */
-  background: linear-gradient(135deg, color-mix(in srgb, var(--ct-primary) 86%, #000), var(--ct-primary));
-  box-shadow: 0 14px 28px color-mix(in srgb, var(--ct-primary) 34%, transparent),
-    0 0 0 2px color-mix(in srgb, var(--ct-accent, #f7b955) 70%, transparent);
+  outline: none;
 }
+.coding-app .iv-mock-btn:hover strong,
+.coding-app .iv-mock-btn:hover small,
+.coding-app .iv-mock-btn:hover svg,
+.coding-app .iv-mock-btn:focus-visible strong,
+.coding-app .iv-mock-btn:focus-visible small,
+.coding-app .iv-mock-btn:focus-visible svg { color: var(--ct-accent, #f58220) !important; }
 
 /* ── Recommended path ─────────────────────────────────────────────────────── */
 .iv-path-strip {

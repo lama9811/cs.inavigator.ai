@@ -43,28 +43,33 @@ function statusOf(progress) {
   return "not_started";
 }
 
-const TOPIC_INSIGHTS = {
-  strings: {
-    objectives: ["String normalization", "Character comparison", "Edge case handling"],
-    mistakes: ["Forgetting lowercase conversion", "Ignoring spaces or punctuation", "Using extra loops when a two-pointer pass fits"],
-  },
-  arrays: {
-    objectives: ["Index tracking", "Single-pass updates", "Boundary checks"],
-    mistakes: ["Skipping the first or last item", "Mutating input unexpectedly", "Using nested loops without needing them"],
-  },
-  "two pointers": {
-    objectives: ["Pointer movement rules", "Loop stopping conditions", "Pair comparison"],
-    mistakes: ["Moving both pointers too early", "Missing equal-value cases", "Not testing short inputs"],
-  },
-  loops: {
-    objectives: ["Loop invariants", "Accumulator updates", "Manual tracing"],
-    mistakes: ["Off-by-one ranges", "Resetting counters inside loops", "Returning before the loop finishes"],
-  },
-  hashmaps: {
-    objectives: ["Frequency counting", "Lookup-first reasoning", "Key normalization"],
-    mistakes: ["Checking after overwriting values", "Using the wrong key shape", "Forgetting default counts"],
-  },
-};
+// Parked: curated per-topic objectives + common mistakes. The "Common mistakes"
+// panel that consumed this was hidden because the copy was identical for every
+// user (not personalized). Kept here as seed copy for the future per-user version
+// — see ROADMAP "Practice Guide: per-user common mistakes". Re-enable insightForTopic()
+// and the panel render in PracticeLibrary when that work begins.
+// const TOPIC_INSIGHTS = {
+//   strings: {
+//     objectives: ["String normalization", "Character comparison", "Edge case handling"],
+//     mistakes: ["Forgetting lowercase conversion", "Ignoring spaces or punctuation", "Using extra loops when a two-pointer pass fits"],
+//   },
+//   arrays: {
+//     objectives: ["Index tracking", "Single-pass updates", "Boundary checks"],
+//     mistakes: ["Skipping the first or last item", "Mutating input unexpectedly", "Using nested loops without needing them"],
+//   },
+//   "two pointers": {
+//     objectives: ["Pointer movement rules", "Loop stopping conditions", "Pair comparison"],
+//     mistakes: ["Moving both pointers too early", "Missing equal-value cases", "Not testing short inputs"],
+//   },
+//   loops: {
+//     objectives: ["Loop invariants", "Accumulator updates", "Manual tracing"],
+//     mistakes: ["Off-by-one ranges", "Resetting counters inside loops", "Returning before the loop finishes"],
+//   },
+//   hashmaps: {
+//     objectives: ["Frequency counting", "Lookup-first reasoning", "Key normalization"],
+//     mistakes: ["Checking after overwriting values", "Using the wrong key shape", "Forgetting default counts"],
+//   },
+// };
 
 // Compact one-row progress strip for the Practice Library. Same numbers as the
 // big StatTiles cards (streak / solved / attempted / % complete) but inline, so
@@ -94,14 +99,16 @@ function ProgressStrip({ progressSummary }) {
   );
 }
 
-function insightForTopic(topic = "") {
-  const normalized = topic.toLowerCase();
-  const key = Object.keys(TOPIC_INSIGHTS).find(name => normalized.includes(name));
-  return TOPIC_INSIGHTS[key] || {
-    objectives: [`Practice ${topic || "problem"} reasoning`, "Trace examples by hand", "Test edge cases before finalizing"],
-    mistakes: ["Skipping the smallest input", "Not explaining the approach first", "Changing too much code at once"],
-  };
-}
+// Parked alongside TOPIC_INSIGHTS above (see ROADMAP "Practice Guide: per-user
+// common mistakes"). Re-enable when the per-user version is built.
+// function insightForTopic(topic = "") {
+//   const normalized = topic.toLowerCase();
+//   const key = Object.keys(TOPIC_INSIGHTS).find(name => normalized.includes(name));
+//   return TOPIC_INSIGHTS[key] || {
+//     objectives: [`Practice ${topic || "problem"} reasoning`, "Trace examples by hand", "Test edge cases before finalizing"],
+//     mistakes: ["Skipping the smallest input", "Not explaining the approach first", "Changing too much code at once"],
+//   };
+// }
 
 export default function QuizBank({
   questions,
@@ -382,8 +389,10 @@ export default function QuizBank({
     })[0];
   }, [topicProgress]);
 
-  // Common mistakes for the topics in view (curated copy).
-  const mistakes = [...new Set(topicsInView.flatMap(topic => insightForTopic(topic).mistakes))].slice(0, 4);
+  // NOTE: "Common mistakes" panel is hidden for now. The curated copy was the same
+  // for every user (not personalized), so it's parked until we can scope it per
+  // student — see ROADMAP "Practice Guide: per-user common mistakes". The
+  // TOPIC_INSIGHTS map + insightForTopic() are kept as the seed copy for that work.
 
   return (
     <section className="coding-page-panel quiz-bank-page">
@@ -724,16 +733,8 @@ export default function QuizBank({
             )}
           </section>
 
-          <section className="practice-guide-section">
-            <h3>Common mistakes</h3>
-            {mistakes.length ? (
-              <ul className="practice-guide-mistakes">
-                {mistakes.map(item => <li key={item}>{item}</li>)}
-              </ul>
-            ) : (
-              <p>Common mistakes appear here based on the topics you&apos;re viewing.</p>
-            )}
-          </section>
+          {/* "Common mistakes" panel hidden until it can be scoped per user —
+              see ROADMAP "Practice Guide: per-user common mistakes". */}
         </aside>
       </div>
     </section>
