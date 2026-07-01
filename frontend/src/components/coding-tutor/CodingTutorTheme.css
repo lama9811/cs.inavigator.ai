@@ -97,12 +97,12 @@ body.coding-dark .coding-app {
    `body.theme-switching` transition-suppressor in index.css + App.jsx.
    NOTE: --ct-bg lives on .coding-app (a child), so we can't read it on the
    parent .chat-main — the literals below mirror --ct-bg in each mode
-   (light #f6f0e7 / dark #0c1422). Keep them in sync if --ct-bg changes. */
+   (light #f6f0e7 / dark #0b1a33). Keep them in sync if --ct-bg changes. */
 .chat-main.coding-chat-main {
   background: #f6f0e7;
 }
 body.coding-dark .chat-main.coding-chat-main {
-  background: #0c1422;
+  background: #0b1a33;
 }
 
 /* ------------------------------------------------------------------
@@ -115,14 +115,14 @@ body.coding-dark .chat-main.coding-chat-main {
    Repaint just those two shell layers to the coding canvas, but ONLY
    when body.coding-dark is on (i.e. only inside the Coding Tutor route).
    The global app theme is untouched in light mode and on every other
-   route. Mirror of --ct-bg dark literal (#0c1422). */
+   route. Mirror of --ct-bg dark literal (#0b1a33). */
 html:has(body.coding-dark),
 body.coding-dark,
 body.coding-dark #root,
 body.coding-dark .app-layout,
 body.coding-dark .chat-main,
 body.coding-dark .coding-app {
-  background: #0c1422 !important;
+  background: #0b1a33 !important;
 }
 
 /* The global top NavBar renders on /coding too (App.jsx). It paints the light
@@ -131,8 +131,8 @@ body.coding-dark .coding-app {
    on, so the whole top of the route is dark. Scoped to coding-dark only. */
 body.coding-dark .navbar,
 body.coding-dark .navbar .nav-container {
-  background: #0c1422 !important;
-  border-color: #1e2d49 !important;
+  background: #0b1a33 !important;
+  border-color: #2f4a7a !important;
 }
 
 /* ---- NavBar contrast in coding dark mode ----

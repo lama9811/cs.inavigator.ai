@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 
 import NavBar         from "./components/NavBar";
 import ChatSidebar    from "./components/ChatSidebar";
@@ -54,10 +54,55 @@ function parseJwt(token) {
   }
 }
 
+// True when the token is missing, malformed, or past its `exp` claim. A 30s skew
+// buffer avoids logging out a token that's about to expire mid-request. Tokens
+// without an `exp` are treated as valid (let the server be the authority).
+function isTokenExpired(token) {
+  if (!token) return true;
+  const { exp } = parseJwt(token);
+  if (!exp) return false;
+  return Date.now() >= (exp * 1000) - 30_000;
+}
+
+// Clear all auth/session state from storage. Shared by manual logout and the
+// automatic session-expiry paths so they never drift.
+function clearAuthStorage() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("chat_sessions");
+  localStorage.removeItem(ACTIVE_CHAT_SESSION_KEY);
+}
+
+// Module-level guard so the expiry toast fires once even if several RequireAuth
+// instances (or the fetch interceptor) detect expiry at the same time.
+let expiryToastShown = false;
+function notifySessionExpiredOnce() {
+  if (expiryToastShown) return;
+  expiryToastShown = true;
+  toast.error("Your session expired — please log in again.", { duration: 2600 });
+  // Allow a future expiry (after the user logs back in) to notify again.
+  setTimeout(() => { expiryToastShown = false; }, 3000);
+}
+
 function RequireAuth({ children }) {
-  return localStorage.getItem("token") 
-    ? children 
-    : <Navigate to="/login" replace />;
+  const token = localStorage.getItem("token");
+  const expired = isTokenExpired(token);
+  // Side effects (toast + storage clear) run in an effect, not during render, so
+  // the toast reliably fires and survives the redirect. `token` (not `expired`) in
+  // deps: we only care whether there was a real token that just went invalid.
+  const hadToken = Boolean(token);
+  useEffect(() => {
+    if (expired && hadToken) {
+      notifySessionExpiredOnce();
+      clearAuthStorage();
+    }
+  }, [expired, hadToken]);
+
+  // Gate on a VALID token, not just its presence — an expired token used to leave
+  // the user "logged in" on a broken UI where every API call silently 401'd. Pass
+  // sessionExpired state so the login page shows its banner too (guaranteed message,
+  // independent of the toast's timing).
+  if (expired) return <Navigate to="/login" replace state={hadToken ? { sessionExpired: true } : undefined} />;
+  return children;
 }
 
 function ChatLayout({
@@ -204,6 +249,34 @@ export default function App() {
       setRole(null);
     }
   }, [token]);
+
+  // Global 401 interceptor: wrap window.fetch so ANY authenticated call to our API
+  // that returns 401 (expired/invalid token) triggers an automatic logout. Without
+  // this, an expired token left the user "logged in" while every call — Canvas
+  // sync, DegreeWorks, chat — failed silently with no feedback. Installed once;
+  // uses a ref so it isn't re-installed on every render. Scoped to our own API and
+  // only when a token exists, so third-party 401s and the login page are untouched.
+  const logoutRef = useRef(null);
+  // Guards against a burst of simultaneous 401s all firing the expiry logout (which
+  // would stack toasts / redirects). Only the first one runs the flow.
+  const expiredLogoutStartedRef = useRef(false);
+  useEffect(() => {
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      const response = await originalFetch(...args);
+      try {
+        if (response.status === 401 && localStorage.getItem("token")) {
+          const url = typeof args[0] === "string" ? args[0] : args[0]?.url || "";
+          const isOurApi = url.includes(API_BASE) || url.includes("/api/");
+          if (isOurApi && logoutRef.current) logoutRef.current(true);
+        }
+      } catch {
+        // Never let the interceptor's own error break the caller's response.
+      }
+      return response;
+    };
+    return () => { window.fetch = originalFetch; };
+  }, []);
 
   // Retire global dark mode. Always strip the app-wide `body.dark` class and the
   // stale "theme" key on mount, so a value persisted before this change (e.g. a
@@ -489,18 +562,37 @@ export default function App() {
   // exclusively inside the Coding Tutor now (its own scoped toggle).
   const toggleTheme = () => {};
 
-  // logout
-  const handleLogout = () => {
+  // Clear session state + reset the UI to a fresh chat. Shared by both logout paths.
+  const resetToLoggedOut = () => {
     setToken(null);
-    localStorage.removeItem("token");
-    localStorage.removeItem("chat_sessions");
-    localStorage.removeItem(ACTIVE_CHAT_SESSION_KEY);
-    // Clear UI and reset to a fresh chat
+    clearAuthStorage();
     const freshId = Date.now().toString();
     setSessions([{ id: freshId, title: "New Chat", messages: [], pinned: false, archived: false, mode: "regular" }]);
     setActiveId(freshId);
-    navigate("/login", { replace: true });
   };
+
+  // logout — `expired` distinguishes an automatic session-expiry logout from a
+  // manual one. On expiry we show a toast for a moment BEFORE redirecting, so the
+  // user understands why they're being sent to login instead of it happening
+  // abruptly with no explanation.
+  const handleLogout = (expired = false) => {
+    if (!expired) {
+      resetToLoggedOut();
+      navigate("/login", { replace: true });
+      return;
+    }
+    // Expiry path (from the 401 interceptor): dedupe a burst of 401s, show the
+    // shared toast, clear, and redirect. The toast lives on the app-root <Toaster>
+    // so it survives the navigation and remains visible on the login page.
+    if (expiredLogoutStartedRef.current) return;
+    expiredLogoutStartedRef.current = true;
+    notifySessionExpiredOnce();
+    resetToLoggedOut();
+    navigate("/login", { replace: true, state: { sessionExpired: true } });
+    setTimeout(() => { expiredLogoutStartedRef.current = false; }, 1500);
+  };
+  // Keep the interceptor's logout ref pointing at the latest handleLogout closure.
+  logoutRef.current = handleLogout;
 
   // Extract user email from token
   const userEmail = token ? (parseJwt(token).email || parseJwt(token).sub || "User") : "";

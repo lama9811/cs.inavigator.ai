@@ -50,6 +50,11 @@ export default function Login({ onLoggedIn }) {
 
   useEffect(() => {
     if (localStorage.getItem("token")) navigate("/", { replace: true });
+    // Notice when we were bounced here by an expired session (see App.jsx logout).
+    if (location.state?.sessionExpired) {
+      setError("Your session expired. Please log in again.");
+      window.history.replaceState({}, document.title);
+    }
     // Show success message from signup redirect
     if (location.state?.message) {
       setSuccess(location.state.message);

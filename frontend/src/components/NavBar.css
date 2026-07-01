@@ -111,6 +111,10 @@ body.dark .sidebar-menu-btn:hover {
   border-radius: 8px;
   padding: 4px 8px;
   margin: -4px -8px;
+  /* Push everything after the brand (the Try Free / Login / Sign Up links) to the
+     far right. On the logged-out nav there's no sidebar toggle/feature pills to
+     fill the left, so without this the links sit next to the brand. */
+  margin-right: auto;
 }
 
 .navbar-left:hover {

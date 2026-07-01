@@ -240,6 +240,30 @@ class CodingPracticeProgress(Base):
     user = relationship("User", backref="coding_practice_progress")
 
 
+class CodingUserProgress(Base):
+    """Per-user Coding Tutor aggregate progress for badge/streak signals that are
+    NOT derivable from CodingPracticeProgress (mock-interview completions, the
+    daily-challenge day list, and the best-ever streak). Makes those signals sync
+    across devices instead of living only in the browser's localStorage. One row
+    per user."""
+    __tablename__ = "coding_user_progress"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_coding_user_progress_user"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True, unique=True)
+    mock_completed = Column(Integer, nullable=False, default=0)
+    best_streak = Column(Integer, nullable=False, default=0)
+    # JSON-encoded array of "YYYY-MM-DD" strings — kept as Text so it works on both
+    # local SQLite and Cloud SQL MySQL without a JSON column-type dependency.
+    daily_days = Column(Text, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", backref="coding_user_progress")
+
+
 class CodingSnippet(Base):
     """Per-user personal code snippets ("My Snippets") — the student's own code,
     not tied to a graded quiz problem. Synced from the browser localStorage."""
