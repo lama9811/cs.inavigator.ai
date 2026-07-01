@@ -1,6 +1,37 @@
 .progress-badge-section {
   display: grid;
-  gap: 14px;
+  gap: 22px;
+}
+
+/* Category groups — each a small labelled band of cards. */
+.progress-badge-group {
+  display: grid;
+  gap: 11px;
+}
+
+.progress-badge-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ct-border) 70%, transparent);
+}
+
+.progress-badge-group-head h3 {
+  margin: 0;
+  color: var(--ct-text);
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.progress-badge-group-head span {
+  color: var(--ct-muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
 }
 
 .progress-badge-header {
@@ -20,6 +51,41 @@
   color: var(--ct-muted);
   font-size: 0.86rem;
   font-weight: 750;
+}
+
+/* "Next up" nudge — tells the student their nearest milestone so an all-locked
+   page reads as a goal, not a wall. Accent-railed to match the hero focus row. */
+.progress-badge-nudge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: -4px;
+  padding: 9px 13px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--ct-accent, #f37021) 24%, var(--ct-border));
+  border-left: 3px solid var(--ct-accent, #f37021);
+  background: color-mix(in srgb, var(--ct-accent, #f37021) 8%, var(--ct-panel));
+}
+
+.progress-badge-nudge-tag {
+  flex: 0 0 auto;
+  padding: 3px 10px;
+  border-radius: 999px;
+  /* Slightly deeper orange + white text reads cleaner than the old dark-on-bright-
+     orange, which looked harsh. */
+  background: color-mix(in srgb, var(--ct-accent, #f37021) 90%, #b3540f);
+  color: #fff;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.progress-badge-nudge-text {
+  color: var(--ct-text);
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .progress-badge-grid {
@@ -47,6 +113,18 @@
   filter: saturate(0.72);
 }
 
+/* Rarity accent: a colored left edge + faint tint. Subtle by design — the icon
+ * and rarity pill already carry color, so this is a quiet reinforcement, not a
+ * second loud signal. Epic (earned) gets a soft glow to feel like a real trophy. */
+.progress-badge-card.rarity-common { border-left: 3px solid color-mix(in srgb, #64748b 60%, var(--ct-border)); }
+.progress-badge-card.rarity-uncommon { border-left: 3px solid color-mix(in srgb, #16a34a 70%, var(--ct-border)); }
+.progress-badge-card.rarity-rare { border-left: 3px solid color-mix(in srgb, #7c3aed 70%, var(--ct-border)); }
+.progress-badge-card.rarity-epic { border-left: 3px solid color-mix(in srgb, #f59e0b 78%, var(--ct-border)); }
+
+.progress-badge-card.rarity-epic.earned {
+  box-shadow: 0 12px 28px color-mix(in srgb, #f59e0b 20%, transparent);
+}
+
 .progress-badge-icon {
   display: inline-flex;
   align-items: center;
@@ -67,11 +145,106 @@
 .progress-badge-card.pink .progress-badge-icon { background: linear-gradient(135deg, #be185d, #f9a8d4); }
 .progress-badge-card.cyan .progress-badge-icon { background: linear-gradient(135deg, #0891b2, #67e8f9); color: #172033; }
 
+.progress-badge-body {
+  min-width: 0;
+}
+
+.progress-badge-titlerow {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+/* Nudge the rarity chip's cap-height to sit level with the title's first line. */
+.progress-badge-titlerow .progress-badge-rarity {
+  margin-top: 1px;
+}
+
 .progress-badge-card h3 {
   margin: 0;
   color: var(--ct-text);
   font-size: 0.98rem;
   line-height: 1.2;
+  min-width: 0;
+}
+
+/* Rarity pill — small, sits next to the badge name. */
+.progress-badge-rarity {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Rarity pills use a stronger tint fill + a deep, saturated text color so each
+   tier clears WCAG AA (>=4.5:1) on the light panel. Dark-mode overrides below
+   swap to light text on a translucent fill for the same contrast on navy. */
+.progress-badge-rarity.rarity-common {
+  background: color-mix(in srgb, #475569 22%, var(--ct-panel-soft));
+  color: #334155;
+}
+.progress-badge-rarity.rarity-uncommon {
+  background: color-mix(in srgb, #15803d 22%, var(--ct-panel-soft));
+  color: #14532d;
+}
+.progress-badge-rarity.rarity-rare {
+  background: color-mix(in srgb, #6d28d9 22%, var(--ct-panel-soft));
+  color: #5b21b6;
+}
+.progress-badge-rarity.rarity-epic {
+  background: color-mix(in srgb, #b45309 22%, var(--ct-panel-soft));
+  color: #92400e;
+}
+
+/* Dark mode: dark saturated text fails on navy — use light text on a stronger
+   translucent color fill so each tier still clears AA. */
+body.coding-dark .progress-badge-rarity.rarity-common {
+  background: rgba(148, 163, 184, 0.24);
+  color: #e2e8f0;
+}
+body.coding-dark .progress-badge-rarity.rarity-uncommon {
+  background: rgba(34, 197, 94, 0.24);
+  color: #bbf7d0;
+}
+body.coding-dark .progress-badge-rarity.rarity-rare {
+  background: rgba(167, 139, 250, 0.26);
+  color: #ddd6fe;
+}
+body.coding-dark .progress-badge-rarity.rarity-epic {
+  background: rgba(245, 158, 11, 0.26);
+  color: #fde68a;
+}
+
+/* Locked cards apply `opacity:.68 + saturate(.72)` to the WHOLE card, which in
+   dark mode washes the already-translucent rarity chips out to near-invisible.
+   On locked+dark chips: undo the card's desaturation, push the fill stronger, and
+   add a faint ring so each tier still reads clearly against the dimmed card.
+   (Light mode reads fine already; earned cards aren't dimmed.) */
+body.coding-dark .progress-badge-card.locked .progress-badge-rarity {
+  filter: saturate(1.6);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10);
+}
+body.coding-dark .progress-badge-card.locked .progress-badge-rarity.rarity-common {
+  background: rgba(148, 163, 184, 0.38);
+  color: #f1f5f9;
+}
+body.coding-dark .progress-badge-card.locked .progress-badge-rarity.rarity-uncommon {
+  background: rgba(34, 197, 94, 0.38);
+  color: #dcfce7;
+}
+body.coding-dark .progress-badge-card.locked .progress-badge-rarity.rarity-rare {
+  background: rgba(167, 139, 250, 0.40);
+  color: #ede9fe;
+}
+body.coding-dark .progress-badge-card.locked .progress-badge-rarity.rarity-epic {
+  background: rgba(245, 158, 11, 0.42);
+  color: #fef3c7;
 }
 
 .progress-badge-card p {
@@ -81,8 +254,48 @@
   line-height: 1.35;
 }
 
+/* Per-badge progress meter (locked, count-based badges only). */
+.progress-badge-meter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 9px;
+}
+
+.progress-badge-meter-track {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-primary) 20%, var(--ct-panel-soft));
+  overflow: hidden;
+}
+
+.progress-badge-meter-fill {
+  display: block;
+  height: 100%;
+  min-width: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--ct-primary), var(--ct-accent, #f37021));
+  transition: width 0.4s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-badge-meter-fill { transition: none; }
+}
+
+.progress-badge-meter-label {
+  flex: 0 0 auto;
+  color: var(--ct-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .progress-badge-card strong {
   justify-self: end;
+  align-self: center;
   padding: 5px 9px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--ct-primary) 12%, var(--ct-panel-soft));
@@ -91,16 +304,32 @@
   white-space: nowrap;
 }
 
+/* Earned pill — the reward state. LIGHT mode: a crisp soft-orange tint chip with
+   orange text + a thin accent ring — clearly "earned" but refined against the white
+   card, not a heavy solid-orange block. (DARK mode gets the bold glowing fill below,
+   which reads great on navy but was too harsh on white.) */
 .progress-badge-card.earned strong {
-  background: color-mix(in srgb, var(--ct-accent) 18%, var(--ct-panel-soft));
-  color: color-mix(in srgb, var(--ct-accent) 82%, #172033);
+  background: color-mix(in srgb, var(--ct-accent, #f37021) 15%, #fff);
+  color: color-mix(in srgb, var(--ct-accent, #f37021) 86%, #6b2d00);
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ct-accent, #f37021) 42%, transparent);
 }
 
 body.coding-dark .progress-badge-card {
   background: var(--ct-solid-raised, #1c2a3f);
 }
 
-body.coding-dark .progress-badge-card strong {
+/* Dark mode: the bold solid glowing pill (reads as a trophy against navy). */
+body.coding-dark .progress-badge-card.earned strong {
+  background: linear-gradient(135deg, var(--ct-accent, #f37021), color-mix(in srgb, var(--ct-accent, #f37021) 72%, #ffd27f));
+  color: #17213a;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--ct-accent, #f37021) 45%, transparent),
+              inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+
+/* Dim cream only for the LOCKED pill in dark mode — do NOT touch the earned pill,
+   which owns its bright accent fill above. */
+body.coding-dark .progress-badge-card.locked strong {
   color: #f3dcc2;
 }
 

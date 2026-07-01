@@ -158,7 +158,7 @@ except ImportError:
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingSnippet
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingSnippet
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -930,6 +930,15 @@ class PracticeProgressUpdate(BaseModel):
         if normalized not in VALID_PRACTICE_STATUSES:
             raise ValueError("Status must be not_started, in_progress, or solved")
         return normalized
+
+class CodingUserProgressUpdate(BaseModel):
+    """Partial update for the per-user aggregate progress. All fields optional so a
+    client can push just what changed. Counters merge as max (monotonic); daily_days
+    merges as a set-union — the endpoint does the merge so a stale device can't lower
+    a value."""
+    mock_completed: Optional[int] = None
+    best_streak: Optional[int] = None
+    daily_days: Optional[list[str]] = None
 
 class PracticeRunRequest(BaseModel):
     question_id: str
@@ -4830,6 +4839,83 @@ async def update_practice_progress(
     db.commit()
     db.refresh(progress)
     return _serialize_practice_progress(progress)
+
+
+# ---------------------------------------------------------------------------
+# Coding Tutor aggregate progress — mock completions, best streak, daily days.
+# Per-user, so badge/streak signals sync across devices (the browser localStorage
+# stays as an offline cache; the server is the source of truth).
+# ---------------------------------------------------------------------------
+MAX_DAILY_DAYS = 370  # ~a year; matches the frontend's cap in recordDailyChallengeDay
+
+def _decode_daily_days(raw: Optional[str]) -> list[str]:
+    if not raw:
+        return []
+    try:
+        parsed = json.loads(raw)
+    except (ValueError, TypeError):
+        return []
+    if not isinstance(parsed, list):
+        return []
+    # Keep only well-formed date strings, de-duplicated and sorted.
+    days = {str(d) for d in parsed if isinstance(d, str) and len(d) == 10 and d.count("-") == 2}
+    return sorted(days)[-MAX_DAILY_DAYS:]
+
+def _serialize_coding_user_progress(row: CodingUserProgress) -> dict[str, Any]:
+    return {
+        "mock_completed": row.mock_completed or 0,
+        "best_streak": row.best_streak or 0,
+        "daily_days": _decode_daily_days(row.daily_days),
+        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+    }
+
+def _get_or_create_coding_user_progress(db: Session, user_id: int) -> CodingUserProgress:
+    row = (
+        db.query(CodingUserProgress)
+        .filter(CodingUserProgress.user_id == user_id)
+        .first()
+    )
+    if row:
+        return row
+    row = CodingUserProgress(user_id=user_id, mock_completed=0, best_streak=0, daily_days="[]")
+    db.add(row)
+    return row
+
+@app.get("/api/coding/user-progress")
+async def get_coding_user_progress(
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    row = _get_or_create_coding_user_progress(db, user["user_id"])
+    db.commit()
+    db.refresh(row)
+    return _serialize_coding_user_progress(row)
+
+@app.put("/api/coding/user-progress")
+async def update_coding_user_progress(
+    req: CodingUserProgressUpdate,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    row = _get_or_create_coding_user_progress(db, user["user_id"])
+
+    # Merge, never clobber — a stale device must not lower a value.
+    if req.mock_completed is not None:
+        row.mock_completed = max(row.mock_completed or 0, int(req.mock_completed))
+    if req.best_streak is not None:
+        row.best_streak = max(row.best_streak or 0, int(req.best_streak))
+    if req.daily_days is not None:
+        merged = set(_decode_daily_days(row.daily_days))
+        merged.update(
+            d for d in req.daily_days
+            if isinstance(d, str) and len(d) == 10 and d.count("-") == 2
+        )
+        row.daily_days = json.dumps(sorted(merged)[-MAX_DAILY_DAYS:])
+
+    row.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(row)
+    return _serialize_coding_user_progress(row)
 
 
 # ---------------------------------------------------------------------------

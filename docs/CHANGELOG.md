@@ -2,6 +2,18 @@
 
 All notable changes to CS Navigator are documented here.
 
+## [6.7.0] - 2026-07-01
+### Added
+- **Coding Tutor Milestones / trophy case** — rebuilt the Progress page into an achievements page. A `buildBadges(stats)` data layer drives **37 badges** grouped into 8 labelled categories (Starter, Consistency, Persistence, Languages, Topics, Testing, Interview Prep, Mastery), each with a rarity chip (Common / Uncommon / Rare / Epic) and, on locked count-based badges, a percentage progress bar. Boolean badges show a clear requirement instead of a fake bar. Earned badges sort to the top of their category. A "Next up" nudge names the nearest milestone. Page order is header → stat tiles → badge grids. All badge signals reuse existing progress data; per-card `aria-label`s make each card read as one phrase for screen readers.
+- **Cross-device badge sync** — new `CodingUserProgress` model (per-user `mock_completed`, `best_streak`, `daily_days`) with `GET`/`PUT /api/coding/user-progress`. The PUT **merges rather than clobbers** (max for counters, set-union for daily days) so a stale device can't lower a value. The frontend layers server sync over the existing localStorage cache: GET-and-merge on mount, debounced PUT on change, auto-seed the server from local values on first sync, and silent fallback to localStorage when offline. Combined with the already-server-side per-problem progress, all 37 badges now follow a user across devices.
+- **Streak flame animation** — the stat-tile streak flame is cold/grey at 0 and "catches fire" (ignite pop + continuous flicker + warm glow) once a streak begins. Respects `prefers-reduced-motion`.
+- **Snippet deep-links** — `/coding/workspace/snippet/:id`. Opening a saved snippet writes its own addressable URL; refreshing or cold-loading that URL reopens the snippet (falls back to the scratch personal workspace with a note if the snippet isn't on this device). Fresh/empty scratch mode stays on `/coding/workspace/personal`.
+### Changed
+- Badge names and descriptions were rewritten to drop forced alliteration and read less AI-generated (e.g. Hello World, Rubber Duck, Green Build, Base Case, Trilingual), keeping `id` values stable.
+- Steady Streak now earns off a persisted *best-ever* streak, so the trophy isn't lost when the current streak resets.
+### Verified
+- Coding Tutor responsive layout confirmed on real devices (previously dev-tools emulation only) — Practice Library and global layout both check out; the tracked "real-device responsive pass" gap is closed.
+
 ## [6.6.1] - 2026-06-30
 ### Added
 - Workspace sub-routes: `/coding/workspace/personal` (My Snippets / scratch mode) and `/coding/workspace/problem/:id` (a specific practice or interview problem). Opening a problem now writes its `/problem/:id` URL, and refreshing or cold-loading that URL re-fetches the problem by id and reopens it (the set — practice vs interview — is inferred from the `iv-` id prefix; unknown ids fall back to the plain workspace with a toast). `/coding/workspace` with no suffix still shows the active problem / empty state. Mock-interview problems intentionally stay on the plain `/coding/workspace` URL (the session is in-memory, not addressable); restoring a problem URL never hijacks a running mock

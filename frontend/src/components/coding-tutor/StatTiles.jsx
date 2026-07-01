@@ -16,9 +16,12 @@ export default function StatTiles({ progressSummary }) {
     <div className="coding-stat-tiles" aria-label="Your coding progress at a glance">
       {tiles.map((tile) => {
         const Icon = tile.Icon;
+        // The streak flame stays cold/grey at 0 and "catches fire" (flicker + glow)
+        // once a streak begins, so starting a streak feels rewarding.
+        const isLitStreak = tile.key === "streak" && Number(progressSummary.displayStreak) > 0;
         return (
           <div className={`coding-stat-tile stat-${tile.key}`} key={tile.key}>
-            <span className="coding-stat-icon" aria-hidden="true"><Icon /></span>
+            <span className={`coding-stat-icon${isLitStreak ? " flame-lit" : ""}`} aria-hidden="true"><Icon /></span>
             <strong className="coding-stat-value">{tile.value}</strong>
             <span className="coding-stat-label">{tile.label}</span>
           </div>

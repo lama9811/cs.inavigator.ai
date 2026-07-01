@@ -24,7 +24,7 @@ import InterviewPrep from "./InterviewPrep";
 import MockInterviewBar from "./MockInterviewBar";
 import MockSummary from "./MockSummary";
 import MockConfirm from "./MockConfirm";
-import { listSnippets, saveSnippet, deleteSnippet, syncSnippetsFromServer, extractCodeFromFile, languageFromFilename } from "../../lib/snippets";
+import { listSnippets, getSnippet, saveSnippet, deleteSnippet, syncSnippetsFromServer, extractCodeFromFile, languageFromFilename } from "../../lib/snippets";
 import "./CodingTutor.css";
 // Scoped "Morgan Coding Lab" sub-brand palette — imported AFTER CodingTutor.css
 // so its --ct-* token re-points win over the inherited global chain.
@@ -87,12 +87,15 @@ function pageFromPath(pathname) {
 }
 
 // Parse the workspace sub-route: which thing is open inside the workspace.
-// → { kind: "personal" } | { kind: "problem", id } | { kind: "none" }
+// → { kind: "personal" } | { kind: "problem", id } | { kind: "snippet", id }
+//   | { kind: "none" }
 function workspaceTargetFromPath(pathname) {
   const clean = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
   if (clean === "/coding/workspace/personal") return { kind: "personal" };
   const problemMatch = clean.match(/^\/coding\/workspace\/problem\/(.+)$/);
   if (problemMatch) return { kind: "problem", id: decodeURIComponent(problemMatch[1]) };
+  const snippetMatch = clean.match(/^\/coding\/workspace\/snippet\/(.+)$/);
+  if (snippetMatch) return { kind: "snippet", id: decodeURIComponent(snippetMatch[1]) };
   return { kind: "none" };
 }
 // Interview-set ids are prefixed "iv-" (e.g. iv-easy-01); everything else is the
@@ -101,6 +104,7 @@ function questionSetForId(id) {
   return String(id || "").startsWith("iv-") ? "interview" : "practice";
 }
 const workspacePathForProblem = (id) => `/coding/workspace/problem/${encodeURIComponent(id)}`;
+const workspacePathForSnippet = (id) => `/coding/workspace/snippet/${encodeURIComponent(id)}`;
 
 const LANGUAGE_FORMATS = {
   Python: { file: "solution.py", style: "Function-focused" },
@@ -198,6 +202,57 @@ function computeDailyStreak(days = readDailyStreakDays()) {
 // True only when today's daily challenge is already recorded.
 function isDailyDoneToday(days = readDailyStreakDays()) {
   return days.includes(localDateKey());
+}
+
+// ── Mock-interview completion counter (per-device, for the mock badges) ────────
+// A finished mock interview increments this. Read by ProgressBadges via
+// progressSummary to award Mock Rookie (1) / Mock Veteran (5).
+const MOCK_DONE_KEY = "coding_mock_completed";
+
+function readMockCompleted() {
+  try {
+    const raw = Number(localStorage.getItem(MOCK_DONE_KEY));
+    return Number.isFinite(raw) && raw > 0 ? raw : 0;
+  } catch (error) {
+    console.warn("[coding-mock] read failed", error);
+    return 0;
+  }
+}
+
+function recordMockCompleted() {
+  const next = readMockCompleted() + 1;
+  try {
+    localStorage.setItem(MOCK_DONE_KEY, String(next));
+  } catch (error) {
+    console.warn("[coding-mock] write failed", error);
+  }
+  return next;
+}
+
+// ── Best streak ever (so Steady Streak is a trophy you don't un-earn) ─────────
+// The current streak resets to 0 when a day is missed; this remembers the highest
+// streak reached so the "3-day streak" badge stays earned forever.
+const BEST_STREAK_KEY = "coding_best_streak";
+
+function readBestStreak() {
+  try {
+    const raw = Number(localStorage.getItem(BEST_STREAK_KEY));
+    return Number.isFinite(raw) && raw > 0 ? raw : 0;
+  } catch (error) {
+    console.warn("[coding-streak] best read failed", error);
+    return 0;
+  }
+}
+
+// Persist the max of the stored best and the current streak; returns the new best.
+function recordBestStreak(currentStreak = 0) {
+  const best = Math.max(readBestStreak(), Number(currentStreak) || 0);
+  try {
+    localStorage.setItem(BEST_STREAK_KEY, String(best));
+  } catch (error) {
+    console.warn("[coding-streak] best write failed", error);
+  }
+  return best;
 }
 
 function normalizeSnippet(text = "") {
@@ -418,6 +473,9 @@ export default function CodingTutor({
   const [mockSession, setMockSession] = useState(null);
   const [mockNow, setMockNow] = useState(0); // ticked each second to re-render the timer
   const [mockSummary, setMockSummary] = useState(null); // post-interview results overlay
+  // Per-device counters that back the mock + best-streak badges (localStorage).
+  const [mockCompleted, setMockCompleted] = useState(() => readMockCompleted());
+  const [bestStreak, setBestStreak] = useState(() => readBestStreak());
   // Confirm dialog for mock-mode actions: { title, body, confirmLabel, onConfirm }.
   const [mockConfirm, setMockConfirm] = useState(null);
   const mockSessionActive = Boolean(mockSession); // ticker dep: only (re)start on begin/end
@@ -522,7 +580,93 @@ export default function CodingTutor({
   // Real consecutive-day streak from daily-challenge completions.
   const displayStreak = useMemo(() => computeDailyStreak(dailyStreakDays), [dailyStreakDays]);
   const dailyDoneToday = useMemo(() => isDailyDoneToday(dailyStreakDays), [dailyStreakDays]);
-  const progressSummary = { solvedCount, attemptedCount, totalAttempts, completionPercent, displayStreak };
+
+  // Remember the best streak ever so Steady Streak is a trophy that isn't lost when
+  // the current streak resets. Bump the persisted best whenever the streak climbs.
+  useEffect(() => {
+    if (displayStreak > bestStreak) setBestStreak(recordBestStreak(displayStreak));
+  }, [displayStreak, bestStreak]);
+
+  // ── Cross-device sync for the aggregate badge signals (mock count, best streak,
+  // daily days). The server is the source of truth; localStorage stays as an
+  // offline cache. On mount we GET + merge down (and seed the server from local if
+  // it's empty — the migration for existing single-device users). On change we
+  // debounce a PUT up. The server merges (max / set-union), so nothing is clobbered
+  // and offline just falls back to localStorage. Gated so the first PUT only fires
+  // after the initial GET has merged.
+  const codingSyncReadyRef = useRef(false);
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${apiBase}/api/coding/user-progress`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok || cancelled) return;
+        const server = await res.json();
+        if (cancelled) return;
+        // Merge server → local (max for counters, union for days).
+        const localDays = readDailyStreakDays();
+        const mergedDays = [...new Set([...localDays, ...(server.daily_days || [])])].sort();
+        const mergedMock = Math.max(readMockCompleted(), server.mock_completed || 0);
+        const mergedBest = Math.max(readBestStreak(), server.best_streak || 0);
+        // Write merged values back to the localStorage cache + state.
+        try {
+          localStorage.setItem(MOCK_DONE_KEY, String(mergedMock));
+          localStorage.setItem(BEST_STREAK_KEY, String(mergedBest));
+          localStorage.setItem(DAILY_STREAK_KEY, JSON.stringify(mergedDays.slice(-370)));
+        } catch { /* cache write best-effort */ }
+        setMockCompleted(mergedMock);
+        setBestStreak(mergedBest);
+        setDailyStreakDays(mergedDays.slice(-370));
+        // If local had more than the server (existing single-device user), push up.
+        const serverBehind =
+          mergedMock > (server.mock_completed || 0) ||
+          mergedBest > (server.best_streak || 0) ||
+          mergedDays.length > (server.daily_days || []).length;
+        if (serverBehind) {
+          fetch(`${apiBase}/api/coding/user-progress`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ mock_completed: mergedMock, best_streak: mergedBest, daily_days: mergedDays }),
+          }).catch(() => {});
+        }
+      } catch {
+        // Offline / backend down → keep using localStorage. No UI error.
+      } finally {
+        if (!cancelled) codingSyncReadyRef.current = true;
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [apiBase]);
+
+  // Debounced PUT when any aggregate signal changes (after the initial sync).
+  useEffect(() => {
+    if (!codingSyncReadyRef.current) return undefined;
+    const token = localStorage.getItem("token");
+    if (!token) return undefined;
+    const handle = setTimeout(() => {
+      fetch(`${apiBase}/api/coding/user-progress`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          mock_completed: mockCompleted,
+          best_streak: Math.max(bestStreak, displayStreak),
+          daily_days: dailyStreakDays,
+        }),
+      }).catch(() => {});
+    }, 800);
+    return () => clearTimeout(handle);
+  }, [apiBase, mockCompleted, bestStreak, displayStreak, dailyStreakDays]);
+
+  const progressSummary = {
+    solvedCount, attemptedCount, totalAttempts, completionPercent, displayStreak,
+    dailyDaysCompleted: dailyStreakDays.length,
+    mockCompleted,
+    bestStreak: Math.max(bestStreak, displayStreak),
+  };
 
   // "Up Next" recommendation: the first question the student hasn't started yet
   // (not solved, no attempts). Falls back to the first non-solved if every
@@ -1299,7 +1443,11 @@ export default function CodingTutor({
   // problem so opening a normal interview problem afterward isn't treated as mock.
   const endMockInterview = () => {
     setMockSession((prev) => {
-      if (prev) setMockSummary(buildMockSummary(prev));
+      if (prev) {
+        setMockSummary(buildMockSummary(prev));
+        // Count this finished mock toward the Mock Rookie / Veteran badges.
+        setMockCompleted(recordMockCompleted());
+      }
       return null;
     });
     setActiveProblem((prev) => (prev?.mock ? { ...prev, mock: false } : prev));
@@ -1380,7 +1528,9 @@ export default function CodingTutor({
     setTestOutput({ status: "ready", message: "" });
     setWorkspaceVisible(true);
     setSnippets(listSnippets());
-    navigate("/coding/workspace/personal");
+    // A saved snippet gets its own addressable URL (shareable / refresh-restorable);
+    // a fresh/empty scratch workspace stays on the plain /personal route.
+    navigate(snippet?.id ? workspacePathForSnippet(snippet.id) : "/coding/workspace/personal");
   };
 
   // True when in the personal workspace and the code differs from what was last
@@ -1444,6 +1594,22 @@ export default function CodingTutor({
 
     if (target.kind === "personal") {
       if (!isPersonalMode) openPersonalWorkspace(null);
+      return;
+    }
+    if (target.kind === "snippet") {
+      // Already showing this snippet → leave it. Otherwise look it up locally and
+      // open it; if it's not on this device (or was deleted), fall back to the
+      // scratch personal workspace with a note rather than a dead route.
+      if (isPersonalMode && activeSnippetId === target.id) return;
+      if (restoredWorkspaceTargetRef.current === target.id) return;
+      restoredWorkspaceTargetRef.current = target.id;
+      const snippet = getSnippet(target.id);
+      if (snippet) {
+        openPersonalWorkspace(snippet);
+      } else {
+        toast.info("That snippet isn't saved on this device.");
+        openPersonalWorkspace(null);
+      }
       return;
     }
     if (target.kind === "problem") {
@@ -1967,12 +2133,12 @@ export default function CodingTutor({
 
   const renderProgress = () => (
     <section className="coding-page-panel progress-page">
-      <StatTiles progressSummary={progressSummary} />
       <ProgressBadges
         questions={allQuestions.length ? allQuestions : questions}
         progressByQuestion={progressByQuestion}
         progressByLanguage={progressByLanguage}
         progressSummary={progressSummary}
+        midSlot={<StatTiles progressSummary={progressSummary} />}
       />
     </section>
   );

@@ -104,7 +104,9 @@
   padding: 10px 18px;
   border: 0;
   border-radius: 12px;
-  background: linear-gradient(135deg, #0b2545, #14315c);
+  /* Crisp brand blue to match the active header selector + the other primary
+     "go" actions (was a deep-navy gradient). */
+  background: linear-gradient(135deg, #3f82e6, #2f6fd6);
   color: #fff !important;
   cursor: pointer;
   text-align: left;
@@ -114,20 +116,22 @@
 .coding-app .iv-mock-btn strong { display: block; font-size: 0.95rem; color: #fff !important; }
 .coding-app .iv-mock-btn small { display: block; font-size: 0.76rem; color: #fff !important; opacity: 0.9; }
 
-/* Hover uses the shared coding-app hover treatment: a soft PEACH fill with ORANGE
-   text + border (the same language as the "Solve" buttons). The base button is deep
-   navy with a white label; on hover the whole label group turns orange. */
+/* Hover: brighten the blue and keep the WHITE label (matches the other primary
+   "go" buttons). Overrides the shared coding-app peach hover so the text stays
+   readable in both light and dark mode. */
 .coding-app .iv-mock-btn:hover,
 .coding-app .iv-mock-btn:focus-visible {
   transform: translateY(-1px);
   outline: none;
+  background: linear-gradient(135deg, #4c8ef0, #3a78de) !important;
 }
 .coding-app .iv-mock-btn:hover strong,
 .coding-app .iv-mock-btn:hover small,
-.coding-app .iv-mock-btn:hover svg,
 .coding-app .iv-mock-btn:focus-visible strong,
-.coding-app .iv-mock-btn:focus-visible small,
-.coding-app .iv-mock-btn:focus-visible svg { color: var(--ct-accent, #f58220) !important; }
+.coding-app .iv-mock-btn:focus-visible small { color: #fff !important; }
+/* Keep the lightning icon its warm accent — a nice pop against the blue. */
+.coding-app .iv-mock-btn:hover svg,
+.coding-app .iv-mock-btn:focus-visible svg { color: #ffd27f !important; }
 
 /* ── Recommended path ─────────────────────────────────────────────────────── */
 .iv-path-strip {
@@ -194,7 +198,7 @@
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--ct-accent, #f58220) 48%, var(--ct-border));
   background: var(--ct-accent, #f58220);
-  color: #172033;
+  color: #fff;
   cursor: pointer;
   font-weight: 750;
   font-size: 0.85rem;

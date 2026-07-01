@@ -1083,7 +1083,9 @@ body.coding-dark .daily-streak-pill.done {
   gap: 2px;
   padding: 14px 16px;
   border-radius: 16px;
-  background: var(--ct-panel-soft);
+  /* Match the milestone/card surface (--ct-panel), not the recessed soft step, so
+     the stat tiles read as the same layer as the cards below them in dark mode. */
+  background: var(--ct-panel);
   border: 1px solid var(--ct-border);
   box-shadow: 0 8px 20px color-mix(in srgb, var(--ct-primary) 8%, transparent);
 }
@@ -1099,9 +1101,48 @@ body.coding-dark .daily-streak-pill.done {
 }
 
 /* Restrained tones — one meaningful accent per metric, not a rainbow. */
-.coding-stat-tile.stat-streak .coding-stat-icon { color: var(--ct-accent); }
+/* Streak flame is COLD (muted grey) at 0 so it visibly "catches fire" when the
+   streak starts. The lit state (.flame-lit, added when displayStreak > 0) turns
+   it warm and animates the flicker + glow below. */
+.coding-stat-tile.stat-streak .coding-stat-icon { color: var(--ct-faint, #94a3b8); }
 .coding-stat-tile.stat-solved .coding-stat-icon { color: var(--ct-success); }
 .coding-stat-tile.stat-attempted .coding-stat-icon { color: var(--ct-primary); }
+
+/* ---- Streak flame: "catches fire" when a streak is active ---- */
+.coding-stat-icon.flame-lit {
+  color: #f97316;                     /* warm ember orange */
+  transform-origin: 50% 85%;          /* pivot at the base, like a real flame */
+  animation: flame-flicker 1.6s ease-in-out infinite;
+}
+
+/* An initial ignite pop the first time it mounts lit, then it settles into the
+   looping flicker (both run; the ignite is short so it reads as "whoosh"). */
+.coding-stat-icon.flame-lit svg {
+  animation: flame-ignite 0.55s ease-out 1;
+  filter: drop-shadow(0 0 5px rgba(249, 115, 22, 0.75))
+          drop-shadow(0 1px 8px rgba(234, 88, 12, 0.45));
+}
+
+@keyframes flame-flicker {
+  0%, 100% { transform: scale(1) rotate(-1deg); }
+  25%      { transform: scale(1.08, 1.12) rotate(1.5deg); }
+  50%      { transform: scale(0.97, 1.05) rotate(-1.5deg); }
+  75%      { transform: scale(1.05, 1.09) rotate(1deg); }
+}
+
+@keyframes flame-ignite {
+  0%   { transform: scale(0.6) translateY(2px); opacity: 0.3; }
+  55%  { transform: scale(1.28) translateY(-1px); opacity: 1; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* Respect reduced-motion: keep the warm color + glow, drop the movement. */
+@media (prefers-reduced-motion: reduce) {
+  .coding-stat-icon.flame-lit,
+  .coding-stat-icon.flame-lit svg {
+    animation: none;
+  }
+}
 .coding-stat-tile.stat-complete .coding-stat-icon { color: var(--ct-primary); }
 
 .coding-stat-value {
@@ -2927,6 +2968,17 @@ body.coding-dark .quiz-tag-difficulty.diff-hard { color: #f4807d; }
   color: #fff;
 }
 
+/* Dark mode: fill the "go solve" actions (Start on not-started, Resume on
+   in-progress) with the brand periwinkle so they read as primary buttons and
+   draw the eye. The solved card's "Review" action is intentionally left as the
+   quiet outlined style. Card-hover still fills any action orange (rule above). */
+body.coding-dark .quiz-problem-card.status-not_started .quiz-problem-action,
+body.coding-dark .quiz-problem-card.status-in_progress .quiz-problem-action {
+  background: #2f6fd6;
+  border-color: #2f6fd6;
+  color: #fff;
+}
+
 .quiz-insight-panel {
   padding: 20px;
   display: grid;
@@ -3748,22 +3800,18 @@ body.coding-dark .floating-rewrite-lang {
 }
 
 /* Coding Tutor dark mode lives here so regular Chatbox styles stay cleaner. */
+/* NOTE: This block sets base dark values, but the AUTHORITATIVE dark palette is
+   the later `body.coding-dark .coding-app` block (search "SINGLE SOURCE OF TRUTH"
+   below, ~line 4438). That later block uses !important and wins the cascade, so
+   any dark palette change must be made THERE, not here. This block is kept only
+   for the non-!important tokens the later block does not set (blue/green/red/gold
+   semantic accents). Do not add surface/border/canvas colors here — they're dead. */
 body.coding-dark .coding-app {
-  --ct-bg: #0b1120;
-  --ct-surface: rgba(17, 24, 39, 0.94);
-  --ct-surface-strong: rgba(15, 23, 42, 0.98);
-  --ct-surface-soft: rgba(30, 41, 59, 0.72);
-  --ct-border: rgba(148, 163, 184, 0.22);
-  --ct-border-strong: rgba(96, 165, 250, 0.36);
-  --ct-text: #e5e7eb;
-  --ct-muted: #a7b3c6;
-  --ct-faint: #7c8aa3;
   --ct-blue: #8ab4f8;
   --ct-blue-strong: #60a5fa;
   --ct-green: #86efac;
   --ct-red: #fca5a5;
   --ct-gold: #facc15;
-  /* Flat dark surface (was a blue radial + gradient that tinted the page). */
   background: var(--ct-bg);
   color: var(--ct-text);
 }
@@ -4412,33 +4460,48 @@ body.coding-dark .floating-chat-button {
   color: #07111f !important;
 }
 
-/* Dark mode solid Morgan theme pass. Keep Coding Tutor opaque and readable.
-   Light-tune (2026-06): lifted the base surface off near-black and spread the
-   three panel levels into distinct steps so the section reads as a layered warm
-   lab instead of one flat too-dark slab. Accents (navy/orange) and borders are
-   pushed brighter so they stop looking muddy on the dark slate. */
+/* ============================================================================
+   SINGLE SOURCE OF TRUTH — Coding Tutor DARK palette.
+   ----------------------------------------------------------------------------
+   This is the one block that owns the dark-mode colors. It uses !important and
+   is the last `body.coding-dark .coding-app` token block in the bundle, so it
+   wins the cascade. To change the dark theme, edit the values HERE. Everything
+   else in dark mode reads these via var(--ct-*); the per-element
+   `body.coding-dark .x` rules below only set layout/one-off tweaks, not the base
+   palette.
+
+   "Deep navy lab" (2026-07): the prior set was a cool gray-slate whose canvas,
+   panels, and tiles sat within ~8% lightness — flat, muddy, and the orange
+   accent never showed. This palette uses a true deep Morgan NAVY canvas (not
+   neutral gray), opens real lightness gaps canvas → panel → raised so cards have
+   depth, brightens borders so edges are visible, and warms the accent so
+   active/earned states glow. On-brand and inviting instead of depressing.
+
+   Canvas literal is mirrored in CodingTutorTheme.css (.chat-main backdrop, shell
+   repaint, navbar) — keep those in sync with --ct-bg below (currently #0b1a33).
+   ============================================================================ */
 body.coding-dark .coding-app {
-  --ct-bg: #0c1422 !important;          /* deep canvas — pushed DOWN so panels clearly float above it */
-  --ct-primary: #8fb4e0;               /* brighter navy-blue (was muddy #789dca) */
+  --ct-bg: #0b1a33 !important;          /* deep Morgan navy canvas (page floor) */
+  --ct-primary: #8fb4e0;                /* bright navy-blue for structure/links */
   --ct-primary-hover: #a6c5ea;
   --ct-primary-soft: rgba(143, 180, 224, 0.20);
-  --ct-accent: #f0a868;                /* warmer, punchier orange (was dull #e7a05b) */
-  --ct-accent-soft: rgba(240, 168, 104, 0.20);
-  --ct-panel: #1e2d49 !important;       /* +elevation step 1 — lifted for clear contrast vs canvas */
-  --ct-panel-soft: #182338 !important;  /* recessed */
-  --ct-panel-raised: #283a5c !important;/* +elevation step 2 (clearly above panel) */
-  --ct-surface: #1e2d49 !important;
-  --ct-surface-soft: #182338 !important;
-  --ct-surface-strong: #283a5c !important;
-  --ct-text: #f6f1e8;
-  --ct-muted: #c2cbd9;                  /* lifted muted for readability */
-  --ct-faint: #95a2b6;
-  --ct-border: #3a4c6b !important;      /* brighter divider so panels separate */
-  --ct-border-strong: #51688c !important;
-  --ct-editor-bg: #121c2e;
-  --ct-editor-text: #f1eadf;
-  --ct-terminal-bg: #131e30;
-  --ct-terminal-text: #f1eadf;
+  --ct-accent: #f7a054;                 /* warm punchy orange (glows on navy) */
+  --ct-accent-soft: rgba(247, 160, 84, 0.20);
+  --ct-panel: #142a4f !important;       /* card — clear step above the canvas */
+  --ct-panel-soft: #10223f !important;  /* recessed / hover wash */
+  --ct-panel-raised: #1d3866 !important;/* raised — clearly floats above panel */
+  --ct-surface: #142a4f !important;
+  --ct-surface-soft: #10223f !important;
+  --ct-surface-strong: #1d3866 !important;
+  --ct-text: #eaf0fb;
+  --ct-muted: #b3c1da;                  /* readable muted on navy */
+  --ct-faint: #8695af;
+  --ct-border: #2f4a7a !important;      /* visible blue divider so panels separate */
+  --ct-border-strong: #4a6aa0 !important;
+  --ct-editor-bg: #0e2038;              /* editor a touch darker than the cards */
+  --ct-editor-text: #eaf0fb;
+  --ct-terminal-bg: #0c1c33;
+  --ct-terminal-text: #dce7f8;
 }
 
 body.coding-dark .coding-app {
@@ -4781,9 +4844,10 @@ body.coding-dark .coding-app {
   .floating-chat-control,
   .floating-chat-icon-btn,
   .problem-navigation button,
-  .workspace-tabs button,
-  .iv-mock-btn
+  .workspace-tabs button
 ):hover:not(:disabled) {
+  /* .iv-mock-btn removed — it now has its own crisp-blue hover (white label) in
+     InterviewPrep.css; the shared peach hover made its text unreadable. */
   background: var(--ct-hover-bg) !important;
   background-color: var(--ct-hover-bg) !important;
   border-color: var(--ct-hover-border) !important;
@@ -6074,6 +6138,14 @@ body.coding-dark .coding-app .campus-section-nav > button.active {
   background: color-mix(in srgb, var(--ct-accent) 8%, var(--ct-paper));
 }
 
+/* Dark mode: --ct-paper (#1b2942) makes this strip dip DARKER than the lighter
+   navy hero around it, so it reads as a muddy inset. Base it on a lighter navy +
+   a touch more accent so it sits inside the hero instead of below it. */
+body.coding-dark .campus-hero-focus {
+  background: color-mix(in srgb, var(--ct-accent) 12%, #1d3866);
+  border-color: color-mix(in srgb, var(--ct-accent) 32%, var(--ct-border));
+}
+
 .campus-hero-focus-label {
   display: inline-flex;
   align-items: center;
@@ -6496,6 +6568,34 @@ body.coding-dark .coding-app .campus-section-nav > button.active {
   box-shadow: 0 10px 22px color-mix(in srgb, var(--ct-primary) 26%, transparent);
 }
 
+/* Dark mode: --ct-primary is a pale periwinkle (#8fb4e0), so the primary actions
+   read washed-out and DON'T pull the eye. Recolor the "go solve something" actions
+   (Resume, Start problem, Practice Now, recommended-next, featured queue) to the
+   crisp brand blue used by the active header selector (#2f6fd6) so they clearly
+   own "what to do next". Secondary actions (Review / Browse / Open Workspace) stay
+   quiet, so attention lands on the primary. */
+body.coding-dark .campus-primary-action,
+body.coding-dark .campus-recommendation-card button,
+body.coding-dark .campus-queue-item.featured button,
+body.coding-dark .campus-daily-mission .daily-practice-btn {
+  /* !important on the daily button is required: an earlier broad rule
+     (`body.coding-dark .daily-practice-btn`) forces a pale periwinkle with
+     !important, which specificity alone can't beat. */
+  background: linear-gradient(135deg, #3f82e6, #2f6fd6) !important;
+  border-color: #2f6fd6 !important;
+  color: #fff !important;
+  box-shadow: 0 10px 24px rgba(47, 111, 214, 0.40);
+}
+
+body.coding-dark .campus-primary-action:hover:not(:disabled),
+body.coding-dark .campus-recommendation-card button:hover:not(:disabled),
+body.coding-dark .campus-queue-item.featured button:hover:not(:disabled),
+body.coding-dark .campus-daily-mission .daily-practice-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4c8ef0, #3a78de) !important;
+  border-color: #5b9bf0 !important;
+  box-shadow: 0 12px 28px rgba(47, 111, 214, 0.52);
+}
+
 /* Secondary = present but quiet: a flat tinted face, readable navy text, a
    visible-but-light border. Lighter than primary, still clearly a button. */
 .campus-secondary-action,
@@ -6507,6 +6607,17 @@ body.coding-dark .coding-app .campus-section-nav > button.active {
   color: var(--ct-primary);
   font-weight: 650;
   box-shadow: none;
+}
+
+/* Dark mode: --ct-primary (#8fb4e0) on the navy panel is low-contrast, so these
+   secondary buttons read dim. Lift the label to bright ink and strengthen the
+   border so they're clearly legible. Light mode (navy-on-paper) is untouched. */
+body.coding-dark .campus-secondary-action,
+body.coding-dark .campus-queue-item button,
+body.coding-dark .campus-language-card button,
+body.coding-dark .campus-daily-mission .daily-link {
+  color: #dbe6f7;
+  border-color: color-mix(in srgb, var(--ct-primary) 46%, var(--ct-border));
 }
 
 .campus-primary-action:hover,
@@ -6730,3 +6841,27 @@ body.coding-dark .quiz-bank-page .quiz-problem-card:focus-visible {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--ct-accent) 28%, transparent) !important;
 }
 
+
+/* ============================================================================
+   Dark-mode: crisp brand-blue primaries (matches the active header selector
+   #2f6fd6). Placed LAST so it wins over the earlier muddy navy/orange gradient
+   and washed-periwinkle rules. Covers: active Workspace tab, the floating Coding
+   Tutor widget button, and the "Open Practice Library" empty-state button.
+   ============================================================================ */
+body.coding-dark .workspace-tabs button.active,
+body.coding-dark .floating-chat-button,
+body.coding-dark .coding-problem-empty button {
+  background: linear-gradient(135deg, #3f82e6, #2f6fd6) !important;
+  border-color: #2f6fd6 !important;
+  color: #fff !important;
+  box-shadow: 0 8px 20px rgba(47, 111, 214, 0.38) !important;
+}
+
+body.coding-dark .workspace-tabs button.active:hover:not(:disabled),
+body.coding-dark .floating-chat-button:hover,
+body.coding-dark .coding-problem-empty button:hover {
+  background: linear-gradient(135deg, #4c8ef0, #3a78de) !important;
+  border-color: #5b9bf0 !important;
+  color: #fff !important;
+  box-shadow: 0 10px 24px rgba(47, 111, 214, 0.5) !important;
+}
