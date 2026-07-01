@@ -15,9 +15,8 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone, timedelta
 
 #  FIXED IMPORTS: Use 'pypdf' which you installed, not 'PyPDF2'
-import pypdf 
+import pypdf
 import docx
-from langchain.schema import SystemMessage, HumanMessage 
 from coding_runner import (
     check_practice_run_rate_limit,
     empty_practice_run_response,
@@ -83,7 +82,7 @@ print(f"[KEY] JWT_SECRET Check: {'FOUND' if os.getenv('JWT_SECRET') else 'MISSIN
 # SQLAlchemy Imports
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import OperationalError, ProgrammingError
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, text, or_
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, text, or_, func
 
 # Vertex AI Agent Engine (replaces Pinecone + OpenAI RAG pipeline)
 from vertex_agent import query_agent, query_agent_stream, check_agent_health, reset_session
@@ -143,22 +142,9 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
     return bad
 
 
-# Legacy imports kept for /ingest endpoint and file analysis fallback
-try:
-    from langchain.text_splitter import TokenTextSplitter
-    from langchain_openai import OpenAIEmbeddings
-    from langchain_pinecone import PineconeVectorStore
-    from langchain_community.chat_models import ChatOpenAI
-    from langchain.chains import RetrievalQA
-    from pinecone import Pinecone
-    LEGACY_RAG_AVAILABLE = True
-except ImportError:
-    LEGACY_RAG_AVAILABLE = False
-    print("   Legacy RAG imports not available (Pinecone/LangChain not installed)")
-
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingSnippet
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingSnippet, ReminderSubscription, SentReminder
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -174,12 +160,7 @@ _banner_sync_timestamps: dict[int, list] = {}
 USE_VERTEX_AGENT   = os.getenv("USE_VERTEX_AGENT", "true").lower() == "true"
 ADK_BASE_URL       = os.getenv("ADK_BASE_URL", "http://127.0.0.1:8080")
 
-# Legacy Pinecone + OpenAI config (kept for /ingest and TTS)
-PINECONE_API_KEY   = os.getenv("PINECONE_API_KEY")
-PINECONE_ENV       = os.getenv("PINECONE_ENV")
-PINECONE_INDEX     = os.getenv("PINECONE_INDEX_NAME")
-PINECONE_NAMESPACE = os.getenv("PINECONE_NAMESPACE", "docs")
-OPENAI_API_KEY     = os.getenv("OPENAI_API_KEY")  # Still needed for TTS
+OPENAI_API_KEY     = os.getenv("OPENAI_API_KEY")  # Used for text-to-speech (/api/tts)
 JWT_SECRET         = os.getenv("JWT_SECRET")
 ALGORITHM          = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "4320"))  # 3 days default
@@ -203,8 +184,8 @@ for folder in [UPLOAD_FOLDER, CHAT_FILES_FOLDER]:
 # Safety check for keys
 if USE_VERTEX_AGENT:
     print(f"[INFO] Using Vertex AI Agent Engine at {ADK_BASE_URL}")
-elif not all([PINECONE_API_KEY, PINECONE_ENV, PINECONE_INDEX, OPENAI_API_KEY]):
-    print("[WARN] WARNING: Some API keys are missing. Chatbot features will be limited.")
+else:
+    print("[WARN] USE_VERTEX_AGENT is disabled; the chat agent will be offline.")
 
 # ==============================================================================
 # 3. DATABASE MODELS
@@ -221,12 +202,38 @@ def init_db():
     except Exception as e:
         print(f"[WARN] DB Connection Error: {e}")
 
-    # 2. Add session_id column if missing (For existing DBs)
+    # 2. Schema migrations (add missing columns/tables on existing DBs).
+    #    Introspect the whole schema in ONE round-trip via information_schema
+    #    instead of firing ~20 sequential "does this exist?" probe queries on
+    #    every boot. Cuts cold-start DB chatter; behavior is unchanged — we still
+    #    detect anything missing and ALTER/CREATE it (auto-migration preserved).
+    existing_tables: set[str] = set()
+    existing_cols: dict[str, set[str]] = {}
+    try:
+        with engine.connect() as conn:
+            for (tname,) in conn.execute(text(
+                "SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_SCHEMA = DATABASE()"
+            )):
+                existing_tables.add(tname.lower())
+            for tname, cname in conn.execute(text(
+                "SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.columns WHERE TABLE_SCHEMA = DATABASE()"
+            )):
+                existing_cols.setdefault(tname.lower(), set()).add(cname.lower())
+    except Exception as e:
+        # If introspection fails, leave the sets empty: every check below then
+        # falls through to a guarded ALTER/CREATE (redundant statements error
+        # harmlessly and are caught), i.e. it degrades to the old behavior.
+        print(f"[WARN] information_schema introspection failed ({e}); attempting guarded migrations.")
+
+    def _has_col(table: str, col: str) -> bool:
+        return col.lower() in existing_cols.get(table.lower(), set())
+
+    def _has_table(table: str) -> bool:
+        return table.lower() in existing_tables
+
     with engine.connect() as conn:
-        try:
-            # Check if column exists by selecting from it
-            conn.execute(text("SELECT session_id FROM chat_history LIMIT 1"))
-        except (OperationalError, ProgrammingError):
+        # 2a. Add session_id column if missing (For existing DBs)
+        if not _has_col("chat_history", "session_id"):
             print("[WARN] 'session_id' column missing. Adding it now...")
             try:
                 conn.execute(text("ALTER TABLE chat_history ADD COLUMN session_id VARCHAR(255) DEFAULT 'default'"))
@@ -236,9 +243,7 @@ def init_db():
                 print(f"[ERROR] Failed to add column: {e}")
 
         # 3. Add profile_picture_data column if missing (For base64 storage)
-        try:
-            conn.execute(text("SELECT profile_picture_data FROM users LIMIT 1"))
-        except (OperationalError, ProgrammingError):
+        if not _has_col("users", "profile_picture_data"):
             print("[WARN] 'profile_picture_data' column missing. Adding it now...")
             try:
                 conn.execute(text("ALTER TABLE users ADD COLUMN profile_picture_data LONGTEXT"))
@@ -248,9 +253,7 @@ def init_db():
                 print(f"[ERROR] Failed to add profile_picture_data column: {e}")
 
         # 4. Add morgan_connected_at column if missing
-        try:
-            conn.execute(text("SELECT morgan_connected_at FROM users LIMIT 1"))
-        except (OperationalError, ProgrammingError):
+        if not _has_col("users", "morgan_connected_at"):
             print("[WARN] 'morgan_connected_at' column missing. Adding it now...")
             try:
                 conn.execute(text("ALTER TABLE users ADD COLUMN morgan_connected_at DATETIME"))
@@ -270,9 +273,7 @@ def init_db():
             ("disabled_at", "DATETIME"),
             ("disabled_reason", "TEXT"),
         ]:
-            try:
-                conn.execute(text(f"SELECT {col} FROM users LIMIT 1"))
-            except (OperationalError, ProgrammingError):
+            if not _has_col("users", col):
                 try:
                     conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {col_type}"))
                     conn.commit()
@@ -281,10 +282,7 @@ def init_db():
                     pass
 
         # 6. Check if degreeworks_data table exists
-        try:
-            conn.execute(text("SELECT id FROM degreeworks_data LIMIT 1"))
-            print("[OK] degreeworks_data table exists")
-        except (OperationalError, ProgrammingError):
+        if not _has_table("degreeworks_data"):
             print("[WARN] 'degreeworks_data' table missing. Creating it now...")
             try:
                 conn.execute(text("""
@@ -318,9 +316,7 @@ def init_db():
                 print(f"[ERROR] Failed to create degreeworks_data table: {e}")
 
         # 6b. Add data_source column to degreeworks_data if missing
-        try:
-            conn.execute(text("SELECT data_source FROM degreeworks_data LIMIT 1"))
-        except (OperationalError, ProgrammingError):
+        if not _has_col("degreeworks_data", "data_source"):
             print("[WARN] 'data_source' column missing from degreeworks_data. Adding it now...")
             try:
                 conn.execute(text("ALTER TABLE degreeworks_data ADD COLUMN data_source VARCHAR(50) DEFAULT 'manual_entry'"))
@@ -329,11 +325,8 @@ def init_db():
             except Exception as e:
                 print(f"[ERROR] Failed to add data_source column: {e}")
 
-        # 6. Check if support_tickets table exists
-        try:
-            conn.execute(text("SELECT id FROM support_tickets LIMIT 1"))
-            print("[OK] support_tickets table exists")
-        except (OperationalError, ProgrammingError):
+        # 7. Check if support_tickets table exists
+        if not _has_table("support_tickets"):
             print("[WARN] 'support_tickets' table missing. Creating it now...")
             try:
                 conn.execute(text("""
@@ -361,11 +354,8 @@ def init_db():
             except Exception as e:
                 print(f"[ERROR] Failed to create support_tickets table: {e}")
 
-        # 7. Check if banner_student_data table exists
-        try:
-            conn.execute(text("SELECT id FROM banner_student_data LIMIT 1"))
-            print("[OK] banner_student_data table exists")
-        except (OperationalError, ProgrammingError):
+        # 8. Check if banner_student_data table exists
+        if not _has_table("banner_student_data"):
             print("[WARN] 'banner_student_data' table missing. Creating it now...")
             try:
                 conn.execute(text("""
@@ -392,6 +382,47 @@ def init_db():
                 print("[OK] Successfully created 'banner_student_data' table!")
             except Exception as e:
                 print(f"[ERROR] Failed to create banner_student_data table: {e}")
+
+        # 9. Check if reminder_subscriptions table exists (Canvas deadline reminders)
+        if not _has_table("reminder_subscriptions"):
+            print("[WARN] 'reminder_subscriptions' table missing. Creating it now...")
+            try:
+                conn.execute(text("""
+                    CREATE TABLE reminder_subscriptions (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        user_id INT NOT NULL,
+                        course_id VARCHAR(64) NOT NULL,
+                        course_code VARCHAR(100),
+                        enabled BOOLEAN NOT NULL DEFAULT TRUE,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        UNIQUE KEY uq_reminder_sub_user_course (user_id, course_id),
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                """))
+                conn.commit()
+                print("[OK] Successfully created 'reminder_subscriptions' table!")
+            except Exception as e:
+                print(f"[ERROR] Failed to create reminder_subscriptions table: {e}")
+
+        # 10. Check if sent_reminders table exists (deadline reminder dedup ledger)
+        if not _has_table("sent_reminders"):
+            print("[WARN] 'sent_reminders' table missing. Creating it now...")
+            try:
+                conn.execute(text("""
+                    CREATE TABLE sent_reminders (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        user_id INT NOT NULL,
+                        reminder_key VARCHAR(255) NOT NULL,
+                        sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE KEY uq_sent_reminder_user_key (user_id, reminder_key),
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                """))
+                conn.commit()
+                print("[OK] Successfully created 'sent_reminders' table!")
+            except Exception as e:
+                print(f"[ERROR] Failed to create sent_reminders table: {e}")
 
     # 8. Create/Update admin account
     try:
@@ -436,51 +467,15 @@ init_db()
 # ==============================================================================
 # 4. FASTAPI APP SETUP
 # ==============================================================================
-# AI System globals (initialized in lifespan)
-pc = None
-retriever = None
-qa = None
-llm = None
-
 def build_qa_chain():
-    """Initialize legacy AI components on startup (only when not using Vertex AI)"""
-    global retriever, qa, llm, pc
+    """Check Vertex AI Agent health on startup."""
     if USE_VERTEX_AGENT:
-        # Check Vertex AI Agent health
         health = check_agent_health()
         print(f" Vertex AI Agent: {health['status']} - {health['message']}")
         if health["status"] != "connected":
-            print("[WARN] ADK server not running. Start it with:")
-            print("   cd google-ai-engine-research/adk_deploy && python -m google.adk.cli web . --port 8080")
-        return
-
-    if not LEGACY_RAG_AVAILABLE:
-        print("[WARN] Legacy RAG libraries not installed. Chatbot will be offline.")
-        return
-    if not all([PINECONE_API_KEY, OPENAI_API_KEY, PINECONE_INDEX]):
-        print("[WARN] API Keys missing. Chatbot will be offline.")
-        return
-    try:
-        pc = Pinecone(api_key=PINECONE_API_KEY)
-        embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=OPENAI_API_KEY)
-        store = PineconeVectorStore.from_existing_index(
-            index_name=PINECONE_INDEX,
-            embedding=embeddings,
-            namespace=PINECONE_NAMESPACE,
-        )
-        retriever = store.as_retriever(
-            search_type="mmr",
-            search_kwargs={
-                "k": 10,
-                "fetch_k": 30,
-                "lambda_mult": 0.5
-            }
-        )
-        llm = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model_name="gpt-3.5-turbo", temperature=0)
-        qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=True)
-        print("[OK] Legacy AI System Initialized (Pinecone + OpenAI)")
-    except Exception as e:
-        print(f"[ERROR] AI Init Failed: {e}")
+            print("[WARN] ADK server not reachable. Chat will be degraded until it is up.")
+    else:
+        print("[WARN] USE_VERTEX_AGENT is disabled; the chat agent is offline.")
 
 @asynccontextmanager
 async def lifespan(app):
@@ -2654,6 +2649,90 @@ async def disconnect_canvas(user: dict = Depends(get_current_user), db: Session 
 
 
 # ==============================================================================
+# DEADLINE REMINDERS - Per-class opt-in for assignment due-date emails
+# ==============================================================================
+class ReminderSubscriptionUpdate(BaseModel):
+    course_id: str
+    enabled: bool
+
+
+@app.get("/api/reminders/subscriptions")
+async def get_reminder_subscriptions(user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """List the student's Canvas classes with their reminder opt-in state.
+
+    Classes default to OFF (opt-in): a class is only ON if a subscription row
+    exists AND enabled is true."""
+    canvas = db.query(CanvasStudentData).filter(CanvasStudentData.user_id == user["user_id"]).first()
+    if not canvas or not canvas.courses:
+        return {"connected": False, "classes": []}
+
+    try:
+        courses = json.loads(canvas.courses) if canvas.courses else []
+    except (ValueError, TypeError):
+        courses = []
+
+    subs = db.query(ReminderSubscription).filter(
+        ReminderSubscription.user_id == user["user_id"]
+    ).all()
+    enabled_map = {str(s.course_id): s.enabled for s in subs}
+
+    classes = []
+    for c in courses:
+        cid = str(c.get("id"))
+        classes.append({
+            "course_id": cid,
+            "course_code": c.get("code"),
+            "name": c.get("name"),
+            "enabled": bool(enabled_map.get(cid, False)),
+        })
+
+    return {"connected": True, "classes": classes}
+
+
+@app.post("/api/reminders/subscriptions")
+async def set_reminder_subscription(
+    req: ReminderSubscriptionUpdate,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Turn deadline reminders on/off for one class (upsert)."""
+    course_id = str(req.course_id)
+
+    # Look up the course code from the stored snapshot for nicer emails/labels.
+    course_code = None
+    canvas = db.query(CanvasStudentData).filter(CanvasStudentData.user_id == user["user_id"]).first()
+    if canvas and canvas.courses:
+        try:
+            for c in json.loads(canvas.courses):
+                if str(c.get("id")) == course_id:
+                    course_code = c.get("code")
+                    break
+        except (ValueError, TypeError):
+            pass
+
+    sub = db.query(ReminderSubscription).filter(
+        ReminderSubscription.user_id == user["user_id"],
+        ReminderSubscription.course_id == course_id,
+    ).first()
+
+    if sub:
+        sub.enabled = req.enabled
+        if course_code:
+            sub.course_code = course_code
+    else:
+        sub = ReminderSubscription(
+            user_id=user["user_id"],
+            course_id=course_id,
+            course_code=course_code,
+            enabled=req.enabled,
+        )
+        db.add(sub)
+
+    db.commit()
+    return {"success": True, "course_id": course_id, "enabled": req.enabled}
+
+
+# ==============================================================================
 # MOMENTUM SCORE - Academic Performance Index
 # ==============================================================================
 from services.canvas_analytics import compute_momentum_score
@@ -3013,33 +3092,6 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
         else:
             answer = "I received the file link, but I cannot find the file on the server to read it."
 
-    elif file_match and llm:
-        # Legacy: File uploaded with old LLM pipeline
-        filename = file_match.group(1)
-        filepath = os.path.join(CHAT_FILES_FOLDER, filename)
-
-        if os.path.exists(filepath):
-            file_content = extract_file_content(filepath)
-            system_msg = f"""You are a helpful academic assistant for Morgan State University's Computer Science department.
-Use the provided file content and conversation history to answer the user's question.
-{student_context}"""
-
-            clean_query = re.sub(r'\[.*?\]\(.*?\)', '', user_q).strip()
-            if not clean_query: clean_query = "Summarize this file."
-
-            user_msg = f"{conversation_context}File Content:\n{file_content}\n\nCurrent Question: {clean_query}"
-
-            try:
-                response = llm([
-                    SystemMessage(content=system_msg),
-                    HumanMessage(content=user_msg)
-                ])
-                answer = response.content
-            except Exception as e:
-                answer = f"I read the file, but had trouble analyzing it: {e}"
-        else:
-            answer = "I received the file link, but I cannot find the file on the server to read it."
-
     elif USE_VERTEX_AGENT:
         # Vertex AI Agent Engine path
         # Tier 1: Query already rewritten above (follow-ups resolved)
@@ -3061,31 +3113,6 @@ Use the provided file content and conversation history to answer the user's ques
         except Exception as e:
             print(f"   Vertex AI Chat Error: {e}")
             answer = "I'm having trouble processing your request. Please try again."
-    elif llm and retriever:
-        # Legacy Pinecone + OpenAI RAG path (fallback)
-        norm = re.sub(r'[\s\W]+', '', user_q.lower())
-        if re.match(r'^(hi|hello|hey)\b', user_q.lower()):
-            answer = "Hello! How can I help you today?"
-        elif re.match(r'^(bye|goodbye|see you)\b', user_q.lower()):
-            answer = "Goodbye! Have a great day."
-        elif re.search(r'\b(thankyou|thanks|thanx|thx|ty)\b', norm):
-            answer = "You're welcome! Let me know if you have any other questions."
-        else:
-            try:
-                docs = retriever.get_relevant_documents(user_q)
-                context_docs = "\n\n".join([doc.page_content for doc in docs[:8]])
-                system_prompt = f"""You are CS Navigator, an academic assistant for Morgan State University's CS department.
-{student_context}
-ONLY answer based on the KNOWLEDGE BASE CONTEXT provided. If info is not found, say so honestly."""
-                full_message = f"{conversation_context}Knowledge base:\n{context_docs}\n\nQuestion: {user_q}"
-                response = llm([
-                    SystemMessage(content=system_prompt),
-                    HumanMessage(content=full_message)
-                ])
-                answer = response.content.strip()
-            except Exception as e:
-                print(f"   Legacy Chat Error: {e}")
-                answer = "I'm having trouble processing your request."
     else:
         answer = "AI system is initializing. Please try again in a moment."
 
@@ -3634,22 +3661,6 @@ async def chat_guest(req: GuestQueryRequest, request: Request):
 
         except Exception as e:
             print(f"   Guest Vertex AI Error: {e}")
-            answer = "I'm having trouble processing your request. Please try again."
-    elif llm and retriever:
-        # Legacy Pinecone + OpenAI RAG path (fallback)
-        try:
-            docs = retriever.get_relevant_documents(user_q)
-            context_docs = "\n\n".join([doc.page_content for doc in docs[:8]])
-            if not context_docs.strip():
-                answer = "I don't have specific information about that. Contact the CS department at compsci@morgan.edu or (443) 885-3962."
-            else:
-                response = llm([
-                    SystemMessage(content="You are CS Navigator for Morgan State University's CS department. ONLY answer from the provided context."),
-                    HumanMessage(content=f"Context:\n{context_docs}\n\nQuestion: {user_q}")
-                ])
-                answer = response.content.strip()
-        except Exception as e:
-            print(f"   Guest Legacy Error: {e}")
             answer = "I'm having trouble processing your request. Please try again."
     else:
         answer = "AI system is initializing. Please try again in a moment."
@@ -5009,9 +5020,32 @@ async def delete_snippet(
     return {"deleted": True}
 
 
+# Filler/greeting messages excluded from the popular-questions ranking. Pure
+# frequency otherwise — this is the only filter (see spec
+# docs/superpowers/specs/2026-06-30-popular-questions-design.md).
+_POPULAR_Q_STOPLIST = {
+    "hi", "hii", "hiii", "hey", "heya", "hello", "helo", "yo", "sup", "wsup", "wassup",
+    "thanks", "thank you", "thx", "ty", "thank u", "ok", "okay", "k", "kk", "cool",
+    "yes", "yep", "yeah", "ya", "no", "nope", "nah", "sure", "great", "nice", "lol",
+    "test", "testing", "morning", "good morning", "hi there", "bye", "goodbye",
+}
+_POPULAR_Q_MIN_LEN = 15  # trimmed-length floor; shorter messages are treated as filler
+
+# Module-level cache: (epoch_seconds, questions). 5-minute TTL.
+_popular_q_cache = {"ts": 0.0, "questions": None}
+_POPULAR_Q_TTL = 300
+
+
 @app.get("/api/popular-questions")
-async def get_popular_questions():
-    """Returns 8 randomly selected questions from a curated pool."""
+async def get_popular_questions(db: Session = Depends(get_db)):
+    """Returns up to 10 of the questions most frequently asked by users.
+
+    Ranking = exact-match (case-insensitive, trimmed) frequency over
+    ChatHistory.user_query. Greetings/filler are excluded; otherwise it is pure
+    frequency with no quality threshold and no curated padding. Falls back to a
+    sample of the curated pool only when there is no real usage yet (or on error).
+    """
+    import time
     import random
 
     QUESTION_POOL = [
@@ -5049,45 +5083,56 @@ async def get_popular_questions():
         "How do I register for CS courses?",
     ]
 
-    return {"questions": random.sample(QUESTION_POOL, 8)}
+    # Serve from cache if fresh.
+    now = time.time()
+    if _popular_q_cache["questions"] is not None and (now - _popular_q_cache["ts"]) < _POPULAR_Q_TTL:
+        return {"questions": _popular_q_cache["questions"]}
+
+    questions = []
+    try:
+        normalized = func.lower(func.trim(ChatHistory.user_query))
+        rows = (
+            db.query(
+                func.max(ChatHistory.user_query).label("display"),
+                func.count().label("freq"),
+            )
+            .filter(ChatHistory.user_query.isnot(None))
+            .filter(func.char_length(func.trim(ChatHistory.user_query)) >= _POPULAR_Q_MIN_LEN)
+            .filter(normalized.notin_(sorted(_POPULAR_Q_STOPLIST)))
+            .group_by(normalized)
+            .order_by(func.count().desc())
+            .limit(10)
+            .all()
+        )
+        questions = [r.display.strip() for r in rows if r.display and r.display.strip()]
+    except Exception as e:
+        print(f"⚠️ popular-questions aggregation failed, using curated fallback: {e}")
+        questions = []
+
+    # Fallback only when there is no real usage yet (or the query failed).
+    if not questions:
+        questions = random.sample(QUESTION_POOL, 10)
+
+    _popular_q_cache["ts"] = now
+    _popular_q_cache["questions"] = questions
+    return {"questions": questions}
 
 # --- Admin / Ingest Routes ---
+# The legacy Pinecone ingest/clear endpoints are retired. The knowledge base now
+# lives in the Vertex AI Search datastore, managed from the admin dashboard
+# (see /api/admin/cloud-kb/* and datastore_manager.py). These stubs remain so old
+# clients get a clear message instead of a 404.
 @app.post("/ingest")
 async def ingest_data_endpoint(user=Depends(get_current_user)):
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admins only")
-
-    files = [os.path.join(DATA_DIR, fn) for fn in sorted(os.listdir(DATA_DIR)) if fn.lower().endswith(".json")]
-    raw = []
-    for p in files:
-        raw.extend(load_json_documents([p]))
-
-    splitter = TokenTextSplitter(chunk_size=800, chunk_overlap=160, model_name="gpt-3.5-turbo")
-    texts, metas = [], []
-    for doc in raw:
-        for chunk in splitter.split_text(doc["text"]):
-            texts.append(chunk)
-            metas.append({"source": os.path.basename(doc["source"])})
-
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=OPENAI_API_KEY)
-    PineconeVectorStore.from_texts(
-        texts=texts,
-        embedding=embeddings,
-        metadatas=metas,
-        index_name=PINECONE_INDEX,
-        namespace=PINECONE_NAMESPACE,
-    )
-    return {"message": f"Ingested into {PINECONE_INDEX}:{PINECONE_NAMESPACE}", "chunks": len(texts)}
+    return {"message": "Deprecated. The KB now lives in the Vertex AI Search datastore — manage it from the admin dashboard (instant updates, no re-index)."}
 
 @app.delete("/clear-index")
 async def clear_index(user=Depends(get_current_user)):
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admins only")
-    if not pc:
-        raise HTTPException(status_code=500, detail="Pinecone not initialized")
-    idx = pc.Index(PINECONE_INDEX)
-    idx.delete(delete_all=True, namespace=PINECONE_NAMESPACE)
-    return {"message": f"Cleared namespace '{PINECONE_NAMESPACE}' in index {PINECONE_INDEX}"}
+    return {"message": "Deprecated. Pinecone has been removed; the Vertex AI Search datastore is managed from the admin dashboard."}
 
 # --- Curriculum Routes ---
 @app.post("/api/curriculum/add")
@@ -5148,7 +5193,7 @@ def health():
         except Exception:
             ai_status = "offline"
         return {"status": "ok", "db": "connected", "ai": "ready" if ai_status == "connected" else "offline"}
-    return {"status": "ok", "db": "connected", "ai": "ready" if qa else "offline"}
+    return {"status": "ok", "db": "connected", "ai": "ready" if USE_VERTEX_AGENT else "offline"}
 
 # ==============================================================================
 # ADMIN DASHBOARD ENDPOINTS
@@ -5302,7 +5347,7 @@ async def get_system_health(user: dict = Depends(get_current_user), db: Session 
         "openai_tts": {"status": "unknown", "message": ""},
         "email_verification": {"status": "unknown", "message": ""},
         "auth_urls": {"status": "unknown", "message": ""},
-        "mode": "vertex_ai" if USE_VERTEX_AGENT else "legacy_rag",
+        "mode": "vertex_ai" if USE_VERTEX_AGENT else "offline",
         "last_check": datetime.now(timezone.utc).isoformat()
     }
 
@@ -5317,18 +5362,7 @@ async def get_system_health(user: dict = Depends(get_current_user), db: Session 
     if USE_VERTEX_AGENT:
         health_status["vertex_agent"] = check_agent_health()
     else:
-        # Legacy: check Pinecone
-        try:
-            if PINECONE_API_KEY and PINECONE_INDEX and LEGACY_RAG_AVAILABLE:
-                pc_check = Pinecone(api_key=PINECONE_API_KEY)
-                idx = pc_check.Index(PINECONE_INDEX)
-                stats = idx.describe_index_stats()
-                vector_count = stats.get("total_vector_count", 0)
-                health_status["vertex_agent"] = {"status": "n/a (legacy mode)", "message": f"Pinecone: {vector_count} vectors"}
-            else:
-                health_status["vertex_agent"] = {"status": "not_configured", "message": "Legacy mode, keys missing"}
-        except Exception as e:
-            health_status["vertex_agent"] = {"status": "error", "message": str(e)[:100]}
+        health_status["vertex_agent"] = {"status": "offline", "message": "USE_VERTEX_AGENT disabled"}
 
     # Check OpenAI TTS
     try:
@@ -5551,29 +5585,14 @@ async def trigger_ingestion(user: dict = Depends(get_current_user)):
 
 @app.post("/api/admin/knowledge-base/sync-all")
 async def sync_all_kb(user: dict = Depends(get_current_user)):
-    """One-click: Re-index Pinecone from Vertex AI datastore + clear all caches.
-    Call this after updating KB docs to ensure both search systems are in sync."""
+    """One-click: clear all caches so KB edits take effect immediately.
+    The Vertex AI Search datastore updates instantly on edit (no re-index step)."""
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
-    results = {"pinecone": None, "cache": None}
+    results = {"cache": None}
 
-    # Step 1: Re-ingest KB docs to Pinecone (hybrid search index)
-    try:
-        from services.hybrid_retrieval import reingest_to_pinecone, is_pinecone_available
-        if is_pinecone_available():
-            ingest_result = await asyncio.to_thread(reingest_to_pinecone)
-            results["pinecone"] = {
-                "status": "ok" if ingest_result.get("failed", 0) == 0 else "partial",
-                "upserted": ingest_result.get("upserted", 0),
-                "failed": ingest_result.get("failed", 0),
-            }
-        else:
-            results["pinecone"] = {"status": "skipped", "reason": "Pinecone not configured"}
-    except Exception as e:
-        results["pinecone"] = {"status": "error", "reason": str(e)[:200]}
-
-    # Step 2: Clear all caches (L1 + L2 + semantic)
+    # Clear all caches (L1 + L2 + semantic) so updated KB docs are served fresh.
     try:
         cleared = query_cache.clear()
         results["cache"] = {"status": "ok", "cleared": cleared}
@@ -5582,7 +5601,7 @@ async def sync_all_kb(user: dict = Depends(get_current_user)):
 
     return {
         "success": True,
-        "message": f"Pinecone: {results['pinecone'].get('upserted', 0)} docs synced. Cache: cleared.",
+        "message": "Caches cleared. Vertex AI datastore is always in sync (instant updates).",
         "details": results,
     }
 
@@ -6231,6 +6250,76 @@ async def internal_degreeworks_sync(request: Request):
             "fresh_last_30d": len(fresh),
             "stale_over_30d": len(stale),
         }
+    finally:
+        db.close()
+
+
+@app.post("/api/internal/reminders/dispatch")
+async def internal_reminders_dispatch(request: Request):
+    """Triggered hourly by Cloud Scheduler. Emails students ~24h before an
+    assignment in an opted-in class is due. Idempotent: a SentReminder ledger
+    prevents the same assignment from being emailed twice. Computes purely from
+    each student's last Canvas sync (no Canvas re-fetch / no stored credentials)."""
+    secret = request.headers.get("X-Research-Secret", "")
+    expected = os.getenv("RESEARCH_SECRET", "")
+    if not expected or secret != expected:
+        raise HTTPException(status_code=403, detail="Invalid research secret")
+
+    from services import reminder_engine
+    from email_service import send_deadline_reminder_email, is_email_configured
+
+    if not is_email_configured():
+        return {"status": "skipped", "reason": "SMTP not configured"}
+
+    now = datetime.now(timezone.utc)
+    sent_count = 0
+    users_processed = 0
+
+    db = SessionLocal()
+    try:
+        # Map user_id -> set of opted-in course ids (only enabled rows).
+        subs = db.query(ReminderSubscription).filter(ReminderSubscription.enabled == True).all()  # noqa: E712
+        enabled_by_user: dict[int, set] = {}
+        for s in subs:
+            enabled_by_user.setdefault(s.user_id, set()).add(str(s.course_id))
+
+        if not enabled_by_user:
+            return {"status": "ok", "users_processed": 0, "reminders_sent": 0}
+
+        for user_id, enabled_course_ids in enabled_by_user.items():
+            canvas = db.query(CanvasStudentData).filter(CanvasStudentData.user_id == user_id).first()
+            if not canvas or not canvas.upcoming_assignments:
+                continue
+            try:
+                assignments = json.loads(canvas.upcoming_assignments)
+            except (ValueError, TypeError):
+                continue
+
+            sent_keys = {
+                r.reminder_key for r in db.query(SentReminder).filter(
+                    SentReminder.user_id == user_id
+                ).all()
+            }
+
+            due = reminder_engine.select_due_reminders(
+                assignments, enabled_course_ids, sent_keys, now
+            )
+            if not due:
+                continue
+
+            user = db.query(User).filter(User.id == user_id).first()
+            if not user or not user.email:
+                continue
+
+            users_processed += 1
+            for item in due:
+                ok = send_deadline_reminder_email(user.email, item["assignment"])
+                if ok:
+                    db.add(SentReminder(user_id=user_id, reminder_key=item["key"]))
+                    sent_count += 1
+            db.commit()
+
+        return {"status": "ok", "users_processed": users_processed, "reminders_sent": sent_count}
     finally:
         db.close()
 

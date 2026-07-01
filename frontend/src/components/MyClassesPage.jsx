@@ -7,6 +7,8 @@ import { FaClock } from "@react-icons/all-files/fa/FaClock";
 import { FaSync } from "@react-icons/all-files/fa/FaSync";
 import { FaCalendarAlt } from "@react-icons/all-files/fa/FaCalendarAlt";
 import { FaChartLine } from "@react-icons/all-files/fa/FaChartLine";
+import { FaBell } from "@react-icons/all-files/fa/FaBell";
+import { FaRegBell } from "@react-icons/all-files/fa/FaRegBell";
 import { getApiBase } from "../lib/apiBase";
 import MomentumScore from "./MomentumScore";
 import "./MyClassesPage.css";
@@ -70,6 +72,9 @@ export default function MyClassesPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("overview");
+  const [reminders, setReminders] = useState({}); // { [course_id]: enabled }
+  const [savingReminder, setSavingReminder] = useState(null);
+  const [toast, setToast] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -79,7 +84,46 @@ export default function MyClassesPage() {
       .then(d => { if (d?.connected) setData(d); })
       .catch(() => {})
       .finally(() => setLoading(false));
+
+    // Load per-class deadline-reminder opt-in state (best-effort).
+    fetch(`${API_BASE}/api/reminders/subscriptions`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d?.classes) {
+          const map = {};
+          d.classes.forEach(c => { map[c.course_id] = c.enabled; });
+          setReminders(map);
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  const toggleReminder = (course, e) => {
+    e?.stopPropagation();
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    const cid = String(course.id);
+    const next = !reminders[cid];
+    setReminders(prev => ({ ...prev, [cid]: next })); // optimistic
+    setSavingReminder(cid);
+    fetch(`${API_BASE}/api/reminders/subscriptions`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ course_id: cid, enabled: next }),
+    })
+      .then(r => { if (!r.ok) throw new Error("save failed"); })
+      .then(() => setToast(next
+        ? `Reminders on for ${cleanCode(course.code)} — email ~24h before each deadline`
+        : `Reminders off for ${cleanCode(course.code)}`))
+      .catch(() => {
+        setReminders(prev => ({ ...prev, [cid]: !next })); // revert
+        setToast("Couldn't save — try again");
+      })
+      .finally(() => {
+        setSavingReminder(null);
+        setTimeout(() => setToast(""), 3500);
+      });
+  };
 
   if (loading) return (
     <div className="mc"><div className="mc-center"><FaSync className="mc-spin" size={20} /><p>Loading Canvas...</p></div></div>
@@ -107,6 +151,7 @@ export default function MyClassesPage() {
 
   return (
     <div className="mc">
+      {toast && <div className="mc-toast"><FaBell size={12} /> {toast}</div>}
       <header className="mc-head">
         <div>
           <h1>My Classes</h1>
@@ -183,11 +228,25 @@ export default function MyClassesPage() {
               <div key={c.id} className="mc-card">
                 <div className="mc-card-top">
                   <span className="mc-badge">{cleanCode(c.code)}</span>
-                  {c.current_score != null && (
-                    <span className="mc-score" style={{ color: getScoreColor(c.current_score) }}>
-                      {c.current_score.toFixed(1)}%
-                    </span>
-                  )}
+                  <div className="mc-card-top-right">
+                    {c.current_score != null && (
+                      <span className="mc-score" style={{ color: getScoreColor(c.current_score) }}>
+                        {c.current_score.toFixed(1)}%
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      className={`mc-bell ${reminders[String(c.id)] ? "on" : ""}`}
+                      onClick={(e) => toggleReminder(c, e)}
+                      disabled={savingReminder === String(c.id)}
+                      aria-pressed={!!reminders[String(c.id)]}
+                      title={reminders[String(c.id)]
+                        ? "Deadline reminders on — email ~24h before each assignment. Click to turn off."
+                        : "Get an email ~24h before each assignment in this class is due."}
+                    >
+                      {reminders[String(c.id)] ? <FaBell size={13} /> : <FaRegBell size={13} />}
+                    </button>
+                  </div>
                 </div>
                 <div className="mc-card-name">{cleanName(c.name)}</div>
                 {c.current_score != null && (

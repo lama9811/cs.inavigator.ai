@@ -17,6 +17,7 @@ Semantic: Matches similar queries via Google text-embedding-004 vectors.
 import hashlib
 import json
 import os
+import re
 import time
 import logging
 from typing import Optional
@@ -49,23 +50,76 @@ SEMANTIC_EMBEDDING_DIMS = 256  # Matryoshka truncation, 256 is fast + accurate e
 # Minimum query length to cache (avoid caching "hi", "hello", etc.)
 MIN_QUERY_LENGTH = 15
 
-# Queries containing these words should NOT be cached (personalized responses)
+# Queries containing these words should NOT be cached (personalized or
+# time-sensitive responses). The cache key does not include user_id for general
+# answers, so anything that recalls a user's own facts — or goes stale fast —
+# must be blocked here so it is never shared with another student.
 NO_CACHE_KEYWORDS = [
+    # personalized — recalls the asking student's own record
     "my advisor",
     "my gpa",
     "my credits",
     "my courses",
+    "my classes",
     "my schedule",
     "my degree",
+    "my major",
+    "my minor",
+    "my audit",
+    "my transcript",
+    "my professor",
+    "my grade",
+    "my graduation",
+    "my enrollment",
     "my name",
     "my student",
     "i have",
     "i need",
     "i am",
     "i'm",
+    "remind me",
+    "remember",
+    "about me",
+    "about myself",
     "recommend me",
     "for me",
+    # time-sensitive — answers go stale fast, don't share them
+    "right now",
+    "today",
+    "currently open",
+    "is registration open",
 ]
+
+# Recall questions like "what's MY advisor" / "who am I" / "did I pass" are
+# answered from the student's own history and are never safe to share, even if
+# they dodge the substring list above. Mirrors the app-layer personalization
+# guard so the two stay in sync.
+_PERSONAL_RECALL_RE = re.compile(
+    r"\b(?:am\s+i\b|did\s+i\b|remind\s+me\b|about\s+(?:me|myself)\b"
+    r"|(?:what|who|where|when)(?:'s|s|\s+is|\s+was|\s+are)?\s+my\b"
+    r"|who\s+am\s+i\b)",
+    re.IGNORECASE,
+)
+
+# A personalized opening greeting ("Hi Alex!", "Hello Alex Chen,") must be
+# scrubbed before an answer enters the SHARED cache, or one student's name leaks
+# to every other student who asks the same question. Strips ONLY a leading
+# salutation + 1-3 capitalized name tokens + a punctuation terminator; the
+# generic body of the answer is left untouched and stays cacheable.
+_PERSONAL_GREETING_RE = re.compile(
+    r"^\s*(?i:hi|hello|hey|greetings|dear|good\s+(?:morning|afternoon|evening))"
+    r"[ \t]*[,]?[ \t]+"
+    r"[A-Z][\w'’.\-]*(?:[ \t]+[A-Z][\w'’.\-]*){0,2}"
+    r"[ \t]*[-!,.:;…—–]+[ \t]*",
+)
+
+
+def _strip_personal_greeting(text: Optional[str]) -> Optional[str]:
+    """Remove a leading 'Hi <Name>,' salutation so a cached answer never carries
+    one student's name to the next. No-op when there is no such greeting."""
+    if not text or not isinstance(text, str):
+        return text
+    return _PERSONAL_GREETING_RE.sub("", text, count=1)
 
 # Redis Configuration (from environment variables)
 REDIS_URL = os.getenv("REDIS_URL", "")
@@ -519,6 +573,10 @@ class MultiTierCache:
             if keyword in query_lower:
                 return False
 
+        # Catch personal-recall phrasings that dodge the substring list above.
+        if _PERSONAL_RECALL_RE.search(query):
+            return False
+
         return True
 
     def get(self, query: str, context_hash: str = "", allow_semantic: bool = True) -> Optional[str]:
@@ -539,7 +597,7 @@ class MultiTierCache:
         response = self.l1.get(key)
         if response is not None:
             logger.info(f"[CACHE] L1 HIT for: {query[:50]}...")
-            return response
+            return _strip_personal_greeting(response)
 
         # Try L2 (Redis)
         response = self.l2.get(key)
@@ -547,7 +605,7 @@ class MultiTierCache:
             logger.info(f"[CACHE] L2 HIT for: {query[:50]}...")
             # Promote to L1 for faster future access
             self.l1.set(key, response)
-            return response
+            return _strip_personal_greeting(response)
 
         # L3: Semantic similarity (catches rephrased versions of the same question)
         # 0.95 threshold = safe, only near-identical matches. Saves a full Gemini call (~4s).
@@ -556,7 +614,7 @@ class MultiTierCache:
             response = self.semantic.get(query, context_hash)
             if response is not None:
                 self.l1.set(key, response)
-                return response
+                return _strip_personal_greeting(response)
 
         logger.info(f"[CACHE] MISS for: {query[:50]}...")
         return None
@@ -566,10 +624,25 @@ class MultiTierCache:
         if not self._should_cache(query):
             return False
 
+        # Scrub a leading "Hi <Name>," greeting before the answer enters the
+        # shared cache, so one student's name never leaks to the next.
+        response = _strip_personal_greeting(response)
+        response_lower = response.lower()
+
         # Don't cache error responses or outage messages
-        if "error" in response.lower()[:50] or "unavailable" in response.lower()[:50]:
+        if "error" in response_lower[:50] or "unavailable" in response_lower[:50]:
             return False
-        if "trouble connecting" in response.lower() or "system issue" in response.lower():
+        if "trouble connecting" in response_lower or "system issue" in response_lower:
+            return False
+        if any(p in response_lower for p in ("busy right now", "try again in a moment", "try again in a minute")):
+            return False
+
+        # Don't cache refusals / "I don't have that" answers — they're not real
+        # content and would poison the cache for everyone.
+        if any(p in response_lower for p in (
+            "i do not have", "i don't have", "i cannot provide", "i can't provide",
+            "i cannot access", "i can't access", "i do not retain", "i don't retain",
+        )):
             return False
 
         # Don't cache responses with grounding disclaimers (they indicate low confidence)
