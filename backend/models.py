@@ -335,3 +335,27 @@ class KBSuggestion(Base):
     reviewed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, nullable=False, server_default=func.now())
     updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
+
+
+class PushSubscription(Base):
+    """A browser Web Push subscription for a user (one row per browser/device).
+
+    The `endpoint` is the push service URL the browser gave us; `p256dh` and
+    `auth` are the encryption keys from the PushSubscription.getKey() values.
+    Deadline reminders and test pushes are delivered to every enabled row.
+    A subscription is removed when the push service reports it gone (404/410)."""
+    __tablename__ = "push_subscriptions"
+    __table_args__ = (
+        UniqueConstraint("user_id", "endpoint", name="uq_push_sub_user_endpoint"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    endpoint = Column(Text, nullable=False)
+    p256dh = Column(String(255), nullable=False)
+    auth = Column(String(255), nullable=False)
+    user_agent = Column(String(400), nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", backref="push_subscriptions")

@@ -144,7 +144,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingSnippet, ReminderSubscription, SentReminder
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingSnippet, ReminderSubscription, SentReminder, PushSubscription
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -2721,6 +2721,102 @@ async def set_reminder_subscription(
 
     db.commit()
     return {"success": True, "course_id": course_id, "enabled": req.enabled}
+
+
+# ==============================================================================
+# WEB PUSH NOTIFICATIONS - browser push as a 2nd channel for deadline reminders
+# ==============================================================================
+class PushSubscriptionIn(BaseModel):
+    endpoint: str
+    keys: dict  # {"p256dh": "...", "auth": "..."}
+
+
+@app.get("/api/push/vapid-public-key")
+async def push_vapid_public_key():
+    """Public applicationServerKey the browser needs to subscribe. `configured`
+    is False when VAPID keys aren't set (frontend then hides the feature)."""
+    from services import push_service
+    return {
+        "configured": push_service.is_push_configured(),
+        "publicKey": push_service.get_public_key(),
+    }
+
+
+@app.post("/api/push/subscribe")
+async def push_subscribe(
+    req: PushSubscriptionIn,
+    request: Request,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Store (or refresh) this browser's push subscription for the user."""
+    p256dh = (req.keys or {}).get("p256dh")
+    auth = (req.keys or {}).get("auth")
+    if not req.endpoint or not p256dh or not auth:
+        raise HTTPException(status_code=400, detail="Invalid push subscription")
+
+    ua = (request.headers.get("user-agent") or "")[:400]
+    existing = db.query(PushSubscription).filter(
+        PushSubscription.user_id == user["user_id"],
+        PushSubscription.endpoint == req.endpoint,
+    ).first()
+    if existing:
+        existing.p256dh = p256dh
+        existing.auth = auth
+        existing.user_agent = ua
+    else:
+        db.add(PushSubscription(
+            user_id=user["user_id"],
+            endpoint=req.endpoint,
+            p256dh=p256dh,
+            auth=auth,
+            user_agent=ua,
+        ))
+    db.commit()
+    return {"success": True}
+
+
+@app.post("/api/push/unsubscribe")
+async def push_unsubscribe(
+    req: PushSubscriptionIn,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Remove this browser's subscription (student turned notifications off)."""
+    db.query(PushSubscription).filter(
+        PushSubscription.user_id == user["user_id"],
+        PushSubscription.endpoint == req.endpoint,
+    ).delete()
+    db.commit()
+    return {"success": True}
+
+
+@app.post("/api/push/test")
+async def push_test(user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Send a test notification to every device the user has subscribed. Prunes
+    any subscriptions the push service reports as expired (404/410)."""
+    from services import push_service
+    if not push_service.is_push_configured():
+        raise HTTPException(status_code=503, detail="Push notifications are not configured on the server.")
+
+    subs = db.query(PushSubscription).filter(PushSubscription.user_id == user["user_id"]).all()
+    if not subs:
+        return {"sent": 0, "detail": "No subscribed devices. Enable notifications first."}
+
+    payload = {
+        "title": "CS Navigator",
+        "body": "🔔 Test notification — deadline reminders are on!",
+        "url": "/my-classes",
+    }
+    sent = 0
+    for s in subs:
+        result = push_service.send_web_push(push_service.build_subscription(s), payload)
+        if result == "ok":
+            sent += 1
+        elif result == "expired":
+            db.delete(s)
+    db.commit()
+    return {"sent": sent, "devices": len(subs)}
 
 
 # ==============================================================================
@@ -6179,14 +6275,18 @@ async def internal_reminders_dispatch(request: Request):
     if not expected or secret != expected:
         raise HTTPException(status_code=403, detail="Invalid research secret")
 
-    from services import reminder_engine
+    from services import reminder_engine, push_service
     from email_service import send_deadline_reminder_email, is_email_configured
 
-    if not is_email_configured():
-        return {"status": "skipped", "reason": "SMTP not configured"}
+    email_ready = is_email_configured()
+    push_ready = push_service.is_push_configured()
+    if not email_ready and not push_ready:
+        return {"status": "skipped", "reason": "No delivery channel configured (SMTP or Web Push)"}
 
     now = datetime.now(timezone.utc)
-    sent_count = 0
+    sent_count = 0        # reminders recorded (delivered on >=1 channel)
+    email_count = 0
+    push_count = 0
     users_processed = 0
 
     db = SessionLocal()
@@ -6222,18 +6322,61 @@ async def internal_reminders_dispatch(request: Request):
                 continue
 
             user = db.query(User).filter(User.id == user_id).first()
-            if not user or not user.email:
+            if not user:
+                continue
+
+            # This user's push devices (if any). Empty list when push is off.
+            push_subs = db.query(PushSubscription).filter(
+                PushSubscription.user_id == user_id
+            ).all() if push_ready else []
+
+            # Skip users we can't reach on any channel.
+            if not (email_ready and user.email) and not push_subs:
                 continue
 
             users_processed += 1
             for item in due:
-                ok = send_deadline_reminder_email(user.email, item["assignment"])
-                if ok:
+                asn = item["assignment"]
+                delivered = False
+
+                # Channel 1: email
+                if email_ready and user.email:
+                    if send_deadline_reminder_email(user.email, asn):
+                        delivered = True
+                        email_count += 1
+
+                # Channel 2: browser push (all of the user's devices)
+                if push_subs:
+                    payload = {
+                        "title": "Assignment due soon",
+                        "body": f"{asn.get('course_name') or 'Class'}: "
+                                f"{asn.get('title') or 'Assignment'} is due soon",
+                        "url": "/my-classes",
+                    }
+                    for ps in list(push_subs):
+                        res = push_service.send_web_push(
+                            push_service.build_subscription(ps), payload
+                        )
+                        if res == "ok":
+                            delivered = True
+                            push_count += 1
+                        elif res == "expired":
+                            db.delete(ps)
+                            push_subs.remove(ps)
+
+                # Record the dedup key only if it went out on >=1 channel.
+                if delivered:
                     db.add(SentReminder(user_id=user_id, reminder_key=item["key"]))
                     sent_count += 1
             db.commit()
 
-        return {"status": "ok", "users_processed": users_processed, "reminders_sent": sent_count}
+        return {
+            "status": "ok",
+            "users_processed": users_processed,
+            "reminders_sent": sent_count,
+            "emails_sent": email_count,
+            "pushes_sent": push_count,
+        }
     finally:
         db.close()
 

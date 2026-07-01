@@ -10,6 +10,7 @@ import { FaChartLine } from "@react-icons/all-files/fa/FaChartLine";
 import { FaBell } from "@react-icons/all-files/fa/FaBell";
 import { FaRegBell } from "@react-icons/all-files/fa/FaRegBell";
 import { getApiBase } from "../lib/apiBase";
+import { pushSupported, getPushState, enablePush, disablePush, sendTestPush } from "../lib/push";
 import MomentumScore from "./MomentumScore";
 import "./MyClassesPage.css";
 
@@ -75,6 +76,8 @@ export default function MyClassesPage() {
   const [reminders, setReminders] = useState({}); // { [course_id]: enabled }
   const [savingReminder, setSavingReminder] = useState(null);
   const [toast, setToast] = useState("");
+  const [push, setPush] = useState({ supported: false, enabled: false, permission: "default" });
+  const [pushBusy, setPushBusy] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -125,6 +128,43 @@ export default function MyClassesPage() {
       });
   };
 
+  // --- Browser push notifications (2nd reminder channel) ---
+  useEffect(() => {
+    if (!pushSupported()) { setPush({ supported: false, enabled: false, permission: "unsupported" }); return; }
+    getPushState().then(setPush).catch(() => {});
+  }, []);
+
+  const flash = (msg) => { setToast(msg); setTimeout(() => setToast(""), 4000); };
+
+  const refreshPush = () => {
+    if (!pushSupported()) return;
+    getPushState().then(setPush).catch(() => {});
+  };
+
+  const handleEnablePush = () => {
+    setPushBusy(true);
+    enablePush()
+      .then(() => { flash("Browser notifications enabled 🔔"); refreshPush(); })
+      .catch((e) => flash(e.message || "Couldn't enable notifications"))
+      .finally(() => setPushBusy(false));
+  };
+
+  const handleDisablePush = () => {
+    setPushBusy(true);
+    disablePush()
+      .then(() => { flash("Browser notifications turned off"); refreshPush(); })
+      .catch((e) => flash(e.message || "Couldn't turn off notifications"))
+      .finally(() => setPushBusy(false));
+  };
+
+  const handleTestPush = () => {
+    setPushBusy(true);
+    sendTestPush()
+      .then((r) => flash(r.sent > 0 ? "Test notification sent — check your desktop! 🔔" : (r.detail || "No subscribed devices yet")))
+      .catch((e) => flash(e.message || "Test failed"))
+      .finally(() => setPushBusy(false));
+  };
+
   if (loading) return (
     <div className="mc"><div className="mc-center"><FaSync className="mc-spin" size={20} /><p>Loading Canvas...</p></div></div>
   );
@@ -159,6 +199,35 @@ export default function MyClassesPage() {
         </div>
         <button className="mc-ghost-btn" onClick={() => navigate("/profile")}><FaSync size={11} /> Re-sync</button>
       </header>
+
+      {push.supported && (
+        <div className="mc-push-banner">
+          <div className="mc-push-banner-text">
+            {push.enabled ? <FaBell size={14} /> : <FaRegBell size={14} />}
+            <span>
+              {push.enabled
+                ? "Browser notifications are on — you'll get a pop-up ~24h before deadlines, even when this tab is closed."
+                : "Turn on browser notifications to get a pop-up alert before each deadline (works even when CS Navigator is closed)."}
+            </span>
+          </div>
+          <div className="mc-push-banner-actions">
+            {push.enabled ? (
+              <>
+                <button className="mc-ghost-btn" onClick={handleTestPush} disabled={pushBusy}>
+                  <FaBell size={11} /> Send test
+                </button>
+                <button className="mc-ghost-btn" onClick={handleDisablePush} disabled={pushBusy}>
+                  Turn off
+                </button>
+              </>
+            ) : (
+              <button className="mc-primary-btn" onClick={handleEnablePush} disabled={pushBusy}>
+                <FaBell size={11} /> {pushBusy ? "Enabling…" : "Enable notifications"}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="mc-stats">
         <div className="mc-stat">

@@ -123,3 +123,28 @@
   .mc-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
   .mc-row-body[style] { flex: 0 0 140px !important; }
 }
+
+/* Browser push notifications banner */
+.mc-push-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding: var(--space-3) var(--space-5);
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--msu-blue-50);
+  border: 1px solid rgba(0, 45, 114, 0.14);
+}
+.mc-push-banner-text {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+.mc-push-banner-text svg { color: var(--msu-blue); flex-shrink: 0; }
+.mc-push-banner-actions { display: flex; gap: var(--space-2); flex-shrink: 0; }
+.dark .mc-push-banner { background: rgba(66, 133, 244, 0.08); border-color: rgba(66, 133, 244, 0.2); }
