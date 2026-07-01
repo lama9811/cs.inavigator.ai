@@ -202,12 +202,38 @@ def init_db():
     except Exception as e:
         print(f"[WARN] DB Connection Error: {e}")
 
-    # 2. Add session_id column if missing (For existing DBs)
+    # 2. Schema migrations (add missing columns/tables on existing DBs).
+    #    Introspect the whole schema in ONE round-trip via information_schema
+    #    instead of firing ~20 sequential "does this exist?" probe queries on
+    #    every boot. Cuts cold-start DB chatter; behavior is unchanged — we still
+    #    detect anything missing and ALTER/CREATE it (auto-migration preserved).
+    existing_tables: set[str] = set()
+    existing_cols: dict[str, set[str]] = {}
+    try:
+        with engine.connect() as conn:
+            for (tname,) in conn.execute(text(
+                "SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_SCHEMA = DATABASE()"
+            )):
+                existing_tables.add(tname.lower())
+            for tname, cname in conn.execute(text(
+                "SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.columns WHERE TABLE_SCHEMA = DATABASE()"
+            )):
+                existing_cols.setdefault(tname.lower(), set()).add(cname.lower())
+    except Exception as e:
+        # If introspection fails, leave the sets empty: every check below then
+        # falls through to a guarded ALTER/CREATE (redundant statements error
+        # harmlessly and are caught), i.e. it degrades to the old behavior.
+        print(f"[WARN] information_schema introspection failed ({e}); attempting guarded migrations.")
+
+    def _has_col(table: str, col: str) -> bool:
+        return col.lower() in existing_cols.get(table.lower(), set())
+
+    def _has_table(table: str) -> bool:
+        return table.lower() in existing_tables
+
     with engine.connect() as conn:
-        try:
-            # Check if column exists by selecting from it
-            conn.execute(text("SELECT session_id FROM chat_history LIMIT 1"))
-        except (OperationalError, ProgrammingError):
+        # 2a. Add session_id column if missing (For existing DBs)
+        if not _has_col("chat_history", "session_id"):
             print("[WARN] 'session_id' column missing. Adding it now...")
             try:
                 conn.execute(text("ALTER TABLE chat_history ADD COLUMN session_id VARCHAR(255) DEFAULT 'default'"))
@@ -217,9 +243,7 @@ def init_db():
                 print(f"[ERROR] Failed to add column: {e}")
 
         # 3. Add profile_picture_data column if missing (For base64 storage)
-        try:
-            conn.execute(text("SELECT profile_picture_data FROM users LIMIT 1"))
-        except (OperationalError, ProgrammingError):
+        if not _has_col("users", "profile_picture_data"):
             print("[WARN] 'profile_picture_data' column missing. Adding it now...")
             try:
                 conn.execute(text("ALTER TABLE users ADD COLUMN profile_picture_data LONGTEXT"))
@@ -229,9 +253,7 @@ def init_db():
                 print(f"[ERROR] Failed to add profile_picture_data column: {e}")
 
         # 4. Add morgan_connected_at column if missing
-        try:
-            conn.execute(text("SELECT morgan_connected_at FROM users LIMIT 1"))
-        except (OperationalError, ProgrammingError):
+        if not _has_col("users", "morgan_connected_at"):
             print("[WARN] 'morgan_connected_at' column missing. Adding it now...")
             try:
                 conn.execute(text("ALTER TABLE users ADD COLUMN morgan_connected_at DATETIME"))
@@ -251,9 +273,7 @@ def init_db():
             ("disabled_at", "DATETIME"),
             ("disabled_reason", "TEXT"),
         ]:
-            try:
-                conn.execute(text(f"SELECT {col} FROM users LIMIT 1"))
-            except (OperationalError, ProgrammingError):
+            if not _has_col("users", col):
                 try:
                     conn.execute(text(f"ALTER TABLE users ADD COLUMN {col} {col_type}"))
                     conn.commit()
@@ -262,10 +282,7 @@ def init_db():
                     pass
 
         # 6. Check if degreeworks_data table exists
-        try:
-            conn.execute(text("SELECT id FROM degreeworks_data LIMIT 1"))
-            print("[OK] degreeworks_data table exists")
-        except (OperationalError, ProgrammingError):
+        if not _has_table("degreeworks_data"):
             print("[WARN] 'degreeworks_data' table missing. Creating it now...")
             try:
                 conn.execute(text("""
@@ -299,9 +316,7 @@ def init_db():
                 print(f"[ERROR] Failed to create degreeworks_data table: {e}")
 
         # 6b. Add data_source column to degreeworks_data if missing
-        try:
-            conn.execute(text("SELECT data_source FROM degreeworks_data LIMIT 1"))
-        except (OperationalError, ProgrammingError):
+        if not _has_col("degreeworks_data", "data_source"):
             print("[WARN] 'data_source' column missing from degreeworks_data. Adding it now...")
             try:
                 conn.execute(text("ALTER TABLE degreeworks_data ADD COLUMN data_source VARCHAR(50) DEFAULT 'manual_entry'"))
@@ -310,11 +325,8 @@ def init_db():
             except Exception as e:
                 print(f"[ERROR] Failed to add data_source column: {e}")
 
-        # 6. Check if support_tickets table exists
-        try:
-            conn.execute(text("SELECT id FROM support_tickets LIMIT 1"))
-            print("[OK] support_tickets table exists")
-        except (OperationalError, ProgrammingError):
+        # 7. Check if support_tickets table exists
+        if not _has_table("support_tickets"):
             print("[WARN] 'support_tickets' table missing. Creating it now...")
             try:
                 conn.execute(text("""
@@ -342,11 +354,8 @@ def init_db():
             except Exception as e:
                 print(f"[ERROR] Failed to create support_tickets table: {e}")
 
-        # 7. Check if banner_student_data table exists
-        try:
-            conn.execute(text("SELECT id FROM banner_student_data LIMIT 1"))
-            print("[OK] banner_student_data table exists")
-        except (OperationalError, ProgrammingError):
+        # 8. Check if banner_student_data table exists
+        if not _has_table("banner_student_data"):
             print("[WARN] 'banner_student_data' table missing. Creating it now...")
             try:
                 conn.execute(text("""
@@ -374,11 +383,8 @@ def init_db():
             except Exception as e:
                 print(f"[ERROR] Failed to create banner_student_data table: {e}")
 
-        # 8. Check if reminder_subscriptions table exists (Canvas deadline reminders)
-        try:
-            conn.execute(text("SELECT id FROM reminder_subscriptions LIMIT 1"))
-            print("[OK] reminder_subscriptions table exists")
-        except (OperationalError, ProgrammingError):
+        # 9. Check if reminder_subscriptions table exists (Canvas deadline reminders)
+        if not _has_table("reminder_subscriptions"):
             print("[WARN] 'reminder_subscriptions' table missing. Creating it now...")
             try:
                 conn.execute(text("""
@@ -399,11 +405,8 @@ def init_db():
             except Exception as e:
                 print(f"[ERROR] Failed to create reminder_subscriptions table: {e}")
 
-        # 9. Check if sent_reminders table exists (deadline reminder dedup ledger)
-        try:
-            conn.execute(text("SELECT id FROM sent_reminders LIMIT 1"))
-            print("[OK] sent_reminders table exists")
-        except (OperationalError, ProgrammingError):
+        # 10. Check if sent_reminders table exists (deadline reminder dedup ledger)
+        if not _has_table("sent_reminders"):
             print("[WARN] 'sent_reminders' table missing. Creating it now...")
             try:
                 conn.execute(text("""
