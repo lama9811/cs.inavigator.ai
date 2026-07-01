@@ -541,13 +541,18 @@ def get_current_user(
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
         user_email = payload.get("email")
+        # A bad/expired token is an AUTHENTICATION failure → 401 (so the frontend's
+        # 401 interceptor logs the user out and prompts re-login). 403 is reserved
+        # for AUTHORIZATION failures (e.g. "admins only") where the user is validly
+        # logged in but lacks permission — those must NOT trigger auto-logout.
         if not user_email:
-            raise HTTPException(status_code=403, detail="Invalid token")
+            raise HTTPException(status_code=401, detail="Invalid token")
 
         user = db.query(User).filter(User.email == user_email).first()
         if not user:
-            raise HTTPException(status_code=403, detail="User not found")
+            raise HTTPException(status_code=401, detail="User not found")
         if getattr(user, "is_disabled", False):
+            # Authenticated but forbidden — stays 403 (not an expired-session case).
             raise HTTPException(status_code=403, detail="Account disabled")
 
         return {
@@ -557,9 +562,12 @@ def get_current_user(
             "name": user.name,
             "student_id": user.student_id,
         }
+    except HTTPException:
+        # Re-raise our own auth errors unchanged (don't fall into the JWTError path).
+        raise
     except JWTError as e:
         print(f"JWT decode error: {e}")
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 def allowed_file(filename: str) -> bool:
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
