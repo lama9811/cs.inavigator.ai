@@ -10,7 +10,10 @@ export default function DailyChallengeCard({ dailyChallenge, loading, onStartCha
     <section className="coding-page-panel daily-page">
       <div className="daily-feature-card">
         <span className="coding-kicker">Today&apos;s Challenge</span>
-        {loading ? (
+        {/* Treat a still-null challenge the same as loading (matches
+            CampusDailyMission), so the placeholder holds until real data arrives
+            instead of briefly flashing fallback content. */}
+        {loading || !dailyChallenge ? (
           <div className="daily-challenge-loading">Loading today&apos;s challenge...</div>
         ) : (
           <>

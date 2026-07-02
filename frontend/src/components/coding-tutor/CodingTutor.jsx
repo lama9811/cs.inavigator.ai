@@ -1437,14 +1437,19 @@ export default function CodingTutor({
   // End → show the results overlay. Also clear the stale `mock` flag on the active
   // problem so opening a normal interview problem afterward isn't treated as mock.
   const endMockInterview = () => {
+    // Keep the updater pure (only returns new state); run the summary/badge side
+    // effects once outside it, so a double-invoked updater can't double-count the
+    // mock badge. Same pattern as the timeout path above.
+    let ended = null;
     setMockSession((prev) => {
-      if (prev) {
-        setMockSummary(buildMockSummary(prev));
-        // Count this finished mock toward the Mock Rookie / Veteran badges.
-        setMockCompleted(recordMockCompleted());
-      }
+      if (prev) ended = prev;
       return null;
     });
+    if (ended) {
+      setMockSummary(buildMockSummary(ended));
+      // Count this finished mock toward the Mock Rookie / Veteran badges.
+      setMockCompleted(recordMockCompleted());
+    }
     setActiveProblem((prev) => (prev?.mock ? { ...prev, mock: false } : prev));
   };
 
@@ -1473,16 +1478,25 @@ export default function CodingTutor({
     const id = setInterval(() => {
       const now = Date.now();
       setMockNow(now);
+      // Read the session via a snapshot in the updater but keep the updater PURE
+      // (only returns new state) — side effects run once, outside it. React can
+      // invoke updaters twice under StrictMode; recordMockCompleted() increments a
+      // persisted counter and toast() is user-visible, so running them inside would
+      // double-count the badge / double-toast. `expired` is captured for the effects.
+      let expired = null;
       setMockSession((prev) => {
         if (!prev || now < prev.endsAt) return prev;
-        setMockSummary(buildMockSummary(prev));
+        expired = prev;
+        return null;
+      });
+      if (expired) {
+        setMockSummary(buildMockSummary(expired));
         // A timed-out mock is still a completed mock — count it toward the Mock
         // Rookie / Veteran badges, same as ending manually (endMockInterview).
         setMockCompleted(recordMockCompleted());
         setActiveProblem((p) => (p?.mock ? { ...p, mock: false } : p));
         toast("Time's up! Mock interview ended.", { icon: "⏱️" });
-        return null;
-      });
+      }
     }, 1000);
     return () => clearInterval(id);
     // Restart the ticker only when a session begins/ends, not on every state edit;
@@ -2228,7 +2242,12 @@ export default function CodingTutor({
         <button
           type="button"
           className={`coding-nav-snippets-btn ${activePage === "workspace" && isPersonalMode ? "active" : ""}`}
-          onClick={openMySnippets}
+          onClick={() => guardPersonalNav(() => {
+            // Match the other nav destinations (openPage): prompt before discarding
+            // unsaved personal edits, and persist in-progress quiz-bank work first.
+            savePendingProblemProgress();
+            openMySnippets();
+          })}
           title="My Snippets"
           aria-label="My Snippets"
           aria-pressed={activePage === "workspace" && isPersonalMode}
