@@ -359,3 +359,39 @@ class KBSuggestion(Base):
     reviewed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, nullable=False, server_default=func.now())
     updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
+
+
+class LiveSection(Base):
+    """Live class-availability snapshot pulled from Banner "Browse Classes".
+    Refreshed by the /api/internal/schedule/refresh cron (every ~6h) for the
+    active registerable term. Carries the same fields as a static schedule
+    section PLUS real-time seats/waitlist. The planner reads the newest rows for
+    a term; if this table is empty/stale it falls back to the static snapshots.
+    One row per (term, crn)."""
+    __tablename__ = "live_sections"
+    __table_args__ = (
+        UniqueConstraint("term", "crn", name="uq_live_section_term_crn"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    term = Column(String(32), nullable=False, index=True)   # sem_key, e.g. 'fall_2026'
+    crn = Column(String(16), nullable=False)                # Banner courseReferenceNumber
+    subject = Column(String(16), nullable=False, index=True)  # 'COSC'
+    course_number = Column(String(16), nullable=True)       # '320'
+    course_code = Column(String(32), nullable=False, index=True)  # 'COSC 320'
+    title = Column(String(255), nullable=True)
+    credits = Column(Integer, nullable=False, default=0)
+    section = Column(String(16), nullable=True)             # sequenceNumber
+    instructor = Column(String(255), nullable=True)
+    campus = Column(String(64), nullable=True)
+    schedule_type = Column(String(64), nullable=True)
+    meeting_time = Column(String(255), nullable=True)       # 'MWF 12:00PM-12:50PM' or 'TBA'
+    room = Column(String(64), nullable=True)
+    seats_available = Column(Integer, nullable=False, default=0)
+    max_enrollment = Column(Integer, nullable=False, default=0)
+    enrollment = Column(Integer, nullable=False, default=0)
+    open_section = Column(Boolean, nullable=False, default=False)
+    wait_count = Column(Integer, nullable=False, default=0)
+    wait_capacity = Column(Integer, nullable=False, default=0)
+    wait_available = Column(Integer, nullable=False, default=0)
+    fetched_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), index=True)

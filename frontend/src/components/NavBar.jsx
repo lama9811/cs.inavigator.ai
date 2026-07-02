@@ -8,6 +8,7 @@ import { FaLaptopCode } from "@react-icons/all-files/fa/FaLaptopCode";
 import { FaBook } from "@react-icons/all-files/fa/FaBook";
 import { FaChartLine } from "@react-icons/all-files/fa/FaChartLine";
 import { FaProjectDiagram } from "@react-icons/all-files/fa/FaProjectDiagram";
+import { FaCalendarAlt } from "@react-icons/all-files/fa/FaCalendarAlt";
 import "../index.css";
 import "./NavBar.css";
 
@@ -76,6 +77,7 @@ export default function NavBar({ role, onToggleSidebar }) {
     { to: "/my-classes", label: "My Classes", Icon: FaChalkboardTeacher },
     { to: "/coding", label: "Coding Tutor", Icon: FaLaptopCode },
     { to: "/curriculum", label: "Curriculum", Icon: FaBook },
+    { to: "/planner", label: "Planner", Icon: FaCalendarAlt },
     { to: "/grade-analysis", label: "Grade Surgeon", Icon: FaChartLine },
     { to: "/ripple-effect", label: "Ripple Effect", Icon: FaProjectDiagram },
   ];

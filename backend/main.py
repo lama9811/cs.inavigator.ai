@@ -144,7 +144,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingSnippet, ReminderSubscription, SentReminder
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingSnippet, ReminderSubscription, SentReminder, LiveSection
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -2783,6 +2783,201 @@ async def ripple_effect(user: dict = Depends(get_current_user), db: Session = De
     dw_dict = await asyncio.to_thread(_fetch_dw_sync, user["user_id"])
     canvas_dict = await asyncio.to_thread(_fetch_canvas_sync, user["user_id"])
     return build_prerequisite_graph(dw_dict, canvas_dict)
+
+
+# ==============================================================================
+# NEXT-SEMESTER PLANNER - suggest 2-3 conflict-free schedules
+# ==============================================================================
+@app.get("/api/planning/next-semester")
+async def planning_next_semester(
+    semester: str = Query(None),
+    time_pref: str = Query("any"),
+    max_credits: int = Query(15),
+    interests: str = Query(""),
+    user: dict = Depends(get_current_user),
+):
+    """Suggest 2-3 conflict-free schedules for an upcoming semester.
+
+    Stateless wrapper over the existing engine: prereq graph (prereq_engine) +
+    schedule generator (schedule_planner) + parsed sections (course_context).
+    Same logic as the conversational planner, just without the chat back-and-forth."""
+    from services.schedule_planner import (
+        generate_schedule_options, eligible_courses, next_semester_key,
+    )
+    from services.course_context import _SCHEDULES
+
+    uid = user["user_id"]
+    dw_dict, canvas_dict = await asyncio.gather(
+        asyncio.to_thread(_fetch_dw_sync, uid),
+        asyncio.to_thread(_fetch_canvas_sync, uid),
+    )
+
+    # Chronologically-ordered list of semesters we have schedule data for.
+    from services.schedule_planner import _parse_semester_key
+    available = sorted(
+        [k for k in _SCHEDULES.keys() if _parse_semester_key(k)],
+        key=_parse_semester_key,
+    )
+
+    # DegreeWorks not connected -> can't know remaining requirements/eligibility.
+    if not dw_dict:
+        return {"connected": False, "available_semesters": available}
+
+    graph = build_prerequisite_graph(dw_dict, canvas_dict)
+    eligible = eligible_courses(graph)
+    node_by_id = {n["id"]: n for n in graph.get("nodes", [])}
+
+    sem_key = semester if semester in _SCHEDULES else next_semester_key(available)
+    classification = dw_dict.get("classification") or "Senior"
+    prefs = {
+        "time_pref": time_pref if time_pref in ("morning", "afternoon", "evening", "any") else "any",
+        "max_credits": max(9, min(int(max_credits or 15), 18)),
+        "interests": [s.strip().lower() for s in (interests or "").split(",") if s.strip()],
+    }
+
+    # Prefer live Banner data (with seats) for this term; fall back to the static
+    # snapshot if the live table is empty or stale.
+    from services.live_schedule import get_live_sections
+    live_sched, live_as_of = (get_live_sections(sem_key) if sem_key else (None, None))
+    if live_sched:
+        # generate_schedule_options expects {sem_key: {code: [sections]}}.
+        schedules_src, data_source, as_of = {sem_key: live_sched}, "live", live_as_of
+    else:
+        schedules_src, data_source, as_of = _SCHEDULES, "static", None
+
+    raw_options = (
+        generate_schedule_options(eligible, sem_key, prefs, schedules_src, classification)
+        if sem_key else []
+    )
+
+    # Enrich each course with what requirement it satisfies + what it unlocks,
+    # and (when live) its real-time availability. Drop internal fields (slots/score).
+    options = []
+    has_tba = False
+    for opt in raw_options:
+        courses = []
+        for c in opt["courses"]:
+            node = node_by_id.get(c["code"], {})
+            t = c.get("time") or "TBA"
+            if t.upper().startswith("TBA"):
+                has_tba = True
+            open_flag = c.get("open_section")
+            if open_flag is True:
+                availability = "open"
+            elif open_flag is False:
+                availability = "waitlist" if (c.get("wait_count") or 0) < (c.get("wait_capacity") or 0) else "full"
+            else:
+                availability = "unknown"
+            courses.append({
+                "code": c["code"],
+                "name": c["name"],
+                "credits": c["credits"],
+                "section": c.get("section", ""),
+                "instructor": c.get("instructor", ""),
+                "time": t,
+                "room": c.get("room", "TBA"),
+                "satisfies": c.get("category") or node.get("category", ""),
+                "unlocks": node.get("unlocks", []),
+                # Live availability (nulls when data_source == "static"):
+                "crn": c.get("crn"),
+                "seats_available": c.get("seats_available"),
+                "availability": availability,
+            })
+        options.append({
+            "label": opt["label"],
+            "total_credits": sum(c["credits"] for c in opt["courses"]),
+            "courses": courses,
+        })
+
+    notes = []
+    if not options:
+        notes.append("No matching schedule data for this semester yet — check WEBSIS or the CS department.")
+    if has_tba:
+        notes.append("Some sections show TBA times and can't be conflict-checked.")
+    if data_source == "live":
+        notes.append("Seat availability is live from Banner.")
+    else:
+        notes.append("Seat availability is not live — verify open seats in Banner before registering.")
+    notes.append("Based on your last DegreeWorks sync.")
+
+    return {
+        "connected": True,
+        "semester": sem_key,
+        "available_semesters": available,
+        "classification": classification,
+        "credits_remaining": dw_dict.get("credits_remaining"),
+        "eligible_count": len(eligible),
+        "options": options,
+        "notes": notes,
+        "data_source": data_source,
+        "as_of": as_of.isoformat() if as_of else None,
+    }
+
+
+@app.post("/api/internal/schedule/refresh")
+async def internal_schedule_refresh(request: Request):
+    """Triggered every ~6h by Cloud Scheduler. Pulls live section + seat data from
+    Banner "Browse Classes" (public, no login) for the active registerable term and
+    replaces the live_sections rows for each CS subject.
+
+    Per-subject isolation: the network fetch happens BEFORE any DB mutation, so a
+    subject that fails to fetch is logged and skipped with its previous rows intact;
+    a DB write that fails rolls back (delete + insert together) leaving the old
+    snapshot in place. One subject never breaks the others."""
+    secret = request.headers.get("X-Research-Secret", "")
+    expected = os.getenv("RESEARCH_SECRET", "")
+    if not expected or secret != expected:
+        raise HTTPException(status_code=403, detail="Invalid research secret")
+
+    from banner_scraper import class_search
+
+    active = await class_search.resolve_active_term()
+    if not active:
+        return {"status": "error", "reason": "could not resolve active term from Banner"}
+    term_code, sem_key = active
+
+    counts: dict[str, int] = {}
+    errors: list[dict] = []
+    for subject in class_search.CS_SUBJECTS:
+        try:
+            sections = await class_search.fetch_sections(subject, term_code, sem_key)
+        except Exception as e:
+            print(f"[SCHEDULE_REFRESH] {subject} {sem_key} fetch failed: {e}")
+            errors.append({"subject": subject, "error": str(e)})
+            continue
+
+        db = SessionLocal()
+        try:
+            # Replace this subject's rows for the term (delete + insert in one txn).
+            db.query(LiveSection).filter(
+                LiveSection.term == sem_key, LiveSection.subject == subject
+            ).delete(synchronize_session=False)
+            now = datetime.now(timezone.utc)
+            for s in sections:
+                db.add(LiveSection(
+                    term=s["term"], crn=s["crn"], subject=s["subject"],
+                    course_number=s["course_number"], course_code=s["course_code"],
+                    title=(s["title"] or "")[:255], credits=s["credits"],
+                    section=s["section"], instructor=(s["instructor"] or "")[:255],
+                    campus=(s["campus"] or "")[:64], schedule_type=(s["schedule_type"] or "")[:64],
+                    meeting_time=(s["time"] or "TBA")[:255], room=(s["room"] or "")[:64],
+                    seats_available=s["seats_available"], max_enrollment=s["max_enrollment"],
+                    enrollment=s["enrollment"], open_section=s["open_section"],
+                    wait_count=s["wait_count"], wait_capacity=s["wait_capacity"],
+                    wait_available=s["wait_available"], fetched_at=now,
+                ))
+            db.commit()
+            counts[subject] = len(sections)
+        except Exception as e:
+            db.rollback()
+            print(f"[SCHEDULE_REFRESH] {subject} {sem_key} DB write failed: {e}")
+            errors.append({"subject": subject, "error": f"db: {e}"})
+        finally:
+            db.close()
+
+    print(f"[SCHEDULE_REFRESH] term={sem_key} counts={counts} errors={len(errors)}")
+    return {"status": "ok", "term": sem_key, "term_code": term_code,
+            "subjects": counts, "errors": errors}
 
 
 # ==============================================================================

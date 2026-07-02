@@ -9,6 +9,7 @@ import CurriculumPage from "./components/CurriculumPage";
 import MyClassesPage from "./components/MyClassesPage";
 import GradeSurgeon from "./components/GradeSurgeon";
 import RippleEffect from "./components/RippleEffect";
+import PlannerPage from "./components/PlannerPage";
 import ProfilePage    from "./components/ProfilePage";
 import AdminDashboard from "./components/AdminDashboard";
 import Forbidden      from "./components/Forbidden";
@@ -844,6 +845,33 @@ export default function App() {
                 onSidebarResize={handleSidebarResize}
               >
                 <CurriculumPage />
+              </SidebarLayout>
+            </RequireAuth>
+          }
+        />
+
+        {/* protected: next-semester planner with sidebar */}
+        <Route
+          path="/planner"
+          element={
+            <RequireAuth>
+              <SidebarLayout
+                sessions={sessions}
+                activeId={activeId}
+                onNew={handleNew}
+                onSelect={handleSelect}
+                onDelete={handleDelete}
+                onLogout={handleLogout}
+                userEmail={userEmail}
+                onPin={handlePin}
+                onArchive={handleArchive}
+                onRename={handleRename}
+                darkMode={darkMode}
+                onToggleTheme={toggleTheme}
+                onCollapseSidebar={toggleSidebar}
+                onSidebarResize={handleSidebarResize}
+              >
+                <PlannerPage />
               </SidebarLayout>
             </RequireAuth>
           }

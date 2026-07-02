@@ -244,6 +244,16 @@ def _score_section(section: dict, course: dict, preferences: dict) -> int:
     else:
         score += 1
 
+    # Live availability (only present when the schedule came from Banner):
+    # strongly prefer sections with open seats. Full sections stay eligible so a
+    # required course with no open section can still be shown (flagged full), but
+    # an open section always outranks a full one.
+    open_flag = section.get("open_section")
+    if open_flag is True:
+        score += 20
+    elif open_flag is False:
+        score -= 20
+
     return score
 
 
@@ -290,6 +300,11 @@ def generate_schedule_options(
                     "room": sec.get("room", "TBA"),
                     "slots": slots,
                     "score": score,
+                    # Live availability (None when schedule is the static snapshot):
+                    "crn": sec.get("crn"),
+                    "seats_available": sec.get("seats_available"),
+                    "open_section": sec.get("open_section"),
+                    "wait_count": sec.get("wait_count"),
                 })
 
     if not available:
@@ -367,6 +382,55 @@ def _option_key(courses: list[dict]) -> str:
 
 
 # =============================================================================
+# ELIGIBILITY + SEMESTER HELPERS (shared by chat flow and /api/planning)
+# =============================================================================
+
+def eligible_courses(graph: dict) -> list[dict]:
+    """Future courses whose prerequisites are all already completed/in-progress.
+
+    Single source of truth for "what can this student take next", used by both
+    the conversational planner and the stateless /api/planning/next-semester
+    endpoint so the two never drift."""
+    done_ids = {n["id"] for n in graph.get("nodes", [])
+                if n.get("status") in ("completed", "in_progress")}
+    result = []
+    for n in graph.get("nodes", []):
+        if n.get("status") != "future":
+            continue
+        blocked = n.get("blocked_by") or []
+        if not blocked or all(bn in done_ids for bn in blocked):
+            result.append(n)
+    return result
+
+
+_SEASON_ORDER = {"spring": 0, "summer": 1, "fall": 2}
+
+
+def _parse_semester_key(key: str):
+    """'fall_2026' -> (2026, 2) for chronological sorting; None if unparseable."""
+    m = re.match(r'(spring|summer|fall)_(\d{4})$', (key or "").lower())
+    return (int(m.group(2)), _SEASON_ORDER[m.group(1)]) if m else None
+
+
+def next_semester_key(available, today=None) -> Optional[str]:
+    """Pick the soonest upcoming semester among the `available` schedule keys.
+
+    Falls back to the latest available term if none are in the future."""
+    import datetime
+    keys = [k for k in available if _parse_semester_key(k)]
+    if not keys:
+        return None
+    today = today or datetime.date.today()
+    cur_season = "spring" if today.month <= 4 else "summer" if today.month <= 7 else "fall"
+    cur = (today.year, _SEASON_ORDER[cur_season])
+    ordered = sorted(keys, key=_parse_semester_key)
+    for k in ordered:
+        if _parse_semester_key(k) >= cur:
+            return k
+    return ordered[-1]
+
+
+# =============================================================================
 # CONVERSATIONAL STATE MACHINE
 # =============================================================================
 
@@ -426,12 +490,7 @@ def process_planner_turn(state: dict, user_msg: str, dw_dict: dict, schedules: d
         try:
             from services.prereq_engine import build_prerequisite_graph
             graph = build_prerequisite_graph(dw_dict, None)
-            eligible = [n for n in graph["nodes"] if n["status"] == "future"
-                        and (not n["blocked_by"] or all(
-                            any(bn == done["id"] for done in graph["nodes"]
-                                if done["status"] in ("completed", "in_progress"))
-                            for bn in n["blocked_by"]
-                        ))]
+            eligible = eligible_courses(graph)
             classification = dw_dict.get("classification", "Senior") or "Senior"
             options = generate_schedule_options(
                 eligible, state["semester"], prefs, schedules, classification
