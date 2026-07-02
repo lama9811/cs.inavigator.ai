@@ -311,6 +311,15 @@ function FloatingChatWindow({
             rows={isMaximized ? 4 : 2}
             value={input}
             onChange={onInputChange}
+            onKeyDown={(event) => {
+              // Enter sends; Ctrl/Cmd+Enter and Shift+Enter insert a newline (for
+              // pasting multi-line code). requestSubmit() runs the form's onSubmit
+              // (onSend) and respects the submit button's disabled state.
+              if (event.key === "Enter" && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
             placeholder="Paste code, an error, or ask for a review..."
             disabled={isLoading}
           />

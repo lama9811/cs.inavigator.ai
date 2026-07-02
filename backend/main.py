@@ -524,7 +524,10 @@ app.include_router(auth_router)
 # ==============================================================================
 # 5. AUTHENTICATION HELPERS
 # ==============================================================================
-security = HTTPBearer()
+# auto_error=False so a MISSING/malformed Authorization header reaches our code and
+# we can return 401 (not FastAPI's default 403), keeping the frontend's 401 logout
+# flow consistent for every auth failure.
+security = HTTPBearer(auto_error=False)
 
 def get_db():
     db = SessionLocal()
@@ -534,9 +537,13 @@ def get_db():
         db.close()
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: Session = Depends(get_db)
 ) -> Dict[str,Any]:
+    # No/invalid bearer credentials → 401 (authentication failure), so the frontend
+    # logs the user out rather than getting an unhandled 403.
+    if not credentials or (credentials.scheme or "").lower() != "bearer" or not credentials.credentials:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     token = credentials.credentials
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
@@ -4867,6 +4874,16 @@ async def update_practice_progress(
 # ---------------------------------------------------------------------------
 MAX_DAILY_DAYS = 370  # ~a year; matches the frontend's cap in recordDailyChallengeDay
 
+def _is_valid_iso_date(d) -> bool:
+    """True only for a real "YYYY-MM-DD" calendar date (rejects e.g. 9999-99-99)."""
+    if not isinstance(d, str) or len(d) != 10:
+        return False
+    try:
+        datetime.strptime(d, "%Y-%m-%d")
+        return True
+    except ValueError:
+        return False
+
 def _decode_daily_days(raw: Optional[str]) -> list[str]:
     if not raw:
         return []
@@ -4876,8 +4893,9 @@ def _decode_daily_days(raw: Optional[str]) -> list[str]:
         return []
     if not isinstance(parsed, list):
         return []
-    # Keep only well-formed date strings, de-duplicated and sorted.
-    days = {str(d) for d in parsed if isinstance(d, str) and len(d) == 10 and d.count("-") == 2}
+    # Keep only real calendar dates, de-duplicated and sorted. Applied on read too,
+    # so any bad value slipped into storage earlier is dropped.
+    days = {d for d in parsed if _is_valid_iso_date(d)}
     return sorted(days)[-MAX_DAILY_DAYS:]
 
 def _serialize_coding_user_progress(row: CodingUserProgress) -> dict[str, Any]:
@@ -4925,10 +4943,7 @@ async def update_coding_user_progress(
         row.best_streak = max(row.best_streak or 0, int(req.best_streak))
     if req.daily_days is not None:
         merged = set(_decode_daily_days(row.daily_days))
-        merged.update(
-            d for d in req.daily_days
-            if isinstance(d, str) and len(d) == 10 and d.count("-") == 2
-        )
+        merged.update(d for d in req.daily_days if _is_valid_iso_date(d))
         row.daily_days = json.dumps(sorted(merged)[-MAX_DAILY_DAYS:])
 
     row.updated_at = datetime.utcnow()

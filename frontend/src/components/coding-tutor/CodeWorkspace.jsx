@@ -245,8 +245,6 @@ export default function CodeWorkspace({
             <div className="coding-dock-terminal" style={{ height: `${terminalHeight}px` }}>
               <TerminalPanel
                 testOutput={testOutput}
-                code={code}
-                language={selectedLanguage}
                 isRunning={isRunning}
                 expanded
                 onClose={onCloseTerminal}

@@ -274,10 +274,16 @@ body.coding-dark .progress-badge-card.locked .progress-badge-rarity.rarity-epic 
 .progress-badge-meter-fill {
   display: block;
   height: 100%;
-  min-width: 8px;
   border-radius: 999px;
   background: linear-gradient(90deg, var(--ct-primary), var(--ct-accent, #f37021));
   transition: width 0.4s ease;
+}
+
+/* Give a NON-zero fill a small min-width so tiny progress (e.g. 2%) is still
+   visible — but only when width isn't exactly 0%, so a true 0/N bar collapses
+   fully instead of showing a permanent sliver. */
+.progress-badge-meter-fill:not([style*="width: 0%"]) {
+  min-width: 8px;
 }
 
 @media (prefers-reduced-motion: reduce) {

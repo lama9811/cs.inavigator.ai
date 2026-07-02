@@ -1,7 +1,5 @@
 import { Command } from 'cmdk';
 import { FaPlus } from "@react-icons/all-files/fa/FaPlus";
-import { FaMoon } from "@react-icons/all-files/fa/FaMoon";
-import { FaSun } from "@react-icons/all-files/fa/FaSun";
 import { FaUser } from "@react-icons/all-files/fa/FaUser";
 import { FaBook } from "@react-icons/all-files/fa/FaBook";
 import { FaCog } from "@react-icons/all-files/fa/FaCog";
@@ -11,10 +9,8 @@ export default function CommandPalette({
   open,
   onOpenChange,
   onNewChat,
-  onToggleTheme,
   onNavigate,
-  role,
-  darkMode
+  role
 }) {
   if (!open) return null;
 
@@ -35,11 +31,6 @@ export default function CommandPalette({
               <Command.Item onSelect={() => runAction(onNewChat)}>
                 <FaPlus size={14} />
                 <span>New Chat</span>
-              </Command.Item>
-
-              <Command.Item onSelect={() => runAction(onToggleTheme)}>
-                {darkMode ? <FaSun size={14} /> : <FaMoon size={14} />}
-                <span>Toggle {darkMode ? 'Light' : 'Dark'} Mode</span>
               </Command.Item>
 
               <Command.Item onSelect={() => runAction(() => onNavigate('/profile'))}>

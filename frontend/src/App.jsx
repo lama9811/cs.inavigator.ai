@@ -55,11 +55,16 @@ function parseJwt(token) {
 }
 
 // True when the token is missing, malformed, or past its `exp` claim. A 30s skew
-// buffer avoids logging out a token that's about to expire mid-request. Tokens
-// without an `exp` are treated as valid (let the server be the authority).
+// buffer avoids logging out a token that's about to expire mid-request.
 function isTokenExpired(token) {
   if (!token) return true;
-  const { exp } = parseJwt(token);
+  const payload = parseJwt(token);
+  // A token that can't be decoded into a usable payload is not trustworthy →
+  // treat it as expired (parseJwt returns {} on any parse failure).
+  if (!payload || typeof payload !== "object" || Object.keys(payload).length === 0) return true;
+  const { exp } = payload;
+  // A decodable token with no exp: defer to the server (it's the authority on
+  // validity); only exp-based expiry is decided client-side.
   if (!exp) return false;
   return Date.now() >= (exp * 1000) - 30_000;
 }
@@ -206,12 +211,23 @@ export default function App() {
   const navigate = useNavigate();
 
   const [token, setToken] = useState(() => localStorage.getItem("token"));
-  const [role, setRole]   = useState(null);
+  // Seed role from the existing token synchronously so a returning user's first
+  // paint already shows the logged-in navbar. Starting at null made NavBar flash
+  // the logged-out links (Try Free / Login / Sign Up) for a frame before the
+  // token-sync effect below set the real role. The server profile fetch still
+  // refreshes/authoritatively confirms the role right after mount.
+  const [role, setRole]   = useState(() => parseJwt(localStorage.getItem("token")).role || null);
   // Start collapsed on small screens so the chat is fully visible; on phones the
   // sidebar opens as an overlay drawer instead of pushing/covering the chat.
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(
-    () => typeof window !== "undefined" && window.innerWidth < 768
-  );
+  // Also honor the user's saved preference so the collapsed state survives a
+  // reload: toggleSidebar/handleSidebarResize persist `sidebar_width` (64 ==
+  // collapsed). Without reading it back here, desktop always reopened the sidebar
+  // on every reload regardless of how the user left it.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    if (window.innerWidth < 768) return true;
+    return Number(localStorage.getItem("sidebar_width")) === 64;
+  });
   const [cmdkOpen, setCmdkOpen] = useState(false);
   // Dark mode state
   // Global (app-wide) dark mode has been retired — only the Coding Tutor has a
@@ -266,9 +282,18 @@ export default function App() {
       const response = await originalFetch(...args);
       try {
         if (response.status === 401 && localStorage.getItem("token")) {
-          const url = typeof args[0] === "string" ? args[0] : args[0]?.url || "";
-          const isOurApi = url.includes(API_BASE) || url.includes("/api/");
-          if (isOurApi && logoutRef.current) logoutRef.current(true);
+          const rawUrl = typeof args[0] === "string" ? args[0] : args[0]?.url || "";
+          // Resolve against our origin, then match by origin+path — a substring
+          // check could misclassify a third-party URL that merely contains "/api/".
+          let isOurApi = false;
+          try {
+            const u = new URL(rawUrl, window.location.origin);
+            const apiOrigin = API_BASE ? new URL(API_BASE, window.location.origin).origin : window.location.origin;
+            isOurApi = u.origin === apiOrigin && u.pathname.startsWith("/api/");
+          } catch {
+            isOurApi = false;
+          }
+          if (isOurApi && logoutRef.current) logoutRef.current({ expired: true });
         }
       } catch {
         // Never let the interceptor's own error break the caller's response.
@@ -571,11 +596,12 @@ export default function App() {
     setActiveId(freshId);
   };
 
-  // logout — `expired` distinguishes an automatic session-expiry logout from a
-  // manual one. On expiry we show a toast for a moment BEFORE redirecting, so the
-  // user understands why they're being sent to login instead of it happening
-  // abruptly with no explanation.
-  const handleLogout = (expired = false) => {
+  // logout — takes an OPTIONS OBJECT ({ expired }), not a positional boolean, so a
+  // click handler wiring `onClick={onLogout}` (which passes the event as arg 0)
+  // can't be misread as an expired-session logout. `expired` distinguishes an
+  // automatic session-expiry logout (toast + notice) from a manual one.
+  const handleLogout = (opts) => {
+    const expired = opts === true || opts?.expired === true; // tolerate legacy `true`
     if (!expired) {
       resetToLoggedOut();
       navigate("/login", { replace: true });
@@ -605,10 +631,8 @@ export default function App() {
         open={cmdkOpen}
         onOpenChange={setCmdkOpen}
         onNewChat={handleNew}
-        onToggleTheme={toggleTheme}
         onNavigate={navigate}
         role={role}
-        darkMode={darkMode}
       />
       <NavBar
         role={role}

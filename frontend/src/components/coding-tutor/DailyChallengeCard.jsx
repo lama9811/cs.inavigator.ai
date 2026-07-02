@@ -1,22 +1,10 @@
-export default function DailyChallengeCard({ dailyChallenge, loading, variant = "page", onStartChallenge, onPracticeWithHints }) {
+export default function DailyChallengeCard({ dailyChallenge, loading, onStartChallenge, onPracticeWithHints }) {
   const difficulty = dailyChallenge?.difficulty || "Easy";
   const estimatedTime = String(difficulty).toLowerCase() === "hard"
     ? "25 min"
     : String(difficulty).toLowerCase() === "medium"
       ? "15 min"
       : "5 min";
-
-  if (variant === "dashboard") {
-    return (
-      <button type="button" className="daily-feature-card dashboard-daily" onClick={onStartChallenge}>
-        <span className="coding-kicker">Today&apos;s Challenge</span>
-        <strong>{dailyChallenge?.title || "Daily coding challenge"}</strong>
-        <small>Difficulty: {difficulty}</small>
-        <small>Estimated Time: {estimatedTime}</small>
-        <span className="daily-practice-btn inline">Start Challenge</span>
-      </button>
-    );
-  }
 
   return (
     <section className="coding-page-panel daily-page">
