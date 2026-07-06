@@ -1263,6 +1263,31 @@ body.dark .youtube-resource-meta a {
   font-size: 0.78rem;
 }
 
+/* Coding Tutor dark mode: the widget lives under `body.coding-dark`, NOT the
+   app-wide `body.dark`, so the `body.dark .youtube-resource-*` contrast fixes
+   above never applied here — the card kept its light-mode surface + text, which
+   read as light text on a light card (invisible). Restore contrast for the
+   widget's cards in coding-dark: dark card surface, light title text, and a
+   readable warm-orange "Open on YouTube" link. */
+body.coding-dark .floating-coding-chat .youtube-resource-card {
+  border-color: #2f4a7a;
+  background: #142a4f;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.32);
+}
+
+body.coding-dark .floating-coding-chat .youtube-resource-meta,
+body.coding-dark .floating-coding-chat .youtube-resource-meta strong {
+  color: #eaf0fb;
+}
+
+body.coding-dark .floating-coding-chat .youtube-resource-meta a {
+  color: #f7a054;
+}
+
+body.coding-dark .floating-coding-chat .youtube-resource-meta a:hover {
+  color: #ffb774;
+}
+
 /* List Styling - Professional Indentation */
 .message-bubble ul,
 .message-bubble ol {

@@ -311,6 +311,24 @@ function FloatingChatWindow({
             rows={isMaximized ? 4 : 2}
             value={input}
             onChange={onInputChange}
+            onKeyDown={(event) => {
+              // Enter sends; Ctrl/Cmd+Enter and Shift+Enter insert a newline (for
+              // pasting multi-line code). requestSubmit() runs the form's onSubmit
+              // (onSend) and respects the submit button's disabled state.
+              // isComposing guard: don't send when Enter is confirming an IME
+              // composition (Chinese/Japanese/Korean input), or it would submit
+              // half-typed text.
+              if (
+                event.key === "Enter" &&
+                !event.ctrlKey &&
+                !event.metaKey &&
+                !event.shiftKey &&
+                !event.nativeEvent.isComposing
+              ) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
             placeholder="Paste code, an error, or ask for a review..."
             disabled={isLoading}
           />

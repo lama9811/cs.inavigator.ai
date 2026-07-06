@@ -332,6 +332,40 @@ body.coding-dark .coding-back-home-btn.active svg {
   color: #047857 !important;
 }
 
+/* Direct "My Snippets" shortcut — a distinct indigo tint so it reads as its own
+   destination, separate from the blue Workspace toggle and orange theme toggle. */
+.coding-nav-snippets-btn {
+  background: rgba(99, 102, 241, 0.08) !important;
+  border-color: rgba(99, 102, 241, 0.20) !important;
+  color: #4f46e5 !important;
+}
+
+.coding-nav-snippets-btn:hover,
+.coding-nav-snippets-btn:focus-visible {
+  background: rgba(99, 102, 241, 0.16) !important;
+  border-color: rgba(99, 102, 241, 0.42) !important;
+}
+
+/* Active = you're currently in the personal workspace. Filled indigo, matching
+   how the section pills mark the active section. */
+.coding-nav-snippets-btn.active {
+  background: #4f46e5 !important;
+  border-color: #4f46e5 !important;
+  color: #fff !important;
+}
+
+body.coding-dark .coding-nav-snippets-btn {
+  background: rgba(129, 140, 248, 0.14) !important;
+  border-color: rgba(129, 140, 248, 0.34) !important;
+  color: #c7cbff !important;
+}
+
+body.coding-dark .coding-nav-snippets-btn.active {
+  background: #818cf8 !important;
+  border-color: #818cf8 !important;
+  color: #0b1322 !important;
+}
+
 /* Coding-Tutor-scoped dark-mode toggle. Tinted with the section accent (orange)
    so it reads as a theme control distinct from the blue section pills. */
 .coding-nav-theme-toggle {
@@ -344,6 +378,37 @@ body.coding-dark .coding-back-home-btn.active svg {
 .coding-nav-theme-toggle:focus-visible {
   background: color-mix(in srgb, var(--ct-accent, #f37021) 18%, transparent) !important;
   border-color: color-mix(in srgb, var(--ct-accent, #f37021) 48%, transparent) !important;
+}
+
+/* The theme toggle is a CONTROL (a setting), not a destination, so render it as a
+   compact icon-only circle at the end of the nav. A visible orange ring marks it
+   as the theme control. (Show Workspace stays a labeled pill.) */
+.coding-app .campus-section-nav .coding-nav-theme-toggle {
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  min-height: 42px;
+  padding: 0 !important;
+  gap: 0;
+  border-radius: 999px;
+  flex: 0 0 auto;
+  margin-left: 6px;
+  /* The nice rounded colored ring: a solid, saturated orange outline so the circle
+     clearly reads as the theme control. (Was washed out at 55% over transparent.) */
+  border-style: solid !important;
+  border-width: 2px !important;
+  border-color: var(--ct-accent, #f37021) !important;
+}
+
+/* Keep the ring visible (not washed out) on hover/focus too. */
+.coding-app .campus-section-nav .coding-nav-theme-toggle:hover,
+.coding-app .campus-section-nav .coding-nav-theme-toggle:focus-visible {
+  border-color: var(--ct-accent, #f37021) !important;
+  background: color-mix(in srgb, var(--ct-accent, #f37021) 18%, transparent) !important;
+}
+
+.coding-app .campus-section-nav .coding-nav-theme-toggle .coding-nav-label {
+  display: none;
 }
 
 .coding-section-nav button:hover,
@@ -1108,8 +1173,11 @@ body.coding-dark .daily-streak-pill.done {
 .coding-stat-tile.stat-solved .coding-stat-icon { color: var(--ct-success); }
 .coding-stat-tile.stat-attempted .coding-stat-icon { color: var(--ct-primary); }
 
-/* ---- Streak flame: "catches fire" when a streak is active ---- */
-.coding-stat-icon.flame-lit {
+/* ---- Streak flame: "catches fire" when a streak is active ----
+   Scoped under .coding-stat-tile.stat-streak so it out-specifies the cold base
+   rule above (.coding-stat-tile.stat-streak .coding-stat-icon), which would
+   otherwise win and keep the flame grey. */
+.coding-stat-tile.stat-streak .coding-stat-icon.flame-lit {
   color: #f97316;                     /* warm ember orange */
   transform-origin: 50% 85%;          /* pivot at the base, like a real flame */
   animation: flame-flicker 1.6s ease-in-out infinite;
@@ -2726,6 +2794,35 @@ body.coding-dark .problem-solution-link {
   box-shadow: 0 12px 26px rgba(29, 78, 216, 0.18);
 }
 
+/* Disabled (loading) Practice Now — no lift/hover, clearly not clickable. */
+.daily-practice-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Daily challenge skeleton while the challenge fetch is in flight, so the card
+   never shows a clickable CTA over placeholder data. */
+.campus-daily-mission.is-loading .daily-skeleton-title,
+.campus-daily-mission.is-loading .daily-skeleton-pill {
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--ct-border) 55%, transparent) 25%,
+    color-mix(in srgb, var(--ct-border) 20%, transparent) 50%,
+    color-mix(in srgb, var(--ct-border) 55%, transparent) 75%);
+  background-size: 200% 100%;
+  border-radius: 8px;
+  color: transparent;
+  animation: daily-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+.campus-daily-mission.is-loading .daily-skeleton-title { width: min(60%, 320px); }
+.campus-daily-mission.is-loading .daily-skeleton-pill { width: 72px; border-radius: 999px; }
+
+@keyframes daily-skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 .quiz-problem-card {
   width: 100%;
   text-align: left;
@@ -3882,6 +3979,13 @@ body.coding-dark .floating-chat-action:hover:not(:disabled) {
   background: rgba(96, 165, 250, 0.2);
   border-color: var(--ct-border-strong);
   color: #dbeafe;
+}
+
+/* Only the ACTIVE (selected) pill gets the soft glow — hover/focus should NOT,
+   or the large 0 12px 28px shadow leaks out past the pill/circle edges as a
+   rectangular halo on every hover. */
+body.coding-dark .coding-section-nav button.active,
+body.coding-dark .workspace-tabs button.active {
   box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
 }
 
@@ -4313,15 +4417,20 @@ body.coding-dark .floating-chat-window {
   background: var(--ct-panel-raised) !important;
 }
 
-/* Force Coding Tutor to use solid academic surfaces, not glass panels. */
+/* Solid academic surfaces, not glass panels. These are a FALLBACK only — no
+   !important, so the warm "Morgan Coding Lab" paper tokens in CodingTutorTheme.css
+   (imported after this file) win in light mode, and the body.coding-dark block
+   below (which keeps its own !important) still owns the dark surfaces. Using
+   !important here used to blanket-override the warm palette, leaving light mode on
+   the cool portal gray. */
 .coding-app,
 body.coding-dark .coding-app {
-  --ct-panel: var(--bg-surface) !important;
-  --ct-panel-soft: var(--bg-surface-soft) !important;
-  --ct-panel-raised: var(--bg-surface-raised) !important;
-  --ct-surface: var(--bg-surface) !important;
-  --ct-surface-strong: var(--bg-surface-raised) !important;
-  --ct-surface-soft: var(--bg-surface-soft) !important;
+  --ct-panel: var(--bg-surface);
+  --ct-panel-soft: var(--bg-surface-soft);
+  --ct-panel-raised: var(--bg-surface-raised);
+  --ct-surface: var(--bg-surface);
+  --ct-surface-strong: var(--bg-surface-raised);
+  --ct-surface-soft: var(--bg-surface-soft);
 }
 
 .coding-section-nav,
@@ -5294,12 +5403,12 @@ body.coding-dark .floating-coding-chat .floating-chat-button:hover {
   background-color: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.coding-app .campus-section-nav::-webkit-scrollbar {
-  display: none;
+  /* overflow must stay visible: `overflow-x: auto` implicitly clips the y-axis
+     too, which chopped the pills' rounded corners + active/hover glow into a flat
+     rectangle (the "buttons look cut off" bug). The nav collapses to icon circles
+     at <=1180px, so it doesn't need horizontal scrolling. */
+  overflow: visible;
+  flex-wrap: wrap;
 }
 
 /* Labeled pills, same structure as the main top nav (icon + text). */
@@ -6508,6 +6617,18 @@ body.coding-dark .campus-hero-focus {
   background: color-mix(in srgb, var(--ct-primary) 8%, var(--ct-panel));
   border: 1px solid color-mix(in srgb, var(--ct-primary) 20%, var(--ct-border));
   white-space: nowrap;
+}
+
+/* Topic/function chips in the workspace ProblemPanel reuse the bare `.daily-tags
+   span` from Chatbox.css, whose dark override is keyed on `body.dark` — but the
+   Coding Tutor uses its own `body.coding-dark`, so that override never fired and
+   the chips rendered as near-white text on a near-white pill (invisible in dark
+   mode). Re-point them to the adaptive --ct-* tokens so they read correctly in
+   BOTH coding light and coding dark, matching the campus daily chips above. */
+.coding-app .daily-tags span {
+  color: var(--ct-primary);
+  background: color-mix(in srgb, var(--ct-primary) 8%, var(--ct-panel));
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 20%, var(--ct-border));
 }
 
 .campus-action-list {

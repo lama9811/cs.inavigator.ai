@@ -1,4 +1,4 @@
-export default function DailyChallengeCard({ dailyChallenge, loading, variant = "page", onStartChallenge, onPracticeWithHints }) {
+export default function DailyChallengeCard({ dailyChallenge, loading, onStartChallenge, onPracticeWithHints }) {
   const difficulty = dailyChallenge?.difficulty || "Easy";
   const estimatedTime = String(difficulty).toLowerCase() === "hard"
     ? "25 min"
@@ -6,23 +6,14 @@ export default function DailyChallengeCard({ dailyChallenge, loading, variant = 
       ? "15 min"
       : "5 min";
 
-  if (variant === "dashboard") {
-    return (
-      <button type="button" className="daily-feature-card dashboard-daily" onClick={onStartChallenge}>
-        <span className="coding-kicker">Today&apos;s Challenge</span>
-        <strong>{dailyChallenge?.title || "Daily coding challenge"}</strong>
-        <small>Difficulty: {difficulty}</small>
-        <small>Estimated Time: {estimatedTime}</small>
-        <span className="daily-practice-btn inline">Start Challenge</span>
-      </button>
-    );
-  }
-
   return (
     <section className="coding-page-panel daily-page">
       <div className="daily-feature-card">
         <span className="coding-kicker">Today&apos;s Challenge</span>
-        {loading ? (
+        {/* Treat a still-null challenge the same as loading (matches
+            CampusDailyMission), so the placeholder holds until real data arrives
+            instead of briefly flashing fallback content. */}
+        {loading || !dailyChallenge ? (
           <div className="daily-challenge-loading">Loading today&apos;s challenge...</div>
         ) : (
           <>

@@ -155,7 +155,9 @@
 }
 .setting-btn:not(.install-app-btn):not(.support-btn):hover svg,
 .sidebar-action-btn:not(.new-chat):hover svg,
-.chat-history-item:hover .chat-title {
+.chat-history-item:hover .chat-title,
+.chat-history-item:hover .pin-icon,
+.chat-history-item:hover .chat-menu-btn {
   color: #fff !important;
 }
 /* Install-app / Support keep their warm orange hover, but readable. */

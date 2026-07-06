@@ -5,6 +5,7 @@ import {
   FaChartLine,
   FaEye,
   FaEyeSlash,
+  FaFileCode,
   FaHome,
   FaLaptopCode,
   FaMoon,
@@ -342,16 +343,6 @@ function summarizeRunForTutor(output = {}) {
   return summary.join("\n");
 }
 
-function buildQualityChecklist(language, output = {}) {
-  if (output.status !== "passed") return [];
-  return [
-    "All local tests passed.",
-    `Review ${language} naming, indentation, and readability before submitting.`,
-    "Check one empty/minimum input and one larger input by hand.",
-    "Confirm the time and space complexity match your intended approach.",
-  ];
-}
-
 // A blank editor reads as "broken", so seed a minimal language-appropriate stub
 // (function signature + a "write your solution" marker) for interview problems,
 // which ship no starter code of their own. Module-level so it can be used both in
@@ -457,7 +448,6 @@ export default function CodingTutor({
   // Drives the real "day streak" tile instead of a derived guess.
   const [dailyStreakDays, setDailyStreakDays] = useState(() => readDailyStreakDays());
   const [difficulty, setDifficulty] = useState("easy");
-  const [selectedTopicPack, setSelectedTopicPack] = useState("");
   const [practiceLanguage, setPracticeLanguage] = useState("Python");
   const [selectedLanguage, setSelectedLanguage] = useState("Python");
   const [questions, setQuestions] = useState([]);
@@ -789,7 +779,12 @@ export default function CodingTutor({
     const raf = requestAnimationFrame(() => {
       body.classList.remove("theme-switching");
     });
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      // If we unmount (or re-run) before the RAF fires, drop the class ourselves
+      // so `theme-switching` can't stay stuck on <body> and suppress transitions.
+      body.classList.remove("theme-switching");
+    };
   }, [codingDark]);
 
   useEffect(() => {
@@ -1442,14 +1437,19 @@ export default function CodingTutor({
   // End → show the results overlay. Also clear the stale `mock` flag on the active
   // problem so opening a normal interview problem afterward isn't treated as mock.
   const endMockInterview = () => {
+    // Keep the updater pure (only returns new state); run the summary/badge side
+    // effects once outside it, so a double-invoked updater can't double-count the
+    // mock badge. Same pattern as the timeout path above.
+    let ended = null;
     setMockSession((prev) => {
-      if (prev) {
-        setMockSummary(buildMockSummary(prev));
-        // Count this finished mock toward the Mock Rookie / Veteran badges.
-        setMockCompleted(recordMockCompleted());
-      }
+      if (prev) ended = prev;
       return null;
     });
+    if (ended) {
+      setMockSummary(buildMockSummary(ended));
+      // Count this finished mock toward the Mock Rookie / Veteran badges.
+      setMockCompleted(recordMockCompleted());
+    }
     setActiveProblem((prev) => (prev?.mock ? { ...prev, mock: false } : prev));
   };
 
@@ -1478,13 +1478,25 @@ export default function CodingTutor({
     const id = setInterval(() => {
       const now = Date.now();
       setMockNow(now);
+      // Read the session via a snapshot in the updater but keep the updater PURE
+      // (only returns new state) — side effects run once, outside it. React can
+      // invoke updaters twice under StrictMode; recordMockCompleted() increments a
+      // persisted counter and toast() is user-visible, so running them inside would
+      // double-count the badge / double-toast. `expired` is captured for the effects.
+      let expired = null;
       setMockSession((prev) => {
         if (!prev || now < prev.endsAt) return prev;
-        setMockSummary(buildMockSummary(prev));
-        setActiveProblem((p) => (p?.mock ? { ...p, mock: false } : p));
-        toast("Time's up! Mock interview ended.", { icon: "⏱️" });
+        expired = prev;
         return null;
       });
+      if (expired) {
+        setMockSummary(buildMockSummary(expired));
+        // A timed-out mock is still a completed mock — count it toward the Mock
+        // Rookie / Veteran badges, same as ending manually (endMockInterview).
+        setMockCompleted(recordMockCompleted());
+        setActiveProblem((p) => (p?.mock ? { ...p, mock: false } : p));
+        toast("Time's up! Mock interview ended.", { icon: "⏱️" });
+      }
     }, 1000);
     return () => clearInterval(id);
     // Restart the ticker only when a session begins/ends, not on every state edit;
@@ -1860,18 +1872,14 @@ export default function CodingTutor({
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || `runner ${response.status}`);
-      const enrichedData = {
-        ...data,
-        quality_checklist: buildQualityChecklist(selectedLanguage, data),
-      };
-      setTestOutput(enrichedData);
+      setTestOutput(data);
       setWorkspaceSnapshots(prev => ({
         ...prev,
         [activeSnapshotKey]: {
           ...(prev[activeSnapshotKey] || {}),
           current: code,
-          lastRun: summarizeRunForTutor(enrichedData),
-          ...(enrichedData.status === "passed" ? { lastPassing: code } : {}),
+          lastRun: summarizeRunForTutor(data),
+          ...(data.status === "passed" ? { lastPassing: code } : {}),
         },
       }));
       if (data.progress) {
@@ -2019,6 +2027,7 @@ export default function CodingTutor({
       progressByQuestion={progressByQuestion}
       nextUpQuestion={nextUpQuestion}
       dailyChallenge={dailyChallenge}
+      dailyChallengeLoading={dailyChallengeLoading}
       dailyDoneToday={dailyDoneToday}
       displayStreak={displayStreak}
       latestQuizResponse={latestQuizResponse}
@@ -2030,6 +2039,17 @@ export default function CodingTutor({
       onSaveQuiz={saveLatestQuizAsPdf}
     />
   );
+
+  // On a cold load / reload of a /coding/workspace/problem/:id URL, activeProblem
+  // is still null while restoreWorkspaceProblem() fetches it. Derive that "restoring"
+  // window PURELY from the URL + current problem (no state that can get stuck): the
+  // URL points at a problem whose id we haven't loaded yet. While true, show the
+  // panel's loading state instead of the empty "Open Practice Library" guide, which
+  // was flashing on every reload. Reverts to false the moment activeProblem matches.
+  const workspaceUrlTarget = workspaceTargetFromPath(location.pathname);
+  const isRestoringProblem =
+    workspaceUrlTarget.kind === "problem" &&
+    activeProblem?.id !== workspaceUrlTarget.id;
 
   const renderWorkspace = () => (
     <section className={`coding-workbench ${terminalOpen ? "terminal-open" : "terminal-closed"} ${isPersonalMode ? "personal-workspace" : ""}`}>
@@ -2060,7 +2080,7 @@ export default function CodingTutor({
             problem={activeProblem}
             solution={activeSolution}
             attempts={attempts}
-            problemLoading={problemLoading}
+            problemLoading={problemLoading || isRestoringProblem}
             isSolved={isActiveProblemSolved}
             solvedLanguages={activeSolvedLanguages}
             showProblemNavigation={isQuizBankProblem}
@@ -2175,10 +2195,8 @@ export default function CodingTutor({
           selectedLanguage={practiceLanguage}
           languageOptions={CODE_LANGUAGES}
           progressSummary={progressSummary}
-          selectedTopicPack={selectedTopicPack}
           onDifficultyChange={setDifficulty}
           onLanguageChange={setPracticeLanguage}
-          onClearTopicPack={() => setSelectedTopicPack("")}
           onSelectProblem={selectQuestion}
         />
       );
@@ -2218,6 +2236,47 @@ export default function CodingTutor({
           </button>
           );
         })}
+        {/* Direct shortcut to the personal scratch space (My Snippets) — separate
+            from the graded Workspace toggle below so the two stay distinctly named.
+            Active when the personal workspace is the thing currently open. */}
+        <button
+          type="button"
+          className={`coding-nav-snippets-btn ${activePage === "workspace" && isPersonalMode ? "active" : ""}`}
+          onClick={() => guardPersonalNav(() => {
+            // Match the other nav destinations (openPage): prompt before discarding
+            // unsaved personal edits, and persist in-progress quiz-bank work first.
+            savePendingProblemProgress();
+            openMySnippets();
+          })}
+          title="My Snippets"
+          aria-label="My Snippets"
+          aria-pressed={activePage === "workspace" && isPersonalMode}
+        >
+          <span className="coding-nav-icon" aria-hidden="true"><FaFileCode /></span>
+          <span className="coding-nav-label">My Snippets</span>
+        </button>
+        {/* toggleWorkspace HIDES only when we're already on the workspace; from any
+            other page it SHOWS it. Derive every label from that same condition so
+            the title/aria-label match what the click actually does (on Home the
+            button opens the workspace, so it must say "Show Workspace"). */}
+        {(() => {
+          const willHideWorkspace = activePage === "workspace" && workspaceVisible;
+          const label = willHideWorkspace ? "Hide Workspace" : "Show Workspace";
+          return (
+            <button
+              type="button"
+              className="coding-nav-workspace-toggle"
+              onClick={toggleWorkspace}
+              title={label}
+              aria-label={label}
+            >
+              <span className="coding-nav-icon" aria-hidden="true">{willHideWorkspace ? <FaEyeSlash /> : <FaEye />}</span>
+              <span className="coding-nav-label">{label}</span>
+            </button>
+          );
+        })()}
+        {/* Theme toggle sits last as a compact icon-only circle — a setting, not a
+            destination. */}
         <button
           type="button"
           className="coding-nav-theme-toggle"
@@ -2228,16 +2287,6 @@ export default function CodingTutor({
         >
           <span className="coding-nav-icon" aria-hidden="true">{codingDark ? <FaSun /> : <FaMoon />}</span>
           <span className="coding-nav-label">{codingDark ? "Light Mode" : "Dark Mode"}</span>
-        </button>
-        <button
-          type="button"
-          className="coding-nav-workspace-toggle"
-          onClick={toggleWorkspace}
-          title={workspaceVisible ? "Hide Workspace" : "Show Workspace"}
-          aria-label={workspaceVisible ? "Hide Workspace" : "Show Workspace"}
-        >
-          <span className="coding-nav-icon" aria-hidden="true">{workspaceVisible ? <FaEyeSlash /> : <FaEye />}</span>
-          <span className="coding-nav-label">{activePage === "workspace" && workspaceVisible ? "Hide Workspace" : "Show Workspace"}</span>
         </button>
         </nav>
       </div>

@@ -9,6 +9,37 @@
     <title>CS Navigator | Morgan State University</title>
   </head>
   <body>
+    <!-- Apply the Coding Tutor's scoped dark theme BEFORE first paint, so a hard
+         refresh on a /coding route in dark mode doesn't flash light first. This
+         mirrors what CodingTutor.jsx does on mount (add body.coding-dark when
+         localStorage codingTheme === "dark"), but runs synchronously here — long
+         before React mounts — to avoid the FOUC. Scoped to coding routes only so
+         the rest of the app stays light; React then keeps the class in sync as the
+         user toggles / navigates. -->
+    <script>
+      (function () {
+        try {
+          var p = window.location.pathname;
+          var onCoding = p === "/coding" || p.indexOf("/coding/") === 0 || p === "/chat/coding";
+          if (onCoding && localStorage.getItem("codingTheme") === "dark") {
+            document.body.classList.add("coding-dark");
+          }
+
+          // Apply the collapsed-sidebar class BEFORE first paint. App.jsx seeds the
+          // same state and an effect toggles this class — but effects run AFTER
+          // paint, so on reload the sidebar rendered open (280px) for a frame and
+          // then snapped to 64px, reading as a glitchy "flash open". Mirror App.jsx's
+          // init exactly: collapsed on small screens, when the saved width is 64
+          // (the collapsed marker), or when logged out (login page has no sidebar).
+          var loggedOut = !localStorage.getItem("token");
+          var narrow = window.innerWidth < 768;
+          var savedCollapsed = Number(localStorage.getItem("sidebar_width")) === 64;
+          if (loggedOut || narrow || savedCollapsed) {
+            document.body.classList.add("sidebar-collapsed");
+          }
+        } catch (e) {}
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

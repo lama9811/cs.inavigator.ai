@@ -202,7 +202,7 @@ function buildBadges(stats) {
     // ── Added badges: persistence, daily habit, curiosity, breadth ──
     bool({ id: "comeback-kid", label: "Green Build", detail: "Passed after 3+ failed runs", icon: FaRedo, tone: "pink", category: "Persistence", rarity: "uncommon", earned: s.comebacks >= 1 }),
     bool({ id: "daily-devotee", label: "Showed Up", detail: "Did a daily challenge", icon: FaCalendarCheck, tone: "cyan", category: "Consistency", rarity: "common", earned: s.dailyDaysCompleted >= 1 }),
-    count({ id: "daily-triple", label: "Daily Grind", detail: "Daily challenge 3 days straight", icon: FaFire, tone: "orange", category: "Consistency", rarity: "rare", current: s.displayStreak, goal: 3 }),
+    count({ id: "daily-triple", label: "Daily Grind", detail: "Daily challenge 3 days straight", icon: FaFire, tone: "orange", category: "Consistency", rarity: "rare", current: Math.max(s.displayStreak, s.bestStreak), goal: 3 }),
     count({ id: "topic-explorer", label: "Curious Mind", detail: "Tried problems in 3 topics", icon: FaCompass, tone: "purple", category: "Topics", rarity: "uncommon", current: s.attemptedTopics, goal: 3 }),
     bool({ id: "recursion-ranger", label: "Base Case", detail: "Solved a recursion problem", icon: FaSync, tone: "gold", category: "Topics", rarity: "uncommon", earned: hasSolvedTopic(s.solvedByTopic, "recursion") }),
     bool({ id: "trees-tracker", label: "Tree Solver", detail: "Solved a tree problem", icon: FaSitemap, tone: "green", category: "Topics", rarity: "rare", earned: hasSolvedTopic(s.solvedByTopic, "tree") }),

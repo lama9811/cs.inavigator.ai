@@ -252,7 +252,9 @@ class CodingUserProgress(Base):
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True, unique=True)
+    # Uniqueness is enforced by the named table constraint above (no column-level
+    # unique=True — that would create a second, redundant unique index).
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     mock_completed = Column(Integer, nullable=False, default=0)
     best_streak = Column(Integer, nullable=False, default=0)
     # JSON-encoded array of "YYYY-MM-DD" strings — kept as Text so it works on both

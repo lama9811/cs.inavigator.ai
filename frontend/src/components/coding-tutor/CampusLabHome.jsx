@@ -216,11 +216,36 @@ function CampusTutorActions({ latestQuizResponse, onPrompt, onSaveQuiz }) {
   );
 }
 
-function CampusDailyMission({ dailyChallenge, dailyDoneToday, displayStreak, onPractice }) {
+function CampusDailyMission({ dailyChallenge, loading, dailyDoneToday, displayStreak, onPractice }) {
   const isLeetCode = (dailyChallenge?.source || "").toLowerCase() === "leetcode";
   const problemNumber = dailyChallenge?.frontend_id;
   const tags = Array.isArray(dailyChallenge?.tags) ? dailyChallenge.tags.filter(Boolean) : [];
   const focusSkills = tags.slice(0, 3);
+
+  // Until the fetch resolves we hold a placeholder payload, so gate the whole card
+  // (and especially Practice Now) behind a disabled skeleton — otherwise the CTA
+  // could start a challenge against stale/placeholder data and bump the streak early.
+  if (loading || !dailyChallenge) {
+    return (
+      <section className="campus-daily-mission is-loading" aria-label="Daily challenge" aria-busy="true">
+        <div className="daily-mission-main">
+          <span className="coding-kicker">Today’s Challenge</span>
+          <h2 className="daily-skeleton-title" aria-hidden="true">&nbsp;</h2>
+          <div className="daily-meta-row">
+            <span className="daily-difficulty daily-skeleton-pill" aria-hidden="true">&nbsp;</span>
+          </div>
+        </div>
+        <aside className="daily-mission-aside">
+          <div className="daily-actions">
+            <button type="button" className="daily-practice-btn" disabled>
+              Loading…
+            </button>
+          </div>
+        </aside>
+      </section>
+    );
+  }
+
   return (
     <section className="campus-daily-mission" aria-label="LeetCode daily challenge">
       {/* Left column: identity + meta. */}
@@ -276,6 +301,7 @@ export default function CampusLabHome({
   nextUpQuestion,
   topicPacks,
   dailyChallenge,
+  dailyChallengeLoading,
   dailyDoneToday,
   displayStreak,
   latestQuizResponse,
@@ -312,6 +338,7 @@ export default function CampusLabHome({
           removed. The LeetCode daily challenge is the focal point under the hero. */}
       <CampusDailyMission
         dailyChallenge={dailyChallenge}
+        loading={dailyChallengeLoading}
         dailyDoneToday={dailyDoneToday}
         displayStreak={displayStreak}
         onPractice={onStartDaily}
