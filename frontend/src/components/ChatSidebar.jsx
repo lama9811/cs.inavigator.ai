@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from 'sonner';
 import { FaPlus } from "@react-icons/all-files/fa/FaPlus";
@@ -689,8 +690,10 @@ export default function ChatSidebar({
         </a>
       </div>
 
-      {/* 🎫 Support Ticket Modal */}
-      {showTicketModal && (
+      {/* 🎫 Support Ticket Modal — portaled to <body> so it escapes the sidebar's
+          containing block (.chat-sidebar has contain/overflow:hidden) and covers the
+          whole viewport instead of being trapped in the 280px sidebar. */}
+      {showTicketModal && createPortal(
         <div className="ticket-modal-overlay" onClick={closeTicketModal}>
           <div className="ticket-modal" onClick={(e) => e.stopPropagation()}>
             {ticketSuccess ? (
@@ -800,7 +803,8 @@ export default function ChatSidebar({
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
     </>

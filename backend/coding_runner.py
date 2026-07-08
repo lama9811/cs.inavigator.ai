@@ -550,7 +550,7 @@ def safe_import(name, globals=None, locals=None, fromlist=(), level=0):
 SAFE_BUILTINS = {
     "__build_class__": builtins.__build_class__,
     "__import__": safe_import,
-    "abs": abs, "all": all, "any": any, "bool": bool, "callable": callable,
+    "abs": abs, "all": all, "any": any, "bin": bin, "bool": bool, "callable": callable,
     "chr": chr, "complex": complex, "dict": dict, "divmod": divmod,
     "enumerate": enumerate, "filter": filter, "float": float, "format": format,
     "frozenset": frozenset, "hash": hash, "hex": hex, "int": int, "isinstance": isinstance,
@@ -1622,7 +1622,7 @@ def safe_import(name, globals=None, locals=None, fromlist=(), level=0):
 SAFE_BUILTINS = {
     "__build_class__": builtins.__build_class__,
     "__import__": safe_import,
-    "abs": abs, "all": all, "any": any, "bool": bool, "callable": callable,
+    "abs": abs, "all": all, "any": any, "bin": bin, "bool": bool, "callable": callable,
     "chr": chr, "complex": complex, "dict": dict, "divmod": divmod,
     "enumerate": enumerate, "filter": filter, "float": float, "format": format,
     "frozenset": frozenset, "hash": hash, "hex": hex, "int": int, "isinstance": isinstance,

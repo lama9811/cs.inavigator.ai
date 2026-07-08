@@ -22,9 +22,13 @@ import ProgressBadges from "./ProgressBadges";
 import QuizBank from "./QuizBank";
 import StatTiles from "./StatTiles";
 import InterviewPrep from "./InterviewPrep";
+import PastInterviews from "./PastInterviews";
 import MockInterviewBar from "./MockInterviewBar";
 import MockSummary from "./MockSummary";
 import MockConfirm from "./MockConfirm";
+import { gradeMockSummary, scoreFromGraded } from "./interviewGrade";
+import { appendInterviewAttempt } from "./interviewHistory";
+import { markInterviewSolved } from "./interviewProgress";
 import { listSnippets, getSnippet, saveSnippet, deleteSnippet, syncSnippetsFromServer, extractCodeFromFile, languageFromFilename } from "../../lib/snippets";
 import "./CodingTutor.css";
 // Scoped "Morgan Coding Lab" sub-brand palette — imported AFTER CodingTutor.css
@@ -32,6 +36,37 @@ import "./CodingTutor.css";
 import "./CodingTutorTheme.css";
 
 const CODE_LANGUAGES = ["Python", "Java", "JavaScript", "C++"];
+// The exact primary topic strings the Practice Library (Quiz Bank) filters on — the
+// filter matches question.topic, so a prerequisite link only lands on real problems if
+// it resolves to one of THESE. Keep in sync with backend/data_sources/quiz.
+const PRACTICE_LIBRARY_TOPICS = [
+  "arrays", "strings", "stacks", "queues", "trees", "graphs", "recursion",
+  "hash maps", "sets", "two pointers", "sliding window", "binary search",
+  "dynamic programming", "prefix sums", "intervals", "heaps", "tries", "matrices",
+  "math", "disjoint sets", "conditionals",
+];
+// Prerequisite labels used on interview problems don't always match the library's exact
+// topic name. This maps a label -> the library topic it should filter by. Anything not
+// here and not already a library topic has NO matching problems -> shown greyed out.
+const PREREQ_TO_LIBRARY_TOPIC = {
+  "hash sets": "sets",
+  "hashing": "hash maps",
+  "2d matrices": "matrices",
+  "matrix": "matrices",
+  "binary search idea": "binary search",
+  "binary search trees": "trees",
+  "breadth-first search": "graphs",
+  "bfs": "graphs",
+  "prefix sums": "prefix sums",
+};
+// Resolve a prerequisite label to a real Practice Library topic, or null if the library
+// has nothing for it (so the UI can grey it out instead of dead-linking).
+function resolvePracticeTopic(label) {
+  const key = String(label || "").toLowerCase().trim();
+  if (PRACTICE_LIBRARY_TOPICS.includes(key)) return key;
+  const mapped = PREREQ_TO_LIBRARY_TOPIC[key];
+  return mapped && PRACTICE_LIBRARY_TOPICS.includes(mapped) ? mapped : null;
+}
 const PRACTICE_LANGUAGE_API = {
   Python: "python",
   Java: "java",
@@ -58,6 +93,7 @@ const PAGE_TO_PATH = {
   dashboard: "/coding",
   quiz: "/coding/practice",
   interview: "/coding/interview-prep",
+  history: "/coding/interview-prep/history",
   workspace: "/coding/workspace",
   progress: "/coding/progress",
   daily: "/coding/daily",
@@ -66,6 +102,7 @@ const PATH_TO_PAGE = {
   "/coding": "dashboard",
   "/coding/practice": "quiz",
   "/coding/interview-prep": "interview",
+  "/coding/interview-prep/history": "history",
   "/coding/workspace": "workspace",
   "/coding/progress": "progress",
   "/coding/daily": "daily",
@@ -348,6 +385,13 @@ function summarizeRunForTutor(output = {}) {
 // which ship no starter code of their own. Module-level so it can be used both in
 // handlers and in a render-time "has the student started coding?" check.
 function interviewStarterStub(question, languageName) {
+  // Graded interview questions ship an authored starter_code (Python) whose function
+  // signature matches the backend test cases — prefer it so what the student fills in
+  // is exactly what the grader calls. Other languages fall back to the generic stub
+  // (and grade via AI review, since only Python tests are authored).
+  if (question?.starter_code && (languageName || "Python").toLowerCase() === "python") {
+    return question.starter_code.endsWith("\n") ? question.starter_code : `${question.starter_code}\n`;
+  }
   const fn = String(question?.title || "solution")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "_")
@@ -421,6 +465,7 @@ export default function CodingTutor({
   onContextChange,
   onActivePageChange,
   onStartFreshChat,
+  onRequestReview,
   onSendToChat,
 }) {
   const location = useLocation();
@@ -448,6 +493,9 @@ export default function CodingTutor({
   // Drives the real "day streak" tile instead of a derived guess.
   const [dailyStreakDays, setDailyStreakDays] = useState(() => readDailyStreakDays());
   const [difficulty, setDifficulty] = useState("easy");
+  // A topic to pre-filter the Practice Library by, set when a student clicks a
+  // prerequisite ("Needs: …") link on an interview problem. Consumed + cleared by QuizBank.
+  const [pendingQuizTopic, setPendingQuizTopic] = useState(null);
   const [practiceLanguage, setPracticeLanguage] = useState("Python");
   const [selectedLanguage, setSelectedLanguage] = useState("Python");
   const [questions, setQuestions] = useState([]);
@@ -461,6 +509,10 @@ export default function CodingTutor({
   //   outcomes: {id: "unattempted"|"attempted"|"solved"|"skipped"},
   //   stuck: [ids] } or null when not running.
   const [mockSession, setMockSession] = useState(null);
+  // Live mirror of mockSession so handlers can read the CURRENT session synchronously
+  // (a setState updater is not guaranteed to run before the next line). Synced below.
+  const mockSessionRef = useRef(null);
+  mockSessionRef.current = mockSession;
   const [mockNow, setMockNow] = useState(0); // ticked each second to re-render the timer
   const [mockSummary, setMockSummary] = useState(null); // post-interview results overlay
   // Per-device counters that back the mock + best-streak badges (localStorage).
@@ -486,6 +538,11 @@ export default function CodingTutor({
   // A pending navigation action held while the "unsaved changes" prompt is shown.
   const [unsavedPrompt, setUnsavedPrompt] = useState(null);
   const [code, setCode] = useState("");
+  // Live mirrors of the editor code + language key, so the mock-nav setMockSession
+  // updaters (which run before React commits fresh state) can snapshot the CURRENT
+  // answer without a stale closure. Kept in sync by the effect below.
+  const codeRef = useRef("");
+  const langKeyRef = useRef("python");
   const [note, setNote] = useState("");
   const [testOutput, setTestOutput] = useState({ status: "ready", message: "" });
   const [terminalOpen, setTerminalOpen] = useState(false);
@@ -512,22 +569,18 @@ export default function CodingTutor({
   // cold-load effect opens a problem once per id (not on every render).
   const restoredWorkspaceTargetRef = useRef(null);
   const selectedLanguageKey = PRACTICE_LANGUAGE_API[selectedLanguage] || "python";
+  // Mirror the live editor code + language into refs every render so the mock-nav
+  // handlers can read the current answer synchronously when switching questions.
+  codeRef.current = code;
+  langKeyRef.current = selectedLanguageKey;
   const activeLanguageProgress = activeProblem ? progressByLanguage[activeProblem.id]?.[selectedLanguageKey] : null;
   const activeProgress = activeLanguageProgress || (activeProblem ? progressByQuestion[activeProblem.id] : null);
   const attempts = activeProgress?.attempt_count || 0;
-  // Interview simulation: lock the language once the student edits past the starter
-  // stub (committing to a language, like a real interview). Recomputed from the live
-  // code so it releases if they clear back to the stub. Scoped to an ACTIVE MOCK
-  // INTERVIEW only — practicing a single interview problem stays free to re-language.
-  const interviewLanguageLocked = useMemo(() => {
-    if (activeProblem?.source !== "interview") return false;
-    if (!(mockSession && activeProblem?.mock)) return false;
-    try {
-      return hasStarterCodeChanged(code, interviewStarterStub(activeProblem, selectedLanguage));
-    } catch {
-      return false;
-    }
-  }, [activeProblem, code, selectedLanguage, mockSession]);
+  // Interview simulation: pick your language on the FIRST question of the mock, then it
+  // LOCKS for the rest of the round (advancing past Q1 commits it — like committing to a
+  // language in a real interview). Stays locked even if you go Back to Q1, so a committed
+  // language can't be swapped mid-round. Outside a mock it's freely switchable.
+  const interviewLanguageLocked = Boolean(mockSession && activeProblem?.mock && mockSession.languageCommitted);
   const hintSteps = useMemo(() => buildHintSteps(activeProblem, activeSolution, attempts), [activeProblem, activeSolution, attempts]);
   const latestFeedback = messages.slice().reverse().find((msg) => msg.sender === "bot" && msg.text)?.text || "";
   const suggestedCodeBlock = latestFeedback.match(/```(?:\w+)?\n([\s\S]*?)```/)?.[1]?.trim() || "";
@@ -762,9 +815,22 @@ export default function CodingTutor({
       toast.info("Write some code first so the tutor has something to review.");
       return;
     }
+    // Warn first — a review sends the student's current code to the AI tutor and opens
+    // a fresh Coding Tutor chat. Confirming is an explicit, visible action (not a silent
+    // hand-off to a chat they'd only find in history).
+    if (!window.confirm("Send your current code to the Coding Tutor for a review?\nThis opens the Coding Tutor chat in a new conversation.")) {
+      return;
+    }
     setTutorMode("Reviewing");
-    onSendToChat?.("Review my current code for correctness and style. Point out the single biggest issue first, then any smaller ones. Don't rewrite the whole thing — guide me.", true);
-  }, [onSendToChat, code]);
+    const reviewPrompt = "Review my current code for correctness and style. Point out the single biggest issue first, then any smaller ones. Don't rewrite the whole thing — guide me.";
+    if (onRequestReview) {
+      // Preferred path: open the FLOATING widget in a fresh session so the reply is
+      // visible next to the code, not buried in the hidden main coding chat.
+      onRequestReview(reviewPrompt);
+    } else {
+      onSendToChat?.(reviewPrompt, true);
+    }
+  }, [onRequestReview, onSendToChat, code]);
 
   // Apply the scoped dark signal to <body> while CodingTutor is mounted, and
   // strip it on unmount so leaving the section returns the rest of the app to
@@ -1152,17 +1218,18 @@ export default function CodingTutor({
     // is still untouched, so we never clobber the student's work). Same lightweight
     // path as leetcode/personal — no /solution fetch (which would 404).
     if (activeProblem?.source === "interview") {
-      // Interview simulation: once the student starts writing (code differs from the
-      // starter stub), the language is LOCKED — like committing to a language in a
-      // real interview. While still on the untouched stub, switching is free and
-      // re-seeds the stub in the new language.
-      if (interviewLanguageLocked) {
-        toast("Language is locked for this mock interview — clear your code back to the starter to switch.", { icon: "🔒" });
-        return;
-      }
+      // In a MOCK, the language locks after Q1 (dropdown disabled), so this is a no-op
+      // once locked. While still on Q1 the student may switch freely; record the choice
+      // onto the session so every later question uses it. Outside a mock, switching is
+      // always free. Only Python ships an authored starter today; other languages fall
+      // back to a generic stub (see interviewStarterStub) — TODO: author Java/JS/C++.
+      if (interviewLanguageLocked) return;
       setSelectedLanguage(languageName);
       setPracticeLanguage(languageName);
       setCode(interviewStarterStub(activeProblem, languageName));
+      if (activeProblem?.mock) {
+        setMockSession((prev) => (prev ? { ...prev, language: languageName } : prev));
+      }
       return;
     }
     if (!activeProblem || activeProblem.source === "leetcode" || activeProblem.source === "personal") {
@@ -1234,14 +1301,23 @@ export default function CodingTutor({
       prompt: question.prompt || "",
       examples: question.examples || [],
       constraints: question.constraints || [],
+      requires: question.requires || [],
       answer_url: question.answer_url || null,
       answer_kind: question.answer_kind || null,
       source: "interview",
       mock: Boolean(opts.mock),
     });
     setActiveSolution(null);
-    setSelectedLanguage(practiceLanguage);
-    setCode(interviewStarterStub(question, practiceLanguage));
+    // Restore a saved mock answer (with its language) if the caller passed one;
+    // otherwise seed the fresh starter stub. This is what stops mock navigation
+    // from wiping the student's in-progress code.
+    if (opts.restoreCode != null) {
+      setSelectedLanguage(opts.restoreLanguage || practiceLanguage);
+      setCode(opts.restoreCode);
+    } else {
+      setSelectedLanguage(practiceLanguage);
+      setCode(interviewStarterStub(question, practiceLanguage));
+    }
     setNote(`Interview prep: ${question.title}`);
     setTestOutput({
       status: "ready",
@@ -1306,20 +1382,51 @@ export default function CodingTutor({
       problemStartedAt: now,
       outcomes: Object.fromEntries(finalQuestions.map(q => [q.id, "unattempted"])),
       stuck: [],
+      // The working language for the round. Chosen on the first question (switchable
+      // there), then locked from Q2 onward. Seeded with the current default.
+      language: practiceLanguage,
+      // Per-question editor code, keyed by question id: { code, language }. Snapshotted
+      // when the student navigates away so switching questions never loses their work.
+      answers: {},
     };
     setMockSession(session);
     setMockNow(now);
     setMockSummary(null);
     openInterviewProblem(finalQuestions[0], { mock: true });
-    toast.success(`Mock interview started — ${finalQuestions.length} problems, ${MOCK_MINUTES} minutes.`);
+    toast.success(`Mock interview started — ${finalQuestions.length} problems, ${MOCK_MINUTES} minutes. Pick your language on this first question — it locks once you move on.`);
+  };
+
+  // Snapshot the CURRENT question's editor code (from the live refs) into the
+  // session's per-question answers map. Pure: returns a new session, no side effects.
+  const snapshotMockAnswer = (session) => {
+    if (!session) return session;
+    const currentId = session.questions[session.index]?.id;
+    if (!currentId) return session;
+    return {
+      ...session,
+      answers: {
+        ...session.answers,
+        [currentId]: { code: codeRef.current, language: langKeyRef.current },
+      },
+    };
+  };
+
+  // Build the restore opts for a target question from a saved answer (if any).
+  const restoreOptsFor = (session, question) => {
+    const saved = session.answers?.[question.id];
+    return saved ? { restoreCode: saved.code, restoreLanguage: saved.language } : {};
   };
 
   const gotoMockProblem = (nextIndex) => {
     setMockSession((prev) => {
       if (!prev) return prev;
-      const clamped = Math.max(0, Math.min(nextIndex, prev.questions.length - 1));
-      openInterviewProblem(prev.questions[clamped], { mock: true });
-      return { ...prev, index: clamped, problemStartedAt: Date.now() };
+      const saved = snapshotMockAnswer(prev);
+      const clamped = Math.max(0, Math.min(nextIndex, saved.questions.length - 1));
+      const target = saved.questions[clamped];
+      openInterviewProblem(target, { mock: true, ...restoreOptsFor(saved, target) });
+      // Advancing beyond Q1 commits the chosen language for the rest of the round.
+      const languageCommitted = saved.languageCommitted || clamped > 0;
+      return { ...saved, index: clamped, problemStartedAt: Date.now(), languageCommitted };
     });
   };
 
@@ -1328,11 +1435,13 @@ export default function CodingTutor({
   const goToPreviousMockProblem = () => {
     setMockSession((prev) => {
       if (!prev) return prev;
-      let target = prev.index - 1;
-      while (target >= 0 && prev.outcomes[prev.questions[target].id] === "skipped") target -= 1;
+      const saved = snapshotMockAnswer(prev);
+      let target = saved.index - 1;
+      while (target >= 0 && saved.outcomes[saved.questions[target].id] === "skipped") target -= 1;
       if (target < 0) return prev; // nothing reachable behind us
-      openInterviewProblem(prev.questions[target], { mock: true });
-      return { ...prev, index: target, problemStartedAt: Date.now() };
+      const targetQ = saved.questions[target];
+      openInterviewProblem(targetQ, { mock: true, ...restoreOptsFor(saved, targetQ) });
+      return { ...saved, index: target, problemStartedAt: Date.now() };
     });
   };
 
@@ -1380,12 +1489,17 @@ export default function CodingTutor({
 
   // Record an outcome for the current mock problem (without leaving it).
   const setMockOutcome = (outcome) => {
+    // Capture the current question id for the side effect below (kept OUT of the pure
+    // updater so it runs once, not twice under StrictMode).
+    const currentId = mockSessionRef.current?.questions[mockSessionRef.current.index]?.id;
     setMockSession((prev) => {
       if (!prev) return prev;
       const id = prev.questions[prev.index]?.id;
       if (!id) return prev;
       return { ...prev, outcomes: { ...prev.outcomes, [id]: outcome } };
     });
+    // Marking a mock problem solved also marks it solved in the Interview Prep bank.
+    if (outcome === "solved" && currentId) markInterviewSolved(currentId);
   };
 
   // Mark the current problem "attempted" (lowest rung) unless already higher.
@@ -1412,7 +1526,11 @@ export default function CodingTutor({
     });
   };
 
-  const buildMockSummary = (session) => {
+  // Build the results summary. Snapshots the CURRENT question's code first (so the
+  // last problem the student was on is captured), then emits per-question code +
+  // language + an empty `grade` slot that the async grader fills in later.
+  const buildMockSummary = (rawSession) => {
+    const session = snapshotMockAnswer(rawSession);
     const used = Math.min(Date.now(), session.endsAt) - session.startedAt;
     const vals = Object.values(session.outcomes);
     return {
@@ -1422,6 +1540,7 @@ export default function CodingTutor({
       skipped: vals.filter(v => v === "skipped").length,
       timeUsedMs: Math.max(0, used),
       topics: [...new Set(session.questions.map(q => q.topic).filter(Boolean))],
+      grading: false, // flipped true while the post-interview grader runs
       problems: session.questions.map(q => ({
         id: q.id,
         title: q.title,
@@ -1430,27 +1549,113 @@ export default function CodingTutor({
         outcome: session.outcomes[q.id],
         answer_url: q.answer_url,
         answer_kind: q.answer_kind,
+        prompt: q.prompt || "",
+        code: session.answers?.[q.id]?.code || "",
+        language: session.answers?.[q.id]?.language || "python",
+        grade: null, // { gradedBy: "tests"|"ai"|"none", ... } — filled by the grader
       })),
     };
+  };
+
+  // Grade the finished mock in the background (hybrid: tests where authored, AI review
+  // otherwise), then merge verdicts into the on-screen summary and save the attempt to
+  // local history. Best-effort — a grading failure still records the outcome-only
+  // attempt so history and the summary never get stuck on "Grading…".
+  const gradeAndRecordMock = async (summary) => {
+    const attemptId = `mock-${Date.now()}`;
+    let gradedProblems = summary.problems;
+    try {
+      gradedProblems = await gradeMockSummary(apiBase, summary);
+      // A question that PASSED its auto-grader tests is marked solved in the Interview
+      // Prep bank (deterministic proof of correctness, stronger than the manual button).
+      gradedProblems.forEach((p) => {
+        const g = p.grade;
+        if (g && g.gradedBy === "tests" && g.total > 0 && g.passed === g.total) {
+          markInterviewSolved(p.id);
+        }
+      });
+      // Only update if this summary is still the one on screen (user hasn't closed it).
+      setMockSummary((cur) =>
+        cur && cur.startedKey === summary.startedKey
+          ? { ...cur, problems: gradedProblems, grading: false }
+          : cur,
+      );
+    } catch (err) {
+      console.error("[mock-grade] failed", err);
+      setMockSummary((cur) =>
+        cur && cur.startedKey === summary.startedKey ? { ...cur, grading: false } : cur,
+      );
+    }
+    // Persist to local Past Interviews history (score derived from the graded set).
+    try {
+      appendInterviewAttempt({
+        id: attemptId,
+        dateISO: new Date().toISOString(),
+        total: summary.total,
+        solved: summary.solved,
+        attempted: summary.attempted,
+        skipped: summary.skipped,
+        timeUsedMs: summary.timeUsedMs,
+        topics: summary.topics,
+        score: scoreFromGraded(gradedProblems),
+        problems: gradedProblems.map((p) => ({
+          id: p.id,
+          title: p.title,
+          topic: p.topic,
+          difficulty: p.difficulty,
+          outcome: p.outcome,
+          answer_url: p.answer_url,
+          answer_kind: p.answer_kind,
+          code: p.code,
+          language: p.language,
+          grade: p.grade,
+        })),
+      });
+    } catch (err) {
+      console.error("[mock-history] save failed", err);
+    }
+  };
+
+  // Single funnel for every way a mock can end (Finish button, End, timeout). Takes
+  // the ended session, shows the summary overlay immediately, records the badge, and
+  // kicks off async grading + history save. Kept OUT of any setState updater so its
+  // side effects (badge counter, toasts) run exactly once even under StrictMode.
+  const concludeMock = (endedSession) => {
+    if (!endedSession) return;
+    // Tag the summary so a late-arriving grade only patches THIS overlay, not a newer
+    // one the user may have opened by starting another round.
+    const summary = { ...buildMockSummary(endedSession), grading: true, startedKey: `${endedSession.startedAt}` };
+    setMockSummary(summary);
+    // Count this finished mock toward the Mock Rookie / Veteran badges.
+    setMockCompleted(recordMockCompleted());
+    setActiveProblem((prev) => (prev?.mock ? { ...prev, mock: false } : prev));
+    // Leave the workspace and land on Interview Prep underneath the results modal, so
+    // closing the modal drops the student straight onto the interview page (and the new
+    // Past Interviews entry) instead of a stale mock workspace. The summary overlay is
+    // portaled to <body>, so it survives this route change and stays on top.
+    goToPage("interview");
+    // Grade in the background, then persist to local history once verdicts land.
+    gradeAndRecordMock(summary);
   };
 
   // End → show the results overlay. Also clear the stale `mock` flag on the active
   // problem so opening a normal interview problem afterward isn't treated as mock.
   const endMockInterview = () => {
-    // Keep the updater pure (only returns new state); run the summary/badge side
-    // effects once outside it, so a double-invoked updater can't double-count the
-    // mock badge. Same pattern as the timeout path above.
-    let ended = null;
-    setMockSession((prev) => {
-      if (prev) ended = prev;
-      return null;
-    });
-    if (ended) {
-      setMockSummary(buildMockSummary(ended));
-      // Count this finished mock toward the Mock Rookie / Veteran badges.
-      setMockCompleted(recordMockCompleted());
-    }
-    setActiveProblem((prev) => (prev?.mock ? { ...prev, mock: false } : prev));
+    // Read the CURRENT session synchronously from the ref (React does not guarantee a
+    // setState updater runs before the next line, so capturing `ended` inside the
+    // updater was unreliable and left the summary un-set). Snapshot first, conclude,
+    // then clear the session.
+    const ended = mockSessionRef.current;
+    if (!ended) return;
+    setMockSession(null);
+    concludeMock(ended);
+  };
+
+  // Finish the round from the last problem (the primary "Finish & see results"
+  // action). Same conclusion path as End, just without the "are you sure" framing —
+  // reaching the end and asking for results is the intended, non-destructive finish.
+  const finishMock = () => {
+    endMockInterview();
   };
 
   // Silently abandon a mock session (no summary popup) — used when the student
@@ -1490,11 +1695,9 @@ export default function CodingTutor({
         return null;
       });
       if (expired) {
-        setMockSummary(buildMockSummary(expired));
-        // A timed-out mock is still a completed mock — count it toward the Mock
-        // Rookie / Veteran badges, same as ending manually (endMockInterview).
-        setMockCompleted(recordMockCompleted());
-        setActiveProblem((p) => (p?.mock ? { ...p, mock: false } : p));
+        // A timed-out mock is still a completed mock — same conclusion path as
+        // ending manually (summary + badge + async grading + history).
+        concludeMock(expired);
         toast("Time's up! Mock interview ended.", { icon: "⏱️" });
       }
     }, 1000);
@@ -2064,6 +2267,7 @@ export default function CodingTutor({
         onNext={() => gotoMockProblem(mockSession.index + 1)}
         onSolved={() => setMockOutcome("solved")}
         onSkip={requestSkipMock}
+        onFinish={finishMock}
         onEnd={confirmEndMock}
       />
       <div className="coding-workbench-main">
@@ -2135,7 +2339,7 @@ export default function CodingTutor({
           onExplainError={explainError}
           onExplainOneTest={explainOneTest}
           onStopRun={stopRun}
-          onRequestReview={requestReview}
+          onRequestReview={activeProblem?.source === "interview" ? null : requestReview}
           onSaveSnippet={handleSaveSnippet}
           onUploadFile={() => personalFileInputRef.current?.click()}
           codeRenderer={codeRenderer}
@@ -2163,13 +2367,40 @@ export default function CodingTutor({
     </section>
   );
 
+  // Open the Practice Library pre-filtered to a topic (used by interview-problem
+  // "Needs: …" prerequisite links so a student can go practice the fundamental first).
+  // Resolves the label to a real library topic; ignores it if the library has none.
+  const openPracticeTopic = (label) => {
+    const topic = resolvePracticeTopic(label);
+    if (!topic) return;
+    setPendingQuizTopic(topic);
+    goToPage("quiz");
+  };
+
   const renderInterviewPrep = () => (
     <InterviewPrep
       questions={interviewQuestions}
       loading={interviewLoading}
       onSolve={openInterviewProblem}
       onStartMock={startMockInterview}
+      resolvePracticeTopic={resolvePracticeTopic}
+      onOpenPracticeTopic={openPracticeTopic}
+      onOpenHistory={() => goToPage("history")}
     />
+  );
+
+  const renderInterviewHistory = () => (
+    <section className="coding-page-panel interview-prep-page">
+      <div className="interview-prep-hero">
+        <span className="coding-kicker">Interview Prep</span>
+        <h2>Past Interviews</h2>
+        <p>Review the mock interviews you've completed — the questions you got, your saved code, and how you scored.</p>
+        <button type="button" className="iv-history-back" onClick={() => goToPage("interview")}>
+          ← Back to Interview Prep
+        </button>
+      </div>
+      <PastInterviews showEmpty />
+    </section>
   );
 
   const renderPage = () => {
@@ -2198,10 +2429,13 @@ export default function CodingTutor({
           onDifficultyChange={setDifficulty}
           onLanguageChange={setPracticeLanguage}
           onSelectProblem={selectQuestion}
+          initialTopic={pendingQuizTopic}
+          onConsumeInitialTopic={() => setPendingQuizTopic(null)}
         />
       );
     }
     if (activePage === "interview") return renderInterviewPrep();
+    if (activePage === "history") return renderInterviewHistory();
     if (activePage === "progress") return renderProgress();
     if (activePage === "workspace" && !workspaceVisible) {
       return (
@@ -2297,7 +2531,7 @@ export default function CodingTutor({
       {mockSummary && (
         <MockSummary
           summary={mockSummary}
-          onClose={() => { setMockSummary(null); openPage("interview"); }}
+          onClose={() => { setMockSummary(null); goToPage("interview"); }}
           onReview={() => { setMockSummary(null); startMockInterview(); }}
         />
       )}

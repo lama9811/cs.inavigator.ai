@@ -344,6 +344,23 @@ export default function Chatbox({
     handleSend(null, messageToSend, false, "coding_tutor", codingWidgetSessionId);
   };
 
+  // Terminal "Ask for a review": open the FLOATING widget in a FRESH conversation and
+  // send the review there — so the reply is visible in the widget (next to the code +
+  // question), not silently appended to the hidden main coding chat. A new session id
+  // + start index gives a clean thread the student can actually see.
+  const requestFloatingReview = (text) => {
+    if (isLoading || !text || !text.trim()) return;
+    const freshSessionId = `coding-${Date.now()}`;
+    setChatMode("coding_tutor");
+    setCodingTutorContext(prev => ({ ...(prev || {}), tutorMode: "Reviewing" }));
+    setCodingWidgetStartIndex(messages.length); // widget shows only this new thread
+    setCodingWidgetSessionId(freshSessionId);
+    setFloatingCodingChatOpen(true);
+    setFloatingCodingChatMaximized(false);
+    setInput("");
+    handleSend(null, text, false, "coding_tutor", freshSessionId);
+  };
+
   const closeCodingWidgetSession = () => {
     const confirmed = window.confirm("Close this Coding Tutor chat session? Reopening starts a fresh widget session. Your main saved chat history is not deleted.");
     if (!confirmed) return;
@@ -1478,6 +1495,7 @@ export default function Chatbox({
           onActivePageChange={setActiveCodingPage}
           onPrefillChat={prefillSharedChat}
           onStartFreshChat={startFreshCodingWidgetSession}
+          onRequestReview={requestFloatingReview}
           onSendToChat={(text, skipCache = true, widgetSessionId = codingWidgetSessionId) => handleSend(null, text, skipCache, "coding_tutor", widgetSessionId)}
         />
       )}

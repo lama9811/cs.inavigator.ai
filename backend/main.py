@@ -903,6 +903,7 @@ QUIZ_QUESTIONS_DIR = os.path.join(QUIZ_DIR, "questions")
 QUIZ_ANSWERS_DIR = os.path.join(QUIZ_DIR, "answers")
 INTERVIEW_DIR = os.path.join(BACKEND_DIR, "data_sources", "interview")
 INTERVIEW_QUESTIONS_DIR = os.path.join(INTERVIEW_DIR, "questions")
+INTERVIEW_ANSWERS_DIR = os.path.join(INTERVIEW_DIR, "answers")
 STUDY_RESOURCES_PATH = os.path.join(BACKEND_DIR, "data_sources", "study_resources.json")
 
 # Question-library registry. Each "set" (library) maps to a folder of per-difficulty
@@ -975,6 +976,28 @@ class PracticeFreeRunRequest(BaseModel):
             raise ValueError("code is required")
         if len(value) > 20000:
             raise ValueError("code is too large for this lightweight runner")
+        return value
+
+class InterviewGradeAnswer(BaseModel):
+    question_id: str
+    language: str = "python"
+    code: str
+
+class InterviewGradeRequest(BaseModel):
+    """Batch grade of a finished mock interview. Each answer is graded against authored
+    test cases when they exist; questions without tests are reported gradedBy='none' so
+    the client can fall back to an AI review. Capped so one request can't grade an
+    unbounded set."""
+    answers: list[InterviewGradeAnswer] = []
+
+    @field_validator("answers")
+    @classmethod
+    def validate_answers(cls, value):
+        if len(value) > 10:
+            raise ValueError("Too many answers in one grading request.")
+        for a in value:
+            if a.code and len(a.code) > 20000:
+                raise ValueError("code is too large for this lightweight runner")
         return value
 
 class StudyResourceSearchRequest(BaseModel):
@@ -4550,6 +4573,28 @@ def _find_language_solution(question_id: str, language: str, question: Optional[
             return solution
     raise HTTPException(status_code=404, detail="Practice solution not found for that question and language.")
 
+def _find_interview_solution(question_id: str, language: str) -> Optional[dict[str, Any]]:
+    """Look up authored interview test cases for a question+language. Returns None (not a
+    404) when no answer file / entry exists — interview questions are only PARTIALLY
+    covered by tests, and a missing entry is the normal 'ungraded' case, not an error."""
+    language_key, language_label = _normalize_practice_language(language)
+    path = os.path.join(INTERVIEW_ANSWERS_DIR, f"{language_key}.json")
+    if not os.path.exists(path):
+        return None
+    try:
+        data = _read_quiz_json(path)
+    except HTTPException:
+        return None
+    items = data.get("items", data if isinstance(data, list) else [])
+    defaults = data.get("defaults", {}) if isinstance(data, dict) else {}
+    for item in items:
+        if str(item.get("question_id", "")).lower() == question_id.lower().strip():
+            solution = {"language": language_label, **defaults, **item}
+            if solution.get("runner_tests"):
+                return solution
+            return None
+    return None
+
 def _serialize_practice_progress(progress: CodingPracticeProgress) -> dict[str, Any]:
     return {
         "id": progress.id,
@@ -4739,6 +4784,66 @@ async def run_practice_solution(
         "progress": serialized_progress,
         "message": "All local tests passed." if status_value == "passed" else "Review the failed tests and try again.",
     }
+
+@app.post("/api/coding/interview/grade")
+async def grade_interview_answers(
+    req: InterviewGradeRequest,
+    user: dict = Depends(get_current_user),
+):
+    """Batch-grade a finished mock interview against authored test cases. Deterministic
+    and free — reuses the same sandboxed runner as the Practice Library. Questions with
+    no authored tests return gradedBy='none' (the client falls back to an AI review).
+    Does NOT write any progress to the DB (mock outcomes are self-reported / local)."""
+    retry_after = check_practice_run_rate_limit(str(user["user_id"]))
+    if retry_after is not None:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many code runs. Wait briefly before trying again.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
+    results: list[dict[str, Any]] = []
+    for answer in req.answers:
+        try:
+            language_key, _ = _normalize_practice_language(answer.language)
+        except HTTPException:
+            results.append({"question_id": answer.question_id, "gradedBy": "none"})
+            continue
+        if language_key not in {"python", "javascript", "java", "cpp"} or not (answer.code or "").strip():
+            results.append({"question_id": answer.question_id, "gradedBy": "none"})
+            continue
+
+        solution = _find_interview_solution(answer.question_id, language_key)
+        if not solution:
+            results.append({"question_id": answer.question_id, "gradedBy": "none"})
+            continue
+
+        function_name = str(solution.get("function_name") or "solve")
+        tests = solution.get("runner_tests") or []
+        cached_run = get_cached_practice_run(answer.question_id, language_key, answer.code, function_name, tests)
+        if cached_run:
+            run_result = cached_run
+        elif language_key == "javascript":
+            run_result = run_javascript_practice_tests(answer.code, function_name, tests)
+        elif language_key == "java":
+            run_result = run_java_practice_tests(answer.code, function_name, tests)
+        elif language_key == "cpp":
+            run_result = run_cpp_practice_tests(answer.code, function_name, tests)
+        else:
+            run_result = run_python_practice_tests(answer.code, function_name, tests)
+        if not cached_run:
+            set_cached_practice_run(answer.question_id, language_key, answer.code, function_name, tests, run_result)
+
+        results.append({
+            "question_id": answer.question_id,
+            "gradedBy": "tests",
+            "status": run_result.get("status", "error"),
+            "passed": run_result.get("passed", 0),
+            "total": run_result.get("total", 0),
+            "tests": run_result.get("tests", []),
+        })
+
+    return {"results": results}
 
 @app.post("/api/coding/practice/freerun")
 async def free_run_practice_solution(

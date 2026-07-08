@@ -118,6 +118,8 @@ export default function QuizBank({
   progressSummary,
   onDifficultyChange,
   onSelectProblem,
+  initialTopic = null,
+  onConsumeInitialTopic,
 }) {
   // The full cross-difficulty set is the source for browsing/filtering. The
   // parent loads all difficulties into allQuestions; fall back to the current
@@ -141,6 +143,20 @@ export default function QuizBank({
   // The active topic selection drives filtering. Kept as its own name so the
   // downstream filter logic reads clearly.
   const effectiveTopics = topicFilters;
+
+  // Deep-link entry: when opened from an interview problem's "Needs: <topic>" link,
+  // pre-select that topic filter (if the library has it) and open the filter panel so
+  // it's obvious why the list is narrowed. Consume the request so it fires once.
+  useEffect(() => {
+    if (!initialTopic) return;
+    const wanted = initialTopic.toLowerCase();
+    const match = [...new Set(sourceQuestions.map(q => (q.topic || "").toLowerCase()))].find(t => t === wanted);
+    if (match) {
+      setTopicFilters([match]);
+      setFiltersOpen(true);
+    }
+    onConsumeInitialTopic?.();
+  }, [initialTopic, sourceQuestions, onConsumeInitialTopic]);
 
   // Topic options come from the whole set so the list is stable regardless of
   // the other active filters.

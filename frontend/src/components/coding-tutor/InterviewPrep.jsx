@@ -6,6 +6,7 @@ import {
   FaChevronDown,
   FaCode,
   FaExternalLinkAlt,
+  FaHistory,
   FaLayerGroup,
   FaListUl,
   FaProjectDiagram,
@@ -18,7 +19,8 @@ import {
   FaTable,
   FaVideo,
 } from "react-icons/fa";
-import { markInterviewReviewed, useInterviewReviewed } from "./interviewProgress";
+import { markInterviewReviewed, useInterviewReviewed, useInterviewSolved } from "./interviewProgress";
+import { useInterviewHistory } from "./interviewHistory";
 import "./InterviewPrep.css";
 
 function titleCase(value = "") {
@@ -65,7 +67,7 @@ function countByDifficulty(questions) {
   );
 }
 
-function groupByTopic(questions, reviewed) {
+function groupByTopic(questions, reviewed, solved = new Set()) {
   const groups = new Map();
   questions.forEach((question) => {
     const topic = question.topic || "general";
@@ -80,39 +82,47 @@ function groupByTopic(questions, reviewed) {
           (DIFFICULTY_RANK[difficultyOf(a)] ?? 9) - (DIFFICULTY_RANK[difficultyOf(b)] ?? 9) ||
           (a.title || "").localeCompare(b.title || ""),
       );
-      const reviewedCount = sorted.filter(q => reviewed.has(q.id)).length;
+      const solvedCount = sorted.filter(q => solved.has(q.id)).length;
+      // "Done" for the topic progress = solved (auto, from a mock) OR reviewed (manual).
+      const reviewedCount = sorted.filter(q => solved.has(q.id) || reviewed.has(q.id)).length;
       return {
         topic: entry.topic,
         questions: sorted,
         breakdown: countByDifficulty(sorted),
         reviewedCount,
+        solvedCount,
         total: sorted.length,
       };
     })
     .sort((a, b) => b.total - a.total || a.topic.localeCompare(b.topic));
 }
 
-function PageShell({ title, subtitle, children }) {
+function PageShell({ title, subtitle, heroAside, children }) {
   return (
     <section className="coding-page-panel interview-prep-page">
       <div className="interview-prep-hero">
-        <span className="coding-kicker">Interview Prep</span>
-        <h2>{title}</h2>
-        {subtitle && <p>{subtitle}</p>}
+        <div className="interview-prep-hero-copy">
+          <span className="coding-kicker">Interview Prep</span>
+          <h2>{title}</h2>
+          {subtitle && <p>{subtitle}</p>}
+        </div>
+        {heroAside && <div className="interview-prep-hero-aside">{heroAside}</div>}
       </div>
       {children}
     </section>
   );
 }
 
-export default function InterviewPrep({ questions = [], loading = false, onSolve, onStartMock }) {
+export default function InterviewPrep({ questions = [], loading = false, onSolve, onStartMock, resolvePracticeTopic, onOpenPracticeTopic, onOpenHistory }) {
   const { reviewed, toggleReviewed } = useInterviewReviewed();
+  const solved = useInterviewSolved();
+  const { history } = useInterviewHistory();
   const [search, setSearch] = useState("");
   const [openTopic, setOpenTopic] = useState(null);
   // Per-topic UI state, keyed by topic: { diff: "all"|"easy"|.., showAll: bool }.
   const [topicView, setTopicView] = useState({});
 
-  const allGroups = useMemo(() => groupByTopic(questions, reviewed), [questions, reviewed]);
+  const allGroups = useMemo(() => groupByTopic(questions, reviewed, solved), [questions, reviewed, solved]);
 
   // Search across title, topic, secondary topics, and patterns. Also supports a
   // bare difficulty word ("medium", "hard") and combos like "medium arrays".
@@ -135,7 +145,7 @@ export default function InterviewPrep({ questions = [], loading = false, onSolve
     });
   }, [questions, search]);
 
-  const groups = useMemo(() => groupByTopic(filtered, reviewed), [filtered, reviewed]);
+  const groups = useMemo(() => groupByTopic(filtered, reviewed, solved), [filtered, reviewed, solved]);
 
   // Surface recognized facets in the search as chips (difficulty + known topics),
   // so "medium arrays" reads back as [Medium] [Arrays] under the bar.
@@ -179,7 +189,9 @@ export default function InterviewPrep({ questions = [], loading = false, onSolve
     };
   }, [questions, allGroups, reviewed]);
 
-  const activeTopic = openTopic ?? groups[0]?.topic ?? null;
+  // Which topic card is expanded. Null/"" = all collapsed — we do NOT auto-open the
+  // first topic on load; a card only opens when the user clicks it.
+  const activeTopic = openTopic || null;
 
   if (loading) {
     return <PageShell title="Loading interview questions…" />;
@@ -203,6 +215,19 @@ export default function InterviewPrep({ questions = [], loading = false, onSolve
     <PageShell
       title="Practice common coding interview patterns"
       subtitle="Choose a topic, solve a problem, then review a walkthrough. These are classic interview questions — attempt each one before opening the solution."
+      heroAside={
+        history.length > 0 && onOpenHistory ? (
+          <button
+            type="button"
+            className="iv-history-entry"
+            onClick={onOpenHistory}
+            title="View your past mock interviews"
+          >
+            <FaHistory aria-hidden="true" />
+            <span>Past Interviews</span>
+          </button>
+        ) : null
+      }
     >
       {/* Progress strip — each metric a small pill-card with an icon. */}
       <div className="iv-progress-strip">
@@ -305,11 +330,6 @@ export default function InterviewPrep({ questions = [], loading = false, onSolve
         <div className="iv-empty">No questions match “{search}”. Try a topic, a difficulty, or a keyword.</div>
       ) : (
         <>
-        <div className="iv-legend">
-          <span><span className="iv-legend-key b-easy">E</span> Easy</span>
-          <span><span className="iv-legend-key b-med">M</span> Medium</span>
-          <span><span className="iv-legend-key b-hard">H</span> Hard</span>
-        </div>
         <div className="iv-topic-grid">
           {groups.map((group, index) => {
             const isOpen = group.topic === activeTopic;
@@ -336,9 +356,9 @@ export default function InterviewPrep({ questions = [], loading = false, onSolve
                     <p className="iv-topic-counts">
                       {group.total} question{group.total === 1 ? "" : "s"}
                       <span className="iv-topic-breakdown">
-                        <span className="iv-bd-chip b-easy">{group.breakdown.easy} Easy</span>
-                        <span className="iv-bd-chip b-med">{group.breakdown.medium} Med</span>
-                        <span className="iv-bd-chip b-hard">{group.breakdown.hard} Hard</span>
+                        {group.breakdown.easy > 0 && <span className="iv-bd-chip b-easy">{group.breakdown.easy} Easy</span>}
+                        {group.breakdown.medium > 0 && <span className="iv-bd-chip b-med">{group.breakdown.medium} Med</span>}
+                        {group.breakdown.hard > 0 && <span className="iv-bd-chip b-hard">{group.breakdown.hard} Hard</span>}
                       </span>
                     </p>
                     <span className="iv-topic-progress" aria-label={`${group.reviewedCount} of ${group.total} reviewed`}>
@@ -346,6 +366,11 @@ export default function InterviewPrep({ questions = [], loading = false, onSolve
                     </span>
                   </span>
                   <span className="iv-topic-aside">
+                    {group.solvedCount > 0 && (
+                      <span className="iv-topic-solved" title={`${group.solvedCount} solved`}>
+                        <FaCheck aria-hidden="true" /> {group.solvedCount} solved
+                      </span>
+                    )}
                     <span className="iv-topic-reviewed">{group.reviewedCount}/{group.total}</span>
                     <FaChevronDown className="iv-topic-chevron" aria-hidden="true" />
                   </span>
@@ -368,7 +393,8 @@ export default function InterviewPrep({ questions = [], loading = false, onSolve
 
                     <ul className="iv-question-list">
                       {shown.map((question) => {
-                        const isReviewed = reviewed.has(question.id);
+                        const isReviewed = reviewed.has(question.id) || solved.has(question.id);
+                        const isSolved = solved.has(question.id);
                         return (
                           <li key={question.id} className={`iv-question-row ${isReviewed ? "reviewed" : ""}`}>
                             <button
@@ -381,10 +407,52 @@ export default function InterviewPrep({ questions = [], loading = false, onSolve
                               {isReviewed ? <FaCheck aria-hidden="true" /> : <FaRegCheckCircle aria-hidden="true" />}
                             </button>
                             <span className="iv-question-main">
-                              <span className="iv-question-title">{question.title}</span>
-                              <span className={`iv-question-diff diff-${difficultyOf(question)}`}>
-                                {titleCase(question.difficulty)}
+                              <span className="iv-question-title-row">
+                                <span className="iv-question-title">{question.title}</span>
+                                <span className={`iv-question-diff diff-${difficultyOf(question)}`}>
+                                  {titleCase(question.difficulty)}
+                                </span>
+                                {isSolved && <span className="iv-question-solved"><FaCheck aria-hidden="true" /> Solved</span>}
                               </span>
+                              {(() => {
+                                // Drop the section's own topic (redundant under a topic
+                                // group) and anything already implied by it, then show
+                                // the *other* background. Linkable ones jump to the
+                                // Practice Library so the student can go learn it first.
+                                const extras = (question.requires || []).filter(
+                                  (r) => r.toLowerCase() !== group.topic.toLowerCase(),
+                                );
+                                if (!extras.length) return null;
+                                return (
+                                  <span className="iv-question-requires">
+                                    Needs:{" "}
+                                    {extras.map((r, i) => {
+                                      // Link only when the label resolves to a real
+                                      // Practice Library topic; otherwise grey it out so
+                                      // it never dead-links to an unfiltered library.
+                                      const resolved = resolvePracticeTopic?.(r);
+                                      const linkable = resolved && onOpenPracticeTopic;
+                                      return (
+                                        <span key={r}>
+                                          {i > 0 && " · "}
+                                          {linkable ? (
+                                            <button
+                                              type="button"
+                                              className="iv-requires-link"
+                                              onClick={() => onOpenPracticeTopic(r)}
+                                              title={`Practice ${r} in the Practice Library`}
+                                            >
+                                              {r}
+                                            </button>
+                                          ) : (
+                                            <span className="iv-requires-plain" title="Not yet in the Practice Library">{r}</span>
+                                          )}
+                                        </span>
+                                      );
+                                    })}
+                                  </span>
+                                );
+                              })()}
                             </span>
                             <span className="iv-question-actions">
                               <button
@@ -427,27 +495,6 @@ export default function InterviewPrep({ questions = [], loading = false, onSolve
         </>
       )}
 
-      {/* How it works — a compact visual flow instead of a doc list. */}
-      <section className="iv-howto">
-        <h3>How it works</h3>
-        <div className="iv-flow">
-          {[
-            { label: "Pick", desc: "a topic or search a pattern" },
-            { label: "Solve", desc: "in the workspace, no peeking" },
-            { label: "Review", desc: "the walkthrough, mark it done" },
-            { label: "Mock", desc: "a timed, mixed round" },
-          ].map((step, i, arr) => (
-            <span className="iv-flow-step" key={step.label}>
-              <span className="iv-flow-num">{i + 1}</span>
-              <span className="iv-flow-body">
-                <strong>{step.label}</strong>
-                <small>{step.desc}</small>
-              </span>
-              {i < arr.length - 1 && <FaArrowRight className="iv-flow-arrow" aria-hidden="true" />}
-            </span>
-          ))}
-        </div>
-      </section>
     </PageShell>
   );
 }

@@ -176,7 +176,7 @@ export default function CodeWorkspace({
               value={selectedLanguage}
               onChange={(event) => onLanguageChange(event.target.value)}
               disabled={languageLocked}
-              title={languageLocked ? "Language is locked once you start coding this problem" : "Change language"}
+              title={languageLocked ? "Language is locked for the rest of this mock — you committed it after the first question" : "Change language"}
             >
               {languageOptions.map(language => <option key={language} value={language}>{language}</option>)}
             </select>

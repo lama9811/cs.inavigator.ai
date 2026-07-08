@@ -547,6 +547,24 @@ body.coding-dark .coding-nav-snippets-btn.active {
   color: #fff !important;
 }
 
+/* Last-problem primary action — reaching the end and asking for results. Uses the
+   accent so it reads as "the thing to click now", distinct from navy Next / red End. */
+.coding-app .mock-bar-finish {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: var(--ct-accent, #f37021);
+  border: 1px solid var(--ct-accent, #f37021);
+  color: #fff !important;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+body.coding-dark .coding-app .mock-bar-finish { color: #fff !important; }
+
 .coding-app .mock-bar-solved.on {
   background: color-mix(in srgb, #22c55e 18%, transparent);
   border-color: color-mix(in srgb, #22c55e 50%, transparent);
@@ -610,6 +628,15 @@ body.coding-dark .coding-app .mock-bar-end { color: #f4807d !important; }
 .coding-app .problem-solution-locked:hover { border-style: solid; color: var(--ct-text) !important; }
 
 /* ── Mock Interview results overlay ───────────────────────────────────────── */
+/* The modal is portaled to <body> but wrapped in `.coding-app` so it keeps the theme
+   tokens + styles. Reset the wrapper so it doesn't inherit the app's grid/padding. */
+.mock-summary-portal {
+  display: block;
+  padding: 0;
+  min-height: 0;
+  background: none;
+}
+
 .mock-summary-overlay {
   position: fixed;
   inset: 0;
@@ -623,6 +650,7 @@ body.coding-dark .coding-app .mock-bar-end { color: #f4807d !important; }
 }
 
 .mock-summary {
+  position: relative;
   width: min(560px, 100%);
   max-height: 88vh;
   overflow: auto;
@@ -635,7 +663,18 @@ body.coding-dark .coding-app .mock-bar-end { color: #f4807d !important; }
   box-shadow: 0 30px 70px rgba(15, 23, 42, 0.3);
 }
 
-.mock-summary-head { display: flex; align-items: center; gap: 14px; }
+.coding-app .mock-summary-x {
+  position: absolute; top: 12px; right: 12px;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--ct-border); background: transparent;
+  color: var(--ct-muted) !important; font-size: 0.9rem; z-index: 2;
+}
+.coding-app .mock-summary-x:hover { color: var(--ct-text) !important; border-color: var(--ct-text); }
+.mock-summary-autoclose { flex: 1; min-width: 0; font-size: 0.74rem; color: var(--ct-muted); font-style: italic; align-self: center; }
+body.coding-dark .coding-app .mock-summary-x { color: #9db8e0 !important; }
+
+.mock-summary-head { display: flex; align-items: center; gap: 14px; padding-right: 34px; }
 .mock-summary-trophy {
   display: inline-flex; align-items: center; justify-content: center;
   width: 48px; height: 48px; border-radius: 14px;
@@ -660,29 +699,72 @@ body.coding-dark .coding-app .mock-bar-end { color: #f4807d !important; }
 
 .mock-summary-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .mock-summary-item {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  display: flex; flex-direction: column; gap: 8px;
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(--ct-border);
   background: var(--ct-panel, rgba(255,255,255,0.5));
 }
-.mock-summary-outcome { display: inline-flex; align-items: center; gap: 6px; font-weight: 750; font-size: 0.8rem; }
+.mock-summary-item-main { display: flex; align-items: center; gap: 8px 10px; flex-wrap: wrap; }
+.mock-summary-outcome { display: inline-flex; align-items: center; gap: 6px; font-weight: 750; font-size: 0.78rem; flex: 0 0 auto; min-width: 84px; }
 .mock-summary-outcome.solved { color: #15803d; }
 .mock-summary-outcome.skipped { color: #64748b; }
 .mock-summary-outcome.attempted { color: #b45309; }
 .mock-summary-outcome.unattempted { color: var(--ct-muted); }
-.mock-summary-title { flex: 1; min-width: 0; font-weight: 650; color: var(--ct-text); font-size: 0.9rem; }
+/* Give the title enough room to sit on one line before the pills wrap below it,
+   instead of collapsing to a narrow word-per-line column. */
+.mock-summary-title {
+  flex: 1 1 200px; min-width: 150px;
+  font-weight: 650; color: var(--ct-text); font-size: 0.88rem; line-height: 1.3;
+}
 .mock-summary-diff { padding: 2px 9px; border-radius: 999px; font-size: 0.7rem; font-weight: 750; text-transform: uppercase; }
 .mock-summary-diff.diff-easy { background: color-mix(in srgb, #22c55e 18%, transparent); color: #15803d; }
 .mock-summary-diff.diff-medium { background: color-mix(in srgb, #f59e0b 20%, transparent); color: #b45309; }
 .mock-summary-diff.diff-hard { background: color-mix(in srgb, #ef4444 18%, transparent); color: #b91c1c; }
+/* Details + Solution live in a right-aligned group; both are the same size. */
+.mock-summary-actions { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 .coding-app .mock-summary-review {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 11px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-width: 92px; padding: 5px 12px; border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--ct-accent) 46%, var(--ct-border));
   background: transparent; color: var(--ct-text) !important;
   text-decoration: none; font-weight: 700; font-size: 0.78rem;
 }
+
+/* Per-question grade chip: tests = hard pass/fail, AI = labeled amber review. */
+.mock-summary-grade {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 0.74rem; font-weight: 750; white-space: nowrap;
+}
+.mock-summary-grade.is-pass { background: color-mix(in srgb, #22c55e 18%, transparent); color: #15803d; }
+.mock-summary-grade.is-fail { background: color-mix(in srgb, #ef4444 16%, transparent); color: #b91c1c; }
+.mock-summary-grade.is-ai { background: color-mix(in srgb, #f59e0b 20%, transparent); color: #b45309; }
+.mock-summary-grade.is-none { background: color-mix(in srgb, var(--ct-muted) 14%, transparent); color: var(--ct-muted); }
+.mock-summary-grade.is-grading { background: transparent; color: var(--ct-muted); font-style: italic; }
+
+.coding-app .mock-summary-expand {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-width: 92px; padding: 5px 12px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--ct-border); background: transparent;
+  color: var(--ct-text) !important; font-weight: 700; font-size: 0.78rem;
+}
+.mock-summary-expand svg { transition: transform 0.15s ease; }
+.mock-summary-expand.open svg { transform: rotate(180deg); }
+
+.mock-summary-detail { border-top: 1px dashed var(--ct-border); padding-top: 8px; }
+.mock-summary-verdict { margin: 0 0 8px; font-size: 0.84rem; color: var(--ct-text); line-height: 1.45; }
+.mock-summary-code {
+  margin: 0; padding: 10px 12px; border-radius: 8px;
+  background: color-mix(in srgb, var(--ct-primary, #2b3f63) 6%, #f7f9fc);
+  border: 1px solid var(--ct-border);
+  font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.8rem;
+  overflow-x: auto; white-space: pre;
+}
+.mock-summary-grading-note { margin: 0 0 4px; font-size: 0.8rem; color: var(--ct-muted); font-style: italic; }
+
+body.coding-dark .mock-summary-code { background: #0f1a2c; border-color: rgba(148,163,184,0.22); color: #e6edf7; }
+body.coding-dark .mock-summary-detail { border-top-color: rgba(148,163,184,0.28); }
 
 .mock-summary-foot { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
 .coding-app .mock-summary-close,
@@ -693,6 +775,12 @@ body.coding-dark .coding-app .mock-bar-end { color: #f4807d !important; }
 .coding-app .mock-summary-again {
   background: var(--ct-primary, #2b3f63); border-color: var(--ct-primary, #2b3f63); color: #fff !important;
 }
+
+/* Prerequisite ("Needs: …") line under an interview problem's tags. */
+.coding-app .problem-requires {
+  margin: 6px 0 0; font-size: 0.82rem; color: var(--ct-muted);
+}
+.coding-app .problem-requires strong { color: var(--ct-text); font-weight: 700; }
 
 body.coding-dark .mock-summary { background: #1c2a3f; }
 body.coding-dark .mss,
@@ -956,9 +1044,13 @@ body.coding-dark .mock-confirm { background: #1c2a3f; }
 }
 
 .interview-prep-hero {
-  display: grid;
-  gap: 8px;
-  max-width: 720px;
+  /* Full-width flex so Past Interviews can sit at the far right of the hero.
+     (The old `display:grid; max-width:720px` here capped the hero and pinned the
+     aside to the middle of wide screens.) The copy still caps its own text width. */
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  max-width: none;
 }
 
 .interview-prep-hero h2 {
