@@ -71,3 +71,57 @@ export function markInterviewReviewed(questionId) {
   writeReviewedSet(next);
   window.dispatchEvent(new Event("interview-reviewed-change"));
 }
+
+// ── Solved tracking ────────────────────────────────────────────────────────
+// Separate from "reviewed": solved means the student actually got the problem right —
+// either they hit Mark Solved during a mock, or their code passed the auto-grader.
+// Backs the "solved" count on the Interview Prep topic cards. localStorage-only.
+const SOLVED_KEY = "csnav.interviewSolved";
+
+function readSolvedSet() {
+  try {
+    const raw = localStorage.getItem(SOLVED_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function writeSolvedSet(set) {
+  try {
+    localStorage.setItem(SOLVED_KEY, JSON.stringify([...set]));
+  } catch {
+    // Storage full / blocked: solved state just won't persist. Non-fatal.
+  }
+}
+
+// Mark an interview problem solved (from a mock Mark-Solved or a passing grade). Also
+// counts as reviewed. Idempotent; fires the sync event so the topic cards update live.
+export function markInterviewSolved(questionId) {
+  if (!questionId) return;
+  const solved = readSolvedSet();
+  if (!solved.has(questionId)) {
+    solved.add(questionId);
+    writeSolvedSet(solved);
+  }
+  // Solving implies reviewed, so it also counts toward review progress.
+  markInterviewReviewed(questionId);
+  window.dispatchEvent(new Event("interview-reviewed-change"));
+}
+
+// React hook: the set of solved interview problem ids, kept in sync across mounts.
+export function useInterviewSolved() {
+  const [solved, setSolved] = useState(readSolvedSet);
+  useEffect(() => {
+    const sync = () => setSolved(readSolvedSet());
+    window.addEventListener("interview-reviewed-change", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("interview-reviewed-change", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+  return solved;
+}

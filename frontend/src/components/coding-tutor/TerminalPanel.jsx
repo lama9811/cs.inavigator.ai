@@ -121,7 +121,11 @@ function TerminalTestsPane({ output, tests, onExplainFailedTests, onRequestRevie
           )}
         </div>
         {output.message && <p className="terminal-panel-message">{output.message}</p>}
-        <p className="terminal-panel-message">Personal code runs are not auto-graded. Use the floating Coding Tutor for review or hints.</p>
+        <p className="terminal-panel-message">
+          {onRequestReview
+            ? "Personal code runs are not auto-graded. Use the floating Coding Tutor for review or hints."
+            : "This run isn't auto-graded. Interview questions are graded after the mock — open View solution for the walkthrough."}
+        </p>
       </section>
     );
   }

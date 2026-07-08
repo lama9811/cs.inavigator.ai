@@ -382,11 +382,21 @@ export default function App() {
           
           if (data.history && data.history.length > 0) {
               const grouped = {};
+              // Real last-activity time per session (epoch ms of the newest
+              // message). The backend streams messages oldest-first, and session
+              // ids are NOT always a parseable creation epoch (e.g. "default"),
+              // so this is the reliable sort/recency key — not the id.
+              const lastActivity = {};
 
               // Group the flat list of messages by their session_id
               data.history.forEach(item => {
                   const sid = item.session_id || "default";
                   if (!grouped[sid]) grouped[sid] = [];
+
+                  const ts = new Date(item.time).getTime();
+                  if (!isNaN(ts)) {
+                    lastActivity[sid] = Math.max(lastActivity[sid] || 0, ts);
+                  }
 
                   // Add User Message
                   grouped[sid].push({
@@ -408,6 +418,7 @@ export default function App() {
                   id: sid,
                   title: generateChatTitle(grouped[sid], String(sid).startsWith("coding-") ? "coding_tutor" : "regular"),
                   messages: grouped[sid],
+                  lastActivity: lastActivity[sid] || 0,
                   pinned: false,
                   archived: false,
                   autoTitle: true,
@@ -417,11 +428,16 @@ export default function App() {
               // Update state with database sessions
               setSessions(dbSessions);
 
-              // Keep the user's selected chat after refresh when it still exists.
+              // Keep the user's selected chat after refresh when it still exists;
+              // otherwise default to the MOST RECENTLY ACTIVE session (by real
+              // message time), not just the last one in array order.
               if (dbSessions.length > 0) {
                 const savedActiveId = localStorage.getItem(ACTIVE_CHAT_SESSION_KEY);
                 const savedSession = dbSessions.find((session) => session.id === savedActiveId);
-                setActiveId(savedSession?.id || dbSessions[dbSessions.length - 1].id);
+                const mostRecent = dbSessions.reduce((a, b) =>
+                  (b.lastActivity || 0) > (a.lastActivity || 0) ? b : a
+                );
+                setActiveId(savedSession?.id || mostRecent.id);
               }
           } else {
               // New account or no history - reset to a fresh session
@@ -471,6 +487,32 @@ export default function App() {
     localStorage.setItem(ACTIVE_CHAT_SESSION_KEY, id);
     const selected = sessions.find((s) => s.id === id);
     navigate(selected?.mode === "coding_tutor" || String(id).startsWith("coding-") ? "/chat/coding" : "/chat");
+  };
+
+  // Header/brand click: land on the MOST RECENT regular chat — the one at the TOP
+  // of the sidebar — regardless of whether it has messages yet. Fixes the header
+  // dropping the user into a stale/older chat. If there are no regular chats at
+  // all, open a fresh one. Coding sessions are excluded (the brand is the CS Nav
+  // regular entry point).
+  //
+  // Recency key: prefer the real last-activity time captured at history load;
+  // fall back to the creation epoch embedded in the id for freshly-created
+  // client-side sessions that haven't synced from the DB yet. This is the SAME
+  // key the sidebar sorts by, so "most recent" == top of the sidebar.
+  const sessionRecency = (s) =>
+    (s?.lastActivity || 0) || Number(String(s?.id || "").match(/^\d+/)?.[0]) || 0;
+  const handleBrandClick = () => {
+    const regular = sessions.filter(
+      (s) => !s.archived && s.mode !== "coding_tutor" && !String(s.id).startsWith("coding-")
+    );
+    if (regular.length === 0) {
+      handleNew();
+      return;
+    }
+    const mostRecent = regular.reduce((a, b) =>
+      sessionRecency(b) > sessionRecency(a) ? b : a
+    );
+    handleSelect(mostRecent.id);
   };
 
   const handlePendingChatActionHandled = (id) => {
@@ -639,6 +681,7 @@ export default function App() {
         role={role}
         onLogout={handleLogout}
         onToggleSidebar={toggleSidebar}
+        onBrandClick={handleBrandClick}
       />
 
       <Routes>
