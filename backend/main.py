@@ -3615,11 +3615,19 @@ async def get_chat_history(user=Depends(get_current_user), db: Session = Depends
     # Format for frontend
     history = []
     for c in chats:
+        # timestamp is stored naive-but-UTC (models.py uses datetime.now(timezone.utc)
+        # into a naive DateTime column). Emit it WITH an explicit UTC offset so the
+        # browser's `new Date(...)` doesn't misread it as local time — that shift
+        # was pushing early-UTC chats into the previous LOCAL day, which made the
+        # header "go to most-recent chat" jump to the wrong day.
+        ts = c.timestamp
+        if ts is not None and ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
         history.append({
             "session_id": c.session_id or "default",
             "user": c.user_query,
             "bot": c.bot_response,
-            "time": c.timestamp.isoformat()
+            "time": ts.isoformat() if ts is not None else None
         })
         
     return {"history": history}

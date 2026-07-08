@@ -4,15 +4,19 @@
    the Topic Practice Pack card language. */
 
 .interview-prep-page {
-  /* Roomier vertical rhythm so the hero, stats, recommended path, search, and
-     cards spread down the panel instead of clustering at the top with a blank
-     tail. Gap scales with viewport height so tall screens fill the gutter. */
+  /* Roomier vertical rhythm so the search, hero, and cards spread down the page
+     instead of clustering at the top. Gap scales with viewport height.
+     (The panel surface/border/shadow/padding are flattened in CodingTutor.css via
+     the more-specific `.coding-app .interview-prep-page.coding-page-panel` rule.) */
   display: grid;
-  gap: clamp(26px, 4.5vh, 56px);
+  gap: clamp(32px, 5vh, 64px);
   align-content: start;
-  /* Warmer off-white than the default sterile panel, scoped to this page. */
-  background: linear-gradient(180deg, #fbf7f1, #fdfbf8) !important;
+  align-self: start;
+  height: fit-content;
 }
+
+/* Extra breathing room between the hero banner and the topic grid specifically. */
+.iv-topic-grid { margin-top: clamp(6px, 1.5vh, 20px); }
 
 .interview-prep-hero {
   display: flex;
@@ -33,10 +37,15 @@
   margin-top: 28px;
 }
 
+/* Sora gives the big header + the "go" CTAs more character than the plain body
+   Inter — rounder, more modern, less blocky. Scoped to this page only. */
 .interview-prep-hero h2 {
   margin: 2px 0 0;
   color: var(--ct-text);
-  font-size: clamp(1.3rem, 2.6vw, 1.7rem);
+  font-family: 'Sora', var(--font-display, 'Public Sans'), sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-size: clamp(1.4rem, 2.8vw, 1.9rem);
 }
 
 .interview-prep-hero p {
@@ -47,183 +56,231 @@
   line-height: 1.5;
 }
 
-/* ── Progress strip (stat pill-cards + mock CTA) ──────────────────────────── */
-.iv-progress-strip {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
+/* ── Readiness Check ladder — ONE merged flow ────────────────────────────────
+   The mock interview is the goal; warming up is the stepping-stone. A calm
+   raised panel (not an aggressive blue banner) so a nervous student isn't scared
+   off; the accent energy is reserved for the "ready" state. */
+.iv-ladder {
+  display: grid;
+  gap: 18px;
+  padding: 26px 28px;
+  border-radius: 20px;
+  /* Distinct, higher-contrast banner so it clearly stands off the warm off-white
+     page — a soft blue tint + defined blue border + lift. Calm, not aggressive. */
+  border: 1px solid color-mix(in srgb, var(--ct-primary, #3f82e6) 32%, var(--ct-border));
+  background:
+    radial-gradient(130% 150% at 100% 0%, color-mix(in srgb, var(--ct-accent, #f58220) 12%, transparent), transparent 55%),
+    linear-gradient(135deg, color-mix(in srgb, var(--ct-primary, #3f82e6) 15%, #fff), color-mix(in srgb, var(--ct-primary, #3f82e6) 6%, #fff));
+  box-shadow: 0 18px 44px color-mix(in srgb, var(--ct-primary, #3f82e6) 16%, rgba(15, 23, 42, 0.08));
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+/* Ready: warm accent frame + glow so the whole card celebrates the unlock. */
+.iv-ladder.is-ready {
+  border-color: color-mix(in srgb, var(--ct-accent, #f58220) 55%, var(--ct-border));
+  background:
+    radial-gradient(130% 150% at 100% 0%, color-mix(in srgb, var(--ct-accent, #f58220) 20%, transparent), transparent 55%),
+    linear-gradient(135deg, color-mix(in srgb, var(--ct-accent, #f58220) 15%, #fff), color-mix(in srgb, var(--ct-accent, #f58220) 6%, #fff));
+  box-shadow: 0 20px 48px color-mix(in srgb, var(--ct-accent, #f58220) 24%, transparent);
 }
 
-.iv-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  flex: 1;
-  min-width: 0;
+/* The checklist chips sit on the tinted banner — give them a solid white base so
+   they don't muddy against the tint. */
+.iv-ladder .iv-check-step { background: #fff; }
+
+.iv-ladder-top { display: flex; flex-wrap: wrap; gap: 18px 28px; align-items: flex-start; }
+.iv-ladder-copy { flex: 1 1 320px; min-width: 0; display: grid; gap: 6px; }
+.iv-ladder-title {
+  margin: 0;
+  color: var(--ct-text);
+  font-family: 'Sora', var(--font-display, 'Public Sans'), sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-size: clamp(1.3rem, 2.8vw, 1.7rem);
+  line-height: 1.12;
+}
+.iv-ladder-sub {
+  margin: 0;
+  max-width: 58ch;
+  color: var(--ct-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 
-.iv-stat {
+/* ── Readiness meter ── */
+.iv-ready-meter { flex: 1 1 260px; min-width: 0; display: grid; gap: 7px; align-self: center; }
+.iv-ready-meter-head {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border: 1px solid var(--ct-border);
-  border-radius: 14px;
-  background: var(--ct-solid-raised, var(--ct-panel-raised));
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+  gap: 8px;
+  color: var(--ct-text);
+  font-weight: 800;
+  font-size: 0.9rem;
 }
+.iv-ready-meter-head svg { color: var(--ct-accent, #f58220); }
+.iv-ready-track {
+  height: 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-border) 82%, transparent);
+  overflow: hidden;
+}
+.iv-ready-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--ct-primary, #3f82e6), var(--ct-accent, #f58220));
+  transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.iv-ladder.is-ready .iv-ready-fill {
+  background: linear-gradient(90deg, var(--ct-accent, #f58220), #f7b955);
+}
+.iv-ready-hint { color: var(--ct-muted); font-size: 0.8rem; }
 
-.iv-stat-icon {
+/* ── Prerequisite checklist (gate topics → Mock Interview) ── */
+.iv-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--ct-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.iv-check-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--ct-border);
+  background: var(--ct-panel, rgba(255, 255, 255, 0.5));
+  min-width: 0;
+}
+.iv-check-mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--ct-primary-soft), var(--ct-accent-soft));
-  color: var(--ct-primary);
-  font-size: 0.9rem;
-}
-
-.iv-stat-body { display: grid; gap: 1px; }
-
-.iv-stat-num {
-  color: var(--ct-text);
-  font-size: 1.25rem;
-  font-weight: 800;
-  line-height: 1.05;
-}
-
-.iv-stat-num.iv-stat-text { font-size: 1rem; }
-.iv-stat-den { color: var(--ct-muted); font-size: 0.85rem; font-weight: 700; }
-
-.iv-stat-label {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ct-border);
   color: var(--ct-muted);
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  font-size: 0.66rem;
+  flex-shrink: 0;
+}
+.iv-check-label { display: grid; line-height: 1.15; }
+.iv-check-label { color: var(--ct-text); font-weight: 700; font-size: 0.86rem; }
+.iv-check-label small { color: var(--ct-muted); font-weight: 650; font-size: 0.7rem; }
+
+.iv-check-step.done { border-color: color-mix(in srgb, var(--ct-success, #22c55e) 45%, var(--ct-border)); }
+.iv-check-step.done .iv-check-mark {
+  border-color: color-mix(in srgb, var(--ct-success, #22c55e) 55%, transparent);
+  background: color-mix(in srgb, var(--ct-success, #22c55e) 16%, transparent);
+  color: #15803d;
+}
+.iv-check-step.done .iv-check-label small { color: #15803d; }
+
+.iv-check-step.current {
+  border-color: color-mix(in srgb, var(--ct-accent, #f58220) 55%, var(--ct-border));
+  background: color-mix(in srgb, var(--ct-accent, #f58220) 7%, var(--ct-panel, #fff));
+}
+.iv-check-step.current .iv-check-mark {
+  border-color: var(--ct-accent, #f58220);
+  background: color-mix(in srgb, var(--ct-accent, #f58220) 16%, transparent);
+  color: var(--ct-accent, #f58220);
 }
 
-/* Scoped + !important on color: a global `.coding-app button` rule otherwise
-   forces dark text, making the label invisible on this dark gradient button. */
-/* This button uses HARD navy literals (not var(--ct-primary)) on purpose: the
-   theme's primary resolves to a medium/light blue in light mode, which washed out
-   the white label — especially on hover. A fixed deep navy guarantees the white
-   text stays readable in every theme; the orange accent ring is the hover signal. */
-.coding-app .iv-mock-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  margin-left: auto;
-  padding: 10px 18px;
-  border: 0;
-  border-radius: 12px;
-  /* Crisp brand blue to match the active header selector + the other primary
-     "go" actions (was a deep-navy gradient). */
-  background: linear-gradient(135deg, #3f82e6, #2f6fd6);
-  color: #fff !important;
-  cursor: pointer;
-  text-align: left;
+/* Future topics — grayed out, no label. They read as "not yet" without adding
+   text clutter to the timeline. */
+.iv-check-step.future { opacity: 0.55; }
+
+/* The goal node — the Mock Interview at the end of the ladder. */
+.iv-check-step.goal .iv-check-mark {
+  border-color: color-mix(in srgb, var(--ct-primary, #3f82e6) 50%, var(--ct-border));
+  color: var(--ct-primary, #3f82e6);
+}
+.iv-check-step.goal.locked { opacity: 0.72; }
+.iv-check-step.goal.unlocked {
+  border-color: color-mix(in srgb, var(--ct-accent, #f58220) 60%, var(--ct-border));
+  background: color-mix(in srgb, var(--ct-accent, #f58220) 10%, var(--ct-panel, #fff));
+}
+.iv-check-step.goal.unlocked .iv-check-mark {
+  border-color: var(--ct-accent, #f58220);
+  background: var(--ct-accent, #f58220);
+  color: #fff;
 }
 
-.coding-app .iv-mock-btn svg { font-size: 1.1rem; color: #f7b955 !important; }
-.coding-app .iv-mock-btn strong { display: block; font-size: 0.95rem; color: #fff !important; }
-.coding-app .iv-mock-btn small { display: block; font-size: 0.76rem; color: #fff !important; opacity: 0.9; }
-
-/* Hover: brighten the blue and keep the WHITE label (matches the other primary
-   "go" buttons). Overrides the shared coding-app peach hover so the text stays
-   readable in both light and dark mode. */
-.coding-app .iv-mock-btn:hover,
-.coding-app .iv-mock-btn:focus-visible {
-  transform: translateY(-1px);
-  outline: none;
-  background: linear-gradient(135deg, #4c8ef0, #3a78de) !important;
-}
-.coding-app .iv-mock-btn:hover strong,
-.coding-app .iv-mock-btn:hover small,
-.coding-app .iv-mock-btn:focus-visible strong,
-.coding-app .iv-mock-btn:focus-visible small { color: #fff !important; }
-/* Keep the lightning icon its warm accent — a nice pop against the blue. */
-.coding-app .iv-mock-btn:hover svg,
-.coding-app .iv-mock-btn:focus-visible svg { color: #ffd27f !important; }
-
-/* ── Recommended path ─────────────────────────────────────────────────────── */
-.iv-path-strip {
+/* ── CTA row (bottom of the hero) — buttons side-by-side, pushed to the far right
+   so they sit under the readiness meter and fill the empty right area. ── */
+.iv-ladder-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px 16px;
-  padding: 12px 16px;
-  border: 1px dashed color-mix(in srgb, var(--ct-accent, #f58220) 42%, var(--ct-border));
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--ct-accent, #f58220) 6%, transparent);
-}
-
-.iv-path-head {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--ct-text);
-  font-weight: 750;
-  font-size: 0.9rem;
-}
-
-.iv-path-chain {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.iv-path-node {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.iv-path-chip {
-  padding: 5px 14px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--ct-accent, #f58220) 45%, var(--ct-border));
-  background: color-mix(in srgb, var(--ct-accent, #f58220) 7%, var(--ct-solid-raised, #fff));
-  color: var(--ct-text);
-  cursor: pointer;
-  font-weight: 700;
-  font-size: 0.85rem;
-  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease,
-    background 0.12s ease;
-}
-
-.iv-path-chip:hover {
-  transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--ct-accent) 70%, var(--ct-border));
-  background: color-mix(in srgb, var(--ct-accent, #f58220) 14%, var(--ct-solid-raised, #fff));
-  box-shadow: 0 8px 18px color-mix(in srgb, var(--ct-accent) 16%, transparent);
-}
-
-.iv-path-chip.is-next {
-  border-color: color-mix(in srgb, var(--ct-accent) 60%, var(--ct-border));
-  background: color-mix(in srgb, var(--ct-accent) 14%, transparent);
-  color: var(--ct-text);
-}
-
-.iv-path-arrow { color: var(--ct-muted); font-size: 0.72rem; }
-
-.iv-path-cta {
+  justify-content: flex-end;
+  gap: 12px;
   margin-left: auto;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--ct-accent, #f58220) 48%, var(--ct-border));
-  background: var(--ct-accent, #f58220);
-  color: #fff;
-  cursor: pointer;
-  font-weight: 750;
-  font-size: 0.85rem;
 }
 
-.iv-path-cta:hover { transform: translateY(-1px); }
+.coding-app .iv-ladder-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 24px;
+  border-radius: 13px;
+  border: 0;
+  cursor: pointer;
+  font-family: 'Sora', var(--font-display, 'Public Sans'), sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-size: 0.96rem;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.14s ease, border-color 0.14s ease;
+}
+.coding-app .iv-ladder-cta small { font-weight: 650; font-size: 0.76rem; opacity: 0.85; }
+
+/* Primary = solid brand blue (the warmup below-ready, or the mock at-ready). */
+.coding-app .iv-ladder-cta.primary {
+  background: linear-gradient(135deg, #3f82e6, #2f6fd6);
+  color: #fff !important;
+  box-shadow: 0 12px 26px color-mix(in srgb, #2f6fd6 30%, transparent);
+}
+.coding-app .iv-ladder-cta.primary svg { color: #ffd27f !important; }
+.coding-app .iv-ladder-cta.primary:hover,
+.coding-app .iv-ladder-cta.primary:focus-visible {
+  transform: translateY(-2px);
+  outline: none;
+  background: linear-gradient(135deg, #4c8ef0, #3a78de) !important;
+  box-shadow: 0 16px 32px color-mix(in srgb, #2f6fd6 38%, transparent);
+}
+
+/* Ready-state glow — the mock CTA pulses so the unlock feels like a reward. */
+.coding-app .iv-ladder-cta.glow {
+  background: linear-gradient(135deg, var(--ct-accent, #f58220), #f7a13c);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--ct-accent, #f58220) 55%, transparent);
+  animation: iv-ready-pulse 2s ease-in-out infinite;
+}
+.coding-app .iv-ladder-cta.glow:hover { background: linear-gradient(135deg, #f7942a, #f8ad4e) !important; }
+@keyframes iv-ready-pulse {
+  0%, 100% { box-shadow: 0 10px 26px color-mix(in srgb, var(--ct-accent, #f58220) 34%, transparent); }
+  50% { box-shadow: 0 10px 30px color-mix(in srgb, var(--ct-accent, #f58220) 60%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .coding-app .iv-ladder-cta.glow { animation: none; }
+}
+
+/* Ghost = low-key text button (the secondary "Try Mock Interview" and the
+   "keep warming up" link). Just text with a slight tint + darken on hover. */
+.coding-app .iv-ladder-cta.ghost {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ct-primary) !important;
+  padding: 13px 16px;
+  font-weight: 750;
+}
+.coding-app .iv-ladder-cta.ghost:hover,
+.coding-app .iv-ladder-cta.ghost:focus-visible {
+  outline: none;
+  color: var(--ct-primary) !important;
+  background: color-mix(in srgb, var(--ct-primary) 8%, transparent) !important;
+}
 
 /* ── Search ───────────────────────────────────────────────────────────────── */
 .iv-search {
@@ -291,9 +348,12 @@
 }
 
 /* ── Topic grid + cards ───────────────────────────────────────────────────── */
+/* Fixed 4-up so the layout is EVEN whether the sidebar is open or closed — an
+   auto-fit track floated between 4 and 5 columns depending on sidebar width.
+   Steps down 4 → 3 → 2 → 1 as the panel narrows (handled in the media queries). */
 .iv-topic-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
   /* stretch so every card in a row is the same height regardless of how many
      difficulty chips wrap; the header fills the card via flex below. */
@@ -393,8 +453,8 @@
   font-size: 0.82rem;
 }
 
-/* Chips always sit on their own line (flex-basis 100%) so cards are consistent —
-   no card wraps to 2 rows while another fits on 1. */
+/* Difficulty chips always sit on their own line (flex-basis 100%) so cards stay
+   consistent — no card wraps to 2 rows while another fits on 1. */
 .iv-topic-breakdown { display: flex; gap: 5px; flex-wrap: wrap; flex-basis: 100%; margin-top: 2px; }
 
 .iv-bd-chip {
@@ -406,27 +466,9 @@
   font-weight: 750;
   letter-spacing: 0.01em;
 }
-
 .iv-bd-chip.b-easy { background: color-mix(in srgb, #22c55e 16%, transparent); color: #15803d; }
 .iv-bd-chip.b-med { background: color-mix(in srgb, #f59e0b 18%, transparent); color: #b45309; }
 .iv-bd-chip.b-hard { background: color-mix(in srgb, #ef4444 16%, transparent); color: #b91c1c; }
-
-.iv-topic-progress {
-  display: block;
-  height: 5px;
-  margin-top: 8px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--ct-border) 80%, transparent);
-  overflow: hidden;
-}
-
-.iv-topic-progress-fill {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--ct-success, #22c55e), color-mix(in srgb, var(--ct-success, #22c55e) 70%, #4ade80));
-  transition: width 0.2s ease;
-}
 
 .iv-topic-aside {
   display: inline-flex;
@@ -436,9 +478,58 @@
   padding-top: 2px;
 }
 
-.iv-topic-reviewed { color: var(--ct-muted); font-size: 0.82rem; font-weight: 750; }
+/* ── Circular progress ring — conic-gradient arc; empty at 0%, green glow at 100%.
+   --pct (0–100) drives the sweep. Replaces the tiny "N/total" text. ── */
+.iv-ring {
+  --size: 44px;
+  --pct: 0;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  flex-shrink: 0;
+  background:
+    conic-gradient(
+      var(--ct-primary, #3f82e6) calc(var(--pct) * 1%),
+      color-mix(in srgb, var(--ct-border) 70%, transparent) 0
+    );
+  transition: background 0.3s ease;
+}
+.iv-ring::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: var(--ct-solid-raised, var(--ct-panel-raised));
+}
+.iv-ring-label {
+  position: relative;
+  color: var(--ct-text);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.iv-ring.done {
+  background: conic-gradient(var(--ct-success, #22c55e) 100%, var(--ct-success, #22c55e) 0);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ct-success, #22c55e) 22%, transparent);
+}
+.iv-ring.done .iv-ring-label { color: #15803d; }
+
 .iv-topic-chevron { color: var(--ct-muted); transition: transform 0.18s ease, color 0.16s ease; }
 .iv-topic-card.open .iv-topic-chevron { transform: rotate(180deg); }
+
+/* ── Completed topics recede — dimmed + slightly shrunk so active ones pop. ── */
+.iv-topic-card.is-done {
+  opacity: 0.62;
+  transform: scale(0.985);
+}
+.iv-topic-card.is-done:hover { opacity: 1; transform: scale(1); }
+.iv-topic-card.is-done::before {
+  background: linear-gradient(180deg, var(--ct-success, #22c55e), #4ade80) !important;
+}
 
 /* ── Expanded body ────────────────────────────────────────────────────────── */
 .iv-topic-body { padding: 0 16px 14px; display: grid; gap: 10px; }
@@ -499,14 +590,13 @@
 .iv-question-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .iv-question-title-row { display: flex; align-items: center; gap: 10px; min-width: 0; flex-wrap: wrap; }
 .iv-question-title { color: var(--ct-text); font-weight: 650; font-size: 0.92rem; }
-/* Solved marker on an interview question row + the topic-card "N solved" badge. */
-.iv-question-solved, .iv-topic-solved {
+/* Solved marker on an interview question row. */
+.iv-question-solved {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 750;
   background: color-mix(in srgb, var(--ct-success, #22c55e) 16%, transparent); color: #15803d;
 }
-.iv-topic-solved { font-size: 0.72rem; }
-body.coding-dark .iv-question-solved, body.coding-dark .iv-topic-solved { color: #4ade80; }
+body.coding-dark .iv-question-solved { color: #4ade80; }
 .iv-question-requires {
   font-size: 0.72rem; color: var(--ct-muted); font-weight: 600;
 }
@@ -592,74 +682,46 @@ body.coding-dark .iv-requires-plain { color: #6b7f9e; }
 
 .iv-show-all:hover { background: color-mix(in srgb, var(--ct-primary) 8%, transparent); }
 
-/* ── How it works — visual flow ───────────────────────────────────────────── */
-.iv-howto {
-  padding: 16px 18px;
-  border: 1px solid var(--ct-border);
-  border-radius: 16px;
-  background: var(--ct-panel-soft, rgba(248, 250, 252, 0.7));
-}
-
-.iv-howto h3 { margin: 0 0 12px; color: var(--ct-text); font-size: 1rem; }
-
-.iv-flow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
-
-.iv-flow-step { display: inline-flex; align-items: center; gap: 12px; }
-
-.iv-flow-num {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--ct-primary), color-mix(in srgb, var(--ct-primary) 70%, #2b3f63));
-  color: #fff;
-  font-weight: 800;
-  font-size: 0.82rem;
-  flex-shrink: 0;
-}
-
-.iv-flow-body { display: grid; gap: 0; }
-.iv-flow-body strong { color: var(--ct-text); font-size: 0.92rem; }
-.iv-flow-body small { color: var(--ct-muted); font-size: 0.78rem; }
-.iv-flow-arrow { color: var(--ct-muted); font-size: 0.8rem; margin-left: 4px; }
-
 /* ── Dark mode ────────────────────────────────────────────────────────────── */
 body.coding-dark .interview-prep-page { background: linear-gradient(180deg, #18233a, #1b2840) !important; }
 
-body.coding-dark .iv-stat,
 body.coding-dark .iv-search,
 body.coding-dark .iv-topic-card { background: var(--ct-solid-raised, #1c2a3f); }
 
-/* Path chips read as buttons, not flat labels: lighter than the strip, an accent
-   ring, and a clear hover lift so students know they're clickable in dark mode. */
-body.coding-dark .iv-path-chip {
-  color: #f4ede1;
-  background: #24344f;
-  border-color: rgba(231, 160, 91, 0.45);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+/* Readiness ladder in dark mode — a distinct blue-lifted banner (lighter than the
+   page + a defined blue border) so it stands off the dark background. */
+body.coding-dark .iv-ladder {
+  border-color: rgba(63, 130, 230, 0.5);
+  background:
+    radial-gradient(130% 150% at 100% 0%, rgba(245, 130, 32, 0.12), transparent 55%),
+    linear-gradient(135deg, #294064, #223454);
+  box-shadow: 0 18px 44px rgba(8, 15, 30, 0.4);
 }
-body.coding-dark .iv-path-chip:hover {
-  background: #2c3f5e;
-  border-color: color-mix(in srgb, var(--ct-accent, #f58220) 75%, transparent);
-  box-shadow: 0 8px 18px rgba(245, 130, 32, 0.22);
+body.coding-dark .iv-ladder .iv-check-step { background: #16233a; }
+body.coding-dark .iv-ladder.is-ready {
+  border-color: rgba(231, 160, 91, 0.55);
+  background:
+    radial-gradient(130% 150% at 100% 0%, rgba(245, 130, 32, 0.2), transparent 55%),
+    linear-gradient(135deg, #3a3350, #2c2d47);
+  box-shadow: 0 18px 44px rgba(245, 130, 32, 0.22);
 }
-body.coding-dark .iv-path-chip.is-next {
-  background: color-mix(in srgb, var(--ct-accent, #f58220) 22%, #24344f);
-  border-color: color-mix(in srgb, var(--ct-accent, #f58220) 70%, transparent);
-}
-body.coding-dark .iv-path-arrow { color: rgba(231, 160, 91, 0.75); }
-body.coding-dark .iv-path-strip {
-  border-color: rgba(231, 160, 91, 0.4);
-  background: rgba(245, 130, 32, 0.05);
-}
+body.coding-dark .iv-ladder-sub,
+body.coding-dark .iv-ready-hint { color: #b7c6de; }
+body.coding-dark .iv-ready-track { background: rgba(148, 163, 184, 0.24); }
+body.coding-dark .iv-check-step { background: #16233a; border-color: rgba(148, 163, 184, 0.22); }
+body.coding-dark .iv-check-mark { border-color: rgba(148, 163, 184, 0.32); color: #b7c6de; }
+body.coding-dark .iv-check-step.done .iv-check-label small { color: #5ee69a; }
+
+/* Ring inner disc + label must sit on the dark card, not white. */
+body.coding-dark .iv-ring::before { background: var(--ct-solid-raised, #1c2a3f); }
+body.coding-dark .iv-ring-label { color: #eef3fb; }
+body.coding-dark .iv-ring.done .iv-ring-label { color: #5ee69a; }
+
 body.coding-dark .iv-topic-card.open .iv-topic-head { background: rgba(231, 160, 91, 0.08); }
 
 body.coding-dark .iv-question-row { background: #16233a; border-color: rgba(148, 163, 184, 0.22); }
 body.coding-dark .iv-question-action { background: #5f7fae; color: #f8f3ea; }
 body.coding-dark .iv-question-action.icon-only { background: transparent; border-color: rgba(231, 160, 91, 0.5); color: #f1e9dc; }
-body.coding-dark .iv-howto { background: #16233a; }
 
 body.coding-dark .iv-bd-chip.b-easy,
 body.coding-dark .iv-question-diff.diff-easy,
@@ -671,19 +733,37 @@ body.coding-dark .iv-question-diff.diff-hard { color: #f4807d; }
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width: 720px) {
-  .iv-progress-stat { min-width: 78px; padding-right: 8px; }
-  .iv-mock-btn { margin-left: 0; width: 100%; justify-content: center; }
-  .iv-path-cta { margin-left: 0; }
+  /* On phones the CTAs go full-width and lose the right-shift so they stay obvious
+     tap targets. */
+  .iv-ladder { padding: 20px; gap: 16px; }
+  .iv-ladder-top { gap: 14px; }
+  .iv-ladder-actions { margin-left: 0; justify-content: stretch; }
+  .coding-app .iv-ladder-cta { width: 100%; justify-content: center; }
+  .coding-app .iv-ladder-cta.ghost { width: auto; align-self: center; }
+
   /* Narrow screens: let the hero wrap so Past Interviews drops below the copy. */
   .interview-prep-hero { flex-wrap: wrap; }
   .interview-prep-hero-aside { margin-left: 0; margin-top: 0; }
   .iv-history-entry { margin-left: -12px; }
 }
 
+/* Topic grid step-downs — keep cards from getting cramped as the panel narrows
+   (the sidebar eats ~280px, so these thresholds account for the open sidebar). */
+@media (max-width: 1360px) {
+  .iv-topic-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 980px) {
+  .iv-topic-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 @media (max-width: 560px) {
   .iv-topic-grid { grid-template-columns: 1fr; }
   .iv-question-row { grid-template-columns: auto minmax(0, 1fr); }
   .iv-question-actions { grid-column: 1 / -1; justify-content: flex-end; }
+  /* Give the ring a touch more room vs the title on very narrow cards. */
+  .iv-ring { --size: 40px; }
+  /* Checklist steps each take a full row so labels never truncate awkwardly. */
+  .iv-check-step { flex: 1 1 100%; }
 }
 
 /* Entry that opens the Past Interviews route. Styled like a browser "History"

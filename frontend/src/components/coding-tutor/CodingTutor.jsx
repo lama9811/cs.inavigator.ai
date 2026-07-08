@@ -2582,7 +2582,7 @@ export default function CodingTutor({
   };
 
   return (
-    <div className={`coding-app ${activePage === "workspace" ? "coding-workspace-active" : ""} ${terminalOpen ? "terminal-open" : "terminal-closed"}`}>
+    <div className={`coding-app coding-page-${activePage} ${activePage === "workspace" ? "coding-workspace-active" : ""} ${terminalOpen ? "terminal-open" : "terminal-closed"}`}>
       <div className="coding-nav-row">
         <nav className="coding-section-nav campus-section-nav" aria-label="Coding tutor sections">
         {CODING_PAGES.map(page => {

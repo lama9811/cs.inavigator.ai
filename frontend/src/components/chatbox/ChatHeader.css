@@ -2,7 +2,9 @@
    secondary header's own height. Both drive the layout so there is never a gap
    above the bar or a chat message hidden behind it. */
 .chat-main {
-  --app-navbar-height: 70px;
+  /* Follow the real navbar height (--nav-h changes across breakpoints: 52–75px);
+     hardcoding 70px left a gap on ≥1440px and an overlap on smaller screens. */
+  --app-navbar-height: var(--nav-h, 70px);
   --secondary-header-height: 48px;
   /* Reserve the bar's height so the first chat message starts below it. */
   padding-top: var(--secondary-header-height);
@@ -141,25 +143,14 @@ body.dark .chat-main > .model-selector-header {
   }
 }
 
-/* The top navbar shrinks on small screens; keep the fixed bar tucked right
-   under it (no gap above) and span the full width once the sidebar is overlaid. */
-@media (max-width: 767px) {
-  .chat-main {
-    --app-navbar-height: 60px;
-  }
-}
-
+/* The fixed bar spans full width once the sidebar overlays the content on small
+   screens. (Its top offset follows --nav-h via --app-navbar-height, so no
+   per-breakpoint height overrides are needed here anymore.) */
 @media (max-width: 640px) {
   .chat-main > .model-selector-header,
   body.sidebar-collapsed .chat-main > .model-selector-header,
   body.sidebar-custom-width:not(.sidebar-collapsed) .chat-main > .model-selector-header,
   body.sidebar-resizing .chat-main > .model-selector-header {
     left: 0 !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .chat-main {
-    --app-navbar-height: 56px;
   }
 }

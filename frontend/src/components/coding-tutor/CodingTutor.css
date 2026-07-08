@@ -25,11 +25,12 @@
   /* Nav is a dropdown BAR on top (row 1), content below (row 2) — on every
      screen. The old 162px side column squished the dropdown into a thin sliver. */
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr);
   /* List pages (Home / Quiz Bank / Interview Prep / Progress) size to their
-     content — NOT a forced viewport height. The forced full height (which made a
-     tall gradient block below short content = the "gutter") is applied only in the
-     workspace, where filling the screen IS wanted (see .coding-workspace-active). */
+     CONTENT — row 2 is `auto`, so the panel is only as tall as what's in it and
+     the tinted --ct-bg never paints an empty tail below the cards (the "gutter"
+     that only showed on short laptop screens). The workspace re-enables a full
+     `1fr` fill below, where filling the screen IS wanted. */
+  grid-template-rows: auto auto;
   min-height: 0;
   padding: 16px 10px 12px;
   /* A flat surface (no tall gradient band) so there's no visible block below the
@@ -39,6 +40,20 @@
   gap: 10px;
   overflow: visible;
   transition: grid-template-columns 0.16s ease;
+}
+
+/* Workspace fills the viewport (editor/terminal want the full height); the
+   content row stretches here, unlike the content-sized list pages above. */
+.coding-app.coding-workspace-active {
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 100%;
+}
+
+/* Interview Prep: the outer app container is transparent so the page's own
+   backdrop shows through (the inner panel is flattened at .interview-prep-page
+   .coding-page-panel below). Scoped to this page; other pages keep their surface. */
+.coding-app.coding-page-interview {
+  background: transparent !important;
 }
 
 .coding-app.mini-sidebar-collapsed {
