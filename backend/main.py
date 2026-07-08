@@ -83,7 +83,7 @@ print(f"[KEY] JWT_SECRET Check: {'FOUND' if os.getenv('JWT_SECRET') else 'MISSIN
 # SQLAlchemy Imports
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import OperationalError, ProgrammingError
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, text, or_, func
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, text, or_, and_, func
 
 # Vertex AI Agent Engine (replaces Pinecone + OpenAI RAG pipeline)
 from vertex_agent import query_agent, query_agent_stream, check_agent_health, reset_session
@@ -5061,17 +5061,29 @@ _POPULAR_Q_STOPLIST = {
 }
 _POPULAR_Q_MIN_LEN = 15  # trimmed-length floor; shorter messages are treated as filler
 
-# Coding-tutor quick-action prompts are logged to ChatHistory just like advising
-# questions, but they must NOT surface on the chat welcome screen (that screen is
-# for academic advising). Drop any question containing one of these coding-tutor
-# signal phrases (matched case-insensitively as substrings).
+# Coding-tutor and mock-interview-grader traffic is logged to ChatHistory just
+# like advising questions, but it must NOT surface on the chat welcome screen
+# (that screen is for academic advising). The primary defense is a session_id
+# exclusion in the query below — coding sessions and the AI grader use their own
+# session ids, so this catches ALL of their traffic (widget questions, review /
+# debug quick-actions, and the "You are grading a mock coding-interview answer…"
+# grader prompts) regardless of wording. The marker list is a belt-and-suspenders
+# fallback for any coding prompt that somehow lands under a non-coding session id.
 _POPULAR_Q_CODING_MARKERS = (
     "my current code",
     "practice quiz",
     "debug my code",
     "rewrite my code",
     "review my code",
+    "grading a mock coding-interview",  # mock-interview AI grader prompt
 )
+
+# ChatHistory.session_id values that belong to the Coding Tutor / grader, excluded
+# from the advising welcome-screen ranking. Coding workspace + floating widget
+# sessions are prefixed "coding-" / "coding-widget-"; the mock grader uses the
+# fixed id "interview-grader".
+_POPULAR_Q_CODING_SESSION_PREFIX = "coding-"
+_POPULAR_Q_GRADER_SESSION_ID = "interview-grader"
 
 # Module-level cache: (epoch_seconds, questions). 5-minute TTL.
 _popular_q_cache = {"ts": 0.0, "questions": None}
@@ -5141,6 +5153,17 @@ async def get_popular_questions(db: Session = Depends(get_db)):
             .filter(ChatHistory.user_query.isnot(None))
             .filter(func.char_length(func.trim(ChatHistory.user_query)) >= _POPULAR_Q_MIN_LEN)
             .filter(normalized.notin_(sorted(_POPULAR_Q_STOPLIST)))
+            # Exclude Coding Tutor + mock-grader traffic (see notes above). A NULL
+            # session_id is legacy advising data, so keep it (isnot-distinct guard).
+            .filter(
+                or_(
+                    ChatHistory.session_id.is_(None),
+                    and_(
+                        ~ChatHistory.session_id.like(f"{_POPULAR_Q_CODING_SESSION_PREFIX}%"),
+                        ChatHistory.session_id != _POPULAR_Q_GRADER_SESSION_ID,
+                    ),
+                )
+            )
             .group_by(normalized)
             .order_by(func.count().desc())
             .limit(30)  # over-fetch: coding-tutor prompts are filtered out below
