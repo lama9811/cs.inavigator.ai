@@ -5234,6 +5234,18 @@ _POPULAR_Q_STOPLIST = {
 }
 _POPULAR_Q_MIN_LEN = 15  # trimmed-length floor; shorter messages are treated as filler
 
+# Coding-tutor quick-action prompts are logged to ChatHistory just like advising
+# questions, but they must NOT surface on the chat welcome screen (that screen is
+# for academic advising). Drop any question containing one of these coding-tutor
+# signal phrases (matched case-insensitively as substrings).
+_POPULAR_Q_CODING_MARKERS = (
+    "my current code",
+    "practice quiz",
+    "debug my code",
+    "rewrite my code",
+    "review my code",
+)
+
 # Module-level cache: (epoch_seconds, questions). 5-minute TTL.
 _popular_q_cache = {"ts": 0.0, "questions": None}
 _POPULAR_Q_TTL = 300
@@ -5304,10 +5316,16 @@ async def get_popular_questions(db: Session = Depends(get_db)):
             .filter(normalized.notin_(sorted(_POPULAR_Q_STOPLIST)))
             .group_by(normalized)
             .order_by(func.count().desc())
-            .limit(10)
+            .limit(30)  # over-fetch: coding-tutor prompts are filtered out below
             .all()
         )
-        questions = [r.display.strip() for r in rows if r.display and r.display.strip()]
+        questions = [
+            r.display.strip()
+            for r in rows
+            if r.display
+            and r.display.strip()
+            and not any(m in r.display.lower() for m in _POPULAR_Q_CODING_MARKERS)
+        ][:10]
     except Exception as e:
         print(f"⚠️ popular-questions aggregation failed, using curated fallback: {e}")
         questions = []
