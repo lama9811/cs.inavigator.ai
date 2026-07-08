@@ -1,0 +1,81 @@
+{
+  "language": "python",
+  "_note": "Authored test cases for the subset of Interview Prep questions that have a clean, self-contained function signature. Questions NOT listed here have no tests and are graded by an AI review instead (hybrid grader). Mirrors the quiz/answers shape: function_name + runner_tests. Runner compares actual == expected (or order-insensitive when the test sets order_insensitive).",
+  "defaults": {
+    "reference_solution": "Implement the named function using the prompt's examples as tests.",
+    "tests": [
+      "Try the provided example.",
+      "Try the smallest / empty valid input.",
+      "Try a case with duplicates, ties, or no valid answer when relevant."
+    ]
+  },
+  "items": [
+    {
+      "question_id": "iv-easy-01",
+      "function_name": "find_duplicates",
+      "starter_code": "def find_duplicates(nums):\n    # Return a list of the values that appear more than once in nums.\n    # (Order does not matter.)\n    return []",
+      "runner_tests": [
+        {"name": "single duplicate", "args": [[1, 2, 2]], "expected": [2], "order_insensitive": true},
+        {"name": "two duplicates", "args": [[2, 1, 2, 1]], "expected": [1, 2], "order_insensitive": true},
+        {"name": "no duplicates", "args": [[1, 2, 3]], "expected": [], "order_insensitive": true},
+        {"name": "empty", "args": [[]], "expected": [], "order_insensitive": true}
+      ]
+    },
+    {
+      "question_id": "iv-easy-04",
+      "function_name": "is_anagram",
+      "starter_code": "def is_anagram(a, b):\n    # Return True if a and b are anagrams of each other, else False.\n    return False",
+      "runner_tests": [
+        {"name": "simple anagram", "args": ["ab", "ba"], "expected": true},
+        {"name": "not anagram different letters", "args": ["A", "B"], "expected": false},
+        {"name": "longer anagram", "args": ["listen", "silent"], "expected": true},
+        {"name": "different length", "args": ["abc", "ab"], "expected": false},
+        {"name": "both empty", "args": ["", ""], "expected": true}
+      ]
+    },
+    {
+      "question_id": "iv-easy-13",
+      "function_name": "differ_by_one_bit",
+      "starter_code": "def differ_by_one_bit(a, b):\n    # Return True if the binary representations of a and b differ by exactly one bit.\n    return False",
+      "runner_tests": [
+        {"name": "0 and 1", "args": [0, 1], "expected": true},
+        {"name": "1 and 2", "args": [1, 2], "expected": false},
+        {"name": "same number", "args": [5, 5], "expected": false},
+        {"name": "4 and 5", "args": [4, 5], "expected": true}
+      ]
+    },
+    {
+      "question_id": "iv-easy-14",
+      "function_name": "count_ones",
+      "starter_code": "def count_ones(n):\n    # Return the number of 1 bits in the binary representation of n.\n    return 0",
+      "runner_tests": [
+        {"name": "zero", "args": [0], "expected": 0},
+        {"name": "seven", "args": [7], "expected": 3},
+        {"name": "eight", "args": [8], "expected": 1},
+        {"name": "255", "args": [255], "expected": 8}
+      ]
+    },
+    {
+      "question_id": "iv-easy-20",
+      "function_name": "compress",
+      "starter_code": "def compress(s):\n    # Compress runs of the same character to char+count. If the result is not\n    # shorter than the original, return the original string.\n    return s",
+      "runner_tests": [
+        {"name": "all shorter", "args": ["aaabbb"], "expected": "a3b3"},
+        {"name": "mixed runs", "args": ["aaabccc"], "expected": "a3b1c3"},
+        {"name": "no gain returns original", "args": ["abc"], "expected": "abc"},
+        {"name": "empty", "args": [""], "expected": ""}
+      ]
+    },
+    {
+      "question_id": "iv-easy-21",
+      "function_name": "fib",
+      "starter_code": "def fib(n):\n    # Return the nth Fibonacci number (fib(0)=0, fib(1)=1).\n    return 0",
+      "runner_tests": [
+        {"name": "fib 0", "args": [0], "expected": 0},
+        {"name": "fib 1", "args": [1], "expected": 1},
+        {"name": "fib 5", "args": [5], "expected": 5},
+        {"name": "fib 10", "args": [10], "expected": 55}
+      ]
+    }
+  ]
+}

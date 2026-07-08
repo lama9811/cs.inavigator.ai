@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from 'sonner';
 import { FaPlus } from "@react-icons/all-files/fa/FaPlus";
@@ -157,9 +158,16 @@ export default function ChatSidebar({
   const filteredSessions = visibleSessions.filter(s =>
     !s.archived && String(s.title || "New Chat").toLowerCase().includes(searchQuery.toLowerCase())
   );
-  const archivedSessions = visibleSessions.filter(s => s.archived);
-  const pinnedSessions = filteredSessions.filter(s => s.pinned);
-  const regularSessions = filteredSessions.filter(s => !s.pinned);
+  // Newest first: prefer the real last-activity time (set at history load),
+  // falling back to the creation epoch embedded in the id. Sorting here makes the
+  // most recent chat sit at the TOP of each date group, matching the header
+  // "jump to most recent".
+  const sessionRecency = (s) =>
+    (s?.lastActivity || 0) || Number(String(s?.id || "").match(/^\d+/)?.[0]) || 0;
+  const byNewest = (a, b) => sessionRecency(b) - sessionRecency(a);
+  const archivedSessions = visibleSessions.filter(s => s.archived).sort(byNewest);
+  const pinnedSessions = filteredSessions.filter(s => s.pinned).sort(byNewest);
+  const regularSessions = filteredSessions.filter(s => !s.pinned).sort(byNewest);
 
   // Date grouping for chat history
   const groupSessionsByDate = (sessions) => {
@@ -171,8 +179,8 @@ export default function ChatSidebar({
     const groups = { "Today": [], "Yesterday": [], "Previous 7 Days": [], "Older": [] };
 
     sessions.forEach(s => {
-      const ts = Number(String(s.id).match(/\d+/)?.[0]);
-      if (isNaN(ts)) { groups["Older"].push(s); return; }
+      const ts = sessionRecency(s);
+      if (!ts) { groups["Older"].push(s); return; }
       const date = new Date(ts);
       if (date >= today) groups["Today"].push(s);
       else if (date >= yesterday) groups["Yesterday"].push(s);
@@ -367,11 +375,11 @@ export default function ChatSidebar({
     }
   }, [contextMenu.visible]);
 
-  // Each session id embeds its creation time (epoch ms) — same source the
-  // date grouping uses. Show a clock time for today, a short date for older.
-  const formatChatItemTime = (id) => {
-    const ts = Number(String(id).match(/\d+/)?.[0]);
-    if (!ts || isNaN(ts)) return "";
+  // Show the session's last-activity time (same key used for sorting/grouping):
+  // a clock time for today, a short date for older.
+  const formatChatItemTime = (s) => {
+    const ts = sessionRecency(s);
+    if (!ts) return "";
     const d = new Date(ts);
     const sameDay = d.toDateString() === new Date().toDateString();
     return sameDay
@@ -409,7 +417,7 @@ export default function ChatSidebar({
       >
         {s.pinned && <FaThumbtack className="pin-icon" size={10} />}
         <span className="chat-title">{s.title}</span>
-        {!isArchived && <span className="chat-item-time">{formatChatItemTime(s.id)}</span>}
+        {!isArchived && <span className="chat-item-time">{formatChatItemTime(s)}</span>}
         <button
           className="chat-menu-btn"
           onClick={(e) => {
@@ -689,8 +697,10 @@ export default function ChatSidebar({
         </a>
       </div>
 
-      {/* 🎫 Support Ticket Modal */}
-      {showTicketModal && (
+      {/* 🎫 Support Ticket Modal — portaled to <body> so it escapes the sidebar's
+          containing block (.chat-sidebar has contain/overflow:hidden) and covers the
+          whole viewport instead of being trapped in the 280px sidebar. */}
+      {showTicketModal && createPortal(
         <div className="ticket-modal-overlay" onClick={closeTicketModal}>
           <div className="ticket-modal" onClick={(e) => e.stopPropagation()}>
             {ticketSuccess ? (
@@ -800,7 +810,8 @@ export default function ChatSidebar({
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
     </>
