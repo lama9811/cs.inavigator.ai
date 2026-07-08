@@ -386,6 +386,11 @@ def _compile_source(
     limiter=None,
 ) -> subprocess.CompletedProcess[str]:
     """Compile step for Java/C++. Longer timeout than execution; no stdin."""
+    # The hardened env scrubs TEMP/TMP, but compilers (g++/MinGW especially) need a
+    # writable temp dir for intermediate files. Point them at the isolated compile
+    # dir itself — writable, sandboxed, and cleaned up with it. No secrets leak.
+    if env is not None:
+        env = {**env, "TMPDIR": cwd, "TMP": cwd, "TEMP": cwd}
     process = subprocess.Popen(
         command,
         cwd=cwd,
@@ -1108,7 +1113,7 @@ def _finalize_compiled_result(
     }
 
 
-def run_java_practice_tests(code: str, function_name: str, tests: list[dict[str, Any]]) -> dict[str, Any]:
+def run_java_practice_tests(code: str, function_name: str, tests: list[dict[str, Any]], arg_spec=None) -> dict[str, Any]:
     if not compiled_runners_enabled():
         return empty_practice_run_response(COMPILED_RUNNERS_DISABLED_MESSAGE)
     try:
@@ -1137,11 +1142,25 @@ def run_java_practice_tests(code: str, function_name: str, tests: list[dict[str,
         )
     invocations_src = "\n".join(invocations)
 
+    # Native-type bridge: with an arg spec, the student writes a clean native-typed
+    # method (int f(String, String)) and the Runner-side bridge unpacks the Object[]
+    # args + boxes any array result, so the compare harness stays identical. Without
+    # a spec, fall back to the legacy `Object f(Object[])` contract.
+    if arg_spec:
+        from practice_starters import java_native_bridge
+        bridge_src = java_native_bridge(function_name, arg_spec)
+        call_expr = "__call(args)"
+    else:
+        bridge_src = ""
+        call_expr = f"Solution.{function_name}(args)"
+
     harness = f"""
 import java.util.*;
 
 public class Runner {{
     static int passed = 0, total = 0;
+
+{bridge_src}
 
     static String esc(String s) {{
         StringBuilder b = new StringBuilder();
@@ -1169,7 +1188,7 @@ public class Runner {{
     static void runTest(String name, Object[] args, Object expected) {{
         total++;
         try {{
-            Object actual = Solution.{function_name}(args);
+            Object actual = {call_expr};
             boolean ok = eq(actual, expected);
             if (ok) passed++;
             System.out.println("{{\\"name\\":\\"" + esc(name) + "\\",\\"passed\\":" + ok
@@ -1241,7 +1260,7 @@ public class Runner {{
     )
 
 
-def run_cpp_practice_tests(code: str, function_name: str, tests: list[dict[str, Any]]) -> dict[str, Any]:
+def run_cpp_practice_tests(code: str, function_name: str, tests: list[dict[str, Any]], arg_spec=None) -> dict[str, Any]:
     if not compiled_runners_enabled():
         return empty_practice_run_response(COMPILED_RUNNERS_DISABLED_MESSAGE)
     try:
@@ -1266,6 +1285,21 @@ def run_cpp_practice_tests(code: str, function_name: str, tests: list[dict[str, 
             f'    runTest({json.dumps(name)}, {{{arg_list}}}, {_cpp_literal(expected)});'
         )
     invocations_src = "\n".join(invocations)
+
+    # Native-type bridge: when we have an arg spec, the student writes a clean
+    # native-typed function (int f(string, string)) and this bridge unpacks the
+    # Value args + wraps the result, so the compare harness stays identical. When
+    # there's no spec, fall back to the legacy `Value f(vector<Value>)` contract.
+    if arg_spec:
+        from practice_starters import cpp_native_bridge
+        student_decl = cpp_native_bridge(function_name, arg_spec)
+        call_target = f"__call_{function_name}"
+    else:
+        student_decl = (
+            f"// Student provides: Value {function_name}(vector<Value> args)\n"
+            f"Value {function_name}(vector<Value> args);"
+        )
+        call_target = function_name
 
     # A tiny tagged-union Value type so student code can accept a vector<Value>.
     harness = f"""
@@ -1307,8 +1341,7 @@ struct Value {{
     }}
 }};
 
-// Student provides: Value {function_name}(vector<Value> args)
-Value {function_name}(vector<Value> args);
+{student_decl}
 
 {code}
 
@@ -1318,7 +1351,7 @@ static string esc(const string& s){{ string r; for(char c:s){{ if(c=='"'||c=='\\
 static void runTest(const string& name, vector<Value> args, Value expected){{
     total_++;
     try {{
-        Value actual = {function_name}(args);
+        Value actual = {call_target}(args);
         bool ok = actual.eq(expected);
         if (ok) passed_++;
         cout << "{{\\"name\\":\\"" << esc(name) << "\\",\\"passed\\":" << (ok?"true":"false")

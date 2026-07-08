@@ -31,6 +31,7 @@ from coding_runner import (
     run_python_practice_tests,
     set_cached_practice_run,
 )
+from practice_starters import build_starter_from_spec, get_arg_spec
 
 from fastapi import FastAPI, HTTPException, Depends, status, File, UploadFile, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -4439,6 +4440,14 @@ JAVASCRIPT_PRACTICE_SIGNATURES = {
 }
 
 def _build_practice_starter_code(language_key: str, function_name: str, question: dict[str, Any]) -> str:
+    # Preferred path: a per-function arg spec (name + type of every argument,
+    # derived from the authored tests) drives a detailed, correctly-typed starter
+    # for ALL four languages from one source. Falls back to the generic
+    # param_kind hint below for any function not yet in the spec.
+    detailed = build_starter_from_spec(language_key, function_name)
+    if detailed:
+        return detailed
+
     shape = _practice_signature_shape(question, function_name)
     param_kind = shape["param_kind"]
     return_kind = shape["return_kind"]
@@ -4746,15 +4755,18 @@ async def run_practice_solution(
     if not tests:
         return empty_practice_run_response("Executable local tests are not available for this question yet. Use Mark Solved as a manual fallback after review.")
 
+    # Java/C++ use the native-type bridge when the function has an arg spec, so the
+    # student writes a clean native-typed function that matches the detailed starter.
+    arg_spec = get_arg_spec(function_name)
     cached_run = get_cached_practice_run(question["id"], language_key, req.code, function_name, tests)
     if cached_run:
         run_result = cached_run
     elif language_key == "javascript":
         run_result = run_javascript_practice_tests(req.code, function_name, tests)
     elif language_key == "java":
-        run_result = run_java_practice_tests(req.code, function_name, tests)
+        run_result = run_java_practice_tests(req.code, function_name, tests, arg_spec=arg_spec)
     elif language_key == "cpp":
-        run_result = run_cpp_practice_tests(req.code, function_name, tests)
+        run_result = run_cpp_practice_tests(req.code, function_name, tests, arg_spec=arg_spec)
     else:
         run_result = run_python_practice_tests(req.code, function_name, tests)
     if not cached_run:
