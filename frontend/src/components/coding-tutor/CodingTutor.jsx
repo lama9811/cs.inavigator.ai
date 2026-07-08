@@ -29,6 +29,14 @@ import MockConfirm from "./MockConfirm";
 import { gradeMockSummary, scoreFromGraded } from "./interviewGrade";
 import { appendInterviewAttempt } from "./interviewHistory";
 import { markInterviewSolved } from "./interviewProgress";
+import {
+  saveDraft,
+  readDraft,
+  clearDraft,
+  saveLastWorkspace,
+  readLastWorkspace,
+  clearLastWorkspace,
+} from "./workspaceDraft";
 import { listSnippets, getSnippet, saveSnippet, deleteSnippet, syncSnippetsFromServer, extractCodeFromFile, languageFromFilename } from "../../lib/snippets";
 import "./CodingTutor.css";
 // Scoped "Morgan Coding Lab" sub-brand palette — imported AFTER CodingTutor.css
@@ -72,6 +80,14 @@ const PRACTICE_LANGUAGE_API = {
   Java: "java",
   JavaScript: "javascript",
   "C++": "cpp",
+};
+// Reverse of PRACTICE_LANGUAGE_API: api key -> display name (for restoring the
+// last workspace, where we persist the api-language key).
+const PRACTICE_LANGUAGE_NAME = {
+  python: "Python",
+  java: "Java",
+  javascript: "JavaScript",
+  cpp: "C++",
 };
 const PRACTICE_LANGUAGE_KEYS = ["python", "java", "javascript", "cpp"];
 const PRACTICE_DIFFICULTIES = ["easy", "medium", "hard"];
@@ -465,7 +481,7 @@ export default function CodingTutor({
   onContextChange,
   onActivePageChange,
   onStartFreshChat,
-  onRequestReview,
+  onSendToWidget,
   onSendToChat,
 }) {
   const location = useLocation();
@@ -568,6 +584,8 @@ export default function CodingTutor({
   // Tracks which /coding/workspace/problem/:id we've already restored, so the
   // cold-load effect opens a problem once per id (not on every render).
   const restoredWorkspaceTargetRef = useRef(null);
+  // Ensures the "auto-reopen last workspace" fallback only fires once per mount.
+  const autoReopenedRef = useRef(false);
   const selectedLanguageKey = PRACTICE_LANGUAGE_API[selectedLanguage] || "python";
   // Mirror the live editor code + language into refs every render so the mock-nav
   // handlers can read the current answer synchronously when switching questions.
@@ -759,23 +777,34 @@ export default function CodingTutor({
     toast.success("AI code applied to workspace");
   }, [activeSnapshotKey, suggestedCodeBlock]);
 
+  // All terminal actions (explain error / explain tests / review) send to the FLOATING
+  // widget: it opens automatically and appends to the ONE ongoing widget thread, so the
+  // reply is visible next to the code and every action in a session stays under one
+  // history. Falls back to the plain chat send if the widget handler isn't wired.
+  const sendToWidget = useCallback((text, tutorMode) => {
+    if (tutorMode) setTutorMode(tutorMode);
+    if (onSendToWidget) {
+      onSendToWidget(text, { tutorMode });
+    } else {
+      onSendToChat?.(text, true);
+    }
+  }, [onSendToWidget, onSendToChat]);
+
   const explainFailedTests = useCallback(() => {
     const summary = summarizeRunForTutor(testOutput);
     if (!summary) {
       toast.info("Run your code first so the tutor can see the test output.");
       return;
     }
-    setTutorMode("Debugging");
-    onSendToChat?.([
+    sendToWidget([
       "Explain these failed tests in small chunks. Point out the likely code issue first, then give one focused next step.",
       "",
       summary,
-    ].join("\n"), true);
-  }, [onSendToChat, testOutput]);
+    ].join("\n"), "Debugging");
+  }, [sendToWidget, testOutput]);
 
   const explainOneTest = useCallback((test, index) => {
     if (!test) return;
-    setTutorMode("Debugging");
     const label = test.name || `Test ${index + 1}`;
     const lines = [
       `Help me with one specific failing test case. Focus only on this case — explain why my code gives the wrong answer here and give one focused next step. Do not rewrite my whole program.`,
@@ -788,8 +817,8 @@ export default function CodingTutor({
       "",
       `Language: ${selectedLanguage}`,
     ].filter(Boolean);
-    onSendToChat?.(lines.join("\n"), true);
-  }, [onSendToChat, selectedLanguage]);
+    sendToWidget(lines.join("\n"), "Debugging");
+  }, [sendToWidget, selectedLanguage]);
 
   const explainError = useCallback(() => {
     const out = testOutput || {};
@@ -798,8 +827,7 @@ export default function CodingTutor({
       toast.info("Run your code first so the tutor can see the error.");
       return;
     }
-    setTutorMode("Debugging");
-    onSendToChat?.([
+    sendToWidget([
       "My code produced this error when I ran it. In plain English: what does this error mean, what is the most likely cause, and what is one focused fix to try? Do not rewrite my whole program.",
       "",
       `Language: ${selectedLanguage}`,
@@ -807,30 +835,20 @@ export default function CodingTutor({
       "```",
       errorText.slice(0, 1500),
       "```",
-    ].join("\n"), true);
-  }, [onSendToChat, testOutput, selectedLanguage]);
+    ].join("\n"), "Debugging");
+  }, [sendToWidget, testOutput, selectedLanguage]);
 
   const requestReview = useCallback(() => {
     if (!code || !code.trim()) {
       toast.info("Write some code first so the tutor has something to review.");
       return;
     }
-    // Warn first — a review sends the student's current code to the AI tutor and opens
-    // a fresh Coding Tutor chat. Confirming is an explicit, visible action (not a silent
-    // hand-off to a chat they'd only find in history).
-    if (!window.confirm("Send your current code to the Coding Tutor for a review?\nThis opens the Coding Tutor chat in a new conversation.")) {
-      return;
-    }
-    setTutorMode("Reviewing");
     const reviewPrompt = "Review my current code for correctness and style. Point out the single biggest issue first, then any smaller ones. Don't rewrite the whole thing — guide me.";
-    if (onRequestReview) {
-      // Preferred path: open the FLOATING widget in a fresh session so the reply is
-      // visible next to the code, not buried in the hidden main coding chat.
-      onRequestReview(reviewPrompt);
-    } else {
-      onSendToChat?.(reviewPrompt, true);
-    }
-  }, [onRequestReview, onSendToChat, code]);
+    // Opens the floating widget and appends to the ongoing Coding Tutor thread (same
+    // history as Explain error and typed questions). No confirm / no new conversation —
+    // the reply just appears in the widget next to the code.
+    sendToWidget(reviewPrompt, "Reviewing");
+  }, [sendToWidget, code]);
 
   // Apply the scoped dark signal to <body> while CodingTutor is mounted, and
   // strip it on unmount so leaving the section returns the rest of the app to
@@ -922,6 +940,34 @@ export default function CodingTutor({
       },
     }));
   }, [activeProblem, activeSnapshotKey, code]);
+
+  // Persist the editor buffer to a local draft (per problem + language) so unrun
+  // code survives navigating to the full chat (which unmounts this workspace) and
+  // switching languages. Debounced so we don't hammer localStorage on every key.
+  // Interview mock problems keep their own per-question answer map, so skip them.
+  // When the draft diverges from the starter, also mark the problem in-progress
+  // locally (no backend round-trip) so it shows under "Continue where you left off"
+  // even if the student never ran it.
+  useEffect(() => {
+    if (!activeProblem || activeProblem.mock) return;
+    if (activeProblem.source === "personal") return; // snippets aren't practice progress
+    const problemId = activeProblem.id;
+    const language = selectedLanguageKey;
+    const starter = activeSolution?.starter_code || "";
+    const handle = setTimeout(() => {
+      saveDraft(problemId, language, code);
+      if (
+        isQuizBankProblem &&
+        activeLanguageProgress?.status !== "solved" &&
+        hasStarterCodeChanged(code, starter)
+      ) {
+        markInProgressLocal(problemId, language, code);
+      }
+    }, 400);
+    return () => clearTimeout(handle);
+    // markInProgressLocal is a stable setState closure; excluded on purpose.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProblem, selectedLanguageKey, code, activeSolution, isQuizBankProblem, activeLanguageProgress]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1066,6 +1112,37 @@ export default function CodingTutor({
     return () => { cancelled = true; };
   }, [apiBase]);
 
+  // Local-only in-progress mark for unrun-but-edited code. Mirrors the optimistic
+  // shape saveProgress writes, but never hits the backend — it just lights up
+  // "Continue where you left off" and the topic's in-progress state on this device.
+  // The authoritative backend save still happens on run / problem-switch.
+  const markInProgressLocal = (questionId, language, draftCode) => {
+    if (!questionId) return;
+    const existing = progressByLanguage[questionId]?.[language] || readLocalProgress(questionId, language);
+    // Don't clobber a solved/attempted record or re-fire when already in-progress
+    // with the same code (keeps the effect from thrashing state on every keystroke).
+    if (existing?.status === "solved") return;
+    if (existing?.status === "in_progress" && existing?.code === draftCode) return;
+    const record = {
+      question_id: questionId,
+      language,
+      ...(existing || {}),
+      status: existing?.status === "attempted" ? "attempted" : "in_progress",
+      code: draftCode,
+      attempt_count: existing?.attempt_count || 0,
+      updated_at: new Date().toISOString(),
+    };
+    writeLocalProgress(questionId, language, record);
+    setProgressByLanguage(prev => {
+      const next = {
+        ...prev,
+        [questionId]: { ...(prev[questionId] || {}), [language]: record },
+      };
+      setProgressByQuestion(aggregateProgressMap(next));
+      return next;
+    });
+  };
+
   const saveProgress = async (questionId, updates = {}, language = selectedLanguageKey) => {
     if (!questionId) return null;
     const current = progressByLanguage[questionId]?.[language] || readLocalProgress(questionId, language) || {
@@ -1161,8 +1238,14 @@ export default function CodingTutor({
     setActiveSolution(solution);
     setSelectedLanguage(languageName);
     setPracticeLanguage(languageName);
-    const nextCode = existingCode ?? progress?.code ?? solution?.starter_code ?? "";
+    // Code precedence: an explicit restore wins, then a local unrun draft (freshest
+    // edit, survives unmount), then saved backend progress, then the starter stub.
+    const draftCode = existingCode == null ? readDraft(problem.id, language) : null;
+    const nextCode = existingCode ?? draftCode ?? progress?.code ?? solution?.starter_code ?? "";
     setCode(nextCode);
+    // Remember this problem+language so the workspace can auto-reopen it if the
+    // student navigates to the full chat (which unmounts the workspace) and back.
+    saveLastWorkspace(problem.id, language);
     setWorkspaceSnapshots(prev => ({
       ...prev,
       [`${problem.id}:${language}`]: {
@@ -1787,7 +1870,15 @@ export default function CodingTutor({
       if (set === "interview") {
         openInterviewProblem(question);
       } else {
-        await loadQuestionSolution(question, practiceLanguage);
+        // Restore the language the student last used on THIS problem (defaulting to
+        // the current practice language) so a reopen doesn't reset them to Python.
+        // loadQuestionSolution then restores that language's saved draft.
+        const last = readLastWorkspace();
+        const restoreLanguage =
+          last?.problemId === question.id && PRACTICE_LANGUAGE_NAME[last.language]
+            ? PRACTICE_LANGUAGE_NAME[last.language]
+            : practiceLanguage;
+        await loadQuestionSolution(question, restoreLanguage);
       }
     } catch (error) {
       console.warn("[coding-workspace] could not restore problem from URL", problemId, error);
@@ -1837,6 +1928,38 @@ export default function CodingTutor({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, activePage]);
+
+  // Fallback auto-reopen: if the student returns to an EMPTY Workspace page (e.g.
+  // from the full chat, which unmounts this component) with no problem loaded,
+  // re-open the last problem + language they were working on so their unrun draft
+  // is restored instead of a blank Python editor. Scoped to the Workspace page so
+  // it never hijacks the Practice Library / dashboard, and only when the URL has no
+  // specific problem (that path's own restore owns it). Fires once per mount.
+  useEffect(() => {
+    if (autoReopenedRef.current) return;
+    if (activePage !== "workspace") return;
+    if (activeProblem || isPersonalMode) return;
+    if (mockSession && activeProblem?.mock) return;
+    if (workspaceTargetFromPath(location.pathname).kind !== "none") return; // a specific target owns it
+    if (listLoading) return; // wait until the practice list is ready
+    const last = readLastWorkspace();
+    if (!last?.problemId || questionSetForId(last.problemId) === "interview") return;
+    autoReopenedRef.current = true;
+    const languageName = PRACTICE_LANGUAGE_NAME[last.language] || practiceLanguage;
+    (async () => {
+      try {
+        const response = await fetch(
+          `${apiBase}/api/coding/practice/questions/${encodeURIComponent(last.problemId)}?set=practice`
+        );
+        if (!response.ok) throw new Error(`question ${response.status}`);
+        const question = await response.json();
+        await loadQuestionSolution(question, languageName);
+      } catch (error) {
+        console.warn("[coding-workspace] auto-reopen last workspace failed", error);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePage, listLoading]);
 
   // Returns the saved record, or null if the user cancelled the name prompt.
   const handleSaveSnippet = () => {
@@ -2109,6 +2232,9 @@ export default function CodingTutor({
           solved_at: new Date().toISOString(),
         };
         writeLocalProgress(activeProblem.id, selectedLanguageKey, localProgress);
+        // Solved for this language → the unrun draft is now redundant; drop it so a
+        // future reopen shows the saved solved code, not a stale draft.
+        clearDraft(activeProblem.id, selectedLanguageKey);
         setProgressByLanguage(prev => {
           const next = {
             ...prev,
@@ -2137,6 +2263,7 @@ export default function CodingTutor({
   const markSolved = async () => {
     if (!activeProblem || !isQuizBankProblem) return;
     await saveProgress(activeProblem.id, { status: "solved", code });
+    clearDraft(activeProblem.id, selectedLanguageKey);
     setTerminalOpen(true);
     setTestOutput({ status: "passed", message: "Marked solved manually. Your current code was saved with this problem.", passed: 0, total: 0, tests: [] });
     toast.success("Practice problem marked solved");
@@ -2158,6 +2285,10 @@ export default function CodingTutor({
         }
       }
     }
+    // Explicit clear = don't auto-reopen this problem next time (the draft stays,
+    // so reopening it from the library still restores the code on demand).
+    clearLastWorkspace();
+    autoReopenedRef.current = true;
     setActiveProblem(null);
     setActiveSolution(null);
     setCode("");

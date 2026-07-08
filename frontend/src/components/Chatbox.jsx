@@ -138,7 +138,6 @@ export default function Chatbox({
   const [floatingCodingChatOpen, setFloatingCodingChatOpen] = useState(false);
   const [floatingCodingChatMaximized, setFloatingCodingChatMaximized] = useState(false);
   const [codingWidgetSessionId, setCodingWidgetSessionId] = useState(() => `coding-widget-${Date.now()}`);
-  const [codingWidgetStartIndex, setCodingWidgetStartIndex] = useState(0);
   const [activeCodingPage, setActiveCodingPage] = useState("dashboard");
   // True while a Mock Interview is running (signalled from CodingTutor via a
   // window event + body class, since the two components share no state). We hide
@@ -151,6 +150,16 @@ export default function Chatbox({
     || location.pathname.startsWith("/coding/");
   const isCodingChatRoute = location.pathname === "/chat/coding";
   const hasStartedChat = messages.length > 0;
+  // The main pane hides floating-widget messages so the widget's Coding Tutor
+  // thread doesn't bleed into the main CS-Nav chat. On the dedicated full coding
+  // chat route (/chat/coding — the widget's "open full chat" destination) the
+  // current widget session's messages ARE shown, since that page IS that thread.
+  // Legacy messages have no `surface` field → treated as "main" so old history
+  // stays visible.
+  const mainMessages = messages.filter((m) => {
+    if (m.surface !== "widget") return true;
+    return isCodingChatRoute && m.widgetSessionId === codingWidgetSessionId;
+  });
   const showChatHeader = !isCodingWorkspaceRoute;
   const showTutorModeToggle = hasStartedChat || isCodingChatRoute;
   // The floating tutor lives ONLY in the workspace — not on the home/dashboard
@@ -197,17 +206,13 @@ export default function Chatbox({
     if (!isCodingWorkspaceRoute || !String(sessionId || "").startsWith("coding-")) return;
 
     setChatMode("coding_tutor");
+    // Adopt this coding session id as the widget's session id. The widget renders
+    // only messages tagged surface:"widget" for this id, so prior regular-chat
+    // history is never shown in the widget (tag-based isolation, no index math).
     setCodingWidgetSessionId(sessionId);
-    // Start the widget's view at the END of the current history so regular-chat
-    // messages from before entering the Coding Tutor are NOT shown in the widget.
-    setCodingWidgetStartIndex(messages.length);
     setFloatingCodingChatMaximized(false);
     // The widget stays CLOSED on load — just the launcher button. The user opens
     // it when they want it (so reloading the page doesn't force it open).
-    // Intentionally NOT depending on messages.length: we snapshot it once when the
-    // coding session begins; re-running on every new message would reset the
-    // session boundary and re-show prior history.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCodingWorkspaceRoute, sessionId]);
 
   useEffect(() => {
@@ -285,8 +290,10 @@ export default function Chatbox({
   const startFreshCodingWidgetSession = useCallback((action = {}) => {
     const nextSessionId = `coding-${Date.now()}`;
     if (action.type === "closed") {
+      // New session id => the widget's tag filter matches no messages yet, so it
+      // shows a clean thread. Prior widget messages are NOT deleted (they stay in
+      // the session store under the old id), just no longer displayed.
       setChatMode("coding_tutor");
-      setCodingWidgetStartIndex(messages.length);
       setCodingWidgetSessionId(nextSessionId);
       setFloatingCodingChatOpen(false);
       setFloatingCodingChatMaximized(false);
@@ -309,14 +316,13 @@ export default function Chatbox({
       return nextSessionId;
     }
     setChatMode("coding_tutor");
-    setCodingWidgetStartIndex(0);
     setCodingWidgetSessionId(nextSessionId);
     setFloatingCodingChatOpen(action.type !== "closed");
     setFloatingCodingChatMaximized(false);
     setInput("");
     setPendingFile(null);
     return nextSessionId;
-  }, [messages.length, onCreateSession]);
+  }, [onCreateSession]);
 
   // Optional shortcuts. Debug sends a debug request immediately; Rewrite sends a
   // rewrite request in the chosen target language. The tutor infers the mode and
@@ -341,24 +347,23 @@ export default function Chatbox({
     setCodingTutorContext(prev => ({ ...(prev || {}), tutorMode: nextTutorMode }));
     setFloatingCodingChatOpen(true);
     setInput("");
-    handleSend(null, messageToSend, false, "coding_tutor", codingWidgetSessionId);
+    handleSend(null, messageToSend, false, "coding_tutor", codingWidgetSessionId, "widget");
   };
 
-  // Terminal "Ask for a review": open the FLOATING widget in a FRESH conversation and
-  // send the review there — so the reply is visible in the widget (next to the code +
-  // question), not silently appended to the hidden main coding chat. A new session id
-  // + start index gives a clean thread the student can actually see.
-  const requestFloatingReview = (text) => {
+  // Terminal actions (Ask for a review / Explain error / Explain failed tests / one test):
+  // open the FLOATING widget and append to the CURRENT ongoing widget thread — so the reply
+  // is visible next to the code, and every action in a session stays under one continuous
+  // history. It does NOT start a fresh session (that only happens on X-close or logout).
+  const sendToFloatingWidget = (text, { tutorMode } = {}) => {
     if (isLoading || !text || !text.trim()) return;
-    const freshSessionId = `coding-${Date.now()}`;
     setChatMode("coding_tutor");
-    setCodingTutorContext(prev => ({ ...(prev || {}), tutorMode: "Reviewing" }));
-    setCodingWidgetStartIndex(messages.length); // widget shows only this new thread
-    setCodingWidgetSessionId(freshSessionId);
+    if (tutorMode) {
+      setCodingTutorContext(prev => ({ ...(prev || {}), tutorMode }));
+    }
     setFloatingCodingChatOpen(true);
     setFloatingCodingChatMaximized(false);
     setInput("");
-    handleSend(null, text, false, "coding_tutor", freshSessionId);
+    handleSend(null, text, false, "coding_tutor", codingWidgetSessionId, "widget");
   };
 
   const closeCodingWidgetSession = () => {
@@ -620,10 +625,13 @@ export default function Chatbox({
     return `m${messageIdRef.current}`;
   };
 
-  // Helper to add message to local state
-  const addMessage = (text, sender) => {
+  // Helper to add message to local state. `meta` carries surface tagging
+  // (surface: "main" | "widget", widgetSessionId) so the floating Coding Tutor
+  // widget and the main CS-Nav chat can render their OWN histories from the one
+  // shared `messages` array without bleeding into each other.
+  const addMessage = (text, sender, meta = {}) => {
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    setMessages((prev) => [...prev, { id: nextMessageId(), text, sender, time }]);
+    setMessages((prev) => [...prev, { id: nextMessageId(), text, sender, time, ...meta }]);
   };
 
   // 🔥 Enhanced TTS using OpenAI API
@@ -1045,11 +1053,18 @@ export default function Chatbox({
   }, []);
 
   // 🔥 MAIN SEND LOGIC - With Streaming Support
-  const handleSend = async (e, overrideText = null, skipCache = false, modeOverride = null, sessionIdOverride = null) => {
+  const handleSend = async (e, overrideText = null, skipCache = false, modeOverride = null, sessionIdOverride = null, surface = "main") => {
     if (e) e.preventDefault();
     const sendText = overrideText || input.trim();
     if ((!sendText && !pendingFile) || isLoading) return;
     const effectiveMode = modeOverride || chatMode;
+    // Tag every message with the surface it belongs to so the floating widget
+    // and the main chat render separate threads from the one `messages` array.
+    // Widget messages also carry the current widgetSessionId so a closed/reopened
+    // widget shows a clean thread without deleting prior history.
+    const msgMeta = surface === "widget"
+      ? { surface: "widget", widgetSessionId: sessionIdOverride || codingWidgetSessionId, mode: effectiveMode }
+      : { surface: "main", mode: effectiveMode };
 
     setIsLoading(true);
     setInput("");  // Clear input immediately to prevent concatenation with next typed message
@@ -1086,7 +1101,7 @@ export default function Chatbox({
         }
 
         // 2. Optimistic UI Update
-        addMessage(finalMessage, "user");
+        addMessage(finalMessage, "user", msgMeta);
         if (!overrideText) {
             setInput("");
             setPendingFile(null);
@@ -1106,7 +1121,7 @@ export default function Chatbox({
         setThinkingTrack(
           effectiveMode === "coding_tutor" ? "coding" : null
         );
-        setMessages((prev) => [...prev, { id: nextMessageId(), text: "", sender: "bot", time, isStreaming: true, mode: effectiveMode }]);
+        setMessages((prev) => [...prev, { id: nextMessageId(), text: "", sender: "bot", time, isStreaming: true, ...msgMeta }]);
 
         // 4. Stream from Chat API using fetch with ReadableStream
         const res = await fetch(`${API_BASE}/chat/stream`, {
@@ -1334,7 +1349,6 @@ export default function Chatbox({
     handledPendingActionRef.current = pendingChatAction.id;
     setChatMode(pendingChatAction.mode || "coding_tutor");
     setCodingWidgetSessionId(sessionId);
-    setCodingWidgetStartIndex(0);
     setFloatingCodingChatMaximized(false);
     setPendingFile(null);
 
@@ -1349,7 +1363,7 @@ export default function Chatbox({
       setFloatingCodingChatOpen(true);
       setInput("");
       setTimeout(() => {
-        handleSendRef.current?.(null, pendingChatAction.text, true, "coding_tutor", sessionId);
+        handleSendRef.current?.(null, pendingChatAction.text, true, "coding_tutor", sessionId, "widget");
       }, 0);
     } else {
       setFloatingCodingChatOpen(true);
@@ -1371,7 +1385,17 @@ export default function Chatbox({
       }
       return copy;
     });
-    setTimeout(() => handleSend(null, lastUserMsg.text, true), 50);
+    setTimeout(
+      () => handleSend(
+        null,
+        lastUserMsg.text,
+        true,
+        lastUserMsg.mode || null,
+        lastUserMsg.surface === "widget" ? (lastUserMsg.widgetSessionId || codingWidgetSessionId) : null,
+        lastUserMsg.surface === "widget" ? "widget" : "main"
+      ),
+      50
+    );
   };
 
   // Drag and drop handlers
@@ -1495,8 +1519,8 @@ export default function Chatbox({
           onActivePageChange={setActiveCodingPage}
           onPrefillChat={prefillSharedChat}
           onStartFreshChat={startFreshCodingWidgetSession}
-          onRequestReview={requestFloatingReview}
-          onSendToChat={(text, skipCache = true, widgetSessionId = codingWidgetSessionId) => handleSend(null, text, skipCache, "coding_tutor", widgetSessionId)}
+          onSendToWidget={sendToFloatingWidget}
+          onSendToChat={(text, skipCache = true, widgetSessionId = codingWidgetSessionId) => handleSend(null, text, skipCache, "coding_tutor", widgetSessionId, "widget")}
         />
       )}
 
@@ -1504,7 +1528,7 @@ export default function Chatbox({
         <FloatingCodingChat
           isOpen={floatingCodingChatOpen}
           isMaximized={floatingCodingChatMaximized}
-          messages={messages.slice(codingWidgetStartIndex)}
+          messages={messages.filter(m => m.surface === "widget" && m.widgetSessionId === codingWidgetSessionId)}
           input={input}
           isLoading={isLoading}
           pendingFile={pendingFile}
@@ -1539,7 +1563,7 @@ export default function Chatbox({
           onClearFile={clearFile}
           onSend={(event) => {
             setChatMode("coding_tutor");
-            handleSend(event, null, false, "coding_tutor", codingWidgetSessionId);
+            handleSend(event, null, false, "coding_tutor", codingWidgetSessionId, "widget");
           }}
           onQuickAction={sendFloatingQuickAction}
         />
@@ -1547,7 +1571,7 @@ export default function Chatbox({
 
       <div className={`chat-messages ${isCodingWorkspaceRoute ? "regular-chat-hidden" : ""}`}>
         <AnimatePresence initial={false}>
-        {!isCodingWorkspaceRoute && !isCodingChatRoute && messages.length === 0 && (
+        {!isCodingWorkspaceRoute && !isCodingChatRoute && mainMessages.length === 0 && (
           <WelcomePanel
             suggestionsLoading={suggestionsLoading}
             suggestions={suggestions}
@@ -1555,7 +1579,7 @@ export default function Chatbox({
             onSuggestion={handleSuggestion}
           />
         )}
-        {messages.length > 0 && messages.map((msg, i) => (
+        {mainMessages.length > 0 && mainMessages.map((msg, i) => (
             <MotionDiv
               key={msg.id ?? i}
               className={`message ${msg.sender}`}
