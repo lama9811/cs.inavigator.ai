@@ -270,9 +270,9 @@
 .guest-suggestions {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-top: 28px;
-  max-width: 800px;
+  gap: 8px;
+  margin-top: 24px;
+  max-width: 720px;
   width: 100%;
   padding: 0 16px;
 }
@@ -284,13 +284,13 @@
 }
 
 .guest-suggestion-btn {
-  padding: 14px 20px;
+  padding: 10px 14px;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-left: 3px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: 10px;
   color: var(--text-main);
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.25s ease;
@@ -614,14 +614,14 @@
 .signup-modal-header {
   padding: 40px 32px 24px;
   text-align: center;
-  background: linear-gradient(135deg, rgba(66, 133, 244, 0.06) 0%, transparent 100%);
+  background: linear-gradient(135deg, rgba(29, 78, 216, 0.06) 0%, transparent 100%);
   border-bottom: 1px solid var(--border-color);
 }
 
 .signup-modal-icon {
   width: 64px;
   height: 64px;
-  background: linear-gradient(135deg, #4285F4 0%, #669DF6 100%);
+  background: linear-gradient(135deg, var(--msu-blue) 0%, var(--msu-blue-light) 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -711,15 +711,15 @@
 }
 
 .signup-modal-btn.primary {
-  background: linear-gradient(135deg, #4285F4 0%, #669DF6 100%);
+  background: linear-gradient(135deg, var(--msu-blue) 0%, var(--msu-blue-light) 100%);
   border: none;
   color: white;
 }
 
 .signup-modal-btn.primary:hover {
-  background: linear-gradient(135deg, #3367D6 0%, #4285F4 100%);
+  background: linear-gradient(135deg, var(--msu-blue-hover) 0%, var(--msu-blue) 100%);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.3);
 }
 
 /* Responsive adjustments */

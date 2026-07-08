@@ -176,8 +176,6 @@ def _chat_mode_for_message(message: str) -> str:
     text = message or ""
     if "CODING TUTOR MODE:" in text:
         return "coding_tutor"
-    if "GENERAL TUTOR MODE:" in text:
-        return "general_tutor"
     return "regular"
 
 # =============================================================================
@@ -231,7 +229,7 @@ def _apply_grounding_gate(text: str, chunks: int, coverage: float = 0.0, has_stu
 
     This prevents responses that cite 1 chunk but are 90% hallucinated from passing.
     """
-    if chat_mode in {"coding_tutor", "general_tutor"}:
+    if chat_mode == "coding_tutor":
         return text
     if not text or _SKIP_GROUNDING_RE.match(text):
         return text
