@@ -84,6 +84,8 @@ backend/backend/
 
 # PDFs (reports, student data)
 *.pdf
+# ...except the official curriculum-sequence sheets we ship as advising references
+!frontend/public/docs/*.pdf
 
 # Test / temp scripts
 generate_report.py

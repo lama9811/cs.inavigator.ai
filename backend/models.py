@@ -492,3 +492,22 @@ class LiveSection(Base):
     wait_capacity = Column(Integer, nullable=False, default=0)
     wait_available = Column(Integer, nullable=False, default=0)
     fetched_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+
+
+class AdvisingFormDraft(Base):
+    """Per-user saved draft of the advising section forms (Internship + Advising).
+    One row per user; `forms_json` holds a JSON object of { form_id: {field: value} }.
+    Text (not JSON column) so it works on both SQLite and Cloud SQL MySQL."""
+    __tablename__ = "advising_form_drafts"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_advising_form_draft_user"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    forms_json = Column(Text, nullable=True)
+    submitted = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", backref="advising_form_drafts")

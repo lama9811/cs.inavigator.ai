@@ -499,7 +499,7 @@ def _cache_session(user_id: str, session_id: str, context: str = "", model: str 
     }
 
 
-def query_agent(query: str, user_id: str = "default", context: str = "", model: str = "", canvas_context: str = "", memory_context: str = "", chat_mode: str = "regular") -> str:
+def query_agent(query: str, user_id: str = "default", context: str = "", model: str = "", canvas_context: str = "", memory_context: str = "", chat_mode: str = "regular", flow_context: str = "") -> str:
     """
     Send a query to the CS Navigator agent and return the final text response.
 
@@ -514,6 +514,9 @@ def query_agent(query: str, user_id: str = "default", context: str = "", model: 
         canvas_context: Canvas LMS data (sent via state_delta, volatile)
         memory_context: Long-term user memory (sent via state_delta, volatile)
         chat_mode: "regular" | "general" | "coding_tutor" (selects the ADK tool set)
+        flow_context: Multi-turn flow instructions (advising/planner). Sent via
+            state_delta so it changes every turn WITHOUT busting the session (which
+            would wipe conversation history). Must NOT be part of the hashed context.
     """
     chat_mode = _resolve_chat_mode(chat_mode, query)
     # Session reuse: hash DegreeWorks + Canvas for invalidation
@@ -535,7 +538,7 @@ def query_agent(query: str, user_id: str = "default", context: str = "", model: 
             return _OUTAGE_MSG
         _cache_session(user_id, session_id, context, model, canvas_context=canvas_context, chat_mode=chat_mode)
 
-    return _run_query(query, user_id, session_id, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode)
+    return _run_query(query, user_id, session_id, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode, flow_context=flow_context)
 
 
 # Per-request grounding metadata. In async single-worker (uvicorn default),
@@ -557,7 +560,7 @@ def _set_grounding(kb_grounded: bool, chunks: int, coverage: float, web_chunks: 
     }
 
 
-def _run_query(message: str, user_id: str, session_id: str, retried: bool = False, context: str = "", model: str = "", canvas_context: str = "", memory_context: str = "", chat_mode: str = "regular") -> str:
+def _run_query(message: str, user_id: str, session_id: str, retried: bool = False, context: str = "", model: str = "", canvas_context: str = "", memory_context: str = "", chat_mode: str = "regular", flow_context: str = "") -> str:
     """Send a query to the ADK and parse the SSE response.
 
     Fast in-memory retrieval runs BEFORE the ADK call (<5ms) to collect
@@ -586,6 +589,9 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
             state_delta["canvas"] = canvas_context
         if memory_context:
             state_delta["memory"] = memory_context
+        # Multi-turn flow instructions (advising/planner): volatile, re-sent every
+        # turn on the SAME session so the flow can advance without losing history.
+        state_delta["advising_flow"] = flow_context or ""
         if state_delta:
             payload["state_delta"] = state_delta
 
@@ -614,7 +620,7 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
             new_session_id = _create_session(user_id, state=state if state else None)
             if new_session_id:
                 _cache_session(user_id, new_session_id, context, model, canvas_context=canvas_context, chat_mode=chat_mode)
-                return _run_query(message, user_id, new_session_id, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode)
+                return _run_query(message, user_id, new_session_id, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode, flow_context=flow_context)
             return _OUTAGE_MSG
 
         resp.raise_for_status()
@@ -703,7 +709,7 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
                 if not retried:
                     print("   [RATE_LIMIT] Gemini 429, retrying once after backoff...")
                     time_module.sleep(3)
-                    return _run_query(message, user_id, session_id, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode)
+                    return _run_query(message, user_id, session_id, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode, flow_context=flow_context)
                 final_text = _BUSY_MSG
 
             # Strip self-disclosure phrases (Gemini sometimes ignores instruction)
@@ -715,7 +721,7 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
             if _KB_FAIL_RE.search(final_text) and not retried:
                 print("   [RETRY] Gemini reported KB access failure, retrying once...")
                 time_module.sleep(2)
-                return _run_query(message, user_id, session_id, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode)
+                return _run_query(message, user_id, session_id, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode, flow_context=flow_context)
 
             # Grounding validation gate: flag low-grounded responses
             has_data = bool(context or canvas_context)
@@ -787,7 +793,7 @@ def reset_session(user_id: str) -> None:
     _session_cache.pop(user_id, None)
 
 
-def query_agent_stream(query: str, user_id: str = "default", context: str = "", model: str = "", canvas_context: str = "", memory_context: str = "", chat_mode: str = "regular"):
+def query_agent_stream(query: str, user_id: str = "default", context: str = "", model: str = "", canvas_context: str = "", memory_context: str = "", chat_mode: str = "regular", flow_context: str = ""):
     """
     Send a query to the CS Navigator agent and stream text chunks as they arrive.
 
@@ -814,10 +820,10 @@ def query_agent_stream(query: str, user_id: str = "default", context: str = "", 
             return
         _cache_session(user_id, session_id, context, model, canvas_context=canvas_context, chat_mode=chat_mode)
 
-    yield from _run_query_stream(query, user_id, session_id, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode)
+    yield from _run_query_stream(query, user_id, session_id, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode, flow_context=flow_context)
 
 
-def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool = False, context: str = "", model: str = "", canvas_context: str = "", memory_context: str = "", chat_mode: str = "regular"):
+def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool = False, context: str = "", model: str = "", canvas_context: str = "", memory_context: str = "", chat_mode: str = "regular", flow_context: str = ""):
     """Stream query results from ADK, yielding text chunks as they arrive.
 
     Fast in-memory retrieval runs BEFORE the ADK call (<5ms) to collect
@@ -843,6 +849,9 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
             state_delta["canvas"] = canvas_context
         if memory_context:
             state_delta["memory"] = memory_context
+        # Multi-turn flow instructions (advising/planner): volatile, re-sent every
+        # turn on the SAME session so the flow can advance without losing history.
+        state_delta["advising_flow"] = flow_context or ""
         if state_delta:
             payload["state_delta"] = state_delta
 
@@ -871,7 +880,7 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
             new_session_id = _create_session(user_id, state=state if state else None)
             if new_session_id:
                 _cache_session(user_id, new_session_id, context, model, canvas_context=canvas_context, chat_mode=chat_mode)
-                yield from _run_query_stream(message, user_id, new_session_id, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode)
+                yield from _run_query_stream(message, user_id, new_session_id, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode, flow_context=flow_context)
                 return
             yield {"type": "error", "content": _OUTAGE_MSG}
             return
@@ -1032,7 +1041,7 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
                 new_sid = _create_session(user_id)
                 if new_sid:
                     _cache_session(user_id, new_sid, context, model, canvas_context=canvas_context, chat_mode=chat_mode)
-                    yield from _run_query_stream(message, user_id, new_sid, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode)
+                    yield from _run_query_stream(message, user_id, new_sid, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode, flow_context=flow_context)
                     return
             print("   [EMPTY] Stream produced no usable text")
             yield {"type": "error", "content": _BUSY_MSG}
