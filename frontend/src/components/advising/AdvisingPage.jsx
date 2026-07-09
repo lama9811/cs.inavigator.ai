@@ -49,6 +49,7 @@ function buildPrefill(dw, profile) {
     put("last_name", last);
     put("student_id", dw.student_id);
     put("major", majorFromProgram(dw.degree_program));
+    put("minor", dw.minor);
     put("classification", dw.classification);
     put("advisor", dw.advisor);
     if (dw.overall_gpa != null) put("gpa", dw.overall_gpa);

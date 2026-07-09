@@ -136,6 +136,12 @@ def parse_degreeworks_audit_json(audit: dict) -> dict:
         code = goal.get("code", "")
         if code == "MAJOR":
             major_name = (goal.get("valueLiteral") or "").strip()
+        elif code == "MINOR":
+            # DegreeWorks carries a declared minor as a goalArray entry, same shape
+            # as MAJOR. Capture its name so the advising form / profile can show it.
+            minor_name = (goal.get("valueLiteral") or "").strip()
+            if minor_name:
+                result["minor"] = minor_name
         elif code == "ADVISOR":
             advisor_name = (goal.get("advisorName") or "").strip()
             if advisor_name:
