@@ -145,7 +145,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingSnippet, ReminderSubscription, SentReminder, LiveSection
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingSnippet, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -169,6 +169,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "4320
 # Upload configuration
 UPLOAD_FOLDER = os.path.join(BACKEND_DIR, "uploads", "profile_pictures")
 CHAT_FILES_FOLDER = os.path.join(BACKEND_DIR, "uploads", "chat_files") #  NEW: Chat files folder
+ADVISING_FILES_FOLDER = os.path.join(BACKEND_DIR, "uploads", "advising_forms")  # Advising doc uploads (DegreeWorks/course sequence)
 
 ALLOWED_EXTENSIONS = {
     'png', 'jpg', 'jpeg', 'gif', 'pdf', 'txt', 'docx', 'doc', 'mov', 'mp4',
@@ -177,7 +178,7 @@ ALLOWED_EXTENSIONS = {
 }
 
 # Create folders if not exist
-for folder in [UPLOAD_FOLDER, CHAT_FILES_FOLDER]:
+for folder in [UPLOAD_FOLDER, CHAT_FILES_FOLDER, ADVISING_FILES_FOLDER]:
     if not os.path.exists(folder):
         os.makedirs(folder, exist_ok=True)
         print(f"[OK] Created folder: {folder}")
@@ -1575,6 +1576,79 @@ async def get_degreeworks(user: dict = Depends(get_current_user), db: Session = 
     }
 
 
+@app.get("/api/advising/draft")
+async def get_advising_draft(user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Return the user's saved advising-form draft (both forms), or empty if none."""
+    row = db.query(AdvisingFormDraft).filter(AdvisingFormDraft.user_id == user["user_id"]).first()
+    if not row or not row.forms_json:
+        return {"forms": {}, "submitted": False}
+    try:
+        forms = json.loads(row.forms_json)
+    except Exception:
+        forms = {}
+    return {"forms": forms, "submitted": bool(row.submitted), "updated_at": row.updated_at.isoformat() if row.updated_at else None}
+
+
+@app.post("/api/advising/draft")
+async def save_advising_draft(payload: dict, user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Save (upsert) the user's advising-form draft. Body: { forms: {form_id: {field: value}}, submitted?: bool }."""
+    forms = payload.get("forms")
+    if not isinstance(forms, dict):
+        raise HTTPException(400, "Expected 'forms' object")
+    # Guard size: the forms are small; reject absurd payloads.
+    encoded = json.dumps(forms)
+    if len(encoded) > 100_000:
+        raise HTTPException(413, "Advising draft too large")
+
+    row = db.query(AdvisingFormDraft).filter(AdvisingFormDraft.user_id == user["user_id"]).first()
+    if row is None:
+        row = AdvisingFormDraft(user_id=user["user_id"])
+        db.add(row)
+    row.forms_json = encoded
+    if isinstance(payload.get("submitted"), bool):
+        row.submitted = payload["submitted"]
+    db.commit()
+    return {"saved": True, "submitted": bool(row.submitted)}
+
+
+# Documents the advising form accepts: the Course Sequence + DegreeWorks PDF (or a
+# scan/photo of them). Kept narrower than the general chat-upload allow-list.
+ADVISING_ALLOWED_EXTENSIONS = {"pdf", "png", "jpg", "jpeg"}
+
+
+@app.post("/api/advising/upload")
+async def upload_advising_document(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+    """Store an advising document (Course Sequence / DegreeWorks PDF) and return its
+    stored filename + URL. The frontend keeps the filename in the draft."""
+    ext = (file.filename or "").rsplit(".", 1)[-1].lower() if "." in (file.filename or "") else ""
+    if ext not in ADVISING_ALLOWED_EXTENSIONS:
+        raise HTTPException(400, "Please upload a PDF or image (pdf, png, jpg).")
+
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    clean_name = re.sub(r'[^a-zA-Z0-9_.-]', '_', file.filename or f"document.{ext}")
+    filename = f"advising_{user['user_id']}_{timestamp}_{clean_name}"
+    filepath = os.path.join(ADVISING_FILES_FOLDER, filename)
+
+    # Stream to disk with size enforcement (never holds the full file in memory).
+    try:
+        bytes_written = 0
+        with open(filepath, "wb") as buffer:
+            while chunk := await file.read(64 * 1024):
+                bytes_written += len(chunk)
+                if bytes_written > MAX_UPLOAD_SIZE:
+                    buffer.close()
+                    os.remove(filepath)
+                    raise HTTPException(413, f"File too large. Maximum size is {MAX_UPLOAD_SIZE // (1024*1024)}MB")
+                buffer.write(chunk)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Advising upload error: {e}")
+        raise HTTPException(500, "Could not save file")
+
+    return {"url": f"/uploads/advising_forms/{filename}", "filename": file.filename, "stored_name": filename}
+
+
 @app.get("/api/degreeworks/debug")
 async def debug_degreeworks(user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     """
@@ -2890,7 +2964,7 @@ from youtube_search import search_youtube_videos, youtube_api_available
 # mock grader posts to /chat with session_id="interview-grader"). These are system
 # prompts, NOT student conversation — they must NEVER be saved to chat_history or
 # returned by /chat-history, or they leak into the main chat sidebar / front page.
-INTERNAL_SESSION_IDS = {"interview-grader"}
+INTERNAL_SESSION_IDS = {"interview-grader", "advising-helper"}
 
 
 def is_persistable_session(session_id: str) -> bool:
@@ -2974,6 +3048,8 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
     student_context = ""
     canvas_context = ""
     memory_context = ""
+    advising_flow = ""  # multi-turn flow block; sent via state_delta, NOT hashed context
+    planner_state = None  # set by the schedule-planner block below (guard for cache-skip)
     conversation_context = _build_conversation_context(history_dicts)
 
     if not is_coding_tutor:
@@ -3023,18 +3099,22 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
             clear_advising_state, process_advising_turn, build_advising_context,
         )
 
+        # The advising block goes to `advising_flow` (sent via state_delta every turn),
+        # NOT student_context. student_context is hashed to decide session reuse, so
+        # putting a per-turn-changing block there would recreate the ADK session each
+        # turn and wipe the conversation — breaking the yes/no follow-ups.
         advising_state = get_advising_state(user["user_id"], session_id)
         if advising_state:
             advising_state = process_advising_turn(advising_state, user_q)
             if advising_state:
                 set_advising_state(user["user_id"], session_id, advising_state)
-                student_context += build_advising_context(advising_state, dw_dict)
+                advising_flow = build_advising_context(advising_state, dw_dict)
             else:
                 clear_advising_state(user["user_id"], session_id)
         elif detect_advising_intent(user_q):
-            advising_state = {"phase": "step1_internship"}
+            advising_state = {"phase": "step1_ask"}
             set_advising_state(user["user_id"], session_id, advising_state)
-            student_context += build_advising_context(advising_state, dw_dict)
+            advising_flow = build_advising_context(advising_state, dw_dict)
 
     mode_context = build_mode_context(req.mode)
     if mode_context:
@@ -3111,6 +3191,7 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
                 model=req.model,
                 canvas_context=canvas_context,
                 memory_context=memory_context,
+                flow_context=advising_flow,
             )
         except Exception as e:
             print(f"   Vertex AI Chat Error: {e}")
@@ -3217,6 +3298,8 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
     student_context = ""
     canvas_context = ""
     memory_context = ""
+    advising_flow = ""  # multi-turn flow block; sent via state_delta, NOT hashed context
+    planner_state = None  # set by the schedule-planner block below (guard for cache-skip)
 
     if not is_coding_tutor:
         student_context = _build_student_context(dw_dict) if dw_dict else ""
@@ -3264,18 +3347,20 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
             clear_advising_state, process_advising_turn, build_advising_context,
         )
 
+        # Advising block -> advising_flow (state_delta), NOT student_context (hashed).
+        # See the /chat handler for why: keeps the ADK session alive across turns.
         advising_state = get_advising_state(user_id, session_id)
         if advising_state:
             advising_state = process_advising_turn(advising_state, user_q)
             if advising_state:
                 set_advising_state(user_id, session_id, advising_state)
-                student_context += build_advising_context(advising_state, dw_dict)
+                advising_flow = build_advising_context(advising_state, dw_dict)
             else:
                 clear_advising_state(user_id, session_id)
         elif detect_advising_intent(user_q):
-            advising_state = {"phase": "step1_internship"}
+            advising_state = {"phase": "step1_ask"}
             set_advising_state(user_id, session_id, advising_state)
-            student_context += build_advising_context(advising_state, dw_dict)
+            advising_flow = build_advising_context(advising_state, dw_dict)
 
     mode_context = build_mode_context(req.mode)
     if mode_context:
@@ -3370,11 +3455,16 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
     allow_semantic = not (bool(dw_dict) or bool(canvas_dict))
     mark_timing("cache_ready")
 
-    skip_response_cache = req.skip_cache or (is_coding_tutor and _coding_tutor_query_has_workspace_code(user_q))
+    # Never serve a cached answer while a multi-turn flow (advising/planner) is active:
+    # the reply must come from the live agent WITH the injected flow instructions, or the
+    # flow silently breaks (a cached "how to access forms" answer bypasses advising).
+    in_flow = bool(advising_flow) or bool(planner_state)
+    skip_response_cache = req.skip_cache or in_flow or (is_coding_tutor and _coding_tutor_query_has_workspace_code(user_q))
 
     # Skip cache when user taps "Regenerate" or when Coding Tutor includes live workspace code.
     if skip_response_cache:
-        reason = "workspace code" if is_coding_tutor and _coding_tutor_query_has_workspace_code(user_q) else "regenerate"
+        reason = ("advising/planner flow" if in_flow else
+                  "workspace code" if is_coding_tutor and _coding_tutor_query_has_workspace_code(user_q) else "regenerate")
         print(f"[CACHE] SKIP ({reason}) for query: {user_q[:50]}...")
         cached_response = None
         if req.skip_cache:
@@ -3453,6 +3543,7 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                 model=req.model,
                 canvas_context=canvas_context,
                 memory_context=memory_context,
+                flow_context=advising_flow,
             ):
                 if first_event:
                     mark_timing("agent_first_event")

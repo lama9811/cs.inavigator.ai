@@ -10,6 +10,7 @@ import MyClassesPage from "./components/MyClassesPage";
 import GradeSurgeon from "./components/GradeSurgeon";
 import RippleEffect from "./components/RippleEffect";
 import PlannerPage from "./components/PlannerPage";
+import AdvisingPage from "./components/advising/AdvisingPage";
 import ProfilePage    from "./components/ProfilePage";
 import AdminDashboard from "./components/AdminDashboard";
 import Forbidden      from "./components/Forbidden";
@@ -951,6 +952,33 @@ export default function App() {
                 onSidebarResize={handleSidebarResize}
               >
                 <PlannerPage />
+              </SidebarLayout>
+            </RequireAuth>
+          }
+        />
+
+        {/* protected: advising form section with sidebar */}
+        <Route
+          path="/advising"
+          element={
+            <RequireAuth>
+              <SidebarLayout
+                sessions={sessions}
+                activeId={activeId}
+                onNew={handleNew}
+                onSelect={handleSelect}
+                onDelete={handleDelete}
+                onLogout={handleLogout}
+                userEmail={userEmail}
+                onPin={handlePin}
+                onArchive={handleArchive}
+                onRename={handleRename}
+                darkMode={darkMode}
+                onToggleTheme={toggleTheme}
+                onCollapseSidebar={toggleSidebar}
+                onSidebarResize={handleSidebarResize}
+              >
+                <AdvisingPage />
               </SidebarLayout>
             </RequireAuth>
           }

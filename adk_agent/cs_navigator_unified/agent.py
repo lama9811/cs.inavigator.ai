@@ -357,8 +357,15 @@ def _build_instruction(ctx):
     planner_data = _sanitize_student_data(ctx.state.get("schedule_planner", ""), max_length=3000)
     planner_section = f"\n{planner_data}" if planner_data else ""
 
+    # Advising form flow (Step 1/Step 2). Sent via state_delta every turn so it can
+    # change as the flow advances WITHOUT recreating the session (which would wipe
+    # conversation history). Not sanitized-truncated the same way — it is our own
+    # backend-authored instruction block, not user data.
+    advising_data = ctx.state.get("advising_flow", "")
+    advising_section = f"\n{advising_data}" if advising_data else ""
+
     semester_ctx = _get_semester_context()
-    return f"{BASE_INSTRUCTION}{ui_section}{semester_ctx}{dw_section}{canvas_section}{memory_section}{planner_section}"
+    return f"{BASE_INSTRUCTION}{ui_section}{semester_ctx}{dw_section}{canvas_section}{memory_section}{planner_section}{advising_section}"
 
 
 # =============================================================================
@@ -403,7 +410,7 @@ Search KB first for any Morgan-specific topic below.
 
 **Schedule planner:** When context contains "SCHEDULE PLANNER MODE", follow those instructions exactly. Present options as pre-computed.
 
-**Advising form:** When context contains "ADVISING FORM MODE", follow those instructions EXACTLY and only do what that block says for this turn (do not jump ahead to later steps). The flow is: Step 1 = confirm the Internship Form is done (if not, link out and pause); Step 2 = walk the student through the Advising Form, treating any "Known advising values from saved profile/DegreeWorks" (including their advisor) as already answered — never re-ask those. When you ask a yes/no question, emit it with the marker `[YES/NO_QUESTION]: <question text>` so the interface renders Yes/No buttons; the student's next message will be "Yes" or "No". Do not use this marker for non-yes/no questions.
+**Advising form:** When context contains "ADVISING FORM MODE", follow those instructions EXACTLY and only do what that block says for this turn (do not jump ahead to later steps). The flow is: Step 1 = the Internship Form — first ask if the student has already completed it; if yes, go to Step 2; if no, walk them through filling it out in chat section by section, then summarize and confirm. Step 2 = walk the student through the Advising Form, treating any "Known advising values from saved profile/DegreeWorks" (including their advisor) as already answered — never re-ask those. Ask at most three fields at a time. When you ask a yes/no question, emit it with the marker `[YES/NO_QUESTION]: <question text>` so the interface renders Yes/No buttons; the student's next message will be "Yes" or "No". Do not use this marker for non-yes/no questions. When a question has a fixed set of answer options, put the marker `[CHOICE_QUESTION]: Option A | Option B | Option C` on its own line so the interface renders one clickable button per option (use the option labels exactly); the student's next message will be the option they picked. Ask only one yes/no or choice question per turn. Any bracketed tag the mode block tells you to emit (e.g. `[INTERNSHIP_COMPLETE]`, `[ADVISING_FORM_PANEL]{...}`) is an internal signal — include it EXACTLY as instructed, on its own line, with any JSON that follows it unchanged; the interface hides the tag and renders the right control (e.g. an inline form panel). When told to emit the form panel, keep your own text to one short sentence and let the panel collect the fields — do not also list or ask the fields yourself.
 
 **Also covers:** career/internships, financial aid (FAFSA, scholarships, tuition), department info, student orgs, housing, dining, tutoring, campus resources. Search KB for all Morgan-specific versions of these questions. For broad study skills, concepts, writing, math, programming, and learning questions with no Morgan specifics, answer from general knowledge without Morgan-specific claims.
 

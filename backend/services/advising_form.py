@@ -117,6 +117,7 @@ INTERNSHIP_FORM_SCHEMA: dict[str, Any] = {
     "form_id": "academic_year_2025_2026_internship_research_job_experience",
     "name": "Academic Year 2025/2026 Internship, Research, Job Experience Form",
     "url": INTERNSHIP_FORM_URL,
+    "source": "scraped Smartsheet HTML (ported from teammate fork)",
     "purpose": (
         "Collect internship, research, and job experience details for the "
         "Morgan State SCMNS advising period."
@@ -129,10 +130,29 @@ INTERNSHIP_FORM_SCHEMA: dict[str, Any] = {
                 {"field_id": "first_name", "label": "First Name", "type": "text", "required": True},
                 {"field_id": "last_name", "label": "Last Name", "type": "text", "required": True},
                 {
+                    "field_id": "gender",
+                    "label": "Gender",
+                    "type": "choice",
+                    "required": True,
+                    "options": ["Male", "Female", "Non Binary"],
+                },
+                {
                     "field_id": "major",
                     "label": "Major",
-                    "type": "text",
+                    "type": "choice",
                     "required": True,
+                    "options": [
+                        "Actuarial Science",
+                        "Biology",
+                        "Coastal Science and Policy",
+                        "Chemistry",
+                        "Cloud Computing",
+                        "Computer Science",
+                        "Engineering Physics",
+                        "Mathematics",
+                        "Medical Laboratory Science",
+                        "Physics",
+                    ],
                 },
                 {
                     "field_id": "transfer_student",
@@ -141,9 +161,58 @@ INTERNSHIP_FORM_SCHEMA: dict[str, Any] = {
                     "required": True,
                 },
                 {
+                    "field_id": "clubs_and_organization_interests",
+                    "label": "SCMNS Clubs or Organization Interests",
+                    "type": "multi_choice",
+                    "required": True,
+                    "options": [
+                        "Not Interested in any SCMNS Clubs",
+                        "Astronomy Club",
+                        "Biology Club",
+                        "Chemistry Club",
+                        "Math Club",
+                        "Medical Laboratory Science Club",
+                        "POWER - SCMNS Black Male Initiative",
+                        "PreDental Society",
+                        "PreMed Program",
+                        "Society of Physics Students",
+                        "Rocket Club",
+                        "Society for the Advancement of Computer Science",
+                        "Women in Computer Science",
+                    ],
+                },
+                {
                     "field_id": "career_interest",
                     "label": "Career Interest",
-                    "type": "text",
+                    "type": "choice",
+                    "required": True,
+                    "options": [
+                        "Analyst",
+                        "Cosmetic Chemist",
+                        "Dentist",
+                        "Developer",
+                        "Environmental Scientist",
+                        "Marine Scientist",
+                        "Medical Doctor",
+                        "Pharmacist",
+                        "Researcher",
+                        "Scientist",
+                        "Teacher",
+                        "Unsure of Career Interest",
+                        "Vet",
+                        "Other",
+                    ],
+                },
+                {
+                    "field_id": "knows_graduate_programs",
+                    "label": "Did you know that SCMNS has graduate programs?",
+                    "type": "yes_no",
+                    "required": True,
+                },
+                {
+                    "field_id": "want_on_campus_research",
+                    "label": "Would you like to conduct research on campus?",
+                    "type": "yes_no_maybe",
                     "required": True,
                 },
             ],
@@ -152,6 +221,54 @@ INTERNSHIP_FORM_SCHEMA: dict[str, Any] = {
             "section_id": "experience_summary",
             "title": "Internship, research, and job experience",
             "fields": [
+                {
+                    "field_id": "did_present_research_this_year",
+                    "label": "Did you present research this academic year?",
+                    "type": "yes_no",
+                    "required": True,
+                },
+                {
+                    "field_id": "number_of_presentations_completed",
+                    "label": "Number of research presentations completed",
+                    "type": "number",
+                    "required": False,
+                    "required_when": {"field_id": "did_present_research_this_year", "value": "Yes"},
+                },
+                {
+                    "field_id": "presentation_details",
+                    "label": "Presentation details",
+                    "type": "text",
+                    "required": False,
+                    "help_text": "List each presentation with type, title, conference, location, and date.",
+                    "required_when": {"field_id": "did_present_research_this_year", "value": "Yes"},
+                },
+                {
+                    "field_id": "had_publication_this_year",
+                    "label": "Did you have a publication this academic year?",
+                    "type": "yes_no",
+                    "required": True,
+                },
+                {
+                    "field_id": "publication_title",
+                    "label": "Title of Publication",
+                    "type": "text",
+                    "required": False,
+                    "required_when": {"field_id": "had_publication_this_year", "value": "Yes"},
+                },
+                {
+                    "field_id": "publication_date",
+                    "label": "Publication Date",
+                    "type": "text",
+                    "required": False,
+                    "required_when": {"field_id": "had_publication_this_year", "value": "Yes"},
+                },
+                {
+                    "field_id": "publication_location",
+                    "label": "Location",
+                    "type": "text",
+                    "required": False,
+                    "required_when": {"field_id": "had_publication_this_year", "value": "Yes"},
+                },
                 {
                     "field_id": "participated_in_experience",
                     "label": "Participated in Internship/Rsch/Job in 2025/2026?",
@@ -175,6 +292,14 @@ INTERNSHIP_FORM_SCHEMA: dict[str, Any] = {
                     "required_when": {"field_id": "participated_in_experience", "value": "Yes"},
                 },
                 {
+                    "field_id": "experience_sector",
+                    "label": "Sector of Internship/Job Experience",
+                    "type": "choice",
+                    "required": False,
+                    "options": ["College/University", "Government Agency", "Private Industry"],
+                    "required_when": {"field_id": "participated_in_experience", "value": "Yes"},
+                },
+                {
                     "field_id": "organization_name",
                     "label": "Name of company, government agency, or institution",
                     "type": "text",
@@ -189,11 +314,144 @@ INTERNSHIP_FORM_SCHEMA: dict[str, Any] = {
                     "required_when": {"field_id": "participated_in_experience", "value": "Yes"},
                 },
                 {
+                    "field_id": "program_name",
+                    "label": "Name of Program (e.g. Emory SURP program)",
+                    "type": "text",
+                    "required": False,
+                    "required_when": {
+                        "field_id": "experience_type",
+                        "values": ["STEM Research", "Non STEM Research"],
+                    },
+                },
+                {
+                    "field_id": "mentor_name",
+                    "label": "Research Mentor's First and Last Name",
+                    "type": "text",
+                    "required": False,
+                    "required_when": {
+                        "field_id": "experience_type",
+                        "values": ["STEM Research", "Non STEM Research"],
+                    },
+                },
+                {
+                    "field_id": "address",
+                    "label": "Address",
+                    "type": "text",
+                    "required": False,
+                    "help_text": "City and State",
+                    "required_when": {"field_id": "participated_in_experience", "value": "Yes"},
+                },
+                {
                     "field_id": "relevance_to_education",
                     "label": "Relevance of Experience to Your Education",
                     "type": "text",
                     "required": False,
                     "required_when": {"field_id": "participated_in_experience", "value": "Yes"},
+                },
+                {
+                    "field_id": "science_math_enhancement",
+                    "label": "Enhanced Science or Math Education",
+                    "type": "yes_no",
+                    "required": False,
+                    "required_when": {"field_id": "participated_in_experience", "value": "Yes"},
+                },
+                {
+                    "field_id": "permanent_job_future_career_prep",
+                    "label": "Permanent Job or Future Career Preparation",
+                    "type": "yes_no",
+                    "required": False,
+                    "required_when": {"field_id": "participated_in_experience", "value": "Yes"},
+                },
+                {
+                    "field_id": "had_second_experience",
+                    "label": "Did you have a second internship/research/job?",
+                    "type": "yes_no",
+                    "required": True,
+                },
+                {
+                    "field_id": "second_experience_type",
+                    "label": "Type of Experience (2)",
+                    "type": "choice",
+                    "required": False,
+                    "options": [
+                        "STEM Internship",
+                        "STEM Related Job",
+                        "STEM Research",
+                        "Non STEM Internship",
+                        "Non STEM Job",
+                        "Non STEM Research",
+                    ],
+                    "required_when": {"field_id": "had_second_experience", "value": "Yes"},
+                },
+                {
+                    "field_id": "second_experience_sector",
+                    "label": "Sector of Internship/Job Experience (2)",
+                    "type": "choice",
+                    "required": False,
+                    "options": ["College/University", "Government Agency", "Private Industry"],
+                    "required_when": {"field_id": "had_second_experience", "value": "Yes"},
+                },
+                {
+                    "field_id": "second_organization_name",
+                    "label": "Name of company, government agency, or institution (2)",
+                    "type": "text",
+                    "required": False,
+                    "required_when": {"field_id": "had_second_experience", "value": "Yes"},
+                },
+                {
+                    "field_id": "second_job_title",
+                    "label": "Your Intern/Job Title (2)",
+                    "type": "text",
+                    "required": False,
+                    "required_when": {"field_id": "had_second_experience", "value": "Yes"},
+                },
+                {
+                    "field_id": "second_program_name",
+                    "label": "Name of Program (2)",
+                    "type": "text",
+                    "required": False,
+                    "required_when": {
+                        "field_id": "second_experience_type",
+                        "values": ["STEM Research", "Non STEM Research"],
+                    },
+                },
+                {
+                    "field_id": "second_mentor_name",
+                    "label": "Research Mentor's First and Last Name (2)",
+                    "type": "text",
+                    "required": False,
+                    "required_when": {
+                        "field_id": "second_experience_type",
+                        "values": ["STEM Research", "Non STEM Research"],
+                    },
+                },
+                {
+                    "field_id": "second_address",
+                    "label": "Address (2)",
+                    "type": "text",
+                    "required": False,
+                    "required_when": {"field_id": "had_second_experience", "value": "Yes"},
+                },
+                {
+                    "field_id": "second_relevance_to_education",
+                    "label": "Relevance of Experience to Your Education (2)",
+                    "type": "text",
+                    "required": False,
+                    "required_when": {"field_id": "had_second_experience", "value": "Yes"},
+                },
+                {
+                    "field_id": "second_science_math_enhancement",
+                    "label": "Enhanced Science or Math Education (2)",
+                    "type": "yes_no",
+                    "required": False,
+                    "required_when": {"field_id": "had_second_experience", "value": "Yes"},
+                },
+                {
+                    "field_id": "second_permanent_job_future_career_prep",
+                    "label": "Permanent Job or Future Career Preparation (2)",
+                    "type": "yes_no",
+                    "required": False,
+                    "required_when": {"field_id": "had_second_experience", "value": "Yes"},
                 },
             ],
         },
@@ -339,6 +597,18 @@ def _yes_no(text: str) -> Optional[bool]:
     return None
 
 
+_CONFIRM_WORDS = (
+    "confirm", "looks good", "that's correct", "thats correct", "correct",
+    "submit", "done", "that's right", "thats right", "yes that's right",
+    "all good", "good to go", "finished", "complete",
+)
+
+
+def _confirms(msg_lower: str) -> bool:
+    """True when the student is confirming a summarized draft (ends a form step)."""
+    return any(w in msg_lower for w in _CONFIRM_WORDS)
+
+
 # =============================================================================
 # IN-MEMORY STATE MACHINE (mirrors schedule_planner)
 # =============================================================================
@@ -379,29 +649,41 @@ def process_advising_turn(state: dict, user_msg: str) -> Optional[dict]:
     if msg_lower in _CANCEL or any(w in msg_lower for w in _CANCEL):
         return None
 
-    if phase == "step1_internship":
+    if phase == "step1_ask":
+        # "Have you already completed the Internship Form?" Yes -> skip to Step 2.
+        # No -> walk them through filling it in chat.
         answer = _yes_no(user_msg)
         if answer is True:
             state["phase"] = "step2_advising"
             state["internship_done"] = True
         elif answer is False:
-            state["phase"] = "step1_paused"
+            state["phase"] = "step1_fill"
             state["internship_done"] = False
-        # Ambiguous -> stay in step1_internship; agent re-asks the yes/no question.
+        # Ambiguous -> stay in step1_ask; agent re-asks the yes/no question.
         return state
 
-    if phase == "step1_paused":
-        # Student came back. If they now say it's done, move on; else keep paused.
-        answer = _yes_no(user_msg)
-        if answer is True:
+    if phase == "step1_fill":
+        # The agent walks the student through the Internship Form fields (from the
+        # injected schema), then shows a summary tagged [INTERNSHIP_COMPLETE] and asks
+        # the student to confirm. When the student confirms, advance to Step 2.
+        if _confirms(msg_lower):
             state["phase"] = "step2_advising"
             state["internship_done"] = True
         return state
 
     if phase == "step2_advising":
-        # The agent drives the section-by-section fill using the injected context;
-        # the flow ends when the student confirms the draft.
-        if any(w in msg_lower for w in ("confirm", "looks good", "that's correct", "thats correct", "submit", "done")):
+        # PROTOTYPE panel flow: the panel is shown, then the student SUBMITS (their
+        # message contains the submitted answers). That submit must NOT end the flow -
+        # it should let the agent confirm once. So: once the panel was shown, the next
+        # student turn advances to a terminal "confirm" phase (agent confirms, flow
+        # then ends on the following turn or immediately after confirming).
+        if state.get("panel_shown") and not state.get("submitted"):
+            state["submitted"] = True
+            return state  # keep alive one turn so the agent can confirm
+        if state.get("submitted"):
+            return None   # confirmation delivered last turn; end the flow
+        # Non-panel fallback: end on an explicit confirm.
+        if _confirms(msg_lower):
             return None
         return state
 
@@ -425,69 +707,107 @@ def _prefill_from_student_data(student_data: Optional[dict]) -> dict[str, Any]:
     return known
 
 
+def _internship_fields_outline(student_data: Optional[dict]) -> str:
+    """Render the Internship Form sections/fields as an outline for the agent to walk."""
+    known = _prefill_from_student_data(student_data)  # first_name/last_name/major overlap
+    lines = ""
+    for section in INTERNSHIP_FORM_SCHEMA["sections"]:
+        lines += f"  {section['title']}:\n"
+        for f in section["fields"]:
+            opts = ""
+            if f.get("options"):
+                opts = " [options: " + ", ".join(f["options"]) + "]"
+            cond = ""
+            if f.get("required_when"):
+                rw = f["required_when"]
+                trig = rw.get("value") or "/".join(rw.get("values", []))
+                cond = f" (only if {rw['field_id']} = {trig})"
+            prefilled = ""
+            if f["field_id"] in known:
+                prefilled = f" (already known: {known[f['field_id']]} - do not re-ask)"
+            lines += f"    - {f['label']}{opts}{cond}{prefilled}\n"
+    return lines
+
+
 def build_advising_context(state: dict, student_data: Optional[dict] = None) -> str:
     """Format advising state into a context block for agent instruction injection."""
     phase = state.get("phase", "")
     bar = "=" * 40
 
-    if phase == "step1_internship":
+    if phase == "step1_ask":
         return (
             f"\n{bar}\n"
-            "ADVISING FORM MODE - STEP 1 (follow exactly):\n"
+            "ADVISING FORM MODE - STEP 1 START (follow exactly):\n"
             "The student is starting the CS department advising flow. Step 1 is the "
-            "Internship Form. Ask ONLY this, using the yes/no button marker so the UI "
-            "renders buttons:\n"
-            "[YES/NO_QUESTION]: Have you already completed Step 1, the Internship Form?\n"
-            "Do NOT start the advising form yet. Just ask this one question.\n"
+            "Internship Form. First find out if they've already done it. Ask ONLY this, "
+            "using the yes/no button marker so the UI renders buttons:\n"
+            "[YES/NO_QUESTION]: Have you already completed the Internship Form?\n"
+            "Do NOT start any form questions yet. Just ask this one question.\n"
             f"{bar}\n"
         )
 
-    if phase == "step1_paused":
+    if phase == "step1_fill":
+        outline = _internship_fields_outline(student_data)
         return (
             f"\n{bar}\n"
-            "ADVISING FORM MODE - STEP 1 NOT DONE (follow exactly):\n"
-            "The student has not completed the Internship Form. Direct them to it and "
-            "PAUSE the advising flow until they return. Say, in a friendly tone:\n"
-            f"'No problem - please complete the Internship Form first: {INTERNSHIP_FORM_URL} "
-            "Come back and tell me once it's done, and we'll continue with the Advising Form.'\n"
-            "Do NOT ask any advising-form questions yet.\n"
+            "ADVISING FORM MODE - STEP 1 FILL THE INTERNSHIP FORM (follow exactly):\n"
+            "The student has NOT completed the Internship Form, so help them fill it out "
+            "right here in chat, section by section. Walk through these fields, asking a "
+            "few at a time (at most 3), grouped naturally. Skip any marked already known. "
+            "Only ask conditional fields when their trigger condition is met.\n\n"
+            f"{outline}\n"
+            "For yes/no fields use the marker: [YES/NO_QUESTION]: <question text>\n"
+            "For a field that has a fixed list of options (shown as [options: ...]), ask "
+            "the question in your text, then put the option marker on its OWN line so the "
+            "UI renders one clickable button per option:\n"
+            "[CHOICE_QUESTION]: Option A | Option B | Option C\n"
+            "Use the option labels exactly as given. Only ask ONE choice question per turn.\n"
+            f"Also mention they can file the official form here as a backup: {INTERNSHIP_FORM_URL}\n"
+            "When every applicable field is answered, SUMMARIZE the completed Internship "
+            "Form draft and ask the student to confirm. Start that confirmation summary "
+            "with the exact tag [INTERNSHIP_COMPLETE] on its own line so the system knows "
+            "Step 1 is done. After they confirm, you'll be moved to Step 2 automatically.\n"
             f"{bar}\n"
         )
 
     if phase == "step2_advising":
         known = _prefill_from_student_data(student_data)
-        # Student-owned fields still needed (skip anything pre-filled).
-        missing = [
-            f for f in ADVISING_FORM_SCHEMA["fields"]
-            if f["field_id"] not in known
-        ]
-        known_lines = ""
-        if known:
-            known_lines = "Known advising values from saved profile/DegreeWorks (treat as ALREADY answered, do not re-ask):\n"
-            for fid, val in known.items():
-                label = next((f["label"] for f in ADVISING_FORM_SCHEMA["fields"] if f["field_id"] == fid), fid)
-                known_lines += f"  - {label}: {val}\n"
 
-        missing_lines = ""
-        for f in missing:
-            hint = f" ({f['help_text']})" if f.get("help_text") else ""
-            missing_lines += f"  - {f['label']}{hint}\n"
+        # PROTOTYPE: render the Advising Form as an inline PANEL the first time we
+        # enter Step 2, pre-filled with known DegreeWorks values. The student fills
+        # it in the panel and submits; their submit arrives as a structured message
+        # and the agent then confirms (ending the flow).
+        if not state.get("panel_shown"):
+            # Mark it shown so we don't re-emit the panel on the confirm turn. (The
+            # caller persists state after build, so this sticks.)
+            state["panel_shown"] = True
+            import json as _json
+            prefill_json = _json.dumps(known, ensure_ascii=True)
+            return (
+                f"\n{bar}\n"
+                "ADVISING FORM MODE - STEP 2 PANEL (follow exactly):\n"
+                "The student completed Step 1. Present the Advising Form as an inline "
+                "panel for them to fill in. Say ONE short friendly sentence telling them "
+                "to fill in the form below (advisor and other known details are already "
+                "filled in), then emit this EXACT marker on its own line so the interface "
+                "renders the form panel:\n"
+                f"[ADVISING_FORM_PANEL]{prefill_json}\n"
+                "Do NOT list the fields yourself and do NOT ask them one by one - the "
+                "panel handles that. Keep your message to that one sentence plus the "
+                "marker line.\n"
+                f"{bar}\n"
+            )
 
+        # After the panel: the student's submitted answers arrive as a message. Confirm
+        # and wrap up.
         return (
             f"\n{bar}\n"
-            "ADVISING FORM MODE - STEP 2 (follow exactly):\n"
-            "The student completed Step 1. Now walk them through the Advising Form in "
-            "small, manageable sections. Optimize for speed and avoid redundancy.\n\n"
-            f"{known_lines}\n"
-            "Only ask the student for these MISSING student-owned fields:\n"
-            f"{missing_lines}\n"
-            "Ask for at most THREE missing fields at a time, grouped naturally, in one "
-            "concise message. For yes/no fields, use the marker:\n"
-            "[YES/NO_QUESTION]: <question text>\n"
-            "When all fields are known or answered, summarize the draft values and ask "
-            "the student to confirm instead of asking more questions. Steps 3 (meeting an "
-            "advisor) and 4 (registration) are bypassed for now - tell the student they "
-            "can handle registration themselves for the time being.\n"
+            "ADVISING FORM MODE - STEP 2 CONFIRM (follow exactly):\n"
+            "The student submitted their advising form answers (in their last message). "
+            "Briefly summarize the values back to them and confirm the form is complete. "
+            "Steps 3 (meeting an advisor) and 4 (registration) are bypassed for now - tell "
+            "the student they can handle registration themselves for the time being. Do "
+            "NOT emit the form panel marker again.\n"
             f"{bar}\n"
         )
 

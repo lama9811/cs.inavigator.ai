@@ -23,6 +23,10 @@ import { getFileIcon } from "./chatbox/FileIcon";
 import ReportModal from "./chatbox/ReportModal";
 import WelcomePanel from "./chatbox/WelcomePanel";
 import YouTubeEmbed from "./chatbox/YouTubeEmbed";
+import AdvisingFormPanel from "./coding-tutor/AdvisingFormPanel";
+import {
+  hasAdvisingPanel, stripAdvisingPanel, parseAdvisingPrefill,
+} from "./coding-tutor/advisingPanelMarker";
 import { getYouTubeVideoId } from "../lib/youtube";
 import "./Chatbox.css";
 import "./chatbox/ChatHeader.css";
@@ -45,11 +49,30 @@ const MessageMarkdown = React.memo(function MessageMarkdown({ text, components }
 // renders Yes/No buttons instead of expecting typed input. Detect it on a bot
 // message; the marker is stripped from the displayed text and buttons are shown.
 const YESNO_MARKER_RE = /\[YES\/NO_QUESTION\]:\s*/i;
+// Multiple-choice question: "[CHOICE_QUESTION]: A | B | C" -> clickable buttons,
+// one per option. The option list runs to the end of that line.
+const CHOICE_MARKER_RE = /\[CHOICE_QUESTION\]:\s*(.+)/i;
+// Internal flow tags the advising agent emits for the backend state machine; never
+// shown to the student.
+const FLOW_TAG_RE = /\[INTERNSHIP_COMPLETE\]\s*/gi;
 function hasYesNoQuestion(text) {
   return typeof text === "string" && YESNO_MARKER_RE.test(text);
 }
+// Returns the list of options for a choice question, or [] if none.
+function getChoiceOptions(text) {
+  if (typeof text !== "string") return [];
+  const m = text.match(CHOICE_MARKER_RE);
+  if (!m) return [];
+  return m[1].split("|").map((o) => o.trim()).filter(Boolean);
+}
 function stripYesNoMarker(text) {
-  return typeof text === "string" ? text.replace(YESNO_MARKER_RE, "") : text;
+  if (typeof text !== "string") return text;
+  return stripAdvisingPanel(
+    text
+      .replace(YESNO_MARKER_RE, "")
+      .replace(CHOICE_MARKER_RE, "")
+      .replace(FLOW_TAG_RE, ""),
+  );
 }
 
 // Featured questions that showcase chatbot capabilities
@@ -1606,6 +1629,47 @@ export default function Chatbox({
                           No
                         </button>
                       </div>
+                    )}
+
+                    {/* Multiple-choice buttons: one per option on the latest bot
+                        message when it carries a [CHOICE_QUESTION] marker. Clicking
+                        sends the option text as the next message. */}
+                    {msg.sender === "bot" && !msg.isStreaming &&
+                      i === mainMessages.length - 1 && !isLoading &&
+                      getChoiceOptions(msg.text).length > 0 && (
+                      <div className="choice-btn-row">
+                        {getChoiceOptions(msg.text).map((opt) => (
+                          <button
+                            key={opt}
+                            type="button"
+                            className="choice-btn"
+                            onClick={() => handleSend(null, opt)}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Advising-form panel: rendered inline on the latest bot message
+                        when it carries the panel marker. Entry happens IN the panel;
+                        Submit posts the collected values back as one structured turn. */}
+                    {msg.sender === "bot" && !msg.isStreaming &&
+                      i === mainMessages.length - 1 &&
+                      hasAdvisingPanel(msg.text) && (
+                      <AdvisingFormPanel
+                        prefill={parseAdvisingPrefill(msg.text)}
+                        disabled={isLoading}
+                        onSubmit={(payload) => {
+                          const lines = Object.entries(payload)
+                            .map(([k, v]) => `${k}: ${v}`)
+                            .join("\n");
+                          handleSend(
+                            null,
+                            `Here are my advising form answers:\n${lines}\n\nPlease confirm.`,
+                          );
+                        }}
+                      />
                     )}
 
                     {/* Streaming indicator - show steps when no text, cursor when text is streaming */}

@@ -1161,6 +1161,45 @@ body.dark .yesno-yes:hover {
   color: #fff;
 }
 
+/* Advising-form multiple-choice buttons (one per option, stacked since option
+   text can be long). Matches the Yes/No button styling. */
+.choice-btn-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+  align-items: flex-start;
+}
+.choice-btn {
+  min-width: 140px;
+  max-width: 100%;
+  text-align: left;
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: 1.5px solid #4285F4;
+  background: transparent;
+  color: #4285F4;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.05s ease;
+}
+.choice-btn:hover {
+  background: #4285F4;
+  color: #fff;
+}
+.choice-btn:active {
+  transform: translateY(1px);
+}
+body.dark .choice-btn {
+  border-color: color-mix(in srgb, #4285F4 70%, #fff 30%);
+  color: color-mix(in srgb, #4285F4 60%, #fff 40%);
+}
+body.dark .choice-btn:hover {
+  background: #4285F4;
+  color: #fff;
+}
+
 /* ─── 🔥 ENHANCED MARKDOWN STYLING - Professional Formatting ─── */
 
 /* Paragraph spacing - cleaner text blocks */
