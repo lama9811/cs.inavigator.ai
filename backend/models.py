@@ -70,6 +70,7 @@ class DegreeWorksData(Base):
     student_name = Column(String(255), nullable=True)
     student_id = Column(String(50), nullable=True)
     degree_program = Column(String(255), nullable=True)  # e.g., "Bachelor of Science in Computer Science"
+    minor = Column(String(255), nullable=True)  # e.g., "Mathematics" (from DegreeWorks goalArray MINOR)
     catalog_year = Column(String(20), nullable=True)  # e.g., "2022-2023"
     classification = Column(String(50), nullable=True)  # e.g., "Senior", "Junior"
     advisor = Column(String(255), nullable=True)

@@ -13,6 +13,7 @@ import { FaChartLine } from "@react-icons/all-files/fa/FaChartLine";
 import { FaStar } from "@react-icons/all-files/fa/FaStar";
 import "./CurriculumPage.css";
 
+import { findMinorPlan } from "./minorsData";
 import { getApiBase } from "../lib/apiBase";
 const API_BASE = getApiBase();
 
@@ -170,6 +171,35 @@ export default function CurriculumPage() {
       semester: completed?.semester || inProgress?.semester || null
     };
   });
+
+  // --- Minor section (bottom of page) -------------------------------------
+  // Driven by a real minor roadmap from MINORS (minorsData.js). We match the
+  // DegreeWorks minor name to its required-course list, then overlay the student's
+  // completed / in-progress status onto each required course. If we don't have the
+  // roadmap for a given minor yet, we render the minor NAME with a note and NO
+  // course table — we never dump the student's whole transcript as "minor courses".
+  const minorName = degreeWorksData?.minor || "";
+  const minorPlan = findMinorPlan(minorName);   // {name, department, credits, courses[]} or null
+
+  const minorCourses = [];
+  if (minorPlan) {
+    minorPlan.courses.forEach((req) => {
+      const code = String(req.code || "").toUpperCase().replace(/\s+/g, " ").trim();
+      const completed = code ? completedCourseMap.get(code) : null;
+      const inProgress = code ? inProgressCourseMap.get(code) : null;
+      minorCourses.push({
+        code: req.code || "",
+        name: req.name || completed?.name || inProgress?.name || "",
+        credits: req.credits ?? completed?.credits ?? 0,
+        note: req.note || null,
+        status: completed ? "completed" : inProgress ? "in-progress" : "pending",
+        grade: completed?.grade || (inProgress ? "IP" : null),
+      });
+    });
+  }
+  const minorDoneCredits = minorCourses
+    .filter((c) => c.status === "completed")
+    .reduce((sum, c) => sum + (Number(c.credits) || 0), 0);
 
   // Get unique categories for filter
   const categories = ["All", ...new Set(curriculumData.map(c => c.category))];
@@ -497,6 +527,94 @@ export default function CurriculumPage() {
           </div>
         )}
       </div>
+
+      {/* Minor section — bottom of page, only when a minor is declared. Mirrors the
+          major's grouped-table layout. When we have the minor's verified roadmap
+          (minorsData.js) we show every required course with the student's status;
+          otherwise we show only the minor NAME + a note (never the whole transcript). */}
+      {!loading && !error && minorName && (
+        <div className="table-container minor-curriculum">
+          <div className="category-section">
+            <div className="category-header">
+              <h3 className="category-title minor-title">
+                <FaStar size={16} /> {minorName} Minor
+                {minorPlan && (
+                  <span className="course-count">
+                    ({minorDoneCredits}
+                    {minorPlan.credits ? ` / ${minorPlan.credits}` : ""} cr done)
+                  </span>
+                )}
+              </h3>
+              <p className="category-description">
+                {minorPlan
+                  ? `${minorPlan.chooseNote || `Courses for the ${minorName} minor.`}${minorPlan.department ? ` Offered by ${minorPlan.department}.` : ""} Always confirm exact requirements in DegreeWorks.`
+                  : `Your declared minor. The full ${minorName} requirement roadmap isn't loaded yet — check DegreeWorks for the exact courses you still need.`}
+              </p>
+            </div>
+
+            {minorPlan && minorCourses.length > 0 && (
+              <table className="curriculum-table">
+                <thead>
+                  <tr>
+                    <th>Status</th>
+                    <th>Code</th>
+                    <th>Course Name</th>
+                    <th>Credits</th>
+                    <th>Grade</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {minorCourses.map((course, idx) => (
+                    <tr key={course.code || `minor-req-${idx}`} className={`course-row ${course.status}`}>
+                      <td className="course-status">
+                        {course.status === "completed" && (
+                          <span className="status-badge completed" title="Completed">
+                            <FaCheckCircle />
+                          </span>
+                        )}
+                        {course.status === "in-progress" && (
+                          <span className="status-badge in-progress" title="In Progress">
+                            <FaClock />
+                          </span>
+                        )}
+                        {course.status === "pending" && (
+                          <span className="status-badge pending" title="Not Started">
+                            <FaBook />
+                          </span>
+                        )}
+                      </td>
+                      <td className="course-code">{course.code || "—"}</td>
+                      <td className="course-name">
+                        {course.name}
+                        {course.note && <span className="course-note"> ({course.note})</span>}
+                      </td>
+                      <td className="course-credits">{course.credits || "—"}</td>
+                      <td className="course-grade">
+                        {course.grade && course.grade !== "IP" ? (
+                          <span
+                            className="grade-badge"
+                            style={{
+                              backgroundColor: `${getGradeColor(course.grade)}20`,
+                              color: getGradeColor(course.grade),
+                              border: `1px solid ${getGradeColor(course.grade)}40`,
+                            }}
+                          >
+                            {course.grade}
+                          </span>
+                        ) : course.status === "in-progress" ? (
+                          <span className="grade-badge in-progress">IP</span>
+                        ) : (
+                          <span className="grade-na">--</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Connect DegreeWorks prompt */}
       {!degreeWorksData && !loading && (

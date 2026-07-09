@@ -6,15 +6,13 @@
 //   1. backend/data_sources/classes.json — the 44 CS/major + supporting courses the
 //      Planner and prereq engine already use (COSC/MATH/CLCO/INSS/EEGR).
 //   2. The two official Curriculum Sequence sheets (Computer Science, Cloud
-//      Computing) — adds the shared GenEd / foundation courses those sheets name
-//      (ENGL, ORNS, MGBU, extra MATH/CLCO) that classes.json doesn't carry.
-//
-// NOTE: this is NOT a full General-Education catalog. It only covers the named
-// courses on the CS/Cloud sequence sheets. Generic GenEd slots on those sheets are
-// placeholders (e.g. "AH General Education Req.") with no fixed course, so there is
-// no single code to name — the student picks a specific approved course for each.
+//      Computing) — adds the shared foundation courses those sheets name (ENGL,
+//      ORNS, MGBU, extra MATH/CLCO) that classes.json doesn't carry.
+//   3. genEdCourses.js — the full official General Education approved-course list
+//      (all 9 distribution areas). Merged in below so GenEd courses resolve too.
+import { GENED_COURSE_NAMES } from "./genEdCourses";
 
-export const COURSE_CATALOG = {
+const CS_COURSE_CATALOG = {
   // --- Math / supporting ---
   "MATH 113": "Intro to Mathematical Analysis I",
   "MATH 114": "Introduction to Mathematical Analysis II",
@@ -79,6 +77,11 @@ export const COURSE_CATALOG = {
   "EEGR 481": "Introduction to Network Security",
   "EEGR 483": "Introduction to Security Management",
 };
+
+// Full catalog = CS/major/supporting courses + every official GenEd course. The CS
+// list wins on the rare overlap (e.g. a course named on both a sequence sheet and
+// the GenEd sheet) since its wording matches what the Planner/prereq engine use.
+export const COURSE_CATALOG = { ...GENED_COURSE_NAMES, ...CS_COURSE_CATALOG };
 
 // Normalize a code the way the course picker stores it ("cosc349" / "COSC  349"
 // -> "COSC 349") so the lookup is forgiving of how a student typed it.

@@ -294,6 +294,7 @@ def init_db():
                         student_name VARCHAR(255),
                         student_id VARCHAR(50),
                         degree_program VARCHAR(255),
+                        minor VARCHAR(255),
                         catalog_year VARCHAR(20),
                         classification VARCHAR(50),
                         advisor VARCHAR(255),
@@ -326,6 +327,16 @@ def init_db():
                 print("[OK] Successfully added 'data_source' column!")
             except Exception as e:
                 print(f"[ERROR] Failed to add data_source column: {e}")
+
+        # 6c. Add minor column to degreeworks_data if missing (captured from DegreeWorks goalArray)
+        if not _has_col("degreeworks_data", "minor"):
+            print("[WARN] 'minor' column missing from degreeworks_data. Adding it now...")
+            try:
+                conn.execute(text("ALTER TABLE degreeworks_data ADD COLUMN minor VARCHAR(255)"))
+                conn.commit()
+                print("[OK] Successfully added 'minor' column!")
+            except Exception as e:
+                print(f"[ERROR] Failed to add minor column: {e}")
 
         # 7. Check if support_tickets table exists
         if not _has_table("support_tickets"):
@@ -1558,6 +1569,7 @@ async def get_degreeworks(user: dict = Depends(get_current_user), db: Session = 
             "student_name": dw_data.student_name,
             "student_id": dw_data.student_id,
             "degree_program": dw_data.degree_program,
+            "minor": dw_data.minor,
             "catalog_year": dw_data.catalog_year,
             "classification": dw_data.classification,
             "advisor": dw_data.advisor,
@@ -1665,6 +1677,7 @@ async def debug_degreeworks(user: dict = Depends(get_current_user), db: Session 
             "student_name": dw_data.student_name,
             "student_id": dw_data.student_id,
             "degree_program": dw_data.degree_program,
+            "minor": dw_data.minor,
             "catalog_year": dw_data.catalog_year,
             "classification": dw_data.classification,
             "advisor": dw_data.advisor,
@@ -2888,6 +2901,7 @@ def _fetch_dw_sync(user_id: int) -> Optional[dict]:
             "student_id": dw.student_id,
             "classification": dw.classification,
             "degree_program": dw.degree_program,
+            "minor": dw.minor,
             "overall_gpa": dw.overall_gpa,
             "major_gpa": dw.major_gpa,
             "total_credits_earned": dw.total_credits_earned,
