@@ -87,6 +87,7 @@ class DegreeWorksData(Base):
     courses_in_progress = Column(Text, nullable=True)  # JSON: [{code, name, credits, semester}]
     courses_remaining = Column(Text, nullable=True)  # JSON: [{code, name, credits, category}]
     requirements_status = Column(Text, nullable=True)  # JSON: [{category, status, details}]
+    gened_areas = Column(Text, nullable=True)  # JSON: {area_code: percent} e.g. {"IM":100,"AH":50} (DegreeWorks-computed)
 
     # Raw data backup
     raw_data = Column(Text, nullable=True)  # Full JSON dump for reference

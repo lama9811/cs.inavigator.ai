@@ -58,6 +58,9 @@ export default function PlannerPage() {
   const [timePref, setTimePref] = useState("any");
   const [maxCredits, setMaxCredits] = useState(15);
   const [interests, setInterests] = useState([]);
+  // Regenerate cycles this to rotate the GenEd/minor picks (CS courses come from the
+  // interests selector, not the variant). Any control change resets it to 0.
+  const [variant, setVariant] = useState(0);
 
   const fetchPlan = useCallback((overrides = {}) => {
     const token = localStorage.getItem("token");
@@ -65,10 +68,14 @@ export default function PlannerPage() {
     setLoading(true);
     setError("");
     const sem = overrides.semester ?? semester;
+    // A regenerate passes its own variant; any other control change resets to 0.
+    const nextVariant = overrides.variant ?? 0;
+    if (nextVariant !== variant) setVariant(nextVariant);
     const params = new URLSearchParams({
       time_pref: overrides.timePref ?? timePref,
       max_credits: String(overrides.maxCredits ?? maxCredits),
       interests: (overrides.interests ?? interests).join(","),
+      variant: String(nextVariant),
     });
     if (sem) params.set("semester", sem);
     fetch(`${API_BASE}/api/planning/next-semester?${params.toString()}`, {
@@ -81,7 +88,9 @@ export default function PlannerPage() {
       })
       .catch((e) => setError(e.message || "Something went wrong"))
       .finally(() => setLoading(false));
-  }, [semester, timePref, maxCredits, interests]);
+  }, [semester, timePref, maxCredits, interests, variant]);
+
+  const regenerate = () => fetchPlan({ variant: variant + 1 });
 
   useEffect(() => { fetchPlan(); /* initial */ // eslint-disable-next-line
   }, []);
@@ -188,6 +197,19 @@ export default function PlannerPage() {
             ))}
           </div>
         </div>
+
+        <div className="pl-control pl-regen-control">
+          <button
+            type="button"
+            className="pl-regen-link"
+            onClick={regenerate}
+            disabled={loading}
+            title="Show a different mix of GenEd/minor courses"
+          >
+            <FaSync size={12} className={loading ? "pl-spin" : ""} />
+            {loading ? "Building…" : "Regenerate"}
+          </button>
+        </div>
       </div>
 
       {error && <div className="pl-error">{error}</div>}
@@ -208,33 +230,49 @@ export default function PlannerPage() {
               </div>
               <div className="pl-courses">
                 {opt.courses.map((c) => (
-                  <div key={c.code + c.section} className="pl-course">
+                  <div key={c.code + (c.section || "")} className={`pl-course${c.untimed ? " untimed" : ""}`}>
                     <div className="pl-course-top">
                       <span className="pl-code">{c.code}</span>
                       <span className="pl-course-credits">{c.credits} cr</span>
                     </div>
                     <div className="pl-course-name">{c.name}</div>
-                    <div className="pl-course-meta">
-                      {c.availability && c.availability !== "unknown" && (
-                        <span className={`pl-seat ${c.availability}`}>
-                          {(SEAT_LABEL[c.availability] || (() => c.availability))(c)}
-                        </span>
-                      )}
-                      <span><FaClock size={11} /> {c.time}</span>
-                      {c.room && c.room !== "TBA" && <span><FaMapMarkerAlt size={11} /> {c.room}</span>}
-                    </div>
-                    {c.instructor && <div className="pl-course-instr">{c.instructor}</div>}
-                    <div className="pl-course-tags">
-                      {c.satisfies && (
-                        <span className="pl-tag satisfies"><FaCheckCircle size={10} /> {c.satisfies}</span>
-                      )}
-                      {c.unlocks && c.unlocks.length > 0 && (
-                        <span className="pl-tag unlocks">
-                          <FaArrowRight size={10} /> unlocks {c.unlocks.slice(0, 2).join(", ")}
-                          {c.unlocks.length > 2 ? ` +${c.unlocks.length - 2}` : ""}
-                        </span>
-                      )}
-                    </div>
+                    {c.untimed ? (
+                      // GenEd/minor course blended into the plan — no class time yet.
+                      <>
+                        <div className="pl-course-meta">
+                          <span className="pl-pick-time"><FaClock size={11} /> Pick your section in WEBSIS</span>
+                        </div>
+                        <div className="pl-course-tags">
+                          <span className={`pl-tag ${c.kind === "minor" ? "minor" : "gened"}`}>
+                            {c.satisfies}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="pl-course-meta">
+                          {c.availability && c.availability !== "unknown" && (
+                            <span className={`pl-seat ${c.availability}`}>
+                              {(SEAT_LABEL[c.availability] || (() => c.availability))(c)}
+                            </span>
+                          )}
+                          <span><FaClock size={11} /> {c.time}</span>
+                          {c.room && c.room !== "TBA" && <span><FaMapMarkerAlt size={11} /> {c.room}</span>}
+                        </div>
+                        {c.instructor && <div className="pl-course-instr">{c.instructor}</div>}
+                        <div className="pl-course-tags">
+                          {c.satisfies && (
+                            <span className="pl-tag satisfies"><FaCheckCircle size={10} /> {c.satisfies}</span>
+                          )}
+                          {c.unlocks && c.unlocks.length > 0 && (
+                            <span className="pl-tag unlocks">
+                              <FaArrowRight size={10} /> unlocks {c.unlocks.slice(0, 2).join(", ")}
+                              {c.unlocks.length > 2 ? ` +${c.unlocks.length - 2}` : ""}
+                            </span>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
