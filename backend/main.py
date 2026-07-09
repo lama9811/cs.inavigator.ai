@@ -3032,6 +3032,27 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
             set_planner_state(user["user_id"], session_id, planner_state)
             student_context += build_planner_context(planner_state)
 
+        # Advising form state machine (Step 1 Internship Form -> Step 2 Advising Form).
+        # Same shape as the schedule planner: detect intent, advance state, inject a
+        # "follow exactly" block. Pre-fills known fields (incl. advisor) from dw_dict.
+        from services.advising_form import (
+            detect_advising_intent, get_advising_state, set_advising_state,
+            clear_advising_state, process_advising_turn, build_advising_context,
+        )
+
+        advising_state = get_advising_state(user["user_id"], session_id)
+        if advising_state:
+            advising_state = process_advising_turn(advising_state, user_q)
+            if advising_state:
+                set_advising_state(user["user_id"], session_id, advising_state)
+                student_context += build_advising_context(advising_state, dw_dict)
+            else:
+                clear_advising_state(user["user_id"], session_id)
+        elif detect_advising_intent(user_q):
+            advising_state = {"phase": "step1_internship"}
+            set_advising_state(user["user_id"], session_id, advising_state)
+            student_context += build_advising_context(advising_state, dw_dict)
+
     mode_context = build_mode_context(req.mode)
     if mode_context:
         student_context += f"\n{mode_context}"
@@ -3257,6 +3278,26 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
             planner_state = {"phase": "ask_semester"}
             set_planner_state(user_id, session_id, planner_state)
             student_context += build_planner_context(planner_state)
+
+        # Advising form state machine (Step 1 Internship Form -> Step 2 Advising Form).
+        # Same shape as the schedule planner; pre-fills known fields from dw_dict.
+        from services.advising_form import (
+            detect_advising_intent, get_advising_state, set_advising_state,
+            clear_advising_state, process_advising_turn, build_advising_context,
+        )
+
+        advising_state = get_advising_state(user_id, session_id)
+        if advising_state:
+            advising_state = process_advising_turn(advising_state, user_q)
+            if advising_state:
+                set_advising_state(user_id, session_id, advising_state)
+                student_context += build_advising_context(advising_state, dw_dict)
+            else:
+                clear_advising_state(user_id, session_id)
+        elif detect_advising_intent(user_q):
+            advising_state = {"phase": "step1_internship"}
+            set_advising_state(user_id, session_id, advising_state)
+            student_context += build_advising_context(advising_state, dw_dict)
 
     mode_context = build_mode_context(req.mode)
     if mode_context:
