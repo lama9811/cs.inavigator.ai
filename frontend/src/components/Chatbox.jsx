@@ -123,16 +123,6 @@ export default function Chatbox({
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceStatus, setVoiceStatus] = useState("idle"); // idle, listening, processing, speaking
 
-  // Model selector state
-  const [selectedModel, setSelectedModel] = useState("inav-1.1");
-  const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
-  const modelDropdownRef = useRef(null);
-
-  const MODEL_OPTIONS = [
-    { id: "inav-1.1", name: "iNav", desc: "Fast & accurate" },
-    { id: "inav-2.0", name: "iNav Pro", desc: "Deeper thinking, may take longer" },
-  ];
-
   const [chatMode, setChatMode] = useState(initialChatMode || "regular");
   const [codingTutorContext, setCodingTutorContext] = useState(null);
   const [floatingCodingChatOpen, setFloatingCodingChatOpen] = useState(false);
@@ -159,17 +149,6 @@ export default function Chatbox({
     && chatMode === "coding_tutor"
     && activeCodingPage === "workspace"
     && !mockInterviewActive;
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target)) {
-        setModelDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   // Listen for mock-interview start/end from CodingTutor (separate component) so
   // we can hide the floating tutor during a mock. Sync the initial value from the
@@ -831,7 +810,6 @@ export default function Chatbox({
         body: JSON.stringify({
           query: transcript,
           session_id: sessionId || "default",
-          model: selectedModel,
           mode: chatMode
         })
       });
@@ -1103,7 +1081,6 @@ export default function Chatbox({
                 display_query: finalMessage,
                 session_id: sessionIdOverride || sessionId || "default",
                 skip_cache: skipCache,
-                model: selectedModel,
                 mode: effectiveMode
             }),
         });
@@ -1439,12 +1416,6 @@ export default function Chatbox({
     >
       {showChatHeader && (
         <ChatHeader
-          modelDropdownRef={modelDropdownRef}
-          modelDropdownOpen={modelDropdownOpen}
-          setModelDropdownOpen={setModelDropdownOpen}
-          modelOptions={MODEL_OPTIONS}
-          selectedModel={selectedModel}
-          setSelectedModel={setSelectedModel}
           isLoading={isLoading}
           showTutorModeToggle={showTutorModeToggle}
           chatMode={chatMode}

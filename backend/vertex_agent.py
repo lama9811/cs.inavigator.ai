@@ -176,8 +176,6 @@ def _chat_mode_for_message(message: str) -> str:
     text = message or ""
     if "CODING TUTOR MODE:" in text:
         return "coding_tutor"
-    if "GENERAL TUTOR MODE:" in text:
-        return "general_tutor"
     return "regular"
 
 # =============================================================================
@@ -221,6 +219,27 @@ def _check_faculty_faithfulness(text: str) -> list[str]:
     return hallucinated
 
 
+def _apply_faithfulness_gate(text: str, chat_mode: str = "regular") -> str:
+    """Backstop for the hard no-fabrication rule (the system prompt is the primary
+    guard). If the answer names a "Dr./Prof. X" whose surname is not a recognized CS
+    faculty member, the model may have invented the person — append a verify-with-the-
+    department note so a fabricated name is never presented as authoritative.
+
+    Note: the whitelist (_FACULTY_LAST_NAMES) is hand-synced from
+    kb_structured/academic_faculty.json, so a newly-hired professor could trip a
+    (soft, non-destructive) note until the list is refreshed.
+    """
+    if chat_mode == "coding_tutor" or not text:
+        return text
+    if _FAITHFULNESS_DISCLAIMER.strip() in text:
+        return text
+    hallucinated = _check_faculty_faithfulness(text)
+    if hallucinated:
+        print(f"   [FAITHFULNESS] Unrecognized faculty name(s) {hallucinated} - appending verify note")
+        return text + _FAITHFULNESS_DISCLAIMER
+    return text
+
+
 def _apply_grounding_gate(text: str, chunks: int, coverage: float = 0.0, has_student_data: bool = False, chat_mode: str = "regular") -> str:
     """Append a disclaimer when the agent answered with insufficient data sources.
 
@@ -231,9 +250,16 @@ def _apply_grounding_gate(text: str, chunks: int, coverage: float = 0.0, has_stu
 
     This prevents responses that cite 1 chunk but are 90% hallucinated from passing.
     """
-    if chat_mode in {"coding_tutor", "general_tutor"}:
+    if chat_mode == "coding_tutor":
         return text
     if not text or _SKIP_GROUNDING_RE.match(text):
+        return text
+    # chunks == 0 means the KB was not used for this answer. That is either the
+    # GENERAL LANE (a non-Morgan question answered from general knowledge — a
+    # "verify with the CS dept" note would be nonsensical) or a Morgan question the
+    # model already refused per the hard rule (its refusal already carries the
+    # contact info). In both cases, do NOT append the Morgan disclaimer.
+    if chunks == 0:
         return text
     if has_student_data:
         return text
@@ -583,6 +609,9 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
             has_data = bool(context or canvas_context)
             final_text = _apply_grounding_gate(final_text, grounding_chunks, coverage=grounding_coverage, has_student_data=has_data, chat_mode=chat_mode)
 
+            # Faithfulness backstop: flag invented "Dr./Prof. X" faculty names
+            final_text = _apply_faithfulness_gate(final_text, chat_mode=chat_mode)
+
             # Inject procedure guide Drive links if the agent omitted them
             final_text = _inject_procedure_links(final_text)
 
@@ -879,6 +908,12 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
         if final != cleaned:
             disclaimer = final[len(cleaned):]
             yield {"type": "chunk", "content": disclaimer}
+
+        # Faithfulness backstop: flag invented "Dr./Prof. X" faculty names
+        after_faith = _apply_faithfulness_gate(final, chat_mode=chat_mode)
+        if after_faith != final:
+            yield {"type": "chunk", "content": after_faith[len(final):]}
+            final = after_faith
 
         # Inject procedure guide Drive links if the agent omitted them
         before_inject = final
