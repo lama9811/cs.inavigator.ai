@@ -319,6 +319,7 @@ def init_db():
                         courses_in_progress TEXT,
                         courses_remaining TEXT,
                         requirements_status TEXT,
+                        gened_areas TEXT,
                         raw_data TEXT,
                         synced_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -349,6 +350,16 @@ def init_db():
                 print("[OK] Successfully added 'minor' column!")
             except Exception as e:
                 print(f"[ERROR] Failed to add minor column: {e}")
+
+        # 6d. Add gened_areas column (DegreeWorks-computed GenEd area completion %)
+        if not _has_col("degreeworks_data", "gened_areas"):
+            print("[WARN] 'gened_areas' column missing from degreeworks_data. Adding it now...")
+            try:
+                conn.execute(text("ALTER TABLE degreeworks_data ADD COLUMN gened_areas TEXT"))
+                conn.commit()
+                print("[OK] Successfully added 'gened_areas' column!")
+            except Exception as e:
+                print(f"[ERROR] Failed to add gened_areas column: {e}")
 
         # 7. Check if support_tickets table exists
         if not _has_table("support_tickets"):
@@ -2683,6 +2694,7 @@ async def planning_next_semester(
     time_pref: str = Query("any"),
     max_credits: int = Query(15),
     interests: str = Query(""),
+    variant: int = Query(0),
     user: dict = Depends(get_current_user),
 ):
     """Suggest 2-3 conflict-free schedules for an upcoming semester.
@@ -2734,8 +2746,14 @@ async def planning_next_semester(
     else:
         schedules_src, data_source, as_of = _SCHEDULES, "static", None
 
+    # GenEd + minor courses to blend into each option (they count toward credits but
+    # have no class times — the student picks sections in WEBSIS).
+    from services.requirement_planner import build_requirements
+    requirements = build_requirements(dw_dict, dw_dict.get("minor") or "")
+
     raw_options = (
-        generate_schedule_options(eligible, sem_key, prefs, schedules_src, classification)
+        generate_schedule_options(eligible, sem_key, prefs, schedules_src, classification,
+                                  requirements=requirements, variant=max(0, int(variant or 0)))
         if sem_key else []
     )
 
@@ -2747,8 +2765,11 @@ async def planning_next_semester(
         courses = []
         for c in opt["courses"]:
             node = node_by_id.get(c["code"], {})
+            untimed = c.get("untimed", False)
             t = c.get("time") or "TBA"
-            if t.upper().startswith("TBA"):
+            # Untimed GenEd/minor courses legitimately have no time ("TBD") — that's
+            # not a TBA scheduling gap, so don't raise the TBA warning for them.
+            if not untimed and t.upper().startswith("TBA"):
                 has_tba = True
             open_flag = c.get("open_section")
             if open_flag is True:
@@ -2767,6 +2788,9 @@ async def planning_next_semester(
                 "room": c.get("room", "TBA"),
                 "satisfies": c.get("category") or node.get("category", ""),
                 "unlocks": node.get("unlocks", []),
+                # GenEd/minor courses blended in — no class time; student picks section.
+                "untimed": untimed,
+                "kind": c.get("kind"),   # "gened" | "minor" | None (CS)
                 # Live availability (nulls when data_source == "static"):
                 "crn": c.get("crn"),
                 "seats_available": c.get("seats_available"),
@@ -2789,6 +2813,9 @@ async def planning_next_semester(
         notes.append("Seat availability is not live — verify open seats in Banner before registering.")
     notes.append("Based on your last DegreeWorks sync.")
 
+    # `requirements` (GenEd + minor) was computed above and blended into each option.
+    # It's also returned raw so the UI can show a remaining-requirements summary.
+
     return {
         "connected": True,
         "semester": sem_key,
@@ -2797,6 +2824,7 @@ async def planning_next_semester(
         "credits_remaining": dw_dict.get("credits_remaining"),
         "eligible_count": len(eligible),
         "options": options,
+        "requirements": requirements,
         "notes": notes,
         "data_source": data_source,
         "as_of": as_of.isoformat() if as_of else None,
@@ -2929,6 +2957,7 @@ def _fetch_dw_sync(user_id: int) -> Optional[dict]:
             "courses_completed": dw.courses_completed,
             "courses_in_progress": dw.courses_in_progress,
             "courses_remaining": dw.courses_remaining,
+            "gened_areas": getattr(dw, 'gened_areas', None),
             "raw_data": dw.raw_data,
             "data_source": getattr(dw, 'data_source', None) or "manual_entry",
         }

@@ -121,6 +121,37 @@ def parse_degreeworks_audit_json(audit: dict) -> dict:
     if remaining:
         result["courses_remaining"] = json.dumps(remaining)
 
+    # --- GenEd area completion (authoritative source for "which GenEd is done") ---
+    # DegreeWorks computes each General Education distribution area's completion %,
+    # accounting for transfer credits, cross-counts (MATH 241 -> MQ), and proficiency
+    # credit that plain course-code matching would miss. We capture {area_code: pct}
+    # (e.g. {"IM": 100, "AH": 50, "HH": 100}) so the planner can trust it. The area
+    # code is the (XX) tag in a rule label like "Health and Healthful Living (HH)".
+    gened_areas = {}
+    _AREA_CODES = {"IM", "EC", "CT", "MQ", "AH", "BP", "SB", "HH", "CI"}
+
+    def _scan_rules_for_gened(rules):
+        for rule in rules or []:
+            label = (rule.get("label") or "")
+            m = re.search(r'\(([A-Z]{2})\)', label)
+            if m and m.group(1) in _AREA_CODES:
+                code = m.group(1)
+                pct = rule.get("percentComplete")
+                try:
+                    pct = int(float(pct))
+                except (TypeError, ValueError):
+                    pct = None
+                if pct is not None:
+                    # Keep the max % seen for an area (some appear in multiple blocks).
+                    gened_areas[code] = max(gened_areas.get(code, 0), pct)
+            # Rules can nest sub-rules.
+            _scan_rules_for_gened(rule.get("ruleArray"))
+
+    for block in blocks:
+        _scan_rules_for_gened(block.get("ruleArray"))
+    if gened_areas:
+        result["gened_areas"] = json.dumps(gened_areas)
+
     # --- Find major from degreeInformation ---
     for deg in deg_array:
         school_lit = (deg.get("schoolLiteral") or "").strip()

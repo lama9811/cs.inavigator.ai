@@ -66,10 +66,17 @@
 }
 .pl-control input[type="range"] { width: 160px; accent-color: var(--msu-blue); }
 .pl-interests { flex: 1 1 260px; }
-.pl-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+/* Interests in a fixed 3-column grid (6 interests -> 3x2). */
+.pl-chips {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  max-width: 340px;
+}
 .pl-chip {
   padding: 5px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-full, 999px);
   background: var(--bg-card); color: var(--text-secondary); font-size: 0.78rem; cursor: pointer;
+  text-align: center; white-space: nowrap;
 }
 .pl-chip.on { background: var(--msu-blue); color: #fff; border-color: var(--msu-blue); }
 
@@ -128,4 +135,37 @@
 @media (max-width: 640px) {
   .pl-controls { gap: 12px; }
   .pl-control select, .pl-control input[type="range"] { min-width: 120px; width: 100%; }
+}
+
+/* Regenerate — plain-text link on the controls card, right side, vertically centered
+   with the other controls (not dropped to the bottom edge). Rotates GenEd/minor. */
+.pl-regen-control {
+  align-self: center;          /* sit at the vertical middle of the controls row */
+  justify-content: center;
+  margin-left: auto;           /* push to the right side of the row */
+}
+.pl-regen-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0; background: none; border: none; cursor: pointer;
+  font-size: 0.85rem; font-weight: 600; color: var(--msu-blue, #2c4a7c);
+  text-decoration: underline; text-underline-offset: 2px;
+}
+.pl-regen-link:hover:not(:disabled) { color: #22385e; }
+.pl-regen-link:disabled { opacity: 0.6; cursor: default; text-decoration: none; }
+
+/* Untimed GenEd/minor courses blended into a schedule option. They count toward
+   the credit total but have no class time — the student picks a section in WEBSIS. */
+.pl-course.untimed {
+  border-style: dashed;
+  background: var(--bg-subtle, #faf9f6);
+}
+.pl-pick-time {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.78rem; font-style: italic; color: var(--text-secondary);
+}
+.pl-tag.gened {
+  color: #7c3aed; background: rgba(124, 58, 237, 0.10);
+}
+.pl-tag.minor {
+  color: #b8860b; background: rgba(217, 119, 6, 0.12);
 }
