@@ -2886,6 +2886,18 @@ from services.course_context import build_course_context
 from youtube_search import search_youtube_videos, youtube_api_available
 
 
+# Internal/system session ids used by background features (e.g. the post-interview
+# mock grader posts to /chat with session_id="interview-grader"). These are system
+# prompts, NOT student conversation — they must NEVER be saved to chat_history or
+# returned by /chat-history, or they leak into the main chat sidebar / front page.
+INTERNAL_SESSION_IDS = {"interview-grader"}
+
+
+def is_persistable_session(session_id: str) -> bool:
+    """False for internal/system sessions that must not touch a student's chat history."""
+    return (session_id or "default") not in INTERNAL_SESSION_IDS
+
+
 def _fetch_history_sync(user_id: int, session_id: str, limit: int = 10) -> list:
     """Fetch chat history in a separate DB session for parallel execution."""
     db = SessionLocal()
@@ -3025,17 +3037,18 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
             student_context += f"\n{video_block}"
         elif video_block:
             answer = build_video_response(verified_videos, resolved_topic)
-            try:
-                new_chat = ChatHistory(
-                    user_id=user["user_id"],
-                    session_id=session_id,
-                    user_query=original_q,
-                    bot_response=answer
-                )
-                db.add(new_chat)
-                db.commit()
-            except Exception as e:
-                print(f"[ERROR] Failed to save video chat history: {e}")
+            if is_persistable_session(session_id):
+                try:
+                    new_chat = ChatHistory(
+                        user_id=user["user_id"],
+                        session_id=session_id,
+                        user_query=original_q,
+                        bot_response=answer
+                    )
+                    db.add(new_chat)
+                    db.commit()
+                except Exception as e:
+                    print(f"[ERROR] Failed to save video chat history: {e}")
             return {"response": answer}
 
     if file_match and USE_VERTEX_AGENT:
@@ -3084,18 +3097,20 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
     else:
         answer = "AI system is initializing. Please try again in a moment."
 
-    # 3. SAVE to RDS (User-Specific)
-    try:
-        new_chat = ChatHistory(
-            user_id=user["user_id"],
-            session_id=session_id,
-            user_query=original_q,
-            bot_response=answer
-        )
-        db.add(new_chat)
-        db.commit()
-    except Exception as e:
-        print(f"[ERROR] Failed to save chat history: {e}")
+    # 3. SAVE to RDS (User-Specific). Skip internal/system sessions (e.g. the mock
+    #    interview grader) so their prompts never appear in the student's chat history.
+    if is_persistable_session(session_id):
+        try:
+            new_chat = ChatHistory(
+                user_id=user["user_id"],
+                session_id=session_id,
+                user_query=original_q,
+                bot_response=answer
+            )
+            db.add(new_chat)
+            db.commit()
+        except Exception as e:
+            print(f"[ERROR] Failed to save chat history: {e}")
 
     # 4. Track failed queries for auto-research agent
     if answer and "error" not in answer.lower()[:50]:
@@ -3347,19 +3362,21 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                 f"timings={timings}"
             )
 
-            # Still save to chat history (save original query, not rewritten)
-            try:
-                with SessionLocal() as save_db:
-                    new_chat = ChatHistory(
-                        user_id=user_id,
-                        session_id=session_id,
-                        user_query=original_q,
-                        bot_response=cached_response
-                    )
-                    save_db.add(new_chat)
-                    save_db.commit()
-            except Exception as e:
-                print(f"[ERROR] Failed to save cached chat history: {e}")
+            # Still save to chat history (save original query, not rewritten).
+            # Skip internal/system sessions (e.g. the mock interview grader).
+            if is_persistable_session(session_id):
+                try:
+                    with SessionLocal() as save_db:
+                        new_chat = ChatHistory(
+                            user_id=user_id,
+                            session_id=session_id,
+                            user_query=original_q,
+                            bot_response=cached_response
+                        )
+                        save_db.add(new_chat)
+                        save_db.commit()
+                except Exception as e:
+                    print(f"[ERROR] Failed to save cached chat history: {e}")
 
         return StreamingResponse(
             generate_cached_sse(),
@@ -3433,19 +3450,21 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
             if query_cache.set(cache_query, full_response, context_hash, allow_semantic=allow_semantic):
                 print(f"[CACHE] Stored response for: {cache_query[:50]}...")
 
-        # Save to chat history after stream completes (save original query, not rewritten)
-        try:
-            with SessionLocal() as save_db:
-                new_chat = ChatHistory(
-                    user_id=user_id,
-                    session_id=session_id,
-                    user_query=original_q,
-                    bot_response=full_response
-                )
-                save_db.add(new_chat)
-                save_db.commit()
-        except Exception as e:
-            print(f"[ERROR] Failed to save streamed chat history: {e}")
+        # Save to chat history after stream completes (save original query, not rewritten).
+        # Skip internal/system sessions (e.g. the mock interview grader).
+        if is_persistable_session(session_id):
+            try:
+                with SessionLocal() as save_db:
+                    new_chat = ChatHistory(
+                        user_id=user_id,
+                        session_id=session_id,
+                        user_query=original_q,
+                        bot_response=full_response
+                    )
+                    save_db.add(new_chat)
+                    save_db.commit()
+            except Exception as e:
+                print(f"[ERROR] Failed to save streamed chat history: {e}")
 
         # Track failed queries for auto-research agent
         # Skip detection on error/empty responses (infra errors aren't KB misses)
@@ -3611,10 +3630,15 @@ async def get_chat_history(user=Depends(get_current_user), db: Session = Depends
               .filter(ChatHistory.user_id == user["user_id"])\
               .order_by(ChatHistory.timestamp.asc())\
               .all()
-    
+
     # Format for frontend
     history = []
     for c in chats:
+        # Never surface internal/system sessions (e.g. the mock interview grader).
+        # This also hides rows an older build may have already persisted, so no DB
+        # cleanup is required for the leak to stop.
+        if not is_persistable_session(c.session_id):
+            continue
         # timestamp is stored naive-but-UTC (models.py uses datetime.now(timezone.utc)
         # into a naive DateTime column). Emit it WITH an explicit UTC offset so the
         # browser's `new Date(...)` doesn't misread it as local time — that shift
