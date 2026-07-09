@@ -41,6 +41,17 @@ const MessageMarkdown = React.memo(function MessageMarkdown({ text, components }
   );
 });
 
+// The advising-form flow emits a "[YES/NO_QUESTION]: <question>" marker so the UI
+// renders Yes/No buttons instead of expecting typed input. Detect it on a bot
+// message; the marker is stripped from the displayed text and buttons are shown.
+const YESNO_MARKER_RE = /\[YES\/NO_QUESTION\]:\s*/i;
+function hasYesNoQuestion(text) {
+  return typeof text === "string" && YESNO_MARKER_RE.test(text);
+}
+function stripYesNoMarker(text) {
+  return typeof text === "string" ? text.replace(YESNO_MARKER_RE, "") : text;
+}
+
 // Featured questions that showcase chatbot capabilities
 const FEATURED_QUESTIONS = [
   "What's the difference between the B.S. in CS and Cloud Computing?",
@@ -1569,9 +1580,33 @@ export default function Chatbox({
                   <div className="message-bubble">
 
                     <MessageMarkdown
-                      text={msg.sender === "user" ? getDisplayMessageText(msg.text) : msg.text}
+                      text={msg.sender === "user" ? getDisplayMessageText(msg.text) : stripYesNoMarker(msg.text)}
                       components={markdownComponents}
                     />
+
+                    {/* Advising-form Yes/No buttons: only on the latest bot message,
+                        once it's done streaming and carries the marker. Clicking sends
+                        "Yes"/"No" as the next message so the flow advances. */}
+                    {msg.sender === "bot" && !msg.isStreaming &&
+                      i === mainMessages.length - 1 && !isLoading &&
+                      hasYesNoQuestion(msg.text) && (
+                      <div className="yesno-btn-row">
+                        <button
+                          type="button"
+                          className="yesno-btn yesno-yes"
+                          onClick={() => handleSend(null, "Yes")}
+                        >
+                          Yes
+                        </button>
+                        <button
+                          type="button"
+                          className="yesno-btn yesno-no"
+                          onClick={() => handleSend(null, "No")}
+                        >
+                          No
+                        </button>
+                      </div>
+                    )}
 
                     {/* Streaming indicator - show steps when no text, cursor when text is streaming */}
                     {msg.isStreaming && !msg.text && (
