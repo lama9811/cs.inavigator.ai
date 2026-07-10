@@ -9,6 +9,7 @@ import CurriculumPage from "./components/CurriculumPage";
 import MyClassesPage from "./components/MyClassesPage";
 import GradeSurgeon from "./components/GradeSurgeon";
 import RippleEffect from "./components/RippleEffect";
+import PlannerPage from "./components/PlannerPage";
 import ProfilePage    from "./components/ProfilePage";
 import AdminDashboard from "./components/AdminDashboard";
 import Forbidden      from "./components/Forbidden";
@@ -55,11 +56,16 @@ function parseJwt(token) {
 }
 
 // True when the token is missing, malformed, or past its `exp` claim. A 30s skew
-// buffer avoids logging out a token that's about to expire mid-request. Tokens
-// without an `exp` are treated as valid (let the server be the authority).
+// buffer avoids logging out a token that's about to expire mid-request.
 function isTokenExpired(token) {
   if (!token) return true;
-  const { exp } = parseJwt(token);
+  const payload = parseJwt(token);
+  // A token that can't be decoded into a usable payload is not trustworthy →
+  // treat it as expired (parseJwt returns {} on any parse failure).
+  if (!payload || typeof payload !== "object" || Object.keys(payload).length === 0) return true;
+  const { exp } = payload;
+  // A decodable token with no exp: defer to the server (it's the authority on
+  // validity); only exp-based expiry is decided client-side.
   if (!exp) return false;
   return Date.now() >= (exp * 1000) - 30_000;
 }
@@ -206,12 +212,23 @@ export default function App() {
   const navigate = useNavigate();
 
   const [token, setToken] = useState(() => localStorage.getItem("token"));
-  const [role, setRole]   = useState(null);
+  // Seed role from the existing token synchronously so a returning user's first
+  // paint already shows the logged-in navbar. Starting at null made NavBar flash
+  // the logged-out links (Try Free / Login / Sign Up) for a frame before the
+  // token-sync effect below set the real role. The server profile fetch still
+  // refreshes/authoritatively confirms the role right after mount.
+  const [role, setRole]   = useState(() => parseJwt(localStorage.getItem("token")).role || null);
   // Start collapsed on small screens so the chat is fully visible; on phones the
   // sidebar opens as an overlay drawer instead of pushing/covering the chat.
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(
-    () => typeof window !== "undefined" && window.innerWidth < 768
-  );
+  // Also honor the user's saved preference so the collapsed state survives a
+  // reload: toggleSidebar/handleSidebarResize persist `sidebar_width` (64 ==
+  // collapsed). Without reading it back here, desktop always reopened the sidebar
+  // on every reload regardless of how the user left it.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    if (window.innerWidth < 768) return true;
+    return Number(localStorage.getItem("sidebar_width")) === 64;
+  });
   const [cmdkOpen, setCmdkOpen] = useState(false);
   // Dark mode state
   // Global (app-wide) dark mode has been retired — only the Coding Tutor has a
@@ -266,9 +283,18 @@ export default function App() {
       const response = await originalFetch(...args);
       try {
         if (response.status === 401 && localStorage.getItem("token")) {
-          const url = typeof args[0] === "string" ? args[0] : args[0]?.url || "";
-          const isOurApi = url.includes(API_BASE) || url.includes("/api/");
-          if (isOurApi && logoutRef.current) logoutRef.current(true);
+          const rawUrl = typeof args[0] === "string" ? args[0] : args[0]?.url || "";
+          // Resolve against our origin, then match by origin+path — a substring
+          // check could misclassify a third-party URL that merely contains "/api/".
+          let isOurApi = false;
+          try {
+            const u = new URL(rawUrl, window.location.origin);
+            const apiOrigin = API_BASE ? new URL(API_BASE, window.location.origin).origin : window.location.origin;
+            isOurApi = u.origin === apiOrigin && u.pathname.startsWith("/api/");
+          } catch {
+            isOurApi = false;
+          }
+          if (isOurApi && logoutRef.current) logoutRef.current({ expired: true });
         }
       } catch {
         // Never let the interceptor's own error break the caller's response.
@@ -356,11 +382,21 @@ export default function App() {
           
           if (data.history && data.history.length > 0) {
               const grouped = {};
+              // Real last-activity time per session (epoch ms of the newest
+              // message). The backend streams messages oldest-first, and session
+              // ids are NOT always a parseable creation epoch (e.g. "default"),
+              // so this is the reliable sort/recency key — not the id.
+              const lastActivity = {};
 
               // Group the flat list of messages by their session_id
               data.history.forEach(item => {
                   const sid = item.session_id || "default";
                   if (!grouped[sid]) grouped[sid] = [];
+
+                  const ts = new Date(item.time).getTime();
+                  if (!isNaN(ts)) {
+                    lastActivity[sid] = Math.max(lastActivity[sid] || 0, ts);
+                  }
 
                   // Add User Message
                   grouped[sid].push({
@@ -382,6 +418,7 @@ export default function App() {
                   id: sid,
                   title: generateChatTitle(grouped[sid], String(sid).startsWith("coding-") ? "coding_tutor" : "regular"),
                   messages: grouped[sid],
+                  lastActivity: lastActivity[sid] || 0,
                   pinned: false,
                   archived: false,
                   autoTitle: true,
@@ -391,11 +428,16 @@ export default function App() {
               // Update state with database sessions
               setSessions(dbSessions);
 
-              // Keep the user's selected chat after refresh when it still exists.
+              // Keep the user's selected chat after refresh when it still exists;
+              // otherwise default to the MOST RECENTLY ACTIVE session (by real
+              // message time), not just the last one in array order.
               if (dbSessions.length > 0) {
                 const savedActiveId = localStorage.getItem(ACTIVE_CHAT_SESSION_KEY);
                 const savedSession = dbSessions.find((session) => session.id === savedActiveId);
-                setActiveId(savedSession?.id || dbSessions[dbSessions.length - 1].id);
+                const mostRecent = dbSessions.reduce((a, b) =>
+                  (b.lastActivity || 0) > (a.lastActivity || 0) ? b : a
+                );
+                setActiveId(savedSession?.id || mostRecent.id);
               }
           } else {
               // New account or no history - reset to a fresh session
@@ -445,6 +487,32 @@ export default function App() {
     localStorage.setItem(ACTIVE_CHAT_SESSION_KEY, id);
     const selected = sessions.find((s) => s.id === id);
     navigate(selected?.mode === "coding_tutor" || String(id).startsWith("coding-") ? "/chat/coding" : "/chat");
+  };
+
+  // Header/brand click: land on the MOST RECENT regular chat — the one at the TOP
+  // of the sidebar — regardless of whether it has messages yet. Fixes the header
+  // dropping the user into a stale/older chat. If there are no regular chats at
+  // all, open a fresh one. Coding sessions are excluded (the brand is the CS Nav
+  // regular entry point).
+  //
+  // Recency key: prefer the real last-activity time captured at history load;
+  // fall back to the creation epoch embedded in the id for freshly-created
+  // client-side sessions that haven't synced from the DB yet. This is the SAME
+  // key the sidebar sorts by, so "most recent" == top of the sidebar.
+  const sessionRecency = (s) =>
+    (s?.lastActivity || 0) || Number(String(s?.id || "").match(/^\d+/)?.[0]) || 0;
+  const handleBrandClick = () => {
+    const regular = sessions.filter(
+      (s) => !s.archived && s.mode !== "coding_tutor" && !String(s.id).startsWith("coding-")
+    );
+    if (regular.length === 0) {
+      handleNew();
+      return;
+    }
+    const mostRecent = regular.reduce((a, b) =>
+      sessionRecency(b) > sessionRecency(a) ? b : a
+    );
+    handleSelect(mostRecent.id);
   };
 
   const handlePendingChatActionHandled = (id) => {
@@ -571,11 +639,12 @@ export default function App() {
     setActiveId(freshId);
   };
 
-  // logout — `expired` distinguishes an automatic session-expiry logout from a
-  // manual one. On expiry we show a toast for a moment BEFORE redirecting, so the
-  // user understands why they're being sent to login instead of it happening
-  // abruptly with no explanation.
-  const handleLogout = (expired = false) => {
+  // logout — takes an OPTIONS OBJECT ({ expired }), not a positional boolean, so a
+  // click handler wiring `onClick={onLogout}` (which passes the event as arg 0)
+  // can't be misread as an expired-session logout. `expired` distinguishes an
+  // automatic session-expiry logout (toast + notice) from a manual one.
+  const handleLogout = (opts) => {
+    const expired = opts === true || opts?.expired === true; // tolerate legacy `true`
     if (!expired) {
       resetToLoggedOut();
       navigate("/login", { replace: true });
@@ -605,15 +674,14 @@ export default function App() {
         open={cmdkOpen}
         onOpenChange={setCmdkOpen}
         onNewChat={handleNew}
-        onToggleTheme={toggleTheme}
         onNavigate={navigate}
         role={role}
-        darkMode={darkMode}
       />
       <NavBar
         role={role}
         onLogout={handleLogout}
         onToggleSidebar={toggleSidebar}
+        onBrandClick={handleBrandClick}
       />
 
       <Routes>
@@ -844,6 +912,33 @@ export default function App() {
                 onSidebarResize={handleSidebarResize}
               >
                 <CurriculumPage />
+              </SidebarLayout>
+            </RequireAuth>
+          }
+        />
+
+        {/* protected: next-semester planner with sidebar */}
+        <Route
+          path="/planner"
+          element={
+            <RequireAuth>
+              <SidebarLayout
+                sessions={sessions}
+                activeId={activeId}
+                onNew={handleNew}
+                onSelect={handleSelect}
+                onDelete={handleDelete}
+                onLogout={handleLogout}
+                userEmail={userEmail}
+                onPin={handlePin}
+                onArchive={handleArchive}
+                onRename={handleRename}
+                darkMode={darkMode}
+                onToggleTheme={toggleTheme}
+                onCollapseSidebar={toggleSidebar}
+                onSidebarResize={handleSidebarResize}
+              >
+                <PlannerPage />
               </SidebarLayout>
             </RequireAuth>
           }

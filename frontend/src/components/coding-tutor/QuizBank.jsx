@@ -116,10 +116,10 @@ export default function QuizBank({
   progressByQuestion,
   listLoading,
   progressSummary,
-  selectedTopicPack,
   onDifficultyChange,
-  onClearTopicPack,
   onSelectProblem,
+  initialTopic = null,
+  onConsumeInitialTopic,
 }) {
   // The full cross-difficulty set is the source for browsing/filtering. The
   // parent loads all difficulties into allQuestions; fall back to the current
@@ -128,11 +128,10 @@ export default function QuizBank({
 
   // ---- Local filter state (multi-select) ----
   // Difficulty/topic/status are arrays of selected values (empty = no filter).
-  // A topic pack opened from Interview Prep seeds the topic selection.
   const [search, setSearch] = useState("");
   const [difficultyFilters, setDifficultyFilters] = useState([]);
   const [statusFilters, setStatusFilters] = useState([]);
-  const [topicFilters, setTopicFilters] = useState(selectedTopicPack ? [selectedTopicPack.toLowerCase()] : []);
+  const [topicFilters, setTopicFilters] = useState([]);
   const [sortBy, setSortBy] = useState("topic");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [topicSearch, setTopicSearch] = useState("");
@@ -141,13 +140,23 @@ export default function QuizBank({
   // How many problem cards are visible; "Show more" reveals PAGE_SIZE at a time.
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  // A topic pack opened from Interview Prep takes precedence and seeds the topic
-  // selection so the page lands already filtered. Memoized so the array identity
-  // is stable across renders (keeps the filter useMemo deps from thrashing).
-  const effectiveTopics = useMemo(
-    () => (selectedTopicPack ? [selectedTopicPack.toLowerCase()] : topicFilters),
-    [selectedTopicPack, topicFilters],
-  );
+  // The active topic selection drives filtering. Kept as its own name so the
+  // downstream filter logic reads clearly.
+  const effectiveTopics = topicFilters;
+
+  // Deep-link entry: when opened from an interview problem's "Needs: <topic>" link,
+  // pre-select that topic filter (if the library has it) and open the filter panel so
+  // it's obvious why the list is narrowed. Consume the request so it fires once.
+  useEffect(() => {
+    if (!initialTopic) return;
+    const wanted = initialTopic.toLowerCase();
+    const match = [...new Set(sourceQuestions.map(q => (q.topic || "").toLowerCase()))].find(t => t === wanted);
+    if (match) {
+      setTopicFilters([match]);
+      setFiltersOpen(true);
+    }
+    onConsumeInitialTopic?.();
+  }, [initialTopic, sourceQuestions, onConsumeInitialTopic]);
 
   // Topic options come from the whole set so the list is stable regardless of
   // the other active filters.
@@ -293,13 +302,10 @@ export default function QuizBank({
     setDifficultyFilters([]);
     setStatusFilters([]);
     setTopicFilters([]);
-    onClearTopicPack?.();
   };
 
-  // Picking any topic locally overrides an externally-set topic pack.
   const toggleTopic = (topic) => {
-    if (selectedTopicPack) onClearTopicPack?.();
-    setTopicFilters(prev => toggleInArray(selectedTopicPack ? [] : prev, topic));
+    setTopicFilters(prev => toggleInArray(prev, topic));
   };
 
   // Solved / total per topic group, so section headers read "Arrays · 0/11 solved".

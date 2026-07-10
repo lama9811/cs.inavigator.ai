@@ -270,9 +270,9 @@
 .guest-suggestions {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-top: 28px;
-  max-width: 800px;
+  gap: 8px;
+  margin-top: 24px;
+  max-width: 720px;
   width: 100%;
   padding: 0 16px;
 }
@@ -284,13 +284,13 @@
 }
 
 .guest-suggestion-btn {
-  padding: 14px 20px;
+  padding: 10px 14px;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-left: 3px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: 10px;
   color: var(--text-main);
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.25s ease;

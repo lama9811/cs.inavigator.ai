@@ -31,6 +31,7 @@ from coding_runner import (
     run_python_practice_tests,
     set_cached_practice_run,
 )
+from practice_starters import build_starter_from_spec, get_arg_spec
 
 from fastapi import FastAPI, HTTPException, Depends, status, File, UploadFile, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -144,7 +145,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingSnippet, ReminderSubscription, SentReminder
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingSnippet, ReminderSubscription, SentReminder, LiveSection
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -534,7 +535,10 @@ app.include_router(auth_router)
 # ==============================================================================
 # 5. AUTHENTICATION HELPERS
 # ==============================================================================
-security = HTTPBearer()
+# auto_error=False so a MISSING/malformed Authorization header reaches our code and
+# we can return 401 (not FastAPI's default 403), keeping the frontend's 401 logout
+# flow consistent for every auth failure.
+security = HTTPBearer(auto_error=False)
 
 def get_db():
     db = SessionLocal()
@@ -544,9 +548,13 @@ def get_db():
         db.close()
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: Session = Depends(get_db)
 ) -> Dict[str,Any]:
+    # No/invalid bearer credentials → 401 (authentication failure), so the frontend
+    # logs the user out rather than getting an unhandled 403.
+    if not credentials or (credentials.scheme or "").lower() != "bearer" or not credentials.credentials:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     token = credentials.credentials
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
@@ -660,6 +668,7 @@ QUIZ_QUESTIONS_DIR = os.path.join(QUIZ_DIR, "questions")
 QUIZ_ANSWERS_DIR = os.path.join(QUIZ_DIR, "answers")
 INTERVIEW_DIR = os.path.join(BACKEND_DIR, "data_sources", "interview")
 INTERVIEW_QUESTIONS_DIR = os.path.join(INTERVIEW_DIR, "questions")
+INTERVIEW_ANSWERS_DIR = os.path.join(INTERVIEW_DIR, "answers")
 STUDY_RESOURCES_PATH = os.path.join(BACKEND_DIR, "data_sources", "study_resources.json")
 
 # Question-library registry. Each "set" (library) maps to a folder of per-difficulty
@@ -732,6 +741,28 @@ class PracticeFreeRunRequest(BaseModel):
             raise ValueError("code is required")
         if len(value) > 20000:
             raise ValueError("code is too large for this lightweight runner")
+        return value
+
+class InterviewGradeAnswer(BaseModel):
+    question_id: str
+    language: str = "python"
+    code: str
+
+class InterviewGradeRequest(BaseModel):
+    """Batch grade of a finished mock interview. Each answer is graded against authored
+    test cases when they exist; questions without tests are reported gradedBy='none' so
+    the client can fall back to an AI review. Capped so one request can't grade an
+    unbounded set."""
+    answers: list[InterviewGradeAnswer] = []
+
+    @field_validator("answers")
+    @classmethod
+    def validate_answers(cls, value):
+        if len(value) > 10:
+            raise ValueError("Too many answers in one grading request.")
+        for a in value:
+            if a.code and len(a.code) > 20000:
+                raise ValueError("code is too large for this lightweight runner")
         return value
 
 class StudyResourceSearchRequest(BaseModel):
@@ -2550,6 +2581,201 @@ async def ripple_effect(user: dict = Depends(get_current_user), db: Session = De
 
 
 # ==============================================================================
+# NEXT-SEMESTER PLANNER - suggest 2-3 conflict-free schedules
+# ==============================================================================
+@app.get("/api/planning/next-semester")
+async def planning_next_semester(
+    semester: str = Query(None),
+    time_pref: str = Query("any"),
+    max_credits: int = Query(15),
+    interests: str = Query(""),
+    user: dict = Depends(get_current_user),
+):
+    """Suggest 2-3 conflict-free schedules for an upcoming semester.
+
+    Stateless wrapper over the existing engine: prereq graph (prereq_engine) +
+    schedule generator (schedule_planner) + parsed sections (course_context).
+    Same logic as the conversational planner, just without the chat back-and-forth."""
+    from services.schedule_planner import (
+        generate_schedule_options, eligible_courses, next_semester_key,
+    )
+    from services.course_context import _SCHEDULES
+
+    uid = user["user_id"]
+    dw_dict, canvas_dict = await asyncio.gather(
+        asyncio.to_thread(_fetch_dw_sync, uid),
+        asyncio.to_thread(_fetch_canvas_sync, uid),
+    )
+
+    # Chronologically-ordered list of semesters we have schedule data for.
+    from services.schedule_planner import _parse_semester_key
+    available = sorted(
+        [k for k in _SCHEDULES.keys() if _parse_semester_key(k)],
+        key=_parse_semester_key,
+    )
+
+    # DegreeWorks not connected -> can't know remaining requirements/eligibility.
+    if not dw_dict:
+        return {"connected": False, "available_semesters": available}
+
+    graph = build_prerequisite_graph(dw_dict, canvas_dict)
+    eligible = eligible_courses(graph)
+    node_by_id = {n["id"]: n for n in graph.get("nodes", [])}
+
+    sem_key = semester if semester in _SCHEDULES else next_semester_key(available)
+    classification = dw_dict.get("classification") or "Senior"
+    prefs = {
+        "time_pref": time_pref if time_pref in ("morning", "afternoon", "evening", "any") else "any",
+        "max_credits": max(9, min(int(max_credits or 15), 18)),
+        "interests": [s.strip().lower() for s in (interests or "").split(",") if s.strip()],
+    }
+
+    # Prefer live Banner data (with seats) for this term; fall back to the static
+    # snapshot if the live table is empty or stale.
+    from services.live_schedule import get_live_sections
+    live_sched, live_as_of = (get_live_sections(sem_key) if sem_key else (None, None))
+    if live_sched:
+        # generate_schedule_options expects {sem_key: {code: [sections]}}.
+        schedules_src, data_source, as_of = {sem_key: live_sched}, "live", live_as_of
+    else:
+        schedules_src, data_source, as_of = _SCHEDULES, "static", None
+
+    raw_options = (
+        generate_schedule_options(eligible, sem_key, prefs, schedules_src, classification)
+        if sem_key else []
+    )
+
+    # Enrich each course with what requirement it satisfies + what it unlocks,
+    # and (when live) its real-time availability. Drop internal fields (slots/score).
+    options = []
+    has_tba = False
+    for opt in raw_options:
+        courses = []
+        for c in opt["courses"]:
+            node = node_by_id.get(c["code"], {})
+            t = c.get("time") or "TBA"
+            if t.upper().startswith("TBA"):
+                has_tba = True
+            open_flag = c.get("open_section")
+            if open_flag is True:
+                availability = "open"
+            elif open_flag is False:
+                availability = "waitlist" if (c.get("wait_count") or 0) < (c.get("wait_capacity") or 0) else "full"
+            else:
+                availability = "unknown"
+            courses.append({
+                "code": c["code"],
+                "name": c["name"],
+                "credits": c["credits"],
+                "section": c.get("section", ""),
+                "instructor": c.get("instructor", ""),
+                "time": t,
+                "room": c.get("room", "TBA"),
+                "satisfies": c.get("category") or node.get("category", ""),
+                "unlocks": node.get("unlocks", []),
+                # Live availability (nulls when data_source == "static"):
+                "crn": c.get("crn"),
+                "seats_available": c.get("seats_available"),
+                "availability": availability,
+            })
+        options.append({
+            "label": opt["label"],
+            "total_credits": sum(c["credits"] for c in opt["courses"]),
+            "courses": courses,
+        })
+
+    notes = []
+    if not options:
+        notes.append("No matching schedule data for this semester yet — check WEBSIS or the CS department.")
+    if has_tba:
+        notes.append("Some sections show TBA times and can't be conflict-checked.")
+    if data_source == "live":
+        notes.append("Seat availability is live from Banner.")
+    else:
+        notes.append("Seat availability is not live — verify open seats in Banner before registering.")
+    notes.append("Based on your last DegreeWorks sync.")
+
+    return {
+        "connected": True,
+        "semester": sem_key,
+        "available_semesters": available,
+        "classification": classification,
+        "credits_remaining": dw_dict.get("credits_remaining"),
+        "eligible_count": len(eligible),
+        "options": options,
+        "notes": notes,
+        "data_source": data_source,
+        "as_of": as_of.isoformat() if as_of else None,
+    }
+
+
+@app.post("/api/internal/schedule/refresh")
+async def internal_schedule_refresh(request: Request):
+    """Triggered every ~6h by Cloud Scheduler. Pulls live section + seat data from
+    Banner "Browse Classes" (public, no login) for the active registerable term and
+    replaces the live_sections rows for each CS subject.
+
+    Per-subject isolation: the network fetch happens BEFORE any DB mutation, so a
+    subject that fails to fetch is logged and skipped with its previous rows intact;
+    a DB write that fails rolls back (delete + insert together) leaving the old
+    snapshot in place. One subject never breaks the others."""
+    secret = request.headers.get("X-Research-Secret", "")
+    expected = os.getenv("RESEARCH_SECRET", "")
+    if not expected or secret != expected:
+        raise HTTPException(status_code=403, detail="Invalid research secret")
+
+    from banner_scraper import class_search
+
+    active = await class_search.resolve_active_term()
+    if not active:
+        return {"status": "error", "reason": "could not resolve active term from Banner"}
+    term_code, sem_key = active
+
+    counts: dict[str, int] = {}
+    errors: list[dict] = []
+    for subject in class_search.CS_SUBJECTS:
+        try:
+            sections = await class_search.fetch_sections(subject, term_code, sem_key)
+        except Exception as e:
+            print(f"[SCHEDULE_REFRESH] {subject} {sem_key} fetch failed: {e}")
+            errors.append({"subject": subject, "error": str(e)})
+            continue
+
+        db = SessionLocal()
+        try:
+            # Replace this subject's rows for the term (delete + insert in one txn).
+            db.query(LiveSection).filter(
+                LiveSection.term == sem_key, LiveSection.subject == subject
+            ).delete(synchronize_session=False)
+            now = datetime.now(timezone.utc)
+            for s in sections:
+                db.add(LiveSection(
+                    term=s["term"], crn=s["crn"], subject=s["subject"],
+                    course_number=s["course_number"], course_code=s["course_code"],
+                    title=(s["title"] or "")[:255], credits=s["credits"],
+                    section=s["section"], instructor=(s["instructor"] or "")[:255],
+                    campus=(s["campus"] or "")[:64], schedule_type=(s["schedule_type"] or "")[:64],
+                    meeting_time=(s["time"] or "TBA")[:255], room=(s["room"] or "")[:64],
+                    seats_available=s["seats_available"], max_enrollment=s["max_enrollment"],
+                    enrollment=s["enrollment"], open_section=s["open_section"],
+                    wait_count=s["wait_count"], wait_capacity=s["wait_capacity"],
+                    wait_available=s["wait_available"], fetched_at=now,
+                ))
+            db.commit()
+            counts[subject] = len(sections)
+        except Exception as e:
+            db.rollback()
+            print(f"[SCHEDULE_REFRESH] {subject} {sem_key} DB write failed: {e}")
+            errors.append({"subject": subject, "error": f"db: {e}"})
+        finally:
+            db.close()
+
+    print(f"[SCHEDULE_REFRESH] term={sem_key} counts={counts} errors={len(errors)}")
+    return {"status": "ok", "term": sem_key, "term_code": term_code,
+            "subjects": counts, "errors": errors}
+
+
+# ==============================================================================
 # GRADE SURGEON - Canvas Grade Analysis
 # ==============================================================================
 from services.canvas_analytics import analyze_course_grade, get_all_courses_summary, parse_gradebook
@@ -4156,6 +4382,14 @@ JAVASCRIPT_PRACTICE_SIGNATURES = {
 }
 
 def _build_practice_starter_code(language_key: str, function_name: str, question: dict[str, Any]) -> str:
+    # Preferred path: a per-function arg spec (name + type of every argument,
+    # derived from the authored tests) drives a detailed, correctly-typed starter
+    # for ALL four languages from one source. Falls back to the generic
+    # param_kind hint below for any function not yet in the spec.
+    detailed = build_starter_from_spec(language_key, function_name)
+    if detailed:
+        return detailed
+
     shape = _practice_signature_shape(question, function_name)
     param_kind = shape["param_kind"]
     return_kind = shape["return_kind"]
@@ -4289,6 +4523,28 @@ def _find_language_solution(question_id: str, language: str, question: Optional[
                 ]
             return solution
     raise HTTPException(status_code=404, detail="Practice solution not found for that question and language.")
+
+def _find_interview_solution(question_id: str, language: str) -> Optional[dict[str, Any]]:
+    """Look up authored interview test cases for a question+language. Returns None (not a
+    404) when no answer file / entry exists — interview questions are only PARTIALLY
+    covered by tests, and a missing entry is the normal 'ungraded' case, not an error."""
+    language_key, language_label = _normalize_practice_language(language)
+    path = os.path.join(INTERVIEW_ANSWERS_DIR, f"{language_key}.json")
+    if not os.path.exists(path):
+        return None
+    try:
+        data = _read_quiz_json(path)
+    except HTTPException:
+        return None
+    items = data.get("items", data if isinstance(data, list) else [])
+    defaults = data.get("defaults", {}) if isinstance(data, dict) else {}
+    for item in items:
+        if str(item.get("question_id", "")).lower() == question_id.lower().strip():
+            solution = {"language": language_label, **defaults, **item}
+            if solution.get("runner_tests"):
+                return solution
+            return None
+    return None
 
 def _serialize_practice_progress(progress: CodingPracticeProgress) -> dict[str, Any]:
     return {
@@ -4441,15 +4697,18 @@ async def run_practice_solution(
     if not tests:
         return empty_practice_run_response("Executable local tests are not available for this question yet. Use Mark Solved as a manual fallback after review.")
 
+    # Java/C++ use the native-type bridge when the function has an arg spec, so the
+    # student writes a clean native-typed function that matches the detailed starter.
+    arg_spec = get_arg_spec(function_name)
     cached_run = get_cached_practice_run(question["id"], language_key, req.code, function_name, tests)
     if cached_run:
         run_result = cached_run
     elif language_key == "javascript":
         run_result = run_javascript_practice_tests(req.code, function_name, tests)
     elif language_key == "java":
-        run_result = run_java_practice_tests(req.code, function_name, tests)
+        run_result = run_java_practice_tests(req.code, function_name, tests, arg_spec=arg_spec)
     elif language_key == "cpp":
-        run_result = run_cpp_practice_tests(req.code, function_name, tests)
+        run_result = run_cpp_practice_tests(req.code, function_name, tests, arg_spec=arg_spec)
     else:
         run_result = run_python_practice_tests(req.code, function_name, tests)
     if not cached_run:
@@ -4479,6 +4738,66 @@ async def run_practice_solution(
         "progress": serialized_progress,
         "message": "All local tests passed." if status_value == "passed" else "Review the failed tests and try again.",
     }
+
+@app.post("/api/coding/interview/grade")
+async def grade_interview_answers(
+    req: InterviewGradeRequest,
+    user: dict = Depends(get_current_user),
+):
+    """Batch-grade a finished mock interview against authored test cases. Deterministic
+    and free — reuses the same sandboxed runner as the Practice Library. Questions with
+    no authored tests return gradedBy='none' (the client falls back to an AI review).
+    Does NOT write any progress to the DB (mock outcomes are self-reported / local)."""
+    retry_after = check_practice_run_rate_limit(str(user["user_id"]))
+    if retry_after is not None:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many code runs. Wait briefly before trying again.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
+    results: list[dict[str, Any]] = []
+    for answer in req.answers:
+        try:
+            language_key, _ = _normalize_practice_language(answer.language)
+        except HTTPException:
+            results.append({"question_id": answer.question_id, "gradedBy": "none"})
+            continue
+        if language_key not in {"python", "javascript", "java", "cpp"} or not (answer.code or "").strip():
+            results.append({"question_id": answer.question_id, "gradedBy": "none"})
+            continue
+
+        solution = _find_interview_solution(answer.question_id, language_key)
+        if not solution:
+            results.append({"question_id": answer.question_id, "gradedBy": "none"})
+            continue
+
+        function_name = str(solution.get("function_name") or "solve")
+        tests = solution.get("runner_tests") or []
+        cached_run = get_cached_practice_run(answer.question_id, language_key, answer.code, function_name, tests)
+        if cached_run:
+            run_result = cached_run
+        elif language_key == "javascript":
+            run_result = run_javascript_practice_tests(answer.code, function_name, tests)
+        elif language_key == "java":
+            run_result = run_java_practice_tests(answer.code, function_name, tests)
+        elif language_key == "cpp":
+            run_result = run_cpp_practice_tests(answer.code, function_name, tests)
+        else:
+            run_result = run_python_practice_tests(answer.code, function_name, tests)
+        if not cached_run:
+            set_cached_practice_run(answer.question_id, language_key, answer.code, function_name, tests, run_result)
+
+        results.append({
+            "question_id": answer.question_id,
+            "gradedBy": "tests",
+            "status": run_result.get("status", "error"),
+            "passed": run_result.get("passed", 0),
+            "total": run_result.get("total", 0),
+            "tests": run_result.get("tests", []),
+        })
+
+    return {"results": results}
 
 @app.post("/api/coding/practice/freerun")
 async def free_run_practice_solution(
@@ -4614,6 +4933,16 @@ async def update_practice_progress(
 # ---------------------------------------------------------------------------
 MAX_DAILY_DAYS = 370  # ~a year; matches the frontend's cap in recordDailyChallengeDay
 
+def _is_valid_iso_date(d) -> bool:
+    """True only for a real "YYYY-MM-DD" calendar date (rejects e.g. 9999-99-99)."""
+    if not isinstance(d, str) or len(d) != 10:
+        return False
+    try:
+        datetime.strptime(d, "%Y-%m-%d")
+        return True
+    except ValueError:
+        return False
+
 def _decode_daily_days(raw: Optional[str]) -> list[str]:
     if not raw:
         return []
@@ -4623,8 +4952,9 @@ def _decode_daily_days(raw: Optional[str]) -> list[str]:
         return []
     if not isinstance(parsed, list):
         return []
-    # Keep only well-formed date strings, de-duplicated and sorted.
-    days = {str(d) for d in parsed if isinstance(d, str) and len(d) == 10 and d.count("-") == 2}
+    # Keep only real calendar dates, de-duplicated and sorted. Applied on read too,
+    # so any bad value slipped into storage earlier is dropped.
+    days = {d for d in parsed if _is_valid_iso_date(d)}
     return sorted(days)[-MAX_DAILY_DAYS:]
 
 def _serialize_coding_user_progress(row: CodingUserProgress) -> dict[str, Any]:
@@ -4672,10 +5002,7 @@ async def update_coding_user_progress(
         row.best_streak = max(row.best_streak or 0, int(req.best_streak))
     if req.daily_days is not None:
         merged = set(_decode_daily_days(row.daily_days))
-        merged.update(
-            d for d in req.daily_days
-            if isinstance(d, str) and len(d) == 10 and d.count("-") == 2
-        )
+        merged.update(d for d in req.daily_days if _is_valid_iso_date(d))
         row.daily_days = json.dumps(sorted(merged)[-MAX_DAILY_DAYS:])
 
     row.updated_at = datetime.utcnow()
@@ -4786,6 +5113,18 @@ _POPULAR_Q_STOPLIST = {
 }
 _POPULAR_Q_MIN_LEN = 15  # trimmed-length floor; shorter messages are treated as filler
 
+# Coding-tutor quick-action prompts are logged to ChatHistory just like advising
+# questions, but they must NOT surface on the chat welcome screen (that screen is
+# for academic advising). Drop any question containing one of these coding-tutor
+# signal phrases (matched case-insensitively as substrings).
+_POPULAR_Q_CODING_MARKERS = (
+    "my current code",
+    "practice quiz",
+    "debug my code",
+    "rewrite my code",
+    "review my code",
+)
+
 # Module-level cache: (epoch_seconds, questions). 5-minute TTL.
 _popular_q_cache = {"ts": 0.0, "questions": None}
 _POPULAR_Q_TTL = 300
@@ -4860,10 +5199,16 @@ async def get_popular_questions(db: Session = Depends(get_db)):
             .filter(func.coalesce(ChatHistory.mode, "regular") == "regular")
             .group_by(normalized)
             .order_by(func.count().desc())
-            .limit(10)
+            .limit(30)  # over-fetch: coding-tutor prompts are filtered out below
             .all()
         )
-        questions = [r.display.strip() for r in rows if r.display and r.display.strip()]
+        questions = [
+            r.display.strip()
+            for r in rows
+            if r.display
+            and r.display.strip()
+            and not any(m in r.display.lower() for m in _POPULAR_Q_CODING_MARKERS)
+        ][:10]
     except Exception as e:
         print(f"⚠️ popular-questions aggregation failed, using curated fallback: {e}")
         questions = []

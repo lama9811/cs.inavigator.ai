@@ -44,6 +44,11 @@ export default function ProblemPanel({
             <span>{problem.topic}</span>
             {solution?.function_name && <span>{solution.function_name}</span>}
           </div>
+          {problem.requires?.length > 0 && (
+            <p className="problem-requires" title="Background this problem assumes">
+              <strong>Needs:</strong> {problem.requires.join(" · ")}
+            </p>
+          )}
           {showProblemNavigation && (
             <div className="problem-navigation">
               <button type="button" onClick={onPreviousProblem} disabled={!canGoPrevious} title="Previous unsolved problem (solved problems are skipped)">Back</button>

@@ -1,4 +1,4 @@
-import { FaArrowRight, FaCheck, FaForward, FaRegClock, FaStop } from "react-icons/fa";
+import { FaArrowRight, FaCheck, FaFlagCheckered, FaForward, FaRegClock, FaStop } from "react-icons/fa";
 
 function fmt(ms) {
   const total = Math.max(0, Math.floor(ms / 1000));
@@ -15,7 +15,7 @@ function tier(remaining) {
   return "navy";
 }
 
-export default function MockInterviewBar({ session, now, canGoPrev = false, onSolved, onSkip, onNext, onPrev, onEnd }) {
+export default function MockInterviewBar({ session, now, canGoPrev = false, onSolved, onSkip, onNext, onPrev, onFinish, onEnd }) {
   if (!session) return null;
   const remaining = session.endsAt - now;
   const urgency = tier(remaining);
@@ -98,10 +98,17 @@ export default function MockInterviewBar({ session, now, canGoPrev = false, onSo
             <FaForward aria-hidden="true" />
             Skip
           </button>
-          <button type="button" className="mock-bar-next" onClick={onNext} disabled={atLast}>
-            Next
-            <FaArrowRight aria-hidden="true" />
-          </button>
+          {atLast ? (
+            <button type="button" className="mock-bar-finish" onClick={onFinish}>
+              <FaFlagCheckered aria-hidden="true" />
+              Finish &amp; see results
+            </button>
+          ) : (
+            <button type="button" className="mock-bar-next" onClick={onNext}>
+              Next
+              <FaArrowRight aria-hidden="true" />
+            </button>
+          )}
         </span>
       </div>
     </div>

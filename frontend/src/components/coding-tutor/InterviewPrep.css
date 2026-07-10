@@ -4,17 +4,33 @@
    the Topic Practice Pack card language. */
 
 .interview-prep-page {
-  /* Let the panel shrink to its content instead of leaving a big blank tail. */
+  /* Roomier vertical rhythm so the hero, stats, recommended path, search, and
+     cards spread down the panel instead of clustering at the top with a blank
+     tail. Gap scales with viewport height so tall screens fill the gutter. */
   display: grid;
-  gap: 16px;
+  gap: clamp(26px, 4.5vh, 56px);
   align-content: start;
   /* Warmer off-white than the default sterile panel, scoped to this page. */
   background: linear-gradient(180deg, #fbf7f1, #fdfbf8) !important;
 }
 
 .interview-prep-hero {
-  display: grid;
-  gap: 6px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: nowrap;
+}
+.interview-prep-hero-copy { display: grid; gap: 6px; min-width: 0; flex: 1 1 100%; }
+/* Past Interviews sits in the top-right of the hero, aligned with the title row.
+   Kept in flex flow (not absolute) so it can't be clipped or mis-anchored by the
+   panel's containing block; pushed hard right and never allowed to shrink. */
+.interview-prep-hero-aside {
+  flex: 0 0 auto;
+  margin-left: auto;
+  align-self: flex-start;
+  /* Drop it down off the eyebrow so it lines up with the big title row. */
+  margin-top: 28px;
 }
 
 .interview-prep-hero h2 {
@@ -170,18 +186,21 @@
 .iv-path-chip {
   padding: 5px 14px;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--ct-primary) 28%, var(--ct-border));
-  background: var(--ct-solid-raised, #fff);
+  border: 1px solid color-mix(in srgb, var(--ct-accent, #f58220) 45%, var(--ct-border));
+  background: color-mix(in srgb, var(--ct-accent, #f58220) 7%, var(--ct-solid-raised, #fff));
   color: var(--ct-text);
   cursor: pointer;
   font-weight: 700;
   font-size: 0.85rem;
+  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease,
+    background 0.12s ease;
 }
 
 .iv-path-chip:hover {
   transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--ct-accent) 55%, var(--ct-border));
-  box-shadow: 0 8px 18px color-mix(in srgb, var(--ct-accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--ct-accent) 70%, var(--ct-border));
+  background: color-mix(in srgb, var(--ct-accent, #f58220) 14%, var(--ct-solid-raised, #fff));
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--ct-accent) 16%, transparent);
 }
 
 .iv-path-chip.is-next {
@@ -263,33 +282,6 @@
   font-weight: 700;
 }
 
-/* Difficulty legend above the topic grid. */
-.iv-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  padding-left: 4px;
-  color: var(--ct-muted);
-  font-size: 0.8rem;
-}
-
-.iv-legend span { display: inline-flex; align-items: center; gap: 6px; }
-
-.iv-legend-key {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 5px;
-  font-size: 0.68rem;
-  font-weight: 800;
-}
-
-.iv-legend-key.b-easy { background: color-mix(in srgb, #22c55e 18%, transparent); color: #15803d; }
-.iv-legend-key.b-med { background: color-mix(in srgb, #f59e0b 20%, transparent); color: #b45309; }
-.iv-legend-key.b-hard { background: color-mix(in srgb, #ef4444 18%, transparent); color: #b91c1c; }
-
 .iv-empty {
   padding: 28px 16px;
   border: 1px dashed var(--ct-border);
@@ -302,14 +294,18 @@
 .iv-topic-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 12px;
-  align-items: start;
+  gap: 16px;
+  /* stretch so every card in a row is the same height regardless of how many
+     difficulty chips wrap; the header fills the card via flex below. */
+  align-items: stretch;
 }
 
 .iv-topic-card.open { grid-column: 1 / -1; }
 
 .iv-topic-card {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
   border: 1px solid var(--ct-border);
   border-radius: 18px;
   background: var(--ct-solid-raised, var(--ct-panel-raised));
@@ -363,7 +359,8 @@
   gap: 12px;
   align-items: center;
   width: 100%;
-  padding: 16px;
+  flex: 1; /* fill the stretched card so all cards in a row match height */
+  padding: 18px 18px 20px;
   border: 0;
   background: transparent;
   color: inherit;
@@ -390,20 +387,22 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   margin: 4px 0 0;
   color: var(--ct-muted);
   font-size: 0.82rem;
 }
 
-.iv-topic-breakdown { display: inline-flex; gap: 5px; flex-wrap: wrap; }
+/* Chips always sit on their own line (flex-basis 100%) so cards are consistent —
+   no card wraps to 2 rows while another fits on 1. */
+.iv-topic-breakdown { display: flex; gap: 5px; flex-wrap: wrap; flex-basis: 100%; margin-top: 2px; }
 
 .iv-bd-chip {
   display: inline-flex;
   align-items: center;
-  padding: 1px 8px;
+  padding: 1px 7px;
   border-radius: 999px;
-  font-size: 0.68rem;
+  font-size: 0.67rem;
   font-weight: 750;
   letter-spacing: 0.01em;
 }
@@ -497,8 +496,31 @@
   color: #15803d;
 }
 
-.iv-question-main { display: flex; align-items: center; gap: 10px; min-width: 0; flex-wrap: wrap; }
+.iv-question-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.iv-question-title-row { display: flex; align-items: center; gap: 10px; min-width: 0; flex-wrap: wrap; }
 .iv-question-title { color: var(--ct-text); font-weight: 650; font-size: 0.92rem; }
+/* Solved marker on an interview question row + the topic-card "N solved" badge. */
+.iv-question-solved, .iv-topic-solved {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 750;
+  background: color-mix(in srgb, var(--ct-success, #22c55e) 16%, transparent); color: #15803d;
+}
+.iv-topic-solved { font-size: 0.72rem; }
+body.coding-dark .iv-question-solved, body.coding-dark .iv-topic-solved { color: #4ade80; }
+.iv-question-requires {
+  font-size: 0.72rem; color: var(--ct-muted); font-weight: 600;
+}
+.iv-requires-link {
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font: inherit; font-weight: 700; color: var(--ct-accent, #f37021);
+  text-decoration: underline; text-underline-offset: 2px;
+}
+.iv-requires-link:hover { color: var(--ct-primary, #2b3f63); }
+/* Greyed out: prerequisite with no matching Practice Library problems yet. */
+.iv-requires-plain { font-weight: 600; color: var(--ct-muted); opacity: 0.7; cursor: default; }
+body.coding-dark .iv-question-requires { color: #9db8e0; }
+body.coding-dark .iv-requires-link { color: #f7a054; }
+body.coding-dark .iv-requires-plain { color: #6b7f9e; }
 
 .iv-question-diff {
   display: inline-flex;
@@ -608,10 +630,30 @@ body.coding-dark .interview-prep-page { background: linear-gradient(180deg, #182
 
 body.coding-dark .iv-stat,
 body.coding-dark .iv-search,
-body.coding-dark .iv-path-chip,
 body.coding-dark .iv-topic-card { background: var(--ct-solid-raised, #1c2a3f); }
 
-body.coding-dark .iv-path-chip { color: #f1e9dc; }
+/* Path chips read as buttons, not flat labels: lighter than the strip, an accent
+   ring, and a clear hover lift so students know they're clickable in dark mode. */
+body.coding-dark .iv-path-chip {
+  color: #f4ede1;
+  background: #24344f;
+  border-color: rgba(231, 160, 91, 0.45);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+}
+body.coding-dark .iv-path-chip:hover {
+  background: #2c3f5e;
+  border-color: color-mix(in srgb, var(--ct-accent, #f58220) 75%, transparent);
+  box-shadow: 0 8px 18px rgba(245, 130, 32, 0.22);
+}
+body.coding-dark .iv-path-chip.is-next {
+  background: color-mix(in srgb, var(--ct-accent, #f58220) 22%, #24344f);
+  border-color: color-mix(in srgb, var(--ct-accent, #f58220) 70%, transparent);
+}
+body.coding-dark .iv-path-arrow { color: rgba(231, 160, 91, 0.75); }
+body.coding-dark .iv-path-strip {
+  border-color: rgba(231, 160, 91, 0.4);
+  background: rgba(245, 130, 32, 0.05);
+}
 body.coding-dark .iv-topic-card.open .iv-topic-head { background: rgba(231, 160, 91, 0.08); }
 
 body.coding-dark .iv-question-row { background: #16233a; border-color: rgba(148, 163, 184, 0.22); }
@@ -632,6 +674,10 @@ body.coding-dark .iv-question-diff.diff-hard { color: #f4807d; }
   .iv-progress-stat { min-width: 78px; padding-right: 8px; }
   .iv-mock-btn { margin-left: 0; width: 100%; justify-content: center; }
   .iv-path-cta { margin-left: 0; }
+  /* Narrow screens: let the hero wrap so Past Interviews drops below the copy. */
+  .interview-prep-hero { flex-wrap: wrap; }
+  .interview-prep-hero-aside { margin-left: 0; margin-top: 0; }
+  .iv-history-entry { margin-left: -12px; }
 }
 
 @media (max-width: 560px) {
@@ -639,3 +685,100 @@ body.coding-dark .iv-question-diff.diff-hard { color: #f4807d; }
   .iv-question-row { grid-template-columns: auto minmax(0, 1fr); }
   .iv-question-actions { grid-column: 1 / -1; justify-content: flex-end; }
 }
+
+/* Entry that opens the Past Interviews route. Styled like a browser "History"
+   control: clock icon + label, self-sized, text-forward (not a filled bar). */
+.iv-history-entry {
+  display: inline-flex; align-items: center; gap: 7px;
+  flex: 0 0 auto; width: max-content; align-self: flex-start;
+  padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  border: 1px solid transparent; background: transparent;
+  color: var(--ct-accent, #f37021); font-weight: 700; font-size: 0.82rem;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.iv-history-entry:hover {
+  border-color: color-mix(in srgb, var(--ct-accent, #f37021) 45%, var(--ct-border));
+  background: color-mix(in srgb, var(--ct-accent, #f37021) 9%, transparent);
+}
+.iv-history-entry > svg { color: var(--ct-accent, #f37021); flex-shrink: 0; }
+
+.iv-history-back {
+  align-self: flex-start; margin-top: 10px;
+  background: none; border: 0; padding: 0; cursor: pointer;
+  color: var(--ct-accent, #f37021); font-weight: 700; font-size: 0.85rem;
+}
+.pi-empty { color: var(--ct-muted); font-size: 0.9rem; padding: 4px 2px; }
+body.coding-dark .iv-history-entry { background: transparent; border-color: transparent; }
+body.coding-dark .iv-history-entry:hover {
+  background: rgba(245, 130, 32, 0.12);
+  border-color: rgba(231, 160, 91, 0.5);
+}
+
+/* ── Past Interviews (local mock history) ─────────────────────────────────── */
+.past-interviews {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--ct-border);
+  background: var(--ct-panel, rgba(255, 255, 255, 0.6));
+}
+.pi-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pi-head h3 {
+  margin: 0; display: inline-flex; align-items: center; gap: 8px;
+  font-size: 1rem; color: var(--ct-text);
+}
+.pi-clear {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--ct-border); background: transparent;
+  color: var(--ct-muted); font-weight: 700; font-size: 0.76rem;
+}
+.pi-clear:hover { color: #b91c1c; border-color: color-mix(in srgb, #ef4444 44%, var(--ct-border)); }
+
+.pi-list { display: grid; gap: 8px; }
+.pi-card { border: 1px solid var(--ct-border); border-radius: 12px; background: #fff; overflow: hidden; }
+.pi-card-head {
+  width: 100%; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px 12px; cursor: pointer; background: transparent; border: 0; text-align: left;
+}
+.pi-card-date { font-weight: 700; color: var(--ct-text); font-size: 0.85rem; }
+.pi-card-score {
+  font-weight: 800; font-size: 0.95rem; color: var(--ct-primary, #2b3f63);
+  padding: 2px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-primary, #2b3f63) 12%, transparent);
+}
+.pi-card-meta { flex: 1; min-width: 0; color: var(--ct-muted); font-size: 0.8rem; }
+.pi-card-chevron { color: var(--ct-muted); transition: transform 0.15s ease; }
+.pi-card.open .pi-card-chevron { transform: rotate(180deg); }
+
+.pi-problem-list { list-style: none; margin: 0; padding: 0 12px 12px; display: grid; gap: 8px; }
+.pi-problem {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 8px 10px; border-radius: 9px; border: 1px solid var(--ct-border);
+  background: var(--ct-panel, rgba(255, 255, 255, 0.5));
+}
+.pi-problem-title { flex: 1; min-width: 0; font-weight: 650; color: var(--ct-text); font-size: 0.85rem; }
+.pi-problem-diff { padding: 2px 8px; border-radius: 999px; font-size: 0.66rem; font-weight: 750; text-transform: uppercase; }
+.pi-problem-diff.diff-easy { background: color-mix(in srgb, #22c55e 18%, transparent); color: #15803d; }
+.pi-problem-diff.diff-medium { background: color-mix(in srgb, #f59e0b 20%, transparent); color: #b45309; }
+.pi-problem-diff.diff-hard { background: color-mix(in srgb, #ef4444 18%, transparent); color: #b91c1c; }
+.pi-problem-outcome { font-size: 0.74rem; font-weight: 700; color: var(--ct-muted); }
+.pi-problem-outcome.solved { color: #15803d; }
+.pi-problem-outcome.attempted { color: #b45309; }
+.pi-grade { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 750; padding: 2px 9px; border-radius: 999px; }
+.pi-grade.pass { background: color-mix(in srgb, #22c55e 18%, transparent); color: #15803d; }
+.pi-grade.fail { background: color-mix(in srgb, #ef4444 16%, transparent); color: #b91c1c; }
+.pi-grade.ai { background: color-mix(in srgb, #f59e0b 20%, transparent); color: #b45309; }
+.pi-grade.none { background: color-mix(in srgb, var(--ct-muted) 14%, transparent); color: var(--ct-muted); }
+.pi-problem-verdict { flex-basis: 100%; margin: 4px 0 0; font-size: 0.8rem; color: var(--ct-text); line-height: 1.4; }
+.pi-problem-code {
+  flex-basis: 100%; margin: 6px 0 0; padding: 9px 11px; border-radius: 7px;
+  background: color-mix(in srgb, var(--ct-primary, #2b3f63) 6%, #f7f9fc); border: 1px solid var(--ct-border);
+  font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.78rem; overflow-x: auto; white-space: pre;
+}
+
+body.coding-dark .past-interviews { background: #16233a; border-color: rgba(148, 163, 184, 0.22); }
+body.coding-dark .pi-card { background: #1c2a3f; border-color: rgba(148, 163, 184, 0.22); }
+body.coding-dark .pi-problem { background: #16233a; border-color: rgba(148, 163, 184, 0.2); }
+body.coding-dark .pi-problem-code { background: #0f1a2c; color: #e6edf7; border-color: rgba(148, 163, 184, 0.22); }

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { FaStop } from "react-icons/fa";
-import { estimateComplexity } from "../../lib/complexity";
 
 function statusLabel(status) {
   if (status === "passed") return "Passed";
@@ -61,25 +60,20 @@ function TerminalOutputPane({ output, tests, onExplainError }) {
   );
 }
 
-// Estimated time complexity from the current code (heuristic). Shown so the
-// student gets a sense of efficiency without needing a separate "Complexity"
-// button or an AI call.
-function ComplexityEstimate({ code, language }) {
-  const est = code && code.trim() ? estimateComplexity(code, language) : null;
-  if (!est) return null;
-  return (
-    <div className={`terminal-complexity confidence-${est.confidence}`}>
-      <span className="terminal-complexity-kind">Est. time complexity</span>
-      <strong>{est.label}</strong>
-      <span className="terminal-complexity-why">{est.rationale}</span>
-    </div>
-  );
-}
-
 // A single test case in the explorer. Failing cases start open; passing cases
 // start collapsed so the student focuses on what went wrong first.
 function TestCaseRow({ test, index, onAsk }) {
   const [open, setOpen] = useState(!test.passed);
+  // On a re-run a case can flip pass<->fail. Re-derive the default open state
+  // (failing = open, passing = collapsed) when that happens, so a case that now
+  // fails reopens instead of staying stuck in its previous state. Adjusting state
+  // during render on a changed input avoids an extra render pass (React's
+  // recommended pattern over a useEffect for this).
+  const [prevPassed, setPrevPassed] = useState(test.passed);
+  if (prevPassed !== test.passed) {
+    setPrevPassed(test.passed);
+    setOpen(!test.passed);
+  }
   const label = test.name || `Test ${index + 1}`;
   return (
     <article className={`terminal-panel-test ${test.passed ? "passed" : "failed"} ${open ? "open" : ""}`}>
@@ -110,10 +104,9 @@ function TestCaseRow({ test, index, onAsk }) {
   );
 }
 
-function TerminalTestsPane({ output, tests, code, language, onExplainFailedTests, onRequestReview, onExplainOneTest }) {
+function TerminalTestsPane({ output, tests, onExplainFailedTests, onRequestReview, onExplainOneTest }) {
   const hasSummary = typeof output.passed === "number" && typeof output.total === "number";
   const hasFailedTests = tests.some(test => !test.passed);
-  const checklist = Array.isArray(output.quality_checklist) ? output.quality_checklist : [];
 
   if (output.free_run) {
     return (
@@ -128,8 +121,11 @@ function TerminalTestsPane({ output, tests, code, language, onExplainFailedTests
           )}
         </div>
         {output.message && <p className="terminal-panel-message">{output.message}</p>}
-        <ComplexityEstimate code={code} language={language} />
-        <p className="terminal-panel-message">Personal code runs are not auto-graded. Use the floating Coding Tutor for review or hints.</p>
+        <p className="terminal-panel-message">
+          {onRequestReview
+            ? "Personal code runs are not auto-graded. Use the floating Coding Tutor for review or hints."
+            : "This run isn't auto-graded. Interview questions are graded after the mock — open View solution for the walkthrough."}
+        </p>
       </section>
     );
   }
@@ -156,13 +152,6 @@ function TerminalTestsPane({ output, tests, code, language, onExplainFailedTests
         )}
       </div>
       {output.message && <p className="terminal-panel-message">{output.message}</p>}
-      <ComplexityEstimate code={code} language={language} />
-      {checklist.length > 0 && (
-        <div className="terminal-quality-checklist">
-          <strong>Code quality checklist</strong>
-          <ul>{checklist.map((item, index) => <li key={index}>{item}</li>)}</ul>
-        </div>
-      )}
       {tests.length > 0 ? (
         <div className="terminal-panel-test-list">
           {tests
@@ -190,8 +179,6 @@ function TerminalTestsPane({ output, tests, code, language, onExplainFailedTests
 
 export default function TerminalPanel({
   testOutput,
-  code,
-  language,
   isRunning = false,
   expanded = false,
   onClose,
@@ -236,8 +223,6 @@ export default function TerminalPanel({
         <TerminalTestsPane
           output={output}
           tests={tests}
-          code={code}
-          language={language}
           onExplainFailedTests={onExplainFailedTests}
           onRequestReview={onRequestReview}
           onExplainOneTest={onExplainOneTest}

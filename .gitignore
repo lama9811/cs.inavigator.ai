@@ -115,3 +115,4 @@ cs-chatbot-key.*
 # Utility scripts (not part of app)
 generate_audio.py
 generate_pdf.py
+workflow-email-agent.md
