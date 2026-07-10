@@ -1,0 +1,29 @@
+{
+  "_note": "Concept-quiz category registry. ONE source of truth for the loader and content authoring. Each language shows the 12 SHARED categories plus its ONE language-specific category (13 total). 'file' is the JSON filename (without extension) under shared/ or by_language/<lang>/. Order here is the order categories appear in the UI. Difficulty levels used across items: easy (freshman) and medium (sophomore).",
+  "languages": {
+    "python": "Python",
+    "java": "Java",
+    "javascript": "JavaScript",
+    "cpp": "C++"
+  },
+  "shared_categories": [
+    { "id": "syntax", "label": "Syntax", "file": "syntax", "blurb": "Intros, printing, and basic program shape." },
+    { "id": "operators", "label": "Operators", "file": "operators", "blurb": "Math and boolean operators." },
+    { "id": "variables", "label": "Variables", "file": "variables", "blurb": "Declaring and assigning values." },
+    { "id": "data-types", "label": "Data Types", "file": "data-types", "blurb": "Numbers, strings, booleans, and casts." },
+    { "id": "strings", "label": "Strings", "file": "strings", "blurb": "Text, indexing, and common string operations." },
+    { "id": "user-input", "label": "User Input", "file": "user-input", "blurb": "Reading input from the user." },
+    { "id": "conditionals", "label": "Conditionals", "file": "conditionals", "blurb": "if / else if / else decisions." },
+    { "id": "loops", "label": "Loops", "file": "loops", "blurb": "for and while repetition." },
+    { "id": "lists", "label": "Lists / Arrays", "file": "lists", "blurb": "Ordered collections and indexing." },
+    { "id": "functions", "label": "Functions", "file": "functions", "blurb": "Defining, calling, and returning." },
+    { "id": "algorithm-problems", "label": "Algorithm Problems", "file": "algorithm-problems", "blurb": "Drag code lines into the correct order (Parsons)." },
+    { "id": "debug", "label": "Debug", "file": "debug", "blurb": "Find and fix common beginner bugs." }
+  ],
+  "language_specific": {
+    "python": { "id": "tuples", "label": "Tuples", "file": "tuples", "blurb": "Immutable ordered collections." },
+    "java": { "id": "methods", "label": "Methods", "file": "methods", "blurb": "Method signatures, parameters, and returns." },
+    "javascript": { "id": "objects", "label": "Objects", "file": "objects", "blurb": "Key/value objects and property access." },
+    "cpp": { "id": "pointers", "label": "Pointers", "file": "pointers", "blurb": "Addresses, dereferencing, and pointer basics." }
+  }
+}

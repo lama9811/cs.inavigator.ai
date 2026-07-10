@@ -1,0 +1,350 @@
+{
+  "concept": "debug",
+  "concept_label": "Debug",
+  "questions": [
+    {
+      "id": "debug-01",
+      "concept": "debug",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "variants": {
+        "python": {
+          "code": "def count_items(items):\n    total = 0\n    for item in items:\n        total = 1\n    return total",
+          "prompt": "This should count the items but always returns 1 for a non-empty list. What is the bug?",
+          "choices": [
+            "The loop variable item is never used",
+            "total = 1 should be total += 1",
+            "return is outside the function",
+            "range() is missing"
+          ],
+          "answer_index": 1,
+          "explanation": "total = 1 overwrites the count each pass. It should be total += 1 so the count accumulates."
+        },
+        "java": {
+          "code": "int countItems(int[] items) {\n    int total = 0;\n    for (int item : items) {\n        total = 1;\n    }\n    return total;\n}",
+          "prompt": "This should count the items but always returns 1 for a non-empty array. What is the bug?",
+          "choices": [
+            "The loop variable item is never used",
+            "total = 1 should be total += 1",
+            "The method has no return type",
+            "The array cannot be looped"
+          ],
+          "answer_index": 1,
+          "explanation": "total = 1 resets the value every iteration. Use total += 1 to keep a running count."
+        },
+        "javascript": {
+          "code": "function countItems(items) {\n    let total = 0;\n    for (let item of items) {\n        total = 1;\n    }\n    return total;\n}",
+          "prompt": "This should count the items but always returns 1 for a non-empty array. What is the bug?",
+          "choices": [
+            "The loop variable item is never used",
+            "total = 1 should be total += 1",
+            "let should be const",
+            "return is misspelled"
+          ],
+          "answer_index": 1,
+          "explanation": "total = 1 overwrites the count each loop. It should be total += 1 to accumulate."
+        },
+        "cpp": {
+          "code": "int countItems(int items[], int n) {\n    int total = 0;\n    for (int i = 0; i < n; i++) {\n        total = 1;\n    }\n    return total;\n}",
+          "prompt": "This should count the items but always returns 1 for a non-empty array. What is the bug?",
+          "choices": [
+            "The index i starts at 0",
+            "total = 1 should be total += 1",
+            "The function needs void",
+            "n should be items.length"
+          ],
+          "answer_index": 1,
+          "explanation": "total = 1 resets the count on every pass. Use total += 1 so it accumulates."
+        }
+      },
+      "title": "Counter always returns 1"
+    },
+    {
+      "id": "debug-02",
+      "concept": "debug",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "variants": {
+        "python": {
+          "code": "x = 5\nif x = 10:\n    print(\"ten\")",
+          "prompt": "What is wrong with this code?",
+          "choices": [
+            "print needs parentheses",
+            "if x = 10 should be if x == 10",
+            "x is not defined",
+            "The colon is missing"
+          ],
+          "answer_index": 1,
+          "explanation": "A single = is assignment; comparison needs ==. if x == 10 tests equality. (In Python, = inside an if is a syntax error.)"
+        },
+        "java": {
+          "code": "int x = 5;\nif (x = 10) {\n    System.out.println(\"ten\");\n}",
+          "prompt": "What is wrong with this code?",
+          "choices": [
+            "println needs a semicolon",
+            "if (x = 10) should be if (x == 10)",
+            "x must be a String",
+            "Braces are not allowed"
+          ],
+          "answer_index": 1,
+          "explanation": "= assigns; == compares. if (x == 10) is the correct equality test. (x = 10 also fails because an int is not a boolean.)"
+        },
+        "javascript": {
+          "code": "let x = 5;\nif (x = 10) {\n    console.log(\"ten\");\n}",
+          "prompt": "This always prints \"ten\" no matter what x starts as. Why?",
+          "choices": [
+            "console.log is misspelled",
+            "x = 10 assigns 10 (truthy) instead of comparing with ===",
+            "let should be var",
+            "The braces are wrong"
+          ],
+          "answer_index": 1,
+          "explanation": "x = 10 assigns 10 and evaluates to 10, which is truthy, so the branch always runs. Use === to compare."
+        },
+        "cpp": {
+          "code": "int x = 5;\nif (x = 10) {\n    cout << \"ten\";\n}",
+          "prompt": "This always prints \"ten\" no matter what x starts as. Why?",
+          "choices": [
+            "cout needs endl",
+            "x = 10 assigns 10 (nonzero = true) instead of comparing with ==",
+            "int should be float",
+            "The condition needs a semicolon"
+          ],
+          "answer_index": 1,
+          "explanation": "x = 10 assigns 10; a nonzero value is true in C++, so the branch always runs. Use == to compare."
+        }
+      },
+      "title": "Assignment vs comparison"
+    },
+    {
+      "id": "debug-03",
+      "concept": "debug",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "variants": {
+        "python": {
+          "code": "nums = [10, 20, 30]\nfor i in range(1, len(nums)):\n    print(nums[i])",
+          "prompt": "This is meant to print every number but skips one. What is the bug?",
+          "choices": [
+            "range should start at 0, not 1",
+            "print needs a comma",
+            "len(nums) is wrong",
+            "The list is empty"
+          ],
+          "answer_index": 0,
+          "explanation": "range(1, len(nums)) starts at index 1, skipping nums[0] (10). It should be range(len(nums)) or range(0, len(nums))."
+        },
+        "java": {
+          "code": "int[] nums = {10, 20, 30};\nfor (int i = 1; i < nums.length; i++) {\n    System.out.println(nums[i]);\n}",
+          "prompt": "This is meant to print every number but skips one. What is the bug?",
+          "choices": [
+            "i should start at 0, not 1",
+            "The condition should be i <= nums.length",
+            "println is wrong",
+            "The array is empty"
+          ],
+          "answer_index": 0,
+          "explanation": "Starting i at 1 skips nums[0] (10). Initialize i = 0 to include the first element."
+        },
+        "javascript": {
+          "code": "let nums = [10, 20, 30];\nfor (let i = 1; i < nums.length; i++) {\n    console.log(nums[i]);\n}",
+          "prompt": "This is meant to log every number but skips one. What is the bug?",
+          "choices": [
+            "i should start at 0, not 1",
+            "The condition should be i <= nums.length",
+            "console.log is wrong",
+            "The array is empty"
+          ],
+          "answer_index": 0,
+          "explanation": "Starting i at 1 skips nums[0] (10). Use let i = 0 to include the first element."
+        },
+        "cpp": {
+          "code": "int nums[] = {10, 20, 30};\nfor (int i = 1; i < 3; i++) {\n    cout << nums[i] << endl;\n}",
+          "prompt": "This is meant to print every number but skips one. What is the bug?",
+          "choices": [
+            "i should start at 0, not 1",
+            "The condition should be i <= 3",
+            "cout is wrong",
+            "The array is empty"
+          ],
+          "answer_index": 0,
+          "explanation": "Starting i at 1 skips nums[0] (10). Initialize i = 0 to print all three values."
+        }
+      },
+      "title": "Loop skips the first item"
+    },
+    {
+      "id": "debug-04",
+      "concept": "debug",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "variants": {
+        "python": {
+          "code": "print(\"Hello\"",
+          "prompt": "Why does this line cause an error?",
+          "choices": [
+            "print is not a function",
+            "The closing parenthesis ) is missing",
+            "Strings need single quotes",
+            "Hello must be a variable"
+          ],
+          "answer_index": 1,
+          "explanation": "The opening ( is never closed. It should be print(\"Hello\") \u00e2\u20ac\u201d every ( needs a matching )."
+        },
+        "java": {
+          "code": "System.out.println(\"Hello\")",
+          "prompt": "Why does this line cause an error?",
+          "choices": [
+            "println is misspelled",
+            "The statement is missing a semicolon ;",
+            "Strings need single quotes",
+            "It needs a return"
+          ],
+          "answer_index": 1,
+          "explanation": "Java statements end with a semicolon. It should be System.out.println(\"Hello\");."
+        },
+        "javascript": {
+          "code": "console.log(\"Hello\"",
+          "prompt": "Why does this line cause an error?",
+          "choices": [
+            "console.log is misspelled",
+            "The closing parenthesis ) is missing",
+            "Strings need backticks",
+            "let is required"
+          ],
+          "answer_index": 1,
+          "explanation": "The opening ( is never closed. It should be console.log(\"Hello\")."
+        },
+        "cpp": {
+          "code": "cout << \"Hello\"",
+          "prompt": "Inside main, why does this line cause an error?",
+          "choices": [
+            "cout is misspelled",
+            "The statement is missing a semicolon ;",
+            "Strings need single quotes",
+            "It needs return 0"
+          ],
+          "answer_index": 1,
+          "explanation": "C++ statements end with a semicolon. It should be cout << \"Hello\";."
+        }
+      },
+      "title": "Missing closing paren"
+    },
+    {
+      "id": "debug-05",
+      "concept": "debug",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "debug_style": "identify-line",
+      "variants": {
+        "python": {
+          "code": "1  def average(nums):\n2      total = 0\n3      for n in nums:\n4          total + n\n5      return total / len(nums)",
+          "prompt": "Which line has the bug?",
+          "choices": [
+            "Line 2",
+            "Line 3",
+            "Line 4",
+            "Line 5"
+          ],
+          "answer_index": 2,
+          "explanation": "Line 4 computes total + n but throws the result away. It should be total += n so the sum actually updates."
+        },
+        "java": {
+          "code": "1  int average(int[] nums) {\n2      int total = 0;\n3      for (int n : nums) {\n4          total + n;\n5      }\n6      return total / nums.length;\n7  }",
+          "prompt": "Which line has the bug?",
+          "choices": [
+            "Line 2",
+            "Line 4",
+            "Line 6",
+            "Line 7"
+          ],
+          "answer_index": 1,
+          "explanation": "Line 4 has total + n; which computes a sum but discards it (and won't even compile as a statement). It should be total += n;."
+        },
+        "javascript": {
+          "code": "1  function average(nums) {\n2      let total = 0;\n3      for (let n of nums) {\n4          total + n;\n5      }\n6      return total / nums.length;\n7  }",
+          "prompt": "Which line has the bug?",
+          "choices": [
+            "Line 2",
+            "Line 4",
+            "Line 6",
+            "Line 7"
+          ],
+          "answer_index": 1,
+          "explanation": "Line 4 evaluates total + n but never stores it, so total stays 0. It should be total += n;."
+        },
+        "cpp": {
+          "code": "1  double average(int nums[], int n) {\n2      int total = 0;\n3      for (int i = 0; i < n; i++) {\n4          total + nums[i];\n5      }\n6      return total / n;\n7  }",
+          "prompt": "Which line has the bug?",
+          "choices": [
+            "Line 2",
+            "Line 4",
+            "Line 6",
+            "Line 7"
+          ],
+          "answer_index": 1,
+          "explanation": "Line 4 computes total + nums[i] but discards it, so total never grows. It should be total += nums[i];."
+        }
+      },
+      "title": "Sum never updates"
+    },
+    {
+      "id": "debug-06",
+      "concept": "debug",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "debug_style": "guess-error",
+      "variants": {
+        "python": {
+          "code": "nums = [1, 2, 3]\nprint(nums[3])",
+          "prompt": "What happens when you run this?",
+          "choices": [
+            "Prints 3",
+            "Prints nothing",
+            "Raises an IndexError (out of range)",
+            "Prints None"
+          ],
+          "answer_index": 2,
+          "explanation": "Valid indexes are 0, 1, 2. Index 3 is out of range, so Python raises an IndexError."
+        },
+        "java": {
+          "code": "int[] nums = {1, 2, 3};\nSystem.out.println(nums[3]);",
+          "prompt": "What happens when you run this?",
+          "choices": [
+            "Prints 3",
+            "Prints 0",
+            "Throws ArrayIndexOutOfBoundsException",
+            "Prints null"
+          ],
+          "answer_index": 2,
+          "explanation": "The array has indexes 0..2. Accessing index 3 throws ArrayIndexOutOfBoundsException at runtime."
+        },
+        "javascript": {
+          "code": "let nums = [1, 2, 3];\nconsole.log(nums[3]);",
+          "prompt": "What happens when you run this?",
+          "choices": [
+            "Prints 3",
+            "Throws an error",
+            "Logs undefined",
+            "Logs null"
+          ],
+          "answer_index": 2,
+          "explanation": "Unlike many languages, JavaScript does not error on out-of-range access \u00e2\u20ac\u201d reading nums[3] simply gives undefined."
+        },
+        "cpp": {
+          "code": "int nums[] = {1, 2, 3};\nwhile (true) {\n    cout << \"looping\";\n}",
+          "prompt": "What happens when you run this?",
+          "choices": [
+            "Prints looping once",
+            "Prints nothing",
+            "Loops forever (infinite loop)",
+            "Compile error"
+          ],
+          "answer_index": 2,
+          "explanation": "while (true) never becomes false and nothing breaks out, so it prints looping endlessly \u00e2\u20ac\u201d an infinite loop."
+        }
+      },
+      "title": "Index out of range"
+    }
+  ]
+}

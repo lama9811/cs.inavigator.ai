@@ -76,6 +76,9 @@ function clearAuthStorage() {
   localStorage.removeItem("token");
   localStorage.removeItem("chat_sessions");
   localStorage.removeItem(ACTIVE_CHAT_SESSION_KEY);
+  // Reset the remembered Concept Quiz location on logout so the next sign-in
+  // doesn't jump back into the previous user's quiz spot.
+  localStorage.removeItem("concept_quiz_last_path");
 }
 
 // Module-level guard so the expiry toast fires once even if several RequireAuth

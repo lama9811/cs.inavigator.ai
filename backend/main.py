@@ -32,6 +32,7 @@ from coding_runner import (
     set_cached_practice_run,
 )
 from practice_starters import build_starter_from_spec, get_arg_spec
+import concept_quiz
 
 from fastapi import FastAPI, HTTPException, Depends, status, File, UploadFile, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -4621,6 +4622,138 @@ async def get_practice_question_hints(question_id: str, level: str = Query("1"))
 async def get_practice_question_solution(question_id: str, language: str = Query("python")):
     question = _find_practice_question(question_id)
     return _find_language_solution(question_id, language, question)
+
+# ---------------------------------------------------------------------------
+# Concept quizzes (CodeChef-style MCQ / type-in / drag-and-drop). Distinct from
+# the code-writing Practice Library above. Content + loader live in
+# backend/concept_quiz.py and data_sources/concept_quiz/. These endpoints just
+# adapt the loader's ValueErrors into HTTP errors and serve projected,
+# single-language questions to the Practice Library "Quiz" toggle.
+# ---------------------------------------------------------------------------
+def _concept_quiz_call(fn, *args):
+    """Run a loader function, mapping its exceptions onto HTTP status codes."""
+    try:
+        return fn(*args)
+    except concept_quiz.ConceptQuizError as exc:
+        # Unknown language / category / question — client-fixable.
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except concept_quiz.ConceptQuizDataError as exc:
+        # Missing or malformed content file — server-side.
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.get("/api/coding/concept-quiz/languages")
+async def list_concept_quiz_languages():
+    """The 4 language cards shown when the student toggles to Quiz mode."""
+    manifest = _concept_quiz_call(concept_quiz.load_manifest)
+    languages = manifest.get("languages", {})
+    return {
+        "languages": [
+            {"id": key, "label": label}
+            for key, label in languages.items()
+        ]
+    }
+
+
+@app.get("/api/coding/concept-quiz/{language}/categories")
+async def list_concept_quiz_categories(language: str):
+    """The 13 categories (12 shared + 1 language-specific) for one language,
+    each with a live question count so empty categories can be flagged/hidden."""
+    categories = _concept_quiz_call(concept_quiz.categories_for_language, language)
+    return {
+        "language": concept_quiz.normalize_language(language),
+        "categories": categories,
+    }
+
+
+@app.get("/api/coding/concept-quiz/{language}/{category}/questions")
+async def list_concept_quiz_questions(language: str, category: str):
+    """Every question in one language + category, projected to that language.
+
+    Answers (answer_index / accepted / parsons line order) are included so the
+    UI can give instant CodeChef-style feedback. This is a learning tool, not a
+    proctored exam; the /grade endpoint below exists for server-verified scoring
+    and future progress tracking.
+    """
+    return _concept_quiz_call(concept_quiz.questions_for_category, language, category)
+
+
+@app.get("/api/coding/concept-quiz/{language}/{category}/questions/{question_id}")
+async def get_concept_quiz_question(language: str, category: str, question_id: str):
+    return _concept_quiz_call(
+        concept_quiz.find_question, language, category, question_id
+    )
+
+
+class ConceptQuizAnswer(BaseModel):
+    question_id: str
+    # MCQ: the chosen option index. Type-in: the typed text. Parsons: the
+    # student's ordered list of lines. Exactly one is used per question kind.
+    choice_index: Optional[int] = None
+    text: Optional[str] = None
+    order: Optional[list[str]] = None
+
+
+class ConceptQuizGradeRequest(BaseModel):
+    language: str
+    category: str
+    answers: list[ConceptQuizAnswer]
+
+
+def _grade_concept_answer(question: dict[str, Any], answer: ConceptQuizAnswer) -> dict[str, Any]:
+    """Grade one submitted answer against its question. Pure/stateless."""
+    kind = question.get("kind")
+    correct = False
+    if kind in {"mcq-output", "mcq-behavior"}:
+        correct = answer.choice_index == question.get("answer_index")
+    elif kind == "typein":
+        # Case-sensitive exact match against accepted forms, but tolerant of
+        # surrounding whitespace the student may have added.
+        submitted = (answer.text or "").strip()
+        correct = submitted in {a.strip() for a in question.get("accepted", [])}
+    elif kind == "parsons":
+        correct = (answer.order or []) == question.get("lines", [])
+    return {
+        "question_id": question.get("id"),
+        "kind": kind,
+        "correct": correct,
+        "explanation": question.get("explanation", ""),
+    }
+
+
+@app.post("/api/coding/concept-quiz/grade")
+async def grade_concept_quiz(
+    req: ConceptQuizGradeRequest,
+    user: dict = Depends(get_current_user),
+):
+    """Server-verified grading for a submitted quiz set. Returns a per-question
+    correct/incorrect breakdown plus a score, powering the green/red results
+    screen. Stateless for now; progress persistence can build on this later."""
+    bank = _concept_quiz_call(
+        concept_quiz.questions_for_category, req.language, req.category
+    )
+    by_id = {str(q.get("id")): q for q in bank["questions"]}
+
+    results: list[dict[str, Any]] = []
+    for answer in req.answers:
+        question = by_id.get(answer.question_id)
+        if question is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Question '{answer.question_id}' is not in {req.language}/{req.category}.",
+            )
+        results.append(_grade_concept_answer(question, answer))
+
+    total = len(results)
+    correct = sum(1 for r in results if r["correct"])
+    return {
+        "language": bank["language"],
+        "category": bank["category"],
+        "total": total,
+        "correct": correct,
+        "score": round(correct / total, 4) if total else 0.0,
+        "results": results,
+    }
 
 @app.post("/api/coding/resources/search")
 async def search_coding_study_resources(

@@ -1,0 +1,181 @@
+{
+  "_note": "STYLE SAMPLE ONLY — the 'Output' category, final schema. Mixes three question types: mcq-output (value), mcq-behavior (what it does), and typein (type the output; or type simple code where unambiguous). All 4 language variants, our own code/numbers (not copied). For user approval before scaling to all categories. Not yet wired to any endpoint or UI.",
+  "concept": "output",
+  "concept_label": "Output",
+  "questions": [
+    {
+      "id": "output-01",
+      "concept": "output",
+      "difficulty": "easy",
+      "kind": "mcq-output",
+      "variants": {
+        "python": {
+          "code": "print(15 + 6)",
+          "prompt": "What does this code output?",
+          "choices": ["156", "21", "15 + 6", "Error"],
+          "answer_index": 1,
+          "explanation": "15 and 6 are numbers, so + adds them. The result 21 is printed."
+        },
+        "java": {
+          "code": "System.out.println(15 + 6);",
+          "prompt": "What does this code output?",
+          "choices": ["156", "21", "15 + 6", "Error"],
+          "answer_index": 1,
+          "explanation": "Both operands are ints, so + performs addition: 15 + 6 = 21."
+        },
+        "javascript": {
+          "code": "console.log(15 + 6);",
+          "prompt": "What does this code output?",
+          "choices": ["156", "21", "15 + 6", "undefined"],
+          "answer_index": 1,
+          "explanation": "Both values are numbers, so + adds them, giving 21."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << 15 + 6;\n    return 0;\n}",
+          "prompt": "What does this program output?",
+          "choices": ["156", "21", "15 + 6", "Error"],
+          "answer_index": 1,
+          "explanation": "15 + 6 is evaluated as integer addition before it reaches cout, so it prints 21."
+        }
+      }
+    },
+    {
+      "id": "output-02",
+      "concept": "output",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "variants": {
+        "python": {
+          "code": "name = \"Ada\"\nprint(\"Hello,\", name)",
+          "prompt": "What does this code do?",
+          "choices": ["Prints the literal text: Hello, name", "Prints a greeting using the value stored in name", "Causes an error because name is undefined", "Prints Hello, on its own line, then Ada on the next"],
+          "answer_index": 1,
+          "explanation": "name holds \"Ada\", and print joins its arguments with a space, so it prints: Hello, Ada."
+        },
+        "java": {
+          "code": "String name = \"Ada\";\nSystem.out.println(\"Hello, \" + name);",
+          "prompt": "What does this code do?",
+          "choices": ["Prints the literal text: Hello, name", "Prints a greeting using the value stored in name", "Causes an error because name is not a String", "Prints Hello, and Ada on separate lines"],
+          "answer_index": 1,
+          "explanation": "+ concatenates the literal \"Hello, \" with the value of name, printing: Hello, Ada."
+        },
+        "javascript": {
+          "code": "let name = \"Ada\";\nconsole.log(\"Hello, \" + name);",
+          "prompt": "What does this code do?",
+          "choices": ["Prints the literal text: Hello, name", "Prints a greeting using the value stored in name", "Causes an error because name is a reserved word", "Prints Hello, and Ada on separate lines"],
+          "answer_index": 1,
+          "explanation": "The + operator concatenates the string with the value of name, logging: Hello, Ada."
+        },
+        "cpp": {
+          "code": "#include <iostream>\n#include <string>\nusing namespace std;\n\nint main() {\n    string name = \"Ada\";\n    cout << \"Hello, \" << name;\n    return 0;\n}",
+          "prompt": "What does this program do?",
+          "choices": ["Prints the literal text: Hello, name", "Prints a greeting using the value stored in name", "Causes an error because name is uninitialized", "Prints Hello, and Ada on separate lines"],
+          "answer_index": 1,
+          "explanation": "Chained << outputs the literal then the value of name, printing: Hello, Ada."
+        }
+      }
+    },
+    {
+      "id": "output-03",
+      "concept": "output",
+      "difficulty": "easy",
+      "kind": "typein",
+      "typein_mode": "output",
+      "variants": {
+        "python": {
+          "code": "print(\"CS\" + \"101\")",
+          "prompt": "Type exactly what this code outputs:",
+          "accepted": ["CS101"],
+          "explanation": "Both operands are strings, so + joins (concatenates) them into CS101."
+        },
+        "java": {
+          "code": "System.out.println(\"CS\" + \"101\");",
+          "prompt": "Type exactly what this code outputs:",
+          "accepted": ["CS101"],
+          "explanation": "With String operands, + concatenates, producing CS101."
+        },
+        "javascript": {
+          "code": "console.log(\"CS\" + \"101\");",
+          "prompt": "Type exactly what this code outputs:",
+          "accepted": ["CS101"],
+          "explanation": "When a string is on either side of +, JavaScript concatenates, giving CS101."
+        },
+        "cpp": {
+          "code": "#include <iostream>\n#include <string>\nusing namespace std;\n\nint main() {\n    string a = \"CS\", b = \"101\";\n    cout << a + b;\n    return 0;\n}",
+          "prompt": "Type exactly what this program outputs:",
+          "accepted": ["CS101"],
+          "explanation": "For std::string values, + concatenates, so the output is CS101."
+        }
+      }
+    },
+    {
+      "id": "output-04",
+      "concept": "output",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "variants": {
+        "python": {
+          "code": "print(7 // 2)",
+          "prompt": "What does this code output?",
+          "choices": ["3.5", "3", "4", "Error"],
+          "answer_index": 1,
+          "explanation": "// is floor (integer) division in Python, so 7 // 2 is 3 (the .5 is dropped)."
+        },
+        "java": {
+          "code": "System.out.println(7 / 2);",
+          "prompt": "What does this code output?",
+          "choices": ["3.5", "3", "4", "Error"],
+          "answer_index": 1,
+          "explanation": "Dividing two ints truncates toward zero in Java, so 7 / 2 is 3."
+        },
+        "javascript": {
+          "code": "console.log(Math.floor(7 / 2));",
+          "prompt": "What does this code output?",
+          "choices": ["3.5", "3", "4", "Error"],
+          "answer_index": 1,
+          "explanation": "7 / 2 is 3.5, and Math.floor rounds down to 3."
+        },
+        "cpp": {
+          "code": "cout << 7 / 2;",
+          "prompt": "What does this code output?",
+          "choices": ["3.5", "3", "4", "Error"],
+          "answer_index": 1,
+          "explanation": "Both operands are ints, so C++ does integer division: 7 / 2 is 3."
+        }
+      }
+    },
+    {
+      "id": "output-05",
+      "concept": "output",
+      "difficulty": "easy",
+      "kind": "typein",
+      "typein_mode": "code",
+      "variants": {
+        "python": {
+          "code": null,
+          "prompt": "Write a single statement that prints the word Hello (exactly).",
+          "accepted": ["print(\"Hello\")", "print('Hello')"],
+          "explanation": "Python prints with the print() function: print(\"Hello\"). Single or double quotes both work."
+        },
+        "java": {
+          "code": null,
+          "prompt": "Write a single statement that prints the word Hello on its own line.",
+          "accepted": ["System.out.println(\"Hello\");"],
+          "explanation": "Java prints a line with System.out.println(\"Hello\"); — note the semicolon and double quotes."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "Write a single statement that logs the word Hello to the console.",
+          "accepted": ["console.log(\"Hello\")", "console.log('Hello')", "console.log(`Hello`)"],
+          "explanation": "JavaScript logs with console.log(\"Hello\"). Single, double, or backtick quotes all work."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "Write a statement that prints the word Hello using cout.",
+          "accepted": ["cout << \"Hello\";", "cout << \"Hello\"", "std::cout << \"Hello\";"],
+          "explanation": "C++ prints with cout << \"Hello\"; using the << stream operator (needs #include <iostream>)."
+        }
+      }
+    }
+  ]
+}
