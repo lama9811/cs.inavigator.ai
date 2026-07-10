@@ -38,6 +38,16 @@ def parse_degreeworks_audit_json(audit: dict) -> dict:
     result["student_id"] = header.get("studentId") or None
     result["overall_gpa"] = _to_float(header.get("studentSystemGpa") or header.get("degreeworksGpa"))
 
+    # --- Credits: distinguish EARNED (passed) from APPLIED (counts toward the degree).
+    # DegreeWorks' block `creditsApplied` bundles in-progress + transfer + exam credits,
+    # so it is NOT "credits earned." The header breaks it down:
+    #   creditsApplied = residentApplied + residentAppliedInProgress + transferApplied + examApplied
+    # "Earned" = everything applied MINUS what's still in progress (not yet passed).
+    # We keep the applied + in-progress numbers too so nothing that needs "counts toward
+    # degree" (e.g. remaining-to-graduate) loses them.
+    in_progress_credits = _to_float(header.get("residentAppliedInProgress")) or 0.0
+    result["total_credits_in_progress"] = in_progress_credits or None
+
     # --- degreeInformation: degree, classification, catalog year ---
     deg_info = audit.get("degreeInformation") or {}
     deg_array = deg_info.get("degreeDataArray") or []
@@ -70,9 +80,15 @@ def parse_degreeworks_audit_json(audit: dict) -> dict:
             block_gpa = _to_float(block.get("gpa"))
 
             if credits_applied:
-                result["total_credits_earned"] = credits_applied
+                # APPLIED = counts toward the degree (includes in-progress + transfer).
+                result["total_credits_applied"] = credits_applied
+                # EARNED = applied minus what's still in progress (passed credits only).
+                # If in-progress isn't known, earned == applied (best available).
+                result["total_credits_earned"] = max(0.0, credits_applied - (in_progress_credits or 0.0))
             if credits_required:
                 result["credits_required"] = credits_required
+            # Remaining-to-graduate is measured against APPLIED (in-progress credits do
+            # count toward finishing), matching DegreeWorks' own "needed" figure.
             if credits_applied and credits_required:
                 result["credits_remaining"] = max(0, credits_required - credits_applied)
             if block_gpa and not result.get("overall_gpa"):

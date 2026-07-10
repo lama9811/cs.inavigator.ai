@@ -79,7 +79,9 @@ class DegreeWorksData(Base):
     # Academic Progress
     overall_gpa = Column(Float, nullable=True)
     major_gpa = Column(Float, nullable=True)
-    total_credits_earned = Column(Float, nullable=True)
+    total_credits_earned = Column(Float, nullable=True)      # passed credits (excludes in-progress)
+    total_credits_applied = Column(Float, nullable=True)     # credits applied to the degree (incl. in-progress + transfer)
+    total_credits_in_progress = Column(Float, nullable=True) # credits currently in progress (not yet earned)
     credits_required = Column(Float, nullable=True)
     credits_remaining = Column(Float, nullable=True)
 
