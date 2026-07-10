@@ -90,7 +90,7 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, text
 from vertex_agent import query_agent, query_agent_stream, check_agent_health, reset_session
 
 # Query caching for faster responses
-from cache import query_cache, get_context_hash, log_cache_stats
+from cache import query_cache, get_context_hash, log_cache_stats, SHORT_CACHE_TTL_SECONDS
 
 
 # =============================================================================
@@ -243,6 +243,16 @@ def init_db():
                 print("[OK] Successfully added 'session_id' column!")
             except Exception as e:
                 print(f"[ERROR] Failed to add column: {e}")
+
+        # 2b. Add mode column if missing (powers CS-Nav-only popular questions)
+        if not _has_col("chat_history", "mode"):
+            print("[WARN] 'mode' column missing. Adding it now...")
+            try:
+                conn.execute(text("ALTER TABLE chat_history ADD COLUMN mode VARCHAR(20) DEFAULT 'regular'"))
+                conn.commit()
+                print("[OK] Successfully added 'mode' column!")
+            except Exception as e:
+                print(f"[ERROR] Failed to add mode column: {e}")
 
         # 3. Add profile_picture_data column if missing (For base64 storage)
         if not _has_col("users", "profile_picture_data"):
@@ -608,7 +618,7 @@ class LoginRequest(BaseModel):
     password: str
 
 VALID_MODELS = {"", "inav-1.0", "inav-1.1"}
-VALID_CHAT_MODES = {"regular", "coding_tutor"}
+VALID_CHAT_MODES = {"regular", "general", "coding_tutor"}
 
 CODING_TUTOR_CONTEXT = """
 CODING TUTOR MODE:
@@ -781,7 +791,7 @@ class QueryRequest(BaseModel):
     session_id: str = "default"
     skip_cache: bool = False
     model: str = ""              # "inav-1.0" (fast) or "inav-1.1" (pro)
-    mode: str = "regular"        # "regular" or "coding_tutor"
+    mode: str = "regular"        # "regular" | "general" | "coding_tutor"
 
     @field_validator("model", mode="before")
     @classmethod
@@ -3044,7 +3054,8 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
                         user_id=user["user_id"],
                         session_id=session_id,
                         user_query=original_q,
-                        bot_response=answer
+                        bot_response=answer,
+                        mode=req.mode
                     )
                     db.add(new_chat)
                     db.commit()
@@ -3070,6 +3081,7 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
                 model=req.model,
                 canvas_context=canvas_context,
                 memory_context=memory_context,
+                chat_mode=req.mode,
             )
         else:
             answer = "I received the file link, but I cannot find the file on the server to read it."
@@ -3091,6 +3103,7 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
                 model=req.model,
                 canvas_context=canvas_context,
                 memory_context=memory_context,
+                chat_mode=req.mode,
             )
         except Exception as e:
             print(f"   Vertex AI Chat Error: {e}")
@@ -3106,15 +3119,17 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
                 user_id=user["user_id"],
                 session_id=session_id,
                 user_query=original_q,
-                bot_response=answer
+                bot_response=answer,
+                mode=req.mode
             )
             db.add(new_chat)
             db.commit()
         except Exception as e:
             print(f"[ERROR] Failed to save chat history: {e}")
 
-    # 4. Track failed queries for auto-research agent
-    if answer and "error" not in answer.lower()[:50]:
+    # 4. Track failed queries for auto-research agent. General mode never queries the
+    # KB, so its answers must not be logged as KB misses.
+    if answer and "error" not in answer.lower()[:50] and req.mode != "general":
         try:
             from research_agent import detect_and_log_failed_query
             detect_and_log_failed_query(original_q, answer, user["user_id"], has_student_data=bool(student_context))
@@ -3290,7 +3305,8 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                             user_id=user_id,
                             session_id=session_id,
                             user_query=original_q,
-                            bot_response=video_answer
+                            bot_response=video_answer,
+                            mode=req.mode
                         )
                         save_db.add(new_chat)
                         save_db.commit()
@@ -3353,8 +3369,19 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
             """Return cached response as SSE."""
             # Send status to show it's from cache
             yield f"data: {json.dumps({'type': 'status', 'content': 'Retrieved from cache'})}\n\n"
+            # General-mode answers are stored as a {text, grounding} envelope so the
+            # required Search Suggestions still render on a cache replay. Every other
+            # mode stores a bare string. Tolerate both shapes.
+            cached_text, cached_grounding = cached_response, None
+            try:
+                _payload = json.loads(cached_response)
+                if isinstance(_payload, dict) and "text" in _payload:
+                    cached_text = _payload["text"]
+                    cached_grounding = _payload.get("grounding")
+            except (ValueError, TypeError):
+                pass
             # Send the full response immediately
-            yield f"data: {json.dumps({'type': 'done', 'content': cached_response})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'content': cached_text, 'grounding': cached_grounding})}\n\n"
             mark_timing("total")
             print(
                 "[CHAT_TIMING] "
@@ -3372,7 +3399,8 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                             user_id=user_id,
                             session_id=session_id,
                             user_query=original_q,
-                            bot_response=cached_response
+                            bot_response=cached_text,
+                            mode=req.mode
                         )
                         save_db.add(new_chat)
                         save_db.commit()
@@ -3395,15 +3423,19 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
     print(f"[CACHE] MISS for query: {user_q[:50]}...")
     stream_had_error = False
 
+    is_general = req.mode == "general"
+
     async def generate_sse():
         """SSE generator that streams text chunks from the agent."""
         nonlocal stream_had_error
         full_response = ""
+        suggested_mode = None
+        grounding_meta = None
         first_event = True
         # Tell the client which "thinking" track to animate. Coding questions never
-        # hit the knowledge base, so the client should not show a "Searching
-        # knowledge base" step for them.
-        thinking_track = "coding" if is_coding_tutor else "regular"
+        # hit the knowledge base; general questions search the web, not the KB — so
+        # neither should show the "Searching knowledge base" step.
+        thinking_track = "coding" if is_coding_tutor else ("general" if is_general else "regular")
         yield f"data: {json.dumps({'type': 'thinking_track', 'content': thinking_track})}\n\n"
         try:
             for event in query_agent_stream(
@@ -3413,6 +3445,7 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                 model=req.model,
                 canvas_context=canvas_context,
                 memory_context=memory_context,
+                chat_mode=req.mode,
             ):
                 if first_event:
                     mark_timing("agent_first_event")
@@ -3429,7 +3462,9 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
 
                 elif event_type == "done":
                     full_response = content or full_response
-                    yield f"data: {json.dumps({'type': 'done', 'content': full_response})}\n\n"
+                    suggested_mode = event.get("suggested_mode")
+                    grounding_meta = event.get("grounding")
+                    yield f"data: {json.dumps({'type': 'done', 'content': full_response, 'suggested_mode': suggested_mode, 'grounding': grounding_meta})}\n\n"
 
                 elif event_type == "error":
                     stream_had_error = True
@@ -3446,9 +3481,23 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
             if not full_response:
                 full_response = "An error occurred during streaming."
 
-        # Cache the successful response
-        if (not skip_response_cache) and full_response and "error" not in full_response.lower()[:50] and "I may not have complete information" not in full_response:
-            if query_cache.set(cache_query, full_response, context_hash, allow_semantic=allow_semantic):
+        # Cache the successful response. A general-mode decline (the bounce) is not a
+        # real answer, so never cache it. Google-grounded answers are stored as a JSON
+        # envelope {text, grounding} so a cache replay can still show the required
+        # Search Suggestions, and on a short TTL so "live" info doesn't go stale.
+        cacheable = (
+            (not skip_response_cache) and full_response
+            and "error" not in full_response.lower()[:50]
+            and "I may not have complete information" not in full_response
+            and suggested_mode is None  # a "switch modes" decline is not a real answer
+        )
+        if cacheable:
+            if is_general:
+                value = json.dumps({"text": full_response, "grounding": grounding_meta})
+                stored = query_cache.set(cache_query, value, context_hash, allow_semantic=False, ttl=SHORT_CACHE_TTL_SECONDS)
+            else:
+                stored = query_cache.set(cache_query, full_response, context_hash, allow_semantic=allow_semantic)
+            if stored:
                 print(f"[CACHE] Stored response for: {cache_query[:50]}...")
 
         # Save to chat history after stream completes (save original query, not rewritten).
@@ -3460,7 +3509,8 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                         user_id=user_id,
                         session_id=session_id,
                         user_query=original_q,
-                        bot_response=full_response
+                        bot_response=full_response,
+                        mode=req.mode
                     )
                     save_db.add(new_chat)
                     save_db.commit()
@@ -3472,7 +3522,9 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
         if full_response and not stream_had_error and "error" not in full_response.lower()[:50]:
             try:
                 from research_agent import detect_and_log_failed_query
-                if not is_coding_tutor:
+                # Coding and General modes never query the KB, so their answers
+                # must not be logged as KB misses.
+                if not is_coding_tutor and not is_general:
                     detect_and_log_failed_query(original_q, full_response, user_id, has_student_data=bool(agent_context))
             except Exception:
                 pass
@@ -5306,6 +5358,10 @@ async def get_popular_questions(db: Session = Depends(get_db)):
             .filter(ChatHistory.user_query.isnot(None))
             .filter(func.char_length(func.trim(ChatHistory.user_query)) >= _POPULAR_Q_MIN_LEN)
             .filter(normalized.notin_(sorted(_POPULAR_Q_STOPLIST)))
+            # CS Nav welcome screen: only rank CS Nav (regular) questions. General/
+            # Coding questions must not surface as Morgan CS suggestions. Legacy rows
+            # predating the `mode` column are NULL -> treated as regular.
+            .filter(func.coalesce(ChatHistory.mode, "regular") == "regular")
             .group_by(normalized)
             .order_by(func.count().desc())
             .limit(30)  # over-fetch: coding-tutor prompts are filtered out below

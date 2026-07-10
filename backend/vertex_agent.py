@@ -178,6 +178,97 @@ def _chat_mode_for_message(message: str) -> str:
         return "coding_tutor"
     return "regular"
 
+
+def _resolve_chat_mode(chat_mode: str, message: str) -> str:
+    """Prefer the explicit mode the caller passed; fall back to sniffing the
+    prompt only when the caller left it at the default. The sniff is back-compat
+    insurance for any path that still smuggles "CODING TUTOR MODE:" in the body
+    (e.g. the voice endpoint) without also passing chat_mode."""
+    if chat_mode and chat_mode != "regular":
+        return chat_mode
+    return _chat_mode_for_message(message)
+
+
+# =============================================================================
+# GROUNDING CHUNK CLASSIFICATION
+# =============================================================================
+# `groundingMetadata.groundingChunks` is ONE array that both grounding sources
+# fill in. A Vertex AI Search (KB) hit carries `retrievedContext`; a Google
+# Search hit carries `web`. Counting `len(chunks)` therefore reads ten web
+# pages as ten KB citations — which would sail straight through the KB
+# grounding gate. Always classify; never count.
+
+def _classify_grounding_chunks(chunks) -> tuple[int, int]:
+    """Return (kb_chunks, web_chunks) from a groundingChunks array."""
+    kb = web = 0
+    for chunk in chunks or []:
+        if not isinstance(chunk, dict):
+            continue
+        if chunk.get("retrievedContext"):
+            kb += 1
+        elif chunk.get("web"):
+            web += 1
+    return kb, web
+
+
+def _extract_web_sources(chunks) -> list[dict]:
+    """Return [{title, uri}] for Google Search chunks, preserving order."""
+    sources = []
+    for chunk in chunks or []:
+        if isinstance(chunk, dict) and chunk.get("web"):
+            web = chunk["web"]
+            sources.append({
+                "title": web.get("title") or "",
+                "uri": web.get("uri") or "",
+            })
+    return sources
+
+
+# =============================================================================
+# BOUNCE MARKERS (each mode declines out-of-lane questions and points to another)
+# =============================================================================
+# Symmetric one-click "switch modes" bounce:
+#   - General mode declines a Morgan question -> [[CS_MODE_SUGGESTED]]   (go to CS Nav)
+#   - CS Nav mode declines a non-Morgan question -> [[GENERAL_MODE_SUGGESTED]] (go to General)
+# The agent prefixes the declined answer with the sentinel; the backend strips it
+# and reports which mode to suggest so the UI can offer a one-click bounce.
+#
+# ADK streams CUMULATIVE snapshots and the caller emits the diff, so the first
+# snapshot can be a half-arrived marker like "[[CS". `text.replace(MARKER, "")`
+# matches nothing there and "[[CS" reaches the student's screen. Withhold the
+# text until it either completes the marker or provably cannot.
+_CS_MODE_MARKER = "[[CS_MODE_SUGGESTED]]"
+_GENERAL_MODE_MARKER = "[[GENERAL_MODE_SUGGESTED]]"
+
+# mode currently in effect -> (marker that mode emits, mode it points the user to)
+_MODE_BOUNCE = {
+    "general": (_CS_MODE_MARKER, "regular"),
+    "regular": (_GENERAL_MODE_MARKER, "general"),
+}
+
+
+def _strip_leading_marker(text: str, marker: str = _CS_MODE_MARKER) -> tuple[Optional[str], bool]:
+    """Resolve a cumulative snapshot against the given leading bounce marker.
+
+    Returns (visible_text, marker_found). A `visible_text` of None means the
+    snapshot is still a proper prefix of the marker — withhold it, emit nothing.
+    """
+    if text.startswith(marker):
+        return text[len(marker):].lstrip(), True
+    if marker.startswith(text):
+        return None, False  # undecided (covers "" and every partial prefix)
+    return text, False
+
+
+def _looks_like_kb_refusal(text: str) -> bool:
+    """Backstop for the bounce: recognize the standard 'not in my knowledge base'
+    refusal so a dropped marker still surfaces the CS-mode button. Web-grounded
+    general answers never carry both the KB phrase and the CS-dept contact."""
+    if not text:
+        return False
+    low = text.lower()
+    return "knowledge base" in low and ("(443) 885-3962" in text or "compsci@morgan.edu" in low)
+
 # =============================================================================
 # FAITHFULNESS GATE: Entity Whitelist
 # =============================================================================
@@ -219,6 +310,27 @@ def _check_faculty_faithfulness(text: str) -> list[str]:
     return hallucinated
 
 
+def _apply_faithfulness_gate(text: str, chat_mode: str = "regular") -> str:
+    """Backstop for the hard no-fabrication rule (the system prompt is the primary
+    guard). If the answer names a "Dr./Prof. X" whose surname is not a recognized CS
+    faculty member, the model may have invented the person — append a verify-with-the-
+    department note so a fabricated name is never presented as authoritative.
+
+    Note: the whitelist (_FACULTY_LAST_NAMES) is hand-synced from
+    kb_structured/academic_faculty.json, so a newly-hired professor could trip a
+    (soft, non-destructive) note until the list is refreshed.
+    """
+    if chat_mode == "coding_tutor" or not text:
+        return text
+    if _FAITHFULNESS_DISCLAIMER.strip() in text:
+        return text
+    hallucinated = _check_faculty_faithfulness(text)
+    if hallucinated:
+        print(f"   [FAITHFULNESS] Unrecognized faculty name(s) {hallucinated} - appending verify note")
+        return text + _FAITHFULNESS_DISCLAIMER
+    return text
+
+
 def _apply_grounding_gate(text: str, chunks: int, coverage: float = 0.0, has_student_data: bool = False, chat_mode: str = "regular") -> str:
     """Append a disclaimer when the agent answered with insufficient data sources.
 
@@ -232,6 +344,13 @@ def _apply_grounding_gate(text: str, chunks: int, coverage: float = 0.0, has_stu
     if chat_mode == "coding_tutor":
         return text
     if not text or _SKIP_GROUNDING_RE.match(text):
+        return text
+    # chunks == 0 means the KB was not used for this answer. That is either the
+    # GENERAL LANE (a non-Morgan question answered from general knowledge — a
+    # "verify with the CS dept" note would be nonsensical) or a Morgan question the
+    # model already refused per the hard rule (its refusal already carries the
+    # contact info). In both cases, do NOT append the Morgan disclaimer.
+    if chunks == 0:
         return text
     if has_student_data:
         return text
@@ -380,7 +499,7 @@ def _cache_session(user_id: str, session_id: str, context: str = "", model: str 
     }
 
 
-def query_agent(query: str, user_id: str = "default", context: str = "", model: str = "", canvas_context: str = "", memory_context: str = "") -> str:
+def query_agent(query: str, user_id: str = "default", context: str = "", model: str = "", canvas_context: str = "", memory_context: str = "", chat_mode: str = "regular") -> str:
     """
     Send a query to the CS Navigator agent and return the final text response.
 
@@ -394,9 +513,10 @@ def query_agent(query: str, user_id: str = "default", context: str = "", model: 
         model: Model preference ("inav-1.0" or "inav-1.1")
         canvas_context: Canvas LMS data (sent via state_delta, volatile)
         memory_context: Long-term user memory (sent via state_delta, volatile)
+        chat_mode: "regular" | "general" | "coding_tutor" (selects the ADK tool set)
     """
+    chat_mode = _resolve_chat_mode(chat_mode, query)
     # Session reuse: hash DegreeWorks + Canvas for invalidation
-    chat_mode = _chat_mode_for_message(query)
     session_id = _get_valid_session(user_id, context, model, canvas_context=canvas_context, chat_mode=chat_mode)
 
     if not session_id:
@@ -415,7 +535,7 @@ def query_agent(query: str, user_id: str = "default", context: str = "", model: 
             return _OUTAGE_MSG
         _cache_session(user_id, session_id, context, model, canvas_context=canvas_context, chat_mode=chat_mode)
 
-    return _run_query(query, user_id, session_id, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context)
+    return _run_query(query, user_id, session_id, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode)
 
 
 # Per-request grounding metadata. In async single-worker (uvicorn default),
@@ -426,11 +546,18 @@ def query_agent(query: str, user_id: str = "default", context: str = "", model: 
 import threading
 _grounding_local = threading.local()
 
-def _set_grounding(kb_grounded: bool, chunks: int, coverage: float):
-    _grounding_local.data = {"kb_grounded": kb_grounded, "grounding_chunks": chunks, "grounding_coverage": coverage}
+def _set_grounding(kb_grounded: bool, chunks: int, coverage: float, web_chunks: int = 0):
+    # `grounding_chunks` stays KB-only so research_agent's KB-miss detector keeps
+    # working unchanged; `web_chunks` is additive for the General-mode path.
+    _grounding_local.data = {
+        "kb_grounded": kb_grounded,
+        "grounding_chunks": chunks,
+        "grounding_coverage": coverage,
+        "web_chunks": web_chunks,
+    }
 
 
-def _run_query(message: str, user_id: str, session_id: str, retried: bool = False, context: str = "", model: str = "", canvas_context: str = "", memory_context: str = "") -> str:
+def _run_query(message: str, user_id: str, session_id: str, retried: bool = False, context: str = "", model: str = "", canvas_context: str = "", memory_context: str = "", chat_mode: str = "regular") -> str:
     """Send a query to the ADK and parse the SSE response.
 
     Fast in-memory retrieval runs BEFORE the ADK call (<5ms) to collect
@@ -438,6 +565,7 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
     VertexAiSearchTool for context; retrieval results here are only for
     verification.
     """
+    chat_mode = _resolve_chat_mode(chat_mode, message)
     # Build ADK payload (no retrieval context injected; agent searches KB itself)
     try:
         payload = {
@@ -451,7 +579,6 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
         }
         # Send volatile data via state_delta (Canvas/memory change often, model per-request)
         state_delta = {}
-        chat_mode = _chat_mode_for_message(message)
         state_delta["chat_mode"] = chat_mode
         if model:
             state_delta["model_preference"] = model
@@ -487,7 +614,7 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
             new_session_id = _create_session(user_id, state=state if state else None)
             if new_session_id:
                 _cache_session(user_id, new_session_id, context, model, canvas_context=canvas_context, chat_mode=chat_mode)
-                return _run_query(message, user_id, new_session_id, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context)
+                return _run_query(message, user_id, new_session_id, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode)
             return _OUTAGE_MSG
 
         resp.raise_for_status()
@@ -496,6 +623,8 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
         final_text = ""
         code_candidate = ""
         grounding_chunks = 0
+        web_chunks = 0
+        web_sources = []
         grounding_coverage = 0.0
         for line in resp.iter_lines():
             if not line:
@@ -510,13 +639,15 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
             except json.JSONDecodeError:
                 continue
 
-            # Extract grounding metadata (tells us if KB search returned results)
+            # Extract grounding metadata (tells us if KB search returned results).
+            # groundingChunks is ONE array shared by KB (retrievedContext) and web
+            # (Google Search) hits — classify, never len(). Coverage is a KB signal.
             gm = event.get("groundingMetadata")
             if gm:
                 chunks = gm.get("groundingChunks", [])
                 supports = gm.get("groundingSupports", [])
-                grounding_chunks = len(chunks)
-                # Coverage: what fraction of the response is grounded in KB results
+                grounding_chunks, web_chunks = _classify_grounding_chunks(chunks)
+                web_sources = _extract_web_sources(chunks)
                 if supports and final_text:
                     total_chars = len(final_text)
                     grounded_chars = sum(
@@ -524,9 +655,9 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
                         for s in supports
                     )
                     grounding_coverage = grounded_chars / total_chars if total_chars > 0 else 0.0
-                elif chunks:
-                    grounding_coverage = 0.5  # Has chunks but no segment info
-                    print(f"   [GROUNDING] Chunks present ({grounding_chunks}) but no segment data - using conservative 0.5 coverage")
+                elif grounding_chunks:
+                    grounding_coverage = 0.5  # Has KB chunks but no segment info
+                    print(f"   [GROUNDING] KB chunks present ({grounding_chunks}) but no segment data - using conservative 0.5 coverage")
 
             # Extract text from model responses (skip function_call / function_response)
             content = event.get("content", {})
@@ -546,9 +677,18 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
                     final_text = text  # Keep last model text (the final answer)
 
         # Store grounding signal for research_agent to read (thread-local)
-        _set_grounding(grounding_chunks > 0, grounding_chunks, grounding_coverage)
+        _set_grounding(grounding_chunks > 0, grounding_chunks, grounding_coverage, web_chunks=web_chunks)
 
         if final_text:
+            # Bounce marker: strip it from the (complete) text and record which mode
+            # to suggest on the thread-local so callers can offer the bounce.
+            _active_marker, _bounce_target = _MODE_BOUNCE.get(chat_mode, (None, None))
+            if _active_marker:
+                stripped, marker_found = _strip_leading_marker(final_text, _active_marker)
+                if marker_found:
+                    final_text = stripped or ""
+                    _grounding_local.data = {**getattr(_grounding_local, "data", {}), "suggested_mode": _bounce_target}
+
             # Clean up citation artifacts from Gemini grounding
             final_text = re.sub(r'\s*\[cite:\s*[^\]]*\]', '', final_text).strip()
             final_text = _preserve_code_first_response(message, final_text, code_candidate)
@@ -563,7 +703,7 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
                 if not retried:
                     print("   [RATE_LIMIT] Gemini 429, retrying once after backoff...")
                     time_module.sleep(3)
-                    return _run_query(message, user_id, session_id, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context)
+                    return _run_query(message, user_id, session_id, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode)
                 final_text = _BUSY_MSG
 
             # Strip self-disclosure phrases (Gemini sometimes ignores instruction)
@@ -575,11 +715,14 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
             if _KB_FAIL_RE.search(final_text) and not retried:
                 print("   [RETRY] Gemini reported KB access failure, retrying once...")
                 time_module.sleep(2)
-                return _run_query(message, user_id, session_id, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context)
+                return _run_query(message, user_id, session_id, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode)
 
             # Grounding validation gate: flag low-grounded responses
             has_data = bool(context or canvas_context)
             final_text = _apply_grounding_gate(final_text, grounding_chunks, coverage=grounding_coverage, has_student_data=has_data, chat_mode=chat_mode)
+
+            # Faithfulness backstop: flag invented "Dr./Prof. X" faculty names
+            final_text = _apply_faithfulness_gate(final_text, chat_mode=chat_mode)
 
             # Inject procedure guide Drive links if the agent omitted them
             final_text = _inject_procedure_links(final_text)
@@ -616,7 +759,7 @@ def get_last_grounding() -> dict:
         grounding_chunks: Number of KB documents cited
         grounding_coverage: Fraction of response text backed by KB sources (0.0-1.0)
     """
-    return getattr(_grounding_local, "data", {"kb_grounded": True, "grounding_chunks": 0, "grounding_coverage": 1.0})
+    return getattr(_grounding_local, "data", {"kb_grounded": True, "grounding_chunks": 0, "grounding_coverage": 1.0, "web_chunks": 0})
 
 
 def check_agent_health() -> dict:
@@ -644,14 +787,14 @@ def reset_session(user_id: str) -> None:
     _session_cache.pop(user_id, None)
 
 
-def query_agent_stream(query: str, user_id: str = "default", context: str = "", model: str = "", canvas_context: str = "", memory_context: str = ""):
+def query_agent_stream(query: str, user_id: str = "default", context: str = "", model: str = "", canvas_context: str = "", memory_context: str = "", chat_mode: str = "regular"):
     """
     Send a query to the CS Navigator agent and stream text chunks as they arrive.
 
     Session reuse based on DegreeWorks (stable). Canvas + memory sent via state_delta (volatile).
     """
+    chat_mode = _resolve_chat_mode(chat_mode, query)
     # Session reuse: hash DegreeWorks + Canvas for invalidation
-    chat_mode = _chat_mode_for_message(query)
     session_id = _get_valid_session(user_id, context, model, canvas_context=canvas_context, chat_mode=chat_mode)
 
     if not session_id:
@@ -671,16 +814,17 @@ def query_agent_stream(query: str, user_id: str = "default", context: str = "", 
             return
         _cache_session(user_id, session_id, context, model, canvas_context=canvas_context, chat_mode=chat_mode)
 
-    yield from _run_query_stream(query, user_id, session_id, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context)
+    yield from _run_query_stream(query, user_id, session_id, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode)
 
 
-def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool = False, context: str = "", model: str = "", canvas_context: str = "", memory_context: str = ""):
+def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool = False, context: str = "", model: str = "", canvas_context: str = "", memory_context: str = "", chat_mode: str = "regular"):
     """Stream query results from ADK, yielding text chunks as they arrive.
 
     Fast in-memory retrieval runs BEFORE the ADK call (<5ms) to collect
     doc_texts for the post-stream VERIFICATION gate. The agent has its own
     VertexAiSearchTool for context.
     """
+    chat_mode = _resolve_chat_mode(chat_mode, message)
     try:
         payload = {
             "app_name": ADK_APP_NAME,
@@ -692,7 +836,6 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
             },
         }
         state_delta = {}
-        chat_mode = _chat_mode_for_message(message)
         state_delta["chat_mode"] = chat_mode
         if model:
             state_delta["model_preference"] = model
@@ -728,7 +871,7 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
             new_session_id = _create_session(user_id, state=state if state else None)
             if new_session_id:
                 _cache_session(user_id, new_session_id, context, model, canvas_context=canvas_context, chat_mode=chat_mode)
-                yield from _run_query_stream(message, user_id, new_session_id, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context)
+                yield from _run_query_stream(message, user_id, new_session_id, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode)
                 return
             yield {"type": "error", "content": _OUTAGE_MSG}
             return
@@ -748,7 +891,17 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
         best_text = ""
         code_candidate = ""
         grounding_chunks = 0
+        web_chunks = 0
+        web_sources = []
+        search_entry_point = ""
+        web_queries = []
         grounding_coverage = 0.0
+        # Bounce marker: each mode declines out-of-lane questions with its own
+        # sentinel (general->CS Nav, CS Nav->general). Strip it from the cumulative
+        # snapshots so it never reaches the client, and record which mode to suggest.
+        active_marker, bounce_target = _MODE_BOUNCE.get(chat_mode, (None, None))
+        strip_marker = active_marker is not None
+        suggested_mode = None
         for line in resp.iter_lines():
             if not line:
                 continue
@@ -762,12 +915,16 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
             except json.JSONDecodeError:
                 continue
 
-            # Extract grounding metadata
+            # Extract grounding metadata. groundingChunks mixes KB (retrievedContext)
+            # and web (Google Search) hits — classify, never len(). Coverage is KB-only.
             gm = event.get("groundingMetadata")
             if gm:
                 chunks = gm.get("groundingChunks", [])
                 supports = gm.get("groundingSupports", [])
-                grounding_chunks = len(chunks)
+                grounding_chunks, web_chunks = _classify_grounding_chunks(chunks)
+                web_sources = _extract_web_sources(chunks)
+                search_entry_point = (gm.get("searchEntryPoint") or {}).get("renderedContent", "") or search_entry_point
+                web_queries = (gm.get("webSearchQueries") or []) or web_queries
                 if supports and full_text:
                     total_chars = len(full_text)
                     grounded_chars = sum(
@@ -775,9 +932,9 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
                         for s in supports
                     )
                     grounding_coverage = grounded_chars / total_chars if total_chars > 0 else 0.0
-                elif chunks:
+                elif grounding_chunks:
                     grounding_coverage = 0.5
-                    print(f"   [GROUNDING] Chunks present ({grounding_chunks}) but no segment data - using conservative 0.5 coverage")
+                    print(f"   [GROUNDING] KB chunks present ({grounding_chunks}) but no segment data - using conservative 0.5 coverage")
 
             content = event.get("content", {})
             if not isinstance(content, dict):
@@ -817,6 +974,16 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
                     if _extract_code_block(text):
                         code_candidate = text
                     text = _code_first_stream_text(message, text, code_candidate)
+                    # Resolve the leading bounce marker against this cumulative
+                    # snapshot. `visible is None` => still an ambiguous partial
+                    # marker, so withhold the whole snapshot (emit nothing).
+                    if strip_marker:
+                        visible, found = _strip_leading_marker(text, active_marker)
+                        if found:
+                            suggested_mode = bounce_target
+                        if visible is None:
+                            continue
+                        text = visible
                     if text.strip():
                         if len(text) > len(full_text):
                             chunk = text[len(full_text):]
@@ -834,7 +1001,7 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
                             best_text = text
 
         # Store grounding signal for research_agent (thread-local)
-        _set_grounding(grounding_chunks > 0, grounding_chunks, grounding_coverage)
+        _set_grounding(grounding_chunks > 0, grounding_chunks, grounding_coverage, web_chunks=web_chunks)
 
         # If Gemini self-reported a KB access failure, send a clearer error
         # (can't retry in streaming mode since broken chunks are already sent to client)
@@ -865,7 +1032,7 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
                 new_sid = _create_session(user_id)
                 if new_sid:
                     _cache_session(user_id, new_sid, context, model, canvas_context=canvas_context, chat_mode=chat_mode)
-                    yield from _run_query_stream(message, user_id, new_sid, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context)
+                    yield from _run_query_stream(message, user_id, new_sid, retried=True, context=context, model=model, canvas_context=canvas_context, memory_context=memory_context, chat_mode=chat_mode)
                     return
             print("   [EMPTY] Stream produced no usable text")
             yield {"type": "error", "content": _BUSY_MSG}
@@ -878,6 +1045,12 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
             disclaimer = final[len(cleaned):]
             yield {"type": "chunk", "content": disclaimer}
 
+        # Faithfulness backstop: flag invented "Dr./Prof. X" faculty names
+        after_faith = _apply_faithfulness_gate(final, chat_mode=chat_mode)
+        if after_faith != final:
+            yield {"type": "chunk", "content": after_faith[len(final):]}
+            final = after_faith
+
         # Inject procedure guide Drive links if the agent omitted them
         before_inject = final
         final = _inject_procedure_links(final)
@@ -885,7 +1058,21 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
             link_chunk = final[len(before_inject):]
             yield {"type": "chunk", "content": link_chunk}
 
-        yield {"type": "done", "content": final}
+        # Backstop (general mode only): if the CS-mode marker was dropped but the
+        # model clearly gave the KB-miss refusal, still offer the CS Nav bounce.
+        if chat_mode == "general" and not suggested_mode and web_chunks == 0 and _looks_like_kb_refusal(final):
+            suggested_mode = "regular"
+
+        # Google Search grounding obliges us to surface Search Suggestions (ToS).
+        grounding = None
+        if web_chunks > 0:
+            grounding = {
+                "searchEntryPoint": search_entry_point,
+                "webQueries": web_queries,
+                "sources": web_sources,
+            }
+
+        yield {"type": "done", "content": final, "suggested_mode": suggested_mode, "grounding": grounding}
 
     except requests.exceptions.ConnectionError:
         print("   [OUTAGE] ADK server not reachable (stream)")
