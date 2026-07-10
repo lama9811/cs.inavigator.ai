@@ -14,17 +14,24 @@
 // field's value matches — `value` for one match, `values` for any-of.
 // `prefillKey` marks fields that pre-fill from the student's DegreeWorks/profile data.
 
-// Build a rolling list of term labels (e.g. "Spring 2026") for the semester
-// dropdowns. Static so the same options render every time (no Date.now needed —
-// the range is intentionally wide and stable rather than "current-term aware").
-const TERMS = ["Spring", "Summer", "Fall", "Winter"];
-export const SEMESTER_OPTIONS = (() => {
+// Build a list of term labels (e.g. "Spring 2026") for the semester dropdowns.
+// Advising only runs Fall -> Spring and Spring -> Fall, so Summer and Winter are
+// NOT advising terms and are left out. Static (no Date.now) so options render
+// the same every time.
+const TERMS = ["Spring", "Fall"];
+const semesterList = (startYear, endYear) => {
   const out = [];
-  for (let year = 2023; year <= 2029; year += 1) {
+  for (let year = startYear; year <= endYear; year += 1) {
     for (const t of TERMS) out.push(`${t} ${year}`);
   }
   return out;
-})();
+};
+
+// Current / upcoming advising terms: 2025 onward.
+export const SEMESTER_OPTIONS = semesterList(2025, 2029);
+
+// "First semester at MSU" is historical, so it goes back further (still Fall/Spring).
+export const ENROLLMENT_SEMESTER_OPTIONS = semesterList(2020, 2029);
 
 // -------------------- Step 1: Internship / Research / Job Experience --------------------
 export const INTERNSHIP_FORM = {
@@ -136,7 +143,7 @@ export const ADVISING_FORM = {
         { id: "last_name", label: "Last Name", type: "text", required: true, prefillKey: "last_name" },
         { id: "major", label: "Major", type: "choice", required: true, options: MAJORS, prefillKey: "major" },
         { id: "minor", label: "Minor", type: "choice", options: MAJORS, prefillKey: "minor" },
-        { id: "first_semester_at_msu", label: "What was your first semester at MSU?", type: "choice", required: true, options: SEMESTER_OPTIONS },
+        { id: "first_semester_at_msu", label: "What was your first semester at MSU?", type: "choice", required: true, options: ENROLLMENT_SEMESTER_OPTIONS },
         { id: "expected_graduation_date", label: "Expected Graduation Date", type: "date" },
         {
           id: "total_credits_earned", label: "Total Credits Earned", type: "number", required: true,
@@ -153,7 +160,8 @@ export const ADVISING_FORM = {
         { id: "current_semester", label: "Current Semester", type: "choice", required: true, options: SEMESTER_OPTIONS },
         {
           id: "registered_courses", label: "Select all registered courses", type: "course_picker", required: true,
-          hint: "Include withdrawn courses. BE SURE TO ADD LABS. Type a course code to add one that isn't listed.",
+          seedSource: "registered",
+          hint: "Include withdrawn courses. BE SURE TO ADD LABS. Search or type a course code to add one that isn't listed.",
         },
         { id: "current_total_credits", label: "Total Credits", type: "number", required: true },
       ],
@@ -164,13 +172,14 @@ export const ADVISING_FORM = {
       fields: [
         {
           id: "summer_winter_courses", label: "Summer / Winter course(s) you'd like to take", type: "course_picker",
-          hint: "Optional. Type a course code to add one that isn't listed.",
+          seedSource: "planner",
+          hint: "Optional. Search or type a course code to add one.",
         },
         { id: "new_semester", label: "New Semester", type: "choice", required: true, options: SEMESTER_OPTIONS },
         {
           id: "upcoming_courses", label: "Select all courses you would like to take", type: "course_picker", required: true,
-          plannerSeeded: true,
-          hint: "Suggestions from your Planner are pre-listed. Type a course code to add any others.",
+          seedSource: "planner",
+          hint: "Suggestions from your Planner are pinned to the top. Search or type any course to add it.",
         },
         { id: "upcoming_total_credits", label: "New Courses Total Credits", type: "number", required: true },
       ],

@@ -30,6 +30,16 @@
   align-items: flex-start;
   margin-bottom: 26px;
 }
+/* Download sits at the top-right of the hero, aligned with the heading. */
+.advising-hero-download {
+  margin-left: auto;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .advising-hero { flex-wrap: wrap; }
+  .advising-hero-download { margin-left: 60px; }  /* line up under the text, past the icon */
+}
 .advising-hero-icon {
   flex-shrink: 0;
   width: 44px; height: 44px;
@@ -107,6 +117,11 @@
   font-size: 0.9rem; background: #fff; color: #1a2438;
 }
 .af-input:focus-visible { outline: 2px solid #4285F4; outline-offset: 1px; border-color: transparent; }
+/* Number fields read as plain textboxes: hide the up/down spinner arrows while
+   keeping numeric input + validation (e.g. Total Credits Earned). */
+.af-input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+.af-input[type="number"]::-webkit-outer-spin-button,
+.af-input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
 .af-toggle-row { display: flex; gap: 6px; }
 .af-toggle {
@@ -155,27 +170,38 @@
 }
 .af-ref-link:hover { text-decoration: underline; }
 
-/* ---------- Course picker (checklist + type-in + chips) ---------- */
+/* ---------- Course picker (searchable dropdown multiselector + chips) ---------- */
 .af-coursepicker { display: flex; flex-direction: column; gap: 10px; }
-.af-cp-options {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 4px 12px;
-  max-height: 168px; overflow-y: auto;
-  padding: 8px 10px; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px;
-  background: #fbfaf7;
+.af-cp-select { position: relative; }
+.af-cp-trigger {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  text-align: left; cursor: pointer;
+}
+.af-cp-menu {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20;
+  background: #fff; border: 1px solid rgba(0,0,0,0.14); border-radius: 8px;
+  box-shadow: 0 8px 24px -8px rgba(0,0,0,0.25); padding: 8px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.af-cp-search { width: 100%; }
+.af-cp-list { max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; }
+.af-cp-group {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: #6b7280; padding: 8px 6px 4px;
 }
 .af-cp-option {
-  display: flex; align-items: center; gap: 8px;
-  padding: 4px 2px; font-size: 0.85rem; cursor: pointer;
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 6px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;
 }
+.af-cp-option:hover { background: rgba(66,133,244,0.08); }
 .af-cp-option input { accent-color: #4285F4; flex-shrink: 0; }
-.af-cp-add { display: flex; gap: 8px; }
-.af-cp-add .af-input { flex: 1; }
-.af-cp-add-btn {
-  flex-shrink: 0; padding: 0 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
-  border: 1px solid #4285F4; background: #4285F4; color: #fff; cursor: pointer;
+.af-cp-empty { padding: 10px 6px; font-size: 0.83rem; color: #6b7280; }
+.af-cp-addtyped {
+  text-align: left; margin-top: 4px; padding: 8px 6px; border-radius: 6px;
+  border: none; background: rgba(66,133,244,0.08); color: #2c4a7c;
+  font-size: 0.83rem; font-weight: 600; cursor: pointer;
 }
-.af-cp-add-btn:disabled { background: #b7c6e0; border-color: #b7c6e0; cursor: default; }
+.af-cp-addtyped:hover { background: rgba(66,133,244,0.16); }
 .af-cp-chips { margin-top: 2px; }
 .af-cp-chip { display: inline-flex; align-items: center; gap: 6px; }
 .af-cp-chip-x {
@@ -224,6 +250,7 @@
 }
 .advising-actions-left, .advising-actions-right { display: flex; align-items: center; gap: 10px; }
 .advising-missing { font-size: 0.8rem; color: #b8842a; }
+.advising-autosave-hint { font-size: 0.78rem; color: #7a808c; }
 .advising-btn {
   display: inline-flex; align-items: center; gap: 7px;
   padding: 9px 16px; border-radius: 10px; font-size: 0.88rem; font-weight: 600; cursor: pointer;

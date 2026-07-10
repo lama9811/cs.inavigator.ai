@@ -10,7 +10,10 @@
 //      ORNS, MGBU, extra MATH/CLCO) that classes.json doesn't carry.
 //   3. genEdCourses.js — the full official General Education approved-course list
 //      (all 9 distribution areas). Merged in below so GenEd courses resolve too.
+//   4. minorsData.js — every real course across the transcribed minors, so minor
+//      courses show up in the advising course picker too.
 import { GENED_COURSE_NAMES } from "./genEdCourses";
+import { MINOR_COURSE_NAMES } from "../minorsData";
 
 const CS_COURSE_CATALOG = {
   // --- Math / supporting ---
@@ -78,10 +81,22 @@ const CS_COURSE_CATALOG = {
   "EEGR 483": "Introduction to Security Management",
 };
 
-// Full catalog = CS/major/supporting courses + every official GenEd course. The CS
-// list wins on the rare overlap (e.g. a course named on both a sequence sheet and
-// the GenEd sheet) since its wording matches what the Planner/prereq engine use.
-export const COURSE_CATALOG = { ...GENED_COURSE_NAMES, ...CS_COURSE_CATALOG };
+// Full catalog = GenEd + CS/major/supporting + minor courses. The CS list wins on
+// the rare overlap (e.g. a course named on both a sequence sheet and the GenEd sheet)
+// since its wording matches what the Planner/prereq engine use.
+export const COURSE_CATALOG = { ...MINOR_COURSE_NAMES, ...GENED_COURSE_NAMES, ...CS_COURSE_CATALOG };
+
+// Which advising-form group a course belongs to, mirroring how the paper form is laid
+// out: General Education, then the CS curriculum, then Minor courses. A course in more
+// than one list is attributed to the first that claims it in that order (GenEd > CS >
+// Minor), so e.g. a SOCI course used by both a GenEd area and a minor reads as GenEd.
+export const COURSE_GROUP = { GENED: "General Education", CS: "CS Curriculum", MINOR: "Minor Courses" };
+function groupForCode(code) {
+  if (GENED_COURSE_NAMES[code]) return COURSE_GROUP.GENED;
+  if (CS_COURSE_CATALOG[code]) return COURSE_GROUP.CS;
+  if (MINOR_COURSE_NAMES[code]) return COURSE_GROUP.MINOR;
+  return COURSE_GROUP.CS;
+}
 
 // Normalize a code the way the course picker stores it ("cosc349" / "COSC  349"
 // -> "COSC 349") so the lookup is forgiving of how a student typed it.
@@ -103,4 +118,35 @@ export function courseLabel(code) {
   const c = normalizeCourseCode(code);
   const name = COURSE_CATALOG[c];
   return name ? `${c} — ${name}` : c;
+}
+
+// Order the groups the way the advising form lays courses out.
+const GROUP_ORDER = [COURSE_GROUP.GENED, COURSE_GROUP.CS, COURSE_GROUP.MINOR];
+
+// Every catalog course as { code, name, label, group } — the searchable list behind
+// the course pickers. Codes are already normalized ("COSC 349"). Sorted by group
+// (GenEd -> CS -> Minor, following the form) then by code within each group.
+export const CATALOG_COURSES = Object.entries(COURSE_CATALOG)
+  .map(([code, name]) => ({ code, name, label: `${code} — ${name}`, group: groupForCode(code) }))
+  .sort((a, b) => {
+    const g = GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group);
+    return g !== 0 ? g : a.code.localeCompare(b.code);
+  });
+
+// Filter the catalog by a free-text query, matching either the code or the name
+// (case-insensitive). Empty query returns the whole list. Used by the picker search.
+export function searchCatalog(query) {
+  const q = String(query || "").trim().toLowerCase();
+  if (!q) return CATALOG_COURSES;
+  return CATALOG_COURSES.filter(
+    (c) => c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q),
+  );
+}
+
+// The catalog course for a code (with its group), or null. Lets the picker label a
+// course's section even when it came from a pinned seed rather than a search hit.
+export function catalogEntry(code) {
+  const c = normalizeCourseCode(code);
+  const name = COURSE_CATALOG[c];
+  return name ? { code: c, name, label: `${c} — ${name}`, group: groupForCode(c) } : null;
 }
