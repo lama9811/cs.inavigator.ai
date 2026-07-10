@@ -112,7 +112,7 @@ def gened_status(dw_dict: dict, sample: int = 4) -> list[dict]:
             earned = sum(
                 c.get("credits", 3)
                 for c in (area_courses + crosscount)
-                if _normalize(c["code"]) in done
+                if c.get("code") and _normalize(c["code"]) in done
             )
             needed = max(0, area.get("credits", 0) - earned)
             if needed <= 0:
@@ -125,7 +125,7 @@ def gened_status(dw_dict: dict, sample: int = 4) -> list[dict]:
         untaken = [
             {"code": c["code"], "name": c["name"], "credits": c.get("credits", 3)}
             for c in area_courses
-            if _normalize(c["code"]) not in done
+            if c.get("code") and _normalize(c["code"]) not in done
         ]
         untaken.sort(key=lambda c: _course_number(c["code"]))
         open_areas.append({
