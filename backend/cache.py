@@ -41,6 +41,11 @@ L1_CACHE_TTL_SECONDS = 3600  # 1 hour for L1 (hot cache)
 # L2 (Redis) Settings
 L2_CACHE_TTL_SECONDS = 28800  # 8 hours for Redis
 
+# Short TTL for time-sensitive modes (General mode: web-grounded, "live" answers).
+# cachetools.TTLCache has ONE global TTL and can't expire per-key, so short-lived
+# L1 entries live in a separate instance; Redis expires per-key via setex.
+SHORT_CACHE_TTL_SECONDS = 1200  # 20 minutes
+
 # Semantic Cache Settings
 SEMANTIC_SIMILARITY_THRESHOLD = 0.95  # Cosine sim threshold (0.95 = near-exact match only, prevents cross-topic false positives)
 SEMANTIC_MAX_ENTRIES = 100  # Max cached embeddings in memory
@@ -248,12 +253,12 @@ class L2Cache:
             logger.warning(f"[REDIS] Get error: {e}")
             return None
 
-    def set(self, key: str, value: str) -> bool:
+    def set(self, key: str, value: str, ttl: Optional[int] = None) -> bool:
         if not self._connected:
             return False
 
         try:
-            self._client.setex(f"csnavigator:{key}", self.ttl, value)
+            self._client.setex(f"csnavigator:{key}", ttl or self.ttl, value)
             return True
         except Exception as e:
             self._stats["errors"] += 1
@@ -549,6 +554,8 @@ class MultiTierCache:
 
     def __init__(self):
         self.l1 = L1Cache()
+        # Separate short-TTL L1 for time-sensitive modes (see SHORT_CACHE_TTL_SECONDS).
+        self.l1_short = L1Cache(ttl=SHORT_CACHE_TTL_SECONDS)
         self.l2 = L2Cache()
         self.semantic = SemanticCache(self.l2)
         self._skipped = 0
@@ -593,8 +600,11 @@ class MultiTierCache:
 
         key = self._generate_key(query, context_hash)
 
-        # Try L1 first (fastest)
+        # Try L1 first (fastest) — check both the default and short-TTL tiers so a
+        # reader never needs to know which TTL bucket an entry landed in.
         response = self.l1.get(key)
+        if response is None:
+            response = self.l1_short.get(key)
         if response is not None:
             logger.info(f"[CACHE] L1 HIT for: {query[:50]}...")
             return _strip_personal_greeting(response)
@@ -619,8 +629,12 @@ class MultiTierCache:
         logger.info(f"[CACHE] MISS for: {query[:50]}...")
         return None
 
-    def set(self, query: str, response: str, context_hash: str = "", allow_semantic: bool = True) -> bool:
-        """Store response in all cache tiers."""
+    def set(self, query: str, response: str, context_hash: str = "", allow_semantic: bool = True, ttl: Optional[int] = None) -> bool:
+        """Store response in all cache tiers.
+
+        ttl: when set (e.g. General mode's 20-min window), the L1 entry goes to the
+        short-TTL tier and Redis expires it per-key. When None, uses the defaults.
+        """
         if not self._should_cache(query):
             return False
 
@@ -651,9 +665,13 @@ class MultiTierCache:
 
         key = self._generate_key(query, context_hash)
 
-        # Write to exact-match tiers
-        self.l1.set(key, response)
-        self.l2.set(key, response)
+        # Write to exact-match tiers. Short-TTL entries use the short L1 instance;
+        # Redis gets the per-key expiry via ttl.
+        if ttl:
+            self.l1_short.set(key, response)
+        else:
+            self.l1.set(key, response)
+        self.l2.set(key, response, ttl=ttl)
 
         # L3: Store embedding for semantic similarity matching (scoped to context)
         if allow_semantic:
