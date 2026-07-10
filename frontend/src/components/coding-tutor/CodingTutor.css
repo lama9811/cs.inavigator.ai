@@ -25,11 +25,12 @@
   /* Nav is a dropdown BAR on top (row 1), content below (row 2) — on every
      screen. The old 162px side column squished the dropdown into a thin sliver. */
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr);
   /* List pages (Home / Quiz Bank / Interview Prep / Progress) size to their
-     content — NOT a forced viewport height. The forced full height (which made a
-     tall gradient block below short content = the "gutter") is applied only in the
-     workspace, where filling the screen IS wanted (see .coding-workspace-active). */
+     CONTENT — row 2 is `auto`, so the panel is only as tall as what's in it and
+     the tinted --ct-bg never paints an empty tail below the cards (the "gutter"
+     that only showed on short laptop screens). The workspace re-enables a full
+     `1fr` fill below, where filling the screen IS wanted. */
+  grid-template-rows: auto auto;
   min-height: 0;
   padding: 16px 10px 12px;
   /* A flat surface (no tall gradient band) so there's no visible block below the
@@ -39,6 +40,54 @@
   gap: 10px;
   overflow: visible;
   transition: grid-template-columns 0.16s ease;
+}
+
+/* Workspace fills the viewport (editor/terminal want the full height); the
+   content row stretches here, unlike the content-sized list pages above. */
+.coding-app.coding-workspace-active {
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 100%;
+}
+/* The concept-quiz RUNNER takes over the full content area (like a focused
+   CodeChef-style exam view) — full-height fill (like the workspace) AND
+   full-bleed: the app padding is removed so the split divider runs edge to
+   edge, header pins to the top, footer to the bottom. */
+.coding-app.coding-quiz-runner-active {
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 100%;
+  padding: 0;
+}
+.coding-app.coding-quiz-runner-active .coding-app-main {
+  padding-right: 0;
+  min-height: 0;
+}
+/* The content wrapper must FILL row 2 and pass height down, or the split only
+   reaches as tall as its content (stops midway). Flex-column + flex:1 chain. */
+.coding-app.coding-quiz-runner-active .coding-app-content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+/* The Practice Library wrapper + Code/Quiz toggle stretch full-height and drop
+   their gap/padding so the runner fills everything below the toggle bar. */
+.coding-app.coding-quiz-runner-active .practice-library {
+  flex: 1;
+  min-height: 0;
+  gap: 0;
+}
+.coding-app.coding-quiz-runner-active .practice-toolbar {
+  padding: 10px 1.75rem;
+}
+.coding-app.coding-quiz-runner-active .practice-library > *:last-child {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Interview Prep: the outer app container is transparent so the page's own
+   backdrop shows through (the inner panel is flattened at .interview-prep-page
+   .coding-page-panel below). Scoped to this page; other pages keep their surface. */
+.coding-app.coding-page-interview {
+  background: transparent !important;
 }
 
 .coding-app.mini-sidebar-collapsed {
@@ -127,7 +176,7 @@
   white-space: nowrap;
   padding: 0 20px;
   border-radius: 16px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--ct-border);
   background: rgba(255, 255, 255, 0.98);
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
   color: var(--ct-text);
@@ -203,7 +252,7 @@ body.coding-dark .coding-back-home-btn.active svg {
   width: clamp(200px, 32%, 280px);
   max-width: 100%;
   background: rgba(255, 255, 255, 0.98);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--ct-border);
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
   border-radius: 14px;
   min-width: 0;
@@ -279,7 +328,7 @@ body.coding-dark .coding-back-home-btn.active svg {
   padding: 9px 16px;
   background: rgba(255, 255, 255, 0.99);
   border: 0;
-  border-top: 1px solid rgba(148, 163, 184, 0.16);
+  border-top: 1px solid var(--ct-border);
   color: #1f2937;
   font-size: 0.9rem;
   cursor: pointer;
@@ -870,7 +919,7 @@ body.coding-dark .mock-confirm { background: #1c2a3f; }
 .quiz-problem-card {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--ct-border);
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
 
@@ -915,7 +964,7 @@ body.coding-dark .mock-confirm { background: #1c2a3f; }
   padding: 10px 14px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--ct-border);
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
 
@@ -943,7 +992,8 @@ body.coding-dark .mock-confirm { background: #1c2a3f; }
 .progress-bar {
   height: 12px;
   border-radius: 999px;
-  background: rgba(148, 163, 184, 0.16);
+  /* Visible empty track on the white card (was a 0.16 slate wash that vanished). */
+  background: color-mix(in srgb, var(--ct-border) 55%, var(--ct-soft));
   overflow: hidden;
 }
 
@@ -3727,7 +3777,7 @@ body.coding-dark .floating-rewrite-lang {
   padding: 10px;
   border-radius: 16px;
   background: rgba(247, 248, 250, 0.92);
-  border: 1px solid rgba(148, 163, 184, 0.14);
+  border: 1px solid var(--ct-border);
 }
 
 .floating-chat-message {
@@ -3749,7 +3799,7 @@ body.coding-dark .floating-rewrite-lang {
   align-self: flex-start;
   background: #fff;
   color: #111827;
-  border: 1px solid rgba(148, 163, 184, 0.14);
+  border: 1px solid var(--ct-border);
 }
 
 .floating-chat-message.bot pre,
@@ -3757,7 +3807,7 @@ body.coding-dark .floating-rewrite-lang {
 .floating-chat-message.bot blockquote,
 .floating-chat-message.bot table {
   background: rgba(15, 23, 42, 0.06);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--ct-border);
   color: #111827;
 }
 
@@ -4851,6 +4901,7 @@ body.coding-dark .floating-chat-icon-btn {
 }
 
 body.coding-dark .floating-chat-action:hover:not(:disabled),
+/* Dark-mode nav/tab hover = periwinkle blue (#3b82f6), not orange. */
 body.coding-dark .coding-section-nav button:hover:not(:disabled),
 body.coding-dark .workspace-tabs button:hover:not(:disabled),
 body.coding-dark .problem-navigation button:hover:not(:disabled),
@@ -4859,17 +4910,19 @@ body.coding-dark .daily-practice-btn.secondary:hover,
 body.coding-dark .save-quiz-pdf-btn:hover,
 body.coding-dark .floating-chat-control:hover,
 body.coding-dark .floating-chat-icon-btn:hover:not(:disabled) {
-  background: rgba(231, 160, 91, 0.17) !important;
-  border-color: rgba(231, 160, 91, 0.42) !important;
-  color: #f5c58e !important;
+  background: rgba(59, 130, 246, 0.16) !important;
+  border-color: rgba(59, 130, 246, 0.5) !important;
+  color: #93b4f5 !important;
 }
 
+/* Active tab (Home / Practice Library / Interview Prep selector) = blue, not orange.
+   NOTE: .workspace-tabs button.active is intentionally excluded — those are
+   underline tabs (styled in CodeWorkspace.css), not filled pills. */
 body.coding-dark .coding-section-nav button.active,
-body.coding-dark .workspace-tabs button.active,
 body.coding-dark .floating-chat-action.active {
-  background: linear-gradient(135deg, rgba(120, 157, 202, 0.24), rgba(231, 160, 91, 0.16)) !important;
-  border-color: rgba(231, 160, 91, 0.36) !important;
-  color: #f7efe3 !important;
+  background: linear-gradient(135deg, rgba(120, 157, 202, 0.24), rgba(59, 130, 246, 0.2)) !important;
+  border-color: rgba(59, 130, 246, 0.45) !important;
+  color: #eaf0fb !important;
 }
 
 body.coding-dark .daily-practice-btn,
@@ -4880,12 +4933,15 @@ body.coding-dark .floating-chat-button {
   color: #f8f3ea !important;
 }
 
+/* Dark-mode hover = periwinkle blue with white text (not orange). Covers the
+   Show Hint / Show All buttons (.daily-practice-btn.secondary) and the widget
+   send/button. */
 body.coding-dark .daily-practice-btn:hover:not(:disabled),
 body.coding-dark .floating-chat-send:hover:not(:disabled),
 body.coding-dark .floating-chat-button:hover {
-  background: #e7a05b !important;
-  border-color: rgba(241, 182, 120, 0.46) !important;
-  color: #182033 !important;
+  background: #3b82f6 !important;
+  border-color: rgba(59, 130, 246, 0.7) !important;
+  color: #ffffff !important;
 }
 
 body.coding-dark .coding-nav-icon,
@@ -4952,9 +5008,13 @@ body.coding-dark .coding-app {
   --ct-solid-panel: #172235;
   --ct-solid-soft: #152033;
   --ct-solid-raised: #1c2a3f;
-  --ct-hover-bg: rgba(231, 160, 91, 0.18);
-  --ct-hover-border: rgba(231, 160, 91, 0.44);
-  --ct-hover-text: #f2bd83;
+  /* Dark-mode hover accent = periwinkle/Google blue (#3b82f6), not orange.
+     These three tokens feed the master :is(...) hover block below (buttons,
+     cards, daily buttons, floating chat) and the daily-btn hover, so recoloring
+     them here turns EVERY dark-mode hover across the section blue in one place. */
+  --ct-hover-bg: rgba(59, 130, 246, 0.16);
+  --ct-hover-border: rgba(59, 130, 246, 0.55);
+  --ct-hover-text: #93b4f5;
 }
 
 .coding-app :is(
@@ -5053,7 +5113,9 @@ body.coding-dark .coding-app {
   background-color: var(--ct-hover-bg) !important;
   border-color: var(--ct-hover-border) !important;
   color: var(--ct-hover-text) !important;
-  box-shadow: 0 12px 26px color-mix(in srgb, var(--ct-accent) 18%, transparent) !important;
+  /* Glow reads the hover-border token so it follows the blue recolor in dark
+     mode instead of the base orange --ct-accent. */
+  box-shadow: 0 12px 26px var(--ct-hover-border) !important;
   transform: translateY(-1px);
 }
 
@@ -5076,6 +5138,16 @@ body.coding-dark .coding-app {
   border-color: var(--ct-hover-border) !important;
   color: #182033 !important;
 }
+/* Dark mode: these primary CTAs hover to brand blue, not orange. */
+body.coding-dark .coding-app :is(
+  .daily-practice-btn,
+  .floating-chat-send,
+  .floating-chat-button
+):hover:not(:disabled) {
+  background: #3b82f6 !important;
+  border-color: rgba(59, 130, 246, 0.7) !important;
+  color: #ffffff !important;
+}
 
 body.coding-dark .coding-app :is(
   .daily-practice-btn,
@@ -5091,8 +5163,11 @@ body.coding-dark .coding-app :is(
   .floating-chat-send,
   .floating-chat-button
 ):hover:not(:disabled) {
-  background: #e7a05b !important;
-  color: #172033 !important;
+  /* Blue hover with WHITE text (was orange #e7a05b + dark #172033). This is the
+     Coding Tutor launcher pill + Show Hint/All + widget send. */
+  background: #3b82f6 !important;
+  border-color: rgba(59, 130, 246, 0.7) !important;
+  color: #ffffff !important;
 }
 
 /* NOTE: .coding-nav-icon was removed from this group — the sub-header pills carry
@@ -5602,6 +5677,21 @@ body.coding-dark .coding-app .campus-section-nav > button.active {
   background: var(--msu-blue, #8ab4f8) !important;
   border-color: var(--msu-blue, #8ab4f8) !important;
   color: #0b1322 !important;
+  /* Ring + glow: blue, not the base orange --ct-accent. */
+  box-shadow:
+    0 0 0 2px rgba(59, 130, 246, 0.45),
+    0 4px 12px rgba(59, 130, 246, 0.28) !important;
+}
+/* Active dot indicator under the selected tab: blue in dark mode. */
+body.coding-dark .coding-app .campus-section-nav > button.active::after {
+  background: #3b82f6 !important;
+}
+/* Section-nav hover in dark mode: blue wash, not orange. */
+body.coding-dark .coding-app .campus-section-nav > button:hover:not(.active),
+body.coding-dark .coding-app .campus-section-nav > button:focus-visible {
+  background: rgba(59, 130, 246, 0.16) !important;
+  border-color: rgba(59, 130, 246, 0.5) !important;
+  color: #eaf0fb !important;
 }
 
 .coding-app .campus-section-nav .coding-nav-workspace-toggle {
@@ -7043,15 +7133,17 @@ body.coding-dark .quiz-bank-page .quiz-problem-desc {
   color: var(--ct-soft, #a6b0c2);
 }
 
+/* Dark-mode hover = periwinkle blue (#3b82f6), not orange. Hardcoded here to
+   override the resting orange rail on hover/focus. */
 body.coding-dark .quiz-bank-page .quiz-problem-card:hover {
-  border-color: rgba(245, 176, 92, 0.45) !important;
-  border-top-color: var(--ct-accent) !important;
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(245, 176, 92, 0.12) !important;
+  border-color: rgba(59, 130, 246, 0.55) !important;
+  border-top-color: #3b82f6 !important;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(59, 130, 246, 0.28) !important;
 }
 
 body.coding-dark .quiz-bank-page .quiz-problem-card:focus-visible {
-  border-top-color: var(--ct-accent) !important;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ct-accent) 28%, transparent) !important;
+  border-top-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35) !important;
 }
 
 
@@ -7070,7 +7162,9 @@ body.coding-dark .coding-problem-empty button {
   box-shadow: 0 8px 20px rgba(47, 111, 214, 0.38) !important;
 }
 
-body.coding-dark .workspace-tabs button.active:hover:not(:disabled),
+/* NOTE: .workspace-tabs button.active:hover removed — workspace tabs are
+   underline tabs (see CodingTutorTheme.css), so hovering the active tab must
+   NOT paint a filled pill/ring. */
 body.coding-dark .floating-chat-button:hover,
 body.coding-dark .coding-problem-empty button:hover {
   background: linear-gradient(135deg, #4c8ef0, #3a78de) !important;

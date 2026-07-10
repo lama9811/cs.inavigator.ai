@@ -76,6 +76,9 @@ function clearAuthStorage() {
   localStorage.removeItem("token");
   localStorage.removeItem("chat_sessions");
   localStorage.removeItem(ACTIVE_CHAT_SESSION_KEY);
+  // Reset the remembered Concept Quiz location on logout so the next sign-in
+  // doesn't jump back into the previous user's quiz spot.
+  localStorage.removeItem("concept_quiz_last_path");
 }
 
 // Module-level guard so the expiry toast fires once even if several RequireAuth
@@ -538,17 +541,29 @@ export default function App() {
   const handleUpdateSession = (msgs) => {
     setSessions((prev) => {
       const currentSession = prev.find((s) => s.id === activeId);
-      
+
       // Only update if messages actually changed
       if (currentSession && JSON.stringify(currentSession.messages) === JSON.stringify(msgs)) {
         return prev; // No change needed, return same reference
       }
-      
+
+      // Only a REAL new message counts as activity. Merely opening a session can
+      // re-emit its messages (hydration normalizes user text, so the arrays differ
+      // by content but not by count) — that must NOT bump recency, or opening an
+      // old chat wrongly makes it "most recent" and the header lands there next
+      // time. So bump lastActivity only when the message COUNT grew.
+      const prevCount = currentSession?.messages?.length || 0;
+      const isNewMessage = msgs.length > prevCount;
+
       return prev.map((s) =>
         s.id === activeId
           ? {
               ...s,
               messages: msgs,
+              // Advance the recency key only on a real new message (see above).
+              // Seeded at history-load; kept frozen when just viewing so ranking
+              // reflects true last activity, not last-opened.
+              lastActivity: isNewMessage ? Date.now() : s.lastActivity,
               title: msgs.length > 0 && shouldAutoRenameSession(s, msgs)
                 ? generateChatTitle(msgs, s.mode)
                 : s.title,

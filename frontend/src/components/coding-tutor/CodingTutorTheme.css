@@ -30,17 +30,19 @@
    canvas never applied (the "still light gray" bug). The extra `body` ancestor
    makes this win regardless of bundle order. */
 body .coding-app {
-  /* Warm paper canvas + panels instead of the cool #F6F8FB / pure-white
-     portal surfaces. These replace the inherited --bg-app / --bg-surface
-     chain for the coding section only. */
-  --ct-bg: #f6f0e7;            /* warm academic paper (page canvas) */
-  --ct-panel: #fffaf1;         /* warm panel (cards / surfaces) */
-  --ct-panel-soft: #f4ecdf;    /* secondary panel / hover wash */
-  --ct-panel-raised: #fffdf8;  /* raised / popover surface */
+  /* Match the app-wide light surfaces (white cards on a cool #f6f8fc canvas)
+     instead of the old warm-cream paper. These replace the inherited
+     --bg-app / --bg-surface chain for the coding section only. The colorful
+     card accents (navy / orange / green below) stay, so the section keeps its
+     distinct look — only the cream tones become the app's white/gray. */
+  --ct-bg: #f6f8fc;            /* app page canvas (--bg-body) */
+  --ct-panel: #ffffff;         /* white panel (cards / surfaces, --bg-card) */
+  --ct-panel-soft: #f8fafc;    /* secondary panel / hover wash (--bg-input) */
+  --ct-panel-raised: #ffffff;  /* raised / popover surface */
 
-  /* Warm parchment borders instead of cool gray (#E2E8F0). */
-  --ct-border: #ddccb6;
-  --ct-border-strong: #c9b596;
+  /* App cool-gray borders instead of warm parchment. */
+  --ct-border: #dbe3ef;        /* --border-color */
+  --ct-border-strong: #b8c5d8; /* --border-strong */
 
   /* Keep the Morgan ORA identity for structure + accent + success. */
   --ct-primary: #0b2545;       /* deep Morgan navy (matches --msu-blue) */
@@ -50,14 +52,14 @@ body .coding-app {
   --ct-accent-soft: rgba(243, 112, 33, 0.10);
   --ct-success: #2f8f4e;       /* solved / pass / success only */
 
-  /* Text stays high-contrast navy/ink on warm paper. */
+  /* Text stays high-contrast navy/ink; muted now matches the app slate. */
   --ct-text: #0b2545;
-  --ct-muted: #6a5f50;         /* warm muted (was cool slate) */
-  --ct-soft: #8a7d6a;
+  --ct-muted: #64748b;         /* app slate (--text-secondary) */
+  --ct-soft: #94a3b8;          /* app soft slate (--text-tertiary) */
 
-  /* Paper accents already referenced by the ORA polish block. */
-  --ct-paper: #fffaf1;
-  --ct-paper-strong: #f4ecdf;
+  /* Paper accents already referenced by the ORA polish block — now white/gray. */
+  --ct-paper: #ffffff;
+  --ct-paper-strong: #f8fafc;
   --ct-gold-line: color-mix(in srgb, var(--ct-accent) 38%, var(--ct-border));
 
   /* Editor / terminal: lab-dark, but a touch warmer/readable than pure slate. */
@@ -97,9 +99,9 @@ body.coding-dark .coding-app {
    `body.theme-switching` transition-suppressor in index.css + App.jsx.
    NOTE: --ct-bg lives on .coding-app (a child), so we can't read it on the
    parent .chat-main — the literals below mirror --ct-bg in each mode
-   (light #f6f0e7 / dark #0b1a33). Keep them in sync if --ct-bg changes. */
+   (light #f6f8fc / dark #0b1a33). Keep them in sync if --ct-bg changes. */
 .chat-main.coding-chat-main {
-  background: #f6f0e7;
+  background: #f6f8fc;
 }
 body.coding-dark .chat-main.coding-chat-main {
   background: #0b1a33;
@@ -189,4 +191,148 @@ body.coding-dark .navbar .nav-pill.active svg {
 body.coding-dark .navbar .admin-nav-btn {
   color: #fff !important;
   border-color: #3a4c6b !important;
+}
+
+/* ============================================================
+   Dark-mode hover language — periwinkle/Google-blue "electric" accent
+   ------------------------------------------------------------
+   One unified hover treatment for EVERY interactive surface across the
+   whole Coding Tutor in dark mode: Home, Practice Library, Interview Prep,
+   Concept Quiz, cards, list rows, pills, buttons, and selectors. Replaces
+   the assorted per-page/orange hovers with a single electric-blue accent:
+   a brand-blue border + a soft glow that reads as "live".
+
+   --cq-hover-blue is the Google-periwinkle primary (#3b82f6). This file is
+   imported LAST, so these rules win the cascade over the per-page hovers in
+   CodingTutor.css / ConceptQuiz.css (equal-or-higher specificity + source
+   order). Scoped under body.coding-dark so light mode is untouched.
+   ============================================================ */
+body.coding-dark .coding-app {
+  --cq-hover-blue: #3b82f6;
+  --cq-hover-glow: rgba(59, 130, 246, 0.28);
+  --cq-hover-wash: rgba(59, 130, 246, 0.08);
+}
+
+/* THE KEY MOVE: remap --ct-accent -> periwinkle blue on any hovered/focused
+   interactive element. The orange "box" on hover comes from dozens of per-page
+   rules that read var(--ct-accent) for background / border-color / box-shadow
+   (many with !important). Rather than override each one, we retarget the token
+   itself on the hovered element: its descendants and its own hover rule now
+   resolve var(--ct-accent) to blue, so EVERY orange hover — Home, Practice
+   Library, Interview Prep, Concept Quiz, cards, rows, pills, buttons — turns
+   blue automatically. Non-hover states keep the orange identity untouched
+   (active/solved/selected badges, etc. are not :hover, so they still read the
+   real --ct-accent). Also neutralize --ct-accent-soft used by some fills. */
+body.coding-dark .coding-app button:hover,
+body.coding-dark .coding-app select:hover,
+body.coding-dark .coding-app textarea:hover,
+body.coding-dark .coding-app a:hover,
+body.coding-dark .coding-app [role="button"]:hover,
+body.coding-dark .coding-app li:hover,
+body.coding-dark .coding-app tr:hover,
+body.coding-dark .coding-app .cq-accordion-item:hover,
+body.coding-dark .coding-app .cq-accordion-head:hover,
+body.coding-dark .coding-app .coding-prompt-card:hover,
+body.coding-dark .coding-app .coding-recent-card:hover,
+body.coding-dark .coding-app .daily-feature-card:hover,
+body.coding-dark .coding-app .quiz-problem-card:hover,
+body.coding-dark .coding-app .quiz-insight-panel:hover,
+body.coding-dark .coding-app .cq-language-card:hover,
+body.coding-dark .coding-app .personal-snippet-item:hover,
+body.coding-dark .coding-app .practice-chip:hover,
+body.coding-dark .coding-app .cq-choice:hover {
+  /* !important beats the base dark palette's own --ct-accent declaration
+     regardless of source order, so the orange->blue swap always wins. */
+  --ct-accent: var(--cq-hover-blue) !important;
+  --ct-accent-soft: var(--cq-hover-wash) !important;
+}
+
+/* Quiz Question/Learn tab: the active underline used the orange accent. In dark
+   mode make that indicator the periwinkle blue too so it matches the hover
+   language (this is an active-state, not a :hover, so the remap above skips it). */
+body.coding-dark .coding-app .cq-tab.active {
+  border-bottom-color: var(--cq-hover-blue) !important;
+}
+
+/* The quiz problem-name link is a <button>, so the master `.coding-app
+   :is(button,...):hover` block in CodingTutor.css paints a filled hover PILL
+   (background + border + box-shadow, all !important) behind it — the "pill is
+   back" regression. Force it back to a plain text link with an underline-only
+   hover, in BOTH themes, with !important so it beats that master block. */
+.coding-app .cq-question-table .cq-question-link,
+.coding-app .cq-question-table .cq-question-link:hover,
+.coding-app .cq-question-table .cq-question-link:focus,
+.coding-app .cq-question-table .cq-question-link:focus-visible,
+.coding-app .cq-question-table tbody tr:hover .cq-question-link {
+  background: none !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  transform: none !important;
+  padding: 0 !important;
+}
+/* Hover = underline + accent text only (no box). Orange in light, blue in dark. */
+.coding-app .cq-question-table tbody tr:hover .cq-question-link {
+  color: var(--ct-accent) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 2px !important;
+}
+body.coding-dark .coding-app .cq-question-table tbody tr:hover .cq-question-link {
+  color: #93b4f5 !important;
+}
+
+/* ── Workspace tabs = underline tabs, like the quiz header (no filled pills) ────
+   Definitive override, placed in the guaranteed-last theme file so it beats the
+   ~6 scattered `.workspace-tabs button.active` fill rules (many !important) in
+   CodingTutor.css regardless of bundle order. Transparent buttons, an accent
+   underline under the active/hover tab; blue in dark, orange in light. High
+   specificity (body.coding-dark .coding-app …) + !important guarantees the win. */
+.coding-app .workspace-tabs > button,
+.coding-app .workspace-tabs > button:hover,
+.coding-app .workspace-tabs > button:focus,
+.coding-app .workspace-tabs > button:focus-visible,
+.coding-app .workspace-tabs > button:active,
+.coding-app .workspace-tabs > button.active,
+.coding-app .workspace-tabs > button.active:hover,
+.coding-app .workspace-tabs > button.active:focus,
+.coding-app .workspace-tabs > button.active:focus-visible,
+.coding-app .workspace-tabs > button.terminal-tab.active,
+body.coding-dark .coding-app .workspace-tabs > button,
+body.coding-dark .coding-app .workspace-tabs > button:hover,
+body.coding-dark .coding-app .workspace-tabs > button:focus,
+body.coding-dark .coding-app .workspace-tabs > button:focus-visible,
+body.coding-dark .coding-app .workspace-tabs > button:active,
+body.coding-dark .coding-app .workspace-tabs > button.active,
+body.coding-dark .coding-app .workspace-tabs > button.active:hover:not(:disabled),
+body.coding-dark .coding-app .workspace-tabs > button.active:focus-visible,
+body.coding-dark .coding-app .workspace-tabs > button.terminal-tab.active {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  border-bottom: 3px solid transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  transform: none !important;
+  margin-bottom: -1px;
+  padding: 0.4rem 0.15rem 0.5rem !important;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+/* Resting + hover text color. */
+.coding-app .workspace-tabs > button { color: var(--ct-muted) !important; }
+.coding-app .workspace-tabs > button:hover { color: var(--ct-text) !important; }
+body.coding-dark .coding-app .workspace-tabs > button:hover { color: #eaf0fb !important; }
+/* Active = accent underline + stronger text (blue in dark, orange-navy in light). */
+.coding-app .workspace-tabs > button.active {
+  color: var(--ct-primary) !important;
+  font-weight: 700;
+  border-bottom-color: var(--ct-accent) !important;
+}
+body.coding-dark .coding-app .workspace-tabs > button.active {
+  color: #eaf0fb !important;
+  border-bottom-color: #3b82f6 !important;
 }

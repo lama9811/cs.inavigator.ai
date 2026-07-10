@@ -1,0 +1,79 @@
+{
+  "concept": "pointers",
+  "concept_label": "Pointers",
+  "language": "cpp",
+  "questions": [
+    {
+      "id": "cpp-pointers-01",
+      "concept": "pointers",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "code": "int x = 42;\nint* p = &x;",
+      "prompt": "What does p hold after this code?",
+      "choices": [
+        "The value 42",
+        "The memory address of x",
+        "A copy of x",
+        "Nothing / it is empty"
+      ],
+      "answer_index": 1,
+      "explanation": "&x means 'address of x'. So p is a pointer that stores the memory address where x lives, not the value 42.",
+      "title": "What a pointer holds"
+    },
+    {
+      "id": "cpp-pointers-02",
+      "concept": "pointers",
+      "difficulty": "easy",
+      "kind": "mcq-output",
+      "language": "cpp",
+      "code": "int x = 42;\nint* p = &x;\ncout << *p;",
+      "prompt": "What does this output?",
+      "choices": [
+        "The address of x",
+        "42",
+        "p",
+        "Error"
+      ],
+      "answer_index": 1,
+      "explanation": "*p dereferences the pointer \u00e2\u20ac\u201d it reads the value at the stored address. Since p points to x, *p is 42.",
+      "title": "Dereference a pointer"
+    },
+    {
+      "id": "cpp-pointers-03",
+      "concept": "pointers",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "cpp",
+      "code": "int x = 10;\nint* p = &x;\n*p = 25;\ncout << x;",
+      "prompt": "What does this output?",
+      "choices": [
+        "10",
+        "25",
+        "The address of x",
+        "Error"
+      ],
+      "answer_index": 1,
+      "explanation": "*p = 25 writes 25 to the location p points to, which is x. So x becomes 25 and is printed.",
+      "title": "Change value via pointer"
+    },
+    {
+      "id": "cpp-pointers-04",
+      "concept": "pointers",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "code": "int x = 5;\nint* p = &x;",
+      "prompt": "In int* p = &x;, what does the * mean here?",
+      "choices": [
+        "Multiplication",
+        "It declares p as a pointer to an int",
+        "It dereferences x",
+        "It makes a copy of x"
+      ],
+      "answer_index": 1,
+      "explanation": "In a declaration, int* means 'pointer to int'. The same * symbol means dereference when used on an existing pointer (like *p), which is a common source of confusion.",
+      "title": "Meaning of int*"
+    }
+  ]
+}

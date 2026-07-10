@@ -32,6 +32,7 @@ from coding_runner import (
     set_cached_practice_run,
 )
 from practice_starters import build_starter_from_spec, get_arg_spec
+import concept_quiz
 
 from fastapi import FastAPI, HTTPException, Depends, status, File, UploadFile, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -2896,6 +2897,18 @@ from services.course_context import build_course_context
 from youtube_search import search_youtube_videos, youtube_api_available
 
 
+# Internal/system session ids used by background features (e.g. the post-interview
+# mock grader posts to /chat with session_id="interview-grader"). These are system
+# prompts, NOT student conversation — they must NEVER be saved to chat_history or
+# returned by /chat-history, or they leak into the main chat sidebar / front page.
+INTERNAL_SESSION_IDS = {"interview-grader"}
+
+
+def is_persistable_session(session_id: str) -> bool:
+    """False for internal/system sessions that must not touch a student's chat history."""
+    return (session_id or "default") not in INTERNAL_SESSION_IDS
+
+
 def _fetch_history_sync(user_id: int, session_id: str, limit: int = 10) -> list:
     """Fetch chat history in a separate DB session for parallel execution."""
     db = SessionLocal()
@@ -3035,18 +3048,19 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
             student_context += f"\n{video_block}"
         elif video_block:
             answer = build_video_response(verified_videos, resolved_topic)
-            try:
-                new_chat = ChatHistory(
-                    user_id=user["user_id"],
-                    session_id=session_id,
-                    user_query=original_q,
-                    bot_response=answer,
-                    mode=req.mode
-                )
-                db.add(new_chat)
-                db.commit()
-            except Exception as e:
-                print(f"[ERROR] Failed to save video chat history: {e}")
+            if is_persistable_session(session_id):
+                try:
+                    new_chat = ChatHistory(
+                        user_id=user["user_id"],
+                        session_id=session_id,
+                        user_query=original_q,
+                        bot_response=answer,
+                        mode=req.mode
+                    )
+                    db.add(new_chat)
+                    db.commit()
+                except Exception as e:
+                    print(f"[ERROR] Failed to save video chat history: {e}")
             return {"response": answer}
 
     if file_match and USE_VERTEX_AGENT:
@@ -3097,19 +3111,21 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
     else:
         answer = "AI system is initializing. Please try again in a moment."
 
-    # 3. SAVE to RDS (User-Specific)
-    try:
-        new_chat = ChatHistory(
-            user_id=user["user_id"],
-            session_id=session_id,
-            user_query=original_q,
-            bot_response=answer,
-            mode=req.mode
-        )
-        db.add(new_chat)
-        db.commit()
-    except Exception as e:
-        print(f"[ERROR] Failed to save chat history: {e}")
+    # 3. SAVE to RDS (User-Specific). Skip internal/system sessions (e.g. the mock
+    #    interview grader) so their prompts never appear in the student's chat history.
+    if is_persistable_session(session_id):
+        try:
+            new_chat = ChatHistory(
+                user_id=user["user_id"],
+                session_id=session_id,
+                user_query=original_q,
+                bot_response=answer,
+                mode=req.mode
+            )
+            db.add(new_chat)
+            db.commit()
+        except Exception as e:
+            print(f"[ERROR] Failed to save chat history: {e}")
 
     # 4. Track failed queries for auto-research agent. General mode never queries the
     # KB, so its answers must not be logged as KB misses.
@@ -3374,20 +3390,22 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                 f"timings={timings}"
             )
 
-            # Still save to chat history (save original query, not rewritten)
-            try:
-                with SessionLocal() as save_db:
-                    new_chat = ChatHistory(
-                        user_id=user_id,
-                        session_id=session_id,
-                        user_query=original_q,
-                        bot_response=cached_text,
-                        mode=req.mode
-                    )
-                    save_db.add(new_chat)
-                    save_db.commit()
-            except Exception as e:
-                print(f"[ERROR] Failed to save cached chat history: {e}")
+            # Still save to chat history (save original query, not rewritten).
+            # Skip internal/system sessions (e.g. the mock interview grader).
+            if is_persistable_session(session_id):
+                try:
+                    with SessionLocal() as save_db:
+                        new_chat = ChatHistory(
+                            user_id=user_id,
+                            session_id=session_id,
+                            user_query=original_q,
+                            bot_response=cached_text,
+                            mode=req.mode
+                        )
+                        save_db.add(new_chat)
+                        save_db.commit()
+                except Exception as e:
+                    print(f"[ERROR] Failed to save cached chat history: {e}")
 
         return StreamingResponse(
             generate_cached_sse(),
@@ -3482,20 +3500,22 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
             if stored:
                 print(f"[CACHE] Stored response for: {cache_query[:50]}...")
 
-        # Save to chat history after stream completes (save original query, not rewritten)
-        try:
-            with SessionLocal() as save_db:
-                new_chat = ChatHistory(
-                    user_id=user_id,
-                    session_id=session_id,
-                    user_query=original_q,
-                    bot_response=full_response,
-                    mode=req.mode
-                )
-                save_db.add(new_chat)
-                save_db.commit()
-        except Exception as e:
-            print(f"[ERROR] Failed to save streamed chat history: {e}")
+        # Save to chat history after stream completes (save original query, not rewritten).
+        # Skip internal/system sessions (e.g. the mock interview grader).
+        if is_persistable_session(session_id):
+            try:
+                with SessionLocal() as save_db:
+                    new_chat = ChatHistory(
+                        user_id=user_id,
+                        session_id=session_id,
+                        user_query=original_q,
+                        bot_response=full_response,
+                        mode=req.mode
+                    )
+                    save_db.add(new_chat)
+                    save_db.commit()
+            except Exception as e:
+                print(f"[ERROR] Failed to save streamed chat history: {e}")
 
         # Track failed queries for auto-research agent
         # Skip detection on error/empty responses (infra errors aren't KB misses)
@@ -3663,15 +3683,28 @@ async def get_chat_history(user=Depends(get_current_user), db: Session = Depends
               .filter(ChatHistory.user_id == user["user_id"])\
               .order_by(ChatHistory.timestamp.asc())\
               .all()
-    
+
     # Format for frontend
     history = []
     for c in chats:
+        # Never surface internal/system sessions (e.g. the mock interview grader).
+        # This also hides rows an older build may have already persisted, so no DB
+        # cleanup is required for the leak to stop.
+        if not is_persistable_session(c.session_id):
+            continue
+        # timestamp is stored naive-but-UTC (models.py uses datetime.now(timezone.utc)
+        # into a naive DateTime column). Emit it WITH an explicit UTC offset so the
+        # browser's `new Date(...)` doesn't misread it as local time — that shift
+        # was pushing early-UTC chats into the previous LOCAL day, which made the
+        # header "go to most-recent chat" jump to the wrong day.
+        ts = c.timestamp
+        if ts is not None and ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
         history.append({
             "session_id": c.session_id or "default",
             "user": c.user_query,
             "bot": c.bot_response,
-            "time": c.timestamp.isoformat()
+            "time": ts.isoformat() if ts is not None else None
         })
         
     return {"history": history}
@@ -4641,6 +4674,138 @@ async def get_practice_question_hints(question_id: str, level: str = Query("1"))
 async def get_practice_question_solution(question_id: str, language: str = Query("python")):
     question = _find_practice_question(question_id)
     return _find_language_solution(question_id, language, question)
+
+# ---------------------------------------------------------------------------
+# Concept quizzes (CodeChef-style MCQ / type-in / drag-and-drop). Distinct from
+# the code-writing Practice Library above. Content + loader live in
+# backend/concept_quiz.py and data_sources/concept_quiz/. These endpoints just
+# adapt the loader's ValueErrors into HTTP errors and serve projected,
+# single-language questions to the Practice Library "Quiz" toggle.
+# ---------------------------------------------------------------------------
+def _concept_quiz_call(fn, *args):
+    """Run a loader function, mapping its exceptions onto HTTP status codes."""
+    try:
+        return fn(*args)
+    except concept_quiz.ConceptQuizError as exc:
+        # Unknown language / category / question — client-fixable.
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except concept_quiz.ConceptQuizDataError as exc:
+        # Missing or malformed content file — server-side.
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.get("/api/coding/concept-quiz/languages")
+async def list_concept_quiz_languages():
+    """The 4 language cards shown when the student toggles to Quiz mode."""
+    manifest = _concept_quiz_call(concept_quiz.load_manifest)
+    languages = manifest.get("languages", {})
+    return {
+        "languages": [
+            {"id": key, "label": label}
+            for key, label in languages.items()
+        ]
+    }
+
+
+@app.get("/api/coding/concept-quiz/{language}/categories")
+async def list_concept_quiz_categories(language: str):
+    """The 13 categories (12 shared + 1 language-specific) for one language,
+    each with a live question count so empty categories can be flagged/hidden."""
+    categories = _concept_quiz_call(concept_quiz.categories_for_language, language)
+    return {
+        "language": concept_quiz.normalize_language(language),
+        "categories": categories,
+    }
+
+
+@app.get("/api/coding/concept-quiz/{language}/{category}/questions")
+async def list_concept_quiz_questions(language: str, category: str):
+    """Every question in one language + category, projected to that language.
+
+    Answers (answer_index / accepted / parsons line order) are included so the
+    UI can give instant CodeChef-style feedback. This is a learning tool, not a
+    proctored exam; the /grade endpoint below exists for server-verified scoring
+    and future progress tracking.
+    """
+    return _concept_quiz_call(concept_quiz.questions_for_category, language, category)
+
+
+@app.get("/api/coding/concept-quiz/{language}/{category}/questions/{question_id}")
+async def get_concept_quiz_question(language: str, category: str, question_id: str):
+    return _concept_quiz_call(
+        concept_quiz.find_question, language, category, question_id
+    )
+
+
+class ConceptQuizAnswer(BaseModel):
+    question_id: str
+    # MCQ: the chosen option index. Type-in: the typed text. Parsons: the
+    # student's ordered list of lines. Exactly one is used per question kind.
+    choice_index: Optional[int] = None
+    text: Optional[str] = None
+    order: Optional[list[str]] = None
+
+
+class ConceptQuizGradeRequest(BaseModel):
+    language: str
+    category: str
+    answers: list[ConceptQuizAnswer]
+
+
+def _grade_concept_answer(question: dict[str, Any], answer: ConceptQuizAnswer) -> dict[str, Any]:
+    """Grade one submitted answer against its question. Pure/stateless."""
+    kind = question.get("kind")
+    correct = False
+    if kind in {"mcq-output", "mcq-behavior"}:
+        correct = answer.choice_index == question.get("answer_index")
+    elif kind == "typein":
+        # Case-sensitive exact match against accepted forms, but tolerant of
+        # surrounding whitespace the student may have added.
+        submitted = (answer.text or "").strip()
+        correct = submitted in {a.strip() for a in question.get("accepted", [])}
+    elif kind == "parsons":
+        correct = (answer.order or []) == question.get("lines", [])
+    return {
+        "question_id": question.get("id"),
+        "kind": kind,
+        "correct": correct,
+        "explanation": question.get("explanation", ""),
+    }
+
+
+@app.post("/api/coding/concept-quiz/grade")
+async def grade_concept_quiz(
+    req: ConceptQuizGradeRequest,
+    user: dict = Depends(get_current_user),
+):
+    """Server-verified grading for a submitted quiz set. Returns a per-question
+    correct/incorrect breakdown plus a score, powering the green/red results
+    screen. Stateless for now; progress persistence can build on this later."""
+    bank = _concept_quiz_call(
+        concept_quiz.questions_for_category, req.language, req.category
+    )
+    by_id = {str(q.get("id")): q for q in bank["questions"]}
+
+    results: list[dict[str, Any]] = []
+    for answer in req.answers:
+        question = by_id.get(answer.question_id)
+        if question is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Question '{answer.question_id}' is not in {req.language}/{req.category}.",
+            )
+        results.append(_grade_concept_answer(question, answer))
+
+    total = len(results)
+    correct = sum(1 for r in results if r["correct"])
+    return {
+        "language": bank["language"],
+        "category": bank["category"],
+        "total": total,
+        "correct": correct,
+        "score": round(correct / total, 4) if total else 0.0,
+        "results": results,
+    }
 
 @app.post("/api/coding/resources/search")
 async def search_coding_study_resources(

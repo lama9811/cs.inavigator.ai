@@ -72,8 +72,8 @@ export default function RunControls({
             type="button"
             className="editor-action-btn editor-action-upload"
             onClick={onUploadFile}
-            title="Upload a .py or .ipynb file"
-            aria-label="Upload a file"
+            title="Upload a .py, .java, .js, .cpp, or .ipynb file"
+            aria-label="Upload a code file"
           >
             <FaFileUpload aria-hidden="true" />
           </button>

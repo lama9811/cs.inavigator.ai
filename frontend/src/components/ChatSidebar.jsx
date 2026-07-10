@@ -606,7 +606,7 @@ export default function ChatSidebar({
         )}
       </div>
 
-      {contextMenu.visible && (
+      {contextMenu.visible && createPortal(
         <div className="context-menu" style={{ top: contextMenu.y, left: contextMenu.x }} onClick={(e) => e.stopPropagation()}>
           <button className="context-menu-item" onClick={() => { onPin(contextMenu.sessionId); closeContextMenu(); }}>
             <FaThumbtack size={14} />
@@ -628,7 +628,8 @@ export default function ChatSidebar({
             <FaTrash size={14} />
             <span>Delete</span>
           </button>
-        </div>
+        </div>,
+        document.body
       )}
 
       <div className="sidebar-bottom">
