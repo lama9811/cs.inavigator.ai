@@ -23,6 +23,7 @@ import { getFileIcon } from "./chatbox/FileIcon";
 import ReportModal from "./chatbox/ReportModal";
 import WelcomePanel from "./chatbox/WelcomePanel";
 import YouTubeEmbed from "./chatbox/YouTubeEmbed";
+import SearchSuggestions from "./chatbox/SearchSuggestions";
 import { getYouTubeVideoId } from "../lib/youtube";
 import "./Chatbox.css";
 import "./chatbox/ChatHeader.css";
@@ -142,7 +143,10 @@ export default function Chatbox({
   const isCodingChatRoute = location.pathname === "/chat/coding";
   const hasStartedChat = messages.length > 0;
   const showChatHeader = !isCodingWorkspaceRoute;
-  const showTutorModeToggle = hasStartedChat || isCodingChatRoute;
+  // Show the mode switcher up front (even on the empty welcome screen) so a student
+  // can choose CS Nav / General / Coding Tutor before sending the first message.
+  // Still hidden inside the coding workspace, which has its own controls.
+  const showTutorModeToggle = !isCodingWorkspaceRoute;
   // The floating tutor lives ONLY in the workspace — not on the home/dashboard
   // or other coding sub-pages, where it overlapped the page's own CTAs.
   const showFloatingCodingChat = isCodingWorkspaceRoute
@@ -1067,7 +1071,7 @@ export default function Chatbox({
         setThinkingTrack(
           effectiveMode === "coding_tutor" ? "coding" : null
         );
-        setMessages((prev) => [...prev, { id: nextMessageId(), text: "", sender: "bot", time, isStreaming: true, mode: effectiveMode }]);
+        setMessages((prev) => [...prev, { id: nextMessageId(), text: "", sender: "bot", time, isStreaming: true, mode: effectiveMode, sourceQuery: finalMessage }]);
 
         // 4. Stream from Chat API using fetch with ReadableStream
         const res = await fetch(`${API_BASE}/chat/stream`, {
@@ -1140,14 +1144,18 @@ export default function Chatbox({
                                 return newMessages;
                             });
                         } else if (event.type === "done") {
-                            // Finalize the message
+                            // Finalize the message. Carry General-mode extras: the web
+                            // Search Suggestions/citations (grounding) and the bounce
+                            // flag that offers a one-click switch into CS Nav mode.
                             fullText = event.content || fullText;
                             setMessages((prev) => {
                                 const newMessages = [...prev];
                                 newMessages[newMessages.length - 1] = {
                                     ...newMessages[newMessages.length - 1],
                                     text: fullText,
-                                    isStreaming: false
+                                    isStreaming: false,
+                                    grounding: event.grounding || null,
+                                    suggestedMode: event.suggested_mode || null
                                 };
                                 return newMessages;
                             });
@@ -1558,6 +1566,23 @@ export default function Chatbox({
                       </span>
                     )}
 
+                    {/* General mode: Google Search Suggestions + web citations (ToS) */}
+                    {msg.sender === "bot" && !msg.isStreaming && msg.grounding && (
+                      <SearchSuggestions grounding={msg.grounding} />
+                    )}
+
+                    {/* Mode bounce: re-run this question in the mode the agent suggests
+                        (General->CS Nav for Morgan questions, CS Nav->General otherwise). */}
+                    {msg.sender === "bot" && !msg.isStreaming && msg.suggestedMode && (
+                      <button
+                        className="cs-mode-bounce-btn"
+                        onClick={() => { setChatMode(msg.suggestedMode); handleSend(null, msg.sourceQuery, false, msg.suggestedMode); }}
+                        disabled={isLoading}
+                      >
+                        {msg.suggestedMode === "general" ? "Ask this in General mode" : "Ask this in CS Nav mode"}
+                      </button>
+                    )}
+
                     {msg.sender === "bot" && !msg.isStreaming && (
                       <div className="bot-action-row">
                         <button
@@ -1743,7 +1768,9 @@ export default function Chatbox({
                 ? "Add a message..."
                 : chatMode === "coding_tutor"
                   ? "Paste code, an error, or ask for a review..."
-                  : "Ask about Morgan State CS — courses, advising, requirements..."
+                  : chatMode === "general"
+                    ? "Ask anything — general knowledge or the live web..."
+                    : "Ask about Morgan State CS — courses, advising, requirements..."
           }
           onVoiceInput={handleVoiceInput}
           onToggleVoiceMode={toggleVoiceMode}

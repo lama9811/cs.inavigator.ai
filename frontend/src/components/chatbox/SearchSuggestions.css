@@ -1,0 +1,55 @@
+/* Scoped container for Google Search grounding attribution (General mode).
+   Google injects its own <style> inside searchEntryPoint; keeping everything
+   under .search-suggestions limits how far those styles reach. */
+.search-suggestions {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(148, 163, 184, 0.25);
+  font-size: 0.82rem;
+}
+
+.search-suggestions-chips {
+  overflow-x: auto;
+}
+
+.search-suggestions-sources {
+  margin-top: 8px;
+}
+
+.search-suggestions-label {
+  display: block;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 4px;
+  letter-spacing: 0.02em;
+}
+
+.search-suggestions-sources ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.search-suggestions-sources a {
+  color: #4f46e5;
+  text-decoration: none;
+  word-break: break-word;
+}
+
+.search-suggestions-sources a:hover {
+  text-decoration: underline;
+}
+
+body.dark .search-suggestions {
+  border-top-color: rgba(148, 163, 184, 0.2);
+}
+
+body.dark .search-suggestions-label {
+  color: #94a3b8;
+}
+
+body.dark .search-suggestions-sources a {
+  color: #818cf8;
+}
