@@ -35,7 +35,7 @@ function formContext(form) {
   return `The student is filling out the "${form.title}" (${form.subtitle}). Its fields are: ${fields}.`;
 }
 
-export default function AdvisingHelper({ form, courseSuggestions = [] }) {
+export default function AdvisingHelper({ form, courseSuggestions = [], writingRequest = null, filledValues = [] }) {
   // The advising form (Step 2) is the one where course selection happens.
   const isAdvisingForm = form.id === "advising_form";
   const STARTERS = isAdvisingForm ? ADVISING_STARTERS : INTERNSHIP_STARTERS;
@@ -44,6 +44,10 @@ export default function AdvisingHelper({ form, courseSuggestions = [] }) {
   const [loading, setLoading] = useState(false);
   const endRef = useRef(null);
   const token = localStorage.getItem("token");
+  // Keep the latest filled-form snapshot in a ref so the writing-help handler can read
+  // it without being a dependency (which would re-fire the effect on every keystroke).
+  const filledRef = useRef(filledValues);
+  useEffect(() => { filledRef.current = filledValues; }, [filledValues]);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
@@ -98,6 +102,76 @@ export default function AdvisingHelper({ form, courseSuggestions = [] }) {
       setLoading(false);
     }
   };
+
+  // Build a short, labeled list of the student's own filled answers most relevant to a
+  // free-writing field, so the helper grounds its guidance in THEIR experience rather
+  // than generic advice. Skips the field being written and the noisy prefill (name/id).
+  const relevantContext = (fieldLabel) => {
+    const SKIP = /^(first name|last name|middle|student id|msu email|advisor|classification|gpa|total credits|major|minor)/i;
+    const lines = filledRef.current
+      .filter((e) => e.label !== fieldLabel && !SKIP.test(e.label))
+      .map((e) => `- ${e.label}: ${e.value}`);
+    return lines.length ? lines.join("\n") : "";
+  };
+
+  // Fired when the student clicks "Help me write this" on a free-writing field. If the
+  // field is empty, the helper asks guiding questions; if they've drafted something, it
+  // polishes THEIR wording. Either way it pulls in their already-filled answers as
+  // context and never invents facts.
+  const askWritingHelp = async (field, currentText) => {
+    if (loading) return;
+    const draft = (currentText || "").trim();
+    const context = relevantContext(field.label);
+    const userLabel = draft
+      ? `Help me improve what I wrote for "${field.label}".`
+      : `Help me write "${field.label}".`;
+    setMessages((m) => [...m, { role: "user", text: userLabel }]);
+    setLoading(true);
+
+    let framed =
+      `You are helping a Morgan State CS student write ONE free-response field on their ` +
+      `advising/internship form. The field is: "${field.label}"${field.hint ? ` (guidance on the form: ${field.hint})` : ""}. ` +
+      `Your job is to help them express THEIR OWN experience clearly — never invent facts ` +
+      `(companies, dates, outcomes, GPA). `;
+    if (context) {
+      framed +=
+        `\n\nHere is what the student has ALREADY entered elsewhere on the form — use it as ` +
+        `context so your help is specific to them (don't just repeat it back):\n${context}\n`;
+    }
+    if (draft) {
+      framed +=
+        `\n\nThe student's current draft for this field:\n"""${draft}"""\n\n` +
+        `Offer a tighter, clearer version they can adapt, then one short tip. Keep their facts; ` +
+        `improve wording/structure only. Remind them to edit it into the field themselves.`;
+    } else {
+      framed +=
+        `\n\nThe field is currently blank. Do NOT write a finished answer for them. Instead ask 2-3 ` +
+        `short guiding questions that will help them write it, and give one example sentence ` +
+        `structure they can follow. Keep it brief.`;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ query: framed, display_query: userLabel, session_id: "advising-helper", mode: "regular" }),
+      });
+      const data = res.ok ? await res.json() : null;
+      const reply = (data?.response || "").trim() || "Sorry, I couldn't get an answer just now. Try again in a moment.";
+      setMessages((m) => [...m, { role: "bot", text: reply }]);
+    } catch {
+      setMessages((m) => [...m, { role: "bot", text: "I'm having trouble connecting right now. Please try again." }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // React to a "Help me write this" click from a free-writing field (nonce changes each
+  // click). eslint-disable: askWritingHelp is stable enough for this first cut.
+  useEffect(() => {
+    if (writingRequest?.field) askWritingHelp(writingRequest.field, writingRequest.currentText);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [writingRequest?.nonce]);
 
   return (
     <aside className="advising-helper" aria-label="Advising form helper">

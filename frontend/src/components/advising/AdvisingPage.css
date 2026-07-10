@@ -111,11 +111,20 @@
 .af-opt { font-weight: 400; color: var(--text-muted, #9ca3af); }
 .af-hint { font-size: 0.72rem; color: var(--text-muted, #9ca3af); }
 
+/* "Help me write this" link under free-writing fields (opens the side-panel helper). */
+.af-write-help {
+  align-self: flex-start; margin-top: 2px;
+  border: none; background: none; cursor: pointer; padding: 0;
+  font-size: 0.76rem; font-weight: 600; color: #4285F4;
+}
+.af-write-help:hover { text-decoration: underline; }
+
 .af-input {
   width: 100%; box-sizing: border-box; padding: 8px 10px;
   border: 1px solid rgba(0,0,0,0.14); border-radius: 8px;
   font-size: 0.9rem; background: #fff; color: #1a2438;
 }
+.af-textarea { resize: vertical; min-height: 68px; line-height: 1.45; font-family: inherit; }
 .af-input:focus-visible { outline: 2px solid #4285F4; outline-offset: 1px; border-color: transparent; }
 /* Number fields read as plain textboxes: hide the up/down spinner arrows while
    keeping numeric input + validation (e.g. Total Credits Earned). */
