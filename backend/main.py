@@ -38,7 +38,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import StreamingResponse, HTMLResponse
+from fastapi.responses import StreamingResponse, HTMLResponse, Response
 from pydantic import BaseModel, field_validator
 from collections import Counter
 import io
@@ -145,7 +145,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingSnippet, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingSnippet, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -1658,36 +1658,54 @@ ADVISING_ALLOWED_EXTENSIONS = {"pdf", "png", "jpg", "jpeg"}
 
 
 @app.post("/api/advising/upload")
-async def upload_advising_document(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
-    """Store an advising document (Course Sequence / DegreeWorks PDF) and return its
-    stored filename + URL. The frontend keeps the filename in the draft."""
+async def upload_advising_document(file: UploadFile = File(...), user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Store an advising document (Course Sequence / DegreeWorks PDF) IN THE DATABASE
+    and return an id-based URL. Bytes live in the DB (not local disk) so uploads
+    survive a Cloud Run restart, where the container filesystem is ephemeral."""
     ext = (file.filename or "").rsplit(".", 1)[-1].lower() if "." in (file.filename or "") else ""
     if ext not in ADVISING_ALLOWED_EXTENSIONS:
         raise HTTPException(400, "Please upload a PDF or image (pdf, png, jpg).")
 
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    clean_name = re.sub(r'[^a-zA-Z0-9_.-]', '_', file.filename or f"document.{ext}")
-    filename = f"advising_{user['user_id']}_{timestamp}_{clean_name}"
-    filepath = os.path.join(ADVISING_FILES_FOLDER, filename)
+    # Read into memory with a size cap (files are small; enforce the limit as we go).
+    chunks = []
+    total = 0
+    while chunk := await file.read(64 * 1024):
+        total += len(chunk)
+        if total > MAX_UPLOAD_SIZE:
+            raise HTTPException(413, f"File too large. Maximum size is {MAX_UPLOAD_SIZE // (1024*1024)}MB")
+        chunks.append(chunk)
+    data = b"".join(chunks)
+    if not data:
+        raise HTTPException(400, "The uploaded file is empty.")
 
-    # Stream to disk with size enforcement (never holds the full file in memory).
+    clean_name = re.sub(r'[^a-zA-Z0-9_. -]', '_', file.filename or f"document.{ext}").strip() or f"document.{ext}"
     try:
-        bytes_written = 0
-        with open(filepath, "wb") as buffer:
-            while chunk := await file.read(64 * 1024):
-                bytes_written += len(chunk)
-                if bytes_written > MAX_UPLOAD_SIZE:
-                    buffer.close()
-                    os.remove(filepath)
-                    raise HTTPException(413, f"File too large. Maximum size is {MAX_UPLOAD_SIZE // (1024*1024)}MB")
-                buffer.write(chunk)
-    except HTTPException:
-        raise
+        row = AdvisingUpload(
+            user_id=user["user_id"],
+            filename=clean_name,
+            content_type=file.content_type or None,
+            size_bytes=total,
+            data=data,
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
     except Exception as e:
         print(f"[ERROR] Advising upload error: {e}")
         raise HTTPException(500, "Could not save file")
 
-    return {"url": f"/uploads/advising_forms/{filename}", "filename": file.filename, "stored_name": filename}
+    # `stored_name` is the id-based reference the draft keeps; `filename` is what we show.
+    return {"url": f"/api/advising/file/{row.id}", "filename": clean_name, "stored_name": str(row.id)}
+
+
+@app.get("/api/advising/file/{upload_id}")
+async def get_advising_document(upload_id: int, user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Serve a previously uploaded advising document from the DB. Owner-only."""
+    row = db.query(AdvisingUpload).filter(AdvisingUpload.id == upload_id).first()
+    if not row or row.user_id != user["user_id"]:
+        raise HTTPException(404, "File not found")
+    headers = {"Content-Disposition": f'inline; filename="{row.filename}"'}
+    return Response(content=row.data, media_type=row.content_type or "application/octet-stream", headers=headers)
 
 
 @app.get("/api/degreeworks/debug")

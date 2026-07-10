@@ -189,6 +189,13 @@
   font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
   color: #6b7280; padding: 8px 6px 4px;
 }
+.af-cp-group-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.af-cp-addall {
+  border: none; background: none; cursor: pointer; padding: 0;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0; text-transform: none;
+  color: #4285F4;
+}
+.af-cp-addall:hover { text-decoration: underline; }
 .af-cp-option {
   display: flex; align-items: center; gap: 9px;
   padding: 7px 6px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;

@@ -1,5 +1,5 @@
 # backend/models.py
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Float, ForeignKey, UniqueConstraint, func
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Float, ForeignKey, UniqueConstraint, func, LargeBinary
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from db import Base
@@ -420,3 +420,22 @@ class AdvisingFormDraft(Base):
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = relationship("User", backref="advising_form_drafts")
+
+
+class AdvisingUpload(Base):
+    """A file the student attached to their advising form (Course Sequence /
+    DegreeWorks PDF or a scan). Stored as bytes IN THE DATABASE, not on local disk,
+    so uploads survive a Cloud Run restart (the container filesystem is ephemeral).
+    Small files only (a few MB, capped at the upload limit). LargeBinary maps to
+    BLOB on SQLite and LONGBLOB/BLOB on MySQL, so it works on both."""
+    __tablename__ = "advising_uploads"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    filename = Column(String(255), nullable=False)          # original name the student uploaded
+    content_type = Column(String(100), nullable=True)       # MIME type, for serving back
+    size_bytes = Column(Integer, nullable=True)
+    data = Column(LargeBinary, nullable=False)              # the file bytes
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    user = relationship("User", backref="advising_uploads")
