@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { FaClipboardList } from "@react-icons/all-files/fa/FaClipboardList";
 import { FaCheckCircle } from "@react-icons/all-files/fa/FaCheckCircle";
 import { FaDownload } from "@react-icons/all-files/fa/FaDownload";
@@ -74,12 +74,24 @@ function buildPrefill(dw, profile) {
 export default function AdvisingPage() {
   const [stepIndex, setStepIndex] = useState(0);
   const [valuesByForm, setValuesByForm] = useState({});   // { formId: {fieldId: value} }
-  const [lockedByForm, setLockedByForm] = useState({});   // { formId: Set(fieldId) }
-  const [courseSuggestions, setCourseSuggestions] = useState([]);  // Planner course codes for the course pickers
+  const [lockedByForm, setLockedByForm] = useState({});   // { formId: Set(fieldId) } — DegreeWorks-prefilled, still read-only
+  const [courseSuggestions, setCourseSuggestions] = useState([]);  // Planner course codes (upcoming-semester pickers)
+  const [registeredCourses, setRegisteredCourses] = useState([]);  // student's current/registered course codes (current-semester picker)
   const [status, setStatus] = useState({ loading: true, saving: false, saved: false, error: "" });
 
   const token = localStorage.getItem("token");
   const form = ADVISING_STEPS[stepIndex];
+
+  // Guards so autosave only fires on real user edits: true once the initial
+  // load has finished, and true once the user changes/uploads/unlocks anything.
+  const hydrated = useRef(false);
+  const dirty = useRef(false);
+  const autosaveTimer = useRef(null);
+  // Latest locked-set + step, read inside the debounced autosave without re-arming it.
+  const lockedRef = useRef(lockedByForm);
+  useEffect(() => { lockedRef.current = lockedByForm; }, [lockedByForm]);
+  const stepRef = useRef(stepIndex);
+  useEffect(() => { stepRef.current = stepIndex; }, [stepIndex]);
 
   // Load DegreeWorks + account profile prefill + any saved draft on mount.
   useEffect(() => {
@@ -118,11 +130,19 @@ export default function AdvisingPage() {
           seededValues[f.id] = vals;
           seededLocked[f.id] = locked;
         }
+
+        // Restore the last step the student was on (persisted under a reserved
+        // __meta key inside the draft), so a reload doesn't send them back to Step 1.
+        const savedStep = Number(draft?.forms?.__meta?.step);
+        if (Number.isInteger(savedStep) && savedStep >= 0 && savedStep < ADVISING_STEPS.length) {
+          setStepIndex(savedStep);
+        }
         setValuesByForm(seededValues);
         setLockedByForm(seededLocked);
+        hydrated.current = true;   // enable autosave now that seeded values are in place
         setStatus((s) => ({ ...s, loading: false }));
       } catch {
-        if (!cancelled) setStatus((s) => ({ ...s, loading: false, error: "Could not load your data. You can still fill the form manually." }));
+        if (!cancelled) { hydrated.current = true; setStatus((s) => ({ ...s, loading: false, error: "Could not load your data. You can still fill the form manually." })); }
       }
     })();
     return () => { cancelled = true; };
@@ -156,6 +176,40 @@ export default function AdvisingPage() {
     return () => { cancelled = true; };
   }, [token]);
 
+  // Pull the student's CURRENT/registered courses so the "registered courses" picker
+  // is pre-seeded with what they're actually taking now: DegreeWorks in-progress +
+  // Banner registered sections. Best-effort — if neither is connected the picker just
+  // falls back to search + type-in.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const codes = [];
+      const seen = new Set();
+      const add = (raw) => {
+        const code = String(raw || "").trim().toUpperCase().replace(/\s+/g, " ");
+        if (code && !seen.has(code)) { seen.add(code); codes.push(code); }
+      };
+      try {
+        const [dwRes, bannerRes] = await Promise.all([
+          fetch(`${API_BASE}/api/degreeworks`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API_BASE}/api/banner/data`, { headers: { Authorization: `Bearer ${token}` } }),
+        ]);
+        if (dwRes.ok) {
+          const dw = await dwRes.json();
+          for (const c of dw?.data?.courses_in_progress || []) add(c?.code);
+        }
+        if (bannerRes.ok) {
+          const b = await bannerRes.json();
+          for (const c of b?.data?.registered_courses || []) add(c?.code || c);
+        }
+        if (!cancelled) setRegisteredCourses(codes);
+      } catch {
+        /* registered-course seed is optional — ignore */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [token]);
+
   // Upload an advising document (Course Sequence / DegreeWorks PDF). Returns the
   // stored filename the form should keep, or null on failure.
   const uploadDocument = useCallback(async (file) => {
@@ -175,11 +229,16 @@ export default function AdvisingPage() {
   const locked = lockedByForm[form.id] || new Set();
 
   const setField = useCallback((fieldId, val) => {
+    dirty.current = true;
     setValuesByForm((prev) => ({ ...prev, [form.id]: { ...(prev[form.id] || {}), [fieldId]: val } }));
     setStatus((s) => ({ ...s, saved: false }));
   }, [form.id]);
 
   const unlock = useCallback((fieldId) => {
+    // Editing a DegreeWorks-prefilled field makes it a user-owned value: it leaves
+    // the locked set, so from now on it's persisted in the draft (and no longer
+    // re-derived from DegreeWorks on reload).
+    dirty.current = true;
     setLockedByForm((prev) => {
       const next = new Set(prev[form.id] || []);
       next.delete(fieldId);
@@ -191,28 +250,72 @@ export default function AdvisingPage() {
   const visible = useMemo(() => visibleFields(form, values), [form, values]);
   const filledCount = visible.filter((f) => String(values[f.id] || "").trim()).length;
 
-  const saveDraft = async () => {
+  // Build the payload that gets persisted. We store ONLY user-owned values, not the
+  // DegreeWorks/profile prefill: fields that are still locked (prefilled + untouched)
+  // are stripped, so on the next load they re-derive fresh from DegreeWorks and stay
+  // read-only. A field the student edited has left the locked set, so it's kept.
+  // This keeps prefill-vs-saved precedence intact across reloads (see the load effect).
+  const buildDraftPayload = useCallback(() => {
+    const out = {};
+    for (const [formId, fields] of Object.entries(valuesByForm)) {
+      const lockedSet = lockedRef.current[formId] || new Set();
+      const kept = {};
+      for (const [fieldId, val] of Object.entries(fields || {})) {
+        if (lockedSet.has(fieldId)) continue;          // untouched DegreeWorks prefill — don't persist
+        if (val == null || val === "") continue;       // don't persist blanks
+        kept[fieldId] = val;
+      }
+      out[formId] = kept;
+    }
+    // Reserved key: the current step, so a reload returns the student where they were.
+    out.__meta = { step: stepRef.current };
+    return out;
+  }, [valuesByForm]);
+
+  const saveDraft = useCallback(async () => {
     setStatus((s) => ({ ...s, saving: true, error: "" }));
     try {
       const res = await fetch(`${API_BASE}/api/advising/draft`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ forms: valuesByForm }),
+        body: JSON.stringify({ forms: buildDraftPayload() }),
       });
       if (!res.ok) throw new Error("save failed");
       setStatus((s) => ({ ...s, saving: false, saved: true }));
+      return true;
     } catch {
       setStatus((s) => ({ ...s, saving: false, error: "Couldn't save your draft. Check your connection and try again." }));
+      return false;
     }
-  };
+  }, [token, buildDraftPayload]);
+
+  // Debounced autosave: ~1.2s after the last edit, once the form is hydrated and the
+  // user has actually changed something. The explicit "Save draft" button and
+  // save-on-Next still work; this just means students rarely need to press them.
+  useEffect(() => {
+    if (!hydrated.current || !dirty.current) return;
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    autosaveTimer.current = setTimeout(() => { saveDraft(); }, 1200);
+    return () => { if (autosaveTimer.current) clearTimeout(autosaveTimer.current); };
+  }, [valuesByForm, lockedByForm, saveDraft]);
+
+  // Persist the step immediately whenever it changes (after the initial load), so a
+  // reload keeps the student on the form they'd moved to — even if they never edited
+  // a field on it. Runs after stepRef is updated by the effect above.
+  useEffect(() => {
+    if (!hydrated.current) return;
+    stepRef.current = stepIndex;
+    saveDraft();
+  }, [stepIndex, saveDraft]);
 
   const downloadPdf = () => {
     // Browser print-to-PDF: open a clean printable doc of everything filled so far.
     buildAdvisingPrintDoc(ADVISING_STEPS, valuesByForm);
   };
 
-  const goNext = async () => {
-    await saveDraft();
+  const goNext = () => {
+    // Advancing changes stepIndex, which the step effect persists (with current
+    // field values) — no separate save call needed here.
     if (stepIndex < ADVISING_STEPS.length - 1) setStepIndex((i) => i + 1);
   };
 
@@ -228,6 +331,9 @@ export default function AdvisingPage() {
           <h1>Advising</h1>
           <p>Fill out your advising paperwork here. Details we already have from DegreeWorks are filled in for you — tap <em>edit</em> to change any of them. Your progress saves as a draft, and you can download a copy to submit.</p>
         </div>
+        <button type="button" className="advising-btn ghost advising-hero-download" onClick={downloadPdf}>
+          <FaDownload size={13} /> Download PDF
+        </button>
       </header>
 
       {/* Step indicator */}
@@ -259,8 +365,12 @@ export default function AdvisingPage() {
             form={form}
             values={values}
             locked={locked}
-            disabled={status.saving}
+            /* Don't disable fields while a background autosave is in flight — that
+               blurs the input the student is typing in (one digit, then focus is
+               lost). Autosave is silent; only the initial load blocks the form. */
+            disabled={false}
             courseSuggestions={courseSuggestions}
+            registeredCourses={registeredCourses}
             onChange={setField}
             onUnlock={unlock}
             onUpload={uploadDocument}
@@ -271,9 +381,7 @@ export default function AdvisingPage() {
               <button type="button" className="advising-btn ghost" onClick={saveDraft} disabled={status.saving}>
                 {status.saving ? "Saving…" : status.saved ? "Draft saved ✓" : "Save draft"}
               </button>
-              <button type="button" className="advising-btn ghost" onClick={downloadPdf}>
-                <FaDownload size={13} /> Download PDF
-              </button>
+              <span className="advising-autosave-hint">Changes save automatically</span>
             </div>
             <div className="advising-actions-right">
               {missing.length > 0 && (

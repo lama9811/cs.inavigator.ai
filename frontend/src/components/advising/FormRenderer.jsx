@@ -3,7 +3,7 @@ import { FaFileUpload } from "@react-icons/all-files/fa/FaFileUpload";
 import { FaFileDownload } from "@react-icons/all-files/fa/FaFileDownload";
 import { FaTimes } from "@react-icons/all-files/fa/FaTimes";
 import { isFieldActive } from "../coding-tutor/advisingFormSchema";
-import { courseLabel } from "../coding-tutor/courseCatalog";
+import { courseLabel, searchCatalog, normalizeCourseCode, COURSE_GROUP } from "../coding-tutor/courseCatalog";
 
 // A dropdown that allows checking multiple options. Value is stored as a
 // "||"-joined string (same format as multi_choice) so save/print stay consistent.
@@ -55,80 +55,145 @@ function MultiSelect({ field, value, disabled, onChange }) {
   );
 }
 
-// Normalize a typed course code: trim, collapse spaces, uppercase (so "cosc 349"
-// and "COSC349" both land as a clean chip). Empty input yields "".
-function normalizeCourse(raw) {
-  return String(raw || "").trim().replace(/\s+/g, " ").toUpperCase();
-}
+// Course picker: a COMPACT searchable dropdown multiselector (keeps the page from
+// being crowded by long checklists) that still shows the chosen courses as chips
+// below the trigger. The dropdown searches the whole catalog by code OR name;
+// `seeds` (the student's registered courses, or Planner suggestions, depending on
+// the field) are pinned to the top so the relevant ones are one tap away. Anything
+// not in the catalog can still be added by typing its code. Selections are stored
+// as a "||"-joined string (same format as before, so saved drafts stay compatible).
+function CoursePicker({ value, disabled, seeds = [], onChange }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const ref = useRef(null);
 
-// Course picker: a checklist of suggested courses (seeded from the Planner) that
-// the student can tick, PLUS a text box to add any course code not in the list.
-// Selections (suggested + manually added) are stored as a "||"-joined string.
-function CoursePicker({ value, disabled, suggestions = [], onChange }) {
-  const [typed, setTyped] = useState("");
   const selected = useMemo(
     () => (value ? value.split("||").filter(Boolean) : []),
     [value],
   );
 
-  // The option list = Planner suggestions plus any already-selected courses that
-  // aren't in the suggestion list (so manually-added ones still show a checkbox).
-  const options = useMemo(() => {
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) { setOpen(false); setQuery(""); } };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  // Pinned seeds = the field's suggested courses (registered or Planner), normalized
+  // and de-duped, shown first so students grab the relevant ones without searching.
+  const pinned = useMemo(() => {
     const seen = new Set();
     const list = [];
-    for (const c of [...suggestions, ...selected]) {
-      const key = normalizeCourse(c);
-      if (key && !seen.has(key)) { seen.add(key); list.push(key); }
+    for (const c of seeds) {
+      const code = normalizeCourseCode(c);
+      if (code && !seen.has(code)) { seen.add(code); list.push(code); }
     }
     return list;
-  }, [suggestions, selected]);
+  }, [seeds]);
+
+  // Search results from the whole catalog, grouped the way the advising form lays
+  // courses out (General Education -> CS Curriculum -> Minor Courses). Pinned seeds
+  // are pulled out into their own "Suggested for you" group so they stay one tap away.
+  const results = useMemo(() => {
+    const pinnedSet = new Set(pinned);
+    const q = query.trim().toLowerCase();
+
+    const shownPinned = !q
+      ? pinned
+      : pinned.filter((code) => courseLabel(code).toLowerCase().includes(q));
+
+    // Catalog hits (already sorted GenEd->CS->Minor by the catalog), minus pinned.
+    const hits = searchCatalog(query).filter((c) => !pinnedSet.has(c.code));
+    const order = [COURSE_GROUP.GENED, COURSE_GROUP.CS, COURSE_GROUP.MINOR];
+    const groups = order
+      .map((g) => ({ group: g, codes: hits.filter((c) => c.group === g).map((c) => c.code) }))
+      .filter((g) => g.codes.length > 0);
+
+    return { shownPinned, groups, total: hits.length + shownPinned.length };
+  }, [query, pinned]);
 
   const commit = (next) => onChange(next.join("||"));
-
-  const toggle = (opt) => {
-    const next = selected.includes(opt)
-      ? selected.filter((s) => s !== opt)
-      : [...selected, opt];
+  const toggle = (code) => {
+    const next = selected.includes(code) ? selected.filter((s) => s !== code) : [...selected, code];
     commit(next);
   };
 
+  // Add a typed course that isn't in the catalog (e.g. a brand-new/odd code).
   const addTyped = () => {
-    const c = normalizeCourse(typed);
-    if (!c) return;
-    if (!selected.includes(c)) commit([...selected, c]);
-    setTyped("");
+    const code = normalizeCourseCode(query);
+    if (!code) return;
+    if (!selected.includes(code)) commit([...selected, code]);
+    setQuery("");
   };
+
+  const summary = selected.length === 0
+    ? "Search or select courses…"
+    : `${selected.length} course${selected.length === 1 ? "" : "s"} selected`;
+
+  const typedIsNew = query.trim() && !searchCatalog(query).some((c) => c.code === normalizeCourseCode(query))
+    && !pinned.includes(normalizeCourseCode(query));
 
   return (
     <div className="af-coursepicker">
-      {options.length > 0 && (
-        <div className="af-cp-options">
-          {options.map((o) => (
-            <label key={o} className="af-cp-option" title={courseLabel(o)}>
-              <input
-                type="checkbox"
-                checked={selected.includes(o)}
-                disabled={disabled}
-                onChange={() => toggle(o)}
-              />
-              <span>{courseLabel(o)}</span>
-            </label>
-          ))}
-        </div>
-      )}
-      <div className="af-cp-add">
-        <input
-          className="af-input"
-          value={typed}
+      <div className="af-cp-select" ref={ref}>
+        <button
+          type="button"
+          className="af-input af-cp-trigger"
           disabled={disabled}
-          placeholder="Add a course, e.g. COSC 349"
-          onChange={(e) => setTyped(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTyped(); } }}
-        />
-        <button type="button" className="af-cp-add-btn" disabled={disabled || !typed.trim()} onClick={addTyped}>
-          Add
+          onClick={() => setOpen((o) => !o)}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+        >
+          <span className={selected.length ? "" : "af-ms-placeholder"}>{summary}</span>
+          <span className={`af-ms-caret${open ? " open" : ""}`}>▾</span>
         </button>
+
+        {open && (
+          <div className="af-cp-menu" role="listbox">
+            <input
+              className="af-input af-cp-search"
+              value={query}
+              autoFocus
+              placeholder="Search by code or name, e.g. COSC or Networks"
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && typedIsNew) { e.preventDefault(); addTyped(); } }}
+            />
+            <div className="af-cp-list">
+              {results.shownPinned.length > 0 && (
+                <>
+                  <div className="af-cp-group">Suggested for you</div>
+                  {results.shownPinned.map((code) => (
+                    <label key={code} className="af-cp-option" title={courseLabel(code)}>
+                      <input type="checkbox" checked={selected.includes(code)} onChange={() => toggle(code)} />
+                      <span>{courseLabel(code)}</span>
+                    </label>
+                  ))}
+                </>
+              )}
+              {results.groups.map((g) => (
+                <div key={g.group}>
+                  <div className="af-cp-group">{g.group}</div>
+                  {g.codes.map((code) => (
+                    <label key={code} className="af-cp-option" title={courseLabel(code)}>
+                      <input type="checkbox" checked={selected.includes(code)} onChange={() => toggle(code)} />
+                      <span>{courseLabel(code)}</span>
+                    </label>
+                  ))}
+                </div>
+              ))}
+              {results.total === 0 && !typedIsNew && (
+                <div className="af-cp-empty">No matching courses.</div>
+              )}
+              {typedIsNew && (
+                <button type="button" className="af-cp-addtyped" onClick={addTyped}>
+                  + Add “{normalizeCourseCode(query)}” (not in catalog)
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
+
       {selected.length > 0 && (
         <div className="af-chips af-cp-chips">
           {selected.map((c) => (
@@ -206,7 +271,7 @@ function FileField({ field, value, disabled, onChange, onUpload }) {
 // Controlled: the parent owns `values` and `locked` (the set of pre-filled fields
 // still locked) and passes setters. This component only renders + reports changes.
 
-function FieldControl({ field, value, disabled, courseSuggestions, onChange, onUpload }) {
+function FieldControl({ field, value, disabled, courseSuggestions, registeredCourses, onChange, onUpload }) {
   const common = { id: `af-${field.id}`, className: "af-input", disabled };
 
   if (field.type === "choice") {
@@ -242,11 +307,17 @@ function FieldControl({ field, value, disabled, courseSuggestions, onChange, onU
   }
 
   if (field.type === "course_picker") {
+    // Pinned seeds depend on the field's purpose: the current-semester "registered
+    // courses" picker seeds from what the student is taking now; the upcoming-semester
+    // pickers seed from the Planner. Either way the full catalog stays searchable.
+    const seeds = field.seedSource === "registered" ? registeredCourses
+      : field.seedSource === "planner" ? courseSuggestions
+      : [];
     return (
       <CoursePicker
         value={value}
         disabled={disabled}
-        suggestions={field.plannerSeeded ? courseSuggestions : []}
+        seeds={seeds}
         onChange={onChange}
       />
     );
@@ -306,7 +377,7 @@ function FieldControl({ field, value, disabled, courseSuggestions, onChange, onU
 }
 
 export default function FormRenderer({
-  form, values, locked, disabled = false, courseSuggestions = [], onChange, onUnlock, onUpload,
+  form, values, locked, disabled = false, courseSuggestions = [], registeredCourses = [], onChange, onUnlock, onUpload,
 }) {
   // Only fields whose conditions are met are shown.
   const visibleBySection = useMemo(
@@ -372,6 +443,7 @@ export default function FormRenderer({
                       value={values[field.id] || ""}
                       disabled={disabled}
                       courseSuggestions={courseSuggestions}
+                      registeredCourses={registeredCourses}
                       onChange={(val) => onChange(field.id, val)}
                       onUpload={onUpload}
                     />

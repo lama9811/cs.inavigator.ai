@@ -255,3 +255,20 @@ export function findMinorPlan(rawName) {
   const plan = canonical ? MINORS[canonical] : null;
   return plan || null;
 }
+
+// Flat code -> name map of every REAL (non-null) course across all transcribed
+// minors, so the advising course picker can offer minor courses too. Null-code
+// "choose an elective" placeholders are skipped (they aren't specific courses).
+// First writer wins on the rare cross-minor duplicate (e.g. a shared SOCI course).
+export const MINOR_COURSE_NAMES = (() => {
+  const out = {};
+  for (const plan of Object.values(MINORS)) {
+    for (const c of plan.courses || []) {
+      if (c.code && !out[c.code]) out[c.code] = c.name || "";
+    }
+  }
+  return out;
+})();
+
+// Just the codes, for callers that only need the list.
+export const MINOR_COURSE_CODES = Object.keys(MINOR_COURSE_NAMES);
