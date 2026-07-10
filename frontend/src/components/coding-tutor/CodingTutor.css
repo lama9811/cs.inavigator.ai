@@ -142,7 +142,7 @@
   white-space: nowrap;
   padding: 0 20px;
   border-radius: 16px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--ct-border);
   background: rgba(255, 255, 255, 0.98);
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
   color: var(--ct-text);
@@ -218,7 +218,7 @@ body.coding-dark .coding-back-home-btn.active svg {
   width: clamp(200px, 32%, 280px);
   max-width: 100%;
   background: rgba(255, 255, 255, 0.98);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--ct-border);
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
   border-radius: 14px;
   min-width: 0;
@@ -294,7 +294,7 @@ body.coding-dark .coding-back-home-btn.active svg {
   padding: 9px 16px;
   background: rgba(255, 255, 255, 0.99);
   border: 0;
-  border-top: 1px solid rgba(148, 163, 184, 0.16);
+  border-top: 1px solid var(--ct-border);
   color: #1f2937;
   font-size: 0.9rem;
   cursor: pointer;
@@ -885,7 +885,7 @@ body.coding-dark .mock-confirm { background: #1c2a3f; }
 .quiz-problem-card {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--ct-border);
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
 
@@ -930,7 +930,7 @@ body.coding-dark .mock-confirm { background: #1c2a3f; }
   padding: 10px 14px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--ct-border);
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
 
@@ -958,7 +958,8 @@ body.coding-dark .mock-confirm { background: #1c2a3f; }
 .progress-bar {
   height: 12px;
   border-radius: 999px;
-  background: rgba(148, 163, 184, 0.16);
+  /* Visible empty track on the white card (was a 0.16 slate wash that vanished). */
+  background: color-mix(in srgb, var(--ct-border) 55%, var(--ct-soft));
   overflow: hidden;
 }
 
@@ -3742,7 +3743,7 @@ body.coding-dark .floating-rewrite-lang {
   padding: 10px;
   border-radius: 16px;
   background: rgba(247, 248, 250, 0.92);
-  border: 1px solid rgba(148, 163, 184, 0.14);
+  border: 1px solid var(--ct-border);
 }
 
 .floating-chat-message {
@@ -3764,7 +3765,7 @@ body.coding-dark .floating-rewrite-lang {
   align-self: flex-start;
   background: #fff;
   color: #111827;
-  border: 1px solid rgba(148, 163, 184, 0.14);
+  border: 1px solid var(--ct-border);
 }
 
 .floating-chat-message.bot pre,
@@ -3772,7 +3773,7 @@ body.coding-dark .floating-rewrite-lang {
 .floating-chat-message.bot blockquote,
 .floating-chat-message.bot table {
   background: rgba(15, 23, 42, 0.06);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--ct-border);
   color: #111827;
 }
 

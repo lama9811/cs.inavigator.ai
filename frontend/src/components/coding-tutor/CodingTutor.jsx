@@ -1998,7 +1998,7 @@ export default function CodingTutor({
     const lower = file.name.toLowerCase();
     const allowed = [".py", ".ipynb", ".js", ".jsx", ".ts", ".tsx", ".java", ".cpp", ".cc", ".c", ".h", ".hpp", ".txt"];
     if (!allowed.some(ext => lower.endsWith(ext))) {
-      toast.error("Unsupported file. Upload a .py, .ipynb, or other code/text file.");
+      toast.error("Unsupported file. Upload a .py, .java, .js, .cpp, .ipynb, or other code/text file.");
       return;
     }
     if (file.size > 512 * 1024) {
@@ -2587,11 +2587,18 @@ export default function CodingTutor({
         <nav className="coding-section-nav campus-section-nav" aria-label="Coding tutor sections">
         {CODING_PAGES.map(page => {
           const Icon = page.icon;
+          // The Workspace icon and the separate "My Snippets" button below both
+          // live under activePage === "workspace". When the personal scratch space
+          // (My Snippets) is what's open, let THAT button own the active state so
+          // only one nav icon reads as selected — the generic Workspace icon defers.
+          const isActive = page.id === "workspace"
+            ? activePage === "workspace" && !isPersonalMode
+            : activePage === page.id;
           return (
           <button
             key={page.id}
             type="button"
-            className={activePage === page.id ? "active" : ""}
+            className={isActive ? "active" : ""}
             onClick={() => openPage(page.id)}
             title={page.label}
             aria-label={page.label}

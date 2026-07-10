@@ -30,17 +30,19 @@
    canvas never applied (the "still light gray" bug). The extra `body` ancestor
    makes this win regardless of bundle order. */
 body .coding-app {
-  /* Warm paper canvas + panels instead of the cool #F6F8FB / pure-white
-     portal surfaces. These replace the inherited --bg-app / --bg-surface
-     chain for the coding section only. */
-  --ct-bg: #f6f0e7;            /* warm academic paper (page canvas) */
-  --ct-panel: #fffaf1;         /* warm panel (cards / surfaces) */
-  --ct-panel-soft: #f4ecdf;    /* secondary panel / hover wash */
-  --ct-panel-raised: #fffdf8;  /* raised / popover surface */
+  /* Match the app-wide light surfaces (white cards on a cool #f6f8fc canvas)
+     instead of the old warm-cream paper. These replace the inherited
+     --bg-app / --bg-surface chain for the coding section only. The colorful
+     card accents (navy / orange / green below) stay, so the section keeps its
+     distinct look — only the cream tones become the app's white/gray. */
+  --ct-bg: #f6f8fc;            /* app page canvas (--bg-body) */
+  --ct-panel: #ffffff;         /* white panel (cards / surfaces, --bg-card) */
+  --ct-panel-soft: #f8fafc;    /* secondary panel / hover wash (--bg-input) */
+  --ct-panel-raised: #ffffff;  /* raised / popover surface */
 
-  /* Warm parchment borders instead of cool gray (#E2E8F0). */
-  --ct-border: #ddccb6;
-  --ct-border-strong: #c9b596;
+  /* App cool-gray borders instead of warm parchment. */
+  --ct-border: #dbe3ef;        /* --border-color */
+  --ct-border-strong: #b8c5d8; /* --border-strong */
 
   /* Keep the Morgan ORA identity for structure + accent + success. */
   --ct-primary: #0b2545;       /* deep Morgan navy (matches --msu-blue) */
@@ -50,14 +52,14 @@ body .coding-app {
   --ct-accent-soft: rgba(243, 112, 33, 0.10);
   --ct-success: #2f8f4e;       /* solved / pass / success only */
 
-  /* Text stays high-contrast navy/ink on warm paper. */
+  /* Text stays high-contrast navy/ink; muted now matches the app slate. */
   --ct-text: #0b2545;
-  --ct-muted: #6a5f50;         /* warm muted (was cool slate) */
-  --ct-soft: #8a7d6a;
+  --ct-muted: #64748b;         /* app slate (--text-secondary) */
+  --ct-soft: #94a3b8;          /* app soft slate (--text-tertiary) */
 
-  /* Paper accents already referenced by the ORA polish block. */
-  --ct-paper: #fffaf1;
-  --ct-paper-strong: #f4ecdf;
+  /* Paper accents already referenced by the ORA polish block — now white/gray. */
+  --ct-paper: #ffffff;
+  --ct-paper-strong: #f8fafc;
   --ct-gold-line: color-mix(in srgb, var(--ct-accent) 38%, var(--ct-border));
 
   /* Editor / terminal: lab-dark, but a touch warmer/readable than pure slate. */
@@ -97,9 +99,9 @@ body.coding-dark .coding-app {
    `body.theme-switching` transition-suppressor in index.css + App.jsx.
    NOTE: --ct-bg lives on .coding-app (a child), so we can't read it on the
    parent .chat-main — the literals below mirror --ct-bg in each mode
-   (light #f6f0e7 / dark #0b1a33). Keep them in sync if --ct-bg changes. */
+   (light #f6f8fc / dark #0b1a33). Keep them in sync if --ct-bg changes. */
 .chat-main.coding-chat-main {
-  background: #f6f0e7;
+  background: #f6f8fc;
 }
 body.coding-dark .chat-main.coding-chat-main {
   background: #0b1a33;

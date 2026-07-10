@@ -120,7 +120,10 @@
 .iv-ready-track {
   height: 12px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--ct-border) 82%, transparent);
+  /* Darker than the pale --ct-border so the empty (0% ready) bar stays visible
+     on the app's white light-mode surface. Blends the border toward the app
+     slate (--ct-soft) instead of fading to transparent. */
+  background: color-mix(in srgb, var(--ct-border) 55%, var(--ct-soft));
   overflow: hidden;
 }
 .iv-ready-fill {
@@ -236,19 +239,20 @@
 }
 .coding-app .iv-ladder-cta small { font-weight: 650; font-size: 0.76rem; opacity: 0.85; }
 
-/* Primary = solid brand blue (the warmup below-ready, or the mock at-ready). */
+/* Primary = solid brand blue (the warmup below-ready, or the mock at-ready).
+   Darkened a step toward Morgan navy so it reads stronger on the white hero. */
 .coding-app .iv-ladder-cta.primary {
-  background: linear-gradient(135deg, #3f82e6, #2f6fd6);
+  background: linear-gradient(135deg, #2f6fd6, #1f56b8);
   color: #fff !important;
-  box-shadow: 0 12px 26px color-mix(in srgb, #2f6fd6 30%, transparent);
+  box-shadow: 0 12px 26px color-mix(in srgb, #1f56b8 32%, transparent);
 }
 .coding-app .iv-ladder-cta.primary svg { color: #ffd27f !important; }
 .coding-app .iv-ladder-cta.primary:hover,
 .coding-app .iv-ladder-cta.primary:focus-visible {
   transform: translateY(-2px);
   outline: none;
-  background: linear-gradient(135deg, #4c8ef0, #3a78de) !important;
-  box-shadow: 0 16px 32px color-mix(in srgb, #2f6fd6 38%, transparent);
+  background: linear-gradient(135deg, #3a78de, #2a63c8) !important;
+  box-shadow: 0 16px 32px color-mix(in srgb, #1f56b8 40%, transparent);
 }
 
 /* Ready-state glow — the mock CTA pulses so the unlock feels like a reward. */
