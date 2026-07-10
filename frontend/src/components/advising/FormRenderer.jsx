@@ -118,6 +118,15 @@ function CoursePicker({ value, disabled, seeds = [], onChange }) {
     commit(next);
   };
 
+  // One-click "add all suggested": select every pinned seed the student hasn't
+  // ticked yet (e.g. all their registered courses at once). Only meaningful when
+  // there are pinned seeds still unselected.
+  const unpickedPinned = pinned.filter((code) => !selected.includes(code));
+  const addAllPinned = () => {
+    if (unpickedPinned.length === 0) return;
+    commit([...selected, ...unpickedPinned]);
+  };
+
   // Add a typed course that isn't in the catalog (e.g. a brand-new/odd code).
   const addTyped = () => {
     const code = normalizeCourseCode(query);
@@ -161,7 +170,14 @@ function CoursePicker({ value, disabled, seeds = [], onChange }) {
             <div className="af-cp-list">
               {results.shownPinned.length > 0 && (
                 <>
-                  <div className="af-cp-group">Suggested for you</div>
+                  <div className="af-cp-group af-cp-group-row">
+                    <span>Suggested for you</span>
+                    {unpickedPinned.length > 0 && (
+                      <button type="button" className="af-cp-addall" onClick={addAllPinned}>
+                        + Add all ({unpickedPinned.length})
+                      </button>
+                    )}
+                  </div>
                   {results.shownPinned.map((code) => (
                     <label key={code} className="af-cp-option" title={courseLabel(code)}>
                       <input type="checkbox" checked={selected.includes(code)} onChange={() => toggle(code)} />
