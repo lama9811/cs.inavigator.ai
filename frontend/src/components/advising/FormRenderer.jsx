@@ -380,6 +380,20 @@ function FieldControl({ field, value, disabled, courseSuggestions, registeredCou
     );
   }
 
+  // Free-writing narrative fields get a roomier textarea instead of a one-line input.
+  if (field.freeWriting) {
+    return (
+      <textarea
+        {...common}
+        className="af-input af-textarea"
+        rows={3}
+        value={value}
+        placeholder={field.hint || "Write a few sentences…"}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    );
+  }
+
   // text / number
   return (
     <input
@@ -393,7 +407,7 @@ function FieldControl({ field, value, disabled, courseSuggestions, registeredCou
 }
 
 export default function FormRenderer({
-  form, values, locked, disabled = false, courseSuggestions = [], registeredCourses = [], onChange, onUnlock, onUpload,
+  form, values, locked, disabled = false, courseSuggestions = [], registeredCourses = [], onChange, onUnlock, onUpload, onWritingHelp,
 }) {
   // Only fields whose conditions are met are shown.
   const visibleBySection = useMemo(
@@ -467,6 +481,19 @@ export default function FormRenderer({
 
                   {field.hint && !isLocked && field.type !== "text" && field.type !== "number" && (
                     <span className="af-hint">{field.hint}</span>
+                  )}
+
+                  {/* Free-writing fields get a "help me write this" link that hands the
+                      field + the student's current draft to the side-panel helper. It
+                      guides/polishes; the student keeps ownership of the wording. */}
+                  {field.freeWriting && !isLocked && onWritingHelp && (
+                    <button
+                      type="button"
+                      className="af-write-help"
+                      onClick={() => onWritingHelp(field, values[field.id] || "")}
+                    >
+                      ✨ Help me write this
+                    </button>
                   )}
                 </div>
               );

@@ -78,6 +78,9 @@ export default function AdvisingPage() {
   const [courseSuggestions, setCourseSuggestions] = useState([]);  // Planner course codes (upcoming-semester pickers)
   const [registeredCourses, setRegisteredCourses] = useState([]);  // student's current/registered course codes (current-semester picker)
   const [status, setStatus] = useState({ loading: true, saving: false, saved: false, error: "" });
+  // A "help me write this" request from a free-writing field: { field, currentText, nonce }.
+  // The nonce lets the helper re-fire even if the same field is clicked twice.
+  const [writingRequest, setWritingRequest] = useState(null);
 
   const token = localStorage.getItem("token");
   const form = ADVISING_STEPS[stepIndex];
@@ -228,11 +231,37 @@ export default function AdvisingPage() {
   const values = useMemo(() => valuesByForm[form.id] || {}, [valuesByForm, form.id]);
   const locked = lockedByForm[form.id] || new Set();
 
+  // A labeled snapshot of everything the student has filled across BOTH forms, so the
+  // free-writing helper can ground its suggestions in their own answers (e.g. use the
+  // internship-form organization + job title when helping write "relevance of
+  // experience"). Only non-empty, non-locked-blank values; "||" shown as commas.
+  const filledValues = useMemo(() => {
+    const out = [];
+    for (const f of ADVISING_STEPS) {
+      const vals = valuesByForm[f.id] || {};
+      for (const section of f.sections) {
+        for (const field of section.fields) {
+          const v = vals[field.id];
+          if (v != null && String(v).trim() !== "") {
+            out.push({ label: field.label, value: String(v).replaceAll("||", ", ") });
+          }
+        }
+      }
+    }
+    return out;
+  }, [valuesByForm]);
+
   const setField = useCallback((fieldId, val) => {
     dirty.current = true;
     setValuesByForm((prev) => ({ ...prev, [form.id]: { ...(prev[form.id] || {}), [fieldId]: val } }));
     setStatus((s) => ({ ...s, saved: false }));
   }, [form.id]);
+
+  // Hand a free-writing field to the side-panel helper. The nonce (a counter via
+  // Date-free increment) makes each click a fresh request the helper reacts to.
+  const requestWritingHelp = useCallback((field, currentText) => {
+    setWritingRequest((prev) => ({ field, currentText, nonce: (prev?.nonce || 0) + 1 }));
+  }, []);
 
   const unlock = useCallback((fieldId) => {
     // Editing a DegreeWorks-prefilled field makes it a user-owned value: it leaves
@@ -374,6 +403,7 @@ export default function AdvisingPage() {
             onChange={setField}
             onUnlock={unlock}
             onUpload={uploadDocument}
+            onWritingHelp={requestWritingHelp}
           />
 
           <footer className="advising-actions">
@@ -404,7 +434,12 @@ export default function AdvisingPage() {
         </div>
 
         <div className="advising-side">
-          <AdvisingHelper form={form} courseSuggestions={courseSuggestions} />
+          <AdvisingHelper
+            form={form}
+            courseSuggestions={courseSuggestions}
+            writingRequest={writingRequest}
+            filledValues={filledValues}
+          />
         </div>
       </div>
     </div>
