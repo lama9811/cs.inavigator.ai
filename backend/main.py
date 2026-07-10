@@ -301,6 +301,8 @@ def init_db():
                         overall_gpa FLOAT,
                         major_gpa FLOAT,
                         total_credits_earned FLOAT,
+                        total_credits_applied FLOAT,
+                        total_credits_in_progress FLOAT,
                         credits_required FLOAT,
                         credits_remaining FLOAT,
                         courses_completed TEXT,
@@ -348,6 +350,20 @@ def init_db():
                 print("[OK] Successfully added 'gened_areas' column!")
             except Exception as e:
                 print(f"[ERROR] Failed to add gened_areas column: {e}")
+
+        # 6e. Split credits into EARNED vs APPLIED. DegreeWorks' creditsApplied bundles
+        # in-progress + transfer credits, so it was overstating "credits earned." These
+        # two columns store the applied total and the in-progress portion; earned is now
+        # applied minus in-progress (see parsers.parse_degreeworks_audit_json).
+        for _col in ("total_credits_applied", "total_credits_in_progress"):
+            if not _has_col("degreeworks_data", _col):
+                print(f"[WARN] '{_col}' column missing from degreeworks_data. Adding it now...")
+                try:
+                    conn.execute(text(f"ALTER TABLE degreeworks_data ADD COLUMN {_col} FLOAT"))
+                    conn.commit()
+                    print(f"[OK] Successfully added '{_col}' column!")
+                except Exception as e:
+                    print(f"[ERROR] Failed to add {_col} column: {e}")
 
         # 7. Check if support_tickets table exists
         if not _has_table("support_tickets"):
@@ -1587,6 +1603,8 @@ async def get_degreeworks(user: dict = Depends(get_current_user), db: Session = 
             "overall_gpa": dw_data.overall_gpa,
             "major_gpa": dw_data.major_gpa,
             "total_credits_earned": dw_data.total_credits_earned,
+            "total_credits_applied": getattr(dw_data, "total_credits_applied", None),
+            "total_credits_in_progress": getattr(dw_data, "total_credits_in_progress", None),
             "credits_required": dw_data.credits_required,
             "credits_remaining": dw_data.credits_remaining,
             "courses_completed": json.loads(dw_data.courses_completed) if dw_data.courses_completed else [],
