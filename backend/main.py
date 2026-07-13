@@ -8,6 +8,7 @@ import os
 import re
 import json
 import time
+import difflib
 import asyncio
 import shutil #  NEW: For file operations
 from typing import List, Dict, Any, Optional
@@ -5267,9 +5268,9 @@ async def delete_snippet(
     return {"deleted": True}
 
 
-# Filler/greeting messages excluded from the popular-questions ranking. Pure
-# frequency otherwise — this is the only filter (see spec
-# docs/superpowers/specs/2026-06-30-popular-questions-design.md).
+# Filler/greeting messages excluded from the popular-questions ranking. Ranking is
+# still by frequency, but a question must also survive _is_cs_department_question()
+# (see spec docs/superpowers/specs/2026-06-30-popular-questions-design.md).
 _POPULAR_Q_STOPLIST = {
     "hi", "hii", "hiii", "hey", "heya", "hello", "helo", "yo", "sup", "wsup", "wassup",
     "thanks", "thank you", "thx", "ty", "thank u", "ok", "okay", "k", "kk", "cool",
@@ -5277,6 +5278,68 @@ _POPULAR_Q_STOPLIST = {
     "test", "testing", "morning", "good morning", "hi there", "bye", "goodbye",
 }
 _POPULAR_Q_MIN_LEN = 15  # trimmed-length floor; shorter messages are treated as filler
+
+# A welcome-screen chip has to teach a new student what this app is for, so it must be
+# a CS-department advising question. Raw frequency alone was surfacing typos, world
+# knowledge ("who is president of Us") and personal recall ("what is my name?") — with a
+# small user base, the most-asked questions are whatever a few people happened to type.
+
+# "Who is X" is a person lookup. It reads as a directory query, not an advising question,
+# and it is what put "who is dr mack at moragn?" on the welcome screen. The chat answers
+# these fine; they just make poor first impressions.
+_POPULAR_Q_WHO_RE = re.compile(r"^\s*who(\s|'|’)", re.IGNORECASE)
+
+# Personal recall ("what is my gpa") is per-student, so it is meaningless as a shared
+# suggestion. Keyed on the recall *shape*, not the word "my" — "How do I contact my
+# academic advisor?" is a real advising question and must survive.
+_POPULAR_Q_PERSONAL_RE = re.compile(
+    r"^\s*(what|where|when|which)(\s+(is|are|was|were))?(\s|')*s?\s*my\b",
+    re.IGNORECASE,
+)
+
+# The question must be *about* the CS department. This is the gate that drops world
+# knowledge outright rather than trying to enumerate everything a student might ask.
+_POPULAR_Q_TOPIC_KEYWORDS = (
+    "cosc", "bioi", "clco", "course", "class", "prereq", "prerequisite", "credit",
+    "elective", "major", "minor", "degree", "graduat", "curriculum", "capstone",
+    "semester", "register", "registration", "enroll", "advisor", "advising",
+    "faculty", "professor", "department", "syllabus", "transcript", "gpa",
+    "internship", "career", "job", "research", "lab", "scholarship", "tuition",
+    "program", "track", "algorithm", "data structure", "ai/ml", "machine learning",
+    "artificial intelligence", "cybersecurity", "computer science", "cs ",
+)
+
+_POPULAR_Q_DUPE_RATIO = 0.9  # SequenceMatcher score above which two questions are "the same"
+
+
+def _is_cs_department_question(question: str) -> bool:
+    """Whether a question belongs on the CS-advising welcome screen."""
+    q = (question or "").strip()
+    if not q:
+        return False
+    if _POPULAR_Q_WHO_RE.match(q) or _POPULAR_Q_PERSONAL_RE.match(q):
+        return False
+    lowered = q.lower()
+    return any(kw in lowered for kw in _POPULAR_Q_TOPIC_KEYWORDS)
+
+
+def _dedupe_near_duplicates(questions: list[str]) -> list[str]:
+    """Collapse questions that differ only in phrasing, keeping the first occurrence.
+
+    Exact-match frequency ranking treats "…if I am interested in AI/ML?" and
+    "…if I'm interested in AI/ML?" as two questions, and both were showing at once.
+    """
+    kept: list[str] = []
+    for q in questions:
+        norm = " ".join(re.sub(r"[^a-z0-9\s]", "", q.lower()).split())
+        if any(
+            difflib.SequenceMatcher(None, norm, " ".join(re.sub(r"[^a-z0-9\s]", "", k.lower()).split())).ratio()
+            >= _POPULAR_Q_DUPE_RATIO
+            for k in kept
+        ):
+            continue
+        kept.append(q)
+    return kept
 
 # Coding-tutor quick-action prompts are logged to ChatHistory just like advising
 # questions, but they must NOT surface on the chat welcome screen (that screen is
@@ -5297,15 +5360,22 @@ _POPULAR_Q_TTL = 300
 
 @app.get("/api/popular-questions")
 async def get_popular_questions(db: Session = Depends(get_db)):
-    """Returns up to 10 of the questions most frequently asked by users.
+    """The 10 most-asked CS-department questions — the same 10 for every student.
 
-    Ranking = exact-match (case-insensitive, trimmed) frequency over
-    ChatHistory.user_query. Greetings/filler are excluded; otherwise it is pure
-    frequency with no quality threshold and no curated padding. Falls back to a
-    sample of the curated pool only when there is no real usage yet (or on error).
+    Ranking is still frequency over ChatHistory.user_query (case-insensitive, trimmed,
+    regular mode only), so the chips track what students actually ask and shift as usage
+    shifts. But frequency alone is not a quality signal at this user count: it was
+    surfacing typos, person lookups ("who is dr mack at moragn?"), world knowledge and
+    personal recall ("what is my name?") onto the welcome screen — the first thing a new
+    student sees. So a question must also survive _is_cs_department_question(), and
+    near-duplicate phrasings are collapsed.
+
+    Everything here is deterministic: no sampling, and a total ordering (frequency, then
+    text). Each Cloud Run instance holds its own module-level cache, so anything random
+    would serve different students different chips. Short of 10, top up from the curated
+    pool in pool order.
     """
     import time
-    import random
 
     QUESTION_POOL = [
         # Course & curriculum
@@ -5363,24 +5433,39 @@ async def get_popular_questions(db: Session = Depends(get_db)):
             # predating the `mode` column are NULL -> treated as regular.
             .filter(func.coalesce(ChatHistory.mode, "regular") == "regular")
             .group_by(normalized)
-            .order_by(func.count().desc())
-            .limit(30)  # over-fetch: coding-tutor prompts are filtered out below
+            # Tie-break on the text so the ranking is total, not just "by frequency".
+            # Equal-frequency questions must order identically on every instance —
+            # otherwise two backends serve two different welcome screens.
+            .order_by(func.count().desc(), normalized.asc())
+            .limit(100)  # over-fetch: most rows are dropped by the filters below
             .all()
         )
-        questions = [
+        ranked = [
             r.display.strip()
             for r in rows
             if r.display
             and r.display.strip()
             and not any(m in r.display.lower() for m in _POPULAR_Q_CODING_MARKERS)
-        ][:10]
+            and _is_cs_department_question(r.display)
+        ]
+        questions = _dedupe_near_duplicates(ranked)[:10]
     except Exception as e:
         print(f"⚠️ popular-questions aggregation failed, using curated fallback: {e}")
         questions = []
 
-    # Fallback only when there is no real usage yet (or the query failed).
-    if not questions:
-        questions = random.sample(QUESTION_POOL, 10)
+    # Top up from the curated pool when real usage does not yet supply 10 that qualify.
+    # Deterministic (pool order, no sampling): every instance must serve the same list,
+    # and each instance has its own module-level cache — a random pick would show
+    # different students different chips.
+    if len(questions) < 10:
+        for candidate in QUESTION_POOL:
+            if len(questions) >= 10:
+                break
+            if not _is_cs_department_question(candidate):
+                continue  # the pool predates the gate and still holds "Who is…" entries
+            if _dedupe_near_duplicates(questions + [candidate]) != questions + [candidate]:
+                continue  # near-duplicate of one already chosen
+            questions.append(candidate)
 
     _popular_q_cache["ts"] = now
     _popular_q_cache["questions"] = questions

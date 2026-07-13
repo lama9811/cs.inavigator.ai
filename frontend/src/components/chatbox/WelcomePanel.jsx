@@ -25,8 +25,9 @@ export default function WelcomePanel({ suggestionsLoading, suggestions, isLoadin
               className="suggestion-btn"
               onClick={() => onSuggestion(suggestion)}
               disabled={isLoading}
+              title={suggestion}
             >
-              {suggestion}
+              <span className="suggestion-btn__text">{suggestion}</span>
             </button>
           ))
         )}
