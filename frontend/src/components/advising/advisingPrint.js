@@ -3,6 +3,7 @@
 // "Save as PDF" in the browser dialog. Only fields with a value are shown.
 import { isFieldActive } from "../coding-tutor/advisingFormSchema";
 import { courseLabel } from "../coding-tutor/courseCatalog";
+import { fileListLabel } from "./formHelpers";
 
 function esc(s) {
   return String(s ?? "")
@@ -19,6 +20,8 @@ function displayFieldValue(field, raw) {
       .map(courseLabel)
       .join(", ");
   }
+  // File fields hold "name::id" pairs; print the filenames, never the storage ids.
+  if (field.type === "file") return fileListLabel(raw);
   return esc(raw);
 }
 

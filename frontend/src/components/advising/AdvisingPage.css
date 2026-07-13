@@ -228,8 +228,9 @@
 .af-cp-chip-x:hover { background: rgba(255,255,255,0.45); }
 .af-cp-chip-x:disabled { opacity: 0.5; cursor: default; }
 
-/* ---------- File upload ---------- */
-.af-file { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+/* ---------- File upload (multiple documents, each removable) ---------- */
+.af-file { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.af-file-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .af-file-input { display: none; }
 .af-file-btn {
   display: inline-flex; align-items: center; gap: 7px;
@@ -238,8 +239,30 @@
 }
 .af-file-btn:hover:not(:disabled) { background: rgba(66,133,244,0.08); }
 .af-file-btn:disabled { opacity: 0.6; cursor: default; }
-.af-file-name { font-size: 0.82rem; color: var(--text-muted, #5a6472); word-break: break-all; }
 .af-file-err { font-size: 0.8rem; color: #a12d2d; }
+
+/* One row per attached document, with its own remove (X) control. */
+.af-file-list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: 6px;
+  width: 100%; max-width: 460px;
+}
+.af-file-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 7px 10px; border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.12); background: rgba(66,133,244,0.05);
+}
+.af-file-name {
+  font-size: 0.82rem; color: var(--text-muted, #5a6472);
+  word-break: break-all; min-width: 0;
+}
+.af-file-x {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 50%;
+  border: none; background: transparent; color: #7a8494; cursor: pointer;
+}
+.af-file-x:hover:not(:disabled) { background: rgba(161,45,45,0.12); color: #a12d2d; }
+.af-file-x:disabled { opacity: 0.5; cursor: default; }
 
 .af-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .af-chip {
