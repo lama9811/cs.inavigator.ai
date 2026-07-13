@@ -1,0 +1,179 @@
+/* Scholarships & Internships page.
+   Navy/blue palette to match the other Tools pages (Advising/Planner/Curriculum).
+   Light-only, same as those — dark mode is Coding-Tutor-only at the moment. */
+.sch-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 28px 24px 80px;
+  color: var(--text-main, #1a2438);
+}
+
+/* Header */
+.sch-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 6px;
+  font-size: 1.7rem;
+  color: #0B2545;
+}
+.sch-sub {
+  margin: 0 0 22px;
+  color: var(--text-muted, #5a6472);
+  font-size: 0.92rem;
+  max-width: 62ch;
+}
+
+/* Search bar */
+.sch-search { display: flex; gap: 10px; margin-bottom: 14px; }
+.sch-input {
+  flex: 1; min-width: 0;
+  padding: 11px 14px;
+  border: 1.5px solid rgba(0,0,0,0.14);
+  border-radius: 10px;
+  font-size: 0.92rem;
+  background: #fff;
+  color: inherit;
+}
+.sch-input:focus {
+  outline: none;
+  border-color: #4285F4;
+  box-shadow: 0 0 0 3px rgba(66,133,244,0.14);
+}
+.sch-input:disabled { background: #f4f5f7; cursor: not-allowed; }
+.sch-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 11px 20px;
+  border: none; border-radius: 10px;
+  background: #0B2545; color: #fff;
+  font-size: 0.9rem; font-weight: 600;
+  cursor: pointer;
+}
+.sch-btn:hover:not(:disabled) { background: #143a6b; }
+.sch-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* Example prompts */
+.sch-examples {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-bottom: 20px;
+}
+.sch-examples-label { font-size: 0.82rem; color: var(--text-muted, #6b7280); }
+.sch-chip {
+  padding: 6px 12px;
+  border: 1.5px solid rgba(0,0,0,0.12);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.8rem; color: #35507d;
+  cursor: pointer;
+}
+.sch-chip:hover { border-color: #4285F4; background: rgba(66,133,244,0.06); }
+
+/* Notices */
+.sch-notice {
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(66,133,244,0.3);
+  background: rgba(66,133,244,0.07);
+  font-size: 0.87rem;
+}
+.sch-notice-warn {
+  border-color: rgba(214,158,46,0.4);
+  background: rgba(214,158,46,0.1);
+}
+.sch-notice-error {
+  border-color: rgba(161,45,45,0.35);
+  background: rgba(161,45,45,0.08);
+  color: #8c2626;
+}
+.sch-status {
+  padding: 22px 0;
+  color: var(--text-muted, #6b7280);
+  font-size: 0.9rem;
+}
+
+/* Urgency groups */
+.sch-group { margin-bottom: 28px; }
+.sch-group-head {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 12px;
+  padding-bottom: 7px;
+  border-bottom: 2px solid rgba(0,0,0,0.08);
+  font-size: 1.05rem;
+}
+/* The border colour IS the signal — closing soon reads as urgent at a glance. */
+.sch-group-urgent   { border-bottom-color: #c0392b; color: #96271b; }
+.sch-group-upcoming { border-bottom-color: #d69e2e; color: #8a6516; }
+.sch-group-open     { border-bottom-color: #2f8f4e; color: #226b3a; }
+.sch-group-hint {
+  font-size: 0.76rem; font-weight: 500;
+  color: var(--text-muted, #6b7280);
+}
+
+/* Cards */
+.sch-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.sch-card {
+  padding: 16px 18px;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 12px;
+  background: #fff;
+}
+.sch-card-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; margin-bottom: 6px;
+}
+.sch-card-name { margin: 0; font-size: 1rem; color: #0B2545; }
+.sch-kind {
+  flex: none;
+  padding: 3px 9px; border-radius: 999px;
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.sch-kind-scholarship { background: rgba(66,133,244,0.12); color: #2a5db0; }
+.sch-kind-internship  { background: rgba(47,143,78,0.12);  color: #226b3a; }
+
+.sch-award { margin: 0 0 6px; font-weight: 600; color: #226b3a; font-size: 0.9rem; }
+.sch-why {
+  margin: 0 0 10px;
+  font-size: 0.86rem; font-style: italic;
+  color: var(--text-muted, #5a6472);
+}
+
+.sch-meta { margin: 0 0 12px; display: grid; gap: 6px; }
+.sch-meta div { display: flex; gap: 8px; font-size: 0.85rem; }
+.sch-meta dt {
+  flex: none; width: 78px;
+  font-weight: 600; color: var(--text-muted, #6b7280);
+}
+.sch-meta dd { margin: 0; min-width: 0; }
+.sch-days { color: #96271b; font-weight: 600; }
+
+.sch-apply {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.85rem; font-weight: 600;
+  color: #2a5db0; text-decoration: none;
+}
+.sch-apply:hover { text-decoration: underline; }
+
+/* Footer note + sources */
+.sch-note {
+  margin: 22px 0 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(66,133,244,0.06);
+  font-size: 0.87rem;
+}
+.sch-sources { margin-top: 16px; font-size: 0.84rem; }
+.sch-sources summary {
+  cursor: pointer;
+  color: var(--text-muted, #6b7280);
+}
+.sch-sources ul { margin: 10px 0 0; padding-left: 18px; }
+.sch-sources li { margin-bottom: 5px; }
+.sch-sources a { color: #2a5db0; word-break: break-all; }
+
+@media (max-width: 640px) {
+  .sch-search { flex-direction: column; }
+  .sch-meta div { flex-direction: column; gap: 2px; }
+  .sch-meta dt { width: auto; }
+}

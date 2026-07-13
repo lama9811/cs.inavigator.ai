@@ -249,6 +249,18 @@ deploy_backend() {
     # emails. It is set AFTER deploy (we don't know it yet) via a follow-up update.
 
     # Optional future: add OPENAI_API_KEY=OPENAI_API_KEY:latest to --set-secrets for TTS/OpenAI features.
+
+    # TAVILY_API_KEY powers scholarship/internship search. It is OPTIONAL on purpose:
+    # mount it only if the secret exists, so a deploy never fails just because
+    # scholarship search hasn't been set up. Without it the page reports "not
+    # configured" instead of erroring. Create it with: ./deploy-cloudrun.sh secrets
+    OPTIONAL_SECRETS=""
+    if gcloud secrets describe TAVILY_API_KEY --project "${PROJECT_ID}" >/dev/null 2>&1; then
+        OPTIONAL_SECRETS=",TAVILY_API_KEY=TAVILY_API_KEY:latest"
+    else
+        warn "TAVILY_API_KEY secret not found - scholarship search will be disabled in this deploy."
+    fi
+
     gcloud run deploy ${BACKEND_SERVICE} \
         --image ${BACKEND_IMAGE} \
         --region ${REGION} \
@@ -284,7 +296,7 @@ ADMIN_PASSWORD=ADMIN_PASSWORD:latest,\
 RESEARCH_SECRET=RESEARCH_SECRET:latest,\
 SMTP_USER=SMTP_USER:latest,\
 SMTP_PASS=SMTP_PASS:latest,\
-YOUTUBE_API_KEY=YOUTUBE_API_KEY:latest"
+YOUTUBE_API_KEY=YOUTUBE_API_KEY:latest${OPTIONAL_SECRETS}"
 
     BACKEND_URL=$(gcloud run services describe ${BACKEND_SERVICE} \
         --region=${REGION} \
