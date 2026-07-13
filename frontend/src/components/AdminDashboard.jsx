@@ -26,6 +26,7 @@ import { FaSync } from "@react-icons/all-files/fa/FaSync";
 import { FaTrash } from "@react-icons/all-files/fa/FaTrash";
 import { FaSave } from "@react-icons/all-files/fa/FaSave";
 import { FaUserShield } from "@react-icons/all-files/fa/FaUserShield";
+import { FaEnvelope } from "@react-icons/all-files/fa/FaEnvelope";
 import { FaUserGraduate } from "@react-icons/all-files/fa/FaUserGraduate";
 import { FaCalendarPlus } from "@react-icons/all-files/fa/FaCalendarPlus";
 import { FaLink } from "@react-icons/all-files/fa/FaLink";
@@ -74,7 +75,7 @@ export default function AdminDashboard() {
 
   // Users State
   const [users, setUsers] = useState([]);
-  const [userStats, setUserStats] = useState({ total: 0, students: 0, admins: 0, new_this_week: 0, morgan_connected: 0 });
+  const [userStats, setUserStats] = useState({ total: 0, students: 0, admins: 0, new_this_week: 0, morgan_connected: 0, verified: 0, unverified: 0 });
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState("all");
   const [userStatusFilter, setUserStatusFilter] = useState("all");
@@ -1340,6 +1341,11 @@ export default function AdminDashboard() {
               <span className="stat-number">{userStats.new_this_week}</span>
               <span className="stat-label">New This Week</span>
             </div>
+            <div className="stat-card open">
+              <FaEnvelope className="stat-icon" />
+              <span className="stat-number">{userStats.unverified}</span>
+              <span className="stat-label">Unverified Email</span>
+            </div>
           </div>
 
           <div className="search-filter-bar">
@@ -1391,6 +1397,7 @@ export default function AdminDashboard() {
                     <th>Name</th>
                     <th>Role</th>
                     <th>Status</th>
+                    <th>Verified</th>
                     <th>Major</th>
                     <th>Morgan</th>
                     <th>Joined</th>
@@ -1409,6 +1416,14 @@ export default function AdminDashboard() {
                           title={u.disabled_reason || ""}
                         >
                           {u.is_disabled ? "disabled" : "active"}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          className={`role-badge ${u.email_verified ? "student" : "disabled"}`}
+                          title={u.email_verified ? "" : "Would be locked out if email verification is enforced at login"}
+                        >
+                          {u.email_verified ? "verified" : "unverified"}
                         </span>
                       </td>
                       <td>{u.major || "-"}</td>
