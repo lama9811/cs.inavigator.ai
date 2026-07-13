@@ -586,8 +586,6 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
             state_delta["canvas"] = canvas_context
         if memory_context:
             state_delta["memory"] = memory_context
-        # Multi-turn flow instructions (advising/planner): volatile, re-sent every
-        # turn on the SAME session so the flow can advance without losing history.
         if state_delta:
             payload["state_delta"] = state_delta
 
@@ -845,8 +843,6 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
             state_delta["canvas"] = canvas_context
         if memory_context:
             state_delta["memory"] = memory_context
-        # Multi-turn flow instructions (advising/planner): volatile, re-sent every
-        # turn on the SAME session so the flow can advance without losing history.
         if state_delta:
             payload["state_delta"] = state_delta
 
