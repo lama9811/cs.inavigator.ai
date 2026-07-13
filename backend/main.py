@@ -6171,6 +6171,29 @@ def health():
 # ==============================================================================
 
 # --- Admin: User Management ---
+def _admin_user_row(u) -> dict:
+    """Serialize a User for the admin table.
+
+    email_verified is coerced rather than passed through: rows predating the column
+    read as NULL, and an unverified user must never be reported as verified — the
+    admin count is what decides whether the login verification gate is safe to turn on.
+    """
+    return {
+        "id": u.id,
+        "email": u.email,
+        "name": u.name,
+        "role": u.role,
+        "student_id": u.student_id,
+        "major": u.major,
+        "morgan_connected": u.morgan_connected,
+        "email_verified": bool(getattr(u, "email_verified", False)),
+        "is_disabled": bool(getattr(u, "is_disabled", False)),
+        "disabled_at": u.disabled_at.isoformat() if getattr(u, "disabled_at", None) else None,
+        "disabled_reason": getattr(u, "disabled_reason", None),
+        "created_at": u.created_at.isoformat() if u.created_at else None,
+    }
+
+
 @app.get("/api/admin/users")
 async def get_all_users(
     search: Optional[str] = None,
@@ -6198,22 +6221,7 @@ async def get_all_users(
     users = query.all()
 
     return {
-        "users": [
-            {
-                "id": u.id,
-                "email": u.email,
-                "name": u.name,
-                "role": u.role,
-                "student_id": u.student_id,
-                "major": u.major,
-                "morgan_connected": u.morgan_connected,
-                "is_disabled": bool(getattr(u, "is_disabled", False)),
-                "disabled_at": u.disabled_at.isoformat() if getattr(u, "disabled_at", None) else None,
-                "disabled_reason": getattr(u, "disabled_reason", None),
-                "created_at": u.created_at.isoformat() if u.created_at else None
-            }
-            for u in users
-        ],
+        "users": [_admin_user_row(u) for u in users],
         "total": len(users)
     }
 
@@ -6234,6 +6242,9 @@ async def get_user_stats(user: dict = Depends(get_current_user), db: Session = D
     new_this_week = db.query(User).filter(User.created_at >= week_ago).count()
     new_this_month = db.query(User).filter(User.created_at >= month_ago).count()
     morgan_connected = db.query(User).filter(User.morgan_connected == True).count()
+    # Derive unverified by subtraction: legacy rows store NULL, and `!= True` does not
+    # match NULL in SQL, so filtering for them directly would undercount.
+    verified = db.query(User).filter(User.email_verified == True).count()
 
     return {
         "total": total_users,
@@ -6241,7 +6252,9 @@ async def get_user_stats(user: dict = Depends(get_current_user), db: Session = D
         "admins": total_admins,
         "new_this_week": new_this_week,
         "new_this_month": new_this_month,
-        "morgan_connected": morgan_connected
+        "morgan_connected": morgan_connected,
+        "verified": verified,
+        "unverified": total_users - verified
     }
 
 @app.put("/api/admin/users/{user_id}/role")
