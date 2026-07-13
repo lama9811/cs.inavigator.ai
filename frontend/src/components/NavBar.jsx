@@ -10,6 +10,7 @@ import { FaChartLine } from "@react-icons/all-files/fa/FaChartLine";
 import { FaProjectDiagram } from "@react-icons/all-files/fa/FaProjectDiagram";
 import { FaCalendarAlt } from "@react-icons/all-files/fa/FaCalendarAlt";
 import { FaClipboardList } from "@react-icons/all-files/fa/FaClipboardList";
+import { FaGraduationCap } from "@react-icons/all-files/fa/FaGraduationCap";
 import { FaThLarge } from "@react-icons/all-files/fa/FaThLarge";
 import { FaChevronDown } from "@react-icons/all-files/fa/FaChevronDown";
 import "../index.css";
@@ -137,6 +138,7 @@ export default function NavBar({ role, onToggleSidebar, onBrandClick }) {
   ];
   const toolsNav = [
     { to: "/advising", label: "Advising Form", Icon: FaClipboardList },
+    { to: "/scholarships", label: "Scholarships", Icon: FaGraduationCap },
     { to: "/curriculum", label: "Curriculum", Icon: FaBook },
     { to: "/planner", label: "Planner", Icon: FaCalendarAlt },
     { to: "/ripple-effect", label: "Ripple Effect", Icon: FaProjectDiagram },

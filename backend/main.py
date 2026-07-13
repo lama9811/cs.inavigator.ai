@@ -1719,6 +1719,67 @@ async def get_advising_document(upload_id: int, user: dict = Depends(get_current
     return Response(content=row.data, media_type=row.content_type or "application/octet-stream", headers=headers)
 
 
+# =============================================================================
+# SCHOLARSHIPS & INTERNSHIPS
+# Ported from Julian Ng's scholarship agent (juliannng/cs-navigator,
+# feat/tutor-scholarship-v2-port). See backend/services/scholarship_search.py.
+# =============================================================================
+from services import scholarship_search
+
+
+@app.get("/api/scholarships/status")
+async def scholarship_status(user: dict = Depends(get_current_user)):
+    """Whether search is usable, so the page can explain itself before a search."""
+    return {"configured": scholarship_search.is_configured()}
+
+
+@app.post("/api/scholarships/search")
+async def search_scholarships(
+    payload: dict,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Find scholarships and internships, filtered by the student's DegreeWorks data.
+
+    Body: { "query": "<what they're looking for>" } (optional).
+    Returns items grouped by deadline urgency (URGENT / UPCOMING / OPEN). Expired
+    opportunities are dropped server-side, not merely discouraged in the prompt.
+    """
+    query = str(payload.get("query") or "").strip()
+    if len(query) > 500:
+        raise HTTPException(400, "Query is too long (500 characters max).")
+
+    if not scholarship_search.is_configured():
+        # Not an error the student caused: report it plainly instead of 500ing.
+        raise HTTPException(
+            503,
+            "Scholarship search isn't configured yet. An admin needs to set TAVILY_API_KEY.",
+        )
+
+    # Eligibility filtering is the whole point: never show an award they can't win.
+    dw_row = db.query(DegreeWorksData).filter(DegreeWorksData.user_id == user["user_id"]).first()
+    dw = {
+        "overall_gpa": dw_row.overall_gpa,
+        "degree_program": dw_row.degree_program,
+        "classification": dw_row.classification,
+        "minor": dw_row.minor,
+    } if dw_row else None
+
+    user_row = db.query(User).filter(User.id == user["user_id"]).first()
+    profile = {"name": user_row.name, "major": user_row.major} if user_row else None
+
+    student = scholarship_search.build_student_profile(dw, profile)
+
+    try:
+        result = scholarship_search.find_opportunities(query, student)
+    except Exception as e:
+        print(f"[ERROR] Scholarship search failed: {e}")
+        raise HTTPException(502, "Scholarship search is temporarily unavailable.")
+
+    result["has_degreeworks"] = bool(dw_row)
+    return result
+
+
 @app.get("/api/degreeworks/debug")
 async def debug_degreeworks(user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     """
