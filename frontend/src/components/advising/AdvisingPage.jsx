@@ -7,7 +7,7 @@ import { getApiBase } from "../../lib/apiBase";
 import { ADVISING_STEPS } from "../coding-tutor/advisingFormSchema";
 import FormRenderer from "./FormRenderer";
 import AdvisingHelper from "./AdvisingHelper";
-import { missingRequired, visibleFields } from "./formHelpers";
+import { missingRequired, visibleFields, fileListLabel } from "./formHelpers";
 import { buildAdvisingPrintDoc } from "./advisingPrint";
 import "./AdvisingPage.css";
 
@@ -213,8 +213,9 @@ export default function AdvisingPage() {
     return () => { cancelled = true; };
   }, [token]);
 
-  // Upload an advising document (Course Sequence / DegreeWorks PDF). Returns the
-  // stored filename the form should keep, or null on failure.
+  // Upload one advising document (Course Sequence sheet / DegreeWorks PDF). Returns
+  // BOTH the id the backend stores the bytes under and the original filename, so the
+  // form can keep the id but still show the student a readable name. Null on failure.
   const uploadDocument = useCallback(async (file) => {
     const body = new FormData();
     body.append("file", file);
@@ -225,7 +226,9 @@ export default function AdvisingPage() {
     });
     if (!res.ok) return null;
     const data = await res.json();
-    return data?.filename || data?.stored_name || null;
+    const id = data?.stored_name || data?.id;
+    if (!id) return null;
+    return { id: String(id), filename: data?.filename || file.name };
   }, [token]);
 
   const values = useMemo(() => valuesByForm[form.id] || {}, [valuesByForm, form.id]);
@@ -243,7 +246,12 @@ export default function AdvisingPage() {
         for (const field of section.fields) {
           const v = vals[field.id];
           if (v != null && String(v).trim() !== "") {
-            out.push({ label: field.label, value: String(v).replaceAll("||", ", ") });
+            // File fields store "name::id" pairs; the helper only ever sees the
+            // filenames, not the internal storage ids.
+            const shown = field.type === "file"
+              ? fileListLabel(v)
+              : String(v).replaceAll("||", ", ");
+            if (shown.trim() !== "") out.push({ label: field.label, value: shown });
           }
         }
       }

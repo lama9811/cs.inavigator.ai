@@ -8,8 +8,10 @@
 //     Planner) PLUS a text box to type in any course code the list doesn't have.
 //     Stored as a "||"-joined string, same as multi_select.
 //   - date: native date input (mm/dd/yyyy).
-//   - file: file upload; the chosen file is sent to POST /api/advising/upload and
-//     the returned filename is stored in the draft.
+//   - file: file upload, MULTIPLE documents allowed (e.g. the Curriculum Sequence
+//     sheet AND the DegreeWorks PDF). Each pick is sent to POST /api/advising/upload;
+//     the returned id is kept as "name::id" and the set is "||"-joined, same as
+//     multi_select. Files are removed one at a time, not by replacing the field.
 // A field with `requiredWhen` only shows (and is only required) when the trigger
 // field's value matches — `value` for one match, `values` for any-of.
 // `prefillKey` marks fields that pre-fill from the student's DegreeWorks/profile data.
@@ -208,7 +210,7 @@ export const ADVISING_FORM = {
         {
           id: "document_upload", label: "Upload Course Sequence + DegreeWorks PDF", type: "file", required: true,
           accept: ".pdf,.png,.jpg,.jpeg",
-          hint: "Your form is returned without review if the wrong documents are attached.",
+          hint: "Attach both documents: your Curriculum Sequence sheet and your DegreeWorks PDF. Your form is returned without review if the wrong documents are attached.",
         },
       ],
     },

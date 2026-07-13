@@ -3,6 +3,7 @@ import { FaFileUpload } from "@react-icons/all-files/fa/FaFileUpload";
 import { FaFileDownload } from "@react-icons/all-files/fa/FaFileDownload";
 import { FaTimes } from "@react-icons/all-files/fa/FaTimes";
 import { isFieldActive } from "../coding-tutor/advisingFormSchema";
+import { parseFileList, serializeFileList, fileListLabel } from "./formHelpers";
 import { courseLabel, searchCatalog, normalizeCourseCode, COURSE_GROUP } from "../coding-tutor/courseCatalog";
 
 // A dropdown that allows checking multiple options. Value is stored as a
@@ -232,50 +233,88 @@ function CoursePicker({ value, disabled, seeds = [], onChange }) {
   );
 }
 
-// File upload: pick a file, hand it to the parent's uploader (which POSTs it to the
-// backend and returns a stored filename), then store that filename in the draft via
-// onChange so it saves + validates like any other field.
+// File upload: the student attaches SEVERAL documents (the Course Sequence sheet AND
+// the DegreeWorks PDF), so this accumulates files instead of overwriting. Each pick is
+// POSTed by the parent's uploader, which returns a stored id; we keep "name::id" per
+// file and "||"-join them, the same multi-value format multi_select/course_picker use,
+// so the draft, summary and print paths all handle it without special-casing.
+// Files are removed individually with their own X — never by replacing the whole field.
 function FileField({ field, value, disabled, onChange, onUpload }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const inputRef = useRef(null);
 
-  const pick = async (file) => {
-    if (!file) return;
+  const attached = parseFileList(value);
+
+  const pick = async (fileList) => {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
     setBusy(true);
     setErr("");
     try {
-      const stored = await onUpload(file);
-      if (!stored) throw new Error("upload failed");
-      onChange(stored);
+      const added = [];
+      for (const file of files) {
+        const stored = await onUpload(file);
+        // The uploader returns null on failure; don't silently drop the file.
+        if (!stored) throw new Error(`could not upload ${file.name}`);
+        added.push({ name: stored.filename || file.name, id: stored.id });
+      }
+      onChange(serializeFileList([...attached, ...added]));
     } catch {
       setErr("Upload failed. Check the file and try again.");
     } finally {
       setBusy(false);
+      // Clear the input so re-picking the same filename still fires onChange.
       if (inputRef.current) inputRef.current.value = "";
     }
   };
 
+  const removeAt = (idx) => {
+    onChange(serializeFileList(attached.filter((_, i) => i !== idx)));
+  };
+
   return (
     <div className="af-file">
-      <input
-        ref={inputRef}
-        type="file"
-        className="af-file-input"
-        accept={field.accept || undefined}
-        disabled={disabled || busy}
-        onChange={(e) => pick(e.target.files?.[0])}
-      />
-      <button
-        type="button"
-        className="af-file-btn"
-        disabled={disabled || busy}
-        onClick={() => inputRef.current?.click()}
-      >
-        <FaFileUpload size={13} /> {busy ? "Uploading…" : value ? "Replace file" : "Choose file"}
-      </button>
-      {value && !busy && <span className="af-file-name">{value}</span>}
-      {err && <span className="af-file-err">{err}</span>}
+      <div className="af-file-row">
+        <input
+          ref={inputRef}
+          type="file"
+          className="af-file-input"
+          accept={field.accept || undefined}
+          multiple
+          disabled={disabled || busy}
+          onChange={(e) => pick(e.target.files)}
+        />
+        <button
+          type="button"
+          className="af-file-btn"
+          disabled={disabled || busy}
+          onClick={() => inputRef.current?.click()}
+        >
+          <FaFileUpload size={13} />
+          {busy ? "Uploading…" : attached.length ? "Add another file" : "Choose files"}
+        </button>
+        {err && <span className="af-file-err">{err}</span>}
+      </div>
+
+      {attached.length > 0 && (
+        <ul className="af-file-list">
+          {attached.map((f, i) => (
+            <li key={`${f.id}-${i}`} className="af-file-item">
+              <span className="af-file-name" title={f.name}>{f.name}</span>
+              <button
+                type="button"
+                className="af-file-x"
+                disabled={disabled || busy}
+                aria-label={`Remove ${f.name}`}
+                onClick={() => removeAt(i)}
+              >
+                <FaTimes size={10} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -418,9 +457,11 @@ export default function FormRenderer({
     [form, values],
   );
 
-  const displayValue = (id) => {
+  const displayValue = (id, field) => {
     const v = values[id];
     if (v == null || v === "") return "—";
+    // File fields store "name::id" pairs; show the filenames only.
+    if (field?.type === "file") return fileListLabel(v) || "—";
     return String(v).replaceAll("||", ", ");  // multi_choice pretty-print
   };
 
@@ -457,7 +498,7 @@ export default function FormRenderer({
 
                   {isLocked ? (
                     <div className="af-locked">
-                      <span className="af-locked-val">{displayValue(field.id)}</span>
+                      <span className="af-locked-val">{displayValue(field.id, field)}</span>
                       <button
                         type="button"
                         className="af-edit"
