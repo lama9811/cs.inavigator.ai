@@ -68,6 +68,18 @@ def _rate_limit_email(
     return False
 
 
+def _needs_email_verification(user) -> bool:
+    """Whether login must be blocked until this user verifies their email.
+
+    NULL reads as unverified: rows predating the column store NULL, and those users
+    never clicked a link. Admins are exempt — that is the escape hatch if a broken
+    sender ever leaves the whole user base unable to verify.
+    """
+    if getattr(user, "role", None) == "admin":
+        return False
+    return not bool(getattr(user, "email_verified", False))
+
+
 def _verification_token_is_expired(expires: datetime | None) -> bool:
     if not expires:
         return False
@@ -120,7 +132,15 @@ def register(req: RegisterRequest, request: Request, db: Session = Depends(get_d
     db.refresh(student)
 
     sent = send_verification_email(email, token)
-    response = _verification_response("Account created! Check your Morgan State email to verify.", token, request)
+    # Verification is enforced at login, so a silent send failure would leave an account
+    # that can never log in and a student with no idea why. Say so, and point at resend.
+    message = (
+        "Account created! Check your Morgan State email to verify."
+        if sent
+        else "Account created, but we could not send the verification email. "
+             "Use \"Resend verification email\" on the login page, or contact compsci@morgan.edu."
+    )
+    response = _verification_response(message, token, request)
     response["user_id"] = student.id
     response["email_sent"] = sent
     return response
@@ -189,13 +209,13 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     if getattr(user, "is_disabled", False):
         raise HTTPException(status_code=403, detail="This account has been disabled. Contact an administrator.")
 
-    # Email verification disabled — all accounts may log in without verifying.
-    # (Previously: blocked unverified non-admin accounts. Re-enable by restoring this check.)
-    # if not getattr(user, "email_verified", True) and user.role != "admin":
-    #     raise HTTPException(
-    #         status_code=403,
-    #         detail="Please verify your email first. Check your inbox for the verification link.",
-    #     )
+    if _needs_email_verification(user):
+        # The wording matters: Login.jsx keys off the substring "verify" to reveal the
+        # "Resend verification email" button. Reword this and the user loses their way back in.
+        raise HTTPException(
+            status_code=403,
+            detail="Please verify your email first. Check your inbox for the verification link.",
+        )
 
     token = create_access_token(
         {"user_id": user.id, "role": user.role, "email": user.email}
