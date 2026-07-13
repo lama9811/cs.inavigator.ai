@@ -1,0 +1,17 @@
+{
+  "name": "CS Navigator | Morgan State University",
+  "short_name": "CS Navigator",
+  "description": "AI-powered academic advising and student support for Morgan State CS students.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B2545",
+  "theme_color": "#0B2545",
+  "icons": [
+    {
+      "src": "/msu_logo.png",
+      "sizes": "510x552",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,180 @@
+{
+  "concept": "algorithm-problems",
+  "concept_label": "Algorithm problems",
+  "questions": [
+    {
+      "id": "algo-01",
+      "concept": "algorithm-problems",
+      "difficulty": "easy",
+      "kind": "parsons",
+      "goal": "Sum all numbers in a list and print the total.",
+      "variants": {
+        "python": {
+          "prompt": "Drag the lines into the correct order to sum a list and print the total.",
+          "lines": [
+            "nums = [4, 8, 15]",
+            "total = 0",
+            "for n in nums:",
+            "    total += n",
+            "print(total)"
+          ],
+          "explanation": "Create the list, start the total at 0, loop adding each number, then print. The += line is indented because it is inside the loop."
+        },
+        "java": {
+          "prompt": "Drag the lines into the correct order to sum an array and print the total.",
+          "lines": [
+            "int[] nums = {4, 8, 15};",
+            "int total = 0;",
+            "for (int n : nums) {",
+            "    total += n;",
+            "}",
+            "System.out.println(total);"
+          ],
+          "explanation": "Declare the array, initialize total to 0, use a for-each loop to add each element, close the loop with }, then print the total."
+        },
+        "javascript": {
+          "prompt": "Drag the lines into the correct order to sum an array and log the total.",
+          "lines": [
+            "let nums = [4, 8, 15];",
+            "let total = 0;",
+            "for (let n of nums) {",
+            "    total += n;",
+            "}",
+            "console.log(total);"
+          ],
+          "explanation": "Declare the array, start total at 0, loop over each value with for...of adding it, close the loop, then log the total."
+        },
+        "cpp": {
+          "prompt": "Drag the lines into the correct order to sum an array and print the total.",
+          "lines": [
+            "int nums[] = {4, 8, 15};",
+            "int total = 0;",
+            "for (int n : nums) {",
+            "    total += n;",
+            "}",
+            "cout << total;"
+          ],
+          "explanation": "Declare the array, initialize total to 0, use a range-based for loop to add each element, close the loop, then output the total."
+        }
+      },
+      "title": "Sum a list"
+    },
+    {
+      "id": "algo-02",
+      "concept": "algorithm-problems",
+      "difficulty": "easy",
+      "kind": "parsons",
+      "goal": "Ask the sum of the first 3 counting numbers (1 + 2 + 3) using a loop.",
+      "variants": {
+        "python": {
+          "prompt": "Drag the lines into the correct order to add the numbers 1, 2, and 3 with a loop, then print the result.",
+          "lines": [
+            "total = 0",
+            "for i in range(1, 4):",
+            "    total += i",
+            "print(total)"
+          ],
+          "explanation": "range(1, 4) yields 1, 2, 3. Start total at 0, add each i inside the loop (indented), then print 6."
+        },
+        "java": {
+          "prompt": "Drag the lines into the correct order to add the numbers 1, 2, and 3 with a loop, then print the result.",
+          "lines": [
+            "int total = 0;",
+            "for (int i = 1; i <= 3; i++) {",
+            "    total += i;",
+            "}",
+            "System.out.println(total);"
+          ],
+          "explanation": "Start total at 0, loop i from 1 to 3 adding each value, close the loop, then print 6."
+        },
+        "javascript": {
+          "prompt": "Drag the lines into the correct order to add the numbers 1, 2, and 3 with a loop, then log the result.",
+          "lines": [
+            "let total = 0;",
+            "for (let i = 1; i <= 3; i++) {",
+            "    total += i;",
+            "}",
+            "console.log(total);"
+          ],
+          "explanation": "Start total at 0, loop i from 1 to 3 adding each value, close the loop, then log 6."
+        },
+        "cpp": {
+          "prompt": "Drag the lines into the correct order to add the numbers 1, 2, and 3 with a loop, then print the result.",
+          "lines": [
+            "int total = 0;",
+            "for (int i = 1; i <= 3; i++) {",
+            "    total += i;",
+            "}",
+            "cout << total;"
+          ],
+          "explanation": "Start total at 0, loop i from 1 to 3 adding each value, close the loop, then output 6."
+        }
+      },
+      "title": "Add 1 + 2 + 3"
+    },
+    {
+      "id": "algo-03",
+      "concept": "algorithm-problems",
+      "difficulty": "medium",
+      "kind": "parsons",
+      "goal": "Find the largest number in a list.",
+      "variants": {
+        "python": {
+          "prompt": "Drag the lines into the correct order to find and print the largest value in the list.",
+          "lines": [
+            "nums = [3, 9, 2, 7]",
+            "largest = nums[0]",
+            "for n in nums:",
+            "    if n > largest:",
+            "        largest = n",
+            "print(largest)"
+          ],
+          "explanation": "Assume the first element is largest, then scan the list; whenever a bigger value appears, update largest. The if is inside the loop and the update is inside the if (two levels of indent)."
+        },
+        "java": {
+          "prompt": "Drag the lines into the correct order to find and print the largest value in the array.",
+          "lines": [
+            "int[] nums = {3, 9, 2, 7};",
+            "int largest = nums[0];",
+            "for (int n : nums) {",
+            "    if (n > largest) {",
+            "        largest = n;",
+            "    }",
+            "}",
+            "System.out.println(largest);"
+          ],
+          "explanation": "Start with the first element as largest, loop through, and update largest whenever a bigger value is found. Note the nested braces for the loop and the if."
+        },
+        "javascript": {
+          "prompt": "Drag the lines into the correct order to find and log the largest value in the array.",
+          "lines": [
+            "let nums = [3, 9, 2, 7];",
+            "let largest = nums[0];",
+            "for (let n of nums) {",
+            "    if (n > largest) {",
+            "        largest = n;",
+            "    }",
+            "}",
+            "console.log(largest);"
+          ],
+          "explanation": "Assume the first element is largest, scan with for...of, and update largest when a bigger value appears. The if and its update are nested inside the loop."
+        },
+        "cpp": {
+          "prompt": "Drag the lines into the correct order to find and print the largest value in the array.",
+          "lines": [
+            "int nums[] = {3, 9, 2, 7};",
+            "int largest = nums[0];",
+            "for (int n : nums) {",
+            "    if (n > largest) {",
+            "        largest = n;",
+            "    }",
+            "}",
+            "cout << largest;"
+          ],
+          "explanation": "Start with the first element as largest, loop through with a range-based for, and update largest whenever a bigger value is found. Note the nested braces."
+        }
+      },
+      "title": "Find the largest"
+    }
+  ]
+}

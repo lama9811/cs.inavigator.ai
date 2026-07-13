@@ -1,0 +1,1316 @@
+/* Concept-quiz styles. All colors flow through the scoped --ct-* tokens defined
+   in CodingTutorTheme.css, so light/dark are handled automatically — no separate
+   dark-mode block needed here. Classes are prefixed `cq-`; the Practice Library
+   wrapper + Code/Quiz toggle use `practice-*`. */
+
+.practice-library {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  /* Readable ink for text/icons sitting on a --ct-primary fill. In light mode
+     --ct-primary is deep navy, so white reads; in dark mode --ct-primary is a
+     light blue, so we need dark ink instead. */
+  --cq-on-primary: #fff;
+}
+body.coding-dark .practice-library {
+  --cq-on-primary: #0b1a33;
+}
+
+/* ---- Toolbar: [Code|Quiz] toggle on the left, back button on the far right ---- */
+.practice-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  /* Separator line under the toggle bar, dividing it from the quiz content. */
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--ct-border);
+}
+/* Filled orange back button. Override the global .coding-app button chrome, then
+   set our own fill. Hover = a raise (lift + deeper shadow), NOT a color change. */
+.coding-app .practice-back-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: linear-gradient(
+    135deg,
+    var(--ct-accent),
+    color-mix(in srgb, var(--ct-accent) 78%, #000)
+  );
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--ct-accent) 32%, transparent);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+.coding-app .practice-back-btn:hover {
+  color: #fff;
+  text-decoration: none;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--ct-accent) 42%, transparent);
+}
+.coding-app .practice-back-btn:active {
+  transform: translateY(0);
+}
+
+/* ---- Code | Quiz toggle ---- */
+.practice-mode-toggle {
+  display: inline-flex;
+  padding: 4px;
+  gap: 4px;
+  background: var(--ct-panel-soft);
+  border: 1px solid var(--ct-border);
+  border-radius: 999px;
+}
+.practice-mode-btn {
+  border: none;
+  background: transparent;
+  color: var(--ct-muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.4rem 1.15rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.practice-mode-btn:hover {
+  color: var(--ct-text);
+}
+/* Gradient fill so the active toggle doesn't look flat. */
+.practice-mode-btn.active {
+  background: linear-gradient(
+    135deg,
+    var(--ct-primary),
+    color-mix(in srgb, var(--ct-primary) 78%, #12325c)
+  );
+  color: var(--cq-on-primary);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--ct-primary) 30%, transparent);
+}
+
+/* ---- Shared bits ---- */
+.cq-loading,
+.cq-empty {
+  color: var(--ct-muted);
+  padding: 1.5rem 0;
+}
+.cq-error {
+  color: #b42318;
+  background: color-mix(in srgb, #b42318 8%, var(--ct-panel));
+  border: 1px solid color-mix(in srgb, #b42318 25%, var(--ct-border));
+  border-radius: 10px;
+  padding: 0.6rem 0.85rem;
+  margin: 0.75rem 0;
+}
+.cq-back-link {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--ct-muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.25rem 0;
+}
+.cq-back-link:hover {
+  color: var(--ct-text);
+}
+
+.cq-btn {
+  border: 1px solid var(--ct-border-strong);
+  border-radius: 10px;
+  padding: 0.55rem 1.15rem;
+  font-weight: 600;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+.cq-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.cq-btn-primary {
+  background: linear-gradient(
+    135deg,
+    var(--ct-primary),
+    color-mix(in srgb, var(--ct-primary) 78%, #12325c)
+  );
+  border-color: var(--ct-primary);
+  color: var(--cq-on-primary);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--ct-primary) 28%, transparent);
+}
+.cq-btn-primary:not(:disabled):hover {
+  filter: brightness(1.08);
+}
+.cq-btn-ghost {
+  background: var(--ct-panel);
+  color: var(--ct-text);
+}
+.cq-btn-ghost:not(:disabled):hover {
+  background: var(--ct-panel-soft);
+}
+
+/* ---- Language cards ---- */
+.cq-cards-intro h2 {
+  margin: 0 0 0.35rem;
+  color: var(--ct-text);
+  font-family: "Sora", var(--font-display, "Public Sans"), sans-serif;
+  font-weight: 800;
+  font-size: 1.9rem;
+  letter-spacing: -0.01em;
+}
+.cq-cards-intro p {
+  margin: 0 0 1.25rem;
+  color: var(--ct-muted);
+  max-width: 58ch;
+}
+.cq-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+.cq-language-card {
+  --cq-card-tint: var(--ct-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  text-align: left;
+  min-height: 260px;
+  padding: 1.5rem 1.5rem 1.35rem;
+  color: var(--ct-text);
+  background: var(--ct-panel);
+  border: 1px solid var(--ct-border-strong);
+  border-top: 5px solid var(--cq-card-tint);
+  border-radius: 18px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  /* Resting elevation so the white cards lift off the near-white page instead
+     of reading flat. Deepens on hover. */
+  box-shadow: 0 4px 14px rgba(11, 37, 69, 0.08), 0 1px 3px rgba(11, 37, 69, 0.06);
+  transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
+}
+/* Tint wash bleeding from the top-left, keyed to the language color, for depth. */
+.cq-language-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    120% 90% at 0% 0%,
+    color-mix(in srgb, var(--cq-card-tint) 16%, transparent),
+    transparent 58%
+  );
+  pointer-events: none;
+}
+.cq-language-card > * {
+  position: relative;
+}
+.cq-language-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 36px color-mix(in srgb, var(--cq-card-tint) 26%, transparent);
+  border-color: var(--cq-card-tint);
+}
+body.coding-dark .cq-language-card {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+.cq-language-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.cq-language-card-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 1.7rem;
+  background: linear-gradient(
+    135deg,
+    var(--cq-card-tint),
+    color-mix(in srgb, var(--cq-card-tint) 65%, #000)
+  );
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--cq-card-tint) 40%, transparent);
+}
+/* Recommended card: stronger tinted border + deeper resting shadow so the
+   suggested starting point stands out from the rest. */
+.cq-language-card.recommended {
+  border: 2px solid var(--cq-card-tint);
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--cq-card-tint) 22%, transparent);
+}
+.cq-language-card-flag {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  background: var(--cq-card-tint);
+  padding: 0.25rem 0.7rem;
+  border-bottom-left-radius: 12px;
+}
+.cq-language-card-name {
+  font-family: "Sora", var(--font-display, "Public Sans"), sans-serif;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--ct-text);
+}
+.cq-language-card-blurb {
+  flex: 1;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--ct-muted);
+}
+.cq-language-card-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.cq-language-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ct-text);
+  background: var(--ct-panel-soft);
+  border: 1px solid var(--ct-border);
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+}
+.cq-language-stat svg {
+  color: var(--cq-card-tint);
+  font-size: 0.85rem;
+}
+/* Category-progress bar inside the card. */
+.cq-language-card-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.cq-language-progress-track {
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-border) 60%, var(--ct-soft));
+  overflow: hidden;
+}
+.cq-language-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--cq-card-tint);
+  transition: width 0.3s ease;
+}
+.cq-language-progress-label {
+  font-size: 0.74rem;
+  color: var(--ct-muted);
+}
+/* CTA is a real full-width gradient button, not a faint link. */
+.cq-language-card-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
+  margin-top: 0.15rem;
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #fff;
+  background: linear-gradient(
+    135deg,
+    var(--cq-card-tint),
+    color-mix(in srgb, var(--cq-card-tint) 62%, #000)
+  );
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--cq-card-tint) 35%, transparent);
+  transition: gap 0.14s ease, filter 0.14s ease;
+}
+.cq-language-card:hover .cq-language-card-cta {
+  gap: 0.7rem;
+  filter: brightness(1.08);
+}
+
+/* ---- Language landing (hero + dropdown + list) ---- */
+.cq-landing {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.cq-hero {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  padding: 1.5rem 1.75rem;
+  border-radius: 16px;
+  /* Solid deep-navy gradient in BOTH themes so the white hero text always has a
+     dark ground. (Keying off --ct-primary broke in light mode where it can be a
+     paler navy, washing out the text.) */
+  background: linear-gradient(135deg, #14294c, #0e1f3c);
+  color: #fff;
+}
+/* Force hero text white regardless of the global coding-app text rules.
+   NOTE: ConceptQuiz.css is imported BEFORE CodingTutor.css, so a plain
+   `.cq-hero h2` (0,1,1) LOSES the specificity tie to `.coding-app h2` (0,1,1)
+   which loads later. Scoping under `.coding-app` (0,2,x) wins the cascade. */
+.coding-app .cq-hero,
+.coding-app .cq-hero h2,
+.coding-app .cq-hero p,
+.coding-app .cq-hero span {
+  color: #fff;
+}
+/* Copy takes the middle; the progress ring is pushed to the far right. */
+.cq-hero-copy {
+  flex: 1 1 auto;
+}
+.cq-hero-icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  font-size: 1.8rem;
+  color: #fff;
+  background: color-mix(in srgb, var(--cq-card-tint, #fff) 55%, rgba(255, 255, 255, 0.15));
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+.cq-hero-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  opacity: 0.8;
+}
+.cq-hero-copy h2 {
+  margin: 0.25rem 0 0.35rem;
+  font-size: 1.9rem;
+  font-family: "Sora", var(--font-display, "Public Sans"), sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.cq-hero-copy p {
+  margin: 0;
+  opacity: 0.85;
+  font-size: 0.95rem;
+}
+.cq-hero-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+/* Thin, elegant progress ring. A conic gradient paints the completed arc in a
+   soft brand blue; a masked inner disc leaves only a thin ring visible. Reserved
+   orange for warnings — this uses cool tones so it reads as calm progress, not
+   an alert. At 0% we show a faint even track (no harsh partial ring). */
+.cq-hero-ring {
+  --cq-ring-fill: #9fc0ef;
+  --cq-ring-track: rgba(255, 255, 255, 0.16);
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: conic-gradient(
+    var(--cq-ring-fill) var(--cq-ring-pct, 0%),
+    var(--cq-ring-track) var(--cq-ring-pct, 0%)
+  );
+}
+.cq-hero-ring.empty {
+  background: var(--cq-ring-track);
+}
+/* Punch out the center so only a thin (4px) ring remains. */
+.cq-hero-ring::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: #14294c;
+}
+body.coding-dark .cq-hero-ring::before {
+  background: #0e1f3c;
+}
+.cq-hero-pct {
+  position: relative;
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+.cq-hero-progress-label {
+  font-size: 0.78rem;
+  opacity: 0.85;
+}
+
+/* ---- Category accordion ---- */
+.cq-accordion {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.cq-accordion-item {
+  background: var(--ct-panel);
+  border: 1px solid var(--ct-border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.cq-accordion-item.open {
+  border-color: var(--ct-border-strong);
+}
+.cq-accordion-item.empty {
+  /* Don't blanket-dim with opacity — on the dark navy panel it makes the row
+     nearly invisible. Muted token colors below carry the "not ready" cue. */
+  background: var(--ct-panel-soft);
+  border-style: dashed;
+}
+.cq-accordion-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-align: left;
+  padding: 1.1rem 1.25rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  /* A <button> does NOT inherit text color by default (UA sets it to
+     canvastext/dark), so its child spans that fall back to inherit render dark
+     on the navy panel. Force inheritance from .coding-app's --ct-text. */
+  color: var(--ct-text);
+}
+.cq-accordion-head:disabled {
+  cursor: not-allowed;
+}
+.cq-accordion-head:not(:disabled):hover {
+  background: var(--ct-panel-soft);
+}
+/* Dark-mode hover revamp: periwinkle-blue left rail + subtle inset glow, matching
+   the question-row hover so the whole accordion reads with one electric accent. */
+body.coding-dark .cq-accordion-head:not(:disabled):hover {
+  background: rgba(59, 130, 246, 0.08);
+  box-shadow: inset 4px 0 0 0 #3b82f6;
+}
+.cq-accordion-num {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  /* Tinted disc that reads in both themes: a soft primary fill with the primary
+     color as the numeral, rather than white-on-primary (which inverts badly in
+     dark mode, where --ct-primary is a light blue). */
+  background: var(--ct-primary-soft);
+  color: var(--ct-primary);
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 35%, transparent);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.cq-accordion-item.empty .cq-accordion-num {
+  background: transparent;
+  color: var(--ct-soft);
+  border-color: var(--ct-border);
+}
+.cq-accordion-copy {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+.cq-accordion-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.15rem;
+  font-family: "Sora", var(--font-display, "Public Sans"), sans-serif;
+  font-weight: 700;
+  color: var(--ct-text);
+}
+.cq-accordion-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ct-muted);
+  background: var(--ct-panel-soft);
+  border: 1px solid var(--ct-border);
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+}
+.cq-accordion-soon {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  /* Readable "coming soon" chip: filled light-gray bg, subtle border, medium
+     text — not the near-invisible ghost it was. */
+  color: #64748b;
+  background: #f3f4f6;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+}
+body.coding-dark .cq-accordion-soon {
+  color: #cbd5e1;
+  background: #1e293b;
+  border-color: #334155;
+}
+.cq-accordion-blurb {
+  color: var(--ct-muted);
+  font-size: 0.88rem;
+}
+.cq-accordion-item.empty .cq-accordion-title {
+  color: var(--ct-muted);
+}
+.cq-accordion-item.empty .cq-accordion-blurb {
+  color: var(--ct-soft);
+}
+.cq-accordion-chevron {
+  flex: 0 0 auto;
+  color: var(--ct-soft);
+  font-size: 0.95rem;
+  transition: transform 0.18s ease;
+}
+.cq-accordion-item.open .cq-accordion-chevron {
+  transform: rotate(180deg);
+  color: var(--ct-muted);
+}
+.cq-accordion-body {
+  border-top: 1px solid var(--ct-border);
+}
+.cq-cat-loading {
+  padding: 1rem 1.25rem;
+}
+
+/* ---- Question table (inside an expanded category) ---- */
+.cq-question-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.cq-question-table thead th {
+  text-align: left;
+  /* Sentence case (not uppercase) reads easier down a long list. */
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ct-text);
+  padding: 0.7rem 1.25rem;
+  /* A firmer separator so the header reads as a header, not an afterthought. */
+  border-bottom: 2px solid var(--ct-border-strong);
+}
+.cq-question-table thead th:nth-child(2),
+.cq-question-table thead th:nth-child(3) {
+  width: 1%;
+  white-space: nowrap;
+}
+.cq-question-table tbody td {
+  padding: 0.6rem 1.25rem;
+  border-bottom: 1px solid var(--ct-border);
+  vertical-align: middle;
+}
+.cq-question-table tbody tr:last-child td {
+  border-bottom: none;
+}
+/* Row hover: subtle highlight so the whole row reads as clickable. */
+.cq-question-table tbody tr:hover td {
+  background: var(--ct-panel-soft);
+}
+/* Dark-mode hover revamp: a periwinkle-blue left rail + subtle inset glow so the
+   active row reads "electric" instead of the old orange wash. The rail lives on
+   the first cell so it hugs the left edge of the row. */
+body.coding-dark .cq-question-table tbody tr:hover td {
+  background: rgba(59, 130, 246, 0.08);
+}
+body.coding-dark .cq-question-table tbody tr:hover td:first-child {
+  box-shadow: inset 4px 0 0 0 #3b82f6;
+}
+/* Plain text link — override the global .coding-app button chrome (border,
+   radius, hover box-shadow, transitions) on BOTH the base and every hover/focus
+   state so no pill/box/glow ever appears behind it. The problem name is the
+   most important thing in the row: bold + bright + a bit larger. */
+.cq-question-table .cq-question-link,
+.cq-question-table .cq-question-link:hover,
+.cq-question-table .cq-question-link:focus,
+.cq-question-table tbody tr:hover .cq-question-link {
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  outline: none;
+  padding: 0;
+  text-align: left;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.cq-question-table .cq-question-link {
+  color: #ffffff;
+  text-decoration: none;
+}
+body:not(.coding-dark) .cq-question-table .cq-question-link {
+  /* Light mode: pure white would be invisible — use the strong text color. */
+  color: var(--ct-text);
+}
+/* Hover = accent text only (underline, no box/glow). Light mode keeps the
+   orange accent; dark mode uses the periwinkle-blue brand to match the left rail. */
+.cq-question-table tbody tr:hover .cq-question-link {
+  color: var(--ct-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+body.coding-dark .cq-question-table tbody tr:hover .cq-question-link {
+  color: #93b4f5;
+}
+.cq-question-status {
+  text-align: center;
+}
+/* Status ICON (not an abstract dot): check = passed, X = missed, empty circle =
+   not started. Universally readable. Scoped under .coding-app + explicit svg
+   fill so the global `.coding-app span{color:inherit}` can't gray it out. */
+.coding-app .cq-status-icon {
+  display: inline-flex;
+  font-size: 1.15rem;
+  vertical-align: middle;
+  color: var(--ct-soft);
+}
+.coding-app .cq-status-icon svg {
+  color: inherit;
+  fill: currentColor;
+}
+.coding-app .cq-status-icon.correct,
+.coding-app .cq-status-icon.correct svg {
+  color: var(--ct-success);
+  fill: currentColor;
+}
+.coding-app .cq-status-icon.incorrect,
+.coding-app .cq-status-icon.incorrect svg {
+  color: #d0493b;
+  fill: currentColor;
+}
+body.coding-dark .coding-app .cq-status-icon.incorrect,
+body.coding-dark .coding-app .cq-status-icon.incorrect svg {
+  color: #f0685a;
+}
+
+/* Best-score badge on the category header: plain text badge with a trophy, no
+   pill — so it doesn't crowd the title. */
+.cq-accordion-best {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.cq-accordion-best svg {
+  font-size: 0.85rem;
+}
+.cq-accordion-best.pass {
+  color: var(--ct-success);
+}
+.cq-accordion-best.try {
+  color: var(--ct-accent);
+}
+
+/* Type badges: color-grouped + iconed so Multiple choice / Type-in / Drag & drop
+   are scannable at a glance. */
+.cq-question-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.cq-question-kind svg {
+  font-size: 0.72rem;
+}
+.cq-question-kind.group-mcq {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+.cq-question-kind.group-typein {
+  color: #15803d;
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+.cq-question-kind.group-parsons {
+  color: #c2410c;
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+/* Dark mode: a lighter-than-fill border + faint inset glow so each badge reads
+   as a distinct chip/token, not a flat "stain" on the navy background. */
+body.coding-dark .cq-question-kind.group-mcq {
+  color: #bfdbfe;
+  background: rgba(37, 99, 235, 0.2);
+  border-color: rgba(96, 165, 250, 0.65);
+}
+body.coding-dark .cq-question-kind.group-typein {
+  color: #bbf7d0;
+  background: rgba(22, 163, 74, 0.2);
+  border-color: rgba(74, 222, 128, 0.65);
+}
+body.coding-dark .cq-question-kind.group-parsons {
+  color: #fed7aa;
+  background: rgba(234, 88, 12, 0.2);
+  border-color: rgba(251, 146, 60, 0.65);
+}
+
+/* ---- Runner ---- */
+.cq-runner {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+/* Full-screen exam view: fills the content area, footer pinned to the bottom,
+   the split body scrolls internally. Enabled by .coding-quiz-runner-active on
+   .coding-app (which gives row 2 a 1fr height). */
+.cq-runner-full {
+  height: 100%;
+  min-height: 0;
+  gap: 0;
+}
+/* Full-bleed exam view: header + footer get horizontal padding to match the
+   panes, and the split runs edge to edge. Runner root fills its flex parent. */
+.coding-quiz-runner-active .cq-runner-full {
+  flex: 1;
+}
+.coding-quiz-runner-active .cq-runner-nav {
+  padding: 1rem 1.75rem;
+  margin: 0;
+}
+/* ONE continuous center divider for the whole runner (header + split), drawn as
+   a vertical line on the runner container at the exact 50% column boundary. Both
+   the header and the split use `1fr 1fr`, so the center is always at 50% and the
+   line stays unbroken from top to bottom — per-cell borders broke at the header/
+   split seam, this doesn't. */
+.cq-runner-full {
+  position: relative;
+}
+.cq-runner-full::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: var(--ct-border);
+  pointer-events: none;
+  z-index: 1;
+}
+/* Header bar split to mirror the columns below: tabs (left) | progress (right). */
+.cq-runner-top {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  border-bottom: 1px solid var(--ct-border);
+}
+.cq-runner-top-left {
+  display: flex;
+  align-items: flex-end;
+  /* No bottom padding — the tabs sit flush on the header's bottom rule so the
+     active underline lands ON the line (no detached "floating" underline). */
+  padding: 0.15rem 1.75rem 0;
+}
+.cq-runner-top-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.45rem 1.75rem;
+}
+@media (max-width: 860px) {
+  .cq-runner-top {
+    grid-template-columns: 1fr;
+  }
+  .cq-runner-top-left {
+    border-right: none;
+  }
+}
+.cq-progress-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ct-text);
+}
+.cq-progress-pct {
+  margin-left: auto;
+  color: var(--ct-accent);
+  font-weight: 700;
+}
+/* Segmented progress: chips, one per question, sitting ABOVE the meta. */
+.cq-progress-segments {
+  display: flex;
+  gap: 4px;
+}
+.cq-progress-seg {
+  flex: 1;
+  height: 6px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-border) 55%, var(--ct-soft));
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.cq-progress-seg:hover {
+  transform: scaleY(1.6);
+}
+.cq-progress-seg.done {
+  background: var(--ct-accent);
+}
+.cq-progress-seg.current {
+  background: var(--ct-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ct-accent) 35%, transparent);
+}
+.cq-progress-seg.current:not(.done) {
+  background: color-mix(in srgb, var(--ct-accent) 55%, var(--ct-soft));
+}
+
+/* Split-screen: two full-height panes with a floor-to-ceiling divider between
+   them, CodeChef-style. Each pane is a flex column: a scrolling body plus its
+   OWN footer nav pinned to the bottom (Previous under the left / question pane,
+   Next·Submit under the right / answer pane). */
+.cq-runner-split {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+}
+.cq-runner-left,
+.cq-runner-right {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+/* No per-pane borders — the continuous center line on .cq-runner-full::before
+   draws the split, unbroken from header through footer. */
+/* The scrolling content area of each pane. */
+.cq-pane-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.5rem 1.75rem;
+}
+/* Footer on the answer pane holding BOTH nav buttons (Previous left, Next/Submit
+   right within it). */
+.cq-pane-nav {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.75rem;
+  border-top: 1px solid var(--ct-border);
+}
+@media (max-width: 860px) {
+  .cq-runner-split {
+    grid-template-columns: 1fr;
+  }
+  .cq-runner-left {
+    border-right: none;
+    border-bottom: 1px solid var(--ct-border);
+  }
+}
+
+/* Tabs as a HEADER LINE: a full-width bottom rule with the switches sitting ON
+   it. The active tab draws a thicker accent segment over the rule (underline
+   tab), so the row reads as "a straight line with switches on it". No pills. */
+.cq-tabs {
+  display: flex;
+  gap: 1.5rem;
+  /* No own margin/border now — the tabs live inside the header-left cell and
+     sit on the header's own bottom rule. */
+  margin: 0;
+}
+/* Override the global .coding-app button chrome (border, radius, hover
+   box-shadow) so the tabs are NOT pills — just text with an orange underline
+   when active. Scoped under .coding-app to win the cascade. Larger type to fill
+   the header; no hover state (per request). */
+.coding-app .cq-tab,
+.coding-app .cq-tab:hover {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  /* Sits ON the header rule: an accent LINE indicator when active, overlapping
+     the header's bottom border. */
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  font-family: "Sora", var(--font-display, "Public Sans"), sans-serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+  padding: 0.25rem 0.25rem 0.4rem;
+  cursor: pointer;
+  color: var(--ct-muted);
+}
+.cq-tab svg {
+  font-size: 1.1rem;
+}
+.coding-app .cq-tab.active {
+  color: var(--ct-primary);
+  font-weight: 700;
+  border-bottom-color: var(--ct-accent);
+}
+
+/* Larger, bolder question prompt in the display font so it anchors the pane. */
+.cq-prompt {
+  margin: 0 0 1rem;
+  color: var(--ct-text);
+  font-family: "Sora", var(--font-display, "Public Sans"), sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+.cq-code {
+  margin: 0 0 0.75rem;
+  padding: 0.9rem 1rem;
+  background: var(--ct-editor-bg);
+  color: var(--ct-editor-text);
+  border-radius: 10px;
+  overflow-x: auto;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.cq-code code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  white-space: pre;
+}
+.cq-goal {
+  margin: 0;
+  color: var(--ct-muted);
+  font-size: 0.9rem;
+}
+
+.cq-learn-panel {
+  padding: 1rem 0;
+}
+.cq-learn-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ct-accent);
+  background: var(--ct-accent-soft);
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  margin-bottom: 0.6rem;
+}
+.cq-learn-panel h4 {
+  margin: 0 0 0.4rem;
+  color: var(--ct-text);
+}
+.cq-learn-panel p {
+  margin: 0;
+  color: var(--ct-muted);
+  font-size: 0.9rem;
+  max-width: 46ch;
+}
+
+/* ---- Answer panels ---- */
+.cq-answer-heading {
+  margin: 0 0 1.1rem;
+  font-family: "Sora", var(--font-display, "Public Sans"), sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ct-text);
+}
+.cq-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.cq-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  text-align: left;
+  padding: 1rem 1.1rem;
+  background: var(--ct-panel);
+  border: 1px solid var(--ct-border-strong);
+  border-radius: 12px;
+  cursor: pointer;
+  /* A <button> doesn't inherit color, and the global `.coding-app span{color:
+     inherit}` makes the child text follow the button — which defaults dark on
+     the navy option in dark mode. Set an explicit light text color here. */
+  color: var(--ct-text);
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.cq-choice:hover {
+  border-color: var(--ct-primary);
+}
+.cq-choice.selected {
+  border-color: var(--ct-primary);
+  background: var(--ct-primary-soft);
+}
+/* Scope under .coding-app so these beat the global `.coding-app span{color:
+   inherit}` (which otherwise drags the option text to the button's dark UA
+   default in dark mode). */
+.coding-app .cq-choice-marker {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--ct-panel-soft);
+  border: 1px solid var(--ct-border-strong);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--ct-text);
+}
+.coding-app .cq-choice.selected .cq-choice-marker {
+  background: var(--ct-primary);
+  color: var(--cq-on-primary);
+  border-color: var(--ct-primary);
+}
+.coding-app .cq-choice-text {
+  color: var(--ct-text);
+  font-size: 0.92rem;
+  white-space: pre-wrap;
+}
+
+.cq-answer-typein {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.cq-typein-label {
+  font-weight: 600;
+  color: var(--ct-text);
+  font-size: 0.9rem;
+}
+.cq-typein-input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--ct-border-strong);
+  border-radius: 10px;
+  background: var(--ct-panel);
+  color: var(--ct-text);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.9rem;
+  resize: vertical;
+}
+.cq-typein-input:focus {
+  outline: 2px solid var(--ct-accent);
+  outline-offset: 1px;
+}
+
+/* ---- Parsons drag-drop ---- */
+.cq-parsons-hint {
+  margin: 0 0 0.6rem;
+  color: var(--ct-muted);
+  font-size: 0.85rem;
+}
+.cq-parsons-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.cq-parsons-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  background: var(--ct-editor-bg);
+  color: var(--ct-editor-text);
+  border: 1px solid var(--ct-border-strong);
+  border-radius: 8px;
+  cursor: grab;
+}
+.cq-parsons-line:active {
+  cursor: grabbing;
+}
+.cq-parsons-grip {
+  color: var(--ct-soft);
+  font-size: 0.9rem;
+}
+.cq-parsons-line code {
+  flex: 1;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.86rem;
+  white-space: pre;
+  overflow-x: auto;
+}
+.cq-parsons-controls {
+  display: flex;
+  gap: 0.2rem;
+}
+.cq-parsons-controls button {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--ct-border);
+  background: var(--ct-panel);
+  color: var(--ct-text);
+  cursor: pointer;
+  line-height: 1;
+}
+.cq-parsons-controls button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.cq-runner-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid var(--ct-border);
+  padding-top: 1.1rem;
+  /* Pinned to the bottom of the full-screen runner (it's the last flex child
+     and the split above it grows to fill). */
+  flex: 0 0 auto;
+}
+
+/* ---- Results screen ---- */
+.cq-results {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.75rem 2rem;
+}
+/* In the full-bleed runner, the results screen fills the height and scrolls,
+   with the action buttons pinned at the bottom. Roomier side padding + a max
+   width so long lists don't stretch edge-to-edge on wide screens. */
+.coding-quiz-runner-active .cq-results {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2rem clamp(1.5rem, 6vw, 4rem);
+}
+.cq-results-header {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+.cq-score-ring {
+  flex: 0 0 auto;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  gap: 0;
+  border: 4px solid var(--ct-success);
+}
+.cq-score-ring.try-again {
+  border-color: var(--ct-accent);
+}
+.cq-score-pct {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--ct-text);
+}
+.cq-score-frac {
+  font-size: 0.75rem;
+  color: var(--ct-muted);
+}
+.cq-results-copy h3 {
+  margin: 0 0 0.3rem;
+  color: var(--ct-text);
+}
+.cq-results-copy p {
+  margin: 0;
+  color: var(--ct-muted);
+}
+
+.cq-results-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.cq-result-row {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem 0.75rem 0;
+  background: var(--ct-panel);
+  border: 1px solid var(--ct-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.cq-result-bar {
+  flex: 0 0 5px;
+  align-self: stretch;
+  background: var(--ct-success);
+}
+.cq-result-row.incorrect .cq-result-bar {
+  background: #d0493b;
+}
+.cq-result-body {
+  flex: 1;
+  padding: 0.1rem 0;
+}
+.cq-result-top {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.35rem;
+}
+.cq-result-num {
+  font-weight: 700;
+  color: var(--ct-muted);
+  font-size: 0.82rem;
+}
+.cq-result-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+}
+.cq-result-row.correct .cq-result-tag {
+  color: var(--ct-success);
+  background: color-mix(in srgb, var(--ct-success) 15%, var(--ct-panel));
+}
+.cq-result-row.incorrect .cq-result-tag {
+  color: #d0493b;
+  background: color-mix(in srgb, #d0493b 12%, var(--ct-panel));
+}
+.cq-result-prompt {
+  margin: 0 0 0.3rem;
+  color: var(--ct-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.cq-result-explanation {
+  margin: 0;
+  color: var(--ct-muted);
+  font-size: 0.85rem;
+}
+.cq-results-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}

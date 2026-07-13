@@ -2460,6 +2460,36 @@ body.dark .send-btn:hover:not(:disabled) {
   transition: opacity 0.2s ease;
 }
 
+/* General-mode "switch to CS Nav" bounce button (always visible, it's an action) */
+.cs-mode-bounce-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 7px 14px;
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.05s ease;
+}
+
+.cs-mode-bounce-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.cs-mode-bounce-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.cs-mode-bounce-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 .message-bubble:hover .bot-action-row,
 .bot-action-row:focus-within {
   opacity: 1;

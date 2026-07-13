@@ -14,6 +14,7 @@ class ChatHistory(Base):
     session_id = Column(String(255), default="default")
     user_query = Column(Text)
     bot_response = Column(Text)
+    mode = Column(String(20), default="regular")  # regular | general | coding_tutor
     timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 

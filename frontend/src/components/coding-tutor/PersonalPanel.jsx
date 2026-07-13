@@ -22,7 +22,7 @@ export default function PersonalPanel({
         </button>
       </div>
       <p className="personal-panel-blurb">
-        Write or upload your own code (.py or .ipynb), run it, and save it here. Not graded.
+        Write or upload your own code (.py, .java, .js, .cpp, or .ipynb), run it, and save it here. Not graded.
       </p>
 
       {snippets.length === 0 ? (

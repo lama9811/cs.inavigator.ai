@@ -113,13 +113,64 @@ body.ct-terminal-resizing * {
 }
 
 
+/* ── Workspace tabs styled like the Concept-Quiz header tabs ─────────────────
+   Underline tabs, not pills: transparent, no border/box, sitting on a shared
+   bottom rule with an accent LINE under the active tab. Mirrors .cq-tab. The
+   !important beats the global .coding-app button chrome + master :is(button)
+   hover pill so no filled pill/box appears. Active line: blue in dark, orange
+   in light (via --ct-accent, which the dark palette already turns bluish). */
+.workspace-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5rem;
+  border-bottom: 1px solid var(--ct-border);
+  padding: 0 0.25rem;
+}
+.coding-app .workspace-tabs > button,
+.coding-app .workspace-tabs > button:hover {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  border-bottom: 3px solid transparent !important;
+  margin-bottom: -1px;
+  padding: 0.4rem 0.15rem 0.5rem !important;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--ct-muted) !important;
+  cursor: pointer;
+}
+.coding-app .workspace-tabs > button:hover {
+  color: var(--ct-text) !important;
+}
+.coding-app .workspace-tabs > button.active {
+  color: var(--ct-primary) !important;
+  font-weight: 700;
+  border-bottom-color: var(--ct-accent) !important;
+}
+body.coding-dark .coding-app .workspace-tabs > button.active {
+  border-bottom-color: #3b82f6 !important;
+}
+
+/* Terminal tab: still pushed to the right, but now an underline tab too (its
+   old gradient-pill active style is neutralized so it matches the other tabs). */
 .workspace-tabs .terminal-tab {
   margin-left: auto;
 }
-
-.workspace-tabs .terminal-tab.active {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--ct-primary) 88%, #ffffff 12%), color-mix(in srgb, var(--ct-primary) 72%, var(--ct-accent) 28%)) !important;
-  color: #ffffff !important;
+.coding-app .workspace-tabs .terminal-tab.active,
+body.coding-dark .coding-app .workspace-tabs .terminal-tab.active {
+  background: transparent !important;
+  color: var(--ct-primary) !important;
+  border-bottom-color: var(--ct-accent) !important;
+}
+body.coding-dark .coding-app .workspace-tabs .terminal-tab.active {
+  color: #eaf0fb !important;
+  border-bottom-color: #3b82f6 !important;
 }
 
 body.coding-dark .coding-app.coding-workspace-active .coding-problem-panel,
@@ -127,9 +178,10 @@ body.coding-dark .coding-app.coding-workspace-active .coding-editor-center {
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22) !important;
 }
 
-body.coding-dark .workspace-tabs .terminal-tab.active {
-  background: linear-gradient(135deg, #243a67, #d89a43) !important;
-  color: #f8f1e8 !important;
+body.coding-dark .coding-app .workspace-tabs .terminal-tab.active {
+  background: transparent !important;
+  color: #eaf0fb !important;
+  border-bottom-color: #3b82f6 !important;
 }
 
 @media (max-width: 900px) {

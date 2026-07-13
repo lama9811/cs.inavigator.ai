@@ -32,6 +32,7 @@ from coding_runner import (
     set_cached_practice_run,
 )
 from practice_starters import build_starter_from_spec, get_arg_spec
+import concept_quiz
 
 from fastapi import FastAPI, HTTPException, Depends, status, File, UploadFile, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -89,7 +90,7 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, text
 from vertex_agent import query_agent, query_agent_stream, check_agent_health, reset_session
 
 # Query caching for faster responses
-from cache import query_cache, get_context_hash, log_cache_stats
+from cache import query_cache, get_context_hash, log_cache_stats, SHORT_CACHE_TTL_SECONDS
 
 
 # =============================================================================
@@ -243,6 +244,16 @@ def init_db():
                 print("[OK] Successfully added 'session_id' column!")
             except Exception as e:
                 print(f"[ERROR] Failed to add column: {e}")
+
+        # 2b. Add mode column if missing (powers CS-Nav-only popular questions)
+        if not _has_col("chat_history", "mode"):
+            print("[WARN] 'mode' column missing. Adding it now...")
+            try:
+                conn.execute(text("ALTER TABLE chat_history ADD COLUMN mode VARCHAR(20) DEFAULT 'regular'"))
+                conn.commit()
+                print("[OK] Successfully added 'mode' column!")
+            except Exception as e:
+                print(f"[ERROR] Failed to add mode column: {e}")
 
         # 3. Add profile_picture_data column if missing (For base64 storage)
         if not _has_col("users", "profile_picture_data"):
@@ -646,7 +657,7 @@ class LoginRequest(BaseModel):
     password: str
 
 VALID_MODELS = {"", "inav-1.0", "inav-1.1"}
-VALID_CHAT_MODES = {"regular", "coding_tutor"}
+VALID_CHAT_MODES = {"regular", "general", "coding_tutor"}
 
 CODING_TUTOR_CONTEXT = """
 CODING TUTOR MODE:
@@ -819,7 +830,7 @@ class QueryRequest(BaseModel):
     session_id: str = "default"
     skip_cache: bool = False
     model: str = ""              # "inav-1.0" (fast) or "inav-1.1" (pro)
-    mode: str = "regular"        # "regular" or "coding_tutor"
+    mode: str = "regular"        # "regular" | "general" | "coding_tutor"
 
     @field_validator("model", mode="before")
     @classmethod
@@ -3223,7 +3234,8 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
                         user_id=user["user_id"],
                         session_id=session_id,
                         user_query=original_q,
-                        bot_response=answer
+                        bot_response=answer,
+                        mode=req.mode
                     )
                     db.add(new_chat)
                     db.commit()
@@ -3249,6 +3261,7 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
                 model=req.model,
                 canvas_context=canvas_context,
                 memory_context=memory_context,
+                chat_mode=req.mode,
             )
         else:
             answer = "I received the file link, but I cannot find the file on the server to read it."
@@ -3271,6 +3284,7 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
                 canvas_context=canvas_context,
                 memory_context=memory_context,
                 flow_context=advising_flow,
+                chat_mode=req.mode,
             )
         except Exception as e:
             print(f"   Vertex AI Chat Error: {e}")
@@ -3286,15 +3300,17 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
                 user_id=user["user_id"],
                 session_id=session_id,
                 user_query=original_q,
-                bot_response=answer
+                bot_response=answer,
+                mode=req.mode
             )
             db.add(new_chat)
             db.commit()
         except Exception as e:
             print(f"[ERROR] Failed to save chat history: {e}")
 
-    # 4. Track failed queries for auto-research agent
-    if answer and "error" not in answer.lower()[:50]:
+    # 4. Track failed queries for auto-research agent. General mode never queries the
+    # KB, so its answers must not be logged as KB misses.
+    if answer and "error" not in answer.lower()[:50] and req.mode != "general":
         try:
             from research_agent import detect_and_log_failed_query
             detect_and_log_failed_query(original_q, answer, user["user_id"], has_student_data=bool(student_context))
@@ -3494,7 +3510,8 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                             user_id=user_id,
                             session_id=session_id,
                             user_query=original_q,
-                            bot_response=video_answer
+                            bot_response=video_answer,
+                            mode=req.mode
                         )
                         save_db.add(new_chat)
                         save_db.commit()
@@ -3562,8 +3579,19 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
             """Return cached response as SSE."""
             # Send status to show it's from cache
             yield f"data: {json.dumps({'type': 'status', 'content': 'Retrieved from cache'})}\n\n"
+            # General-mode answers are stored as a {text, grounding} envelope so the
+            # required Search Suggestions still render on a cache replay. Every other
+            # mode stores a bare string. Tolerate both shapes.
+            cached_text, cached_grounding = cached_response, None
+            try:
+                _payload = json.loads(cached_response)
+                if isinstance(_payload, dict) and "text" in _payload:
+                    cached_text = _payload["text"]
+                    cached_grounding = _payload.get("grounding")
+            except (ValueError, TypeError):
+                pass
             # Send the full response immediately
-            yield f"data: {json.dumps({'type': 'done', 'content': cached_response})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'content': cached_text, 'grounding': cached_grounding})}\n\n"
             mark_timing("total")
             print(
                 "[CHAT_TIMING] "
@@ -3581,7 +3609,8 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                             user_id=user_id,
                             session_id=session_id,
                             user_query=original_q,
-                            bot_response=cached_response
+                            bot_response=cached_text,
+                            mode=req.mode
                         )
                         save_db.add(new_chat)
                         save_db.commit()
@@ -3604,15 +3633,19 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
     print(f"[CACHE] MISS for query: {user_q[:50]}...")
     stream_had_error = False
 
+    is_general = req.mode == "general"
+
     async def generate_sse():
         """SSE generator that streams text chunks from the agent."""
         nonlocal stream_had_error
         full_response = ""
+        suggested_mode = None
+        grounding_meta = None
         first_event = True
         # Tell the client which "thinking" track to animate. Coding questions never
-        # hit the knowledge base, so the client should not show a "Searching
-        # knowledge base" step for them.
-        thinking_track = "coding" if is_coding_tutor else "regular"
+        # hit the knowledge base; general questions search the web, not the KB — so
+        # neither should show the "Searching knowledge base" step.
+        thinking_track = "coding" if is_coding_tutor else ("general" if is_general else "regular")
         yield f"data: {json.dumps({'type': 'thinking_track', 'content': thinking_track})}\n\n"
         try:
             for event in query_agent_stream(
@@ -3623,6 +3656,7 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                 canvas_context=canvas_context,
                 memory_context=memory_context,
                 flow_context=advising_flow,
+                chat_mode=req.mode,
             ):
                 if first_event:
                     mark_timing("agent_first_event")
@@ -3639,7 +3673,9 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
 
                 elif event_type == "done":
                     full_response = content or full_response
-                    yield f"data: {json.dumps({'type': 'done', 'content': full_response})}\n\n"
+                    suggested_mode = event.get("suggested_mode")
+                    grounding_meta = event.get("grounding")
+                    yield f"data: {json.dumps({'type': 'done', 'content': full_response, 'suggested_mode': suggested_mode, 'grounding': grounding_meta})}\n\n"
 
                 elif event_type == "error":
                     stream_had_error = True
@@ -3656,9 +3692,23 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
             if not full_response:
                 full_response = "An error occurred during streaming."
 
-        # Cache the successful response
-        if (not skip_response_cache) and full_response and "error" not in full_response.lower()[:50] and "I may not have complete information" not in full_response:
-            if query_cache.set(cache_query, full_response, context_hash, allow_semantic=allow_semantic):
+        # Cache the successful response. A general-mode decline (the bounce) is not a
+        # real answer, so never cache it. Google-grounded answers are stored as a JSON
+        # envelope {text, grounding} so a cache replay can still show the required
+        # Search Suggestions, and on a short TTL so "live" info doesn't go stale.
+        cacheable = (
+            (not skip_response_cache) and full_response
+            and "error" not in full_response.lower()[:50]
+            and "I may not have complete information" not in full_response
+            and suggested_mode is None  # a "switch modes" decline is not a real answer
+        )
+        if cacheable:
+            if is_general:
+                value = json.dumps({"text": full_response, "grounding": grounding_meta})
+                stored = query_cache.set(cache_query, value, context_hash, allow_semantic=False, ttl=SHORT_CACHE_TTL_SECONDS)
+            else:
+                stored = query_cache.set(cache_query, full_response, context_hash, allow_semantic=allow_semantic)
+            if stored:
                 print(f"[CACHE] Stored response for: {cache_query[:50]}...")
 
         # Save to chat history after stream completes (save original query, not rewritten).
@@ -3670,7 +3720,8 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                         user_id=user_id,
                         session_id=session_id,
                         user_query=original_q,
-                        bot_response=full_response
+                        bot_response=full_response,
+                        mode=req.mode
                     )
                     save_db.add(new_chat)
                     save_db.commit()
@@ -3682,7 +3733,9 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
         if full_response and not stream_had_error and "error" not in full_response.lower()[:50]:
             try:
                 from research_agent import detect_and_log_failed_query
-                if not is_coding_tutor:
+                # Coding and General modes never query the KB, so their answers
+                # must not be logged as KB misses.
+                if not is_coding_tutor and not is_general:
                     detect_and_log_failed_query(original_q, full_response, user_id, has_student_data=bool(agent_context))
             except Exception:
                 pass
@@ -4833,6 +4886,138 @@ async def get_practice_question_solution(question_id: str, language: str = Query
     question = _find_practice_question(question_id)
     return _find_language_solution(question_id, language, question)
 
+# ---------------------------------------------------------------------------
+# Concept quizzes (CodeChef-style MCQ / type-in / drag-and-drop). Distinct from
+# the code-writing Practice Library above. Content + loader live in
+# backend/concept_quiz.py and data_sources/concept_quiz/. These endpoints just
+# adapt the loader's ValueErrors into HTTP errors and serve projected,
+# single-language questions to the Practice Library "Quiz" toggle.
+# ---------------------------------------------------------------------------
+def _concept_quiz_call(fn, *args):
+    """Run a loader function, mapping its exceptions onto HTTP status codes."""
+    try:
+        return fn(*args)
+    except concept_quiz.ConceptQuizError as exc:
+        # Unknown language / category / question — client-fixable.
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except concept_quiz.ConceptQuizDataError as exc:
+        # Missing or malformed content file — server-side.
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.get("/api/coding/concept-quiz/languages")
+async def list_concept_quiz_languages():
+    """The 4 language cards shown when the student toggles to Quiz mode."""
+    manifest = _concept_quiz_call(concept_quiz.load_manifest)
+    languages = manifest.get("languages", {})
+    return {
+        "languages": [
+            {"id": key, "label": label}
+            for key, label in languages.items()
+        ]
+    }
+
+
+@app.get("/api/coding/concept-quiz/{language}/categories")
+async def list_concept_quiz_categories(language: str):
+    """The 13 categories (12 shared + 1 language-specific) for one language,
+    each with a live question count so empty categories can be flagged/hidden."""
+    categories = _concept_quiz_call(concept_quiz.categories_for_language, language)
+    return {
+        "language": concept_quiz.normalize_language(language),
+        "categories": categories,
+    }
+
+
+@app.get("/api/coding/concept-quiz/{language}/{category}/questions")
+async def list_concept_quiz_questions(language: str, category: str):
+    """Every question in one language + category, projected to that language.
+
+    Answers (answer_index / accepted / parsons line order) are included so the
+    UI can give instant CodeChef-style feedback. This is a learning tool, not a
+    proctored exam; the /grade endpoint below exists for server-verified scoring
+    and future progress tracking.
+    """
+    return _concept_quiz_call(concept_quiz.questions_for_category, language, category)
+
+
+@app.get("/api/coding/concept-quiz/{language}/{category}/questions/{question_id}")
+async def get_concept_quiz_question(language: str, category: str, question_id: str):
+    return _concept_quiz_call(
+        concept_quiz.find_question, language, category, question_id
+    )
+
+
+class ConceptQuizAnswer(BaseModel):
+    question_id: str
+    # MCQ: the chosen option index. Type-in: the typed text. Parsons: the
+    # student's ordered list of lines. Exactly one is used per question kind.
+    choice_index: Optional[int] = None
+    text: Optional[str] = None
+    order: Optional[list[str]] = None
+
+
+class ConceptQuizGradeRequest(BaseModel):
+    language: str
+    category: str
+    answers: list[ConceptQuizAnswer]
+
+
+def _grade_concept_answer(question: dict[str, Any], answer: ConceptQuizAnswer) -> dict[str, Any]:
+    """Grade one submitted answer against its question. Pure/stateless."""
+    kind = question.get("kind")
+    correct = False
+    if kind in {"mcq-output", "mcq-behavior"}:
+        correct = answer.choice_index == question.get("answer_index")
+    elif kind == "typein":
+        # Case-sensitive exact match against accepted forms, but tolerant of
+        # surrounding whitespace the student may have added.
+        submitted = (answer.text or "").strip()
+        correct = submitted in {a.strip() for a in question.get("accepted", [])}
+    elif kind == "parsons":
+        correct = (answer.order or []) == question.get("lines", [])
+    return {
+        "question_id": question.get("id"),
+        "kind": kind,
+        "correct": correct,
+        "explanation": question.get("explanation", ""),
+    }
+
+
+@app.post("/api/coding/concept-quiz/grade")
+async def grade_concept_quiz(
+    req: ConceptQuizGradeRequest,
+    user: dict = Depends(get_current_user),
+):
+    """Server-verified grading for a submitted quiz set. Returns a per-question
+    correct/incorrect breakdown plus a score, powering the green/red results
+    screen. Stateless for now; progress persistence can build on this later."""
+    bank = _concept_quiz_call(
+        concept_quiz.questions_for_category, req.language, req.category
+    )
+    by_id = {str(q.get("id")): q for q in bank["questions"]}
+
+    results: list[dict[str, Any]] = []
+    for answer in req.answers:
+        question = by_id.get(answer.question_id)
+        if question is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Question '{answer.question_id}' is not in {req.language}/{req.category}.",
+            )
+        results.append(_grade_concept_answer(question, answer))
+
+    total = len(results)
+    correct = sum(1 for r in results if r["correct"])
+    return {
+        "language": bank["language"],
+        "category": bank["category"],
+        "total": total,
+        "correct": correct,
+        "score": round(correct / total, 4) if total else 0.0,
+        "results": results,
+    }
+
 @app.post("/api/coding/resources/search")
 async def search_coding_study_resources(
     req: StudyResourceSearchRequest,
@@ -5384,6 +5569,10 @@ async def get_popular_questions(db: Session = Depends(get_db)):
             .filter(ChatHistory.user_query.isnot(None))
             .filter(func.char_length(func.trim(ChatHistory.user_query)) >= _POPULAR_Q_MIN_LEN)
             .filter(normalized.notin_(sorted(_POPULAR_Q_STOPLIST)))
+            # CS Nav welcome screen: only rank CS Nav (regular) questions. General/
+            # Coding questions must not surface as Morgan CS suggestions. Legacy rows
+            # predating the `mode` column are NULL -> treated as regular.
+            .filter(func.coalesce(ChatHistory.mode, "regular") == "regular")
             .group_by(normalized)
             .order_by(func.count().desc())
             .limit(30)  # over-fetch: coding-tutor prompts are filtered out below

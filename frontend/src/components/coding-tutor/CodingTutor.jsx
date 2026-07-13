@@ -20,6 +20,8 @@ import PersonalPanel from "./PersonalPanel";
 import ProblemPanel from "./ProblemPanel";
 import ProgressBadges from "./ProgressBadges";
 import QuizBank from "./QuizBank";
+import ConceptQuiz from "./concept-quiz/ConceptQuiz";
+import "./concept-quiz/ConceptQuiz.css";
 import StatTiles from "./StatTiles";
 import InterviewPrep from "./InterviewPrep";
 import PastInterviews from "./PastInterviews";
@@ -44,6 +46,13 @@ import "./CodingTutor.css";
 import "./CodingTutorTheme.css";
 
 const CODE_LANGUAGES = ["Python", "Java", "JavaScript", "C++"];
+// Concept-quiz language ids (backend keys) → display labels, for the quiz views.
+const CONCEPT_QUIZ_LABELS = {
+  python: "Python",
+  java: "Java",
+  javascript: "JavaScript",
+  cpp: "C++",
+};
 // The exact primary topic strings the Practice Library (Quiz Bank) filters on — the
 // filter matches question.topic, so a prerequisite link only lands on real problems if
 // it resolves to one of THESE. Keep in sync with backend/data_sources/quiz.
@@ -137,6 +146,9 @@ function pageFromPath(pathname) {
   // Any /coding/workspace/* sub-path (personal, problem/:id) is still the
   // "workspace" section — the suffix selects what's open WITHIN the workspace.
   if (clean === "/coding/workspace" || clean.startsWith("/coding/workspace/")) return "workspace";
+  // Likewise any /coding/practice/* sub-path (the concept-quiz language/runner
+  // routes) is still the "quiz" section; the suffix selects the quiz view.
+  if (clean === "/coding/practice" || clean.startsWith("/coding/practice/")) return "quiz";
   return PATH_TO_PAGE[clean] || "dashboard";
 }
 
@@ -159,6 +171,39 @@ function questionSetForId(id) {
 }
 const workspacePathForProblem = (id) => `/coding/workspace/problem/${encodeURIComponent(id)}`;
 const workspacePathForSnippet = (id) => `/coding/workspace/snippet/${encodeURIComponent(id)}`;
+
+// Concept-quiz (CodeChef-style MCQ/type-in/Parsons) lives UNDER the practice
+// page as sub-routes, mirroring how the workspace nests problem/snippet routes.
+// The practice page stays the "quiz" section; the suffix selects the quiz view:
+//   /coding/practice                                     → Code|Quiz toggle (Quiz = language cards)
+//   /coding/practice/quiz/:language                      → language landing (hero + category dropdown + list)
+//   /coding/practice/quiz/:language/:category/:questionId → sequential runner
+// Returns { view: "toggle" | "language" | "runner", language?, category?, questionId? }.
+function conceptQuizTargetFromPath(pathname) {
+  const clean = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+  const runner = clean.match(
+    /^\/coding\/practice\/quiz\/([^/]+)\/([^/]+)\/(.+)$/
+  );
+  if (runner) {
+    return {
+      view: "runner",
+      language: decodeURIComponent(runner[1]),
+      category: decodeURIComponent(runner[2]),
+      questionId: decodeURIComponent(runner[3]),
+    };
+  }
+  const landing = clean.match(/^\/coding\/practice\/quiz\/([^/]+)$/);
+  if (landing) {
+    return { view: "language", language: decodeURIComponent(landing[1]) };
+  }
+  return { view: "toggle" };
+}
+const quizPathForLanguage = (language) =>
+  `/coding/practice/quiz/${encodeURIComponent(language)}`;
+const quizPathForQuestion = (language, category, questionId) =>
+  `/coding/practice/quiz/${encodeURIComponent(language)}/${encodeURIComponent(
+    category
+  )}/${encodeURIComponent(questionId)}`;
 
 const LANGUAGE_FORMATS = {
   Python: { file: "solution.py", style: "Function-focused" },
@@ -512,6 +557,22 @@ export default function CodingTutor({
   // A topic to pre-filter the Practice Library by, set when a student clicks a
   // prerequisite ("Needs: …") link on an interview problem. Consumed + cleared by QuizBank.
   const [pendingQuizTopic, setPendingQuizTopic] = useState(null);
+  // Practice Library [Code | Quiz] toggle. Only consulted on the bare
+  // /coding/practice path; any /coding/practice/quiz/* path forces Quiz. "code"
+  // shows the code-writing QuizBank, "quiz" shows the concept-quiz language cards.
+  const [quizMode, setQuizMode] = useState("code");
+  // Remember the last Quiz location so switching Code → Quiz returns the student
+  // to where they were (a language's categories, or the exact question), rather
+  // than resetting to the language cards. Persisted so it survives reloads too.
+  const lastQuizPathRef = useRef(
+    (() => {
+      try {
+        return localStorage.getItem("concept_quiz_last_path") || null;
+      } catch {
+        return null;
+      }
+    })()
+  );
   const [practiceLanguage, setPracticeLanguage] = useState("Python");
   const [selectedLanguage, setSelectedLanguage] = useState("Python");
   const [questions, setQuestions] = useState([]);
@@ -878,6 +939,19 @@ export default function CodingTutor({
       document.body.classList.remove("coding-dark");
     };
   }, []);
+
+  // Remember the deepest Quiz path the student visits (a language landing or a
+  // specific question), so toggling back to Quiz restores it. Only /quiz/* paths
+  // are tracked; the bare toggle path isn't a "location" worth restoring.
+  useEffect(() => {
+    if (conceptQuizTargetFromPath(location.pathname).view === "toggle") return;
+    lastQuizPathRef.current = location.pathname;
+    try {
+      localStorage.setItem("concept_quiz_last_path", location.pathname);
+    } catch {
+      // storage unavailable — in-memory ref still works for this session
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     // Pull the account's saved snippets from the server once on load and merge
@@ -1998,7 +2072,7 @@ export default function CodingTutor({
     const lower = file.name.toLowerCase();
     const allowed = [".py", ".ipynb", ".js", ".jsx", ".ts", ".tsx", ".java", ".cpp", ".cc", ".c", ".h", ".hpp", ".txt"];
     if (!allowed.some(ext => lower.endsWith(ext))) {
-      toast.error("Unsupported file. Upload a .py, .ipynb, or other code/text file.");
+      toast.error("Unsupported file. Upload a .py, .java, .js, .cpp, .ipynb, or other code/text file.");
       return;
     }
     if (file.size > 512 * 1024) {
@@ -2547,22 +2621,109 @@ export default function CodingTutor({
       );
     }
     if (activePage === "quiz") {
+      // The Practice Library has two modes behind a [Code | Quiz] toggle, both
+      // URL-backed: /coding/practice = Code (the code-writing QuizBank), and any
+      // /coding/practice/quiz/* path = Quiz (the concept quizzes). Deriving the
+      // mode from the path keeps deep links + Back/Forward working.
+      const quizTarget = conceptQuizTargetFromPath(location.pathname);
+      const inQuizMode = quizTarget.view !== "toggle" || quizMode === "quiz";
+      // Back navigation for the current quiz view, surfaced on the toggle row
+      // (far right) so it shares the line with the Code/Quiz toggle instead of
+      // sitting on its own row below.
+      let quizBack = null;
+      if (quizTarget.view === "language") {
+        quizBack = {
+          label: "All languages",
+          onClick: () => {
+            setQuizMode("quiz");
+            navigate("/coding/practice");
+          },
+        };
+      } else if (quizTarget.view === "runner") {
+        const langLabel =
+          CONCEPT_QUIZ_LABELS[quizTarget.language] || quizTarget.language;
+        quizBack = {
+          label: `Back to ${langLabel}`,
+          onClick: () => navigate(quizPathForLanguage(quizTarget.language)),
+        };
+      }
       return (
-        <QuizBank
-          questions={questions}
-          allQuestions={allQuestions}
-          progressByQuestion={progressByQuestion}
-          listLoading={listLoading}
-          difficulty={difficulty}
-          selectedLanguage={practiceLanguage}
-          languageOptions={CODE_LANGUAGES}
-          progressSummary={progressSummary}
-          onDifficultyChange={setDifficulty}
-          onLanguageChange={setPracticeLanguage}
-          onSelectProblem={selectQuestion}
-          initialTopic={pendingQuizTopic}
-          onConsumeInitialTopic={() => setPendingQuizTopic(null)}
-        />
+        <div className="practice-library">
+          <div className="practice-toolbar">
+            <div className="practice-mode-toggle" role="tablist" aria-label="Practice mode">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={!inQuizMode}
+                className={`practice-mode-btn ${!inQuizMode ? "active" : ""}`}
+                onClick={() => {
+                  setQuizMode("code");
+                  navigate("/coding/practice");
+                }}
+              >
+                Code
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={inQuizMode}
+                className={`practice-mode-btn ${inQuizMode ? "active" : ""}`}
+                onClick={() => {
+                  setQuizMode("quiz");
+                  // Return to the last Quiz location (language/question) if we
+                  // have one; otherwise show the language cards.
+                  const saved = lastQuizPathRef.current;
+                  if (saved && saved !== location.pathname) navigate(saved);
+                }}
+              >
+                Quiz
+              </button>
+            </div>
+            {quizBack ? (
+              <button
+                type="button"
+                className="practice-back-btn"
+                onClick={quizBack.onClick}
+              >
+                ← {quizBack.label}
+              </button>
+            ) : null}
+          </div>
+
+          {inQuizMode ? (
+            <ConceptQuiz
+              apiBase={apiBase}
+              target={quizTarget}
+              languageLabels={CONCEPT_QUIZ_LABELS}
+              onNavigateToLanguages={() => {
+                setQuizMode("quiz");
+                navigate("/coding/practice");
+              }}
+              onNavigateToLanguage={(language) =>
+                navigate(quizPathForLanguage(language))
+              }
+              onNavigateToQuestion={(language, category, questionId) =>
+                navigate(quizPathForQuestion(language, category, questionId))
+              }
+            />
+          ) : (
+            <QuizBank
+              questions={questions}
+              allQuestions={allQuestions}
+              progressByQuestion={progressByQuestion}
+              listLoading={listLoading}
+              difficulty={difficulty}
+              selectedLanguage={practiceLanguage}
+              languageOptions={CODE_LANGUAGES}
+              progressSummary={progressSummary}
+              onDifficultyChange={setDifficulty}
+              onLanguageChange={setPracticeLanguage}
+              onSelectProblem={selectQuestion}
+              initialTopic={pendingQuizTopic}
+              onConsumeInitialTopic={() => setPendingQuizTopic(null)}
+            />
+          )}
+        </div>
       );
     }
     if (activePage === "interview") return renderInterviewPrep();
@@ -2582,16 +2743,23 @@ export default function CodingTutor({
   };
 
   return (
-    <div className={`coding-app coding-page-${activePage} ${activePage === "workspace" ? "coding-workspace-active" : ""} ${terminalOpen ? "terminal-open" : "terminal-closed"}`}>
+    <div className={`coding-app coding-page-${activePage} ${activePage === "workspace" ? "coding-workspace-active" : ""} ${activePage === "quiz" && conceptQuizTargetFromPath(location.pathname).view === "runner" ? "coding-quiz-runner-active" : ""} ${terminalOpen ? "terminal-open" : "terminal-closed"}`}>
       <div className="coding-nav-row">
         <nav className="coding-section-nav campus-section-nav" aria-label="Coding tutor sections">
         {CODING_PAGES.map(page => {
           const Icon = page.icon;
+          // The Workspace icon and the separate "My Snippets" button below both
+          // live under activePage === "workspace". When the personal scratch space
+          // (My Snippets) is what's open, let THAT button own the active state so
+          // only one nav icon reads as selected — the generic Workspace icon defers.
+          const isActive = page.id === "workspace"
+            ? activePage === "workspace" && !isPersonalMode
+            : activePage === page.id;
           return (
           <button
             key={page.id}
             type="button"
-            className={activePage === page.id ? "active" : ""}
+            className={isActive ? "active" : ""}
             onClick={() => openPage(page.id)}
             title={page.label}
             aria-label={page.label}
