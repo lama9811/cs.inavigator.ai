@@ -3205,7 +3205,6 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
     student_context = ""
     canvas_context = ""
     memory_context = ""
-    advising_flow = ""  # multi-turn flow block; sent via state_delta, NOT hashed context
     planner_state = None  # set by the schedule-planner block below (guard for cache-skip)
     conversation_context = _build_conversation_context(history_dicts)
 
@@ -3248,30 +3247,10 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
             set_planner_state(user["user_id"], session_id, planner_state)
             student_context += build_planner_context(planner_state)
 
-        # Advising form state machine (Step 1 Internship Form -> Step 2 Advising Form).
-        # Same shape as the schedule planner: detect intent, advance state, inject a
-        # "follow exactly" block. Pre-fills known fields (incl. advisor) from dw_dict.
-        from services.advising_form import (
-            detect_advising_intent, get_advising_state, set_advising_state,
-            clear_advising_state, process_advising_turn, build_advising_context,
-        )
-
-        # The advising block goes to `advising_flow` (sent via state_delta every turn),
-        # NOT student_context. student_context is hashed to decide session reuse, so
-        # putting a per-turn-changing block there would recreate the ADK session each
-        # turn and wipe the conversation — breaking the yes/no follow-ups.
-        advising_state = get_advising_state(user["user_id"], session_id)
-        if advising_state:
-            advising_state = process_advising_turn(advising_state, user_q)
-            if advising_state:
-                set_advising_state(user["user_id"], session_id, advising_state)
-                advising_flow = build_advising_context(advising_state, dw_dict)
-            else:
-                clear_advising_state(user["user_id"], session_id)
-        elif detect_advising_intent(user_q):
-            advising_state = {"phase": "step1_ask"}
-            set_advising_state(user["user_id"], session_id, advising_state)
-            advising_flow = build_advising_context(advising_state, dw_dict)
+        # NOTE: the in-chat advising state machine was removed. Advising now lives on
+        # its own page (Tools -> Advising Form), which persists to AdvisingFormDraft.
+        # The chat version kept answers in an in-memory dict that never reached the DB,
+        # so a student's answers vanished on restart and never showed up on the page.
 
     mode_context = build_mode_context(req.mode)
     if mode_context:
@@ -3460,7 +3439,6 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
     student_context = ""
     canvas_context = ""
     memory_context = ""
-    advising_flow = ""  # multi-turn flow block; sent via state_delta, NOT hashed context
     planner_state = None  # set by the schedule-planner block below (guard for cache-skip)
 
     if not is_coding_tutor:
@@ -3502,27 +3480,8 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
             set_planner_state(user_id, session_id, planner_state)
             student_context += build_planner_context(planner_state)
 
-        # Advising form state machine (Step 1 Internship Form -> Step 2 Advising Form).
-        # Same shape as the schedule planner; pre-fills known fields from dw_dict.
-        from services.advising_form import (
-            detect_advising_intent, get_advising_state, set_advising_state,
-            clear_advising_state, process_advising_turn, build_advising_context,
-        )
-
-        # Advising block -> advising_flow (state_delta), NOT student_context (hashed).
-        # See the /chat handler for why: keeps the ADK session alive across turns.
-        advising_state = get_advising_state(user_id, session_id)
-        if advising_state:
-            advising_state = process_advising_turn(advising_state, user_q)
-            if advising_state:
-                set_advising_state(user_id, session_id, advising_state)
-                advising_flow = build_advising_context(advising_state, dw_dict)
-            else:
-                clear_advising_state(user_id, session_id)
-        elif detect_advising_intent(user_q):
-            advising_state = {"phase": "step1_ask"}
-            set_advising_state(user_id, session_id, advising_state)
-            advising_flow = build_advising_context(advising_state, dw_dict)
+        # NOTE: the in-chat advising state machine was removed here too. See the /chat
+        # handler above. Advising is now the Tools -> Advising Form page.
 
     mode_context = build_mode_context(req.mode)
     if mode_context:
@@ -3618,15 +3577,15 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
     allow_semantic = not (bool(dw_dict) or bool(canvas_dict))
     mark_timing("cache_ready")
 
-    # Never serve a cached answer while a multi-turn flow (advising/planner) is active:
-    # the reply must come from the live agent WITH the injected flow instructions, or the
-    # flow silently breaks (a cached "how to access forms" answer bypasses advising).
-    in_flow = bool(advising_flow) or bool(planner_state)
+    # Never serve a cached answer while the schedule-planner flow is active: the reply
+    # must come from the live agent WITH the injected flow instructions, or the flow
+    # silently breaks.
+    in_flow = bool(planner_state)
     skip_response_cache = req.skip_cache or in_flow or (is_coding_tutor and _coding_tutor_query_has_workspace_code(user_q))
 
     # Skip cache when user taps "Regenerate" or when Coding Tutor includes live workspace code.
     if skip_response_cache:
-        reason = ("advising/planner flow" if in_flow else
+        reason = ("planner flow" if in_flow else
                   "workspace code" if is_coding_tutor and _coding_tutor_query_has_workspace_code(user_q) else "regenerate")
         print(f"[CACHE] SKIP ({reason}) for query: {user_q[:50]}...")
         cached_response = None
