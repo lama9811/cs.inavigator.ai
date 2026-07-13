@@ -961,7 +961,7 @@ body.dark .workspace-discussion-panel {
 .suggestions {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  align-items: start; /* don't stretch short cards to match a tall neighbor */
+  align-items: stretch; /* every card in a row matches its neighbour's height */
   gap: 8px;
   margin-top: 24px;
   max-width: 720px;
@@ -991,6 +991,22 @@ body.dark .workspace-discussion-panel {
   overflow: hidden;
   text-align: left;
   line-height: 1.35;
+  /* Every card is two lines tall whether its question wraps or not, so the grid reads
+     as a grid. Without this, a one-line question next to a two-line one leaves a step.
+     The 18px = 16px vertical padding + 2px of top/bottom border; omit the border and
+     one-line rows land 2px short of wrapped ones. */
+  display: flex;
+  align-items: center;
+  min-height: calc(2 * 1.35em + 18px);
+}
+
+/* Clamp to the two lines the card is sized for. A longer question is ellipsised in the
+   chip; the click still sends the full text. */
+.suggestion-btn__text {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* Google brand color accents on suggestion cards */
