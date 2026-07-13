@@ -59,6 +59,9 @@ CLAUDE.md
 AGENTS.md
 ROADMAP.md
 
+# Planning docs — internal implementation queues, kept local (never pushed)
+docs/plans/
+
 # Presentation / talk notes (kept local, not for public repo)
 docs/aaas_talk.md
 docs/*_talk.md
