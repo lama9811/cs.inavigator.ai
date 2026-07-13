@@ -71,9 +71,13 @@ def _rate_limit_email(
 def _needs_email_verification(user) -> bool:
     """Whether login must be blocked until this user verifies their email.
 
-    NULL reads as unverified: rows predating the column store NULL, and those users
-    never clicked a link. Admins are exempt — that is the escape hatch if a broken
-    sender ever leaves the whole user base unable to verify.
+    Anything falsy — False, and NULL should it ever occur — reads as unverified, so a
+    missing value can never open the gate. (Rows predating the column were backfilled
+    TRUE by init_db's `BOOLEAN DEFAULT TRUE`, so they are already verified; NULL is
+    defensive, not expected.)
+
+    Admins are exempt — that is the escape hatch if a broken sender ever leaves the
+    whole user base unable to verify.
     """
     if getattr(user, "role", None) == "admin":
         return False
