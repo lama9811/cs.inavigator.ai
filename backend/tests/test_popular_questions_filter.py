@@ -3,7 +3,7 @@ import os
 os.environ.setdefault("JWT_SECRET", "test-only-jwt-secret-not-for-production")
 
 import pytest
-from sqlalchemy import create_engine, func, or_
+from sqlalchemy import create_engine, func, or_, and_
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -13,7 +13,7 @@ from main import (
     _is_cs_department_question,
     _dedupe_near_duplicates,
     _POPULAR_Q_CODING_MARKERS,
-    _POPULAR_Q_CODING_SESSION_PREFIX,
+    _POPULAR_Q_FEATURE_SESSION_PREFIXES,
     _POPULAR_Q_MIN_LEN,
 )
 
@@ -116,7 +116,10 @@ def _eligible(db):
         .filter(
             or_(
                 ChatHistory.session_id.is_(None),
-                ~ChatHistory.session_id.like(f"{_POPULAR_Q_CODING_SESSION_PREFIX}%"),
+                and_(*[
+                    ~ChatHistory.session_id.like(f"{p}%")
+                    for p in _POPULAR_Q_FEATURE_SESSION_PREFIXES
+                ]),
             )
         )
         .group_by(normalized)
@@ -133,6 +136,33 @@ def _ask(db, query, session_id="1783612676914", mode="regular"):
     db.add(ChatHistory(user_id=1, session_id=session_id, mode=mode,
                        user_query=query, bot_response="..."))
     db.commit()
+
+
+class TestAdvisingPanelTrafficIsExcluded:
+    """The advising-form side panel logs to chat_history too, and its questions were
+    reaching the welcome screen.
+
+    These only make sense with the form open. A student who clicks "What should I write
+    for my career goals?" from the home screen lands in a general chat with no form in
+    front of them, which is a worse experience than not offering it at all.
+    """
+
+    def test_advising_helper_question_is_excluded(self, session):
+        """The exact question found leaking in the real chat_history."""
+        _ask(session, "What should I write for my career goals?",
+             session_id="advising-helper")
+        assert _eligible(session) == []
+
+    def test_a_future_advising_session_is_also_excluded(self):
+        """The rule is a PREFIX, so a new advising-* session works without another patch.
+        This is the point of a prefix list rather than a chain of special cases."""
+        assert any(p == "advising-" for p in _POPULAR_Q_FEATURE_SESSION_PREFIXES)
+
+    def test_asking_about_advising_in_the_MAIN_chat_is_still_kept(self, session):
+        """The general chat is where advising questions SHOULD come from. Only the panel
+        is excluded, not the topic — otherwise the fix would gut the welcome screen."""
+        _ask(session, "can you help me with advising?", session_id="1783612676914")
+        assert _eligible(session) == ["can you help me with advising?"]
 
 
 class TestCodingTutorTrafficIsExcluded:
