@@ -64,6 +64,10 @@ docs/aaas_talk.md
 docs/*_talk.md
 docs/presentation*.md
 
+# Planning docs — the WHOLE folder, so anything added here later is covered too.
+# These are internal roadmaps/design notes and must never reach the public repo.
+docs/plans/
+
 # Text extraction service (cloned repo)
 text-extract-api/
 

@@ -3323,6 +3323,185 @@ body.coding-dark .practice-guide-title {
   color: var(--ct-text);
 }
 
+/* Focus next: the guide's headline, and the one thing it wants the student to do.
+   The whole block is the accent card (the old design put only the sentence in one). */
+.practice-guide-focus {
+  padding: 11px 12px 12px;
+  border-left: 3px solid var(--ct-accent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ct-accent) 8%, var(--ct-panel));
+}
+
+/* Topic name + mastery score on one baseline. Overrides the inherited card padding
+   and background — this <p> now sits INSIDE the card rather than being it. */
+.practice-guide-weakest.is-mastery {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border-left: 0;
+  border-radius: 0;
+  background: none;
+  font-size: 0.95rem;
+}
+
+.practice-guide-weakest.is-mastery strong {
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+/* The action. Full-width so it reads as "do this", not as an incidental link. */
+.practice-guide-focus-cta {
+  display: block;
+  width: 100%;
+  margin-top: 2px;
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--ct-accent) 45%, transparent);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ct-accent);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.practice-guide-focus-cta:hover {
+  background: color-mix(in srgb, var(--ct-accent) 12%, transparent);
+  border-color: var(--ct-accent);
+}
+
+.practice-guide-focus-cta:focus-visible {
+  outline: 2px solid var(--ct-accent);
+  outline-offset: 2px;
+}
+
+/* The "why" line under Focus next. Generated from the student's own attempt log
+   (dominant error class, attempts-to-solve, hints used) — never canned copy. */
+.practice-guide-reason {
+  margin: 8px 0 10px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--ct-muted, #6b7280);
+}
+
+/* Collapsed "All topics" list. Closed by default: the guide's headline is ONE next
+   action, and a 23-row table competing with it buries the thing the student should
+   actually do. Fixed max-height so the panel doesn't grow without bound as the
+   library expands. */
+.practice-guide-topics {
+  margin-top: 4px;
+}
+
+.practice-guide-topics > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  padding: 7px 0;
+  list-style: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ct-muted, #6b7280);
+  border-top: 1px solid var(--ct-border, rgba(148, 163, 184, 0.25));
+}
+
+/* Kill the default disclosure marker in both engines, then draw our own caret so it
+   can sit on the right and rotate. */
+.practice-guide-topics > summary::-webkit-details-marker {
+  display: none;
+}
+
+.practice-guide-topics > summary::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translate(-1px, -1px);
+  transition: transform 0.18s ease;
+  flex: none;
+}
+
+.practice-guide-topics[open] > summary::after {
+  transform: rotate(-135deg) translate(-2px, -2px);
+}
+
+.practice-guide-topics > summary:hover,
+.practice-guide-topics > summary:focus-visible {
+  color: var(--ct-text);
+}
+
+.practice-guide-topics-count {
+  margin-left: auto;
+  margin-right: 4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ct-muted, #6b7280);
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+/* Scrolls inside itself rather than stretching the sidebar. */
+.practice-guide-topics[open] .practice-guide-progress {
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
+  padding-bottom: 4px;
+}
+
+/* Mastery score chip (0-100). Semantic color, deliberately separate from --ct-accent:
+   this encodes *state*, so it must read at a glance without being read as branding. */
+.practice-mastery-band {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid transparent;
+}
+
+.practice-mastery-band.is-strong {
+  color: #15803d;
+  background: color-mix(in srgb, #22c55e 14%, transparent);
+  border-color: color-mix(in srgb, #22c55e 35%, transparent);
+}
+
+.practice-mastery-band.is-steady {
+  color: #1d4ed8;
+  background: color-mix(in srgb, #3b82f6 14%, transparent);
+  border-color: color-mix(in srgb, #3b82f6 35%, transparent);
+}
+
+.practice-mastery-band.is-shaky {
+  color: #b45309;
+  background: color-mix(in srgb, #f59e0b 16%, transparent);
+  border-color: color-mix(in srgb, #f59e0b 38%, transparent);
+}
+
+.practice-mastery-band.is-weak {
+  color: #b91c1c;
+  background: color-mix(in srgb, #ef4444 14%, transparent);
+  border-color: color-mix(in srgb, #ef4444 35%, transparent);
+}
+
+/* Dark lab theme. The Coding Tutor themes on `body.coding-dark` (see
+   CodingTutorTheme.css) — NOT the retired global `body.dark`, and not a
+   [data-theme] attribute. The light-mode text colors fail contrast on the dark
+   panel, so lift each hue rather than inverting the chip, which would lose the
+   semantic reading (green = strong, red = weak). */
+body.coding-dark .practice-mastery-band.is-strong { color: #4ade80; }
+body.coding-dark .practice-mastery-band.is-steady { color: #60a5fa; }
+body.coding-dark .practice-mastery-band.is-shaky { color: #fbbf24; }
+body.coding-dark .practice-mastery-band.is-weak { color: #f87171; }
+
 /* Topics-in-view chips. */
 .practice-guide-chips {
   display: flex;

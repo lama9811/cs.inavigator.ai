@@ -1,0 +1,113 @@
+{
+  "_note": "ORIGINAL content. Topic sequence follows the standard free intro texts (Runestone FoPP ch.7, Think Python ch.7, OpenStax ch.5); sequences are not copyrightable. No prose, examples, or exercises are copied from any of them: all three are copyleft (GFDL / CC BY-NC-SA), and copying would bind CS Navigator's content to those terms.",
+  "title": "Loops",
+  "summary": "Do something many times without writing it many times.",
+  "minutes": 6,
+  "error_classes": ["timeout", "wrong_answer"],
+  "refresher": "A `for` loop repeats once for each item in a sequence. `for x in [1, 2, 3]:` runs the body three times, with x holding 1, then 2, then 3. To count instead, use `range(n)`, which stops just before n. A `while` loop keeps going as long as its condition is true, so something inside it has to eventually make that condition false. Otherwise it never stops.",
+  "refresher_code": "for i in range(3):\n    print(i)\n# prints 0, 1, 2",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A loop is how you tell the computer to do something again. Without one, printing the numbers 1 through 100 would mean writing 100 lines. With one, it takes two."
+    },
+    {
+      "kind": "code",
+      "caption": "A `for` loop runs its body once for each item in a sequence. The sequence here is a list of three names, so the body runs three times.",
+      "code": "for name in [\"Ada\", \"Grace\", \"Alan\"]:\n    print(\"Hello, \" + name)",
+      "output": "Hello, Ada\nHello, Grace\nHello, Alan"
+    },
+    {
+      "kind": "text",
+      "body": "The variable after `for`, in this case `name`, is called the loop variable. You pick what to call it. On each pass it automatically holds the next item, so you never assign it yourself."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "The indentation is the loop",
+      "body": "In Python, the indented lines under `for` are the body of the loop. Un-indent a line and it is no longer inside the loop, so it runs once, after the loop has finished. This is the single most common cause of \"why did it only print once?\""
+    },
+    {
+      "kind": "code",
+      "caption": "To count rather than walk a list, use `range(n)`. It produces 0, 1, and so on, stopping just before n. `range(5)` therefore gives you five numbers: 0 through 4.",
+      "code": "for i in range(5):\n    print(i)",
+      "output": "0\n1\n2\n3\n4"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "range(5) does not include 5",
+      "body": "This catches almost everyone at least once. `range(5)` gives you 0, 1, 2, 3, 4. It stops before 5, never reaching it. If you want 1 through 5, write `range(1, 6)`. Getting this wrong by a single step is so common that it has its own name: an off-by-one error."
+    },
+    {
+      "kind": "check",
+      "prompt": "How many times does this loop print, and what is the last number it prints?",
+      "code": "for i in range(4):\n    print(i)",
+      "choices": [
+        "4 times, last number 3",
+        "4 times, last number 4",
+        "5 times, last number 4",
+        "3 times, last number 3"
+      ],
+      "answer_index": 0,
+      "why": "`range(4)` produces 0, 1, 2, 3. That is four numbers, and it stops before reaching 4. So the loop runs four times and the last thing printed is 3. If you picked \"last number 4\", you have just met the off-by-one error in person, which is the most useful way to meet it."
+    },
+    {
+      "kind": "text",
+      "body": "The other pattern worth knowing early is the accumulator. Start with an empty total, then add to it on each pass. Almost every problem that asks you to add things up, count how many, or build a list is really this pattern wearing a different hat."
+    },
+    {
+      "kind": "code",
+      "caption": "Notice that `total` is created before the loop starts. Create it inside and it would be reset to 0 on every pass, so the answer would always come out as just the last number.",
+      "code": "total = 0\nfor price in [4, 7, 2]:\n    total = total + price\nprint(total)",
+      "output": "13"
+    },
+    {
+      "kind": "text",
+      "body": "A `while` loop works differently. It does not walk through a sequence. It simply keeps going for as long as its condition stays true, which makes it the right choice when you cannot know in advance how many repeats you will need."
+    },
+    {
+      "kind": "code",
+      "caption": "This counts down. The condition is checked before each pass, so once `n` reaches 0 the loop stops without running the body again.",
+      "code": "n = 3\nwhile n > 0:\n    print(n)\n    n = n - 1\nprint(\"Liftoff!\")",
+      "output": "3\n2\n1\nLiftoff!"
+    },
+    {
+      "kind": "compare",
+      "caption": "A `while` loop only ends if something inside it changes the condition. Leave that line out and the program hangs forever, because the loop has been given no reason to stop.",
+      "wrong_label": "Runs forever",
+      "wrong": "n = 3\nwhile n > 0:\n    print(n)\n# n never changes,\n# so n > 0 stays true",
+      "right_label": "Ends",
+      "right": "n = 3\nwhile n > 0:\n    print(n)\n    n = n - 1\n# n shrinks each pass,\n# so n > 0 eventually fails"
+    },
+    {
+      "kind": "check",
+      "prompt": "This loop is meant to count up to 5. What actually happens?",
+      "code": "count = 1\nwhile count <= 5:\n    print(count)\ncount = count + 1",
+      "choices": [
+        "It prints 1 through 5",
+        "It prints 1 forever",
+        "It prints nothing",
+        "It prints 1, 2, 3, 4, 5, 6"
+      ],
+      "answer_index": 1,
+      "why": "Look at the indentation. `count = count + 1` sits outside the loop body, so it never runs while the loop is going. `count` stays at 1, the condition `count <= 5` stays true, and the loop prints 1 over and over. Indent that last line by four spaces and it works. Whenever a run of yours times out, this is the first thing to check."
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "If your code times out, suspect a while loop",
+      "body": "An infinite loop is the usual reason a run never finishes. Ask yourself one question: what inside this loop will eventually make the condition false? If you cannot point at the line that does it, you have found your bug."
+    },
+    {
+      "kind": "list",
+      "title": "Which loop should I reach for?",
+      "items": [
+        "You have a list, a string, or a range to walk through: use `for`",
+        "You know how many times to repeat: use `for` with `range(n)`",
+        "You repeat until something becomes true, and cannot say how long that takes: use `while`",
+        "When you are unsure, start with `for`. It cannot run forever."
+      ]
+    }
+  ]
+}

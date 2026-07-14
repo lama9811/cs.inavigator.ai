@@ -21,6 +21,8 @@ import ProblemPanel from "./ProblemPanel";
 import ProgressBadges from "./ProgressBadges";
 import QuizBank from "./QuizBank";
 import ConceptQuiz from "./concept-quiz/ConceptQuiz";
+import LearnMode from "./learn/LearnMode";
+import "./learn/Learn.css";
 import "./concept-quiz/ConceptQuiz.css";
 import StatTiles from "./StatTiles";
 import InterviewPrep from "./InterviewPrep";
@@ -174,30 +176,76 @@ const workspacePathForSnippet = (id) => `/coding/workspace/snippet/${encodeURICo
 
 // Concept-quiz (CodeChef-style MCQ/type-in/Parsons) lives UNDER the practice
 // page as sub-routes, mirroring how the workspace nests problem/snippet routes.
-// The practice page stays the "quiz" section; the suffix selects the quiz view:
-//   /coding/practice                                     → Code|Quiz toggle (Quiz = language cards)
-//   /coding/practice/quiz/:language                      → language landing (hero + category dropdown + list)
-//   /coding/practice/quiz/:language/:category/:questionId → sequential runner
-// Returns { view: "toggle" | "language" | "runner", language?, category?, questionId? }.
-function conceptQuizTargetFromPath(pathname) {
+//
+// The Practice Library has THREE modes — Learn → Practice → Code. Read the idea, check
+// you got it, then apply it. A beginner who doesn't know what a function is has nowhere
+// to start otherwise: a quiz can only tell them they're wrong, and an editor is a wall.
+//
+//   /coding/practice                                       → LEARN, the language cards (DEFAULT)
+//   /coding/practice/learn/:language                        → that language's lesson list
+//   /coding/practice/learn/:language/:category              → one lesson
+//   /coding/practice/quiz                                   → PRACTICE, the language cards
+//   /coding/practice/quiz/:language                         → language landing (categories)
+//   /coding/practice/quiz/:language/:category/:questionId   → the quiz runner
+//   /coding/practice/code                                   → CODE, the code-writing library
+//
+// Every mode has its OWN URL, and the URL is the single source of truth. Holding the mode
+// in React state as well would let the address bar disagree with the screen: Back/Forward
+// would skip mode switches and a refresh would bounce the student somewhere else.
+//
+// Returns { mode: "learn"|"quiz"|"code", view: ..., language?, category?, questionId? }.
+function practiceTargetFromPath(pathname) {
   const clean = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
-  const runner = clean.match(
-    /^\/coding\/practice\/quiz\/([^/]+)\/([^/]+)\/(.+)$/
-  );
+
+  // --- Code ---
+  if (clean === "/coding/practice/code") {
+    return { mode: "code", view: "code" };
+  }
+
+  // --- Learn ---
+  const lessonPage = clean.match(/^\/coding\/practice\/learn\/([^/]+)\/([^/]+)$/);
+  if (lessonPage) {
+    return {
+      mode: "learn",
+      view: "lesson",
+      language: decodeURIComponent(lessonPage[1]),
+      category: decodeURIComponent(lessonPage[2]),
+    };
+  }
+  const lessonList = clean.match(/^\/coding\/practice\/learn\/([^/]+)$/);
+  if (lessonList) {
+    return { mode: "learn", view: "lessons", language: decodeURIComponent(lessonList[1]) };
+  }
+
+  // --- Practice (the concept quizzes) ---
+  const runner = clean.match(/^\/coding\/practice\/quiz\/([^/]+)\/([^/]+)\/(.+)$/);
   if (runner) {
     return {
+      mode: "quiz",
       view: "runner",
       language: decodeURIComponent(runner[1]),
       category: decodeURIComponent(runner[2]),
       questionId: decodeURIComponent(runner[3]),
     };
   }
-  const landing = clean.match(/^\/coding\/practice\/quiz\/([^/]+)$/);
-  if (landing) {
-    return { view: "language", language: decodeURIComponent(landing[1]) };
+  const quizLanding = clean.match(/^\/coding\/practice\/quiz\/([^/]+)$/);
+  if (quizLanding) {
+    return { mode: "quiz", view: "language", language: decodeURIComponent(quizLanding[1]) };
   }
-  return { view: "toggle" };
+  if (clean === "/coding/practice/quiz") {
+    return { mode: "quiz", view: "quiz" };
+  }
+
+  // Bare /coding/practice → LEARN. The front door teaches before it tests.
+  return { mode: "learn", view: "languages" };
 }
+const PRACTICE_LEARN_PATH = "/coding/practice";
+const PRACTICE_QUIZ_PATH = "/coding/practice/quiz";
+const PRACTICE_CODE_PATH = "/coding/practice/code";
+const learnPathForLanguage = (language) =>
+  `/coding/practice/learn/${encodeURIComponent(language)}`;
+const learnPathForLesson = (language, category) =>
+  `/coding/practice/learn/${encodeURIComponent(language)}/${encodeURIComponent(category)}`;
 const quizPathForLanguage = (language) =>
   `/coding/practice/quiz/${encodeURIComponent(language)}`;
 const quizPathForQuestion = (language, category, questionId) =>
@@ -557,22 +605,24 @@ export default function CodingTutor({
   // A topic to pre-filter the Practice Library by, set when a student clicks a
   // prerequisite ("Needs: …") link on an interview problem. Consumed + cleared by QuizBank.
   const [pendingQuizTopic, setPendingQuizTopic] = useState(null);
-  // Practice Library [Code | Quiz] toggle. Only consulted on the bare
-  // /coding/practice path; any /coding/practice/quiz/* path forces Quiz. "code"
-  // shows the code-writing QuizBank, "quiz" shows the concept-quiz language cards.
-  const [quizMode, setQuizMode] = useState("code");
-  // Remember the last Quiz location so switching Code → Quiz returns the student
-  // to where they were (a language's categories, or the exact question), rather
-  // than resetting to the language cards. Persisted so it survives reloads too.
-  const lastQuizPathRef = useRef(
-    (() => {
-      try {
-        return localStorage.getItem("concept_quiz_last_path") || null;
-      } catch {
-        return null;
-      }
-    })()
-  );
+  // NOTE: the Practice Library's [Quiz | Code] mode is NOT state — it is derived from
+  // the URL (see conceptQuizTargetFromPath). Holding it in state as well would make the
+  // address bar disagree with the screen: /coding/practice would render Quiz while
+  // claiming to be the library, Back/Forward would skip the switch, and a refresh would
+  // silently bounce the student back to Quiz. One source of truth, and it's the URL.
+  //
+  // QUIZ IS THE DEFAULT LANDING, deliberately. A student who doesn't know what a
+  // function is yet should not have a blank code editor as their front door — that's a
+  // wall, not an on-ramp. The quiz teaches the concept; the code problems apply it.
+  // (Cost: only the code runner writes attempt events, so a quiz-only student generates
+  // no mastery signal. Accepted — teaching the beginner beats instrumenting them. See
+  // ROADMAP §1.5, backing quiz progress with a real table, which closes that gap.)
+
+  // (Removed: a "last quiz location" ref that made the Practice tab restore wherever the
+  // student was last. A top-level tab should go to its front page — the language cards —
+  // not silently teleport you into a half-finished quiz, with no way left to ask for the
+  // language list. Back/Forward still returns them to the exact question, because every
+  // view has a real URL.)
   const [practiceLanguage, setPracticeLanguage] = useState("Python");
   const [selectedLanguage, setSelectedLanguage] = useState("Python");
   const [questions, setQuestions] = useState([]);
@@ -716,6 +766,35 @@ export default function CodingTutor({
   // debounce a PUT up. The server merges (max / set-union), so nothing is clobbered
   // and offline just falls back to localStorage. Gated so the first PUT only fires
   // after the initial GET has merged.
+  // Per-topic mastery, computed server-side from the attempt log. Read-only: nothing
+  // here is stored client-side, because the score is a *view* over the events and
+  // caching it would let a stale number outlive the attempt that changed it.
+  //
+  // `masteryTick` is bumped after a graded run so the score reflects the attempt the
+  // student just made — otherwise "Focus next" would still name a topic they'd only
+  // just improved on.
+  const [mastery, setMastery] = useState(null);
+  const [masteryTick, setMasteryTick] = useState(0);
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${apiBase}/api/coding/mastery`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (!cancelled) setMastery(data);
+      } catch {
+        // Mastery is an enhancement to the Practice Guide, not a requirement for it.
+        // If it fails, QuizBank falls back to the solved/total ratio.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [apiBase, masteryTick]);
+
   const codingSyncReadyRef = useRef(false);
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -940,19 +1019,6 @@ export default function CodingTutor({
     };
   }, []);
 
-  // Remember the deepest Quiz path the student visits (a language landing or a
-  // specific question), so toggling back to Quiz restores it. Only /quiz/* paths
-  // are tracked; the bare toggle path isn't a "location" worth restoring.
-  useEffect(() => {
-    if (conceptQuizTargetFromPath(location.pathname).view === "toggle") return;
-    lastQuizPathRef.current = location.pathname;
-    try {
-      localStorage.setItem("concept_quiz_last_path", location.pathname);
-    } catch {
-      // storage unavailable — in-memory ref still works for this session
-    }
-  }, [location.pathname]);
-
   useEffect(() => {
     // Pull the account's saved snippets from the server once on load and merge
     // them into the local cache, so My Snippets follows the user across devices.
@@ -1003,6 +1069,18 @@ export default function CodingTutor({
   useEffect(() => {
     if (activePage !== "workspace") setLastNonWorkspacePage(activePage);
   }, [activePage]);
+
+  // When the student opens a different problem, restart the "time on this problem"
+  // clock. A ref (not state) so it never triggers a re-render — it is only read at the
+  // moment a run is submitted. Reloading the page resets it, which is why the backend
+  // treats this as a trend signal rather than a measurement.
+  const problemOpenedAtRef = useRef(Date.now());
+  useEffect(() => {
+    problemOpenedAtRef.current = Date.now();
+  }, [activeProblem?.id]);
+
+  const secondsSinceOpen = () =>
+    Math.max(0, Math.round((Date.now() - problemOpenedAtRef.current) / 1000));
 
   useEffect(() => {
     if (!activeProblem || !code) return;
@@ -2194,7 +2272,11 @@ export default function CodingTutor({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ language: selectedLanguageKey, code }),
+        body: JSON.stringify({
+          language: selectedLanguageKey,
+          code,
+          seconds_since_open: secondsSinceOpen(),
+        }),
         signal: controller.signal,
       });
       const data = await response.json();
@@ -2267,12 +2349,20 @@ export default function CodingTutor({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ question_id: activeProblem.id, language: selectedLanguageKey, code }),
+        body: JSON.stringify({
+          question_id: activeProblem.id,
+          language: selectedLanguageKey,
+          code,
+          hints_used: revealedHints,
+          seconds_since_open: secondsSinceOpen(),
+        }),
         signal: controller.signal,
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || `runner ${response.status}`);
       setTestOutput(data);
+      // This run just wrote an attempt event, so the mastery score is now stale.
+      setMasteryTick(tick => tick + 1);
       setWorkspaceSnapshots(prev => ({
         ...prev,
         [activeSnapshotKey]: {
@@ -2442,7 +2532,7 @@ export default function CodingTutor({
       onStartDaily={() => startDailyChallenge(true)}
       onOpenSnippets={openMySnippets}
       onSelectQuestion={selectQuestion}
-      onOpenQuizBank={() => openPage("quiz")}
+      onOpenQuizBank={() => navigate(PRACTICE_CODE_PATH)}
       onPrompt={sendDashboardPrompt}
       onSaveQuiz={saveLatestQuizAsPdf}
     />
@@ -2499,7 +2589,7 @@ export default function CodingTutor({
             onNextProblem={() => navigatePracticeProblem(1)}
             onShowHint={showNextHint}
             onShowAllHints={showAllHints}
-            onOpenQuizBank={() => openPage("quiz")}
+            onOpenQuizBank={() => navigate(PRACTICE_CODE_PATH)}
             mockMode={Boolean(activeProblem?.mock && mockSession)}
             solutionUnlocked={
               !activeProblem?.mock ||
@@ -2579,7 +2669,9 @@ export default function CodingTutor({
     const topic = resolvePracticeTopic(label);
     if (!topic) return;
     setPendingQuizTopic(topic);
-    goToPage("quiz");
+    // The CODE path, not the bare one — a "go practice this fundamental" link promises
+    // code problems on that topic. The bare path is now the Quiz landing.
+    navigate(PRACTICE_CODE_PATH);
   };
 
   const renderInterviewPrep = () => (
@@ -2621,89 +2713,112 @@ export default function CodingTutor({
       );
     }
     if (activePage === "quiz") {
-      // The Practice Library has two modes behind a [Code | Quiz] toggle, both
-      // URL-backed: /coding/practice = Code (the code-writing QuizBank), and any
-      // /coding/practice/quiz/* path = Quiz (the concept quizzes). Deriving the
-      // mode from the path keeps deep links + Back/Forward working.
-      const quizTarget = conceptQuizTargetFromPath(location.pathname);
-      const inQuizMode = quizTarget.view !== "toggle" || quizMode === "quiz";
-      // Back navigation for the current quiz view, surfaced on the toggle row
-      // (far right) so it shares the line with the Code/Quiz toggle instead of
-      // sitting on its own row below.
-      let quizBack = null;
-      if (quizTarget.view === "language") {
-        quizBack = {
-          label: "All languages",
-          onClick: () => {
-            setQuizMode("quiz");
-            navigate("/coding/practice");
-          },
-        };
-      } else if (quizTarget.view === "runner") {
-        const langLabel =
-          CONCEPT_QUIZ_LABELS[quizTarget.language] || quizTarget.language;
-        quizBack = {
+      // Mode comes from the URL, never from state, so the address bar always matches
+      // the screen. Learn -> Practice -> Code: read it, check it, apply it.
+      const target = practiceTargetFromPath(location.pathname);
+      const mode = target.mode;
+
+      // Back navigation for the current view, surfaced on the toolbar row (far right)
+      // so it shares the line with the mode toggle instead of taking its own row.
+      let back = null;
+      if (target.view === "language") {
+        back = { label: "All languages", onClick: () => navigate(PRACTICE_QUIZ_PATH) };
+      } else if (target.view === "runner") {
+        const langLabel = CONCEPT_QUIZ_LABELS[target.language] || target.language;
+        back = {
           label: `Back to ${langLabel}`,
-          onClick: () => navigate(quizPathForLanguage(quizTarget.language)),
+          onClick: () => navigate(quizPathForLanguage(target.language)),
+        };
+      } else if (target.view === "lessons") {
+        back = { label: "All languages", onClick: () => navigate(PRACTICE_LEARN_PATH) };
+      } else if (target.view === "lesson") {
+        const langLabel = CONCEPT_QUIZ_LABELS[target.language] || target.language;
+        back = {
+          label: `Back to ${langLabel}`,
+          onClick: () => navigate(learnPathForLanguage(target.language)),
         };
       }
+
+      const MODES = [
+        { id: "learn", label: "Learn", hint: "Read the idea" },
+        { id: "quiz", label: "Practice", hint: "Check you got it" },
+        { id: "code", label: "Code", hint: "Apply it" },
+      ];
+
+      // A mode button always goes to that mode's FRONT PAGE — the four language cards —
+      // never to wherever the student happened to be last. A top-level tab that silently
+      // teleports you into a half-finished quiz is unpredictable, and there's no way to
+      // ask it for the language list once it starts doing that.
+      //
+      // Nothing is lost: every view has a real URL, so Back/Forward returns the student
+      // to the exact question they were on, and quiz answers are held by the runner for
+      // the session.
+      const MODE_HOME = {
+        learn: PRACTICE_LEARN_PATH,
+        quiz: PRACTICE_QUIZ_PATH,
+        code: PRACTICE_CODE_PATH,
+      };
+      const goToMode = (id) => {
+        const to = MODE_HOME[id];
+        if (to && to !== location.pathname) navigate(to);
+      };
+
       return (
         <div className="practice-library">
           <div className="practice-toolbar">
+            {/* Learn -> Practice -> Code, left to right, and Learn is the default. A
+                student who hasn't met functions yet needs the idea before the editor:
+                a quiz can only tell them they're wrong, and a blank editor is a wall. */}
             <div className="practice-mode-toggle" role="tablist" aria-label="Practice mode">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={!inQuizMode}
-                className={`practice-mode-btn ${!inQuizMode ? "active" : ""}`}
-                onClick={() => {
-                  setQuizMode("code");
-                  navigate("/coding/practice");
-                }}
-              >
-                Code
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={inQuizMode}
-                className={`practice-mode-btn ${inQuizMode ? "active" : ""}`}
-                onClick={() => {
-                  setQuizMode("quiz");
-                  // Return to the last Quiz location (language/question) if we
-                  // have one; otherwise show the language cards.
-                  const saved = lastQuizPathRef.current;
-                  if (saved && saved !== location.pathname) navigate(saved);
-                }}
-              >
-                Quiz
-              </button>
+              {MODES.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === m.id}
+                  title={m.hint}
+                  className={`practice-mode-btn ${mode === m.id ? "active" : ""}`}
+                  onClick={() => goToMode(m.id)}
+                >
+                  {m.label}
+                </button>
+              ))}
             </div>
-            {quizBack ? (
-              <button
-                type="button"
-                className="practice-back-btn"
-                onClick={quizBack.onClick}
-              >
-                ← {quizBack.label}
+            {back ? (
+              <button type="button" className="practice-back-btn" onClick={back.onClick}>
+                ← {back.label}
               </button>
             ) : null}
           </div>
 
-          {inQuizMode ? (
+          {mode === "learn" ? (
+            <LearnMode
+              apiBase={apiBase}
+              target={target}
+              languageLabels={CONCEPT_QUIZ_LABELS}
+              onNavigateToLanguages={() => navigate(PRACTICE_LEARN_PATH)}
+              onNavigateToLanguage={(language) => navigate(learnPathForLanguage(language))}
+              onNavigateToLesson={(language, category) =>
+                navigate(learnPathForLesson(language, category))
+              }
+              // The whole point of Learn: it hands off to Practice on the same topic.
+              onPracticeCategory={(language, category) =>
+                navigate(quizPathForLanguage(language) + `#${category}`)
+              }
+            />
+          ) : mode === "quiz" ? (
             <ConceptQuiz
               apiBase={apiBase}
-              target={quizTarget}
+              target={target}
               languageLabels={CONCEPT_QUIZ_LABELS}
-              onNavigateToLanguages={() => {
-                setQuizMode("quiz");
-                navigate("/coding/practice");
-              }}
-              onNavigateToLanguage={(language) =>
-                navigate(quizPathForLanguage(language))
-              }
+              onNavigateToLanguages={() => navigate(PRACTICE_QUIZ_PATH)}
+              onNavigateToLanguage={(language) => navigate(quizPathForLanguage(language))}
               onNavigateToQuestion={(language, category, questionId) =>
                 navigate(quizPathForQuestion(language, category, questionId))
+              }
+              // "I don't remember this" -> the full lesson, same topic.
+              onOpenLesson={(language, category) =>
+                navigate(learnPathForLesson(language, category))
               }
             />
           ) : (
@@ -2716,6 +2831,7 @@ export default function CodingTutor({
               selectedLanguage={practiceLanguage}
               languageOptions={CODE_LANGUAGES}
               progressSummary={progressSummary}
+              mastery={mastery}
               onDifficultyChange={setDifficulty}
               onLanguageChange={setPracticeLanguage}
               onSelectProblem={selectQuestion}
@@ -2742,8 +2858,24 @@ export default function CodingTutor({
     return renderWorkspace();
   };
 
+  // Hoisted out of the JSX: this was a single ~150-char template literal calling a
+  // function inline, which is how a stale reference survived a rename (the bundler
+  // builds it fine; it throws at render and blanks the page).
+  const appClasses = [
+    "coding-app",
+    `coding-page-${activePage}`,
+    activePage === "workspace" ? "coding-workspace-active" : "",
+    activePage === "quiz" &&
+    practiceTargetFromPath(location.pathname).view === "runner"
+      ? "coding-quiz-runner-active"
+      : "",
+    terminalOpen ? "terminal-open" : "terminal-closed",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div className={`coding-app coding-page-${activePage} ${activePage === "workspace" ? "coding-workspace-active" : ""} ${activePage === "quiz" && conceptQuizTargetFromPath(location.pathname).view === "runner" ? "coding-quiz-runner-active" : ""} ${terminalOpen ? "terminal-open" : "terminal-closed"}`}>
+    <div className={appClasses}>
       <div className="coding-nav-row">
         <nav className="coding-section-nav campus-section-nav" aria-label="Coding tutor sections">
         {CODING_PAGES.map(page => {
