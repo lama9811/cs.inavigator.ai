@@ -5341,10 +5341,24 @@ def _dedupe_near_duplicates(questions: list[str]) -> list[str]:
         kept.append(q)
     return kept
 
-# Coding-tutor quick-action prompts are logged to ChatHistory just like advising
-# questions, but they must NOT surface on the chat welcome screen (that screen is
-# for academic advising). Drop any question containing one of these coding-tutor
-# signal phrases (matched case-insensitively as substrings).
+# Coding-tutor traffic is logged to ChatHistory just like advising questions, but it
+# must NOT surface on the chat welcome screen (that screen is for academic advising).
+#
+# The real defense is the session_id exclusion in the query below. Coding Tutor chats
+# carry their own session ids, so matching on those catches ALL of their traffic no
+# matter how the student worded the question.
+#
+# Two earlier filters do NOT cover this, which is why questions were still leaking:
+#
+#   * `mode == "regular"` — Coding Tutor rows are written with mode "regular", not
+#     "coding_tutor", so the mode filter lets them straight through. (Verified against
+#     real chat_history rows: coding-* sessions are all stored as mode "regular".)
+#   * the marker list below — it only matches five hard-coded phrases. "Can you provide
+#     a video that explains this?" asked inside the Coding Tutor contains none of them
+#     and reached the home screen.
+#
+# The markers stay as a belt-and-suspenders fallback for any coding prompt that somehow
+# lands under a non-coding session id.
 _POPULAR_Q_CODING_MARKERS = (
     "my current code",
     "practice quiz",
@@ -5352,6 +5366,15 @@ _POPULAR_Q_CODING_MARKERS = (
     "rewrite my code",
     "review my code",
 )
+
+# ChatHistory.session_id values belonging to the Coding Tutor. The workspace uses
+# "coding-<timestamp>" and the floating widget uses "coding-widget-<timestamp>", so a
+# single prefix match covers both.
+#
+# The mock-interview grader ("interview-grader") needs no entry here: INTERNAL_SESSION_IDS
+# now prevents it from ever being written to chat_history at all, which is a strictly
+# better fix than filtering it back out at read time.
+_POPULAR_Q_CODING_SESSION_PREFIX = "coding-"
 
 # Module-level cache: (epoch_seconds, questions). 5-minute TTL.
 _popular_q_cache = {"ts": 0.0, "questions": None}
@@ -5432,6 +5455,20 @@ async def get_popular_questions(db: Session = Depends(get_db)):
             # Coding questions must not surface as Morgan CS suggestions. Legacy rows
             # predating the `mode` column are NULL -> treated as regular.
             .filter(func.coalesce(ChatHistory.mode, "regular") == "regular")
+            # Exclude Coding Tutor sessions. The `mode` filter above does NOT catch them:
+            # coding rows are written with mode "regular", so they pass straight through
+            # it, and the marker list only matches five hard-coded phrases. Keying on the
+            # session id catches all coding traffic regardless of wording.
+            #
+            # NULL session_id is legacy advising data and must be KEPT — an unguarded
+            # NOT LIKE would evaluate to NULL for those rows and silently drop every one
+            # of them, emptying the welcome screen of exactly the questions it's for.
+            .filter(
+                or_(
+                    ChatHistory.session_id.is_(None),
+                    ~ChatHistory.session_id.like(f"{_POPULAR_Q_CODING_SESSION_PREFIX}%"),
+                )
+            )
             .group_by(normalized)
             # Tie-break on the text so the ranking is total, not just "by frequency".
             # Equal-frequency questions must order identically on every instance —
