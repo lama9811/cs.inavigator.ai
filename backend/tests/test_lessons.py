@@ -46,9 +46,166 @@ def test_every_category_is_loadable(language):
 
 
 def test_unauthored_lesson_returns_none():
-    # A category that exists in the manifest but has no lesson file yet.
-    assert lessons.get_lesson("python", "user-input") is None
-    assert lessons.has_lesson("python", "user-input") is False
+    """An unauthored category is EMPTY, not an error.
+
+    Deliberately does not name a real category. The original version pinned
+    `python/user-input` as "the unauthored one", and broke the day that lesson was
+    written — the test was tracking the content, not the behavior. The behavior is
+    what matters: the manifest is the roadmap, the files are what exists so far, and a
+    category with no file yet must return None rather than 500 the student's page.
+    """
+    assert lessons.get_lesson("python", "not-a-real-category") is None
+    assert lessons.has_lesson("python", "not-a-real-category") is False
+
+
+def test_python_track_is_complete():
+    """Python is the recommended starting language, so its Learn track is the one a
+    beginner is most likely to land in. Every category in the manifest has a lesson.
+
+    This will fail if a new Python category is added to the manifest without a lesson to
+    go with it, which is the point: the front door should not have an empty room in it.
+    Other languages are deliberately not asserted here; they are still being authored.
+    """
+    missing = [
+        category["id"]
+        for category in concept_quiz.categories_for_language("python")
+        if not lessons.has_lesson("python", category["id"])
+    ]
+    assert not missing, f"Python categories with no lesson: {missing}"
+
+
+def test_lesson_prose_is_not_robotic():
+    """The voice rules, enforced rather than trusted.
+
+    The first Loops draft read as machine-written, and the cause was measurable: em-dashes
+    used as all-purpose punctuation, bold as emphasis-by-force, and shouted caps. Those are
+    exactly the tells a student registers as "a computer wrote this", and this is the one
+    surface meant to feel like a person explaining something.
+
+    Only PROSE is checked. Inline code spans are stripped first: `**` is Python's exponent
+    operator and belongs in the Operators lesson, so matching it there would be a false
+    positive, not a finding.
+    """
+    import re
+
+    inline_code = re.compile(r"`[^`]*`")
+    em_dash = re.compile(r"[—–]")          # em dash, en dash
+    bold = re.compile(r"\*\*")
+    shouted = re.compile(r"\b(NEVER|ALWAYS|MUST|BEFORE|ONLY|EVERY|ALL)\b")
+
+    offenses = []
+    for language, category, lesson in authored_lessons():
+        prose = [lesson["refresher"], lesson["summary"]]
+        for block in lesson["blocks"]:
+            prose += [str(block.get(f, "")) for f in ("body", "caption", "title", "why", "prompt")]
+            prose += [str(i) for i in block.get("items", [])]
+
+        text = inline_code.sub("", "\n".join(prose))
+        where = f"{language}/{category}"
+        if em_dash.search(text):
+            offenses.append(f"{where}: em-dash in prose")
+        if bold.search(text):
+            offenses.append(f"{where}: bold in prose (a callout block is the emphasis)")
+        for word in set(shouted.findall(text)):
+            offenses.append(f"{where}: shouted caps '{word}'")
+
+    assert not offenses, "Lesson prose must not read as machine-written:\n  " + "\n  ".join(offenses)
+
+
+def test_lessons_talk_about_python_not_about_the_student():
+    """No pep talks. Teach the mistake; do not reassure the student about themselves.
+
+    A real review finding. One lesson shipped a warning callout titled "An error message is
+    information, not a verdict", whose body told the student a traceback "says nothing about
+    whether you are cut out for this". A first-year scanning for how to fix their code hits an
+    amber alert box about their self-esteem and thinks: why is this here.
+
+    Two things went wrong, and both are worth naming. The tone was `warning`, so the UI shouted
+    for attention in order to deliver encouragement. And only its last sentences ("run early,
+    run often") could be acted on; the rest was preamble justifying the advice.
+
+    The rule this enforces: normalize the MISTAKE, not the person. "This catches almost everyone
+    at least once" is good, and deliberately still allowed, because it is a fact about the error
+    that tells you not to go hunting for a deeper misunderstanding. "It does not mean you did
+    anything careless" is about the reader's character, and is not.
+    """
+    import re
+
+    # Prose about the student's feelings, ability, or self-worth. Not about Python.
+    pep_talk = re.compile(
+        r"cut out for|whether you are|not a verdict|not a judg[e]?ment"
+        r"|does not mean you|doesn't mean you|you are not (bad|stupid|dumb|failing)"
+        r"|ashamed|smart enough|impostor|your ability|reflection of you"
+        r"|says nothing about (whether|you)",
+        re.I,
+    )
+
+    offenses = []
+    for language, category, lesson in authored_lessons():
+        for index, block in enumerate(lesson["blocks"]):
+            for field in ("body", "caption", "title", "why", "prompt"):
+                text = str(block.get(field, ""))
+                match = pep_talk.search(text)
+                if match:
+                    offenses.append(
+                        f"{language}/{category} block[{index}].{field}: {match.group(0)!r}"
+                    )
+
+    assert not offenses, (
+        "Lessons must teach Python, not reassure the student about themselves:\n  "
+        + "\n  ".join(offenses)
+    )
+
+
+def test_no_stock_phrase_is_reused_across_lessons():
+    """A phrase repeated in every lesson stops being writing and becomes a template.
+
+    A real review finding, and the more interesting one. The reassurance "This catches almost
+    everyone at least once" is genuinely good: it tells a student the mistake is common, so
+    they stop hunting for a deeper misunderstanding they do not have. But it was used TWELVE
+    times, in eleven of the thirteen lessons, always as the opening line of the mistake
+    callout. A student who reads two lessons sees the seam. The sentence stops reading as a
+    person being kind and starts reading as a slot in a form, which is exactly the thing the
+    voice rules exist to prevent.
+
+    So the rule is not "never reassure". It is "do not say it the same way every time". Any
+    distinctive phrase appearing in more than two lessons is a template leaking through, and
+    this test fails on it.
+
+    Generic wording is deliberately not checked here. This looks only for long, distinctive
+    phrasings, because those are the ones a reader recognizes as copy-paste.
+    """
+    import re
+    from collections import defaultdict
+
+    STOPWORDS_OK = 2  # a phrase may legitimately recur in at most this many lessons
+
+    seen = defaultdict(set)
+    for language, category, lesson in authored_lessons():
+        prose = [lesson["refresher"], lesson["summary"]]
+        for block in lesson["blocks"]:
+            prose += [str(block.get(f, "")) for f in ("body", "caption", "title", "why", "prompt")]
+            prose += [str(i) for i in block.get("items", [])]
+
+        text = " ".join(prose).lower()
+        text = re.sub(r"`[^`]*`", " ", text)      # code is allowed to repeat
+        words = re.findall(r"[a-z']+", text)
+
+        # 7-word shingles: long enough that a collision is a copied sentence, not a
+        # coincidence of common English.
+        for i in range(len(words) - 6):
+            shingle = " ".join(words[i:i + 7])
+            seen[shingle].add(f"{language}/{category}")
+
+    overused = {
+        phrase: sorted(where)
+        for phrase, where in seen.items()
+        if len(where) > STOPWORDS_OK
+    }
+
+    assert not overused, "Stock phrasing reused across lessons (a template showing through):\n  " + "\n  ".join(
+        f'"{phrase}" in {where}' for phrase, where in sorted(overused.items())
+    )
 
 
 def test_unknown_language_errors():

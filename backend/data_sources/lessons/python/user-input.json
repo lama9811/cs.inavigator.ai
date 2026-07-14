@@ -1,0 +1,109 @@
+{
+  "_note": "ORIGINAL content. Topic sequence follows the standard free intro texts (Runestone FoPP ch.2, Think Python ch.5, OpenStax ch.2); sequences are not copyrightable. No prose, examples, or exercises are copied from any of them: all three are copyleft (GFDL / CC BY-NC-SA), and copying would bind CS Navigator's content to those terms.",
+  "title": "User Input",
+  "summary": "Ask the person running your program a question, and use their answer.",
+  "minutes": 6,
+  "error_classes": [
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "`input()` pauses your program, waits for the person to type something, and hands back what they typed. Whatever comes back is a string, even when it looks like a number. So `input()` for 5 gives you the text `\"5\"`, not the number 5. To do math with it, convert it first: `int(input())` for a whole number, `float(input())` for a decimal. If the person types letters instead of digits, `int()` cannot convert them and your program stops with a ValueError.",
+  "refresher_code": "age = int(input(\"Your age: \"))\nprint(age + 1)\n# Your age: 19\n# 20",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "So far your programs have only known what you typed into them. Input changes that. It lets your program stop, ask a question, and wait for a person to answer. The same program can then give a different result every time it runs, because the person gives a different answer every time."
+    },
+    {
+      "kind": "code",
+      "caption": "The text inside the parentheses is the question shown on screen. The program then waits. Nothing else happens until the person types something and presses Enter.",
+      "code": "name = input(\"What is your name? \")\nprint(\"Hi, \" + name + \"!\")",
+      "output": "What is your name? Grace\nHi, Grace!"
+    },
+    {
+      "kind": "text",
+      "body": "Read that line right to left and it makes sense. `input()` collects what the person typed, and the `=` puts it into `name`. Skip the variable and the answer is gone the instant it arrives, because nothing held on to it."
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "Everything input() gives you is a string",
+      "body": "This is the one fact to carry out of this lesson. It does not matter what the person types. Digits, letters, punctuation, an empty line: `input()` hands all of it back as a string. Type 5 and you get the text `\"5\"`, which looks like a number and is not one. Python will not warn you, because as far as it is concerned nothing has gone wrong yet."
+    },
+    {
+      "kind": "code",
+      "caption": "The `+` here is not adding. Given two strings, `+` glues them together, so two numbers typed by a person come out stuck end to end instead of summed.",
+      "code": "a = input(\"First number: \")\nb = input(\"Second number: \")\nprint(a + b)",
+      "output": "First number: 1\nSecond number: 2\n12"
+    },
+    {
+      "kind": "text",
+      "body": "That `12` is the bug this lesson exists for. You asked for 1 and 2 and got 12 back. Nothing crashed and no error appeared, which is what makes it so slippery. Python did exactly what you asked. You just asked for the wrong thing, because you thought you had numbers and you had text."
+    },
+    {
+      "kind": "compare",
+      "caption": "The fix is to convert the text into a number before you do any math with it. `int()` takes a string of digits and gives back the number it spells.",
+      "wrong_label": "Prints 12",
+      "wrong": "a = input(\"First: \")\nb = input(\"Second: \")\nprint(a + b)\n# a is \"1\", b is \"2\"\n# \"1\" + \"2\" glues\n# them into \"12\"",
+      "right_label": "Prints 3",
+      "right": "a = int(input(\"First: \"))\nb = int(input(\"Second: \"))\nprint(a + b)\n# a is 1, b is 2\n# 1 + 2 adds\n# them into 3"
+    },
+    {
+      "kind": "check",
+      "prompt": "The person runs this and types 4, then types 6. What appears on the last line?",
+      "code": "x = input(\"x: \")\ny = input(\"y: \")\nprint(x + y)",
+      "choices": [
+        "46",
+        "10",
+        "\"10\"",
+        "An error, because you cannot add input"
+      ],
+      "answer_index": 0,
+      "why": "Both `x` and `y` are strings, because that is the only thing `input()` ever returns. Between two strings, `+` joins rather than adds, so `\"4\" + \"6\"` becomes `\"46\"`. If you picked 10, you read the code the way you meant it rather than the way Python runs it, and that is the whole trap. There is no error, and that is what makes this bug so hard to spot: the program looks like it worked."
+    },
+    {
+      "kind": "text",
+      "body": "Look closely at the shape of the fix: `int(input(\"First: \"))`. Two things are happening in one line. The inner `input()` runs first and produces a string. The outer `int()` then takes that string and turns it into a whole number. Two closing parentheses at the end, because two functions were opened."
+    },
+    {
+      "kind": "code",
+      "caption": "Use `float()` instead of `int()` when the answer might have a decimal point. `int(\"5.5\")` fails, because 5.5 is not a whole number and `int()` will not quietly round it for you.",
+      "code": "price = float(input(\"Price: \"))\nqty = int(input(\"How many? \"))\nprint(\"Total:\", price * qty)",
+      "output": "Price: 2.50\nHow many? 3\nTotal: 7.5"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "ValueError means the text was not a number",
+      "body": "Ask for a number and the person types \"seven\", and `int()` has nothing to work with. Your program stops with a ValueError. All Python is telling you is that the text it was handed does not spell a number. Read the message. It shows you the exact text it choked on, which is usually enough to see what happened."
+    },
+    {
+      "kind": "check",
+      "prompt": "The person runs this and types \"twelve\" instead of digits. What happens?",
+      "code": "age = int(input(\"Age: \"))\nprint(age)",
+      "choices": [
+        "It prints 12",
+        "It prints \"twelve\"",
+        "It stops with a ValueError",
+        "It prints 0, because the text was not a number"
+      ],
+      "answer_index": 2,
+      "why": "`int()` converts a string of digits into a number. It does not read English, so \"twelve\" means nothing to it and it raises a ValueError. Notice that Python does not fall back to 0 or make a guess. Guessing quietly would be far worse than stopping, because you would get a wrong answer and never know why. A loud error you can find beats a silent one you cannot."
+    },
+    {
+      "kind": "text",
+      "body": "You will meet the tool that handles this gracefully, `try` and `except`, a little later. For now it is enough to know why the crash happens, and to convert the input only when you actually need a number."
+    },
+    {
+      "kind": "list",
+      "title": "Habits that keep input from biting you",
+      "items": [
+        "Ask yourself one question every time: do I need this as text, or as a number?",
+        "Names, answers, and anything you only print: leave it as a string, no conversion needed.",
+        "Anything you will add, subtract, or compare as a quantity: wrap it in `int()` or `float()`.",
+        "End the prompt text with a space, as in `input(\"Age: \")`, so what the person types is not jammed against your question.",
+        "If a total comes out looking like two answers glued together, you forgot an `int()`. Check that first."
+      ]
+    }
+  ]
+}
