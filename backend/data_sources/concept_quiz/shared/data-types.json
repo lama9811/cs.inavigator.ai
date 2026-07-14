@@ -1,0 +1,246 @@
+{
+  "_note": "Data Types. Curriculum sequence follows Foundations of Python Programming (Runestone) ch.2.2-2.6 - Values, Data Types, Type conversion. FoPP is GFDL-licensed, so NO content is copied: only the topic order is used (sequences are not copyrightable). Every question is original. Concepts: int vs float vs string vs bool, integer division, string-vs-number confusion, casting.",
+  "concept": "data-types",
+  "concept_label": "Data Types",
+  "questions": [
+    {
+      "id": "concat-vs-add-01",
+      "concept": "data-types",
+      "difficulty": "easy",
+      "kind": "mcq-output",
+      "title": "Adding numbers vs joining text",
+      "variants": {
+        "python": {
+          "code": "print(\"3\" + \"4\")",
+          "prompt": "What does this code output?",
+          "choices": ["7", "34", "\"34\"", "TypeError"],
+          "answer_index": 1,
+          "explanation": "These are STRINGS, not numbers — the quotes give it away. On strings, `+` joins (concatenates) rather than adds, so you get 34. Remove the quotes and you'd get 7."
+        },
+        "java": {
+          "code": "System.out.println(\"3\" + \"4\");",
+          "prompt": "What does this code output?",
+          "choices": ["7", "34", "\"34\"", "Compile error"],
+          "answer_index": 1,
+          "explanation": "These are Strings, not ints — the quotes give it away. On Strings, `+` joins them, so you get 34. Without quotes you'd get 7."
+        },
+        "javascript": {
+          "code": "console.log(\"3\" + \"4\");",
+          "prompt": "What does this code output?",
+          "choices": ["7", "34", "\"34\"", "NaN"],
+          "answer_index": 1,
+          "explanation": "These are strings, not numbers — the quotes give it away. On strings, `+` joins them, so you get 34. Without quotes you'd get 7."
+        },
+        "cpp": {
+          "code": "#include <iostream>\n#include <string>\nusing namespace std;\n\nint main() {\n    string a = \"3\";\n    string b = \"4\";\n    cout << a + b;\n    return 0;\n}",
+          "prompt": "What does this program output?",
+          "choices": ["7", "34", "\"34\"", "Compile error"],
+          "answer_index": 1,
+          "explanation": "These are strings, not ints. On strings, `+` joins them, so you get 34. Declare them as `int` instead and you'd get 7."
+        }
+      }
+    },
+    {
+      "id": "mixed-add-01",
+      "concept": "data-types",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Mixing a number and a string",
+      "error_class": "runtime",
+      "variants": {
+        "python": {
+          "code": "age = 20\nprint(\"You are \" + age)",
+          "prompt": "What happens when this runs?",
+          "choices": [
+            "It prints 'You are 20'",
+            "TypeError: can only concatenate str to str",
+            "It prints 'You are ' then 20 on the next line",
+            "It prints 'You are age'"
+          ],
+          "answer_index": 1,
+          "explanation": "Python refuses to guess: you can't `+` a string and an int. Fix it with `str(age)` to convert, or use an f-string: `f\"You are {age}\"`. This TypeError is one of the most common beginner errors."
+        },
+        "java": {
+          "code": "int age = 20;\nSystem.out.println(\"You are \" + age);",
+          "prompt": "What happens when this runs?",
+          "choices": [
+            "It prints 'You are 20'",
+            "Compile error: incompatible types",
+            "It prints 'You are ' then 20 on the next line",
+            "It prints 'You are age'"
+          ],
+          "answer_index": 0,
+          "explanation": "Java is the exception here: when EITHER side of `+` is a String, it converts the other side to a String automatically. So this prints 'You are 20'. Python would raise a TypeError for the same code."
+        },
+        "javascript": {
+          "code": "let age = 20;\nconsole.log(\"You are \" + age);",
+          "prompt": "What happens when this runs?",
+          "choices": [
+            "It prints 'You are 20'",
+            "TypeError",
+            "It prints 'You are NaN'",
+            "It prints 'You are age'"
+          ],
+          "answer_index": 0,
+          "explanation": "JavaScript quietly converts the number to a string when you `+` it with one, so this prints 'You are 20'. Convenient — but the same coercion is why `\"3\" + 4` gives \"34\" instead of 7."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int age = 20;\n    cout << \"You are \" << age;\n    return 0;\n}",
+          "prompt": "What does this program output?",
+          "choices": [
+            "You are 20",
+            "Compile error",
+            "You are age",
+            "You are  (blank)"
+          ],
+          "answer_index": 0,
+          "explanation": "`<<` handles each value separately and knows how to print an int, so this prints 'You are 20'. Note it's `<<`, not `+` — using `+` between a string literal and an int would NOT compile."
+        }
+      }
+    },
+    {
+      "id": "int-div-01",
+      "concept": "data-types",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Dividing two integers",
+      "variants": {
+        "python": {
+          "code": "print(7 / 2)\nprint(7 // 2)",
+          "prompt": "What does this code output (two lines)?",
+          "choices": ["3.5 then 3", "3 then 3", "3.5 then 3.5", "3 then 3.5"],
+          "answer_index": 0,
+          "explanation": "In Python 3, `/` always gives a float: 7 / 2 = 3.5. `//` is FLOOR division — it throws away the remainder, giving 3. Picking the wrong one is a classic off-by-a-fraction bug."
+        },
+        "java": {
+          "code": "System.out.println(7 / 2);\nSystem.out.println(7.0 / 2);",
+          "prompt": "What does this code output (two lines)?",
+          "choices": ["3 then 3.5", "3.5 then 3.5", "3 then 3", "3.5 then 3"],
+          "answer_index": 0,
+          "explanation": "int / int gives an INT in Java — 7 / 2 truncates to 3, losing the .5 silently. Make one side a double (7.0) and you get 3.5. This silent truncation causes real bugs."
+        },
+        "javascript": {
+          "code": "console.log(7 / 2);\nconsole.log(Math.floor(7 / 2));",
+          "prompt": "What does this code output (two lines)?",
+          "choices": ["3.5 then 3", "3 then 3", "3.5 then 3.5", "3 then 3.5"],
+          "answer_index": 0,
+          "explanation": "JavaScript has only one number type, so `/` always gives 3.5 — there is no automatic integer division. Use `Math.floor()` when you want to drop the fraction."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << 7 / 2 << endl;\n    cout << 7.0 / 2 << endl;\n    return 0;\n}",
+          "prompt": "What does this program output (two lines)?",
+          "choices": ["3 then 3.5", "3.5 then 3.5", "3 then 3", "3.5 then 3"],
+          "answer_index": 0,
+          "explanation": "int / int gives an int in C++ — 7 / 2 truncates to 3, silently losing the .5. Make one side a double (7.0) and you get 3.5. This silent truncation causes real bugs."
+        }
+      }
+    },
+    {
+      "id": "cast-01",
+      "concept": "data-types",
+      "difficulty": "easy",
+      "kind": "mcq-output",
+      "title": "Converting a string to a number",
+      "variants": {
+        "python": {
+          "code": "n = int(\"12\")\nprint(n + 3)",
+          "prompt": "What does this code output?",
+          "choices": ["123", "15", "\"123\"", "TypeError"],
+          "answer_index": 1,
+          "explanation": "`int(\"12\")` CONVERTS the text \"12\" into the number 12. Now `+` adds, giving 15. Without the `int()`, you'd be joining strings and get \"123\"."
+        },
+        "java": {
+          "code": "int n = Integer.parseInt(\"12\");\nSystem.out.println(n + 3);",
+          "prompt": "What does this code output?",
+          "choices": ["123", "15", "\"123\"", "Compile error"],
+          "answer_index": 1,
+          "explanation": "`Integer.parseInt(\"12\")` CONVERTS the text into the number 12, so `+` adds: 15. Without the parse, `\"12\" + 3` would join into \"123\"."
+        },
+        "javascript": {
+          "code": "let n = Number(\"12\");\nconsole.log(n + 3);",
+          "prompt": "What does this code output?",
+          "choices": ["123", "15", "\"123\"", "NaN"],
+          "answer_index": 1,
+          "explanation": "`Number(\"12\")` CONVERTS the text into the number 12, so `+` adds: 15. Without it, `\"12\" + 3` would join into \"123\" — a very common JS bug."
+        },
+        "cpp": {
+          "code": "#include <iostream>\n#include <string>\nusing namespace std;\n\nint main() {\n    int n = stoi(\"12\");\n    cout << n + 3;\n    return 0;\n}",
+          "prompt": "What does this program output?",
+          "choices": ["123", "15", "\"123\"", "Compile error"],
+          "answer_index": 1,
+          "explanation": "`stoi` (string to int) CONVERTS the text \"12\" into the number 12, so `+` adds: 15."
+        }
+      }
+    },
+    {
+      "id": "bool-01",
+      "concept": "data-types",
+      "difficulty": "easy",
+      "kind": "mcq-output",
+      "title": "Comparisons produce booleans",
+      "variants": {
+        "python": {
+          "code": "result = 5 > 3\nprint(result)",
+          "prompt": "What does this code output?",
+          "choices": ["5", "True", "\"5 > 3\"", "1"],
+          "answer_index": 1,
+          "explanation": "A comparison doesn't print the numbers — it produces a BOOLEAN, either True or False. 5 is greater than 3, so `result` holds True. Booleans are what `if` statements check."
+        },
+        "java": {
+          "code": "boolean result = 5 > 3;\nSystem.out.println(result);",
+          "prompt": "What does this code output?",
+          "choices": ["5", "true", "\"5 > 3\"", "1"],
+          "answer_index": 1,
+          "explanation": "A comparison produces a BOOLEAN — true or false. 5 is greater than 3, so `result` is true. Booleans are what `if` statements check. (Java prints lowercase `true`.)"
+        },
+        "javascript": {
+          "code": "let result = 5 > 3;\nconsole.log(result);",
+          "prompt": "What does this code output?",
+          "choices": ["5", "true", "\"5 > 3\"", "1"],
+          "answer_index": 1,
+          "explanation": "A comparison produces a BOOLEAN — true or false. 5 is greater than 3, so `result` is true. Booleans are what `if` statements check."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    bool result = 5 > 3;\n    cout << result;\n    return 0;\n}",
+          "prompt": "What does this program output?",
+          "choices": ["5", "1", "\"5 > 3\"", "true"],
+          "answer_index": 1,
+          "explanation": "A comparison produces a bool. C++ prints a bool as 1 for true and 0 for false by default — so this shows 1. (Use `cout << boolalpha` to print 'true' instead.)"
+        }
+      }
+    },
+    {
+      "id": "typein-float-01",
+      "concept": "data-types",
+      "difficulty": "medium",
+      "kind": "typein",
+      "title": "What type is this value?",
+      "variants": {
+        "python": {
+          "code": "value = 3.0\n# What does type(value) report?",
+          "prompt": "Type the name of the data type (one word):",
+          "accepted": ["float", "Float", "FLOAT"],
+          "explanation": "The `.0` makes it a FLOAT, not an int — even though the value equals 3. Python treats 3 and 3.0 as different types, and that difference shows up when you divide or compare."
+        },
+        "java": {
+          "code": "double value = 3.0;\n// What is the declared type of value?",
+          "prompt": "Type the name of the data type (one word):",
+          "accepted": ["double", "Double", "DOUBLE"],
+          "explanation": "A decimal literal like 3.0 is a `double` in Java. `int` can only hold whole numbers — assigning 3.0 to an int would not compile without an explicit cast."
+        },
+        "javascript": {
+          "code": "let value = 3.0;\n// What does typeof value report?",
+          "prompt": "Type what `typeof value` returns (one word):",
+          "accepted": ["number", "Number", "NUMBER"],
+          "explanation": "JavaScript has only ONE number type — `number` — for both 3 and 3.0. Unlike Python or Java, there's no separate int and float."
+        },
+        "cpp": {
+          "code": "double value = 3.0;\n// What is the declared type of value?",
+          "prompt": "Type the name of the data type (one word):",
+          "accepted": ["double", "Double", "DOUBLE"],
+          "explanation": "A decimal literal like 3.0 is a `double` in C++. An `int` holds only whole numbers, so assigning 3.0 to one would silently truncate it to 3."
+        }
+      }
+    }
+  ]
+}

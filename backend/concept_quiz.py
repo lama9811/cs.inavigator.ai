@@ -188,7 +188,14 @@ def _project_question(raw: dict[str, Any], language: str, *, scope: str) -> dict
     # Optional shared metadata that lives at the item level for both scopes.
     # (title/typein_mode/goal/debug_style are per-question, not per-language, so
     # the samples put them on the item; a variant-level value still wins below.)
-    for optional in ("title", "goal", "debug_style", "typein_mode"):
+    #
+    # `error_class` ties a question to the failure mode it teaches, using the SAME
+    # vocabulary the attempt telemetry records (syntax / runtime / wrong_answer /
+    # timeout — see services/attempt_telemetry.py). That shared vocabulary is what lets
+    # the mastery model close the loop: "your last 4 runs didn't compile" can route the
+    # student to the quizzes that teach syntax errors, instead of just telling them they
+    # failed. Optional — most questions teach a concept, not a failure mode.
+    for optional in ("title", "goal", "debug_style", "typein_mode", "error_class"):
         if optional in raw:
             base[optional] = raw[optional]
 
@@ -263,14 +270,26 @@ def questions_for_category(language: str, category_id: str) -> dict[str, Any]:
     """All questions for one language + category, each projected to that language.
 
     Returns { language, category, category_label, scope, questions[] }.
+
+    A category in the manifest whose content file has not been authored yet returns an
+    EMPTY question list — it is not an error. The manifest is the roadmap of what the
+    Practice Library will cover; the files are what exists so far, and the two are
+    allowed to disagree while authoring is in progress.
+
+    This mirrors `_count_questions`, which has always reported an unauthored category as
+    0 rather than raising. Without it the two disagreed: the category list rendered fine
+    ("Loops · 0 questions") and then *clicking* Loops returned a 500. That was a real bug
+    for every unauthored category — 10 of Python's 13 at the time of writing — and it
+    became a front-door bug the moment Quiz became the Practice Library's default landing.
     """
     lang = normalize_language(language)
     cat, scope, path = _resolve_category(lang, category_id)
-    data = _read_json(path)
 
     questions: list[dict[str, Any]] = []
-    for raw in data.get("questions", []):
-        questions.append(_project_question(raw, lang, scope=scope))
+    if os.path.exists(path):
+        data = _read_json(path)
+        for raw in data.get("questions", []):
+            questions.append(_project_question(raw, lang, scope=scope))
 
     return {
         "language": lang,
