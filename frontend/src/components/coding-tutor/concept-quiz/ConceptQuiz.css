@@ -27,8 +27,10 @@ body.coding-dark .practice-library {
   padding-bottom: 0.85rem;
   border-bottom: 1px solid var(--ct-border);
 }
-/* Filled orange back button. Override the global .coding-app button chrome, then
-   set our own fill. Hover = a raise (lift + deeper shadow), NOT a color change. */
+/* Filled orange back button. Hover = a raise (lift + deeper shadow), NOT a color
+   change. The app-wide `.coding-app :is(button, ...):hover` in CodingTutor.css
+   repaints the fill and swaps the glow with !important, and that file is imported
+   AFTER this one -- so the hover state below needs !important to survive. */
 .coding-app .practice-back-btn {
   margin-left: auto;
   display: inline-flex;
@@ -49,17 +51,23 @@ body.coding-dark .practice-library {
   padding: 0.5rem 1rem;
   transition: transform 0.14s ease, box-shadow 0.14s ease;
 }
-.coding-app .practice-back-btn:hover {
-  color: #fff;
+.coding-app .practice-back-btn:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    var(--ct-accent),
+    color-mix(in srgb, var(--ct-accent) 78%, #000)
+  ) !important;
+  border-color: transparent !important;
+  color: #fff !important;
   text-decoration: none;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px color-mix(in srgb, var(--ct-accent) 42%, transparent);
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--ct-accent) 42%, transparent) !important;
 }
 .coding-app .practice-back-btn:active {
   transform: translateY(0);
 }
 
-/* ---- Code | Quiz toggle ---- */
+/* ---- Learn | Practice | Code toggle ---- */
 .practice-mode-toggle {
   display: inline-flex;
   padding: 4px;
@@ -68,7 +76,16 @@ body.coding-dark .practice-library {
   border: 1px solid var(--ct-border);
   border-radius: 999px;
 }
-.practice-mode-btn {
+/* These pills sit INSIDE a track, so they must NOT behave like free-standing
+   buttons. Two app-wide rules in CodingTutor.css otherwise hit them:
+     .coding-app button:hover                 -> a 24px lifted-card shadow
+     .coding-app :is(button, ...):hover       -> bg + border + 26px glow +
+                                                 translateY(-1px), all !important
+   On a segmented control that reads as a glitch: the pill jumps and grows a
+   glow that snaps in un-eased, then the real selection color arrives after.
+   Both of those use !important, so the resets below must too. Shadow and
+   transform stay in the transition list so nothing changes on a separate clock. */
+.coding-app .practice-mode-btn {
   border: none;
   background: transparent;
   color: var(--ct-muted);
@@ -77,20 +94,33 @@ body.coding-dark .practice-library {
   padding: 0.4rem 1.15rem;
   border-radius: 999px;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  box-shadow: none;
+  transform: none;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease !important;
 }
-.practice-mode-btn:hover {
-  color: var(--ct-text);
+/* Hover = a quiet inset wash. The pill stays put and stays flat: the only thing
+   that lifts inside this track is the selected pill. */
+.coding-app .practice-mode-btn:hover:not(:disabled) {
+  background: var(--ct-panel) !important;
+  border-color: transparent !important;
+  color: var(--ct-text) !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
-/* Gradient fill so the active toggle doesn't look flat. */
-.practice-mode-btn.active {
+/* Gradient fill so the active toggle doesn't look flat. Its shadow is tight to
+   the pill, so it reads as a raised switch, not a floating card. Hovering the
+   already-active pill must not repaint it -- that flicker was the "stuck" state. */
+.coding-app .practice-mode-btn.active,
+.coding-app .practice-mode-btn.active:hover:not(:disabled) {
   background: linear-gradient(
     135deg,
     var(--ct-primary),
     color-mix(in srgb, var(--ct-primary) 78%, #12325c)
-  );
-  color: var(--cq-on-primary);
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--ct-primary) 30%, transparent);
+  ) !important;
+  border-color: transparent !important;
+  color: var(--cq-on-primary) !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--ct-primary) 30%, transparent) !important;
+  transform: none !important;
 }
 
 /* ---- Shared bits ---- */
