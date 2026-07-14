@@ -58,20 +58,24 @@ def test_unauthored_lesson_returns_none():
     assert lessons.has_lesson("python", "not-a-real-category") is False
 
 
-def test_python_track_is_complete():
-    """Python is the recommended starting language, so its Learn track is the one a
-    beginner is most likely to land in. Every category in the manifest has a lesson.
+@pytest.mark.parametrize("language", ["python", "java"])
+def test_authored_track_is_complete(language):
+    """Every category in a finished language's manifest has a lesson.
 
-    This will fail if a new Python category is added to the manifest without a lesson to
-    go with it, which is the point: the front door should not have an empty room in it.
-    Other languages are deliberately not asserted here; they are still being authored.
+    Fails if a category is added to the manifest without a lesson to go with it, which is
+    the point: Learn is the Practice Library's front door, and it should not have an empty
+    room in it.
+
+    JavaScript and C++ are deliberately absent from this list. They are still being
+    authored, and a test that fails for work not yet started teaches nobody anything. Add
+    each language here as its track is finished.
     """
     missing = [
         category["id"]
-        for category in concept_quiz.categories_for_language("python")
-        if not lessons.has_lesson("python", category["id"])
+        for category in concept_quiz.categories_for_language(language)
+        if not lessons.has_lesson(language, category["id"])
     ]
-    assert not missing, f"Python categories with no lesson: {missing}"
+    assert not missing, f"{language} categories with no lesson: {missing}"
 
 
 def test_lesson_prose_is_not_robotic():
@@ -131,12 +135,18 @@ def test_lessons_talk_about_python_not_about_the_student():
     """
     import re
 
-    # Prose about the student's feelings, ability, or self-worth. Not about Python.
+    # Prose about the student's feelings, ability, or self-worth. Not about the code.
+    #
+    # The subject has to be a PERSON. An earlier, looser version of this pattern flagged
+    # the Java Debug lesson for "it says nothing about whether the arithmetic is right",
+    # which is not a pep talk at all: it is a sharp warning that silencing the compiler
+    # with a cast does not make the answer correct. A rule that fires on wording rather
+    # than on subject would have deleted good teaching, so it is anchored on "you".
     pep_talk = re.compile(
         r"cut out for|whether you are|not a verdict|not a judg[e]?ment"
         r"|does not mean you|doesn't mean you|you are not (bad|stupid|dumb|failing)"
         r"|ashamed|smart enough|impostor|your ability|reflection of you"
-        r"|says nothing about (whether|you)",
+        r"|says nothing about (whether you|you )",
         re.I,
     )
 

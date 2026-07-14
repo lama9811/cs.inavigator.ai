@@ -1,0 +1,139 @@
+{
+  "_note": "ORIGINAL content. Topic order follows the standard free Java text (Eck, 'Introduction to Programming Using Java', ch.3 on branching); a topic sequence is not copyrightable, but prose is. No sentence, example, or exercise here is copied or paraphrased from it. Eck is CC BY-NC-SA, which is copyleft and forbids commercial use forever, so copying its words would bind CS Navigator's content to those terms permanently. Every word below was written for this lesson. All code was compiled and run on JDK 21; every 'output' field is the real program output.",
+  "title": "Conditionals",
+  "summary": "Let your program pick which lines to run.",
+  "minutes": 7,
+  "error_classes": [
+    "syntax",
+    "wrong_answer"
+  ],
+  "refresher": "An `if` statement runs its body when the condition comes back true, and skips it otherwise. Java requires parentheses around that condition, and the braces `{ }` mark where the body starts and ends. Add `else if` for a second question, and `else` for the leftover case. Java tries the branches from the top and stops as soon as one of them fires. Use `==` on numbers, `&&` and `||` and `!` to combine conditions, and `.equals()` on Strings.",
+  "refresher_code": "int score = 85;\nif (score >= 90) {\n    System.out.println(\"A\");\n} else if (score >= 80) {\n    System.out.println(\"B\");\n} else {\n    System.out.println(\"C\");\n}\n// prints B",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A program that always runs the same lines in the same order can only ever do one thing. A conditional is how it starts reacting to what it was handed. You write a test that Java can settle as true or false, and the code attached to that test runs on true and is skipped on false."
+    },
+    {
+      "kind": "code",
+      "caption": "Two pieces of punctuation carry the meaning here. The parentheses hold the condition, and Java requires them. The braces mark the body: everything between `{` and `}` runs only when the condition is true. The last line sits outside the braces, so it runs no matter what.",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        int age = 20;\n        if (age >= 18) {\n            System.out.println(\"You can vote.\");\n        }\n        System.out.println(\"Done.\");\n    }\n}",
+      "output": "You can vote.\nDone."
+    },
+    {
+      "kind": "text",
+      "body": "That is the full shape of a Java program: a class, a `main` method inside it, and your statements inside that. Every example below assumes the same wrapper, so from here on you will only see the statements themselves. Indentation is how you make code readable for a person. Unlike Python, it means nothing to Java. The braces are what decide the body."
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "A missing brace does not always break the program",
+      "body": "Java lets you skip the braces when the body is a single statement. That sounds convenient and it is the source of a real bug. Without braces, only the very next statement belongs to the `if`. Every line after that one runs unconditionally, no matter how the question turned out. Nothing is underlined and nothing complains, because you have written legal Java. It just is not the Java you meant."
+    },
+    {
+      "kind": "compare",
+      "caption": "Both versions compile. On the left, `temperature` is 40, so the \"Hot\" line never prints. Yet the shorts line prints anyway, because it was never inside the `if` to begin with. The braces on the right make the body explicit, and the code then does what it looks like it does.",
+      "wrong_label": "Prints when it should not",
+      "wrong": "int temperature = 40;\nif (temperature > 80)\n    System.out.println(\"Hot\");\n    System.out.println(\"Wear shorts.\");\n\n// prints: Wear shorts.\n// the indenting is a lie",
+      "right_label": "Braces mark the body",
+      "right": "int temperature = 40;\nif (temperature > 80) {\n    System.out.println(\"Hot\");\n    System.out.println(\"Wear shorts.\");\n}\n\n// prints nothing"
+    },
+    {
+      "kind": "text",
+      "body": "Use braces every time, even for a one-line body. It costs you two characters and it removes a whole category of bug. Most teams and most professors require it for exactly that reason."
+    },
+    {
+      "kind": "check",
+      "prompt": "The programmer wanted nothing to print from the `if`, since `lives` is 0. What actually prints?",
+      "code": "int lives = 0;\nif (lives > 0)\n    System.out.println(\"Keep playing\");\n    System.out.println(\"Score saved\");\nSystem.out.println(\"Game over\");",
+      "choices": [
+        "Score saved, then Game over",
+        "Game over only",
+        "Nothing prints",
+        "Keep playing, then Score saved, then Game over"
+      ],
+      "answer_index": 0,
+      "why": "With no braces, the `if` owns exactly one statement: the \"Keep playing\" line. That is the only line it can skip, and `lives > 0` is false, so it is skipped. The \"Score saved\" line was never inside the `if`, no matter how far it is indented, so it runs. \"Game over\" runs too. If you picked \"Game over only\", you read the indentation the way a person would, and that is the trap: Java reads braces, and there are none here. Put braces around both lines and you get the behavior you wanted."
+    },
+    {
+      "kind": "text",
+      "body": "One test and one fallback rarely covers a real problem. `else if` gives you another test to try, and Java only reaches it when the branch above came back false. `else` sits at the bottom with no test of its own, catching whatever got past the rest. Put as many `else if` branches in the middle as the problem calls for."
+    },
+    {
+      "kind": "code",
+      "caption": "Java tries the questions from the top, one after another, and quits the moment one of them fires. The 90 test fails, the 80 test passes, so B is printed and the remaining branches are never examined. Order is therefore part of the logic. Swap the 90 and 80 branches here and a score of 95 lands on the 80 test first, so every A student in the class quietly gets a B.",
+      "code": "int score = 85;\n\nif (score >= 90) {\n    System.out.println(\"A\");\n} else if (score >= 80) {\n    System.out.println(\"B\");\n} else if (score >= 70) {\n    System.out.println(\"C\");\n} else {\n    System.out.println(\"Not passing yet\");\n}",
+      "output": "B"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "if (x = 5) will not compile",
+      "body": "One `=` assigns a value. Two `==` asks a question. Write `if (x = 5)` and Java rejects the program before it runs, with the message \"incompatible types: int cannot be converted to boolean\". Unpack that: `x = 5` hands back the number 5, and an `if` can only work with true or false. The message is naming the exact gap, a number sitting where a yes-or-no belongs, and the repair is the second `=`. In C the same line compiles and misbehaves quietly, which is the version of this bug that costs you an afternoon."
+    },
+    {
+      "kind": "text",
+      "body": "That message is worth pausing on. Java checks types when it compiles, before a single line runs. A type mistake is not something you meet halfway through a run with the wrong answer already on the screen. It stops the build, names the file and the line, and nothing executes. In Python you find that kind of error by running the program. In Java you find it by trying to compile."
+    },
+    {
+      "kind": "text",
+      "body": "Conditions can be joined. `&&` demands that both halves hold, and fails the moment either one does not. `||` is satisfied by either half, so it fails only when neither holds. `!` flips a condition into its opposite. Whichever you use, both sides of the operator have to be something Java could test on its own. `age >= 13 && <= 19` reads fine to a human and will not compile, because `<= 19` never says what it is comparing."
+    },
+    {
+      "kind": "code",
+      "caption": "Three operators, three different bars to clear, and the contrast is the point. `&&` wants both halves, and 16 clears the teen test on both. `||` wants only one, so it takes two failures to shut a branch out: 16 is neither under 5 nor 65 or over, and the free admission line stays quiet. `!` simply flips. Read `!hasTicket` aloud as \"not has ticket\" and it is clear the branch is meant for people who still need to buy one.",
+      "code": "int age = 16;\nboolean hasTicket = true;\n\nif (age >= 13 && age <= 19) {\n    System.out.println(\"Teen price\");\n}\n\nif (age < 5 || age >= 65) {\n    System.out.println(\"Free admission\");\n}\n\nif (!hasTicket) {\n    System.out.println(\"Buy a ticket first\");\n}",
+      "output": "Teen price"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Comparing Strings with == is the bug that hides",
+      "body": "On Strings, `==` asks whether two names point at the same object in memory, not whether the text matches. Use `.equals()` to compare the characters. What makes this one nasty is that `==` often appears to work: two String literals written directly in your code get shared, so `grade == \"A\"` can come out true and convince you the code is fine. The moment the text arrives from a Scanner or a file it is a fresh object, `==` turns false, and the branch you tested by hand stops firing. Same code, same words on screen, different answer."
+    },
+    {
+      "kind": "compare",
+      "caption": "Both read a word typed by the user, and both compile. Type \"yes\" into each and only the right-hand version prints anything, because the typed String is a new object and `==` is asking the wrong question about it.",
+      "wrong_label": "Never matches typed input",
+      "wrong": "Scanner in = new Scanner(System.in);\nString answer = in.nextLine();\n\nif (answer == \"yes\") {\n    System.out.println(\"Confirmed\");\n}\n\n// user types yes\n// prints nothing",
+      "right_label": "Compares the text",
+      "right": "Scanner in = new Scanner(System.in);\nString answer = in.nextLine();\n\nif (answer.equals(\"yes\")) {\n    System.out.println(\"Confirmed\");\n}\n\n// user types yes\n// prints: Confirmed"
+    },
+    {
+      "kind": "text",
+      "body": "When one value is checked against several fixed possibilities, a `switch` says the same thing as a long `else if` chain with less repetition. Java compares the value against each `case` label and jumps to the one that matches. `default` runs when none of them do."
+    },
+    {
+      "kind": "code",
+      "caption": "Each `break` ends the switch. Leave one out and Java keeps running straight down into the cases below it, printing those too, which is almost never what you wanted. That behavior is called fall-through, and a missing `break` is the classic switch bug.",
+      "code": "int day = 3;\n\nswitch (day) {\n    case 1:\n        System.out.println(\"Monday\");\n        break;\n    case 2:\n        System.out.println(\"Tuesday\");\n        break;\n    case 3:\n        System.out.println(\"Wednesday\");\n        break;\n    default:\n        System.out.println(\"Some other day\");\n}",
+      "output": "Wednesday"
+    },
+    {
+      "kind": "check",
+      "prompt": "Every `break` has been left out of this switch. What does it print?",
+      "code": "int day = 1;\n\nswitch (day) {\n    case 1:\n        System.out.println(\"Monday\");\n    case 2:\n        System.out.println(\"Tuesday\");\n    default:\n        System.out.println(\"Some other day\");\n}",
+      "choices": [
+        "Monday, Tuesday, and Some other day, on three lines",
+        "Monday only",
+        "Monday and Some other day",
+        "It does not compile, since every case needs a break"
+      ],
+      "answer_index": 0,
+      "why": "Java jumps to `case 1` because `day` is 1, and then it keeps going. A `case` label is a place to jump to, not a wall. With no `break` to stop it, execution falls straight through `case 2` and `default`, running all three prints. If you picked \"Monday only\", you read each case as a separate box, which is how an `else if` chain behaves but not a switch. And this compiles fine: a missing `break` is legal Java, so the compiler stays quiet while the program does the wrong thing. Put a `break` at the end of every case."
+    },
+    {
+      "kind": "list",
+      "title": "Habits that keep Java conditionals honest",
+      "items": [
+        "Wrap the condition in parentheses. Java will not compile `if x > 1` without them.",
+        "Use braces on every `if`, even a one-line body, so the body is never in doubt.",
+        "Order your branches from strictest to loosest, because whichever question fires first ends the chain.",
+        "Compare numbers with `==`, and compare Strings with `.equals()`.",
+        "End every `case` in a switch with a `break`, unless you actually want it to fall through.",
+        "Try the boundary values. For `score >= 90`, run 90 itself, then 89, then 91.",
+        "When the program does the wrong thing and reports no error at all, check the braces before you check anything else."
+      ]
+    }
+  ]
+}

@@ -22,7 +22,7 @@
   ],
   "language_specific": {
     "python": { "id": "tuples", "label": "Tuples", "file": "tuples", "blurb": "Immutable ordered collections." },
-    "java": { "id": "methods", "label": "Methods", "file": "methods", "blurb": "Method signatures, parameters, and returns." },
+    "java": { "id": "classes-objects", "label": "Classes & Objects", "file": "classes-objects", "blurb": "Fields, constructors, and making your own objects." },
     "javascript": { "id": "objects", "label": "Objects", "file": "objects", "blurb": "Key/value objects and property access." },
     "cpp": { "id": "pointers", "label": "Pointers", "file": "pointers", "blurb": "Addresses, dereferencing, and pointer basics." }
   }

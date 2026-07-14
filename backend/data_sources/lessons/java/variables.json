@@ -1,0 +1,133 @@
+{
+  "_note": "ORIGINAL content. Topic order follows the standard free Java text (Eck, 'Introduction to Programming Using Java', ch.2); a topic sequence is not copyrightable, but prose is. No sentence, example, or exercise here is copied or paraphrased from it. Eck is CC BY-NC-SA, and copying would bind CS Navigator's content to that license permanently, including its NonCommercial clause. Prose is also written fresh rather than adapted from the Python variables lesson, so the two do not read as one template with the keywords swapped.",
+  "title": "Variables",
+  "summary": "Give a value a name, and give that name a type.",
+  "minutes": 6,
+  "error_classes": [
+    "syntax",
+    "wrong_answer"
+  ],
+  "refresher": "In Java you declare a variable by naming its type first: `int score = 10;`. The type stays with the name for as long as the variable exists, so a name declared `int` can only ever hold whole numbers. The `=` assigns a value, it does not compare. Every statement ends in a semicolon. Two rules the compiler enforces before your program runs: you cannot read a local variable you never gave a value, and you cannot declare the same name twice in the same block.",
+  "refresher_code": "int score = 10;\nscore = score + 5;\nSystem.out.println(score);\n// 15",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A variable holds a value under a name you pick. Java wants one thing up front that several other languages do not: you have to say what kind of value the name will hold before you use it. Introducing the name is called declaring it, and the kind of value is its type."
+    },
+    {
+      "kind": "code",
+      "caption": "`int` is the type, `score` is the name, `10` is the value. The class and `main` wrapper is shown once here so you know where a variable lives; the later examples are the statements that go inside `main`.",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        int score = 10;\n        System.out.println(score);\n    }\n}",
+      "output": "10"
+    },
+    {
+      "kind": "text",
+      "body": "Read the declaration left to right and it tells you what it does. `int score = 10;` says: make room for a whole number, call it `score`, put 10 in it. The semicolon closes the statement. Java requires it, and leaving it off is a compile error."
+    },
+    {
+      "kind": "code",
+      "caption": "Three types, picked to match three kinds of value. `String` holds text, `int` holds whole numbers, `boolean` holds true or false. The type is written once, at the declaration, and never again for that name.",
+      "code": "String name = \"Ada\";\nint age = 36;\nboolean isStudent = true;\n\nSystem.out.println(name);\nSystem.out.println(age);\nSystem.out.println(isStudent);",
+      "output": "Ada\n36\ntrue"
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "The type stays for life",
+      "body": "Once `score` is declared `int`, it stays an `int` until the end of its block. Change the value as often as you like. You cannot change the type. Putting text in it later is not a problem that waits for that line to run: the compiler reads the file first and refuses to build it, reporting `incompatible types: String cannot be converted to int`. In Python the same mistake would sit quietly in the file until that line happened to execute."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "The equals sign gives an order, it does not state a fact",
+      "body": "In math, `x = 5` claims that x is 5. In Java it commands: put 5 into x. That is why `count = count + 1;` is not a contradiction. Java reads the right side first, gets whatever `count` holds at that moment, adds one, and stores the result back under the same name. The `==` you meet later is the one that asks whether two values match. A single `=` never asks. It puts."
+    },
+    {
+      "kind": "code",
+      "caption": "Reassignment needs no type, because the type was settled at the declaration. Writing `int count = 2;` on the third line would ask for a brand new variable rather than updating this one.",
+      "code": "int count = 1;\nSystem.out.println(count);\ncount = 2;\nSystem.out.println(count);",
+      "output": "1\n2"
+    },
+    {
+      "kind": "check",
+      "prompt": "What does this print?",
+      "code": "int total = 5;\ntotal = total + 3;\ntotal = total * 2;\nSystem.out.println(total);",
+      "choices": [
+        "16",
+        "13",
+        "10",
+        "11"
+      ],
+      "answer_index": 0,
+      "why": "Take the lines in order, which is how Java takes them. `total` starts at 5. The second line makes it 5 + 3, so 8. The third doubles that 8, so 16. Picking 13 means the multiply got applied to the original 5 instead of the 8 that was sitting there by then. Each line works on the value the line above it left behind."
+    },
+    {
+      "kind": "text",
+      "body": "Some values should be fixed the moment they are set: the credit cap on a full course load, a tax rate, the width of a board. Mark those `final`. The compiler then rejects any later attempt to assign to them, including your own."
+    },
+    {
+      "kind": "code",
+      "caption": "`final` gives a name one value and holds it there. Adding `MAX_CREDITS = 21;` below would fail with `cannot assign a value to final variable MAX_CREDITS`. That is the point of it: the error lands at compile time, before the program can act on a number nobody meant to change.",
+      "code": "final int MAX_CREDITS = 18;\nint taken = 15;\nSystem.out.println(MAX_CREDITS - taken);",
+      "output": "3"
+    },
+    {
+      "kind": "list",
+      "title": "How Java programmers name things",
+      "items": [
+        "Ordinary variables use camelCase: `finalScore`, `studentCount`, `isReady`.",
+        "Start lowercase, then capitalize the first letter of each new word. No spaces, no dashes.",
+        "A `final` constant is the exception to camelCase: capitals joined by underscores, as in `MAX_CREDITS` or `TAX_RATE`. The shape itself signals that the value never moves.",
+        "Capitalization is part of the name. `score` and `Score` refer to two separate variables.",
+        "Digits are allowed inside a name but not at the front: `score2` compiles, `2score` does not.",
+        "Spell out the contents. A reader can guess what `studentCount` holds. Nobody can guess `n`."
+      ]
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "Declaring is not the same as initializing",
+      "body": "`int score;` reserves room for a number without putting one there. Read it before you assign to it and the compiler stops you with `variable score might not have been initialized`. Java would rather refuse to build than hand you a number nobody chose. The usual fix is to declare and assign on one line, which is why most Java you come across does both at once."
+    },
+    {
+      "kind": "compare",
+      "caption": "Both sides declare `score` as an `int`. The right side gives it a value before reading it. The left side is not a crash partway through a run: it never runs, because javac produces no class file to run.",
+      "wrong_label": "Will not compile",
+      "wrong": "int score;\nSystem.out.println(score);\n// variable score might\n// not have been\n// initialized",
+      "right_label": "Compiles and runs",
+      "right": "int score = 10;\nSystem.out.println(score);\n// 10"
+    },
+    {
+      "kind": "text",
+      "body": "The compiler catches one more thing early: the same name declared twice in one block. Once `score` exists, the name is taken. Writing `int` in front of it again asks for a second variable under a name that is already spoken for."
+    },
+    {
+      "kind": "check",
+      "prompt": "What happens when you compile and run this?",
+      "code": "int score = 10;\nSystem.out.println(score);\nint score = 20;\nSystem.out.println(score);",
+      "choices": [
+        "It fails to compile: score is already defined",
+        "It prints 10, then 20",
+        "It prints 20, then 20",
+        "It prints 10, then crashes while running"
+      ],
+      "answer_index": 0,
+      "why": "The third line declares `score` a second time in a block that already has one, so javac reports `variable score is already defined in method main(String[])` and produces nothing to run. Dropping that second `int` and writing `score = 20;` is what gives you 10 then 20, because that reassigns the variable instead of declaring a new one. Note that no output appears at all here, not even the first 10: a compile error stops the program before its first line runs."
+    },
+    {
+      "kind": "text",
+      "body": "That is the trade Java offers. It asks for a type on every declaration and a value in every local variable before you read it. In exchange it catches a whole family of mistakes while the file is still open in your editor, rather than while someone is running the program."
+    },
+    {
+      "kind": "list",
+      "title": "Before you move on",
+      "items": [
+        "Declare and initialize on one line where you can: `int score = 10;`",
+        "Pick the type from the value: whole number is `int`, decimal is `double`, text is `String`, yes or no is `boolean`.",
+        "Reassign with the name alone. The type appears at the declaration and nowhere else.",
+        "Reach for `final` when a value should be set once and never touched again.",
+        "Read the compiler message before changing anything. It gives you the variable and the line, and for both mistakes in this lesson it names the problem outright."
+      ]
+    }
+  ]
+}

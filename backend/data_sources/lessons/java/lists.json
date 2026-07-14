@@ -1,0 +1,135 @@
+{
+  "_note": "ORIGINAL content. Topic sequence follows the standard free Java text (Eck, 'Introduction to Programming Using Java', arrays then ArrayList) and the shared Practice Library category order; a topic sequence is not copyrightable. No prose, examples, or exercises are copied from it: it is CC BY-NC-SA, and copying would bind CS Navigator's content to those terms permanently, including the NonCommercial clause. Every code example here was compiled and run on a real JDK, and the outputs and error messages are what it actually produced.",
+  "title": "Lists / Arrays",
+  "summary": "Hold many values under one name: a fixed array, or a growable ArrayList.",
+  "minutes": 8,
+  "error_classes": [
+    "runtime",
+    "syntax",
+    "wrong_answer"
+  ],
+  "refresher": "An array holds a fixed number of values of one type: `int[] nums = new int[5];` reserves exactly 5 slots, and that size never changes. Positions start at 0, so the last valid index is `nums.length - 1`. On an array, `length` is a field, so it takes no parentheses. When you do not know the count ahead of time, use an `ArrayList`, which grows as you add to it: `add` puts an item on the end, `get(i)` reads one, `size()` counts them. An ArrayList holds objects, so a list of whole numbers is `ArrayList<Integer>`, never `ArrayList<int>`.",
+  "refresher_code": "int[] nums = new int[3];\nnums[0] = 88;\nSystem.out.println(nums[0]);\nSystem.out.println(nums.length);\n// 88\n// 3",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "One variable holds one value. That runs out fast. A roster of thirty students would need thirty separate names, and you would have to write every one of them by hand before you could store a single grade. An array solves that: it parks a whole run of values of the same type behind one name, and you pick out any single one by giving its position."
+    },
+    {
+      "kind": "text",
+      "body": "Java asks you two questions on the line that creates an array: what type are the items, and how many slots do you want. Neither answer can change later. From here on, assume every snippet sits inside the usual `public class Main { public static void main(String[] args) { ... } }` wrapper."
+    },
+    {
+      "kind": "code",
+      "caption": "`new int[4]` reserves four slots. You never put anything in slot 2, so Java prints 0 instead of complaining. An `int` array starts life full of zeros, which is worth knowing: a 0 in your output may be a value you set or a slot you forgot.",
+      "code": "int[] scores = new int[4];\nscores[0] = 88;\nscores[1] = 92;\n\nSystem.out.println(scores[0]);\nSystem.out.println(scores[2]);\nSystem.out.println(scores.length);",
+      "output": "88\n0\n4"
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "On an array, length is a field and takes no parentheses",
+      "body": "Write `scores.length`. Write `scores.length()` and the compiler stops with \"cannot find symbol: method length()\". Those parentheses are not a harmless extra. They tell Java to go looking for a method, and an array has none by that name."
+    },
+    {
+      "kind": "text",
+      "body": "Positions are numbered from 0. The first item sits at index 0, the second at index 1, and an array of four items uses positions 0, 1, 2, and 3. The length counts slots, so it is always one more than the highest index you are allowed to touch."
+    },
+    {
+      "kind": "code",
+      "caption": "The curly-brace form fills the array as you build it and lets Java count the items. Starting at 0 and looping while `i < students.length` visits every position exactly once. That is why the condition uses `<` and never `<=`.",
+      "code": "String[] students = {\"Ada\", \"Grace\", \"Alan\"};\n\nfor (int i = 0; i < students.length; i++) {\n    System.out.println(i + \": \" + students[i]);\n}",
+      "output": "0: Ada\n1: Grace\n2: Alan"
+    },
+    {
+      "kind": "compare",
+      "caption": "The only difference is `<=` in place of `<`. An array of length 3 has no slot 3, so the left loop prints all three items and then asks for one that was never there. Java throws an ArrayIndexOutOfBoundsException. Reading `arr[arr.length]` is wrong for every array that has ever existed, because the length always sits one step past the final index.",
+      "wrong_label": "Crashes on the last pass",
+      "wrong": "int[] arr = {4, 7, 2};\nfor (int i = 0; i <= arr.length; i++) {\n    System.out.println(arr[i]);\n}\n// prints 4, 7, 2\n// then throws at i = 3",
+      "right_label": "Stops in time",
+      "right": "int[] arr = {4, 7, 2};\nfor (int i = 0; i < arr.length; i++) {\n    System.out.println(arr[i]);\n}\n// prints 4, 7, 2\n// then stops"
+    },
+    {
+      "kind": "check",
+      "prompt": "Which of these describes what Java does with this code?",
+      "code": "int[] scores = new int[3];\nSystem.out.println(scores[0]);\nSystem.out.println(scores.length);\nscores[3] = 99;\nSystem.out.println(\"done\");",
+      "choices": [
+        "It prints 0 and 3, then throws an ArrayIndexOutOfBoundsException",
+        "It prints 0, 3, and done, because assigning to scores[3] grows the array",
+        "It refuses to compile, because slot 3 does not exist",
+        "It prints nothing, because the array was never filled in"
+      ],
+      "answer_index": 0,
+      "why": "The first two lines are fine: an int array starts full of zeros, so `scores[0]` is 0, and `scores.length` is 3. Then `scores[3] = 99` asks for slot 3 when the only slots are 0, 1, and 2. Java throws an ArrayIndexOutOfBoundsException and stops, so \"done\" never prints. The compile error is a tempting pick, but an index is a value the program works out while running, so Java cannot judge it in advance and only finds out when it arrives there. Assigning past the end never grows an array. The size was fixed the moment you wrote `new int[3]`."
+    },
+    {
+      "kind": "text",
+      "body": "That fixed size is what an array gives you and also what it costs you. If ten students sign up for a five-slot array, there is no squeezing in a sixth. You would have to make a bigger array and copy everything across. When you cannot know the count in advance, reach for an `ArrayList`, which grows as you add to it."
+    },
+    {
+      "kind": "code",
+      "caption": "The type in the angle brackets says what the list holds. `add` appends, `get(0)` reads the first item, `size()` counts them, and `remove` takes the value out. Nowhere did you state a size, because the list keeps track of that itself.",
+      "code": "import java.util.ArrayList;\n\nArrayList<String> tasks = new ArrayList<>();\ntasks.add(\"read\");\ntasks.add(\"code\");\ntasks.add(\"submit\");\n\nSystem.out.println(tasks);\nSystem.out.println(tasks.size());\nSystem.out.println(tasks.get(0));\n\ntasks.remove(\"read\");\nSystem.out.println(tasks);",
+      "output": "[read, code, submit]\n3\nread\n[code, submit]"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "ArrayList<int> does not compile. You need ArrayList<Integer>.",
+      "body": "An ArrayList can only hold objects, and `int` is not one. It is a primitive: a plain machine number with no methods attached. `Integer` is the object version of that same value, and `Integer` is what goes in the angle brackets. Once the list is declared that way you can still write `nums.add(10)` and read items back into an `int`, because Java converts between the two on its own. The pairs worth memorizing are `int` with `Integer`, `double` with `Double`, and `char` with `Character`."
+    },
+    {
+      "kind": "code",
+      "caption": "The list is declared to hold `Integer`, yet `nums.add(10)` hands it a plain `int` and the loop variable `n` is a plain `int` too. Java converts in both directions for you, so the declaration is the one place the distinction actually shows up.",
+      "code": "import java.util.ArrayList;\n\nArrayList<Integer> nums = new ArrayList<>();\nnums.add(10);\nnums.add(20);\nnums.add(30);\n\nint total = 0;\nfor (int n : nums) {\n    total = total + n;\n}\nSystem.out.println(total);\nSystem.out.println(nums.get(1));",
+      "output": "60\n20"
+    },
+    {
+      "kind": "text",
+      "body": "Now the counting trap, the one that sends students combing through their logic for an hour when the fix is a single character. Three different things all report how big something is, and each wants to be written differently."
+    },
+    {
+      "kind": "code",
+      "caption": "One idea, three spellings. An array uses a field with no parentheses, a String uses a method with parentheses, and an ArrayList uses a method with a different name. This is the most common compile error in the whole topic.",
+      "code": "import java.util.ArrayList;\n\nint[] nums = {4, 7, 2};\nString word = \"hello\";\nArrayList<String> names = new ArrayList<>();\nnames.add(\"Ada\");\n\nSystem.out.println(nums.length);\nSystem.out.println(word.length());\nSystem.out.println(names.size());",
+      "output": "3\n5\n1"
+    },
+    {
+      "kind": "check",
+      "prompt": "`names` is an `ArrayList<String>` holding two names. Which line prints 2?",
+      "code": "ArrayList<String> names = new ArrayList<>();\nnames.add(\"Ada\");\nnames.add(\"Grace\");\n\n// which line prints 2?",
+      "choices": [
+        "`System.out.println(names.size());`",
+        "`System.out.println(names.length);`",
+        "`System.out.println(names.length());`",
+        "`System.out.println(len(names));`"
+      ],
+      "answer_index": 0,
+      "why": "An ArrayList counts with `size()`. The tempting answer is `names.length`, because you just learned that arrays use `length` and an ArrayList feels like the same sort of thing. It is not, and the compiler says so: \"cannot find symbol: variable length\". `names.length()` fails for the same reason, since `length()` belongs to String. Sort them by what you are holding: array uses `length`, String uses `length()`, ArrayList uses `size()`. As for `len(names)`, that is Python, and Java will not recognize it at all."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "A compile error happens before your program runs at all",
+      "body": "Java checks types while it builds your program, so `ArrayList<int>` and `nums.length()` are caught before a single line executes. Nothing you wrote ever ran. An ArrayIndexOutOfBoundsException is the opposite: the program compiled cleanly, started running, and only failed when it reached the bad index. Both are worth reading closely. The compiler names the file, the line, and usually the exact symbol it went looking for and could not find."
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "remove on an ArrayList of Integer is genuinely ambiguous",
+      "body": "For a list of Integers, `nums.remove(1)` deletes the item at position 1, not the item whose value is 1. Java reads a plain `int` as an index. To delete by value, hand it an object: `nums.remove(Integer.valueOf(1))`. An `ArrayList<String>` has no such problem, since `remove(\"read\")` can only mean the value. If a number quietly vanishes from the wrong spot in your list, this is why."
+    },
+    {
+      "kind": "list",
+      "title": "Habits that keep arrays and lists out of trouble",
+      "items": [
+        "The first index is 0 and the last is `length - 1`. Loop with `i < arr.length`, never `i <= arr.length`.",
+        "`arr[arr.length]` is out of bounds for every array, always. For the final item, ask for `arr[arr.length - 1]`.",
+        "Array uses `length` with no parentheses, String uses `length()`, ArrayList uses `size()`. Check what you are holding before you type it.",
+        "An ArrayList holds objects, so write `ArrayList<Integer>`, not `ArrayList<int>`.",
+        "Know the count in advance and it will not change: use an array. Cannot know it yet: use an ArrayList.",
+        "When a loop reads one item too far, print `arr.length` and the index just before it fails. Those two numbers usually name the bug on sight."
+      ]
+    }
+  ]
+}

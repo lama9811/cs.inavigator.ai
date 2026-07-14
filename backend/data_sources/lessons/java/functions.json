@@ -1,0 +1,139 @@
+{
+  "_note": "ORIGINAL content. Topic sequence follows the standard free Java text (Eck, 'Introduction to Programming Using Java', ch.4 on subroutines); a topic sequence is not copyrightable, but prose is. No sentence, example, or exercise is copied or closely paraphrased from it. Eck is CC BY-NC-SA, a copyleft NonCommercial license, and copying his words would bind CS Navigator's content to those terms permanently. Every word here was written for this lesson. All code blocks were compiled and run with javac/java 21; every 'output' field is real program output, and every compile error quoted is the real javac message. Prose is also deliberately written to share no sentences with python/functions.json: the two lessons teach the same topic, and the reuse test hashes Python and Java together.",
+  "title": "Functions",
+  "summary": "Methods in Java: declare what goes in, declare what comes out, and let the compiler hold you to it.",
+  "minutes": 8,
+  "error_classes": [
+    "syntax",
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "In Java a function is called a method. It lives inside a class, and its first line is the signature: a modifier such as `public static`, then the return type, then the name, then the parameters in parentheses. Use `return` to send a value back, and that value has to match the type you declared. Declare `void` when nothing comes back. Showing and returning are different jobs: `System.out.println` paints text on the screen, while `return` produces a value the rest of your code can catch and keep.",
+  "refresher_code": "public static int doubled(int n) {\n    return n * 2;\n}\n\nint result = doubled(5);\nSystem.out.println(result);\n// 10",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Java calls a function a method. Same idea, different word, and since everyone writing Java says method, this lesson says it too. A method bundles up some work and puts a name on it. Write the work down once, then trigger it later just by mentioning that name. Three lines you keep pasting into four different spots are three lines begging to become a method."
+    },
+    {
+      "kind": "code",
+      "caption": "Notice that defining and running are two different events. The body of `greet` sits there inert until `main` says its name. Here `main` says it twice, and only then does anything appear on screen.",
+      "code": "public class Main {\n    public static void greet() {\n        System.out.println(\"Welcome to Morgan State.\");\n    }\n\n    public static void main(String[] args) {\n        greet();\n        greet();\n    }\n}",
+      "output": "Welcome to Morgan State.\nWelcome to Morgan State."
+    },
+    {
+      "kind": "text",
+      "body": "The opening line of a method is called its signature, and it packs four decisions into one line. `public` is the modifier, controlling who may call it. `static` gets its own explanation later on. `void` is the return type, announcing what kind of value will come back. `greet` is the name. The empty parentheses are the parameter list, and empty means this method asks nothing of you. To keep things readable, the rest of this lesson prints only the methods. Picture the `public class Main { ... }` shell wrapped around each one."
+    },
+    {
+      "kind": "list",
+      "title": "Reading a signature left to right",
+      "items": [
+        "`public` is the modifier: who is allowed to call this method.",
+        "`static` means the method belongs to the class itself, not to an object built from it.",
+        "`int` is the return type: the kind of value `return` sends back. Use `void` when nothing does.",
+        "`doubled` is the name. Java style is a verb in camelCase, so `calculateGpa`, not `calculate_gpa`.",
+        "`(int n)` is the parameter list: what the method needs, and the type of each thing it needs."
+      ]
+    },
+    {
+      "kind": "code",
+      "caption": "Inside the parentheses, `String name` is a parameter. Out at the call sites, \"Ada\" and \"Grace\" are the arguments. A parameter behaves like a variable that flickers into existence for one run of the method, carrying whatever got passed that time. Because you wrote its type, slipping a number in where a `String` belongs is caught while you compile, long before anyone runs the thing.",
+      "code": "public static void greet(String name) {\n    System.out.println(\"Hello, \" + name + \"!\");\n}\n\n// inside main:\ngreet(\"Ada\");\ngreet(\"Grace\");",
+      "output": "Hello, Ada!\nHello, Grace!"
+    },
+    {
+      "kind": "text",
+      "body": "Up to here, every method has done nothing but print. Printing is the right call when a human is meant to read the result. It is the wrong call the second your own code wants the number. Text that has gone to the screen is spent. Your program cannot reach up and grab it back. Getting a usable value requires `return`."
+    },
+    {
+      "kind": "code",
+      "caption": "Where `println` throws a value away after showing it, `return` delivers it to whoever made the call. Delivered means usable, so you can assign it, add it, or pass it onward. Watch the final line: since `doubled` yields an `int`, two calls can be summed on the spot, giving 6 plus 8.",
+      "code": "public static int doubled(int n) {\n    return n * 2;\n}\n\n// inside main:\nint result = doubled(5);\nSystem.out.println(result);\nSystem.out.println(doubled(3) + doubled(4));",
+      "output": "10\n14"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "println shows a value. return gives a value back.",
+      "body": "If one idea from this lesson sticks, make it this one. `System.out.println` is a one-way trip to the screen for a human to look at, and nothing in your program can retrieve what it sent. `return` puts the value into the hands of the caller, ready to sit in a variable and be used again. A method that merely prints yields nothing at all. Confuse the two and the screen will look flawless while your code is holding an empty bag."
+    },
+    {
+      "kind": "compare",
+      "caption": "Run either one and 10 shows up on screen. Only the right-hand version leaves the caller holding something it can use. The left never even reaches that point: `doubled` is typed `void`, there is no value to put in `answer`, and javac halts with \"incompatible types: void cannot be converted to int\".",
+      "wrong_label": "Prints, returns nothing",
+      "wrong": "public static void doubled(int n) {\n    System.out.println(n * 2);\n}\n\n// inside main:\nint answer = doubled(5);\n// will not compile:\n// void cannot be\n// converted to int",
+      "right_label": "Returns a value",
+      "right": "public static int doubled(int n) {\n    return n * 2;\n}\n\n// inside main:\nint answer = doubled(5);\nSystem.out.println(answer);\n// 10"
+    },
+    {
+      "kind": "check",
+      "prompt": "What happens when you try to run this?",
+      "code": "public static void square(int n) {\n    System.out.println(n * n);\n}\n\n// inside main:\nint answer = square(4);\nSystem.out.println(answer);",
+      "choices": [
+        "It does not compile, because a void method gives back no value to store in `answer`",
+        "It prints 16, then prints 16 again",
+        "It prints 16, then prints null",
+        "It compiles and prints 16 once, and `answer` is quietly left at 0"
+      ],
+      "answer_index": 0,
+      "why": "Typed `void`, `square` yields nothing, yet `int answer = square(4);` tries to park that nothing inside an `int`. Javac throws the file out with \"incompatible types: void cannot be converted to int\", so execution never begins and 16 is never printed. Choosing \"prints 16, then prints null\" is Python thinking: over there, a function lacking a return slips back `None` and the program carries on. Java declines to start at all. Switch `void` to `int`, turn `System.out.println(n * n)` into `return n * n`, and it will build."
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "Every path has to reach a return",
+      "body": "Declare an `int` and you owe the compiler a value on all possible routes through the method. Tuck the only `return` inside an `if`, and one route escapes out the bottom empty-handed. Javac catches it, prints \"missing return statement\", and declines to build. That strictness is deliberate: a method that occasionally produces no answer never gets to run."
+    },
+    {
+      "kind": "code",
+      "caption": "Here both branches deliver a value, so no matter which way the `if` falls, javac is satisfied. Rip out the `else` and it stops building instantly, even though the specific call `grade(75)` would happily have taken the true branch. Javac reasons about every possible route, not the one you had in mind.",
+      "code": "public static int grade(int score) {\n    if (score >= 60) {\n        return 1;\n    } else {\n        return 0;\n    }\n}\n\n// inside main:\nSystem.out.println(grade(75));\nSystem.out.println(grade(40));",
+      "output": "1\n0"
+    },
+    {
+      "kind": "text",
+      "body": "Time to deal with `static`, which you have been typing on faith this whole lesson. A `static` method is attached to the class. Leave `static` off and the method attaches to an object instead, meaning something has to be constructed before that method can be reached. `main` is itself `static` and fires before a single object exists, so naming a non-static method inside it hands the job to an object nobody ever built."
+    },
+    {
+      "kind": "compare",
+      "caption": "One word separates these: `static` on the method. Javac throws out the left one with \"non-static method triple(int) cannot be referenced from a static context\". Unpacked, that sentence means `main` is static, so whatever it calls by bare name has to be static as well.",
+      "wrong_label": "Will not compile",
+      "wrong": "public int triple(int n) {\n    return n * 3;\n}\n\npublic static void main(String[] args) {\n    System.out.println(triple(4));\n}",
+      "right_label": "Compiles and runs",
+      "right": "public static int triple(int n) {\n    return n * 3;\n}\n\npublic static void main(String[] args) {\n    System.out.println(triple(4));\n}"
+    },
+    {
+      "kind": "code",
+      "caption": "Declare a variable inside a method and it belongs to that method alone. Programmers call that region its scope. `message` springs up while `shout` executes and vanishes the moment control leaves, so referring to it back in `main` names a thing that is not there. Javac answers with \"cannot find symbol\", the build fails, and the output field below is empty because the program never ran at all. Even the `\"hey\"` line never prints, which surprises people who expect the first statement to squeak through before the error hits.",
+      "code": "public static String shout(String word) {\n    String message = word.toUpperCase();\n    return message;\n}\n\n// inside main:\nSystem.out.println(shout(\"hey\"));\nSystem.out.println(message);",
+      "output": ""
+    },
+    {
+      "kind": "check",
+      "prompt": "This method is supposed to give back the larger of two numbers. What does javac do with it?",
+      "code": "public static int bigger(int a, int b) {\n    if (a > b) {\n        return a;\n    }\n}\n\n// inside main:\nSystem.out.println(bigger(3, 9));",
+      "choices": [
+        "It compiles, runs, and prints 9",
+        "It compiles, runs, and prints 3",
+        "It refuses to compile, because one path through the method returns nothing",
+        "It compiles, then crashes at runtime with a NullPointerException"
+      ],
+      "answer_index": 2,
+      "why": "An `int` was promised, but should `a > b` turn out false, control slides to the closing brace with nothing delivered. Javac refuses that and reports \"missing return statement\", so the program never launches. Picking \"compiles, runs, and prints 9\" is the Python reflex, where the identical shape runs fine and slips back `None`. Java audits all routes before producing a class file. Drop `return b;` underneath the `if` and it builds, and at that point 9 is indeed what you see."
+    },
+    {
+      "kind": "list",
+      "title": "Before you call a method done",
+      "items": [
+        "Name it after what it does, in camelCase: `calculateGpa`, not `doStuff`.",
+        "Work out what facts it needs. Each one turns into a parameter with a declared type.",
+        "Work out what it owes the caller. Anything other than nothing means the return type is not `void`.",
+        "Return the value whenever code will hold onto it. Print it only when a person is reading.",
+        "Trace each branch of each `if` and make sure none of them slips past a `return`.",
+        "Keep it `static` for as long as your program is one class with `main` calling its helpers.",
+        "Check it by capturing what it returns and printing that, rather than believing what it prints itself."
+      ]
+    }
+  ]
+}

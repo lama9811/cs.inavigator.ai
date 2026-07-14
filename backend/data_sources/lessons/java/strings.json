@@ -1,0 +1,140 @@
+{
+  "_note": "Original content. Topic sequence follows the standard free Java text (Eck, 'Introduction to Programming Using Java', ch.2-3, on String as an object, its methods, and immutability); a topic sequence is not copyrightable, but prose is. No sentence, example, or exercise here is copied or paraphrased from it. Eck is CC BY-NC-SA, so copying would permanently tie this project's content to those terms, including the NonCommercial clause. Every word was written for this lesson. All code was compiled and run on JDK 21 to confirm each stated output.",
+  "title": "Strings",
+  "summary": "Text is an object in Java, and comparing two of them has one right way.",
+  "minutes": 8,
+  "error_classes": [
+    "runtime",
+    "wrong_answer",
+    "syntax"
+  ],
+  "refresher": "A `String` holds text in double quotes: `\"Ada\"`. It is an object, not a primitive, so it carries methods you call with a dot: `s.length()`, `s.charAt(0)`, `s.substring(1, 4)`, `s.toUpperCase()`, `s.trim()`, `s.split(\",\")`. Indexes start at 0, so the last character is at `s.length() - 1`. Strings are immutable, so every method returns a new String and changes nothing. Compare two Strings with `a.equals(b)`. Using `==` compares whether they are the same object in memory, which is not the question you meant to ask.",
+  "refresher_code": "String s = \"Morgan\";\nSystem.out.println(s.length());\nSystem.out.println(s.charAt(0));\nSystem.out.println(s.substring(0, 3));\nSystem.out.println(s.equals(\"Morgan\"));\n// 6\n// M\n// Mor\n// true",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Strings hold the words your program works with: someone's name, a menu choice, a line typed at the keyboard. You write one inside double quotes. Java gives single quotes a separate job, so `\"A\"` is a String while `'A'` is a single `char`. Learn that split now and a whole family of errors never finds you."
+    },
+    {
+      "kind": "text",
+      "body": "Java has eight primitive types, such as `int`, `double`, `boolean`, and `char`. A primitive holds a plain value and nothing else. String is not one of them. String is an object, and that single fact explains almost everything in this lesson: why you call methods on it with a dot, and why comparing two of them is not as simple as it looks."
+    },
+    {
+      "kind": "code",
+      "caption": "This is the wrapper every Java program needs. Later examples show only the statements that go inside `main`, and you can assume this class around them. Note the capital S in `String`: it is capitalized because it is an object type, while `int` is lowercase because it is a primitive.",
+      "code": "public class Demo {\n    public static void main(String[] args) {\n        String school = \"Morgan State\";\n        System.out.println(school);\n        System.out.println(school.length());\n    }\n}",
+      "output": "Morgan State\n12"
+    },
+    {
+      "kind": "text",
+      "body": "`school.length()` is a method call. You are asking the String object to do something and hand back an answer. That is what the dot means. It needs the parentheses, because you are calling it. Write `school.length` with no parentheses and the compiler stops you, saying it cannot find a variable named `length`."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Java catches type errors before it runs anything",
+      "body": "Java checks the types of everything while it compiles, which is before a single line of your program has run. So `int n = \"hello\";` never gets the chance to misbehave. The compiler refuses it outright and prints `incompatible types: String cannot be converted to int`. That is a compile error, and no output appears at all. Compare that with an error thrown while the program is running, which happens after some of your output has already printed. Where the error shows up tells you which kind you are looking at."
+    },
+    {
+      "kind": "code",
+      "caption": "The `+` sign joins strings together. This is concatenation. When one side is a String and the other is a number, Java converts the number to text for you, which is why `\"Score: \" + 10` works and gives you text.",
+      "code": "String first = \"Ada\";\nString last = \"Lovelace\";\nString full = first + \" \" + last;\nSystem.out.println(full);\nSystem.out.println(\"Score: \" + 10);",
+      "output": "Ada Lovelace\nScore: 10"
+    },
+    {
+      "kind": "code",
+      "caption": "The methods you will reach for most. `charAt(i)` gets one character, and counting starts at 0. `substring(a, b)` takes the characters from a up to but not including b. `substring(a)` with one number runs from a to the end.",
+      "code": "String word = \"Bears\";\nSystem.out.println(word.length());\nSystem.out.println(word.charAt(0));\nSystem.out.println(word.charAt(4));\nSystem.out.println(word.substring(1, 4));\nSystem.out.println(word.substring(2));",
+      "output": "5\nB\ns\near\nars"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "StringIndexOutOfBoundsException",
+      "body": "\"Bears\" has five characters, so the legal indexes are 0, 1, 2, 3, and 4. There is no index 5. Ask for `word.charAt(5)` and the program stops with `StringIndexOutOfBoundsException: Index 5 out of bounds for length 5`. Read that message closely, because it hands you both numbers you need. When it appears, count the characters and subtract one. That is the largest index you are allowed to ask for."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does this do?",
+      "code": "String word = \"Bears\";\nSystem.out.println(word.charAt(word.length()));",
+      "choices": [
+        "It throws a StringIndexOutOfBoundsException",
+        "It prints s",
+        "It prints 5",
+        "It fails to compile"
+      ],
+      "answer_index": 0,
+      "why": "`word.length()` is 5, so this asks for `word.charAt(5)`. The legal indexes stop at 4, so nothing lives at 5 and the program halts on that line with a StringIndexOutOfBoundsException. \"It prints s\" is the answer that pulls at you, and for a fair reason: the letter s does sit at the end of the word. Its index is 4, though, not 5, because the count opened at 0. Reach it with `word.charAt(word.length() - 1)`. The code does compile, since the compiler has no way to know what that number will be before the program runs."
+    },
+    {
+      "kind": "text",
+      "body": "Now the part that matters most in this whole lesson. Sooner or later you will compare two Strings, and Java gives you two things that look like they do that job. Only one of them asks the question you actually have in mind."
+    },
+    {
+      "kind": "compare",
+      "caption": "`==` asks whether two names point at the same object in memory. `.equals()` asks whether two strings contain the same characters. When you compare text, the second question is the one you meant. The left version compiles cleanly, runs without complaint, and quietly prints the wrong thing.",
+      "wrong_label": "Prints \"no match\"",
+      "wrong": "String typed = \"ye\";\nString answer = typed + \"s\";\n\nif (answer == \"yes\") {\n    System.out.println(\"match\");\n} else {\n    System.out.println(\"no match\");\n}",
+      "right_label": "Prints \"match\"",
+      "right": "String typed = \"ye\";\nString answer = typed + \"s\";\n\nif (answer.equals(\"yes\")) {\n    System.out.println(\"match\");\n} else {\n    System.out.println(\"no match\");\n}"
+    },
+    {
+      "kind": "text",
+      "body": "Both strings hold the characters y, e, s. The left version still says they do not match, because `answer` was built while the program was running and so it is a different object from the `\"yes\"` written in the code. `==` compares the objects, finds two different ones, and answers false. It answered honestly. It just answered a question about memory when you were asking a question about text."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "The `==` bug is quiet, and sometimes it looks like it works",
+      "body": "This is the bug that costs Java beginners the most time, and the reason is that `==` sometimes appears to work. Compare two strings you typed directly into your code and Java may reuse one object for both, so `==` returns true and you walk away believing it. Then you compare against a string that came from user input or from a `+`, the object is a fresh one, and the same code silently returns false. Nothing crashes and nothing warns you. The `if` just takes the wrong branch. Use `.equals()` every time you compare text, including the times `==` would have happened to work."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does this print?",
+      "code": "String a = \"cs\";\nString b = a + \"202\";\nSystem.out.println(b == \"cs202\");\nSystem.out.println(b.equals(\"cs202\"));",
+      "choices": [
+        "false then true",
+        "true then true",
+        "false then false",
+        "true then false"
+      ],
+      "answer_index": 0,
+      "why": "`b` is built at runtime by joining `a` with \"202\", so it is a brand new object that happens to hold the same characters as the \"cs202\" written in the code. `==` compares the two objects, sees that they are not the same one, and prints false. `.equals()` compares the characters, finds them identical, and prints true. If you picked \"true then true\", you read `==` as a question about the text. It is a question about the object, and that gap is exactly where the bug lives."
+    },
+    {
+      "kind": "text",
+      "body": "One more idea ties the rest together. A String is immutable: once it exists, its characters can never be changed. So no String method edits the string you called it on. Each one builds a new String and hands it back, and if you do not catch what it hands back, it is gone."
+    },
+    {
+      "kind": "code",
+      "caption": "The first `toUpperCase()` builds an uppercase string and drops it on the floor, because nothing was told to keep it. `name` is untouched. The second line stores the result back into `name`, which is what you almost always want.",
+      "code": "String name = \"ada\";\nname.toUpperCase();\nSystem.out.println(name);\n\nname = name.toUpperCase();\nSystem.out.println(name);",
+      "output": "ada\nADA"
+    },
+    {
+      "kind": "code",
+      "caption": "`trim()` strips whitespace off both ends, the first thing to do with keyboard input. `split()` cuts a string into an array of pieces at the separator you name. Look at the third number: `raw` is still 16 characters long. `trim()` handed back a new string and left the original exactly as it was.",
+      "code": "String raw = \"  Ada Lovelace  \";\nString clean = raw.trim();\n\nSystem.out.println(clean.toUpperCase());\nSystem.out.println(clean.length());\nSystem.out.println(raw.length());\n\nString[] parts = clean.split(\" \");\nSystem.out.println(parts.length);\nSystem.out.println(parts[0]);",
+      "output": "ADA LOVELACE\n12\n16\n2\nAda"
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "A String method call on its own line is usually a bug",
+      "body": "`name.trim();` sitting alone as a statement compiles fine and does nothing you can observe. It trims a copy and throws the copy away. The compiler will not warn you, because calling a method and ignoring its answer is legal. If a line calls a String method and does not assign the result, print it, or test it, look at that line again."
+    },
+    {
+      "kind": "list",
+      "title": "Habits that save you hours",
+      "items": [
+        "Compare text with `a.equals(b)`. Reach for `==` on Strings and you are asking about memory, not about text.",
+        "To ignore capitalization, use `a.equalsIgnoreCase(b)` instead of uppercasing both sides.",
+        "Typed input arrives with stray spaces, so trim it first: `answer.trim().equalsIgnoreCase(\"yes\")`",
+        "The last valid index is `s.length() - 1`. Ask for `s.length()` itself and you get a StringIndexOutOfBoundsException.",
+        "`substring(a, b)` stops just before b, so `substring(0, 3)` gives you three characters.",
+        "Every String method returns a new String and changes nothing. Store the result or it is lost.",
+        "`length()` has parentheses on a String. On an array, `parts.length` has none. Mixing them up is a compile error, so the compiler tells you immediately."
+      ]
+    }
+  ]
+}

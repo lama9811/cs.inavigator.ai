@@ -1,0 +1,146 @@
+{
+  "_note": "ORIGINAL content. Topic order follows the standard free Java text (Eck, 'Introduction to Programming Using Java', ch.3 on control structures and ch.7 on arrays); a topic sequence is not copyrightable, but prose is. Not one sentence, example, or exercise here is copied or paraphrased from it. Eck is CC BY-NC-SA, and copying his words would bind CS Navigator's content to that license permanently, including its ban on commercial use.",
+  "title": "Algorithm Problems",
+  "summary": "Solve it on paper first. Then the Java is mostly typing.",
+  "minutes": 8,
+  "error_classes": [
+    "wrong_answer",
+    "syntax",
+    "runtime"
+  ],
+  "refresher": "Reading the problem is not the same as understanding it. Read it again, explain it out loud in plain language, then trace one tiny case by hand with a pencil. The thing you kept erasing and rewriting on that paper is the variable your program needs. Four shapes cover most first-year problems: a running total, a tally of how many, a best-so-far value, and a hunt for one matching item. All four are the same skeleton. Declare the variable above the loop, change it inside the loop, use it below the loop. Java is strict about the first of those. A variable declared between the loop braces is gone once the loop ends, and the compiler will stop the build rather than let you read it.",
+  "refresher_code": "int[] nums = {4, 8, 15};\nint total = 0;\nfor (int n : nums) {\n    total += n;\n}\nSystem.out.println(total);\n// 27",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "When a problem defeats you, the cause is usually not Java. It is that you started typing while you were still reading. Nothing has been decided, so each line is a guess, and soon you are debugging a plan that never existed. There is no new syntax in this lesson. It is about what happens before your first semicolon."
+    },
+    {
+      "kind": "list",
+      "title": "Do these four things before you type",
+      "items": [
+        "Read it twice. Write down what you are given and what you owe back.",
+        "Explain it to the wall in plain language. If the wall would be confused, so are you.",
+        "Trace one tiny case with a pencil. Three items, and show every step.",
+        "Study your own paper. The shape you just used has a name."
+      ]
+    },
+    {
+      "kind": "text",
+      "body": "Almost nobody bothers with the pencil, and the pencil is where the answer lives. Suppose the task is to sum 4, 8, and 15. Your hand writes a zero, crosses it out for 4, crosses that out for 12, and finishes on 27. Study what your hand did. You kept exactly one number going, and you revised it every time a new value arrived. There is your algorithm. It showed up before you touched Java at all."
+    },
+    {
+      "kind": "code",
+      "caption": "Your paper transfers almost line for line. `total` is the one number you kept going, the loop is the values arriving one at a time, and the print is you reading your final scribble aloud. From here on, examples drop the `public class` and `main` wrapper. Assume it is still wrapped around them.",
+      "code": "public class Totals {\n    public static void main(String[] args) {\n        int[] prices = {4, 8, 15};\n        int total = 0;\n        for (int p : prices) {\n            total += p;\n        }\n        System.out.println(total);\n    }\n}",
+      "output": "27"
+    },
+    {
+      "kind": "text",
+      "body": "Programmers call this an accumulator. Declare it above the loop, grow it inside the loop, read it below the loop. Three cousins of it will handle nearly every problem your first two semesters throw at you, and each one reuses those exact three moves."
+    },
+    {
+      "kind": "list",
+      "title": "The four shapes worth recognizing on sight",
+      "items": [
+        "Accumulator: sums the values. Begin at 0, and grow it by each item.",
+        "Counter: answers how many. Begin at 0, and grow it by 1 whenever an `if` says yes.",
+        "Max or min: holds the champion. Begin with item zero, and swap when beaten.",
+        "Search: finds one match. Record where it was, then quit looking."
+      ]
+    },
+    {
+      "kind": "code",
+      "caption": "Compare this to the accumulator above. Only two things moved: the `if` filters which items qualify, and the update grows by 1 rather than by the value. That tiny edit turns \"what do they add up to\" into \"how many of them passed\".",
+      "code": "int[] scores = {88, 45, 92, 61};\nint passes = 0;\nfor (int s : scores) {\n    if (s >= 60) {\n        passes++;\n    }\n}\nSystem.out.println(passes);",
+      "output": "3"
+    },
+    {
+      "kind": "code",
+      "caption": "The champion starts out as item zero, and gets dethroned whenever the loop meets something larger. Beginning at 0 instead of `temps[0]` would quietly ruin this: every reading here is below freezing, so no value could ever unseat 0, and the program would report 0 as the warmest day.",
+      "code": "int[] temps = {-4, -9, -1, -7};\nint biggest = temps[0];\nfor (int t : temps) {\n    if (t > biggest) {\n        biggest = t;\n    }\n}\nSystem.out.println(biggest);",
+      "output": "-1"
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "temps[0] blows up on an empty array",
+      "body": "Ask an array with zero items for slot 0 and Java throws an ArrayIndexOutOfBoundsException, killing the program on the spot. The compiler waves this through, because how many items an array holds is only settled once the program is running. If the problem says the input may be empty, guard it with `temps.length > 0` before you touch slot 0."
+    },
+    {
+      "kind": "code",
+      "caption": "This one needs the position, not the value, so it counts with `i` rather than walking the items straight. Starting `found` at -1 is a common trick: no real slot is ever numbered -1, so -1 can safely mean \"still missing\". The `break` is doing real work. Take it out and the loop marches on to the second 47, leaving `found` holding 3 instead of 1.",
+      "code": "int[] ids = {31, 47, 12, 47};\nint found = -1;\nfor (int i = 0; i < ids.length; i++) {\n    if (ids[i] == 47) {\n        found = i;\n        break;\n    }\n}\nSystem.out.println(found);",
+      "output": "1"
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Two questions place every line for you",
+      "body": "What am I holding on to? What causes it to change? Answer the first and you have your variable, and it belongs above the loop. Answer the second and you have your `if`, and it belongs between the braces. Then you read the variable below the loop. Those two questions will get you further than memorizing the four shapes ever will."
+    },
+    {
+      "kind": "check",
+      "prompt": "The task: \"An array holds the rainfall for four days. On how many days did it rain at all?\" Which shape solves it, and what does that shape print here?",
+      "code": "int[] rain = {0, 3, 0, 7};\n// which shape belongs here?",
+      "choices": [
+        "A counter. It prints 2.",
+        "An accumulator adding up the rainfall. It prints 10.",
+        "A max tracker holding the wettest day. It prints 7.",
+        "A search that quits on the first rainy day. It prints 1."
+      ],
+      "answer_index": 0,
+      "why": "\"On how many days\" is a tally, and a tally is a counter: begin at 0, grow by 1 whenever `r > 0` holds. Two of the four days have rain, so the answer is 2. The accumulator is placed there to tempt you, because both shapes walk the same array and both look at the same numbers. What separates them is the size of the step. A counter steps by 1, so `days++` answers \"how many days\", which is 2. An accumulator steps by the value, so `mm += r` answers \"how much rain\", which is 10. Same loop, same array, and the update line is the only thing that decides which question you answered."
+    },
+    {
+      "kind": "text",
+      "body": "Here Java parts ways with the languages you may have met first. The declaration has to sit above the loop. Slide it between the braces in Python and you still get a program, just one with a bad answer. Slide it between the braces in Java and the variable ceases to exist at the closing brace, leaving the line below the loop talking to nobody."
+    },
+    {
+      "kind": "compare",
+      "caption": "Same four lines both times, and only one of them moved. `int total` written between the braces is created fresh and destroyed on every single pass, so the `System.out.println` underneath is naming something that never made it out of the loop. Java does not run this and then produce a strange number. It declines to build it, reporting \"cannot find symbol: variable total\".",
+      "wrong_label": "Will not compile",
+      "wrong": "for (int p : prices) {\n    int total = 0;\n    total += p;\n}\nSystem.out.println(total);\n// cannot find symbol:\n// variable total",
+      "right_label": "Prints 27",
+      "right": "int total = 0;\nfor (int p : prices) {\n    total += p;\n}\nSystem.out.println(total);\n// declared once,\n// above the loop"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "A build that fails is the kinder outcome",
+      "body": "Java inspects your whole file before one line executes, and it will not ship that version. Make the same slip in a language that runs first and objects later, and you get a program that completes, prints something, and never hints that the something is wrong. Silence plus a plausible number is the bug that eats your weekend. A red line with a file and a line number takes ten seconds."
+    },
+    {
+      "kind": "check",
+      "prompt": "This is supposed to report the largest number. It builds, it runs, and it says 7. What went wrong?",
+      "code": "int[] nums = {12, 30, 7};\nint biggest = 0;\nfor (int n : nums) {\n    biggest = 0;\n    if (n > biggest) {\n        biggest = n;\n    }\n}\nSystem.out.println(biggest);",
+      "choices": [
+        "The line `biggest = 0;` lives between the braces, so every pass erases the previous winner",
+        "The `if` should test `>=` rather than `>`, so that ties are kept",
+        "The `System.out.println(biggest)` line belongs between the braces",
+        "You cannot find a maximum without sorting the array first"
+      ],
+      "answer_index": 0,
+      "why": "The declaration is above the loop, which is why this builds at all. The reset is not. `biggest` is flattened to 0 at the top of every pass, so each comparison is only ever this item against zero, never against the champion so far. The final pass leaves 7 sitting there, and 7 is what you see. Sorting is the trap, because sorting genuinely would hand you 30. It also throws away the algorithm you were asked to write and leaves the erasing line untouched, waiting to spoil whatever you build next. Remove that single line and the code is right."
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "Two ints divided give you back an int",
+      "body": "Say you have `int[] marks = {90, 85, 78}` and you add them up to 253. Ask for `sum / marks.length` and Java hands you 84, not 84.33. Both operands are `int`, so Java divides in whole numbers, discards the remainder, and never mentions it. Convert one side and the fraction survives: `(double) sum / marks.length` yields 84.33333333333333. An average that comes out oddly round is the giveaway."
+    },
+    {
+      "kind": "list",
+      "title": "A rescue plan for when you are stuck",
+      "items": [
+        "One sentence on the input. One sentence on the output. Written down, not in your head.",
+        "Pencil out the smallest case you can imagine. Three items will do.",
+        "Note what you kept revising as you went. That is the variable.",
+        "Give it a shape: a sum, a tally, a champion, or a target you are hunting.",
+        "Declare above the loop, revise inside the loop, read below the loop.",
+        "\"Cannot find symbol\" from the compiler means you declared it between the braces.",
+        "An answer that is always the final item means you are erasing the variable every pass."
+      ]
+    }
+  ]
+}
