@@ -81,6 +81,55 @@ def test_part_two_questions_are_moderately_harder():
         for question in cq.questions_for_category("python", category)["questions"]:
             assert question["difficulty"] == "medium"
 
+def test_categories_are_split_into_small_beginner_and_intermediate_tracks():
+    for language in ALL_LANGUAGES:
+        categories = cq.categories_for_language(language)
+        by_track = {
+            track: [category["id"] for category in categories if category["track"] == track]
+            for track in cq.VALID_TRACKS
+        }
+        expected = {
+            "python": {"beginner": 12, "intermediate": 11},
+            "java": {"beginner": 12, "intermediate": 11},
+            "javascript": {"beginner": 12, "intermediate": 7},
+            "cpp": {"beginner": 12, "intermediate": 7},
+        }[language]
+        assert {track: len(ids) for track, ids in by_track.items()} == expected
+        assert set().union(*map(set, by_track.values())) == set(all_categories(language))
+
+
+def test_language_specific_topic_is_an_intermediate_next_step():
+    for language in ALL_LANGUAGES:
+        specific = [
+            category for category in cq.categories_for_language(language)
+            if category["scope"] == "language"
+        ]
+        assert len(specific) == 1
+        assert specific[0]["track"] == "intermediate"
+
+def test_invalid_track_metadata_is_rejected():
+    with pytest.raises(cq.ConceptQuizDataError, match="invalid track"):
+        cq._track_for_category({"id": "bad-track", "track": "expert"})
+
+
+def test_lesson_only_extensions_do_not_claim_quiz_questions():
+    expected_ids = {
+        "python": {"dictionaries", "sets", "file-handling", "exceptions", "classes-objects", "modules-imports", "comprehensions", "testing"},
+        "java": {"maps", "file-io", "exceptions", "inheritance-interfaces", "generics", "enums", "packages-access", "lambdas-streams"},
+        "javascript": {"error-handling", "modules", "dom-events", "async-promises"},
+        "cpp": {"classes-objects", "file-io", "exceptions", "memory-ownership"},
+    }
+    for language in ALL_LANGUAGES:
+        extensions = [
+            category for category in cq.categories_for_language(language)
+            if category.get("lesson_only")
+        ]
+        assert {category["id"] for category in extensions} == expected_ids[language]
+        assert all(category["scope"] == "extension" for category in extensions)
+        assert all(category["track"] == "intermediate" for category in extensions)
+        assert all(category["count"] == 0 for category in extensions)
+
+
 def test_unknown_category_still_errors():
     """"Not authored yet" and "no such category" are different answers. Only the first
     is allowed to return empty; a typo'd category must still fail loudly."""

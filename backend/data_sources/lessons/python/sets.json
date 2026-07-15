@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. Topic coverage follows the curriculum in Runestone Foundations of Python Programming, Think Python, and OpenStax Introduction to Python Programming. No prose, examples, or exercises were copied; the sources guide topic selection only.",
+  "title": "Sets",
+  "summary": "Keep one copy of each value and compare groups directly.",
+  "minutes": 9,
+  "error_classes": [
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "A set is an unordered collection of unique values. Add with `add`, remove safely with `discard`, and use union, intersection, or difference to compare groups. Empty sets use `set()`, because `{}` creates a dictionary.",
+  "refresher_code": "skills = {\"Python\", \"Git\"}\nskills.add(\"Python\")\nprint(len(skills))\n# 2",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A set is useful when the question is about membership, not position. It can track the courses a student has completed or the tags attached to an article. Duplicate input collapses into one stored value."
+    },
+    {
+      "kind": "code",
+      "caption": "Repeated values disappear when the list becomes a set. The result has three unique course codes even though the source list has four items.",
+      "code": "courses = [\"CS101\", \"MATH120\", \"CS101\", \"ENG101\"]\nunique_courses = set(courses)\nprint(len(unique_courses))\nprint(\"CS101\" in unique_courses)",
+      "output": "3\nTrue"
+    },
+    {
+      "kind": "text",
+      "body": "Sets do not promise an index order, so `skills[0]` is not valid. If order matters, keep a list. If fast membership and uniqueness matter, a set is usually the clearer tool."
+    },
+    {
+      "kind": "compare",
+      "caption": "`remove` raises KeyError when the value is absent. `discard` leaves the set unchanged, which is convenient when absence is acceptable.",
+      "wrong_label": "May fail",
+      "wrong": "clubs = {\"Robotics\"}\nclubs.remove(\"Chess\")",
+      "right_label": "Safe absence",
+      "right": "clubs = {\"Robotics\"}\nclubs.discard(\"Chess\")"
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "Curly braces have one empty exception",
+      "body": "`{\"Python\"}` is a set, but `{}` is an empty dictionary. Write `set()` when you need an empty set, then add values to it."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is the value of `common`?",
+      "code": "a = {1, 2, 3}\nb = {2, 3, 4}\ncommon = a & b",
+      "choices": [
+        "{2, 3}",
+        "{1, 2, 3, 4}",
+        "{1, 4}",
+        "[2, 3]"
+      ],
+      "answer_index": 0,
+      "why": "The `&` operator computes intersection, keeping only values present in both sets. The result remains a set, not a list."
+    },
+    {
+      "kind": "text",
+      "body": "Union combines both groups, intersection keeps the overlap, and difference keeps values found only on the left. Those operations often replace nested loops with a statement that matches the question directly."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which expression finds courses completed by Ada but not Ben?",
+      "code": "ada = {\"CS101\", \"MATH120\"}\nben = {\"CS101\", \"ENG101\"}",
+      "choices": [
+        "ada - ben",
+        "ada | ben",
+        "ada & ben",
+        "ben - ada"
+      ],
+      "answer_index": 0,
+      "why": "Set difference keeps members from the left set that are absent from the right. Here the result is `{\"MATH120\"}`."
+    },
+    {
+      "kind": "list",
+      "title": "Set checklist",
+      "items": [
+        "Use a set when duplicates have no meaning.",
+        "Do not depend on item positions.",
+        "Prefer `discard` when a missing value is acceptable.",
+        "Use `&`, `|`, and `-` to compare groups.",
+        "Create an empty set with `set()`."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "_note": "ORIGINAL content. Topic coverage was checked against javascript.info and Eloquent JavaScript. No prose, examples, or exercises were copied; the references are curriculum guides only.",
+  "title": "Async & Promises",
+  "summary": "Work with values that become available after the current code finishes.",
+  "minutes": 10,
+  "error_classes": [
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "A Promise represents a future result that can be pending, fulfilled, or rejected. An `async` function returns a Promise, and `await` pauses that function until a Promise settles without freezing the entire browser.",
+  "refresher_code": "async function loadUser() {\n  const response = await fetch(\"/api/user\");\n  if (!response.ok) throw new Error(\"Request failed\");\n  return response.json();\n}",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Network requests, timers, and many browser APIs do not finish immediately. JavaScript starts the work, continues handling other events, and schedules a reaction for when the result or error becomes available."
+    },
+    {
+      "kind": "text",
+      "body": "Await makes asynchronous steps read in order, but it is valid only inside an async function or supported module top level. A rejected Promise behaves like a thrown error at the await line, so try and catch can provide an expected recovery path."
+    },
+    {
+      "kind": "code",
+      "caption": "The function waits for loadUser to settle, then prints either the returned name or a controlled failure message.",
+      "code": "async function showName() {\n  try {\n    const user = await loadUser();\n    console.log(user.name);\n  } catch (error) {\n    console.log(\"Could not load the user\");\n  }\n}",
+      "output": "Depends on the request result."
+    },
+    {
+      "kind": "compare",
+      "wrong_label": "Common mistake",
+      "wrong": "const user = fetch(\"/api/user\");\nconsole.log(user.name);",
+      "right_label": "Clearer version",
+      "right": "const response = await fetch(\"/api/user\");\nconst user = await response.json();\nconsole.log(user.name);",
+      "caption": "Fetch returns a Promise, not the final user object. Await both the response and the later body-parsing Promise."
+    },
+    {
+      "kind": "text",
+      "body": "Call order and completion order can differ. The request starts first, showName yields control at await, other browser work can run, and showName resumes only after the Promise settles. This is coordination, not a blocking sleep."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Fetch does not reject every bad response",
+      "body": "A response with status 404 or 500 still fulfills the fetch Promise. Check `response.ok` and throw or return an error result before parsing data you expected from a successful request."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does an async function always return?",
+      "code": "",
+      "choices": [
+        "A Promise",
+        "A timer id",
+        "A callback",
+        "Only undefined"
+      ],
+      "answer_index": 0,
+      "why": "JavaScript wraps a returned value in a fulfilled Promise, or returns a rejected Promise when the function throws."
+    },
+    {
+      "kind": "check",
+      "prompt": "What happens when an awaited Promise rejects?",
+      "code": "",
+      "choices": [
+        "An error is thrown at the await expression",
+        "The browser closes",
+        "Await returns null automatically",
+        "The function restarts"
+      ],
+      "answer_index": 0,
+      "why": "Rejection enters the surrounding catch just like a synchronous throw, or rejects the async function when it is not caught."
+    },
+    {
+      "kind": "list",
+      "title": "Async & Promises checklist",
+      "items": [
+        "Await the operation that produces the needed value.",
+        "Check HTTP response status explicitly.",
+        "Catch failures where recovery is possible.",
+        "Keep independent requests concurrent when appropriate."
+      ]
+    }
+  ]
+}

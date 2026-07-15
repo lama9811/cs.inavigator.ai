@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. Topic coverage was checked against Think C++ and the Google C++ Class outline. No prose, examples, or exercises were copied; the references are curriculum guides only.",
+  "title": "Classes & Objects",
+  "summary": "Design types that keep related state and behavior together.",
+  "minutes": 10,
+  "error_classes": [
+    "syntax",
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "A class defines a new type. Private data members protect an object?s state, public methods provide controlled operations, and a constructor establishes a valid starting state. Each object owns its own member values.",
+  "refresher_code": "class Counter {\npublic:\n  Counter() : value_(0) {}\n  void increment() { value_++; }\n  int value() const { return value_; }\nprivate:\n  int value_;\n};",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A class lets you describe what a kind of object stores and what it can do. Instead of passing several related variables between functions, you give the relationship a name and keep the operations beside the data they protect."
+    },
+    {
+      "kind": "text",
+      "body": "Public members form the interface that other code may use. Private members are implementation details the class controls. A constructor runs when an object is created and should leave every member ready for the other methods."
+    },
+    {
+      "kind": "code",
+      "caption": "The constructor initializes the balance, deposit changes it through a rule, and the const getter reads it without modifying the object.",
+      "code": "#include <iostream>\nclass Account {\npublic:\n  Account(int starting) : balance_(starting) {}\n  void deposit(int amount) { if (amount > 0) balance_ += amount; }\n  int balance() const { return balance_; }\nprivate:\n  int balance_;\n};\nint main() {\n  Account account(20);\n  account.deposit(5);\n  std::cout << account.balance() << \"\\n\";\n}",
+      "output": "25"
+    },
+    {
+      "kind": "compare",
+      "wrong_label": "Common mistake",
+      "wrong": "class Account {\npublic:\n  int balance;\n};\naccount.balance = -50;",
+      "right_label": "Clearer version",
+      "right": "class Account {\npublic:\n  void deposit(int amount);\n  int balance() const;\nprivate:\n  int balance_;\n};",
+      "caption": "Public data lets any caller create an invalid state. A small public interface can enforce the class rule in one place."
+    },
+    {
+      "kind": "text",
+      "body": "Trace two Account objects separately. Depositing into the first changes only its balance member because each object has its own state. Methods know which object they are using through the implicit `this` pointer."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Initialize every member",
+      "body": "A constructor body runs after data members have already been initialized. Prefer the member initializer list for their starting values, especially for const members and objects that have no default constructor."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is the main job of a constructor?",
+      "code": "",
+      "choices": [
+        "Establish a valid starting state",
+        "Delete the object",
+        "Make every member public",
+        "Run after every method"
+      ],
+      "answer_index": 0,
+      "why": "The constructor initializes the new object so its public operations can rely on a valid state."
+    },
+    {
+      "kind": "check",
+      "prompt": "Why make a getter method `const`?",
+      "code": "int balance() const;",
+      "choices": [
+        "It promises not to modify the object through that method",
+        "It makes the returned integer constant forever",
+        "It hides the method",
+        "It allocates the object"
+      ],
+      "answer_index": 0,
+      "why": "The trailing const lets callers and the compiler know that reading the balance does not change the account."
+    },
+    {
+      "kind": "list",
+      "title": "Classes & Objects checklist",
+      "items": [
+        "Give the class one clear responsibility.",
+        "Initialize every member in the constructor.",
+        "Keep invariants behind private data.",
+        "Mark read-only methods const."
+      ]
+    }
+  ]
+}

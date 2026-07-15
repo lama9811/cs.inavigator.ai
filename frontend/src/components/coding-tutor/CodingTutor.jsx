@@ -203,18 +203,46 @@ function practiceTargetFromPath(pathname) {
   }
 
   // --- Learn ---
-  const lessonPage = clean.match(/^\/coding\/practice\/learn\/([^/]+)\/([^/]+)$/);
-  if (lessonPage) {
+  // New tracked routes add one level without breaking links created before tracks existed.
+  const trackedLesson = clean.match(
+    /^\/coding\/practice\/learn\/([^/]+)\/(beginner|intermediate)\/([^/]+)$/
+  );
+  if (trackedLesson) {
     return {
       mode: "learn",
       view: "lesson",
-      language: decodeURIComponent(lessonPage[1]),
-      category: decodeURIComponent(lessonPage[2]),
+      language: decodeURIComponent(trackedLesson[1]),
+      track: trackedLesson[2],
+      category: decodeURIComponent(trackedLesson[3]),
     };
   }
-  const lessonList = clean.match(/^\/coding\/practice\/learn\/([^/]+)$/);
-  if (lessonList) {
-    return { mode: "learn", view: "lessons", language: decodeURIComponent(lessonList[1]) };
+  const trackedList = clean.match(
+    /^\/coding\/practice\/learn\/([^/]+)\/(beginner|intermediate)$/
+  );
+  if (trackedList) {
+    return {
+      mode: "learn",
+      view: "lessons",
+      language: decodeURIComponent(trackedList[1]),
+      track: trackedList[2],
+    };
+  }
+  const legacyLesson = clean.match(/^\/coding\/practice\/learn\/([^/]+)\/([^/]+)$/);
+  if (legacyLesson) {
+    return {
+      mode: "learn",
+      view: "lesson",
+      language: decodeURIComponent(legacyLesson[1]),
+      category: decodeURIComponent(legacyLesson[2]),
+    };
+  }
+  const languageTracks = clean.match(/^\/coding\/practice\/learn\/([^/]+)$/);
+  if (languageTracks) {
+    return {
+      mode: "learn",
+      view: "tracks",
+      language: decodeURIComponent(languageTracks[1]),
+    };
   }
 
   // --- Practice (the concept quizzes) ---
@@ -244,8 +272,12 @@ const PRACTICE_QUIZ_PATH = "/coding/practice/quiz";
 const PRACTICE_CODE_PATH = "/coding/practice/code";
 const learnPathForLanguage = (language) =>
   `/coding/practice/learn/${encodeURIComponent(language)}`;
-const learnPathForLesson = (language, category) =>
-  `/coding/practice/learn/${encodeURIComponent(language)}/${encodeURIComponent(category)}`;
+const learnPathForTrack = (language, track) =>
+  `/coding/practice/learn/${encodeURIComponent(language)}/${encodeURIComponent(track)}`;
+const learnPathForLesson = (language, category, track) =>
+  track
+    ? `${learnPathForTrack(language, track)}/${encodeURIComponent(category)}`
+    : `/coding/practice/learn/${encodeURIComponent(language)}/${encodeURIComponent(category)}`;
 const quizPathForLanguage = (language) =>
   `/coding/practice/quiz/${encodeURIComponent(language)}`;
 const quizPathForQuestion = (language, category, questionId) =>
@@ -2729,13 +2761,25 @@ export default function CodingTutor({
           label: `Back to ${langLabel}`,
           onClick: () => navigate(quizPathForLanguage(target.language)),
         };
-      } else if (target.view === "lessons") {
+      } else if (target.view === "tracks") {
         back = { label: "All languages", onClick: () => navigate(PRACTICE_LEARN_PATH) };
+      } else if (target.view === "lessons") {
+        back = {
+          label: "Choose track",
+          onClick: () => navigate(learnPathForLanguage(target.language)),
+        };
       } else if (target.view === "lesson") {
         const langLabel = CONCEPT_QUIZ_LABELS[target.language] || target.language;
         back = {
-          label: `Back to ${langLabel}`,
-          onClick: () => navigate(learnPathForLanguage(target.language)),
+          label: target.track
+            ? `Back to ${target.track === "beginner" ? "Beginner" : "Intermediate"} track`
+            : `Back to ${langLabel}`,
+          onClick: () =>
+            navigate(
+              target.track
+                ? learnPathForTrack(target.language, target.track)
+                : learnPathForLanguage(target.language)
+            ),
         };
       }
 
@@ -2798,8 +2842,11 @@ export default function CodingTutor({
               languageLabels={CONCEPT_QUIZ_LABELS}
               onNavigateToLanguages={() => navigate(PRACTICE_LEARN_PATH)}
               onNavigateToLanguage={(language) => navigate(learnPathForLanguage(language))}
-              onNavigateToLesson={(language, category) =>
-                navigate(learnPathForLesson(language, category))
+              onNavigateToTrack={(language, track) =>
+                navigate(learnPathForTrack(language, track))
+              }
+              onNavigateToLesson={(language, category, track) =>
+                navigate(learnPathForLesson(language, category, track))
               }
               // The whole point of Learn: it hands off to Practice on the same topic.
               onPracticeCategory={(language, category) =>

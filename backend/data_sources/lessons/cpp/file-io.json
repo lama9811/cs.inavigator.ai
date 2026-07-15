@@ -1,0 +1,82 @@
+{
+  "_note": "ORIGINAL content. Topic coverage was checked against Think C++ and the Google C++ Class outline. No prose, examples, or exercises were copied; the references are curriculum guides only.",
+  "title": "File I/O",
+  "summary": "Read and write files through streams with clear failure checks.",
+  "minutes": 10,
+  "error_classes": [
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "Use `std::ifstream` for input files and `std::ofstream` for output files. Check that the stream opened successfully before reading or writing. `std::getline` reads a complete text line.",
+  "refresher_code": "#include <fstream>\nstd::ifstream input(\"courses.txt\");\nif (!input) {\n  std::cerr << \"Could not open file\\n\";\n}",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A file stream connects the familiar stream operations to data stored outside the program. The path may be wrong, permission may be denied, or the file may disappear, so opening a file is an operation that needs an explicit failure path."
+    },
+    {
+      "kind": "text",
+      "body": "Input extraction and getline move a read position through the file. Each successful read advances that position. A loop should use the read operation itself as its condition rather than checking end-of-file before attempting the read."
+    },
+    {
+      "kind": "code",
+      "caption": "The loop processes each line only after getline succeeds, so it does not repeat stale data after the final read.",
+      "code": "#include <fstream>\n#include <iostream>\n#include <string>\nint main() {\n  std::ifstream input(\"courses.txt\");\n  if (!input) {\n    std::cerr << \"Could not open courses.txt\\n\";\n    return 1;\n  }\n  std::string line;\n  while (std::getline(input, line)) {\n    std::cout << line << \"\\n\";\n  }\n}",
+      "output": "One output line for each line in courses.txt."
+    },
+    {
+      "kind": "compare",
+      "wrong_label": "Common mistake",
+      "wrong": "while (!input.eof()) {\n  std::getline(input, line);\n  use(line);\n}",
+      "right_label": "Clearer version",
+      "right": "while (std::getline(input, line)) {\n  use(line);\n}",
+      "caption": "EOF becomes known only after a read fails. Testing getline directly prevents one extra pass with old or empty data."
+    },
+    {
+      "kind": "text",
+      "body": "Trace the final iteration: getline reads the last real line and the body uses it. The next getline attempt fails, converts the stream condition to false, and the loop ends before the body can run again."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Relative paths start at the working directory",
+      "body": "A path such as `courses.txt` is resolved from the program?s current working directory, which may differ from the source-code folder. Print or configure the working directory when a file exists but the program cannot find it."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which stream type reads from a file?",
+      "code": "",
+      "choices": [
+        "std::ifstream",
+        "std::ofstream",
+        "std::cout",
+        "std::string"
+      ],
+      "answer_index": 0,
+      "why": "An ifstream is an input file stream, while an ofstream sends output into a file."
+    },
+    {
+      "kind": "check",
+      "prompt": "Why use `while (getline(stream, line))`?",
+      "code": "",
+      "choices": [
+        "The body runs only after a successful read",
+        "It reads the entire file at once",
+        "It sorts the lines",
+        "It keeps the stream open forever"
+      ],
+      "answer_index": 0,
+      "why": "The returned stream state becomes false when reading fails, preventing the loop from processing invalid data."
+    },
+    {
+      "kind": "list",
+      "title": "File I/O checklist",
+      "items": [
+        "Check that opening succeeded.",
+        "Process data only after a successful read.",
+        "Know the working directory for relative paths.",
+        "Let stream objects close files through their destructors."
+      ]
+    }
+  ]
+}

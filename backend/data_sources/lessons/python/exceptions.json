@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. Topic coverage follows the curriculum in Runestone Foundations of Python Programming, Think Python, and OpenStax Introduction to Python Programming. No prose, examples, or exercises were copied; the sources guide topic selection only.",
+  "title": "Exceptions",
+  "summary": "Respond to expected failures while leaving unexpected bugs visible.",
+  "minutes": 10,
+  "error_classes": [
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "Put an operation that may fail inside `try`, catch a specific exception with `except`, and place cleanup in `finally` when both outcomes need it. Avoid a bare `except`, because it can hide mistakes unrelated to the expected problem.",
+  "refresher_code": "try:\n    credits = int(raw)\nexcept ValueError:\n    print(\"Enter a whole number\")",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "An exception is Python reporting that it cannot finish an operation. Some exceptions come from expected input, such as letters where a number is required. Others expose a coding mistake. Good handling separates those cases."
+    },
+    {
+      "kind": "code",
+      "caption": "Only conversion is protected, and only ValueError is handled. The response matches the failure the program understands.",
+      "code": "raw = \"twelve\"\ntry:\n    credits = int(raw)\n    print(credits)\nexcept ValueError:\n    print(\"Credits must be a whole number\")",
+      "output": "Credits must be a whole number"
+    },
+    {
+      "kind": "text",
+      "body": "When a statement raises, Python skips the rest of the try block and searches for a matching except clause. Code after the whole structure continues unless the handler raises another exception or exits."
+    },
+    {
+      "kind": "compare",
+      "caption": "A broad handler can make an unrelated NameError look like bad input. Catching ValueError keeps other bugs honest and visible.",
+      "wrong_label": "Too broad",
+      "wrong": "try:\n    total = int(raw) + missing\nexcept Exception:\n    print(\"Bad input\")",
+      "right_label": "Specific",
+      "right": "try:\n    total = int(raw)\nexcept ValueError:\n    print(\"Bad number\")"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Do not silence evidence",
+      "body": "An empty `except` lets the program continue without completing its work or explaining why. Handle the expected case, log useful context, or allow the exception to reach a layer that can respond."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which exception does `int(\"3.5\")` raise?",
+      "code": "int(\"3.5\")",
+      "choices": [
+        "ValueError",
+        "TypeError",
+        "KeyError",
+        "FileNotFoundError"
+      ],
+      "answer_index": 0,
+      "why": "The argument is a string, which is an accepted input type, but its contents do not represent a whole integer. That makes the value invalid."
+    },
+    {
+      "kind": "text",
+      "body": "An `else` block runs only when try succeeds. A `finally` block runs after success or failure, so it belongs to cleanup that must happen on either path. Context managers often handle file cleanup more neatly."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which block runs after try whether an exception occurred or not?",
+      "code": "",
+      "choices": [
+        "finally",
+        "except",
+        "else",
+        "raise"
+      ],
+      "answer_index": 0,
+      "why": "`finally` is reserved for work required on both paths. An except block needs a matching failure, while else requires success."
+    },
+    {
+      "kind": "list",
+      "title": "Exception checklist",
+      "items": [
+        "Protect the smallest operation that can fail.",
+        "Catch the most specific useful exception.",
+        "Give the caller or user a recovery path.",
+        "Keep unexpected programming errors visible.",
+        "Use `finally` only for cleanup shared by both outcomes."
+      ]
+    }
+  ]
+}

@@ -39,6 +39,7 @@ LANGUAGE_KEYS = ("python", "java", "javascript", "cpp")
 
 # Question kinds the UI knows how to render. Anything else is a content error.
 VALID_KINDS = {"mcq-output", "mcq-behavior", "typein", "parsons"}
+VALID_TRACKS = {"beginner", "intermediate"}
 
 # ---------------------------------------------------------------------------
 # Raised for bad input (unknown language/category) — the API layer maps these
@@ -89,12 +90,23 @@ def load_manifest() -> dict[str, Any]:
     return _read_json(MANIFEST_PATH)
 
 
+def _track_for_category(category: dict[str, Any]) -> str:
+    """Validate and normalize the Learn track authored in the manifest."""
+    track = str(category.get("track", "") or "").lower().strip()
+    if track not in VALID_TRACKS:
+        raise ConceptQuizDataError(
+            f"Category '{category.get('id', '?')}' has invalid track '{track}'."
+        )
+    return track
+
+
 def categories_for_language(language: str) -> list[dict[str, Any]]:
-    """The shared categories plus one language-specific category for a language.
+    """Shared, core language-specific, and optional lesson-only categories.
 
     Each entry carries id/label/blurb/file plus ``scope`` ("shared" or
-    "language") so the UI can tell them apart, and a ``count`` of questions
-    available in that category for this language.
+    "language"), ``track`` ("beginner" or "intermediate"), and a live question
+    count. Learn uses the track metadata to present a smaller first step without
+    duplicating or moving quiz and lesson content.
     """
     lang = normalize_language(language)
     manifest = load_manifest()
@@ -102,6 +114,7 @@ def categories_for_language(language: str) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for cat in manifest.get("shared_categories", []):
         entry = {**cat, "scope": "shared"}
+        entry["track"] = _track_for_category(cat)
         paths = [_shared_path(cat["file"])]
         if cat.get("extra_file"):
             paths.append(_shared_path(cat["extra_file"]))
@@ -111,9 +124,16 @@ def categories_for_language(language: str) -> list[dict[str, Any]]:
     specific = manifest.get("language_specific", {}).get(lang)
     if specific:
         entry = {**specific, "scope": "language"}
+        entry["track"] = _track_for_category(specific)
         entry["count"] = _count_questions(
             _by_language_path(lang, specific["file"]), lang, scope="language"
         )
+        out.append(entry)
+
+    for extension in manifest.get("language_extensions", {}).get(lang, []):
+        entry = {**extension, "scope": "extension", "lesson_only": True}
+        entry["track"] = _track_for_category(extension)
+        entry["count"] = 0
         out.append(entry)
     return out
 
@@ -142,6 +162,10 @@ def _resolve_category(language: str, category_id: str) -> tuple[dict[str, Any], 
     specific = manifest.get("language_specific", {}).get(lang)
     if specific and specific["id"] == wanted:
         return specific, "language", _by_language_path(lang, specific["file"])
+
+    for extension in manifest.get("language_extensions", {}).get(lang, []):
+        if extension["id"] == wanted:
+            return extension, "language", _by_language_path(lang, extension["file"])
 
     raise ConceptQuizError(
         f"Category '{category_id}' is not available for {lang}."

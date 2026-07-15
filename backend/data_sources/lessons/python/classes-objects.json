@@ -1,0 +1,84 @@
+{
+  "_note": "ORIGINAL content. Topic coverage follows the curriculum in Runestone Foundations of Python Programming, Think Python, and OpenStax Introduction to Python Programming. No prose, examples, or exercises were copied; the sources guide topic selection only.",
+  "title": "Classes & Objects",
+  "summary": "Group related data and actions into your own type.",
+  "minutes": 10,
+  "error_classes": [
+    "runtime",
+    "syntax",
+    "wrong_answer"
+  ],
+  "refresher": "A class describes the data and actions that its objects share. Create an object by calling the class, store its data on `self`, and use methods for work that belongs to that object. The `__init__` method sets the starting values.",
+  "refresher_code": "class Student:\n    def __init__(self, name):\n        self.name = name\n\nada = Student(\"Ada\")\nprint(ada.name)",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A program may need to keep a student's name, major, and earned credits together. Separate variables become hard to manage when there are many students. A class gives that group a name and describes what each student object can do."
+    },
+    {
+      "kind": "code",
+      "caption": "`Student` is the class. Calling it creates one object, and `__init__` stores the values that belong to that object.",
+      "code": "class Student:\n    def __init__(self, name, credits):\n        self.name = name\n        self.credits = credits\n\n    def add_credits(self, amount):\n        self.credits += amount\n\nada = Student(\"Ada\", 15)\nada.add_credits(3)\nprint(ada.name, ada.credits)",
+      "output": "Ada 18"
+    },
+    {
+      "kind": "text",
+      "body": "The name `self` refers to the object that received the method call. Python passes it automatically. `ada.add_credits(3)` uses `ada` as self and 3 as amount."
+    },
+    {
+      "kind": "compare",
+      "caption": "A value without `self.` is only a local name. Store it on the object when another method needs it later.",
+      "wrong_label": "Value is lost",
+      "wrong": "def __init__(self, name):\n    name = name",
+      "right_label": "Stored on object",
+      "right": "def __init__(self, name):\n    self.name = name"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Each object has its own data",
+      "body": "Creating a second Student does not copy or replace the first one. Each call to the class creates a separate object with separate instance attributes."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does this print?",
+      "code": "a = Student(\"Ada\", 12)\nb = Student(\"Ben\", 9)\nb.credits += 3\nprint(a.credits, b.credits)",
+      "choices": [
+        "12 12",
+        "15 12",
+        "9 12",
+        "12 9"
+      ],
+      "answer_index": 0,
+      "why": "The two calls create different objects. Changing b affects only b, so a stays at 12 while b becomes 12."
+    },
+    {
+      "kind": "text",
+      "body": "Methods keep related behavior near the data it uses. A method can return a result, update the object, or both. Give it a name that says what the object is doing."
+    },
+    {
+      "kind": "check",
+      "prompt": "What must be the first parameter of this instance method?",
+      "code": "class Counter:\n    def increase(____, amount):\n        ____.value += amount",
+      "choices": [
+        "self",
+        "class",
+        "value",
+        "new"
+      ],
+      "answer_index": 0,
+      "why": "Python passes the receiving object into the first parameter. The usual name is self, and the method uses it to reach that object's value."
+    },
+    {
+      "kind": "list",
+      "title": "Class checklist",
+      "items": [
+        "Use a class when data and behavior belong together.",
+        "Set starting attributes inside `__init__`.",
+        "Write `self.attribute` for data stored on an object.",
+        "Remember that each class call creates a new object.",
+        "Keep a method focused on one clear action."
+      ]
+    }
+  ]
+}

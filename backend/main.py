@@ -4715,8 +4715,8 @@ async def list_concept_quiz_languages():
 
 @app.get("/api/coding/concept-quiz/{language}/categories")
 async def list_concept_quiz_categories(language: str):
-    """The 13 categories (12 shared + 1 language-specific) for one language,
-    each with a live question count so empty categories can be flagged/hidden.
+    """Core categories plus any language-specific lesson-only extensions, each
+    with a live question count and beginner/intermediate track metadata.
 
     Also reports `has_lesson` per category, so Learn mode can show which topics can be
     read (and Practice can offer a "read the lesson first" nudge on a topic the student

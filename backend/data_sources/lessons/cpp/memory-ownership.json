@@ -1,0 +1,82 @@
+{
+  "_note": "ORIGINAL content. Topic coverage was checked against Think C++ and the Google C++ Class outline. No prose, examples, or exercises were copied; the references are curriculum guides only.",
+  "title": "Memory Ownership",
+  "summary": "Use automatic lifetime and smart pointers to make resource responsibility clear.",
+  "minutes": 10,
+  "error_classes": [
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "Prefer objects with automatic storage and standard containers. When one owner needs dynamic lifetime, use `std::unique_ptr` with `std::make_unique`. Use shared ownership only when the design truly has several owners.",
+  "refresher_code": "#include <memory>\nauto score = std::make_unique<int>(85);\nstd::cout << *score;",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Ownership answers who is responsible for releasing a resource. Local objects and containers release their resources automatically at the end of scope. Dynamic allocation needs the same clear responsibility, which smart pointers encode in their types."
+    },
+    {
+      "kind": "text",
+      "body": "A unique_ptr owns one object and destroys it when the pointer leaves scope. It cannot be copied because two unique owners would contradict the rule. It can be moved when responsibility must transfer to another variable or function."
+    },
+    {
+      "kind": "code",
+      "caption": "The unique pointer owns the Student, move transfers that ownership into active, and cleanup happens automatically when active leaves scope.",
+      "code": "#include <iostream>\n#include <memory>\n#include <string>\nstruct Student { std::string name; };\nint main() {\n  auto pending = std::make_unique<Student>(Student{\"Ada\"});\n  auto active = std::move(pending);\n  if (!pending) std::cout << active->name << \"\\n\";\n}",
+      "output": "Ada"
+    },
+    {
+      "kind": "compare",
+      "wrong_label": "Common mistake",
+      "wrong": "Student* student = new Student{\"Ada\"};\nuse(student);\n// delete is easy to forget",
+      "right_label": "Clearer version",
+      "right": "auto student = std::make_unique<Student>(Student{\"Ada\"});\nuse(student.get());\n// cleanup is automatic",
+      "caption": "Raw new separates allocation from cleanup. A unique pointer keeps both responsibilities in one object lifetime."
+    },
+    {
+      "kind": "text",
+      "body": "Before the move, pending owns the Student. After the move, active owns it and pending is empty. Dereferencing pending would be invalid, but its empty state can be checked. When main ends, active destroys the Student exactly once."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Shared pointer is not the default",
+      "body": "`std::shared_ptr` uses a reference count and is appropriate when ownership is genuinely shared. Using it everywhere can hide unclear lifetime design and can leak cycles, so begin with values, containers, or unique ownership."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does `std::move` do to a unique_ptr?",
+      "code": "",
+      "choices": [
+        "Transfers its ownership to the destination",
+        "Copies the owned object automatically",
+        "Deletes both pointers",
+        "Makes the object global"
+      ],
+      "answer_index": 0,
+      "why": "Move transfers the unique ownership; the destination owns the object and the source becomes empty."
+    },
+    {
+      "kind": "check",
+      "prompt": "When is `shared_ptr` appropriate?",
+      "code": "",
+      "choices": [
+        "When several parts truly share ownership",
+        "For every local integer",
+        "Whenever a raw reference is enough",
+        "To avoid including memory"
+      ],
+      "answer_index": 0,
+      "why": "A shared pointer models multiple owners whose lifetimes overlap, not ordinary temporary access to an object."
+    },
+    {
+      "kind": "list",
+      "title": "Memory Ownership checklist",
+      "items": [
+        "Prefer values and standard containers first.",
+        "Use make_unique for one dynamic owner.",
+        "Move unique ownership deliberately.",
+        "Use shared ownership only when the model requires it."
+      ]
+    }
+  ]
+}

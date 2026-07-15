@@ -163,7 +163,7 @@ export default function QuizLanguageLanding({
     fetchQuizCategories(apiBase, language)
       .then((data) => {
         if (!alive) return;
-        const cats = data.categories || [];
+        const cats = (data.categories || []).filter((category) => !category.lesson_only);
         setCategories(cats);
         // Open the first category that actually has questions by default.
         const firstReady = cats.find((c) => c.count > 0);

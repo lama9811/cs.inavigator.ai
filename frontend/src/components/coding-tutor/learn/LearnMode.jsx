@@ -1,18 +1,38 @@
 import { useEffect, useState } from "react";
-import { FaBookOpen, FaArrowRight, FaClock, FaLock, FaCheck } from "react-icons/fa";
+import { FaBookOpen, FaArrowRight, FaLock } from "react-icons/fa";
 import { LANGUAGE_VISUALS } from "../concept-quiz/languageVisuals";
 import LessonView from "./LessonView";
 
-// Learn — the first of the Practice Library's three modes (Learn → Practice → Code).
+// Learn is the first Practice Library mode: Learn -> Practice -> Code.
 //
-// A beginner who has never seen a function has nowhere to start in the other two: a quiz
-// can only tell them they're wrong, and a blank editor is a wall. Learn is where the idea
-// comes from, and every lesson hands off to the quiz on the same topic.
-//
-// Three views, all URL-backed (see practiceTargetFromPath in CodingTutor):
-//   languages → the 4 language cards
-//   lessons   → one language's lesson list
-//   lesson    → a single lesson
+// Four URL-backed views keep the address bar, Back/Forward, and refresh in sync:
+//   languages -> the four language cards
+//   tracks    -> Beginner and Intermediate cards for one language
+//   lessons   -> the selected track's smaller lesson list
+//   lesson    -> one authored lesson
+
+const TRACKS = [
+  {
+    id: "beginner",
+    label: "Beginner Track",
+    kicker: "Start here",
+    description:
+      "Build the foundation one idea at a time, then try your first algorithm and debugging lessons.",
+    cta: "Start with the basics",
+  },
+  {
+    id: "intermediate",
+    label: "Intermediate Track",
+    kicker: "Next step",
+    description:
+      "Build on Part 1 with multi-step problems and the next concepts that matter most in this language.",
+    cta: "Explore next steps",
+  },
+];
+
+function trackDefinition(trackId) {
+  return TRACKS.find((track) => track.id === trackId) || null;
+}
 
 function LanguageCards({ languages, onPick }) {
   return (
@@ -20,8 +40,8 @@ function LanguageCards({ languages, onPick }) {
       <div className="cq-cards-intro">
         <h2>Learn</h2>
         <p>
-          Short lessons that teach the idea before you're tested on it. Read one,
-          then practice it. Pick a language to start.
+          Short lessons that teach the idea before you're tested on it. Pick a
+          language, then choose the pace that fits where you are.
         </p>
       </div>
       <div className="cq-cards-grid">
@@ -37,9 +57,9 @@ function LanguageCards({ languages, onPick }) {
               role="button"
               tabIndex={0}
               onClick={() => onPick(lang.id)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
                   onPick(lang.id);
                 }
               }}
@@ -59,7 +79,7 @@ function LanguageCards({ languages, onPick }) {
                 <span className="cq-language-card-blurb">{accent.blurb}</span>
               ) : null}
               <span className="cq-language-card-cta">
-                Start learning <FaArrowRight aria-hidden="true" />
+                Choose a track <FaArrowRight aria-hidden="true" />
               </span>
             </div>
           );
@@ -69,41 +89,103 @@ function LanguageCards({ languages, onPick }) {
   );
 }
 
-function LessonList({ language, languageLabel, categories, onOpen, onBack }) {
-  // A category with no lesson yet is shown but locked — the manifest is the roadmap of
-  // what this library will cover, so hiding unwritten topics would hide the plan. It is
-  // never a dead click: the card says so before the student presses it.
-  const ready = categories.filter((c) => c.has_lesson);
+function TrackCards({ language, languageLabel, categories, onPick, onBack }) {
+  const languageAccent = LANGUAGE_VISUALS[language]?.tint || "#7c3aed";
+
+  return (
+    <div className="learn-tracks">
+      <header className="learn-tracks-head">
+        <span className="lesson-kicker">{languageLabel}</span>
+        <h2>Choose your learning track</h2>
+        <p>
+          Start with the foundation or jump to the next step when those ideas already
+          feel familiar. Nothing is locked.
+        </p>
+      </header>
+
+      <div className="learn-track-grid">
+        {TRACKS.map((track) => {
+          const trackCategories = categories.filter(
+            (category) => category.track === track.id
+          );
+          const ready = trackCategories.filter((category) => category.has_lesson).length;
+          const questions = trackCategories.reduce(
+            (total, category) => total + (category.count || 0),
+            0
+          );
+          const accent = track.id === "beginner" ? "#16a34a" : languageAccent;
+
+          return (
+            <button
+              key={track.id}
+              type="button"
+              className={`learn-track-card is-${track.id}`}
+              style={{ "--learn-track-accent": accent }}
+              onClick={() => onPick(language, track.id)}
+            >
+              <span className="learn-track-kicker">{track.kicker}</span>
+              <span className="learn-track-title">{track.label}</span>
+              <span className="learn-track-description">{track.description}</span>
+              <span className="learn-track-stats">
+                <span>{ready} lessons</span>
+                <span aria-hidden="true">•</span>
+                <span>{questions} practice questions</span>
+              </span>
+              <span className="learn-track-cta">
+                {track.cta} <FaArrowRight aria-hidden="true" />
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <button type="button" className="practice-guide-viewall" onClick={onBack}>
+        ← All languages
+      </button>
+    </div>
+  );
+}
+
+function LessonList({
+  language,
+  languageLabel,
+  track,
+  categories,
+  onOpen,
+  onBack,
+}) {
+  const ready = categories.filter((category) => category.has_lesson);
 
   return (
     <div className="learn-list">
       <header className="learn-list-head">
+        <span className="lesson-kicker">{languageLabel}</span>
         <h2>
-          <FaBookOpen aria-hidden="true" /> {languageLabel}
+          <FaBookOpen aria-hidden="true" /> {track.label}
         </h2>
         <p>
           {ready.length
-            ? `${ready.length} lesson${ready.length === 1 ? "" : "s"} ready. Read one, then practice it.`
-            : "Lessons for this language are being written."}
+            ? `${ready.length} lesson${ready.length === 1 ? "" : "s"} ready. ${track.description}`
+            : "Lessons for this track are being written."}
         </p>
       </header>
 
       <ol className="learn-lesson-grid">
-        {categories.map((cat, index) => {
-          const locked = !cat.has_lesson;
+        {categories.map((category, index) => {
+          const locked = !category.has_lesson;
           return (
-            <li key={cat.id}>
+            <li key={category.id}>
               <button
                 type="button"
                 className={`learn-lesson-card ${locked ? "locked" : ""}`}
                 disabled={locked}
-                onClick={() => onOpen(language, cat.id)}
+                onClick={() => onOpen(language, category.id, track.id)}
               >
                 <span className="learn-lesson-num">{index + 1}</span>
                 <span className="learn-lesson-body">
-                  <span className="learn-lesson-title">{cat.label}</span>
-                  {cat.blurb ? (
-                    <span className="learn-lesson-blurb">{cat.blurb}</span>
+                  <span className="learn-lesson-title">{category.label}</span>
+                  {category.blurb ? (
+                    <span className="learn-lesson-blurb">{category.blurb}</span>
                   ) : null}
                 </span>
                 <span className="learn-lesson-meta">
@@ -113,8 +195,10 @@ function LessonList({ language, languageLabel, categories, onOpen, onBack }) {
                     </span>
                   ) : (
                     <>
-                      {cat.count > 0 ? (
-                        <span className="learn-lesson-qcount">{cat.count} questions</span>
+                      {category.count > 0 ? (
+                        <span className="learn-lesson-qcount">
+                          {category.count} questions
+                        </span>
                       ) : null}
                       <FaArrowRight aria-hidden="true" />
                     </>
@@ -127,7 +211,7 @@ function LessonList({ language, languageLabel, categories, onOpen, onBack }) {
       </ol>
 
       <button type="button" className="practice-guide-viewall" onClick={onBack}>
-        ← All languages
+        ← Back to tracks
       </button>
     </div>
   );
@@ -139,6 +223,7 @@ export default function LearnMode({
   languageLabels,
   onNavigateToLanguages,
   onNavigateToLanguage,
+  onNavigateToTrack,
   onNavigateToLesson,
   onPracticeCategory,
 }) {
@@ -149,22 +234,21 @@ export default function LearnMode({
 
   const labelFor = (id) => languageLabels[id] || (id || "").toUpperCase();
 
-  // Language list (for the cards view).
   useEffect(() => {
     if (target.view !== "languages") return undefined;
     let alive = true;
     setLoading(true);
     setError("");
     fetch(`${apiBase}/api/coding/concept-quiz/languages`)
-      .then((r) => {
-        if (!r.ok) throw new Error("Could not load languages.");
-        return r.json();
+      .then((response) => {
+        if (!response.ok) throw new Error("Could not load languages.");
+        return response.json();
       })
       .then((data) => {
         if (alive) setLanguages(data.languages || []);
       })
-      .catch((err) => {
-        if (alive) setError(err.message || "Could not load languages.");
+      .catch((fetchError) => {
+        if (alive) setError(fetchError.message || "Could not load languages.");
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -174,24 +258,25 @@ export default function LearnMode({
     };
   }, [apiBase, target.view]);
 
-  // Category list for one language (the lesson list). Reuses the concept-quiz category
-  // endpoint, which now reports `has_lesson` per category — Learn and Practice are keyed
-  // to the SAME categories by design, so "Learn Loops" and "Practice Loops" can't drift.
+  // Track cards and lesson lists use the same category endpoint as Practice. The
+  // manifest owns the track field, so Learn never keeps a second topic registry.
   useEffect(() => {
-    if (target.view !== "lessons" || !target.language) return undefined;
+    if (!["tracks", "lessons"].includes(target.view) || !target.language) {
+      return undefined;
+    }
     let alive = true;
     setLoading(true);
     setError("");
     fetch(`${apiBase}/api/coding/concept-quiz/${target.language}/categories`)
-      .then((r) => {
-        if (!r.ok) throw new Error("Could not load lessons.");
-        return r.json();
+      .then((response) => {
+        if (!response.ok) throw new Error("Could not load lessons.");
+        return response.json();
       })
       .then((data) => {
         if (alive) setCategories(data.categories || []);
       })
-      .catch((err) => {
-        if (alive) setError(err.message || "Could not load lessons.");
+      .catch((fetchError) => {
+        if (alive) setError(fetchError.message || "Could not load lessons.");
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -209,7 +294,11 @@ export default function LearnMode({
         category={target.category}
         languageLabel={labelFor(target.language)}
         onPractice={() => onPracticeCategory(target.language, target.category)}
-        onBack={() => onNavigateToLanguage(target.language)}
+        onBack={() =>
+          target.track
+            ? onNavigateToTrack(target.language, target.track)
+            : onNavigateToLanguage(target.language)
+        }
       />
     );
   }
@@ -217,14 +306,31 @@ export default function LearnMode({
   if (loading) return <p className="cq-loading">Loading lessons…</p>;
   if (error) return <p className="cq-error">{error}</p>;
 
+  if (target.view === "tracks") {
+    return (
+      <TrackCards
+        language={target.language}
+        languageLabel={labelFor(target.language)}
+        categories={categories}
+        onPick={onNavigateToTrack}
+        onBack={onNavigateToLanguages}
+      />
+    );
+  }
+
   if (target.view === "lessons") {
+    const track = trackDefinition(target.track);
+    const trackCategories = categories.filter(
+      (category) => category.track === target.track
+    );
     return (
       <LessonList
         language={target.language}
         languageLabel={labelFor(target.language)}
-        categories={categories}
+        track={track}
+        categories={trackCategories}
         onOpen={onNavigateToLesson}
-        onBack={onNavigateToLanguages}
+        onBack={() => onNavigateToLanguage(target.language)}
       />
     );
   }
