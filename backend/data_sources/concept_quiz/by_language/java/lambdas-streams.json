@@ -1,0 +1,184 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "lambdas-streams",
+  "concept_label": "Lambdas & Streams",
+  "language": "java",
+  "questions": [
+    {
+      "id": "java-lambdas-streams-check-1",
+      "concept": "lambdas-streams",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "java",
+      "title": "Lambdas & Streams practice 1",
+      "code": "names.stream().____(name -> name.length() > 3)",
+      "prompt": "Which stream operation keeps only items that pass a condition?",
+      "choices": [
+        "filter",
+        "map",
+        "count",
+        "toList"
+      ],
+      "answer_index": 0,
+      "explanation": "Filter receives a condition and keeps values for which that condition is true. Map changes values instead of deciding whether to keep them."
+    },
+    {
+      "id": "java-lambdas-streams-check-2",
+      "concept": "lambdas-streams",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "java",
+      "title": "Lambdas & Streams practice 2",
+      "code": "List<String> names = List.of(\"Ada\", \"Grace\");\nList<Integer> lengths = names.stream()\n    .map(name -> name.length())\n    .toList();",
+      "prompt": "What does this stream produce?",
+      "choices": [
+        "[3, 5]",
+        "[Ada, Grace]",
+        "[true, true]",
+        "8"
+      ],
+      "answer_index": 0,
+      "explanation": "Map replaces each String with the Integer returned by `length()`. Ada has three characters and Grace has five."
+    },
+    {
+      "id": "java-lambdas-streams-output-01",
+      "concept": "lambdas-streams",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "java",
+      "title": "Trace Lambdas & Streams",
+      "code": "List<Integer> scores = List.of(72, 48, 90);\nList<Integer> adjusted = scores.stream()\n    .filter(score -> score >= 60)\n    .map(score -> score + 5)\n    .toList();\nSystem.out.println(adjusted);",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "[77, 95]"
+      ],
+      "explanation": "The filter keeps passing scores. The map adds five points to each remaining score. `toList` starts the work and gathers the results. The resulting output is '[77, 95]'."
+    },
+    {
+      "id": "java-lambdas-streams-advice-01",
+      "concept": "lambdas-streams",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Lambdas & Streams good practice",
+      "code": null,
+      "prompt": "Which is a useful practice for Lambdas & Streams?",
+      "choices": [
+        "Use a lambda for one small action.",
+        "Skip input checks and assume every value is valid.",
+        "Hide every error and continue without checking the result.",
+        "Put all of the work in one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Use a lambda for one small action. This keeps the code easier to understand and verify."
+    },
+    {
+      "id": "java-lambdas-streams-supplement-01",
+      "concept": "lambdas-streams",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Lambdas & Streams practice 5",
+      "code": null,
+      "prompt": "Which version follows the lesson's safer approach?",
+      "choices": [
+        "List<Integer> passing = scores.stream()\n    .filter(score -> score >= 60)\n    .toList();",
+        "scores.stream()\n    .filter(score -> score >= 60);",
+        "Both versions are equally safe.",
+        "Neither version can run."
+      ],
+      "answer_index": 0,
+      "explanation": "A stream needs a final operation. Without `toList`, `count`, or another terminal step, the earlier steps describe work but do not run it."
+    },
+    {
+      "id": "java-lambdas-streams-supplement-02",
+      "concept": "lambdas-streams",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Lambdas & Streams practice 6",
+      "code": null,
+      "prompt": "Which statement best explains 'A loop may be clearer'?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Use a regular loop when the work needs several changing variables, early exits, detailed error handling, or many side effects. Streams fit best when data moves through a short set of clear steps.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "Use a regular loop when the work needs several changing variables, early exits, detailed error handling, or many side effects. Streams fit best when data moves through a short set of clear steps."
+    },
+    {
+      "id": "java-lambdas-streams-supplement-03",
+      "concept": "lambdas-streams",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Lambdas & Streams practice 7",
+      "code": null,
+      "prompt": "Which is a useful practice for Lambdas & Streams?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Read a stream from top to bottom as data steps.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 2,
+      "explanation": "Read a stream from top to bottom as data steps. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "java-lambdas-streams-supplement-04",
+      "concept": "lambdas-streams",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Lambdas & Streams practice 8",
+      "code": null,
+      "prompt": "Which is a useful practice for Lambdas & Streams?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement.",
+        "Use filter to keep and map to change."
+      ],
+      "answer_index": 3,
+      "explanation": "Use filter to keep and map to change. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "java-lambdas-streams-supplement-05",
+      "concept": "lambdas-streams",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Lambdas & Streams practice 9",
+      "code": null,
+      "prompt": "Which is a useful practice for Lambdas & Streams?",
+      "choices": [
+        "Finish with a terminal operation.",
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Finish with a terminal operation. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "java-lambdas-streams-supplement-06",
+      "concept": "lambdas-streams",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Lambdas & Streams practice 10",
+      "code": null,
+      "prompt": "Which is a useful practice for Lambdas & Streams?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Choose a loop when the stream would hide the real work.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "Choose a loop when the stream would hide the real work. This makes the result easier to understand and verify."
+    }
+  ]
+}

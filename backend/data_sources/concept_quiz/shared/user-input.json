@@ -1,0 +1,577 @@
+{
+  "_note": "Original Practice questions derived from CS Navigator's original Learn lesson for this topic.",
+  "concept": "user-input",
+  "concept_label": "User Input",
+  "questions": [
+    {
+      "id": "user-input-lesson-check-1",
+      "concept": "user-input",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "User Input practice 1",
+      "variants": {
+        "python": {
+          "code": "x = input(\"x: \")\ny = input(\"y: \")\nprint(x + y)",
+          "prompt": "The person runs this and types 4, then types 6. What appears on the last line?",
+          "choices": [
+            "46",
+            "10",
+            "\"10\"",
+            "An error, because you cannot add input"
+          ],
+          "answer_index": 0,
+          "explanation": "Both `x` and `y` are strings, because that is the only thing `input()` ever returns. Between two strings, `+` joins rather than adds, so `\"4\" + \"6\"` becomes `\"46\"`. If you picked 10, you read the code the way you meant it rather than the way Python runs it, and that is the whole trap. There is no error, and that is what makes this bug so hard to spot: the program looks like it worked."
+        },
+        "java": {
+          "code": "int score = sc.nextInt();\nString comment = sc.nextLine();\nSystem.out.println(\"Comment: [\" + comment + \"]\");",
+          "prompt": "The user types 90, presses Enter, types Great work, and presses Enter. What does this print?",
+          "choices": [
+            "Comment: []",
+            "Comment: [Great work]",
+            "Comment: [90]",
+            "It crashes with an InputMismatchException"
+          ],
+          "answer_index": 0,
+          "explanation": "`nextInt()` takes the 90 and stops, leaving the newline from that first Enter unread. `nextLine()` then reads to the end of that same line, which is nothing at all, so `comment` is the empty string and the brackets print with nothing between them. The words Great work are still waiting on the next line, unread. Put a bare `sc.nextLine();` between the two lines and the comment arrives."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "What signals a canceled prompt?",
+          "choices": [
+            "null",
+            "0",
+            "false",
+            "an empty array"
+          ],
+          "answer_index": 0,
+          "explanation": "The browser returns null for cancellation, which differs from an entered empty string."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "What indicates invalid numeric extraction?",
+          "choices": [
+            "the stream becomes failed",
+            "the value becomes a string",
+            "main restarts",
+            "cout closes"
+          ],
+          "answer_index": 0,
+          "explanation": "The input stream records a failure state that can be tested in a condition."
+        }
+      }
+    },
+    {
+      "id": "user-input-lesson-check-2",
+      "concept": "user-input",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "User Input practice 2",
+      "variants": {
+        "python": {
+          "code": "age = int(input(\"Age: \"))\nprint(age)",
+          "prompt": "The person runs this and types \"twelve\" instead of digits. What happens?",
+          "choices": [
+            "It prints 12",
+            "It prints \"twelve\"",
+            "It stops with a ValueError",
+            "It prints 0, because the text was not a number"
+          ],
+          "answer_index": 2,
+          "explanation": "`int()` converts a string of digits into a number. It does not read English, so \"twelve\" means nothing to it and it raises a ValueError. Notice that Python does not fall back to 0 or make a guess. Guessing quietly would be far worse than stopping, because you would get a wrong answer and never know why. A loud error you can find beats a silent one you cannot."
+        },
+        "java": {
+          "code": "System.out.print(\"Enter two numbers: \");\nint a = sc.nextInt();\nint b = sc.nextInt();\nSystem.out.println(\"Sum: \" + a + b);",
+          "prompt": "The user types 2, a space, then 3, and presses Enter. What does this print?",
+          "choices": [
+            "Enter two numbers: Sum: 23",
+            "Enter two numbers: Sum: 5",
+            "Enter two numbers: Sum: 2 3",
+            "It crashes, because two numbers on one line need two Enters"
+          ],
+          "answer_index": 0,
+          "explanation": "Both `nextInt()` calls work, and they read across the space happily, so `a` is 2 and `b` is 3. The trap is the last line. Java works left to right, and `\"Sum: \" + a` is a String joined to a number, which produces the String `\"Sum: 2\"`. Joining 3 to that gives `\"Sum: 23\"`. The `+` only adds when both sides are numbers; once a String is involved it glues instead. To get 5, do the arithmetic in its own parentheses: `\"Sum: \" + (a + b)`."
+        },
+        "javascript": {
+          "code": "const raw = \"18\";",
+          "prompt": "Which line converts numeric text?",
+          "choices": [
+            "const age = Number(raw);",
+            "const age = raw + 0;",
+            "const age = Boolean(raw);",
+            "const age = raw.trim;"
+          ],
+          "answer_index": 0,
+          "explanation": "Number performs explicit conversion, while adding zero concatenates text."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "Which reads an entire line with spaces?",
+          "choices": [
+            "std::getline(std::cin, text);",
+            "std::cin >> text;",
+            "std::cout << text;",
+            "read(text);"
+          ],
+          "answer_index": 0,
+          "explanation": "Getline continues through spaces until it reaches the line delimiter."
+        }
+      }
+    },
+    {
+      "id": "user-input-summary-01",
+      "concept": "user-input",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "User Input summary",
+      "variants": {
+        "python": {
+          "code": null,
+          "prompt": "Which statement best describes User Input?",
+          "choices": [
+            "Ask the person running your program a question, and use their answer.",
+            "It is used only to print a message.",
+            "It automatically fixes every program error.",
+            "It removes the need for variables and tests."
+          ],
+          "answer_index": 0,
+          "explanation": "`input()` pauses your program, waits for the person to type something, and hands back what they typed. Whatever comes back is a string, even when it looks like a number. So `input()` for 5 gives you the text `\"5\"`, not the number 5. To do math with it, convert it first: `int(input())` for a whole number, `float(input())` for a decimal. If the person types letters instead of digits, `int()` cannot convert them and your program stops with a ValueError."
+        },
+        "java": {
+          "code": null,
+          "prompt": "Which statement best describes User Input?",
+          "choices": [
+            "Read what the user types, and survive the two ways it goes wrong.",
+            "It is used only to print a message.",
+            "It automatically fixes every program error.",
+            "It removes the need for variables and tests."
+          ],
+          "answer_index": 0,
+          "explanation": "To read what someone types, you need a Scanner. Put `import java.util.Scanner;` at the top of the file, then build one with `Scanner sc = new Scanner(System.in);`. Ask it for the type you want: `nextInt()` for a whole number, `nextDouble()` for a decimal, `nextLine()` for a whole line of text. The catch is that `nextInt()` and `nextDouble()` read the number and stop, leaving the rest of the line unread. A `nextLine()` straight after one of them picks up that leftover and hands you an empty string."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "Which statement best describes User Input?",
+          "choices": [
+            "Validate external text before calculating with it.",
+            "It is used only to print a message.",
+            "It automatically fixes every program error.",
+            "It removes the need for variables and tests."
+          ],
+          "answer_index": 0,
+          "explanation": "Browser `prompt(...)` returns a string or `null` when canceled. Handle cancellation, trim when appropriate, convert numeric text, and validate the result."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "Which statement best describes User Input?",
+          "choices": [
+            "Read stream data and handle failed extraction.",
+            "It is used only to print a message.",
+            "It automatically fixes every program error.",
+            "It removes the need for variables and tests."
+          ],
+          "answer_index": 0,
+          "explanation": "`std::cin >> value` extracts formatted input into a typed variable. Check the stream before using the value, because text entered for a number makes extraction fail."
+        }
+      }
+    },
+    {
+      "id": "user-input-advice-01",
+      "concept": "user-input",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "User Input advice",
+      "variants": {
+        "python": {
+          "code": null,
+          "prompt": "Which is a useful practice for User Input?",
+          "choices": [
+            "Ask yourself one question every time: do I need this as text, or as a number?",
+            "Skip input checks and assume every value is valid.",
+            "Hide every error and continue without checking the result.",
+            "Put all of the work in one long statement."
+          ],
+          "answer_index": 0,
+          "explanation": "Ask yourself one question every time: do I need this as text, or as a number? This keeps the code easier to understand and verify."
+        },
+        "java": {
+          "code": null,
+          "prompt": "Which is a useful practice for User Input?",
+          "choices": [
+            "Import `java.util.Scanner` and create the Scanner once, near the top of `main`. One Scanner for the whole program is enough.",
+            "Skip input checks and assume every value is valid.",
+            "Hide every error and continue without checking the result.",
+            "Put all of the work in one long statement."
+          ],
+          "answer_index": 0,
+          "explanation": "Import `java.util.Scanner` and create the Scanner once, near the top of `main`. One Scanner for the whole program is enough. This keeps the code easier to understand and verify."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "Which is a useful practice for User Input?",
+          "choices": [
+            "Handle null first.",
+            "Skip input checks and assume every value is valid.",
+            "Hide every error and continue without checking the result.",
+            "Put all of the work in one long statement."
+          ],
+          "answer_index": 0,
+          "explanation": "Handle null first. This keeps the code easier to understand and verify."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "Which is a useful practice for User Input?",
+          "choices": [
+            "Declare a matching type.",
+            "Skip input checks and assume every value is valid.",
+            "Hide every error and continue without checking the result.",
+            "Put all of the work in one long statement."
+          ],
+          "answer_index": 0,
+          "explanation": "Declare a matching type. This keeps the code easier to understand and verify."
+        }
+      }
+    },
+    {
+      "id": "user-input-supplement-01",
+      "concept": "user-input",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "User Input practice 5",
+      "variants": {
+        "python": {
+          "code": null,
+          "prompt": "Which version follows the lesson's safer approach?",
+          "choices": [
+            "a = int(input(\"First: \"))\nb = int(input(\"Second: \"))\nprint(a + b)\n# a is 1, b is 2\n# 1 + 2 adds\n# them into 3",
+            "a = input(\"First: \")\nb = input(\"Second: \")\nprint(a + b)\n# a is \"1\", b is \"2\"\n# \"1\" + \"2\" glues\n# them into \"12\"",
+            "Both versions are equally safe.",
+            "Neither version can run."
+          ],
+          "answer_index": 0,
+          "explanation": "The fix is to convert the text into a number before you do any math with it. `int()` takes a string of digits and gives back the number it spells."
+        },
+        "java": {
+          "code": null,
+          "prompt": "Which version follows the lesson's safer approach?",
+          "choices": [
+            "System.out.print(\"Age: \");\nint age = sc.nextInt();\nsc.nextLine();   // eat the newline\n\nSystem.out.print(\"Name: \");\nString name = sc.nextLine();\n\nSystem.out.println(\"[\" + name + \"]\");\n// Age: Name: [Ada]",
+            "System.out.print(\"Age: \");\nint age = sc.nextInt();\n\nSystem.out.print(\"Name: \");\nString name = sc.nextLine();\n\nSystem.out.println(\"[\" + name + \"]\");\n// Age: Name: []",
+            "Both versions are equally safe.",
+            "Neither version can run."
+          ],
+          "answer_index": 0,
+          "explanation": "The fix is one throwaway `sc.nextLine();` whose only job is to consume the leftover newline. You ignore what it returns. In the broken version the program does not even stop at the Name prompt, and that is the tell: if a prompt flashes past without waiting, an unread newline is why."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "Which version follows the lesson's safer approach?",
+          "choices": [
+            "const raw = prompt(\"Credits?\");\nif (raw !== null) {\n  const credits = Number(raw);\n  if (!Number.isNaN(credits)) console.log(credits + 1);\n}",
+            "const credits = Number(prompt(\"Credits?\"));\nconsole.log(credits + 1);",
+            "Both versions are equally safe.",
+            "Neither version can run."
+          ],
+          "answer_index": 0,
+          "explanation": "Protect the conversion path from cancellation and invalid text."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "Which version follows the lesson's safer approach?",
+          "choices": [
+            "std::cin >> age;\nstd::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\\n');\nstd::getline(std::cin, name);",
+            "std::cin >> age;\nstd::getline(std::cin, name);",
+            "Both versions are equally safe.",
+            "Neither version can run."
+          ],
+          "answer_index": 0,
+          "explanation": "Discard the leftover newline before switching to a full-line read."
+        }
+      }
+    },
+    {
+      "id": "user-input-supplement-02",
+      "concept": "user-input",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "User Input practice 6",
+      "variants": {
+        "python": {
+          "code": null,
+          "prompt": "Which statement best explains 'Everything input() gives you is a string'?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "This is the one fact to carry out of this lesson. It does not matter what the person types. Digits, letters, punctuation, an empty line: `input()` hands all of it back as a string. Type 5 and you get the text `\"5\"`, which looks like a number and is not one. Python will not warn you, because as far as it is concerned nothing has gone wrong yet.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 1,
+          "explanation": "This is the one fact to carry out of this lesson. It does not matter what the person types. Digits, letters, punctuation, an empty line: `input()` hands all of it back as a string. Type 5 and you get the text `\"5\"`, which looks like a number and is not one. Python will not warn you, because as far as it is concerned nothing has gone wrong yet."
+        },
+        "java": {
+          "code": null,
+          "prompt": "Which statement best explains 'Forgetting the import'?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Leave out `import java.util.Scanner;` and the compiler stops with \"cannot find symbol\" pointing at the word `Scanner`. It is not saying Scanner does not exist. It is saying you never told it where to look. The import line goes above the `class` line, at the very top of the file.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 1,
+          "explanation": "Leave out `import java.util.Scanner;` and the compiler stops with \"cannot find symbol\" pointing at the word `Scanner`. It is not saying Scanner does not exist. It is saying you never told it where to look. The import line goes above the `class` line, at the very top of the file."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "Which statement best explains 'Check the boundary'?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Typing 12 into a prompt produces `\"12\"`; adding one without conversion joins text into `\"121\"`.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 1,
+          "explanation": "Typing 12 into a prompt produces `\"12\"`; adding one without conversion joins text into `\"121\"`."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "Which statement best explains 'Follow the data'?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "After `operator>>` reads a number, a newline can remain in the stream and make a following `getline` appear to skip input.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 1,
+          "explanation": "After `operator>>` reads a number, a newline can remain in the stream and make a following `getline` appear to skip input."
+        }
+      }
+    },
+    {
+      "id": "user-input-supplement-03",
+      "concept": "user-input",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "User Input practice 7",
+      "variants": {
+        "python": {
+          "code": null,
+          "prompt": "Which statement best explains 'ValueError means the text was not a number'?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Ask for a number and the person types \"seven\", and `int()` has nothing to work with. Your program stops with a ValueError. All Python is telling you is that the text it was handed does not spell a number. Read the message. It shows you the exact text it choked on, which is usually enough to see what happened.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 2,
+          "explanation": "Ask for a number and the person types \"seven\", and `int()` has nothing to work with. Your program stops with a ValueError. All Python is telling you is that the text it was handed does not spell a number. Read the message. It shows you the exact text it choked on, which is usually enough to see what happened."
+        },
+        "java": {
+          "code": null,
+          "prompt": "Which statement best explains 'The wrong method is caught before the program runs'?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Write `int age = sc.nextLine();` and the program never starts. The compiler rejects it with \"incompatible types: String cannot be converted to int\", because `nextLine()` hands back a String and you asked to store it in an `int`. Java checks types while compiling, which is good news here: the mismatch is caught before a single prompt is printed or a single keystroke is read.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 2,
+          "explanation": "Write `int age = sc.nextLine();` and the program never starts. The compiler rejects it with \"incompatible types: String cannot be converted to int\", because `nextLine()` hands back a String and you asked to store it in an `int`. Java checks types while compiling, which is good news here: the mismatch is caught before a single prompt is printed or a single keystroke is read."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "Which is a useful practice for User Input?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Trim only irrelevant spaces.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 2,
+          "explanation": "Trim only irrelevant spaces. This makes the result easier to understand and verify."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "Which is a useful practice for User Input?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Test extraction success.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 2,
+          "explanation": "Test extraction success. This makes the result easier to understand and verify."
+        }
+      }
+    },
+    {
+      "id": "user-input-supplement-04",
+      "concept": "user-input",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "User Input practice 8",
+      "variants": {
+        "python": {
+          "code": null,
+          "prompt": "Which is a useful practice for User Input?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement.",
+            "Names, answers, and anything you only print: leave it as a string, no conversion needed."
+          ],
+          "answer_index": 3,
+          "explanation": "Names, answers, and anything you only print: leave it as a string, no conversion needed. This makes the result easier to understand and verify."
+        },
+        "java": {
+          "code": null,
+          "prompt": "Which statement best explains 'A crash on input is not a crash in your code'?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement.",
+            "An InputMismatchException means the program asked for a number and got something else. Check the obvious cause first: are you reading the values in the same order the user is typing them? Asking for a name and an age but reading the age first will throw this every single time, and the fault is in the order, not in the Scanner."
+          ],
+          "answer_index": 3,
+          "explanation": "An InputMismatchException means the program asked for a number and got something else. Check the obvious cause first: are you reading the values in the same order the user is typing them? Asking for a name and an age but reading the age first will throw this every single time, and the fault is in the order, not in the Scanner."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "Which is a useful practice for User Input?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement.",
+            "Store one converted value."
+          ],
+          "answer_index": 3,
+          "explanation": "Store one converted value. This makes the result easier to understand and verify."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "Which is a useful practice for User Input?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement.",
+            "Plan transitions to getline."
+          ],
+          "answer_index": 3,
+          "explanation": "Plan transitions to getline. This makes the result easier to understand and verify."
+        }
+      }
+    },
+    {
+      "id": "user-input-supplement-05",
+      "concept": "user-input",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "User Input practice 9",
+      "variants": {
+        "python": {
+          "code": null,
+          "prompt": "Which is a useful practice for User Input?",
+          "choices": [
+            "Anything you will add, subtract, or compare as a quantity: wrap it in `int()` or `float()`.",
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 0,
+          "explanation": "Anything you will add, subtract, or compare as a quantity: wrap it in `int()` or `float()`. This makes the result easier to understand and verify."
+        },
+        "java": {
+          "code": null,
+          "prompt": "Which is a useful practice for User Input?",
+          "choices": [
+            "Prompt before every read, with `print` rather than `println`, so the user knows what you are waiting for.",
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 0,
+          "explanation": "Prompt before every read, with `print` rather than `println`, so the user knows what you are waiting for. This makes the result easier to understand and verify."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "Which is a useful practice for User Input?",
+          "choices": [
+            "Explain invalid input clearly.",
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 0,
+          "explanation": "Explain invalid input clearly. This makes the result easier to understand and verify."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "Which is a useful practice for User Input?",
+          "choices": [
+            "Reject unusable input clearly.",
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 0,
+          "explanation": "Reject unusable input clearly. This makes the result easier to understand and verify."
+        }
+      }
+    },
+    {
+      "id": "user-input-supplement-06",
+      "concept": "user-input",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "User Input practice 10",
+      "variants": {
+        "python": {
+          "code": null,
+          "prompt": "Which statement best describes User Input?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Ask the person running your program a question, and use their answer.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 1,
+          "explanation": "`input()` pauses your program, waits for the person to type something, and hands back what they typed. Whatever comes back is a string, even when it looks like a number. So `input()` for 5 gives you the text `\"5\"`, not the number 5. To do math with it, convert it first: `int(input())` for a whole number, `float(input())` for a decimal. If the person types letters instead of digits, `int()` cannot convert them and your program stops with a ValueError."
+        },
+        "java": {
+          "code": null,
+          "prompt": "Which statement best describes User Input?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Read what the user types, and survive the two ways it goes wrong.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 1,
+          "explanation": "To read what someone types, you need a Scanner. Put `import java.util.Scanner;` at the top of the file, then build one with `Scanner sc = new Scanner(System.in);`. Ask it for the type you want: `nextInt()` for a whole number, `nextDouble()` for a decimal, `nextLine()` for a whole line of text. The catch is that `nextInt()` and `nextDouble()` read the number and stop, leaving the rest of the line unread. A `nextLine()` straight after one of them picks up that leftover and hands you an empty string."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "Which statement best describes User Input?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Validate external text before calculating with it.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 1,
+          "explanation": "Browser `prompt(...)` returns a string or `null` when canceled. Handle cancellation, trim when appropriate, convert numeric text, and validate the result."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "Which statement best describes User Input?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Read stream data and handle failed extraction.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 1,
+          "explanation": "`std::cin >> value` extracts formatted input into a typed variable. Check the stream before using the value, because text entered for a number makes extraction fail."
+        }
+      }
+    }
+  ]
+}

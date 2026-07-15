@@ -1,0 +1,180 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "classes-objects",
+  "concept_label": "Classes & Objects",
+  "language": "cpp",
+  "questions": [
+    {
+      "id": "cpp-classes-objects-check-1",
+      "concept": "classes-objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Classes & Objects practice 1",
+      "code": null,
+      "prompt": "What is the main job of a constructor?",
+      "choices": [
+        "Establish a valid starting state",
+        "Delete the object",
+        "Make every member public",
+        "Run after every method"
+      ],
+      "answer_index": 0,
+      "explanation": "The constructor initializes the new object so its public operations can rely on a valid state."
+    },
+    {
+      "id": "cpp-classes-objects-check-2",
+      "concept": "classes-objects",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "cpp",
+      "title": "Classes & Objects practice 2",
+      "code": "int balance() const;",
+      "prompt": "Why make a getter method `const`?",
+      "choices": [
+        "It promises not to modify the object through that method",
+        "It makes the returned integer constant forever",
+        "It hides the method",
+        "It allocates the object"
+      ],
+      "answer_index": 0,
+      "explanation": "The trailing const lets callers and the compiler know that reading the balance does not change the account."
+    },
+    {
+      "id": "cpp-classes-objects-output-01",
+      "concept": "classes-objects",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "cpp",
+      "title": "Trace Classes & Objects",
+      "code": "#include <iostream>\nclass Account {\npublic:\n  Account(int starting) : balance_(starting) {}\n  void deposit(int amount) { if (amount > 0) balance_ += amount; }\n  int balance() const { return balance_; }\nprivate:\n  int balance_;\n};\nint main() {\n  Account account(20);\n  account.deposit(5);\n  std::cout << account.balance() << \"\\n\";\n}",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "25"
+      ],
+      "explanation": "The constructor initializes the balance, deposit changes it through a rule, and the const getter reads it without modifying the object. The resulting output is '25'."
+    },
+    {
+      "id": "cpp-classes-objects-advice-01",
+      "concept": "classes-objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Classes & Objects good practice",
+      "code": null,
+      "prompt": "Which is a useful practice for Classes & Objects?",
+      "choices": [
+        "Give the class one clear responsibility.",
+        "Skip input checks and assume every value is valid.",
+        "Hide every error and continue without checking the result.",
+        "Put all of the work in one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Give the class one clear responsibility. This keeps the code easier to understand and verify."
+    },
+    {
+      "id": "cpp-classes-objects-supplement-01",
+      "concept": "classes-objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Classes & Objects practice 5",
+      "code": null,
+      "prompt": "Which version follows the lesson's safer approach?",
+      "choices": [
+        "class Account {\npublic:\n  void deposit(int amount);\n  int balance() const;\nprivate:\n  int balance_;\n};",
+        "class Account {\npublic:\n  int balance;\n};\naccount.balance = -50;",
+        "Both versions are equally safe.",
+        "Neither version can run."
+      ],
+      "answer_index": 0,
+      "explanation": "Public data lets any caller create an invalid state. A small public interface can enforce the class rule in one place."
+    },
+    {
+      "id": "cpp-classes-objects-supplement-02",
+      "concept": "classes-objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Classes & Objects practice 6",
+      "code": null,
+      "prompt": "Which statement best explains 'Initialize every member'?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "A constructor body runs after data members have already been initialized. Prefer the member initializer list for their starting values, especially for const members and objects that have no default constructor.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "A constructor body runs after data members have already been initialized. Prefer the member initializer list for their starting values, especially for const members and objects that have no default constructor."
+    },
+    {
+      "id": "cpp-classes-objects-supplement-03",
+      "concept": "classes-objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Classes & Objects practice 7",
+      "code": null,
+      "prompt": "Which is a useful practice for Classes & Objects?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Initialize every member in the constructor.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 2,
+      "explanation": "Initialize every member in the constructor. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "cpp-classes-objects-supplement-04",
+      "concept": "classes-objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Classes & Objects practice 8",
+      "code": null,
+      "prompt": "Which is a useful practice for Classes & Objects?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement.",
+        "Keep invariants behind private data."
+      ],
+      "answer_index": 3,
+      "explanation": "Keep invariants behind private data. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "cpp-classes-objects-supplement-05",
+      "concept": "classes-objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Classes & Objects practice 9",
+      "code": null,
+      "prompt": "Which is a useful practice for Classes & Objects?",
+      "choices": [
+        "Mark read-only methods const.",
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Mark read-only methods const. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "cpp-classes-objects-supplement-06",
+      "concept": "classes-objects",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "cpp",
+      "title": "Classes & Objects practice 10",
+      "code": "#include <iostream>\nclass Account {\npublic:\n  Account(int starting) : balance_(starting) {}\n  void deposit(int amount) { if (amount > 0) balance_ += amount; }\n  int balance() const { return balance_; }\nprivate:\n  int balance_;\n};\nint main() {\n  Account account(20);\n  account.deposit(5);\n  std::cout << account.balance() << \"\\n\";\n}",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "25"
+      ],
+      "explanation": "The constructor initializes the balance, deposit changes it through a rule, and the const getter reads it without modifying the object. The output is '25'."
+    }
+  ]
+}

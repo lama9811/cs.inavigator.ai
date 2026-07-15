@@ -1,0 +1,184 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "exceptions",
+  "concept_label": "Exceptions",
+  "language": "java",
+  "questions": [
+    {
+      "id": "java-exceptions-check-1",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "java",
+      "title": "Exceptions practice 1",
+      "code": "Integer.parseInt(\"3.5\");",
+      "prompt": "Which exception comes from `Integer.parseInt(\"3.5\")`?",
+      "choices": [
+        "NumberFormatException",
+        "ClassCastException",
+        "IOException",
+        "NullPointerException"
+      ],
+      "answer_index": 0,
+      "explanation": "The text does not match Java's integer format. The method reports that content problem with NumberFormatException."
+    },
+    {
+      "id": "java-exceptions-check-2",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "java",
+      "title": "Exceptions practice 2",
+      "code": "String load(Path path) { /* reads a file */ }",
+      "prompt": "What must a method do with a checked IOException?",
+      "choices": [
+        "Catch it or declare it with `throws`",
+        "Ignore it because all exceptions are optional",
+        "Convert it to an int",
+        "Place it in a static field"
+      ],
+      "answer_index": 0,
+      "explanation": "Java's compiler tracks checked exceptions. The method must handle the IOException or state in its signature that a caller is responsible for it."
+    },
+    {
+      "id": "java-exceptions-output-01",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "java",
+      "title": "Trace Exceptions",
+      "code": "String raw = \"twelve\";\ntry {\n    int credits = Integer.parseInt(raw);\n    System.out.println(credits);\n} catch (NumberFormatException error) {\n    System.out.println(\"Credits must be a whole number\");\n}",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "Credits must be a whole number"
+      ],
+      "explanation": "The catch type matches the conversion failure. Code after the failed parse inside try is skipped, then execution continues after catch. The resulting output is 'Credits must be a whole number'."
+    },
+    {
+      "id": "java-exceptions-advice-01",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Exceptions good practice",
+      "code": null,
+      "prompt": "Which is a useful practice for Exceptions?",
+      "choices": [
+        "Catch a type that matches the recovery you can perform.",
+        "Skip input checks and assume every value is valid.",
+        "Hide every error and continue without checking the result.",
+        "Put all of the work in one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Catch a type that matches the recovery you can perform. This keeps the code easier to understand and verify."
+    },
+    {
+      "id": "java-exceptions-supplement-01",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Exceptions practice 5",
+      "code": null,
+      "prompt": "Which version follows the lesson's safer approach?",
+      "choices": [
+        "try { loadCredits(raw); }\ncatch (NumberFormatException e) {\n    System.out.println(\"Bad number\");\n}",
+        "try { loadCredits(raw); }\ncatch (Exception e) {\n    System.out.println(\"Bad number\");\n}",
+        "Both versions are equally safe.",
+        "Neither version can run."
+      ],
+      "answer_index": 0,
+      "explanation": "Catching Exception can mislabel a NullPointerException as bad input. The narrow catch handles only the case the message describes."
+    },
+    {
+      "id": "java-exceptions-supplement-02",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Exceptions practice 6",
+      "code": null,
+      "prompt": "Which statement best explains 'Keep the cause when adding context'?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "If you create a new exception, pass the original one as its cause. Without that link, the stack trace loses the failure that started the chain and makes diagnosis harder.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "If you create a new exception, pass the original one as its cause. Without that link, the stack trace loses the failure that started the chain and makes diagnosis harder."
+    },
+    {
+      "id": "java-exceptions-supplement-03",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Exceptions practice 7",
+      "code": null,
+      "prompt": "Which is a useful practice for Exceptions?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Keep the protected block small.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 2,
+      "explanation": "Keep the protected block small. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "java-exceptions-supplement-04",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Exceptions practice 8",
+      "code": null,
+      "prompt": "Which is a useful practice for Exceptions?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement.",
+        "Distinguish checked exceptions from runtime exceptions."
+      ],
+      "answer_index": 3,
+      "explanation": "Distinguish checked exceptions from runtime exceptions. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "java-exceptions-supplement-05",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Exceptions practice 9",
+      "code": null,
+      "prompt": "Which is a useful practice for Exceptions?",
+      "choices": [
+        "Preserve an original cause when wrapping.",
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Preserve an original cause when wrapping. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "java-exceptions-supplement-06",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Exceptions practice 10",
+      "code": null,
+      "prompt": "Which is a useful practice for Exceptions?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Use try-with-resources for closeable objects.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "Use try-with-resources for closeable objects. This makes the result easier to understand and verify."
+    }
+  ]
+}

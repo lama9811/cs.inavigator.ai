@@ -1,0 +1,180 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "objects",
+  "concept_label": "Objects",
+  "language": "javascript",
+  "questions": [
+    {
+      "id": "javascript-objects-check-1",
+      "concept": "objects",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "javascript",
+      "title": "Objects practice 1",
+      "code": "const key=\"credits\";",
+      "prompt": "Which uses the value in key?",
+      "choices": [
+        "student[key]",
+        "student.key",
+        "student->key",
+        "student(key)"
+      ],
+      "answer_index": 0,
+      "explanation": "Brackets evaluate the variable, while dot notation searches for a property literally named key."
+    },
+    {
+      "id": "javascript-objects-check-2",
+      "concept": "objects",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "javascript",
+      "title": "Objects practice 2",
+      "code": "const first={score:10};\nconst second=first;\nsecond.score=20;",
+      "prompt": "What becomes of first.score?",
+      "choices": [
+        "20",
+        "10",
+        "the object is copied",
+        "a const error"
+      ],
+      "answer_index": 0,
+      "explanation": "Both variables refer to one object, so the property change is visible through first."
+    },
+    {
+      "id": "javascript-objects-output-01",
+      "concept": "objects",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "javascript",
+      "title": "Trace Objects",
+      "code": "const student={name:\"Ada\",major:\"CS\"};\nconst field=\"major\";\nconsole.log(student.name);\nconsole.log(student[field]);",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "Ada\nCS"
+      ],
+      "explanation": "Dot notation reads a fixed name, while brackets use the string stored in field. The resulting output is 'Ada\\nCS'."
+    },
+    {
+      "id": "javascript-objects-advice-01",
+      "concept": "objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Objects good practice",
+      "code": null,
+      "prompt": "Which is a useful practice for Objects?",
+      "choices": [
+        "Use dots for fixed keys.",
+        "Skip input checks and assume every value is valid.",
+        "Hide every error and continue without checking the result.",
+        "Put all of the work in one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Use dots for fixed keys. This keeps the code easier to understand and verify."
+    },
+    {
+      "id": "javascript-objects-supplement-01",
+      "concept": "objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Objects practice 5",
+      "code": null,
+      "prompt": "Which version follows the lesson's safer approach?",
+      "choices": [
+        "const key = \"credits\";\nconsole.log(student[key]);",
+        "const key = \"credits\";\nconsole.log(student.key);",
+        "Both versions are equally safe.",
+        "Neither version can run."
+      ],
+      "answer_index": 0,
+      "explanation": "Use brackets when the property name comes from a variable."
+    },
+    {
+      "id": "javascript-objects-supplement-02",
+      "concept": "objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Objects practice 6",
+      "code": null,
+      "prompt": "Which statement best explains 'Trace this carefully'?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Reading a missing property returns undefined; an error may occur later when code tries to use that absent value.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "Reading a missing property returns undefined; an error may occur later when code tries to use that absent value."
+    },
+    {
+      "id": "javascript-objects-supplement-03",
+      "concept": "objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Objects practice 7",
+      "code": null,
+      "prompt": "Which is a useful practice for Objects?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Use brackets for computed keys.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 2,
+      "explanation": "Use brackets for computed keys. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "javascript-objects-supplement-04",
+      "concept": "objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Objects practice 8",
+      "code": null,
+      "prompt": "Which is a useful practice for Objects?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement.",
+        "Check optional properties."
+      ],
+      "answer_index": 3,
+      "explanation": "Check optional properties. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "javascript-objects-supplement-05",
+      "concept": "objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Objects practice 9",
+      "code": null,
+      "prompt": "Which is a useful practice for Objects?",
+      "choices": [
+        "Copy before independent mutation.",
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Copy before independent mutation. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "javascript-objects-supplement-06",
+      "concept": "objects",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "javascript",
+      "title": "Objects practice 10",
+      "code": "const student={name:\"Ada\",major:\"CS\"};\nconst field=\"major\";\nconsole.log(student.name);\nconsole.log(student[field]);",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "Ada\nCS"
+      ],
+      "explanation": "Dot notation reads a fixed name, while brackets use the string stored in field. The output is 'Ada\\nCS'."
+    }
+  ]
+}

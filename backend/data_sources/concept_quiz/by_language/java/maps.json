@@ -1,0 +1,184 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "maps",
+  "concept_label": "Maps",
+  "language": "java",
+  "questions": [
+    {
+      "id": "java-maps-check-1",
+      "concept": "maps",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "java",
+      "title": "Maps practice 1",
+      "code": "Map<String, Integer> m = new HashMap<>();\nm.put(\"a\", 1);\nm.put(\"a\", 4);\nSystem.out.println(m.size() + \" \" + m.get(\"a\"));",
+      "prompt": "What prints after these statements?",
+      "choices": [
+        "1 4",
+        "2 1",
+        "2 4",
+        "1 1"
+      ],
+      "answer_index": 0,
+      "explanation": "Both calls use the same key, so the second call replaces its value. One mapping remains, and its current value is 4."
+    },
+    {
+      "id": "java-maps-check-2",
+      "concept": "maps",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "java",
+      "title": "Maps practice 2",
+      "code": "Map<String, Integer> grades = new HashMap<>();",
+      "prompt": "Which view gives both keys and values for a loop?",
+      "choices": [
+        "grades.entrySet()",
+        "grades.keySet()",
+        "grades.values()",
+        "grades.size()"
+      ],
+      "answer_index": 0,
+      "explanation": "`entrySet()` contains Map.Entry objects, and every entry exposes both sides of the mapping. The other views provide only keys or only values."
+    },
+    {
+      "id": "java-maps-output-01",
+      "concept": "maps",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "java",
+      "title": "Trace Maps",
+      "code": "Map<String, Integer> grades = new HashMap<>();\ngrades.put(\"CS101\", 90);\ngrades.put(\"MATH120\", 84);\ngrades.put(\"CS101\", 95);\nSystem.out.println(grades.size());\nSystem.out.println(grades.get(\"CS101\"));",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "2\n95"
+      ],
+      "explanation": "Declare variables with the Map interface and construct a HashMap. Each `put` connects one key to one value. The resulting output is '2\\n95'."
+    },
+    {
+      "id": "java-maps-advice-01",
+      "concept": "maps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Maps good practice",
+      "code": null,
+      "prompt": "Which is a useful practice for Maps?",
+      "choices": [
+        "Program to `Map` and construct a suitable implementation.",
+        "Skip input checks and assume every value is valid.",
+        "Hide every error and continue without checking the result.",
+        "Put all of the work in one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Program to `Map` and construct a suitable implementation. This keeps the code easier to understand and verify."
+    },
+    {
+      "id": "java-maps-supplement-01",
+      "concept": "maps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Maps practice 5",
+      "code": null,
+      "prompt": "Which version follows the lesson's safer approach?",
+      "choices": [
+        "int score = grades.getOrDefault(\"ENG101\", 0);",
+        "int score = grades.get(\"ENG101\");",
+        "Both versions are equally safe.",
+        "Neither version can run."
+      ],
+      "answer_index": 0,
+      "explanation": "`get` returns null for a missing key, which can cause trouble when Java unboxes it to int. `getOrDefault` makes the absent case explicit."
+    },
+    {
+      "id": "java-maps-supplement-02",
+      "concept": "maps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Maps practice 6",
+      "code": null,
+      "prompt": "Which statement best explains 'Null does not prove a key is absent'?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "A map is allowed to store null as a value. If that distinction matters, use `containsKey` to ask whether the key exists rather than guessing from `get`.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "A map is allowed to store null as a value. If that distinction matters, use `containsKey` to ask whether the key exists rather than guessing from `get`."
+    },
+    {
+      "id": "java-maps-supplement-03",
+      "concept": "maps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Maps practice 7",
+      "code": null,
+      "prompt": "Which is a useful practice for Maps?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Choose immutable, stable keys when possible.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 2,
+      "explanation": "Choose immutable, stable keys when possible. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "java-maps-supplement-04",
+      "concept": "maps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Maps practice 8",
+      "code": null,
+      "prompt": "Which is a useful practice for Maps?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement.",
+        "Remember that `put` replaces an equal key."
+      ],
+      "answer_index": 3,
+      "explanation": "Remember that `put` replaces an equal key. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "java-maps-supplement-05",
+      "concept": "maps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Maps practice 9",
+      "code": null,
+      "prompt": "Which is a useful practice for Maps?",
+      "choices": [
+        "Use `getOrDefault` for a meaningful fallback.",
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Use `getOrDefault` for a meaningful fallback. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "java-maps-supplement-06",
+      "concept": "maps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Maps practice 10",
+      "code": null,
+      "prompt": "Which is a useful practice for Maps?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Use `entrySet` when processing keys and values together.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "Use `entrySet` when processing keys and values together. This makes the result easier to understand and verify."
+    }
+  ]
+}

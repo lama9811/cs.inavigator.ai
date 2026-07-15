@@ -1,0 +1,184 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "dictionaries",
+  "concept_label": "Dictionaries",
+  "language": "python",
+  "questions": [
+    {
+      "id": "python-dictionaries-check-1",
+      "concept": "dictionaries",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "python",
+      "title": "Dictionaries practice 1",
+      "code": "prices = {\"pen\": 2}\nprices[\"pen\"] = 3\nprices[\"book\"] = 8\nprint(len(prices), prices[\"pen\"])",
+      "prompt": "What does this print?",
+      "choices": [
+        "2 3",
+        "3 2",
+        "2 2",
+        "3 3"
+      ],
+      "answer_index": 0,
+      "explanation": "Updating `pen` does not create a second key. Adding `book` makes two keys total, and the current value stored under `pen` is 3."
+    },
+    {
+      "id": "python-dictionaries-check-2",
+      "concept": "dictionaries",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "python",
+      "title": "Dictionaries practice 2",
+      "code": "grades = {\"CS101\": 90, \"MATH120\": 84}",
+      "prompt": "Which loop prints both each course name and its grade?",
+      "choices": [
+        "for course, grade in grades.items():",
+        "for course, grade in grades:",
+        "for grade in grades.values, course:",
+        "for item in grades.keys().values():"
+      ],
+      "answer_index": 0,
+      "explanation": "`items()` produces key-value pairs that can be unpacked into two variables. Iterating over the dictionary alone produces only keys."
+    },
+    {
+      "id": "python-dictionaries-output-01",
+      "concept": "dictionaries",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "python",
+      "title": "Trace Dictionaries",
+      "code": "student = {\"name\": \"Ada\", \"credits\": 15}\nprint(student[\"name\"])\nstudent[\"credits\"] = 18\nstudent[\"major\"] = \"CS\"\nprint(student)",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "Ada\n{'name': 'Ada', 'credits': 18, 'major': 'CS'}"
+      ],
+      "explanation": "Keys appear before colons and values appear after them. Square brackets use a key to find its value. The resulting output is \"Ada\\n{'name': 'Ada', 'credits': 18, 'major': 'CS'}\"."
+    },
+    {
+      "id": "python-dictionaries-advice-01",
+      "concept": "dictionaries",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Dictionaries good practice",
+      "code": null,
+      "prompt": "Which is a useful practice for Dictionaries?",
+      "choices": [
+        "Choose stable, descriptive keys.",
+        "Skip input checks and assume every value is valid.",
+        "Hide every error and continue without checking the result.",
+        "Put all of the work in one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Choose stable, descriptive keys. This keeps the code easier to understand and verify."
+    },
+    {
+      "id": "python-dictionaries-supplement-01",
+      "concept": "dictionaries",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Dictionaries practice 5",
+      "code": null,
+      "prompt": "Which version follows the lesson's safer approach?",
+      "choices": [
+        "scores = {\"quiz\": 8}\nprint(scores.get(\"exam\", 0))",
+        "scores = {\"quiz\": 8}\nprint(scores[\"exam\"])",
+        "Both versions are equally safe.",
+        "Neither version can run."
+      ],
+      "answer_index": 0,
+      "explanation": "Bracket lookup is useful when a key is required. `get` is better when absence is normal and you have a sensible fallback."
+    },
+    {
+      "id": "python-dictionaries-supplement-02",
+      "concept": "dictionaries",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Dictionaries practice 6",
+      "code": null,
+      "prompt": "Which statement best explains 'Membership checks keys'?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "`\"Ada\" in student` looks through the keys, not the values. Use `\"name\" in student` to ask whether that field exists. Use `\"Ada\" in student.values()` only when you truly need to search values.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "`\"Ada\" in student` looks through the keys, not the values. Use `\"name\" in student` to ask whether that field exists. Use `\"Ada\" in student.values()` only when you truly need to search values."
+    },
+    {
+      "id": "python-dictionaries-supplement-03",
+      "concept": "dictionaries",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Dictionaries practice 7",
+      "code": null,
+      "prompt": "Which is a useful practice for Dictionaries?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Use brackets when a missing key is an error.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 2,
+      "explanation": "Use brackets when a missing key is an error. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "python-dictionaries-supplement-04",
+      "concept": "dictionaries",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Dictionaries practice 8",
+      "code": null,
+      "prompt": "Which is a useful practice for Dictionaries?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement.",
+        "Use `get` for an optional value with a fallback."
+      ],
+      "answer_index": 3,
+      "explanation": "Use `get` for an optional value with a fallback. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "python-dictionaries-supplement-05",
+      "concept": "dictionaries",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Dictionaries practice 9",
+      "code": null,
+      "prompt": "Which is a useful practice for Dictionaries?",
+      "choices": [
+        "Use `.items()` when a loop needs keys and values.",
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Use `.items()` when a loop needs keys and values. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "python-dictionaries-supplement-06",
+      "concept": "dictionaries",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Dictionaries practice 10",
+      "code": null,
+      "prompt": "Which is a useful practice for Dictionaries?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Remember that assigning the same key updates rather than duplicates it.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "Remember that assigning the same key updates rather than duplicates it. This makes the result easier to understand and verify."
+    }
+  ]
+}

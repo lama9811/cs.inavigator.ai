@@ -1,0 +1,184 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "sets",
+  "concept_label": "Sets",
+  "language": "python",
+  "questions": [
+    {
+      "id": "python-sets-check-1",
+      "concept": "sets",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "python",
+      "title": "Sets practice 1",
+      "code": "a = {1, 2, 3}\nb = {2, 3, 4}\ncommon = a & b",
+      "prompt": "What is the value of `common`?",
+      "choices": [
+        "{2, 3}",
+        "{1, 2, 3, 4}",
+        "{1, 4}",
+        "[2, 3]"
+      ],
+      "answer_index": 0,
+      "explanation": "The `&` operator computes intersection, keeping only values present in both sets. The result remains a set, not a list."
+    },
+    {
+      "id": "python-sets-check-2",
+      "concept": "sets",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "python",
+      "title": "Sets practice 2",
+      "code": "ada = {\"CS101\", \"MATH120\"}\nben = {\"CS101\", \"ENG101\"}",
+      "prompt": "Which expression finds courses completed by Ada but not Ben?",
+      "choices": [
+        "ada - ben",
+        "ada | ben",
+        "ada & ben",
+        "ben - ada"
+      ],
+      "answer_index": 0,
+      "explanation": "Set difference keeps members from the left set that are absent from the right. Here the result is `{\"MATH120\"}`."
+    },
+    {
+      "id": "python-sets-output-01",
+      "concept": "sets",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "python",
+      "title": "Trace Sets",
+      "code": "courses = [\"CS101\", \"MATH120\", \"CS101\", \"ENG101\"]\nunique_courses = set(courses)\nprint(len(unique_courses))\nprint(\"CS101\" in unique_courses)",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "3\nTrue"
+      ],
+      "explanation": "Repeated values disappear when the list becomes a set. The result has three unique course codes even though the source list has four items. The resulting output is '3\\nTrue'."
+    },
+    {
+      "id": "python-sets-advice-01",
+      "concept": "sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Sets good practice",
+      "code": null,
+      "prompt": "Which is a useful practice for Sets?",
+      "choices": [
+        "Use a set when duplicates have no meaning.",
+        "Skip input checks and assume every value is valid.",
+        "Hide every error and continue without checking the result.",
+        "Put all of the work in one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Use a set when duplicates have no meaning. This keeps the code easier to understand and verify."
+    },
+    {
+      "id": "python-sets-supplement-01",
+      "concept": "sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Sets practice 5",
+      "code": null,
+      "prompt": "Which version follows the lesson's safer approach?",
+      "choices": [
+        "clubs = {\"Robotics\"}\nclubs.discard(\"Chess\")",
+        "clubs = {\"Robotics\"}\nclubs.remove(\"Chess\")",
+        "Both versions are equally safe.",
+        "Neither version can run."
+      ],
+      "answer_index": 0,
+      "explanation": "`remove` raises KeyError when the value is absent. `discard` leaves the set unchanged, which is convenient when absence is acceptable."
+    },
+    {
+      "id": "python-sets-supplement-02",
+      "concept": "sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Sets practice 6",
+      "code": null,
+      "prompt": "Which statement best explains 'Curly braces have one empty exception'?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "`{\"Python\"}` is a set, but `{}` is an empty dictionary. Write `set()` when you need an empty set, then add values to it.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "`{\"Python\"}` is a set, but `{}` is an empty dictionary. Write `set()` when you need an empty set, then add values to it."
+    },
+    {
+      "id": "python-sets-supplement-03",
+      "concept": "sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Sets practice 7",
+      "code": null,
+      "prompt": "Which is a useful practice for Sets?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Do not depend on item positions.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 2,
+      "explanation": "Do not depend on item positions. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "python-sets-supplement-04",
+      "concept": "sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Sets practice 8",
+      "code": null,
+      "prompt": "Which is a useful practice for Sets?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement.",
+        "Prefer `discard` when a missing value is acceptable."
+      ],
+      "answer_index": 3,
+      "explanation": "Prefer `discard` when a missing value is acceptable. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "python-sets-supplement-05",
+      "concept": "sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Sets practice 9",
+      "code": null,
+      "prompt": "Which is a useful practice for Sets?",
+      "choices": [
+        "Use `&`, `|`, and `-` to compare groups.",
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Use `&`, `|`, and `-` to compare groups. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "python-sets-supplement-06",
+      "concept": "sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Sets practice 10",
+      "code": null,
+      "prompt": "Which is a useful practice for Sets?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Create an empty set with `set()`.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "Create an empty set with `set()`. This makes the result easier to understand and verify."
+    }
+  ]
+}

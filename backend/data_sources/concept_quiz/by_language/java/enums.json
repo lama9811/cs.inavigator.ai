@@ -1,0 +1,184 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "enums",
+  "concept_label": "Enums",
+  "language": "java",
+  "questions": [
+    {
+      "id": "java-enums-check-1",
+      "concept": "enums",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "java",
+      "title": "Enums practice 1",
+      "code": "enum Level { LOW, MEDIUM, HIGH }",
+      "prompt": "Which assignment is valid for this enum?",
+      "choices": [
+        "Level level = Level.MEDIUM;",
+        "Level level = \"MEDIUM\";",
+        "Level level = 2;",
+        "Level level = new Level();"
+      ],
+      "answer_index": 0,
+      "explanation": "An enum variable holds one of its declared constants. The constant is reached through the enum type, so Level.MEDIUM is the valid value."
+    },
+    {
+      "id": "java-enums-check-2",
+      "concept": "enums",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "java",
+      "title": "Enums practice 2",
+      "code": "Level level = Level.HIGH;\nswitch (level) {\n    case LOW -> System.out.println(\"1\");\n    case MEDIUM -> System.out.println(\"2\");\n    case HIGH -> System.out.println(\"3\");\n}",
+      "prompt": "What prints?",
+      "choices": [
+        "3",
+        "HIGH",
+        "2",
+        "Nothing"
+      ],
+      "answer_index": 0,
+      "explanation": "The value is Level.HIGH, so the HIGH case runs and prints the text 3. The other cases are skipped."
+    },
+    {
+      "id": "java-enums-output-01",
+      "concept": "enums",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "java",
+      "title": "Trace Enums",
+      "code": "enum Status {\n    PLANNED, ACTIVE, COMPLETE\n}\n\nStatus current = Status.ACTIVE;\nSystem.out.println(current);",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "ACTIVE"
+      ],
+      "explanation": "The variable can hold one Status constant. Java checks the name during compilation. The resulting output is 'ACTIVE'."
+    },
+    {
+      "id": "java-enums-advice-01",
+      "concept": "enums",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Enums good practice",
+      "code": null,
+      "prompt": "Which is a useful practice for Enums?",
+      "choices": [
+        "Use an enum for a fixed set of choices.",
+        "Skip input checks and assume every value is valid.",
+        "Hide every error and continue without checking the result.",
+        "Put all of the work in one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Use an enum for a fixed set of choices. This keeps the code easier to understand and verify."
+    },
+    {
+      "id": "java-enums-supplement-01",
+      "concept": "enums",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Enums practice 5",
+      "code": null,
+      "prompt": "Which version follows the lesson's safer approach?",
+      "choices": [
+        "Status status = Status.ACTIVE;",
+        "String status = \"acitve\";",
+        "Both versions are equally safe.",
+        "Neither version can run."
+      ],
+      "answer_index": 0,
+      "explanation": "Strings can contain an unnoticed spelling difference. The enum version is checked by the compiler and gives the value a clear type."
+    },
+    {
+      "id": "java-enums-supplement-02",
+      "concept": "enums",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Enums practice 6",
+      "code": null,
+      "prompt": "Which statement best explains 'Changing text into an enum can fail'?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "`Status.valueOf(text)` requires an exact constant name. Input such as `\"active\"` does not match `ACTIVE` unless you clean or convert it first.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "`Status.valueOf(text)` requires an exact constant name. Input such as `\"active\"` does not match `ACTIVE` unless you clean or convert it first."
+    },
+    {
+      "id": "java-enums-supplement-03",
+      "concept": "enums",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Enums practice 7",
+      "code": null,
+      "prompt": "Which is a useful practice for Enums?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Name constants clearly and consistently.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 2,
+      "explanation": "Name constants clearly and consistently. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "java-enums-supplement-04",
+      "concept": "enums",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Enums practice 8",
+      "code": null,
+      "prompt": "Which is a useful practice for Enums?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement.",
+        "Store the enum value instead of a matching string."
+      ],
+      "answer_index": 3,
+      "explanation": "Store the enum value instead of a matching string. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "java-enums-supplement-05",
+      "concept": "enums",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Enums practice 9",
+      "code": null,
+      "prompt": "Which is a useful practice for Enums?",
+      "choices": [
+        "Handle outside text before calling `valueOf`.",
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Handle outside text before calling `valueOf`. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "java-enums-supplement-06",
+      "concept": "enums",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Enums practice 10",
+      "code": null,
+      "prompt": "Which is a useful practice for Enums?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Use switch when each constant needs different behavior.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "Use switch when each constant needs different behavior. This makes the result easier to understand and verify."
+    }
+  ]
+}

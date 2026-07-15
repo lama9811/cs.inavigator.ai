@@ -131,9 +131,12 @@ def categories_for_language(language: str) -> list[dict[str, Any]]:
         out.append(entry)
 
     for extension in manifest.get("language_extensions", {}).get(lang, []):
-        entry = {**extension, "scope": "extension", "lesson_only": True}
+        entry = {**extension, "scope": "extension"}
         entry["track"] = _track_for_category(extension)
-        entry["count"] = 0
+        entry["lesson_only"] = bool(extension.get("lesson_only", False))
+        entry["count"] = _count_questions(
+            _by_language_path(lang, extension["file"]), lang, scope="language"
+        )
         out.append(entry)
     return out
 

@@ -1,0 +1,180 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "memory-ownership",
+  "concept_label": "Memory Ownership",
+  "language": "cpp",
+  "questions": [
+    {
+      "id": "cpp-memory-ownership-check-1",
+      "concept": "memory-ownership",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Memory Ownership practice 1",
+      "code": null,
+      "prompt": "What does `std::move` do to a unique_ptr?",
+      "choices": [
+        "Transfers its ownership to the destination",
+        "Copies the owned object automatically",
+        "Deletes both pointers",
+        "Makes the object global"
+      ],
+      "answer_index": 0,
+      "explanation": "Move transfers the unique ownership; the destination owns the object and the source becomes empty."
+    },
+    {
+      "id": "cpp-memory-ownership-check-2",
+      "concept": "memory-ownership",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Memory Ownership practice 2",
+      "code": null,
+      "prompt": "When is `shared_ptr` appropriate?",
+      "choices": [
+        "When several parts truly share ownership",
+        "For every local integer",
+        "Whenever a raw reference is enough",
+        "To avoid including memory"
+      ],
+      "answer_index": 0,
+      "explanation": "A shared pointer models multiple owners whose lifetimes overlap, not ordinary temporary access to an object."
+    },
+    {
+      "id": "cpp-memory-ownership-output-01",
+      "concept": "memory-ownership",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "cpp",
+      "title": "Trace Memory Ownership",
+      "code": "#include <iostream>\n#include <memory>\n#include <string>\nstruct Student { std::string name; };\nint main() {\n  auto pending = std::make_unique<Student>(Student{\"Ada\"});\n  auto active = std::move(pending);\n  if (!pending) std::cout << active->name << \"\\n\";\n}",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "Ada"
+      ],
+      "explanation": "The unique pointer owns the Student, move transfers that ownership into active, and cleanup happens automatically when active leaves scope. The resulting output is 'Ada'."
+    },
+    {
+      "id": "cpp-memory-ownership-advice-01",
+      "concept": "memory-ownership",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Memory Ownership good practice",
+      "code": null,
+      "prompt": "Which is a useful practice for Memory Ownership?",
+      "choices": [
+        "Prefer values and standard containers first.",
+        "Skip input checks and assume every value is valid.",
+        "Hide every error and continue without checking the result.",
+        "Put all of the work in one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Prefer values and standard containers first. This keeps the code easier to understand and verify."
+    },
+    {
+      "id": "cpp-memory-ownership-supplement-01",
+      "concept": "memory-ownership",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Memory Ownership practice 5",
+      "code": null,
+      "prompt": "Which version follows the lesson's safer approach?",
+      "choices": [
+        "auto student = std::make_unique<Student>(Student{\"Ada\"});\nuse(student.get());\n// cleanup is automatic",
+        "Student* student = new Student{\"Ada\"};\nuse(student);\n// delete is easy to forget",
+        "Both versions are equally safe.",
+        "Neither version can run."
+      ],
+      "answer_index": 0,
+      "explanation": "Raw new separates allocation from cleanup. A unique pointer keeps both responsibilities in one object lifetime."
+    },
+    {
+      "id": "cpp-memory-ownership-supplement-02",
+      "concept": "memory-ownership",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Memory Ownership practice 6",
+      "code": null,
+      "prompt": "Which statement best explains 'Shared pointer is not the default'?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "`std::shared_ptr` uses a reference count and is appropriate when ownership is genuinely shared. Using it everywhere can hide unclear lifetime design and can leak cycles, so begin with values, containers, or unique ownership.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "`std::shared_ptr` uses a reference count and is appropriate when ownership is genuinely shared. Using it everywhere can hide unclear lifetime design and can leak cycles, so begin with values, containers, or unique ownership."
+    },
+    {
+      "id": "cpp-memory-ownership-supplement-03",
+      "concept": "memory-ownership",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Memory Ownership practice 7",
+      "code": null,
+      "prompt": "Which is a useful practice for Memory Ownership?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Use make_unique for one dynamic owner.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 2,
+      "explanation": "Use make_unique for one dynamic owner. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "cpp-memory-ownership-supplement-04",
+      "concept": "memory-ownership",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Memory Ownership practice 8",
+      "code": null,
+      "prompt": "Which is a useful practice for Memory Ownership?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement.",
+        "Move unique ownership deliberately."
+      ],
+      "answer_index": 3,
+      "explanation": "Move unique ownership deliberately. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "cpp-memory-ownership-supplement-05",
+      "concept": "memory-ownership",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Memory Ownership practice 9",
+      "code": null,
+      "prompt": "Which is a useful practice for Memory Ownership?",
+      "choices": [
+        "Use shared ownership only when the model requires it.",
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Use shared ownership only when the model requires it. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "cpp-memory-ownership-supplement-06",
+      "concept": "memory-ownership",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "cpp",
+      "title": "Memory Ownership practice 10",
+      "code": "#include <iostream>\n#include <memory>\n#include <string>\nstruct Student { std::string name; };\nint main() {\n  auto pending = std::make_unique<Student>(Student{\"Ada\"});\n  auto active = std::move(pending);\n  if (!pending) std::cout << active->name << \"\\n\";\n}",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "Ada"
+      ],
+      "explanation": "The unique pointer owns the Student, move transfers that ownership into active, and cleanup happens automatically when active leaves scope. The output is 'Ada'."
+    }
+  ]
+}

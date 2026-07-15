@@ -1,0 +1,188 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "packages-access",
+  "concept_label": "Packages & Access Modifiers",
+  "language": "java",
+  "questions": [
+    {
+      "id": "java-packages-access-check-1",
+      "concept": "packages-access",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "java",
+      "title": "Packages & Access Modifiers practice 1",
+      "code": "____ String passwordHash;",
+      "prompt": "Which modifier limits a field to its own class?",
+      "choices": [
+        "private",
+        "public",
+        "package",
+        "import"
+      ],
+      "answer_index": 0,
+      "explanation": "A private member can be accessed only inside the class that declares it. Callers must use the public operations the class provides."
+    },
+    {
+      "id": "java-packages-access-check-2",
+      "concept": "packages-access",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Packages & Access Modifiers practice 2",
+      "code": null,
+      "prompt": "Which line imports ArrayList from its package?",
+      "choices": [
+        "import java.util.ArrayList;",
+        "package java.util.ArrayList;",
+        "include java.util.ArrayList;",
+        "using java.util.ArrayList;"
+      ],
+      "answer_index": 0,
+      "explanation": "Java import statements begin with `import` and use the full package and class name. The statement ends with a semicolon."
+    },
+    {
+      "id": "java-packages-access-summary-01",
+      "concept": "packages-access",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Packages & Access Modifiers summary",
+      "code": null,
+      "prompt": "Which statement best describes Packages & Access Modifiers?",
+      "choices": [
+        "Organize classes and control which code may use their details.",
+        "It is used only to print a message.",
+        "It automatically fixes every program error.",
+        "It removes the need for variables and tests."
+      ],
+      "answer_index": 0,
+      "explanation": "A package groups related classes and gives them a shared name. Put the package statement first in the file. Use `public` for code meant for callers, `private` for class details, and default access for code shared only inside the package."
+    },
+    {
+      "id": "java-packages-access-advice-01",
+      "concept": "packages-access",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Packages & Access Modifiers good practice",
+      "code": null,
+      "prompt": "Which is a useful practice for Packages & Access Modifiers?",
+      "choices": [
+        "Group classes that solve related problems.",
+        "Skip input checks and assume every value is valid.",
+        "Hide every error and continue without checking the result.",
+        "Put all of the work in one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Group classes that solve related problems. This keeps the code easier to understand and verify."
+    },
+    {
+      "id": "java-packages-access-supplement-01",
+      "concept": "packages-access",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Packages & Access Modifiers practice 5",
+      "code": null,
+      "prompt": "Which version follows the lesson's safer approach?",
+      "choices": [
+        "private int credits;\npublic void addCredits(int amount) {\n    if (amount > 0) credits += amount;\n}",
+        "public int credits;",
+        "Both versions are equally safe.",
+        "Neither version can run."
+      ],
+      "answer_index": 0,
+      "explanation": "A private field prevents outside code from placing the object in an invalid state. A method can check the new value before saving it."
+    },
+    {
+      "id": "java-packages-access-supplement-02",
+      "concept": "packages-access",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Packages & Access Modifiers practice 6",
+      "code": null,
+      "prompt": "Which statement best explains 'Folders and package names must agree'?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "If a file declares `package school.records`, keep it under the matching `school/records` path for normal builds. A mismatch often leads to class loading or import errors.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "If a file declares `package school.records`, keep it under the matching `school/records` path for normal builds. A mismatch often leads to class loading or import errors."
+    },
+    {
+      "id": "java-packages-access-supplement-03",
+      "concept": "packages-access",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Packages & Access Modifiers practice 7",
+      "code": null,
+      "prompt": "Which is a useful practice for Packages & Access Modifiers?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Match package names to the directory structure.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 2,
+      "explanation": "Match package names to the directory structure. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "java-packages-access-supplement-04",
+      "concept": "packages-access",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Packages & Access Modifiers practice 8",
+      "code": null,
+      "prompt": "Which is a useful practice for Packages & Access Modifiers?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement.",
+        "Keep fields private unless outside access is truly required."
+      ],
+      "answer_index": 3,
+      "explanation": "Keep fields private unless outside access is truly required. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "java-packages-access-supplement-05",
+      "concept": "packages-access",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Packages & Access Modifiers practice 9",
+      "code": null,
+      "prompt": "Which is a useful practice for Packages & Access Modifiers?",
+      "choices": [
+        "Expose small public methods with clear jobs.",
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Expose small public methods with clear jobs. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "java-packages-access-supplement-06",
+      "concept": "packages-access",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Packages & Access Modifiers practice 10",
+      "code": null,
+      "prompt": "Which is a useful practice for Packages & Access Modifiers?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Import classes instead of repeating long names throughout a file.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "Import classes instead of repeating long names throughout a file. This makes the result easier to understand and verify."
+    }
+  ]
+}

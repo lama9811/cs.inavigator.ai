@@ -1,0 +1,577 @@
+{
+  "_note": "Original Practice questions derived from CS Navigator's original Learn lesson for this topic.",
+  "concept": "operators",
+  "concept_label": "Operators",
+  "questions": [
+    {
+      "id": "operators-lesson-check-1",
+      "concept": "operators",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "Operators practice 1",
+      "variants": {
+        "python": {
+          "code": "total = 20\nprint(total // 6)\nprint(total % 6)\nprint(total / 6)",
+          "prompt": "What does this print?",
+          "choices": [
+            "3\n2\n3.3333333333333335",
+            "3.33\n2\n3.33",
+            "3\n3\n3.0",
+            "4\n2\n3.3333333333333335"
+          ],
+          "answer_index": 0,
+          "explanation": "20 divided by 6 is 3 with 2 left over. `//` reports the 3 and throws the rest away, so you get 3, not 3.33 and not 4. It cuts down, it does not round. `%` reports the 2 that was left over. Plain `/` keeps the full decimal, which is where that long tail of 3s comes from. If you picked 4, you were rounding: `//` never rounds up."
+        },
+        "java": {
+          "code": "int total = 7;\nint count = 2;\ndouble average = total / count;\nSystem.out.println(average);",
+          "prompt": "The result is stored in a `double`, so what does this print?",
+          "choices": [
+            "3.0",
+            "3.5",
+            "3",
+            "It does not compile"
+          ],
+          "answer_index": 0,
+          "explanation": "Java works out `total / count` on its own, before it ever looks at the left side. Both are `int`, so that is integer division and the answer is 3. Only then is the 3 stored in a `double`, which turns it into 3.0. The fraction was already gone by that point. If you picked 3.5, you assumed the `double` on the left reaches back and changes how the division is done. It does not. The type on the left says where the answer goes, not how it gets computed. Writing `(double) total / count` fixes it."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "What is `10 - 2 * 3`?",
+          "choices": [
+            "4",
+            "24",
+            "18",
+            "8"
+          ],
+          "answer_index": 0,
+          "explanation": "Multiplication produces six before that value is subtracted from ten."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "What is `10 - 2 * 3`?",
+          "choices": [
+            "4",
+            "24",
+            "18",
+            "8"
+          ],
+          "answer_index": 0,
+          "explanation": "Multiplication happens first, leaving ten minus six."
+        }
+      }
+    },
+    {
+      "id": "operators-lesson-check-2",
+      "concept": "operators",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "Operators practice 2",
+      "variants": {
+        "python": {
+          "code": "age = 15",
+          "prompt": "You want to print a message only when the age is between 13 and 19. Which line is right?",
+          "choices": [
+            "`if age >= 13 and age <= 19:`",
+            "`if age >= 13 or age <= 19:`",
+            "`if age = 13 and age = 19:`",
+            "`if age > 13 and age < 19:`"
+          ],
+          "answer_index": 0,
+          "explanation": "Between 13 and 19 means both things have to be true at once, and that is exactly what `and` does. The `or` version looks close, but it lets every age through. Try 5: it is not at least 13, but it is at most 19, and `or` only needs one side. That is a wrong answer rather than an error, so nothing warns you. The third line uses a single `=` and will not run at all. The last one is nearly right, but `>` and `<` leave out 13 and 19 themselves. Use `>=` and `<=` when the ends count."
+        },
+        "java": {
+          "code": "int x = 10;\nx += 5;\nSystem.out.println(x / 3);",
+          "prompt": "What does this print?",
+          "choices": [
+            "5",
+            "5.0",
+            "3",
+            "6"
+          ],
+          "answer_index": 0,
+          "explanation": "Take it one line at a time. `x` starts at 10, and `x += 5` makes it 15. Then `15 / 3` is an int divided by an int, and this one happens to come out even, so the answer is 5 and no fraction is lost. It prints as `5` rather than `5.0` because int division produces an `int`, and Java prints an int with no decimal point. If you picked 5.0, you were watching for the truncation trap, which is the right instinct aimed at the wrong line. The trap costs you nothing here, because 15 divides by 3 exactly."
+        },
+        "javascript": {
+          "code": "const value = \"7\";",
+          "prompt": "Which condition is true?",
+          "choices": [
+            "value === 7",
+            "value !== 7",
+            "value > 10",
+            "value === 8"
+          ],
+          "answer_index": 1,
+          "explanation": "The variable holds a string, so it is strictly unequal to the number seven."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "What is `9 % 4`?",
+          "choices": [
+            "1",
+            "2.25",
+            "4",
+            "0"
+          ],
+          "answer_index": 0,
+          "explanation": "The remainder after two groups of four is one."
+        }
+      }
+    },
+    {
+      "id": "operators-summary-01",
+      "concept": "operators",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "Operators summary",
+      "variants": {
+        "python": {
+          "code": null,
+          "prompt": "Which statement best describes Operators?",
+          "choices": [
+            "Do math, and ask true-or-false questions about the answer.",
+            "It is used only to print a message.",
+            "It automatically fixes every program error.",
+            "It removes the need for variables and tests."
+          ],
+          "answer_index": 0,
+          "explanation": "Operators are the symbols that do work on values. `+ - * /` do the math you expect, and `/` always hands back a decimal. `//` divides and throws away the remainder, `%` keeps only the remainder, and `**` raises to a power. Comparisons like `== != < >` ask a question and answer it with True or False. The one to watch is `==` against `=`. A single `=` puts a value into a name. A double `==` asks whether two values match."
+        },
+        "java": {
+          "code": null,
+          "prompt": "Which statement best describes Operators?",
+          "choices": [
+            "The symbols that do the work: arithmetic, comparison, and logic.",
+            "It is used only to print a message.",
+            "It automatically fixes every program error.",
+            "It removes the need for variables and tests."
+          ],
+          "answer_index": 0,
+          "explanation": "Operators are the symbols that combine values. `+ - * /` do arithmetic and `%` gives the remainder. Division is the one to watch: if both sides are `int`, Java divides as integers and throws the fraction away, so `7 / 2` is 3. Make one side a `double` to get 3.5. Comparisons like `==` and `<` produce a `boolean`, and `&&`, `||`, and `!` combine those booleans. Assignment is `=`. Comparison is `==`. They are different operators."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "Which statement best describes Operators?",
+          "choices": [
+            "Combine values with arithmetic, comparison, and logic.",
+            "It is used only to print a message.",
+            "It automatically fixes every program error.",
+            "It removes the need for variables and tests."
+          ],
+          "answer_index": 0,
+          "explanation": "Arithmetic operators calculate values, comparisons produce booleans, and logical operators join conditions. Prefer `===` so type and value must match."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "Which statement best describes Operators?",
+          "choices": [
+            "Calculate values and combine boolean conditions.",
+            "It is used only to print a message.",
+            "It automatically fixes every program error.",
+            "It removes the need for variables and tests."
+          ],
+          "answer_index": 0,
+          "explanation": "C++ arithmetic follows precedence rules, comparisons produce booleans, and `&&`, `||`, and `!` combine logic. Integer division discards the fractional part."
+        }
+      }
+    },
+    {
+      "id": "operators-advice-01",
+      "concept": "operators",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "Operators advice",
+      "variants": {
+        "python": {
+          "code": null,
+          "prompt": "Which is a useful practice for Operators?",
+          "choices": [
+            "`/` always gives a decimal, so `4 / 2` is 2.0 and not 2",
+            "Skip input checks and assume every value is valid.",
+            "Hide every error and continue without checking the result.",
+            "Put all of the work in one long statement."
+          ],
+          "answer_index": 0,
+          "explanation": "`/` always gives a decimal, so `4 / 2` is 2.0 and not 2 This keeps the code easier to understand and verify."
+        },
+        "java": {
+          "code": null,
+          "prompt": "Which is a useful practice for Operators?",
+          "choices": [
+            "An average or a percentage came out too low, or came out as 0: you divided an `int` by an `int`. Cast one side with `(double)`.",
+            "Skip input checks and assume every value is valid.",
+            "Hide every error and continue without checking the result.",
+            "Put all of the work in one long statement."
+          ],
+          "answer_index": 0,
+          "explanation": "An average or a percentage came out too low, or came out as 0: you divided an `int` by an `int`. Cast one side with `(double)`. This keeps the code easier to understand and verify."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "Which is a useful practice for Operators?",
+          "choices": [
+            "Prefer strict equality.",
+            "Skip input checks and assume every value is valid.",
+            "Hide every error and continue without checking the result.",
+            "Put all of the work in one long statement."
+          ],
+          "answer_index": 0,
+          "explanation": "Prefer strict equality. This keeps the code easier to understand and verify."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "Which is a useful practice for Operators?",
+          "choices": [
+            "Check operand types.",
+            "Skip input checks and assume every value is valid.",
+            "Hide every error and continue without checking the result.",
+            "Put all of the work in one long statement."
+          ],
+          "answer_index": 0,
+          "explanation": "Check operand types. This keeps the code easier to understand and verify."
+        }
+      }
+    },
+    {
+      "id": "operators-supplement-01",
+      "concept": "operators",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "Operators practice 5",
+      "variants": {
+        "python": {
+          "code": null,
+          "prompt": "Which version follows the lesson's safer approach?",
+          "choices": [
+            "score = 75\nif score == 100:\n    print(\"Perfect\")\n# a double == compares,\n# which is the question\n# you meant to ask",
+            "score = 75\nif score = 100:\n    print(\"Perfect\")\n# a single = assigns,\n# and you cannot\n# assign inside an if",
+            "Both versions are equally safe.",
+            "Neither version can run."
+          ],
+          "answer_index": 0,
+          "explanation": "One equals sign puts a value into a name. Two equals signs ask whether two values match. Inside an `if`, the single `=` is not a wrong answer, it is a syntax error, so Python refuses to run the file at all."
+        },
+        "java": {
+          "code": null,
+          "prompt": "Which version follows the lesson's safer approach?",
+          "choices": [
+            "int score = 3;\n\nif (score == 5) {\n    System.out.println(\"five\");\n}\n// == compares,\n// so the if is handed\n// a boolean",
+            "int score = 3;\n\nif (score = 5) {\n    System.out.println(\"five\");\n}\n// = assigns 5 to score,\n// so the if is handed\n// an int, not a boolean",
+            "Both versions are equally safe.",
+            "Neither version can run."
+          ],
+          "answer_index": 0,
+          "explanation": "The headline mistake of this lesson. `=` puts a value into a variable. `==` asks whether two values are equal. Java catches the slip for you when the variable is a number, and the message names the problem outright: incompatible types: int cannot be converted to boolean. An `if` needs a boolean, and `score = 5` produces an int."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "Which version follows the lesson's safer approach?",
+          "choices": [
+            "const total = Number(\"12\") + 3; // 15",
+            "const total = \"12\" + 3; // \"123\"",
+            "Both versions are equally safe.",
+            "Neither version can run."
+          ],
+          "answer_index": 0,
+          "explanation": "Explicit conversion makes the intended operation visible."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "Which version follows the lesson's safer approach?",
+          "choices": [
+            "double average = static_cast<double>(total) / count;",
+            "double average = total / count;",
+            "Both versions are equally safe.",
+            "Neither version can run."
+          ],
+          "answer_index": 0,
+          "explanation": "Convert before the operation that would lose information."
+        }
+      }
+    },
+    {
+      "id": "operators-supplement-02",
+      "concept": "operators",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "Operators practice 6",
+      "variants": {
+        "python": {
+          "code": null,
+          "prompt": "Which statement best explains 'Dividing by zero stops the program'?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "`10 / 0` does not give you a strange number. It raises a ZeroDivisionError and your program stops right there. The same is true for `//` and `%`. The number you divide by is often the result of a calculation, or something the user typed. Either way it can turn out to be 0 when you never meant it to be, so check it first.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 1,
+          "explanation": "`10 / 0` does not give you a strange number. It raises a ZeroDivisionError and your program stops right there. The same is true for `//` and `%`. The number you divide by is often the result of a calculation, or something the user typed. Either way it can turn out to be 0 when you never meant it to be, so check it first."
+        },
+        "java": {
+          "code": null,
+          "prompt": "Which statement best explains 'Integer division truncates'?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "When both sides of `/` are integers, Java keeps the whole-number part and discards the rest. `7 / 2` is 3. `9 / 10` is 0. Nothing warns you, because you asked for integer arithmetic and you got integer arithmetic. Any time an average or a percentage comes out lower than it should, and especially when it comes out as a flat 0, this is the first thing to suspect. Look for a `/` with an `int` on both sides.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 1,
+          "explanation": "When both sides of `/` are integers, Java keeps the whole-number part and discards the rest. `7 / 2` is 3. `9 / 10` is 0. Nothing warns you, because you asked for integer arithmetic and you got integer arithmetic. Any time an average or a percentage comes out lower than it should, and especially when it comes out as a flat 0, this is the first thing to suspect. Look for a `/` with an `int` on both sides."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "Which statement best explains 'Watch this detail'?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Loose equality may convert an operand first, so `5 == \"5\"` is true while `5 === \"5\"` is false.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 1,
+          "explanation": "Loose equality may convert an operand first, so `5 == \"5\"` is true while `5 === \"5\"` is false."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "Which statement best explains 'C++ detail to check'?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Use `==` for comparison. A single equals sign assigns a value, and an assignment inside a condition can silently alter program state.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 1,
+          "explanation": "Use `==` for comparison. A single equals sign assigns a value, and an assignment inside a condition can silently alter program state."
+        }
+      }
+    },
+    {
+      "id": "operators-supplement-03",
+      "concept": "operators",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "Operators practice 7",
+      "variants": {
+        "python": {
+          "code": null,
+          "prompt": "Which statement best explains 'Typing = when you meant =='?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Read the line out loud. If the words are \"set score to 100\", you want one `=`. If the words are \"is score 100\", you want two. Python is on your side here. It will not run a file with `if score = 100` in it, so the mistake shows up straight away instead of hiding in a wrong result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 2,
+          "explanation": "Read the line out loud. If the words are \"set score to 100\", you want one `=`. If the words are \"is score 100\", you want two. Python is on your side here. It will not run a file with `if score = 100` in it, so the mistake shows up straight away instead of hiding in a wrong result."
+        },
+        "java": {
+          "code": null,
+          "prompt": "Which statement best explains 'x++ and ++x are not always the same'?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "The same pattern behind `+=` gives you `-=`, `*=`, `/=`, and `%=`, and `x--` subtracts 1 the way `x++` adds it. On a line of its own, `x++` and `++x` do the same job, so inside a loop either one is fine. They part ways when you use the value in the same expression: `System.out.println(n++)` prints the old n and then adds 1, while `++n` adds 1 first and prints the new value. If you have to stop and work out which one an expression means, split it into two lines. Clear beats clever.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 2,
+          "explanation": "The same pattern behind `+=` gives you `-=`, `*=`, `/=`, and `%=`, and `x--` subtracts 1 the way `x++` adds it. On a line of its own, `x++` and `++x` do the same job, so inside a loop either one is fine. They part ways when you use the value in the same expression: `System.out.println(n++)` prints the old n and then adds 1, while `++n` adds 1 first and prints the new value. If you have to stop and work out which one an expression means, split it into two lines. Clear beats clever."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "Which is a useful practice for Operators?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Use `%` for a remainder.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 2,
+          "explanation": "Use `%` for a remainder. This makes the result easier to understand and verify."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "Which is a useful practice for Operators?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Use equality for comparisons.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 2,
+          "explanation": "Use equality for comparisons. This makes the result easier to understand and verify."
+        }
+      }
+    },
+    {
+      "id": "operators-supplement-04",
+      "concept": "operators",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "Operators practice 8",
+      "variants": {
+        "python": {
+          "code": null,
+          "prompt": "Which is a useful practice for Operators?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement.",
+            "`//` divides and drops the remainder, cutting down rather than rounding"
+          ],
+          "answer_index": 3,
+          "explanation": "`//` divides and drops the remainder, cutting down rather than rounding This makes the result easier to understand and verify."
+        },
+        "java": {
+          "code": null,
+          "prompt": "Which statement best explains 'Java catches this at compile time, with one exception'?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement.",
+            "Java checks types before it runs anything, so `if (score = 5)` is rejected by the compiler and the program never starts. That is a syntax-class error, and it is the good outcome, because you find out straight away. The exception is a variable that is already a `boolean`. `if (done = true)` sets `done` to true and then hands `true` to the `if`, so it compiles, the branch runs on every pass, and nothing complains. That version is a wrong-answer bug and it will not announce itself. When a condition seems stuck on true, count the equals signs."
+          ],
+          "answer_index": 3,
+          "explanation": "Java checks types before it runs anything, so `if (score = 5)` is rejected by the compiler and the program never starts. That is a syntax-class error, and it is the good outcome, because you find out straight away. The exception is a variable that is already a `boolean`. `if (done = true)` sets `done` to true and then hands `true` to the `if`, so it compiles, the branch runs on every pass, and nothing complains. That version is a wrong-answer bug and it will not announce itself. When a condition seems stuck on true, count the equals signs."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "Which is a useful practice for Operators?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement.",
+            "Add clarifying parentheses."
+          ],
+          "answer_index": 3,
+          "explanation": "Add clarifying parentheses. This makes the result easier to understand and verify."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "Which is a useful practice for Operators?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement.",
+            "Parenthesize dense logic."
+          ],
+          "answer_index": 3,
+          "explanation": "Parenthesize dense logic. This makes the result easier to understand and verify."
+        }
+      }
+    },
+    {
+      "id": "operators-supplement-05",
+      "concept": "operators",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "Operators practice 9",
+      "variants": {
+        "python": {
+          "code": null,
+          "prompt": "Which is a useful practice for Operators?",
+          "choices": [
+            "`%` keeps only the remainder, so `n % 2 == 0` tests for an even number",
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 0,
+          "explanation": "`%` keeps only the remainder, so `n % 2 == 0` tests for an even number This makes the result easier to understand and verify."
+        },
+        "java": {
+          "code": null,
+          "prompt": "Which is a useful practice for Operators?",
+          "choices": [
+            "Declaring the result as a `double` does not rescue you. `double avg = 7 / 2;` is 3.0, because the division finished before the assignment happened.",
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 0,
+          "explanation": "Declaring the result as a `double` does not rescue you. `double avg = 7 / 2;` is 3.0, because the division finished before the assignment happened. This makes the result easier to understand and verify."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "Which is a useful practice for Operators?",
+          "choices": [
+            "Inspect types around plus.",
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 0,
+          "explanation": "Inspect types around plus. This makes the result easier to understand and verify."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "Which is a useful practice for Operators?",
+          "choices": [
+            "Remember integer division.",
+            "Skip checks and assume every value is valid.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 0,
+          "explanation": "Remember integer division. This makes the result easier to understand and verify."
+        }
+      }
+    },
+    {
+      "id": "operators-supplement-06",
+      "concept": "operators",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "Operators practice 10",
+      "variants": {
+        "python": {
+          "code": null,
+          "prompt": "Which statement best describes Operators?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Do math, and ask true-or-false questions about the answer.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 1,
+          "explanation": "Operators are the symbols that do work on values. `+ - * /` do the math you expect, and `/` always hands back a decimal. `//` divides and throws away the remainder, `%` keeps only the remainder, and `**` raises to a power. Comparisons like `== != < >` ask a question and answer it with True or False. The one to watch is `==` against `=`. A single `=` puts a value into a name. A double `==` asks whether two values match."
+        },
+        "java": {
+          "code": null,
+          "prompt": "Which statement best describes Operators?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "The symbols that do the work: arithmetic, comparison, and logic.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 1,
+          "explanation": "Operators are the symbols that combine values. `+ - * /` do arithmetic and `%` gives the remainder. Division is the one to watch: if both sides are `int`, Java divides as integers and throws the fraction away, so `7 / 2` is 3. Make one side a `double` to get 3.5. Comparisons like `==` and `<` produce a `boolean`, and `&&`, `||`, and `!` combine those booleans. Assignment is `=`. Comparison is `==`. They are different operators."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "Which statement best describes Operators?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Combine values with arithmetic, comparison, and logic.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 1,
+          "explanation": "Arithmetic operators calculate values, comparisons produce booleans, and logical operators join conditions. Prefer `===` so type and value must match."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "Which statement best describes Operators?",
+          "choices": [
+            "Skip checks and assume every value is valid.",
+            "Calculate values and combine boolean conditions.",
+            "Hide errors and continue without checking the result.",
+            "Put every step into one long statement."
+          ],
+          "answer_index": 1,
+          "explanation": "C++ arithmetic follows precedence rules, comparisons produce booleans, and `&&`, `||`, and `!` combine logic. Integer division discards the fractional part."
+        }
+      }
+    }
+  ]
+}

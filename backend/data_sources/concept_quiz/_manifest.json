@@ -1,5 +1,5 @@
 {
-  "_note": "Concept-quiz category registry. ONE source of truth for the loader and content authoring. Each language has 14 shared categories plus one core language-specific category. Every language also includes focused lesson-only Intermediate extensions, which do not appear as Practice quizzes. 'file' is the JSON filename (without extension) under shared/ or by_language/<lang>/. Order here is the order categories appear in the UI. Difficulty levels used across items: easy (freshman) and medium (sophomore).",
+  "_note": "Concept-quiz category registry. ONE source of truth for the loader and content authoring. Each language has 14 shared categories plus one core language-specific category. Every language also includes focused Intermediate extensions with matching Learn lessons and Practice questions. 'file' is the JSON filename (without extension) under shared/ or by_language/<lang>/. Order here is the order categories appear in the UI. Difficulty levels used across items: easy (freshman) and medium (sophomore).",
   "languages": {
     "python": "Python",
     "java": "Java",
@@ -30,36 +30,36 @@
   },
   "language_extensions": {
     "python": [
-      {"id": "dictionaries", "label": "Dictionaries", "file": "dictionaries", "track": "intermediate", "lesson_only": true, "blurb": "Organizing values by meaningful keys instead of positions."},
-      {"id": "sets", "label": "Sets", "file": "sets", "track": "intermediate", "lesson_only": true, "blurb": "Keeping unique values and comparing groups efficiently."},
-      {"id": "file-handling", "label": "File Handling", "file": "file-handling", "track": "intermediate", "lesson_only": true, "blurb": "Reading and writing files safely with context managers."},
-      {"id": "exceptions", "label": "Exceptions", "file": "exceptions", "track": "intermediate", "lesson_only": true, "blurb": "Handling expected failures without hiding coding mistakes."},
-      {"id": "classes-objects", "label": "Classes & Objects", "file": "classes-objects", "track": "intermediate", "lesson_only": true, "blurb": "Building your own types from related data and behavior."},
-      {"id": "modules-imports", "label": "Modules & Imports", "file": "modules-imports", "track": "intermediate", "lesson_only": true, "blurb": "Splitting programs into files with clear responsibilities."},
-      {"id": "comprehensions", "label": "Comprehensions", "file": "comprehensions", "track": "intermediate", "lesson_only": true, "blurb": "Creating collections from short, readable rules."},
-      {"id": "testing", "label": "Testing", "file": "testing", "track": "intermediate", "lesson_only": true, "blurb": "Checking normal, boundary, and unusual cases."}
+      {"id": "dictionaries", "label": "Dictionaries", "file": "dictionaries", "track": "intermediate", "lesson_only": false, "blurb": "Organizing values by meaningful keys instead of positions."},
+      {"id": "sets", "label": "Sets", "file": "sets", "track": "intermediate", "lesson_only": false, "blurb": "Keeping unique values and comparing groups efficiently."},
+      {"id": "file-handling", "label": "File Handling", "file": "file-handling", "track": "intermediate", "lesson_only": false, "blurb": "Reading and writing files safely with context managers."},
+      {"id": "exceptions", "label": "Exceptions", "file": "exceptions", "track": "intermediate", "lesson_only": false, "blurb": "Handling expected failures without hiding coding mistakes."},
+      {"id": "classes-objects", "label": "Classes & Objects", "file": "classes-objects", "track": "intermediate", "lesson_only": false, "blurb": "Building your own types from related data and behavior."},
+      {"id": "modules-imports", "label": "Modules & Imports", "file": "modules-imports", "track": "intermediate", "lesson_only": false, "blurb": "Splitting programs into files with clear responsibilities."},
+      {"id": "comprehensions", "label": "Comprehensions", "file": "comprehensions", "track": "intermediate", "lesson_only": false, "blurb": "Creating collections from short, readable rules."},
+      {"id": "testing", "label": "Testing", "file": "testing", "track": "intermediate", "lesson_only": false, "blurb": "Checking normal, boundary, and unusual cases."}
     ],
     "java": [
-      {"id": "maps", "label": "Maps", "file": "maps", "track": "intermediate", "lesson_only": true, "blurb": "Connecting unique keys to values with HashMap."},
-      {"id": "file-io", "label": "File I/O", "file": "file-io", "track": "intermediate", "lesson_only": true, "blurb": "Reading and writing text files with Java's file APIs."},
-      {"id": "exceptions", "label": "Exceptions", "file": "exceptions", "track": "intermediate", "lesson_only": true, "blurb": "Catching expected failures and preserving useful error details."},
-      {"id": "inheritance-interfaces", "label": "Inheritance & Interfaces", "file": "inheritance-interfaces", "track": "intermediate", "lesson_only": true, "blurb": "Sharing behavior while keeping classes flexible."},
-      {"id": "generics", "label": "Generics", "file": "generics", "track": "intermediate", "lesson_only": true, "blurb": "Writing type-safe collections and reusable code."},
-      {"id": "enums", "label": "Enums", "file": "enums", "track": "intermediate", "lesson_only": true, "blurb": "Representing a fixed set of named choices."},
-      {"id": "packages-access", "label": "Packages & Access Modifiers", "file": "packages-access", "track": "intermediate", "lesson_only": true, "blurb": "Organizing classes and controlling access to details."},
-      {"id": "lambdas-streams", "label": "Lambdas & Streams", "file": "lambdas-streams", "track": "intermediate", "lesson_only": true, "blurb": "Processing collection data through clear steps."}
+      {"id": "maps", "label": "Maps", "file": "maps", "track": "intermediate", "lesson_only": false, "blurb": "Connecting unique keys to values with HashMap."},
+      {"id": "file-io", "label": "File I/O", "file": "file-io", "track": "intermediate", "lesson_only": false, "blurb": "Reading and writing text files with Java's file APIs."},
+      {"id": "exceptions", "label": "Exceptions", "file": "exceptions", "track": "intermediate", "lesson_only": false, "blurb": "Catching expected failures and preserving useful error details."},
+      {"id": "inheritance-interfaces", "label": "Inheritance & Interfaces", "file": "inheritance-interfaces", "track": "intermediate", "lesson_only": false, "blurb": "Sharing behavior while keeping classes flexible."},
+      {"id": "generics", "label": "Generics", "file": "generics", "track": "intermediate", "lesson_only": false, "blurb": "Writing type-safe collections and reusable code."},
+      {"id": "enums", "label": "Enums", "file": "enums", "track": "intermediate", "lesson_only": false, "blurb": "Representing a fixed set of named choices."},
+      {"id": "packages-access", "label": "Packages & Access Modifiers", "file": "packages-access", "track": "intermediate", "lesson_only": false, "blurb": "Organizing classes and controlling access to details."},
+      {"id": "lambdas-streams", "label": "Lambdas & Streams", "file": "lambdas-streams", "track": "intermediate", "lesson_only": false, "blurb": "Processing collection data through clear steps."}
     ],
     "javascript": [
-      {"id": "error-handling", "label": "Error Handling", "file": "error-handling", "track": "intermediate", "lesson_only": true, "blurb": "Catching expected failures without hiding programming mistakes."},
-      {"id": "modules", "label": "Modules", "file": "modules", "track": "intermediate", "lesson_only": true, "blurb": "Splitting code into files with export and import."},
-      {"id": "dom-events", "label": "DOM & Events", "file": "dom-events", "track": "intermediate", "lesson_only": true, "blurb": "Connecting JavaScript to pages, buttons, and user actions."},
-      {"id": "async-promises", "label": "Async & Promises", "file": "async-promises", "track": "intermediate", "lesson_only": true, "blurb": "Working with results that arrive later."}
+      {"id": "error-handling", "label": "Error Handling", "file": "error-handling", "track": "intermediate", "lesson_only": false, "blurb": "Catching expected failures without hiding programming mistakes."},
+      {"id": "modules", "label": "Modules", "file": "modules", "track": "intermediate", "lesson_only": false, "blurb": "Splitting code into files with export and import."},
+      {"id": "dom-events", "label": "DOM & Events", "file": "dom-events", "track": "intermediate", "lesson_only": false, "blurb": "Connecting JavaScript to pages, buttons, and user actions."},
+      {"id": "async-promises", "label": "Async & Promises", "file": "async-promises", "track": "intermediate", "lesson_only": false, "blurb": "Working with results that arrive later."}
     ],
     "cpp": [
-      {"id": "classes-objects", "label": "Classes & Objects", "file": "classes-objects", "track": "intermediate", "lesson_only": true, "blurb": "Designing types that keep data and behavior together."},
-      {"id": "file-io", "label": "File I/O", "file": "file-io", "track": "intermediate", "lesson_only": true, "blurb": "Reading and writing files with streams."},
-      {"id": "exceptions", "label": "Exceptions", "file": "exceptions", "track": "intermediate", "lesson_only": true, "blurb": "Reporting and handling failures across function calls."},
-      {"id": "memory-ownership", "label": "Memory Ownership", "file": "memory-ownership", "track": "intermediate", "lesson_only": true, "blurb": "Using RAII and smart pointers to manage resources safely."}
+      {"id": "classes-objects", "label": "Classes & Objects", "file": "classes-objects", "track": "intermediate", "lesson_only": false, "blurb": "Designing types that keep data and behavior together."},
+      {"id": "file-io", "label": "File I/O", "file": "file-io", "track": "intermediate", "lesson_only": false, "blurb": "Reading and writing files with streams."},
+      {"id": "exceptions", "label": "Exceptions", "file": "exceptions", "track": "intermediate", "lesson_only": false, "blurb": "Reporting and handling failures across function calls."},
+      {"id": "memory-ownership", "label": "Memory Ownership", "file": "memory-ownership", "track": "intermediate", "lesson_only": false, "blurb": "Using RAII and smart pointers to manage resources safely."}
     ]
   }
 }

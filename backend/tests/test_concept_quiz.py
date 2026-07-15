@@ -112,7 +112,7 @@ def test_invalid_track_metadata_is_rejected():
         cq._track_for_category({"id": "bad-track", "track": "expert"})
 
 
-def test_lesson_only_extensions_do_not_claim_quiz_questions():
+def test_every_extension_has_a_practice_bank():
     expected_ids = {
         "python": {"dictionaries", "sets", "file-handling", "exceptions", "classes-objects", "modules-imports", "comprehensions", "testing"},
         "java": {"maps", "file-io", "exceptions", "inheritance-interfaces", "generics", "enums", "packages-access", "lambdas-streams"},
@@ -122,12 +122,32 @@ def test_lesson_only_extensions_do_not_claim_quiz_questions():
     for language in ALL_LANGUAGES:
         extensions = [
             category for category in cq.categories_for_language(language)
-            if category.get("lesson_only")
+            if category["scope"] == "extension"
         ]
         assert {category["id"] for category in extensions} == expected_ids[language]
-        assert all(category["scope"] == "extension" for category in extensions)
         assert all(category["track"] == "intermediate" for category in extensions)
-        assert all(category["count"] == 0 for category in extensions)
+        assert all(category["lesson_only"] is False for category in extensions)
+        assert all(category["count"] >= 10 for category in extensions)
+
+
+def test_every_registered_category_has_expected_practice_coverage():
+    eight_question_categories = {
+        "algorithm-problems",
+        "algorithm-problems-2",
+        "debug",
+        "debug-2",
+    }
+    for language in ALL_LANGUAGES:
+        underfilled = [
+            f"{category['id']} ({category['count']})"
+            for category in cq.categories_for_language(language)
+            if category["count"] < (
+                8 if category["id"] in eight_question_categories else 10
+            )
+        ]
+        assert not underfilled, (
+            f"{language} categories below their Practice target: {underfilled}"
+        )
 
 
 def test_unknown_category_still_errors():

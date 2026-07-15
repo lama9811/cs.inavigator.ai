@@ -1,0 +1,180 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "modules",
+  "concept_label": "Modules",
+  "language": "javascript",
+  "questions": [
+    {
+      "id": "javascript-modules-check-1",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Modules practice 1",
+      "code": null,
+      "prompt": "Which syntax imports a named export called `add`?",
+      "choices": [
+        "import { add } from \"./math.js\";",
+        "import add with \"./math.js\";",
+        "include add from \"./math.js\";",
+        "require { add } \"./math.js\";"
+      ],
+      "answer_index": 0,
+      "explanation": "Named imports use braces around the exact exported name and a from clause containing the module path."
+    },
+    {
+      "id": "javascript-modules-check-2",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Modules practice 2",
+      "code": null,
+      "prompt": "How often is a module normally evaluated when imported by several files?",
+      "choices": [
+        "Once, then its exports are reused",
+        "Once per function call",
+        "Twice for named exports",
+        "It is never evaluated"
+      ],
+      "answer_index": 0,
+      "explanation": "The module system evaluates one module instance and shares its exported bindings with the files that import it."
+    },
+    {
+      "id": "javascript-modules-output-01",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "javascript",
+      "title": "Trace Modules",
+      "code": "// math.js\nexport const double = n => n * 2;\n// app.js\nimport { double } from \"./math.js\";\nconsole.log(double(6));",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "12"
+      ],
+      "explanation": "The exporting file defines one reusable operation, and the importing file names the same exported binding. The resulting output is '12'."
+    },
+    {
+      "id": "javascript-modules-advice-01",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Modules good practice",
+      "code": null,
+      "prompt": "Which is a useful practice for Modules?",
+      "choices": [
+        "Give each module one clear responsibility.",
+        "Skip input checks and assume every value is valid.",
+        "Hide every error and continue without checking the result.",
+        "Put all of the work in one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Give each module one clear responsibility. This keeps the code easier to understand and verify."
+    },
+    {
+      "id": "javascript-modules-supplement-01",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Modules practice 5",
+      "code": null,
+      "prompt": "Which version follows the lesson's safer approach?",
+      "choices": [
+        "import { double } from \"./math.js\";",
+        "import double from \"./math.js\";",
+        "Both versions are equally safe.",
+        "Neither version can run."
+      ],
+      "answer_index": 0,
+      "explanation": "A named export uses braces when imported. A default export uses the brace-free form, so the two styles must agree."
+    },
+    {
+      "id": "javascript-modules-supplement-02",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Modules practice 6",
+      "code": null,
+      "prompt": "Which statement best explains 'Paths are part of the contract'?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "A correct export can still fail to load when its path is wrong. Relative browser imports normally include the file extension, and a server must deliver the module with an appropriate JavaScript content type.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "A correct export can still fail to load when its path is wrong. Relative browser imports normally include the file extension, and a server must deliver the module with an appropriate JavaScript content type."
+    },
+    {
+      "id": "javascript-modules-supplement-03",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Modules practice 7",
+      "code": null,
+      "prompt": "Which is a useful practice for Modules?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Export only values other files need.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 2,
+      "explanation": "Export only values other files need. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "javascript-modules-supplement-04",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Modules practice 8",
+      "code": null,
+      "prompt": "Which is a useful practice for Modules?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement.",
+        "Match named and default import styles."
+      ],
+      "answer_index": 3,
+      "explanation": "Match named and default import styles. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "javascript-modules-supplement-05",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Modules practice 9",
+      "code": null,
+      "prompt": "Which is a useful practice for Modules?",
+      "choices": [
+        "Check relative paths and file extensions.",
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Check relative paths and file extensions. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "javascript-modules-supplement-06",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "javascript",
+      "title": "Modules practice 10",
+      "code": "// math.js\nexport const double = n => n * 2;\n// app.js\nimport { double } from \"./math.js\";\nconsole.log(double(6));",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "12"
+      ],
+      "explanation": "The exporting file defines one reusable operation, and the importing file names the same exported binding. The output is '12'."
+    }
+  ]
+}

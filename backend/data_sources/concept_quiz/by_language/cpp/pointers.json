@@ -36,7 +36,7 @@
         "Error"
       ],
       "answer_index": 1,
-      "explanation": "*p dereferences the pointer \u00e2\u20ac\u201d it reads the value at the stored address. Since p points to x, *p is 42.",
+      "explanation": "*p dereferences the pointer â€” it reads the value at the stored address. Since p points to x, *p is 42.",
       "title": "Dereference a pointer"
     },
     {
@@ -83,7 +83,12 @@
       "language": "cpp",
       "code": "int a = 4;\nint b = 9;\nint* p = &a;\np = &b;\ncout << *p;",
       "prompt": "What does this output?",
-      "choices": ["4", "9", "The address of b", "Compile error"],
+      "choices": [
+        "4",
+        "9",
+        "The address of b",
+        "Compile error"
+      ],
       "answer_index": 1,
       "explanation": "The pointer first stores the address of a, then p = &b replaces that address. Dereferencing p now reads b, so the program prints 9. Reassigning the pointer does not change a.",
       "title": "Point somewhere new"
@@ -97,10 +102,87 @@
       "error_class": "runtime",
       "code": "int* p = nullptr;\ncout << *p;",
       "prompt": "What is wrong with this code?",
-      "choices": ["nullptr contains the number 0, so it safely prints 0", "Dereferencing a null pointer causes undefined behavior", "Pointers cannot be printed with cout", "p must be declared as double*"],
+      "choices": [
+        "nullptr contains the number 0, so it safely prints 0",
+        "Dereferencing a null pointer causes undefined behavior",
+        "Pointers cannot be printed with cout",
+        "p must be declared as double*"
+      ],
       "answer_index": 1,
       "explanation": "nullptr deliberately points to no object. Dereferencing it asks for a value at an invalid location, which causes undefined behavior and often crashes. Check that a pointer is not null before using *p.",
       "title": "Do not dereference null"
+    },
+    {
+      "id": "cpp-pointers-supplement-01",
+      "concept": "pointers",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Pointers practice 7",
+      "code": null,
+      "prompt": "Which version follows the lesson's safer approach?",
+      "choices": [
+        "int* score = nullptr;\nif (score != nullptr) {\n  std::cout << *score;\n}",
+        "int* score = nullptr;\nstd::cout << *score;",
+        "Both versions are equally safe.",
+        "Neither version can run."
+      ],
+      "answer_index": 0,
+      "explanation": "Check for a valid target before following an address."
+    },
+    {
+      "id": "cpp-pointers-supplement-02",
+      "concept": "pointers",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Pointers practice 8",
+      "code": null,
+      "prompt": "Which statement best explains 'Inspect this state'?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "An uninitialized or null pointer does not identify a valid object. Dereferencing it has undefined behavior and can crash the program.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "An uninitialized or null pointer does not identify a valid object. Dereferencing it has undefined behavior and can crash the program."
+    },
+    {
+      "id": "cpp-pointers-supplement-03",
+      "concept": "pointers",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Pointers practice 9",
+      "code": null,
+      "prompt": "Which is a useful practice for Pointers?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Use nullptr for no target.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 2,
+      "explanation": "Use nullptr for no target. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "cpp-pointers-supplement-04",
+      "concept": "pointers",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Pointers practice 10",
+      "code": null,
+      "prompt": "Which is a useful practice for Pointers?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement.",
+        "Check before dereferencing."
+      ],
+      "answer_index": 3,
+      "explanation": "Check before dereferencing. This makes the result easier to understand and verify."
     }
   ]
 }

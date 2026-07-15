@@ -1,0 +1,180 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "error-handling",
+  "concept_label": "Error Handling",
+  "language": "javascript",
+  "questions": [
+    {
+      "id": "javascript-error-handling-check-1",
+      "concept": "error-handling",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Error Handling practice 1",
+      "code": null,
+      "prompt": "Which block runs whether try succeeds or fails?",
+      "choices": [
+        "finally",
+        "catch only",
+        "throw",
+        "return"
+      ],
+      "answer_index": 0,
+      "explanation": "A finally block runs after the try and any matching catch, making it suitable for cleanup that both paths require."
+    },
+    {
+      "id": "javascript-error-handling-check-2",
+      "concept": "error-handling",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "javascript",
+      "title": "Error Handling practice 2",
+      "code": "try { save(); } catch (error) {}",
+      "prompt": "What is wrong with an empty catch block?",
+      "choices": [
+        "It hides the failure and its evidence",
+        "Catch requires a return value",
+        "It retries forever",
+        "It converts the error to text"
+      ],
+      "answer_index": 0,
+      "explanation": "The program silently continues, so neither the user nor the developer can see that save failed or why it failed."
+    },
+    {
+      "id": "javascript-error-handling-output-01",
+      "concept": "error-handling",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "javascript",
+      "title": "Trace Error Handling",
+      "code": "const raw = \"{bad json}\";\ntry {\n  JSON.parse(raw);\n  console.log(\"Loaded\");\n} catch (error) {\n  console.log(\"Could not read that JSON\");\n}",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "Could not read that JSON"
+      ],
+      "explanation": "JSON.parse throws before the Loaded message, so catch provides a controlled response. The resulting output is 'Could not read that JSON'."
+    },
+    {
+      "id": "javascript-error-handling-advice-01",
+      "concept": "error-handling",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Error Handling good practice",
+      "code": null,
+      "prompt": "Which is a useful practice for Error Handling?",
+      "choices": [
+        "Protect only operations you expect can fail.",
+        "Skip input checks and assume every value is valid.",
+        "Hide every error and continue without checking the result.",
+        "Put all of the work in one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Protect only operations you expect can fail. This keeps the code easier to understand and verify."
+    },
+    {
+      "id": "javascript-error-handling-supplement-01",
+      "concept": "error-handling",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Error Handling practice 5",
+      "code": null,
+      "prompt": "Which version follows the lesson's safer approach?",
+      "choices": [
+        "try {\n  riskyWork();\n} catch (error) {\n  console.error(error);\n  throw error;\n}",
+        "try { riskyWork(); } catch (error) {}",
+        "Both versions are equally safe.",
+        "Neither version can run."
+      ],
+      "answer_index": 0,
+      "explanation": "An empty catch makes the program look successful even though its work failed. Handle an expected case or preserve the error for a layer that can."
+    },
+    {
+      "id": "javascript-error-handling-supplement-02",
+      "concept": "error-handling",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Error Handling practice 6",
+      "code": null,
+      "prompt": "Which statement best explains 'Catch narrowly'?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Do not wrap a whole application in one broad try block. Keep the protected section close to the operation whose failure you understand, so unrelated programming mistakes are not mislabeled as expected input problems.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "Do not wrap a whole application in one broad try block. Keep the protected section close to the operation whose failure you understand, so unrelated programming mistakes are not mislabeled as expected input problems."
+    },
+    {
+      "id": "javascript-error-handling-supplement-03",
+      "concept": "error-handling",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Error Handling practice 7",
+      "code": null,
+      "prompt": "Which is a useful practice for Error Handling?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Read the Error name and message.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 2,
+      "explanation": "Read the Error name and message. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "javascript-error-handling-supplement-04",
+      "concept": "error-handling",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Error Handling practice 8",
+      "code": null,
+      "prompt": "Which is a useful practice for Error Handling?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement.",
+        "Give users a specific recovery path."
+      ],
+      "answer_index": 3,
+      "explanation": "Give users a specific recovery path. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "javascript-error-handling-supplement-05",
+      "concept": "error-handling",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Error Handling practice 9",
+      "code": null,
+      "prompt": "Which is a useful practice for Error Handling?",
+      "choices": [
+        "Rethrow errors the current layer cannot handle.",
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Rethrow errors the current layer cannot handle. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "javascript-error-handling-supplement-06",
+      "concept": "error-handling",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "javascript",
+      "title": "Error Handling practice 10",
+      "code": "const raw = \"{bad json}\";\ntry {\n  JSON.parse(raw);\n  console.log(\"Loaded\");\n} catch (error) {\n  console.log(\"Could not read that JSON\");\n}",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "Could not read that JSON"
+      ],
+      "explanation": "JSON.parse throws before the Loaded message, so catch provides a controlled response. The output is 'Could not read that JSON'."
+    }
+  ]
+}

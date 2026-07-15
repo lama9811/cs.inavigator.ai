@@ -1,0 +1,180 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "exceptions",
+  "concept_label": "Exceptions",
+  "language": "cpp",
+  "questions": [
+    {
+      "id": "cpp-exceptions-check-1",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Exceptions practice 1",
+      "code": null,
+      "prompt": "How should standard exceptions usually be caught?",
+      "choices": [
+        "By const reference",
+        "By raw pointer",
+        "By mutable global value",
+        "Only with catch-all"
+      ],
+      "answer_index": 0,
+      "explanation": "Catching by const reference avoids copying and preserves the dynamic exception information for the handler."
+    },
+    {
+      "id": "cpp-exceptions-check-2",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Exceptions practice 2",
+      "code": null,
+      "prompt": "What happens to local RAII objects during stack unwinding?",
+      "choices": [
+        "Their destructors run",
+        "They are always leaked",
+        "They become global",
+        "Their constructors run again"
+      ],
+      "answer_index": 0,
+      "explanation": "As exception control exits each scope, destructors run for fully constructed local objects and release their resources."
+    },
+    {
+      "id": "cpp-exceptions-output-01",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "cpp",
+      "title": "Trace Exceptions",
+      "code": "#include <iostream>\n#include <stdexcept>\nint requirePositive(int value) {\n  if (value <= 0) throw std::invalid_argument(\"value must be positive\");\n  return value;\n}\nint main() {\n  try {\n    std::cout << requirePositive(-2) << \"\\n\";\n  } catch (const std::invalid_argument& error) {\n    std::cout << error.what() << \"\\n\";\n  }\n}",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "value must be positive"
+      ],
+      "explanation": "The parser either returns a valid positive count or throws a descriptive exception that the caller handles. The resulting output is 'value must be positive'."
+    },
+    {
+      "id": "cpp-exceptions-advice-01",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Exceptions good practice",
+      "code": null,
+      "prompt": "Which is a useful practice for Exceptions?",
+      "choices": [
+        "Throw a descriptive exception type.",
+        "Skip input checks and assume every value is valid.",
+        "Hide every error and continue without checking the result.",
+        "Put all of the work in one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Throw a descriptive exception type. This keeps the code easier to understand and verify."
+    },
+    {
+      "id": "cpp-exceptions-supplement-01",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Exceptions practice 5",
+      "code": null,
+      "prompt": "Which version follows the lesson's safer approach?",
+      "choices": [
+        "try { work(); }\ncatch (const std::runtime_error& error) {\n  std::cerr << error.what();\n}",
+        "try { work(); }\ncatch (...) { }",
+        "Both versions are equally safe.",
+        "Neither version can run."
+      ],
+      "answer_index": 0,
+      "explanation": "A catch-all that does nothing hides the cause. Catch a meaningful type where a useful response is possible."
+    },
+    {
+      "id": "cpp-exceptions-supplement-02",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Exceptions practice 6",
+      "code": null,
+      "prompt": "Which statement best explains 'Exceptions are not ordinary branch logic'?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Use an if statement for expected choices such as an empty search result. Reserve exceptions for a function that cannot complete its promised operation, especially when several callers need the failure information.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 1,
+      "explanation": "Use an if statement for expected choices such as an empty search result. Reserve exceptions for a function that cannot complete its promised operation, especially when several callers need the failure information."
+    },
+    {
+      "id": "cpp-exceptions-supplement-03",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Exceptions practice 7",
+      "code": null,
+      "prompt": "Which is a useful practice for Exceptions?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Catch only where recovery or context is possible.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 2,
+      "explanation": "Catch only where recovery or context is possible. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "cpp-exceptions-supplement-04",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Exceptions practice 8",
+      "code": null,
+      "prompt": "Which is a useful practice for Exceptions?",
+      "choices": [
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement.",
+        "Catch standard exceptions by const reference."
+      ],
+      "answer_index": 3,
+      "explanation": "Catch standard exceptions by const reference. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "cpp-exceptions-supplement-05",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Exceptions practice 9",
+      "code": null,
+      "prompt": "Which is a useful practice for Exceptions?",
+      "choices": [
+        "Do not silence unknown failures.",
+        "Skip checks and assume every value is valid.",
+        "Hide errors and continue without checking the result.",
+        "Put every step into one long statement."
+      ],
+      "answer_index": 0,
+      "explanation": "Do not silence unknown failures. This makes the result easier to understand and verify."
+    },
+    {
+      "id": "cpp-exceptions-supplement-06",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "cpp",
+      "title": "Exceptions practice 10",
+      "code": "#include <iostream>\n#include <stdexcept>\nint requirePositive(int value) {\n  if (value <= 0) throw std::invalid_argument(\"value must be positive\");\n  return value;\n}\nint main() {\n  try {\n    std::cout << requirePositive(-2) << \"\\n\";\n  } catch (const std::invalid_argument& error) {\n    std::cout << error.what() << \"\\n\";\n  }\n}",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "value must be positive"
+      ],
+      "explanation": "The parser either returns a valid positive count or throws a descriptive exception that the caller handles. The output is 'value must be positive'."
+    }
+  ]
+}
