@@ -92,7 +92,7 @@ function notifySessionExpiredOnce() {
   setTimeout(() => { expiryToastShown = false; }, 3000);
 }
 
-function RequireAuth({ children }) {
+function RequireAuth({ children, onExpired }) {
   const token = localStorage.getItem("token");
   const expired = isTokenExpired(token);
   // Side effects (toast + storage clear) run in an effect, not during render, so
@@ -101,10 +101,13 @@ function RequireAuth({ children }) {
   const hadToken = Boolean(token);
   useEffect(() => {
     if (expired && hadToken) {
-      notifySessionExpiredOnce();
-      clearAuthStorage();
+      if (onExpired) onExpired({ expired: true });
+      else {
+        notifySessionExpiredOnce();
+        clearAuthStorage();
+      }
     }
-  }, [expired, hadToken]);
+  }, [expired, hadToken, onExpired]);
 
   // Gate on a VALID token, not just its presence — an expired token used to leave
   // the user "logged in" on a broken UI where every API call silently 401'd. Pass
@@ -215,6 +218,7 @@ export default function App() {
   const navigate = useNavigate();
 
   const [token, setToken] = useState(() => localStorage.getItem("token"));
+  const isAuthenticated = !isTokenExpired(token);
   // Seed role from the existing token synchronously so a returning user's first
   // paint already shows the logged-in navbar. Starting at null made NavBar flash
   // the logged-out links (Try Free / Login / Sign Up) for a frame before the
@@ -287,13 +291,18 @@ export default function App() {
       try {
         if (response.status === 401 && localStorage.getItem("token")) {
           const rawUrl = typeof args[0] === "string" ? args[0] : args[0]?.url || "";
-          // Resolve against our origin, then match by origin+path — a substring
-          // check could misclassify a third-party URL that merely contains "/api/".
+          // Match the configured backend origin and confirm this was an authenticated
+          // request. This covers /chat and /chat-history as well as /api/* without
+          // treating an unrelated same-origin 401 as an expired session.
           let isOurApi = false;
           try {
             const u = new URL(rawUrl, window.location.origin);
             const apiOrigin = API_BASE ? new URL(API_BASE, window.location.origin).origin : window.location.origin;
-            isOurApi = u.origin === apiOrigin && u.pathname.startsWith("/api/");
+            const requestHeaders = new Headers(
+              args[1]?.headers || (args[0] instanceof Request ? args[0].headers : undefined)
+            );
+            const hasBearerToken = /^Bearer\s+\S+/i.test(requestHeaders.get("Authorization") || "");
+            isOurApi = u.origin === apiOrigin && hasBearerToken;
           } catch {
             isOurApi = false;
           }
@@ -320,9 +329,9 @@ export default function App() {
   // Toggle sidebar CSS class on body
   // IMPORTANT: Also collapse sidebar when not authenticated to prevent overlay on login page
   useEffect(() => {
-    const shouldCollapse = sidebarCollapsed || !token;
+    const shouldCollapse = sidebarCollapsed || !isAuthenticated;
     document.body.classList.toggle('sidebar-collapsed', shouldCollapse);
-  }, [sidebarCollapsed, token]);
+  }, [sidebarCollapsed, isAuthenticated]);
 
   // Cmd+K listener
   useEffect(() => {
@@ -678,6 +687,27 @@ export default function App() {
   // Keep the interceptor's logout ref pointing at the latest handleLogout closure.
   logoutRef.current = handleLogout;
 
+  // Expiration is a moment in time, not a React event. Schedule the shared logout
+  // path from the JWT exp claim so an idle page updates immediately without waiting
+  // for another render, API request, or full reload.
+  useEffect(() => {
+    if (!token) return undefined;
+    const { exp } = parseJwt(token);
+    if (!Number.isFinite(Number(exp))) return undefined;
+
+    let timeoutId;
+    const scheduleExpiryCheck = () => {
+      const remaining = (Number(exp) * 1000) - 30_000 - Date.now();
+      if (remaining <= 0) {
+        logoutRef.current?.({ expired: true });
+        return;
+      }
+      timeoutId = window.setTimeout(scheduleExpiryCheck, Math.min(remaining, 2_147_483_647));
+    };
+    scheduleExpiryCheck();
+    return () => window.clearTimeout(timeoutId);
+  }, [token]);
+
   // Extract user email from token
   const userEmail = token ? (parseJwt(token).email || parseJwt(token).sub || "User") : "";
 
@@ -694,6 +724,7 @@ export default function App() {
       />
       <NavBar
         role={role}
+        authenticated={isAuthenticated}
         onLogout={handleLogout}
         onToggleSidebar={toggleSidebar}
         onBrandClick={handleBrandClick}
@@ -731,14 +762,14 @@ export default function App() {
         {/* root redirects to /trychat or /chat based on auth */}
         <Route
           path="/"
-          element={<Navigate to={token ? "/chat" : "/trychat"} replace />}
+          element={<Navigate to={isAuthenticated ? "/chat" : "/trychat"} replace />}
         />
 
         {/* protected: chat */}
         <Route
           path="/chat"
           element={
-            <RequireAuth>
+            <RequireAuth onExpired={handleLogout}>
               <ChatLayout
                 sessions={sessions}
                 activeId={activeId}
@@ -770,7 +801,7 @@ export default function App() {
              from the path while staying mounted (shared state is preserved). */
           path="/coding/*"
           element={
-            <RequireAuth>
+            <RequireAuth onExpired={handleLogout}>
               <ChatLayout
                 sessions={sessions}
                 activeId={activeId}
@@ -798,7 +829,7 @@ export default function App() {
         <Route
           path="/chat/coding"
           element={
-            <RequireAuth>
+            <RequireAuth onExpired={handleLogout}>
               <ChatLayout
                 sessions={sessions}
                 activeId={activeId}
@@ -828,7 +859,7 @@ export default function App() {
         <Route
           path="/my-classes"
           element={
-            <RequireAuth>
+            <RequireAuth onExpired={handleLogout}>
               <SidebarLayout
                 sessions={sessions}
                 activeId={activeId}
@@ -855,7 +886,7 @@ export default function App() {
         <Route
           path="/grade-analysis"
           element={
-            <RequireAuth>
+            <RequireAuth onExpired={handleLogout}>
               <SidebarLayout
                 sessions={sessions}
                 activeId={activeId}
@@ -882,7 +913,7 @@ export default function App() {
         <Route
           path="/ripple-effect"
           element={
-            <RequireAuth>
+            <RequireAuth onExpired={handleLogout}>
               <SidebarLayout
                 sessions={sessions}
                 activeId={activeId}
@@ -909,7 +940,7 @@ export default function App() {
         <Route
           path="/curriculum"
           element={
-            <RequireAuth>
+            <RequireAuth onExpired={handleLogout}>
               <SidebarLayout
                 sessions={sessions}
                 activeId={activeId}
@@ -936,7 +967,7 @@ export default function App() {
         <Route
           path="/planner"
           element={
-            <RequireAuth>
+            <RequireAuth onExpired={handleLogout}>
               <SidebarLayout
                 sessions={sessions}
                 activeId={activeId}
@@ -963,7 +994,7 @@ export default function App() {
         <Route
           path="/profile"
           element={
-            <RequireAuth>
+            <RequireAuth onExpired={handleLogout}>
               <SidebarLayout
                 sessions={sessions}
                 activeId={activeId}
@@ -990,7 +1021,7 @@ export default function App() {
         <Route
           path="/admin"
           element={
-            <RequireAuth>
+            <RequireAuth onExpired={handleLogout}>
               {role === "admin" ? <AdminDashboard /> : <Forbidden />}
             </RequireAuth>
           }
@@ -999,7 +1030,7 @@ export default function App() {
         {/* fallback */}
         <Route
           path="*"
-          element={<Navigate to={token ? "/chat" : "/trychat"} replace />}
+          element={<Navigate to={isAuthenticated ? "/chat" : "/trychat"} replace />}
         />
       </Routes>
     </>
