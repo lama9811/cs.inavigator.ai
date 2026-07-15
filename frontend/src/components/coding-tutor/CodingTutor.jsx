@@ -2762,7 +2762,9 @@ export default function CodingTutor({
           onClick: () => navigate(quizPathForLanguage(target.language)),
         };
       } else if (target.view === "tracks") {
-        back = { label: "All languages", onClick: () => navigate(PRACTICE_LEARN_PATH) };
+        // The track chooser renders its own in-page "All languages" link (see
+        // LearnMode's TrackCards), so the toolbar back button would be a duplicate.
+        back = null;
       } else if (target.view === "lessons") {
         back = {
           label: "Choose track",

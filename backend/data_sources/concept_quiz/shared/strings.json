@@ -175,63 +175,6 @@
       }
     },
     {
-      "id": "strings-advice-01",
-      "concept": "strings",
-      "difficulty": "easy",
-      "kind": "mcq-behavior",
-      "title": "Strings advice",
-      "variants": {
-        "python": {
-          "code": null,
-          "prompt": "Which is a useful practice for Strings?",
-          "choices": [
-            "Index of the last character is `len(s) - 1`, or just use `s[-1]`",
-            "Skip input checks and assume every value is valid.",
-            "Hide every error and continue without checking the result.",
-            "Put all of the work in one long statement."
-          ],
-          "answer_index": 0,
-          "explanation": "Index of the last character is `len(s) - 1`, or just use `s[-1]` This keeps the code easier to understand and verify."
-        },
-        "java": {
-          "code": null,
-          "prompt": "Which is a useful practice for Strings?",
-          "choices": [
-            "Compare text with `a.equals(b)`. Reach for `==` on Strings and you are asking about memory, not about text.",
-            "Skip input checks and assume every value is valid.",
-            "Hide every error and continue without checking the result.",
-            "Put all of the work in one long statement."
-          ],
-          "answer_index": 0,
-          "explanation": "Compare text with `a.equals(b)`. Reach for `==` on Strings and you are asking about memory, not about text. This keeps the code easier to understand and verify."
-        },
-        "javascript": {
-          "code": null,
-          "prompt": "Which is a useful practice for Strings?",
-          "choices": [
-            "Count from index zero.",
-            "Skip input checks and assume every value is valid.",
-            "Hide every error and continue without checking the result.",
-            "Put all of the work in one long statement."
-          ],
-          "answer_index": 0,
-          "explanation": "Count from index zero. This keeps the code easier to understand and verify."
-        },
-        "cpp": {
-          "code": null,
-          "prompt": "Which is a useful practice for Strings?",
-          "choices": [
-            "Include the string header.",
-            "Skip input checks and assume every value is valid.",
-            "Hide every error and continue without checking the result.",
-            "Put all of the work in one long statement."
-          ],
-          "answer_index": 0,
-          "explanation": "Include the string header. This keeps the code easier to understand and verify."
-        }
-      }
-    },
-    {
       "id": "strings-supplement-01",
       "concept": "strings",
       "difficulty": "easy",
@@ -239,337 +182,466 @@
       "title": "Strings practice 5",
       "variants": {
         "python": {
-          "code": null,
-          "prompt": "Which version follows the lesson's safer approach?",
+          "code": "s = \"cat\"\ns[0] = \"b\"",
+          "prompt": "What happens when you run `s[0] = \"b\"` on a string `s = \"cat\"`?",
           "choices": [
-            "s = \"cat\"\ns = \"b\" + s[1:]\nprint(s)\n# bat",
-            "s = \"cat\"\ns[0] = \"b\"\n# strings do not\n# support item\n# assignment",
-            "Both versions are equally safe.",
-            "Neither version can run."
+            "A TypeError — strings do not support item assignment",
+            "s becomes \"bat\"",
+            "It silently does nothing",
+            "An IndexError"
           ],
           "answer_index": 0,
-          "explanation": "Assigning into a string raises a TypeError. Nothing you do to a string edits it in place, so the fix is always the same: build the string you want and put it back in the name."
+          "explanation": "Strings are immutable, so assigning into one raises a TypeError: 'str' object does not support item assignment. Reading `s[0]` works, which is the trap. To change a character, build a new string, as in `\"b\" + s[1:]`, which gives \"bat\"."
         },
         "java": {
-          "code": null,
-          "prompt": "Which version follows the lesson's safer approach?",
+          "code": "String answer = \"ye\" + \"s\";\nif (answer == \"yes\") {\n    System.out.println(\"match\");\n} else {\n    System.out.println(\"no match\");\n}",
+          "prompt": "What does this print, given `answer` was built as `\"ye\" + \"s\"`?",
           "choices": [
-            "String typed = \"ye\";\nString answer = typed + \"s\";\n\nif (answer.equals(\"yes\")) {\n    System.out.println(\"match\");\n} else {\n    System.out.println(\"no match\");\n}",
-            "String typed = \"ye\";\nString answer = typed + \"s\";\n\nif (answer == \"yes\") {\n    System.out.println(\"match\");\n} else {\n    System.out.println(\"no match\");\n}",
-            "Both versions are equally safe.",
-            "Neither version can run."
+            "no match — == compares object identity, not characters",
+            "match — == compares the text",
+            "It throws a NullPointerException",
+            "It fails to compile"
           ],
           "answer_index": 0,
-          "explanation": "`==` asks whether two names point at the same object in memory. `.equals()` asks whether two strings contain the same characters. When you compare text, the second question is the one you meant. The left version compiles cleanly, runs without complaint, and quietly prints the wrong thing."
+          "explanation": "A string built at run time is a new object, so `==` (which asks whether two references point at the same object) is false, and this prints \"no match\". To compare characters use `.equals()`. The code compiles and runs; it just answers the wrong question."
         },
         "javascript": {
-          "code": null,
-          "prompt": "Which version follows the lesson's safer approach?",
+          "code": "let major = \"cs\";\nmajor = major.toUpperCase();",
+          "prompt": "After `let major = \"cs\"; major.toUpperCase();`, what is `major`?",
           "choices": [
-            "let major = \"cs\";\nmajor = major.toUpperCase();",
-            "let major = \"cs\";\nmajor.toUpperCase();",
-            "Both versions are equally safe.",
-            "Neither version can run."
+            "\"cs\" — toUpperCase returns a new string and the result was not kept",
+            "\"CS\" — the string is changed in place",
+            "undefined",
+            "It throws an error"
           ],
           "answer_index": 0,
-          "explanation": "Keep the transformed string returned by the method."
+          "explanation": "Strings are immutable, so `toUpperCase()` returns a new \"CS\" and leaves `major` alone. Calling it without assigning throws the result away, so `major` is still \"cs\". You have to capture it: `major = major.toUpperCase()`."
         },
         "cpp": {
-          "code": null,
-          "prompt": "Which version follows the lesson's safer approach?",
+          "code": "if (!text.empty()) {\n  char last = text.back();\n}",
+          "prompt": "Why guard with `if (!text.empty())` before reading `text.back()`?",
           "choices": [
-            "if (!text.empty()) {\n  char last = text.back();\n}",
-            "char last = text[text.size() - 1]; // unsafe when empty",
-            "Both versions are equally safe.",
-            "Neither version can run."
+            "back() on an empty string is undefined behavior",
+            "back() is slower than indexing",
+            "empty() is the only way to get a string's length",
+            "back() returns the first character, not the last"
           ],
           "answer_index": 0,
-          "explanation": "Check that text exists before reading its final character."
+          "explanation": "Calling `back()` (or reading `text[text.size() - 1]`) on an empty string reads out of bounds, which is undefined behavior. The `empty()` check makes sure there is a last character before you ask for it. `back()` returns the final character, and the guard is about safety, not speed."
         }
       }
     },
     {
-      "id": "strings-supplement-02",
+      "id": "strings-authored-01",
       "concept": "strings",
-      "difficulty": "easy",
+      "difficulty": "medium",
       "kind": "mcq-behavior",
-      "title": "Strings practice 6",
+      "title": "Strings concept check 1",
       "variants": {
         "python": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 1",
           "code": null,
-          "prompt": "Which statement best explains 'You cannot add a number to a string'?",
+          "prompt": "What does the lesson mean by \"You cannot add a number to a string\"?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "`\"Score: \" + 10` raises a TypeError, because plus means one thing for text and something else for numbers, and Python refuses to guess which you meant. Two ways out. Convert the number with `str(10)`, or use an f-string, which is easier to read and is what most people reach for.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "s",
+            "`\"Score: \" + 10` raises a TypeError, because plus means one thing for text and something else for numbers, and Python refuses to guess which you meant. Two ways out.",
+            "5",
+            "It prints nothing"
           ],
           "answer_index": 1,
-          "explanation": "`\"Score: \" + 10` raises a TypeError, because plus means one thing for text and something else for numbers, and Python refuses to guess which you meant. Two ways out. Convert the number with `str(10)`, or use an f-string, which is easier to read and is what most people reach for."
+          "explanation": "A string is text in quotes: `\"Ada\"` or `'Ada'`. `len(s)` tells you how many characters it holds. That reasoning supports the answer: `\"Score: \" + 10` raises a TypeError, because plus means one thing for text and something else for numbers, and Python refuses to guess which you meant. Two ways out."
         },
         "java": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 1",
           "code": null,
-          "prompt": "Which statement best explains 'Java catches type errors before it runs anything'?",
+          "prompt": "What does the lesson mean by \"Java catches type errors before it runs anything\"?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Java checks the types of everything while it compiles, which is before a single line of your program has run. So `int n = \"hello\";` never gets the chance to misbehave. The compiler refuses it outright and prints `incompatible types: String cannot be converted to int`. That is a compile error, and no output appears at all. Compare that with an error thrown while the program is running, which happens after some of your output has already printed. Where the error shows up tells you which kind you are looking at.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "It prints s",
+            "Java checks the types of everything while it compiles, which is before a single line of your program has run. So `int n = \"hello\";` never gets the chance to misbehave.",
+            "It prints 5",
+            "It fails to compile"
           ],
           "answer_index": 1,
-          "explanation": "Java checks the types of everything while it compiles, which is before a single line of your program has run. So `int n = \"hello\";` never gets the chance to misbehave. The compiler refuses it outright and prints `incompatible types: String cannot be converted to int`. That is a compile error, and no output appears at all. Compare that with an error thrown while the program is running, which happens after some of your output has already printed. Where the error shows up tells you which kind you are looking at."
+          "explanation": "A `String` holds text in double quotes: `\"Ada\"`. It is an object, not a primitive, so it carries methods you call with a dot: `s.length()`, `s.charAt(0)`, `s.substring(1, 4)`, `s.toUpperCase()`, `s.trim()`, `s.split(\",\")`. That reasoning supports the answer: Java checks the types of everything while it compiles, which is before a single line of your program has run. So `int n = \"hello\";` never gets the chance to misbehave."
         },
         "javascript": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 1",
           "code": null,
-          "prompt": "Which statement best explains 'Watch this detail'?",
+          "prompt": "What does the lesson mean by \"Watch this detail\"?",
           "choices": [
-            "Skip checks and assume every value is valid.",
+            "\"Navi\"",
             "A string with length five ends at index four. Reading `text[text.length]` goes one place too far.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "\"avi\"",
+            "\"vig\""
           ],
           "answer_index": 1,
-          "explanation": "A string with length five ends at index four. Reading `text[text.length]` goes one place too far."
+          "explanation": "Strings are immutable sequences with zero-based indexes. `.length` counts characters, and template literals insert expressions with `${...}`. That reasoning supports the answer: A string with length five ends at index four. Reading `text[text.length]` goes one place too far."
         },
         "cpp": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 1",
           "code": null,
-          "prompt": "Which statement best explains 'C++ detail to check'?",
+          "prompt": "What does the lesson mean by \"C++ detail to check\"?",
           "choices": [
-            "Skip checks and assume every value is valid.",
+            "2",
             "For a nonempty string, the final character is at `text.size() - 1`; using `text[text.size()]` steps past the valid range.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "4",
+            "0"
           ],
           "answer_index": 1,
-          "explanation": "For a nonempty string, the final character is at `text.size() - 1`; using `text[text.size()]` steps past the valid range."
+          "explanation": "`std::string` stores text, `.size()` reports its character count, and indexing starts at zero. Strings support comparison and concatenation with compatible operands. That reasoning supports the answer: For a nonempty string, the final character is at `text.size() - 1`; using `text[text.size()]` steps past the valid range."
         }
       }
     },
     {
-      "id": "strings-supplement-03",
+      "id": "strings-authored-02",
       "concept": "strings",
-      "difficulty": "easy",
+      "difficulty": "medium",
       "kind": "mcq-behavior",
-      "title": "Strings practice 7",
+      "title": "Strings concept check 2",
       "variants": {
         "python": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 2",
           "code": null,
-          "prompt": "Which statement best explains 'IndexError: string index out of range'?",
+          "prompt": "What does the lesson mean by \"IndexError: string index out of range\"?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "`\"Bears\"` has five characters, so the valid indexes are 0, 1, 2, 3, and 4. Asking for `word[5]` asks for a sixth character that was never there, and Python stops the program rather than invent one. When you see this error, count the characters, then subtract one. That is the highest index you are allowed.",
-            "Put every step into one long statement."
+            "2 world",
+            "16 WORLD",
+            "`\"Bears\"` has five characters, so the valid indexes are 0, 1, 2, 3, and 4. Asking for `word[5]` asks for a sixth character that was never there, and Python stops the program rather than invent one.",
+            "3 WORLD"
           ],
           "answer_index": 2,
-          "explanation": "`\"Bears\"` has five characters, so the valid indexes are 0, 1, 2, 3, and 4. Asking for `word[5]` asks for a sixth character that was never there, and Python stops the program rather than invent one. When you see this error, count the characters, then subtract one. That is the highest index you are allowed."
+          "explanation": "A string is text in quotes: `\"Ada\"` or `'Ada'`. `len(s)` tells you how many characters it holds. That reasoning supports the answer: `\"Bears\"` has five characters, so the valid indexes are 0, 1, 2, 3, and 4. Asking for `word[5]` asks for a sixth character that was never there, and Python stops the program rather than invent one."
         },
         "java": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 2",
           "code": null,
-          "prompt": "Which statement best explains 'StringIndexOutOfBoundsException'?",
+          "prompt": "What does the lesson mean by \"StringIndexOutOfBoundsException\"?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "\"Bears\" has five characters, so the legal indexes are 0, 1, 2, 3, and 4. There is no index 5. Ask for `word.charAt(5)` and the program stops with `StringIndexOutOfBoundsException: Index 5 out of bounds for length 5`. Read that message closely, because it hands you both numbers you need. When it appears, count the characters and subtract one. That is the largest index you are allowed to ask for.",
-            "Put every step into one long statement."
+            "true then true",
+            "false then false",
+            "\"Bears\" has five characters, so the legal indexes are 0, 1, 2, 3, and 4. There is no index 5.",
+            "true then false"
           ],
           "answer_index": 2,
-          "explanation": "\"Bears\" has five characters, so the legal indexes are 0, 1, 2, 3, and 4. There is no index 5. Ask for `word.charAt(5)` and the program stops with `StringIndexOutOfBoundsException: Index 5 out of bounds for length 5`. Read that message closely, because it hands you both numbers you need. When it appears, count the characters and subtract one. That is the largest index you are allowed to ask for."
+          "explanation": "A `String` holds text in double quotes: `\"Ada\"`. It is an object, not a primitive, so it carries methods you call with a dot: `s.length()`, `s.charAt(0)`, `s.substring(1, 4)`, `s.toUpperCase()`, `s.trim()`, `s.split(\",\")`. That reasoning supports the answer: \"Bears\" has five characters, so the legal indexes are 0, 1, 2, 3, and 4. There is no index 5."
         },
         "javascript": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 2",
           "code": null,
-          "prompt": "Which is a useful practice for Strings?",
+          "prompt": "Which choice describes a reliable Strings practice?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "Save transformed strings.",
-            "Put every step into one long statement."
+            "CS",
+            "undefined",
+            "Count from index zero.",
+            "a runtime error"
           ],
           "answer_index": 2,
-          "explanation": "Save transformed strings. This makes the result easier to understand and verify."
+          "explanation": "Strings are immutable sequences with zero-based indexes. `.length` counts characters, and template literals insert expressions with `${...}`. That reasoning supports the answer: Count from index zero."
         },
         "cpp": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 2",
           "code": null,
-          "prompt": "Which is a useful practice for Strings?",
+          "prompt": "Which choice describes a reliable Strings practice?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "Count indexes from zero.",
-            "Put every step into one long statement."
+            "\"ode\"",
+            "\"co\"",
+            "Include the string header.",
+            "\"d\""
           ],
           "answer_index": 2,
-          "explanation": "Count indexes from zero. This makes the result easier to understand and verify."
+          "explanation": "`std::string` stores text, `.size()` reports its character count, and indexing starts at zero. Strings support comparison and concatenation with compatible operands. That reasoning supports the answer: Include the string header."
         }
       }
     },
     {
-      "id": "strings-supplement-04",
+      "id": "strings-authored-03",
       "concept": "strings",
-      "difficulty": "easy",
+      "difficulty": "medium",
       "kind": "mcq-behavior",
-      "title": "Strings practice 8",
+      "title": "Strings concept check 3",
       "variants": {
         "python": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 3",
           "code": null,
-          "prompt": "Which statement best explains 'Catch the result or lose it'?",
+          "prompt": "What does the lesson mean by \"Catch the result or lose it\"?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement.",
-            "`name.upper()` on its own does nothing you can see. It builds a new uppercase string and then throws it away, because you never said where to put it. Write `name = name.upper()` if you want to keep it. Every string method works this way, so it is one habit that covers all of them."
+            "s = \"cat\"\ns[0] = \"b\"\n# strings do not\n# support item\n# assignment",
+            "It prints nothing",
+            "2 world",
+            "`name.upper()` on its own does nothing you can see. It builds a new uppercase string and then throws it away, because you never said where to put it."
           ],
           "answer_index": 3,
-          "explanation": "`name.upper()` on its own does nothing you can see. It builds a new uppercase string and then throws it away, because you never said where to put it. Write `name = name.upper()` if you want to keep it. Every string method works this way, so it is one habit that covers all of them."
+          "explanation": "A string is text in quotes: `\"Ada\"` or `'Ada'`. `len(s)` tells you how many characters it holds. That reasoning supports the answer: `name.upper()` on its own does nothing you can see. It builds a new uppercase string and then throws it away, because you never said where to put it."
         },
         "java": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 3",
           "code": null,
-          "prompt": "Which statement best explains 'The `==` bug is quiet, and sometimes it looks like it works'?",
+          "prompt": "What does the lesson mean by \"The `==` bug is quiet, and sometimes it looks like it works\"?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement.",
-            "This is the bug that costs Java beginners the most time, and the reason is that `==` sometimes appears to work. Compare two strings you typed directly into your code and Java may reuse one object for both, so `==` returns true and you walk away believing it. Then you compare against a string that came from user input or from a `+`, the object is a fresh one, and the same code silently returns false. Nothing crashes and nothing warns you. The `if` just takes the wrong branch. Use `.equals()` every time you compare text, including the times `==` would have happened to work."
+            "String typed = \"ye\";\nString answer = typed + \"s\";\n\nif (answer == \"yes\") {\n    System.out.println(\"match\");\n} else {\n    System.out.println(\"no match\");\n}",
+            "It fails to compile",
+            "true then true",
+            "This is the bug that costs Java beginners the most time, and the reason is that `==` sometimes appears to work. Compare two strings you typed directly into your code and Java may reuse one object for both, so `==` returns true and you walk away believing it."
           ],
           "answer_index": 3,
-          "explanation": "This is the bug that costs Java beginners the most time, and the reason is that `==` sometimes appears to work. Compare two strings you typed directly into your code and Java may reuse one object for both, so `==` returns true and you walk away believing it. Then you compare against a string that came from user input or from a `+`, the object is a fresh one, and the same code silently returns false. Nothing crashes and nothing warns you. The `if` just takes the wrong branch. Use `.equals()` every time you compare text, including the times `==` would have happened to work."
+          "explanation": "A `String` holds text in double quotes: `\"Ada\"`. It is an object, not a primitive, so it carries methods you call with a dot: `s.length()`, `s.charAt(0)`, `s.substring(1, 4)`, `s.toUpperCase()`, `s.trim()`, `s.split(\",\")`. That reasoning supports the answer: This is the bug that costs Java beginners the most time, and the reason is that `==` sometimes appears to work. Compare two strings you typed directly into your code and Java may reuse one object for both, so `==` returns true and you walk away believing it."
         },
         "javascript": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 3",
           "code": null,
-          "prompt": "Which is a useful practice for Strings?",
+          "prompt": "Which recommendation belongs in a review of Strings code?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement.",
-            "Use template interpolation."
+            "let major = \"cs\";\nmajor.toUpperCase();",
+            "\"vig\"",
+            "CS",
+            "Save transformed strings."
           ],
           "answer_index": 3,
-          "explanation": "Use template interpolation. This makes the result easier to understand and verify."
+          "explanation": "Strings are immutable sequences with zero-based indexes. `.length` counts characters, and template literals insert expressions with `${...}`. That reasoning supports the answer: Save transformed strings."
         },
         "cpp": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 3",
           "code": null,
-          "prompt": "Which is a useful practice for Strings?",
+          "prompt": "Which recommendation belongs in a review of Strings code?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement.",
-            "Distinguish count from final index."
+            "char last = text[text.size() - 1]; // unsafe when empty",
+            "0",
+            "\"ode\"",
+            "Count indexes from zero."
           ],
           "answer_index": 3,
-          "explanation": "Distinguish count from final index. This makes the result easier to understand and verify."
+          "explanation": "`std::string` stores text, `.size()` reports its character count, and indexing starts at zero. Strings support comparison and concatenation with compatible operands. That reasoning supports the answer: Count indexes from zero."
         }
       }
     },
     {
-      "id": "strings-supplement-05",
+      "id": "strings-authored-04",
       "concept": "strings",
-      "difficulty": "easy",
+      "difficulty": "medium",
       "kind": "mcq-behavior",
-      "title": "Strings practice 9",
+      "title": "Strings concept check 4",
       "variants": {
         "python": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 4",
           "code": null,
-          "prompt": "Which is a useful practice for Strings?",
+          "prompt": "Which guideline helps prevent a common Strings mistake?",
           "choices": [
+            "Index of the last character is `len(s) - 1`, or just use `s[-1]`",
+            "16 WORLD",
+            "3 WORLD",
+            "s = \"cat\"\ns[0] = \"b\"\n# strings do not\n# support item\n# assignment"
+          ],
+          "answer_index": 0,
+          "explanation": "A string is text in quotes: `\"Ada\"` or `'Ada'`. `len(s)` tells you how many characters it holds. That reasoning supports the answer: Index of the last character is `len(s) - 1`, or just use `s[-1]`"
+        },
+        "java": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 4",
+          "code": null,
+          "prompt": "What does the lesson mean by \"A String method call on its own line is usually a bug\"?",
+          "choices": [
+            "`name.trim();` sitting alone as a statement compiles fine and does nothing you can observe. It trims a copy and throws the copy away.",
+            "false then false",
+            "true then false",
+            "String typed = \"ye\";\nString answer = typed + \"s\";\n\nif (answer == \"yes\") {\n    System.out.println(\"match\");\n} else {\n    System.out.println(\"no match\");\n}"
+          ],
+          "answer_index": 0,
+          "explanation": "A `String` holds text in double quotes: `\"Ada\"`. It is an object, not a primitive, so it carries methods you call with a dot: `s.length()`, `s.charAt(0)`, `s.substring(1, 4)`, `s.toUpperCase()`, `s.trim()`, `s.split(\",\")`. That reasoning supports the answer: `name.trim();` sitting alone as a statement compiles fine and does nothing you can observe. It trims a copy and throws the copy away."
+        },
+        "javascript": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 4",
+          "code": null,
+          "prompt": "Which guideline helps prevent a common Strings mistake?",
+          "choices": [
+            "Use template interpolation.",
+            "undefined",
+            "a runtime error",
+            "let major = \"cs\";\nmajor.toUpperCase();"
+          ],
+          "answer_index": 0,
+          "explanation": "Strings are immutable sequences with zero-based indexes. `.length` counts characters, and template literals insert expressions with `${...}`. That reasoning supports the answer: Use template interpolation."
+        },
+        "cpp": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 4",
+          "code": null,
+          "prompt": "Which guideline helps prevent a common Strings mistake?",
+          "choices": [
+            "Distinguish count from final index.",
+            "\"co\"",
+            "\"d\"",
+            "char last = text[text.size() - 1]; // unsafe when empty"
+          ],
+          "answer_index": 0,
+          "explanation": "`std::string` stores text, `.size()` reports its character count, and indexing starts at zero. Strings support comparison and concatenation with compatible operands. That reasoning supports the answer: Distinguish count from final index."
+        }
+      }
+    },
+    {
+      "id": "strings-authored-05",
+      "concept": "strings",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Strings concept check 5",
+      "variants": {
+        "python": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 5",
+          "code": null,
+          "prompt": "A classmate is checking their understanding of Strings. Which advice is correct?",
+          "choices": [
+            "s",
             "A slice stops before its second number, exactly like `range()` does",
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "5",
+            "16 WORLD"
           ],
-          "answer_index": 0,
-          "explanation": "A slice stops before its second number, exactly like `range()` does This makes the result easier to understand and verify."
+          "answer_index": 1,
+          "explanation": "A string is text in quotes: `\"Ada\"` or `'Ada'`. `len(s)` tells you how many characters it holds. That reasoning supports the answer: A slice stops before its second number, exactly like `range()` does"
         },
         "java": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 5",
           "code": null,
-          "prompt": "Which statement best explains 'A String method call on its own line is usually a bug'?",
+          "prompt": "A classmate is checking their understanding of Strings. Which advice is correct?",
           "choices": [
-            "`name.trim();` sitting alone as a statement compiles fine and does nothing you can observe. It trims a copy and throws the copy away. The compiler will not warn you, because calling a method and ignoring its answer is legal. If a line calls a String method and does not assign the result, print it, or test it, look at that line again.",
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "It prints s",
+            "Compare text with `a.equals(b)`. Reach for `==` on Strings and you are asking about memory, not about text.",
+            "It prints 5",
+            "false then false"
           ],
-          "answer_index": 0,
-          "explanation": "`name.trim();` sitting alone as a statement compiles fine and does nothing you can observe. It trims a copy and throws the copy away. The compiler will not warn you, because calling a method and ignoring its answer is legal. If a line calls a String method and does not assign the result, print it, or test it, look at that line again."
+          "answer_index": 1,
+          "explanation": "A `String` holds text in double quotes: `\"Ada\"`. It is an object, not a primitive, so it carries methods you call with a dot: `s.length()`, `s.charAt(0)`, `s.substring(1, 4)`, `s.toUpperCase()`, `s.trim()`, `s.split(\",\")`. That reasoning supports the answer: Compare text with `a.equals(b)`. Reach for `==` on Strings and you are asking about memory, not about text."
         },
         "javascript": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 5",
           "code": null,
-          "prompt": "Which is a useful practice for Strings?",
+          "prompt": "A classmate is checking their understanding of Strings. Which advice is correct?",
           "choices": [
+            "\"Navi\"",
             "Trim input when appropriate.",
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "\"avi\"",
+            "undefined"
           ],
-          "answer_index": 0,
-          "explanation": "Trim input when appropriate. This makes the result easier to understand and verify."
+          "answer_index": 1,
+          "explanation": "Strings are immutable sequences with zero-based indexes. `.length` counts characters, and template literals insert expressions with `${...}`. That reasoning supports the answer: Trim input when appropriate."
         },
         "cpp": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 5",
           "code": null,
-          "prompt": "Which is a useful practice for Strings?",
+          "prompt": "A classmate is checking their understanding of Strings. Which advice is correct?",
           "choices": [
+            "2",
             "Check emptiness before using the last character.",
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "4",
+            "\"co\""
           ],
-          "answer_index": 0,
-          "explanation": "Check emptiness before using the last character. This makes the result easier to understand and verify."
+          "answer_index": 1,
+          "explanation": "`std::string` stores text, `.size()` reports its character count, and indexing starts at zero. Strings support comparison and concatenation with compatible operands. That reasoning supports the answer: Check emptiness before using the last character."
         }
       }
     },
     {
-      "id": "strings-supplement-06",
+      "id": "strings-authored-06",
       "concept": "strings",
-      "difficulty": "easy",
+      "difficulty": "medium",
       "kind": "mcq-behavior",
-      "title": "Strings practice 10",
+      "title": "Strings concept check 6",
       "variants": {
         "python": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 6",
           "code": null,
-          "prompt": "Which statement best describes Strings?",
+          "prompt": "Which choice shows sound reasoning about Strings?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Text you can measure, cut apart, and reshape.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "3 WORLD",
+            "s = \"cat\"\ns[0] = \"b\"\n# strings do not\n# support item\n# assignment",
+            "Strip anything a user typed before you compare it: `answer.strip().lower() == \"yes\"`",
+            "s"
           ],
-          "answer_index": 1,
-          "explanation": "A string is text in quotes: `\"Ada\"` or `'Ada'`. `len(s)` tells you how many characters it holds. You reach a single character with `s[i]`, and counting starts at 0, so the last character of a string of length 5 is `s[4]`. `s[-1]` is a shortcut for that last one. `s[1:4]` is a slice: it takes characters 1, 2, and 3, stopping before 4. A string cannot be changed in place, so build a new one instead."
+          "answer_index": 2,
+          "explanation": "A string is text in quotes: `\"Ada\"` or `'Ada'`. `len(s)` tells you how many characters it holds. That reasoning supports the answer: Strip anything a user typed before you compare it: `answer.strip().lower() == \"yes\"`"
         },
         "java": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 6",
           "code": null,
-          "prompt": "Which statement best describes Strings?",
+          "prompt": "Which choice shows sound reasoning about Strings?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Text is an object in Java, and comparing two of them has one right way.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "true then false",
+            "String typed = \"ye\";\nString answer = typed + \"s\";\n\nif (answer == \"yes\") {\n    System.out.println(\"match\");\n} else {\n    System.out.println(\"no match\");\n}",
+            "To ignore capitalization, use `a.equalsIgnoreCase(b)` instead of uppercasing both sides.",
+            "It prints s"
           ],
-          "answer_index": 1,
-          "explanation": "A `String` holds text in double quotes: `\"Ada\"`. It is an object, not a primitive, so it carries methods you call with a dot: `s.length()`, `s.charAt(0)`, `s.substring(1, 4)`, `s.toUpperCase()`, `s.trim()`, `s.split(\",\")`. Indexes start at 0, so the last character is at `s.length() - 1`. Strings are immutable, so every method returns a new String and changes nothing. Compare two Strings with `a.equals(b)`. Using `==` compares whether they are the same object in memory, which is not the question you meant to ask."
+          "answer_index": 2,
+          "explanation": "A `String` holds text in double quotes: `\"Ada\"`. It is an object, not a primitive, so it carries methods you call with a dot: `s.length()`, `s.charAt(0)`, `s.substring(1, 4)`, `s.toUpperCase()`, `s.trim()`, `s.split(\",\")`. That reasoning supports the answer: To ignore capitalization, use `a.equalsIgnoreCase(b)` instead of uppercasing both sides."
         },
         "javascript": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 6",
           "code": null,
-          "prompt": "Which statement best describes Strings?",
+          "prompt": "What is the main idea behind Strings?",
           "choices": [
-            "Skip checks and assume every value is valid.",
+            "a runtime error",
+            "let major = \"cs\";\nmajor.toUpperCase();",
             "Read and transform text without changing the original value.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "\"Navi\""
           ],
-          "answer_index": 1,
-          "explanation": "Strings are immutable sequences with zero-based indexes. `.length` counts characters, and template literals insert expressions with `${...}`."
+          "answer_index": 2,
+          "explanation": "Strings are immutable sequences with zero-based indexes. `.length` counts characters, and template literals insert expressions with `${...}`. That reasoning supports the answer: Read and transform text without changing the original value."
         },
         "cpp": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Strings concept check 6",
           "code": null,
-          "prompt": "Which statement best describes Strings?",
+          "prompt": "What is the main idea behind Strings?",
           "choices": [
-            "Skip checks and assume every value is valid.",
+            "\"d\"",
+            "char last = text[text.size() - 1]; // unsafe when empty",
             "Create, index, compare, and combine text.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "2"
           ],
-          "answer_index": 1,
-          "explanation": "`std::string` stores text, `.size()` reports its character count, and indexing starts at zero. Strings support comparison and concatenation with compatible operands."
+          "answer_index": 2,
+          "explanation": "`std::string` stores text, `.size()` reports its character count, and indexing starts at zero. Strings support comparison and concatenation with compatible operands. That reasoning supports the answer: Create, index, compare, and combine text."
         }
       }
     }

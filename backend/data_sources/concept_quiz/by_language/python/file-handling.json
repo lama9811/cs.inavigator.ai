@@ -55,130 +55,130 @@
       "explanation": "The `with` block owns the open file. When the indented block ends, Python closes it even if an error interrupted the work. The resulting output is 'CS101\\nMATH120'."
     },
     {
-      "id": "python-file-handling-advice-01",
-      "concept": "file-handling",
-      "difficulty": "medium",
-      "kind": "mcq-behavior",
-      "language": "python",
-      "title": "File Handling good practice",
-      "code": null,
-      "prompt": "Which is a useful practice for File Handling?",
-      "choices": [
-        "Use `with open(...)` to guarantee closing.",
-        "Skip input checks and assume every value is valid.",
-        "Hide every error and continue without checking the result.",
-        "Put all of the work in one long statement."
-      ],
-      "answer_index": 0,
-      "explanation": "Use `with open(...)` to guarantee closing. This keeps the code easier to understand and verify."
-    },
-    {
       "id": "python-file-handling-supplement-01",
       "concept": "file-handling",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
       "title": "File Handling practice 5",
-      "code": null,
-      "prompt": "Which version follows the lesson's safer approach?",
+      "code": "with open(\"notes.txt\") as file:\n    text = file.read()\nprint(text)",
+      "prompt": "Why keep `file.read()` inside the `with` block instead of after it?",
       "choices": [
-        "with open(\"notes.txt\") as file:\n    text = file.read()\nprint(text)",
-        "with open(\"notes.txt\") as file:\n    pass\ntext = file.read()",
-        "Both versions are equally safe.",
-        "Neither version can run."
+        "The file is closed when the block ends, so reading after it fails",
+        "read() can only be called outside the with block",
+        "print() must be inside the with block",
+        "The file stays open forever either way"
       ],
       "answer_index": 0,
-      "explanation": "Keeping the read inside `with` avoids trying to use a closed file later. The text itself can be saved and used after the block."
+      "explanation": "`with` closes the file automatically when the block ends, so calling `file.read()` afterward raises a ValueError about I/O on a closed file. Do the reading inside; the *text* is an ordinary string you can freely `print` afterward. That is exactly what this version does."
     },
     {
-      "id": "python-file-handling-supplement-02",
+      "id": "python-file-handling-authored-01",
       "concept": "file-handling",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "File Handling practice 6",
+      "title": "File Handling concept check 1",
       "code": null,
-      "prompt": "Which statement best explains 'Writing can replace real data'?",
+      "prompt": "What does the lesson mean by \"Writing can replace real data\"?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Check the mode before running file code. Opening an existing file with `\"w\"` clears it immediately. Choose `\"a\"` when the goal is to preserve the old text and add another record.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "\"w\"",
+        "Check the mode before running file code. Opening an existing file with `\"w\"` clears it immediately.",
+        "\"r\"",
+        "\"x\""
       ],
       "answer_index": 1,
-      "explanation": "Check the mode before running file code. Opening an existing file with `\"w\"` clears it immediately. Choose `\"a\"` when the goal is to preserve the old text and add another record."
+      "explanation": "Open files with a `with` statement so Python closes them automatically. Use mode `\"r\"` to read, `\"w\"` to replace a file, and `\"a\"` to add at the end. That reasoning supports the answer: Check the mode before running file code. Opening an existing file with `\"w\"` clears it immediately."
     },
     {
-      "id": "python-file-handling-supplement-03",
+      "id": "python-file-handling-authored-02",
       "concept": "file-handling",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "File Handling practice 7",
+      "title": "File Handling concept check 2",
       "code": null,
-      "prompt": "Which is a useful practice for File Handling?",
+      "prompt": "Which choice describes a reliable File Handling practice?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Specify UTF-8 for text you control.",
-        "Put every step into one long statement."
+        "To close the file",
+        "To convert each line to a number",
+        "Use `with open(...)` to guarantee closing.",
+        "To skip the first line"
       ],
       "answer_index": 2,
-      "explanation": "Specify UTF-8 for text you control. This makes the result easier to understand and verify."
+      "explanation": "Open files with a `with` statement so Python closes them automatically. Use mode `\"r\"` to read, `\"w\"` to replace a file, and `\"a\"` to add at the end. That reasoning supports the answer: Use `with open(...)` to guarantee closing."
     },
     {
-      "id": "python-file-handling-supplement-04",
+      "id": "python-file-handling-authored-03",
       "concept": "file-handling",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "File Handling practice 8",
+      "title": "File Handling concept check 3",
       "code": null,
-      "prompt": "Which is a useful practice for File Handling?",
+      "prompt": "Which recommendation belongs in a review of File Handling code?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement.",
-        "Confirm whether the mode reads, replaces, or appends."
+        "with open(\"notes.txt\") as file:\n    pass\ntext = file.read()",
+        "\"x\"",
+        "To close the file",
+        "Specify UTF-8 for text you control."
       ],
       "answer_index": 3,
-      "explanation": "Confirm whether the mode reads, replaces, or appends. This makes the result easier to understand and verify."
+      "explanation": "Open files with a `with` statement so Python closes them automatically. Use mode `\"r\"` to read, `\"w\"` to replace a file, and `\"a\"` to add at the end. That reasoning supports the answer: Specify UTF-8 for text you control."
     },
     {
-      "id": "python-file-handling-supplement-05",
+      "id": "python-file-handling-authored-04",
       "concept": "file-handling",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "File Handling practice 9",
+      "title": "File Handling concept check 4",
       "code": null,
-      "prompt": "Which is a useful practice for File Handling?",
+      "prompt": "Which guideline helps prevent a common File Handling mistake?",
       "choices": [
-        "Expect missing paths and permission errors.",
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "Confirm whether the mode reads, replaces, or appends.",
+        "To convert each line to a number",
+        "To skip the first line",
+        "with open(\"notes.txt\") as file:\n    pass\ntext = file.read()"
       ],
       "answer_index": 0,
-      "explanation": "Expect missing paths and permission errors. This makes the result easier to understand and verify."
+      "explanation": "Open files with a `with` statement so Python closes them automatically. Use mode `\"r\"` to read, `\"w\"` to replace a file, and `\"a\"` to add at the end. That reasoning supports the answer: Confirm whether the mode reads, replaces, or appends."
     },
     {
-      "id": "python-file-handling-supplement-06",
+      "id": "python-file-handling-authored-05",
       "concept": "file-handling",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "File Handling practice 10",
+      "title": "File Handling concept check 5",
       "code": null,
-      "prompt": "Which is a useful practice for File Handling?",
+      "prompt": "A classmate is checking their understanding of File Handling. Which advice is correct?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Process large files one line at a time.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "\"w\"",
+        "Expect missing paths and permission errors.",
+        "\"r\"",
+        "To convert each line to a number"
       ],
       "answer_index": 1,
-      "explanation": "Process large files one line at a time. This makes the result easier to understand and verify."
+      "explanation": "Open files with a `with` statement so Python closes them automatically. Use mode `\"r\"` to read, `\"w\"` to replace a file, and `\"a\"` to add at the end. That reasoning supports the answer: Expect missing paths and permission errors."
+    },
+    {
+      "id": "python-file-handling-authored-06",
+      "concept": "file-handling",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "File Handling concept check 6",
+      "code": null,
+      "prompt": "Which choice shows sound reasoning about File Handling?",
+      "choices": [
+        "To skip the first line",
+        "with open(\"notes.txt\") as file:\n    pass\ntext = file.read()",
+        "Process large files one line at a time.",
+        "\"w\""
+      ],
+      "answer_index": 2,
+      "explanation": "Open files with a `with` statement so Python closes them automatically. Use mode `\"r\"` to read, `\"w\"` to replace a file, and `\"a\"` to add at the end. That reasoning supports the answer: Process large files one line at a time."
     }
   ]
 }

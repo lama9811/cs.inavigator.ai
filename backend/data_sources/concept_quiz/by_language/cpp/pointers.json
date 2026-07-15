@@ -36,7 +36,7 @@
         "Error"
       ],
       "answer_index": 1,
-      "explanation": "*p dereferences the pointer â€” it reads the value at the stored address. Since p points to x, *p is 42.",
+      "explanation": "*p dereferences the pointer - it reads the value at the stored address. Since p points to x, *p is 42.",
       "title": "Dereference a pointer"
     },
     {
@@ -119,70 +119,70 @@
       "kind": "mcq-behavior",
       "language": "cpp",
       "title": "Pointers practice 7",
-      "code": null,
-      "prompt": "Which version follows the lesson's safer approach?",
+      "code": "int* score = nullptr;\nif (score != nullptr) {\n  std::cout << *score;\n}",
+      "prompt": "A pointer `score` is `nullptr`. What does `if (score != nullptr) { std::cout << *score; }` do?",
       "choices": [
-        "int* score = nullptr;\nif (score != nullptr) {\n  std::cout << *score;\n}",
-        "int* score = nullptr;\nstd::cout << *score;",
-        "Both versions are equally safe.",
-        "Neither version can run."
+        "Nothing prints, because the guard is false and the body is skipped",
+        "It prints 0, because nullptr holds the value zero",
+        "It crashes, because *score runs before the check",
+        "It fails to compile, because you cannot compare a pointer to nullptr"
       ],
       "answer_index": 0,
-      "explanation": "Check for a valid target before following an address."
+      "explanation": "`score` is null, so `score != nullptr` is false and the block is skipped. Nothing is dereferenced and nothing prints. That is the whole point of the guard: it reaches `*score` only when there is a real object to read. Comparing a pointer to nullptr is normal and compiles fine."
     },
     {
-      "id": "cpp-pointers-supplement-02",
+      "id": "cpp-pointers-authored-01",
       "concept": "pointers",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Pointers practice 8",
+      "title": "Pointers concept check 1",
       "code": null,
-      "prompt": "Which statement best explains 'Inspect this state'?",
+      "prompt": "Which warning about Pointers should a student remember?",
       "choices": [
-        "Skip checks and assume every value is valid.",
+        "a copy of x",
         "An uninitialized or null pointer does not identify a valid object. Dereferencing it has undefined behavior and can crash the program.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "the type of x",
+        "always zero"
       ],
       "answer_index": 1,
-      "explanation": "An uninitialized or null pointer does not identify a valid object. Dereferencing it has undefined behavior and can crash the program."
+      "explanation": "A pointer holds an address. `&value` obtains an address, `*pointer` dereferences it, and `nullptr` represents no object. That reasoning supports the answer: An uninitialized or null pointer does not identify a valid object. Dereferencing it has undefined behavior and can crash the program."
     },
     {
-      "id": "cpp-pointers-supplement-03",
+      "id": "cpp-pointers-authored-02",
       "concept": "pointers",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Pointers practice 9",
+      "title": "Pointers concept check 2",
       "code": null,
-      "prompt": "Which is a useful practice for Pointers?",
+      "prompt": "Which choice describes a reliable Pointers practice?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Use nullptr for no target.",
-        "Put every step into one long statement."
+        "a new pointer",
+        "the address of p",
+        "Initialize every pointer.",
+        "pointer multiplication"
       ],
       "answer_index": 2,
-      "explanation": "Use nullptr for no target. This makes the result easier to understand and verify."
+      "explanation": "A pointer holds an address. `&value` obtains an address, `*pointer` dereferences it, and `nullptr` represents no object. That reasoning supports the answer: Initialize every pointer."
     },
     {
-      "id": "cpp-pointers-supplement-04",
+      "id": "cpp-pointers-authored-03",
       "concept": "pointers",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Pointers practice 10",
+      "title": "Pointers concept check 3",
       "code": null,
-      "prompt": "Which is a useful practice for Pointers?",
+      "prompt": "Which recommendation belongs in a review of Pointers code?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement.",
-        "Check before dereferencing."
+        "int* score = nullptr;\nstd::cout << *score;",
+        "always zero",
+        "a new pointer",
+        "Use nullptr for no target."
       ],
       "answer_index": 3,
-      "explanation": "Check before dereferencing. This makes the result easier to understand and verify."
+      "explanation": "A pointer holds an address. `&value` obtains an address, `*pointer` dereferences it, and `nullptr` represents no object. That reasoning supports the answer: Use nullptr for no target."
     }
   ]
 }

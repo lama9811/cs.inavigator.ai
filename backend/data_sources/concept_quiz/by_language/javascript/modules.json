@@ -55,126 +55,130 @@
       "explanation": "The exporting file defines one reusable operation, and the importing file names the same exported binding. The resulting output is '12'."
     },
     {
-      "id": "javascript-modules-advice-01",
-      "concept": "modules",
-      "difficulty": "medium",
-      "kind": "mcq-behavior",
-      "language": "javascript",
-      "title": "Modules good practice",
-      "code": null,
-      "prompt": "Which is a useful practice for Modules?",
-      "choices": [
-        "Give each module one clear responsibility.",
-        "Skip input checks and assume every value is valid.",
-        "Hide every error and continue without checking the result.",
-        "Put all of the work in one long statement."
-      ],
-      "answer_index": 0,
-      "explanation": "Give each module one clear responsibility. This keeps the code easier to understand and verify."
-    },
-    {
       "id": "javascript-modules-supplement-01",
       "concept": "modules",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
       "title": "Modules practice 5",
-      "code": null,
-      "prompt": "Which version follows the lesson's safer approach?",
+      "code": "import { double } from \"./math.js\";",
+      "prompt": "`math.js` has `export function double(...)`. Which import matches it?",
       "choices": [
-        "import { double } from \"./math.js\";",
-        "import double from \"./math.js\";",
-        "Both versions are equally safe.",
-        "Neither version can run."
+        "import { double } from \"./math.js\";  — braces, because it is a named export",
+        "import double from \"./math.js\";  — no braces",
+        "import * double from \"./math.js\";",
+        "require(\"./math.js\").double;"
       ],
       "answer_index": 0,
-      "explanation": "A named export uses braces when imported. A default export uses the brace-free form, so the two styles must agree."
+      "explanation": "A named export is imported with braces around the exact name: `import { double }`. The brace-free form is only for a `default` export, so it would import `undefined` here. `import * double` is invalid syntax, and `require` is CommonJS, not ES-module syntax."
     },
     {
-      "id": "javascript-modules-supplement-02",
+      "id": "javascript-modules-authored-01",
       "concept": "modules",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Modules practice 6",
+      "title": "Modules concept check 1",
       "code": null,
-      "prompt": "Which statement best explains 'Paths are part of the contract'?",
+      "prompt": "What does the lesson mean by \"Paths are part of the contract\"?",
       "choices": [
-        "Skip checks and assume every value is valid.",
+        "import add with \"./math.js\";",
         "A correct export can still fail to load when its path is wrong. Relative browser imports normally include the file extension, and a server must deliver the module with an appropriate JavaScript content type.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "include add from \"./math.js\";",
+        "require { add } \"./math.js\";"
       ],
       "answer_index": 1,
-      "explanation": "A correct export can still fail to load when its path is wrong. Relative browser imports normally include the file extension, and a server must deliver the module with an appropriate JavaScript content type."
+      "explanation": "A module exposes selected values with `export` and uses another module with `import`. Named imports must match their exported names. That reasoning supports the answer: A correct export can still fail to load when its path is wrong. Relative browser imports normally include the file extension, and a server must deliver the module with an appropriate JavaScript content type."
     },
     {
-      "id": "javascript-modules-supplement-03",
+      "id": "javascript-modules-authored-02",
       "concept": "modules",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Modules practice 7",
+      "title": "Modules concept check 2",
       "code": null,
-      "prompt": "Which is a useful practice for Modules?",
+      "prompt": "Which choice describes a reliable Modules practice?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Export only values other files need.",
-        "Put every step into one long statement."
+        "Once per function call",
+        "Twice for named exports",
+        "Give each module one clear responsibility.",
+        "It is never evaluated"
       ],
       "answer_index": 2,
-      "explanation": "Export only values other files need. This makes the result easier to understand and verify."
+      "explanation": "A module exposes selected values with `export` and uses another module with `import`. Named imports must match their exported names. That reasoning supports the answer: Give each module one clear responsibility."
     },
     {
-      "id": "javascript-modules-supplement-04",
+      "id": "javascript-modules-authored-03",
       "concept": "modules",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Modules practice 8",
+      "title": "Modules concept check 3",
       "code": null,
-      "prompt": "Which is a useful practice for Modules?",
+      "prompt": "Which recommendation belongs in a review of Modules code?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement.",
-        "Match named and default import styles."
+        "import double from \"./math.js\";",
+        "require { add } \"./math.js\";",
+        "Once per function call",
+        "Export only values other files need."
       ],
       "answer_index": 3,
-      "explanation": "Match named and default import styles. This makes the result easier to understand and verify."
+      "explanation": "A module exposes selected values with `export` and uses another module with `import`. Named imports must match their exported names. That reasoning supports the answer: Export only values other files need."
     },
     {
-      "id": "javascript-modules-supplement-05",
+      "id": "javascript-modules-authored-04",
       "concept": "modules",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Modules practice 9",
+      "title": "Modules concept check 4",
       "code": null,
-      "prompt": "Which is a useful practice for Modules?",
+      "prompt": "Which guideline helps prevent a common Modules mistake?",
       "choices": [
-        "Check relative paths and file extensions.",
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "Match named and default import styles.",
+        "Twice for named exports",
+        "It is never evaluated",
+        "import double from \"./math.js\";"
       ],
       "answer_index": 0,
-      "explanation": "Check relative paths and file extensions. This makes the result easier to understand and verify."
+      "explanation": "A module exposes selected values with `export` and uses another module with `import`. Named imports must match their exported names. That reasoning supports the answer: Match named and default import styles."
     },
     {
-      "id": "javascript-modules-supplement-06",
+      "id": "javascript-modules-authored-05",
       "concept": "modules",
       "difficulty": "medium",
-      "kind": "typein",
+      "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Modules practice 10",
-      "code": "// math.js\nexport const double = n => n * 2;\n// app.js\nimport { double } from \"./math.js\";\nconsole.log(double(6));",
-      "prompt": "What output does this code produce? Enter each line in order.",
-      "accepted": [
-        "12"
+      "title": "Modules concept check 5",
+      "code": null,
+      "prompt": "A classmate is checking their understanding of Modules. Which advice is correct?",
+      "choices": [
+        "import add with \"./math.js\";",
+        "Check relative paths and file extensions.",
+        "include add from \"./math.js\";",
+        "Twice for named exports"
       ],
-      "explanation": "The exporting file defines one reusable operation, and the importing file names the same exported binding. The output is '12'."
+      "answer_index": 1,
+      "explanation": "A module exposes selected values with `export` and uses another module with `import`. Named imports must match their exported names. That reasoning supports the answer: Check relative paths and file extensions."
+    },
+    {
+      "id": "javascript-modules-authored-06",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Modules concept check 6",
+      "code": null,
+      "prompt": "What is the main idea behind Modules?",
+      "choices": [
+        "It is never evaluated",
+        "import double from \"./math.js\";",
+        "Split a program into files with explicit exports and imports.",
+        "import add with \"./math.js\";"
+      ],
+      "answer_index": 2,
+      "explanation": "A module exposes selected values with `export` and uses another module with `import`. Named imports must match their exported names. That reasoning supports the answer: Split a program into files with explicit exports and imports."
     }
   ]
 }

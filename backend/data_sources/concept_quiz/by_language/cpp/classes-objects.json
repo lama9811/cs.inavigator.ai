@@ -55,126 +55,130 @@
       "explanation": "The constructor initializes the balance, deposit changes it through a rule, and the const getter reads it without modifying the object. The resulting output is '25'."
     },
     {
-      "id": "cpp-classes-objects-advice-01",
-      "concept": "classes-objects",
-      "difficulty": "medium",
-      "kind": "mcq-behavior",
-      "language": "cpp",
-      "title": "Classes & Objects good practice",
-      "code": null,
-      "prompt": "Which is a useful practice for Classes & Objects?",
-      "choices": [
-        "Give the class one clear responsibility.",
-        "Skip input checks and assume every value is valid.",
-        "Hide every error and continue without checking the result.",
-        "Put all of the work in one long statement."
-      ],
-      "answer_index": 0,
-      "explanation": "Give the class one clear responsibility. This keeps the code easier to understand and verify."
-    },
-    {
       "id": "cpp-classes-objects-supplement-01",
       "concept": "classes-objects",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
       "title": "Classes & Objects practice 5",
-      "code": null,
-      "prompt": "Which version follows the lesson's safer approach?",
+      "code": "class Account {\npublic:\n  void deposit(int amount);\n  int balance() const;\nprivate:\n  int balance_;\n};",
+      "prompt": "In this class, why is `balance_` under `private` while `deposit` and `balance` are `public`?",
       "choices": [
-        "class Account {\npublic:\n  void deposit(int amount);\n  int balance() const;\nprivate:\n  int balance_;\n};",
-        "class Account {\npublic:\n  int balance;\n};\naccount.balance = -50;",
-        "Both versions are equally safe.",
-        "Neither version can run."
+        "So the balance can only change through methods that enforce the class's rules",
+        "So the balance uses less memory than a public field",
+        "So the balance is shared across every Account object",
+        "So the class compiles faster"
       ],
       "answer_index": 0,
-      "explanation": "Public data lets any caller create an invalid state. A small public interface can enforce the class rule in one place."
+      "explanation": "A private field cannot be assigned from outside the class, so no caller can write `account.balance_ = -50`. Every change has to go through `deposit`, which is the one place that can reject an invalid amount. Access level is about who may change the data, not about memory, sharing, or compile speed."
     },
     {
-      "id": "cpp-classes-objects-supplement-02",
+      "id": "cpp-classes-objects-authored-01",
       "concept": "classes-objects",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Classes & Objects practice 6",
+      "title": "Classes & Objects concept check 1",
       "code": null,
-      "prompt": "Which statement best explains 'Initialize every member'?",
+      "prompt": "What does the lesson mean by \"Initialize every member\"?",
       "choices": [
-        "Skip checks and assume every value is valid.",
+        "Delete the object",
         "A constructor body runs after data members have already been initialized. Prefer the member initializer list for their starting values, especially for const members and objects that have no default constructor.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "Make every member public",
+        "Run after every method"
       ],
       "answer_index": 1,
-      "explanation": "A constructor body runs after data members have already been initialized. Prefer the member initializer list for their starting values, especially for const members and objects that have no default constructor."
+      "explanation": "A class defines a new type. Private data members protect an object?s state, public methods provide controlled operations, and a constructor establishes a valid starting state. That reasoning supports the answer: A constructor body runs after data members have already been initialized. Prefer the member initializer list for their starting values, especially for const members and objects that have no default constructor."
     },
     {
-      "id": "cpp-classes-objects-supplement-03",
+      "id": "cpp-classes-objects-authored-02",
       "concept": "classes-objects",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Classes & Objects practice 7",
+      "title": "Classes & Objects concept check 2",
       "code": null,
-      "prompt": "Which is a useful practice for Classes & Objects?",
+      "prompt": "Which choice describes a reliable Classes & Objects practice?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Initialize every member in the constructor.",
-        "Put every step into one long statement."
+        "It makes the returned integer constant forever",
+        "It hides the method",
+        "Give the class one clear responsibility.",
+        "It allocates the object"
       ],
       "answer_index": 2,
-      "explanation": "Initialize every member in the constructor. This makes the result easier to understand and verify."
+      "explanation": "A class defines a new type. Private data members protect an object?s state, public methods provide controlled operations, and a constructor establishes a valid starting state. That reasoning supports the answer: Give the class one clear responsibility."
     },
     {
-      "id": "cpp-classes-objects-supplement-04",
+      "id": "cpp-classes-objects-authored-03",
       "concept": "classes-objects",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Classes & Objects practice 8",
+      "title": "Classes & Objects concept check 3",
       "code": null,
-      "prompt": "Which is a useful practice for Classes & Objects?",
+      "prompt": "Which recommendation belongs in a review of Classes & Objects code?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement.",
-        "Keep invariants behind private data."
+        "class Account {\npublic:\n  int balance;\n};\naccount.balance = -50;",
+        "Run after every method",
+        "It makes the returned integer constant forever",
+        "Initialize every member in the constructor."
       ],
       "answer_index": 3,
-      "explanation": "Keep invariants behind private data. This makes the result easier to understand and verify."
+      "explanation": "A class defines a new type. Private data members protect an object?s state, public methods provide controlled operations, and a constructor establishes a valid starting state. That reasoning supports the answer: Initialize every member in the constructor."
     },
     {
-      "id": "cpp-classes-objects-supplement-05",
+      "id": "cpp-classes-objects-authored-04",
       "concept": "classes-objects",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Classes & Objects practice 9",
+      "title": "Classes & Objects concept check 4",
       "code": null,
-      "prompt": "Which is a useful practice for Classes & Objects?",
+      "prompt": "Which guideline helps prevent a common Classes & Objects mistake?",
       "choices": [
-        "Mark read-only methods const.",
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "Keep invariants behind private data.",
+        "It hides the method",
+        "It allocates the object",
+        "class Account {\npublic:\n  int balance;\n};\naccount.balance = -50;"
       ],
       "answer_index": 0,
-      "explanation": "Mark read-only methods const. This makes the result easier to understand and verify."
+      "explanation": "A class defines a new type. Private data members protect an object?s state, public methods provide controlled operations, and a constructor establishes a valid starting state. That reasoning supports the answer: Keep invariants behind private data."
     },
     {
-      "id": "cpp-classes-objects-supplement-06",
+      "id": "cpp-classes-objects-authored-05",
       "concept": "classes-objects",
       "difficulty": "medium",
-      "kind": "typein",
+      "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Classes & Objects practice 10",
-      "code": "#include <iostream>\nclass Account {\npublic:\n  Account(int starting) : balance_(starting) {}\n  void deposit(int amount) { if (amount > 0) balance_ += amount; }\n  int balance() const { return balance_; }\nprivate:\n  int balance_;\n};\nint main() {\n  Account account(20);\n  account.deposit(5);\n  std::cout << account.balance() << \"\\n\";\n}",
-      "prompt": "What output does this code produce? Enter each line in order.",
-      "accepted": [
-        "25"
+      "title": "Classes & Objects concept check 5",
+      "code": null,
+      "prompt": "A classmate is checking their understanding of Classes & Objects. Which advice is correct?",
+      "choices": [
+        "Delete the object",
+        "Mark read-only methods const.",
+        "Make every member public",
+        "It hides the method"
       ],
-      "explanation": "The constructor initializes the balance, deposit changes it through a rule, and the const getter reads it without modifying the object. The output is '25'."
+      "answer_index": 1,
+      "explanation": "A class defines a new type. Private data members protect an object?s state, public methods provide controlled operations, and a constructor establishes a valid starting state. That reasoning supports the answer: Mark read-only methods const."
+    },
+    {
+      "id": "cpp-classes-objects-authored-06",
+      "concept": "classes-objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Classes & Objects concept check 6",
+      "code": null,
+      "prompt": "What is the main idea behind Classes & Objects?",
+      "choices": [
+        "It allocates the object",
+        "class Account {\npublic:\n  int balance;\n};\naccount.balance = -50;",
+        "Design types that keep related state and behavior together.",
+        "Delete the object"
+      ],
+      "answer_index": 2,
+      "explanation": "A class defines a new type. Private data members protect an object?s state, public methods provide controlled operations, and a constructor establishes a valid starting state. That reasoning supports the answer: Design types that keep related state and behavior together."
     }
   ]
 }

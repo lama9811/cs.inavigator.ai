@@ -55,130 +55,130 @@
       "explanation": "You build a tuple with parentheses and commas. Reading from it looks exactly like reading from a list, so if you have seen indexing before, you already know this part. The resulting output is '(3, 5)\\n3\\n2'."
     },
     {
-      "id": "python-tuples-advice-01",
-      "concept": "tuples",
-      "difficulty": "medium",
-      "kind": "mcq-behavior",
-      "language": "python",
-      "title": "Tuples good practice",
-      "code": null,
-      "prompt": "Which is a useful practice for Tuples?",
-      "choices": [
-        "The values will never change, like a coordinate or a fixed pair of settings: use a tuple",
-        "Skip input checks and assume every value is valid.",
-        "Hide every error and continue without checking the result.",
-        "Put all of the work in one long statement."
-      ],
-      "answer_index": 0,
-      "explanation": "The values will never change, like a coordinate or a fixed pair of settings: use a tuple This keeps the code easier to understand and verify."
-    },
-    {
       "id": "python-tuples-supplement-01",
       "concept": "tuples",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
       "title": "Tuples practice 5",
-      "code": null,
-      "prompt": "Which version follows the lesson's safer approach?",
+      "code": "point = (3, 5)\npoint[0] = 10",
+      "prompt": "What happens when you run `point = (3, 5)` then `point[0] = 10`?",
       "choices": [
-        "point = (3, 5)\npoint = (10, 5)\n# you cannot edit a tuple,\n# so make a new one and\n# reuse the name",
-        "point = (3, 5)\npoint[0] = 10\n# TypeError: 'tuple' object\n# does not support item\n# assignment",
-        "Both versions are equally safe.",
-        "Neither version can run."
+        "It raises a TypeError, because tuples do not support item assignment",
+        "point becomes (10, 5)",
+        "It silently does nothing",
+        "It raises an IndexError"
       ],
       "answer_index": 0,
-      "explanation": "This is the mistake almost everyone makes on their first tuple. The index reads fine, so it looks like it should also assign. Python lets you look, but it does not let you touch."
+      "explanation": "A tuple is immutable, so `point[0] = 10` raises a TypeError: 'tuple' object does not support item assignment. Reading `point[0]` is fine, which is why the assignment looks like it should work. To 'change' a tuple you build a new one and reuse the name, as in `point = (10, 5)`."
     },
     {
-      "id": "python-tuples-supplement-02",
+      "id": "python-tuples-authored-01",
       "concept": "tuples",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Tuples practice 6",
+      "title": "Tuples concept check 1",
       "code": null,
-      "prompt": "Which statement best explains 'A tuple cannot be edited in place'?",
+      "prompt": "What does the lesson mean by \"A tuple cannot be edited in place\"?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "If you see \"'tuple' object does not support item assignment\", you tried to write into something frozen. It usually means you reached for a list habit while holding a tuple. Either build a fresh tuple, or use a list if the values really do need to change.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "It prints ('small', 'regular', 'large')",
+        "If you see \"'tuple' object does not support item assignment\", you tried to write into something frozen. It usually means you reached for a list habit while holding a tuple.",
+        "It prints ('small', 'medium', 'large') and ignores the change",
+        "It raises a syntax error, because tuples use square brackets"
       ],
       "answer_index": 1,
-      "explanation": "If you see \"'tuple' object does not support item assignment\", you tried to write into something frozen. It usually means you reached for a list habit while holding a tuple. Either build a fresh tuple, or use a list if the values really do need to change."
+      "explanation": "A tuple holds several values in order, written with parentheses: `point = (3, 5)`. It works like a list for reading, so `point[0]` is 3. That reasoning supports the answer: If you see \"'tuple' object does not support item assignment\", you tried to write into something frozen. It usually means you reached for a list habit while holding a tuple."
     },
     {
-      "id": "python-tuples-supplement-03",
+      "id": "python-tuples-authored-02",
       "concept": "tuples",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Tuples practice 7",
+      "title": "Tuples concept check 2",
       "code": null,
-      "prompt": "Which statement best explains 'A tuple of one needs a trailing comma'?",
+      "prompt": "What does the lesson mean by \"A tuple of one needs a trailing comma\"?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "`(4)` is not a tuple. The parentheses there are just grouping, the way they are in `(2 + 3) * 4`, so you get the plain number 4. To make a tuple with one item, add a comma: `(4,)`. It looks like a typo the first few times you write it. It is not.",
-        "Put every step into one long statement."
+        "tuple tuple",
+        "int int",
+        "`(4)` is not a tuple. The parentheses there are just grouping, the way they are in `(2 + 3) * 4`, so you get the plain number 4.",
+        "tuple int"
       ],
       "answer_index": 2,
-      "explanation": "`(4)` is not a tuple. The parentheses there are just grouping, the way they are in `(2 + 3) * 4`, so you get the plain number 4. To make a tuple with one item, add a comma: `(4,)`. It looks like a typo the first few times you write it. It is not."
+      "explanation": "A tuple holds several values in order, written with parentheses: `point = (3, 5)`. It works like a list for reading, so `point[0]` is 3. That reasoning supports the answer: `(4)` is not a tuple. The parentheses there are just grouping, the way they are in `(2 + 3) * 4`, so you get the plain number 4."
     },
     {
-      "id": "python-tuples-supplement-04",
+      "id": "python-tuples-authored-03",
       "concept": "tuples",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Tuples practice 8",
+      "title": "Tuples concept check 3",
       "code": null,
-      "prompt": "Which is a useful practice for Tuples?",
+      "prompt": "Which recommendation belongs in a review of Tuples code?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement.",
-        "You need to add, remove, or edit items as the program runs: use a list"
+        "point = (3, 5)\npoint[0] = 10\n# TypeError: 'tuple' object\n# does not support item\n# assignment",
+        "It raises a syntax error, because tuples use square brackets",
+        "tuple tuple",
+        "The values will never change, like a coordinate or a fixed pair of settings: use a tuple"
       ],
       "answer_index": 3,
-      "explanation": "You need to add, remove, or edit items as the program runs: use a list This makes the result easier to understand and verify."
+      "explanation": "A tuple holds several values in order, written with parentheses: `point = (3, 5)`. It works like a list for reading, so `point[0]` is 3. That reasoning supports the answer: The values will never change, like a coordinate or a fixed pair of settings: use a tuple"
     },
     {
-      "id": "python-tuples-supplement-05",
+      "id": "python-tuples-authored-04",
       "concept": "tuples",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Tuples practice 9",
+      "title": "Tuples concept check 4",
       "code": null,
-      "prompt": "Which is a useful practice for Tuples?",
+      "prompt": "Which guideline helps prevent a common Tuples mistake?",
       "choices": [
-        "A function needs to hand back two or three values at once: return a tuple and unpack it",
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "You need to add, remove, or edit items as the program runs: use a list",
+        "int int",
+        "tuple int",
+        "point = (3, 5)\npoint[0] = 10\n# TypeError: 'tuple' object\n# does not support item\n# assignment"
       ],
       "answer_index": 0,
-      "explanation": "A function needs to hand back two or three values at once: return a tuple and unpack it This makes the result easier to understand and verify."
+      "explanation": "A tuple holds several values in order, written with parentheses: `point = (3, 5)`. It works like a list for reading, so `point[0]` is 3. That reasoning supports the answer: You need to add, remove, or edit items as the program runs: use a list"
     },
     {
-      "id": "python-tuples-supplement-06",
+      "id": "python-tuples-authored-05",
       "concept": "tuples",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Tuples practice 10",
+      "title": "Tuples concept check 5",
       "code": null,
-      "prompt": "Which is a useful practice for Tuples?",
+      "prompt": "A classmate is checking their understanding of Tuples. Which advice is correct?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "You want to be sure a function cannot alter what you passed in: pass a tuple",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "It prints ('small', 'regular', 'large')",
+        "A function needs to hand back two or three values at once: return a tuple and unpack it",
+        "It prints ('small', 'medium', 'large') and ignores the change",
+        "int int"
       ],
       "answer_index": 1,
-      "explanation": "You want to be sure a function cannot alter what you passed in: pass a tuple This makes the result easier to understand and verify."
+      "explanation": "A tuple holds several values in order, written with parentheses: `point = (3, 5)`. It works like a list for reading, so `point[0]` is 3. That reasoning supports the answer: A function needs to hand back two or three values at once: return a tuple and unpack it"
+    },
+    {
+      "id": "python-tuples-authored-06",
+      "concept": "tuples",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Tuples concept check 6",
+      "code": null,
+      "prompt": "Which choice shows sound reasoning about Tuples?",
+      "choices": [
+        "tuple int",
+        "point = (3, 5)\npoint[0] = 10\n# TypeError: 'tuple' object\n# does not support item\n# assignment",
+        "You want to be sure a function cannot alter what you passed in: pass a tuple",
+        "It prints ('small', 'regular', 'large')"
+      ],
+      "answer_index": 2,
+      "explanation": "A tuple holds several values in order, written with parentheses: `point = (3, 5)`. It works like a list for reading, so `point[0]` is 3. That reasoning supports the answer: You want to be sure a function cannot alter what you passed in: pass a tuple"
     }
   ]
 }

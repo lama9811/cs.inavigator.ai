@@ -175,63 +175,6 @@
       }
     },
     {
-      "id": "lists-advice-01",
-      "concept": "lists",
-      "difficulty": "easy",
-      "kind": "mcq-behavior",
-      "title": "Lists / Arrays advice",
-      "variants": {
-        "python": {
-          "code": null,
-          "prompt": "Which is a useful practice for Lists / Arrays?",
-          "choices": [
-            "The first item is at index 0, and the last is at `len(lst) - 1`. Use `lst[-1]` and skip the arithmetic.",
-            "Skip input checks and assume every value is valid.",
-            "Hide every error and continue without checking the result.",
-            "Put all of the work in one long statement."
-          ],
-          "answer_index": 0,
-          "explanation": "The first item is at index 0, and the last is at `len(lst) - 1`. Use `lst[-1]` and skip the arithmetic. This keeps the code easier to understand and verify."
-        },
-        "java": {
-          "code": null,
-          "prompt": "Which is a useful practice for Lists / Arrays?",
-          "choices": [
-            "The first index is 0 and the last is `length - 1`. Loop with `i < arr.length`, never `i <= arr.length`.",
-            "Skip input checks and assume every value is valid.",
-            "Hide every error and continue without checking the result.",
-            "Put all of the work in one long statement."
-          ],
-          "answer_index": 0,
-          "explanation": "The first index is 0 and the last is `length - 1`. Loop with `i < arr.length`, never `i <= arr.length`. This keeps the code easier to understand and verify."
-        },
-        "javascript": {
-          "code": null,
-          "prompt": "Which is a useful practice for Lists / Arrays?",
-          "choices": [
-            "Begin indexing at zero.",
-            "Skip input checks and assume every value is valid.",
-            "Hide every error and continue without checking the result.",
-            "Put all of the work in one long statement."
-          ],
-          "answer_index": 0,
-          "explanation": "Begin indexing at zero. This keeps the code easier to understand and verify."
-        },
-        "cpp": {
-          "code": null,
-          "prompt": "Which is a useful practice for Lists / Arrays?",
-          "choices": [
-            "Include vector.",
-            "Skip input checks and assume every value is valid.",
-            "Hide every error and continue without checking the result.",
-            "Put all of the work in one long statement."
-          ],
-          "answer_index": 0,
-          "explanation": "Include vector. This keeps the code easier to understand and verify."
-        }
-      }
-    },
-    {
       "id": "lists-supplement-01",
       "concept": "lists",
       "difficulty": "easy",
@@ -239,337 +182,466 @@
       "title": "Lists / Arrays practice 5",
       "variants": {
         "python": {
-          "code": null,
-          "prompt": "Which version follows the lesson's safer approach?",
+          "code": "nums = [1, 2, 2, 3, 2]\nfor n in nums:\n    if n == 2:\n        nums.remove(n)\nprint(nums)",
+          "prompt": "What does this print, and why?",
           "choices": [
-            "nums = [1, 2, 2, 3, 2]\nkeep = []\nfor n in nums:\n    if n != 2:\n        keep.append(n)\nprint(keep)\n# [1, 3]\n# every 2 is gone",
-            "nums = [1, 2, 2, 3, 2]\nfor n in nums:\n    if n == 2:\n        nums.remove(n)\nprint(nums)\n# [1, 3, 2]\n# two 2s left behind",
-            "Both versions are equally safe.",
-            "Neither version can run."
+            "[1, 3, 2] — removing while looping makes the loop skip items",
+            "[1, 3] — every 2 is removed",
+            "[1, 2, 2, 3, 2] — remove does nothing inside a loop",
+            "It raises an error"
           ],
           "answer_index": 0,
-          "explanation": "Removing items from a list while you loop over it makes the loop skip items. The loop tracks its place by position, so deleting an item shifts everything after it back by one, and the loop moves forward past the item that just slid into the empty spot. Build a new list instead and nothing shifts underneath you."
+          "explanation": "Deleting from a list while looping over it shifts later items back by one, and the loop's position still moves forward, so it steps past the item that slid into the gap. Two of the 2s get skipped and survive, leaving [1, 3, 2]. Build a new list instead of mutating the one you are iterating."
         },
         "java": {
-          "code": null,
-          "prompt": "Which version follows the lesson's safer approach?",
+          "code": "int[] arr = {4, 7, 2};\nfor (int i = 0; i <= arr.length; i++) {\n    System.out.println(arr[i]);\n}",
+          "prompt": "What does this loop do?",
           "choices": [
-            "int[] arr = {4, 7, 2};\nfor (int i = 0; i < arr.length; i++) {\n    System.out.println(arr[i]);\n}\n// prints 4, 7, 2\n// then stops",
-            "int[] arr = {4, 7, 2};\nfor (int i = 0; i <= arr.length; i++) {\n    System.out.println(arr[i]);\n}\n// prints 4, 7, 2\n// then throws at i = 3",
-            "Both versions are equally safe.",
-            "Neither version can run."
+            "Prints 4, 7, 2, then throws ArrayIndexOutOfBoundsException at i = 3",
+            "Prints 4, 7, 2 and stops cleanly",
+            "Prints 4, 7, 2, 0",
+            "Fails to compile"
           ],
           "answer_index": 0,
-          "explanation": "The only difference is `<=` in place of `<`. An array of length 3 has no slot 3, so the left loop prints all three items and then asks for one that was never there. Java throws an ArrayIndexOutOfBoundsException. Reading `arr[arr.length]` is wrong for every array that has ever existed, because the length always sits one step past the final index."
+          "explanation": "`<=` lets `i` reach 3, but an array of length 3 has valid indexes 0, 1, 2. `arr[3]` was never allocated, so after printing all three items Java throws ArrayIndexOutOfBoundsException. The length is always one past the last index, so the correct guard is `i < arr.length`."
         },
         "javascript": {
-          "code": null,
-          "prompt": "Which version follows the lesson's safer approach?",
+          "code": "const planned = [...courses];\nplanned.push(\"CS 301\");",
+          "prompt": "After this runs, what is in the original `courses` array?",
           "choices": [
-            "const planned = [...courses];\nplanned.push(\"CS 301\");",
-            "const planned = courses;\nplanned.push(\"CS 301\");",
-            "Both versions are equally safe.",
-            "Neither version can run."
+            "Unchanged — planned is a separate copy",
+            "It also gains \"CS 301\"",
+            "It becomes empty",
+            "It throws, because arrays cannot be spread"
           ],
           "answer_index": 0,
-          "explanation": "Copy before editing when the original must stay unchanged."
+          "explanation": "`[...courses]` builds a new array with the same items, so `planned` and `courses` are independent. Pushing to `planned` does not touch `courses`. Assigning `const planned = courses` (no spread) would share one array, and then the push would show up in both."
         },
         "cpp": {
-          "code": null,
-          "prompt": "Which version follows the lesson's safer approach?",
+          "code": "int value = scores.at(index);",
+          "prompt": "How does `scores.at(index)` differ from `scores[index]` when `index` is out of range?",
           "choices": [
-            "int value = scores.at(index);",
-            "int value = scores[index];",
-            "Both versions are equally safe.",
-            "Neither version can run."
+            "at() throws std::out_of_range; [] is undefined behavior",
+            "They behave identically",
+            "at() returns 0; [] returns -1",
+            "at() is invalid syntax on a vector"
           ],
           "answer_index": 0,
-          "explanation": "Ask for checked access while a boundary is uncertain."
+          "explanation": "`at()` checks the bound and throws `std::out_of_range` on a bad index, so the failure is visible. `operator[]` does not check and reads invalid memory, which is undefined behavior and may not crash right away. Prefer `at()` when the index might be out of range."
         }
       }
     },
     {
-      "id": "lists-supplement-02",
+      "id": "lists-authored-01",
       "concept": "lists",
-      "difficulty": "easy",
+      "difficulty": "medium",
       "kind": "mcq-behavior",
-      "title": "Lists / Arrays practice 6",
+      "title": "Lists / Arrays concept check 1",
       "variants": {
         "python": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 1",
           "code": null,
-          "prompt": "Which statement best explains 'The length is one past the last index'?",
+          "prompt": "What does the lesson mean by \"The length is one past the last index\"?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "A list with 4 items has a length of 4, but its last index is 3. Asking for `scores[4]` reaches past the end and Python stops with an IndexError. The length is a count of items, not a position, and the two are always off by one. When you want the last item, ask for `scores[-1]` or `scores[len(scores) - 1]`.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "It prints blue",
+            "A list with 4 items has a length of 4, but its last index is 3. Asking for `scores[4]` reaches past the end and Python stops with an IndexError.",
+            "It prints red",
+            "It prints 3"
           ],
           "answer_index": 1,
-          "explanation": "A list with 4 items has a length of 4, but its last index is 3. Asking for `scores[4]` reaches past the end and Python stops with an IndexError. The length is a count of items, not a position, and the two are always off by one. When you want the last item, ask for `scores[-1]` or `scores[len(scores) - 1]`."
+          "explanation": "A list holds several values in order, written in square brackets: `scores = [88, 92, 75]`. You reach an item by its position, and positions start at 0, so `scores[0]` is the first one. That reasoning supports the answer: A list with 4 items has a length of 4, but its last index is 3. Asking for `scores[4]` reaches past the end and Python stops with an IndexError."
         },
         "java": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 1",
           "code": null,
-          "prompt": "Which statement best explains 'On an array, length is a field and takes no parentheses'?",
+          "prompt": "What does the lesson mean by \"On an array, length is a field and takes no parentheses\"?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Write `scores.length`. Write `scores.length()` and the compiler stops with \"cannot find symbol: method length()\". Those parentheses are not a harmless extra. They tell Java to go looking for a method, and an array has none by that name.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "It prints 0, 3, and done, because assigning to scores[3] grows the array",
+            "Write `scores.length`. Write `scores.length()` and the compiler stops with \"cannot find symbol: method length()\".",
+            "It refuses to compile, because slot 3 does not exist",
+            "It prints nothing, because the array was never filled in"
           ],
           "answer_index": 1,
-          "explanation": "Write `scores.length`. Write `scores.length()` and the compiler stops with \"cannot find symbol: method length()\". Those parentheses are not a harmless extra. They tell Java to go looking for a method, and an array has none by that name."
+          "explanation": "An array holds a fixed number of values of one type: `int[] nums = new int[5];` reserves exactly 5 slots, and that size never changes. Positions start at 0, so the last valid index is `nums.length - 1`. That reasoning supports the answer: Write `scores.length`. Write `scores.length()` and the compiler stops with \"cannot find symbol: method length()\"."
         },
         "javascript": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 1",
           "code": null,
-          "prompt": "Which statement best explains 'Check the boundary'?",
+          "prompt": "What does the lesson mean by \"Check the boundary\"?",
           "choices": [
-            "Skip checks and assume every value is valid.",
+            "values[values.length]",
             "Const prevents assigning a different array to the variable, but it does not freeze the current array contents.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "values[-1]",
+            "values.last"
           ],
           "answer_index": 1,
-          "explanation": "Const prevents assigning a different array to the variable, but it does not freeze the current array contents."
+          "explanation": "Arrays hold ordered values with zero-based indexes. `.length` gives the count, `.push(value)` adds at the end, and `.pop()` removes the final item. That reasoning supports the answer: Const prevents assigning a different array to the variable, but it does not freeze the current array contents."
         },
         "cpp": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 1",
           "code": null,
-          "prompt": "Which statement best explains 'Follow the data'?",
+          "prompt": "What does the lesson mean by \"Follow the data\"?",
           "choices": [
-            "Skip checks and assume every value is valid.",
+            "3",
             "Unchecked bracket access past the end causes undefined behavior. Use valid index bounds, or `.at()` when you want an exception for an invalid position.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "1",
+            "4"
           ],
           "answer_index": 1,
-          "explanation": "Unchecked bracket access past the end causes undefined behavior. Use valid index bounds, or `.at()` when you want an exception for an invalid position."
+          "explanation": "A fixed array has a compile-time size, while `std::vector` can grow. Vector indexes start at zero, `.size()` returns the count, and `.push_back` appends. That reasoning supports the answer: Unchecked bracket access past the end causes undefined behavior. Use valid index bounds, or `.at()` when you want an exception for an invalid position."
         }
       }
     },
     {
-      "id": "lists-supplement-03",
+      "id": "lists-authored-02",
       "concept": "lists",
-      "difficulty": "easy",
+      "difficulty": "medium",
       "kind": "mcq-behavior",
-      "title": "Lists / Arrays practice 7",
+      "title": "Lists / Arrays concept check 2",
       "variants": {
         "python": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 2",
           "code": null,
-          "prompt": "Which statement best explains 'remove takes a value, pop takes a position'?",
+          "prompt": "What does the lesson mean by \"remove takes a value, pop takes a position\"?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "The two are easy to mix up. `tasks.remove(\"code\")` looks for the item \"code\" and deletes the first one it finds. `tasks.pop(0)` deletes whatever is sitting at position 0, no matter what it is. If you hand `.remove()` a value that is not in the list, Python raises a ValueError, so check with `in` first when you are not certain.",
-            "Put every step into one long statement."
+            "`.remove()` only ever deletes one item, no matter how many times you call it",
+            "The loop ends early because the list got shorter than it started",
+            "The two are easy to mix up. `tasks.remove(\"code\")` looks for the item \"code\" and deletes the first one it finds.",
+            "`.remove()` cannot delete numbers, only strings"
           ],
           "answer_index": 2,
-          "explanation": "The two are easy to mix up. `tasks.remove(\"code\")` looks for the item \"code\" and deletes the first one it finds. `tasks.pop(0)` deletes whatever is sitting at position 0, no matter what it is. If you hand `.remove()` a value that is not in the list, Python raises a ValueError, so check with `in` first when you are not certain."
+          "explanation": "A list holds several values in order, written in square brackets: `scores = [88, 92, 75]`. You reach an item by its position, and positions start at 0, so `scores[0]` is the first one. That reasoning supports the answer: The two are easy to mix up. `tasks.remove(\"code\")` looks for the item \"code\" and deletes the first one it finds."
         },
         "java": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 2",
           "code": null,
-          "prompt": "Which statement best explains 'ArrayList<int> does not compile. You need ArrayList<Integer>.'?",
+          "prompt": "What does the lesson mean by \"ArrayList<int> does not compile. You need ArrayList<Integer>.\"?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "An ArrayList can only hold objects, and `int` is not one. It is a primitive: a plain machine number with no methods attached. `Integer` is the object version of that same value, and `Integer` is what goes in the angle brackets. Once the list is declared that way you can still write `nums.add(10)` and read items back into an `int`, because Java converts between the two on its own. The pairs worth memorizing are `int` with `Integer`, `double` with `Double`, and `char` with `Character`.",
-            "Put every step into one long statement."
+            "`System.out.println(names.length);`",
+            "`System.out.println(names.length());`",
+            "An ArrayList can only hold objects, and `int` is not one. It is a primitive: a plain machine number with no methods attached.",
+            "`System.out.println(len(names));`"
           ],
           "answer_index": 2,
-          "explanation": "An ArrayList can only hold objects, and `int` is not one. It is a primitive: a plain machine number with no methods attached. `Integer` is the object version of that same value, and `Integer` is what goes in the angle brackets. Once the list is declared that way you can still write `nums.add(10)` and read items back into an `int`, because Java converts between the two on its own. The pairs worth memorizing are `int` with `Integer`, `double` with `Double`, and `char` with `Character`."
+          "explanation": "An array holds a fixed number of values of one type: `int[] nums = new int[5];` reserves exactly 5 slots, and that size never changes. Positions start at 0, so the last valid index is `nums.length - 1`. That reasoning supports the answer: An ArrayList can only hold objects, and `int` is not one. It is a primitive: a plain machine number with no methods attached."
         },
         "javascript": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 2",
           "code": null,
-          "prompt": "Which is a useful practice for Lists / Arrays?",
+          "prompt": "Which choice describes a reliable Lists / Arrays practice?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "Subtract one for the end.",
-            "Put every step into one long statement."
+            "1",
+            "orange",
+            "Begin indexing at zero.",
+            "a const error"
           ],
           "answer_index": 2,
-          "explanation": "Subtract one for the end. This makes the result easier to understand and verify."
+          "explanation": "Arrays hold ordered values with zero-based indexes. `.length` gives the count, `.push(value)` adds at the end, and `.pop()` removes the final item. That reasoning supports the answer: Begin indexing at zero."
         },
         "cpp": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 2",
           "code": null,
-          "prompt": "Which is a useful practice for Lists / Arrays?",
+          "prompt": "Which choice describes a reliable Lists / Arrays practice?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "Begin at zero.",
-            "Put every step into one long statement."
+            "values.add(9);",
+            "values[values.size()];",
+            "Include vector.",
+            "append(values,9);"
           ],
           "answer_index": 2,
-          "explanation": "Begin at zero. This makes the result easier to understand and verify."
+          "explanation": "A fixed array has a compile-time size, while `std::vector` can grow. Vector indexes start at zero, `.size()` returns the count, and `.push_back` appends. That reasoning supports the answer: Include vector."
         }
       }
     },
     {
-      "id": "lists-supplement-04",
+      "id": "lists-authored-03",
       "concept": "lists",
-      "difficulty": "easy",
+      "difficulty": "medium",
       "kind": "mcq-behavior",
-      "title": "Lists / Arrays practice 8",
+      "title": "Lists / Arrays concept check 3",
       "variants": {
         "python": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 3",
           "code": null,
-          "prompt": "Which statement best explains 'When a list result is close but not quite right'?",
+          "prompt": "What does the lesson mean by \"When a list result is close but not quite right\"?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement.",
-            "A list that comes out one item short, or one item long, or missing exactly the values that sat next to each other, is almost always one of two bugs. Either an index is off by one, or you changed the list while looping over it. Print the list before and after the loop and compare. The difference usually names the bug for you."
+            "nums = [1, 2, 2, 3, 2]\nfor n in nums:\n    if n == 2:\n        nums.remove(n)\nprint(nums)\n# [1, 3, 2]\n# two 2s left behind",
+            "It prints 3",
+            "`.remove()` only ever deletes one item, no matter how many times you call it",
+            "A list that comes out one item short, or one item long, or missing exactly the values that sat next to each other, is almost always one of two bugs. Either an index is off by one, or you changed the list while looping over it."
           ],
           "answer_index": 3,
-          "explanation": "A list that comes out one item short, or one item long, or missing exactly the values that sat next to each other, is almost always one of two bugs. Either an index is off by one, or you changed the list while looping over it. Print the list before and after the loop and compare. The difference usually names the bug for you."
+          "explanation": "A list holds several values in order, written in square brackets: `scores = [88, 92, 75]`. You reach an item by its position, and positions start at 0, so `scores[0]` is the first one. That reasoning supports the answer: A list that comes out one item short, or one item long, or missing exactly the values that sat next to each other, is almost always one of two bugs. Either an index is off by one, or you changed the list while looping over it."
         },
         "java": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 3",
           "code": null,
-          "prompt": "Which statement best explains 'A compile error happens before your program runs at all'?",
+          "prompt": "What does the lesson mean by \"A compile error happens before your program runs at all\"?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement.",
-            "Java checks types while it builds your program, so `ArrayList<int>` and `nums.length()` are caught before a single line executes. Nothing you wrote ever ran. An ArrayIndexOutOfBoundsException is the opposite: the program compiled cleanly, started running, and only failed when it reached the bad index. Both are worth reading closely. The compiler names the file, the line, and usually the exact symbol it went looking for and could not find."
+            "int[] arr = {4, 7, 2};\nfor (int i = 0; i <= arr.length; i++) {\n    System.out.println(arr[i]);\n}\n// prints 4, 7, 2\n// then throws at i = 3",
+            "It prints nothing, because the array was never filled in",
+            "`System.out.println(names.length);`",
+            "Java checks types while it builds your program, so `ArrayList<int>` and `nums.length()` are caught before a single line executes. Nothing you wrote ever ran."
           ],
           "answer_index": 3,
-          "explanation": "Java checks types while it builds your program, so `ArrayList<int>` and `nums.length()` are caught before a single line executes. Nothing you wrote ever ran. An ArrayIndexOutOfBoundsException is the opposite: the program compiled cleanly, started running, and only failed when it reached the bad index. Both are worth reading closely. The compiler names the file, the line, and usually the exact symbol it went looking for and could not find."
+          "explanation": "An array holds a fixed number of values of one type: `int[] nums = new int[5];` reserves exactly 5 slots, and that size never changes. Positions start at 0, so the last valid index is `nums.length - 1`. That reasoning supports the answer: Java checks types while it builds your program, so `ArrayList<int>` and `nums.length()` are caught before a single line executes. Nothing you wrote ever ran."
         },
         "javascript": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 3",
           "code": null,
-          "prompt": "Which is a useful practice for Lists / Arrays?",
+          "prompt": "Which recommendation belongs in a review of Lists / Arrays code?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement.",
-            "Use push and pop deliberately."
+            "const planned = courses;\nplanned.push(\"CS 301\");",
+            "values.last",
+            "1",
+            "Subtract one for the end."
           ],
           "answer_index": 3,
-          "explanation": "Use push and pop deliberately. This makes the result easier to understand and verify."
+          "explanation": "Arrays hold ordered values with zero-based indexes. `.length` gives the count, `.push(value)` adds at the end, and `.pop()` removes the final item. That reasoning supports the answer: Subtract one for the end."
         },
         "cpp": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 3",
           "code": null,
-          "prompt": "Which is a useful practice for Lists / Arrays?",
+          "prompt": "Which recommendation belongs in a review of Lists / Arrays code?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement.",
-            "Stay below size."
+            "int value = scores[index];",
+            "4",
+            "values.add(9);",
+            "Begin at zero."
           ],
           "answer_index": 3,
-          "explanation": "Stay below size. This makes the result easier to understand and verify."
+          "explanation": "A fixed array has a compile-time size, while `std::vector` can grow. Vector indexes start at zero, `.size()` returns the count, and `.push_back` appends. That reasoning supports the answer: Begin at zero."
         }
       }
     },
     {
-      "id": "lists-supplement-05",
+      "id": "lists-authored-04",
       "concept": "lists",
-      "difficulty": "easy",
+      "difficulty": "medium",
       "kind": "mcq-behavior",
-      "title": "Lists / Arrays practice 9",
+      "title": "Lists / Arrays concept check 4",
       "variants": {
         "python": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 4",
           "code": null,
-          "prompt": "Which is a useful practice for Lists / Arrays?",
+          "prompt": "Which guideline helps prevent a common Lists / Arrays mistake?",
           "choices": [
+            "The first item is at index 0, and the last is at `len(lst) - 1`. Use `lst[-1]` and skip the arithmetic.",
+            "The loop ends early because the list got shorter than it started",
+            "`.remove()` cannot delete numbers, only strings",
+            "nums = [1, 2, 2, 3, 2]\nfor n in nums:\n    if n == 2:\n        nums.remove(n)\nprint(nums)\n# [1, 3, 2]\n# two 2s left behind"
+          ],
+          "answer_index": 0,
+          "explanation": "A list holds several values in order, written in square brackets: `scores = [88, 92, 75]`. You reach an item by its position, and positions start at 0, so `scores[0]` is the first one. That reasoning supports the answer: The first item is at index 0, and the last is at `len(lst) - 1`. Use `lst[-1]` and skip the arithmetic."
+        },
+        "java": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 4",
+          "code": null,
+          "prompt": "What does the lesson mean by \"remove on an ArrayList of Integer is genuinely ambiguous\"?",
+          "choices": [
+            "For a list of Integers, `nums.remove(1)` deletes the item at position 1, not the item whose value is 1. Java reads a plain `int` as an index.",
+            "`System.out.println(names.length());`",
+            "`System.out.println(len(names));`",
+            "int[] arr = {4, 7, 2};\nfor (int i = 0; i <= arr.length; i++) {\n    System.out.println(arr[i]);\n}\n// prints 4, 7, 2\n// then throws at i = 3"
+          ],
+          "answer_index": 0,
+          "explanation": "An array holds a fixed number of values of one type: `int[] nums = new int[5];` reserves exactly 5 slots, and that size never changes. Positions start at 0, so the last valid index is `nums.length - 1`. That reasoning supports the answer: For a list of Integers, `nums.remove(1)` deletes the item at position 1, not the item whose value is 1. Java reads a plain `int` as an index."
+        },
+        "javascript": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 4",
+          "code": null,
+          "prompt": "Which guideline helps prevent a common Lists / Arrays mistake?",
+          "choices": [
+            "Use push and pop deliberately.",
+            "orange",
+            "a const error",
+            "const planned = courses;\nplanned.push(\"CS 301\");"
+          ],
+          "answer_index": 0,
+          "explanation": "Arrays hold ordered values with zero-based indexes. `.length` gives the count, `.push(value)` adds at the end, and `.pop()` removes the final item. That reasoning supports the answer: Use push and pop deliberately."
+        },
+        "cpp": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 4",
+          "code": null,
+          "prompt": "Which guideline helps prevent a common Lists / Arrays mistake?",
+          "choices": [
+            "Stay below size.",
+            "values[values.size()];",
+            "append(values,9);",
+            "int value = scores[index];"
+          ],
+          "answer_index": 0,
+          "explanation": "A fixed array has a compile-time size, while `std::vector` can grow. Vector indexes start at zero, `.size()` returns the count, and `.push_back` appends. That reasoning supports the answer: Stay below size."
+        }
+      }
+    },
+    {
+      "id": "lists-authored-05",
+      "concept": "lists",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Lists / Arrays concept check 5",
+      "variants": {
+        "python": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 5",
+          "code": null,
+          "prompt": "A classmate is checking their understanding of Lists / Arrays. Which advice is correct?",
+          "choices": [
+            "It prints blue",
             "Loop with `for item in lst:` when you only need the values. A loop that never touches an index has no index to get wrong.",
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "It prints red",
+            "The loop ends early because the list got shorter than it started"
           ],
-          "answer_index": 0,
-          "explanation": "Loop with `for item in lst:` when you only need the values. A loop that never touches an index has no index to get wrong. This makes the result easier to understand and verify."
+          "answer_index": 1,
+          "explanation": "A list holds several values in order, written in square brackets: `scores = [88, 92, 75]`. You reach an item by its position, and positions start at 0, so `scores[0]` is the first one. That reasoning supports the answer: Loop with `for item in lst:` when you only need the values. A loop that never touches an index has no index to get wrong."
         },
         "java": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 5",
           "code": null,
-          "prompt": "Which statement best explains 'remove on an ArrayList of Integer is genuinely ambiguous'?",
+          "prompt": "A classmate is checking their understanding of Lists / Arrays. Which advice is correct?",
           "choices": [
-            "For a list of Integers, `nums.remove(1)` deletes the item at position 1, not the item whose value is 1. Java reads a plain `int` as an index. To delete by value, hand it an object: `nums.remove(Integer.valueOf(1))`. An `ArrayList<String>` has no such problem, since `remove(\"read\")` can only mean the value. If a number quietly vanishes from the wrong spot in your list, this is why.",
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "It prints 0, 3, and done, because assigning to scores[3] grows the array",
+            "The first index is 0 and the last is `length - 1`. Loop with `i < arr.length`, never `i <= arr.length`.",
+            "It refuses to compile, because slot 3 does not exist",
+            "`System.out.println(names.length());`"
           ],
-          "answer_index": 0,
-          "explanation": "For a list of Integers, `nums.remove(1)` deletes the item at position 1, not the item whose value is 1. Java reads a plain `int` as an index. To delete by value, hand it an object: `nums.remove(Integer.valueOf(1))`. An `ArrayList<String>` has no such problem, since `remove(\"read\")` can only mean the value. If a number quietly vanishes from the wrong spot in your list, this is why."
+          "answer_index": 1,
+          "explanation": "An array holds a fixed number of values of one type: `int[] nums = new int[5];` reserves exactly 5 slots, and that size never changes. Positions start at 0, so the last valid index is `nums.length - 1`. That reasoning supports the answer: The first index is 0 and the last is `length - 1`. Loop with `i < arr.length`, never `i <= arr.length`."
         },
         "javascript": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 5",
           "code": null,
-          "prompt": "Which is a useful practice for Lists / Arrays?",
+          "prompt": "A classmate is checking their understanding of Lists / Arrays. Which advice is correct?",
           "choices": [
+            "values[values.length]",
             "Know which methods mutate.",
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "values[-1]",
+            "orange"
           ],
-          "answer_index": 0,
-          "explanation": "Know which methods mutate. This makes the result easier to understand and verify."
+          "answer_index": 1,
+          "explanation": "Arrays hold ordered values with zero-based indexes. `.length` gives the count, `.push(value)` adds at the end, and `.pop()` removes the final item. That reasoning supports the answer: Know which methods mutate."
         },
         "cpp": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 5",
           "code": null,
-          "prompt": "Which is a useful practice for Lists / Arrays?",
+          "prompt": "A classmate is checking their understanding of Lists / Arrays. Which advice is correct?",
           "choices": [
+            "3",
             "Choose checked access when useful.",
-            "Skip checks and assume every value is valid.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "1",
+            "values[values.size()];"
           ],
-          "answer_index": 0,
-          "explanation": "Choose checked access when useful. This makes the result easier to understand and verify."
+          "answer_index": 1,
+          "explanation": "A fixed array has a compile-time size, while `std::vector` can grow. Vector indexes start at zero, `.size()` returns the count, and `.push_back` appends. That reasoning supports the answer: Choose checked access when useful."
         }
       }
     },
     {
-      "id": "lists-supplement-06",
+      "id": "lists-authored-06",
       "concept": "lists",
-      "difficulty": "easy",
+      "difficulty": "medium",
       "kind": "mcq-behavior",
-      "title": "Lists / Arrays practice 10",
+      "title": "Lists / Arrays concept check 6",
       "variants": {
         "python": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 6",
           "code": null,
-          "prompt": "Which statement best describes Lists / Arrays?",
+          "prompt": "Which choice shows sound reasoning about Lists / Arrays?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Hold many values under one name, in order.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "`.remove()` cannot delete numbers, only strings",
+            "nums = [1, 2, 2, 3, 2]\nfor n in nums:\n    if n == 2:\n        nums.remove(n)\nprint(nums)\n# [1, 3, 2]\n# two 2s left behind",
+            "Avoid adding to or removing from a list while you loop over it. Build a new list of what you want to keep.",
+            "It prints blue"
           ],
-          "answer_index": 1,
-          "explanation": "A list holds several values in order, written in square brackets: `scores = [88, 92, 75]`. You reach an item by its position, and positions start at 0, so `scores[0]` is the first one. `len(scores)` tells you how many items there are. Because counting starts at 0, the last valid position is always one less than the length. Lists can change after you make them: `.append(x)` adds to the end, `.pop()` removes the last item, and `.remove(x)` removes the first item equal to x."
+          "answer_index": 2,
+          "explanation": "A list holds several values in order, written in square brackets: `scores = [88, 92, 75]`. You reach an item by its position, and positions start at 0, so `scores[0]` is the first one. That reasoning supports the answer: Avoid adding to or removing from a list while you loop over it. Build a new list of what you want to keep."
         },
         "java": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 6",
           "code": null,
-          "prompt": "Which statement best describes Lists / Arrays?",
+          "prompt": "Which choice shows sound reasoning about Lists / Arrays?",
           "choices": [
-            "Skip checks and assume every value is valid.",
-            "Hold many values under one name: a fixed array, or a growable ArrayList.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "`System.out.println(len(names));`",
+            "int[] arr = {4, 7, 2};\nfor (int i = 0; i <= arr.length; i++) {\n    System.out.println(arr[i]);\n}\n// prints 4, 7, 2\n// then throws at i = 3",
+            "`arr[arr.length]` is out of bounds for every array, always. For the final item, ask for `arr[arr.length - 1]`.",
+            "It prints 0, 3, and done, because assigning to scores[3] grows the array"
           ],
-          "answer_index": 1,
-          "explanation": "An array holds a fixed number of values of one type: `int[] nums = new int[5];` reserves exactly 5 slots, and that size never changes. Positions start at 0, so the last valid index is `nums.length - 1`. On an array, `length` is a field, so it takes no parentheses. When you do not know the count ahead of time, use an `ArrayList`, which grows as you add to it: `add` puts an item on the end, `get(i)` reads one, `size()` counts them. An ArrayList holds objects, so a list of whole numbers is `ArrayList<Integer>`, never `ArrayList<int>`."
+          "answer_index": 2,
+          "explanation": "An array holds a fixed number of values of one type: `int[] nums = new int[5];` reserves exactly 5 slots, and that size never changes. Positions start at 0, so the last valid index is `nums.length - 1`. That reasoning supports the answer: `arr[arr.length]` is out of bounds for every array, always. For the final item, ask for `arr[arr.length - 1]`."
         },
         "javascript": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 6",
           "code": null,
-          "prompt": "Which statement best describes Lists / Arrays?",
+          "prompt": "What is the main idea behind Lists / Arrays?",
           "choices": [
-            "Skip checks and assume every value is valid.",
+            "a const error",
+            "const planned = courses;\nplanned.push(\"CS 301\");",
             "Store ordered values and access them by index.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "values[values.length]"
           ],
-          "answer_index": 1,
-          "explanation": "Arrays hold ordered values with zero-based indexes. `.length` gives the count, `.push(value)` adds at the end, and `.pop()` removes the final item."
+          "answer_index": 2,
+          "explanation": "Arrays hold ordered values with zero-based indexes. `.length` gives the count, `.push(value)` adds at the end, and `.pop()` removes the final item. That reasoning supports the answer: Store ordered values and access them by index."
         },
         "cpp": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Lists / Arrays concept check 6",
           "code": null,
-          "prompt": "Which statement best describes Lists / Arrays?",
+          "prompt": "What is the main idea behind Lists / Arrays?",
           "choices": [
-            "Skip checks and assume every value is valid.",
+            "append(values,9);",
+            "int value = scores[index];",
             "Store ordered elements in arrays and vectors.",
-            "Hide errors and continue without checking the result.",
-            "Put every step into one long statement."
+            "3"
           ],
-          "answer_index": 1,
-          "explanation": "A fixed array has a compile-time size, while `std::vector` can grow. Vector indexes start at zero, `.size()` returns the count, and `.push_back` appends."
+          "answer_index": 2,
+          "explanation": "A fixed array has a compile-time size, while `std::vector` can grow. Vector indexes start at zero, `.size()` returns the count, and `.push_back` appends. That reasoning supports the answer: Store ordered elements in arrays and vectors."
         }
       }
     }

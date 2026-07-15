@@ -55,126 +55,130 @@
       "explanation": "The setup registers one listener. Each click then updates the stored count and the page text. The resulting output is 'The displayed number increases after each click.'."
     },
     {
-      "id": "javascript-dom-events-advice-01",
-      "concept": "dom-events",
-      "difficulty": "medium",
-      "kind": "mcq-behavior",
-      "language": "javascript",
-      "title": "DOM & Events good practice",
-      "code": null,
-      "prompt": "Which is a useful practice for DOM & Events?",
-      "choices": [
-        "Select the intended element precisely.",
-        "Skip input checks and assume every value is valid.",
-        "Hide every error and continue without checking the result.",
-        "Put all of the work in one long statement."
-      ],
-      "answer_index": 0,
-      "explanation": "Select the intended element precisely. This keeps the code easier to understand and verify."
-    },
-    {
       "id": "javascript-dom-events-supplement-01",
       "concept": "dom-events",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
       "title": "DOM & Events practice 5",
-      "code": null,
-      "prompt": "Which version follows the lesson's safer approach?",
+      "code": "const target = document.querySelector(\"#missing\");\nif (target) target.textContent = \"Ready\";",
+      "prompt": "Why guard with `if (target)` before setting `target.textContent`?",
       "choices": [
-        "const target = document.querySelector(\"#missing\");\nif (target) target.textContent = \"Ready\";",
-        "document.querySelector(\"#missing\").textContent = \"Ready\";",
-        "Both versions are equally safe.",
-        "Neither version can run."
+        "querySelector returns null when nothing matches, and reading null.textContent throws",
+        "textContent is read-only and cannot be assigned",
+        "querySelector returns an array that must be indexed",
+        "The guard makes the selector run faster"
       ],
       "answer_index": 0,
-      "explanation": "Selection can fail when the id is wrong or the script runs before the element exists. Check the returned value before using it."
+      "explanation": "When no element matches, `querySelector` returns `null`, and `null.textContent = ...` throws a TypeError. The guard runs the assignment only when an element was found. `querySelector` returns a single element (not an array), `textContent` is writable, and the check is about safety, not speed."
     },
     {
-      "id": "javascript-dom-events-supplement-02",
+      "id": "javascript-dom-events-authored-01",
       "concept": "dom-events",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "DOM & Events practice 6",
+      "title": "DOM & Events concept check 1",
       "code": null,
-      "prompt": "Which statement best explains 'Use textContent for plain text'?",
+      "prompt": "What does the lesson mean by \"Use textContent for plain text\"?",
       "choices": [
-        "Skip checks and assume every value is valid.",
+        "An empty string",
         "`innerHTML` asks the browser to parse markup. Use `textContent` for ordinary user-facing text, especially when a value came from input, so text is displayed rather than treated as page structure.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "false only",
+        "A new element"
       ],
       "answer_index": 1,
-      "explanation": "`innerHTML` asks the browser to parse markup. Use `textContent` for ordinary user-facing text, especially when a value came from input, so text is displayed rather than treated as page structure."
+      "explanation": "The DOM represents the page as objects. Select an element, verify it exists, then register an event listener. That reasoning supports the answer: `innerHTML` asks the browser to parse markup. Use `textContent` for ordinary user-facing text, especially when a value came from input, so text is displayed rather than treated as page structure."
     },
     {
-      "id": "javascript-dom-events-supplement-03",
+      "id": "javascript-dom-events-authored-02",
       "concept": "dom-events",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "DOM & Events practice 7",
+      "title": "DOM & Events concept check 2",
       "code": null,
-      "prompt": "Which is a useful practice for DOM & Events?",
+      "prompt": "Which choice describes a reliable DOM & Events practice?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Check a selector result before use.",
-        "Put every step into one long statement."
+        "As soon as it is registered",
+        "Before the page loads every time",
+        "Select the intended element precisely.",
+        "Only when the function returns text"
       ],
       "answer_index": 2,
-      "explanation": "Check a selector result before use. This makes the result easier to understand and verify."
+      "explanation": "The DOM represents the page as objects. Select an element, verify it exists, then register an event listener. That reasoning supports the answer: Select the intended element precisely."
     },
     {
-      "id": "javascript-dom-events-supplement-04",
+      "id": "javascript-dom-events-authored-03",
       "concept": "dom-events",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "DOM & Events practice 8",
+      "title": "DOM & Events concept check 3",
       "code": null,
-      "prompt": "Which is a useful practice for DOM & Events?",
+      "prompt": "Which recommendation belongs in a review of DOM & Events code?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement.",
-        "Keep listeners short and focused."
+        "document.querySelector(\"#missing\").textContent = \"Ready\";",
+        "A new element",
+        "As soon as it is registered",
+        "Check a selector result before use."
       ],
       "answer_index": 3,
-      "explanation": "Keep listeners short and focused. This makes the result easier to understand and verify."
+      "explanation": "The DOM represents the page as objects. Select an element, verify it exists, then register an event listener. That reasoning supports the answer: Check a selector result before use."
     },
     {
-      "id": "javascript-dom-events-supplement-05",
+      "id": "javascript-dom-events-authored-04",
       "concept": "dom-events",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "DOM & Events practice 9",
+      "title": "DOM & Events concept check 4",
       "code": null,
-      "prompt": "Which is a useful practice for DOM & Events?",
+      "prompt": "Which guideline helps prevent a common DOM & Events mistake?",
       "choices": [
-        "Display untrusted text with textContent.",
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "Keep listeners short and focused.",
+        "Before the page loads every time",
+        "Only when the function returns text",
+        "document.querySelector(\"#missing\").textContent = \"Ready\";"
       ],
       "answer_index": 0,
-      "explanation": "Display untrusted text with textContent. This makes the result easier to understand and verify."
+      "explanation": "The DOM represents the page as objects. Select an element, verify it exists, then register an event listener. That reasoning supports the answer: Keep listeners short and focused."
     },
     {
-      "id": "javascript-dom-events-supplement-06",
+      "id": "javascript-dom-events-authored-05",
       "concept": "dom-events",
       "difficulty": "medium",
-      "kind": "typein",
+      "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "DOM & Events practice 10",
-      "code": "const button = document.querySelector(\"#count\");\nconst output = document.querySelector(\"#output\");\nlet count = 0;\nbutton.addEventListener(\"click\", () => {\n  count += 1;\n  output.textContent = count;\n});",
-      "prompt": "What output does this code produce? Enter each line in order.",
-      "accepted": [
-        "The displayed number increases after each click."
+      "title": "DOM & Events concept check 5",
+      "code": null,
+      "prompt": "A classmate is checking their understanding of DOM & Events. Which advice is correct?",
+      "choices": [
+        "An empty string",
+        "Display untrusted text with textContent.",
+        "false only",
+        "Before the page loads every time"
       ],
-      "explanation": "The setup registers one listener. Each click then updates the stored count and the page text. The output is 'The displayed number increases after each click.'."
+      "answer_index": 1,
+      "explanation": "The DOM represents the page as objects. Select an element, verify it exists, then register an event listener. That reasoning supports the answer: Display untrusted text with textContent."
+    },
+    {
+      "id": "javascript-dom-events-authored-06",
+      "concept": "dom-events",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "DOM & Events concept check 6",
+      "code": null,
+      "prompt": "What is the main idea behind DOM & Events?",
+      "choices": [
+        "Only when the function returns text",
+        "document.querySelector(\"#missing\").textContent = \"Ready\";",
+        "Connect JavaScript behavior to page elements and user actions.",
+        "An empty string"
+      ],
+      "answer_index": 2,
+      "explanation": "The DOM represents the page as objects. Select an element, verify it exists, then register an event listener. That reasoning supports the answer: Connect JavaScript behavior to page elements and user actions."
     }
   ]
 }

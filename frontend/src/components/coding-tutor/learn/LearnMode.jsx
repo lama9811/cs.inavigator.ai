@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FaBookOpen, FaArrowRight, FaLock } from "react-icons/fa";
+import { FaBookOpen, FaArrowRight, FaArrowLeft, FaLock } from "react-icons/fa";
 import { LANGUAGE_VISUALS } from "../concept-quiz/languageVisuals";
 import LessonView from "./LessonView";
 
@@ -94,6 +94,10 @@ function TrackCards({ language, languageLabel, categories, onPick, onBack }) {
 
   return (
     <div className="learn-tracks">
+      <button type="button" className="learn-back-link" onClick={onBack}>
+        <FaArrowLeft aria-hidden="true" /> All languages
+      </button>
+
       <header className="learn-tracks-head">
         <span className="lesson-kicker">{languageLabel}</span>
         <h2>Choose your learning track</h2>
@@ -127,9 +131,16 @@ function TrackCards({ language, languageLabel, categories, onPick, onBack }) {
               <span className="learn-track-title">{track.label}</span>
               <span className="learn-track-description">{track.description}</span>
               <span className="learn-track-stats">
-                <span>{ready} lessons</span>
-                <span aria-hidden="true">•</span>
-                <span>{questions} practice questions</span>
+                <span className="learn-track-stat">
+                  <span className="learn-track-stat-num">{ready}</span>
+                  <span className="learn-track-stat-label">
+                    lesson{ready === 1 ? "" : "s"}
+                  </span>
+                </span>
+                <span className="learn-track-stat">
+                  <span className="learn-track-stat-num">{questions}</span>
+                  <span className="learn-track-stat-label">practice questions</span>
+                </span>
               </span>
               <span className="learn-track-cta">
                 {track.cta} <FaArrowRight aria-hidden="true" />
@@ -138,10 +149,6 @@ function TrackCards({ language, languageLabel, categories, onPick, onBack }) {
           );
         })}
       </div>
-
-      <button type="button" className="practice-guide-viewall" onClick={onBack}>
-        ← All languages
-      </button>
     </div>
   );
 }

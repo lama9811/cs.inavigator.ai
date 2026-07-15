@@ -55,126 +55,130 @@
       "explanation": "The unique pointer owns the Student, move transfers that ownership into active, and cleanup happens automatically when active leaves scope. The resulting output is 'Ada'."
     },
     {
-      "id": "cpp-memory-ownership-advice-01",
-      "concept": "memory-ownership",
-      "difficulty": "medium",
-      "kind": "mcq-behavior",
-      "language": "cpp",
-      "title": "Memory Ownership good practice",
-      "code": null,
-      "prompt": "Which is a useful practice for Memory Ownership?",
-      "choices": [
-        "Prefer values and standard containers first.",
-        "Skip input checks and assume every value is valid.",
-        "Hide every error and continue without checking the result.",
-        "Put all of the work in one long statement."
-      ],
-      "answer_index": 0,
-      "explanation": "Prefer values and standard containers first. This keeps the code easier to understand and verify."
-    },
-    {
       "id": "cpp-memory-ownership-supplement-01",
       "concept": "memory-ownership",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
       "title": "Memory Ownership practice 5",
-      "code": null,
-      "prompt": "Which version follows the lesson's safer approach?",
+      "code": "auto student = std::make_unique<Student>(Student{\"Ada\"});\nuse(student.get());",
+      "prompt": "What happens to the Student when `student` (a unique_ptr) goes out of scope?",
       "choices": [
-        "auto student = std::make_unique<Student>(Student{\"Ada\"});\nuse(student.get());\n// cleanup is automatic",
-        "Student* student = new Student{\"Ada\"};\nuse(student);\n// delete is easy to forget",
-        "Both versions are equally safe.",
-        "Neither version can run."
+        "It is destroyed automatically, with no manual delete needed",
+        "It leaks unless you call delete student",
+        "It is copied, so two Students now exist",
+        "It stays alive until the program ends"
       ],
       "answer_index": 0,
-      "explanation": "Raw new separates allocation from cleanup. A unique pointer keeps both responsibilities in one object lifetime."
+      "explanation": "A `unique_ptr` owns its object and deletes it when the pointer leaves scope. That is the reason to prefer it over raw `new`: the cleanup is tied to the object's lifetime, so there is no `delete` to forget. A unique_ptr cannot be copied, and the object does not outlive its owner."
     },
     {
-      "id": "cpp-memory-ownership-supplement-02",
+      "id": "cpp-memory-ownership-authored-01",
       "concept": "memory-ownership",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Memory Ownership practice 6",
+      "title": "Memory Ownership concept check 1",
       "code": null,
-      "prompt": "Which statement best explains 'Shared pointer is not the default'?",
+      "prompt": "What does the lesson mean by \"Shared pointer is not the default\"?",
       "choices": [
-        "Skip checks and assume every value is valid.",
+        "Copies the owned object automatically",
         "`std::shared_ptr` uses a reference count and is appropriate when ownership is genuinely shared. Using it everywhere can hide unclear lifetime design and can leak cycles, so begin with values, containers, or unique ownership.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "Deletes both pointers",
+        "Makes the object global"
       ],
       "answer_index": 1,
-      "explanation": "`std::shared_ptr` uses a reference count and is appropriate when ownership is genuinely shared. Using it everywhere can hide unclear lifetime design and can leak cycles, so begin with values, containers, or unique ownership."
+      "explanation": "Prefer objects with automatic storage and standard containers. When one owner needs dynamic lifetime, use `std::unique_ptr` with `std::make_unique`. That reasoning supports the answer: `std::shared_ptr` uses a reference count and is appropriate when ownership is genuinely shared. Using it everywhere can hide unclear lifetime design and can leak cycles, so begin with values, containers, or unique ownership."
     },
     {
-      "id": "cpp-memory-ownership-supplement-03",
+      "id": "cpp-memory-ownership-authored-02",
       "concept": "memory-ownership",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Memory Ownership practice 7",
+      "title": "Memory Ownership concept check 2",
       "code": null,
-      "prompt": "Which is a useful practice for Memory Ownership?",
+      "prompt": "Which choice describes a reliable Memory Ownership practice?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Use make_unique for one dynamic owner.",
-        "Put every step into one long statement."
+        "For every local integer",
+        "Whenever a raw reference is enough",
+        "Prefer values and standard containers first.",
+        "To avoid including memory"
       ],
       "answer_index": 2,
-      "explanation": "Use make_unique for one dynamic owner. This makes the result easier to understand and verify."
+      "explanation": "Prefer objects with automatic storage and standard containers. When one owner needs dynamic lifetime, use `std::unique_ptr` with `std::make_unique`. That reasoning supports the answer: Prefer values and standard containers first."
     },
     {
-      "id": "cpp-memory-ownership-supplement-04",
+      "id": "cpp-memory-ownership-authored-03",
       "concept": "memory-ownership",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Memory Ownership practice 8",
+      "title": "Memory Ownership concept check 3",
       "code": null,
-      "prompt": "Which is a useful practice for Memory Ownership?",
+      "prompt": "Which recommendation belongs in a review of Memory Ownership code?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement.",
-        "Move unique ownership deliberately."
+        "Student* student = new Student{\"Ada\"};\nuse(student);\n// delete is easy to forget",
+        "Makes the object global",
+        "For every local integer",
+        "Use make_unique for one dynamic owner."
       ],
       "answer_index": 3,
-      "explanation": "Move unique ownership deliberately. This makes the result easier to understand and verify."
+      "explanation": "Prefer objects with automatic storage and standard containers. When one owner needs dynamic lifetime, use `std::unique_ptr` with `std::make_unique`. That reasoning supports the answer: Use make_unique for one dynamic owner."
     },
     {
-      "id": "cpp-memory-ownership-supplement-05",
+      "id": "cpp-memory-ownership-authored-04",
       "concept": "memory-ownership",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Memory Ownership practice 9",
+      "title": "Memory Ownership concept check 4",
       "code": null,
-      "prompt": "Which is a useful practice for Memory Ownership?",
+      "prompt": "Which guideline helps prevent a common Memory Ownership mistake?",
       "choices": [
-        "Use shared ownership only when the model requires it.",
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "Move unique ownership deliberately.",
+        "Whenever a raw reference is enough",
+        "To avoid including memory",
+        "Student* student = new Student{\"Ada\"};\nuse(student);\n// delete is easy to forget"
       ],
       "answer_index": 0,
-      "explanation": "Use shared ownership only when the model requires it. This makes the result easier to understand and verify."
+      "explanation": "Prefer objects with automatic storage and standard containers. When one owner needs dynamic lifetime, use `std::unique_ptr` with `std::make_unique`. That reasoning supports the answer: Move unique ownership deliberately."
     },
     {
-      "id": "cpp-memory-ownership-supplement-06",
+      "id": "cpp-memory-ownership-authored-05",
       "concept": "memory-ownership",
       "difficulty": "medium",
-      "kind": "typein",
+      "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Memory Ownership practice 10",
-      "code": "#include <iostream>\n#include <memory>\n#include <string>\nstruct Student { std::string name; };\nint main() {\n  auto pending = std::make_unique<Student>(Student{\"Ada\"});\n  auto active = std::move(pending);\n  if (!pending) std::cout << active->name << \"\\n\";\n}",
-      "prompt": "What output does this code produce? Enter each line in order.",
-      "accepted": [
-        "Ada"
+      "title": "Memory Ownership concept check 5",
+      "code": null,
+      "prompt": "A classmate is checking their understanding of Memory Ownership. Which advice is correct?",
+      "choices": [
+        "Copies the owned object automatically",
+        "Use shared ownership only when the model requires it.",
+        "Deletes both pointers",
+        "Whenever a raw reference is enough"
       ],
-      "explanation": "The unique pointer owns the Student, move transfers that ownership into active, and cleanup happens automatically when active leaves scope. The output is 'Ada'."
+      "answer_index": 1,
+      "explanation": "Prefer objects with automatic storage and standard containers. When one owner needs dynamic lifetime, use `std::unique_ptr` with `std::make_unique`. That reasoning supports the answer: Use shared ownership only when the model requires it."
+    },
+    {
+      "id": "cpp-memory-ownership-authored-06",
+      "concept": "memory-ownership",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Memory Ownership concept check 6",
+      "code": null,
+      "prompt": "What is the main idea behind Memory Ownership?",
+      "choices": [
+        "To avoid including memory",
+        "Student* student = new Student{\"Ada\"};\nuse(student);\n// delete is easy to forget",
+        "Use automatic lifetime and smart pointers to make resource responsibility clear.",
+        "Copies the owned object automatically"
+      ],
+      "answer_index": 2,
+      "explanation": "Prefer objects with automatic storage and standard containers. When one owner needs dynamic lifetime, use `std::unique_ptr` with `std::make_unique`. That reasoning supports the answer: Use automatic lifetime and smart pointers to make resource responsibility clear."
     }
   ]
 }

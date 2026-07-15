@@ -55,130 +55,130 @@
       "explanation": "The variable can hold one Status constant. Java checks the name during compilation. The resulting output is 'ACTIVE'."
     },
     {
-      "id": "java-enums-advice-01",
-      "concept": "enums",
-      "difficulty": "medium",
-      "kind": "mcq-behavior",
-      "language": "java",
-      "title": "Enums good practice",
-      "code": null,
-      "prompt": "Which is a useful practice for Enums?",
-      "choices": [
-        "Use an enum for a fixed set of choices.",
-        "Skip input checks and assume every value is valid.",
-        "Hide every error and continue without checking the result.",
-        "Put all of the work in one long statement."
-      ],
-      "answer_index": 0,
-      "explanation": "Use an enum for a fixed set of choices. This keeps the code easier to understand and verify."
-    },
-    {
       "id": "java-enums-supplement-01",
       "concept": "enums",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
       "title": "Enums practice 5",
-      "code": null,
-      "prompt": "Which version follows the lesson's safer approach?",
+      "code": "Status status = Status.ACTIVE;",
+      "prompt": "Why does `Status status = Status.ACTIVE;` catch mistakes that `String status = \"active\";` does not?",
       "choices": [
-        "Status status = Status.ACTIVE;",
-        "String status = \"acitve\";",
-        "Both versions are equally safe.",
-        "Neither version can run."
+        "A misspelled enum constant is a compile error, but a misspelled string is not",
+        "Enums use less memory than strings",
+        "Strings cannot be compared with equals()",
+        "Enums are automatically saved to a file"
       ],
       "answer_index": 0,
-      "explanation": "Strings can contain an unnoticed spelling difference. The enum version is checked by the compiler and gives the value a clear type."
+      "explanation": "`Status.ACTIVns` would not compile, so a typo is caught before the program runs. `\"actvie\"` is a perfectly valid string, so the same typo slips through and fails silently later. The benefit is compile-time checking and a clear type, not memory or storage."
     },
     {
-      "id": "java-enums-supplement-02",
+      "id": "java-enums-authored-01",
       "concept": "enums",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Enums practice 6",
+      "title": "Enums concept check 1",
       "code": null,
-      "prompt": "Which statement best explains 'Changing text into an enum can fail'?",
+      "prompt": "What does the lesson mean by \"Changing text into an enum can fail\"?",
       "choices": [
-        "Skip checks and assume every value is valid.",
+        "Level level = \"MEDIUM\";",
         "`Status.valueOf(text)` requires an exact constant name. Input such as `\"active\"` does not match `ACTIVE` unless you clean or convert it first.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "Level level = 2;",
+        "Level level = new Level();"
       ],
       "answer_index": 1,
-      "explanation": "`Status.valueOf(text)` requires an exact constant name. Input such as `\"active\"` does not match `ACTIVE` unless you clean or convert it first."
+      "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: `Status.valueOf(text)` requires an exact constant name. Input such as `\"active\"` does not match `ACTIVE` unless you clean or convert it first."
     },
     {
-      "id": "java-enums-supplement-03",
+      "id": "java-enums-authored-02",
       "concept": "enums",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Enums practice 7",
+      "title": "Enums concept check 2",
       "code": null,
-      "prompt": "Which is a useful practice for Enums?",
+      "prompt": "Which choice describes a reliable Enums practice?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Name constants clearly and consistently.",
-        "Put every step into one long statement."
+        "HIGH",
+        "2",
+        "Use an enum for a fixed set of choices.",
+        "Nothing"
       ],
       "answer_index": 2,
-      "explanation": "Name constants clearly and consistently. This makes the result easier to understand and verify."
+      "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: Use an enum for a fixed set of choices."
     },
     {
-      "id": "java-enums-supplement-04",
+      "id": "java-enums-authored-03",
       "concept": "enums",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Enums practice 8",
+      "title": "Enums concept check 3",
       "code": null,
-      "prompt": "Which is a useful practice for Enums?",
+      "prompt": "Which recommendation belongs in a review of Enums code?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement.",
-        "Store the enum value instead of a matching string."
+        "String status = \"acitve\";",
+        "Level level = new Level();",
+        "HIGH",
+        "Name constants clearly and consistently."
       ],
       "answer_index": 3,
-      "explanation": "Store the enum value instead of a matching string. This makes the result easier to understand and verify."
+      "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: Name constants clearly and consistently."
     },
     {
-      "id": "java-enums-supplement-05",
+      "id": "java-enums-authored-04",
       "concept": "enums",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Enums practice 9",
+      "title": "Enums concept check 4",
       "code": null,
-      "prompt": "Which is a useful practice for Enums?",
+      "prompt": "Which guideline helps prevent a common Enums mistake?",
       "choices": [
-        "Handle outside text before calling `valueOf`.",
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "Store the enum value instead of a matching string.",
+        "2",
+        "Nothing",
+        "String status = \"acitve\";"
       ],
       "answer_index": 0,
-      "explanation": "Handle outside text before calling `valueOf`. This makes the result easier to understand and verify."
+      "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: Store the enum value instead of a matching string."
     },
     {
-      "id": "java-enums-supplement-06",
+      "id": "java-enums-authored-05",
       "concept": "enums",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Enums practice 10",
+      "title": "Enums concept check 5",
       "code": null,
-      "prompt": "Which is a useful practice for Enums?",
+      "prompt": "A classmate is checking their understanding of Enums. Which advice is correct?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Use switch when each constant needs different behavior.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "Level level = \"MEDIUM\";",
+        "Handle outside text before calling `valueOf`.",
+        "Level level = 2;",
+        "2"
       ],
       "answer_index": 1,
-      "explanation": "Use switch when each constant needs different behavior. This makes the result easier to understand and verify."
+      "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: Handle outside text before calling `valueOf`."
+    },
+    {
+      "id": "java-enums-authored-06",
+      "concept": "enums",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Enums concept check 6",
+      "code": null,
+      "prompt": "Which choice shows sound reasoning about Enums?",
+      "choices": [
+        "Nothing",
+        "String status = \"acitve\";",
+        "Use switch when each constant needs different behavior.",
+        "Level level = \"MEDIUM\";"
+      ],
+      "answer_index": 2,
+      "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: Use switch when each constant needs different behavior."
     }
   ]
 }

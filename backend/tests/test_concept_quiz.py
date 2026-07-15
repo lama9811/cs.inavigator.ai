@@ -317,3 +317,66 @@ def test_shared_questions_exist_in_every_language():
         assert len(set(counts.values())) == 1, (
             f"shared category '{category['id']}' has uneven coverage across languages: {counts}"
         )
+
+
+FILLER_PHRASES = (
+    "skip checks and assume every value is valid",
+    "skip input checks and assume every value is valid",
+    "hide errors and continue",
+    "hide every error and continue",
+    "put every step into one long statement",
+    "put all of the work in one long statement",
+    "inspect this state",
+    "trace this carefully",
+)
+
+
+def test_expanded_banks_do_not_use_filler_templates_or_duplicate_prompts():
+    for language in ALL_LANGUAGES:
+        for category in cq.categories_for_language(language):
+            questions = cq.questions_for_category(language, category["id"])["questions"]
+            if not any("-authored-" in question["id"] for question in questions):
+                continue
+
+            authored_prompts = [
+                question.get("prompt", "").strip().lower()
+                for question in questions
+                if "-authored-" in question["id"] and question.get("prompt", "").strip()
+            ]
+            assert len(authored_prompts) == len(set(authored_prompts)), (
+                f"{language}/{category['id']} repeats an authored question prompt"
+            )
+
+            prompt_code_pairs = [
+                (
+                    question.get("prompt", "").strip().lower(),
+                    question.get("code") or "",
+                )
+                for question in questions
+                if question.get("prompt", "").strip()
+            ]
+            assert len(prompt_code_pairs) == len(set(prompt_code_pairs)), (
+                f"{language}/{category['id']} repeats the same prompt and code"
+            )
+
+            for question in questions:
+                rendered = str(question).lower()
+                matched = [phrase for phrase in FILLER_PHRASES if phrase in rendered]
+                assert not matched, (
+                    f"{language}/{category['id']}/{question['id']} uses filler: {matched}"
+                )
+
+
+def test_authored_mcq_explanations_add_more_than_the_correct_choice():
+    for language in ALL_LANGUAGES:
+        for category in cq.categories_for_language(language):
+            questions = cq.questions_for_category(language, category["id"])["questions"]
+            for question in questions:
+                if "-authored-" not in question["id"] or not question.get("choices"):
+                    continue
+                correct = question["choices"][question["answer_index"]].strip().lower()
+                explanation = question.get("explanation", "").strip().lower()
+                assert explanation != correct, (
+                    f"{language}/{category['id']}/{question['id']} only repeats its answer"
+                )
+                assert len(explanation) >= len(correct) + 20

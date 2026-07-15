@@ -620,6 +620,43 @@ body.coding-dark .lesson-check-why.is-wrong .lesson-check-verdict { color: #fbbf
   padding: 4px 0 24px;
 }
 
+/* Back to the language grid. A plain text link, not the heavy full-width bordered
+   bar it used to be — a secondary action should read as secondary. */
+.learn-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 16px;
+  padding: 4px 2px;
+  border: 0;
+  background: none;
+  color: var(--ct-muted, #6b7280);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.learn-back-link svg {
+  font-size: 0.72rem;
+  transition: transform 0.15s ease;
+}
+
+.learn-back-link:hover {
+  color: var(--ct-text);
+}
+
+.learn-back-link:hover svg {
+  transform: translateX(-3px);
+}
+
+.learn-back-link:focus-visible {
+  outline: 2px solid var(--ct-accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
 .learn-tracks-head {
   max-width: 680px;
   margin-bottom: 20px;
@@ -677,10 +714,59 @@ body.coding-dark .lesson-check-why.is-wrong .lesson-check-verdict { color: #fbbf
   background: var(--learn-track-accent);
 }
 
-.learn-track-card:hover {
-  transform: translateY(-3px);
-  border-color: var(--learn-track-accent);
-  box-shadow: 0 14px 30px color-mix(in srgb, var(--learn-track-accent) 14%, transparent);
+/* The card IS a <button>, so the app-wide `.coding-app :is(button, ...):hover`
+   rule in CodingTutor.css (loaded later, all !important) otherwise repaints the
+   whole card: blue background, blue border, blue TEXT, and a 26px glow. That is
+   the "everything turned blue on hover" bug. Neutralize that rule here and keep
+   only the intended lift + accent border + soft shadow. Same source-order fix as
+   the segmented toggle pills. */
+/* IMPORTANT — specificity, not just source order. The app-wide rule is
+   `.coding-app :is(button, ...):hover:not(:disabled)`, which computes to (0,4,0)
+   with !important. A bare `.learn-track-card:hover:not(:disabled)` is only (0,3,0),
+   so it LOSES even with !important — that was why the card still went blue. These
+   resets are scoped under `.coding-app` to reach (0,5,0) and win outright. */
+
+/* The app-wide rule also forces `transition: ... color 120ms ... !important`. Even
+   though our reset pins the color, that 120ms color transition animates the blue
+   in and back out for one hover frame — the "quick flash". Override the transition
+   so color/background change INSTANTLY; only the lift and shadow ease. */
+.coding-app .learn-track-card {
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease !important;
+}
+
+.coding-app .learn-track-card,
+.coding-app .learn-track-card:hover:not(:disabled) {
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      color-mix(in srgb, var(--learn-track-accent) 15%, transparent),
+      transparent 45%
+    ),
+    var(--ct-panel) !important;
+  color: var(--ct-text) !important;
+}
+
+.coding-app .learn-track-card:hover:not(:disabled) {
+  transform: translateY(-3px) !important;
+  border-color: var(--learn-track-accent) !important;
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--learn-track-accent) 16%, transparent) !important;
+}
+
+/* The blue "link" look was the button's hover `color` cascading into the text
+   spans. Pin each span so a stray inherited color can never repaint them. */
+.coding-app .learn-track-card:hover:not(:disabled) .learn-track-title,
+.coding-app .learn-track-card:hover:not(:disabled) .learn-track-stat-num {
+  color: var(--ct-text) !important;
+}
+.coding-app .learn-track-card:hover:not(:disabled) .learn-track-description {
+  color: color-mix(in srgb, var(--ct-text) 78%, transparent) !important;
+}
+.coding-app .learn-track-card:hover:not(:disabled) .learn-track-stat-label {
+  color: color-mix(in srgb, var(--ct-text) 60%, transparent) !important;
+}
+.coding-app .learn-track-card:hover:not(:disabled) .learn-track-kicker,
+.coding-app .learn-track-card:hover:not(:disabled) .learn-track-cta {
+  color: var(--learn-track-accent) !important;
 }
 
 .learn-track-card:focus-visible {
@@ -688,40 +774,99 @@ body.coding-dark .lesson-check-why.is-wrong .lesson-check-verdict { color: #fbbf
   outline-offset: 3px;
 }
 
-.learn-track-kicker {
-  display: inline-flex;
-  margin-bottom: 18px;
-  padding: 5px 9px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--learn-track-accent) 14%, transparent);
-  color: var(--learn-track-accent);
-  font-size: 0.69rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+/* Beginner is where most students should start, so it leads: a slightly heavier
+   accent wash and a thicker rail. Intermediate stays quieter, the deliberate
+   second choice rather than a mirror-image twin. */
+.learn-track-card.is-beginner {
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      color-mix(in srgb, var(--learn-track-accent) 22%, transparent),
+      transparent 52%
+    ),
+    var(--ct-panel);
+  border-color: color-mix(in srgb, var(--learn-track-accent) 42%, var(--ct-border));
 }
 
+.coding-app .learn-track-card.is-beginner,
+.coding-app .learn-track-card.is-beginner:hover:not(:disabled) {
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      color-mix(in srgb, var(--learn-track-accent) 22%, transparent),
+      transparent 52%
+    ),
+    var(--ct-panel) !important;
+}
+
+.learn-track-card.is-beginner::before {
+  width: 6px;
+}
+
+/* The kicker is a LABEL, so it should whisper, not shout. Dropped the filled pill
+   and the 800 weight — it was out-shouting the title beneath it. Now a quiet
+   accent-tinted tag that ranks below the headline. */
+.learn-track-kicker {
+  display: inline-flex;
+  margin-bottom: 14px;
+  color: var(--learn-track-accent);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+/* The headline. It leads the card, so it is clearly the biggest, boldest thing —
+   above the stat number, not tied with it. Tight to its description below (they
+   are one unit). */
 .learn-track-title {
-  margin-bottom: 9px;
-  font-size: 1.25rem;
-  font-weight: 750;
+  margin-bottom: 7px;
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
   color: var(--ct-text);
 }
 
+/* Brighter than the muted grey it was — this copy tells the student what the track
+   IS, so it should read as content, not footnote. */
 .learn-track-description {
-  color: var(--ct-muted, #6b7280);
-  font-size: 0.86rem;
+  color: color-mix(in srgb, var(--ct-text) 78%, transparent);
+  font-size: 0.88rem;
   line-height: 1.55;
 }
 
+/* The question count is the strongest selling point after the content fill, so it
+   reads as a stat (big tabular number + readable label), not as dim footnote text.
+   Extra top margin sets the stats apart from the title+description unit above. */
 .learn-track-stats {
   display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  margin-top: 18px;
-  color: var(--ct-muted, #6b7280);
+  gap: 30px;
+  margin-top: 22px;
+}
+
+.learn-track-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.learn-track-stat-num {
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ct-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Was 0.72rem muted grey and near-invisible on the gradient. Bumped size and
+   contrast so "practice questions" actually reads. */
+.learn-track-stat-label {
   font-size: 0.76rem;
   font-weight: 600;
+  letter-spacing: 0.005em;
+  color: color-mix(in srgb, var(--ct-text) 60%, transparent);
 }
 
 .learn-track-cta {

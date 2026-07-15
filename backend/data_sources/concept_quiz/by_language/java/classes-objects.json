@@ -55,130 +55,130 @@
       "explanation": "The whole file. `name` and `gpa` are fields: the state each Student carries, declared once in the class and then owned separately by every object built from it. `new Student()` builds one such object and hands back a reference to it, which is what `s` holds. The resulting output is 'Ada\\n3.9'."
     },
     {
-      "id": "java-classes-objects-advice-01",
-      "concept": "classes-objects",
-      "difficulty": "medium",
-      "kind": "mcq-behavior",
-      "language": "java",
-      "title": "Classes & Objects good practice",
-      "code": null,
-      "prompt": "Which is a useful practice for Classes & Objects?",
-      "choices": [
-        "Name the class for the thing it represents, capitalized: `Student`, not `doStudentStuff`.",
-        "Skip input checks and assume every value is valid.",
-        "Hide every error and continue without checking the result.",
-        "Put all of the work in one long statement."
-      ],
-      "answer_index": 0,
-      "explanation": "Name the class for the thing it represents, capitalized: `Student`, not `doStudentStuff`. This keeps the code easier to understand and verify."
-    },
-    {
       "id": "java-classes-objects-supplement-01",
       "concept": "classes-objects",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
       "title": "Classes & Objects practice 5",
-      "code": null,
-      "prompt": "Which version follows the lesson's safer approach?",
+      "code": "Student s = null;\nSystem.out.println(\"here\");\nSystem.out.println(s.name);",
+      "prompt": "What does this code print?",
       "choices": [
-        "Student s = new Student(\"Ada\", 3.9);\nSystem.out.println(\"here\");\nSystem.out.println(s.name);\n// prints \"here\", then Ada:\n// new built the object",
-        "Student s = null;\nSystem.out.println(\"here\");\nSystem.out.println(s.name);\n// prints \"here\", then crashes:\n// nothing was ever built",
-        "Both versions are equally safe.",
-        "Neither version can run."
+        "It prints \"here\", then throws a NullPointerException",
+        "It prints \"here\", then an empty line",
+        "It prints nothing and throws immediately",
+        "It fails to compile"
       ],
       "answer_index": 0,
-      "explanation": "Both sides compile, which is what makes this one sting: the mistake survives the compiler and only shows up when you run it. Declaring a variable of type Student does not create a Student, so the NullPointerException side holds a reference pointing at nothing. The dot in `s.name` says \"go to the object and get its name\", and there is no object to go to."
+      "explanation": "`s` is declared but points at no object, so the first line runs and prints \"here\". The second line asks the object at `s` for its `name`, but there is no object, so Java throws a NullPointerException at that line. It compiles cleanly, which is what makes the bug survive to run time."
     },
     {
-      "id": "java-classes-objects-supplement-02",
+      "id": "java-classes-objects-authored-01",
       "concept": "classes-objects",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Classes & Objects practice 6",
+      "title": "Classes & Objects concept check 1",
       "code": null,
-      "prompt": "Which statement best explains 'You have been writing classes all along'?",
+      "prompt": "What does the lesson mean by \"You have been writing classes all along\"?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Every Java program you have written so far sat inside `public class Something { ... }`. That was not decoration. Java has nowhere to put code except inside a class, so even a one line program needs one. Today the class stops being a wrapper you ignore and becomes the thing you are actually designing.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "3.9",
+        "Every Java program you have written so far sat inside `public class Something { ... }`.",
+        "It does not compile",
+        "It throws a NullPointerException"
       ],
       "answer_index": 1,
-      "explanation": "Every Java program you have written so far sat inside `public class Something { ... }`. That was not decoration. Java has nowhere to put code except inside a class, so even a one line program needs one. Today the class stops being a wrapper you ignore and becomes the thing you are actually designing."
+      "explanation": "A class is a blueprint: it lists the fields an object will hold and the methods it can run. An object is one actual thing built from that blueprint. That reasoning supports the answer: Every Java program you have written so far sat inside `public class Something { ... }`."
     },
     {
-      "id": "java-classes-objects-supplement-03",
+      "id": "java-classes-objects-authored-02",
       "concept": "classes-objects",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Classes & Objects practice 7",
+      "title": "Classes & Objects concept check 2",
       "code": null,
-      "prompt": "Which statement best explains 'What `this` is for'?",
+      "prompt": "What does the lesson mean by \"What `this` is for\"?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "In that constructor, the parameter is called `name` and the field is also called `name`. Java resolves the plain name `name` to the parameter, because the closer one wins. So `this.name = name` means: take the value that was passed in, and store it in this object's field. Drop the `this.` and you write `name = name`, which quietly assigns the parameter to itself and leaves the field empty. It compiles. It just does nothing.",
-        "Put every step into one long statement."
+        "It throws a NullPointerException on the first println",
+        "It does not compile, since the fields were never set",
+        "In that constructor, the parameter is called `name` and the field is also called `name`. Java resolves the plain name `name` to the parameter, because the closer one wins.",
+        "An empty line then 0"
       ],
       "answer_index": 2,
-      "explanation": "In that constructor, the parameter is called `name` and the field is also called `name`. Java resolves the plain name `name` to the parameter, because the closer one wins. So `this.name = name` means: take the value that was passed in, and store it in this object's field. Drop the `this.` and you write `name = name`, which quietly assigns the parameter to itself and leaves the field empty. It compiles. It just does nothing."
+      "explanation": "A class is a blueprint: it lists the fields an object will hold and the methods it can run. An object is one actual thing built from that blueprint. That reasoning supports the answer: In that constructor, the parameter is called `name` and the field is also called `name`. Java resolves the plain name `name` to the parameter, because the closer one wins."
     },
     {
-      "id": "java-classes-objects-supplement-04",
+      "id": "java-classes-objects-authored-03",
       "concept": "classes-objects",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Classes & Objects practice 8",
+      "title": "Classes & Objects concept check 3",
       "code": null,
-      "prompt": "Which statement best explains 'A NullPointerException means you never called new'?",
+      "prompt": "What does the lesson mean by \"A NullPointerException means you never called new\"?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement.",
-        "This is the error Java beginners hit most. It does not mean the object is broken. It means there is no object. Some reference is holding `null`, and you used a dot on it. Java tells you which line, so go to that line, find the variable before the dot, and trace backwards to where it should have been given a `new`. Usually you declared it in one branch of an `if` and used it outside."
+        "Student s = null;\nSystem.out.println(\"here\");\nSystem.out.println(s.name);\n// prints \"here\", then crashes:\n// nothing was ever built",
+        "It throws a NullPointerException",
+        "It throws a NullPointerException on the first println",
+        "This is the error Java beginners hit most. It does not mean the object is broken."
       ],
       "answer_index": 3,
-      "explanation": "This is the error Java beginners hit most. It does not mean the object is broken. It means there is no object. Some reference is holding `null`, and you used a dot on it. Java tells you which line, so go to that line, find the variable before the dot, and trace backwards to where it should have been given a `new`. Usually you declared it in one branch of an `if` and used it outside."
+      "explanation": "A class is a blueprint: it lists the fields an object will hold and the methods it can run. An object is one actual thing built from that blueprint. That reasoning supports the answer: This is the error Java beginners hit most. It does not mean the object is broken."
     },
     {
-      "id": "java-classes-objects-supplement-05",
+      "id": "java-classes-objects-authored-04",
       "concept": "classes-objects",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Classes & Objects practice 9",
+      "title": "Classes & Objects concept check 4",
       "code": null,
-      "prompt": "Which is a useful practice for Classes & Objects?",
+      "prompt": "Which guideline helps prevent a common Classes & Objects mistake?",
       "choices": [
-        "Fields are what it knows. Methods are what it can do. Sort your ideas into those two piles first.",
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "Name the class for the thing it represents, capitalized: `Student`, not `doStudentStuff`.",
+        "It does not compile, since the fields were never set",
+        "An empty line then 0",
+        "Student s = null;\nSystem.out.println(\"here\");\nSystem.out.println(s.name);\n// prints \"here\", then crashes:\n// nothing was ever built"
       ],
       "answer_index": 0,
-      "explanation": "Fields are what it knows. Methods are what it can do. Sort your ideas into those two piles first. This makes the result easier to understand and verify."
+      "explanation": "A class is a blueprint: it lists the fields an object will hold and the methods it can run. An object is one actual thing built from that blueprint. That reasoning supports the answer: Name the class for the thing it represents, capitalized: `Student`, not `doStudentStuff`."
     },
     {
-      "id": "java-classes-objects-supplement-06",
+      "id": "java-classes-objects-authored-05",
       "concept": "classes-objects",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Classes & Objects practice 10",
+      "title": "Classes & Objects concept check 5",
       "code": null,
-      "prompt": "Which is a useful practice for Classes & Objects?",
+      "prompt": "A classmate is checking their understanding of Classes & Objects. Which advice is correct?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Write a constructor as soon as an object needs more than one field, so an object can never exist half filled in.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "3.9",
+        "Fields are what it knows. Methods are what it can do. Sort your ideas into those two piles first.",
+        "It does not compile",
+        "It does not compile, since the fields were never set"
       ],
       "answer_index": 1,
-      "explanation": "Write a constructor as soon as an object needs more than one field, so an object can never exist half filled in. This makes the result easier to understand and verify."
+      "explanation": "A class is a blueprint: it lists the fields an object will hold and the methods it can run. An object is one actual thing built from that blueprint. That reasoning supports the answer: Fields are what it knows. Methods are what it can do. Sort your ideas into those two piles first."
+    },
+    {
+      "id": "java-classes-objects-authored-06",
+      "concept": "classes-objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Classes & Objects concept check 6",
+      "code": null,
+      "prompt": "Which choice shows sound reasoning about Classes & Objects?",
+      "choices": [
+        "An empty line then 0",
+        "Student s = null;\nSystem.out.println(\"here\");\nSystem.out.println(s.name);\n// prints \"here\", then crashes:\n// nothing was ever built",
+        "Write a constructor as soon as an object needs more than one field, so an object can never exist half filled in.",
+        "3.9"
+      ],
+      "answer_index": 2,
+      "explanation": "A class is a blueprint: it lists the fields an object will hold and the methods it can run. An object is one actual thing built from that blueprint. That reasoning supports the answer: Write a constructor as soon as an object needs more than one field, so an object can never exist half filled in."
     }
   ]
 }

@@ -55,130 +55,130 @@
       "explanation": "`Student` is the class. Calling it creates one object, and `__init__` stores the values that belong to that object. The resulting output is 'Ada 18'."
     },
     {
-      "id": "python-classes-objects-advice-01",
-      "concept": "classes-objects",
-      "difficulty": "medium",
-      "kind": "mcq-behavior",
-      "language": "python",
-      "title": "Classes & Objects good practice",
-      "code": null,
-      "prompt": "Which is a useful practice for Classes & Objects?",
-      "choices": [
-        "Use a class when data and behavior belong together.",
-        "Skip input checks and assume every value is valid.",
-        "Hide every error and continue without checking the result.",
-        "Put all of the work in one long statement."
-      ],
-      "answer_index": 0,
-      "explanation": "Use a class when data and behavior belong together. This keeps the code easier to understand and verify."
-    },
-    {
       "id": "python-classes-objects-supplement-01",
       "concept": "classes-objects",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
       "title": "Classes & Objects practice 5",
-      "code": null,
-      "prompt": "Which version follows the lesson's safer approach?",
+      "code": "def __init__(self, name):\n    self.name = name",
+      "prompt": "In `__init__`, what is the difference between `self.name = name` and `name = name`?",
       "choices": [
-        "def __init__(self, name):\n    self.name = name",
-        "def __init__(self, name):\n    name = name",
-        "Both versions are equally safe.",
-        "Neither version can run."
+        "self.name stores it on the object; name = name only reassigns a local and is lost",
+        "They both store the value on the object",
+        "name = name raises an error",
+        "self.name creates a new class, not an attribute"
       ],
       "answer_index": 0,
-      "explanation": "A value without `self.` is only a local name. Store it on the object when another method needs it later."
+      "explanation": "`self.name = name` attaches the value to the object, so other methods can read it later. `name = name` just assigns the parameter to itself, a local that vanishes when `__init__` returns, and the object never remembers the name. It runs without error but stores nothing."
     },
     {
-      "id": "python-classes-objects-supplement-02",
+      "id": "python-classes-objects-authored-01",
       "concept": "classes-objects",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Classes & Objects practice 6",
+      "title": "Classes & Objects concept check 1",
       "code": null,
-      "prompt": "Which statement best explains 'Each object has its own data'?",
+      "prompt": "What does the lesson mean by \"Each object has its own data\"?",
       "choices": [
-        "Skip checks and assume every value is valid.",
+        "15 12",
         "Creating a second Student does not copy or replace the first one. Each call to the class creates a separate object with separate instance attributes.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "9 12",
+        "12 9"
       ],
       "answer_index": 1,
-      "explanation": "Creating a second Student does not copy or replace the first one. Each call to the class creates a separate object with separate instance attributes."
+      "explanation": "A class describes the data and actions that its objects share. Create an object by calling the class, store its data on `self`, and use methods for work that belongs to that object. That reasoning supports the answer: Creating a second Student does not copy or replace the first one. Each call to the class creates a separate object with separate instance attributes."
     },
     {
-      "id": "python-classes-objects-supplement-03",
+      "id": "python-classes-objects-authored-02",
       "concept": "classes-objects",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Classes & Objects practice 7",
+      "title": "Classes & Objects concept check 2",
       "code": null,
-      "prompt": "Which is a useful practice for Classes & Objects?",
+      "prompt": "Which choice describes a reliable Classes & Objects practice?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Set starting attributes inside `__init__`.",
-        "Put every step into one long statement."
+        "class",
+        "value",
+        "Use a class when data and behavior belong together.",
+        "new"
       ],
       "answer_index": 2,
-      "explanation": "Set starting attributes inside `__init__`. This makes the result easier to understand and verify."
+      "explanation": "A class describes the data and actions that its objects share. Create an object by calling the class, store its data on `self`, and use methods for work that belongs to that object. That reasoning supports the answer: Use a class when data and behavior belong together."
     },
     {
-      "id": "python-classes-objects-supplement-04",
+      "id": "python-classes-objects-authored-03",
       "concept": "classes-objects",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Classes & Objects practice 8",
+      "title": "Classes & Objects concept check 3",
       "code": null,
-      "prompt": "Which is a useful practice for Classes & Objects?",
+      "prompt": "Which recommendation belongs in a review of Classes & Objects code?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement.",
-        "Write `self.attribute` for data stored on an object."
+        "def __init__(self, name):\n    name = name",
+        "12 9",
+        "class",
+        "Set starting attributes inside `__init__`."
       ],
       "answer_index": 3,
-      "explanation": "Write `self.attribute` for data stored on an object. This makes the result easier to understand and verify."
+      "explanation": "A class describes the data and actions that its objects share. Create an object by calling the class, store its data on `self`, and use methods for work that belongs to that object. That reasoning supports the answer: Set starting attributes inside `__init__`."
     },
     {
-      "id": "python-classes-objects-supplement-05",
+      "id": "python-classes-objects-authored-04",
       "concept": "classes-objects",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Classes & Objects practice 9",
+      "title": "Classes & Objects concept check 4",
       "code": null,
-      "prompt": "Which is a useful practice for Classes & Objects?",
+      "prompt": "Which guideline helps prevent a common Classes & Objects mistake?",
       "choices": [
-        "Remember that each class call creates a new object.",
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "Write `self.attribute` for data stored on an object.",
+        "value",
+        "new",
+        "def __init__(self, name):\n    name = name"
       ],
       "answer_index": 0,
-      "explanation": "Remember that each class call creates a new object. This makes the result easier to understand and verify."
+      "explanation": "A class describes the data and actions that its objects share. Create an object by calling the class, store its data on `self`, and use methods for work that belongs to that object. That reasoning supports the answer: Write `self.attribute` for data stored on an object."
     },
     {
-      "id": "python-classes-objects-supplement-06",
+      "id": "python-classes-objects-authored-05",
       "concept": "classes-objects",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Classes & Objects practice 10",
+      "title": "Classes & Objects concept check 5",
       "code": null,
-      "prompt": "Which is a useful practice for Classes & Objects?",
+      "prompt": "A classmate is checking their understanding of Classes & Objects. Which advice is correct?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Keep a method focused on one clear action.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "15 12",
+        "Remember that each class call creates a new object.",
+        "9 12",
+        "value"
       ],
       "answer_index": 1,
-      "explanation": "Keep a method focused on one clear action. This makes the result easier to understand and verify."
+      "explanation": "A class describes the data and actions that its objects share. Create an object by calling the class, store its data on `self`, and use methods for work that belongs to that object. That reasoning supports the answer: Remember that each class call creates a new object."
+    },
+    {
+      "id": "python-classes-objects-authored-06",
+      "concept": "classes-objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Classes & Objects concept check 6",
+      "code": null,
+      "prompt": "Which choice shows sound reasoning about Classes & Objects?",
+      "choices": [
+        "new",
+        "def __init__(self, name):\n    name = name",
+        "Keep a method focused on one clear action.",
+        "15 12"
+      ],
+      "answer_index": 2,
+      "explanation": "A class describes the data and actions that its objects share. Create an object by calling the class, store its data on `self`, and use methods for work that belongs to that object. That reasoning supports the answer: Keep a method focused on one clear action."
     }
   ]
 }

@@ -189,7 +189,7 @@
             "Hello must be a variable"
           ],
           "answer_index": 1,
-          "explanation": "The opening ( is never closed. It should be print(\"Hello\") â€” every ( needs a matching )."
+          "explanation": "The opening ( is never closed. It should be print(\"Hello\") - every ( needs a matching )."
         },
         "java": {
           "code": "System.out.println(\"Hello\")",
@@ -329,7 +329,7 @@
             "Logs null"
           ],
           "answer_index": 2,
-          "explanation": "Unlike many languages, JavaScript does not error on out-of-range access â€” reading nums[3] simply gives undefined."
+          "explanation": "Unlike many languages, JavaScript does not error on out-of-range access - reading nums[3] simply gives undefined."
         },
         "cpp": {
           "code": "int nums[] = {1, 2, 3};\nwhile (true) {\n    cout << \"looping\";\n}",
@@ -341,7 +341,7 @@
             "Compile error"
           ],
           "answer_index": 2,
-          "explanation": "while (true) never becomes false and nothing breaks out, so it prints looping endlessly â€” an infinite loop."
+          "explanation": "while (true) never becomes false and nothing breaks out, so it prints looping endlessly - an infinite loop."
         }
       },
       "title": "Index out of range"

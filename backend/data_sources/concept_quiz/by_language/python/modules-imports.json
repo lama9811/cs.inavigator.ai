@@ -55,130 +55,130 @@
       "explanation": "Importing the module keeps the source of `sqrt` clear. The dot says that the function comes from math. The resulting output is '5.0'."
     },
     {
-      "id": "python-modules-imports-advice-01",
-      "concept": "modules-imports",
-      "difficulty": "medium",
-      "kind": "mcq-behavior",
-      "language": "python",
-      "title": "Modules & Imports good practice",
-      "code": null,
-      "prompt": "Which is a useful practice for Modules & Imports?",
-      "choices": [
-        "Group code by one clear purpose.",
-        "Skip input checks and assume every value is valid.",
-        "Hide every error and continue without checking the result.",
-        "Put all of the work in one long statement."
-      ],
-      "answer_index": 0,
-      "explanation": "Group code by one clear purpose. This keeps the code easier to understand and verify."
-    },
-    {
       "id": "python-modules-imports-supplement-01",
       "concept": "modules-imports",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
       "title": "Modules & Imports practice 5",
-      "code": null,
-      "prompt": "Which version follows the lesson's safer approach?",
+      "code": "import math\nprint(math.sqrt(16))",
+      "prompt": "Why prefer `import math; math.sqrt(16)` over `from math import *`?",
       "choices": [
-        "import math\nprint(math.sqrt(16))",
-        "from math import *\nprint(sqrt(16))",
-        "Both versions are equally safe.",
-        "Neither version can run."
+        "The wildcard dumps every name in and can quietly overwrite one you defined",
+        "The wildcard import is a syntax error",
+        "math.sqrt is faster than sqrt",
+        "sqrt does not exist in the math module"
       ],
       "answer_index": 0,
-      "explanation": "A wildcard import hides where names came from and can replace an existing name. Importing the module keeps that boundary visible."
+      "explanation": "`from math import *` pulls in every public name at once, which hides where a name came from and can shadow something you already defined (for example, your own `sqrt`). `import math` keeps the boundary visible: `math.sqrt` says exactly where it lives. Both call the same function at the same speed."
     },
     {
-      "id": "python-modules-imports-supplement-02",
+      "id": "python-modules-imports-authored-01",
       "concept": "modules-imports",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Modules & Imports practice 6",
+      "title": "Modules & Imports concept check 1",
       "code": null,
-      "prompt": "Which statement best explains 'Imported files can run code'?",
+      "prompt": "What does the lesson mean by \"Imported files can run code\"?",
       "choices": [
-        "Skip checks and assume every value is valid.",
+        "from random import randint",
         "Statements at the top level run when Python imports the file. Place demo code and direct user input inside a main guard so importing the module does not start them.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "include random",
+        "using random"
       ],
       "answer_index": 1,
-      "explanation": "Statements at the top level run when Python imports the file. Place demo code and direct user input inside a main guard so importing the module does not start them."
+      "explanation": "A Python file is a module. Use `import module` to keep its name visible, or `from module import name` to bring in one item. That reasoning supports the answer: Statements at the top level run when Python imports the file. Place demo code and direct user input inside a main guard so importing the module does not start them."
     },
     {
-      "id": "python-modules-imports-supplement-03",
+      "id": "python-modules-imports-authored-02",
       "concept": "modules-imports",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Modules & Imports practice 7",
+      "title": "Modules & Imports concept check 2",
       "code": null,
-      "prompt": "Which is a useful practice for Modules & Imports?",
+      "prompt": "Which choice describes a reliable Modules & Imports practice?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Prefer imports that show where a name came from.",
-        "Put every step into one long statement."
+        "Every time the file is imported",
+        "Only after an error",
+        "Group code by one clear purpose.",
+        "Before Python reads the file"
       ],
       "answer_index": 2,
-      "explanation": "Prefer imports that show where a name came from. This makes the result easier to understand and verify."
+      "explanation": "A Python file is a module. Use `import module` to keep its name visible, or `from module import name` to bring in one item. That reasoning supports the answer: Group code by one clear purpose."
     },
     {
-      "id": "python-modules-imports-supplement-04",
+      "id": "python-modules-imports-authored-03",
       "concept": "modules-imports",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Modules & Imports practice 8",
+      "title": "Modules & Imports concept check 3",
       "code": null,
-      "prompt": "Which is a useful practice for Modules & Imports?",
+      "prompt": "Which recommendation belongs in a review of Modules & Imports code?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement.",
-        "Avoid wildcard imports."
+        "from math import *\nprint(sqrt(16))",
+        "using random",
+        "Every time the file is imported",
+        "Prefer imports that show where a name came from."
       ],
       "answer_index": 3,
-      "explanation": "Avoid wildcard imports. This makes the result easier to understand and verify."
+      "explanation": "A Python file is a module. Use `import module` to keep its name visible, or `from module import name` to bring in one item. That reasoning supports the answer: Prefer imports that show where a name came from."
     },
     {
-      "id": "python-modules-imports-supplement-05",
+      "id": "python-modules-imports-authored-04",
       "concept": "modules-imports",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Modules & Imports practice 9",
+      "title": "Modules & Imports concept check 4",
       "code": null,
-      "prompt": "Which is a useful practice for Modules & Imports?",
+      "prompt": "Which guideline helps prevent a common Modules & Imports mistake?",
       "choices": [
-        "Keep top-level work small.",
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "Avoid wildcard imports.",
+        "Only after an error",
+        "Before Python reads the file",
+        "from math import *\nprint(sqrt(16))"
       ],
       "answer_index": 0,
-      "explanation": "Keep top-level work small. This makes the result easier to understand and verify."
+      "explanation": "A Python file is a module. Use `import module` to keep its name visible, or `from module import name` to bring in one item. That reasoning supports the answer: Avoid wildcard imports."
     },
     {
-      "id": "python-modules-imports-supplement-06",
+      "id": "python-modules-imports-authored-05",
       "concept": "modules-imports",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Modules & Imports practice 10",
+      "title": "Modules & Imports concept check 5",
       "code": null,
-      "prompt": "Which is a useful practice for Modules & Imports?",
+      "prompt": "A classmate is checking their understanding of Modules & Imports. Which advice is correct?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Put demos and command-line input behind a main guard.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "from random import randint",
+        "Keep top-level work small.",
+        "include random",
+        "Only after an error"
       ],
       "answer_index": 1,
-      "explanation": "Put demos and command-line input behind a main guard. This makes the result easier to understand and verify."
+      "explanation": "A Python file is a module. Use `import module` to keep its name visible, or `from module import name` to bring in one item. That reasoning supports the answer: Keep top-level work small."
+    },
+    {
+      "id": "python-modules-imports-authored-06",
+      "concept": "modules-imports",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Modules & Imports concept check 6",
+      "code": null,
+      "prompt": "Which choice shows sound reasoning about Modules & Imports?",
+      "choices": [
+        "Before Python reads the file",
+        "from math import *\nprint(sqrt(16))",
+        "Put demos and command-line input behind a main guard.",
+        "from random import randint"
+      ],
+      "answer_index": 2,
+      "explanation": "A Python file is a module. Use `import module` to keep its name visible, or `from module import name` to bring in one item. That reasoning supports the answer: Put demos and command-line input behind a main guard."
     }
   ]
 }

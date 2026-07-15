@@ -59,130 +59,130 @@
       "explanation": "A package groups related classes and gives them a shared name. Put the package statement first in the file. Use `public` for code meant for callers, `private` for class details, and default access for code shared only inside the package."
     },
     {
-      "id": "java-packages-access-advice-01",
-      "concept": "packages-access",
-      "difficulty": "medium",
-      "kind": "mcq-behavior",
-      "language": "java",
-      "title": "Packages & Access Modifiers good practice",
-      "code": null,
-      "prompt": "Which is a useful practice for Packages & Access Modifiers?",
-      "choices": [
-        "Group classes that solve related problems.",
-        "Skip input checks and assume every value is valid.",
-        "Hide every error and continue without checking the result.",
-        "Put all of the work in one long statement."
-      ],
-      "answer_index": 0,
-      "explanation": "Group classes that solve related problems. This keeps the code easier to understand and verify."
-    },
-    {
       "id": "java-packages-access-supplement-01",
       "concept": "packages-access",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
       "title": "Packages & Access Modifiers practice 5",
-      "code": null,
-      "prompt": "Which version follows the lesson's safer approach?",
+      "code": "private int credits;\npublic void addCredits(int amount) {\n    if (amount > 0) credits += amount;\n}",
+      "prompt": "What does making `credits` private and exposing `addCredits` prevent?",
       "choices": [
-        "private int credits;\npublic void addCredits(int amount) {\n    if (amount > 0) credits += amount;\n}",
-        "public int credits;",
-        "Both versions are equally safe.",
-        "Neither version can run."
+        "Outside code setting credits directly to an invalid value like -5",
+        "The class from being used in other packages",
+        "The credits field from ever changing",
+        "The object from being created"
       ],
       "answer_index": 0,
-      "explanation": "A private field prevents outside code from placing the object in an invalid state. A method can check the new value before saving it."
+      "explanation": "A private field cannot be written from outside, so no caller can do `obj.credits = -5`. Changes must go through `addCredits`, which rejects a non-positive amount. The field still changes through that method, and the class is still usable elsewhere and still constructible."
     },
     {
-      "id": "java-packages-access-supplement-02",
+      "id": "java-packages-access-authored-01",
       "concept": "packages-access",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Packages & Access Modifiers practice 6",
+      "title": "Packages & Access Modifiers concept check 1",
       "code": null,
-      "prompt": "Which statement best explains 'Folders and package names must agree'?",
+      "prompt": "What does the lesson mean by \"Folders and package names must agree\"?",
       "choices": [
-        "Skip checks and assume every value is valid.",
+        "public",
         "If a file declares `package school.records`, keep it under the matching `school/records` path for normal builds. A mismatch often leads to class loading or import errors.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "package",
+        "import"
       ],
       "answer_index": 1,
-      "explanation": "If a file declares `package school.records`, keep it under the matching `school/records` path for normal builds. A mismatch often leads to class loading or import errors."
+      "explanation": "A package groups related classes and gives them a shared name. Put the package statement first in the file. That reasoning supports the answer: If a file declares `package school.records`, keep it under the matching `school/records` path for normal builds. A mismatch often leads to class loading or import errors."
     },
     {
-      "id": "java-packages-access-supplement-03",
+      "id": "java-packages-access-authored-02",
       "concept": "packages-access",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Packages & Access Modifiers practice 7",
+      "title": "Packages & Access Modifiers concept check 2",
       "code": null,
-      "prompt": "Which is a useful practice for Packages & Access Modifiers?",
+      "prompt": "Which choice describes a reliable Packages & Access Modifiers practice?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Match package names to the directory structure.",
-        "Put every step into one long statement."
+        "package java.util.ArrayList;",
+        "include java.util.ArrayList;",
+        "Group classes that solve related problems.",
+        "using java.util.ArrayList;"
       ],
       "answer_index": 2,
-      "explanation": "Match package names to the directory structure. This makes the result easier to understand and verify."
+      "explanation": "A package groups related classes and gives them a shared name. Put the package statement first in the file. That reasoning supports the answer: Group classes that solve related problems."
     },
     {
-      "id": "java-packages-access-supplement-04",
+      "id": "java-packages-access-authored-03",
       "concept": "packages-access",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Packages & Access Modifiers practice 8",
+      "title": "Packages & Access Modifiers concept check 3",
       "code": null,
-      "prompt": "Which is a useful practice for Packages & Access Modifiers?",
+      "prompt": "Which recommendation belongs in a review of Packages & Access Modifiers code?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement.",
-        "Keep fields private unless outside access is truly required."
+        "public int credits;",
+        "import",
+        "package java.util.ArrayList;",
+        "Match package names to the directory structure."
       ],
       "answer_index": 3,
-      "explanation": "Keep fields private unless outside access is truly required. This makes the result easier to understand and verify."
+      "explanation": "A package groups related classes and gives them a shared name. Put the package statement first in the file. That reasoning supports the answer: Match package names to the directory structure."
     },
     {
-      "id": "java-packages-access-supplement-05",
+      "id": "java-packages-access-authored-04",
       "concept": "packages-access",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Packages & Access Modifiers practice 9",
+      "title": "Packages & Access Modifiers concept check 4",
       "code": null,
-      "prompt": "Which is a useful practice for Packages & Access Modifiers?",
+      "prompt": "Which guideline helps prevent a common Packages & Access Modifiers mistake?",
       "choices": [
-        "Expose small public methods with clear jobs.",
-        "Skip checks and assume every value is valid.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "Keep fields private unless outside access is truly required.",
+        "include java.util.ArrayList;",
+        "using java.util.ArrayList;",
+        "public int credits;"
       ],
       "answer_index": 0,
-      "explanation": "Expose small public methods with clear jobs. This makes the result easier to understand and verify."
+      "explanation": "A package groups related classes and gives them a shared name. Put the package statement first in the file. That reasoning supports the answer: Keep fields private unless outside access is truly required."
     },
     {
-      "id": "java-packages-access-supplement-06",
+      "id": "java-packages-access-authored-05",
       "concept": "packages-access",
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Packages & Access Modifiers practice 10",
+      "title": "Packages & Access Modifiers concept check 5",
       "code": null,
-      "prompt": "Which is a useful practice for Packages & Access Modifiers?",
+      "prompt": "A classmate is checking their understanding of Packages & Access Modifiers. Which advice is correct?",
       "choices": [
-        "Skip checks and assume every value is valid.",
-        "Import classes instead of repeating long names throughout a file.",
-        "Hide errors and continue without checking the result.",
-        "Put every step into one long statement."
+        "public",
+        "Expose small public methods with clear jobs.",
+        "package",
+        "include java.util.ArrayList;"
       ],
       "answer_index": 1,
-      "explanation": "Import classes instead of repeating long names throughout a file. This makes the result easier to understand and verify."
+      "explanation": "A package groups related classes and gives them a shared name. Put the package statement first in the file. That reasoning supports the answer: Expose small public methods with clear jobs."
+    },
+    {
+      "id": "java-packages-access-authored-06",
+      "concept": "packages-access",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Packages & Access Modifiers concept check 6",
+      "code": null,
+      "prompt": "Which choice shows sound reasoning about Packages & Access Modifiers?",
+      "choices": [
+        "using java.util.ArrayList;",
+        "public int credits;",
+        "Import classes instead of repeating long names throughout a file.",
+        "public"
+      ],
+      "answer_index": 2,
+      "explanation": "A package groups related classes and gives them a shared name. Put the package statement first in the file. That reasoning supports the answer: Import classes instead of repeating long names throughout a file."
     }
   ]
 }
