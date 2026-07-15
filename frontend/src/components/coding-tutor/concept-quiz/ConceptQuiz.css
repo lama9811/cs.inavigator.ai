@@ -656,14 +656,30 @@ body.coding-dark .cq-track-badge.is-intermediate {
 .cq-accordion-head:disabled {
   cursor: not-allowed;
 }
-.cq-accordion-head:not(:disabled):hover {
-  background: var(--ct-panel-soft);
+/* The app-wide `.coding-app :is(button, ...):hover` (0,4,0, all !important, loaded
+   after this file) forces a blue `color` + `transition: color` onto this <button>,
+   which cascades into the title/blurb and repaints the whole row blue with a flash.
+   The row's INTENDED hover is a periwinkle rail + faint wash with readable text, so
+   pin the color at (0,5,0) and kill the color transition; keep the rail below. */
+.coding-app .cq-accordion-head {
+  transition: background 0.14s ease, box-shadow 0.14s ease !important;
+}
+.coding-app .cq-accordion-head:not(:disabled):hover {
+  background: var(--ct-panel-soft) !important;
+  color: var(--ct-text) !important;
+  box-shadow: none !important;
+}
+.coding-app .cq-accordion-head:not(:disabled):hover .cq-accordion-title {
+  color: var(--ct-text) !important;
+}
+.coding-app .cq-accordion-head:not(:disabled):hover .cq-accordion-blurb {
+  color: var(--ct-muted) !important;
 }
 /* Dark-mode hover revamp: periwinkle-blue left rail + subtle inset glow, matching
    the question-row hover so the whole accordion reads with one electric accent. */
-body.coding-dark .cq-accordion-head:not(:disabled):hover {
-  background: rgba(59, 130, 246, 0.08);
-  box-shadow: inset 4px 0 0 0 #3b82f6;
+body.coding-dark .coding-app .cq-accordion-head:not(:disabled):hover {
+  background: rgba(59, 130, 246, 0.08) !important;
+  box-shadow: inset 4px 0 0 0 #3b82f6 !important;
 }
 .cq-accordion-num {
   flex: 0 0 auto;

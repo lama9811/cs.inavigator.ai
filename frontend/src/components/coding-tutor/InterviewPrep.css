@@ -887,3 +887,203 @@ body.coding-dark .iv-history-entry:hover {
   background: rgba(59, 130, 246, 0.12) !important;
   border-color: rgba(59, 130, 246, 0.5) !important;
 }
+
+
+/* Interview Prep clarity pass: compact the path and separate study from mastery. */
+.interview-prep-page {
+  gap: clamp(18px, 2.5vh, 28px);
+}
+
+.iv-topic-grid {
+  margin-top: 0;
+}
+
+.iv-ladder {
+  gap: 14px;
+  padding: 20px 22px;
+}
+
+.iv-ladder-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  gap: 24px;
+  align-items: center;
+}
+
+.iv-ladder-eyebrow {
+  color: var(--ct-primary);
+  font-size: 0.7rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.iv-ladder-title {
+  font-size: clamp(1.12rem, 2vw, 1.4rem);
+}
+
+.iv-ladder-sub {
+  font-size: 0.86rem;
+}
+
+.iv-ready-meter-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+}
+
+.iv-ready-meter-head strong {
+  color: var(--ct-text);
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.iv-ready-track {
+  height: 10px;
+}
+
+.iv-checklist {
+  padding-top: 12px;
+  gap: 8px;
+}
+
+.iv-check-step {
+  flex: 1 1 150px;
+  padding: 7px 11px;
+}
+
+.iv-check-step.goal.available {
+  border-color: color-mix(in srgb, var(--ct-primary) 38%, var(--ct-border));
+}
+
+.iv-check-step.goal.available .iv-check-label small {
+  color: var(--ct-primary);
+}
+
+.iv-ladder-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.iv-ladder-actions {
+  margin-left: 0;
+}
+
+.coding-app .iv-ladder-cta {
+  padding: 11px 18px;
+  font-size: 0.86rem;
+}
+
+.coding-app .iv-ladder-cta.secondary {
+  color: var(--ct-primary) !important;
+  background: color-mix(in srgb, var(--ct-panel) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 48%, var(--ct-border));
+}
+
+.coding-app .iv-ladder-cta.secondary:hover,
+.coding-app .iv-ladder-cta.secondary:focus-visible {
+  outline: none;
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--ct-primary) 9%, var(--ct-panel)) !important;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--ct-primary) 14%, transparent);
+}
+
+.iv-ladder-note {
+  flex-basis: 100%;
+  margin: -2px 2px 0 0;
+  color: var(--ct-muted);
+  font-size: 0.74rem;
+  text-align: right;
+}
+
+.iv-topic-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.iv-topic-title-row h3 {
+  margin: 0;
+}
+
+.iv-topic-recommended {
+  display: inline-flex;
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: var(--ct-primary);
+  background: color-mix(in srgb, var(--ct-primary) 11%, transparent);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.iv-topic-recommended.next {
+  color: #92400e;
+  background: color-mix(in srgb, var(--ct-accent, #f58220) 18%, transparent);
+}
+
+.iv-ring {
+  --size: 48px;
+}
+
+.iv-ring-label {
+  font-size: 0.62rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.iv-review-check:disabled {
+  cursor: default;
+  opacity: 0.9;
+}
+
+.iv-question-reviewed {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: var(--ct-primary);
+  background: color-mix(in srgb, var(--ct-primary) 10%, transparent);
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+body.coding-dark .iv-topic-recommended {
+  color: #bcd2f5;
+  background: rgba(59, 130, 246, 0.18);
+}
+
+body.coding-dark .iv-topic-recommended.next {
+  color: #ffd59a;
+  background: rgba(245, 130, 32, 0.18);
+}
+
+body.coding-dark .iv-question-reviewed {
+  color: #bcd2f5;
+  background: rgba(59, 130, 246, 0.16);
+}
+
+body.coding-dark .coding-app .iv-ladder-cta.secondary {
+  background: rgba(15, 26, 44, 0.35);
+  border-color: rgba(147, 180, 245, 0.55);
+  color: #dbeafe !important;
+}
+
+@media (max-width: 800px) {
+  .iv-ladder-top {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .iv-ladder-actions-row,
+  .iv-ladder-actions {
+    justify-content: stretch;
+    width: 100%;
+  }
+
+  .iv-ladder-note {
+    text-align: left;
+  }
+}

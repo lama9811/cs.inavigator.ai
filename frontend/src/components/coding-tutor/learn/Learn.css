@@ -59,9 +59,36 @@
   transition: border-color 0.15s ease, transform 0.12s ease, background 0.15s ease;
 }
 
-.learn-lesson-card:hover:not(.locked) {
-  border-color: var(--ct-accent);
-  transform: translateX(2px);
+/* Same app-wide-button-hover bleed as the track cards: these rows are <button>s, so
+   `.coding-app :is(button, ...):hover:not(:disabled)` (0,4,0, all !important) repaints
+   the row blue — background, border, and TEXT — and its forced `transition: color`
+   animates the flash. Neutralize it at (0,5,0) and pin the text so nothing turns blue;
+   keep only the nudge + accent border + a soft shadow. Locked rows are `disabled`, so
+   the app-wide :hover:not(:disabled) never fires on them — no guard needed here. */
+.coding-app .learn-lesson-card {
+  transition: border-color 0.15s ease, transform 0.12s ease,
+    box-shadow 0.15s ease, background 0.15s ease !important;
+}
+
+.coding-app .learn-lesson-card,
+.coding-app .learn-lesson-card:hover:not(.locked) {
+  background: var(--ct-panel) !important;
+  color: var(--ct-text) !important;
+}
+
+.coding-app .learn-lesson-card:hover:not(.locked) {
+  border-color: var(--ct-accent) !important;
+  transform: translateX(2px) !important;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--ct-accent) 14%, transparent) !important;
+}
+
+/* Pin the text spans: the blue "link" tint was the button's hover color cascading in. */
+.coding-app .learn-lesson-card:hover:not(.locked) .learn-lesson-title {
+  color: var(--ct-text) !important;
+}
+.coding-app .learn-lesson-card:hover:not(.locked) .learn-lesson-blurb,
+.coding-app .learn-lesson-card:hover:not(.locked) .learn-lesson-meta {
+  color: var(--ct-muted, #6b7280) !important;
 }
 
 .learn-lesson-card:focus-visible {
@@ -155,7 +182,10 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ct-accent);
+  /* --ct-primary (MSU blue), NOT --ct-accent: the sub-brand theme re-points
+     --ct-accent to orange in light mode, which fought the blue/green track cards
+     below (three temperatures on one page). Blue keys to the app palette. */
+  color: var(--ct-primary);
 }
 
 .lesson-head h1 {
@@ -695,10 +725,13 @@ body.coding-dark .lesson-check-why.is-wrong .lesson-check-verdict { color: #fbbf
   background:
     radial-gradient(
       circle at 100% 0%,
-      color-mix(in srgb, var(--learn-track-accent) 15%, transparent),
-      transparent 45%
+      color-mix(in srgb, var(--learn-track-accent) 12%, transparent),
+      transparent 55%
     ),
     var(--ct-panel);
+  /* Resting shadow so the card lifts off the near-white page instead of reading as
+     a flat outline. On dark mode the panel/canvas contrast did this for free. */
+  box-shadow: 0 4px 14px rgba(15, 37, 69, 0.07), 0 1px 3px rgba(15, 37, 69, 0.05);
   color: var(--ct-text);
   font: inherit;
   text-align: left;
@@ -706,11 +739,16 @@ body.coding-dark .lesson-check-why.is-wrong .lesson-check-verdict { color: #fbbf
   transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
+body.coding-dark .learn-track-card {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.32);
+}
+
+/* The left rail. Thicker so it reads on a pale card, where a 4px strip vanished. */
 .learn-track-card::before {
   content: "";
   position: absolute;
   inset: 0 auto 0 0;
-  width: 4px;
+  width: 5px;
   background: var(--learn-track-accent);
 }
 
@@ -734,38 +772,45 @@ body.coding-dark .lesson-check-why.is-wrong .lesson-check-verdict { color: #fbbf
   transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease !important;
 }
 
+/* The app-wide rule sets `background-color: var(--ct-hover-bg) !important` as a
+   SEPARATE longhand. Our `background` shorthand resets background-color to
+   transparent, so that orange longhand shows THROUGH our transparent gradient —
+   that was the "whole card turns orange on hover". Pin background-color explicitly. */
 .coding-app .learn-track-card,
-.coding-app .learn-track-card:hover:not(:disabled) {
+.coding-app .learn-tracks .learn-track-card:hover:not(:disabled) {
   background:
     radial-gradient(
       circle at 100% 0%,
-      color-mix(in srgb, var(--learn-track-accent) 15%, transparent),
-      transparent 45%
+      color-mix(in srgb, var(--learn-track-accent) 12%, transparent),
+      transparent 55%
     ),
     var(--ct-panel) !important;
+  background-color: var(--ct-panel) !important;
   color: var(--ct-text) !important;
 }
 
-.coding-app .learn-track-card:hover:not(:disabled) {
+.coding-app .learn-tracks .learn-track-card:hover:not(:disabled) {
   transform: translateY(-3px) !important;
   border-color: var(--learn-track-accent) !important;
-  box-shadow: 0 14px 30px color-mix(in srgb, var(--learn-track-accent) 16%, transparent) !important;
+  /* Deepen the resting shadow, tinted to the card's OWN accent (green/blue), never
+     the global orange --ct-hover-border the app-wide rule would use. */
+  box-shadow: 0 16px 32px color-mix(in srgb, var(--learn-track-accent) 20%, transparent) !important;
 }
 
 /* The blue "link" look was the button's hover `color` cascading into the text
    spans. Pin each span so a stray inherited color can never repaint them. */
-.coding-app .learn-track-card:hover:not(:disabled) .learn-track-title,
-.coding-app .learn-track-card:hover:not(:disabled) .learn-track-stat-num {
+.coding-app .learn-tracks .learn-track-card:hover:not(:disabled) .learn-track-title,
+.coding-app .learn-tracks .learn-track-card:hover:not(:disabled) .learn-track-stat-num {
   color: var(--ct-text) !important;
 }
-.coding-app .learn-track-card:hover:not(:disabled) .learn-track-description {
+.coding-app .learn-tracks .learn-track-card:hover:not(:disabled) .learn-track-description {
   color: color-mix(in srgb, var(--ct-text) 78%, transparent) !important;
 }
-.coding-app .learn-track-card:hover:not(:disabled) .learn-track-stat-label {
+.coding-app .learn-tracks .learn-track-card:hover:not(:disabled) .learn-track-stat-label {
   color: color-mix(in srgb, var(--ct-text) 60%, transparent) !important;
 }
-.coding-app .learn-track-card:hover:not(:disabled) .learn-track-kicker,
-.coding-app .learn-track-card:hover:not(:disabled) .learn-track-cta {
+.coding-app .learn-tracks .learn-track-card:hover:not(:disabled) .learn-track-kicker,
+.coding-app .learn-tracks .learn-track-card:hover:not(:disabled) .learn-track-cta {
   color: var(--learn-track-accent) !important;
 }
 
@@ -777,15 +822,18 @@ body.coding-dark .lesson-check-why.is-wrong .lesson-check-verdict { color: #fbbf
 /* Beginner is where most students should start, so it leads: a slightly heavier
    accent wash and a thicker rail. Intermediate stays quieter, the deliberate
    second choice rather than a mirror-image twin. */
+/* Beginner leads, but through a CORNER GLOW + thicker rail + stronger border — not a
+   full green flood, which on a white card read as "selected/success" rather than
+   "recommended". The wash is pulled into the top-right corner and kept light. */
 .learn-track-card.is-beginner {
   background:
     radial-gradient(
       circle at 100% 0%,
-      color-mix(in srgb, var(--learn-track-accent) 22%, transparent),
-      transparent 52%
+      color-mix(in srgb, var(--learn-track-accent) 16%, transparent),
+      transparent 42%
     ),
     var(--ct-panel);
-  border-color: color-mix(in srgb, var(--learn-track-accent) 42%, var(--ct-border));
+  border-color: color-mix(in srgb, var(--learn-track-accent) 40%, var(--ct-border));
 }
 
 .coding-app .learn-track-card.is-beginner,
@@ -793,14 +841,15 @@ body.coding-dark .lesson-check-why.is-wrong .lesson-check-verdict { color: #fbbf
   background:
     radial-gradient(
       circle at 100% 0%,
-      color-mix(in srgb, var(--learn-track-accent) 22%, transparent),
-      transparent 52%
+      color-mix(in srgb, var(--learn-track-accent) 16%, transparent),
+      transparent 42%
     ),
     var(--ct-panel) !important;
+  background-color: var(--ct-panel) !important;
 }
 
 .learn-track-card.is-beginner::before {
-  width: 6px;
+  width: 7px;
 }
 
 /* The kicker is a LABEL, so it should whisper, not shout. Dropped the filled pill
@@ -897,5 +946,60 @@ body.coding-dark .lesson-check-why.is-wrong .lesson-check-verdict { color: #fbbf
   .learn-track-card {
     min-height: 230px;
     padding: 20px;
+  }
+}
+
+
+/* Track chooser hierarchy: keep the decision focused and add useful context
+   without stretching two short cards across the full application canvas. */
+.learn-tracks {
+  width: min(100%, 1080px);
+  margin-inline: auto;
+}
+
+.learn-tracks-head {
+  max-width: 720px;
+}
+
+.learn-back-link {
+  font-size: 0.86rem;
+  color: color-mix(in srgb, var(--ct-text) 68%, transparent);
+}
+
+.learn-track-kicker {
+  font-size: 0.72rem;
+  opacity: 1;
+}
+
+.learn-track-topics {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 18px;
+  color: color-mix(in srgb, var(--ct-text) 72%, transparent);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.learn-track-topics-label {
+  color: var(--learn-track-accent);
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.learn-track-stat-label {
+  color: color-mix(in srgb, var(--ct-text) 68%, transparent);
+  font-size: 0.78rem;
+}
+
+@media (max-width: 700px) {
+  .learn-tracks {
+    width: 100%;
+  }
+
+  .learn-track-topics {
+    margin-top: 14px;
   }
 }

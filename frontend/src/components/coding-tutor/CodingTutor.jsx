@@ -5,6 +5,7 @@ import {
   FaChartLine,
   FaEye,
   FaEyeSlash,
+  FaEllipsisH,
   FaFileCode,
   FaHome,
   FaLaptopCode,
@@ -21,6 +22,7 @@ import ProblemPanel from "./ProblemPanel";
 import ProgressBadges from "./ProgressBadges";
 import QuizBank from "./QuizBank";
 import ConceptQuiz from "./concept-quiz/ConceptQuiz";
+import { summarizeLearnQuizProgress } from "./concept-quiz/conceptQuizProgress";
 import LearnMode from "./learn/LearnMode";
 import "./learn/Learn.css";
 import "./concept-quiz/ConceptQuiz.css";
@@ -31,7 +33,7 @@ import MockInterviewBar from "./MockInterviewBar";
 import MockSummary from "./MockSummary";
 import MockConfirm from "./MockConfirm";
 import { gradeMockSummary, scoreFromGraded } from "./interviewGrade";
-import { appendInterviewAttempt } from "./interviewHistory";
+import { appendInterviewAttempt, summarizeInterviewHistory } from "./interviewHistory";
 import { markInterviewSolved } from "./interviewProgress";
 import {
   saveDraft,
@@ -105,7 +107,7 @@ const PRACTICE_DIFFICULTIES = ["easy", "medium", "hard"];
 
 const CODING_PAGES = [
   { id: "dashboard", label: "Home", icon: FaHome },
-  { id: "quiz", label: "Practice Library", icon: FaBook },
+  { id: "quiz", label: "Learning Library", icon: FaBook },
   { id: "interview", label: "Interview Prep", icon: FaUserGraduate },
   { id: "workspace", label: "Workspace", icon: FaLaptopCode },
   { id: "progress", label: "Progress", icon: FaChartLine },
@@ -2689,6 +2691,8 @@ export default function CodingTutor({
         progressByQuestion={progressByQuestion}
         progressByLanguage={progressByLanguage}
         progressSummary={progressSummary}
+        learnQuizStats={summarizeLearnQuizProgress()}
+        interviewStats={summarizeInterviewHistory()}
         midSlot={<StatTiles progressSummary={progressSummary} />}
       />
     </section>
@@ -2927,7 +2931,7 @@ export default function CodingTutor({
     <div className={appClasses}>
       <div className="coding-nav-row">
         <nav className="coding-section-nav campus-section-nav" aria-label="Coding tutor sections">
-        {CODING_PAGES.map(page => {
+        {CODING_PAGES.filter((page) => page.id !== "progress").map(page => {
           const Icon = page.icon;
           // The Workspace icon and the separate "My Snippets" button below both
           // live under activePage === "workspace". When the personal scratch space
@@ -2950,45 +2954,77 @@ export default function CodingTutor({
           </button>
           );
         })}
-        {/* Direct shortcut to the personal scratch space (My Snippets) — separate
-            from the graded Workspace toggle below so the two stay distinctly named.
-            Active when the personal workspace is the thing currently open. */}
-        <button
-          type="button"
-          className={`coding-nav-snippets-btn ${activePage === "workspace" && isPersonalMode ? "active" : ""}`}
-          onClick={() => guardPersonalNav(() => {
-            // Match the other nav destinations (openPage): prompt before discarding
-            // unsaved personal edits, and persist in-progress quiz-bank work first.
-            savePendingProblemProgress();
-            openMySnippets();
-          })}
-          title="My Snippets"
-          aria-label="My Snippets"
-          aria-pressed={activePage === "workspace" && isPersonalMode}
+        <details
+          className="coding-nav-more"
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) {
+              event.currentTarget.removeAttribute("open");
+            }
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.currentTarget.removeAttribute("open");
+              event.currentTarget.querySelector("summary")?.focus();
+            }
+          }}
         >
-          <span className="coding-nav-icon" aria-hidden="true"><FaFileCode /></span>
-          <span className="coding-nav-label">My Snippets</span>
-        </button>
-        {/* toggleWorkspace HIDES only when we're already on the workspace; from any
-            other page it SHOWS it. Derive every label from that same condition so
-            the title/aria-label match what the click actually does (on Home the
-            button opens the workspace, so it must say "Show Workspace"). */}
-        {(() => {
-          const willHideWorkspace = activePage === "workspace" && workspaceVisible;
-          const label = willHideWorkspace ? "Hide Workspace" : "Show Workspace";
-          return (
+          <summary
+            className={
+              activePage === "progress" || (activePage === "workspace" && isPersonalMode)
+                ? "active"
+                : ""
+            }
+            aria-label="More Coding Tutor tools"
+          >
+            <span className="coding-nav-icon" aria-hidden="true"><FaEllipsisH /></span>
+            <span className="coding-nav-label">More</span>
+          </summary>
+          <div className="coding-nav-more-menu">
             <button
               type="button"
-              className="coding-nav-workspace-toggle"
-              onClick={toggleWorkspace}
-              title={label}
-              aria-label={label}
+              className={activePage === "progress" ? "active" : ""}
+              onClick={(event) => {
+                event.currentTarget.closest("details")?.removeAttribute("open");
+                openPage("progress");
+              }}
             >
-              <span className="coding-nav-icon" aria-hidden="true">{willHideWorkspace ? <FaEyeSlash /> : <FaEye />}</span>
-              <span className="coding-nav-label">{label}</span>
+              <span className="coding-nav-icon" aria-hidden="true"><FaChartLine /></span>
+              <span>Progress</span>
             </button>
-          );
-        })()}
+            <button
+              type="button"
+              className={activePage === "workspace" && isPersonalMode ? "active" : ""}
+              onClick={(event) => {
+                event.currentTarget.closest("details")?.removeAttribute("open");
+                guardPersonalNav(() => {
+                  savePendingProblemProgress();
+                  openMySnippets();
+                });
+              }}
+            >
+              <span className="coding-nav-icon" aria-hidden="true"><FaFileCode /></span>
+              <span>My Snippets</span>
+            </button>
+            {(() => {
+              const willHideWorkspace = activePage === "workspace" && workspaceVisible;
+              const label = willHideWorkspace ? "Hide Workspace" : "Show Workspace";
+              return (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.currentTarget.closest("details")?.removeAttribute("open");
+                    toggleWorkspace();
+                  }}
+                >
+                  <span className="coding-nav-icon" aria-hidden="true">
+                    {willHideWorkspace ? <FaEyeSlash /> : <FaEye />}
+                  </span>
+                  <span>{label}</span>
+                </button>
+              );
+            })()}
+          </div>
+        </details>
         {/* Theme toggle sits last as a compact icon-only circle — a setting, not a
             destination. */}
         <button

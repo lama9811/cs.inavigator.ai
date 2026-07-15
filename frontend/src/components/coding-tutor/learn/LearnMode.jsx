@@ -130,6 +130,17 @@ function TrackCards({ language, languageLabel, categories, onPick, onBack }) {
               <span className="learn-track-kicker">{track.kicker}</span>
               <span className="learn-track-title">{track.label}</span>
               <span className="learn-track-description">{track.description}</span>
+              <span className="learn-track-topics">
+                <span className="learn-track-topics-label">Includes</span>
+                <span>
+                  {trackCategories
+                    .filter((category) => category.has_lesson)
+                    .slice(0, 4)
+                    .map((category) => category.label)
+                    .join(" / ")}
+                  {ready > 4 ? " + " + (ready - 4) + " more" : ""}
+                </span>
+              </span>
               <span className="learn-track-stats">
                 <span className="learn-track-stat">
                   <span className="learn-track-stat-num">{ready}</span>

@@ -7351,3 +7351,120 @@ body.coding-dark .coding-problem-empty button:hover {
   color: #fff !important;
   box-shadow: 0 10px 24px rgba(47, 111, 214, 0.5) !important;
 }
+
+
+/* Keep the primary Coding Tutor destinations visible and group lower-frequency
+   tools under a compact native disclosure menu. */
+.coding-app .campus-section-nav .coding-nav-more {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.coding-app .campus-section-nav .coding-nav-more > summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1px solid var(--ct-border);
+  border-radius: 999px;
+  background: var(--ct-panel);
+  color: var(--ct-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.coding-app .campus-section-nav .coding-nav-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.coding-app .campus-section-nav .coding-nav-more > summary:hover,
+.coding-app .campus-section-nav .coding-nav-more > summary:focus-visible {
+  background: color-mix(in srgb, var(--ct-primary) 9%, var(--ct-panel));
+  border-color: color-mix(in srgb, var(--ct-primary) 42%, var(--ct-border));
+  color: var(--ct-primary);
+}
+
+.coding-app .campus-section-nav .coding-nav-more > summary.active {
+  background: var(--ct-primary);
+  border-color: var(--ct-primary);
+  color: #fff;
+}
+
+.coding-nav-more-menu {
+  position: absolute;
+  z-index: 80;
+  top: calc(100% + 9px);
+  right: 0;
+  display: grid;
+  width: 220px;
+  padding: 8px;
+  border: 1px solid var(--ct-border);
+  border-radius: 14px;
+  background: var(--ct-panel);
+  box-shadow: 0 16px 36px rgba(15, 37, 69, 0.16);
+}
+
+.coding-app .campus-section-nav .coding-nav-more-menu > button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 11px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ct-text);
+  font: inherit;
+  font-size: 0.84rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.coding-app .campus-section-nav .coding-nav-more-menu > button:hover,
+.coding-app .campus-section-nav .coding-nav-more-menu > button:focus-visible,
+.coding-app .campus-section-nav .coding-nav-more-menu > button.active {
+  background: color-mix(in srgb, var(--ct-primary) 10%, var(--ct-panel)) !important;
+  color: var(--ct-primary) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.coding-app .campus-section-nav > button:hover,
+.coding-app .campus-section-nav > button:focus-visible {
+  background: color-mix(in srgb, var(--ct-primary) 9%, var(--ct-panel)) !important;
+  border-color: color-mix(in srgb, var(--ct-primary) 42%, var(--ct-border)) !important;
+  color: var(--ct-primary) !important;
+}
+
+.coding-app .campus-section-nav > button.active {
+  border-color: var(--ct-primary) !important;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--ct-primary) 24%, transparent) !important;
+}
+
+.coding-app .campus-section-nav > button.active::after {
+  background: var(--ct-primary) !important;
+}
+
+body.coding-dark .coding-nav-more-menu {
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.42);
+}
+
+@media (max-width: 1180px) {
+  .coding-app .campus-section-nav .coding-nav-more > summary {
+    width: 42px;
+    min-width: 42px;
+    height: 42px;
+    min-height: 42px;
+    padding: 0;
+  }
+
+  .coding-app .campus-section-nav .coding-nav-more > summary .coding-nav-label {
+    display: none;
+  }
+}

@@ -8,6 +8,7 @@ import {
   FaCheck,
   FaTimes,
 } from "react-icons/fa";
+import { markLessonRead } from "../concept-quiz/conceptQuizProgress";
 
 // One lesson. Renders the authored block types (see backend/lessons.py) and ends with
 // the handoff that gives Learn its purpose: "Practice this."
@@ -228,6 +229,9 @@ export default function LessonView({
       .then((data) => {
         // `lesson: null` means "not authored yet" — a real, expected state, not an error.
         if (alive) setLesson(data.lesson);
+        // Record the read only when a real lesson loaded, so "not authored yet"
+        // pages don't count toward the reading badges.
+        if (alive && data.lesson) markLessonRead(language, category);
       })
       .catch((err) => {
         if (alive) setError(err.message || "Could not load this lesson.");
