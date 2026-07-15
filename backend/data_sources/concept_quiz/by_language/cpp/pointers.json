@@ -74,6 +74,33 @@
       "answer_index": 1,
       "explanation": "In a declaration, int* means 'pointer to int'. The same * symbol means dereference when used on an existing pointer (like *p), which is a common source of confusion.",
       "title": "Meaning of int*"
+    },
+    {
+      "id": "cpp-pointers-05",
+      "concept": "pointers",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "cpp",
+      "code": "int a = 4;\nint b = 9;\nint* p = &a;\np = &b;\ncout << *p;",
+      "prompt": "What does this output?",
+      "choices": ["4", "9", "The address of b", "Compile error"],
+      "answer_index": 1,
+      "explanation": "The pointer first stores the address of a, then p = &b replaces that address. Dereferencing p now reads b, so the program prints 9. Reassigning the pointer does not change a.",
+      "title": "Point somewhere new"
+    },
+    {
+      "id": "cpp-pointers-06",
+      "concept": "pointers",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "error_class": "runtime",
+      "code": "int* p = nullptr;\ncout << *p;",
+      "prompt": "What is wrong with this code?",
+      "choices": ["nullptr contains the number 0, so it safely prints 0", "Dereferencing a null pointer causes undefined behavior", "Pointers cannot be printed with cout", "p must be declared as double*"],
+      "answer_index": 1,
+      "explanation": "nullptr deliberately points to no object. Dereferencing it asks for a value at an invalid location, which causes undefined behavior and often crashes. Check that a pointer is not null before using *p.",
+      "title": "Do not dereference null"
     }
   ]
 }

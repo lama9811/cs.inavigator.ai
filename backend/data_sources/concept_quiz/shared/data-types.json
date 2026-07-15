@@ -241,6 +241,150 @@
           "explanation": "A decimal literal like 3.0 is a `double` in C++. An `int` holds only whole numbers, so assigning 3.0 to one would silently truncate it to 3."
         }
       }
+    },
+    {
+      "id": "boolean-conversion-01",
+      "concept": "data-types",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Values used as conditions",
+      "variants": {
+        "python": {
+          "code": "value = 0\nprint(bool(value))",
+          "prompt": "What does this print?",
+          "choices": ["True", "False", "0", "TypeError"],
+          "answer_index": 1,
+          "explanation": "Python treats numeric zero as false when converted to bool. Nonzero numbers convert to true. This matters whenever a number is used directly as a condition."
+        },
+        "java": {
+          "code": "int value = 0;\nSystem.out.println(value != 0);",
+          "prompt": "What does this print?",
+          "choices": ["true", "false", "0", "Compile error"],
+          "answer_index": 1,
+          "explanation": "Java does not convert an int directly to boolean, so the code compares value with zero. Since value is 0, value != 0 is false."
+        },
+        "javascript": {
+          "code": "let value = 0;\nconsole.log(Boolean(value));",
+          "prompt": "What does this print?",
+          "choices": ["true", "false", "0", "undefined"],
+          "answer_index": 1,
+          "explanation": "JavaScript converts numeric zero to false. Other falsy values include an empty string, null, undefined, and NaN, so implicit conversion deserves careful attention."
+        },
+        "cpp": {
+          "code": "int value = 0;\ncout << boolalpha << static_cast<bool>(value);",
+          "prompt": "What does this print?",
+          "choices": ["true", "false", "0", "Compile error"],
+          "answer_index": 1,
+          "explanation": "Converting zero to bool produces false. boolalpha tells cout to print the word false instead of the numeric form 0."
+        }
+      }
+    },
+    {
+      "id": "decimal-to-int-01",
+      "concept": "data-types",
+      "difficulty": "easy",
+      "kind": "typein",
+      "title": "Convert a decimal to an integer",
+      "variants": {
+        "python": {
+          "code": "value = int(8.9)\nprint(value)",
+          "prompt": "What integer does this print?",
+          "accepted": ["8"],
+          "explanation": "Converting a positive float with int removes the fractional part. It truncates toward zero, so 8.9 becomes 8 rather than rounding to 9."
+        },
+        "java": {
+          "code": "int value = (int) 8.9;\nSystem.out.println(value);",
+          "prompt": "What integer does this print?",
+          "accepted": ["8"],
+          "explanation": "The explicit int cast discards the fractional part and truncates toward zero. It does not round, so the stored value is 8."
+        },
+        "javascript": {
+          "code": "let value = Math.trunc(8.9);\nconsole.log(value);",
+          "prompt": "What integer does this print?",
+          "accepted": ["8"],
+          "explanation": "Math.trunc removes everything after the decimal point. The result is 8, which is still represented by JavaScript's number type."
+        },
+        "cpp": {
+          "code": "int value = static_cast<int>(8.9);\ncout << value;",
+          "prompt": "What integer does this print?",
+          "accepted": ["8"],
+          "explanation": "The explicit cast converts the double to int by dropping the fractional part. The conversion truncates toward zero, producing 8."
+        }
+      }
+    },
+    {
+      "id": "strict-equality-01",
+      "concept": "data-types",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Same-looking values, different types",
+      "variants": {
+        "python": {
+          "code": "print(5 == \"5\")",
+          "prompt": "What does this print?",
+          "choices": ["True", "False", "5", "TypeError"],
+          "answer_index": 1,
+          "explanation": "One value is an int and the other is a string. Python does not convert the string for this equality check, so they are not equal."
+        },
+        "java": {
+          "code": "System.out.println(\"5\".equals(5));",
+          "prompt": "What does this print?",
+          "choices": ["true", "false", "5", "Compile error"],
+          "answer_index": 1,
+          "explanation": "String.equals checks both compatible type and content. The String 5 is not equal to the Integer 5, so the result is false."
+        },
+        "javascript": {
+          "code": "console.log(5 === \"5\");",
+          "prompt": "What does this print?",
+          "choices": ["true", "false", "5", "TypeError"],
+          "answer_index": 1,
+          "explanation": "Strict equality does not coerce types. A number and a string are different types, so 5 === \"5\" is false."
+        },
+        "cpp": {
+          "code": "int number = 5;\nstring text = \"5\";\ncout << boolalpha << (to_string(number) == text);",
+          "prompt": "What does this print?",
+          "choices": ["true", "false", "5", "Compile error"],
+          "answer_index": 0,
+          "explanation": "to_string explicitly converts the int to the string \"5\". The two strings then contain the same characters, so the comparison is true."
+        }
+      }
+    },
+    {
+      "id": "floating-precision-01",
+      "concept": "data-types",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Decimals are approximations",
+      "variants": {
+        "python": {
+          "code": "print(0.1 + 0.2 == 0.3)",
+          "prompt": "What does this usually print, and why?",
+          "choices": ["False, because many decimal fractions are only approximated in binary", "True, because float arithmetic is exact", "0.3, because == returns the sum", "TypeError, because floats cannot be compared"],
+          "answer_index": 0,
+          "explanation": "Binary floating-point cannot represent 0.1 and 0.2 exactly. Their stored approximations add to a value just above 0.3, so direct equality is false. Compare with a small tolerance instead."
+        },
+        "java": {
+          "code": "System.out.println(0.1 + 0.2 == 0.3);",
+          "prompt": "What does this usually print, and why?",
+          "choices": ["false, because many decimal fractions are only approximated in binary", "true, because double arithmetic is exact", "0.3, because == returns the sum", "Compile error, because doubles cannot be compared"],
+          "answer_index": 0,
+          "explanation": "A double stores a binary approximation of these decimals. The sum is slightly different from the stored approximation of 0.3, so exact equality returns false."
+        },
+        "javascript": {
+          "code": "console.log(0.1 + 0.2 === 0.3);",
+          "prompt": "What does this usually print, and why?",
+          "choices": ["false, because many decimal fractions are only approximated in binary", "true, because number arithmetic is exact", "0.3, because === returns the sum", "TypeError, because decimals need parseFloat"],
+          "answer_index": 0,
+          "explanation": "JavaScript numbers use binary floating-point. The result is approximately 0.30000000000000004, so strict equality with 0.3 is false."
+        },
+        "cpp": {
+          "code": "cout << boolalpha << (0.1 + 0.2 == 0.3);",
+          "prompt": "What does this usually print, and why?",
+          "choices": ["false, because many decimal fractions are only approximated in binary", "true, because double arithmetic is exact", "0.3, because == returns the sum", "Compile error, because doubles cannot be compared"],
+          "answer_index": 0,
+          "explanation": "The double values are binary approximations. The computed sum and the stored 0.3 differ slightly, so robust numeric code compares their difference with a tolerance."
+        }
+      }
     }
   ]
 }

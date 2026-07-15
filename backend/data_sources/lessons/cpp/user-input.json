@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "User Input",
+  "summary": "Read stream data and handle failed extraction.",
+  "minutes": 10,
+  "error_classes": [
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "`std::cin >> value` extracts formatted input into a typed variable. Check the stream before using the value, because text entered for a number makes extraction fail.",
+  "refresher_code": "int credits;\nif (std::cin >> credits) {\n  std::cout << credits;\n}",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "`std::cin >> value` extracts formatted input into a typed variable. Check the stream before using the value, because text entered for a number makes extraction fail. Read stream data and handle failed extraction."
+    },
+    {
+      "kind": "text",
+      "body": "Formatted extraction with `>>` reads one typed token and normally stops at whitespace. `std::getline` reads the rest of a full line, including spaces. Mixing them requires attention because the newline left by extraction can become the first delimiter seen by getline."
+    },
+    {
+      "kind": "code",
+      "caption": "The stream condition separates successful integer extraction from invalid text.",
+      "code": "#include <iostream>\nint main(){\n int credits;\n std::cout << \"Credits: \";\n if(std::cin >> credits) std::cout << credits+1 << \"\\n\";\n else std::cout << \"Enter a number\\n\";\n}",
+      "output": "Depends on input"
+    },
+    {
+      "kind": "compare",
+      "caption": "Discard the leftover newline before switching to a full-line read.",
+      "wrong_label": "Common mistake",
+      "wrong": "std::cin >> age;\nstd::getline(std::cin, name);",
+      "right_label": "Clearer version",
+      "right": "std::cin >> age;\nstd::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\\n');\nstd::getline(std::cin, name);"
+    },
+    {
+      "kind": "text",
+      "body": "After a user enters an age and presses Enter, extraction consumes the digits but leaves the newline. Ignore removes that pending delimiter, then getline waits for the name. Also test stream failure before using a numeric variable."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Follow the data",
+      "body": "After `operator>>` reads a number, a newline can remain in the stream and make a following `getline` appear to skip input."
+    },
+    {
+      "kind": "check",
+      "prompt": "What indicates invalid numeric extraction?",
+      "code": "",
+      "choices": [
+        "the stream becomes failed",
+        "the value becomes a string",
+        "main restarts",
+        "cout closes"
+      ],
+      "answer_index": 0,
+      "why": "The input stream records a failure state that can be tested in a condition."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which reads an entire line with spaces?",
+      "code": "",
+      "choices": [
+        "std::getline(std::cin, text);",
+        "std::cin >> text;",
+        "std::cout << text;",
+        "read(text);"
+      ],
+      "answer_index": 0,
+      "why": "Getline continues through spaces until it reaches the line delimiter."
+    },
+    {
+      "kind": "list",
+      "title": "User Input checklist",
+      "items": [
+        "Declare a matching type.",
+        "Test extraction success.",
+        "Plan transitions to getline.",
+        "Reject unusable input clearly."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

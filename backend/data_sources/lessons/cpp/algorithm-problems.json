@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Algorithm Problems: Part 1",
+  "summary": "Order initialization, traversal, update, and return.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "Define the input and output, trace a tiny case, initialize an accumulator, update it for each relevant element, and return after traversal completes.",
+  "refresher_code": "int total=0;\nfor(int n: values) total+=n;\nreturn total;",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Define the input and output, trace a tiny case, initialize an accumulator, update it for each relevant element, and return after traversal completes. Order initialization, traversal, update, and return."
+    },
+    {
+      "kind": "text",
+      "body": "Translate an algorithm prompt into input, output, remembered state, and repeated work. In a sum, the accumulator starts at zero because adding zero changes nothing. A range-based loop then adds each value exactly once, and the function returns only after traversal."
+    },
+    {
+      "kind": "code",
+      "caption": "The accumulator starts at zero and receives every value before it is returned.",
+      "code": "#include <iostream>\n#include <vector>\nint sum(const std::vector<int>& v){\n int total=0;\n for(int n:v) total+=n;\n return total;\n}\nint main(){std::cout<<sum({3,5,2})<<\"\\n\";}",
+      "output": "10"
+    },
+    {
+      "kind": "compare",
+      "caption": "Keep the return outside the loop body.",
+      "wrong_label": "Common mistake",
+      "wrong": "for (int value : values) {\n  total += value;\n  return total;\n}",
+      "right_label": "Clearer version",
+      "right": "for (int value : values) {\n  total += value;\n}\nreturn total;"
+    },
+    {
+      "kind": "text",
+      "body": "For `{3, 5, 2}`, total becomes three, then eight, then ten. An empty vector performs no updates and returns the initialized zero. Tracing both a normal case and the smallest valid case exposes misplaced initialization and return statements."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Inspect this state",
+      "body": "Returning inside the range loop stops after one element; the final answer belongs after the complete traversal."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is the sum accumulator initialized to?",
+      "code": "",
+      "choices": [
+        "0",
+        "1",
+        "the vector size",
+        "the first index"
+      ],
+      "answer_index": 0,
+      "why": "Zero is the additive identity and works correctly even when the vector is empty."
+    },
+    {
+      "kind": "check",
+      "prompt": "Where does a full traversal return?",
+      "code": "",
+      "choices": [
+        "after the loop",
+        "before initialization",
+        "inside the first pass",
+        "before every update"
+      ],
+      "answer_index": 0,
+      "why": "Later elements can change the result, so the loop must finish first."
+    },
+    {
+      "kind": "list",
+      "title": "Algorithm Problems: Part 1 checklist",
+      "items": [
+        "Write expected output.",
+        "Choose correct initial state.",
+        "Visit each needed element.",
+        "Return after traversal."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

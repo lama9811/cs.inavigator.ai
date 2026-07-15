@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Operators",
+  "summary": "Calculate values and combine boolean conditions.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "C++ arithmetic follows precedence rules, comparisons produce booleans, and `&&`, `||`, and `!` combine logic. Integer division discards the fractional part.",
+  "refresher_code": "bool ready = credits >= 12 && holds == 0;",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "C++ arithmetic follows precedence rules, comparisons produce booleans, and `&&`, `||`, and `!` combine logic. Integer division discards the fractional part. Calculate values and combine boolean conditions."
+    },
+    {
+      "kind": "text",
+      "body": "An operator uses the types of both operands. Two integers divided together produce an integer result, even if that result is later stored in a double. Convert an operand before division when the fractional part matters. Logical operators also short-circuit, so the right side may not run."
+    },
+    {
+      "kind": "code",
+      "caption": "Two integer operands produce integer division, while the double operand keeps the fraction.",
+      "code": "#include <iostream>\nint main(){\n  std::cout << 7 / 2 << \"\\n\";\n  std::cout << 7.0 / 2 << \"\\n\";\n}",
+      "output": "3\n3.5"
+    },
+    {
+      "kind": "compare",
+      "caption": "Convert before the operation that would lose information.",
+      "wrong_label": "Common mistake",
+      "wrong": "double average = total / count;",
+      "right_label": "Clearer version",
+      "right": "double average = static_cast<double>(total) / count;"
+    },
+    {
+      "kind": "text",
+      "body": "With total seven and count two, the wrong expression performs integer division first and produces three. Assignment changes three into `3.0` but cannot restore the lost half. The corrected expression makes the division itself use floating-point arithmetic."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "C++ detail to check",
+      "body": "Use `==` for comparison. A single equals sign assigns a value, and an assignment inside a condition can silently alter program state."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is `10 - 2 * 3`?",
+      "code": "",
+      "choices": [
+        "4",
+        "24",
+        "18",
+        "8"
+      ],
+      "answer_index": 0,
+      "why": "Multiplication happens first, leaving ten minus six."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is `9 % 4`?",
+      "code": "",
+      "choices": [
+        "1",
+        "2.25",
+        "4",
+        "0"
+      ],
+      "answer_index": 0,
+      "why": "The remainder after two groups of four is one."
+    },
+    {
+      "kind": "list",
+      "title": "Operators checklist",
+      "items": [
+        "Check operand types.",
+        "Use equality for comparisons.",
+        "Parenthesize dense logic.",
+        "Remember integer division."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

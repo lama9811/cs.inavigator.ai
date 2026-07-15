@@ -90,7 +90,7 @@ def load_manifest() -> dict[str, Any]:
 
 
 def categories_for_language(language: str) -> list[dict[str, Any]]:
-    """The 13 categories a language shows: 12 shared + its 1 language-specific.
+    """The shared categories plus one language-specific category for a language.
 
     Each entry carries id/label/blurb/file plus ``scope`` ("shared" or
     "language") so the UI can tell them apart, and a ``count`` of questions
@@ -102,7 +102,10 @@ def categories_for_language(language: str) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for cat in manifest.get("shared_categories", []):
         entry = {**cat, "scope": "shared"}
-        entry["count"] = _count_questions(_shared_path(cat["file"]), lang, scope="shared")
+        paths = [_shared_path(cat["file"])]
+        if cat.get("extra_file"):
+            paths.append(_shared_path(cat["extra_file"]))
+        entry["count"] = sum(_count_questions(path, lang, scope="shared") for path in paths)
         out.append(entry)
 
     specific = manifest.get("language_specific", {}).get(lang)
@@ -210,7 +213,9 @@ def _project_question(raw: dict[str, Any], language: str, *, scope: str) -> dict
             raise ConceptQuizDataError(
                 f"Question '{raw.get('id', '?')}' has no '{language}' variant."
             )
-        payload = variant
+        # Common fields can live on the question when only code differs by language.
+        # A language variant still wins for any field it overrides.
+        payload = {**raw, **variant}
     else:
         # Language-specific: content is at the item level. Guard that the file's
         # declared language matches what we're serving.
@@ -286,10 +291,14 @@ def questions_for_category(language: str, category_id: str) -> dict[str, Any]:
     cat, scope, path = _resolve_category(lang, category_id)
 
     questions: list[dict[str, Any]] = []
-    if os.path.exists(path):
-        data = _read_json(path)
-        for raw in data.get("questions", []):
-            questions.append(_project_question(raw, lang, scope=scope))
+    paths = [path]
+    if scope == "shared" and cat.get("extra_file"):
+        paths.append(_shared_path(cat["extra_file"]))
+    for content_path in paths:
+        if os.path.exists(content_path):
+            data = _read_json(content_path)
+            for raw in data.get("questions", []):
+                questions.append(_project_question(raw, lang, scope=scope))
 
     return {
         "language": lang,

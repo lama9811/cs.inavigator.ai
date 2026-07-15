@@ -1,0 +1,84 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Loops",
+  "summary": "Repeat statements with a clear exit condition.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "timeout",
+    "runtime"
+  ],
+  "refresher": "A `for` loop groups initialization, condition, and update. A `while` loop repeats while its condition is true. Trace the first value, final included value, and update.",
+  "refresher_code": "for(int i=0;i<3;i++){\n  std::cout << i << \"\\n\";\n}",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A `for` loop groups initialization, condition, and update. A `while` loop repeats while its condition is true. Trace the first value, final included value, and update. Repeat statements with a clear exit condition."
+    },
+    {
+      "kind": "text",
+      "body": "Trace a loop as initialization, test, body, and update. For container traversal, the first index is zero and the condition should stay strictly below the size. A range-based loop avoids manual indexes when you only need each element value."
+    },
+    {
+      "kind": "code",
+      "caption": "The counter begins at zero and stops when it reaches three.",
+      "code": "#include <iostream>\nint main(){\n for(int i=0;i<3;i++) std::cout<<\"step \"<<i<<\"\\n\";\n}",
+      "output": "step 0\nstep 1\nstep 2"
+    },
+    {
+      "kind": "compare",
+      "caption": "Use a strict bound so the count is never used as an index.",
+      "wrong_label": "Common mistake",
+      "wrong": "for (std::size_t i = 0; i <= values.size(); i++) {\n  use(values[i]);\n}",
+      "right_label": "Clearer version",
+      "right": "for (std::size_t i = 0; i < values.size(); i++) {\n  use(values[i]);\n}"
+    },
+    {
+      "kind": "text",
+      "body": "For three elements, valid indexes are zero, one, and two. Once i becomes three, the corrected condition fails. The inclusive version allows three and accesses beyond the vector. If no index is needed, `for (int value : values)` is simpler."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Follow the data",
+      "body": "A while loop whose tested variable never changes can run forever; identify the exact statement responsible for reaching the exit."
+    },
+    {
+      "kind": "check",
+      "prompt": "How many passes occur?",
+      "code": "for(int i=1;i<=4;i++){}",
+      "choices": [
+        "4",
+        "3",
+        "5",
+        "none"
+      ],
+      "answer_index": 0,
+      "why": "The loop includes one through four because its condition includes the upper boundary."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is missing?",
+      "code": "int count=3;\nwhile(count>0){std::cout<<count;}",
+      "choices": [
+        "an update to count",
+        "a header",
+        "a second condition",
+        "a string"
+      ],
+      "answer_index": 0,
+      "why": "Count stays equal to three, leaving the while condition true forever."
+    },
+    {
+      "kind": "list",
+      "title": "Loops checklist",
+      "items": [
+        "Record initialization.",
+        "Inspect the comparison.",
+        "Confirm forward progress.",
+        "Use container size."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

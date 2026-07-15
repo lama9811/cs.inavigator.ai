@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Conditionals",
+  "summary": "Choose a branch with ordered boolean expressions.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "syntax"
+  ],
+  "refresher": "C++ checks an `if`, then any `else if` branches, and finally `else`. The first true branch runs, so narrower overlapping ranges belong before broad ones.",
+  "refresher_code": "if(score>=90){ grade=\"A\"; }\nelse { grade=\"Below A\"; }",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "C++ checks an `if`, then any `else if` branches, and finally `else`. The first true branch runs, so narrower overlapping ranges belong before broad ones. Choose a branch with ordered boolean expressions."
+    },
+    {
+      "kind": "text",
+      "body": "C++ conditions expect a value convertible to bool. Zero becomes false and nonzero numbers become true, but an explicit comparison usually communicates the rule better. An else attaches to the nearest unmatched if, so braces prevent indentation from telling a different story than the compiler."
+    },
+    {
+      "kind": "code",
+      "caption": "The first condition is true, so later parts of the chain are skipped.",
+      "code": "#include <iostream>\nint main(){\n int score=92;\n if(score>=90) std::cout<<\"A\\n\";\n else if(score>=80) std::cout<<\"B\\n\";\n else std::cout<<\"C or below\\n\";\n}",
+      "output": "A"
+    },
+    {
+      "kind": "compare",
+      "caption": "Remove the stray semicolon so the block belongs to the condition.",
+      "wrong_label": "Common mistake",
+      "wrong": "if (score >= 60); {\n  passed = true;\n}",
+      "right_label": "Clearer version",
+      "right": "if (score >= 60) {\n  passed = true;\n}"
+    },
+    {
+      "kind": "text",
+      "body": "The semicolon in the wrong version is an empty controlled statement. The following block then runs every time. In the corrected version, only scores at least sixty enter the block. Test just below, on, and just above the boundary."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Follow the data",
+      "body": "An accidental semicolon after `if (condition);` ends the controlled statement, making the following block run independently."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is printed?",
+      "code": "int n=0;\nif(n) std::cout<<\"yes\"; else std::cout<<\"no\";",
+      "choices": [
+        "no",
+        "yes",
+        "0",
+        "an error"
+      ],
+      "answer_index": 0,
+      "why": "Zero converts to false in the condition, so the else branch runs."
+    },
+    {
+      "kind": "check",
+      "prompt": "Why test 90 before 60?",
+      "code": "",
+      "choices": [
+        "95 satisfies both thresholds",
+        "C++ sorts conditions",
+        "else requires equality",
+        "it changes score"
+      ],
+      "answer_index": 0,
+      "why": "Only the first true branch runs, so the broader rule would hide the narrower grade."
+    },
+    {
+      "kind": "list",
+      "title": "Conditionals checklist",
+      "items": [
+        "Order overlapping rules.",
+        "Use visible braces.",
+        "Remove stray semicolons.",
+        "Test each boundary."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Strings",
+  "summary": "Create, index, compare, and combine text.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "`std::string` stores text, `.size()` reports its character count, and indexing starts at zero. Strings support comparison and concatenation with compatible operands.",
+  "refresher_code": "#include <string>\nstd::string name = \"Ada\";\nchar first = name[0];",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "`std::string` stores text, `.size()` reports its character count, and indexing starts at zero. Strings support comparison and concatenation with compatible operands. Create, index, compare, and combine text."
+    },
+    {
+      "kind": "text",
+      "body": "`std::string` manages a sequence of characters and its storage for you. A `char` holds one character, while a string can grow and provides methods such as `.size()`, `.substr()`, and `.find()`. Indexing is unchecked with brackets, so stay inside the valid range."
+    },
+    {
+      "kind": "code",
+      "caption": "Substring takes a starting index and a character count, unlike APIs that use an ending index.",
+      "code": "#include <iostream>\n#include <string>\nint main(){\n std::string word=\"campus\";\n std::cout << word[0] << \"\\n\";\n std::cout << word.substr(1,3) << \"\\n\";\n}",
+      "output": "c\namp"
+    },
+    {
+      "kind": "compare",
+      "caption": "Check that text exists before reading its final character.",
+      "wrong_label": "Common mistake",
+      "wrong": "char last = text[text.size() - 1]; // unsafe when empty",
+      "right_label": "Clearer version",
+      "right": "if (!text.empty()) {\n  char last = text.back();\n}"
+    },
+    {
+      "kind": "text",
+      "body": "For a nonempty word, `back()` reads the final character. For an empty string, there is no such character, so the condition skips access. The size is a count, not an index: a four-character string has valid positions zero through three."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "C++ detail to check",
+      "body": "For a nonempty string, the final character is at `text.size() - 1`; using `text[text.size()]` steps past the valid range."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is `std::string(\"Ada\").size()`?",
+      "code": "",
+      "choices": [
+        "3",
+        "2",
+        "4",
+        "0"
+      ],
+      "answer_index": 0,
+      "why": "The string contains three characters, so its size is three."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does `substr(1,2)` return from `\"code\"`?",
+      "code": "",
+      "choices": [
+        "\"od\"",
+        "\"ode\"",
+        "\"co\"",
+        "\"d\""
+      ],
+      "answer_index": 0,
+      "why": "The call starts at index one and takes two characters, producing od."
+    },
+    {
+      "kind": "list",
+      "title": "Strings checklist",
+      "items": [
+        "Include the string header.",
+        "Count indexes from zero.",
+        "Distinguish count from final index.",
+        "Check emptiness before using the last character."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

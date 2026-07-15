@@ -4816,19 +4816,34 @@ def _grade_concept_answer(question: dict[str, Any], answer: ConceptQuizAnswer) -
     """Grade one submitted answer against its question. Pure/stateless."""
     kind = question.get("kind")
     correct = False
+    student_answer: Any = None
+    correct_answer: Any = None
     if kind in {"mcq-output", "mcq-behavior"}:
         correct = answer.choice_index == question.get("answer_index")
+        choices = question.get("choices", [])
+        if isinstance(answer.choice_index, int) and 0 <= answer.choice_index < len(choices):
+            student_answer = choices[answer.choice_index]
+        correct_index = question.get("answer_index")
+        if isinstance(correct_index, int) and 0 <= correct_index < len(choices):
+            correct_answer = choices[correct_index]
     elif kind == "typein":
         # Case-sensitive exact match against accepted forms, but tolerant of
         # surrounding whitespace the student may have added.
         submitted = (answer.text or "").strip()
         correct = submitted in {a.strip() for a in question.get("accepted", [])}
+        student_answer = submitted or None
+        accepted = question.get("accepted", [])
+        correct_answer = accepted[0] if accepted else None
     elif kind == "parsons":
         correct = (answer.order or []) == question.get("lines", [])
+        student_answer = answer.order or None
+        correct_answer = question.get("lines", []) or None
     return {
         "question_id": question.get("id"),
         "kind": kind,
         "correct": correct,
+        "student_answer": student_answer,
+        "correct_answer": correct_answer,
         "explanation": question.get("explanation", ""),
     }
 

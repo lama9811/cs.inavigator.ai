@@ -1006,6 +1006,10 @@ body.coding-dark .cq-question-kind.group-parsons {
 }
 
 /* Larger, bolder question prompt in the display font so it anchors the pane. */
+/* Keep the active question unmistakably readable on the light quiz surface. */
+body:not(.coding-dark) .coding-app .cq-prompt {
+  color: #071b33;
+}
 .cq-prompt {
   margin: 0 0 1rem;
   color: var(--ct-text);
@@ -1397,9 +1401,92 @@ body.coding-dark .cq-question-kind.group-parsons {
   font-weight: 600;
 }
 .cq-result-explanation {
-  margin: 0;
+  margin: 0.65rem 0 0;
   color: var(--ct-muted);
   font-size: 0.85rem;
+}
+.cq-result-explanation strong {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: var(--ct-text);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.cq-result-explanation p {
+  margin: 0;
+}
+.cq-result-more {
+  margin-top: 0.5rem;
+  color: var(--ct-muted);
+}
+.cq-result-more summary {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--ct-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.cq-result-more[open] summary {
+  margin-bottom: 0.35rem;
+}
+.cq-result-more p {
+  margin: 0;
+}.cq-result-answer-review {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-top: 0.65rem;
+}
+.cq-result-answer {
+  min-width: 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--ct-border);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--ct-panel) 88%, var(--ct-bg));
+}
+.cq-result-answer span {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: var(--ct-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.cq-result-answer code {
+  display: block;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  color: var(--ct-text);
+  font-size: 0.82rem;
+}
+.cq-result-answer.student {
+  border-color: color-mix(in srgb, #d0493b 45%, var(--ct-border));
+}
+.cq-result-answer.correct {
+  border-color: color-mix(in srgb, var(--ct-success) 45%, var(--ct-border));
+}
+@media (max-width: 640px) {
+  .cq-result-more {
+  margin-top: 0.5rem;
+  color: var(--ct-muted);
+}
+.cq-result-more summary {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--ct-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.cq-result-more[open] summary {
+  margin-bottom: 0.35rem;
+}
+.cq-result-more p {
+  margin: 0;
+}.cq-result-answer-review {
+    grid-template-columns: 1fr;
+  }
 }
 .cq-results-actions {
   display: flex;

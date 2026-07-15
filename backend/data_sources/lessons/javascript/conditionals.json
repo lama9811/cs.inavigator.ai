@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
+  "title": "Conditionals",
+  "summary": "Select one path with ordered boolean tests.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "syntax"
+  ],
+  "refresher": "An `if` branch runs when its condition is truthy. Add `else if` for another test and `else` for remaining cases. Put narrower overlapping rules first.",
+  "refresher_code": "if (score >= 90) {\n  grade = \"A\";\n} else {\n  grade = \"Below A\";\n}",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "An `if` branch runs when its condition is truthy. Add `else if` for another test and `else` for remaining cases. Put narrower overlapping rules first. Select one path with ordered boolean tests."
+    },
+    {
+      "kind": "text",
+      "body": "A conditional chain is read from top to bottom. The first truthy condition wins, and the rest of that chain is skipped. Truthy does not mean equal to `true`; nonempty strings and most objects are truthy, while zero, an empty string, null, undefined, and NaN are falsy."
+    },
+    {
+      "kind": "code",
+      "caption": "The chain stops after the first true threshold.",
+      "code": "const score=92;\nlet grade;\nif(score>=90) grade=\"A\";\nelse if(score>=80) grade=\"B\";\nelse grade=\"C or below\";\nconsole.log(grade);",
+      "output": "A"
+    },
+    {
+      "kind": "compare",
+      "caption": "Place specific rules before broad rules.",
+      "wrong_label": "Common mistake",
+      "wrong": "if (score >= 60) grade = \"Pass\";\nelse if (score >= 90) grade = \"A\";",
+      "right_label": "Clearer version",
+      "right": "if (score >= 90) grade = \"A\";\nelse if (score >= 60) grade = \"Pass\";"
+    },
+    {
+      "kind": "text",
+      "body": "Trace a score of 95 through both versions. In the wrong order, 95 matches the broad passing rule and the chain stops. In the corrected order, it reaches the A rule first. Boundary tests such as 59, 60, 89, and 90 reveal ordering mistakes quickly."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Check the boundary",
+      "body": "Writing `if (status = \"ready\")` assigns text instead of comparing it; use strict equality for a comparison."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is printed?",
+      "code": "const n=0;\nif(n) console.log(\"yes\"); else console.log(\"no\");",
+      "choices": [
+        "no",
+        "yes",
+        "0",
+        "a syntax error"
+      ],
+      "answer_index": 0,
+      "why": "Zero is falsy, so execution moves to the else branch."
+    },
+    {
+      "kind": "check",
+      "prompt": "Why test 90 before 60?",
+      "code": "",
+      "choices": [
+        "95 also matches the broader rule",
+        "numbers must descend",
+        "else needs equality",
+        "it changes the type"
+      ],
+      "answer_index": 0,
+      "why": "The chain stops at its first match, so a broad rule can hide a narrower grade range."
+    },
+    {
+      "kind": "list",
+      "title": "Conditionals checklist",
+      "items": [
+        "Order overlapping ranges.",
+        "Show branch braces.",
+        "Compare rather than assign.",
+        "Test exact boundary values."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

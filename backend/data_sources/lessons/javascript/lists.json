@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
+  "title": "Lists / Arrays",
+  "summary": "Store ordered values and access them by index.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "Arrays hold ordered values with zero-based indexes. `.length` gives the count, `.push(value)` adds at the end, and `.pop()` removes the final item.",
+  "refresher_code": "const courses=[\"CS 101\",\"MATH 201\"];\ncourses.push(\"ENG 101\");",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Arrays hold ordered values with zero-based indexes. `.length` gives the count, `.push(value)` adds at the end, and `.pop()` removes the final item. Store ordered values and access them by index."
+    },
+    {
+      "kind": "text",
+      "body": "An array stores an ordered set of values, but the array variable actually holds a reference to that collection. Methods such as `push`, `pop`, and `splice` change the existing array. Methods such as `slice`, `map`, and `filter` return another array, so save their result when you need it."
+    },
+    {
+      "kind": "code",
+      "caption": "Push adds a third item, while index one still selects the second course.",
+      "code": "const courses=[\"CS 101\",\"CS 201\"];\ncourses.push(\"CS 301\");\nconsole.log(courses[1]);\nconsole.log(courses.length);",
+      "output": "CS 201\n3"
+    },
+    {
+      "kind": "compare",
+      "caption": "Copy before editing when the original must stay unchanged.",
+      "wrong_label": "Common mistake",
+      "wrong": "const planned = courses;\nplanned.push(\"CS 301\");",
+      "right_label": "Clearer version",
+      "right": "const planned = [...courses];\nplanned.push(\"CS 301\");"
+    },
+    {
+      "kind": "text",
+      "body": "In the wrong version, `planned` and `courses` reach the same array, so both appear to gain a course. Spread reads the existing elements into a new outer array. For nested objects, that copy is shallow, so inner objects can still be shared."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Check the boundary",
+      "body": "Const prevents assigning a different array to the variable, but it does not freeze the current array contents."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which reads the final item?",
+      "code": "const values=[4,8,12];",
+      "choices": [
+        "values[values.length-1]",
+        "values[values.length]",
+        "values[-1]",
+        "values.last"
+      ],
+      "answer_index": 0,
+      "why": "Length is three while the final valid index is two, so subtract one."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is printed?",
+      "code": "const colors=[\"blue\"];\ncolors.push(\"orange\");\nconsole.log(colors.length);",
+      "choices": [
+        "2",
+        "1",
+        "orange",
+        "a const error"
+      ],
+      "answer_index": 0,
+      "why": "Push mutates the existing array, so const permits it and length becomes two."
+    },
+    {
+      "kind": "list",
+      "title": "Lists / Arrays checklist",
+      "items": [
+        "Begin indexing at zero.",
+        "Subtract one for the end.",
+        "Use push and pop deliberately.",
+        "Know which methods mutate."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

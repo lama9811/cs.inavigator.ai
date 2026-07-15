@@ -1,0 +1,84 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Functions",
+  "summary": "Define typed inputs and a returned result.",
+  "minutes": 10,
+  "error_classes": [
+    "syntax",
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "A function declaration states its return type, name, and parameter types. `return` supplies a compatible result. Passing by const reference avoids copying a large input that should not change.",
+  "refresher_code": "int square(int n){\n  return n*n;\n}",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A function declaration states its return type, name, and parameter types. `return` supplies a compatible result. Passing by const reference avoids copying a large input that should not change. Define typed inputs and a returned result."
+    },
+    {
+      "kind": "text",
+      "body": "C++ normally passes an argument by value, which creates a separate parameter value. An ampersand in a parameter type makes it a reference to the caller?s object. Add `const` when the function should read that object without copying or changing it."
+    },
+    {
+      "kind": "code",
+      "caption": "The two arguments initialize typed parameters, and the selected integer returns to main.",
+      "code": "#include <iostream>\nint larger(int a,int b){return a>b?a:b;}\nint main(){std::cout<<larger(7,4)<<\"\\n\";}",
+      "output": "7"
+    },
+    {
+      "kind": "compare",
+      "caption": "Use a const reference for a large read-only input.",
+      "wrong_label": "Common mistake",
+      "wrong": "int total(std::vector<int> values) { /* copies */ }",
+      "right_label": "Clearer version",
+      "right": "int total(const std::vector<int>& values) { /* reads original */ }"
+    },
+    {
+      "kind": "text",
+      "body": "The wrong signature makes a new vector for the call. The corrected parameter refers to the caller?s vector, while const prevents modification through that reference. Small types such as int are usually clearer and cheap to pass by value."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Follow the data",
+      "body": "A non-void function that reaches its end without a return has undefined behavior when the caller expects a result."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is the return type here?",
+      "code": "double average(int total,int count);",
+      "choices": [
+        "double",
+        "int",
+        "average",
+        "void"
+      ],
+      "answer_index": 0,
+      "why": "The type written before the function name declares the returned value type."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is printed?",
+      "code": "int twice(int n){return n*2;}\nstd::cout<<twice(3);",
+      "choices": [
+        "6",
+        "3",
+        "33",
+        "nothing"
+      ],
+      "answer_index": 0,
+      "why": "The argument initializes n, and the returned multiplication result is six."
+    },
+    {
+      "kind": "list",
+      "title": "Functions checklist",
+      "items": [
+        "Match parameter types.",
+        "Return on every path.",
+        "Keep one clear purpose.",
+        "Use const references for read-only large values."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

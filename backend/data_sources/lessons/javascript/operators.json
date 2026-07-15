@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
+  "title": "Operators",
+  "summary": "Combine values with arithmetic, comparison, and logic.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "Arithmetic operators calculate values, comparisons produce booleans, and logical operators join conditions. Prefer `===` so type and value must match.",
+  "refresher_code": "const eligible = credits >= 12 && holds === 0;",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Arithmetic operators calculate values, comparisons produce booleans, and logical operators join conditions. Prefer `===` so type and value must match. Combine values with arithmetic, comparison, and logic."
+    },
+    {
+      "kind": "text",
+      "body": "Operators work in a particular order. Multiplication and division happen before addition and subtraction, then comparisons produce booleans that logical operators can combine. JavaScript also chooses behavior from operand types, so plus adds two numbers but joins text when either side is a string."
+    },
+    {
+      "kind": "code",
+      "caption": "Multiplication runs before addition, then strict equality tests the completed result.",
+      "code": "const total = 2 + 4 * 3;\nconsole.log(total);\nconsole.log(total === 14);",
+      "output": "14\ntrue"
+    },
+    {
+      "kind": "compare",
+      "caption": "Explicit conversion makes the intended operation visible.",
+      "wrong_label": "Common mistake",
+      "wrong": "const total = \"12\" + 3; // \"123\"",
+      "right_label": "Clearer version",
+      "right": "const total = Number(\"12\") + 3; // 15"
+    },
+    {
+      "kind": "text",
+      "body": "Trace an expression in small pieces. For `2 + 4 * 3 === 14`, calculate `4 * 3`, add two, and compare fourteen with fourteen. Each intermediate result has both a value and a type."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Watch this detail",
+      "body": "Loose equality may convert an operand first, so `5 == \"5\"` is true while `5 === \"5\"` is false."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is `10 - 2 * 3`?",
+      "code": "",
+      "choices": [
+        "4",
+        "24",
+        "18",
+        "8"
+      ],
+      "answer_index": 0,
+      "why": "Multiplication produces six before that value is subtracted from ten."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which condition is true?",
+      "code": "const value = \"7\";",
+      "choices": [
+        "value === 7",
+        "value !== 7",
+        "value > 10",
+        "value === 8"
+      ],
+      "answer_index": 1,
+      "why": "The variable holds a string, so it is strictly unequal to the number seven."
+    },
+    {
+      "kind": "list",
+      "title": "Operators checklist",
+      "items": [
+        "Prefer strict equality.",
+        "Use `%` for a remainder.",
+        "Add clarifying parentheses.",
+        "Inspect types around plus."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

@@ -1,0 +1,222 @@
+{
+    "_note":  "Original Part 1 Parsons questions. Curriculum references are documented in lessons/SOURCES.md; no source prose or exercises are copied.",
+    "questions":  [
+                      {
+                          "id":  "algo-p1-05",
+                          "concept":  "algorithm-problems",
+                          "difficulty":  "easy",
+                          "kind":  "parsons",
+                          "title":  "Count even values",
+                          "prompt":  "Arrange the lines to count and print the even values.",
+                          "explanation":  "Initialize the counter before the loop, test each value, increment only for an even value, and print after the scan.",
+                          "variants":  {
+                                           "python":  {
+                                                          "lines":  [
+                                                                        "nums = [3, 4, 8, 9]",
+                                                                        "count = 0",
+                                                                        "for n in nums:",
+                                                                        "    if n % 2 == 0:",
+                                                                        "        count += 1",
+                                                                        "print(count)"
+                                                                    ]
+                                                      },
+                                           "java":  {
+                                                        "lines":  [
+                                                                      "int[] nums = {3, 4, 8, 9};",
+                                                                      "int count = 0;",
+                                                                      "for (int n : nums) {",
+                                                                      "    if (n % 2 == 0) {",
+                                                                      "        count++;",
+                                                                      "    }",
+                                                                      "}",
+                                                                      "System.out.println(count);"
+                                                                  ]
+                                                    },
+                                           "javascript":  {
+                                                              "lines":  [
+                                                                            "const nums = [3, 4, 8, 9];",
+                                                                            "let count = 0;",
+                                                                            "for (const n of nums) {",
+                                                                            "  if (n % 2 === 0) {",
+                                                                            "    count++;",
+                                                                            "  }",
+                                                                            "}",
+                                                                            "console.log(count);"
+                                                                        ]
+                                                          },
+                                           "cpp":  {
+                                                       "lines":  [
+                                                                     "int nums[] = {3, 4, 8, 9};",
+                                                                     "int count = 0;",
+                                                                     "for (int n : nums) {",
+                                                                     "    if (n % 2 == 0) {",
+                                                                     "        count++;",
+                                                                     "    }",
+                                                                     "}",
+                                                                     "cout \u003c\u003c count;"
+                                                                 ]
+                                                   }
+                                       }
+                      },
+                      {
+                          "id":  "algo-p1-06",
+                          "concept":  "algorithm-problems",
+                          "difficulty":  "easy",
+                          "kind":  "parsons",
+                          "title":  "Find the smallest",
+                          "prompt":  "Arrange the lines to find and print the smallest value.",
+                          "explanation":  "Start with a real list value as the current minimum, compare every value, update when a smaller one appears, then print the result.",
+                          "variants":  {
+                                           "python":  {
+                                                          "lines":  [
+                                                                        "nums = [7, 2, 9, 4]",
+                                                                        "smallest = nums[0]",
+                                                                        "for n in nums:",
+                                                                        "    if n \u003c smallest:",
+                                                                        "        smallest = n",
+                                                                        "print(smallest)"
+                                                                    ]
+                                                      },
+                                           "java":  {
+                                                        "lines":  [
+                                                                      "int[] nums = {7, 2, 9, 4};",
+                                                                      "int smallest = nums[0];",
+                                                                      "for (int n : nums) {",
+                                                                      "    if (n \u003c smallest) {",
+                                                                      "        smallest = n;",
+                                                                      "    }",
+                                                                      "}",
+                                                                      "System.out.println(smallest);"
+                                                                  ]
+                                                    },
+                                           "javascript":  {
+                                                              "lines":  [
+                                                                            "const nums = [7, 2, 9, 4];",
+                                                                            "let smallest = nums[0];",
+                                                                            "for (const n of nums) {",
+                                                                            "  if (n \u003c smallest) {",
+                                                                            "    smallest = n;",
+                                                                            "  }",
+                                                                            "}",
+                                                                            "console.log(smallest);"
+                                                                        ]
+                                                          },
+                                           "cpp":  {
+                                                       "lines":  [
+                                                                     "int nums[] = {7, 2, 9, 4};",
+                                                                     "int smallest = nums[0];",
+                                                                     "for (int n : nums) {",
+                                                                     "    if (n \u003c smallest) {",
+                                                                     "        smallest = n;",
+                                                                     "    }",
+                                                                     "}",
+                                                                     "cout \u003c\u003c smallest;"
+                                                                 ]
+                                                   }
+                                       }
+                      },
+                      {
+                          "id":  "algo-p1-07",
+                          "concept":  "algorithm-problems",
+                          "difficulty":  "easy",
+                          "kind":  "parsons",
+                          "title":  "Search for a value",
+                          "prompt":  "Arrange the lines to report whether 6 appears in the collection.",
+                          "explanation":  "Begin with found set to false, scan each value, set it to true when the target appears, and report the result after the loop.",
+                          "variants":  {
+                                           "python":  {
+                                                          "lines":  [
+                                                                        "nums = [2, 6, 9]",
+                                                                        "found = False",
+                                                                        "for n in nums:",
+                                                                        "    if n == 6:",
+                                                                        "        found = True",
+                                                                        "print(found)"
+                                                                    ]
+                                                      },
+                                           "java":  {
+                                                        "lines":  [
+                                                                      "int[] nums = {2, 6, 9};",
+                                                                      "boolean found = false;",
+                                                                      "for (int n : nums) {",
+                                                                      "    if (n == 6) {",
+                                                                      "        found = true;",
+                                                                      "    }",
+                                                                      "}",
+                                                                      "System.out.println(found);"
+                                                                  ]
+                                                    },
+                                           "javascript":  {
+                                                              "lines":  [
+                                                                            "const nums = [2, 6, 9];",
+                                                                            "let found = false;",
+                                                                            "for (const n of nums) {",
+                                                                            "  if (n === 6) {",
+                                                                            "    found = true;",
+                                                                            "  }",
+                                                                            "}",
+                                                                            "console.log(found);"
+                                                                        ]
+                                                          },
+                                           "cpp":  {
+                                                       "lines":  [
+                                                                     "int nums[] = {2, 6, 9};",
+                                                                     "bool found = false;",
+                                                                     "for (int n : nums) {",
+                                                                     "    if (n == 6) {",
+                                                                     "        found = true;",
+                                                                     "    }",
+                                                                     "}",
+                                                                     "cout \u003c\u003c boolalpha \u003c\u003c found;"
+                                                                 ]
+                                                   }
+                                       }
+                      },
+                      {
+                          "id":  "algo-p1-08",
+                          "concept":  "algorithm-problems",
+                          "difficulty":  "easy",
+                          "kind":  "parsons",
+                          "title":  "Build a countdown",
+                          "prompt":  "Arrange the lines to print 3, 2, 1.",
+                          "explanation":  "Initialize before the loop, keep looping while the value is positive, print the current value, and decrease it each pass.",
+                          "variants":  {
+                                           "python":  {
+                                                          "lines":  [
+                                                                        "n = 3",
+                                                                        "while n \u003e 0:",
+                                                                        "    print(n)",
+                                                                        "    n -= 1"
+                                                                    ]
+                                                      },
+                                           "java":  {
+                                                        "lines":  [
+                                                                      "int n = 3;",
+                                                                      "while (n \u003e 0) {",
+                                                                      "    System.out.println(n);",
+                                                                      "    n--;",
+                                                                      "}"
+                                                                  ]
+                                                    },
+                                           "javascript":  {
+                                                              "lines":  [
+                                                                            "let n = 3;",
+                                                                            "while (n \u003e 0) {",
+                                                                            "  console.log(n);",
+                                                                            "  n--;",
+                                                                            "}"
+                                                                        ]
+                                                          },
+                                           "cpp":  {
+                                                       "lines":  [
+                                                                     "int n = 3;",
+                                                                     "while (n \u003e 0) {",
+                                                                     "    cout \u003c\u003c n \u003c\u003c endl;",
+                                                                     "    n--;",
+                                                                     "}"
+                                                                 ]
+                                                   }
+                                       }
+                      }
+                  ]
+}

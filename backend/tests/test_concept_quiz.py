@@ -5,7 +5,7 @@ Two jobs:
 1. **An unauthored category is EMPTY, not broken.** The manifest is the roadmap of what
    the Practice Library will cover; the JSON files are what exists so far. Those two are
    allowed to disagree while authoring is in progress, and the API must survive it. This
-   was a real 500 for 10 of Python's 13 categories, and it became a *front-door* bug the
+   was a real 500 for 10 of Python's categories, and it became a *front-door* bug the
    moment Quiz became the default landing.
 
 2. **Content validation.** These questions are hand-authored JSON — the single most
@@ -55,6 +55,31 @@ def test_category_counts_agree_with_questions(language):
             f"category serves {len(served)}"
         )
 
+
+@pytest.mark.parametrize("language", ALL_LANGUAGES)
+@pytest.mark.parametrize("category", ("syntax", "variables", "data-types"))
+def test_expanded_foundation_categories_have_ten_questions(language, category):
+    questions = cq.questions_for_category(language, category)["questions"]
+    assert len(questions) == 10, (
+        f"{language}/{category}: expected the complete 10-question foundation set, "
+        f"found {len(questions)}"
+    )
+
+
+@pytest.mark.parametrize("language", ALL_LANGUAGES)
+@pytest.mark.parametrize(
+    ("category", "expected"),
+    (("algorithm-problems", 8), ("algorithm-problems-2", 8), ("debug", 8), ("debug-2", 8)),
+)
+def test_two_part_algorithm_and_debug_banks_have_expected_counts(language, category, expected):
+    questions = cq.questions_for_category(language, category)["questions"]
+    assert len(questions) == expected
+
+
+def test_part_two_questions_are_moderately_harder():
+    for category in ("algorithm-problems-2", "debug-2"):
+        for question in cq.questions_for_category("python", category)["questions"]:
+            assert question["difficulty"] == "medium"
 
 def test_unknown_category_still_errors():
     """"Not authored yet" and "no such category" are different answers. Only the first
@@ -148,6 +173,54 @@ def test_every_question_explains_itself():
         assert len(explanation) >= 15, (
             f"{language}/{category}/{q['id']}: explanation missing or too short"
         )
+
+
+def test_grade_result_includes_readable_mcq_answer_review():
+    from main import ConceptQuizAnswer, _grade_concept_answer
+
+    question = {
+        "id": "review-mcq",
+        "kind": "mcq-output",
+        "choices": ["one", "two", "three"],
+        "answer_index": 1,
+        "explanation": "Two is the expected result.",
+    }
+    result = _grade_concept_answer(
+        question, ConceptQuizAnswer(question_id="review-mcq", choice_index=2)
+    )
+    assert result["correct"] is False
+    assert result["student_answer"] == "three"
+    assert result["correct_answer"] == "two"
+
+
+def test_grade_result_includes_both_parsons_orders_for_review():
+    from main import ConceptQuizAnswer, _grade_concept_answer
+
+    question = {
+        "id": "review-parsons",
+        "kind": "parsons",
+        "lines": ["first", "second"],
+        "explanation": "The first step must happen before the second.",
+    }
+    result = _grade_concept_answer(
+        question,
+        ConceptQuizAnswer(question_id="review-parsons", order=["second", "first"]),
+    )
+    assert result["correct"] is False
+    assert result["student_answer"] == ["second", "first"]
+    assert result["correct_answer"] == ["first", "second"]
+
+
+def test_code_answer_placeholder_does_not_reveal_a_solution():
+    """A code-entry hint may describe the input shape, but must not contain an answer."""
+    runner_path = os.path.join(
+        os.path.dirname(cq.BACKEND_DIR),
+        "frontend", "src", "components", "coding-tutor", "concept-quiz", "QuizRunner.jsx",
+    )
+    with open(runner_path, encoding="utf-8") as handle:
+        runner = handle.read()
+    assert 'e.g. print(\\"Hello\\")' not in runner
+    assert 'question.typein_mode === "code" ? "Enter one statement"' in runner
 
 
 def test_question_ids_are_unique_within_a_category():

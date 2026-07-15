@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Data Types",
+  "summary": "Choose representations that match the stored values.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "Common C++ types include `int`, `double`, `char`, `bool`, and `std::string`. Conversions can be implicit, but `static_cast` makes an intentional conversion visible.",
+  "refresher_code": "double average = static_cast<double>(total) / count;",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Common C++ types include `int`, `double`, `char`, `bool`, and `std::string`. Conversions can be implicit, but `static_cast` makes an intentional conversion visible. Choose representations that match the stored values."
+    },
+    {
+      "kind": "text",
+      "body": "Types describe both meaning and representation. `int` is for whole numbers, `double` keeps fractional values, `char` stores one character, and `bool` stores a truth value. Converting to a type with a smaller range or less precision can change the value, which is called narrowing."
+    },
+    {
+      "kind": "code",
+      "caption": "Casting one operand before division preserves the fractional result.",
+      "code": "#include <iostream>\nint main(){\n int total=7,count=2;\n double avg=static_cast<double>(total)/count;\n std::cout << avg << \"\\n\";\n}",
+      "output": "3.5"
+    },
+    {
+      "kind": "compare",
+      "caption": "Keep fractional data in a matching type.",
+      "wrong_label": "Common mistake",
+      "wrong": "int gpa = 3.75;",
+      "right_label": "Clearer version",
+      "right": "double gpa = 3.75;"
+    },
+    {
+      "kind": "text",
+      "body": "The wrong declaration converts the decimal to an integer and stores three. The corrected declaration preserves the fraction. Numeric limits also matter: an integer cannot represent every possible whole number, so select a type whose range fits the data and avoid relying on overflow."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "C++ detail to check",
+      "body": "Storing a decimal in an int discards its fractional part. The compiler may allow that conversion even when it is not what the calculation needs."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which type stores one character?",
+      "code": "",
+      "choices": [
+        "char",
+        "string",
+        "double",
+        "bool"
+      ],
+      "answer_index": 0,
+      "why": "The char type represents one character value such as a letter."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is stored in `n`?",
+      "code": "int n = 4.9;",
+      "choices": [
+        "4",
+        "4.9",
+        "5",
+        "a string"
+      ],
+      "answer_index": 0,
+      "why": "Conversion to int truncates the fractional part rather than rounding it."
+    },
+    {
+      "kind": "list",
+      "title": "Data Types checklist",
+      "items": [
+        "Match type to meaning.",
+        "Cast before integer division.",
+        "Watch narrowing conversions.",
+        "Use string for text."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

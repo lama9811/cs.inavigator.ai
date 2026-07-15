@@ -153,7 +153,7 @@ function AnswerPanel({ question, answer, onAnswer }) {
           autoComplete="off"
           value={answer?.text ?? ""}
           placeholder={
-            question.typein_mode === "code" ? "e.g. print(\"Hello\")" : "Your answer"
+            question.typein_mode === "code" ? "Enter one statement" : "Your answer"
           }
           onChange={(event) => onAnswer({ text: event.target.value })}
         />
@@ -281,6 +281,16 @@ function withInlineCode(text) {
   );
 }
 
+function splitExplanation(text) {
+  const sentences = String(text || "")
+    .trim()
+    .split(/(?<=[.!?])\s+/)
+    .filter(Boolean);
+  return {
+    summary: sentences.slice(0, 2).join(" "),
+    detail: sentences.slice(2).join(" "),
+  };
+}
 function ResultsScreen({ grade, questions, onRetry, onBackToCategory }) {
   const byId = useMemo(() => {
     const map = {};
@@ -291,6 +301,11 @@ function ResultsScreen({ grade, questions, onRetry, onBackToCategory }) {
   }, [grade]);
 
   const pct = Math.round((grade.score || 0) * 100);
+  const formatAnswer = (value) => {
+    if (Array.isArray(value)) return value.join("\n");
+    if (value == null || value === "") return "No answer";
+    return String(value);
+  };
   return (
     <div className="cq-results">
       <div className="cq-results-header">
@@ -327,9 +342,33 @@ function ResultsScreen({ grade, questions, onRetry, onBackToCategory }) {
                   </span>
                 </div>
                 <p className="cq-result-prompt">{q.prompt}</p>
-                {r.explanation ? (
-                  <p className="cq-result-explanation">{r.explanation}</p>
+                {!ok ? (
+                  <div className="cq-result-answer-review">
+                    <div className="cq-result-answer student">
+                      <span>Your answer</span>
+                      <code>{formatAnswer(r.student_answer)}</code>
+                    </div>
+                    <div className="cq-result-answer correct">
+                      <span>Correct answer</span>
+                      <code>{formatAnswer(r.correct_answer)}</code>
+                    </div>
+                  </div>
                 ) : null}
+                {r.explanation ? (() => {
+                  const explanation = splitExplanation(r.explanation);
+                  return (
+                    <div className="cq-result-explanation">
+                      <strong>{ok ? "Why it works" : "What happened"}</strong>
+                      <p>{explanation.summary}</p>
+                      {explanation.detail ? (
+                        <details className="cq-result-more">
+                          <summary>More detail</summary>
+                          <p>{explanation.detail}</p>
+                        </details>
+                      ) : null}
+                    </div>
+                  );
+                })() : null}
               </div>
             </li>
           );

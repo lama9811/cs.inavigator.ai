@@ -58,7 +58,7 @@ def test_unauthored_lesson_returns_none():
     assert lessons.has_lesson("python", "not-a-real-category") is False
 
 
-@pytest.mark.parametrize("language", ["python", "java"])
+@pytest.mark.parametrize("language", ALL_LANGUAGES)
 def test_authored_track_is_complete(language):
     """Every category in a finished language's manifest has a lesson.
 
@@ -66,9 +66,8 @@ def test_authored_track_is_complete(language):
     the point: Learn is the Practice Library's front door, and it should not have an empty
     room in it.
 
-    JavaScript and C++ are deliberately absent from this list. They are still being
-    authored, and a test that fails for work not yet started teaches nobody anything. Add
-    each language here as its track is finished.
+    All registered language tracks are authored. A new category must include its matching
+    Learn lesson before this test can pass.
     """
     missing = [
         category["id"]

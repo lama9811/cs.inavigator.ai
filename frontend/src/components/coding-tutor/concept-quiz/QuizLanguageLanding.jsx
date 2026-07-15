@@ -154,7 +154,7 @@ export default function QuizLanguageLanding({
   const [loadingCats, setLoadingCats] = useState(true);
   const [error, setError] = useState("");
 
-  // Load the 13 categories for this language.
+  // Load the available shared and language-specific categories.
   useEffect(() => {
     let alive = true;
     setLoadingCats(true);

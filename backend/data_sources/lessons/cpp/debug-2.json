@@ -1,0 +1,84 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Debug: Part 2",
+  "summary": "Trace lifetime, signed bounds, mutation, and edge cases.",
+  "minutes": 10,
+  "error_classes": [
+    "runtime",
+    "wrong_answer",
+    "timeout"
+  ],
+  "refresher": "Harder C++ bugs may come from invalid references, unsigned arithmetic, shared mutation, or a missing boundary case. Record state near its first incorrect transition.",
+  "refresher_code": "for(std::size_t i=0;i<v.size();i++){\n  std::cout << i << \": \" << v[i] << \"\\n\";\n}",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Harder C++ bugs may come from invalid references, unsigned arithmetic, shared mutation, or a missing boundary case. Record state near its first incorrect transition. Trace lifetime, signed bounds, mutation, and edge cases."
+    },
+    {
+      "kind": "text",
+      "body": "Deeper C++ debugging tracks object lifetime, signed and unsigned values, aliases, and mutation. A reference or pointer can outlive the object it once identified, becoming dangling. Container growth can also invalidate pointers, references, and iterators into its old storage."
+    },
+    {
+      "kind": "code",
+      "caption": "Using size-compatible indexes and a strict upper bound keeps each access valid.",
+      "code": "#include <iostream>\n#include <vector>\nint main(){\n std::vector<int> v{2,4};\n for(std::size_t i=0;i<v.size();i++) std::cout<<i<<\":\"<<v[i]<<\"\\n\";\n}",
+      "output": "0:2\n1:4"
+    },
+    {
+      "kind": "compare",
+      "caption": "Do not return a reference to a local object that is about to disappear.",
+      "wrong_label": "Common mistake",
+      "wrong": "const std::string& label() {\n  std::string text = \"CS\";\n  return text;\n}",
+      "right_label": "Clearer version",
+      "right": "std::string label() {\n  std::string text = \"CS\";\n  return text;\n}"
+    },
+    {
+      "kind": "text",
+      "body": "The local text ends its lifetime when the function returns. The wrong reference then points at an object that no longer exists. Returning by value produces a valid result, and modern C++ can do this efficiently without exposing the local lifetime."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Inspect this state",
+      "body": "Subtracting one from an empty container size wraps an unsigned value to a huge number; check emptiness before that calculation."
+    },
+    {
+      "kind": "check",
+      "prompt": "Why is `i <= v.size()` unsafe for indexing?",
+      "code": "",
+      "choices": [
+        "it eventually uses index size",
+        "vectors reject loops",
+        "i becomes text",
+        "size excludes zero"
+      ],
+      "answer_index": 0,
+      "why": "The count itself is one past the final valid index, yet the inclusive test allows it."
+    },
+    {
+      "kind": "check",
+      "prompt": "What should precede `v.size()-1`?",
+      "code": "",
+      "choices": [
+        "an emptiness check",
+        "a sort call",
+        "a pointer cast",
+        "a second vector"
+      ],
+      "answer_index": 0,
+      "why": "An empty size cannot be safely decremented as an unsigned value, so guard the case first."
+    },
+    {
+      "kind": "list",
+      "title": "Debug: Part 2 checklist",
+      "items": [
+        "Test empty containers.",
+        "Keep strict index bounds.",
+        "Track object lifetime.",
+        "Find the earliest bad state."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

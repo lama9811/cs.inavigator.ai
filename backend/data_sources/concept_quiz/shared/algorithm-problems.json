@@ -175,6 +175,70 @@
         }
       },
       "title": "Find the largest"
+    },
+    {
+      "id": "parsons-count-matches-01",
+      "concept": "algorithm-problems",
+      "difficulty": "easy",
+      "kind": "parsons",
+      "title": "Count matching values",
+      "goal": "Count how many values are greater than 5, then print the count.",
+      "variants": {
+        "python": {
+          "prompt": "Drag the lines into the correct order to count values greater than 5.",
+          "lines": [
+            "numbers = [2, 8, 6, 3]",
+            "count = 0",
+            "for number in numbers:",
+            "    if number > 5:",
+            "        count += 1",
+            "print(count)"
+          ],
+          "explanation": "Create the collection and counter first. The condition belongs inside the loop, and the counter update belongs inside the condition so only matching values are counted. Print after the loop has examined every value."
+        },
+        "java": {
+          "prompt": "Drag the lines into the correct order to count values greater than 5.",
+          "lines": [
+            "int[] numbers = {2, 8, 6, 3};",
+            "int count = 0;",
+            "for (int number : numbers) {",
+            "    if (number > 5) {",
+            "        count++;",
+            "    }",
+            "}",
+            "System.out.println(count);"
+          ],
+          "explanation": "Initialize the counter before the loop. Nest the comparison and increment inside the loop, close both blocks, and print only after every array value has been checked."
+        },
+        "javascript": {
+          "prompt": "Drag the lines into the correct order to count values greater than 5.",
+          "lines": [
+            "const numbers = [2, 8, 6, 3];",
+            "let count = 0;",
+            "for (const number of numbers) {",
+            "  if (number > 5) {",
+            "    count += 1;",
+            "  }",
+            "}",
+            "console.log(count);"
+          ],
+          "explanation": "Set up the array and counter first. Check each number inside the loop, increment only inside the matching branch, then log the completed count after the loop."
+        },
+        "cpp": {
+          "prompt": "Drag the lines into the correct order to count values greater than 5.",
+          "lines": [
+            "int numbers[] = {2, 8, 6, 3};",
+            "int count = 0;",
+            "for (int number : numbers) {",
+            "    if (number > 5) {",
+            "        count++;",
+            "    }",
+            "}",
+            "cout << count;"
+          ],
+          "explanation": "Initialize count before the range-based loop. The comparison and increment are nested so only values above 5 contribute. Output comes after both blocks close."
+        }
+      }
     }
   ]
 }

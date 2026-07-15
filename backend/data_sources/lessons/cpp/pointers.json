@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Pointers",
+  "summary": "Store addresses and access the values located there.",
+  "minutes": 10,
+  "error_classes": [
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "A pointer holds an address. `&value` obtains an address, `*pointer` dereferences it, and `nullptr` represents no object. Check for null before dereferencing.",
+  "refresher_code": "int value=7;\nint* p=&value;\nstd::cout << *p;",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A pointer holds an address. `&value` obtains an address, `*pointer` dereferences it, and `nullptr` represents no object. Check for null before dereferencing. Store addresses and access the values located there."
+    },
+    {
+      "kind": "text",
+      "body": "A pointer is a variable whose value is an address. The address-of operator `&` obtains an object?s location, and dereference `*` follows a stored address to reach that object. The star in a declaration says the variable is a pointer; the star in an expression performs dereference."
+    },
+    {
+      "kind": "code",
+      "caption": "The pointer stores score?s address, so dereference assignment changes the original integer.",
+      "code": "#include <iostream>\nint main(){\n int score=70;\n int* p=&score;\n *p=85;\n std::cout<<score<<\"\\n\";\n}",
+      "output": "85"
+    },
+    {
+      "kind": "compare",
+      "caption": "Check for a valid target before following an address.",
+      "wrong_label": "Common mistake",
+      "wrong": "int* score = nullptr;\nstd::cout << *score;",
+      "right_label": "Clearer version",
+      "right": "int* score = nullptr;\nif (score != nullptr) {\n  std::cout << *score;\n}"
+    },
+    {
+      "kind": "text",
+      "body": "The wrong code has no object to follow, so dereference causes undefined behavior. A pointer can later receive `&value`, after which `*score` refers to that value. When absence is not meaningful, a reference may express the relationship more safely and simply."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Inspect this state",
+      "body": "An uninitialized or null pointer does not identify a valid object. Dereferencing it has undefined behavior and can crash the program."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does `p` hold after `int* p=&x`?",
+      "code": "",
+      "choices": [
+        "the address of x",
+        "a copy of x",
+        "the type of x",
+        "always zero"
+      ],
+      "answer_index": 0,
+      "why": "The address-of operator produces x?s memory address, which is stored in the pointer."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does `*p` mean in an expression?",
+      "code": "",
+      "choices": [
+        "the value at the pointed address",
+        "a new pointer",
+        "the address of p",
+        "pointer multiplication"
+      ],
+      "answer_index": 0,
+      "why": "Dereference follows the stored address and accesses the object located there."
+    },
+    {
+      "kind": "list",
+      "title": "Pointers checklist",
+      "items": [
+        "Initialize every pointer.",
+        "Use nullptr for no target.",
+        "Check before dereferencing.",
+        "Prefer references when null is not meaningful."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

@@ -1,0 +1,84 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Algorithm Problems: Part 2",
+  "summary": "Track related state and handle empty inputs.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "runtime",
+    "timeout"
+  ],
+  "refresher": "Multi-step algorithms may preserve a best value plus its index or combine a total with a count. Write an invariant and decide tie and empty-input rules.",
+  "refresher_code": "std::size_t best=0;\nfor(std::size_t i=1;i<v.size();i++)\n if(v[i]>v[best]) best=i;",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Multi-step algorithms may preserve a best value plus its index or combine a total with a count. Write an invariant and decide tie and empty-input rules. Track related state and handle empty inputs."
+    },
+    {
+      "kind": "text",
+      "body": "A more involved algorithm often carries related state, such as a best index and the value available at that index. State an invariant in ordinary language: after examining positions through i, best names the largest one seen. That sentence tells you what each update must preserve."
+    },
+    {
+      "kind": "code",
+      "caption": "The empty guard precedes index access, and later values may replace the candidate index.",
+      "code": "#include <iostream>\n#include <vector>\nint largestIndex(const std::vector<int>& v){\n if(v.empty()) return -1;\n std::size_t best=0;\n for(std::size_t i=1;i<v.size();i++) if(v[i]>v[best]) best=i;\n return static_cast<int>(best);\n}\nint main(){std::cout<<largestIndex({4,9,7})<<\"\\n\";}",
+      "output": "1"
+    },
+    {
+      "kind": "compare",
+      "caption": "Handle empty input before creating an element-based candidate.",
+      "wrong_label": "Common mistake",
+      "wrong": "std::size_t best = 0;\nreturn values[best];",
+      "right_label": "Clearer version",
+      "right": "if (values.empty()) return -1;\nstd::size_t best = 0;"
+    },
+    {
+      "kind": "text",
+      "body": "For `{4, 9, 7}`, best begins at zero, changes to one after comparing nine, and remains one after seven. Decide what ties mean by choosing `>` for the first maximum or `>=` for the last. The empty contract belongs in the function documentation."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Inspect this state",
+      "body": "Without the empty check, reading element zero from an empty vector is invalid before the loop even begins."
+    },
+    {
+      "kind": "check",
+      "prompt": "Why start at index one?",
+      "code": "",
+      "choices": [
+        "zero already initialized best",
+        "vectors start at one",
+        "odd indexes lead",
+        "it skips negatives"
+      ],
+      "answer_index": 0,
+      "why": "The first element already supplies the current candidate, so only later positions need comparison."
+    },
+    {
+      "kind": "check",
+      "prompt": "With `>`, which tied maximum remains?",
+      "code": "",
+      "choices": [
+        "the first",
+        "the last",
+        "both",
+        "neither"
+      ],
+      "answer_index": 0,
+      "why": "An equal later value does not satisfy greater-than, preserving the earlier index."
+    },
+    {
+      "kind": "list",
+      "title": "Algorithm Problems: Part 2 checklist",
+      "items": [
+        "Define each state variable.",
+        "Specify tie behavior.",
+        "Guard empty input.",
+        "Trace every update."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

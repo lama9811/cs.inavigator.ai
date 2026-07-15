@@ -345,6 +345,44 @@
         }
       },
       "title": "Index out of range"
+    },
+    {
+      "id": "debug-07",
+      "concept": "debug",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Return happens too early",
+      "error_class": "wrong_answer",
+      "variants": {
+        "python": {
+          "code": "def contains_even(nums):\n    for n in nums:\n        if n % 2 == 0:\n            return True\n        return False",
+          "prompt": "Why can this return False even when a later number is even?",
+          "choices": ["return False is inside the loop, so the function stops after the first odd number", "The modulo operator cannot test even numbers", "return True must appear before the if", "The loop should start at index 1"],
+          "answer_index": 0,
+          "explanation": "A return ends the whole function immediately. With return False inside the loop, only the first item gets a fair test. Move return False after the loop so every item can be checked first."
+        },
+        "java": {
+          "code": "boolean containsEven(int[] nums) {\n    for (int n : nums) {\n        if (n % 2 == 0) return true;\n        return false;\n    }\n    return false;\n}",
+          "prompt": "Why can this return false even when a later number is even?",
+          "choices": ["return false inside the loop stops after the first odd number", "The method needs to return an int", "The modulo operator changes n", "Enhanced for loops skip the last item"],
+          "answer_index": 0,
+          "explanation": "The return false inside the loop exits during the first odd value. Keep the successful return in the loop, but wait until after the loop to conclude that no even value was found."
+        },
+        "javascript": {
+          "code": "function containsEven(nums) {\n  for (const n of nums) {\n    if (n % 2 === 0) return true;\n    return false;\n  }\n  return false;\n}",
+          "prompt": "Why can this return false even when a later number is even?",
+          "choices": ["return false inside the loop stops after the first odd number", "const prevents the loop from advancing", "=== cannot compare numbers", "The function must use while"],
+          "answer_index": 0,
+          "explanation": "The first odd number reaches return false and ends the function, so later values are never visited. Put that final return after the loop."
+        },
+        "cpp": {
+          "code": "bool containsEven(int nums[], int size) {\n    for (int i = 0; i < size; i++) {\n        if (nums[i] % 2 == 0) return true;\n        return false;\n    }\n    return false;\n}",
+          "prompt": "Why can this return false even when a later number is even?",
+          "choices": ["return false inside the loop stops after the first odd number", "bool cannot hold false", "The array must start at index 1", "The modulo expression changes the array"],
+          "answer_index": 0,
+          "explanation": "Returning false inside the loop ends the function after the first odd element. Move that return below the loop so the function checks the entire array."
+        }
+      }
     }
   ]
 }

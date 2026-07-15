@@ -1,5 +1,5 @@
 {
-  "_note": "Concept-quiz category registry. ONE source of truth for the loader and content authoring. Each language shows the 12 SHARED categories plus its ONE language-specific category (13 total). 'file' is the JSON filename (without extension) under shared/ or by_language/<lang>/. Order here is the order categories appear in the UI. Difficulty levels used across items: easy (freshman) and medium (sophomore).",
+  "_note": "Concept-quiz category registry. ONE source of truth for the loader and content authoring. Each language shows the 14 shared categories plus its one language-specific category (15 total). 'file' is the JSON filename (without extension) under shared/ or by_language/<lang>/. Order here is the order categories appear in the UI. Difficulty levels used across items: easy (freshman) and medium (sophomore).",
   "languages": {
     "python": "Python",
     "java": "Java",
@@ -17,8 +17,10 @@
     { "id": "loops", "label": "Loops", "file": "loops", "blurb": "for and while repetition." },
     { "id": "lists", "label": "Lists / Arrays", "file": "lists", "blurb": "Ordered collections and indexing." },
     { "id": "functions", "label": "Functions", "file": "functions", "blurb": "Defining, calling, and returning." },
-    { "id": "algorithm-problems", "label": "Algorithm Problems", "file": "algorithm-problems", "blurb": "Drag code lines into the correct order (Parsons)." },
-    { "id": "debug", "label": "Debug", "file": "debug", "blurb": "Find and fix common beginner bugs." }
+    { "id": "algorithm-problems", "label": "Algorithm Problems - Part 1", "file": "algorithm-problems", "extra_file": "algorithm-problems-part-1-extra", "blurb": "Build foundational algorithms by arranging code (8 questions)." },
+    { "id": "algorithm-problems-2", "label": "Algorithm Problems - Part 2", "file": "algorithm-problems-part-2", "blurb": "Practice moderately harder, multi-step algorithms (8 questions)." },
+    { "id": "debug", "label": "Debug - Part 1", "file": "debug", "extra_file": "debug-part-1-extra", "blurb": "Find and fix common beginner bugs (8 questions)." },
+    { "id": "debug-2", "label": "Debug - Part 2", "file": "debug-part-2", "blurb": "Trace edge cases and multi-step bugs (8 questions)." }
   ],
   "language_specific": {
     "python": { "id": "tuples", "label": "Tuples", "file": "tuples", "blurb": "Immutable ordered collections." },

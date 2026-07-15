@@ -241,6 +241,150 @@
           "explanation": "Trace it: x starts at 2, becomes 2 * 5 = 10, then 10 - 3 = 7. Writing down the value after each line is the most useful debugging habit you can build."
         }
       }
+    },
+    {
+      "id": "compound-update-01",
+      "concept": "variables",
+      "difficulty": "easy",
+      "kind": "typein",
+      "title": "Update with shorthand",
+      "variants": {
+        "python": {
+          "code": "points = 6\npoints += 4\npoints *= 2\nprint(points)",
+          "prompt": "What number does this print?",
+          "accepted": ["20"],
+          "explanation": "Start at 6. The += update adds 4, making 10. The *= update then multiplies that current value by 2, making 20. Each shorthand uses the value already stored in the variable."
+        },
+        "java": {
+          "code": "int points = 6;\npoints += 4;\npoints *= 2;\nSystem.out.println(points);",
+          "prompt": "What number does this print?",
+          "accepted": ["20"],
+          "explanation": "Start at 6. points += 4 stores 10, then points *= 2 stores 20. Compound assignment updates the existing variable rather than creating a new one."
+        },
+        "javascript": {
+          "code": "let points = 6;\npoints += 4;\npoints *= 2;\nconsole.log(points);",
+          "prompt": "What number does this print?",
+          "accepted": ["20"],
+          "explanation": "Start at 6. The first compound assignment changes points to 10, and the second changes it to 20. The updates happen in order."
+        },
+        "cpp": {
+          "code": "int points = 6;\npoints += 4;\npoints *= 2;\ncout << points;",
+          "prompt": "What number does this print?",
+          "accepted": ["20"],
+          "explanation": "Start at 6. points += 4 makes 10, then points *= 2 makes 20. Compound assignment reads and updates the same variable."
+        }
+      }
+    },
+    {
+      "id": "copy-value-01",
+      "concept": "variables",
+      "difficulty": "easy",
+      "kind": "mcq-output",
+      "title": "Copying a stored value",
+      "variants": {
+        "python": {
+          "code": "first = 12\nsecond = first\nfirst = 30\nprint(second)",
+          "prompt": "What does this print?",
+          "choices": ["12", "30", "42", "NameError"],
+          "answer_index": 0,
+          "explanation": "second receives the value 12 when the assignment runs. Reassigning first later does not revisit the earlier assignment, so second remains 12."
+        },
+        "java": {
+          "code": "int first = 12;\nint second = first;\nfirst = 30;\nSystem.out.println(second);",
+          "prompt": "What does this print?",
+          "choices": ["12", "30", "42", "Compile error"],
+          "answer_index": 0,
+          "explanation": "For primitive ints, second receives a copy of the value in first. Changing first afterward does not change second, so 12 prints."
+        },
+        "javascript": {
+          "code": "let first = 12;\nlet second = first;\nfirst = 30;\nconsole.log(second);",
+          "prompt": "What does this print?",
+          "choices": ["12", "30", "42", "undefined"],
+          "answer_index": 0,
+          "explanation": "Numbers are copied by value. second stores 12 before first changes, so the later reassignment has no effect on second."
+        },
+        "cpp": {
+          "code": "int first = 12;\nint second = first;\nfirst = 30;\ncout << second;",
+          "prompt": "What does this print?",
+          "choices": ["12", "30", "42", "Compile error"],
+          "answer_index": 0,
+          "explanation": "The int value is copied into second. The variables occupy separate storage, so assigning 30 to first leaves second at 12."
+        }
+      }
+    },
+    {
+      "id": "shadow-scope-01",
+      "concept": "variables",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "A local name hides another",
+      "variants": {
+        "python": {
+          "code": "message = \"outside\"\ndef show():\n    message = \"inside\"\n    print(message)\nshow()\nprint(message)",
+          "prompt": "What does this print?",
+          "choices": ["inside then outside", "inside then inside", "outside then outside", "UnboundLocalError"],
+          "answer_index": 0,
+          "explanation": "The assignment inside show creates a local variable that temporarily hides the global name. The function prints inside, while the unchanged global variable prints outside afterward."
+        },
+        "java": {
+          "code": "static String message = \"outside\";\nstatic void show() {\n    String message = \"inside\";\n    System.out.println(message);\n}\n// show(); then print the field message",
+          "prompt": "What do the two print operations produce?",
+          "choices": ["inside then outside", "inside then inside", "outside then outside", "Compile error"],
+          "answer_index": 0,
+          "explanation": "The local variable inside show hides the field only within that method. After show returns, the field still contains outside."
+        },
+        "javascript": {
+          "code": "let message = \"outside\";\nfunction show() {\n  let message = \"inside\";\n  console.log(message);\n}\nshow();\nconsole.log(message);",
+          "prompt": "What does this print?",
+          "choices": ["inside then outside", "inside then inside", "outside then outside", "ReferenceError"],
+          "answer_index": 0,
+          "explanation": "The let inside the function creates a local binding that hides the outer one. It disappears when the call ends, leaving the outer value unchanged."
+        },
+        "cpp": {
+          "code": "string message = \"outside\";\n{\n    string message = \"inside\";\n    cout << message << endl;\n}\ncout << message;",
+          "prompt": "What does this print?",
+          "choices": ["inside then outside", "inside then inside", "outside then outside", "Compile error"],
+          "answer_index": 0,
+          "explanation": "The inner block declares a new variable that hides the outer message until the closing brace. The outer variable still stores outside after the block."
+        }
+      }
+    },
+    {
+      "id": "static-vs-dynamic-01",
+      "concept": "variables",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Assigning a different kind of value",
+      "variants": {
+        "python": {
+          "code": "value = 7\nvalue = \"seven\"\nprint(value)",
+          "prompt": "What happens?",
+          "choices": ["It prints seven", "It raises TypeError on the second assignment", "It prints 7", "It prints both values"],
+          "answer_index": 0,
+          "explanation": "Python variables are dynamically typed names. The name value can refer to an int and later refer to a string, so the final print shows seven."
+        },
+        "java": {
+          "code": "int value = 7;\nvalue = \"seven\";\nSystem.out.println(value);",
+          "prompt": "What happens?",
+          "choices": ["It prints seven", "It fails to compile because a String cannot be assigned to an int", "It prints 7", "It converts seven to a number"],
+          "answer_index": 1,
+          "explanation": "The declaration fixes value as an int variable. Java rejects a later String assignment because the types are incompatible."
+        },
+        "javascript": {
+          "code": "let value = 7;\nvalue = \"seven\";\nconsole.log(value);",
+          "prompt": "What happens?",
+          "choices": ["It logs seven", "It throws TypeError on the second assignment", "It logs 7", "It logs undefined"],
+          "answer_index": 0,
+          "explanation": "A JavaScript variable can hold values of different types over time. The string replaces the number, so seven is logged."
+        },
+        "cpp": {
+          "code": "int value = 7;\nvalue = \"seven\";\ncout << value;",
+          "prompt": "What happens?",
+          "choices": ["It prints seven", "It fails to compile because a string cannot be assigned to an int", "It prints 7", "It converts seven to zero"],
+          "answer_index": 1,
+          "explanation": "The declaration fixes value as an int. A string literal is not an int value, so the compiler rejects the assignment."
+        }
+      }
     }
   ]
 }

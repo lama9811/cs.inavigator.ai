@@ -22,7 +22,7 @@ export function fetchQuizLanguages(apiBase) {
   return getJson(`${apiBase}/api/coding/concept-quiz/languages`);
 }
 
-// The 13 categories (12 shared + 1 language-specific) for one language, each
+// The shared categories plus one language-specific category for one language, each
 // with a live `count` and `scope`.
 export function fetchQuizCategories(apiBase, language) {
   return getJson(

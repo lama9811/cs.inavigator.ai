@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Syntax",
+  "summary": "Build a valid program from declarations, statements, and braces.",
+  "minutes": 10,
+  "error_classes": [
+    "syntax",
+    "runtime"
+  ],
+  "refresher": "A basic C++ program includes needed headers, defines `main`, ends statements with semicolons, and balances every brace. `std::cout` sends values to standard output.",
+  "refresher_code": "#include <iostream>\nint main() { std::cout << \"Hi\\n\"; }",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A basic C++ program includes needed headers, defines `main`, ends statements with semicolons, and balances every brace. `std::cout` sends values to standard output. Build a valid program from declarations, statements, and braces."
+    },
+    {
+      "kind": "text",
+      "body": "C++ goes through a build step before the program can run. The preprocessor handles lines such as `#include`, the compiler checks types and syntax, and the linker connects compiled code with required definitions. An error at any stage means there is no new executable to run."
+    },
+    {
+      "kind": "code",
+      "caption": "The header declares the stream tools, and the statement sits inside the main function body.",
+      "code": "#include <iostream>\nint main() {\n  std::cout << \"Welcome\\n\";\n  return 0;\n}",
+      "output": "Welcome"
+    },
+    {
+      "kind": "compare",
+      "caption": "A complete statement and balanced function body let compilation continue.",
+      "wrong_label": "Common mistake",
+      "wrong": "int main() {\n  std::cout << \"Hello\\n\"\n}",
+      "right_label": "Clearer version",
+      "right": "int main() {\n  std::cout << \"Hello\\n\";\n}"
+    },
+    {
+      "kind": "text",
+      "body": "Read the corrected program by layers: `main` is the starting function, braces mark its body, the stream insertion sends text to output, and the semicolon ends that statement. Fix the earliest compiler diagnostic first because later messages may be consequences."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "C++ detail to check",
+      "body": "A compiler may report a later line when the real cause is a missing semicolon or brace immediately before it."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which line is a complete output statement?",
+      "code": "",
+      "choices": [
+        "std::cout << \"Hi\";",
+        "std::cout >> \"Hi\";",
+        "cout \"Hi\";",
+        "std::cout << \"Hi\""
+      ],
+      "answer_index": 0,
+      "why": "Output uses the insertion operator and the statement ends with a semicolon."
+    },
+    {
+      "kind": "check",
+      "prompt": "Where does execution begin?",
+      "code": "",
+      "choices": [
+        "main",
+        "iostream",
+        "cout",
+        "return"
+      ],
+      "answer_index": 0,
+      "why": "A hosted C++ program begins by calling its main function."
+    },
+    {
+      "kind": "list",
+      "title": "Syntax checklist",
+      "items": [
+        "Include required headers.",
+        "Balance all braces.",
+        "End statements with semicolons.",
+        "Start with the first compiler error."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

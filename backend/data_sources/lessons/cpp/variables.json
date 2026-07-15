@@ -1,0 +1,84 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Variables",
+  "summary": "Declare typed names and control reassignment.",
+  "minutes": 10,
+  "error_classes": [
+    "syntax",
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "A C++ variable declaration states its type, name, and optional initial value. `const` prevents later assignment, and scope limits where a name can be used.",
+  "refresher_code": "const std::string course = \"CS 201\";\nint seats = 3;\nseats = 2;",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A C++ variable declaration states its type, name, and optional initial value. `const` prevents later assignment, and scope limits where a name can be used. Declare typed names and control reassignment."
+    },
+    {
+      "kind": "text",
+      "body": "A C++ variable has a fixed type, a scope, and a lifetime. Scope answers where the name is visible. Lifetime answers how long its stored object exists. Local variables begin their lifetime when execution reaches their declaration and end when their block finishes."
+    },
+    {
+      "kind": "code",
+      "caption": "The string remains constant while the integer count is incremented.",
+      "code": "#include <iostream>\n#include <string>\nint main(){\n  const std::string course=\"CS 201\";\n  int enrolled=24;\n  enrolled++;\n  std::cout << course << \": \" << enrolled << \"\\n\";\n}",
+      "output": "CS 201: 25"
+    },
+    {
+      "kind": "compare",
+      "caption": "Initialize a local variable before any branch can read it.",
+      "wrong_label": "Common mistake",
+      "wrong": "int result;\nif (ready) result = 5;\nstd::cout << result;",
+      "right_label": "Clearer version",
+      "right": "int result = 0;\nif (ready) result = 5;\nstd::cout << result;"
+    },
+    {
+      "kind": "text",
+      "body": "If ready is false in the wrong version, result was never given a value and reading it is invalid. In the corrected version, zero provides a defined fallback. Use `const` after the type when reassignment should be rejected by the compiler."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "C++ detail to check",
+      "body": "Reading an uninitialized local variable gives an indeterminate value and can lead to undefined behavior; initialize state before using it."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which declaration creates a changing integer?",
+      "code": "",
+      "choices": [
+        "int attempts = 0;",
+        "const int attempts = 0;",
+        "attempts int = 0;",
+        "var attempts = 0;"
+      ],
+      "answer_index": 0,
+      "why": "A plain int variable can be reassigned after its initialized declaration."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is printed?",
+      "code": "int points=4;\npoints += 3;\nstd::cout << points;",
+      "choices": [
+        "7",
+        "43",
+        "4",
+        "nothing"
+      ],
+      "answer_index": 0,
+      "why": "Compound assignment adds three to the numeric value and stores seven."
+    },
+    {
+      "kind": "list",
+      "title": "Variables checklist",
+      "items": [
+        "Choose an accurate type.",
+        "Initialize before reading.",
+        "Use const for fixed values.",
+        "Keep scope as narrow as practical."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Lists / Arrays",
+  "summary": "Store ordered elements in arrays and vectors.",
+  "minutes": 10,
+  "error_classes": [
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "A fixed array has a compile-time size, while `std::vector` can grow. Vector indexes start at zero, `.size()` returns the count, and `.push_back` appends.",
+  "refresher_code": "#include <vector>\nstd::vector<int> values{2,4};\nvalues.push_back(6);",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A fixed array has a compile-time size, while `std::vector` can grow. Vector indexes start at zero, `.size()` returns the count, and `.push_back` appends. Store ordered elements in arrays and vectors."
+    },
+    {
+      "kind": "text",
+      "body": "A built-in array has a fixed size that is part of its declaration. `std::vector` is a container that manages storage and can grow with `push_back`. Both use zero-based positions, but vector supplies `.size()`, checked `.at()`, and useful iteration support."
+    },
+    {
+      "kind": "code",
+      "caption": "The vector grows to three elements, while index one selects its second value.",
+      "code": "#include <iostream>\n#include <vector>\nint main(){\n std::vector<int> values{4,8};\n values.push_back(12);\n std::cout<<values[1]<<\"\\n\"<<values.size()<<\"\\n\";\n}",
+      "output": "8\n3"
+    },
+    {
+      "kind": "compare",
+      "caption": "Ask for checked access while a boundary is uncertain.",
+      "wrong_label": "Common mistake",
+      "wrong": "int value = scores[index];",
+      "right_label": "Clearer version",
+      "right": "int value = scores.at(index);"
+    },
+    {
+      "kind": "text",
+      "body": "Bracket access assumes the index is valid and gives undefined behavior otherwise. The `at` method checks and throws `std::out_of_range`, which makes the bad position easier to diagnose. A final design can choose either based on its validation and performance needs."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Follow the data",
+      "body": "Unchecked bracket access past the end causes undefined behavior. Use valid index bounds, or `.at()` when you want an exception for an invalid position."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which is the last valid index for size three?",
+      "code": "",
+      "choices": [
+        "2",
+        "3",
+        "1",
+        "4"
+      ],
+      "answer_index": 0,
+      "why": "Zero-based positions are zero, one, and two, so the count itself is outside the vector."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which operation appends a value?",
+      "code": "",
+      "choices": [
+        "values.push_back(9);",
+        "values.add(9);",
+        "values[values.size()];",
+        "append(values,9);"
+      ],
+      "answer_index": 0,
+      "why": "Vector provides push_back to add one element at its end."
+    },
+    {
+      "kind": "list",
+      "title": "Lists / Arrays checklist",
+      "items": [
+        "Include vector.",
+        "Begin at zero.",
+        "Stay below size.",
+        "Choose checked access when useful."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}
