@@ -68,12 +68,14 @@ def test_configured_with_key(monkeypatch):
 
 
 def test_missing_key_degrades_instead_of_raising(monkeypatch):
-    """The whole point: no key must not blow up the request."""
+    """With NO live source at all (grounding off + no Tavily key), the request must
+    not blow up — it falls back to the curated core, so results still come."""
+    monkeypatch.setenv("SCHOLARSHIP_USE_GROUNDING", "false")
     monkeypatch.delenv("TAVILY_API_KEY", raising=False)
     result = ss.find_opportunities("scholarships", {"gpa": 3.4})
-    assert result["configured"] is False
-    assert result["total"] == 0
-    assert "TAVILY_API_KEY" in result["note"]
+    assert result["configured"] is False             # no live search available
+    assert result["total"] > 0                       # curated core still served
+    assert "curated" in result["note"].lower()
 
 
 def test_web_search_without_key_returns_error_dict(monkeypatch):
@@ -95,23 +97,30 @@ def test_tavily_exception_is_swallowed(monkeypatch):
     assert "connection reset" in out["error"]
 
 
-def test_search_failure_returns_empty_result_not_500(monkeypatch):
+def test_search_failure_returns_curated_not_500(monkeypatch):
+    """A Tavily quota error falls back to the curated core, not an empty page.
+    (Grounding off so we test the Tavily path deterministically, offline.)"""
+    monkeypatch.setenv("SCHOLARSHIP_USE_GROUNDING", "false")
     monkeypatch.setenv("TAVILY_API_KEY", "tvly-fake")
+    ss.clear_cache()
     with patch.object(ss, "web_search", return_value={"error": "quota exceeded", "results": []}):
         result = ss.find_opportunities("scholarships", {})
     assert result["configured"] is True
-    assert result["total"] == 0
-    assert "quota exceeded" in result["note"]
+    assert result["total"] > 0                       # curated core carries it
+    assert "curated" in result["note"].lower()
 
 
 def test_gemini_failure_still_returns_sources(monkeypatch):
-    """If the model can't summarize, the student should still get the raw links."""
+    """If the model can't summarize, the student still gets curated items + raw links.
+    (Grounding off so the Tavily fetch-then-summarize path runs.)"""
+    monkeypatch.setenv("SCHOLARSHIP_USE_GROUNDING", "false")
     monkeypatch.setenv("TAVILY_API_KEY", "tvly-fake")
+    ss.clear_cache()
     hits = {"results": [{"title": "UNCF", "url": "https://uncf.org", "snippet": "s", "published_date": None}]}
     with patch.object(ss, "web_search", return_value=hits), \
          patch.object(ss, "_ask_gemini", return_value=None):
         result = ss.find_opportunities("scholarships", {})
-    assert result["total"] == 0
+    assert result["total"] > 0                        # curated core present
     assert result["sources"][0]["url"] == "https://uncf.org"
 
 
@@ -169,6 +178,27 @@ def test_undated_items_sink_below_dated_ones():
         {"name": "Dated", "deadline": _iso(60)},
     ])
     assert [i["name"] for i in groups["OPEN"]] == ["Dated", "Rolling"]
+
+
+def test_recommended_items_lead_the_open_bucket():
+    """Curated (recommended) awards sort ahead of non-curated undated ones — most
+    curated awards are rolling, and they're the vetted picks worth surfacing."""
+    groups = ss._group_by_urgency([
+        {"name": "Random live award", "deadline": "(not listed)"},
+        {"name": "Curated pick", "deadline": "(not listed)", "curated": True},
+    ])
+    assert [i["name"] for i in groups["OPEN"]] == ["Curated pick", "Random live award"]
+
+
+def test_a_real_close_deadline_still_beats_a_recommended_rolling_one():
+    """'Closest deadline first' wins across buckets: an URGENT dated award outranks
+    a recommended rolling one, which lands in OPEN."""
+    groups = ss._group_by_urgency([
+        {"name": "Curated rolling", "deadline": "(not listed)", "curated": True},
+        {"name": "Due in 5 days", "deadline": _iso(5)},
+    ])
+    order = [i["name"] for b in ("URGENT", "UPCOMING", "OPEN") for i in groups[b]]
+    assert order[0] == "Due in 5 days"
 
 
 def test_malformed_items_are_skipped():
@@ -321,3 +351,332 @@ def test_valid_kinds_and_statuses_are_the_expected_sets():
     assert set(ss.VALID_STATUSES) == {
         "interested", "applying", "submitted", "awarded", "rejected", "expired",
     }
+
+
+# --- application checklists ---------------------------------------------------
+# The checklist is what turns "saved" into "applied". The properties that matter:
+# generation never fails hard (falls back to a template), items come back in the
+# stored shape, and progress counts are junk-tolerant.
+
+def test_default_checklist_differs_by_kind():
+    sch = [i["label"] for i in ss.default_checklist("scholarship")]
+    intern = [i["label"] for i in ss.default_checklist("internship")]
+    assert sch != intern
+    assert any("FAFSA" in x for x in sch)          # scholarship-specific
+    assert any("resume" in x.lower() for x in intern)  # internship-specific
+
+
+def test_default_checklist_items_have_the_stored_shape():
+    for item in ss.default_checklist("scholarship"):
+        assert set(item.keys()) == {"id", "label", "done", "note"}
+        assert item["done"] is False and item["note"] == ""
+
+
+def test_checklist_items_skips_blank_labels():
+    items = ss._checklist_items(["Essay", "", "   ", "Transcript"])
+    assert [i["label"] for i in items] == ["Essay", "Transcript"]
+
+
+def test_generate_checklist_falls_back_when_ai_unavailable(monkeypatch):
+    """When the AI call fails, generation must degrade to the template, not raise.
+
+    We force the failure explicitly (a genai client that raises) rather than
+    relying on genai being absent from the environment — the real package IS
+    installed here, and other tests stub sys.modules, so an implicit-absence
+    assumption is order-dependent and flaky.
+    """
+    import types as _t
+    import sys
+
+    class _BoomClient:
+        def __init__(self, **_kw):
+            raise RuntimeError("no Vertex credentials in test env")
+
+    fake_genai = _t.SimpleNamespace(
+        Client=_BoomClient,
+        types=_t.SimpleNamespace(GenerateContentConfig=lambda **_kw: None),
+    )
+    monkeypatch.setitem(sys.modules, "google", _t.SimpleNamespace(genai=fake_genai))
+    monkeypatch.setitem(sys.modules, "google.genai", fake_genai)
+
+    item = {"kind": "scholarship", "name": "UNCF", "eligibility": "3.0 GPA"}
+    result = ss.generate_checklist(item)
+    assert result == ss.default_checklist("scholarship")
+
+
+def _install_fake_genai(monkeypatch):
+    """Stub out `from google import genai` / `from google.genai import types`.
+
+    generate_checklist does `from google import genai` then
+    `from google.genai import types`, so `types` must be an ATTRIBUTE of the
+    google.genai module object (not just a separate sys.modules entry). We set
+    both so either import form resolves.
+    """
+    import types as _t
+    import sys
+
+    class _Resp:
+        text = "ignored — _extract_json is patched"
+
+    class _Models:
+        def generate_content(self, **_kw):
+            return _Resp()
+
+    class _Client:
+        models = _Models()
+
+    fake_types = _t.SimpleNamespace(GenerateContentConfig=lambda **_kw: None)
+    fake_genai = _t.SimpleNamespace(
+        Client=lambda **_kw: _Client(),
+        types=fake_types,               # so `from google.genai import types` works
+    )
+    fake_google = _t.SimpleNamespace(genai=fake_genai)  # so `from google import genai` works
+
+    monkeypatch.setitem(sys.modules, "google", fake_google)
+    monkeypatch.setitem(sys.modules, "google.genai", fake_genai)
+    monkeypatch.setitem(sys.modules, "google.genai.types", fake_types)
+
+
+def test_generate_checklist_uses_ai_items_when_present(monkeypatch):
+    """When the model returns items, they become the checklist (capped at 8)."""
+    labels = [f"Requirement {n}" for n in range(12)]
+    monkeypatch.setattr(ss, "_extract_json", lambda _t: {"items": labels})
+    _install_fake_genai(monkeypatch)
+
+    result = ss.generate_checklist({"kind": "scholarship", "name": "X"})
+    assert len(result) == 8                            # capped
+    assert result[0]["label"] == "Requirement 0"
+    assert all(set(i) == {"id", "label", "done", "note"} for i in result)
+
+
+def test_generate_checklist_falls_back_on_empty_ai_result(monkeypatch):
+    monkeypatch.setattr(ss, "_extract_json", lambda _t: {"items": []})
+    _install_fake_genai(monkeypatch)
+
+    result = ss.generate_checklist({"kind": "internship", "name": "STEP"})
+    assert result == ss.default_checklist("internship")
+
+
+# --- checklist progress ------------------------------------------------------
+
+def test_checklist_progress_counts_done_and_total():
+    checklist = [
+        {"label": "a", "done": True},
+        {"label": "b", "done": False},
+        {"label": "c", "done": True},
+    ]
+    assert ss.checklist_progress(checklist) == {"done": 2, "total": 3}
+
+
+def test_checklist_progress_is_empty_for_none():
+    assert ss.checklist_progress(None) == {"done": 0, "total": 0}
+
+
+def test_checklist_progress_ignores_junk_items():
+    """A labelless or non-dict entry doesn't count toward the total."""
+    checklist = [
+        {"label": "real", "done": True},
+        {"done": True},          # no label — junk
+        "not a dict",            # junk
+        {"label": "", "done": True},  # blank label — junk
+    ]
+    assert ss.checklist_progress(checklist) == {"done": 1, "total": 1}
+
+
+# --- curated core database ---------------------------------------------------
+# The zero-cost layer. Properties that matter: it loads real awards, it filters
+# by GPA conservatively, and it's always available even with no Tavily key.
+
+def test_curated_file_loads_real_awards():
+    data = ss._load_curated()
+    assert len(data["scholarships"]) >= 5
+    assert len(data["internships"]) >= 5
+
+
+def test_curated_items_have_urls_and_names():
+    """Never invent a link: every curated award must carry a real URL and name."""
+    for entry in ss.curated_opportunities({}):
+        assert entry["name"]
+        assert entry["url"] and entry["url"].startswith("http")
+
+
+def test_curated_filters_out_awards_above_the_students_gpa():
+    """A 2.0 student shouldn't see a 3.5-minimum award; a 3.9 student should."""
+    low = {n["name"] for n in ss.curated_opportunities({"gpa": 2.0})}
+    high = {n["name"] for n in ss.curated_opportunities({"gpa": 3.9})}
+    # The high-GPA student sees at least as many as the low-GPA one.
+    assert high >= low
+    # And strictly more, because some awards carry a 3.0+ minimum.
+    assert len(high) > len(low)
+
+
+def test_curated_keeps_awards_when_gpa_unknown():
+    """Missing GPA must not hide awards — better shown than wrongly filtered."""
+    none_known = ss.curated_opportunities({})
+    high = ss.curated_opportunities({"gpa": 4.0})
+    assert len(none_known) == len(high)
+
+
+def test_curated_available_without_any_live_source(monkeypatch):
+    """The whole point of the curated core: it works with no live search at all."""
+    monkeypatch.setenv("SCHOLARSHIP_USE_GROUNDING", "false")
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    result = ss.find_opportunities("scholarships", {"gpa": 3.5})
+    assert result["configured"] is False
+    assert result["total"] > 0                       # curated still returned
+    names = [i["name"] for b in result["groups"].values() for i in b]
+    assert any("UNCF" in n or "Google" in n for n in names)
+
+
+# --- shared result cache -----------------------------------------------------
+
+def test_merge_dedupes_curated_and_live():
+    """A curated 'Google STEP' and a live 'Google STEP Internship' collapse to one."""
+    curated = [{"name": "Google STEP", "deadline": "(not listed)"}]
+    live = [
+        {"name": "Google STEP Internship", "deadline": "(not listed)"},
+        {"name": "Some Other Award", "deadline": "(not listed)"},
+    ]
+    groups = ss._merge_and_group(curated, live)
+    names = [i["name"] for b in groups.values() for i in b]
+    assert "Google STEP" in names
+    assert "Google STEP Internship" not in names      # deduped against curated
+    assert "Some Other Award" in names
+
+
+def test_cache_key_buckets_similar_students():
+    """Two students with GPAs in the same half-point band share a cache entry."""
+    a = ss._cache_key("cs scholarships", {"gpa": 3.4, "major": "CS", "classification": "Junior"})
+    b = ss._cache_key("cs scholarships", {"gpa": 3.2, "major": "CS", "classification": "Junior"})
+    assert a == b       # 3.4 and 3.2 both floor to the 3.0 band
+
+
+def test_cache_stores_and_expires(monkeypatch):
+    """A cached live result is served within TTL and dropped after it.
+
+    Grounding is forced off here so the deterministic Tavily path is exercised;
+    the cache behavior is identical whichever live source produced the items.
+    """
+    monkeypatch.setenv("SCHOLARSHIP_USE_GROUNDING", "false")
+    monkeypatch.setenv("TAVILY_API_KEY", "tvly-fake")
+    ss.clear_cache()
+
+    hits = {"results": [{"title": "UNCF", "url": "https://uncf.org", "snippet": "s", "published_date": None}]}
+    parsed = {"items": [{"name": "Live Award", "deadline": _iso(20)}], "note": "n"}
+
+    calls = {"web": 0}
+
+    def _counting_search(*_a, **_k):
+        calls["web"] += 1
+        return hits
+
+    monkeypatch.setattr(ss, "web_search", _counting_search)
+    monkeypatch.setattr(ss, "_ask_gemini", lambda *_a, **_k: parsed)
+
+    student = {"gpa": 3.5, "major": "CS"}
+    r1 = ss.find_opportunities("scholarships", student, now=1000.0)
+    assert r1.get("cached") is False and calls["web"] > 0
+    first_calls = calls["web"]
+
+    # Second identical search within TTL: served from cache, no new web calls.
+    r2 = ss.find_opportunities("scholarships", student, now=1000.0 + 60)
+    assert r2.get("cached") is True
+    assert calls["web"] == first_calls              # no extra Tavily bill
+
+    # After TTL: cache miss, web is hit again.
+    r3 = ss.find_opportunities("scholarships", student, now=1000.0 + ss.CACHE_TTL_SECONDS + 10)
+    assert r3.get("cached") is False
+    assert calls["web"] > first_calls
+
+
+# --- live search: grounding primary, Tavily fallback -------------------------
+# The plan's option (c): free Gemini google_search grounding is the default live
+# source, Tavily only a fallback. The chain: grounding -> Tavily -> curated core.
+
+def test_grounding_is_on_by_default(monkeypatch):
+    monkeypatch.delenv("SCHOLARSHIP_USE_GROUNDING", raising=False)
+    assert ss.grounding_enabled() is True
+
+
+def test_grounding_can_be_disabled(monkeypatch):
+    monkeypatch.setenv("SCHOLARSHIP_USE_GROUNDING", "false")
+    assert ss.grounding_enabled() is False
+
+
+def test_grounding_result_is_used_and_tavily_not_called(monkeypatch):
+    """When grounding returns items, Tavily is never touched — that's the free path."""
+    monkeypatch.setenv("SCHOLARSHIP_USE_GROUNDING", "true")
+    monkeypatch.setenv("TAVILY_API_KEY", "tvly-fake")
+    ss.clear_cache()
+
+    with patch.object(ss, "grounded_search",
+                      return_value={"items": [{"name": "Grounded Award", "deadline": _iso(15)}], "note": "g"}), \
+         patch.object(ss, "web_search") as web:
+        result = ss.find_opportunities("scholarships", {"gpa": 3.5}, now=10.0)
+
+    names = [i["name"] for b in result["groups"].values() for i in b]
+    assert "Grounded Award" in names
+    assert not web.called                          # no Tavily bill when grounding works
+
+
+def test_falls_back_to_tavily_when_grounding_empty(monkeypatch):
+    """Grounding returning nothing must fall through to Tavily (if a key is set)."""
+    monkeypatch.setenv("SCHOLARSHIP_USE_GROUNDING", "true")
+    monkeypatch.setenv("TAVILY_API_KEY", "tvly-fake")
+    ss.clear_cache()
+
+    hits = {"results": [{"title": "T", "url": "https://t.org", "snippet": "s", "published_date": None}]}
+    with patch.object(ss, "grounded_search", return_value=None), \
+         patch.object(ss, "web_search", return_value=hits), \
+         patch.object(ss, "_ask_gemini",
+                      return_value={"items": [{"name": "Tavily Award", "deadline": _iso(15)}], "note": ""}):
+        result = ss.find_opportunities("scholarships", {"gpa": 3.5}, now=20.0)
+
+    names = [i["name"] for b in result["groups"].values() for i in b]
+    assert "Tavily Award" in names
+
+
+def test_curated_carries_when_both_live_sources_fail(monkeypatch):
+    """Grounding fails AND Tavily fails -> the curated core still fills the page."""
+    monkeypatch.setenv("SCHOLARSHIP_USE_GROUNDING", "true")
+    monkeypatch.setenv("TAVILY_API_KEY", "tvly-fake")
+    ss.clear_cache()
+
+    with patch.object(ss, "grounded_search", return_value=None), \
+         patch.object(ss, "web_search", return_value={"error": "down", "results": []}):
+        result = ss.find_opportunities("scholarships", {"gpa": 3.5}, now=30.0)
+
+    assert result["total"] > 0                     # curated core carries it
+
+
+def test_live_available_via_grounding_without_any_key(monkeypatch):
+    """With grounding on and no Tavily key, live search is still 'available'."""
+    monkeypatch.setenv("SCHOLARSHIP_USE_GROUNDING", "true")
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    ss.clear_cache()
+
+    with patch.object(ss, "grounded_search",
+                      return_value={"items": [{"name": "Free Grounded", "deadline": "(not listed)"}], "note": ""}):
+        result = ss.find_opportunities("scholarships", {"gpa": 3.5}, now=40.0)
+
+    assert result["configured"] is True            # grounding counts as configured
+    names = [i["name"] for b in result["groups"].values() for i in b]
+    assert "Free Grounded" in names
+
+
+# --- expanded curated database -----------------------------------------------
+
+def test_curated_database_is_sizeable():
+    """The curated core should carry the page on its own; keep it well-stocked."""
+    data = ss._load_curated()
+    total = len(data["scholarships"]) + len(data["internships"])
+    assert total >= 30, f"curated core is thin ({total} awards)"
+
+
+def test_curated_entries_are_well_formed():
+    """Never ship an award without a real name and a real link."""
+    data = ss._load_curated()
+    for entry in [*data["scholarships"], *data["internships"]]:
+        assert entry.get("name"), f"unnamed curated entry: {entry.get('id')}"
+        assert str(entry.get("url", "")).startswith("http"), \
+            f"curated entry missing a real URL: {entry.get('id')}"

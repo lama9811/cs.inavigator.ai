@@ -492,6 +492,12 @@ class SavedScholarship(Base):
     # can't silently rot the saved copy. JSON string.
     snapshot_json = Column(Text, nullable=True)
 
+    # The application checklist, as a JSON list of
+    # {id, label, done, note} items. Generated from the award's own requirements
+    # (via the AI) the first time the student opens the detail view, then editable.
+    # Null until generated; an empty list means "generated, but nothing found".
+    checklist_json = Column(Text, nullable=True)
+
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
