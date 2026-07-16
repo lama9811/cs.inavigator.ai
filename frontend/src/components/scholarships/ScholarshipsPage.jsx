@@ -601,6 +601,97 @@ function sortSaved(items, sort) {
   return copy;
 }
 
+// Statuses where the student still has work to do. Mirrors the backend's
+// _ACTIVE_STATUSES so the dashboard numbers match /api/scholarships/summary.
+const ACTIVE_STATUSES = ["interested", "applying", "submitted"];
+
+// Roll the saved list up into the dashboard numbers. Derived on the client from
+// the already-loaded list (no extra fetch), using the same rules as the backend
+// build_saved_summary so the count can't drift from the list below it.
+function summarize(saved) {
+  const active = saved.filter((s) => ACTIVE_STATUSES.includes(s.status));
+  let urgent = 0, expiringSoon = 0, expiredActive = 0, done = 0, total = 0;
+  const upcoming = [];
+  for (const s of active) {
+    const prog = s.checklist_progress || { done: 0, total: 0 };
+    done += prog.done || 0;
+    total += prog.total || 0;
+    const d = s.days_remaining;
+    if (d == null) continue;
+    if (d < 0) { expiredActive += 1; continue; }
+    if (d <= 7) urgent += 1;
+    if (d <= 30) expiringSoon += 1;
+    upcoming.push(s);
+  }
+  upcoming.sort((a, b) => a.days_remaining - b.days_remaining);
+  return {
+    total: saved.length,
+    active: active.length,
+    awarded: saved.filter((s) => s.status === "awarded").length,
+    urgent,
+    expiringSoon,
+    expiredActive,
+    checklist: { done, total },
+    nextDeadlines: upcoming.slice(0, 3),
+  };
+}
+
+// A one-glance rollup across everything a student is tracking. Answers the three
+// questions a student actually has: how many am I on, what's due soon, and what's
+// the very next deadline.
+function SummaryBar({ saved }) {
+  const s = summarize(saved);
+  const pct = s.checklist.total
+    ? Math.round((s.checklist.done / s.checklist.total) * 100)
+    : 0;
+
+  return (
+    <div className="sch-summary">
+      <div className="sch-summary-stats">
+        <div className="sch-stat">
+          <span className="sch-stat-num">{s.active}</span>
+          <span className="sch-stat-label">In progress</span>
+        </div>
+        <div className={"sch-stat" + (s.urgent ? " sch-stat-urgent" : "")}>
+          <span className="sch-stat-num">{s.urgent}</span>
+          <span className="sch-stat-label">Closing soon</span>
+        </div>
+        <div className="sch-stat">
+          <span className="sch-stat-num">{s.awarded}</span>
+          <span className="sch-stat-label">Awarded</span>
+        </div>
+        <div className="sch-stat sch-stat-progress">
+          <span className="sch-stat-num">{pct}%</span>
+          <span className="sch-stat-label">
+            Checklist ({s.checklist.done}/{s.checklist.total})
+          </span>
+        </div>
+      </div>
+
+      {s.expiredActive > 0 && (
+        <p className="sch-summary-warn">
+          {s.expiredActive} active {s.expiredActive === 1 ? "item has" : "items have"} a
+          deadline that already passed — update or remove {s.expiredActive === 1 ? "it" : "them"}.
+        </p>
+      )}
+
+      {s.nextDeadlines.length > 0 && (
+        <div className="sch-summary-next">
+          <span className="sch-summary-next-head">Next deadlines</span>
+          <ul>
+            {s.nextDeadlines.map((item) => (
+              <li key={item.id}>
+                <span className="sch-summary-next-name">{item.name}</span>
+                <span className="sch-summary-next-when">{daysLabel(item)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // The "My Scholarships" tab. Scholarships and internships are split into their own
 // sections because they are different objects (an internship has no award amount).
 // A filter/sort bar sits on top so a student with many saved items can slice them.
@@ -662,6 +753,8 @@ function SavedView({ saved, onStatus, onRemove, onOpen, inFlight, onGoSearch }) 
 
   return (
     <>
+      <SummaryBar saved={saved} />
+
       <div className="sch-toolbar">
         <label className="sch-toolbar-field">
           <span>Show</span>

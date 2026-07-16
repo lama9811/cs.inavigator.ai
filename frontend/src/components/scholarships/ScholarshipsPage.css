@@ -303,6 +303,74 @@
   outline: none; border-color: #4285F4;
 }
 
+/* Dashboard rollup across saved opportunities */
+.sch-summary {
+  margin-bottom: 20px;
+  padding: 16px 18px;
+  border: 1px solid rgba(11,37,69,0.12);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(66,133,244,0.05), rgba(66,133,244,0.02));
+}
+.sch-summary-stats {
+  display: flex; flex-wrap: wrap; gap: 12px;
+}
+.sch-stat {
+  flex: 1 1 120px;
+  min-width: 110px;
+  padding: 12px 14px;
+  border: 1px solid rgba(0,0,0,0.07);
+  border-radius: 10px;
+  background: #fff;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.sch-stat-num {
+  font-size: 1.5rem; font-weight: 700; line-height: 1;
+  color: #0B2545;
+}
+.sch-stat-label {
+  font-size: 0.76rem; font-weight: 600;
+  color: var(--text-muted, #6b7280);
+}
+.sch-stat-urgent { border-color: rgba(214,158,46,0.5); background: rgba(214,158,46,0.08); }
+.sch-stat-urgent .sch-stat-num { color: #b7791f; }
+.sch-stat-progress .sch-stat-num { color: #226b3a; }
+
+.sch-summary-warn {
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(161,45,45,0.08);
+  color: #8a2525;
+  font-size: 0.82rem; font-weight: 600;
+}
+
+.sch-summary-next {
+  margin-top: 14px;
+}
+.sch-summary-next-head {
+  display: block;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted, #6b7280);
+  margin-bottom: 6px;
+}
+.sch-summary-next ul {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.sch-summary-next li {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  font-size: 0.86rem;
+}
+.sch-summary-next-name {
+  color: #0B2545; font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sch-summary-next-when {
+  flex-shrink: 0;
+  color: #b7791f; font-weight: 600; font-size: 0.8rem;
+}
+
 /* Empty state for My Scholarships */
 .sch-empty {
   display: flex; flex-direction: column; align-items: center; gap: 10px;
