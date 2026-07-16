@@ -897,3 +897,81 @@ def checklist_progress(checklist: Optional[list]) -> dict:
             if it.get("done"):
                 done += 1
     return {"done": done, "total": total}
+
+
+# --- deadline nudges ---------------------------------------------------------
+#
+# The plan's §2 ask: "deadline-aware nudges — reuse the existing reminder engine
+# rather than building a new one." The Canvas engine (services/reminder_engine.py)
+# is assignment-shaped (course_id / submission states), so it can't be called
+# directly here. This is the scholarship-shaped twin: a pure selector, tested
+# without a DB, with the SentReminder ledger and email send living in main.py —
+# exactly the same split as reminder_engine + internal_reminders_dispatch.
+
+# Statuses that mean "don't nudge": the student is done with this one either way.
+_TERMINAL_STATUSES = {"submitted", "awarded", "rejected", "expired"}
+
+# Default lead time. Scholarships are multi-day work, so we warn earlier than the
+# 24h Canvas window — a week gives a student time to actually gather documents.
+DEFAULT_REMINDER_LEAD_DAYS = int(os.getenv("SCHOLARSHIP_REMINDER_LEAD_DAYS", "7"))
+
+
+def scholarship_reminder_key(saved_id, deadline: Optional[str]) -> str:
+    """Stable per-saved-item dedup key.
+
+    Prefixed 'sch:' so it shares the SentReminder ledger with Canvas assignment
+    keys without ever colliding. The deadline is part of the key on purpose: if
+    the student edits the saved deadline, the key changes and one fresh nudge is
+    sent for the new date (same trick reminder_key uses for moved assignments)."""
+    return f"sch:{saved_id}:{(deadline or '').strip()}"
+
+
+def select_due_scholarship_reminders(
+    saved_items,
+    sent_keys,
+    now: Optional[datetime] = None,
+    lead_days: int = DEFAULT_REMINDER_LEAD_DAYS,
+):
+    """Pick saved scholarships whose deadline is close enough to nudge now.
+
+    A saved item qualifies when ALL hold:
+      - it has a parseable future deadline within `lead_days` (0 < days <= lead),
+      - its status is not terminal (submitted / awarded / rejected / expired),
+      - no nudge has been sent for it yet (key not in `sent_keys`).
+
+    Deliberately pure — plain dicts in, plain dicts out — so it is unit-testable
+    without a DB or the network. The DB-aware wrapper lives in main.py.
+
+    Args:
+        saved_items: list of dicts, each at least {id, deadline, status, name, ...}.
+        sent_keys: set of already-sent reminder keys.
+        now: timezone-aware UTC "current time" (defaults to real now).
+        lead_days: warn this many days before the deadline (default 7).
+
+    Returns:
+        list of {"item": <dict>, "key": <str>, "days_remaining": <int>} for
+        qualifying items, soonest deadline first.
+    """
+    if now is None:
+        now = datetime.now(timezone.utc)
+    sent = set(sent_keys)
+
+    selected = []
+    for item in saved_items:
+        if not isinstance(item, dict):
+            continue
+        status = str(item.get("status") or "").strip().lower()
+        if status in _TERMINAL_STATUSES:
+            continue
+        verdict = check_deadline(str(item.get("deadline") or ""))
+        days = verdict.get("days_remaining")
+        # Skip missing/invalid/expired deadlines and anything outside the window.
+        if not isinstance(days, int) or not (0 < days <= lead_days):
+            continue
+        key = scholarship_reminder_key(item.get("id"), item.get("deadline"))
+        if key in sent:
+            continue
+        selected.append({"item": item, "key": key, "days_remaining": days})
+
+    selected.sort(key=lambda r: r["days_remaining"])
+    return selected
