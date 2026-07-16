@@ -477,6 +477,19 @@ def init_db():
             except Exception as e:
                 print(f"[ERROR] Failed to create sent_reminders table: {e}")
 
+        # 7b. Add checklist_json to saved_scholarships if the table predates it.
+        # create_all() makes new tables but never adds columns to an existing one,
+        # so a server that created saved_scholarships before the checklist feature
+        # would 500 on every read/write of the missing column.
+        if _has_table("saved_scholarships") and not _has_col("saved_scholarships", "checklist_json"):
+            print("[WARN] 'checklist_json' column missing from saved_scholarships. Adding it now...")
+            try:
+                conn.execute(text("ALTER TABLE saved_scholarships ADD COLUMN checklist_json TEXT"))
+                conn.commit()
+                print("[OK] Successfully added 'checklist_json' column!")
+            except Exception as e:
+                print(f"[ERROR] Failed to add checklist_json column: {e}")
+
     # 8. Create/Update admin account
     try:
         db = SessionLocal()
@@ -1736,8 +1749,18 @@ from services import scholarship_search
 
 @app.get("/api/scholarships/status")
 async def scholarship_status(user: dict = Depends(get_current_user)):
-    """Whether search is usable, so the page can explain itself before a search."""
-    return {"configured": scholarship_search.is_configured()}
+    """Whether live search is usable, so the page can explain itself before a search.
+
+    Live search is available if EITHER free Gemini grounding is enabled or a Tavily
+    key is set. The curated core shows regardless, so this only tells the UI whether
+    to promise live results on top of it.
+    """
+    live = scholarship_search.grounding_enabled() or scholarship_search.is_configured()
+    return {
+        "configured": live,
+        "grounding": scholarship_search.grounding_enabled(),
+        "tavily": scholarship_search.is_configured(),
+    }
 
 
 @app.post("/api/scholarships/search")
@@ -1756,12 +1779,9 @@ async def search_scholarships(
     if len(query) > 500:
         raise HTTPException(400, "Query is too long (500 characters max).")
 
-    if not scholarship_search.is_configured():
-        # Not an error the student caused: report it plainly instead of 500ing.
-        raise HTTPException(
-            503,
-            "Scholarship search isn't configured yet. An admin needs to set TAVILY_API_KEY.",
-        )
+    # No 503 when Tavily is unset: the curated core still returns real awards, so
+    # find_opportunities degrades to that instead of failing. The response's
+    # `configured` flag tells the frontend whether live search was available.
 
     # Eligibility filtering is the whole point: never show an award they can't win.
     dw_row = db.query(DegreeWorksData).filter(DegreeWorksData.user_id == user["user_id"]).first()
@@ -1792,9 +1812,25 @@ async def search_scholarships(
 # save it, and come back to it after the tab closes. Split by `kind` so
 # scholarships and internships render and filter separately on the frontend.
 
+def _load_checklist(row: SavedScholarship) -> Optional[list]:
+    """Parse the stored checklist JSON, tolerant of a null or corrupt value.
+
+    Returns None when no checklist has been generated yet (so the frontend knows
+    to offer "generate"), or the item list once it has.
+    """
+    if not row.checklist_json:
+        return None
+    try:
+        data = json.loads(row.checklist_json)
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return None
+    return data if isinstance(data, list) else None
+
+
 def _saved_to_dict(row: SavedScholarship) -> dict:
     """Serialize a saved row, recomputing urgency from today so the badge is fresh."""
     urgency = scholarship_search.recompute_urgency(row.deadline)
+    checklist = _load_checklist(row)
     return {
         "id": row.id,
         "client_key": row.client_key,
@@ -1814,6 +1850,9 @@ def _saved_to_dict(row: SavedScholarship) -> dict:
         "urgency": urgency["status"],
         "days_remaining": urgency["days_remaining"],
         "saved_at": row.created_at.isoformat() if row.created_at else None,
+        # null until generated; the frontend shows "Build my checklist" in that case.
+        "checklist": checklist,
+        "checklist_progress": scholarship_search.checklist_progress(checklist),
     }
 
 
@@ -1941,6 +1980,93 @@ async def delete_saved_scholarship(
     db.delete(row)
     db.commit()
     return {"ok": True, "id": saved_id}
+
+
+# --- Application checklists ---------------------------------------------------
+# The checklist is what turns "I saved it" into "I applied". Generated from the
+# award's own requirements, then the student checks items off and adds notes.
+
+def _get_saved_row_or_404(saved_id: int, user_id: int, db: Session) -> SavedScholarship:
+    row = (
+        db.query(SavedScholarship)
+        .filter(SavedScholarship.id == saved_id, SavedScholarship.user_id == user_id)
+        .first()
+    )
+    if row is None:
+        raise HTTPException(404, "That saved opportunity was not found.")
+    return row
+
+
+def _sanitize_checklist(raw) -> list:
+    """Coerce a client-sent checklist into the stored shape, dropping junk.
+
+    The frontend owns the whole list and PUTs it back on every edit, so this is
+    the one place we validate it: each item becomes {id, label, done, note} with
+    trimmed, length-capped strings. A blank label drops the item.
+    """
+    if not isinstance(raw, list):
+        return []
+    out: list = []
+    for i, it in enumerate(raw):
+        if not isinstance(it, dict):
+            continue
+        label = str(it.get("label") or "").strip()
+        if not label:
+            continue
+        out.append({
+            "id": str(it.get("id") or f"item-{i}")[:40],
+            "label": label[:200],
+            "done": bool(it.get("done")),
+            "note": str(it.get("note") or "").strip()[:500],
+        })
+    return out
+
+
+@app.post("/api/scholarships/saved/{saved_id}/checklist/generate")
+async def generate_saved_checklist(
+    saved_id: int,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Build the application checklist for a saved item from its requirements.
+
+    Idempotent-ish: regenerating replaces the list. The frontend only calls this
+    when there's no checklist yet, or when the student explicitly asks to rebuild.
+    Never fails hard — generation degrades to a default template.
+    """
+    row = _get_saved_row_or_404(saved_id, user["user_id"], db)
+
+    item = {
+        "kind": row.kind, "name": row.name, "award": row.award, "pay": row.pay,
+        "eligibility": row.eligibility, "role": row.role, "deadline": row.deadline,
+        "why": row.why,
+    }
+    checklist = scholarship_search.generate_checklist(item)
+    row.checklist_json = json.dumps(checklist)
+    db.commit()
+    db.refresh(row)
+    return _saved_to_dict(row)
+
+
+@app.put("/api/scholarships/saved/{saved_id}/checklist")
+async def update_saved_checklist(
+    saved_id: int,
+    payload: dict,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Replace a saved item's checklist wholesale.
+
+    The client sends the full list on every change (toggle, edit, add, delete,
+    note). Replacing the whole thing is simpler and race-free versus per-item
+    PATCHes, and a checklist is small.
+    """
+    checklist = _sanitize_checklist(payload.get("checklist"))
+    row = _get_saved_row_or_404(saved_id, user["user_id"], db)
+    row.checklist_json = json.dumps(checklist)
+    db.commit()
+    db.refresh(row)
+    return _saved_to_dict(row)
 
 
 @app.get("/api/degreeworks/debug")
