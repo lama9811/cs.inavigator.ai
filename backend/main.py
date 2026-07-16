@@ -147,7 +147,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingSnippet, ReminderSubscription, SentReminder, LiveSection
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingSnippet, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -4700,6 +4700,213 @@ def _concept_quiz_call(fn, *args):
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
+PLACEMENT_CATEGORIES = ("syntax", "data-types", "conditionals", "loops", "functions")
+
+
+def _concept_correct_answer(question: dict[str, Any]) -> Any:
+    """Return the authored answer in the same readable shape used by quiz review."""
+    kind = question.get("kind")
+    if kind in {"mcq-output", "mcq-behavior"}:
+        choices = question.get("choices") or []
+        index = question.get("answer_index")
+        return choices[index] if isinstance(index, int) and 0 <= index < len(choices) else None
+    if kind == "typein":
+        accepted = question.get("accepted") or []
+        return accepted[0] if accepted else None
+    if kind == "parsons":
+        return question.get("lines") or None
+    return None
+
+
+def _stored_concept_results(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Strip answers before persistence; quiz analytics never stores typed code/text."""
+    return [
+        {
+            "question_id": str(result.get("question_id") or "")[:120],
+            "kind": str(result.get("kind") or "")[:30],
+            "correct": bool(result.get("correct")),
+        }
+        for result in results
+        if result.get("question_id")
+    ]
+
+
+def _save_concept_attempt(
+    db: Session,
+    *,
+    user_id: int,
+    language: str,
+    category: str,
+    correct: int,
+    total: int,
+    score: float,
+    results: list[dict[str, Any]],
+) -> Optional[CodingConceptQuizAttempt]:
+    """Save progress without turning a temporary DB issue into a lost quiz result."""
+    row = CodingConceptQuizAttempt(
+        user_id=user_id,
+        language=concept_quiz.normalize_language(language),
+        category=str(category)[:80],
+        correct=max(0, int(correct)),
+        total=max(0, int(total)),
+        score=max(0.0, min(1.0, float(score))),
+        results_json=json.dumps(_stored_concept_results(results)),
+    )
+    try:
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return row
+    except Exception as exc:
+        db.rollback()
+        print(f"[WARN] Concept-quiz progress was not saved: {exc}")
+        return None
+
+
+def _concept_attempt_results(row: CodingConceptQuizAttempt) -> list[dict[str, Any]]:
+    try:
+        value = json.loads(row.results_json or "[]")
+        return value if isinstance(value, list) else []
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return []
+
+
+def _serialize_concept_progress(rows: list[CodingConceptQuizAttempt]) -> dict[str, Any]:
+    """Fold append-only attempts into category cards and unresolved mistake review."""
+    categories: dict[tuple[str, str], dict[str, Any]] = {}
+    latest_questions: dict[tuple[str, str, str], dict[str, Any]] = {}
+
+    def attempt_sort_key(item: CodingConceptQuizAttempt) -> tuple[float, int]:
+        created = item.created_at
+        if created is None:
+            stamp = 0.0
+        else:
+            if created.tzinfo is None:
+                created = created.replace(tzinfo=timezone.utc)
+            stamp = created.timestamp()
+        return stamp, item.id or 0
+
+    for row in sorted(rows, key=attempt_sort_key):
+        key = (row.language, row.category)
+        attempt = {
+            "correct": row.correct,
+            "total": row.total,
+            "score": row.score,
+            "at": row.created_at.isoformat() if row.created_at else None,
+        }
+        record = categories.setdefault(key, {
+            "language": row.language,
+            "category": row.category,
+            "attempts": 0,
+            "best": None,
+            "last": None,
+            "questions": {},
+        })
+        record["attempts"] += 1
+        record["last"] = attempt
+        if record["best"] is None or row.score > record["best"]["score"]:
+            record["best"] = attempt
+
+        for result in _concept_attempt_results(row):
+            question_id = str(result.get("question_id") or "")
+            if not question_id:
+                continue
+            status_value = "correct" if result.get("correct") else "incorrect"
+            record["questions"][question_id] = status_value
+            latest_questions[(row.language, row.category, question_id)] = {
+                "language": row.language,
+                "category": row.category,
+                "question_id": question_id,
+                "kind": result.get("kind"),
+                "status": status_value,
+                "at": attempt["at"],
+            }
+
+    mistakes: list[dict[str, Any]] = []
+    for item in latest_questions.values():
+        if item["status"] != "incorrect" or item["category"] == "placement":
+            continue
+        try:
+            question = concept_quiz.find_question(
+                item["language"], item["category"], item["question_id"]
+            )
+        except (concept_quiz.ConceptQuizError, concept_quiz.ConceptQuizDataError):
+            continue
+        mistakes.append({
+            **item,
+            "title": question.get("title") or question.get("prompt") or item["question_id"],
+            "prompt": question.get("prompt") or "",
+            "correct_answer": _concept_correct_answer(question),
+            "explanation": question.get("explanation") or "",
+        })
+
+    mistakes.sort(key=lambda item: item.get("at") or "", reverse=True)
+    visible_categories = [
+        value for key, value in categories.items() if key[1] != "placement"
+    ]
+    visible_categories.sort(key=lambda item: (item["language"], item["category"]))
+    placement = [
+        value for key, value in categories.items() if key[1] == "placement"
+    ]
+    return {
+        "categories": visible_categories,
+        "mistakes": mistakes[:30],
+        "placement": placement,
+    }
+
+
+def _placement_questions(language: str) -> list[dict[str, Any]]:
+    """Pick one authored multiple-choice question from five foundation topics."""
+    selected: list[dict[str, Any]] = []
+    for category in PLACEMENT_CATEGORIES:
+        bank = concept_quiz.questions_for_category(language, category)
+        question = next(
+            (q for q in bank["questions"] if q.get("kind") in {"mcq-output", "mcq-behavior"}),
+            None,
+        )
+        if question:
+            selected.append({**question, "placement_category": category})
+    return selected
+
+
+def _public_placement_question(question: dict[str, Any]) -> dict[str, Any]:
+    hidden = {"answer_index", "accepted", "explanation", "lines"}
+    return {key: value for key, value in question.items() if key not in hidden}
+
+
+@app.get("/api/coding/concept-quiz/progress")
+async def get_concept_quiz_progress(
+    language: Optional[str] = Query(None),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Cross-device category progress plus currently unresolved quiz mistakes."""
+    query = db.query(CodingConceptQuizAttempt).filter(
+        CodingConceptQuizAttempt.user_id == user["user_id"]
+    )
+    if language:
+        normalized = _concept_quiz_call(concept_quiz.normalize_language, language)
+        query = query.filter(CodingConceptQuizAttempt.language == normalized)
+    rows = query.order_by(CodingConceptQuizAttempt.created_at.asc()).all()
+    return _serialize_concept_progress(rows)
+
+
+@app.get("/api/coding/concept-quiz/placement/{language}")
+async def get_concept_quiz_placement(
+    language: str,
+    user: dict = Depends(get_current_user),
+):
+    normalized = _concept_quiz_call(concept_quiz.normalize_language, language)
+    questions = _concept_quiz_call(_placement_questions, normalized)
+    if len(questions) < len(PLACEMENT_CATEGORIES):
+        raise HTTPException(status_code=503, detail="The placement check is not ready for this language yet.")
+    return {
+        "language": normalized,
+        "total": len(questions),
+        "questions": [_public_placement_question(question) for question in questions],
+    }
+
+
 @app.get("/api/coding/concept-quiz/languages")
 async def list_concept_quiz_languages():
     """The 4 language cards shown when the student toggles to Quiz mode."""
@@ -4812,6 +5019,11 @@ class ConceptQuizGradeRequest(BaseModel):
     answers: list[ConceptQuizAnswer]
 
 
+class ConceptQuizPlacementRequest(BaseModel):
+    language: str
+    answers: list[ConceptQuizAnswer]
+
+
 def _grade_concept_answer(question: dict[str, Any], answer: ConceptQuizAnswer) -> dict[str, Any]:
     """Grade one submitted answer against its question. Pure/stateless."""
     kind = question.get("kind")
@@ -4848,10 +5060,80 @@ def _grade_concept_answer(question: dict[str, Any], answer: ConceptQuizAnswer) -
     }
 
 
+@app.post("/api/coding/concept-quiz/placement")
+async def grade_concept_quiz_placement(
+    req: ConceptQuizPlacementRequest,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    normalized = _concept_quiz_call(concept_quiz.normalize_language, req.language)
+    questions = _concept_quiz_call(_placement_questions, normalized)
+    by_id = {str(question.get("id")): question for question in questions}
+    submitted = {answer.question_id: answer for answer in req.answers}
+    if set(submitted) != set(by_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Answer all five placement questions before submitting.",
+        )
+
+    results = []
+    for question in questions:
+        result = _grade_concept_answer(question, submitted[str(question.get("id"))])
+        result["placement_category"] = question["placement_category"]
+        results.append(result)
+
+    correct = sum(1 for result in results if result["correct"])
+    total = len(results)
+    score = round(correct / total, 4) if total else 0.0
+    first_missed = next(
+        (result["placement_category"] for result in results if not result["correct"]),
+        None,
+    )
+    if score >= 1.0:
+        track = "intermediate"
+        available = concept_quiz.categories_for_language(normalized)
+        next_category = next(
+            (item["id"] for item in available if item.get("track") == "intermediate" and item.get("count", 0) > 0),
+            "algorithm-problems",
+        )
+        reason = "You answered every foundation question correctly, so you are ready for a gentle intermediate topic."
+    else:
+        track = "beginner"
+        next_category = first_missed or "syntax"
+        reason = (
+            f"Start with {next_category.replace('-', ' ')} because it was the first foundation topic that needs another look."
+        )
+
+    saved = _save_concept_attempt(
+        db,
+        user_id=user["user_id"],
+        language=normalized,
+        category="placement",
+        correct=correct,
+        total=total,
+        score=score,
+        results=results,
+    )
+    return {
+        "language": normalized,
+        "correct": correct,
+        "total": total,
+        "score": score,
+        "results": results,
+        "recommendation": {
+            "track": track,
+            "category": next_category,
+            "reason": reason,
+        },
+        "progress_saved": saved is not None,
+    }
+
+
 @app.post("/api/coding/concept-quiz/grade")
 async def grade_concept_quiz(
     req: ConceptQuizGradeRequest,
     user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """Server-verified grading for a submitted quiz set. Returns a per-question
     correct/incorrect breakdown plus a score, powering the green/red results
@@ -4873,13 +5155,26 @@ async def grade_concept_quiz(
 
     total = len(results)
     correct = sum(1 for r in results if r["correct"])
+    score = round(correct / total, 4) if total else 0.0
+    saved = _save_concept_attempt(
+        db,
+        user_id=user["user_id"],
+        language=bank["language"],
+        category=bank["category"],
+        correct=correct,
+        total=total,
+        score=score,
+        results=results,
+    )
     return {
         "language": bank["language"],
         "category": bank["category"],
         "total": total,
         "correct": correct,
-        "score": round(correct / total, 4) if total else 0.0,
+        "score": score,
         "results": results,
+        "progress_saved": saved is not None,
+        "attempt_id": saved.id if saved else None,
     }
 
 @app.post("/api/coding/resources/search")

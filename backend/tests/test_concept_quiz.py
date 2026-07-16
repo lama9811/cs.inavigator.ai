@@ -331,26 +331,19 @@ FILLER_PHRASES = (
 )
 
 
-def test_expanded_banks_do_not_use_filler_templates_or_duplicate_prompts():
+def test_all_banks_reject_filler_templates_and_exact_duplicate_questions():
+    """Quality rules apply to every bank, not only files produced by one authoring pass.
+
+    Requiring an ``-authored-`` id accidentally gave older/template questions a free pass,
+    which is how filler can return while the test suite remains green.
+    """
     for language in ALL_LANGUAGES:
         for category in cq.categories_for_language(language):
             questions = cq.questions_for_category(language, category["id"])["questions"]
-            if not any("-authored-" in question["id"] for question in questions):
-                continue
-
-            authored_prompts = [
-                question.get("prompt", "").strip().lower()
-                for question in questions
-                if "-authored-" in question["id"] and question.get("prompt", "").strip()
-            ]
-            assert len(authored_prompts) == len(set(authored_prompts)), (
-                f"{language}/{category['id']} repeats an authored question prompt"
-            )
-
             prompt_code_pairs = [
                 (
-                    question.get("prompt", "").strip().lower(),
-                    question.get("code") or "",
+                    " ".join(question.get("prompt", "").lower().split()),
+                    " ".join(str(question.get("code") or "").lower().split()),
                 )
                 for question in questions
                 if question.get("prompt", "").strip()
@@ -367,12 +360,12 @@ def test_expanded_banks_do_not_use_filler_templates_or_duplicate_prompts():
                 )
 
 
-def test_authored_mcq_explanations_add_more_than_the_correct_choice():
+def test_every_mcq_explanation_adds_more_than_the_correct_choice():
     for language in ALL_LANGUAGES:
         for category in cq.categories_for_language(language):
             questions = cq.questions_for_category(language, category["id"])["questions"]
             for question in questions:
-                if "-authored-" not in question["id"] or not question.get("choices"):
+                if not question.get("choices"):
                     continue
                 correct = question["choices"][question["answer_index"]].strip().lower()
                 explanation = question.get("explanation", "").strip().lower()
@@ -380,3 +373,91 @@ def test_authored_mcq_explanations_add_more_than_the_correct_choice():
                     f"{language}/{category['id']}/{question['id']} only repeats its answer"
                 )
                 assert len(explanation) >= len(correct) + 20
+
+# ---------------------------------------------------------------------------
+# Cross-device progress, placement, and privacy
+# ---------------------------------------------------------------------------
+
+def test_stored_quiz_results_never_include_student_answers_or_code():
+    from main import _stored_concept_results
+
+    stored = _stored_concept_results([
+        {
+            "question_id": "privacy-check",
+            "kind": "typein",
+            "correct": False,
+            "student_answer": "print('private attempt')",
+            "correct_answer": "print('hello')",
+            "explanation": "Not needed in the progress row.",
+        }
+    ])
+    rendered = json.dumps(stored)
+    assert "private attempt" not in rendered
+    assert "correct_answer" not in rendered
+    assert stored == [
+        {"question_id": "privacy-check", "kind": "typein", "correct": False}
+    ]
+
+
+def test_progress_serializer_keeps_best_latest_status_and_unresolved_mistakes():
+    from datetime import datetime, timedelta, timezone
+    from main import _serialize_concept_progress
+    from models import CodingConceptQuizAttempt
+
+    questions = cq.questions_for_category("python", "syntax")["questions"][:2]
+    first, second = questions
+    now = datetime.now(timezone.utc)
+    rows = [
+        CodingConceptQuizAttempt(
+            id=1,
+            user_id=7,
+            language="python",
+            category="syntax",
+            correct=0,
+            total=2,
+            score=0.0,
+            results_json=json.dumps([
+                {"question_id": first["id"], "kind": first["kind"], "correct": False},
+                {"question_id": second["id"], "kind": second["kind"], "correct": False},
+            ]),
+            created_at=now,
+        ),
+        CodingConceptQuizAttempt(
+            id=2,
+            user_id=7,
+            language="python",
+            category="syntax",
+            correct=1,
+            total=2,
+            score=0.5,
+            results_json=json.dumps([
+                {"question_id": first["id"], "kind": first["kind"], "correct": True},
+                {"question_id": second["id"], "kind": second["kind"], "correct": False},
+            ]),
+            created_at=now + timedelta(minutes=1),
+        ),
+    ]
+
+    payload = _serialize_concept_progress(rows)
+    category = payload["categories"][0]
+    assert category["attempts"] == 2
+    assert category["best"]["score"] == 0.5
+    assert category["last"]["score"] == 0.5
+    assert category["questions"][first["id"]] == "correct"
+    assert category["questions"][second["id"]] == "incorrect"
+    assert [item["question_id"] for item in payload["mistakes"]] == [second["id"]]
+    assert payload["mistakes"][0]["explanation"]
+
+
+def test_placement_uses_five_foundation_topics_without_leaking_answers():
+    from main import PLACEMENT_CATEGORIES, _placement_questions, _public_placement_question
+
+    questions = _placement_questions("python")
+    assert [question["placement_category"] for question in questions] == list(PLACEMENT_CATEGORIES)
+    assert len(questions) == 5
+    for question in questions:
+        public = _public_placement_question(question)
+        assert question["kind"] in {"mcq-output", "mcq-behavior"}
+        assert "answer_index" not in public
+        assert "explanation" not in public
+        assert len(public["choices"]) >= 3

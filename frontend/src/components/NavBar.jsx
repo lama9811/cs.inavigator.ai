@@ -128,7 +128,7 @@ export default function NavBar({ role, authenticated, onToggleSidebar, onBrandCl
           <nav className="nav-primary-links" aria-label="Primary navigation">
             {primaryNav.map(({ to, label, Icon }) => (
               <NavLink key={to} to={to} className={pillClass} title={label}>
-                <Icon size={15} />
+                {React.createElement(Icon, { size: 15 })}
                 <span>{label}</span>
               </NavLink>
             ))}

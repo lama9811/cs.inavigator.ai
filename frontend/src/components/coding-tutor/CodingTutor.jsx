@@ -2677,6 +2677,11 @@ export default function CodingTutor({
           suggestedCodeBlock={suggestedCodeBlock}
           terminalOpen={terminalOpen}
           testOutput={testOutput}
+          solutionReview={{
+            studentCode: code,
+            reference: activeSolution?.reference_solution || "",
+            complexity: activeSolution?.complexity || "",
+          }}
           canMarkSolved={isQuizBankProblem}
           isPersonalMode={isPersonalMode}
           onCodeChange={setCode}
@@ -2892,6 +2897,7 @@ export default function CodingTutor({
               apiBase={apiBase}
               target={target}
               languageLabels={CONCEPT_QUIZ_LABELS}
+              mastery={mastery}
               onNavigateToLanguages={() => navigate(PRACTICE_QUIZ_PATH)}
               onNavigateToLanguage={(language) => navigate(quizPathForLanguage(language))}
               onNavigateToQuestion={(language, category, questionId) =>

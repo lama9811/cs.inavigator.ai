@@ -42,6 +42,7 @@ export default function CodeWorkspace({
   latestFeedback,
   terminalOpen,
   testOutput,
+  solutionReview,
   canMarkSolved = true,
   isPersonalMode = false,
   languageLocked = false,
@@ -253,6 +254,7 @@ export default function CodeWorkspace({
                 onExplainError={onExplainError}
                 onExplainOneTest={onExplainOneTest}
                 onRequestReview={onRequestReview}
+                solutionReview={solutionReview}
               />
             </div>
           </>

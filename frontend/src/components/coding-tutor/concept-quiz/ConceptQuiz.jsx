@@ -158,6 +158,7 @@ export default function ConceptQuiz({
   apiBase,
   target,
   languageLabels,
+  mastery,
   onNavigateToLanguages,
   onNavigateToLanguage,
   onNavigateToQuestion,
@@ -218,6 +219,7 @@ export default function ConceptQuiz({
         apiBase={apiBase}
         language={target.language}
         languageLabel={labelFor(target.language)}
+        mastery={mastery}
         onBackToLanguages={onNavigateToLanguages}
         onOpenQuestion={(category, questionId) =>
           onNavigateToQuestion(target.language, category, questionId)
