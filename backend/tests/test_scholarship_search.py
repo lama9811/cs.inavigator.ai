@@ -680,3 +680,85 @@ def test_curated_entries_are_well_formed():
         assert entry.get("name"), f"unnamed curated entry: {entry.get('id')}"
         assert str(entry.get("url", "")).startswith("http"), \
             f"curated entry missing a real URL: {entry.get('id')}"
+
+
+# --- deadline nudges (select_due_scholarship_reminders) ----------------------
+
+def _saved(sid, offset_days, status="interested", **extra):
+    """Build a saved-item dict with a deadline `offset_days` from today."""
+    item = {"id": sid, "name": f"Award {sid}", "kind": "scholarship",
+            "deadline": _iso(offset_days), "status": status}
+    item.update(extra)
+    return item
+
+
+def test_reminder_selects_item_inside_the_window():
+    """A future deadline within the lead window (default 7d) is picked."""
+    due = ss.select_due_scholarship_reminders([_saved(1, 3)], set())
+    assert len(due) == 1
+    assert due[0]["item"]["id"] == 1
+    assert due[0]["days_remaining"] == 3
+    assert due[0]["key"] == ss.scholarship_reminder_key(1, _iso(3))
+
+
+def test_reminder_skips_deadline_today_and_expired():
+    """0 days (today) and negative (expired) are outside 0 < days <= lead."""
+    items = [_saved(1, 0), _saved(2, -5)]
+    assert ss.select_due_scholarship_reminders(items, set()) == []
+
+
+def test_reminder_skips_beyond_the_window():
+    """A deadline further out than the lead window is not nudged yet."""
+    assert ss.select_due_scholarship_reminders([_saved(1, 20)], set()) == []
+
+
+def test_reminder_respects_custom_lead_days():
+    """A wider lead window pulls in a further-out deadline."""
+    due = ss.select_due_scholarship_reminders([_saved(1, 20)], set(), lead_days=30)
+    assert len(due) == 1
+
+
+@pytest.mark.parametrize("status", ["submitted", "awarded", "rejected", "expired"])
+def test_reminder_skips_terminal_statuses(status):
+    """Don't nudge an award the student is already done with."""
+    assert ss.select_due_scholarship_reminders([_saved(1, 3, status=status)], set()) == []
+
+
+def test_reminder_is_case_insensitive_on_status():
+    """Terminal-status check is lowercased, so 'Submitted' still skips."""
+    assert ss.select_due_scholarship_reminders([_saved(1, 3, status="Submitted")], set()) == []
+
+
+def test_reminder_dedupes_via_sent_keys():
+    """An already-sent key is not selected again (idempotent dispatch)."""
+    key = ss.scholarship_reminder_key(1, _iso(3))
+    assert ss.select_due_scholarship_reminders([_saved(1, 3)], {key}) == []
+
+
+def test_reminder_key_changes_when_deadline_moves():
+    """Editing the deadline changes the key so one fresh nudge is sent."""
+    assert ss.scholarship_reminder_key(1, "2026-01-01") != ss.scholarship_reminder_key(1, "2026-02-01")
+
+
+def test_reminder_key_is_prefixed_to_avoid_canvas_collision():
+    """Shares the SentReminder ledger with Canvas keys but never collides."""
+    assert ss.scholarship_reminder_key(1, "2026-01-01").startswith("sch:")
+
+
+def test_reminder_sorts_soonest_first():
+    """Nudges come back ordered by days remaining."""
+    items = [_saved(1, 6), _saved(2, 2), _saved(3, 4)]
+    due = ss.select_due_scholarship_reminders(items, set())
+    assert [d["item"]["id"] for d in due] == [2, 3, 1]
+
+
+def test_reminder_skips_missing_or_junk_deadline():
+    """A missing or unparseable deadline is simply skipped, not crashed on."""
+    items = [{"id": 1, "status": "interested"},  # no deadline
+             {"id": 2, "status": "interested", "deadline": "not-a-date"}]
+    assert ss.select_due_scholarship_reminders(items, set()) == []
+
+
+def test_reminder_tolerates_non_dict_rows():
+    """Junk in the list is ignored, not fatal."""
+    assert ss.select_due_scholarship_reminders([None, "x", _saved(1, 3)], set())[0]["item"]["id"] == 1

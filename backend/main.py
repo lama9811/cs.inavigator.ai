@@ -7202,6 +7202,86 @@ async def internal_reminders_dispatch(request: Request):
         db.close()
 
 
+@app.post("/api/internal/scholarships/reminders/dispatch")
+async def internal_scholarship_reminders_dispatch(request: Request):
+    """Triggered daily by Cloud Scheduler. Emails a student when a saved
+    scholarship / internship deadline is within the lead window (default 7 days).
+    Idempotent: the same SentReminder ledger used for Canvas reminders dedupes
+    each nudge, keyed with an 'sch:' prefix so the two never collide. Computes
+    entirely from the saved_scholarships table — no web re-fetch."""
+    secret = request.headers.get("X-Research-Secret", "")
+    expected = os.getenv("RESEARCH_SECRET", "")
+    if not expected or secret != expected:
+        raise HTTPException(status_code=403, detail="Invalid research secret")
+
+    from services import scholarship_search
+    from email_service import send_scholarship_deadline_email, is_email_configured
+
+    if not is_email_configured():
+        return {"status": "skipped", "reason": "SMTP not configured"}
+
+    now = datetime.now(timezone.utc)
+    sent_count = 0
+    users_processed = 0
+
+    db = SessionLocal()
+    try:
+        # Group every saved row by student. The selector drops terminal statuses
+        # (submitted / awarded / rejected / expired) and out-of-window deadlines.
+        rows = db.query(SavedScholarship).all()
+        rows_by_user: dict[int, list] = {}
+        for r in rows:
+            rows_by_user.setdefault(r.user_id, []).append(r)
+
+        if not rows_by_user:
+            return {"status": "ok", "users_processed": 0, "reminders_sent": 0}
+
+        for user_id, saved_rows in rows_by_user.items():
+            items = [
+                {
+                    "id": r.id,
+                    "name": r.name,
+                    "kind": r.kind,
+                    "deadline": r.deadline,
+                    "status": r.status,
+                    "award": r.award,
+                    "pay": r.pay,
+                    "url": r.url,
+                }
+                for r in saved_rows
+            ]
+
+            sent_keys = {
+                sr.reminder_key for sr in db.query(SentReminder).filter(
+                    SentReminder.user_id == user_id
+                ).all()
+            }
+
+            due = scholarship_search.select_due_scholarship_reminders(
+                items, sent_keys, now
+            )
+            if not due:
+                continue
+
+            user = db.query(User).filter(User.id == user_id).first()
+            if not user or not user.email:
+                continue
+
+            users_processed += 1
+            for entry in due:
+                ok = send_scholarship_deadline_email(
+                    user.email, entry["item"], entry["days_remaining"]
+                )
+                if ok:
+                    db.add(SentReminder(user_id=user_id, reminder_key=entry["key"]))
+                    sent_count += 1
+            db.commit()
+
+        return {"status": "ok", "users_processed": users_processed, "reminders_sent": sent_count}
+    finally:
+        db.close()
+
+
 # ==============================================================================
 # CLOUD KB STATS ENDPOINT
 # ==============================================================================
