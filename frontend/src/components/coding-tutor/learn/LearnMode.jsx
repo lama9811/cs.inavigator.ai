@@ -113,10 +113,6 @@ function TrackCards({ language, languageLabel, categories, onPick, onBack }) {
             (category) => category.track === track.id
           );
           const ready = trackCategories.filter((category) => category.has_lesson).length;
-          const questions = trackCategories.reduce(
-            (total, category) => total + (category.count || 0),
-            0
-          );
           const accent = track.id === "beginner" ? "#16a34a" : languageAccent;
 
           return (
@@ -147,10 +143,6 @@ function TrackCards({ language, languageLabel, categories, onPick, onBack }) {
                   <span className="learn-track-stat-label">
                     lesson{ready === 1 ? "" : "s"}
                   </span>
-                </span>
-                <span className="learn-track-stat">
-                  <span className="learn-track-stat-num">{questions}</span>
-                  <span className="learn-track-stat-label">practice questions</span>
                 </span>
               </span>
               <span className="learn-track-cta">
@@ -228,8 +220,8 @@ function LessonList({
         })}
       </ol>
 
-      <button type="button" className="practice-guide-viewall" onClick={onBack}>
-        ← Back to tracks
+      <button type="button" className="learn-back-link" onClick={onBack}>
+        <FaArrowLeft aria-hidden="true" /> Back to tracks
       </button>
     </div>
   );

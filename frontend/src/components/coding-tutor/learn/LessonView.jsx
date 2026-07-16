@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   FaClock,
   FaArrowRight,
+  FaArrowLeft,
   FaLightbulb,
   FaExclamationTriangle,
   FaTimesCircle,
@@ -9,6 +10,7 @@ import {
   FaTimes,
 } from "react-icons/fa";
 import { markLessonRead } from "../concept-quiz/conceptQuizProgress";
+import LessonPlayBar from "./LessonPlayBar";
 
 // One lesson. Renders the authored block types (see backend/lessons.py) and ends with
 // the handoff that gives Learn its purpose: "Practice this."
@@ -258,8 +260,8 @@ export default function LessonView({
         <button type="button" className="lesson-practice-cta" onClick={onPractice}>
           Try the practice questions <FaArrowRight aria-hidden="true" />
         </button>
-        <button type="button" className="practice-guide-viewall" onClick={onBack}>
-          ← Back to {languageLabel}
+        <button type="button" className="learn-back-link" onClick={onBack}>
+          <FaArrowLeft aria-hidden="true" /> Back to {languageLabel}
         </button>
       </div>
     );
@@ -277,6 +279,9 @@ export default function LessonView({
           </span>
         ) : null}
       </header>
+
+      {/* Read-aloud. Free browser TTS — reads the prose, skips code and the checks. */}
+      <LessonPlayBar lesson={lesson} />
 
       <div className="lesson-body">
         {lesson.blocks.map((block, i) => (

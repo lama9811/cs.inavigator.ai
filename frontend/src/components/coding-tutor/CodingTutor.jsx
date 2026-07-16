@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
+  FaArrowLeft,
   FaBook,
   FaChartLine,
   FaEye,
@@ -605,6 +606,7 @@ export default function CodingTutor({
   apiBase,
   codeRenderer,
   messages = [],
+  currentWidgetSessionId,
   onContextChange,
   onActivePageChange,
   onStartFreshChat,
@@ -745,7 +747,13 @@ export default function CodingTutor({
   // language can't be swapped mid-round. Outside a mock it's freely switchable.
   const interviewLanguageLocked = Boolean(mockSession && activeProblem?.mock && mockSession.languageCommitted);
   const hintSteps = useMemo(() => buildHintSteps(activeProblem, activeSolution, attempts), [activeProblem, activeSolution, attempts]);
-  const latestFeedback = messages.slice().reverse().find((msg) => msg.sender === "bot" && msg.text)?.text || "";
+  const latestFeedback = messages.slice().reverse().find((msg) =>
+    msg.sender === "bot"
+    && msg.text
+    && msg.mode === "coding_tutor"
+    && msg.surface === "widget"
+    && msg.widgetSessionId === currentWidgetSessionId
+  )?.text || "";
   const suggestedCodeBlock = latestFeedback.match(/```(?:\w+)?\n([\s\S]*?)```/)?.[1]?.trim() || "";
   const latestQuizResponse = quizPdfStartIndex !== null
     ? messages.slice(quizPdfStartIndex).slice().reverse().find((msg) => msg.sender === "bot" && msg.text)?.text || ""
@@ -938,18 +946,37 @@ export default function CodingTutor({
   );
   const runnerSummary = useMemo(() => summarizeRunForTutor(testOutput), [testOutput]);
   const applyAiCode = useCallback(() => {
-    if (!suggestedCodeBlock) return;
-    setCode(suggestedCodeBlock);
+    if (!suggestedCodeBlock || suggestedCodeBlock === code) return;
+    if (code.trim() && !window.confirm("Replace the current workspace code with this tutor suggestion? You can undo this change afterward.")) {
+      return;
+    }
     setWorkspaceSnapshots(prev => ({
       ...prev,
       [activeSnapshotKey]: {
         ...(prev[activeSnapshotKey] || {}),
+        beforeAiRewrite: code,
         aiRewrite: suggestedCodeBlock,
         current: suggestedCodeBlock,
       },
     }));
-    toast.success("AI code applied to workspace");
-  }, [activeSnapshotKey, suggestedCodeBlock]);
+    setCode(suggestedCodeBlock);
+    toast.success("Tutor code applied. Undo is available in the chat.");
+  }, [activeSnapshotKey, code, suggestedCodeBlock]);
+
+  const undoAiCode = useCallback(() => {
+    const previousCode = activeSnapshots.beforeAiRewrite;
+    if (typeof previousCode !== "string") return;
+    setCode(previousCode);
+    setWorkspaceSnapshots(prev => ({
+      ...prev,
+      [activeSnapshotKey]: {
+        ...(prev[activeSnapshotKey] || {}),
+        beforeAiRewrite: undefined,
+        current: previousCode,
+      },
+    }));
+    toast.success("Restored your previous workspace code.");
+  }, [activeSnapshotKey, activeSnapshots.beforeAiRewrite]);
 
   // All terminal actions (explain error / explain tests / review) send to the FLOATING
   // widget: it opens automatically and appends to the ONE ongoing widget thread, so the
@@ -1079,11 +1106,12 @@ export default function CodingTutor({
       note: useWorkspace ? note : "",
       tutorMode,
       runnerSummary: useWorkspace ? runnerSummary : "",
-      workspaceSnapshots: useWorkspace ? activeSnapshots : {},
       suggestedCodeBlock,
       onApplyAICode: suggestedCodeBlock ? applyAiCode : null,
+      onUndoAICode: typeof activeSnapshots.beforeAiRewrite === "string" ? undoAiCode : null,
+      canUndoAICode: typeof activeSnapshots.beforeAiRewrite === "string",
     });
-  }, [activePage, activeProblem, attempts, code, note, onContextChange, selectedLanguage, suggestedCodeBlock, tutorMode, workspaceTab, workspaceVisible, runnerSummary, activeSnapshots, applyAiCode]);
+  }, [activePage, activeProblem, attempts, code, note, onContextChange, selectedLanguage, suggestedCodeBlock, tutorMode, workspaceTab, workspaceVisible, runnerSummary, activeSnapshots.beforeAiRewrite, applyAiCode, undoAiCode]);
 
   useEffect(() => {
     onActivePageChange?.(activePage);
@@ -2836,7 +2864,7 @@ export default function CodingTutor({
             </div>
             {back ? (
               <button type="button" className="practice-back-btn" onClick={back.onClick}>
-                ← {back.label}
+                <FaArrowLeft aria-hidden="true" /> {back.label}
               </button>
             ) : null}
           </div>

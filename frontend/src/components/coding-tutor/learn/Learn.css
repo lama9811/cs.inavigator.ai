@@ -188,6 +188,112 @@
   color: var(--ct-primary);
 }
 
+/* --- Listen-to-this-lesson play bar (free browser TTS) --- */
+.lesson-playbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 22px;
+  padding: 10px 14px;
+  border: 1px solid var(--ct-border, rgba(148, 163, 184, 0.25));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ct-primary) 5%, var(--ct-panel));
+}
+
+.lesson-playbar-icon {
+  display: grid;
+  place-items: center;
+  color: var(--ct-primary);
+  font-size: 0.95rem;
+}
+
+.lesson-playbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Scoped resets so the app-wide `.coding-app :is(button,...):hover` doesn't repaint
+   these controls orange or lift them like free-standing cards. Same fix used across
+   the coding UI. */
+.coding-app .lesson-playbar-btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--ct-border, rgba(148, 163, 184, 0.3));
+  border-radius: 50%;
+  background: var(--ct-panel);
+  color: var(--ct-text);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.coding-app .lesson-playbar-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ct-primary) 10%, var(--ct-panel)) !important;
+  border-color: color-mix(in srgb, var(--ct-primary) 40%, var(--ct-border)) !important;
+  color: var(--ct-primary) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.coding-app .lesson-playbar-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* The play/pause button leads: filled primary, white glyph. */
+.coding-app .lesson-playbar-btn.is-primary,
+.coding-app .lesson-playbar-btn.is-primary:hover:not(:disabled) {
+  width: 40px;
+  height: 40px;
+  border-color: transparent !important;
+  background: var(--ct-primary) !important;
+  color: var(--cq-on-primary, #fff) !important;
+  font-size: 0.9rem;
+}
+
+.coding-app .lesson-playbar-btn.is-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.lesson-playbar-btn:focus-visible {
+  outline: 2px solid var(--ct-primary);
+  outline-offset: 2px;
+}
+
+.lesson-playbar-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.lesson-playbar-track {
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-border) 70%, transparent);
+  overflow: hidden;
+}
+
+.lesson-playbar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ct-primary);
+  transition: width 0.25s ease;
+}
+
+.lesson-playbar-count {
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ct-muted, #6b7280);
+}
+
 .lesson-head h1 {
   margin: 0 0 8px;
   font-size: 1.75rem;
@@ -627,8 +733,8 @@ body.coding-dark .lesson-check-why.is-wrong .lesson-check-verdict { color: #fbbf
   color: var(--ct-muted, #6b7280);
 }
 
-.lesson-empty .practice-guide-viewall {
-  display: block;
+/* Center the back link in the empty state (it's a flex inline-flex by default). */
+.lesson-empty .learn-back-link {
   margin: 14px auto 0;
 }
 
@@ -1002,4 +1108,33 @@ body.coding-dark .learn-track-card {
   .learn-track-topics {
     margin-top: 14px;
   }
+}
+
+
+/* Keep the track chooser's back action quiet. The app-wide button hover adds an
+   orange fill and large glow to every button; navigation links should only get a
+   small blue tint and arrow movement. */
+.coding-app .learn-tracks .learn-back-link,
+.coding-app .learn-tracks .learn-back-link:hover:not(:disabled) {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.coding-app .learn-tracks .learn-back-link {
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: transparent !important;
+  background-color: transparent !important;
+  color: color-mix(in srgb, var(--ct-text) 68%, transparent) !important;
+}
+
+.coding-app .learn-tracks .learn-back-link:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ct-primary) 7%, transparent) !important;
+  background-color: color-mix(in srgb, var(--ct-primary) 7%, transparent) !important;
+  color: var(--ct-text) !important;
+  transform: none !important;
+}
+
+.coding-app .learn-tracks .learn-back-link:focus-visible {
+  outline-color: var(--ct-primary);
 }

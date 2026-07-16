@@ -27,44 +27,44 @@ body.coding-dark .practice-library {
   padding-bottom: 0.85rem;
   border-bottom: 1px solid var(--ct-border);
 }
-/* Filled orange back button. Hover = a raise (lift + deeper shadow), NOT a color
-   change. The app-wide `.coding-app :is(button, ...):hover` in CodingTutor.css
-   repaints the fill and swaps the glow with !important, and that file is imported
-   AFTER this one -- so the hover state below needs !important to survive. */
-.coding-app .practice-back-btn {
+/* Quiet text-link back button, matching the Learn section's `learn-back-link`: a
+   plain muted label with a small arrow that nudges on hover — NOT a filled orange
+   pill. The app-wide `.coding-app :is(button, ...):hover` (imported after this file,
+   all !important) would otherwise repaint it orange with a big glow, so the resets
+   below are scoped under .coding-app and marked !important to win. */
+.coding-app .practice-back-btn,
+.coding-app .practice-back-btn:hover:not(:disabled) {
   margin-left: auto;
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  background: linear-gradient(
-    135deg,
-    var(--ct-accent),
-    color-mix(in srgb, var(--ct-accent) 78%, #000)
-  );
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  box-shadow: 0 3px 10px color-mix(in srgb, var(--ct-accent) 32%, transparent);
-  font-weight: 700;
-  font-size: 0.9rem;
+  gap: 7px;
+  padding: 4px 6px;
+  border: 0 !important;
+  border-radius: 6px;
+  background: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+  color: var(--ct-muted) !important;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
   cursor: pointer;
-  padding: 0.5rem 1rem;
-  transition: transform 0.14s ease, box-shadow 0.14s ease;
+  transition: color 0.15s ease !important;
 }
 .coding-app .practice-back-btn:hover:not(:disabled) {
-  background: linear-gradient(
-    135deg,
-    var(--ct-accent),
-    color-mix(in srgb, var(--ct-accent) 78%, #000)
-  ) !important;
-  border-color: transparent !important;
-  color: #fff !important;
-  text-decoration: none;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 8px 20px color-mix(in srgb, var(--ct-accent) 42%, transparent) !important;
+  color: var(--ct-text) !important;
 }
-.coding-app .practice-back-btn:active {
-  transform: translateY(0);
+.coding-app .practice-back-btn svg {
+  font-size: 0.72rem;
+  transition: transform 0.15s ease;
+}
+.coding-app .practice-back-btn:hover:not(:disabled) svg {
+  transform: translateX(-3px);
+}
+.coding-app .practice-back-btn:focus-visible {
+  outline: 2px solid var(--ct-primary);
+  outline-offset: 3px;
 }
 
 /* ---- Learn | Practice | Code toggle ---- */
@@ -199,10 +199,28 @@ body.coding-dark .practice-library {
   color: var(--ct-muted);
   max-width: 58ch;
 }
+.cq-language-cards {
+  width: 100%;
+  max-width: 1560px;
+  margin-inline: auto;
+}
+
 .cq-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1.25rem;
+}
+
+@media (max-width: 1100px) {
+  .cq-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .cq-cards-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .cq-language-card {
   --cq-card-tint: var(--ct-primary);
