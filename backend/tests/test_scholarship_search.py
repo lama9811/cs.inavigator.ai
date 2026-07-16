@@ -372,6 +372,38 @@ def test_default_checklist_items_have_the_stored_shape():
         assert item["done"] is False and item["note"] == ""
 
 
+def test_internship_template_is_a_stage_prefixed_pipeline():
+    """Every internship step is prefixed with its hiring-funnel stage."""
+    labels = [i["label"] for i in ss.default_checklist("internship")]
+    stages = {label.split(" · ", 1)[0] for label in labels}
+    assert " · " in labels[0], "internship steps must carry a stage prefix"
+    assert stages == {"Apply", "Online assessment", "Interview", "Offer"}
+
+
+def test_internship_template_is_ordered_apply_to_offer():
+    """The pipeline reads in order: Apply first, Offer last."""
+    order = ["Apply", "Online assessment", "Interview", "Offer"]
+    stages = [i["label"].split(" · ", 1)[0] for i in ss.default_checklist("internship")]
+    # stages appear in non-decreasing pipeline order
+    positions = [order.index(s) for s in stages]
+    assert positions == sorted(positions)
+
+
+def test_internship_prompt_asks_for_the_pipeline():
+    """The internship prompt steers the model toward stage-prefixed steps."""
+    p = ss._checklist_prompt({"kind": "internship", "name": "Google STEP"})
+    assert "pipeline" in p.lower()
+    assert "Online assessment ·" in p
+    assert "Offer ·" in p
+
+
+def test_scholarship_prompt_is_not_pipeline_shaped():
+    """A scholarship prompt stays submission-shaped, not a hiring pipeline."""
+    p = ss._checklist_prompt({"kind": "scholarship", "name": "UNCF"})
+    assert "essay" in p.lower()
+    assert "Online assessment ·" not in p
+
+
 def test_checklist_items_skips_blank_labels():
     items = ss._checklist_items(["Essay", "", "   ", "Transcript"])
     assert [i["label"] for i in items] == ["Essay", "Transcript"]
