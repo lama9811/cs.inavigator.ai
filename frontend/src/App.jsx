@@ -477,7 +477,7 @@ export default function App() {
       messages: [],
       pinned: false,
       archived: false,
-      autoTitle: !config.title,
+      autoTitle: config.autoTitle ?? !config.title,
       mode,
     };
     setSessions((prev) => [...prev, newChat]); // Append to end

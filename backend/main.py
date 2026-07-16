@@ -174,7 +174,7 @@ CHAT_FILES_FOLDER = os.path.join(BACKEND_DIR, "uploads", "chat_files") #  NEW: C
 
 ALLOWED_EXTENSIONS = {
     'png', 'jpg', 'jpeg', 'gif', 'pdf', 'txt', 'docx', 'doc', 'mov', 'mp4',
-    'py', 'java', 'cpp', 'c', 'h', 'hpp', 'js', 'jsx', 'ts', 'tsx', 'json',
+    'py', 'java', 'cpp', 'cc', 'c', 'h', 'hpp', 'js', 'jsx', 'ts', 'tsx', 'json',
     'md', 'html', 'css'
 }
 
