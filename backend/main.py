@@ -148,7 +148,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingSnippet, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingSnippet, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -1785,6 +1785,162 @@ async def search_scholarships(
 
     result["has_degreeworks"] = bool(dw_row)
     return result
+
+
+# --- Saved scholarships (My Scholarships) ------------------------------------
+# Saving is what turns the search box into a feature: a student can find an award,
+# save it, and come back to it after the tab closes. Split by `kind` so
+# scholarships and internships render and filter separately on the frontend.
+
+def _saved_to_dict(row: SavedScholarship) -> dict:
+    """Serialize a saved row, recomputing urgency from today so the badge is fresh."""
+    urgency = scholarship_search.recompute_urgency(row.deadline)
+    return {
+        "id": row.id,
+        "client_key": row.client_key,
+        "kind": row.kind,
+        "name": row.name,
+        "award": row.award,
+        "eligibility": row.eligibility,
+        "pay": row.pay,
+        "term": row.term,
+        "location": row.location,
+        "role": row.role,
+        "deadline": row.deadline,
+        "url": row.url,
+        "source_url": row.source_url,
+        "why": row.why,
+        "status": row.status,
+        "urgency": urgency["status"],
+        "days_remaining": urgency["days_remaining"],
+        "saved_at": row.created_at.isoformat() if row.created_at else None,
+    }
+
+
+@app.get("/api/scholarships/saved")
+async def list_saved_scholarships(
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Every opportunity this student has saved, newest first, urgency recomputed."""
+    rows = (
+        db.query(SavedScholarship)
+        .filter(SavedScholarship.user_id == user["user_id"])
+        .order_by(SavedScholarship.created_at.desc())
+        .all()
+    )
+    return {"items": [_saved_to_dict(r) for r in rows]}
+
+
+@app.post("/api/scholarships/saved")
+async def save_scholarship(
+    payload: dict,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Save an opportunity from a search result.
+
+    Upserts on (user_id, client_key): re-saving the same award updates the stored
+    copy rather than creating a duplicate. Snapshots the item as-sent so a later
+    source change can't rot the saved copy.
+    """
+    name = str(payload.get("name") or "").strip()
+    if not name:
+        raise HTTPException(400, "A scholarship name is required to save it.")
+
+    kind = str(payload.get("kind") or "scholarship").strip().lower()
+    if kind not in scholarship_search.VALID_KINDS:
+        kind = "scholarship"
+
+    url = str(payload.get("url") or "").strip() or None
+    key = scholarship_search.client_key_for(name, url or "")
+
+    row = (
+        db.query(SavedScholarship)
+        .filter(
+            SavedScholarship.user_id == user["user_id"],
+            SavedScholarship.client_key == key,
+        )
+        .first()
+    )
+    if row is None:
+        row = SavedScholarship(user_id=user["user_id"], client_key=key)
+        db.add(row)
+
+    row.kind = kind
+    row.name = name[:300]
+    row.award = (str(payload.get("award")).strip()[:200] if payload.get("award") else None)
+    row.eligibility = (str(payload.get("eligibility")).strip() if payload.get("eligibility") else None)
+    row.pay = (str(payload.get("pay")).strip()[:120] if payload.get("pay") else None)
+    row.term = (str(payload.get("term")).strip()[:120] if payload.get("term") else None)
+    row.location = (str(payload.get("location")).strip()[:200] if payload.get("location") else None)
+    row.role = (str(payload.get("role")).strip()[:200] if payload.get("role") else None)
+    row.deadline = (str(payload.get("deadline")).strip()[:40] if payload.get("deadline") else None)
+    row.url = url[:1000] if url else None
+    src = str(payload.get("source_url") or "").strip() or None
+    row.source_url = src[:1000] if src else None
+    row.why = (str(payload.get("why")).strip() if payload.get("why") else None)
+    # Snapshot the whole item as it was at save time.
+    try:
+        row.snapshot_json = json.dumps(payload)[:20000]
+    except (TypeError, ValueError):
+        row.snapshot_json = None
+
+    db.commit()
+    db.refresh(row)
+    return _saved_to_dict(row)
+
+
+@app.patch("/api/scholarships/saved/{saved_id}")
+async def update_saved_scholarship(
+    saved_id: int,
+    payload: dict,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Move a saved item along its pipeline (interested → applying → submitted → …)."""
+    row = (
+        db.query(SavedScholarship)
+        .filter(
+            SavedScholarship.id == saved_id,
+            SavedScholarship.user_id == user["user_id"],
+        )
+        .first()
+    )
+    if row is None:
+        raise HTTPException(404, "That saved opportunity was not found.")
+
+    status = str(payload.get("status") or "").strip().lower()
+    if status:
+        if status not in scholarship_search.VALID_STATUSES:
+            raise HTTPException(400, f"Unknown status '{status}'.")
+        row.status = status
+
+    db.commit()
+    db.refresh(row)
+    return _saved_to_dict(row)
+
+
+@app.delete("/api/scholarships/saved/{saved_id}")
+async def delete_saved_scholarship(
+    saved_id: int,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Un-save an opportunity."""
+    row = (
+        db.query(SavedScholarship)
+        .filter(
+            SavedScholarship.id == saved_id,
+            SavedScholarship.user_id == user["user_id"],
+        )
+        .first()
+    )
+    if row is None:
+        raise HTTPException(404, "That saved opportunity was not found.")
+    db.delete(row)
+    db.commit()
+    return {"ok": True, "id": saved_id}
 
 
 @app.get("/api/degreeworks/debug")
