@@ -774,12 +774,18 @@ DEFAULT_SCHOLARSHIP_CHECKLIST = [
     "Proof of enrollment",
 ]
 
+# An internship is a pipeline, not a single submission: apply -> online
+# assessment -> interviews -> offer. The template is ordered to follow that
+# pipeline, and each step is prefixed with its stage so a flat checklist still
+# reads like the hiring funnel — no special data shape needed.
 DEFAULT_INTERNSHIP_CHECKLIST = [
-    "Tailored resume",
-    "Cover letter",
-    "Online assessment (if required)",
-    "Portfolio / GitHub link",
-    "Prepare for the technical interview",
+    "Apply · Tailor your resume to the role",
+    "Apply · Write a short cover letter / intro",
+    "Apply · Add your portfolio / GitHub link",
+    "Online assessment · Complete the OA if one is sent",
+    "Interview · Prepare behavioral answers (STAR stories)",
+    "Interview · Prepare for the technical / coding screen",
+    "Offer · Review the offer and note the deadline to accept",
 ]
 
 
@@ -809,9 +815,16 @@ def default_checklist(kind: str) -> list[dict]:
 
 
 def _checklist_prompt(item: dict) -> str:
-    """Ask the model for the concrete requirements THIS award asks for."""
+    """Ask the model for the concrete requirements THIS opportunity asks for.
+
+    Scholarships and internships get different task instructions: a scholarship
+    is one submission (essay, transcript, letters), while an internship is a
+    pipeline (apply -> online assessment -> interviews -> offer). The internship
+    prompt asks for stage-prefixed steps so the flat checklist reads like the
+    hiring funnel, matching DEFAULT_INTERNSHIP_CHECKLIST.
+    """
     kind = item.get("kind", "scholarship")
-    return f"""You are helping a Morgan State CS student assemble everything a specific {kind} application requires.
+    header = f"""You are helping a Morgan State CS student assemble everything a specific {kind} requires.
 
 === THE OPPORTUNITY ===
 Name: {item.get('name', '')}
@@ -820,23 +833,52 @@ Award/Pay: {item.get('award') or item.get('pay') or '(not listed)'}
 Eligibility: {item.get('eligibility') or '(not listed)'}
 Role: {item.get('role') or '(n/a)'}
 Deadline: {item.get('deadline') or '(not listed)'}
-Why it fits: {item.get('why') or ''}
+Why it fits: {item.get('why') or ''}"""
 
-=== YOUR TASK ===
-List the concrete application requirements a student must gather or complete for
-THIS opportunity. Be specific to what the text above implies — "a 500-word essay
-on leadership", not just "essay"; "two recommendation letters from faculty", not
-just "letters". If the details are thin, fall back to the standard requirements
-for this kind of {kind}.
+    json_shape = """Return ONLY a JSON object, no prose, no markdown fence:
 
-Return ONLY a JSON object, no prose, no markdown fence:
-
-{{
+{
   "items": [
     "One clear, actionable requirement",
     "Another requirement"
   ]
-}}
+}"""
+
+    if kind == "internship":
+        return f"""{header}
+
+=== YOUR TASK ===
+An internship is a pipeline, not a single submission. List the concrete steps a
+student must complete across the whole hiring process for THIS internship, in
+order, and PREFIX each step with its stage:
+  "Apply · ..."             (resume, cover letter, portfolio, the application itself)
+  "Online assessment · ..." (a coding/aptitude OA, only if one is likely)
+  "Interview · ..."         (behavioral prep, technical/coding screen prep)
+  "Offer · ..."             (review the offer, deadline to accept)
+
+Be specific to what the text above implies — "Interview · Prepare for a system
+design round" if it's a senior role, not just "prep". If the details are thin,
+fall back to the standard software-internship pipeline.
+
+{json_shape}
+
+Rules:
+- 5 to 8 items, ordered by stage (Apply first, Offer last).
+- Every item starts with a stage prefix followed by " · ".
+- Each item is one action the student can check off ("done / not done").
+- Never invent a stage the text contradicts. When unsure, use the standard pipeline.
+- Return only the JSON object."""
+
+    return f"""{header}
+
+=== YOUR TASK ===
+List the concrete application requirements a student must gather or complete for
+THIS scholarship. Be specific to what the text above implies — "a 500-word essay
+on leadership", not just "essay"; "two recommendation letters from faculty", not
+just "letters". If the details are thin, fall back to the standard requirements
+for a scholarship.
+
+{json_shape}
 
 Rules:
 - 4 to 8 items. Each is one thing the student can check off.
