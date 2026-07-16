@@ -85,7 +85,7 @@ print(f"[KEY] JWT_SECRET Check: {'FOUND' if os.getenv('JWT_SECRET') else 'MISSIN
 # SQLAlchemy Imports
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import OperationalError, ProgrammingError
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, text, or_, func
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, text, or_, and_, func
 
 # Vertex AI Agent Engine (replaces Pinecone + OpenAI RAG pipeline)
 from vertex_agent import query_agent, query_agent_stream, check_agent_health, reset_session
@@ -5341,16 +5341,50 @@ def _dedupe_near_duplicates(questions: list[str]) -> list[str]:
         kept.append(q)
     return kept
 
-# Coding-tutor quick-action prompts are logged to ChatHistory just like advising
-# questions, but they must NOT surface on the chat welcome screen (that screen is
-# for academic advising). Drop any question containing one of these coding-tutor
-# signal phrases (matched case-insensitively as substrings).
+# In-app feature panels (the Coding Tutor, the advising-form helper) log to ChatHistory
+# just like the general chat does, but their questions must NOT surface on the welcome
+# screen. The real defense is the session_id exclusion in the query below; these markers
+# are only a fallback.
+#
+# Two earlier filters were assumed to cover this and neither did, which is why questions
+# kept leaking:
+#
+#   * `mode == "regular"` — feature-panel rows are written with mode "regular", not
+#     "coding_tutor", so the mode filter lets them straight through. (Verified against
+#     real chat_history rows: every coding-* session is stored as mode "regular".)
+#   * the marker list below — it only matches five hard-coded phrases. "Can you provide
+#     a video that explains this?", asked inside the Coding Tutor, contains none of them
+#     and reached the home screen.
+#
+# The markers stay as a belt-and-suspenders fallback for any coding prompt that somehow
+# lands under a non-panel session id.
 _POPULAR_Q_CODING_MARKERS = (
     "my current code",
     "practice quiz",
     "debug my code",
     "rewrite my code",
     "review my code",
+)
+
+# Session-id prefixes for FEATURE PANELS: in-app helpers that happen to log to
+# chat_history but are not the general advising chat. Their questions only make sense
+# with that feature open in front of you, so they must never be offered as a welcome-screen
+# suggestion. A student who clicks "What should I write for my career goals?" from the home
+# screen lands in a general chat with no advising form in sight.
+#
+#   coding-          the Coding Tutor workspace ("coding-<ts>") and its floating widget
+#                    ("coding-widget-<ts>") — one prefix covers both
+#   advising-        the advising-form side panel ("advising-helper")
+#
+# ADD A PREFIX HERE whenever a new in-app panel starts posting to /chat. That is the whole
+# maintenance burden, and it's why this is a list rather than a chain of special cases.
+#
+# The mock-interview grader ("interview-grader") needs no entry: INTERNAL_SESSION_IDS now
+# stops it being written to chat_history at all, which is strictly better than filtering it
+# back out at read time.
+_POPULAR_Q_FEATURE_SESSION_PREFIXES = (
+    "coding-",
+    "advising-",
 )
 
 # Module-level cache: (epoch_seconds, questions). 5-minute TTL.
@@ -5432,6 +5466,24 @@ async def get_popular_questions(db: Session = Depends(get_db)):
             # Coding questions must not surface as Morgan CS suggestions. Legacy rows
             # predating the `mode` column are NULL -> treated as regular.
             .filter(func.coalesce(ChatHistory.mode, "regular") == "regular")
+            # Exclude in-app feature panels (Coding Tutor, advising helper). The `mode`
+            # filter above does NOT catch them: their rows are written with mode
+            # "regular", so they pass straight through it, and the marker list only
+            # matches five hard-coded phrases. Keying on the session id catches all of
+            # their traffic regardless of how the question was worded.
+            #
+            # NULL session_id is legacy advising data and must be KEPT — an unguarded
+            # NOT LIKE evaluates to NULL for those rows and would silently drop every one
+            # of them, emptying the welcome screen of exactly the questions it's for.
+            .filter(
+                or_(
+                    ChatHistory.session_id.is_(None),
+                    and_(*[
+                        ~ChatHistory.session_id.like(f"{prefix}%")
+                        for prefix in _POPULAR_Q_FEATURE_SESSION_PREFIXES
+                    ]),
+                )
+            )
             .group_by(normalized)
             # Tie-break on the text so the ranking is total, not just "by frequency".
             # Equal-frequency questions must order identically on every instance —
