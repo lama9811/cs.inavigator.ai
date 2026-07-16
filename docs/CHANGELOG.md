@@ -2,6 +2,16 @@
 
 All notable changes to CS Navigator are documented here.
 
+## [6.8.0] - 2026-07-15
+### Added
+- **Learn tracks, all four languages** — the Learn mode now has authored lessons for Python, Java, JavaScript, and C++, each split into a **Beginner** and **Intermediate** track. The Learn flow is four URL-backed views (languages → tracks → lessons → lesson) so Back/Forward and refresh all behave.
+- **Concept-quiz banks filled and made real** — every shared and language-specific concept-quiz bank is authored: **412 real questions across 44 banks**, no "coming soon" slots. Former templated filler was rewritten into real behavioral questions with topic-specific distractors, and guard tests now fail the build on filler stems, duplicate prompts, or answer-restating explanations.
+- **Read-aloud lessons** — a "Listen to this lesson" play bar on lesson pages, built on the free browser `speechSynthesis` (no API key, no dependency). Reads the prose, announces code by caption, and skips the raw code and Check-yourself blocks. Play/pause + section skip; stops on navigation and never autoplays. (The Web Speech API has no seekable timeline, so skip is by section, not seconds.)
+- **Floating Coding Tutor on Learn** — the widget now appears on the Learn track-chooser and lesson pages so a student can ask a question while reading, and it drags freely then **snaps to the nearest of four corners** (persisted, resize-safe, honors `prefers-reduced-motion`).
+- **Progress badges for Learn and concept quizzes** — the achievements page previously rewarded only the code-problem path. New badges cover reading lessons and concept quizzes (first quiz, a perfect 100%, topics passed, quiz polyglot), plus a cross-surface "Full Circle" (read a lesson, pass a quiz, solve a problem). Interview badges now reward performance in a mock (pass 2 of 3, or solve all 3) rather than just finishing.
+### Changed
+- **Clearer lesson prose** — C++ lesson wording simplified toward plain beginner language, and JS terms glossed on first use (booleans, reference, arrays) so nothing is used before it's introduced.
+
 ## [6.7.0] - 2026-07-01
 ### Added
 - **Coding Tutor Milestones / trophy case** — rebuilt the Progress page into an achievements page. A `buildBadges(stats)` data layer drives **37 badges** grouped into 8 labelled categories (Starter, Consistency, Persistence, Languages, Topics, Testing, Interview Prep, Mastery), each with a rarity chip (Common / Uncommon / Rare / Epic) and, on locked count-based badges, a percentage progress bar. Boolean badges show a clear requirement instead of a fake bar. Earned badges sort to the top of their category. A "Next up" nudge names the nearest milestone. Page order is header → stat tiles → badge grids. All badge signals reuse existing progress data; per-card `aria-label`s make each card read as one phrase for screen readers.
