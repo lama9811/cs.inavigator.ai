@@ -252,3 +252,72 @@ def test_get_current_date_shape():
     assert today["date"] == date.today().strftime("%Y-%m-%d")
     assert today["semester"].split()[0] in ("Spring", "Summer", "Fall")
     assert today["year"] == date.today().year
+
+
+# --- saved opportunities: dedupe key -----------------------------------------
+# Saving is what turns the search box into a feature. The two properties that
+# matter: the same award saved twice collapses to one row, and a saved item's
+# urgency is recomputed from *today*, not frozen at save time.
+
+def test_client_key_is_stable_for_the_same_award():
+    a = ss.client_key_for("UNCF Scholarship", "https://uncf.org/apply")
+    b = ss.client_key_for("UNCF Scholarship", "https://uncf.org/apply")
+    assert a == b
+
+
+def test_client_key_ignores_case_and_whitespace():
+    """A re-save from a later search shouldn't duplicate just because the model
+    capitalized differently or added a trailing space."""
+    a = ss.client_key_for("UNCF Scholarship", "https://uncf.org")
+    b = ss.client_key_for("  uncf scholarship ", "HTTPS://UNCF.ORG")
+    assert a == b
+
+
+def test_client_key_differs_by_name_and_url():
+    base = ss.client_key_for("Award A", "https://a.org")
+    assert base != ss.client_key_for("Award B", "https://a.org")   # name differs
+    assert base != ss.client_key_for("Award A", "https://b.org")   # url differs
+
+
+def test_client_key_survives_missing_url():
+    """Some awards have no apply link; the key must still be stable, not raise."""
+    a = ss.client_key_for("Rolling Award", "")
+    b = ss.client_key_for("Rolling Award", "")
+    assert a == b and len(a) > 0
+
+
+# --- saved opportunities: urgency recompute ----------------------------------
+
+def test_recompute_urgency_tracks_today():
+    assert ss.recompute_urgency(_iso(3))["status"] == "URGENT"
+    assert ss.recompute_urgency(_iso(20))["status"] == "UPCOMING"
+    assert ss.recompute_urgency(_iso(90))["status"] == "OPEN"
+
+
+def test_recompute_urgency_flags_a_now_expired_save():
+    """An item saved weeks ago whose deadline has since passed must read EXPIRED,
+    so the frontend can dim it instead of pretending it's still open."""
+    verdict = ss.recompute_urgency(_iso(-2))
+    assert verdict["status"] == "EXPIRED"
+    assert verdict["days_remaining"] == -2
+
+
+def test_recompute_urgency_today_is_urgent():
+    assert ss.recompute_urgency(_iso(0))["status"] == "URGENT"
+
+
+@pytest.mark.parametrize("bad", ["", "(not listed)", None, "rolling"])
+def test_recompute_urgency_undated_is_open(bad):
+    verdict = ss.recompute_urgency(bad)
+    assert verdict["status"] == "OPEN"
+    assert verdict["days_remaining"] is None
+
+
+# --- saved opportunities: validation vocab -----------------------------------
+
+def test_valid_kinds_and_statuses_are_the_expected_sets():
+    """The endpoint validates against these; a typo here silently breaks saving."""
+    assert set(ss.VALID_KINDS) == {"scholarship", "internship"}
+    assert set(ss.VALID_STATUSES) == {
+        "interested", "applying", "submitted", "awarded", "rejected", "expired",
+    }

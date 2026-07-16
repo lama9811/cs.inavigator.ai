@@ -22,6 +22,7 @@ disabled and the endpoint reports that plainly.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -449,3 +450,48 @@ def find_opportunities(query: str, student: dict) -> dict:
         "total": sum(len(v) for v in groups.values()),
         "sources": [{"title": r["title"], "url": r["url"]} for r in results[:8]],
     }
+
+
+# --- saved opportunities (My Scholarships) -----------------------------------
+#
+# Search is ephemeral; a saved list is not. These helpers back the save/track
+# feature: a stable dedupe key so the same award can't be saved twice, and an
+# urgency recompute so "3 days left" is right on the day the student opens the
+# page, not the day they saved it.
+
+VALID_KINDS = ("scholarship", "internship")
+VALID_STATUSES = (
+    "interested", "applying", "submitted", "awarded", "rejected", "expired",
+)
+
+
+def client_key_for(name: str, url: str) -> str:
+    """A stable dedupe key for a saved item.
+
+    Keyed on name + apply URL so the SAME award re-saved from a later search
+    updates the existing row instead of piling up duplicates. Case- and
+    whitespace-insensitive on the name; the URL anchors it when two awards share
+    a name. Short hash — collisions across a single student's saved list are
+    astronomically unlikely and would only merge two genuinely identical saves.
+    """
+    basis = f"{(name or '').strip().lower()}|{(url or '').strip().lower()}"
+    return hashlib.sha1(basis.encode("utf-8")).hexdigest()[:32]
+
+
+def recompute_urgency(deadline: Optional[str]) -> dict:
+    """Re-derive a saved item's urgency from today's date.
+
+    A row saved three weeks ago that read "UPCOMING" may now be "URGENT" or
+    "EXPIRED". Callers recompute on load so the badge is never stale. Returns
+    {status, days_remaining}; status is URGENT / UPCOMING / OPEN / EXPIRED, and
+    an unparseable or missing deadline is OPEN with days_remaining None.
+    """
+    verdict = check_deadline(str(deadline or ""))
+    status = verdict.get("status")
+    if status == "EXPIRED":
+        return {"status": "EXPIRED", "days_remaining": verdict.get("days_remaining")}
+    if status == "TODAY":
+        return {"status": "URGENT", "days_remaining": 0}
+    if status in ("INVALID", None):
+        return {"status": "OPEN", "days_remaining": None}
+    return {"status": status, "days_remaining": verdict.get("days_remaining")}

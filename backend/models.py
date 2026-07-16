@@ -440,3 +440,63 @@ class AdvisingUpload(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     user = relationship("User", backref="advising_uploads")
+
+
+class SavedScholarship(Base):
+    """A scholarship or internship a student saved from a search.
+
+    Search is ephemeral; applying is not. A student finds an award, means to
+    apply, and loses it. This table is what lets them come back to it — the whole
+    reason Scholarships is a feature and not just a search box.
+
+    `kind` splits the two objects that were previously mashed together: a
+    scholarship has an `award` and `eligibility`; an internship has pay, a term,
+    a location and a role. Both share this row, but the frontend renders and
+    filters them separately.
+
+    We snapshot the details at save time (`snapshot_json`). The source page
+    changes or 404s, and a saved award that silently becomes a dead link is worse
+    than no feature — so we keep what we knew and can re-check it later."""
+    __tablename__ = "saved_scholarships"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+
+    # Stable dedupe key (a hash of name+url), so re-saving the same award from a
+    # later search updates the existing row instead of creating a duplicate.
+    client_key = Column(String(80), nullable=False, index=True)
+
+    kind = Column(String(20), nullable=False, default="scholarship")  # scholarship | internship
+    name = Column(String(300), nullable=False)
+
+    # Scholarship-shaped fields.
+    award = Column(String(200), nullable=True)          # "$5,000" / "(not listed)"
+    eligibility = Column(Text, nullable=True)
+
+    # Internship-shaped fields. Null on scholarships.
+    pay = Column(String(120), nullable=True)            # "$45/hr" / "Paid"
+    term = Column(String(120), nullable=True)           # "Summer 2026"
+    location = Column(String(200), nullable=True)
+    role = Column(String(200), nullable=True)
+
+    deadline = Column(String(40), nullable=True)        # "YYYY-MM-DD" / "(not listed)"
+    url = Column(String(1000), nullable=True)           # apply link
+    source_url = Column(String(1000), nullable=True)    # where we found it
+    why = Column(Text, nullable=True)                   # why it fits this student
+
+    # Where the student is in the process.
+    # interested | applying | submitted | awarded | rejected | expired
+    status = Column(String(20), nullable=False, default="interested")
+
+    # Full snapshot of the item as it was at save time, so a later source change
+    # can't silently rot the saved copy. JSON string.
+    snapshot_json = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "client_key", name="uq_saved_scholarship_user_key"),
+    )
+
+    user = relationship("User", backref="saved_scholarships")

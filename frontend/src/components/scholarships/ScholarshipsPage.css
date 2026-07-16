@@ -172,8 +172,112 @@
 .sch-sources li { margin-bottom: 5px; }
 .sch-sources a { color: #2a5db0; word-break: break-all; }
 
+/* Tabs: Search / My Scholarships */
+.sch-tabs {
+  display: flex; gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 1.5px solid rgba(0,0,0,0.08);
+}
+.sch-tab {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 16px;
+  border: none;
+  border-bottom: 2.5px solid transparent;
+  background: none;
+  font-size: 0.9rem; font-weight: 600;
+  color: var(--text-muted, #6b7280);
+  cursor: pointer;
+  margin-bottom: -1.5px;
+}
+.sch-tab:hover { color: #2a5db0; }
+.sch-tab.is-active { color: #0B2545; border-bottom-color: #0B2545; }
+.sch-tab-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 999px;
+  background: #0B2545; color: #fff;
+  font-size: 0.68rem; font-weight: 700;
+}
+
+/* Card actions row (apply link + save button) */
+.sch-card-actions {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-top: 4px;
+}
+.sch-card-actions .sch-apply { margin-right: auto; }
+
+/* Save / Saved toggle */
+.sch-save {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 13px;
+  border: 1.5px solid rgba(66,133,244,0.4);
+  border-radius: 8px;
+  background: #fff;
+  color: #2a5db0;
+  font-size: 0.83rem; font-weight: 600;
+  cursor: pointer;
+}
+.sch-save:hover:not(:disabled) { background: rgba(66,133,244,0.08); }
+.sch-save.is-saved {
+  border-color: #0B2545;
+  background: #0B2545;
+  color: #fff;
+}
+.sch-save:disabled { opacity: 0.6; cursor: default; }
+
+/* Saved cards */
+.sch-saved-card.is-expired { opacity: 0.7; }
+.sch-days.is-expired { color: #96271b; }
+
+.sch-status-pick {
+  display: inline-flex; align-items: center; gap: 7px;
+  margin-right: auto;
+}
+.sch-status-label {
+  font-size: 0.78rem; font-weight: 600;
+  color: var(--text-muted, #6b7280);
+}
+.sch-status-select {
+  padding: 5px 9px;
+  border: 1.5px solid rgba(0,0,0,0.16);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.82rem; font-weight: 600;
+  color: #35507d;
+  cursor: pointer;
+}
+/* The status colour is a signal: awarded reads as a win, rejected as closed. */
+.sch-status-select.is-awarded  { border-color: #2f8f4e; color: #226b3a; }
+.sch-status-select.is-rejected { border-color: rgba(0,0,0,0.16); color: #6b7280; }
+.sch-status-select.is-expired  { border-color: #c0392b; color: #96271b; }
+
+.sch-remove {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  border: 1.5px solid rgba(161,45,45,0.25);
+  border-radius: 8px;
+  background: #fff;
+  color: #a12d2d;
+  cursor: pointer;
+}
+.sch-remove:hover:not(:disabled) { background: rgba(161,45,45,0.08); }
+.sch-remove:disabled { opacity: 0.5; cursor: default; }
+
+/* Empty state for My Scholarships */
+.sch-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-muted, #6b7280);
+}
+.sch-empty p { margin: 0; font-size: 0.95rem; }
+.sch-empty-sub { font-size: 0.86rem; max-width: 42ch; }
+.sch-empty .sch-btn { margin-top: 8px; }
+
 @media (max-width: 640px) {
   .sch-search { flex-direction: column; }
   .sch-meta div { flex-direction: column; gap: 2px; }
   .sch-meta dt { width: auto; }
+  .sch-card-actions { gap: 8px; }
+  .sch-status-pick { margin-right: 0; }
 }
