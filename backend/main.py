@@ -1871,6 +1871,25 @@ async def list_saved_scholarships(
     return {"items": [_saved_to_dict(r) for r in rows]}
 
 
+@app.get("/api/scholarships/summary")
+async def scholarship_summary(
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Dashboard rollup across this student's saved opportunities.
+
+    One glance: how many they're tracking, how many are due soon, checklist
+    progress, and the next few deadlines. Computed from the same serialized
+    rows the list endpoint returns, so the numbers can't drift from the list."""
+    rows = (
+        db.query(SavedScholarship)
+        .filter(SavedScholarship.user_id == user["user_id"])
+        .all()
+    )
+    items = [_saved_to_dict(r) for r in rows]
+    return scholarship_search.build_saved_summary(items)
+
+
 @app.post("/api/scholarships/saved")
 async def save_scholarship(
     payload: dict,
