@@ -1,7 +1,7 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Debug: Part 1",
-  "summary": "Separate compile errors, runtime failures, wrong output, and hangs.",
+  "summary": "Tell compile errors, crashes, wrong answers, and endless loops apart.",
   "minutes": 10,
   "error_classes": [
     "syntax",
@@ -9,21 +9,21 @@
     "wrong_answer",
     "timeout"
   ],
-  "refresher": "Compiler errors prevent a build, runtime failures happen during execution, and logic errors finish with the wrong answer. Start with the earliest useful diagnostic and reproduce one case.",
+  "refresher": "A compile error stops the program from being built. A runtime error happens after it starts. A logic error finishes with the wrong answer, and a timeout often means a loop did not stop. Identify the category before changing code.",
   "refresher_code": "std::vector<int> v{1,2};\nstd::cout << v.at(v.size()-1);",
   "blocks": [
     {
       "kind": "text",
-      "body": "Compiler errors prevent a build, runtime failures happen during execution, and logic errors finish with the wrong answer. Start with the earliest useful diagnostic and reproduce one case. Separate compile errors, runtime failures, wrong output, and hangs."
+      "body": "Debugging begins by naming what happened. Did the compiler reject the code? Did the program start and then fail? Did it finish with the wrong output? Did it keep running? Each symptom points you toward a different part of the program."
     },
     {
       "kind": "text",
-      "body": "C++ failures fall into build errors, runtime symptoms, wrong answers, and hangs. Runtime symptoms can include undefined behavior, where the language no longer promises any particular result. A program that seems to work after invalid memory access is still broken, so warnings and boundary checks matter."
+      "body": "For a compile error, begin with the first compiler message. For a crash or range error, inspect indexes and empty collections. For wrong output, trace the values one step at a time. For a hang, inspect the loop condition and its update."
     },
     {
       "kind": "code",
-      "caption": "Subtracting one selects the final valid position before checked access.",
-      "code": "#include <iostream>\n#include <vector>\nint main(){\n std::vector<int> v{1,2};\n std::cout<<v.at(v.size()-1)<<\"\\n\";\n}",
+      "caption": "The vector is not empty, so size minus one gives the final valid index and at checks the access.",
+      "code": "#include <iostream>\n#include <vector>\n\nint main() {\n  std::vector<int> values{1, 2};\n\n  if (!values.empty()) {\n    std::cout << values.at(values.size() - 1) << \"\\n\";\n  }\n}",
       "output": "2"
     },
     {
@@ -36,13 +36,13 @@
     },
     {
       "kind": "text",
-      "body": "The wrong index equals the element count and sits one position beyond the end. The corrected expression is valid only when the vector is nonempty, so add that guard for general input. A thrown range error is more informative than silent memory misuse."
+      "body": "The index in the first version equals the element count, which is one position too far. The corrected expression uses the last valid position, but it still needs an empty check before subtracting one. Checked access gives a useful error instead of silently reading outside the vector."
     },
     {
       "kind": "callout",
       "tone": "mistake",
-      "title": "Inspect this state",
-      "body": "Compiler messages can cascade from one missing symbol. Fix the first reported source location, rebuild, and then reconsider the remaining messages."
+      "title": "Fix one clear cause at a time",
+      "body": "One missing symbol can create several compiler messages. Start at the first reported location, make one focused change, rebuild, and then see which messages remain."
     },
     {
       "kind": "check",

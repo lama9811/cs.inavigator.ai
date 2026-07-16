@@ -1,27 +1,33 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Lists / Arrays",
-  "summary": "Store ordered elements in arrays and vectors.",
+  "summary": "Keep several values in order with a vector.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "A fixed array has a compile-time size, while `std::vector` can grow. Vector indexes start at zero, `.size()` returns the count, and `.push_back` appends.",
+  "refresher": "`std::vector` is C++'s common growable collection. Indexes begin at zero, `.size()` gives the number of elements, and `.push_back(value)` adds one item to the end.",
   "refresher_code": "#include <vector>\nstd::vector<int> values{2,4};\nvalues.push_back(6);",
   "blocks": [
     {
       "kind": "text",
-      "body": "A fixed array has a compile-time size, while `std::vector` can grow. Vector indexes start at zero, `.size()` returns the count, and `.push_back` appends. Store ordered elements in arrays and vectors."
+      "body": "A vector keeps several values of the same type in order. Create one with `std::vector<int> scores{80, 90};`. The type inside angle brackets says this vector stores integers."
     },
     {
       "kind": "text",
-      "body": "A built-in array has a fixed size that is part of its declaration. `std::vector` is a container that manages storage and can grow with `push_back`. Both use zero-based positions, but vector supplies `.size()`, checked `.at()`, and useful iteration support."
+      "body": "A vector can grow with `push_back`. Its positions begin at zero, just like positions in a string. Brackets read a position when you already know it is valid. `.at(index)` checks the position and reports an error when it is outside the vector."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "A vector is close to a Python list",
+      "body": "A Python list and a C++ vector both store ordered values and start at index zero. A vector normally keeps one element type, so `std::vector<int>` accepts integers rather than a mixture of unrelated values."
     },
     {
       "kind": "code",
-      "caption": "The vector grows to three elements, while index one selects its second value.",
-      "code": "#include <iostream>\n#include <vector>\nint main(){\n std::vector<int> values{4,8};\n values.push_back(12);\n std::cout<<values[1]<<\"\\n\"<<values.size()<<\"\\n\";\n}",
+      "caption": "The vector begins with two integers, grows to three, and then prints its second value and its size.",
+      "code": "#include <iostream>\n#include <vector>\n\nint main() {\n  std::vector<int> values{4, 8};\n  values.push_back(12);\n\n  std::cout << values[1] << \"\\n\";\n  std::cout << values.size() << \"\\n\";\n}",
       "output": "8\n3"
     },
     {
@@ -34,13 +40,13 @@
     },
     {
       "kind": "text",
-      "body": "Bracket access assumes the index is valid and gives undefined behavior otherwise. The `at` method checks and throws `std::out_of_range`, which makes the bad position easier to diagnose. A final design can choose either based on its validation and performance needs."
+      "body": "Bracket access trusts that the index is valid. `.at()` checks first and produces a clear out-of-range error when the position does not exist. While learning or debugging, that message is often more useful than an unexplained crash or incorrect value."
     },
     {
       "kind": "callout",
       "tone": "mistake",
-      "title": "Follow the data",
-      "body": "Unchecked bracket access past the end causes undefined behavior. Use valid index bounds, or `.at()` when you want an exception for an invalid position."
+      "title": "The size is not a valid index",
+      "body": "A vector with three elements has indexes zero, one, and two. Index three equals the size and is already past the end. Keep an index below `.size()`."
     },
     {
       "kind": "check",

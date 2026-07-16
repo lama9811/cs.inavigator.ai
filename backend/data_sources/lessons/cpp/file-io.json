@@ -1,26 +1,32 @@
 {
   "_note": "ORIGINAL content. Topic coverage was checked against Think C++ and the Google C++ Class outline. No prose, examples, or exercises were copied; the references are curriculum guides only.",
   "title": "File I/O",
-  "summary": "Read and write files through streams with clear failure checks.",
+  "summary": "Read and write files while handling missing paths clearly.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "Use `std::ifstream` for input files and `std::ofstream` for output files. Check that the stream opened successfully before reading or writing. `std::getline` reads a complete text line.",
+  "refresher": "Use `std::ifstream` to read a file and `std::ofstream` to write one. Check that the file opened before using it. `std::getline` reads one complete line at a time.",
   "refresher_code": "#include <fstream>\nstd::ifstream input(\"courses.txt\");\nif (!input) {\n  std::cerr << \"Could not open file\\n\";\n}",
   "blocks": [
     {
       "kind": "text",
-      "body": "A file stream connects the familiar stream operations to data stored outside the program. The path may be wrong, permission may be denied, or the file may disappear, so opening a file is an operation that needs an explicit failure path."
+      "body": "A file lets information remain after the program ends. C++ uses file stream objects that work much like `std::cin` and `std::cout`. Opening can fail because the path is wrong, the file is missing, or permission is denied, so check the stream first."
     },
     {
       "kind": "text",
-      "body": "Input extraction and getline move a read position through the file. Each successful read advances that position. A loop should use the read operation itself as its condition rather than checking end-of-file before attempting the read."
+      "body": "Each successful read moves forward through the file. Put `std::getline` directly in the `while` condition so the body runs only when a real line was read. This also stops cleanly at the end of the file."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Compare this with Python's open",
+      "body": "Python often uses `with open(...) as file`. C++ creates an `ifstream` or `ofstream` object. Both approaches close the file automatically when the surrounding block finishes."
     },
     {
       "kind": "code",
-      "caption": "The loop processes each line only after getline succeeds, so it does not repeat stale data after the final read.",
+      "caption": "The program checks that the file opened, then prints each line only after getline succeeds.",
       "code": "#include <fstream>\n#include <iostream>\n#include <string>\nint main() {\n  std::ifstream input(\"courses.txt\");\n  if (!input) {\n    std::cerr << \"Could not open courses.txt\\n\";\n    return 1;\n  }\n  std::string line;\n  while (std::getline(input, line)) {\n    std::cout << line << \"\\n\";\n  }\n}",
       "output": "One output line for each line in courses.txt."
     },
@@ -34,13 +40,13 @@
     },
     {
       "kind": "text",
-      "body": "Trace the final iteration: getline reads the last real line and the body uses it. The next getline attempt fails, converts the stream condition to false, and the loop ends before the body can run again."
+      "body": "The final real line is processed normally. The next call to `getline` fails because there is nothing left to read, so the condition becomes false and the loop ends before stale data can be used."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "Relative paths start at the working directory",
-      "body": "A path such as `courses.txt` is resolved from the program?s current working directory, which may differ from the source-code folder. Print or configure the working directory when a file exists but the program cannot find it."
+      "body": "A path such as `courses.txt` starts from the program's current working directory, which may not be the folder containing the source file. Check the run configuration or use a known path when a file exists but cannot be found."
     },
     {
       "kind": "check",
@@ -72,10 +78,10 @@
       "kind": "list",
       "title": "File I/O checklist",
       "items": [
-        "Check that opening succeeded.",
+        "Check that the file opened.",
         "Process data only after a successful read.",
-        "Know the working directory for relative paths.",
-        "Let stream objects close files through their destructors."
+        "Know where a relative path begins.",
+        "Let the stream close the file automatically when it leaves scope."
       ]
     }
   ]

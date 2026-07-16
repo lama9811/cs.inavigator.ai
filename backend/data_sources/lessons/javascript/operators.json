@@ -16,7 +16,7 @@
     },
     {
       "kind": "text",
-      "body": "Operators work in a particular order. Multiplication and division happen before addition and subtraction, then comparisons produce booleans that logical operators can combine. JavaScript also chooses behavior from operand types, so plus adds two numbers but joins text when either side is a string."
+      "body": "Operators work in a particular order. Multiplication and division happen before addition and subtraction, then comparisons produce booleans (the values `true` and `false`) that logical operators can combine. JavaScript also chooses behavior from operand types, so plus adds two numbers but joins text when either side is a string."
     },
     {
       "kind": "code",

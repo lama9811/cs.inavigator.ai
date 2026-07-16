@@ -389,3 +389,24 @@ def test_lessons_are_keyed_to_real_quiz_categories():
                 f"{language}/{filename}: '{category_id}' is not a quiz category, so this "
                 f"lesson is unreachable. Valid: {sorted(valid_ids)}"
             )
+
+
+def test_cpp_lesson_text_has_no_corrupted_apostrophes():
+    """Catch encoding damage such as object?s before it reaches the lesson UI.
+
+    This appeared across several C++ lessons where possessive apostrophes had been
+    replaced by question marks. JSON remained valid, so structural validation alone
+    could not detect the student-facing damage.
+    """
+    cpp_dir = os.path.join(lessons.LESSONS_DIR, "cpp")
+    damaged = []
+    for filename in os.listdir(cpp_dir):
+        if not filename.endswith(".json"):
+            continue
+        path = os.path.join(cpp_dir, filename)
+        with open(path, "r", encoding="utf-8") as handle:
+            text = handle.read()
+        if "?s" in text or "\ufffd" in text:
+            damaged.append(filename)
+
+    assert not damaged, f"C++ lesson files with corrupted text: {damaged}"

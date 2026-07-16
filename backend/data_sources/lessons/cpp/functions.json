@@ -1,47 +1,53 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Functions",
-  "summary": "Define typed inputs and a returned result.",
+  "summary": "Name a reusable task, give it inputs, and return a result.",
   "minutes": 10,
   "error_classes": [
     "syntax",
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "A function declaration states its return type, name, and parameter types. `return` supplies a compatible result. Passing by const reference avoids copying a large input that should not change.",
+  "refresher": "A C++ function writes its return type before its name and gives every parameter a type. For example, `int square(int n)` accepts an integer and returns an integer. Use `void` when no value is returned.",
   "refresher_code": "int square(int n){\n  return n*n;\n}",
   "blocks": [
     {
       "kind": "text",
-      "body": "A function declaration states its return type, name, and parameter types. `return` supplies a compatible result. Passing by const reference avoids copying a large input that should not change. Define typed inputs and a returned result."
+      "body": "A function gives a name to a reusable task. Its parameters receive input values, and `return` sends a result back to the caller. In C++, the function also states the type of each input and the type of its result."
     },
     {
       "kind": "text",
-      "body": "C++ normally passes an argument by value, which creates a separate parameter value. An ampersand in a parameter type makes it a reference to the caller?s object. Add `const` when the function should read that object without copying or changing it."
+      "body": "Read `int larger(int a, int b)` from left to right: the function returns an `int`, its name is `larger`, and it receives two integer parameters. A call such as `larger(7, 4)` fills those parameters and waits for the returned answer."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "C++ types are the main difference from Python here",
+      "body": "Python writes `def square(n):`. C++ writes `int square(int n)`. Both name the function and its input, but C++ also states that the input and result are integers."
     },
     {
       "kind": "code",
-      "caption": "The two arguments initialize typed parameters, and the selected integer returns to main.",
-      "code": "#include <iostream>\nint larger(int a,int b){return a>b?a:b;}\nint main(){std::cout<<larger(7,4)<<\"\\n\";}",
+      "caption": "The arguments 7 and 4 fill a and b. The function returns 7, and main prints it.",
+      "code": "#include <iostream>\n\nint larger(int a, int b) {\n  if (a > b) {\n    return a;\n  }\n  return b;\n}\n\nint main() {\n  std::cout << larger(7, 4) << \"\\n\";\n}",
       "output": "7"
     },
     {
       "kind": "compare",
-      "caption": "Use a const reference for a large read-only input.",
+      "caption": "A non-void function must use return to send its answer back.",
       "wrong_label": "Common mistake",
-      "wrong": "int total(std::vector<int> values) { /* copies */ }",
+      "wrong": "int square(int n) {\n  n * n;\n}",
       "right_label": "Clearer version",
-      "right": "int total(const std::vector<int>& values) { /* reads original */ }"
+      "right": "int square(int n) {\n  return n * n;\n}"
     },
     {
       "kind": "text",
-      "body": "The wrong signature makes a new vector for the call. The corrected parameter refers to the caller?s vector, while const prevents modification through that reference. Small types such as int are usually clearer and cheap to pass by value."
+      "body": "The first version calculates a value but throws it away. The corrected version returns the result to the line that called the function. Make sure every possible path in a non-void function returns the promised type."
     },
     {
       "kind": "callout",
       "tone": "mistake",
-      "title": "Follow the data",
-      "body": "A non-void function that reaches its end without a return has undefined behavior when the caller expects a result."
+      "title": "Return the promised result",
+      "body": "If a function begins with a type such as `int` or `double`, the caller expects a result of that type. Use `return` on every possible path. A `void` function performs work without returning a value."
     },
     {
       "kind": "check",
@@ -73,10 +79,10 @@
       "kind": "list",
       "title": "Functions checklist",
       "items": [
-        "Match parameter types.",
-        "Return on every path.",
-        "Keep one clear purpose.",
-        "Use const references for read-only large values."
+        "Match each parameter type to its input.",
+        "Return the promised type on every path.",
+        "Give the function one clear purpose.",
+        "Use void only when no result is needed."
       ]
     }
   ],

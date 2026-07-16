@@ -1,27 +1,33 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Pointers",
-  "summary": "Store addresses and access the values located there.",
+  "summary": "Understand addresses, pointers, and safe access to another value.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "A pointer holds an address. `&value` obtains an address, `*pointer` dereferences it, and `nullptr` represents no object. Check for null before dereferencing.",
+  "refresher": "A pointer stores the address of another value. `&value` gets an address, `*pointer` follows it, and `nullptr` means the pointer currently points to nothing. Check for `nullptr` before dereferencing.",
   "refresher_code": "int value=7;\nint* p=&value;\nstd::cout << *p;",
   "blocks": [
     {
       "kind": "text",
-      "body": "A pointer holds an address. `&value` obtains an address, `*pointer` dereferences it, and `nullptr` represents no object. Check for null before dereferencing. Store addresses and access the values located there."
+      "body": "Every variable lives somewhere in memory. A pointer stores that location instead of storing another copy of the value. This lets code reach or change the original value through its address."
     },
     {
       "kind": "text",
-      "body": "A pointer is a variable whose value is an address. The address-of operator `&` obtains an object?s location, and dereference `*` follows a stored address to reach that object. The star in a declaration says the variable is a pointer; the star in an expression performs dereference."
+      "body": "In `int* pointer = &score;`, the star says `pointer` stores the address of an integer, and `&score` gets score's address. Later, `*pointer` follows that address to read or change score. The star has two related jobs: declaring a pointer and following one."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Python usually hides this layer",
+      "body": "Python variables also let code refer to objects, but Python manages those references for you. C++ exposes addresses directly when you use pointers, which gives more control and also creates more responsibility."
     },
     {
       "kind": "code",
-      "caption": "The pointer stores score?s address, so dereference assignment changes the original integer.",
-      "code": "#include <iostream>\nint main(){\n int score=70;\n int* p=&score;\n *p=85;\n std::cout<<score<<\"\\n\";\n}",
+      "caption": "The pointer stores score's address. Assigning through `*pointer` therefore changes score itself.",
+      "code": "#include <iostream>\n\nint main() {\n  int score = 70;\n  int* pointer = &score;\n\n  *pointer = 85;\n  std::cout << score << \"\\n\";\n}",
       "output": "85"
     },
     {
@@ -34,13 +40,13 @@
     },
     {
       "kind": "text",
-      "body": "The wrong code has no object to follow, so dereference causes undefined behavior. A pointer can later receive `&value`, after which `*score` refers to that value. When absence is not meaningful, a reference may express the relationship more safely and simply."
+      "body": "The first pointer contains `nullptr`, which means there is no integer to follow. Dereferencing it is invalid and may crash the program. The condition in the second version makes sure a real address exists first."
     },
     {
       "kind": "callout",
       "tone": "mistake",
-      "title": "Inspect this state",
-      "body": "An uninitialized or null pointer does not identify a valid object. Dereferencing it has undefined behavior and can crash the program."
+      "title": "Never follow an unknown address",
+      "body": "Initialize a pointer when you create it. Use `nullptr` when it has no target, then check before using `*pointer`. Dereferencing a null or uninitialized pointer is invalid."
     },
     {
       "kind": "check",
@@ -53,7 +59,7 @@
         "always zero"
       ],
       "answer_index": 0,
-      "why": "The address-of operator produces x?s memory address, which is stored in the pointer."
+      "why": "The `&` operator gets x's memory address, and the pointer stores that address."
     },
     {
       "kind": "check",

@@ -16,7 +16,7 @@
     },
     {
       "kind": "text",
-      "body": "An array stores an ordered set of values, but the array variable actually holds a reference to that collection. Methods such as `push`, `pop`, and `splice` change the existing array. Methods such as `slice`, `map`, and `filter` return another array, so save their result when you need it."
+      "body": "An array stores an ordered set of values, but the array variable actually holds a reference to that collection. A reference means the variable points at the array rather than holding its own copy, so two variables can point at the same array. Methods such as `push`, `pop`, and `splice` change the existing array. Methods such as `slice`, `map`, and `filter` return another array, so save their result when you need it."
     },
     {
       "kind": "code",
@@ -34,7 +34,7 @@
     },
     {
       "kind": "text",
-      "body": "In the wrong version, `planned` and `courses` reach the same array, so both appear to gain a course. Spread reads the existing elements into a new outer array. For nested objects, that copy is shallow, so inner objects can still be shared."
+      "body": "In the wrong version, `planned` and `courses` reach the same array, so both appear to gain a course. Spread reads the existing elements into a new outer array. If those elements are themselves arrays, the copy is shallow: the outer array is new, but each inner array is still shared."
     },
     {
       "kind": "callout",

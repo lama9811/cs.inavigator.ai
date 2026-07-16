@@ -1,27 +1,33 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Strings",
-  "summary": "Create, index, compare, and combine text.",
+  "summary": "Store text, read individual characters, and build new strings.",
   "minutes": 10,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "`std::string` stores text, `.size()` reports its character count, and indexing starts at zero. Strings support comparison and concatenation with compatible operands.",
+  "refresher": "`std::string` stores text. Indexes begin at zero, `.size()` gives the character count, and `+` joins compatible strings. Include `<string>` before using this type.",
   "refresher_code": "#include <string>\nstd::string name = \"Ada\";\nchar first = name[0];",
   "blocks": [
     {
       "kind": "text",
-      "body": "`std::string` stores text, `.size()` reports its character count, and indexing starts at zero. Strings support comparison and concatenation with compatible operands. Create, index, compare, and combine text."
+      "body": "Use `std::string` for words and sentences. Include `<string>`, then create a value such as `std::string name = \"Ada\";`. A single `char` stores only one character, while a string stores many."
     },
     {
       "kind": "text",
-      "body": "`std::string` manages a sequence of characters and its storage for you. A `char` holds one character, while a string can grow and provides methods such as `.size()`, `.substr()`, and `.find()`. Indexing is unchecked with brackets, so stay inside the valid range."
+      "body": "String positions start at zero. In `\"code\"`, index zero is `c` and index three is `e`. `.size()` returns the number of characters, so the final valid index is one less than the size. Check that a string is not empty before asking for its last character."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Strings feel familiar from Python",
+      "body": "Python and C++ strings both start indexing at zero. Python writes `len(word)`, while C++ writes `word.size()`. C++ also places the type in the `std` library namespace, which is why its full name is `std::string`."
     },
     {
       "kind": "code",
-      "caption": "Substring takes a starting index and a character count, unlike APIs that use an ending index.",
-      "code": "#include <iostream>\n#include <string>\nint main(){\n std::string word=\"campus\";\n std::cout << word[0] << \"\\n\";\n std::cout << word.substr(1,3) << \"\\n\";\n}",
+      "caption": "The first bracket reads the first character. substr starts at index one and takes three characters.",
+      "code": "#include <iostream>\n#include <string>\n\nint main() {\n  std::string word = \"campus\";\n  std::cout << word[0] << \"\\n\";\n  std::cout << word.substr(1, 3) << \"\\n\";\n}",
       "output": "c\namp"
     },
     {
@@ -34,13 +40,13 @@
     },
     {
       "kind": "text",
-      "body": "For a nonempty word, `back()` reads the final character. For an empty string, there is no such character, so the condition skips access. The size is a count, not an index: a four-character string has valid positions zero through three."
+      "body": "For a nonempty word, `back()` returns the final character. An empty string has no final character, so the `if` condition skips that access. Remember that a size is a count, not a position."
     },
     {
       "kind": "callout",
       "tone": "mistake",
-      "title": "C++ detail to check",
-      "body": "For a nonempty string, the final character is at `text.size() - 1`; using `text[text.size()]` steps past the valid range."
+      "title": "The size is one past the last index",
+      "body": "A four-character string has a size of four but valid indexes from zero through three. `text[text.size()]` goes one position beyond the string."
     },
     {
       "kind": "check",

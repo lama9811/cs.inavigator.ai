@@ -1,28 +1,34 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Variables",
-  "summary": "Declare typed names and control reassignment.",
+  "summary": "Give values clear names and decide whether they may change.",
   "minutes": 10,
   "error_classes": [
     "syntax",
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "A C++ variable declaration states its type, name, and optional initial value. `const` prevents later assignment, and scope limits where a name can be used.",
+  "refresher": "A C++ variable starts with a type, followed by its name and an optional value. For example, `int score = 10;` stores a whole number. Add `const` when the value should not be reassigned.",
   "refresher_code": "const std::string course = \"CS 201\";\nint seats = 3;\nseats = 2;",
   "blocks": [
     {
       "kind": "text",
-      "body": "A C++ variable declaration states its type, name, and optional initial value. `const` prevents later assignment, and scope limits where a name can be used. Declare typed names and control reassignment."
+      "body": "A variable is a named place to keep a value. In C++, you write the type before the name: `int attempts = 0;`. The type tells C++ what kind of value belongs there, and the semicolon ends the declaration."
     },
     {
       "kind": "text",
-      "body": "A C++ variable has a fixed type, a scope, and a lifetime. Scope answers where the name is visible. Lifetime answers how long its stored object exists. Local variables begin their lifetime when execution reaches their declaration and end when their block finishes."
+      "body": "A variable keeps the same type while it exists. A name declared inside braces can be used only inside that block. Give local variables a starting value before reading them so the program never has to guess what they contain."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Python chooses the type for you",
+      "body": "Python lets you write `score = 10`. C++ writes the type as part of the declaration: `int score = 10;`. That extra word lets the compiler catch assignments that do not match."
     },
     {
       "kind": "code",
-      "caption": "The string remains constant while the integer count is incremented.",
-      "code": "#include <iostream>\n#include <string>\nint main(){\n  const std::string course=\"CS 201\";\n  int enrolled=24;\n  enrolled++;\n  std::cout << course << \": \" << enrolled << \"\\n\";\n}",
+      "caption": "The course name stays fixed because it is const. The enrolled count may change, so the program adds one before printing.",
+      "code": "#include <iostream>\n#include <string>\n\nint main() {\n  const std::string course = \"CS 201\";\n  int enrolled = 24;\n\n  enrolled++;\n  std::cout << course << \": \" << enrolled << \"\\n\";\n}",
       "output": "CS 201: 25"
     },
     {
@@ -35,13 +41,13 @@
     },
     {
       "kind": "text",
-      "body": "If ready is false in the wrong version, result was never given a value and reading it is invalid. In the corrected version, zero provides a defined fallback. Use `const` after the type when reassignment should be rejected by the compiler."
+      "body": "If `ready` is false in the first version, `result` never receives a value. Starting it at zero gives the program a clear fallback. Use `const` for a value such as a course name or conversion rate that should stay fixed."
     },
     {
       "kind": "callout",
       "tone": "mistake",
-      "title": "C++ detail to check",
-      "body": "Reading an uninitialized local variable gives an indeterminate value and can lead to undefined behavior; initialize state before using it."
+      "title": "Initialize before use",
+      "body": "A local number without a starting value does not contain a dependable answer. Assign a value when you declare it, unless every possible path clearly assigns one before it is read."
     },
     {
       "kind": "check",

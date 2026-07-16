@@ -1,46 +1,52 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "User Input",
-  "summary": "Read stream data and handle failed extraction.",
+  "summary": "Read keyboard input and check whether it matches the expected type.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "`std::cin >> value` extracts formatted input into a typed variable. Check the stream before using the value, because text entered for a number makes extraction fail.",
+  "refresher": "Use `std::cin >> value` to read one value from the keyboard. The variable's type tells C++ what kind of input to expect. Use `std::getline` when you need a full line that may contain spaces.",
   "refresher_code": "int credits;\nif (std::cin >> credits) {\n  std::cout << credits;\n}",
   "blocks": [
     {
       "kind": "text",
-      "body": "`std::cin >> value` extracts formatted input into a typed variable. Check the stream before using the value, because text entered for a number makes extraction fail. Read stream data and handle failed extraction."
+      "body": "Programs can pause and read what a user types. `std::cin >> age;` reads one value into `age`. Because `age` is an integer, C++ expects the user to enter a whole number."
     },
     {
       "kind": "text",
-      "body": "Formatted extraction with `>>` reads one typed token and normally stops at whitespace. `std::getline` reads the rest of a full line, including spaces. Mixing them requires attention because the newline left by extraction can become the first delimiter seen by getline."
+      "body": "The `>>` form normally stops at a space, which is useful for one number or one word. `std::getline(std::cin, name)` reads a complete line, including spaces. When you switch from `>>` to `getline`, use `std::ws` to skip the leftover newline."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Python input starts as text",
+      "body": "Python's `input()` returns a string, and you convert it with something like `int(input())`. C++ can read directly into an `int`, but the read may fail when the typed text is not a whole number."
     },
     {
       "kind": "code",
-      "caption": "The stream condition separates successful integer extraction from invalid text.",
-      "code": "#include <iostream>\nint main(){\n int credits;\n std::cout << \"Credits: \";\n if(std::cin >> credits) std::cout << credits+1 << \"\\n\";\n else std::cout << \"Enter a number\\n\";\n}",
+      "caption": "The if condition is true only when C++ successfully reads a whole number.",
+      "code": "#include <iostream>\n\nint main() {\n  int credits;\n  std::cout << \"Credits: \";\n\n  if (std::cin >> credits) {\n    std::cout << \"Next term: \" << credits + 1 << \"\\n\";\n  } else {\n    std::cout << \"Please enter a whole number.\\n\";\n  }\n}",
       "output": "Depends on input"
     },
     {
       "kind": "compare",
-      "caption": "Discard the leftover newline before switching to a full-line read.",
+      "caption": "Use std::ws before getline so the leftover Enter key does not become an empty name.",
       "wrong_label": "Common mistake",
       "wrong": "std::cin >> age;\nstd::getline(std::cin, name);",
       "right_label": "Clearer version",
-      "right": "std::cin >> age;\nstd::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\\n');\nstd::getline(std::cin, name);"
+      "right": "std::cin >> age;\nstd::getline(std::cin >> std::ws, name);"
     },
     {
       "kind": "text",
-      "body": "After a user enters an age and presses Enter, extraction consumes the digits but leaves the newline. Ignore removes that pending delimiter, then getline waits for the name. Also test stream failure before using a numeric variable."
+      "body": "After the user types an age and presses Enter, `>>` reads the digits but can leave the newline behind. `std::ws` removes that waiting whitespace, so `getline` pauses for the person's name instead of returning an empty string."
     },
     {
       "kind": "callout",
       "tone": "mistake",
-      "title": "Follow the data",
-      "body": "After `operator>>` reads a number, a newline can remain in the stream and make a following `getline` appear to skip input."
+      "title": "Check whether conversion worked",
+      "body": "If a user types `hello` when C++ expects an integer, the read fails. Test `std::cin` before using the number so invalid input follows a clear error path."
     },
     {
       "kind": "check",

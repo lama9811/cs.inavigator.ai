@@ -1,47 +1,53 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Loops",
-  "summary": "Repeat statements with a clear exit condition.",
+  "summary": "Repeat work a known number of times or until a condition changes.",
   "minutes": 10,
   "error_classes": [
     "wrong_answer",
     "timeout",
     "runtime"
   ],
-  "refresher": "A `for` loop groups initialization, condition, and update. A `while` loop repeats while its condition is true. Trace the first value, final included value, and update.",
+  "refresher": "A `for` loop has a starting value, a condition, and an update. A `while` loop repeats while its condition remains true. Make sure the condition eventually becomes false.",
   "refresher_code": "for(int i=0;i<3;i++){\n  std::cout << i << \"\\n\";\n}",
   "blocks": [
     {
       "kind": "text",
-      "body": "A `for` loop groups initialization, condition, and update. A `while` loop repeats while its condition is true. Trace the first value, final included value, and update. Repeat statements with a clear exit condition."
+      "body": "A loop repeats a block of code. Use a `for` loop when you can describe the start, stopping rule, and update together. Use a `while` loop when repetition depends mainly on a condition."
     },
     {
       "kind": "text",
-      "body": "Trace a loop as initialization, test, body, and update. For container traversal, the first index is zero and the condition should stay strictly below the size. A range-based loop avoids manual indexes when you only need each element value."
+      "body": "Read a `for` loop in four steps: set the counter, test the condition, run the body, then update the counter. For a collection with three items, valid indexes are zero, one, and two, so the counter must stay below the size."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "C++ writes out the pieces of Python's range",
+      "body": "Python's `for i in range(3)` hides the counter update. C++ writes the same plan as `for (int i = 0; i < 3; i++)`: start at zero, stop before three, and add one."
     },
     {
       "kind": "code",
-      "caption": "The counter begins at zero and stops when it reaches three.",
-      "code": "#include <iostream>\nint main(){\n for(int i=0;i<3;i++) std::cout<<\"step \"<<i<<\"\\n\";\n}",
+      "caption": "The counter begins at zero, prints once per pass, and stops before it reaches three.",
+      "code": "#include <iostream>\n\nint main() {\n  for (int i = 0; i < 3; i++) {\n    std::cout << \"step \" << i << \"\\n\";\n  }\n}",
       "output": "step 0\nstep 1\nstep 2"
     },
     {
       "kind": "compare",
       "caption": "Use a strict bound so the count is never used as an index.",
       "wrong_label": "Common mistake",
-      "wrong": "for (std::size_t i = 0; i <= values.size(); i++) {\n  use(values[i]);\n}",
+      "wrong": "for (int i = 0; i <= values.size(); i++) {\n  use(values[i]);\n}",
       "right_label": "Clearer version",
-      "right": "for (std::size_t i = 0; i < values.size(); i++) {\n  use(values[i]);\n}"
+      "right": "for (int i = 0; i < values.size(); i++) {\n  use(values[i]);\n}"
     },
     {
       "kind": "text",
-      "body": "For three elements, valid indexes are zero, one, and two. Once i becomes three, the corrected condition fails. The inclusive version allows three and accesses beyond the vector. If no index is needed, `for (int value : values)` is simpler."
+      "body": "For three elements, the valid indexes are zero, one, and two. When `i` becomes three, the corrected condition is false. The version using `<=` allows index three and steps past the vector. If you do not need an index, use `for (int value : values)`."
     },
     {
       "kind": "callout",
       "tone": "mistake",
-      "title": "Follow the data",
-      "body": "A while loop whose tested variable never changes can run forever; identify the exact statement responsible for reaching the exit."
+      "title": "A loop needs a way to finish",
+      "body": "A `while` loop can run forever when the value in its condition never changes. Point to the exact update that moves the loop toward its stopping condition."
     },
     {
       "kind": "check",

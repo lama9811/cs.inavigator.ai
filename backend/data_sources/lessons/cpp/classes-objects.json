@@ -1,27 +1,33 @@
 {
   "_note": "ORIGINAL content. Topic coverage was checked against Think C++ and the Google C++ Class outline. No prose, examples, or exercises were copied; the references are curriculum guides only.",
   "title": "Classes & Objects",
-  "summary": "Design types that keep related state and behavior together.",
+  "summary": "Create your own types by keeping related data and actions together.",
   "minutes": 10,
   "error_classes": [
     "syntax",
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "A class defines a new type. Private data members protect an object?s state, public methods provide controlled operations, and a constructor establishes a valid starting state. Each object owns its own member values.",
+  "refresher": "A class describes a new kind of object. Data members store its state, methods perform its actions, and a constructor gives every new object a valid starting state. Public members are available to other code; private members stay inside the class.",
   "refresher_code": "class Counter {\npublic:\n  Counter() : value_(0) {}\n  void increment() { value_++; }\n  int value() const { return value_; }\nprivate:\n  int value_;\n};",
   "blocks": [
     {
       "kind": "text",
-      "body": "A class lets you describe what a kind of object stores and what it can do. Instead of passing several related variables between functions, you give the relationship a name and keep the operations beside the data they protect."
+      "body": "A class is a plan for making objects. It gives related values and functions one name. For example, an `Account` object can keep a balance and provide a deposit method instead of passing a loose balance variable through the program."
     },
     {
       "kind": "text",
-      "body": "Public members form the interface that other code may use. Private members are implementation details the class controls. A constructor runs when an object is created and should leave every member ready for the other methods."
+      "body": "Public members are the operations other code may use. Private members can be changed only through the class's own methods. A constructor runs when a new object is created and supplies its starting values."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "The idea matches Python classes",
+      "body": "Python uses `class` and usually initializes an object in `__init__`. C++ also uses `class`, but its constructor has the same name as the class and member types are written explicitly."
     },
     {
       "kind": "code",
-      "caption": "The constructor initializes the balance, deposit changes it through a rule, and the const getter reads it without modifying the object.",
+      "caption": "The constructor starts the balance, deposit changes it only for a positive amount, and balance reads the current value.",
       "code": "#include <iostream>\nclass Account {\npublic:\n  Account(int starting) : balance_(starting) {}\n  void deposit(int amount) { if (amount > 0) balance_ += amount; }\n  int balance() const { return balance_; }\nprivate:\n  int balance_;\n};\nint main() {\n  Account account(20);\n  account.deposit(5);\n  std::cout << account.balance() << \"\\n\";\n}",
       "output": "25"
     },
@@ -35,13 +41,13 @@
     },
     {
       "kind": "text",
-      "body": "Trace two Account objects separately. Depositing into the first changes only its balance member because each object has its own state. Methods know which object they are using through the implicit `this` pointer."
+      "body": "Each `Account` object has its own balance. Depositing into one account does not change another account. Inside a method, C++ knows which object received the call; that object is available through a pointer named `this`, although most beginner methods do not need to write it explicitly."
     },
     {
       "kind": "callout",
       "tone": "mistake",
-      "title": "Initialize every member",
-      "body": "A constructor body runs after data members have already been initialized. Prefer the member initializer list for their starting values, especially for const members and objects that have no default constructor."
+      "title": "The constructor sets the starting state",
+      "body": "The part after the constructor's colon is called a member initializer list. It gives members their starting values before the constructor body runs. Read `balance_(starting)` as: start the balance member with the value in starting."
     },
     {
       "kind": "check",
@@ -73,10 +79,10 @@
       "kind": "list",
       "title": "Classes & Objects checklist",
       "items": [
-        "Give the class one clear responsibility.",
+        "Give the class one clear purpose.",
         "Initialize every member in the constructor.",
-        "Keep invariants behind private data.",
-        "Mark read-only methods const."
+        "Keep data private when methods need to protect its rules.",
+        "Mark methods const when they only read the object."
       ]
     }
   ]

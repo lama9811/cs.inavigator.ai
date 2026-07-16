@@ -1,27 +1,33 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Operators",
-  "summary": "Calculate values and combine boolean conditions.",
+  "summary": "Calculate values, compare them, and combine conditions.",
   "minutes": 10,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "C++ arithmetic follows precedence rules, comparisons produce booleans, and `&&`, `||`, and `!` combine logic. Integer division discards the fractional part.",
+  "refresher": "C++ uses familiar arithmetic operators such as `+`, `-`, `*`, and `/`. Comparisons such as `>=` produce true or false. Use `&&` for and, `||` for or, `!` for not, and `==` to compare equality.",
   "refresher_code": "bool ready = credits >= 12 && holds == 0;",
   "blocks": [
     {
       "kind": "text",
-      "body": "C++ arithmetic follows precedence rules, comparisons produce booleans, and `&&`, `||`, and `!` combine logic. Integer division discards the fractional part. Calculate values and combine boolean conditions."
+      "body": "Operators perform work with values. Arithmetic operators calculate, comparison operators ask a true-or-false question, and logical operators join those questions. Parentheses make a longer expression easier to follow."
     },
     {
       "kind": "text",
-      "body": "An operator uses the types of both operands. Two integers divided together produce an integer result, even if that result is later stored in a double. Convert an operand before division when the fractional part matters. Logical operators also short-circuit, so the right side may not run."
+      "body": "The types on both sides affect the result. Two integers divided together produce an integer, so `7 / 2` gives `3`. The logical operators `&&` and `||` stop as soon as the final answer is known, which can prevent the expression on the right from running."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Logical words look different in Python",
+      "body": "Python spells these operators `and`, `or`, and `not`. C++ writes the same ideas as `&&`, `||`, and `!`. The meaning is the same even though the symbols differ."
     },
     {
       "kind": "code",
-      "caption": "Two integer operands produce integer division, while the double operand keeps the fraction.",
-      "code": "#include <iostream>\nint main(){\n  std::cout << 7 / 2 << \"\\n\";\n  std::cout << 7.0 / 2 << \"\\n\";\n}",
+      "caption": "The first calculation uses two integers and drops the fraction. Writing 7.0 makes the second calculation use decimal arithmetic.",
+      "code": "#include <iostream>\n\nint main() {\n  std::cout << 7 / 2 << \"\\n\";\n  std::cout << 7.0 / 2 << \"\\n\";\n}",
       "output": "3\n3.5"
     },
     {
@@ -34,13 +40,13 @@
     },
     {
       "kind": "text",
-      "body": "With total seven and count two, the wrong expression performs integer division first and produces three. Assignment changes three into `3.0` but cannot restore the lost half. The corrected expression makes the division itself use floating-point arithmetic."
+      "body": "If `total` is seven and `count` is two, integer division produces three before assignment happens. Storing that result in a double changes it to `3.0`, but the missing half is already gone. Convert before dividing."
     },
     {
       "kind": "callout",
       "tone": "mistake",
-      "title": "C++ detail to check",
-      "body": "Use `==` for comparison. A single equals sign assigns a value, and an assignment inside a condition can silently alter program state."
+      "title": "Comparison uses two equals signs",
+      "body": "Use `==` to ask whether two values are equal. A single `=` stores a new value. Mixing them up inside a condition can change a variable when you only meant to compare it."
     },
     {
       "kind": "check",

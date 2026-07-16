@@ -1,27 +1,27 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Algorithm Problems: Part 1",
-  "summary": "Order initialization, traversal, update, and return.",
+  "summary": "Turn a small problem into ordered steps you can trace.",
   "minutes": 10,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "Define the input and output, trace a tiny case, initialize an accumulator, update it for each relevant element, and return after traversal completes.",
+  "refresher": "First state the input and expected output. Choose any value the algorithm must remember, update it as you visit the data, and return only after all required work is finished.",
   "refresher_code": "int total=0;\nfor(int n: values) total+=n;\nreturn total;",
   "blocks": [
     {
       "kind": "text",
-      "body": "Define the input and output, trace a tiny case, initialize an accumulator, update it for each relevant element, and return after traversal completes. Order initialization, traversal, update, and return."
+      "body": "An algorithm is a clear sequence of steps for producing an answer. Before writing C++, describe the input, the output, what must be remembered, and what work repeats. Then translate each part into code."
     },
     {
       "kind": "text",
-      "body": "Translate an algorithm prompt into input, output, remembered state, and repeated work. In a sum, the accumulator starts at zero because adding zero changes nothing. A range-based loop then adds each value exactly once, and the function returns only after traversal."
+      "body": "To add a vector, remember a running total. Programmers often call a value like this an accumulator because it collects each update. Start it at zero, add every number, and return the total after the loop."
     },
     {
       "kind": "code",
-      "caption": "The accumulator starts at zero and receives every value before it is returned.",
-      "code": "#include <iostream>\n#include <vector>\nint sum(const std::vector<int>& v){\n int total=0;\n for(int n:v) total+=n;\n return total;\n}\nint main(){std::cout<<sum({3,5,2})<<\"\\n\";}",
+      "caption": "Total begins at zero, receives every value, and is returned only after the loop is complete.",
+      "code": "#include <iostream>\n#include <vector>\n\nint sum(const std::vector<int>& values) {\n  int total = 0;\n\n  for (int value : values) {\n    total += value;\n  }\n\n  return total;\n}\n\nint main() {\n  std::cout << sum({3, 5, 2}) << \"\\n\";\n}",
       "output": "10"
     },
     {
@@ -34,13 +34,13 @@
     },
     {
       "kind": "text",
-      "body": "For `{3, 5, 2}`, total becomes three, then eight, then ten. An empty vector performs no updates and returns the initialized zero. Tracing both a normal case and the smallest valid case exposes misplaced initialization and return statements."
+      "body": "For `{3, 5, 2}`, the running total becomes three, then eight, then ten. An empty vector performs no additions and returns zero. Trace both an ordinary case and the smallest allowed case to catch misplaced setup or return steps."
     },
     {
       "kind": "callout",
       "tone": "mistake",
-      "title": "Inspect this state",
-      "body": "Returning inside the range loop stops after one element; the final answer belongs after the complete traversal."
+      "title": "Finish the repeated work before returning",
+      "body": "A return inside the loop ends the function during the first pass. Put the final return after the loop when every element must contribute to the answer."
     },
     {
       "kind": "check",

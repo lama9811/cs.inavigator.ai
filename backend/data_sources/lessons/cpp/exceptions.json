@@ -1,26 +1,32 @@
 {
   "_note": "ORIGINAL content. Topic coverage was checked against Think C++ and the Google C++ Class outline. No prose, examples, or exercises were copied; the references are curriculum guides only.",
   "title": "Exceptions",
-  "summary": "Report failures across function calls without losing cleanup.",
+  "summary": "Send a clear failure to code that knows how to handle it.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "Throw an exception when a function cannot fulfill its contract and the caller may recover at a higher level. Catch exceptions by const reference, handle only cases you understand, and preserve useful error details.",
+  "refresher": "Use `throw` when a function cannot complete its promised job. Put code that may fail inside `try`, and handle a known exception in `catch`. Preserve the error message so the caller knows what went wrong.",
   "refresher_code": "try {\n  enroll(student);\n} catch (const std::exception& error) {\n  std::cerr << error.what() << \"\\n\";\n}",
   "blocks": [
     {
       "kind": "text",
-      "body": "An exception separates the normal return path from a failure path that may cross several function calls. It is useful when a function has no valid result and returning a special number would be unclear or easy to ignore."
+      "body": "Sometimes a function cannot produce a valid result. An exception lets it stop the normal path and send failure information to a caller. This is clearer than returning a made-up number that might be mistaken for a real answer."
     },
     {
       "kind": "text",
-      "body": "Throwing creates an exception object and begins stack unwinding. Local objects in exited scopes are destroyed as control searches for a matching catch. This cleanup behavior works with RAII-managed resources and is a major reason to avoid raw ownership."
+      "body": "When code throws, C++ looks back through the active function calls for a matching `catch`. As it leaves each function, local objects are cleaned up. This is why standard containers, strings, and file streams remain safe during an exception."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "The shape is similar to Python",
+      "body": "Python uses `try`, `raise`, and `except`. C++ uses `try`, `throw`, and `catch`. In both languages, expected choices still belong in ordinary `if` statements."
     },
     {
       "kind": "code",
-      "caption": "The parser either returns a valid positive count or throws a descriptive exception that the caller handles.",
+      "caption": "The function either returns a positive value or throws a message. Main catches that specific failure and prints the explanation.",
       "code": "#include <iostream>\n#include <stdexcept>\nint requirePositive(int value) {\n  if (value <= 0) throw std::invalid_argument(\"value must be positive\");\n  return value;\n}\nint main() {\n  try {\n    std::cout << requirePositive(-2) << \"\\n\";\n  } catch (const std::invalid_argument& error) {\n    std::cout << error.what() << \"\\n\";\n  }\n}",
       "output": "value must be positive"
     },
@@ -34,13 +40,13 @@
     },
     {
       "kind": "text",
-      "body": "For the negative input, requirePositive checks its contract, constructs invalid_argument, and stops its normal path. Main catches that type by const reference, reads the message, and then continues after the catch block."
+      "body": "For the negative input, `requirePositive` cannot fulfill its rule, so it throws `invalid_argument`. The normal path stops. Main catches that type, reads its message, and then continues after the catch block."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "Exceptions are not ordinary branch logic",
-      "body": "Use an if statement for expected choices such as an empty search result. Reserve exceptions for a function that cannot complete its promised operation, especially when several callers need the failure information."
+      "body": "Use an `if` for an expected choice, such as an empty search result. Use an exception when a function cannot complete the job it promised and a caller needs the failure information."
     },
     {
       "kind": "check",
@@ -57,16 +63,16 @@
     },
     {
       "kind": "check",
-      "prompt": "What happens to local RAII objects during stack unwinding?",
+      "prompt": "What happens to local objects when an exception leaves their block?",
       "code": "",
       "choices": [
-        "Their destructors run",
+        "They are cleaned up as the block is exited",
         "They are always leaked",
         "They become global",
         "Their constructors run again"
       ],
       "answer_index": 0,
-      "why": "As exception control exits each scope, destructors run for fully constructed local objects and release their resources."
+      "why": "C++ exits each active block on the way to a matching catch, so fully created local objects run their normal cleanup."
     },
     {
       "kind": "list",

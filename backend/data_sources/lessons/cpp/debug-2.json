@@ -1,28 +1,34 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Debug: Part 2",
-  "summary": "Trace lifetime, signed bounds, mutation, and edge cases.",
+  "summary": "Find harder bugs involving object lifetime, container sizes, and changing state.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "wrong_answer",
     "timeout"
   ],
-  "refresher": "Harder C++ bugs may come from invalid references, unsigned arithmetic, shared mutation, or a missing boundary case. Record state near its first incorrect transition.",
+  "refresher": "Harder C++ bugs often appear when code keeps an address too long, subtracts from an empty size, or changes a container while using a position inside it. Trace the first value or reference that becomes invalid.",
   "refresher_code": "for(std::size_t i=0;i<v.size();i++){\n  std::cout << i << \": \" << v[i] << \"\\n\";\n}",
   "blocks": [
     {
       "kind": "text",
-      "body": "Harder C++ bugs may come from invalid references, unsigned arithmetic, shared mutation, or a missing boundary case. Record state near its first incorrect transition. Trace lifetime, signed bounds, mutation, and edge cases."
+      "body": "Some C++ bugs come from values that were once valid but are no longer safe to use. A local object disappears when its function ends. A vector may move its elements when it grows. An empty container has no final element. Check these moments when a later line behaves strangely."
     },
     {
       "kind": "text",
-      "body": "Deeper C++ debugging tracks object lifetime, signed and unsigned values, aliases, and mutation. A reference or pointer can outlive the object it once identified, becoming dangling. Container growth can also invalidate pointers, references, and iterators into its old storage."
+      "body": "A pointer or reference that still names an object after that object is gone is called dangling. Positions into a vector can also become invalid after the vector changes its storage. Trace when the object was created, changed, and destroyed instead of looking only at the line where the crash appears."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "What is std::size_t?",
+      "body": "`std::size_t` is the nonnegative integer type C++ uses for sizes and indexes. You do not need to memorize its internal size. Match it with `.size()` and keep the index strictly below the container's size."
     },
     {
       "kind": "code",
-      "caption": "Using size-compatible indexes and a strict upper bound keeps each access valid.",
-      "code": "#include <iostream>\n#include <vector>\nint main(){\n std::vector<int> v{2,4};\n for(std::size_t i=0;i<v.size();i++) std::cout<<i<<\":\"<<v[i]<<\"\\n\";\n}",
+      "caption": "The loop uses the vector's size as its stopping point and never allows the index to reach the size itself.",
+      "code": "#include <iostream>\n#include <vector>\n\nint main() {\n  std::vector<int> values{2, 4};\n\n  for (std::size_t i = 0; i < values.size(); i++) {\n    std::cout << i << \": \" << values[i] << \"\\n\";\n  }\n}",
       "output": "0:2\n1:4"
     },
     {
@@ -35,13 +41,13 @@
     },
     {
       "kind": "text",
-      "body": "The local text ends its lifetime when the function returns. The wrong reference then points at an object that no longer exists. Returning by value produces a valid result, and modern C++ can do this efficiently without exposing the local lifetime."
+      "body": "The local string exists only while `label` is running. Returning a reference would leave the caller with a name for an object that has already disappeared. Returning the string by value gives the caller its own valid result."
     },
     {
       "kind": "callout",
       "tone": "mistake",
-      "title": "Inspect this state",
-      "body": "Subtracting one from an empty container size wraps an unsigned value to a huge number; check emptiness before that calculation."
+      "title": "Check emptiness before subtracting from size",
+      "body": "Container sizes use a nonnegative number type. Subtracting one from an empty size does not produce a useful negative index; it wraps to a very large value. Handle the empty case first."
     },
     {
       "kind": "check",

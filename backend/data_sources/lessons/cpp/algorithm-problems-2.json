@@ -1,28 +1,34 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Algorithm Problems: Part 2",
-  "summary": "Track related state and handle empty inputs.",
+  "summary": "Track more than one piece of state and handle edge cases first.",
   "minutes": 10,
   "error_classes": [
     "wrong_answer",
     "runtime",
     "timeout"
   ],
-  "refresher": "Multi-step algorithms may preserve a best value plus its index or combine a total with a count. Write an invariant and decide tie and empty-input rules.",
-  "refresher_code": "std::size_t best=0;\nfor(std::size_t i=1;i<v.size();i++)\n if(v[i]>v[best]) best=i;",
+  "refresher": "A multi-step algorithm may remember a best value and where it appeared. Write the rule that should remain true after every loop pass, decide what happens for empty input and ties, then trace a small example.",
+  "refresher_code": "std::size_t best = 0;\nfor (std::size_t i = 1; i < values.size(); i++) {\n  if (values[i] > values[best]) best = i;\n}",
   "blocks": [
     {
       "kind": "text",
-      "body": "Multi-step algorithms may preserve a best value plus its index or combine a total with a count. Write an invariant and decide tie and empty-input rules. Track related state and handle empty inputs."
+      "body": "A harder algorithm often remembers several related facts. To find the position of the largest value, remember the best position found so far and compare every later value with it. Decide the empty-input result before reading position zero."
     },
     {
       "kind": "text",
-      "body": "A more involved algorithm often carries related state, such as a best index and the value available at that index. State an invariant in ordinary language: after examining positions through i, best names the largest one seen. That sentence tells you what each update must preserve."
+      "body": "A rule that stays true after every loop pass is called an invariant. Here the rule is simple: after checking through position `i`, `best` stores the position of the largest value seen so far. Writing that sentence first makes the update easier to verify."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "The algorithm is not C++-specific",
+      "body": "You would keep the same best-so-far rule in Python. C++ adds explicit vector and index types, but the reasoning and the small hand trace are identical."
     },
     {
       "kind": "code",
-      "caption": "The empty guard precedes index access, and later values may replace the candidate index.",
-      "code": "#include <iostream>\n#include <vector>\nint largestIndex(const std::vector<int>& v){\n if(v.empty()) return -1;\n std::size_t best=0;\n for(std::size_t i=1;i<v.size();i++) if(v[i]>v[best]) best=i;\n return static_cast<int>(best);\n}\nint main(){std::cout<<largestIndex({4,9,7})<<\"\\n\";}",
+      "caption": "The empty case is handled before position zero is used. Each larger value replaces the saved best position.",
+      "code": "#include <iostream>\n#include <vector>\n\nint largestIndex(const std::vector<int>& values) {\n  if (values.empty()) {\n    return -1;\n  }\n\n  std::size_t best = 0;\n  for (std::size_t i = 1; i < values.size(); i++) {\n    if (values[i] > values[best]) {\n      best = i;\n    }\n  }\n\n  return static_cast<int>(best);\n}\n\nint main() {\n  std::cout << largestIndex({4, 9, 7}) << \"\\n\";\n}",
       "output": "1"
     },
     {
@@ -35,13 +41,13 @@
     },
     {
       "kind": "text",
-      "body": "For `{4, 9, 7}`, best begins at zero, changes to one after comparing nine, and remains one after seven. Decide what ties mean by choosing `>` for the first maximum or `>=` for the last. The empty contract belongs in the function documentation."
+      "body": "For `{4, 9, 7}`, `best` starts at zero, changes to one after nine, and stays one after seven. Using `>` keeps the first position when two maximum values tie. Using `>=` would keep the last tied position."
     },
     {
       "kind": "callout",
       "tone": "mistake",
-      "title": "Inspect this state",
-      "body": "Without the empty check, reading element zero from an empty vector is invalid before the loop even begins."
+      "title": "Handle empty input before choosing a candidate",
+      "body": "Position zero is a valid starting candidate only when the vector contains an element. Check `.empty()` before reading or comparing any element."
     },
     {
       "kind": "check",

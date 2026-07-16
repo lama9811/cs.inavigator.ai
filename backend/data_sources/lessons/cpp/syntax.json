@@ -1,27 +1,33 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Syntax",
-  "summary": "Build a valid program from declarations, statements, and braces.",
+  "summary": "See how a small C++ program is put together and run.",
   "minutes": 10,
   "error_classes": [
     "syntax",
     "runtime"
   ],
-  "refresher": "A basic C++ program includes needed headers, defines `main`, ends statements with semicolons, and balances every brace. `std::cout` sends values to standard output.",
+  "refresher": "A small C++ program usually includes a header, defines `main`, and places statements between braces. Most statements end with a semicolon. `std::cout` prints information on the screen.",
   "refresher_code": "#include <iostream>\nint main() { std::cout << \"Hi\\n\"; }",
   "blocks": [
     {
       "kind": "text",
-      "body": "A basic C++ program includes needed headers, defines `main`, ends statements with semicolons, and balances every brace. `std::cout` sends values to standard output. Build a valid program from declarations, statements, and braces."
+      "body": "C++ needs a little more structure than Python. The program below includes the tool used for printing, begins in a function named `main`, and places the work between `{` and `}`. Most action lines end with a semicolon."
     },
     {
       "kind": "text",
-      "body": "C++ goes through a build step before the program can run. The preprocessor handles lines such as `#include`, the compiler checks types and syntax, and the linker connects compiled code with required definitions. An error at any stage means there is no new executable to run."
+      "body": "Before C++ runs, a compiler translates the code into a program the computer can execute. If a semicolon, quote, or brace is missing, the compiler stops and points to a nearby line. Fix the first error, build again, and then look at anything that remains."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "If you have seen Python",
+      "body": "Python can run a short print statement by itself. C++ asks you to put that statement inside `main` and compile the program before it runs. Both languages still execute instructions from top to bottom."
     },
     {
       "kind": "code",
-      "caption": "The header declares the stream tools, and the statement sits inside the main function body.",
-      "code": "#include <iostream>\nint main() {\n  std::cout << \"Welcome\\n\";\n  return 0;\n}",
+      "caption": "Read this from top to bottom: add the printing tool, begin main, print one line, and finish successfully.",
+      "code": "#include <iostream>\n\nint main() {\n  std::cout << \"Welcome\\n\";\n  return 0;\n}",
       "output": "Welcome"
     },
     {
@@ -34,13 +40,13 @@
     },
     {
       "kind": "text",
-      "body": "Read the corrected program by layers: `main` is the starting function, braces mark its body, the stream insertion sends text to output, and the semicolon ends that statement. Fix the earliest compiler diagnostic first because later messages may be consequences."
+      "body": "Read the corrected program one piece at a time. `main` is where execution starts. Braces surround the function's work. `std::cout` prints the text, and the semicolon finishes that instruction."
     },
     {
       "kind": "callout",
       "tone": "mistake",
-      "title": "C++ detail to check",
-      "body": "A compiler may report a later line when the real cause is a missing semicolon or brace immediately before it."
+      "title": "Start with the first error",
+      "body": "One missing semicolon or brace can cause several compiler messages. Fix the earliest message first because the later ones may disappear with it."
     },
     {
       "kind": "check",

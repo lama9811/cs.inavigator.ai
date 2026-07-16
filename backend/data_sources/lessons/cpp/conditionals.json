@@ -1,27 +1,33 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Conditionals",
-  "summary": "Choose a branch with ordered boolean expressions.",
+  "summary": "Choose which code runs by asking true-or-false questions.",
   "minutes": 10,
   "error_classes": [
     "wrong_answer",
     "syntax"
   ],
-  "refresher": "C++ checks an `if`, then any `else if` branches, and finally `else`. The first true branch runs, so narrower overlapping ranges belong before broad ones.",
+  "refresher": "C++ checks `if`, then any `else if` branches, and finally `else`. Only the first true branch runs. Put braces around each branch so its beginning and end are easy to see.",
   "refresher_code": "if(score>=90){ grade=\"A\"; }\nelse { grade=\"Below A\"; }",
   "blocks": [
     {
       "kind": "text",
-      "body": "C++ checks an `if`, then any `else if` branches, and finally `else`. The first true branch runs, so narrower overlapping ranges belong before broad ones. Choose a branch with ordered boolean expressions."
+      "body": "A conditional lets the program choose. C++ tests the expression inside `if (...)`. If it is true, that block runs. Otherwise, the program tries the next `else if` or uses the final `else`."
     },
     {
       "kind": "text",
-      "body": "C++ conditions expect a value convertible to bool. Zero becomes false and nonzero numbers become true, but an explicit comparison usually communicates the rule better. An else attaches to the nearest unmatched if, so braces prevent indentation from telling a different story than the compiler."
+      "body": "Write comparisons that clearly show the rule, such as `score >= 60`. Put the most specific overlapping rule first because only the first true branch runs. Braces make it clear which statements belong to each choice."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Braces do the job indentation does in Python",
+      "body": "Python uses indentation to show which statements belong to an `if`. C++ uses braces. Indentation still helps people read C++, but the braces are what the compiler follows."
     },
     {
       "kind": "code",
-      "caption": "The first condition is true, so later parts of the chain are skipped.",
-      "code": "#include <iostream>\nint main(){\n int score=92;\n if(score>=90) std::cout<<\"A\\n\";\n else if(score>=80) std::cout<<\"B\\n\";\n else std::cout<<\"C or below\\n\";\n}",
+      "caption": "A score of 92 satisfies the first condition, so C++ prints A and skips the remaining branches.",
+      "code": "#include <iostream>\n\nint main() {\n  int score = 92;\n\n  if (score >= 90) {\n    std::cout << \"A\\n\";\n  } else if (score >= 80) {\n    std::cout << \"B\\n\";\n  } else {\n    std::cout << \"C or below\\n\";\n  }\n}",
       "output": "A"
     },
     {
@@ -34,13 +40,13 @@
     },
     {
       "kind": "text",
-      "body": "The semicolon in the wrong version is an empty controlled statement. The following block then runs every time. In the corrected version, only scores at least sixty enter the block. Test just below, on, and just above the boundary."
+      "body": "The semicolon in the first version finishes the `if` immediately. The block below it is separate and runs every time. Remove that semicolon so the block runs only when the score is at least sixty."
     },
     {
       "kind": "callout",
       "tone": "mistake",
-      "title": "Follow the data",
-      "body": "An accidental semicolon after `if (condition);` ends the controlled statement, making the following block run independently."
+      "title": "Do not end the if line with a semicolon",
+      "body": "Write `if (condition) {`, not `if (condition); {`. That extra semicolon creates an empty branch and makes the following block run on its own."
     },
     {
       "kind": "check",
