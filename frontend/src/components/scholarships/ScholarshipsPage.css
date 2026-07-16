@@ -123,6 +123,17 @@
   gap: 12px; margin-bottom: 6px;
 }
 .sch-card-name { margin: 0; font-size: 1rem; color: #0B2545; }
+.sch-rec {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(214,158,46,0.15);
+  color: #8a6516;
+  font-size: 0.68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.03em;
+  vertical-align: middle;
+}
 .sch-kind {
   flex: none;
   padding: 3px 9px; border-radius: 999px;
@@ -263,6 +274,35 @@
 .sch-remove:hover:not(:disabled) { background: rgba(161,45,45,0.08); }
 .sch-remove:disabled { opacity: 0.5; cursor: default; }
 
+/* Filter / sort toolbar on My Scholarships */
+.sch-toolbar {
+  display: flex; flex-wrap: wrap; gap: 14px;
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  border: 1px solid rgba(0,0,0,0.09);
+  border-radius: 10px;
+  background: #fafbfc;
+}
+.sch-toolbar-field {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 0.82rem;
+}
+.sch-toolbar-field > span {
+  font-weight: 600; color: var(--text-muted, #6b7280);
+}
+.sch-toolbar-field select {
+  padding: 6px 10px;
+  border: 1.5px solid rgba(0,0,0,0.16);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.82rem; font-weight: 600;
+  color: #35507d;
+  cursor: pointer;
+}
+.sch-toolbar-field select:focus {
+  outline: none; border-color: #4285F4;
+}
+
 /* Empty state for My Scholarships */
 .sch-empty {
   display: flex; flex-direction: column; align-items: center; gap: 10px;
@@ -274,10 +314,189 @@
 .sch-empty-sub { font-size: 0.86rem; max-width: 42ch; }
 .sch-empty .sch-btn { margin-top: 8px; }
 
+/* Open / View button on saved cards */
+.sch-open {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 13px;
+  border: 1.5px solid rgba(11,37,69,0.25);
+  border-radius: 8px;
+  background: #fff;
+  color: #0B2545;
+  font-size: 0.83rem; font-weight: 600;
+  cursor: pointer;
+}
+.sch-open:hover { background: rgba(11,37,69,0.06); }
+
+/* Progress bar (shared by card + detail) */
+.sch-progress {
+  flex: 1; min-width: 0;
+  height: 7px;
+  background: rgba(0,0,0,0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.sch-progress-bar {
+  height: 100%;
+  background: #2f8f4e;
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+.sch-card-progress {
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 0 12px;
+}
+.sch-card-progress-label {
+  flex: none;
+  font-size: 0.76rem; font-weight: 600;
+  color: var(--text-muted, #6b7280);
+}
+
+/* ===== Detail view ===== */
+.sch-detail-back {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 0; margin-bottom: 16px;
+  border: none; background: none;
+  font-size: 0.86rem; font-weight: 600;
+  color: #2a5db0;
+  cursor: pointer;
+}
+.sch-detail-back:hover { text-decoration: underline; }
+
+.sch-detail-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.sch-detail-name { margin: 0 0 6px; font-size: 1.3rem; color: #0B2545; }
+.sch-detail-apply {
+  flex: none;
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 16px;
+  border-radius: 9px;
+  background: #0B2545; color: #fff;
+  font-size: 0.86rem; font-weight: 600;
+  text-decoration: none;
+}
+.sch-detail-apply:hover { background: #143a6b; }
+
+.sch-detail-meta {
+  margin: 0 0 14px;
+  display: grid; gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid rgba(0,0,0,0.09);
+  border-radius: 12px;
+  background: #fafbfc;
+}
+.sch-detail-meta div { display: flex; gap: 10px; font-size: 0.88rem; }
+.sch-detail-meta dt {
+  flex: none; width: 92px;
+  font-weight: 600; color: var(--text-muted, #6b7280);
+}
+.sch-detail-meta dd { margin: 0; min-width: 0; }
+.sch-detail-why {
+  margin: 0 0 20px;
+  font-size: 0.9rem; font-style: italic;
+  color: var(--text-muted, #5a6472);
+}
+
+/* ===== Checklist ===== */
+.sch-checklist {
+  padding: 18px 20px;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 12px;
+  background: #fff;
+}
+.sch-checklist-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; margin-bottom: 12px;
+}
+.sch-checklist-head h3 { margin: 0; font-size: 1.05rem; color: #0B2545; }
+.sch-checklist-count {
+  font-size: 0.8rem; font-weight: 600;
+  color: #226b3a;
+}
+.sch-checklist .sch-progress { margin-bottom: 16px; height: 8px; }
+
+.sch-checklist-empty {
+  text-align: center; padding: 16px 8px;
+  color: var(--text-muted, #6b7280);
+}
+.sch-checklist-empty p { margin: 0 0 14px; font-size: 0.9rem; }
+
+.sch-checklist-items { list-style: none; margin: 0 0 14px; padding: 0; }
+.sch-check-item {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.sch-check-item:last-child { border-bottom: none; }
+.sch-check-row {
+  display: flex; align-items: center; gap: 10px;
+}
+.sch-check-row input[type="checkbox"] {
+  flex: none; width: 17px; height: 17px; cursor: pointer;
+  accent-color: #2f8f4e;
+}
+.sch-check-label {
+  flex: 1; min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 0.9rem;
+  background: transparent;
+  color: inherit;
+}
+.sch-check-label:hover { border-color: rgba(0,0,0,0.1); }
+.sch-check-label:focus { outline: none; border-color: #4285F4; background: #fff; }
+.sch-check-item.is-done .sch-check-label {
+  text-decoration: line-through;
+  color: var(--text-muted, #9aa2ac);
+}
+.sch-check-remove {
+  flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+  border: none; border-radius: 6px;
+  background: none; color: #9aa2ac;
+  cursor: pointer;
+}
+.sch-check-remove:hover { background: rgba(161,45,45,0.08); color: #a12d2d; }
+.sch-check-note {
+  width: 100%;
+  margin-top: 4px; margin-left: 27px;
+  max-width: calc(100% - 27px);
+  padding: 4px 8px;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 7px;
+  font-size: 0.8rem;
+  background: #fafbfc;
+  color: var(--text-muted, #5a6472);
+}
+.sch-check-note:focus { outline: none; border-color: #4285F4; background: #fff; }
+
+.sch-checklist-actions {
+  display: flex; gap: 10px; flex-wrap: wrap;
+}
+.sch-check-add, .sch-check-regen {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 13px;
+  border: 1.5px solid rgba(0,0,0,0.14);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.82rem; font-weight: 600;
+  color: #35507d;
+  cursor: pointer;
+}
+.sch-check-add:hover, .sch-check-regen:hover {
+  border-color: #4285F4; background: rgba(66,133,244,0.06);
+}
+.sch-check-regen:disabled, .sch-check-add:disabled { opacity: 0.6; cursor: default; }
+
 @media (max-width: 640px) {
   .sch-search { flex-direction: column; }
   .sch-meta div { flex-direction: column; gap: 2px; }
   .sch-meta dt { width: auto; }
   .sch-card-actions { gap: 8px; }
   .sch-status-pick { margin-right: 0; }
+  .sch-detail-meta div { flex-direction: column; gap: 2px; }
+  .sch-detail-meta dt { width: auto; }
 }
