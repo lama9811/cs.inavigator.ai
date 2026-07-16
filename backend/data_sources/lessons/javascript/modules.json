@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. Topic coverage was checked against javascript.info and Eloquent JavaScript. No prose, examples, or exercises were copied; the references are curriculum guides only.",
+  "title": "Modules",
+  "summary": "Split a program into files with explicit exports and imports.",
+  "minutes": 10,
+  "error_classes": [
+    "syntax",
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "A module exposes selected values with `export` and uses another module with `import`. Named imports must match their exported names. Browser module scripts use `type=\"module\"` and have their own top-level scope.",
+  "refresher_code": "// math.js\nexport function add(a, b) { return a + b; }\n// app.js\nimport { add } from \"./math.js\";",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "As a program grows, one file becomes difficult to scan and easy to break. Modules let each file own one focused responsibility while declaring exactly which pieces other files may use."
+    },
+    {
+      "kind": "text",
+      "body": "An export is a public doorway, not a copy of every variable in the file. An import creates a live connection to that exported binding. The relative path begins with `./` when the module sits beside the importing file."
+    },
+    {
+      "kind": "code",
+      "caption": "The exporting file defines one reusable operation, and the importing file names the same exported binding.",
+      "code": "// math.js\nexport const double = n => n * 2;\n// app.js\nimport { double } from \"./math.js\";\nconsole.log(double(6));",
+      "output": "12"
+    },
+    {
+      "kind": "compare",
+      "wrong_label": "Common mistake",
+      "wrong": "import double from \"./math.js\";",
+      "right_label": "Clearer version",
+      "right": "import { double } from \"./math.js\";",
+      "caption": "A named export uses braces when imported. A default export uses the brace-free form, so the two styles must agree."
+    },
+    {
+      "kind": "text",
+      "body": "When app.js loads, JavaScript first resolves math.js, evaluates its top-level declarations once, and then gives app.js access to `double`. Module files use strict mode automatically and do not add their top-level names to the global object."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Paths are part of the contract",
+      "body": "A correct export can still fail to load when its path is wrong. Relative browser imports normally include the file extension, and a server must deliver the module with an appropriate JavaScript content type."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which syntax imports a named export called `add`?",
+      "code": "",
+      "choices": [
+        "import { add } from \"./math.js\";",
+        "import add with \"./math.js\";",
+        "include add from \"./math.js\";",
+        "require { add } \"./math.js\";"
+      ],
+      "answer_index": 0,
+      "why": "Named imports use braces around the exact exported name and a from clause containing the module path."
+    },
+    {
+      "kind": "check",
+      "prompt": "How often is a module normally evaluated when imported by several files?",
+      "code": "",
+      "choices": [
+        "Once, then its exports are reused",
+        "Once per function call",
+        "Twice for named exports",
+        "It is never evaluated"
+      ],
+      "answer_index": 0,
+      "why": "The module system evaluates one module instance and shares its exported bindings with the files that import it."
+    },
+    {
+      "kind": "list",
+      "title": "Modules checklist",
+      "items": [
+        "Give each module one clear responsibility.",
+        "Export only values other files need.",
+        "Match named and default import styles.",
+        "Check relative paths and file extensions."
+      ]
+    }
+  ]
+}

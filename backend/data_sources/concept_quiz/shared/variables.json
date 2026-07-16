@@ -1,0 +1,390 @@
+{
+  "_note": "Variables. Curriculum sequence follows Foundations of Python Programming (Runestone) ch.2 - Variables, Statements, and Expressions. FoPP is GFDL-licensed, so NO content is copied from it: the topic order is used (topic sequences are not copyrightable), every question below is original. Concepts covered: assignment, reassignment, updating, naming rules, evaluation order.",
+  "concept": "variables",
+  "concept_label": "Variables",
+  "questions": [
+    {
+      "id": "assign-01",
+      "concept": "variables",
+      "difficulty": "easy",
+      "kind": "mcq-output",
+      "title": "Assignment stores a value",
+      "variants": {
+        "python": {
+          "code": "score = 10\nscore = 25\nprint(score)",
+          "prompt": "What does this code output?",
+          "choices": ["10", "25", "35", "Error"],
+          "answer_index": 1,
+          "explanation": "Assigning again REPLACES the old value. `score` held 10, then 25 overwrote it, so 25 prints. A variable holds one value at a time."
+        },
+        "java": {
+          "code": "int score = 10;\nscore = 25;\nSystem.out.println(score);",
+          "prompt": "What does this code output?",
+          "choices": ["10", "25", "35", "Error"],
+          "answer_index": 1,
+          "explanation": "The second line REPLACES the value in `score`. It held 10, now it holds 25. Note the type `int` only appears once — on the declaration."
+        },
+        "javascript": {
+          "code": "let score = 10;\nscore = 25;\nconsole.log(score);",
+          "prompt": "What does this code output?",
+          "choices": ["10", "25", "35", "undefined"],
+          "answer_index": 1,
+          "explanation": "Assigning again REPLACES the old value, so `score` is 25. `let` appears only on the first line — repeating it would redeclare the variable."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int score = 10;\n    score = 25;\n    cout << score;\n    return 0;\n}",
+          "prompt": "What does this program output?",
+          "choices": ["10", "25", "35", "Error"],
+          "answer_index": 1,
+          "explanation": "The second assignment REPLACES the value. `score` held 10, now it holds 25. The type `int` is written once, at the declaration."
+        }
+      }
+    },
+    {
+      "id": "update-01",
+      "concept": "variables",
+      "difficulty": "easy",
+      "kind": "mcq-output",
+      "title": "Updating a variable using itself",
+      "variants": {
+        "python": {
+          "code": "count = 4\ncount = count + 3\nprint(count)",
+          "prompt": "What does this code output?",
+          "choices": ["4", "3", "7", "43"],
+          "answer_index": 2,
+          "explanation": "The RIGHT side is evaluated first: `count + 3` is 4 + 3 = 7. That result is then stored back into `count`. This 'use the old value to make the new one' pattern is everywhere in programming."
+        },
+        "java": {
+          "code": "int count = 4;\ncount = count + 3;\nSystem.out.println(count);",
+          "prompt": "What does this code output?",
+          "choices": ["4", "3", "7", "43"],
+          "answer_index": 2,
+          "explanation": "The right side runs first: `count + 3` is 4 + 3 = 7, and 7 is stored back into `count`. (`count += 3` is shorthand for exactly this.)"
+        },
+        "javascript": {
+          "code": "let count = 4;\ncount = count + 3;\nconsole.log(count);",
+          "prompt": "What does this code output?",
+          "choices": ["4", "3", "7", "43"],
+          "answer_index": 2,
+          "explanation": "The right side is evaluated first: 4 + 3 = 7, then 7 is stored back into `count`. (`count += 3` is shorthand for the same thing.)"
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int count = 4;\n    count = count + 3;\n    cout << count;\n    return 0;\n}",
+          "prompt": "What does this program output?",
+          "choices": ["4", "3", "7", "43"],
+          "answer_index": 2,
+          "explanation": "The right side runs first: 4 + 3 = 7, then 7 is stored back into `count`. (`count += 3` is shorthand for the same thing.)"
+        }
+      }
+    },
+    {
+      "id": "swap-01",
+      "concept": "variables",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Order of assignment matters",
+      "variants": {
+        "python": {
+          "code": "a = 1\nb = 2\na = b\nb = a\nprint(a, b)",
+          "prompt": "What does this code output?",
+          "choices": ["1 2", "2 1", "2 2", "1 1"],
+          "answer_index": 2,
+          "explanation": "This does NOT swap them. `a = b` makes a into 2 — the old value 1 is gone forever. Then `b = a` copies that same 2 back into b. Both end up 2. A real swap needs a third variable to hold the old value (or in Python, `a, b = b, a`)."
+        },
+        "java": {
+          "code": "int a = 1;\nint b = 2;\na = b;\nb = a;\nSystem.out.println(a + \" \" + b);",
+          "prompt": "What does this code output?",
+          "choices": ["1 2", "2 1", "2 2", "1 1"],
+          "answer_index": 2,
+          "explanation": "This does NOT swap them. `a = b` overwrites a with 2 — the old 1 is gone. `b = a` then copies that 2 back. Both are 2. A real swap needs a temp variable to save the old value first."
+        },
+        "javascript": {
+          "code": "let a = 1;\nlet b = 2;\na = b;\nb = a;\nconsole.log(a, b);",
+          "prompt": "What does this code output?",
+          "choices": ["1 2", "2 1", "2 2", "1 1"],
+          "answer_index": 2,
+          "explanation": "This does NOT swap them. `a = b` overwrites a with 2 — the old 1 is lost. `b = a` copies that 2 back. Both are 2. A real swap needs a temp variable (or `[a, b] = [b, a]`)."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a = 1;\n    int b = 2;\n    a = b;\n    b = a;\n    cout << a << \" \" << b;\n    return 0;\n}",
+          "prompt": "What does this program output?",
+          "choices": ["1 2", "2 1", "2 2", "1 1"],
+          "answer_index": 2,
+          "explanation": "This does NOT swap them. `a = b` overwrites a with 2 — the old 1 is gone. `b = a` copies that 2 back. Both are 2. A real swap needs a temp variable to hold the old value first."
+        }
+      }
+    },
+    {
+      "id": "name-01",
+      "concept": "variables",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "Which variable name is not allowed?",
+      "variants": {
+        "python": {
+          "code": "# Which of these is NOT a valid variable name?",
+          "prompt": "Which one is illegal as a variable name?",
+          "choices": ["total_score", "score2", "2score", "_score"],
+          "answer_index": 2,
+          "explanation": "A name cannot START with a digit — `2score` is a syntax error. Letters, digits, and underscores are all fine anywhere else, and a leading underscore is allowed."
+        },
+        "java": {
+          "code": "// Which of these is NOT a valid variable name?",
+          "prompt": "Which one is illegal as a variable name?",
+          "choices": ["totalScore", "score2", "2score", "_score"],
+          "answer_index": 2,
+          "explanation": "A name cannot START with a digit — `2score` won't compile. Letters, digits, `_`, and `$` are allowed elsewhere, and a leading underscore is legal."
+        },
+        "javascript": {
+          "code": "// Which of these is NOT a valid variable name?",
+          "prompt": "Which one is illegal as a variable name?",
+          "choices": ["totalScore", "score2", "2score", "_score"],
+          "answer_index": 2,
+          "explanation": "A name cannot START with a digit — `2score` is a syntax error. Letters, digits, `_`, and `$` are fine elsewhere, and a leading underscore is legal."
+        },
+        "cpp": {
+          "code": "// Which of these is NOT a valid variable name?",
+          "prompt": "Which one is illegal as a variable name?",
+          "choices": ["total_score", "score2", "2score", "_score"],
+          "answer_index": 2,
+          "explanation": "A name cannot START with a digit — `2score` won't compile. Letters, digits, and underscores are fine elsewhere, and a leading underscore is legal."
+        }
+      }
+    },
+    {
+      "id": "undefined-01",
+      "concept": "variables",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Using a variable before it exists",
+      "error_class": "runtime",
+      "variants": {
+        "python": {
+          "code": "print(total)\ntotal = 5",
+          "prompt": "What happens when this runs?",
+          "choices": [
+            "It prints 5",
+            "It prints nothing, then sets total to 5",
+            "NameError: name 'total' is not defined",
+            "It prints 0"
+          ],
+          "answer_index": 2,
+          "explanation": "Python runs top to bottom. On line 1 the name `total` doesn't exist yet, so you get a NameError. Assignment must come BEFORE use — order matters."
+        },
+        "java": {
+          "code": "System.out.println(total);\nint total = 5;",
+          "prompt": "What happens when this compiles?",
+          "choices": [
+            "It prints 5",
+            "It prints 0",
+            "Compile error: total might not have been initialized / cannot find symbol",
+            "It prints null"
+          ],
+          "answer_index": 2,
+          "explanation": "Java reads top to bottom too. `total` isn't declared yet on line 1, so it won't compile. Declare a variable before you use it."
+        },
+        "javascript": {
+          "code": "console.log(total);\nlet total = 5;",
+          "prompt": "What happens when this runs?",
+          "choices": [
+            "It prints 5",
+            "It prints undefined",
+            "ReferenceError: Cannot access 'total' before initialization",
+            "It prints null"
+          ],
+          "answer_index": 2,
+          "explanation": "A `let` variable exists but cannot be READ before its declaration line runs — that gap is the 'temporal dead zone'. Declare before you use."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << total;\n    int total = 5;\n    return 0;\n}",
+          "prompt": "What happens when this compiles?",
+          "choices": [
+            "It prints 5",
+            "It prints 0",
+            "Compile error: 'total' was not declared in this scope",
+            "It prints garbage"
+          ],
+          "answer_index": 2,
+          "explanation": "C++ compiles top to bottom. On the `cout` line, `total` hasn't been declared yet, so the compiler rejects it. Declare before you use."
+        }
+      }
+    },
+    {
+      "id": "typein-01",
+      "concept": "variables",
+      "difficulty": "easy",
+      "kind": "typein",
+      "title": "Trace the final value",
+      "variants": {
+        "python": {
+          "code": "x = 2\nx = x * 5\nx = x - 3\nprint(x)",
+          "prompt": "What number does this print?",
+          "accepted": ["7"],
+          "explanation": "Follow it one line at a time: x starts at 2, becomes 2 * 5 = 10, then becomes 10 - 3 = 7. Tracing line by line — writing down the value after each step — is the single most useful debugging habit you can build."
+        },
+        "java": {
+          "code": "int x = 2;\nx = x * 5;\nx = x - 3;\nSystem.out.println(x);",
+          "prompt": "What number does this print?",
+          "accepted": ["7"],
+          "explanation": "Trace it: x starts at 2, becomes 2 * 5 = 10, then 10 - 3 = 7. Writing down the value after each line is the most useful debugging habit you can build."
+        },
+        "javascript": {
+          "code": "let x = 2;\nx = x * 5;\nx = x - 3;\nconsole.log(x);",
+          "prompt": "What number does this print?",
+          "accepted": ["7"],
+          "explanation": "Trace it: x starts at 2, becomes 2 * 5 = 10, then 10 - 3 = 7. Writing down the value after each line is the most useful debugging habit you can build."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int x = 2;\n    x = x * 5;\n    x = x - 3;\n    cout << x;\n    return 0;\n}",
+          "prompt": "What number does this print?",
+          "accepted": ["7"],
+          "explanation": "Trace it: x starts at 2, becomes 2 * 5 = 10, then 10 - 3 = 7. Writing down the value after each line is the most useful debugging habit you can build."
+        }
+      }
+    },
+    {
+      "id": "compound-update-01",
+      "concept": "variables",
+      "difficulty": "easy",
+      "kind": "typein",
+      "title": "Update with shorthand",
+      "variants": {
+        "python": {
+          "code": "points = 6\npoints += 4\npoints *= 2\nprint(points)",
+          "prompt": "What number does this print?",
+          "accepted": ["20"],
+          "explanation": "Start at 6. The += update adds 4, making 10. The *= update then multiplies that current value by 2, making 20. Each shorthand uses the value already stored in the variable."
+        },
+        "java": {
+          "code": "int points = 6;\npoints += 4;\npoints *= 2;\nSystem.out.println(points);",
+          "prompt": "What number does this print?",
+          "accepted": ["20"],
+          "explanation": "Start at 6. points += 4 stores 10, then points *= 2 stores 20. Compound assignment updates the existing variable rather than creating a new one."
+        },
+        "javascript": {
+          "code": "let points = 6;\npoints += 4;\npoints *= 2;\nconsole.log(points);",
+          "prompt": "What number does this print?",
+          "accepted": ["20"],
+          "explanation": "Start at 6. The first compound assignment changes points to 10, and the second changes it to 20. The updates happen in order."
+        },
+        "cpp": {
+          "code": "int points = 6;\npoints += 4;\npoints *= 2;\ncout << points;",
+          "prompt": "What number does this print?",
+          "accepted": ["20"],
+          "explanation": "Start at 6. points += 4 makes 10, then points *= 2 makes 20. Compound assignment reads and updates the same variable."
+        }
+      }
+    },
+    {
+      "id": "copy-value-01",
+      "concept": "variables",
+      "difficulty": "easy",
+      "kind": "mcq-output",
+      "title": "Copying a stored value",
+      "variants": {
+        "python": {
+          "code": "first = 12\nsecond = first\nfirst = 30\nprint(second)",
+          "prompt": "What does this print?",
+          "choices": ["12", "30", "42", "NameError"],
+          "answer_index": 0,
+          "explanation": "second receives the value 12 when the assignment runs. Reassigning first later does not revisit the earlier assignment, so second remains 12."
+        },
+        "java": {
+          "code": "int first = 12;\nint second = first;\nfirst = 30;\nSystem.out.println(second);",
+          "prompt": "What does this print?",
+          "choices": ["12", "30", "42", "Compile error"],
+          "answer_index": 0,
+          "explanation": "For primitive ints, second receives a copy of the value in first. Changing first afterward does not change second, so 12 prints."
+        },
+        "javascript": {
+          "code": "let first = 12;\nlet second = first;\nfirst = 30;\nconsole.log(second);",
+          "prompt": "What does this print?",
+          "choices": ["12", "30", "42", "undefined"],
+          "answer_index": 0,
+          "explanation": "Numbers are copied by value. second stores 12 before first changes, so the later reassignment has no effect on second."
+        },
+        "cpp": {
+          "code": "int first = 12;\nint second = first;\nfirst = 30;\ncout << second;",
+          "prompt": "What does this print?",
+          "choices": ["12", "30", "42", "Compile error"],
+          "answer_index": 0,
+          "explanation": "The int value is copied into second. The variables occupy separate storage, so assigning 30 to first leaves second at 12."
+        }
+      }
+    },
+    {
+      "id": "shadow-scope-01",
+      "concept": "variables",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "A local name hides another",
+      "variants": {
+        "python": {
+          "code": "message = \"outside\"\ndef show():\n    message = \"inside\"\n    print(message)\nshow()\nprint(message)",
+          "prompt": "What does this print?",
+          "choices": ["inside then outside", "inside then inside", "outside then outside", "UnboundLocalError"],
+          "answer_index": 0,
+          "explanation": "The assignment inside show creates a local variable that temporarily hides the global name. The function prints inside, while the unchanged global variable prints outside afterward."
+        },
+        "java": {
+          "code": "static String message = \"outside\";\nstatic void show() {\n    String message = \"inside\";\n    System.out.println(message);\n}\n// show(); then print the field message",
+          "prompt": "What do the two print operations produce?",
+          "choices": ["inside then outside", "inside then inside", "outside then outside", "Compile error"],
+          "answer_index": 0,
+          "explanation": "The local variable inside show hides the field only within that method. After show returns, the field still contains outside."
+        },
+        "javascript": {
+          "code": "let message = \"outside\";\nfunction show() {\n  let message = \"inside\";\n  console.log(message);\n}\nshow();\nconsole.log(message);",
+          "prompt": "What does this print?",
+          "choices": ["inside then outside", "inside then inside", "outside then outside", "ReferenceError"],
+          "answer_index": 0,
+          "explanation": "The let inside the function creates a local binding that hides the outer one. It disappears when the call ends, leaving the outer value unchanged."
+        },
+        "cpp": {
+          "code": "string message = \"outside\";\n{\n    string message = \"inside\";\n    cout << message << endl;\n}\ncout << message;",
+          "prompt": "What does this print?",
+          "choices": ["inside then outside", "inside then inside", "outside then outside", "Compile error"],
+          "answer_index": 0,
+          "explanation": "The inner block declares a new variable that hides the outer message until the closing brace. The outer variable still stores outside after the block."
+        }
+      }
+    },
+    {
+      "id": "static-vs-dynamic-01",
+      "concept": "variables",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Assigning a different kind of value",
+      "variants": {
+        "python": {
+          "code": "value = 7\nvalue = \"seven\"\nprint(value)",
+          "prompt": "What happens?",
+          "choices": ["It prints seven", "It raises TypeError on the second assignment", "It prints 7", "It prints both values"],
+          "answer_index": 0,
+          "explanation": "Python variables are dynamically typed names. The name value can refer to an int and later refer to a string, so the final print shows seven."
+        },
+        "java": {
+          "code": "int value = 7;\nvalue = \"seven\";\nSystem.out.println(value);",
+          "prompt": "What happens?",
+          "choices": ["It prints seven", "It fails to compile because a String cannot be assigned to an int", "It prints 7", "It converts seven to a number"],
+          "answer_index": 1,
+          "explanation": "The declaration fixes value as an int variable. Java rejects a later String assignment because the types are incompatible."
+        },
+        "javascript": {
+          "code": "let value = 7;\nvalue = \"seven\";\nconsole.log(value);",
+          "prompt": "What happens?",
+          "choices": ["It logs seven", "It throws TypeError on the second assignment", "It logs 7", "It logs undefined"],
+          "answer_index": 0,
+          "explanation": "A JavaScript variable can hold values of different types over time. The string replaces the number, so seven is logged."
+        },
+        "cpp": {
+          "code": "int value = 7;\nvalue = \"seven\";\ncout << value;",
+          "prompt": "What happens?",
+          "choices": ["It prints seven", "It fails to compile because a string cannot be assigned to an int", "It prints 7", "It converts seven to zero"],
+          "answer_index": 1,
+          "explanation": "The declaration fixes value as an int. A string literal is not an int value, so the compiler rejects the assignment."
+        }
+      }
+    }
+  ]
+}

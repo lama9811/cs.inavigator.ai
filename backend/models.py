@@ -1,5 +1,5 @@
 # backend/models.py
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Float, ForeignKey, UniqueConstraint, func
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Float, ForeignKey, UniqueConstraint, Index, func
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from db import Base
@@ -288,6 +288,69 @@ class CodingSnippet(Base):
     )
 
     user = relationship("User", backref="coding_snippets")
+
+
+class CodingAttemptEvent(Base):
+    """Append-only log of coding attempts — one row per Run / Submit / free run.
+
+    CodingPracticeProgress only records *that* a student solved a question. This
+    records *how they got there*: which attempt failed, what kind of failure it was,
+    which tests broke, how many hints they had open, and how long they'd been on the
+    problem. That difference is what per-topic mastery, the adaptive ladder, and a
+    real "common mistakes" panel are built from — none of which can be derived from
+    the current progress row.
+
+    Append-only on purpose. Rows are never updated or deleted by the app, so the
+    history stays a faithful record of what actually happened.
+
+    Privacy: we store the *shape* of a failure (error class, which test names broke),
+    never the student's source code. `code_len` is a size, not the code.
+    """
+    __tablename__ = "coding_attempt_events"
+    __table_args__ = (
+        # The two queries this table exists to serve: "how is this student doing on
+        # this topic" and "what do students get wrong on this question".
+        Index("ix_coding_attempt_user_question", "user_id", "question_id"),
+        Index("ix_coding_attempt_question_created", "question_id", "created_at"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+
+    # Where the attempt came from: "practice" | "freerun" | "interview".
+    # Free runs have no question, so question_id is nullable.
+    source = Column(String(20), nullable=False, default="practice")
+    question_id = Column(String(80), nullable=True, index=True)
+    # Denormalized from the question bank at write time so mastery queries don't have
+    # to re-load the JSON bank, and so the row still means something if a question is
+    # later retitled or recategorized.
+    topic = Column(String(80), nullable=True, index=True)
+    difficulty = Column(String(20), nullable=True)
+    language = Column(String(30), nullable=False, default="python")
+
+    # "pass" | "fail" | "error" | "timeout"  — what happened overall.
+    outcome = Column(String(20), nullable=False)
+    # "syntax" | "runtime" | "wrong_answer" | "timeout" | None (on a pass).
+    # The single most valuable field here: "didn't know the language" and "didn't know
+    # the algorithm" are different problems and need different teaching.
+    error_class = Column(String(30), nullable=True, index=True)
+
+    tests_passed = Column(Integer, nullable=False, default=0)
+    tests_total = Column(Integer, nullable=False, default=0)
+    # JSON-encoded array of failing test names. Text (not a JSON column) so it works on
+    # both local SQLite and Cloud SQL MySQL, matching CodingUserProgress.daily_days.
+    failed_tests = Column(Text, nullable=True)
+
+    # Client-reported effort signals. Best-effort: a student can reload the page and
+    # reset the timer, so treat these as a trend, not a measurement.
+    hints_used = Column(Integer, nullable=False, default=0)
+    seconds_since_open = Column(Integer, nullable=True)
+
+    code_len = Column(Integer, nullable=False, default=0)
+    duration_ms = Column(Integer, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+
+    user = relationship("User", backref="coding_attempt_events")
 
 
 class FailedQuery(Base):

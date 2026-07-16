@@ -1,0 +1,450 @@
+{
+  "_note": "Functions. Curriculum sequence follows Foundations of Python Programming (Runestone) ch.12 and Think Python ch.3. Both are copyleft (GFDL / CC BY-NC-SA), so NO content is copied from either: only the topic order is used, and a topic sequence is not copyrightable. Every question below is original. Concepts covered: defining and calling, parameters vs arguments, return vs print (the headline confusion), a missing return giving back nothing, return ending the function early, argument order, and local scope.",
+  "concept": "functions",
+  "concept_label": "Functions",
+  "questions": [
+    {
+      "id": "call-01",
+      "concept": "functions",
+      "difficulty": "easy",
+      "kind": "mcq-output",
+      "title": "Defining is not calling",
+      "variants": {
+        "python": {
+          "code": "def greet():\n    print(\"hello\")\n\nprint(\"start\")",
+          "prompt": "What does this print?",
+          "choices": ["start", "hello, then start", "start, then hello", "hello"],
+          "answer_index": 0,
+          "explanation": "Defining a function only teaches the computer what `greet` means. The body does not run until somebody calls it with `greet()`, and nobody here ever does. Only \"start\" prints."
+        },
+        "java": {
+          "code": "static void greet() {\n    System.out.println(\"hello\");\n}\n\npublic static void main(String[] args) {\n    System.out.println(\"start\");\n}",
+          "prompt": "What does this print?",
+          "choices": ["start", "hello, then start", "start, then hello", "hello"],
+          "answer_index": 0,
+          "explanation": "Defining a method only teaches the computer what `greet` means. The body does not run until somebody calls it with `greet()`, and `main` never does. Only \"start\" prints."
+        },
+        "javascript": {
+          "code": "function greet() {\n  console.log(\"hello\");\n}\n\nconsole.log(\"start\");",
+          "prompt": "What does this print?",
+          "choices": ["start", "hello, then start", "start, then hello", "hello"],
+          "answer_index": 0,
+          "explanation": "Defining a function only teaches the computer what `greet` means. The body does not run until somebody calls it with `greet()`, and nobody here ever does. Only \"start\" prints."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nvoid greet() {\n    cout << \"hello\" << endl;\n}\n\nint main() {\n    cout << \"start\" << endl;\n    return 0;\n}",
+          "prompt": "What does this print?",
+          "choices": ["start", "hello, then start", "start, then hello", "hello"],
+          "answer_index": 0,
+          "explanation": "Defining a function only teaches the computer what `greet` means. The body does not run until somebody calls it with `greet()`, and `main` never does. Only \"start\" prints."
+        }
+      }
+    },
+    {
+      "id": "print-not-return-01",
+      "concept": "functions",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "A function that prints gives nothing back",
+      "error_class": "wrong_answer",
+      "variants": {
+        "python": {
+          "code": "def square(n):\n    print(n * n)\n\nanswer = square(4)\nprint(answer)",
+          "prompt": "What does this print?",
+          "choices": [
+            "16, then None",
+            "16, then 16",
+            "None, then 16",
+            "16 only"
+          ],
+          "answer_index": 0,
+          "explanation": "`square` prints 16 to the screen, which you can see, but it never returns anything. A function with no `return` hands back `None`, so `answer` is None and the second print shows None. Printing shows a value to a person; returning gives it to your program. They are not the same, and this is the confusion that catches the most people."
+        },
+        "java": {
+          "code": "static void square(int n) {\n    System.out.println(n * n);\n}\n\npublic static void main(String[] args) {\n    square(4);\n    System.out.println(\"done\");\n}",
+          "prompt": "What does this print?",
+          "choices": [
+            "16, then done",
+            "done, then 16",
+            "16 only",
+            "It fails to compile"
+          ],
+          "answer_index": 0,
+          "explanation": "`square` is declared `void`, so it hands nothing back. It can print 16, but you could not write `int answer = square(4);` because there is no value to store. Printing shows a value to a person; returning gives it to your program. Change `void` to `int` and add `return n * n;` to get a value you can use."
+        },
+        "javascript": {
+          "code": "function square(n) {\n  console.log(n * n);\n}\n\nconst answer = square(4);\nconsole.log(answer);",
+          "prompt": "What does this print?",
+          "choices": [
+            "16, then undefined",
+            "16, then 16",
+            "undefined, then 16",
+            "16 only"
+          ],
+          "answer_index": 0,
+          "explanation": "`square` prints 16, which you can see, but it never returns anything. A function with no `return` hands back `undefined`, so `answer` is undefined. Printing shows a value to a person; returning gives it to your program. They are not the same, and this is the confusion that catches the most people."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nvoid square(int n) {\n    cout << n * n << endl;\n}\n\nint main() {\n    square(4);\n    cout << \"done\" << endl;\n    return 0;\n}",
+          "prompt": "What does this print?",
+          "choices": [
+            "16, then done",
+            "done, then 16",
+            "16 only",
+            "Compile error"
+          ],
+          "answer_index": 0,
+          "explanation": "`square` is declared `void`, so it hands nothing back. It can print 16, but you could not write `int answer = square(4);` because there is no value to store. Printing shows a value to a person; returning gives it to your program. Change `void` to `int` and add `return n * n;` to get a value you can use."
+        }
+      }
+    },
+    {
+      "id": "return-value-01",
+      "concept": "functions",
+      "difficulty": "easy",
+      "kind": "typein",
+      "title": "Using what a function returns",
+      "variants": {
+        "python": {
+          "code": "def double(n):\n    return n * 2\n\nresult = double(5) + double(3)\nprint(result)",
+          "prompt": "What number does this print?",
+          "accepted": ["16"],
+          "explanation": "Each call runs the function and produces a value where the call was written. `double(5)` becomes 10 and `double(3)` becomes 6, so the line reads 10 + 6, which is 16. That is what `return` buys you: the result can be used in an expression, stored, or passed along."
+        },
+        "java": {
+          "code": "static int doubleIt(int n) {\n    return n * 2;\n}\n\npublic static void main(String[] args) {\n    int result = doubleIt(5) + doubleIt(3);\n    System.out.println(result);\n}",
+          "prompt": "What number does this print?",
+          "accepted": ["16"],
+          "explanation": "Each call runs the method and produces a value where the call was written. `doubleIt(5)` becomes 10 and `doubleIt(3)` becomes 6, so the line reads 10 + 6, which is 16. That is what `return` buys you: the result can be used in an expression, stored, or passed along."
+        },
+        "javascript": {
+          "code": "function double(n) {\n  return n * 2;\n}\n\nconst result = double(5) + double(3);\nconsole.log(result);",
+          "prompt": "What number does this print?",
+          "accepted": ["16"],
+          "explanation": "Each call runs the function and produces a value where the call was written. `double(5)` becomes 10 and `double(3)` becomes 6, so the line reads 10 + 6, which is 16. That is what `return` buys you: the result can be used in an expression, stored, or passed along."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint doubleIt(int n) {\n    return n * 2;\n}\n\nint main() {\n    int result = doubleIt(5) + doubleIt(3);\n    cout << result;\n    return 0;\n}",
+          "prompt": "What number does this print?",
+          "accepted": ["16"],
+          "explanation": "Each call runs the function and produces a value where the call was written. `doubleIt(5)` becomes 10 and `doubleIt(3)` becomes 6, so the line reads 10 + 6, which is 16. That is what `return` buys you: the result can be used in an expression, stored, or passed along."
+        }
+      }
+    },
+    {
+      "id": "return-stops-01",
+      "concept": "functions",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "return ends the function immediately",
+      "variants": {
+        "python": {
+          "code": "def check(n):\n    if n > 0:\n        return \"positive\"\n    return \"not positive\"\n\nprint(check(5))",
+          "prompt": "What does this print?",
+          "choices": [
+            "positive",
+            "not positive",
+            "positive, then not positive",
+            "None"
+          ],
+          "answer_index": 0,
+          "explanation": "The moment a `return` runs, the function ends and hands the value back. 5 is greater than 0, so it returns \"positive\" and the last line never runs. That is why an early return does not need an `else` after it: reaching the next line already means the condition was false."
+        },
+        "java": {
+          "code": "static String check(int n) {\n    if (n > 0) {\n        return \"positive\";\n    }\n    return \"not positive\";\n}\n\npublic static void main(String[] args) {\n    System.out.println(check(5));\n}",
+          "prompt": "What does this print?",
+          "choices": [
+            "positive",
+            "not positive",
+            "positive, then not positive",
+            "It fails to compile"
+          ],
+          "answer_index": 0,
+          "explanation": "The moment a `return` runs, the method ends and hands the value back. 5 is greater than 0, so it returns \"positive\" and the last line never runs. That is why an early return does not need an `else` after it: reaching the next line already means the condition was false."
+        },
+        "javascript": {
+          "code": "function check(n) {\n  if (n > 0) {\n    return \"positive\";\n  }\n  return \"not positive\";\n}\n\nconsole.log(check(5));",
+          "prompt": "What does this print?",
+          "choices": [
+            "positive",
+            "not positive",
+            "positive, then not positive",
+            "undefined"
+          ],
+          "answer_index": 0,
+          "explanation": "The moment a `return` runs, the function ends and hands the value back. 5 is greater than 0, so it returns \"positive\" and the last line never runs. That is why an early return does not need an `else` after it: reaching the next line already means the condition was false."
+        },
+        "cpp": {
+          "code": "#include <iostream>\n#include <string>\nusing namespace std;\n\nstring check(int n) {\n    if (n > 0) {\n        return \"positive\";\n    }\n    return \"not positive\";\n}\n\nint main() {\n    cout << check(5);\n    return 0;\n}",
+          "prompt": "What does this print?",
+          "choices": [
+            "positive",
+            "not positive",
+            "positive, then not positive",
+            "Compile error"
+          ],
+          "answer_index": 0,
+          "explanation": "The moment a `return` runs, the function ends and hands the value back. 5 is greater than 0, so it returns \"positive\" and the last line never runs. That is why an early return does not need an `else` after it: reaching the next line already means the condition was false."
+        }
+      }
+    },
+    {
+      "id": "missing-return-01",
+      "concept": "functions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "The branch with no return",
+      "error_class": "wrong_answer",
+      "variants": {
+        "python": {
+          "code": "def bigger(a, b):\n    if a > b:\n        return a\n\nprint(bigger(3, 9))",
+          "prompt": "What does this print?",
+          "choices": [
+            "None",
+            "9",
+            "3",
+            "It raises an error"
+          ],
+          "answer_index": 0,
+          "explanation": "3 is not greater than 9, so the `if` body is skipped and the function reaches its end without hitting a `return`. A function that falls off the end hands back `None`. Nothing crashes, which is what makes this hard to find: your program just quietly starts working with None. Every path through a function needs to return something."
+        },
+        "java": {
+          "code": "static int bigger(int a, int b) {\n    if (a > b) {\n        return a;\n    }\n}",
+          "prompt": "What happens when you compile this?",
+          "choices": [
+            "Compile error: missing return statement",
+            "It compiles and returns 0 when a is not bigger",
+            "It compiles and returns null",
+            "It compiles fine"
+          ],
+          "answer_index": 0,
+          "explanation": "Java checks that every possible path returns a value, and here the path where `a > b` is false returns nothing. It refuses to compile. This is Java being a friend: the same code in Python would run and quietly hand back None."
+        },
+        "javascript": {
+          "code": "function bigger(a, b) {\n  if (a > b) {\n    return a;\n  }\n}\n\nconsole.log(bigger(3, 9));",
+          "prompt": "What does this print?",
+          "choices": [
+            "undefined",
+            "9",
+            "3",
+            "It throws a TypeError"
+          ],
+          "answer_index": 0,
+          "explanation": "3 is not greater than 9, so the `if` body is skipped and the function reaches its end without hitting a `return`. A function that falls off the end hands back `undefined`. Nothing crashes, which is what makes this hard to find: your program quietly starts working with undefined. Every path through a function needs to return something."
+        },
+        "cpp": {
+          "code": "int bigger(int a, int b) {\n    if (a > b) {\n        return a;\n    }\n}",
+          "prompt": "What is wrong with this function?",
+          "choices": [
+            "Not every path returns a value, so calling it with a <= b is undefined behavior",
+            "Nothing, it returns 0 when a is not bigger",
+            "It will not compile under any circumstances",
+            "Nothing, it returns b automatically"
+          ],
+          "answer_index": 0,
+          "explanation": "When `a > b` is false the function ends without returning anything, and reading that result is undefined behavior. Most compilers only warn rather than refuse, so it may build and then hand you a garbage number. That is the C++ pattern to watch for: the language often lets you do the wrong thing quietly. Make sure every path returns."
+        }
+      }
+    },
+    {
+      "id": "arg-order-01",
+      "concept": "functions",
+      "difficulty": "medium",
+      "kind": "typein",
+      "title": "Arguments fill parameters in order",
+      "error_class": "wrong_answer",
+      "variants": {
+        "python": {
+          "code": "def subtract(a, b):\n    return a - b\n\nprint(subtract(3, 10))",
+          "prompt": "What number does this print?",
+          "accepted": ["-7"],
+          "explanation": "Arguments fill the parameters left to right, so `a` is 3 and `b` is 10. The function returns 3 - 10, which is -7. The names in the call do not matter; the position does. Getting two arguments the wrong way round produces a perfectly runnable program with a wrong answer."
+        },
+        "java": {
+          "code": "static int subtract(int a, int b) {\n    return a - b;\n}\n\npublic static void main(String[] args) {\n    System.out.println(subtract(3, 10));\n}",
+          "prompt": "What number does this print?",
+          "accepted": ["-7"],
+          "explanation": "Arguments fill the parameters left to right, so `a` is 3 and `b` is 10. The method returns 3 - 10, which is -7. Position is what matters. Getting two arguments the wrong way round produces a program that compiles and runs and gives a wrong answer."
+        },
+        "javascript": {
+          "code": "function subtract(a, b) {\n  return a - b;\n}\n\nconsole.log(subtract(3, 10));",
+          "prompt": "What number does this print?",
+          "accepted": ["-7"],
+          "explanation": "Arguments fill the parameters left to right, so `a` is 3 and `b` is 10. The function returns 3 - 10, which is -7. Position is what matters. Getting two arguments the wrong way round produces a program that runs fine and gives a wrong answer."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint subtract(int a, int b) {\n    return a - b;\n}\n\nint main() {\n    cout << subtract(3, 10);\n    return 0;\n}",
+          "prompt": "What number does this print?",
+          "accepted": ["-7"],
+          "explanation": "Arguments fill the parameters left to right, so `a` is 3 and `b` is 10. The function returns 3 - 10, which is -7. Position is what matters. Getting two arguments the wrong way round produces a program that compiles and runs and gives a wrong answer."
+        }
+      }
+    },
+    {
+      "id": "local-scope-01",
+      "concept": "functions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "A variable made inside a function",
+      "error_class": "runtime",
+      "variants": {
+        "python": {
+          "code": "def compute():\n    result = 42\n\ncompute()\nprint(result)",
+          "prompt": "What happens when this runs?",
+          "choices": [
+            "NameError: name 'result' is not defined",
+            "It prints 42",
+            "It prints None",
+            "It prints 0"
+          ],
+          "answer_index": 0,
+          "explanation": "`result` is created inside the function, so it only exists while the function is running. When `compute()` finishes, it is gone. The last line asks for a name that does not exist out here. To get a value out of a function, `return` it."
+        },
+        "java": {
+          "code": "static void compute() {\n    int result = 42;\n}\n\npublic static void main(String[] args) {\n    compute();\n    System.out.println(result);\n}",
+          "prompt": "What happens when you compile this?",
+          "choices": [
+            "Compile error: cannot find symbol 'result'",
+            "It prints 42",
+            "It prints 0",
+            "It prints null"
+          ],
+          "answer_index": 0,
+          "explanation": "`result` is a local variable, so it only exists inside `compute`. By the time `main` reaches the print, that variable is long gone, and the compiler cannot even find the name. To get a value out of a method, `return` it."
+        },
+        "javascript": {
+          "code": "function compute() {\n  const result = 42;\n}\n\ncompute();\nconsole.log(result);",
+          "prompt": "What happens when this runs?",
+          "choices": [
+            "ReferenceError: result is not defined",
+            "It prints 42",
+            "It prints undefined",
+            "It prints null"
+          ],
+          "answer_index": 0,
+          "explanation": "`result` is created inside the function, so it only exists while the function is running. Once `compute()` finishes, it is gone. The last line asks for a name that does not exist out here. To get a value out of a function, `return` it."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nvoid compute() {\n    int result = 42;\n}\n\nint main() {\n    compute();\n    cout << result;\n    return 0;\n}",
+          "prompt": "What happens when you compile this?",
+          "choices": [
+            "Compile error: 'result' was not declared in this scope",
+            "It prints 42",
+            "It prints 0",
+            "It prints garbage"
+          ],
+          "answer_index": 0,
+          "explanation": "`result` is a local variable, so it only exists inside `compute`. By the time `main` reaches the `cout`, that variable is gone, and the compiler cannot find the name at all. To get a value out of a function, `return` it."
+        }
+      }
+    },
+    {
+      "id": "reuse-01",
+      "concept": "functions",
+      "difficulty": "easy",
+      "kind": "typein",
+      "title": "Calling the same function twice",
+      "variants": {
+        "python": {
+          "code": "def add_tax(price):\n    return price + (price * 0.10)\n\ntotal = add_tax(100) + add_tax(200)\nprint(int(total))",
+          "prompt": "What number does this print?",
+          "accepted": ["330"],
+          "explanation": "Each call runs the body fresh with its own argument. `add_tax(100)` gives 110 and `add_tax(200)` gives 220, so the total is 330. This is the whole point of a function: write the rule once, then apply it as often as you like. If the tax rate changes, you edit one line."
+        },
+        "java": {
+          "code": "static double addTax(double price) {\n    return price + (price * 0.10);\n}\n\npublic static void main(String[] args) {\n    double total = addTax(100) + addTax(200);\n    System.out.println((int) total);\n}",
+          "prompt": "What number does this print?",
+          "accepted": ["330"],
+          "explanation": "Each call runs the body fresh with its own argument. `addTax(100)` gives 110.0 and `addTax(200)` gives 220.0, so the total is 330.0, printed as 330. This is the whole point of a method: write the rule once, then apply it as often as you like. If the tax rate changes, you edit one line."
+        },
+        "javascript": {
+          "code": "function addTax(price) {\n  return price + (price * 0.10);\n}\n\nconst total = addTax(100) + addTax(200);\nconsole.log(Math.round(total));",
+          "prompt": "What number does this print?",
+          "accepted": ["330"],
+          "explanation": "Each call runs the body fresh with its own argument. `addTax(100)` gives 110 and `addTax(200)` gives 220, so the total is 330. This is the whole point of a function: write the rule once, then apply it as often as you like. If the tax rate changes, you edit one line."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\ndouble addTax(double price) {\n    return price + (price * 0.10);\n}\n\nint main() {\n    double total = addTax(100) + addTax(200);\n    cout << (int) total;\n    return 0;\n}",
+          "prompt": "What number does this print?",
+          "accepted": ["330"],
+          "explanation": "Each call runs the body fresh with its own argument. `addTax(100)` gives 110.0 and `addTax(200)` gives 220.0, so the total is 330.0, printed as 330. This is the whole point of a function: write the rule once, then apply it as often as you like. If the tax rate changes, you edit one line."
+        }
+      }
+    },
+    {
+      "id": "function-in-condition-01",
+      "concept": "functions",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "A function that hands back true or false",
+      "variants": {
+        "python": {
+          "code": "def is_even(n):\n    return n % 2 == 0\n\nif is_even(7):\n    print(\"even\")\nelse:\n    print(\"odd\")",
+          "prompt": "What does this print?",
+          "choices": ["odd", "even", "True", "False"],
+          "answer_index": 0,
+          "explanation": "`7 % 2` is 1, and 1 == 0 is False, so the function returns False and the `else` runs. A function that returns a boolean can be dropped straight into an `if`, which is how you give a condition a readable name."
+        },
+        "java": {
+          "code": "static boolean isEven(int n) {\n    return n % 2 == 0;\n}\n\npublic static void main(String[] args) {\n    if (isEven(7)) {\n        System.out.println(\"even\");\n    } else {\n        System.out.println(\"odd\");\n    }\n}",
+          "prompt": "What does this print?",
+          "choices": ["odd", "even", "true", "false"],
+          "answer_index": 0,
+          "explanation": "`7 % 2` is 1, and 1 == 0 is false, so the method returns false and the `else` runs. A method that returns a boolean can be dropped straight into an `if`, which is how you give a condition a readable name."
+        },
+        "javascript": {
+          "code": "function isEven(n) {\n  return n % 2 === 0;\n}\n\nif (isEven(7)) {\n  console.log(\"even\");\n} else {\n  console.log(\"odd\");\n}",
+          "prompt": "What does this print?",
+          "choices": ["odd", "even", "true", "false"],
+          "answer_index": 0,
+          "explanation": "`7 % 2` is 1, and `1 === 0` is false, so the function returns false and the `else` runs. A function that returns a boolean can be dropped straight into an `if`, which is how you give a condition a readable name."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nbool isEven(int n) {\n    return n % 2 == 0;\n}\n\nint main() {\n    if (isEven(7)) {\n        cout << \"even\";\n    } else {\n        cout << \"odd\";\n    }\n    return 0;\n}",
+          "prompt": "What does this print?",
+          "choices": ["odd", "even", "true", "false"],
+          "answer_index": 0,
+          "explanation": "`7 % 2` is 1, and 1 == 0 is false, so the function returns false and the `else` runs. A function that returns a boolean can be dropped straight into an `if`, which is how you give a condition a readable name."
+        }
+      }
+    },
+    {
+      "id": "param-copy-01",
+      "concept": "functions",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Changing a parameter inside the function",
+      "error_class": "wrong_answer",
+      "variants": {
+        "python": {
+          "code": "def bump(n):\n    n = n + 1\n    return n\n\nx = 5\nbump(x)\nprint(x)",
+          "prompt": "What does this print?",
+          "choices": ["5", "6", "None", "It raises an error"],
+          "answer_index": 0,
+          "explanation": "The parameter `n` is its own name inside the function, so changing it does not touch `x` out here. The function does return 6, but the call throws that value away because nobody stored it. `x` is still 5. To keep the result, write `x = bump(x)`."
+        },
+        "java": {
+          "code": "static int bump(int n) {\n    n = n + 1;\n    return n;\n}\n\npublic static void main(String[] args) {\n    int x = 5;\n    bump(x);\n    System.out.println(x);\n}",
+          "prompt": "What does this print?",
+          "choices": ["5", "6", "0", "It fails to compile"],
+          "answer_index": 0,
+          "explanation": "Java passes a COPY of the value, so `n` is its own variable and changing it does not touch `x`. The method does return 6, but the call throws that value away because nobody stored it. `x` is still 5. To keep the result, write `x = bump(x);`."
+        },
+        "javascript": {
+          "code": "function bump(n) {\n  n = n + 1;\n  return n;\n}\n\nlet x = 5;\nbump(x);\nconsole.log(x);",
+          "prompt": "What does this print?",
+          "choices": ["5", "6", "undefined", "NaN"],
+          "answer_index": 0,
+          "explanation": "The parameter `n` is its own name inside the function, so changing it does not touch `x` out here. The function does return 6, but the call throws that value away because nobody stored it. `x` is still 5. To keep the result, write `x = bump(x);`."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint bump(int n) {\n    n = n + 1;\n    return n;\n}\n\nint main() {\n    int x = 5;\n    bump(x);\n    cout << x;\n    return 0;\n}",
+          "prompt": "What does this print?",
+          "choices": ["5", "6", "0", "Compile error"],
+          "answer_index": 0,
+          "explanation": "C++ passes by value by default, so `n` is a copy and changing it does not touch `x`. The function returns 6, but the call throws that value away because nobody stored it. `x` is still 5. Either write `x = bump(x);`, or declare the parameter as a reference (`int& n`) to change the caller's variable directly."
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Debug: Part 1",
+  "summary": "Tell compile errors, crashes, wrong answers, and endless loops apart.",
+  "minutes": 10,
+  "error_classes": [
+    "syntax",
+    "runtime",
+    "wrong_answer",
+    "timeout"
+  ],
+  "refresher": "A compile error stops the program from being built. A runtime error happens after it starts. A logic error finishes with the wrong answer, and a timeout often means a loop did not stop. Identify the category before changing code.",
+  "refresher_code": "std::vector<int> v{1,2};\nstd::cout << v.at(v.size()-1);",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Debugging begins by naming what happened. Did the compiler reject the code? Did the program start and then fail? Did it finish with the wrong output? Did it keep running? Each symptom points you toward a different part of the program."
+    },
+    {
+      "kind": "text",
+      "body": "For a compile error, begin with the first compiler message. For a crash or range error, inspect indexes and empty collections. For wrong output, trace the values one step at a time. For a hang, inspect the loop condition and its update."
+    },
+    {
+      "kind": "code",
+      "caption": "The vector is not empty, so size minus one gives the final valid index and at checks the access.",
+      "code": "#include <iostream>\n#include <vector>\n\nint main() {\n  std::vector<int> values{1, 2};\n\n  if (!values.empty()) {\n    std::cout << values.at(values.size() - 1) << \"\\n\";\n  }\n}",
+      "output": "2"
+    },
+    {
+      "kind": "compare",
+      "caption": "Prefer checked access while locating an index failure.",
+      "wrong_label": "Common mistake",
+      "wrong": "std::cout << values[values.size()];",
+      "right_label": "Clearer version",
+      "right": "std::cout << values.at(values.size() - 1);"
+    },
+    {
+      "kind": "text",
+      "body": "The index in the first version equals the element count, which is one position too far. The corrected expression uses the last valid position, but it still needs an empty check before subtracting one. Checked access gives a useful error instead of silently reading outside the vector."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Fix one clear cause at a time",
+      "body": "One missing symbol can create several compiler messages. Start at the first reported location, make one focused change, rebuild, and then see which messages remain."
+    },
+    {
+      "kind": "check",
+      "prompt": "What kind of issue is a missing semicolon?",
+      "code": "",
+      "choices": [
+        "compile error",
+        "logic error",
+        "timeout",
+        "valid syntax"
+      ],
+      "answer_index": 0,
+      "why": "The compiler cannot parse the statement boundary, so no executable is produced."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does `.at(2)` do for two elements?",
+      "code": "",
+      "choices": [
+        "throws out_of_range",
+        "returns the last item",
+        "adds an item",
+        "returns zero"
+      ],
+      "answer_index": 0,
+      "why": "The valid positions are zero and one, and checked access reports position two as out of range."
+    },
+    {
+      "kind": "list",
+      "title": "Debug: Part 1 checklist",
+      "items": [
+        "Reproduce one input.",
+        "Fix first diagnostics first.",
+        "Inspect the named line.",
+        "Retest after one change."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

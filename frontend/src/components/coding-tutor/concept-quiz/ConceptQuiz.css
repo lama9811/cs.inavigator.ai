@@ -27,39 +27,47 @@ body.coding-dark .practice-library {
   padding-bottom: 0.85rem;
   border-bottom: 1px solid var(--ct-border);
 }
-/* Filled orange back button. Override the global .coding-app button chrome, then
-   set our own fill. Hover = a raise (lift + deeper shadow), NOT a color change. */
-.coding-app .practice-back-btn {
+/* Quiet text-link back button, matching the Learn section's `learn-back-link`: a
+   plain muted label with a small arrow that nudges on hover — NOT a filled orange
+   pill. The app-wide `.coding-app :is(button, ...):hover` (imported after this file,
+   all !important) would otherwise repaint it orange with a big glow, so the resets
+   below are scoped under .coding-app and marked !important to win. */
+.coding-app .practice-back-btn,
+.coding-app .practice-back-btn:hover:not(:disabled) {
   margin-left: auto;
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  background: linear-gradient(
-    135deg,
-    var(--ct-accent),
-    color-mix(in srgb, var(--ct-accent) 78%, #000)
-  );
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  box-shadow: 0 3px 10px color-mix(in srgb, var(--ct-accent) 32%, transparent);
-  font-weight: 700;
-  font-size: 0.9rem;
+  gap: 7px;
+  padding: 4px 6px;
+  border: 0 !important;
+  border-radius: 6px;
+  background: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+  color: var(--ct-muted) !important;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
   cursor: pointer;
-  padding: 0.5rem 1rem;
-  transition: transform 0.14s ease, box-shadow 0.14s ease;
+  transition: color 0.15s ease !important;
 }
-.coding-app .practice-back-btn:hover {
-  color: #fff;
-  text-decoration: none;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px color-mix(in srgb, var(--ct-accent) 42%, transparent);
+.coding-app .practice-back-btn:hover:not(:disabled) {
+  color: var(--ct-text) !important;
 }
-.coding-app .practice-back-btn:active {
-  transform: translateY(0);
+.coding-app .practice-back-btn svg {
+  font-size: 0.72rem;
+  transition: transform 0.15s ease;
+}
+.coding-app .practice-back-btn:hover:not(:disabled) svg {
+  transform: translateX(-3px);
+}
+.coding-app .practice-back-btn:focus-visible {
+  outline: 2px solid var(--ct-primary);
+  outline-offset: 3px;
 }
 
-/* ---- Code | Quiz toggle ---- */
+/* ---- Learn | Practice | Code toggle ---- */
 .practice-mode-toggle {
   display: inline-flex;
   padding: 4px;
@@ -68,7 +76,16 @@ body.coding-dark .practice-library {
   border: 1px solid var(--ct-border);
   border-radius: 999px;
 }
-.practice-mode-btn {
+/* These pills sit INSIDE a track, so they must NOT behave like free-standing
+   buttons. Two app-wide rules in CodingTutor.css otherwise hit them:
+     .coding-app button:hover                 -> a 24px lifted-card shadow
+     .coding-app :is(button, ...):hover       -> bg + border + 26px glow +
+                                                 translateY(-1px), all !important
+   On a segmented control that reads as a glitch: the pill jumps and grows a
+   glow that snaps in un-eased, then the real selection color arrives after.
+   Both of those use !important, so the resets below must too. Shadow and
+   transform stay in the transition list so nothing changes on a separate clock. */
+.coding-app .practice-mode-btn {
   border: none;
   background: transparent;
   color: var(--ct-muted);
@@ -77,20 +94,33 @@ body.coding-dark .practice-library {
   padding: 0.4rem 1.15rem;
   border-radius: 999px;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  box-shadow: none;
+  transform: none;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease !important;
 }
-.practice-mode-btn:hover {
-  color: var(--ct-text);
+/* Hover = a quiet inset wash. The pill stays put and stays flat: the only thing
+   that lifts inside this track is the selected pill. */
+.coding-app .practice-mode-btn:hover:not(:disabled) {
+  background: var(--ct-panel) !important;
+  border-color: transparent !important;
+  color: var(--ct-text) !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
-/* Gradient fill so the active toggle doesn't look flat. */
-.practice-mode-btn.active {
+/* Gradient fill so the active toggle doesn't look flat. Its shadow is tight to
+   the pill, so it reads as a raised switch, not a floating card. Hovering the
+   already-active pill must not repaint it -- that flicker was the "stuck" state. */
+.coding-app .practice-mode-btn.active,
+.coding-app .practice-mode-btn.active:hover:not(:disabled) {
   background: linear-gradient(
     135deg,
     var(--ct-primary),
     color-mix(in srgb, var(--ct-primary) 78%, #12325c)
-  );
-  color: var(--cq-on-primary);
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--ct-primary) 30%, transparent);
+  ) !important;
+  border-color: transparent !important;
+  color: var(--cq-on-primary) !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--ct-primary) 30%, transparent) !important;
+  transform: none !important;
 }
 
 /* ---- Shared bits ---- */
@@ -169,10 +199,28 @@ body.coding-dark .practice-library {
   color: var(--ct-muted);
   max-width: 58ch;
 }
+.cq-language-cards {
+  width: 100%;
+  max-width: 1560px;
+  margin-inline: auto;
+}
+
 .cq-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1.25rem;
+}
+
+@media (max-width: 1100px) {
+  .cq-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .cq-cards-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .cq-language-card {
   --cq-card-tint: var(--ct-primary);
@@ -451,6 +499,138 @@ body.coding-dark .cq-hero-ring::before {
   opacity: 0.85;
 }
 
+/* ---- Beginner and intermediate track groups ---- */
+.cq-track-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cq-track-group {
+  overflow: hidden;
+  background: var(--ct-panel-soft);
+  border: 1px solid var(--ct-border);
+  border-radius: 16px;
+}
+
+.cq-track-toggle {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.2rem;
+  color: var(--ct-text);
+  background: transparent;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cq-track-toggle:hover {
+  background: color-mix(in srgb, var(--ct-primary-soft) 55%, transparent);
+}
+
+.cq-track-badge {
+  min-width: 7.25rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cq-track-badge.is-beginner {
+  color: #166534;
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.cq-track-badge.is-intermediate {
+  color: #5b21b6;
+  background: #ede9fe;
+  border-color: #c4b5fd;
+}
+
+body.coding-dark .cq-track-badge.is-beginner {
+  color: #bbf7d0;
+  background: rgba(22, 101, 52, 0.35);
+  border-color: #166534;
+}
+
+body.coding-dark .cq-track-badge.is-intermediate {
+  color: #ddd6fe;
+  background: rgba(91, 33, 182, 0.35);
+  border-color: #6d28d9;
+}
+
+.cq-track-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.cq-track-copy strong {
+  color: var(--ct-text);
+  font-family: "Sora", var(--font-display, "Public Sans"), sans-serif;
+  font-size: 1.05rem;
+}
+
+.cq-track-copy span {
+  color: var(--ct-muted);
+  font-size: 0.86rem;
+}
+
+.cq-track-stats {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  column-gap: 0.3rem;
+  color: var(--ct-text);
+  font-size: 0.86rem;
+}
+
+.cq-track-stats small {
+  color: var(--ct-muted);
+}
+
+.cq-track-chevron {
+  color: var(--ct-muted);
+  transition: transform 0.18s ease;
+}
+
+.cq-track-group.open .cq-track-chevron {
+  transform: rotate(180deg);
+}
+
+.cq-track-content {
+  padding: 0 1rem 1rem;
+}
+
+@media (max-width: 640px) {
+  .cq-track-toggle {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .cq-track-badge {
+    min-width: 0;
+    justify-self: start;
+  }
+
+  .cq-track-copy,
+  .cq-track-stats {
+    display: none;
+  }
+
+  .cq-track-content {
+    padding: 0 0.65rem 0.65rem;
+  }
+}
+
 /* ---- Category accordion ---- */
 .cq-accordion {
   list-style: none;
@@ -494,14 +674,30 @@ body.coding-dark .cq-hero-ring::before {
 .cq-accordion-head:disabled {
   cursor: not-allowed;
 }
-.cq-accordion-head:not(:disabled):hover {
-  background: var(--ct-panel-soft);
+/* The app-wide `.coding-app :is(button, ...):hover` (0,4,0, all !important, loaded
+   after this file) forces a blue `color` + `transition: color` onto this <button>,
+   which cascades into the title/blurb and repaints the whole row blue with a flash.
+   The row's INTENDED hover is a periwinkle rail + faint wash with readable text, so
+   pin the color at (0,5,0) and kill the color transition; keep the rail below. */
+.coding-app .cq-accordion-head {
+  transition: background 0.14s ease, box-shadow 0.14s ease !important;
+}
+.coding-app .cq-accordion-head:not(:disabled):hover {
+  background: var(--ct-panel-soft) !important;
+  color: var(--ct-text) !important;
+  box-shadow: none !important;
+}
+.coding-app .cq-accordion-head:not(:disabled):hover .cq-accordion-title {
+  color: var(--ct-text) !important;
+}
+.coding-app .cq-accordion-head:not(:disabled):hover .cq-accordion-blurb {
+  color: var(--ct-muted) !important;
 }
 /* Dark-mode hover revamp: periwinkle-blue left rail + subtle inset glow, matching
    the question-row hover so the whole accordion reads with one electric accent. */
-body.coding-dark .cq-accordion-head:not(:disabled):hover {
-  background: rgba(59, 130, 246, 0.08);
-  box-shadow: inset 4px 0 0 0 #3b82f6;
+body.coding-dark .coding-app .cq-accordion-head:not(:disabled):hover {
+  background: rgba(59, 130, 246, 0.08) !important;
+  box-shadow: inset 4px 0 0 0 #3b82f6 !important;
 }
 .cq-accordion-num {
   flex: 0 0 auto;
@@ -976,6 +1172,10 @@ body.coding-dark .cq-question-kind.group-parsons {
 }
 
 /* Larger, bolder question prompt in the display font so it anchors the pane. */
+/* Keep the active question unmistakably readable on the light quiz surface. */
+body:not(.coding-dark) .coding-app .cq-prompt {
+  color: #071b33;
+}
 .cq-prompt {
   margin: 0 0 1rem;
   color: var(--ct-text);
@@ -1029,6 +1229,68 @@ body.coding-dark .cq-question-kind.group-parsons {
   color: var(--ct-muted);
   font-size: 0.9rem;
   max-width: 46ch;
+}
+
+/* The refresher: a reminder mid-question, not the whole lesson. Comes from the same
+   authored file as the full lesson (backend/lessons.py) so the two can't contradict
+   each other. */
+.cq-learn-refresher {
+  line-height: 1.65;
+  color: var(--ct-text) !important;
+}
+
+.cq-learn-refresher code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ct-accent) 12%, transparent);
+  color: var(--ct-accent);
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.86em;
+}
+
+.cq-learn-code {
+  margin: 0.85rem 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ct-border, rgba(148, 163, 184, 0.25));
+  border-radius: 8px;
+  background: var(--ct-editor-bg, #0f172a);
+  overflow-x: auto;
+}
+
+.cq-learn-code code {
+  color: var(--ct-editor-text, #e2e8f0);
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  white-space: pre;
+}
+
+/* The escape hatch: a refresher isn't always enough. */
+.cq-learn-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 1rem;
+  padding: 7px 13px;
+  border: 1px solid color-mix(in srgb, var(--ct-accent) 45%, transparent);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ct-accent);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.cq-learn-more:hover {
+  background: color-mix(in srgb, var(--ct-accent) 12%, transparent);
+  border-color: var(--ct-accent);
+}
+
+.cq-learn-more:focus-visible {
+  outline: 2px solid var(--ct-accent);
+  outline-offset: 2px;
 }
 
 /* ---- Answer panels ---- */
@@ -1305,9 +1567,92 @@ body.coding-dark .cq-question-kind.group-parsons {
   font-weight: 600;
 }
 .cq-result-explanation {
-  margin: 0;
+  margin: 0.65rem 0 0;
   color: var(--ct-muted);
   font-size: 0.85rem;
+}
+.cq-result-explanation strong {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: var(--ct-text);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.cq-result-explanation p {
+  margin: 0;
+}
+.cq-result-more {
+  margin-top: 0.5rem;
+  color: var(--ct-muted);
+}
+.cq-result-more summary {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--ct-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.cq-result-more[open] summary {
+  margin-bottom: 0.35rem;
+}
+.cq-result-more p {
+  margin: 0;
+}.cq-result-answer-review {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-top: 0.65rem;
+}
+.cq-result-answer {
+  min-width: 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--ct-border);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--ct-panel) 88%, var(--ct-bg));
+}
+.cq-result-answer span {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: var(--ct-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.cq-result-answer code {
+  display: block;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  color: var(--ct-text);
+  font-size: 0.82rem;
+}
+.cq-result-answer.student {
+  border-color: color-mix(in srgb, #d0493b 45%, var(--ct-border));
+}
+.cq-result-answer.correct {
+  border-color: color-mix(in srgb, var(--ct-success) 45%, var(--ct-border));
+}
+@media (max-width: 640px) {
+  .cq-result-more {
+  margin-top: 0.5rem;
+  color: var(--ct-muted);
+}
+.cq-result-more summary {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--ct-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.cq-result-more[open] summary {
+  margin-bottom: 0.35rem;
+}
+.cq-result-more p {
+  margin: 0;
+}.cq-result-answer-review {
+    grid-template-columns: 1fr;
+  }
 }
 .cq-results-actions {
   display: flex;

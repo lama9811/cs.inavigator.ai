@@ -1,0 +1,184 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "inheritance-interfaces",
+  "concept_label": "Inheritance & Interfaces",
+  "language": "java",
+  "questions": [
+    {
+      "id": "java-inheritance-interfaces-check-1",
+      "concept": "inheritance-interfaces",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "java",
+      "title": "Inheritance & Interfaces practice 1",
+      "code": "interface Payable { double amountDue(); }",
+      "prompt": "Which declaration lets a class promise the methods in Payable?",
+      "choices": [
+        "class Invoice implements Payable",
+        "class Invoice imports Payable",
+        "class Invoice includes Payable",
+        "class Invoice instanceOf Payable"
+      ],
+      "answer_index": 0,
+      "explanation": "The `implements` keyword connects a class to an interface contract. The class must then provide the required abstract methods."
+    },
+    {
+      "id": "java-inheritance-interfaces-check-2",
+      "concept": "inheritance-interfaces",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "java",
+      "title": "Inheritance & Interfaces practice 2",
+      "code": "@Override\npublic String toString() { return \"Invoice\"; }",
+      "prompt": "Why add `@Override` above a method?",
+      "choices": [
+        "It asks the compiler to verify a matching parent method",
+        "It makes the method private",
+        "It permits two return types",
+        "It creates the superclass"
+      ],
+      "answer_index": 0,
+      "explanation": "The annotation catches misspelled names and mismatched parameters at compile time. It does not change access or create inheritance by itself."
+    },
+    {
+      "id": "java-inheritance-interfaces-output-01",
+      "concept": "inheritance-interfaces",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "java",
+      "title": "Trace Inheritance & Interfaces",
+      "code": "interface Payable {\n    double amountDue();\n}\nclass Invoice implements Payable {\n    public double amountDue() { return 25.0; }\n}\nclass Membership implements Payable {\n    public double amountDue() { return 10.0; }\n}\nList<Payable> bills = List.of(new Invoice(), new Membership());\nfor (Payable bill : bills) System.out.println(bill.amountDue());",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "25.0\n10.0"
+      ],
+      "explanation": "Both classes satisfy Payable, so one list can hold both. The loop calls the version belonging to the actual object. The resulting output is '25.0\\n10.0'."
+    },
+    {
+      "id": "java-inheritance-interfaces-supplement-01",
+      "concept": "inheritance-interfaces",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Inheritance & Interfaces practice 5",
+      "code": "void printBill(Payable bill) {\n    System.out.println(bill.amountDue());\n}",
+      "prompt": "Why declare the parameter as the interface `Payable` rather than the class `Invoice`?",
+      "choices": [
+        "The method then accepts any type that implements Payable, including future ones",
+        "Interfaces run faster than concrete classes",
+        "Invoice cannot be printed with println",
+        "Only interfaces are allowed as method parameters"
+      ],
+      "answer_index": 0,
+      "explanation": "Accepting `Payable` lets the method work with `Invoice`, `Receipt`, or any class that implements the interface, now or later. Requiring `Invoice` locks it to one class. This is about flexibility, not speed, and concrete classes are perfectly valid parameter types too."
+    },
+    {
+      "id": "java-inheritance-interfaces-authored-01",
+      "concept": "inheritance-interfaces",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Inheritance & Interfaces concept check 1",
+      "code": null,
+      "prompt": "What does the lesson mean by \"Inheritance means is-a\"?",
+      "choices": [
+        "class Invoice imports Payable",
+        "Use `extends` only when every child truly is a usable version of the parent. If one class merely needs another object's help, keep that helper in a field and use composition.",
+        "class Invoice includes Payable",
+        "class Invoice instanceOf Payable"
+      ],
+      "answer_index": 1,
+      "explanation": "A class `extends` one superclass and may `implement` several interfaces. Override methods to provide subtype behavior, use the interface type for flexible variables, and prefer composition when classes only need to reuse a helper rather than form a true is-a relationship. That reasoning supports the answer: Use `extends` only when every child truly is a usable version of the parent. If one class merely needs another object's help, keep that helper in a field and use composition."
+    },
+    {
+      "id": "java-inheritance-interfaces-authored-02",
+      "concept": "inheritance-interfaces",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Inheritance & Interfaces concept check 2",
+      "code": null,
+      "prompt": "Which choice describes a reliable Inheritance & Interfaces practice?",
+      "choices": [
+        "It makes the method private",
+        "It permits two return types",
+        "Use an interface to state a capability.",
+        "It creates the superclass"
+      ],
+      "answer_index": 2,
+      "explanation": "A class `extends` one superclass and may `implement` several interfaces. Override methods to provide subtype behavior, use the interface type for flexible variables, and prefer composition when classes only need to reuse a helper rather than form a true is-a relationship. That reasoning supports the answer: Use an interface to state a capability."
+    },
+    {
+      "id": "java-inheritance-interfaces-authored-03",
+      "concept": "inheritance-interfaces",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Inheritance & Interfaces concept check 3",
+      "code": null,
+      "prompt": "Which recommendation belongs in a review of Inheritance & Interfaces code?",
+      "choices": [
+        "void printBill(Invoice bill) {\n    System.out.println(bill.amountDue());\n}",
+        "class Invoice instanceOf Payable",
+        "It makes the method private",
+        "Type variables by the contract when callers need flexibility."
+      ],
+      "answer_index": 3,
+      "explanation": "A class `extends` one superclass and may `implement` several interfaces. Override methods to provide subtype behavior, use the interface type for flexible variables, and prefer composition when classes only need to reuse a helper rather than form a true is-a relationship. That reasoning supports the answer: Type variables by the contract when callers need flexibility."
+    },
+    {
+      "id": "java-inheritance-interfaces-authored-04",
+      "concept": "inheritance-interfaces",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Inheritance & Interfaces concept check 4",
+      "code": null,
+      "prompt": "Which guideline helps prevent a common Inheritance & Interfaces mistake?",
+      "choices": [
+        "Use `@Override` for compiler checking.",
+        "It permits two return types",
+        "It creates the superclass",
+        "void printBill(Invoice bill) {\n    System.out.println(bill.amountDue());\n}"
+      ],
+      "answer_index": 0,
+      "explanation": "A class `extends` one superclass and may `implement` several interfaces. Override methods to provide subtype behavior, use the interface type for flexible variables, and prefer composition when classes only need to reuse a helper rather than form a true is-a relationship. That reasoning supports the answer: Use `@Override` for compiler checking."
+    },
+    {
+      "id": "java-inheritance-interfaces-authored-05",
+      "concept": "inheritance-interfaces",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Inheritance & Interfaces concept check 5",
+      "code": null,
+      "prompt": "A classmate is checking their understanding of Inheritance & Interfaces. Which advice is correct?",
+      "choices": [
+        "class Invoice imports Payable",
+        "Reserve `extends` for a true is-a relationship.",
+        "class Invoice includes Payable",
+        "It permits two return types"
+      ],
+      "answer_index": 1,
+      "explanation": "A class `extends` one superclass and may `implement` several interfaces. Override methods to provide subtype behavior, use the interface type for flexible variables, and prefer composition when classes only need to reuse a helper rather than form a true is-a relationship. That reasoning supports the answer: Reserve `extends` for a true is-a relationship."
+    },
+    {
+      "id": "java-inheritance-interfaces-authored-06",
+      "concept": "inheritance-interfaces",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Inheritance & Interfaces concept check 6",
+      "code": null,
+      "prompt": "Which choice shows sound reasoning about Inheritance & Interfaces?",
+      "choices": [
+        "It creates the superclass",
+        "void printBill(Invoice bill) {\n    System.out.println(bill.amountDue());\n}",
+        "Prefer composition for simple code reuse.",
+        "class Invoice imports Payable"
+      ],
+      "answer_index": 2,
+      "explanation": "A class `extends` one superclass and may `implement` several interfaces. Override methods to provide subtype behavior, use the interface type for flexible variables, and prefer composition when classes only need to reuse a helper rather than form a true is-a relationship. That reasoning supports the answer: Prefer composition for simple code reuse."
+    }
+  ]
+}

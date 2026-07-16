@@ -1,0 +1,130 @@
+{
+  "_note": "ORIGINAL content. The topic order follows the standard free Java text (Eck, 'Introduction to Programming Using Java', ch.2: primitive types, literals, type conversion). A topic sequence is not copyrightable; prose is. No sentence, example, or exercise here is copied or paraphrased from it. Eck's book is CC BY-NC-SA, so copying its words would bind CS Navigator's content to that license permanently, including its NonCommercial clause. Every word below was written for this project.",
+  "title": "Data Types",
+  "summary": "Whole numbers, decimals, true or false, single characters, and text, plus what happens when you mix them.",
+  "minutes": 8,
+  "error_classes": [
+    "wrong_answer",
+    "syntax"
+  ],
+  "refresher": "In Java you announce the type before the name: `int score = 90;`. The four primitives you will use most are `int` for whole numbers, `double` for decimals, `boolean` for true or false, and `char` for a single character in single quotes. `String` is not a primitive. It is an object, and it holds text in double quotes. Dividing two ints gives an int, so `5 / 2` is 2, not 2.5. Make one side a double to get a decimal answer. Java also checks types before your program runs, so putting text in an int is a compile error and nothing runs at all.",
+  "refresher_code": "int total = 7;\nint count = 2;\nSystem.out.println(total / count);\n// 3\nSystem.out.println((double) total / count);\n// 3.5",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "In Java, every variable has a type, and you write that type down yourself. Python looks at the value and guesses. Java makes you say it first, on the same line, in front of the name. That extra word buys you something: Java can check your types before the program ever runs."
+    },
+    {
+      "kind": "code",
+      "caption": "The full wrapper is shown once here so you can see where these lines live. Every later example in this lesson is just the statements from inside `main`, with the class and the `main` method around them assumed.",
+      "code": "public class Main {\n    public static void main(String[] args) {\n        int studentCount = 42;\n        double gpa = 3.75;\n        boolean isEnrolled = true;\n        char grade = 'A';\n        String name = \"Ada\";\n\n        System.out.println(studentCount);\n        System.out.println(gpa);\n        System.out.println(isEnrolled);\n        System.out.println(grade);\n        System.out.println(name);\n    }\n}",
+      "output": "42\n3.75\ntrue\nA\nAda"
+    },
+    {
+      "kind": "list",
+      "title": "The five you will use constantly",
+      "items": [
+        "`int` holds a whole number: 42, 0, -7. No decimal point, ever.",
+        "`double` holds a number with a decimal point: 3.75, 2.0, -0.5.",
+        "`boolean` holds exactly one of two values: `true` or `false`, lowercase, no quotes.",
+        "`char` holds one single character in single quotes: 'A', '7', '?'.",
+        "`String` holds text in double quotes: \"Ada\", \"7\", \"hello world\"."
+      ]
+    },
+    {
+      "kind": "code",
+      "caption": "The first four in that list are primitives, meaning a plain value and nothing more. `String` is the odd one out. It is an object, so it carries methods you can call on it. That is the practical difference: a `String` can tell you its own length, and a `char` cannot.",
+      "code": "char initial = 'A';\nString fullName = \"Ada\";\n\nSystem.out.println(initial);\nSystem.out.println(fullName.length());",
+      "output": "A\n3"
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "Single quotes and double quotes are not interchangeable",
+      "body": "`char c = \"A\";` does not compile. Java reads the double quotes, sees a `String`, then finds a `char` waiting for it, and stops with `incompatible types: String cannot be converted to char`. One character in double quotes is still a `String`. If you want a `char`, use single quotes."
+    },
+    {
+      "kind": "text",
+      "body": "Now the part of this lesson that will cost you points on an assignment if you skip it. When Java divides two `int` values, the answer is an `int`. There is no room for a decimal inside an `int`, so Java throws the decimal part away and keeps the whole number."
+    },
+    {
+      "kind": "code",
+      "caption": "Same numbers, three different answers. The type of the result is decided by the types you divided, not by the value you were hoping for. One `double` anywhere in the division is enough to get a decimal back.",
+      "code": "System.out.println(5 / 2);\nSystem.out.println(5.0 / 2);\nSystem.out.println(5 / 2.0);",
+      "output": "2\n2.5\n2.5"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "5 / 2 is 2, and Java never mentions it",
+      "body": "This is called integer division. It does not round to the nearest whole number, it chops the decimal off, so 5 / 2 is 2 and 9 / 10 is 0. Nothing is underlined, nothing crashes, and your program prints its answer with total confidence. When a number comes out lower than you expected, or comes out as a flat 0, check whether both sides of the `/` were ints."
+    },
+    {
+      "kind": "compare",
+      "caption": "The left version looks like it should work. `average` is declared as a `double`, so surely the answer is a decimal. It is not. Java finishes the division first, while both sides are still ints, and 7 / 2 is 3. Only then is that 3 stored into a `double`, which turns it into 3.0. The decimal was already gone. That trailing .0 is what makes the bug so slippery: it came from the type you declared, not from the math.",
+      "wrong_label": "Prints 3.0",
+      "wrong": "int total = 7;\nint count = 2;\n\ndouble average = total / count;\nSystem.out.println(average);\n// 3.0",
+      "right_label": "Prints 3.5",
+      "right": "int total = 7;\nint count = 2;\n\ndouble average = (double) total / count;\nSystem.out.println(average);\n// 3.5"
+    },
+    {
+      "kind": "check",
+      "prompt": "A student is working out what percent of the points they earned. What does this print?",
+      "code": "int earned = 3;\nint possible = 4;\ndouble percent = (earned / possible) * 100;\nSystem.out.println(percent);",
+      "choices": [
+        "0.0",
+        "75.0",
+        "75",
+        "It does not compile"
+      ],
+      "answer_index": 0,
+      "why": "Look at what is inside the parentheses. `earned / possible` is 3 / 4, and both are ints, so the answer has to be an int. Java chops the decimal and gets 0. Then 0 * 100 is 0, and storing that in a `double` prints 0.0. If you picked 75.0, you did the math the way a person would, and that is exactly the trap: the parentheses forced the division to happen while both sides were still ints. Write `((double) earned / possible) * 100` and you get 75.0."
+    },
+    {
+      "kind": "code",
+      "caption": "Turning one type into another is called casting. You write the type you want in parentheses in front of the value. Casting a `double` to an `int` truncates, the same way integer division does, so 9.99 becomes 9 and not 10. Do not reach for a cast when you meant to round. Going the other way, `int` into `double`, needs no cast at all, because nothing is lost.",
+      "code": "double price = 9.99;\nint rounded = (int) price;\nSystem.out.println(rounded);\n\nint whole = 7;\ndouble asDouble = whole;\nSystem.out.println(asDouble);",
+      "output": "9\n7.0"
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "Java will not quietly shrink a value for you",
+      "body": "Write `int n = 9.99;` and it does not compile. The message is `possible lossy conversion from double to int`. Java is telling you a `double` does not fit inside an `int`, and it will not guess whether you wanted to lose the .99. Adding the cast, `int n = (int) 9.99;`, is you saying yes, throw it away. Now it compiles, and n is 9."
+    },
+    {
+      "kind": "compare",
+      "caption": "Java is statically typed. Before your program runs, the compiler reads every line and checks that the types line up. Here the print sits above the bad line, and you still never see the word starting. Not one line ran, because the compiler rejected the file before it produced anything to run. In Python a mix-up like this blows up mid-run, after some output has already appeared. In Java it is caught first, so if you see none of your output at all, suspect the compiler and not your logic.",
+      "wrong_label": "Does not compile",
+      "wrong": "System.out.println(\"starting\");\nint x = \"5\";\nSystem.out.println(x);\n\n// error: incompatible types:\n// String cannot be\n// converted to int",
+      "right_label": "Compiles and runs",
+      "right": "System.out.println(\"starting\");\nint x = Integer.parseInt(\"5\");\nSystem.out.println(x);\n\n// starting\n// 5"
+    },
+    {
+      "kind": "check",
+      "prompt": "Which line stops this program from compiling?",
+      "code": "int a = 5;\ndouble b = 5;\nString c = \"5\";\nint d = c;",
+      "choices": [
+        "`double b = 5;`, because 5 has no decimal point",
+        "`String c = \"5\";`, because \"5\" is a number in quotes",
+        "`int d = c;`, because a String cannot be stored in an int",
+        "None of them, all four lines are fine"
+      ],
+      "answer_index": 2,
+      "why": "`int d = c;` is the line Java rejects, with `incompatible types: String cannot be converted to int`. It is a compile error and not a crash, so the program never starts and none of the other lines run either. The other three are all legal. `double b = 5;` works because an `int` widens into a `double` with nothing lost, and it stores 5.0. `String c = \"5\";` is fine too: the quotes make it text, and text is what a `String` holds. To pull the number out of that text, use `Integer.parseInt(c)`."
+    },
+    {
+      "kind": "list",
+      "title": "Habits that prevent most type bugs in Java",
+      "items": [
+        "If you want a decimal out of a division, make sure at least one side is a `double` before the `/` runs.",
+        "Casting truncates. `(int) 9.99` is 9. If you meant to round, use `Math.round` instead.",
+        "Single quotes give you a `char`. Double quotes give you a `String`. They are not the same type.",
+        "Text that looks like a number is still text. Use `Integer.parseInt` or `Double.parseDouble` to get the number out of it.",
+        "Put a `String` on either side of a `+` and Java glues instead of adding, so `\"Score: \" + 5` gives you Score: 5.",
+        "A compile error means nothing ran. Fix the types first, then go back to the logic.",
+        "When an answer comes out as 0, or as a whole number with .0 stuck on the end, look for two ints on either side of a `/`."
+      ]
+    }
+  ]
+}

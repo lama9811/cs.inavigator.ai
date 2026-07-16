@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. Topic coverage follows the curriculum in Runestone Foundations of Python Programming, Think Python, and OpenStax Introduction to Python Programming. No prose, examples, or exercises were copied; the sources guide topic selection only.",
+  "title": "Comprehensions",
+  "summary": "Build a collection from a short, readable rule.",
+  "minutes": 9,
+  "error_classes": [
+    "syntax",
+    "wrong_answer"
+  ],
+  "refresher": "A comprehension builds a new collection by looping over an iterable. Write the result expression first, then the `for` part, and add an `if` part only when values should be filtered. Use a normal loop when the rule needs several steps.",
+  "refresher_code": "squares = [number * number for number in range(4)]\nprint(squares)\n# [0, 1, 4, 9]",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Many loops follow the same pattern: start an empty list, change each value, and append the result. A list comprehension writes that simple pattern as one expression."
+    },
+    {
+      "kind": "code",
+      "caption": "Read the comprehension as: make `number * number` for each number in the range. It creates a new list and does not change the range.",
+      "code": "numbers = [1, 2, 3, 4]\nsquares = [number * number for number in numbers]\nprint(squares)",
+      "output": "[1, 4, 9, 16]"
+    },
+    {
+      "kind": "text",
+      "body": "An optional `if` filters the input. It decides which items reach the result expression. This is different from an if-else expression, which chooses between two result values."
+    },
+    {
+      "kind": "compare",
+      "caption": "The comprehension is useful because the job has one change and one filter. More steps would be easier to follow as a regular loop.",
+      "wrong_label": "Too much packed in",
+      "wrong": "result = [clean(x) if valid(x) else fix(x)\n          for x in data if keep(x)]",
+      "right_label": "One clear rule",
+      "right": "even_squares = [n * n for n in numbers\n                if n % 2 == 0]"
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Short does not always mean clear",
+      "body": "A comprehension is a good fit when you can say its rule in one breath. Choose a normal loop when you need several conditions, temporary names, logging, or error handling."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does this create?",
+      "code": "values = [n + 1 for n in [2, 4, 6]]",
+      "choices": [
+        "[3, 5, 7]",
+        "[2, 4, 6, 1]",
+        "[2, 5, 8]",
+        "[1, 1, 1]"
+      ],
+      "answer_index": 0,
+      "why": "The expression `n + 1` runs once for each input value. Adding one to 2, 4, and 6 produces 3, 5, and 7."
+    },
+    {
+      "kind": "text",
+      "body": "Set and dictionary comprehensions use the same reading order. Curly braces with one expression create a set. Curly braces with a key and value separated by a colon create a dictionary."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which expression creates a dictionary that maps each word to its length?",
+      "code": "words = [\"cat\", \"tiger\"]",
+      "choices": [
+        "{word: len(word) for word in words}",
+        "[word, len(word) for word in words]",
+        "{len(word) for word in words}",
+        "dict(word for len(word) in words)"
+      ],
+      "answer_index": 0,
+      "why": "A dictionary comprehension needs a key expression, a colon, and a value expression before the for clause. Here each word is the key and its length is the value."
+    },
+    {
+      "kind": "list",
+      "title": "Comprehension checklist",
+      "items": [
+        "Use a comprehension to create a new collection.",
+        "Keep the expression and filter simple.",
+        "Do not use one only to cause side effects.",
+        "Choose brackets for a list and braces for a set or dictionary.",
+        "Switch to a normal loop when the rule becomes hard to read."
+      ]
+    }
+  ]
+}

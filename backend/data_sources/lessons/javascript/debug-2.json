@@ -1,0 +1,84 @@
+{
+  "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
+  "title": "Debug: Part 2",
+  "summary": "Trace coercion, mutation, references, and edge cases.",
+  "minutes": 10,
+  "error_classes": [
+    "runtime",
+    "wrong_answer",
+    "timeout"
+  ],
+  "refresher": "Deeper bugs can begin before the visible failure. Record both value and type, identify mutations, and test empty, one-item, and boundary inputs.",
+  "refresher_code": "console.log(value,typeof value);\nconsole.log(array.slice());",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Deeper bugs can begin before the visible failure. Record both value and type, identify mutations, and test empty, one-item, and boundary inputs. Trace coercion, mutation, references, and edge cases."
+    },
+    {
+      "kind": "text",
+      "body": "Multi-step bugs require finding the first incorrect transition, not only the line where the problem becomes visible. Take small snapshots of values, types, and shared references. When data changes unexpectedly, identify every operation that could mutate the same object."
+    },
+    {
+      "kind": "code",
+      "caption": "Spread creates a separate array, so pushing into the copy leaves the original unchanged.",
+      "code": "const original=[1,2];\nconst copy=[...original];\ncopy.push(3);\nconsole.log(original.length);\nconsole.log(copy.length);",
+      "output": "2\n3"
+    },
+    {
+      "kind": "compare",
+      "caption": "Give a planned copy its own array before mutation.",
+      "wrong_label": "Common mistake",
+      "wrong": "const copy = original;\ncopy.push(3);",
+      "right_label": "Clearer version",
+      "right": "const copy = [...original];\ncopy.push(3);"
+    },
+    {
+      "kind": "text",
+      "body": "The wrong assignment creates a second route to one array. The corrected spread creates a separate outer collection, so the lengths can diverge. If elements are objects, inspect whether those inner objects are still shared before assuming a fully independent copy."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Trace this carefully",
+      "body": "A console can make `5` and `\"5\"` look similar; log typeof beside uncertain data when plus or equality acts strangely."
+    },
+    {
+      "kind": "check",
+      "prompt": "Why can numeric sort look wrong?",
+      "code": "console.log([2,11,3].sort());",
+      "choices": [
+        "default sort compares strings",
+        "arrays cannot sort numbers",
+        "eleven is negative",
+        "sort drops a value"
+      ],
+      "answer_index": 0,
+      "why": "Without a comparison function, sort orders string forms and places eleven before two."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does `const b=a` do for arrays?",
+      "code": "const a=[1];\nconst b=a;",
+      "choices": [
+        "copies the reference",
+        "makes an independent array",
+        "freezes both",
+        "converts to text"
+      ],
+      "answer_index": 0,
+      "why": "Both variables point to one array, so mutation through either name changes the shared value."
+    },
+    {
+      "kind": "list",
+      "title": "Debug: Part 2 checklist",
+      "items": [
+        "Test smallest inputs.",
+        "Log value and type.",
+        "Mark mutating operations.",
+        "Find the first wrong transition."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

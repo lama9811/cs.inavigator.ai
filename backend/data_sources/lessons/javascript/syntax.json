@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
+  "title": "Syntax",
+  "summary": "Write statements the JavaScript engine can parse.",
+  "minutes": 10,
+  "error_classes": [
+    "syntax",
+    "runtime"
+  ],
+  "refresher": "JavaScript needs matching quotes, parentheses, brackets, and braces. Semicolons separate statements, braces group blocks, and `console.log(...)` displays a value.",
+  "refresher_code": "const course = \"CS 101\";\nconsole.log(course);",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "JavaScript needs matching quotes, parentheses, brackets, and braces. Semicolons separate statements, braces group blocks, and `console.log(...)` displays a value. Write statements the JavaScript engine can parse."
+    },
+    {
+      "kind": "text",
+      "body": "JavaScript first parses the whole file. Parsing means checking whether the symbols form valid instructions. Only after that check can execution begin. This is why one missing quote can stop output from lines that appear earlier: the engine could not finish reading the program as a complete unit."
+    },
+    {
+      "kind": "code",
+      "caption": "The string closes correctly, and the template literal inserts the stored campus name.",
+      "code": "const campus = \"Morgan State\";\nconsole.log(`Welcome to ${campus}`);",
+      "output": "Welcome to Morgan State"
+    },
+    {
+      "kind": "compare",
+      "caption": "A balanced statement gives the parser a clear ending.",
+      "wrong_label": "Common mistake",
+      "wrong": "console.log(\"Welcome\";",
+      "right_label": "Clearer version",
+      "right": "console.log(\"Welcome\");"
+    },
+    {
+      "kind": "text",
+      "body": "Read the corrected line from the inside out: the quotes make a string, the parentheses pass it to `log`, and the semicolon ends the statement. If an error mentions an unexpected token, inspect the symbol just before the reported location too."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Watch this detail",
+      "body": "An unexpected end of input often points to an earlier opening symbol that never received its matching closer."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which line has valid syntax?",
+      "code": "",
+      "choices": [
+        "console.log(\"Hello\");",
+        "console.log(\"Hello);",
+        "console log(\"Hello\");",
+        "console.log[\"Hello\");"
+      ],
+      "answer_index": 0,
+      "why": "The first choice balances its quotes and parentheses and uses the dot required before `log`."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is displayed?",
+      "code": "// console.log(\"hidden\");\nconsole.log(\"shown\");",
+      "choices": [
+        "shown",
+        "hidden",
+        "both words",
+        "a syntax error"
+      ],
+      "answer_index": 0,
+      "why": "The first line is a comment, so only the second statement executes."
+    },
+    {
+      "kind": "list",
+      "title": "Syntax checklist",
+      "items": [
+        "Match every opening symbol.",
+        "Use `//` for a line comment.",
+        "Indent nested braces clearly.",
+        "Read the first parser message."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

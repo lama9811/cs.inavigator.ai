@@ -1,0 +1,91 @@
+{
+  "_note": "ORIGINAL content. Topic sequence follows the standard free intro texts (Runestone FoPP ch.2, Think Python ch.2, OpenStax ch.2); sequences are not copyrightable. No prose, examples, or exercises are copied from any of them: all are copyleft (GFDL / CC BY-NC-SA), and copying would bind CS Navigator's content to those terms.",
+  "title": "Variables",
+  "summary": "Give a value a name so you can use it again.",
+  "minutes": 5,
+  "error_classes": ["syntax", "runtime"],
+  "refresher": "A variable is a name that holds a value. You create one by assigning to it: `score = 10`. The name goes on the left, the value on the right, and the `=` means \"put this value in this name\". It is not a comparison. Assigning to a name that already exists replaces what was there. Using a name you never assigned is an error, because Python has nothing to look up.",
+  "refresher_code": "score = 10\nscore = score + 5\nprint(score)\n# 15",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A variable is a name for a value. You make one by assigning: put the name on the left, an equals sign in the middle, and the value on the right. From then on, writing the name means the value."
+    },
+    {
+      "kind": "code",
+      "caption": "Three variables, three types of value. Python works out the type on its own, so you never have to announce it.",
+      "code": "name = \"Ada\"\nage = 36\nis_student = True\n\nprint(name)\nprint(age)",
+      "output": "Ada\n36"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "The equals sign does not mean equals",
+      "body": "In math, `x = 5` states a fact. In Python it gives an order: put 5 into x. That difference is why `x = x + 1` is not nonsense. It reads as \"take what x is now, add one, and put the result back into x\". Later, when you learn `==`, this is the distinction you will be leaning on: `=` puts a value in, `==` asks whether two values match."
+    },
+    {
+      "kind": "text",
+      "body": "A variable can be reassigned as often as you like. The new value replaces the old one, and the old value is simply gone. Nothing warns you, because replacing a value is usually exactly what you meant to do."
+    },
+    {
+      "kind": "code",
+      "caption": "Each line runs top to bottom, so the value you get depends on when you look. Reading `count` before the last line would have given you 1, not 2.",
+      "code": "count = 1\nprint(count)\ncount = 2\nprint(count)",
+      "output": "1\n2"
+    },
+    {
+      "kind": "check",
+      "prompt": "What does this print?",
+      "code": "total = 5\ntotal = total + 3\ntotal = total * 2\nprint(total)",
+      "choices": ["16", "13", "10", "11"],
+      "answer_index": 0,
+      "why": "Work through it one line at a time, which is exactly how Python does. `total` starts at 5. Then it becomes 5 + 3, which is 8. Then it becomes 8 * 2, which is 16. The trick is that each line uses the value from the line before, not the original 5."
+    },
+    {
+      "kind": "text",
+      "body": "Names are not arbitrary. Python has rules about which ones are allowed, and there is a strong convention about which ones you should actually pick."
+    },
+    {
+      "kind": "list",
+      "title": "Naming rules and habits",
+      "items": [
+        "Letters, digits, and underscores only. No spaces and no dashes.",
+        "It cannot start with a digit. `score2` is fine, `2score` is not.",
+        "Case matters. `score` and `Score` are two different variables.",
+        "Python style is lowercase with underscores: `final_score`, not `finalScore`.",
+        "Say what it holds. `n` tells the next reader nothing; `student_count` tells them everything."
+      ]
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "Using a name you never assigned",
+      "body": "If you type a name Python has never seen, you get a NameError. Nine times out of ten it is a typo: you assigned `total` and then asked for `totl`. The error message names the variable it could not find, so read it and compare it letter by letter against where you defined it. The other cause is asking for a variable before the line that creates it has run."
+    },
+    {
+      "kind": "compare",
+      "caption": "Python reads top to bottom. A variable does not exist until the assignment line has actually run, so asking for it before then is asking for something that is not there yet.",
+      "wrong_label": "NameError",
+      "wrong": "print(greeting)\ngreeting = \"Hi\"\n# asked for it one\n# line too early",
+      "right_label": "Works",
+      "right": "greeting = \"Hi\"\nprint(greeting)\n# created first,\n# then used"
+    },
+    {
+      "kind": "check",
+      "prompt": "Which of these lines is a syntax error?",
+      "code": "1st_place = \"Ada\"\nfirst_place = \"Ada\"\nfirstPlace = \"Ada\"\nfirst_place2 = \"Ada\"",
+      "choices": [
+        "`1st_place = \"Ada\"`",
+        "`firstPlace = \"Ada\"`",
+        "`first_place2 = \"Ada\"`",
+        "None of them, all four are legal"
+      ],
+      "answer_index": 0,
+      "why": "A name cannot start with a digit, so `1st_place` is rejected before the program even runs. `firstPlace` and `first_place2` are both legal. `firstPlace` is against Python's style convention, which prefers underscores, but style is advice and syntax is a rule. Python only refuses to run the one that breaks the rule."
+    },
+    {
+      "kind": "text",
+      "body": "One last habit worth starting now. When a value in your program has a meaning, give it a name even if you only use it once. `price * 0.06` makes a reader guess. `price * sales_tax_rate` does not."
+    }
+  ]
+}

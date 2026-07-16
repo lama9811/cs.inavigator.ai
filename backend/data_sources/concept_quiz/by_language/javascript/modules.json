@@ -1,0 +1,184 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "modules",
+  "concept_label": "Modules",
+  "language": "javascript",
+  "questions": [
+    {
+      "id": "javascript-modules-check-1",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Modules practice 1",
+      "code": null,
+      "prompt": "Which syntax imports a named export called `add`?",
+      "choices": [
+        "import { add } from \"./math.js\";",
+        "import add with \"./math.js\";",
+        "include add from \"./math.js\";",
+        "require { add } \"./math.js\";"
+      ],
+      "answer_index": 0,
+      "explanation": "Named imports use braces around the exact exported name and a from clause containing the module path."
+    },
+    {
+      "id": "javascript-modules-check-2",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Modules practice 2",
+      "code": null,
+      "prompt": "How often is a module normally evaluated when imported by several files?",
+      "choices": [
+        "Once, then its exports are reused",
+        "Once per function call",
+        "Twice for named exports",
+        "It is never evaluated"
+      ],
+      "answer_index": 0,
+      "explanation": "The module system evaluates one module instance and shares its exported bindings with the files that import it."
+    },
+    {
+      "id": "javascript-modules-output-01",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "javascript",
+      "title": "Trace Modules",
+      "code": "// math.js\nexport const double = n => n * 2;\n// app.js\nimport { double } from \"./math.js\";\nconsole.log(double(6));",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "12"
+      ],
+      "explanation": "The exporting file defines one reusable operation, and the importing file names the same exported binding. The resulting output is '12'."
+    },
+    {
+      "id": "javascript-modules-supplement-01",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Modules practice 5",
+      "code": "import { double } from \"./math.js\";",
+      "prompt": "`math.js` has `export function double(...)`. Which import matches it?",
+      "choices": [
+        "import { double } from \"./math.js\";  — braces, because it is a named export",
+        "import double from \"./math.js\";  — no braces",
+        "import * double from \"./math.js\";",
+        "require(\"./math.js\").double;"
+      ],
+      "answer_index": 0,
+      "explanation": "A named export is imported with braces around the exact name: `import { double }`. The brace-free form is only for a `default` export, so it would import `undefined` here. `import * double` is invalid syntax, and `require` is CommonJS, not ES-module syntax."
+    },
+    {
+      "id": "javascript-modules-authored-01",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Modules concept check 1",
+      "code": null,
+      "prompt": "What does the lesson mean by \"Paths are part of the contract\"?",
+      "choices": [
+        "import add with \"./math.js\";",
+        "A correct export can still fail to load when its path is wrong. Relative browser imports normally include the file extension, and a server must deliver the module with an appropriate JavaScript content type.",
+        "include add from \"./math.js\";",
+        "require { add } \"./math.js\";"
+      ],
+      "answer_index": 1,
+      "explanation": "A module exposes selected values with `export` and uses another module with `import`. Named imports must match their exported names. That reasoning supports the answer: A correct export can still fail to load when its path is wrong. Relative browser imports normally include the file extension, and a server must deliver the module with an appropriate JavaScript content type."
+    },
+    {
+      "id": "javascript-modules-authored-02",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Modules concept check 2",
+      "code": null,
+      "prompt": "Which choice describes a reliable Modules practice?",
+      "choices": [
+        "Once per function call",
+        "Twice for named exports",
+        "Give each module one clear responsibility.",
+        "It is never evaluated"
+      ],
+      "answer_index": 2,
+      "explanation": "A module exposes selected values with `export` and uses another module with `import`. Named imports must match their exported names. That reasoning supports the answer: Give each module one clear responsibility."
+    },
+    {
+      "id": "javascript-modules-authored-03",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Modules concept check 3",
+      "code": null,
+      "prompt": "Which recommendation belongs in a review of Modules code?",
+      "choices": [
+        "import double from \"./math.js\";",
+        "require { add } \"./math.js\";",
+        "Once per function call",
+        "Export only values other files need."
+      ],
+      "answer_index": 3,
+      "explanation": "A module exposes selected values with `export` and uses another module with `import`. Named imports must match their exported names. That reasoning supports the answer: Export only values other files need."
+    },
+    {
+      "id": "javascript-modules-authored-04",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Modules concept check 4",
+      "code": null,
+      "prompt": "Which guideline helps prevent a common Modules mistake?",
+      "choices": [
+        "Match named and default import styles.",
+        "Twice for named exports",
+        "It is never evaluated",
+        "import double from \"./math.js\";"
+      ],
+      "answer_index": 0,
+      "explanation": "A module exposes selected values with `export` and uses another module with `import`. Named imports must match their exported names. That reasoning supports the answer: Match named and default import styles."
+    },
+    {
+      "id": "javascript-modules-authored-05",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Modules concept check 5",
+      "code": null,
+      "prompt": "A classmate is checking their understanding of Modules. Which advice is correct?",
+      "choices": [
+        "import add with \"./math.js\";",
+        "Check relative paths and file extensions.",
+        "include add from \"./math.js\";",
+        "Twice for named exports"
+      ],
+      "answer_index": 1,
+      "explanation": "A module exposes selected values with `export` and uses another module with `import`. Named imports must match their exported names. That reasoning supports the answer: Check relative paths and file extensions."
+    },
+    {
+      "id": "javascript-modules-authored-06",
+      "concept": "modules",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Modules concept check 6",
+      "code": null,
+      "prompt": "What is the main idea behind Modules?",
+      "choices": [
+        "It is never evaluated",
+        "import double from \"./math.js\";",
+        "Split a program into files with explicit exports and imports.",
+        "import add with \"./math.js\";"
+      ],
+      "answer_index": 2,
+      "explanation": "A module exposes selected values with `export` and uses another module with `import`. Named imports must match their exported names. That reasoning supports the answer: Split a program into files with explicit exports and imports."
+    }
+  ]
+}

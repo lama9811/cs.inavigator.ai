@@ -39,6 +39,7 @@ LANGUAGE_KEYS = ("python", "java", "javascript", "cpp")
 
 # Question kinds the UI knows how to render. Anything else is a content error.
 VALID_KINDS = {"mcq-output", "mcq-behavior", "typein", "parsons"}
+VALID_TRACKS = {"beginner", "intermediate"}
 
 # ---------------------------------------------------------------------------
 # Raised for bad input (unknown language/category) — the API layer maps these
@@ -89,12 +90,23 @@ def load_manifest() -> dict[str, Any]:
     return _read_json(MANIFEST_PATH)
 
 
+def _track_for_category(category: dict[str, Any]) -> str:
+    """Validate and normalize the Learn track authored in the manifest."""
+    track = str(category.get("track", "") or "").lower().strip()
+    if track not in VALID_TRACKS:
+        raise ConceptQuizDataError(
+            f"Category '{category.get('id', '?')}' has invalid track '{track}'."
+        )
+    return track
+
+
 def categories_for_language(language: str) -> list[dict[str, Any]]:
-    """The 13 categories a language shows: 12 shared + its 1 language-specific.
+    """Shared, core language-specific, and optional lesson-only categories.
 
     Each entry carries id/label/blurb/file plus ``scope`` ("shared" or
-    "language") so the UI can tell them apart, and a ``count`` of questions
-    available in that category for this language.
+    "language"), ``track`` ("beginner" or "intermediate"), and a live question
+    count. Learn uses the track metadata to present a smaller first step without
+    duplicating or moving quiz and lesson content.
     """
     lang = normalize_language(language)
     manifest = load_manifest()
@@ -102,14 +114,28 @@ def categories_for_language(language: str) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for cat in manifest.get("shared_categories", []):
         entry = {**cat, "scope": "shared"}
-        entry["count"] = _count_questions(_shared_path(cat["file"]), lang, scope="shared")
+        entry["track"] = _track_for_category(cat)
+        paths = [_shared_path(cat["file"])]
+        if cat.get("extra_file"):
+            paths.append(_shared_path(cat["extra_file"]))
+        entry["count"] = sum(_count_questions(path, lang, scope="shared") for path in paths)
         out.append(entry)
 
     specific = manifest.get("language_specific", {}).get(lang)
     if specific:
         entry = {**specific, "scope": "language"}
+        entry["track"] = _track_for_category(specific)
         entry["count"] = _count_questions(
             _by_language_path(lang, specific["file"]), lang, scope="language"
+        )
+        out.append(entry)
+
+    for extension in manifest.get("language_extensions", {}).get(lang, []):
+        entry = {**extension, "scope": "extension"}
+        entry["track"] = _track_for_category(extension)
+        entry["lesson_only"] = bool(extension.get("lesson_only", False))
+        entry["count"] = _count_questions(
+            _by_language_path(lang, extension["file"]), lang, scope="language"
         )
         out.append(entry)
     return out
@@ -139,6 +165,10 @@ def _resolve_category(language: str, category_id: str) -> tuple[dict[str, Any], 
     specific = manifest.get("language_specific", {}).get(lang)
     if specific and specific["id"] == wanted:
         return specific, "language", _by_language_path(lang, specific["file"])
+
+    for extension in manifest.get("language_extensions", {}).get(lang, []):
+        if extension["id"] == wanted:
+            return extension, "language", _by_language_path(lang, extension["file"])
 
     raise ConceptQuizError(
         f"Category '{category_id}' is not available for {lang}."
@@ -188,7 +218,14 @@ def _project_question(raw: dict[str, Any], language: str, *, scope: str) -> dict
     # Optional shared metadata that lives at the item level for both scopes.
     # (title/typein_mode/goal/debug_style are per-question, not per-language, so
     # the samples put them on the item; a variant-level value still wins below.)
-    for optional in ("title", "goal", "debug_style", "typein_mode"):
+    #
+    # `error_class` ties a question to the failure mode it teaches, using the SAME
+    # vocabulary the attempt telemetry records (syntax / runtime / wrong_answer /
+    # timeout — see services/attempt_telemetry.py). That shared vocabulary is what lets
+    # the mastery model close the loop: "your last 4 runs didn't compile" can route the
+    # student to the quizzes that teach syntax errors, instead of just telling them they
+    # failed. Optional — most questions teach a concept, not a failure mode.
+    for optional in ("title", "goal", "debug_style", "typein_mode", "error_class"):
         if optional in raw:
             base[optional] = raw[optional]
 
@@ -203,7 +240,9 @@ def _project_question(raw: dict[str, Any], language: str, *, scope: str) -> dict
             raise ConceptQuizDataError(
                 f"Question '{raw.get('id', '?')}' has no '{language}' variant."
             )
-        payload = variant
+        # Common fields can live on the question when only code differs by language.
+        # A language variant still wins for any field it overrides.
+        payload = {**raw, **variant}
     else:
         # Language-specific: content is at the item level. Guard that the file's
         # declared language matches what we're serving.
@@ -263,14 +302,30 @@ def questions_for_category(language: str, category_id: str) -> dict[str, Any]:
     """All questions for one language + category, each projected to that language.
 
     Returns { language, category, category_label, scope, questions[] }.
+
+    A category in the manifest whose content file has not been authored yet returns an
+    EMPTY question list — it is not an error. The manifest is the roadmap of what the
+    Practice Library will cover; the files are what exists so far, and the two are
+    allowed to disagree while authoring is in progress.
+
+    This mirrors `_count_questions`, which has always reported an unauthored category as
+    0 rather than raising. Without it the two disagreed: the category list rendered fine
+    ("Loops · 0 questions") and then *clicking* Loops returned a 500. That was a real bug
+    for every unauthored category — 10 of Python's 13 at the time of writing — and it
+    became a front-door bug the moment Quiz became the Practice Library's default landing.
     """
     lang = normalize_language(language)
     cat, scope, path = _resolve_category(lang, category_id)
-    data = _read_json(path)
 
     questions: list[dict[str, Any]] = []
-    for raw in data.get("questions", []):
-        questions.append(_project_question(raw, lang, scope=scope))
+    paths = [path]
+    if scope == "shared" and cat.get("extra_file"):
+        paths.append(_shared_path(cat["extra_file"]))
+    for content_path in paths:
+        if os.path.exists(content_path):
+            data = _read_json(content_path)
+            for raw in data.get("questions", []):
+                questions.append(_project_question(raw, lang, scope=scope))
 
     return {
         "language": lang,

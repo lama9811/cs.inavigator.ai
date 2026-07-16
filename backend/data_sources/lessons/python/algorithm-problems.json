@@ -1,0 +1,125 @@
+{
+  "_note": "ORIGINAL content. Topic sequence follows the standard free intro texts (Runestone FoPP ch.7 and ch.11, Think Python ch.7 and ch.10, OpenStax ch.5); sequences are not copyrightable. No prose, examples, or exercises are copied from any of them: all three are copyleft (GFDL / CC BY-NC-SA), and copying would bind CS Navigator's content to those terms.",
+  "title": "Algorithm Problems",
+  "summary": "Think the problem through first, then put the lines in the right order.",
+  "minutes": 7,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "Before you write any code, do four things. Read the problem twice. Say it back in your own words. Work one small example by hand and write down every step. Then look for the pattern you just used. Most beginner problems are one of four shapes: an accumulator that builds a running total, a search that looks through items for one that matches, a counter that tallies how many, and a max or min tracker that keeps the best value seen so far. All four share one skeleton. Set something up before the loop, update it inside the loop, use it after the loop.",
+  "refresher_code": "total = 0\nfor n in [4, 8, 15]:\n    total += n\nprint(total)\n# 27",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Most people freeze on a programming problem for a reason that has nothing to do with Python. They read the problem, then immediately start typing. There is no plan yet, so every line is a guess. This lesson is not about new syntax. It is about what you do in the two minutes before you touch the keyboard."
+    },
+    {
+      "kind": "list",
+      "title": "Four steps, in this order",
+      "items": [
+        "Read it. Twice. Slowly. Notice what goes in and what should come out.",
+        "Restate it in your own words, out loud or on paper. If you cannot, you have not understood it yet.",
+        "Do one small example by hand. Actually write the numbers down.",
+        "Find the pattern. Look at what your hand just did, and name the shape."
+      ]
+    },
+    {
+      "kind": "text",
+      "body": "Step three is the one people skip, and it is the one that does the work. Take the problem \"add up all the numbers in a list\" with the list 4, 8, 15. On paper you would write 0, then 4, then 12, then 27. You kept one running number and updated it each time you looked at a new item. That is the whole algorithm. You found it with a pencil."
+    },
+    {
+      "kind": "code",
+      "caption": "The paper version turns straight into code. `total` is the running number you kept, the loop is you looking at each item, and the print is you reading off the final answer.",
+      "code": "total = 0\nfor n in [4, 8, 15]:\n    total += n\nprint(total)",
+      "output": "27"
+    },
+    {
+      "kind": "text",
+      "body": "That shape has a name. It is called an accumulator: a variable you set up before the loop, add to inside the loop, and read after the loop. Once you can see it, you will see it everywhere. Three more shapes cover most of what a first-year problem asks for."
+    },
+    {
+      "kind": "list",
+      "title": "The four shapes you will keep meeting",
+      "items": [
+        "Accumulator: a running total. Start at 0, add each item, print at the end.",
+        "Search: look through the items for one that matches, and stop when you find it.",
+        "Counter: how many items match a rule. Start at 0, add 1 each time the rule is true.",
+        "Max or min: keep the best value you have seen so far, and replace it when you see better."
+      ]
+    },
+    {
+      "kind": "code",
+      "caption": "A counter is an accumulator that adds 1 instead of adding the item. The `if` decides which items count, so the shape barely changes even though the question does.",
+      "code": "scores = [88, 45, 92, 61]\npasses = 0\nfor s in scores:\n    if s >= 60:\n        passes += 1\nprint(passes)",
+      "output": "3"
+    },
+    {
+      "kind": "code",
+      "caption": "A max tracker starts with the first item as the current best, then replaces it whenever it meets something bigger. Starting at 0 instead would break the moment the list holds only negative numbers, as it does here.",
+      "code": "temps = [-4, -9, -1, -7]\nbiggest = temps[0]\nfor t in temps:\n    if t > biggest:\n        biggest = t\nprint(biggest)",
+      "output": "-1"
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "All four shapes have the same skeleton",
+      "body": "Set something up before the loop. Update it inside the loop. Use it after the loop. If you can answer \"what am I keeping track of, and what makes it change?\", you already know where every line goes. That one question is worth more than memorizing any of the four shapes."
+    },
+    {
+      "kind": "check",
+      "prompt": "You are asked: \"Given a list of words, how many of them are longer than 4 letters?\" Which shape is that?",
+      "code": "words = [\"cat\", \"tiger\", \"ox\", \"zebra\"]\n# what shape goes here?",
+      "choices": [
+        "A counter, starting at 0 and adding 1 when the rule is true",
+        "An accumulator, adding each word's length to a running total",
+        "A max tracker, keeping the longest word seen so far",
+        "A search, stopping at the first word longer than 4 letters"
+      ],
+      "answer_index": 0,
+      "why": "The question asks how many, so you are tallying, and a tally is a counter. Adding each word's length answers a different question: how many letters in total. That is the tempting choice, because both versions add something and both reach for `len`. The difference is what you add. A counter adds 1, an accumulator adds the value."
+    },
+    {
+      "kind": "text",
+      "body": "The Practice questions for this topic hand you the lines already written and ask you to drag them into the right order. That sounds easier than writing code from scratch, and in one way it is. But it tests the exact thing that trips people up, which is knowing what belongs before the loop, what belongs inside it, and what belongs after."
+    },
+    {
+      "kind": "compare",
+      "caption": "Both versions use the same four lines. Only the order changed, and that alone turns 15 into 27. Setting up `total` inside the loop wipes it on every pass, so the only thing that survives is the last number.",
+      "wrong_label": "Prints 15",
+      "wrong": "for n in [4, 8, 15]:\n    total = 0\n    total += n\nprint(total)\n# total is wiped\n# on every pass",
+      "right_label": "Prints 27",
+      "right": "total = 0\nfor n in [4, 8, 15]:\n    total += n\nprint(total)\n# total is set up\n# once, before the loop"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Printing inside the loop instead of after it",
+      "body": "If `print(total)` is indented, it runs on every pass and you get 4, then 12, then 27. Three lines where you wanted one. The code is not broken, exactly. It answers a question you were not asked. Decide whether you want one answer at the end or a report of every step, then indent to match."
+    },
+    {
+      "kind": "check",
+      "prompt": "This is meant to find the largest number, but it prints the wrong answer. Why?",
+      "code": "nums = [12, 30, 7]\nfor n in nums:\n    biggest = 0\n    if n > biggest:\n        biggest = n\nprint(biggest)",
+      "choices": [
+        "`biggest = 0` sits inside the loop, so it resets every pass and only the last number survives",
+        "The `if` should use `>=` instead of `>`",
+        "`print(biggest)` should be indented inside the loop",
+        "The list has to be sorted before the loop runs"
+      ],
+      "answer_index": 0,
+      "why": "The setup line belongs before the loop. Where it sits now, `biggest` is knocked back to 0 at the start of every pass. So each comparison only ever sees the current number, and the final answer is 7, the last item. Sorting the list is the tempting answer, because it does happen to give the right number here. But it swaps in a different algorithm instead of fixing this one, and the reset bug would still be sitting there. Move the setup line above the `for` and the code works as written."
+    },
+    {
+      "kind": "list",
+      "title": "When you are stuck on a problem",
+      "items": [
+        "Say what goes in and what comes out. One sentence each.",
+        "Do the smallest example by hand, and write down what you keep track of at each step.",
+        "Name that thing. It is usually a total, a count, a best-so-far, or a match you are hunting for.",
+        "Write the setup line first, then the loop, then the line that uses the result.",
+        "If your answer is only ever the last item, your setup line is probably inside the loop."
+      ]
+    }
+  ]
+}

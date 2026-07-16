@@ -1,0 +1,89 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Conditionals",
+  "summary": "Choose which code runs by asking true-or-false questions.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "syntax"
+  ],
+  "refresher": "C++ checks `if`, then any `else if` branches, and finally `else`. Only the first true branch runs. Put braces around each branch so its beginning and end are easy to see.",
+  "refresher_code": "if(score>=90){ grade=\"A\"; }\nelse { grade=\"Below A\"; }",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A conditional lets the program choose. C++ tests the expression inside `if (...)`. If it is true, that block runs. Otherwise, the program tries the next `else if` or uses the final `else`."
+    },
+    {
+      "kind": "text",
+      "body": "Write comparisons that clearly show the rule, such as `score >= 60`. Put the most specific overlapping rule first because only the first true branch runs. Braces make it clear which statements belong to each choice."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Braces do the job indentation does in Python",
+      "body": "Python uses indentation to show which statements belong to an `if`. C++ uses braces. Indentation still helps people read C++, but the braces are what the compiler follows."
+    },
+    {
+      "kind": "code",
+      "caption": "A score of 92 satisfies the first condition, so C++ prints A and skips the remaining branches.",
+      "code": "#include <iostream>\n\nint main() {\n  int score = 92;\n\n  if (score >= 90) {\n    std::cout << \"A\\n\";\n  } else if (score >= 80) {\n    std::cout << \"B\\n\";\n  } else {\n    std::cout << \"C or below\\n\";\n  }\n}",
+      "output": "A"
+    },
+    {
+      "kind": "compare",
+      "caption": "Remove the stray semicolon so the block belongs to the condition.",
+      "wrong_label": "Common mistake",
+      "wrong": "if (score >= 60); {\n  passed = true;\n}",
+      "right_label": "Clearer version",
+      "right": "if (score >= 60) {\n  passed = true;\n}"
+    },
+    {
+      "kind": "text",
+      "body": "The semicolon in the first version finishes the `if` immediately. The block below it is separate and runs every time. Remove that semicolon so the block runs only when the score is at least sixty."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Do not end the if line with a semicolon",
+      "body": "Write `if (condition) {`, not `if (condition); {`. That extra semicolon creates an empty branch and makes the following block run on its own."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is printed?",
+      "code": "int n=0;\nif(n) std::cout<<\"yes\"; else std::cout<<\"no\";",
+      "choices": [
+        "no",
+        "yes",
+        "0",
+        "an error"
+      ],
+      "answer_index": 0,
+      "why": "Zero converts to false in the condition, so the else branch runs."
+    },
+    {
+      "kind": "check",
+      "prompt": "Why test 90 before 60?",
+      "code": "",
+      "choices": [
+        "95 satisfies both thresholds",
+        "C++ sorts conditions",
+        "else requires equality",
+        "it changes score"
+      ],
+      "answer_index": 0,
+      "why": "Only the first true branch runs, so the broader rule would hide the narrower grade."
+    },
+    {
+      "kind": "list",
+      "title": "Conditionals checklist",
+      "items": [
+        "Order overlapping rules.",
+        "Use visible braces.",
+        "Remove stray semicolons.",
+        "Test each boundary."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

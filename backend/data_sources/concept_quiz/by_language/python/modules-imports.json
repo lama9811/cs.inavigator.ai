@@ -1,0 +1,184 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "modules-imports",
+  "concept_label": "Modules & Imports",
+  "language": "python",
+  "questions": [
+    {
+      "id": "python-modules-imports-check-1",
+      "concept": "modules-imports",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Modules & Imports practice 1",
+      "code": null,
+      "prompt": "Which line makes the `random` module available under its own name?",
+      "choices": [
+        "import random",
+        "from random import randint",
+        "include random",
+        "using random"
+      ],
+      "answer_index": 0,
+      "explanation": "`import random` binds the module name. Its functions are then reached with a dot, such as `random.randint(1, 6)`."
+    },
+    {
+      "id": "python-modules-imports-check-2",
+      "concept": "modules-imports",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "python",
+      "title": "Modules & Imports practice 2",
+      "code": "if __name__ == \"__main__\":\n    print(\"Run demo\")",
+      "prompt": "When does this print?",
+      "choices": [
+        "When this file is run directly",
+        "Every time the file is imported",
+        "Only after an error",
+        "Before Python reads the file"
+      ],
+      "answer_index": 0,
+      "explanation": "Python sets `__name__` to `\"__main__\"` for the file that starts the program. Imported modules receive their module names instead."
+    },
+    {
+      "id": "python-modules-imports-output-01",
+      "concept": "modules-imports",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "python",
+      "title": "Trace Modules & Imports",
+      "code": "import math\n\nside = 5\nprint(math.sqrt(side * side))",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "5.0"
+      ],
+      "explanation": "Importing the module keeps the source of `sqrt` clear. The dot says that the function comes from math. The resulting output is '5.0'."
+    },
+    {
+      "id": "python-modules-imports-supplement-01",
+      "concept": "modules-imports",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Modules & Imports practice 5",
+      "code": "import math\nprint(math.sqrt(16))",
+      "prompt": "Why prefer `import math; math.sqrt(16)` over `from math import *`?",
+      "choices": [
+        "The wildcard dumps every name in and can quietly overwrite one you defined",
+        "The wildcard import is a syntax error",
+        "math.sqrt is faster than sqrt",
+        "sqrt does not exist in the math module"
+      ],
+      "answer_index": 0,
+      "explanation": "`from math import *` pulls in every public name at once, which hides where a name came from and can shadow something you already defined (for example, your own `sqrt`). `import math` keeps the boundary visible: `math.sqrt` says exactly where it lives. Both call the same function at the same speed."
+    },
+    {
+      "id": "python-modules-imports-authored-01",
+      "concept": "modules-imports",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Modules & Imports concept check 1",
+      "code": null,
+      "prompt": "What does the lesson mean by \"Imported files can run code\"?",
+      "choices": [
+        "from random import randint",
+        "Statements at the top level run when Python imports the file. Place demo code and direct user input inside a main guard so importing the module does not start them.",
+        "include random",
+        "using random"
+      ],
+      "answer_index": 1,
+      "explanation": "A Python file is a module. Use `import module` to keep its name visible, or `from module import name` to bring in one item. That reasoning supports the answer: Statements at the top level run when Python imports the file. Place demo code and direct user input inside a main guard so importing the module does not start them."
+    },
+    {
+      "id": "python-modules-imports-authored-02",
+      "concept": "modules-imports",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Modules & Imports concept check 2",
+      "code": null,
+      "prompt": "Which choice describes a reliable Modules & Imports practice?",
+      "choices": [
+        "Every time the file is imported",
+        "Only after an error",
+        "Group code by one clear purpose.",
+        "Before Python reads the file"
+      ],
+      "answer_index": 2,
+      "explanation": "A Python file is a module. Use `import module` to keep its name visible, or `from module import name` to bring in one item. That reasoning supports the answer: Group code by one clear purpose."
+    },
+    {
+      "id": "python-modules-imports-authored-03",
+      "concept": "modules-imports",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Modules & Imports concept check 3",
+      "code": null,
+      "prompt": "Which recommendation belongs in a review of Modules & Imports code?",
+      "choices": [
+        "from math import *\nprint(sqrt(16))",
+        "using random",
+        "Every time the file is imported",
+        "Prefer imports that show where a name came from."
+      ],
+      "answer_index": 3,
+      "explanation": "A Python file is a module. Use `import module` to keep its name visible, or `from module import name` to bring in one item. That reasoning supports the answer: Prefer imports that show where a name came from."
+    },
+    {
+      "id": "python-modules-imports-authored-04",
+      "concept": "modules-imports",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Modules & Imports concept check 4",
+      "code": null,
+      "prompt": "Which guideline helps prevent a common Modules & Imports mistake?",
+      "choices": [
+        "Avoid wildcard imports.",
+        "Only after an error",
+        "Before Python reads the file",
+        "from math import *\nprint(sqrt(16))"
+      ],
+      "answer_index": 0,
+      "explanation": "A Python file is a module. Use `import module` to keep its name visible, or `from module import name` to bring in one item. That reasoning supports the answer: Avoid wildcard imports."
+    },
+    {
+      "id": "python-modules-imports-authored-05",
+      "concept": "modules-imports",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Modules & Imports concept check 5",
+      "code": null,
+      "prompt": "A classmate is checking their understanding of Modules & Imports. Which advice is correct?",
+      "choices": [
+        "from random import randint",
+        "Keep top-level work small.",
+        "include random",
+        "Only after an error"
+      ],
+      "answer_index": 1,
+      "explanation": "A Python file is a module. Use `import module` to keep its name visible, or `from module import name` to bring in one item. That reasoning supports the answer: Keep top-level work small."
+    },
+    {
+      "id": "python-modules-imports-authored-06",
+      "concept": "modules-imports",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Modules & Imports concept check 6",
+      "code": null,
+      "prompt": "Which choice shows sound reasoning about Modules & Imports?",
+      "choices": [
+        "Before Python reads the file",
+        "from math import *\nprint(sqrt(16))",
+        "Put demos and command-line input behind a main guard.",
+        "from random import randint"
+      ],
+      "answer_index": 2,
+      "explanation": "A Python file is a module. Use `import module` to keep its name visible, or `from module import name` to bring in one item. That reasoning supports the answer: Put demos and command-line input behind a main guard."
+    }
+  ]
+}

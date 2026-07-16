@@ -108,7 +108,7 @@
   box-shadow: 0 12px 28px color-mix(in srgb, var(--ct-primary) 9%, transparent);
 }
 
-.progress-badge-card.locked {
+.progress-badge-card.not-started {
   opacity: 0.68;
   filter: saturate(0.72);
 }
@@ -226,23 +226,23 @@ body.coding-dark .progress-badge-rarity.rarity-epic {
    On locked+dark chips: undo the card's desaturation, push the fill stronger, and
    add a faint ring so each tier still reads clearly against the dimmed card.
    (Light mode reads fine already; earned cards aren't dimmed.) */
-body.coding-dark .progress-badge-card.locked .progress-badge-rarity {
+body.coding-dark .progress-badge-card.not-started .progress-badge-rarity {
   filter: saturate(1.6);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10);
 }
-body.coding-dark .progress-badge-card.locked .progress-badge-rarity.rarity-common {
+body.coding-dark .progress-badge-card.not-started .progress-badge-rarity.rarity-common {
   background: rgba(148, 163, 184, 0.38);
   color: #f1f5f9;
 }
-body.coding-dark .progress-badge-card.locked .progress-badge-rarity.rarity-uncommon {
+body.coding-dark .progress-badge-card.not-started .progress-badge-rarity.rarity-uncommon {
   background: rgba(34, 197, 94, 0.38);
   color: #dcfce7;
 }
-body.coding-dark .progress-badge-card.locked .progress-badge-rarity.rarity-rare {
+body.coding-dark .progress-badge-card.not-started .progress-badge-rarity.rarity-rare {
   background: rgba(167, 139, 250, 0.40);
   color: #ede9fe;
 }
-body.coding-dark .progress-badge-card.locked .progress-badge-rarity.rarity-epic {
+body.coding-dark .progress-badge-card.not-started .progress-badge-rarity.rarity-epic {
   background: rgba(245, 158, 11, 0.42);
   color: #fef3c7;
 }
@@ -335,7 +335,7 @@ body.coding-dark .progress-badge-card.earned strong {
 
 /* Dim cream only for the LOCKED pill in dark mode — do NOT touch the earned pill,
    which owns its bright accent fill above. */
-body.coding-dark .progress-badge-card.locked strong {
+body.coding-dark .progress-badge-card.not-started strong {
   color: #f3dcc2;
 }
 
@@ -347,5 +347,283 @@ body.coding-dark .progress-badge-card.locked strong {
   .progress-badge-card strong {
     grid-column: 2;
     justify-self: start;
+  }
+}
+
+
+/* Milestone page hierarchy: active goals stay visible; untouched goals stay calm. */
+.progress-badge-header {
+  align-items: flex-start;
+}
+
+.progress-badge-header > div {
+  min-width: 0;
+}
+
+.progress-badge-header h2 {
+  margin: 3px 0 4px;
+}
+
+.progress-badge-header p,
+.progress-badge-toolbar p {
+  margin: 0;
+  color: var(--ct-muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.progress-badge-header > span {
+  margin-top: 7px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-primary) 9%, var(--ct-panel-soft));
+  white-space: nowrap;
+}
+
+.progress-badge-next {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 220px);
+  gap: 24px;
+  align-items: center;
+  padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, var(--ct-accent, #f37021) 30%, var(--ct-border));
+  border-left: 4px solid var(--ct-accent, #f37021);
+  border-radius: 16px;
+  background:
+    linear-gradient(110deg, color-mix(in srgb, var(--ct-accent, #f37021) 10%, var(--ct-panel)), var(--ct-panel));
+}
+
+.progress-badge-next-copy h3 {
+  margin: 9px 0 3px;
+  color: var(--ct-text);
+  font-size: 1.12rem;
+}
+
+.progress-badge-next-copy p {
+  margin: 0;
+  color: var(--ct-muted);
+  font-size: 0.86rem;
+}
+
+.progress-badge-next-action {
+  display: block;
+  margin-top: 9px;
+  color: var(--ct-text);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.progress-badge-next-progress {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 10px;
+  align-items: end;
+}
+
+.progress-badge-next-progress > strong {
+  padding: 0;
+  background: none;
+  color: var(--ct-text);
+  font-size: 1.55rem;
+}
+
+.progress-badge-next-progress > span,
+.progress-badge-next-progress > small {
+  color: var(--ct-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.progress-badge-next-progress > span {
+  align-self: center;
+}
+
+.progress-badge-next-progress .progress-badge-meter-track,
+.progress-badge-next-progress > small {
+  grid-column: 1 / -1;
+}
+
+.progress-badge-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 2px;
+}
+
+.progress-badge-toolbar h2 {
+  margin: 0 0 3px;
+  color: var(--ct-text);
+  font-size: 1rem;
+}
+
+.progress-badge-filters {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--ct-border);
+  border-radius: 12px;
+  background: var(--ct-panel-soft);
+}
+
+.progress-badge-filters button,
+.progress-badge-empty button {
+  border: 0;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.progress-badge-filters button {
+  padding: 7px 10px;
+  background: transparent;
+  color: var(--ct-muted);
+}
+
+.progress-badge-filters button span {
+  display: inline-flex;
+  justify-content: center;
+  min-width: 20px;
+  margin-left: 4px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-primary) 9%, var(--ct-panel));
+  font-size: 0.68rem;
+}
+
+.progress-badge-filters button:hover {
+  color: var(--ct-text);
+  background: color-mix(in srgb, var(--ct-primary) 8%, var(--ct-panel));
+}
+
+.progress-badge-filters button.active {
+  color: #fff;
+  background: var(--ct-primary);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--ct-primary) 22%, transparent);
+}
+
+.progress-badge-filters button.active span {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.progress-badge-card.in-progress {
+  border-color: color-mix(in srgb, var(--ct-primary) 42%, var(--ct-border));
+}
+
+.progress-badge-card.not-started {
+  opacity: 0.72;
+  filter: saturate(0.72);
+  box-shadow: none;
+}
+
+.progress-badge-card .badge-state-in-progress {
+  background: color-mix(in srgb, var(--ct-primary) 12%, var(--ct-panel-soft));
+  color: var(--ct-primary);
+}
+
+.progress-badge-card .badge-state-not-started {
+  background: var(--ct-panel-soft);
+  color: var(--ct-muted);
+}
+
+.progress-badge-empty {
+  display: grid;
+  place-items: center;
+  gap: 7px;
+  padding: 32px 20px;
+  border: 1px dashed var(--ct-border);
+  border-radius: 16px;
+  text-align: center;
+  background: var(--ct-panel);
+}
+
+.progress-badge-empty > svg {
+  color: #16a34a;
+  font-size: 1.5rem;
+}
+
+.progress-badge-empty h3 {
+  margin: 0;
+  color: var(--ct-text);
+  font-size: 1rem;
+}
+
+.progress-badge-empty p {
+  max-width: 500px;
+  margin: 0;
+  color: var(--ct-muted);
+  font-size: 0.84rem;
+}
+
+.progress-badge-empty button {
+  margin-top: 5px;
+  padding: 8px 12px;
+  color: #fff;
+  background: var(--ct-primary);
+}
+
+.progress-badge-locked {
+  border: 1px solid var(--ct-border);
+  border-radius: 16px;
+  background: var(--ct-panel);
+  overflow: hidden;
+}
+
+.progress-badge-locked summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  color: var(--ct-text);
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.progress-badge-locked summary small {
+  color: var(--ct-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.progress-badge-locked-content {
+  display: grid;
+  gap: 22px;
+  padding: 4px 16px 16px;
+  border-top: 1px solid var(--ct-border);
+}
+
+body.coding-dark .progress-badge-card.not-started .progress-badge-rarity {
+  filter: saturate(1.5);
+}
+
+@media (max-width: 760px) {
+  .progress-badge-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .progress-badge-filters {
+    align-self: flex-start;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 620px) {
+  .progress-badge-next {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .progress-badge-header {
+    align-items: flex-start;
+  }
+
+  .progress-badge-grid {
+    grid-template-columns: 1fr;
   }
 }

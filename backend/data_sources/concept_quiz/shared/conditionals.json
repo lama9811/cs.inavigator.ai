@@ -1,0 +1,438 @@
+{
+  "_note": "Conditionals. Curriculum sequence follows Foundations of Python Programming (Runestone) ch.6 and Think Python ch.5. Both are copyleft (GFDL / CC BY-NC-SA), so NO content is copied from either: only the topic order is used, and a topic sequence is not copyrightable. Every question below is original. Concepts covered: if/else, the elif-else-if chain stopping at the first true branch, order of branches, == vs =, boolean operators, and the body being decided by indentation or braces.",
+  "concept": "conditionals",
+  "concept_label": "Conditionals",
+  "questions": [
+    {
+      "id": "if-else-01",
+      "concept": "conditionals",
+      "difficulty": "easy",
+      "kind": "mcq-output",
+      "title": "Which branch runs?",
+      "variants": {
+        "python": {
+          "code": "age = 15\nif age >= 18:\n    print(\"adult\")\nelse:\n    print(\"minor\")",
+          "prompt": "What does this print?",
+          "choices": ["minor", "adult", "Both lines", "Nothing"],
+          "answer_index": 0,
+          "explanation": "15 is not greater than or equal to 18, so the condition is false and the `else` branch runs. Exactly one of the two branches runs, never both."
+        },
+        "java": {
+          "code": "int age = 15;\nif (age >= 18) {\n    System.out.println(\"adult\");\n} else {\n    System.out.println(\"minor\");\n}",
+          "prompt": "What does this print?",
+          "choices": ["minor", "adult", "Both lines", "Nothing"],
+          "answer_index": 0,
+          "explanation": "15 is not greater than or equal to 18, so the condition is false and the `else` branch runs. Exactly one of the two branches runs, never both."
+        },
+        "javascript": {
+          "code": "const age = 15;\nif (age >= 18) {\n  console.log(\"adult\");\n} else {\n  console.log(\"minor\");\n}",
+          "prompt": "What does this print?",
+          "choices": ["minor", "adult", "Both lines", "Nothing"],
+          "answer_index": 0,
+          "explanation": "15 is not greater than or equal to 18, so the condition is false and the `else` branch runs. Exactly one of the two branches runs, never both."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int age = 15;\n    if (age >= 18) {\n        cout << \"adult\";\n    } else {\n        cout << \"minor\";\n    }\n    return 0;\n}",
+          "prompt": "What does this print?",
+          "choices": ["minor", "adult", "Both lines", "Nothing"],
+          "answer_index": 0,
+          "explanation": "15 is not greater than or equal to 18, so the condition is false and the `else` branch runs. Exactly one of the two branches runs, never both."
+        }
+      }
+    },
+    {
+      "id": "chain-first-true-01",
+      "concept": "conditionals",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "A chain stops at the first true branch",
+      "error_class": "wrong_answer",
+      "variants": {
+        "python": {
+          "code": "score = 95\nif score >= 80:\n    print(\"B\")\nelif score >= 90:\n    print(\"A\")\nelse:\n    print(\"C\")",
+          "prompt": "What does this print?",
+          "choices": ["B", "A", "B and A", "C"],
+          "answer_index": 0,
+          "explanation": "95 is greater than or equal to 80, so the first branch wins and the chain stops right there. The `elif` is never even checked, so the A is unreachable for every score. This is why order matters: put the strictest condition first, or every A student in your class quietly gets a B."
+        },
+        "java": {
+          "code": "int score = 95;\nif (score >= 80) {\n    System.out.println(\"B\");\n} else if (score >= 90) {\n    System.out.println(\"A\");\n} else {\n    System.out.println(\"C\");\n}",
+          "prompt": "What does this print?",
+          "choices": ["B", "A", "B and A", "C"],
+          "answer_index": 0,
+          "explanation": "95 is greater than or equal to 80, so the first branch wins and the chain stops. The `else if` is never checked, so the A is unreachable for every score. Order matters: put the strictest condition first, or every A student quietly gets a B."
+        },
+        "javascript": {
+          "code": "const score = 95;\nif (score >= 80) {\n  console.log(\"B\");\n} else if (score >= 90) {\n  console.log(\"A\");\n} else {\n  console.log(\"C\");\n}",
+          "prompt": "What does this print?",
+          "choices": ["B", "A", "B and A", "C"],
+          "answer_index": 0,
+          "explanation": "95 is greater than or equal to 80, so the first branch wins and the chain stops. The `else if` is never checked, so the A is unreachable for every score. Order matters: put the strictest condition first, or every A student quietly gets a B."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int score = 95;\n    if (score >= 80) {\n        cout << \"B\";\n    } else if (score >= 90) {\n        cout << \"A\";\n    } else {\n        cout << \"C\";\n    }\n    return 0;\n}",
+          "prompt": "What does this print?",
+          "choices": ["B", "A", "B and A", "C"],
+          "answer_index": 0,
+          "explanation": "95 is greater than or equal to 80, so the first branch wins and the chain stops. The `else if` is never checked, so the A is unreachable for every score. Order matters: put the strictest condition first, or every A student quietly gets a B."
+        }
+      }
+    },
+    {
+      "id": "separate-ifs-01",
+      "concept": "conditionals",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Two ifs are not a chain",
+      "error_class": "wrong_answer",
+      "variants": {
+        "python": {
+          "code": "n = 5\nif n > 0:\n    print(\"positive\")\nif n > 3:\n    print(\"big\")",
+          "prompt": "What does this print?",
+          "choices": [
+            "positive, then big",
+            "positive",
+            "big",
+            "Nothing"
+          ],
+          "answer_index": 0,
+          "explanation": "These are two separate `if` statements, not a chain, so both conditions get checked and both are true. Both lines print. Swap the second `if` for an `elif` and only the first would run. That one word decides whether your conditions are alternatives or independent questions."
+        },
+        "java": {
+          "code": "int n = 5;\nif (n > 0) {\n    System.out.println(\"positive\");\n}\nif (n > 3) {\n    System.out.println(\"big\");\n}",
+          "prompt": "What does this print?",
+          "choices": [
+            "positive, then big",
+            "positive",
+            "big",
+            "Nothing"
+          ],
+          "answer_index": 0,
+          "explanation": "These are two separate `if` statements, not a chain, so both conditions get checked and both are true. Both lines print. Write `else if` instead and only the first would run. That one word decides whether your conditions are alternatives or independent questions."
+        },
+        "javascript": {
+          "code": "const n = 5;\nif (n > 0) {\n  console.log(\"positive\");\n}\nif (n > 3) {\n  console.log(\"big\");\n}",
+          "prompt": "What does this print?",
+          "choices": [
+            "positive, then big",
+            "positive",
+            "big",
+            "Nothing"
+          ],
+          "answer_index": 0,
+          "explanation": "These are two separate `if` statements, not a chain, so both conditions get checked and both are true. Both lines print. Write `else if` instead and only the first would run. That one word decides whether your conditions are alternatives or independent questions."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int n = 5;\n    if (n > 0) {\n        cout << \"positive\" << endl;\n    }\n    if (n > 3) {\n        cout << \"big\" << endl;\n    }\n    return 0;\n}",
+          "prompt": "What does this print?",
+          "choices": [
+            "positive, then big",
+            "positive",
+            "big",
+            "Nothing"
+          ],
+          "answer_index": 0,
+          "explanation": "These are two separate `if` statements, not a chain, so both conditions get checked and both are true. Both lines print. Write `else if` instead and only the first would run. That one word decides whether your conditions are alternatives or independent questions."
+        }
+      }
+    },
+    {
+      "id": "assign-vs-compare-01",
+      "concept": "conditionals",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "One equals sign inside an if",
+      "error_class": "syntax",
+      "variants": {
+        "python": {
+          "code": "x = 3\nif x = 5:\n    print(\"five\")",
+          "prompt": "What happens when this runs?",
+          "choices": [
+            "SyntaxError, the file does not run at all",
+            "It prints five",
+            "It prints nothing and sets x to 5",
+            "It prints nothing, because x is 3"
+          ],
+          "answer_index": 0,
+          "explanation": "A single `=` assigns a value; a double `==` asks whether two values match. Inside a condition you are always asking, so Python rejects the file before running a single line. Read the line out loud: if the words are \"is x five\", you want two."
+        },
+        "java": {
+          "code": "int x = 3;\nif (x = 5) {\n    System.out.println(\"five\");\n}",
+          "prompt": "What happens when you compile this?",
+          "choices": [
+            "Compile error: incompatible types, int cannot be converted to boolean",
+            "It prints five",
+            "It prints nothing and sets x to 5",
+            "It prints nothing, because x is 3"
+          ],
+          "answer_index": 0,
+          "explanation": "`x = 5` assigns and produces the int 5, but an `if` needs a boolean. Java refuses to compile it, which is a friendly outcome: the mistake cannot hide. In C and C++ this same line compiles and is always true, which is far more dangerous."
+        },
+        "javascript": {
+          "code": "let x = 3;\nif (x = 5) {\n  console.log(\"five\");\n}",
+          "prompt": "What happens when this runs?",
+          "choices": [
+            "It prints five, because the assignment produces 5, which is truthy",
+            "It throws a SyntaxError",
+            "It prints nothing, because x is 3",
+            "It prints 5"
+          ],
+          "answer_index": 0,
+          "explanation": "This is the dangerous case. `x = 5` assigns 5 to x, and the whole expression produces 5. Since 5 is truthy, the branch runs and it prints \"five\". No error, no warning, and the condition is now true no matter what x was. Use `===` when you mean to compare."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int x = 3;\n    if (x = 5) {\n        cout << \"five\";\n    }\n    return 0;\n}",
+          "prompt": "What happens when this runs?",
+          "choices": [
+            "It prints five, because the assignment produces 5, which is truthy",
+            "Compile error",
+            "It prints nothing, because x is 3",
+            "It prints 5"
+          ],
+          "answer_index": 0,
+          "explanation": "This is the most dangerous typo in C++. `x = 5` assigns and produces 5, and any non-zero value counts as true, so the branch always runs. It compiles cleanly and gives no warning by default. Java rejects this line; C++ happily runs it."
+        }
+      }
+    },
+    {
+      "id": "and-or-01",
+      "concept": "conditionals",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "and needs both, or needs one",
+      "variants": {
+        "python": {
+          "code": "age = 20\nhas_id = False\nif age >= 18 and has_id:\n    print(\"allowed\")\nelse:\n    print(\"denied\")",
+          "prompt": "What does this print?",
+          "choices": ["denied", "allowed", "Nothing", "Error"],
+          "answer_index": 0,
+          "explanation": "`and` requires both sides to be true. The age passes, but `has_id` is False, so the whole condition is false and the `else` runs. Change `and` to `or` and it would print allowed, since one true side would be enough."
+        },
+        "java": {
+          "code": "int age = 20;\nboolean hasId = false;\nif (age >= 18 && hasId) {\n    System.out.println(\"allowed\");\n} else {\n    System.out.println(\"denied\");\n}",
+          "prompt": "What does this print?",
+          "choices": ["denied", "allowed", "Nothing", "It fails to compile"],
+          "answer_index": 0,
+          "explanation": "`&&` requires both sides to be true. The age passes, but `hasId` is false, so the whole condition is false and the `else` runs. Change `&&` to `||` and it would print allowed, since one true side would be enough."
+        },
+        "javascript": {
+          "code": "const age = 20;\nconst hasId = false;\nif (age >= 18 && hasId) {\n  console.log(\"allowed\");\n} else {\n  console.log(\"denied\");\n}",
+          "prompt": "What does this print?",
+          "choices": ["denied", "allowed", "Nothing", "undefined"],
+          "answer_index": 0,
+          "explanation": "`&&` requires both sides to be true. The age passes, but `hasId` is false, so the whole condition is false and the `else` runs. Change `&&` to `||` and it would print allowed, since one true side would be enough."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int age = 20;\n    bool hasId = false;\n    if (age >= 18 && hasId) {\n        cout << \"allowed\";\n    } else {\n        cout << \"denied\";\n    }\n    return 0;\n}",
+          "prompt": "What does this print?",
+          "choices": ["denied", "allowed", "Nothing", "Compile error"],
+          "answer_index": 0,
+          "explanation": "`&&` requires both sides to be true. The age passes, but `hasId` is false, so the whole condition is false and the `else` runs. Change `&&` to `||` and it would print allowed, since one true side would be enough."
+        }
+      }
+    },
+    {
+      "id": "body-scope-01",
+      "concept": "conditionals",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Which line belongs to the if?",
+      "error_class": "wrong_answer",
+      "variants": {
+        "python": {
+          "code": "score = 50\nif score >= 80:\n    print(\"nice work\")\nprint(\"done\")",
+          "prompt": "What does this print?",
+          "choices": [
+            "done",
+            "Nothing",
+            "nice work, then done",
+            "nice work"
+          ],
+          "answer_index": 0,
+          "explanation": "Only the indented line is inside the `if`. `print(\"done\")` is back at the left margin, so it is not part of the branch and runs for any score at all. The indentation is what decides membership, so a line that looks close to the `if` is not necessarily inside it."
+        },
+        "java": {
+          "code": "int score = 50;\nif (score >= 80)\n    System.out.println(\"nice work\");\n    System.out.println(\"done\");",
+          "prompt": "What does this print?",
+          "choices": [
+            "done",
+            "Nothing",
+            "nice work, then done",
+            "It fails to compile"
+          ],
+          "answer_index": 0,
+          "explanation": "With no braces, an `if` takes only the single statement after it. The second `println` is indented to look like it belongs, but Java ignores indentation, so it sits outside the `if` and always runs. This is exactly why you should always write the braces, even for a single line."
+        },
+        "javascript": {
+          "code": "const score = 50;\nif (score >= 80)\n  console.log(\"nice work\");\n  console.log(\"done\");",
+          "prompt": "What does this print?",
+          "choices": [
+            "done",
+            "Nothing",
+            "nice work, then done",
+            "It throws a SyntaxError"
+          ],
+          "answer_index": 0,
+          "explanation": "With no braces, an `if` takes only the single statement after it. The second `console.log` is indented to look like it belongs, but JavaScript ignores indentation, so it sits outside the `if` and always runs. This is why you should always write the braces."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int score = 50;\n    if (score >= 80)\n        cout << \"nice work\" << endl;\n        cout << \"done\" << endl;\n    return 0;\n}",
+          "prompt": "What does this print?",
+          "choices": [
+            "done",
+            "Nothing",
+            "nice work, then done",
+            "Compile error"
+          ],
+          "answer_index": 0,
+          "explanation": "With no braces, an `if` takes only the single statement after it. The second `cout` is indented to look like it belongs, but C++ ignores indentation, so it sits outside the `if` and always runs. This is why you should always write the braces."
+        }
+      }
+    },
+    {
+      "id": "chain-order-01",
+      "concept": "conditionals",
+      "difficulty": "medium",
+      "kind": "typein",
+      "title": "Trace the grade",
+      "variants": {
+        "python": {
+          "code": "score = 85\nif score >= 90:\n    grade = \"A\"\nelif score >= 80:\n    grade = \"B\"\nelif score >= 70:\n    grade = \"C\"\nelse:\n    grade = \"F\"\nprint(grade)",
+          "prompt": "What letter does this print?",
+          "accepted": ["B", "b"],
+          "explanation": "Check the branches in order. 85 is not at least 90, so A is skipped. 85 is at least 80, so `grade` becomes B and the chain stops. The later branches are never even looked at. This chain is written correctly: strictest first, so each branch only has to rule out what came before it."
+        },
+        "java": {
+          "code": "int score = 85;\nString grade;\nif (score >= 90) {\n    grade = \"A\";\n} else if (score >= 80) {\n    grade = \"B\";\n} else if (score >= 70) {\n    grade = \"C\";\n} else {\n    grade = \"F\";\n}\nSystem.out.println(grade);",
+          "prompt": "What letter does this print?",
+          "accepted": ["B", "b"],
+          "explanation": "Check the branches in order. 85 is not at least 90, so A is skipped. 85 is at least 80, so `grade` becomes B and the chain stops. The later branches are never looked at. This chain is written correctly: strictest first, so each branch only has to rule out what came before it."
+        },
+        "javascript": {
+          "code": "const score = 85;\nlet grade;\nif (score >= 90) {\n  grade = \"A\";\n} else if (score >= 80) {\n  grade = \"B\";\n} else if (score >= 70) {\n  grade = \"C\";\n} else {\n  grade = \"F\";\n}\nconsole.log(grade);",
+          "prompt": "What letter does this print?",
+          "accepted": ["B", "b"],
+          "explanation": "Check the branches in order. 85 is not at least 90, so A is skipped. 85 is at least 80, so `grade` becomes B and the chain stops. The later branches are never looked at. This chain is written correctly: strictest first, so each branch only has to rule out what came before it."
+        },
+        "cpp": {
+          "code": "#include <iostream>\n#include <string>\nusing namespace std;\n\nint main() {\n    int score = 85;\n    string grade;\n    if (score >= 90) {\n        grade = \"A\";\n    } else if (score >= 80) {\n        grade = \"B\";\n    } else if (score >= 70) {\n        grade = \"C\";\n    } else {\n        grade = \"F\";\n    }\n    cout << grade;\n    return 0;\n}",
+          "prompt": "What letter does this print?",
+          "accepted": ["B", "b"],
+          "explanation": "Check the branches in order. 85 is not at least 90, so A is skipped. 85 is at least 80, so `grade` becomes B and the chain stops. The later branches are never looked at. This chain is written correctly: strictest first, so each branch only has to rule out what came before it."
+        }
+      }
+    },
+    {
+      "id": "not-operator-01",
+      "concept": "conditionals",
+      "difficulty": "easy",
+      "kind": "mcq-output",
+      "title": "Flipping a condition",
+      "variants": {
+        "python": {
+          "code": "is_open = False\nif not is_open:\n    print(\"closed\")\nelse:\n    print(\"open\")",
+          "prompt": "What does this print?",
+          "choices": ["closed", "open", "Nothing", "Error"],
+          "answer_index": 0,
+          "explanation": "`not` flips a boolean. `is_open` is False, so `not is_open` is True and the first branch runs. Reading it aloud helps: \"if not open, print closed\"."
+        },
+        "java": {
+          "code": "boolean isOpen = false;\nif (!isOpen) {\n    System.out.println(\"closed\");\n} else {\n    System.out.println(\"open\");\n}",
+          "prompt": "What does this print?",
+          "choices": ["closed", "open", "Nothing", "It fails to compile"],
+          "answer_index": 0,
+          "explanation": "`!` flips a boolean. `isOpen` is false, so `!isOpen` is true and the first branch runs. Reading it aloud helps: \"if not open, print closed\"."
+        },
+        "javascript": {
+          "code": "const isOpen = false;\nif (!isOpen) {\n  console.log(\"closed\");\n} else {\n  console.log(\"open\");\n}",
+          "prompt": "What does this print?",
+          "choices": ["closed", "open", "Nothing", "undefined"],
+          "answer_index": 0,
+          "explanation": "`!` flips a boolean. `isOpen` is false, so `!isOpen` is true and the first branch runs. Reading it aloud helps: \"if not open, print closed\"."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    bool isOpen = false;\n    if (!isOpen) {\n        cout << \"closed\";\n    } else {\n        cout << \"open\";\n    }\n    return 0;\n}",
+          "prompt": "What does this print?",
+          "choices": ["closed", "open", "Nothing", "Compile error"],
+          "answer_index": 0,
+          "explanation": "`!` flips a boolean. `isOpen` is false, so `!isOpen` is true and the first branch runs. Reading it aloud helps: \"if not open, print closed\"."
+        }
+      }
+    },
+    {
+      "id": "nested-if-01",
+      "concept": "conditionals",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "An if inside an if",
+      "variants": {
+        "python": {
+          "code": "logged_in = True\nis_admin = False\nif logged_in:\n    if is_admin:\n        print(\"admin panel\")\n    else:\n        print(\"user home\")\nelse:\n    print(\"login page\")",
+          "prompt": "What does this print?",
+          "choices": ["user home", "admin panel", "login page", "Nothing"],
+          "answer_index": 0,
+          "explanation": "The outer `if` passes, so we go inside it. There, `is_admin` is False, so the inner `else` runs. The outer `else` is only reached when `logged_in` is false, so it never comes into play here. Nesting reads like a decision tree: answer the first question, then the next."
+        },
+        "java": {
+          "code": "boolean loggedIn = true;\nboolean isAdmin = false;\nif (loggedIn) {\n    if (isAdmin) {\n        System.out.println(\"admin panel\");\n    } else {\n        System.out.println(\"user home\");\n    }\n} else {\n    System.out.println(\"login page\");\n}",
+          "prompt": "What does this print?",
+          "choices": ["user home", "admin panel", "login page", "Nothing"],
+          "answer_index": 0,
+          "explanation": "The outer `if` passes, so we go inside it. There, `isAdmin` is false, so the inner `else` runs. The outer `else` is only reached when `loggedIn` is false, so it never comes into play here. Nesting reads like a decision tree: answer the first question, then the next."
+        },
+        "javascript": {
+          "code": "const loggedIn = true;\nconst isAdmin = false;\nif (loggedIn) {\n  if (isAdmin) {\n    console.log(\"admin panel\");\n  } else {\n    console.log(\"user home\");\n  }\n} else {\n  console.log(\"login page\");\n}",
+          "prompt": "What does this print?",
+          "choices": ["user home", "admin panel", "login page", "Nothing"],
+          "answer_index": 0,
+          "explanation": "The outer `if` passes, so we go inside it. There, `isAdmin` is false, so the inner `else` runs. The outer `else` is only reached when `loggedIn` is false, so it never comes into play here. Nesting reads like a decision tree: answer the first question, then the next."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    bool loggedIn = true;\n    bool isAdmin = false;\n    if (loggedIn) {\n        if (isAdmin) {\n            cout << \"admin panel\";\n        } else {\n            cout << \"user home\";\n        }\n    } else {\n        cout << \"login page\";\n    }\n    return 0;\n}",
+          "prompt": "What does this print?",
+          "choices": ["user home", "admin panel", "login page", "Nothing"],
+          "answer_index": 0,
+          "explanation": "The outer `if` passes, so we go inside it. There, `isAdmin` is false, so the inner `else` runs. The outer `else` is only reached when `loggedIn` is false, so it never comes into play here. Nesting reads like a decision tree: answer the first question, then the next."
+        }
+      }
+    },
+    {
+      "id": "boundary-01",
+      "concept": "conditionals",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Exactly on the boundary",
+      "error_class": "wrong_answer",
+      "variants": {
+        "python": {
+          "code": "score = 80\nif score > 80:\n    print(\"pass\")\nelse:\n    print(\"fail\")",
+          "prompt": "What does this print?",
+          "choices": ["fail", "pass", "Nothing", "Error"],
+          "answer_index": 0,
+          "explanation": "`>` means strictly greater than, and 80 is not greater than 80, so the `else` runs. If a score of exactly 80 was meant to pass, the condition should be `>=`. Boundary values are where conditions go wrong, so test the exact edge every time."
+        },
+        "java": {
+          "code": "int score = 80;\nif (score > 80) {\n    System.out.println(\"pass\");\n} else {\n    System.out.println(\"fail\");\n}",
+          "prompt": "What does this print?",
+          "choices": ["fail", "pass", "Nothing", "It fails to compile"],
+          "answer_index": 0,
+          "explanation": "`>` means strictly greater than, and 80 is not greater than 80, so the `else` runs. If a score of exactly 80 was meant to pass, the condition should be `>=`. Boundary values are where conditions go wrong, so test the exact edge every time."
+        },
+        "javascript": {
+          "code": "const score = 80;\nif (score > 80) {\n  console.log(\"pass\");\n} else {\n  console.log(\"fail\");\n}",
+          "prompt": "What does this print?",
+          "choices": ["fail", "pass", "Nothing", "undefined"],
+          "answer_index": 0,
+          "explanation": "`>` means strictly greater than, and 80 is not greater than 80, so the `else` runs. If a score of exactly 80 was meant to pass, the condition should be `>=`. Boundary values are where conditions go wrong, so test the exact edge every time."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int score = 80;\n    if (score > 80) {\n        cout << \"pass\";\n    } else {\n        cout << \"fail\";\n    }\n    return 0;\n}",
+          "prompt": "What does this print?",
+          "choices": ["fail", "pass", "Nothing", "Compile error"],
+          "answer_index": 0,
+          "explanation": "`>` means strictly greater than, and 80 is not greater than 80, so the `else` runs. If a score of exactly 80 was meant to pass, the condition should be `>=`. Boundary values are where conditions go wrong, so test the exact edge every time."
+        }
+      }
+    }
+  ]
+}

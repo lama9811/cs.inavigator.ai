@@ -10,7 +10,7 @@ export default function StatTiles({ progressSummary }) {
     { key: "streak", Icon: FaFire, value: progressSummary.displayStreak, label: "Day streak" },
     { key: "solved", Icon: FaCheckCircle, value: progressSummary.solvedCount, label: "Solved" },
     { key: "attempted", Icon: FaPenFancy, value: progressSummary.attemptedCount, label: "Attempted" },
-    { key: "complete", Icon: FaChartLine, value: `${progressSummary.completionPercent}%`, label: "Complete" },
+    { key: "complete", Icon: FaChartLine, value: `${progressSummary.completionPercent}%`, label: "Problems complete" },
   ];
   return (
     <div className="coding-stat-tiles" aria-label="Your coding progress at a glance">

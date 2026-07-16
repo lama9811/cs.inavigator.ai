@@ -1,0 +1,84 @@
+{
+  "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
+  "title": "Loops",
+  "summary": "Repeat work while keeping the stopping rule visible.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "timeout",
+    "runtime"
+  ],
+  "refresher": "A `for` loop places setup, condition, and update together. A `while` loop repeats while its condition stays truthy. Trace the initial state, boundary, and update.",
+  "refresher_code": "for (let i=0; i<3; i++) {\n  console.log(i);\n}",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A `for` loop places setup, condition, and update together. A `while` loop repeats while its condition stays truthy. Trace the initial state, boundary, and update. Repeat work while keeping the stopping rule visible."
+    },
+    {
+      "kind": "text",
+      "body": "A loop has four parts to reason about: starting state, condition, body, and update. Write those parts on separate lines when tracing. After each pass, ask what changed and whether that change moves the condition toward false. This method works for both `for` and `while`."
+    },
+    {
+      "kind": "code",
+      "caption": "The counter starts at zero, runs below three, and grows after each pass.",
+      "code": "for(let i=0;i<3;i++){\n  console.log(`step ${i}`);\n}",
+      "output": "step 0\nstep 1\nstep 2"
+    },
+    {
+      "kind": "compare",
+      "caption": "A strict upper bound keeps array indexes valid.",
+      "wrong_label": "Common mistake",
+      "wrong": "for (let i = 0; i <= items.length; i++) {\n  console.log(items[i]);\n}",
+      "right_label": "Clearer version",
+      "right": "for (let i = 0; i < items.length; i++) {\n  console.log(items[i]);\n}"
+    },
+    {
+      "kind": "text",
+      "body": "For three items, the corrected index values are zero, one, and two. After index two, the update makes `i` equal three, the condition fails, and the loop ends. The wrong version allows index three, which is one position past the array."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Check the boundary",
+      "body": "When a loop hangs, locate the line that moves its tested state toward an exit; a missing update keeps the condition true."
+    },
+    {
+      "kind": "check",
+      "prompt": "How many passes occur?",
+      "code": "for(let i=1;i<=4;i++) console.log(i);",
+      "choices": [
+        "4",
+        "3",
+        "5",
+        "infinitely many"
+      ],
+      "answer_index": 0,
+      "why": "The values one through four are included by the less-than-or-equal condition."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is missing?",
+      "code": "let count=3;\nwhile(count>0){ console.log(count); }",
+      "choices": [
+        "an update to count",
+        "a semicolon",
+        "a second condition",
+        "a const declaration"
+      ],
+      "answer_index": 0,
+      "why": "Count never changes, so the condition remains true and the loop cannot finish."
+    },
+    {
+      "kind": "list",
+      "title": "Loops checklist",
+      "items": [
+        "Record the initial counter.",
+        "Mark inclusive boundaries.",
+        "Confirm state changes.",
+        "Use collection length."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

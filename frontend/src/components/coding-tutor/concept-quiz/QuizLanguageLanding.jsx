@@ -23,6 +23,40 @@ import { readCategoryProgress } from "./conceptQuizProgress";
 // passes this bar.
 const PASS_THRESHOLD = 0.7;
 
+const TRACKS = [
+  {
+    id: "beginner",
+    label: "Beginner",
+    description: "Core concepts plus your first algorithm and debugging practice.",
+  },
+  {
+    id: "intermediate",
+    label: "Intermediate",
+    description: "Multi-step problems and language-specific concepts.",
+  },
+];
+
+function orderTrackCategories(trackId, categories) {
+  if (trackId !== "intermediate") return categories;
+
+  const algorithmPartTwo = categories.find(
+    (category) => category.id === "algorithm-problems-2"
+  );
+  const debugPartTwo = categories.find((category) => category.id === "debug-2");
+  const ordered = categories.filter(
+    (category) =>
+      category.id !== "algorithm-problems-2" && category.id !== "debug-2"
+  );
+
+  if (algorithmPartTwo) {
+    ordered.splice(Math.min(2, ordered.length), 0, algorithmPartTwo);
+  }
+  if (debugPartTwo) {
+    ordered.splice(Math.min(5, ordered.length), 0, debugPartTwo);
+  }
+  return ordered;
+}
+
 // Per-kind badge meta: a color group (drives the badge palette), an icon, and a
 // label. Grouping MCQ variants together and giving each type its own color +
 // icon makes the Type column scannable at a glance.
@@ -149,12 +183,16 @@ export default function QuizLanguageLanding({
 }) {
   const [categories, setCategories] = useState([]);
   const [openId, setOpenId] = useState("");
+  const [openTracks, setOpenTracks] = useState({
+    beginner: true,
+    intermediate: false,
+  });
   // Per-category question cache: { [categoryId]: question[] }.
   const [questionsByCat, setQuestionsByCat] = useState({});
   const [loadingCats, setLoadingCats] = useState(true);
   const [error, setError] = useState("");
 
-  // Load the 13 categories for this language.
+  // Load the available shared and language-specific categories.
   useEffect(() => {
     let alive = true;
     setLoadingCats(true);
@@ -163,8 +201,9 @@ export default function QuizLanguageLanding({
     fetchQuizCategories(apiBase, language)
       .then((data) => {
         if (!alive) return;
-        const cats = data.categories || [];
+        const cats = (data.categories || []).filter((category) => !category.lesson_only);
         setCategories(cats);
+        setOpenTracks({ beginner: true, intermediate: false });
         // Open the first category that actually has questions by default.
         const firstReady = cats.find((c) => c.count > 0);
         setOpenId(firstReady ? firstReady.id : "");
@@ -198,6 +237,19 @@ export default function QuizLanguageLanding({
   );
   const readyCategories = useMemo(
     () => categories.filter((c) => c.count > 0),
+    [categories]
+  );
+  const categoriesByTrack = useMemo(
+    () =>
+      Object.fromEntries(
+        TRACKS.map((track) => [
+          track.id,
+          orderTrackCategories(
+            track.id,
+            categories.filter((category) => category.track === track.id)
+          ),
+        ])
+      ),
     [categories]
   );
   // A category is "complete" once its best score passes the bar.
@@ -256,74 +308,133 @@ export default function QuizLanguageLanding({
       {error ? <p className="cq-error">{error}</p> : null}
 
       {loadingCats ? (
-        <p className="cq-loading">Loading categories…</p>
+        <p className="cq-loading">Loading categories...</p>
       ) : (
-        <ul className="cq-accordion">
-          {categories.map((cat, index) => {
-            const empty = cat.count === 0;
-            const open = openId === cat.id && !empty;
-            const best = progressByCat[cat.id]?.best;
-            const bestPct = best ? Math.round(best.score * 100) : null;
+        <div className="cq-track-groups">
+          {TRACKS.map((track) => {
+            const trackCategories = categoriesByTrack[track.id] || [];
+            const expanded = openTracks[track.id];
+            const trackQuestions = trackCategories.reduce(
+              (sum, category) => sum + (category.count || 0),
+              0
+            );
+
+            if (trackCategories.length === 0) return null;
+
             return (
-              <li
-                key={cat.id}
-                className={`cq-accordion-item ${open ? "open" : ""} ${
-                  empty ? "empty" : ""
-                }`}
+              <section
+                key={track.id}
+                className={"cq-track-group" + (expanded ? " open" : "")}
               >
                 <button
                   type="button"
-                  className="cq-accordion-head"
-                  aria-expanded={open}
-                  disabled={empty}
-                  onClick={() => setOpenId(open ? "" : cat.id)}
+                  className="cq-track-toggle"
+                  aria-expanded={expanded}
+                  aria-controls={"cq-" + track.id + "-categories"}
+                  onClick={() =>
+                    setOpenTracks((current) => ({
+                      beginner: false,
+                      intermediate: false,
+                      [track.id]: !current[track.id],
+                    }))
+                  }
                 >
-                  <span className="cq-accordion-num">{index + 1}</span>
-                  <span className="cq-accordion-copy">
-                    <span className="cq-accordion-title">
-                      {cat.label}
-                      {empty ? (
-                        <span className="cq-accordion-soon">Coming soon</span>
-                      ) : (
-                        <span className="cq-accordion-count">{cat.count}</span>
-                      )}
-                    </span>
-                    {cat.blurb ? (
-                      <span className="cq-accordion-blurb">{cat.blurb}</span>
-                    ) : null}
-                    {bestPct != null ? (
-                      <span
-                        className={`cq-accordion-best ${
-                          bestPct >= PASS_THRESHOLD * 100 ? "pass" : "try"
-                        }`}
-                      >
-                        <FaTrophy aria-hidden="true" />
-                        Best score: {bestPct}% ({best.correct}/{best.total})
-                      </span>
-                    ) : null}
+                  <span className={"cq-track-badge is-" + track.id}>
+                    {track.label}
                   </span>
-                  <span className="cq-accordion-chevron" aria-hidden="true">
-                    {empty ? <FaLock /> : <FaChevronDown />}
+                  <span className="cq-track-copy">
+                    <strong>{track.label} topics</strong>
+                    <span>{track.description}</span>
                   </span>
+                  <span className="cq-track-stats">
+                    <strong>{trackCategories.length}</strong>
+                    <small>topics</small>
+                    <strong>{trackQuestions}</strong>
+                    <small>questions</small>
+                  </span>
+                  <FaChevronDown className="cq-track-chevron" aria-hidden="true" />
                 </button>
 
-                {open ? (
-                  <div className="cq-accordion-body">
-                    <CategoryQuestions
-                      apiBase={apiBase}
-                      language={language}
-                      category={cat}
-                      cached={questionsByCat[cat.id]}
-                      progress={progressByCat[cat.id]}
-                      onLoaded={cacheQuestions}
-                      onOpenQuestion={onOpenQuestion}
-                    />
+                {expanded ? (
+                  <div
+                    className="cq-track-content"
+                    id={"cq-" + track.id + "-categories"}
+                  >
+                    <ul className="cq-accordion">
+                      {trackCategories.map((cat, index) => {
+                        const empty = cat.count === 0;
+                        const open = openId === cat.id && !empty;
+                        const best = progressByCat[cat.id]?.best;
+                        const bestPct = best ? Math.round(best.score * 100) : null;
+                        return (
+                          <li
+                            key={cat.id}
+                            className={
+                              "cq-accordion-item" +
+                              (open ? " open" : "") +
+                              (empty ? " empty" : "")
+                            }
+                          >
+                            <button
+                              type="button"
+                              className="cq-accordion-head"
+                              aria-expanded={open}
+                              disabled={empty}
+                              onClick={() => setOpenId(open ? "" : cat.id)}
+                            >
+                              <span className="cq-accordion-num">{index + 1}</span>
+                              <span className="cq-accordion-copy">
+                                <span className="cq-accordion-title">
+                                  {cat.label}
+                                  {empty ? (
+                                    <span className="cq-accordion-soon">Coming soon</span>
+                                  ) : (
+                                    <span className="cq-accordion-count">{cat.count}</span>
+                                  )}
+                                </span>
+                                {cat.blurb ? (
+                                  <span className="cq-accordion-blurb">{cat.blurb}</span>
+                                ) : null}
+                                {bestPct != null ? (
+                                  <span
+                                    className={
+                                      "cq-accordion-best " +
+                                      (bestPct >= PASS_THRESHOLD * 100 ? "pass" : "try")
+                                    }
+                                  >
+                                    <FaTrophy aria-hidden="true" />
+                                    Best score: {bestPct}% ({best.correct}/{best.total})
+                                  </span>
+                                ) : null}
+                              </span>
+                              <span className="cq-accordion-chevron" aria-hidden="true">
+                                {empty ? <FaLock /> : <FaChevronDown />}
+                              </span>
+                            </button>
+
+                            {open ? (
+                              <div className="cq-accordion-body">
+                                <CategoryQuestions
+                                  apiBase={apiBase}
+                                  language={language}
+                                  category={cat}
+                                  cached={questionsByCat[cat.id]}
+                                  progress={progressByCat[cat.id]}
+                                  onLoaded={cacheQuestions}
+                                  onOpenQuestion={onOpenQuestion}
+                                />
+                              </div>
+                            ) : null}
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </div>
                 ) : null}
-              </li>
+              </section>
             );
           })}
-        </ul>
+        </div>
       )}
     </div>
   );

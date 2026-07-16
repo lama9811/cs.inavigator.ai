@@ -1,0 +1,184 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "objects",
+  "concept_label": "Objects",
+  "language": "javascript",
+  "questions": [
+    {
+      "id": "javascript-objects-check-1",
+      "concept": "objects",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "javascript",
+      "title": "Objects practice 1",
+      "code": "const key=\"credits\";",
+      "prompt": "Which uses the value in key?",
+      "choices": [
+        "student[key]",
+        "student.key",
+        "student->key",
+        "student(key)"
+      ],
+      "answer_index": 0,
+      "explanation": "Brackets evaluate the variable, while dot notation searches for a property literally named key."
+    },
+    {
+      "id": "javascript-objects-check-2",
+      "concept": "objects",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "javascript",
+      "title": "Objects practice 2",
+      "code": "const first={score:10};\nconst second=first;\nsecond.score=20;",
+      "prompt": "What becomes of first.score?",
+      "choices": [
+        "20",
+        "10",
+        "the object is copied",
+        "a const error"
+      ],
+      "answer_index": 0,
+      "explanation": "Both variables refer to one object, so the property change is visible through first."
+    },
+    {
+      "id": "javascript-objects-output-01",
+      "concept": "objects",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "javascript",
+      "title": "Trace Objects",
+      "code": "const student={name:\"Ada\",major:\"CS\"};\nconst field=\"major\";\nconsole.log(student.name);\nconsole.log(student[field]);",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "Ada\nCS"
+      ],
+      "explanation": "Dot notation reads a fixed name, while brackets use the string stored in field. The resulting output is 'Ada\\nCS'."
+    },
+    {
+      "id": "javascript-objects-supplement-01",
+      "concept": "objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Objects practice 5",
+      "code": "const key = \"credits\";\nconsole.log(student[key]);",
+      "prompt": "Given `const key = \"credits\";`, why use `student[key]` instead of `student.key`?",
+      "choices": [
+        "Brackets use the variable's value, so it reads student.credits",
+        "Dot and bracket access are identical here",
+        "student.key reads the credits property too",
+        "Brackets only work on arrays, not objects"
+      ],
+      "answer_index": 0,
+      "explanation": "`student[key]` evaluates `key` to the string \"credits\" and reads that property, giving `student.credits`. `student.key` looks for a property literally named \"key\", which does not exist, so it returns undefined. Bracket access works on objects and is exactly how you use a computed property name."
+    },
+    {
+      "id": "javascript-objects-authored-01",
+      "concept": "objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Objects concept check 1",
+      "code": null,
+      "prompt": "Which warning about Objects should a student remember?",
+      "choices": [
+        "student.key",
+        "Reading a missing property returns undefined; an error may occur later when code tries to use that absent value.",
+        "student->key",
+        "student(key)"
+      ],
+      "answer_index": 1,
+      "explanation": "Objects store values under keys. Dot notation reads a known simple key, while brackets evaluate a computed key. That reasoning supports the answer: Reading a missing property returns undefined; an error may occur later when code tries to use that absent value."
+    },
+    {
+      "id": "javascript-objects-authored-02",
+      "concept": "objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Objects concept check 2",
+      "code": null,
+      "prompt": "Which choice describes a reliable Objects practice?",
+      "choices": [
+        "10",
+        "the object is copied",
+        "Use dots for fixed keys.",
+        "a const error"
+      ],
+      "answer_index": 2,
+      "explanation": "Objects store values under keys. Dot notation reads a known simple key, while brackets evaluate a computed key. That reasoning supports the answer: Use dots for fixed keys."
+    },
+    {
+      "id": "javascript-objects-authored-03",
+      "concept": "objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Objects concept check 3",
+      "code": null,
+      "prompt": "Which recommendation belongs in a review of Objects code?",
+      "choices": [
+        "const key = \"credits\";\nconsole.log(student.key);",
+        "student(key)",
+        "10",
+        "Use brackets for computed keys."
+      ],
+      "answer_index": 3,
+      "explanation": "Objects store values under keys. Dot notation reads a known simple key, while brackets evaluate a computed key. That reasoning supports the answer: Use brackets for computed keys."
+    },
+    {
+      "id": "javascript-objects-authored-04",
+      "concept": "objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Objects concept check 4",
+      "code": null,
+      "prompt": "Which guideline helps prevent a common Objects mistake?",
+      "choices": [
+        "Check optional properties.",
+        "the object is copied",
+        "a const error",
+        "const key = \"credits\";\nconsole.log(student.key);"
+      ],
+      "answer_index": 0,
+      "explanation": "Objects store values under keys. Dot notation reads a known simple key, while brackets evaluate a computed key. That reasoning supports the answer: Check optional properties."
+    },
+    {
+      "id": "javascript-objects-authored-05",
+      "concept": "objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Objects concept check 5",
+      "code": null,
+      "prompt": "A classmate is checking their understanding of Objects. Which advice is correct?",
+      "choices": [
+        "student.key",
+        "Copy before independent mutation.",
+        "student->key",
+        "the object is copied"
+      ],
+      "answer_index": 1,
+      "explanation": "Objects store values under keys. Dot notation reads a known simple key, while brackets evaluate a computed key. That reasoning supports the answer: Copy before independent mutation."
+    },
+    {
+      "id": "javascript-objects-authored-06",
+      "concept": "objects",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Objects concept check 6",
+      "code": null,
+      "prompt": "What is the main idea behind Objects?",
+      "choices": [
+        "a const error",
+        "const key = \"credits\";\nconsole.log(student.key);",
+        "Group related values under named properties.",
+        "student.key"
+      ],
+      "answer_index": 2,
+      "explanation": "Objects store values under keys. Dot notation reads a known simple key, while brackets evaluate a computed key. That reasoning supports the answer: Group related values under named properties."
+    }
+  ]
+}

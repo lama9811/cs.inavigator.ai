@@ -1,0 +1,67 @@
+{
+  "_note": "ORIGINAL CS Navigator content added to align Learn with the existing Part 2 quiz category. No source prose, examples, or exercises were copied.",
+  "title": "Debug: Part 2",
+  "summary": "Trace aliases, numeric edges, mutation, and boundaries.",
+  "minutes": 7,
+  "error_classes": [
+    "runtime",
+    "wrong_answer",
+    "timeout"
+  ],
+  "refresher": "Harder Java bugs can originate in shared object references, integer arithmetic, or an edge case skipped by normal input. Record state just before and after its first incorrect change.",
+  "refresher_code": "System.out.println(value + \" : \" + value.getClass().getSimpleName());",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Harder Java bugs can originate in shared object references, integer arithmetic, or an edge case skipped by normal input. Record state just before and after its first incorrect change. Trace aliases, numeric edges, mutation, and boundaries."
+    },
+    {
+      "kind": "code",
+      "caption": "Clone creates a separate array, so changing the copy leaves the original first value intact.",
+      "code": "int[] original = {1, 2};\nint[] copy = original.clone();\ncopy[0] = 9;\nSystem.out.println(original[0]);\nSystem.out.println(copy[0]);",
+      "output": "1\n9"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Track the state",
+      "body": "Writing `int[] copy = original` copies only the reference. Both variables then reach the same array and share mutations."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does array assignment copy?",
+      "code": "int[] b = a;",
+      "choices": [
+        "the reference",
+        "every element into a new array",
+        "only the first value",
+        "the array length"
+      ],
+      "answer_index": 0,
+      "why": "Both variables point to one array object until code explicitly clones or copies it."
+    },
+    {
+      "kind": "check",
+      "prompt": "Why can an average lose its decimal?",
+      "code": "int average = total / count;",
+      "choices": [
+        "integer division occurs first",
+        "Java rounds every double",
+        "arrays block decimals",
+        "count becomes text"
+      ],
+      "answer_index": 0,
+      "why": "When both operands are integers, division produces an integer before the result is assigned."
+    },
+    {
+      "kind": "list",
+      "title": "Debug: Part 2 checklist",
+      "items": [
+        "Test empty arrays.",
+        "Track object aliases.",
+        "Inspect numeric operand types.",
+        "Capture the earliest bad state."
+      ]
+    }
+  ]
+}

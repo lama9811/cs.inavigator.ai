@@ -1,0 +1,84 @@
+{
+  "_note": "ORIGINAL content. Topic coverage follows David Eck's Introduction to Programming Using Java. No prose, examples, or exercises were copied; the source guides curriculum order only.",
+  "title": "Generics",
+  "summary": "Tell Java what type a collection or reusable class should hold.",
+  "minutes": 10,
+  "error_classes": [
+    "syntax",
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "Generics place a type inside angle brackets, such as `List<String>`. The compiler then checks what can enter and leave the collection. A type parameter like `T` lets one class or method work safely with several reference types.",
+  "refresher_code": "List<String> names = new ArrayList<>();\nnames.add(\"Ada\");\nString first = names.get(0);",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A list can hold names, grades, or Student objects. Java needs to know which kind you intend. The type inside angle brackets gives the compiler that information."
+    },
+    {
+      "kind": "code",
+      "caption": "This list accepts String values. Getting an item returns a String, so no cast is needed.",
+      "code": "List<String> courses = new ArrayList<>();\ncourses.add(\"CS101\");\ncourses.add(\"MATH120\");\nString first = courses.get(0);\nSystem.out.println(first);",
+      "output": "CS101"
+    },
+    {
+      "kind": "text",
+      "body": "Without a type argument, an older raw list treats its items as Object. That loses useful checks and can move a type mistake from compilation to runtime."
+    },
+    {
+      "kind": "compare",
+      "caption": "The generic list rejects the wrong item as soon as the code is compiled. The raw list accepts it and may fail during a later cast.",
+      "wrong_label": "Raw list",
+      "wrong": "List values = new ArrayList();\nvalues.add(42);\nString name = (String) values.get(0);",
+      "right_label": "Checked list",
+      "right": "List<String> names = new ArrayList<>();\nnames.add(\"Ada\");\nString name = names.get(0);"
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Use reference types in angle brackets",
+      "body": "Write `Integer` instead of `int` and `Double` instead of `double`. Java automatically wraps and unwraps these values in most collection code."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which declaration creates a list that accepts Integer values?",
+      "code": "",
+      "choices": [
+        "List<Integer> scores = new ArrayList<>();",
+        "List<int> scores = new ArrayList<>();",
+        "List scores<Integer> = new ArrayList<>();",
+        "Integer<List> scores = new ArrayList<>();"
+      ],
+      "answer_index": 0,
+      "why": "The element type belongs inside angle brackets after List. Collections use the wrapper type Integer rather than the primitive type int."
+    },
+    {
+      "kind": "text",
+      "body": "Your own class can use a type parameter too. A Box<T> stores one value whose type is chosen when the object is declared. The same class can then make a Box<String> or Box<Student>."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does `T` mean in `class Box<T>`?",
+      "code": "class Box<T> {\n    T value;\n}",
+      "choices": [
+        "A type chosen when Box is used",
+        "A required class named T",
+        "The number of items in the box",
+        "A private text value"
+      ],
+      "answer_index": 0,
+      "why": "T is a placeholder for a reference type. Declaring Box<String> replaces T with String for that use of the class."
+    },
+    {
+      "kind": "list",
+      "title": "Generics checklist",
+      "items": [
+        "Give every collection an element type.",
+        "Use wrapper types for primitive values.",
+        "Avoid raw collection types.",
+        "Let the diamond `<>` copy the type from the declaration.",
+        "Use a type parameter when one design works for several types."
+      ]
+    }
+  ]
+}

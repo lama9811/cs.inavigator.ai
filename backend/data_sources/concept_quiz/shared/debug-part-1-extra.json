@@ -1,0 +1,36 @@
+{
+    "_note":  "Original Debug Part 1 additions. These focus on common beginner mistakes and deterministic explanations.",
+    "questions":  [
+                      {
+                          "id":  "debug-p1-08",
+                          "concept":  "debug",
+                          "difficulty":  "easy",
+                          "kind":  "mcq-behavior",
+                          "title":  "Loop goes one step too far",
+                          "error_class":  "runtime",
+                          "prompt":  "What is wrong with the loop boundary?",
+                          "choices":  [
+                                          "It allows an index equal to the collection length",
+                                          "It skips index 0",
+                                          "It never enters the loop",
+                                          "It changes the collection length"
+                                      ],
+                          "answer_index":  0,
+                          "explanation":  "Indexes stop one before the length. Using \u003c= permits one extra iteration, so the final access is outside the collection. Use \u003c for an index-based scan.",
+                          "variants":  {
+                                           "python":  {
+                                                          "code":  "nums = [4, 8, 2]\nfor i in range(len(nums) + 1):\n    print(nums[i])"
+                                                      },
+                                           "java":  {
+                                                        "code":  "int[] nums = {4, 8, 2};\nfor (int i = 0; i \u003c= nums.length; i++) {\n    System.out.println(nums[i]);\n}"
+                                                    },
+                                           "javascript":  {
+                                                              "code":  "const nums = [4, 8, 2];\nfor (let i = 0; i \u003c= nums.length; i++) {\n  console.log(nums[i]);\n}"
+                                                          },
+                                           "cpp":  {
+                                                       "code":  "int nums[] = {4, 8, 2};\nfor (int i = 0; i \u003c= 3; i++) {\n    cout \u003c\u003c nums[i];\n}"
+                                                   }
+                                       }
+                      }
+                  ]
+}

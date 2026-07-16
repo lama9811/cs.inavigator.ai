@@ -1,0 +1,184 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "generics",
+  "concept_label": "Generics",
+  "language": "java",
+  "questions": [
+    {
+      "id": "java-generics-check-1",
+      "concept": "generics",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Generics practice 1",
+      "code": null,
+      "prompt": "Which declaration creates a list that accepts Integer values?",
+      "choices": [
+        "List<Integer> scores = new ArrayList<>();",
+        "List<int> scores = new ArrayList<>();",
+        "List scores<Integer> = new ArrayList<>();",
+        "Integer<List> scores = new ArrayList<>();"
+      ],
+      "answer_index": 0,
+      "explanation": "The element type belongs inside angle brackets after List. Collections use the wrapper type Integer rather than the primitive type int."
+    },
+    {
+      "id": "java-generics-check-2",
+      "concept": "generics",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "java",
+      "title": "Generics practice 2",
+      "code": "class Box<T> {\n    T value;\n}",
+      "prompt": "What does `T` mean in `class Box<T>`?",
+      "choices": [
+        "A type chosen when Box is used",
+        "A required class named T",
+        "The number of items in the box",
+        "A private text value"
+      ],
+      "answer_index": 0,
+      "explanation": "T is a placeholder for a reference type. Declaring Box<String> replaces T with String for that use of the class."
+    },
+    {
+      "id": "java-generics-output-01",
+      "concept": "generics",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "java",
+      "title": "Trace Generics",
+      "code": "List<String> courses = new ArrayList<>();\ncourses.add(\"CS101\");\ncourses.add(\"MATH120\");\nString first = courses.get(0);\nSystem.out.println(first);",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "CS101"
+      ],
+      "explanation": "This list accepts String values. Getting an item returns a String, so no cast is needed. The resulting output is 'CS101'."
+    },
+    {
+      "id": "java-generics-supplement-01",
+      "concept": "generics",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Generics practice 5",
+      "code": "List<String> names = new ArrayList<>();\nnames.add(\"Ada\");\nString name = names.get(0);",
+      "prompt": "Why does `List<String> names` catch a wrong-type mistake that the raw `List values` does not?",
+      "choices": [
+        "The element type is checked at compile time, so adding the wrong type fails to compile",
+        "A raw list cannot hold objects at all",
+        "get(0) on a raw list always returns null",
+        "The generic list sorts its items automatically"
+      ],
+      "answer_index": 0,
+      "explanation": "`List<String>` tells the compiler only strings belong, so `names.add(42)` would not compile and `get` returns a String with no cast. The raw `List` accepts anything and defers the problem to a cast that can blow up at run time. Generics add type checking, not sorting, and a raw list still stores objects."
+    },
+    {
+      "id": "java-generics-authored-01",
+      "concept": "generics",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Generics concept check 1",
+      "code": null,
+      "prompt": "What does the lesson mean by \"Use reference types in angle brackets\"?",
+      "choices": [
+        "List<int> scores = new ArrayList<>();",
+        "Write `Integer` instead of `int` and `Double` instead of `double`. Java automatically wraps and unwraps these values in most collection code.",
+        "List scores<Integer> = new ArrayList<>();",
+        "Integer<List> scores = new ArrayList<>();"
+      ],
+      "answer_index": 1,
+      "explanation": "Generics place a type inside angle brackets, such as `List<String>`. The compiler then checks what can enter and leave the collection. That reasoning supports the answer: Write `Integer` instead of `int` and `Double` instead of `double`. Java automatically wraps and unwraps these values in most collection code."
+    },
+    {
+      "id": "java-generics-authored-02",
+      "concept": "generics",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Generics concept check 2",
+      "code": null,
+      "prompt": "Which choice describes a reliable Generics practice?",
+      "choices": [
+        "A required class named T",
+        "The number of items in the box",
+        "Give every collection an element type.",
+        "A private text value"
+      ],
+      "answer_index": 2,
+      "explanation": "Generics place a type inside angle brackets, such as `List<String>`. The compiler then checks what can enter and leave the collection. That reasoning supports the answer: Give every collection an element type."
+    },
+    {
+      "id": "java-generics-authored-03",
+      "concept": "generics",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Generics concept check 3",
+      "code": null,
+      "prompt": "Which recommendation belongs in a review of Generics code?",
+      "choices": [
+        "List values = new ArrayList();\nvalues.add(42);\nString name = (String) values.get(0);",
+        "Integer<List> scores = new ArrayList<>();",
+        "A required class named T",
+        "Use wrapper types for primitive values."
+      ],
+      "answer_index": 3,
+      "explanation": "Generics place a type inside angle brackets, such as `List<String>`. The compiler then checks what can enter and leave the collection. That reasoning supports the answer: Use wrapper types for primitive values."
+    },
+    {
+      "id": "java-generics-authored-04",
+      "concept": "generics",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Generics concept check 4",
+      "code": null,
+      "prompt": "Which guideline helps prevent a common Generics mistake?",
+      "choices": [
+        "Avoid raw collection types.",
+        "The number of items in the box",
+        "A private text value",
+        "List values = new ArrayList();\nvalues.add(42);\nString name = (String) values.get(0);"
+      ],
+      "answer_index": 0,
+      "explanation": "Generics place a type inside angle brackets, such as `List<String>`. The compiler then checks what can enter and leave the collection. That reasoning supports the answer: Avoid raw collection types."
+    },
+    {
+      "id": "java-generics-authored-05",
+      "concept": "generics",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Generics concept check 5",
+      "code": null,
+      "prompt": "A classmate is checking their understanding of Generics. Which advice is correct?",
+      "choices": [
+        "List<int> scores = new ArrayList<>();",
+        "Let the diamond `<>` copy the type from the declaration.",
+        "List scores<Integer> = new ArrayList<>();",
+        "The number of items in the box"
+      ],
+      "answer_index": 1,
+      "explanation": "Generics place a type inside angle brackets, such as `List<String>`. The compiler then checks what can enter and leave the collection. That reasoning supports the answer: Let the diamond `<>` copy the type from the declaration."
+    },
+    {
+      "id": "java-generics-authored-06",
+      "concept": "generics",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Generics concept check 6",
+      "code": null,
+      "prompt": "Which choice shows sound reasoning about Generics?",
+      "choices": [
+        "A private text value",
+        "List values = new ArrayList();\nvalues.add(42);\nString name = (String) values.get(0);",
+        "Use a type parameter when one design works for several types.",
+        "List<int> scores = new ArrayList<>();"
+      ],
+      "answer_index": 2,
+      "explanation": "Generics place a type inside angle brackets, such as `List<String>`. The compiler then checks what can enter and leave the collection. That reasoning supports the answer: Use a type parameter when one design works for several types."
+    }
+  ]
+}

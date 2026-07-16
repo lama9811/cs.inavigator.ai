@@ -1,0 +1,124 @@
+{
+  "_note": "ORIGINAL content. Topic sequence follows the standard free Java text (Eck, 'Introduction to Programming Using Java', ch.2 on expressions, operators, and precedence); a topic sequence is not copyrightable. No prose, examples, or exercises are copied from it: it is CC BY-NC-SA, and copying would bind CS Navigator's content to those terms permanently, including the NonCommercial clause.",
+  "title": "Operators",
+  "summary": "The symbols that do the work: arithmetic, comparison, and logic.",
+  "minutes": 7,
+  "error_classes": [
+    "wrong_answer",
+    "syntax"
+  ],
+  "refresher": "Operators are the symbols that combine values. `+ - * /` do arithmetic and `%` gives the remainder. Division is the one to watch: if both sides are `int`, Java divides as integers and throws the fraction away, so `7 / 2` is 3. Make one side a `double` to get 3.5. Comparisons like `==` and `<` produce a `boolean`, and `&&`, `||`, and `!` combine those booleans. Assignment is `=`. Comparison is `==`. They are different operators.",
+  "refresher_code": "int total = 7;\nint count = 2;\n\nSystem.out.println(total / count);\n// 3\n\nSystem.out.println(total / 2.0);\n// 3.5",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "An operator is a symbol that takes values and produces a new one. Most of them come straight from math class. Java uses `+`, `-`, and `*` for add, subtract, and multiply, and they behave the way you expect. Division is where Java surprises people, so much of this lesson is really about division, and about telling `=` apart from `==`."
+    },
+    {
+      "kind": "code",
+      "caption": "Four familiar symbols, plus `%`, which gives the remainder after division. 7 divided by 2 is 3 with 1 left over, so `7 / 2` is 3 and `7 % 2` is 1. Watch the quotient: it is the line that will cost you points on an assignment. Every example below assumes the usual `public class Main` and `main` method wrapped around it.",
+      "code": "int sum = 7 + 2;\nint product = 7 * 2;\nint quotient = 7 / 2;\nint remainder = 7 % 2;\n\nSystem.out.println(sum);\nSystem.out.println(product);\nSystem.out.println(quotient);\nSystem.out.println(remainder);",
+      "output": "9\n14\n3\n1"
+    },
+    {
+      "kind": "text",
+      "body": "Look at that third line again. `7 / 2` gave you 3, not 3.5. Java did not round it. It threw the fraction away and kept the whole number. That is integer division, and it is doing exactly what it was told to do."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Integer division truncates",
+      "body": "When both sides of `/` are integers, Java keeps the whole-number part and discards the rest. `7 / 2` is 3. `9 / 10` is 0. Nothing warns you, because you asked for integer arithmetic and you got integer arithmetic. Any time an average or a percentage comes out lower than it should, and especially when it comes out as a flat 0, this is the first thing to suspect. Look for a `/` with an `int` on both sides."
+    },
+    {
+      "kind": "code",
+      "caption": "The types going in decide the type coming out. One `double` anywhere in the division is enough to make Java keep the fraction. `(double) total` is a cast: it says treat this int as a double for this expression, which is the fix when both variables are already declared as `int` and you cannot change that.",
+      "code": "int total = 7;\nint count = 2;\n\nSystem.out.println(total / count);\nSystem.out.println(total / 2.0);\nSystem.out.println((double) total / count);",
+      "output": "3\n3.5\n3.5"
+    },
+    {
+      "kind": "check",
+      "prompt": "The result is stored in a `double`, so what does this print?",
+      "code": "int total = 7;\nint count = 2;\ndouble average = total / count;\nSystem.out.println(average);",
+      "choices": [
+        "3.0",
+        "3.5",
+        "3",
+        "It does not compile"
+      ],
+      "answer_index": 0,
+      "why": "Java works out `total / count` on its own, before it ever looks at the left side. Both are `int`, so that is integer division and the answer is 3. Only then is the 3 stored in a `double`, which turns it into 3.0. The fraction was already gone by that point. If you picked 3.5, you assumed the `double` on the left reaches back and changes how the division is done. It does not. The type on the left says where the answer goes, not how it gets computed. Writing `(double) total / count` fixes it."
+    },
+    {
+      "kind": "code",
+      "caption": "Java gives you shortcuts for updating a variable from its own current value. `score += 3` is short for `score = score + 3`, and `score++` adds exactly 1. Each line changes the variable in place, so the prints let you watch it move: 5 becomes 8, then 9, then back down to 5.",
+      "code": "int score = 5;\n\nscore += 3;\nSystem.out.println(score);\n\nscore++;\nSystem.out.println(score);\n\nscore -= 4;\nSystem.out.println(score);",
+      "output": "8\n9\n5"
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "x++ and ++x are not always the same",
+      "body": "The same pattern behind `+=` gives you `-=`, `*=`, `/=`, and `%=`, and `x--` subtracts 1 the way `x++` adds it. On a line of its own, `x++` and `++x` do the same job, so inside a loop either one is fine. They part ways when you use the value in the same expression: `System.out.println(n++)` prints the old n and then adds 1, while `++n` adds 1 first and prints the new value. If you have to stop and work out which one an expression means, split it into two lines. Clear beats clever."
+    },
+    {
+      "kind": "text",
+      "body": "The next group asks questions instead of doing math. A comparison operator takes two values and produces a `boolean`, which is either `true` or `false`. That is the type an `if` statement needs."
+    },
+    {
+      "kind": "code",
+      "caption": "`==` asks whether two values match, and `!=` asks whether they differ. You also get `<`, `>`, `<=`, and `>=`. Each one hands back a boolean, and a boolean is an ordinary value, which is why you can print it straight out without an `if` anywhere in sight.",
+      "code": "int a = 5;\nint b = 5;\n\nSystem.out.println(a == b);\nSystem.out.println(a != b);\nSystem.out.println(a < 10);",
+      "output": "true\nfalse\ntrue"
+    },
+    {
+      "kind": "code",
+      "caption": "Once you have booleans, the logical operators join them up. `&&` demands both sides, `||` settles for either one, and `!` flips a boolean to its opposite. Say the first line aloud as \"eighteen or older and enrolled\" and it explains itself. Mind the doubled symbols: a single `&` or `|` is a different and much rarer operator, and typing one by accident is an easy slip to make.",
+      "code": "int age = 19;\nboolean enrolled = true;\n\nSystem.out.println(age >= 18 && enrolled);\nSystem.out.println(age < 18 || enrolled);\nSystem.out.println(!enrolled);",
+      "output": "true\ntrue\nfalse"
+    },
+    {
+      "kind": "compare",
+      "caption": "The headline mistake of this lesson. `=` puts a value into a variable. `==` asks whether two values are equal. Java catches the slip for you when the variable is a number, and the message names the problem outright: incompatible types: int cannot be converted to boolean. An `if` needs a boolean, and `score = 5` produces an int.",
+      "wrong_label": "Will not compile",
+      "wrong": "int score = 3;\n\nif (score = 5) {\n    System.out.println(\"five\");\n}\n// = assigns 5 to score,\n// so the if is handed\n// an int, not a boolean",
+      "right_label": "Compiles and asks the question",
+      "right": "int score = 3;\n\nif (score == 5) {\n    System.out.println(\"five\");\n}\n// == compares,\n// so the if is handed\n// a boolean"
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "Java catches this at compile time, with one exception",
+      "body": "Java checks types before it runs anything, so `if (score = 5)` is rejected by the compiler and the program never starts. That is a syntax-class error, and it is the good outcome, because you find out straight away. The exception is a variable that is already a `boolean`. `if (done = true)` sets `done` to true and then hands `true` to the `if`, so it compiles, the branch runs on every pass, and nothing complains. That version is a wrong-answer bug and it will not announce itself. When a condition seems stuck on true, count the equals signs."
+    },
+    {
+      "kind": "text",
+      "body": "The last piece is precedence: which operator goes first when you write several of them in one line. Java follows the order you already learned in math. `*`, `/`, and `%` run before `+` and `-`, so `2 + 3 * 4` is 14 and not 20. Arithmetic runs before comparisons, comparisons run before `&&`, and `&&` runs before `||`. Parentheses beat all of it, and they are free."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does this print?",
+      "code": "int x = 10;\nx += 5;\nSystem.out.println(x / 3);",
+      "choices": [
+        "5",
+        "5.0",
+        "3",
+        "6"
+      ],
+      "answer_index": 0,
+      "why": "Take it one line at a time. `x` starts at 10, and `x += 5` makes it 15. Then `15 / 3` is an int divided by an int, and this one happens to come out even, so the answer is 5 and no fraction is lost. It prints as `5` rather than `5.0` because int division produces an `int`, and Java prints an int with no decimal point. If you picked 5.0, you were watching for the truncation trap, which is the right instinct aimed at the wrong line. The trap costs you nothing here, because 15 divides by 3 exactly."
+    },
+    {
+      "kind": "list",
+      "title": "What to check when the arithmetic looks wrong",
+      "items": [
+        "An average or a percentage came out too low, or came out as 0: you divided an `int` by an `int`. Cast one side with `(double)`.",
+        "Declaring the result as a `double` does not rescue you. `double avg = 7 / 2;` is 3.0, because the division finished before the assignment happened.",
+        "A condition never changes: count the equals signs. `=` assigns, `==` compares.",
+        "Use `%` to test divisibility. `n % 2 == 0` is how you ask whether n is even.",
+        "When one expression mixes `*`, `+`, and `&&`, add parentheses. They cost nothing and they say what you meant.",
+        "The compiler checks types before your code runs, so an error it catches is the cheapest bug you will get. The expensive ones are the lines that compile and still give you the wrong number."
+      ]
+    }
+  ]
+}
