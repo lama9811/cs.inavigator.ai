@@ -5,7 +5,9 @@ import { FaSearch } from "@react-icons/all-files/fa/FaSearch";
 import { FaRegBookmark } from "@react-icons/all-files/fa/FaRegBookmark";
 import { FaBookmark } from "@react-icons/all-files/fa/FaBookmark";
 import { FaTrashAlt } from "@react-icons/all-files/fa/FaTrashAlt";
+import { FaRegListAlt } from "@react-icons/all-files/fa/FaRegListAlt";
 import { getApiBase } from "../../lib/apiBase";
+import ScholarshipDetail from "./ScholarshipDetail";
 import "./ScholarshipsPage.css";
 
 const API_BASE = getApiBase();
@@ -85,7 +87,10 @@ function OpportunityCard({ item, saved, onSave, onRemove, saving }) {
   return (
     <li className="sch-card">
       <div className="sch-card-head">
-        <h3 className="sch-card-name">{item.name}</h3>
+        <h3 className="sch-card-name">
+          {item.curated && <span className="sch-rec" title="Curated by CS Navigator">★ Recommended</span>}
+          {item.name}
+        </h3>
         {item.kind && <span className={`sch-kind sch-kind-${item.kind}`}>{item.kind}</span>}
       </div>
 
@@ -151,10 +156,12 @@ function OpportunityCard({ item, saved, onSave, onRemove, saving }) {
   );
 }
 
-function SavedCard({ item, onStatus, onRemove, busy }) {
+function SavedCard({ item, onStatus, onRemove, onOpen, busy }) {
   const days = daysLabel(item);
-  const hasLink = item.url && item.url !== "(not listed)";
   const expired = item.urgency === "EXPIRED";
+
+  const prog = item.checklist_progress || { done: 0, total: 0 };
+  const pct = prog.total ? Math.round((prog.done / prog.total) * 100) : 0;
 
   return (
     <li className={`sch-card sch-saved-card ${expired ? "is-expired" : ""}`}>
@@ -182,6 +189,17 @@ function SavedCard({ item, onStatus, onRemove, busy }) {
         </div>
       </dl>
 
+      {/* Compact checklist progress, so the card shows at a glance how far along
+          an application is without opening the detail view. */}
+      {prog.total > 0 && (
+        <div className="sch-card-progress">
+          <div className="sch-progress">
+            <div className="sch-progress-bar" style={{ width: `${pct}%` }} />
+          </div>
+          <span className="sch-card-progress-label">{prog.done}/{prog.total} steps</span>
+        </div>
+      )}
+
       <div className="sch-card-actions">
         <label className="sch-status-pick">
           <span className="sch-status-label">Status</span>
@@ -197,11 +215,9 @@ function SavedCard({ item, onStatus, onRemove, busy }) {
           </select>
         </label>
 
-        {hasLink && (
-          <a className="sch-apply" href={item.url} target="_blank" rel="noopener noreferrer">
-            Apply <FaExternalLinkAlt size={11} />
-          </a>
-        )}
+        <button type="button" className="sch-open" onClick={() => onOpen?.(item)}>
+          <FaRegListAlt size={12} /> {prog.total > 0 ? "Checklist" : "View"}
+        </button>
         <button
           type="button"
           className="sch-remove"
@@ -227,6 +243,8 @@ export default function ScholarshipsPage() {
 
   const [saved, setSaved] = useState([]);
   const [savingKey, setSavingKey] = useState(null); // name+url currently in flight
+  const [openId, setOpenId] = useState(null);        // saved id shown in the detail view
+  const [saveError, setSaveError] = useState("");    // surfaced save/unsave failures
 
   const token = localStorage.getItem("token");
   const authHeaders = { Authorization: `Bearer ${token}` };
@@ -300,22 +318,26 @@ export default function ScholarshipsPage() {
   const saveItem = useCallback(async (item) => {
     const key = `${item.name}|${item.url || ""}`;
     setSavingKey(key);
+    setSaveError("");
     try {
       const res = await fetch(`${API_BASE}/api/scholarships/saved`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify(toSavePayload(item)),
       });
-      if (res.ok) {
-        const row = await res.json();
-        // Replace an existing row with the same id, or add the new one.
-        setSaved((prev) => {
-          const without = prev.filter((s) => s.id !== row.id);
-          return [row, ...without];
-        });
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({}));
+        throw new Error(detail?.detail || `Couldn't save (error ${res.status}).`);
       }
-    } catch {
-      /* leave the button as Save so the student can retry */
+      const row = await res.json();
+      // Replace an existing row with the same id, or add the new one.
+      setSaved((prev) => {
+        const without = prev.filter((s) => s.id !== row.id);
+        return [row, ...without];
+      });
+    } catch (e) {
+      // Surface it — a silently-failing Save button is worse than an error.
+      setSaveError(e.message || "Couldn't save. Please try again.");
     } finally {
       setSavingKey(null);
     }
@@ -325,21 +347,31 @@ export default function ScholarshipsPage() {
   const removeItem = useCallback(async (row) => {
     const key = `${row.name}|${row.url || ""}`;
     setSavingKey(key);
+    setSaveError("");
     try {
       const res = await fetch(`${API_BASE}/api/scholarships/saved/${row.id}`, {
         method: "DELETE",
         headers: authHeaders,
       });
-      if (res.ok) {
-        setSaved((prev) => prev.filter((s) => s.id !== row.id));
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({}));
+        throw new Error(detail?.detail || `Couldn't remove (error ${res.status}).`);
       }
-    } catch {
-      /* keep it in the list so the student can retry */
+      setSaved((prev) => prev.filter((s) => s.id !== row.id));
+      setOpenId((cur) => (cur === row.id ? null : cur)); // close detail if it was open
+    } catch (e) {
+      setSaveError(e.message || "Couldn't remove. Please try again.");
     } finally {
       setSavingKey(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  // Merge a server-updated row (from status change or checklist edit) into the
+  // saved list, so the card's progress bar and the detail view stay in sync.
+  const mergeSaved = useCallback((row) => {
+    setSaved((prev) => prev.map((s) => (s.id === row.id ? { ...s, ...row } : s)));
+  }, []);
 
   const setStatus = useCallback(async (row, status) => {
     setSavingKey(`${row.name}|${row.url || ""}`);
@@ -367,6 +399,10 @@ export default function ScholarshipsPage() {
 
   const total = result?.total ?? 0;
   const inFlight = (item) => savingKey === `${item.name}|${item.url || ""}`;
+  // The saved item currently open in the detail view (if any). Derived so it
+  // always reflects the latest saved data (progress, status).
+  const openItem = openId != null ? saved.find((s) => s.id === openId) : null;
+  const showDetail = tab === "saved" && openItem;
 
   return (
     <div className="sch-page">
@@ -380,34 +416,41 @@ export default function ScholarshipsPage() {
         </p>
       </header>
 
-      <div className="sch-tabs" role="tablist">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "search"}
-          className={`sch-tab ${tab === "search" ? "is-active" : ""}`}
-          onClick={() => setTab("search")}
-        >
-          <FaSearch size={12} /> Search
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "saved"}
-          className={`sch-tab ${tab === "saved" ? "is-active" : ""}`}
-          onClick={() => setTab("saved")}
-        >
-          <FaBookmark size={12} /> My Scholarships
-          {saved.length > 0 && <span className="sch-tab-count">{saved.length}</span>}
-        </button>
-      </div>
+      {/* Tabs hide while a detail view is open; the detail has its own back link. */}
+      {!showDetail && (
+        <div className="sch-tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "search"}
+            className={`sch-tab ${tab === "search" ? "is-active" : ""}`}
+            onClick={() => setTab("search")}
+          >
+            <FaSearch size={12} /> Search
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "saved"}
+            className={`sch-tab ${tab === "saved" ? "is-active" : ""}`}
+            onClick={() => setTab("saved")}
+          >
+            <FaBookmark size={12} /> My Scholarships
+            {saved.length > 0 && <span className="sch-tab-count">{saved.length}</span>}
+          </button>
+        </div>
+      )}
+
+      {saveError && (
+        <div className="sch-notice sch-notice-error" role="alert">{saveError}</div>
+      )}
 
       {tab === "search" ? (
         <>
           {configured === false && (
-            <div className="sch-notice sch-notice-warn">
-              Scholarship search isn&apos;t set up yet. An admin needs to add a Tavily API
-              key before this page can return results.
+            <div className="sch-notice">
+              Showing our curated list of top scholarships and internships. Live web
+              search isn&apos;t set up yet, but these are the awards worth applying to.
             </div>
           )}
 
@@ -418,15 +461,15 @@ export default function ScholarshipsPage() {
               placeholder="What are you looking for? e.g. summer internships for juniors"
               value={query}
               maxLength={500}
-              disabled={busy || configured === false}
+              disabled={busy}
               onChange={(e) => setQuery(e.target.value)}
             />
-            <button type="submit" className="sch-btn" disabled={busy || configured === false}>
+            <button type="submit" className="sch-btn" disabled={busy}>
               <FaSearch size={13} /> {busy ? "Searching…" : "Search"}
             </button>
           </form>
 
-          {!result && !busy && configured !== false && (
+          {!result && !busy && (
             <div className="sch-examples">
               <span className="sch-examples-label">Try:</span>
               {EXAMPLES.map((ex) => (
@@ -510,11 +553,18 @@ export default function ScholarshipsPage() {
             </>
           )}
         </>
+      ) : openItem ? (
+        <ScholarshipDetail
+          item={openItem}
+          onBack={() => setOpenId(null)}
+          onSaved={mergeSaved}
+        />
       ) : (
         <SavedView
           saved={saved}
           onStatus={setStatus}
           onRemove={removeItem}
+          onOpen={(row) => setOpenId(row.id)}
           inFlight={inFlight}
           onGoSearch={() => setTab("search")}
         />
@@ -523,9 +573,42 @@ export default function ScholarshipsPage() {
   );
 }
 
+// The sort options for the saved list. "deadline" leans on days_remaining (which
+// the backend recomputes on load); undated items sink. "recommended" floats the
+// curated picks; "name" is a plain A–Z.
+const SORTS = [
+  { key: "deadline", label: "Deadline (soonest)" },
+  { key: "recommended", label: "Recommended first" },
+  { key: "name", label: "Name (A–Z)" },
+];
+
+function sortSaved(items, sort) {
+  const copy = [...items];
+  if (sort === "name") {
+    copy.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  } else if (sort === "recommended") {
+    copy.sort((a, b) => (b.curated ? 1 : 0) - (a.curated ? 1 : 0));
+  } else {
+    // deadline: dated first (soonest), undated last
+    copy.sort((a, b) => {
+      const da = a.days_remaining, db = b.days_remaining;
+      if (da == null && db == null) return 0;
+      if (da == null) return 1;
+      if (db == null) return -1;
+      return da - db;
+    });
+  }
+  return copy;
+}
+
 // The "My Scholarships" tab. Scholarships and internships are split into their own
 // sections because they are different objects (an internship has no award amount).
-function SavedView({ saved, onStatus, onRemove, inFlight, onGoSearch }) {
+// A filter/sort bar sits on top so a student with many saved items can slice them.
+function SavedView({ saved, onStatus, onRemove, onOpen, inFlight, onGoSearch }) {
+  const [kind, setKind] = useState("all");        // all | scholarship | internship
+  const [status, setStatus] = useState("all");    // all | <a pipeline status>
+  const [sort, setSort] = useState("deadline");
+
   if (!saved.length) {
     return (
       <div className="sch-empty">
@@ -542,8 +625,19 @@ function SavedView({ saved, onStatus, onRemove, inFlight, onGoSearch }) {
     );
   }
 
-  const scholarships = saved.filter((s) => s.kind !== "internship");
-  const internships = saved.filter((s) => s.kind === "internship");
+  // Apply the status filter (kind is handled per-section below).
+  const afterStatus = status === "all"
+    ? saved
+    : saved.filter((s) => s.status === status);
+
+  const scholarships = sortSaved(afterStatus.filter((s) => s.kind !== "internship"), sort);
+  const internships = sortSaved(afterStatus.filter((s) => s.kind === "internship"), sort);
+
+  const showScholarships = kind !== "internship";
+  const showInternships = kind !== "scholarship";
+  const nothingMatches =
+    (!showScholarships || !scholarships.length) &&
+    (!showInternships || !internships.length);
 
   const renderSection = (label, items) =>
     items.length > 0 && (
@@ -558,6 +652,7 @@ function SavedView({ saved, onStatus, onRemove, inFlight, onGoSearch }) {
               item={item}
               onStatus={onStatus}
               onRemove={onRemove}
+              onOpen={onOpen}
               busy={inFlight(item)}
             />
           ))}
@@ -567,8 +662,42 @@ function SavedView({ saved, onStatus, onRemove, inFlight, onGoSearch }) {
 
   return (
     <>
-      {renderSection("Scholarships", scholarships)}
-      {renderSection("Internships", internships)}
+      <div className="sch-toolbar">
+        <label className="sch-toolbar-field">
+          <span>Show</span>
+          <select value={kind} onChange={(e) => setKind(e.target.value)}>
+            <option value="all">All</option>
+            <option value="scholarship">Scholarships</option>
+            <option value="internship">Internships</option>
+          </select>
+        </label>
+        <label className="sch-toolbar-field">
+          <span>Status</span>
+          <select value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value="all">Any</option>
+            {STATUSES.map((s) => (
+              <option key={s.key} value={s.key}>{s.label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="sch-toolbar-field">
+          <span>Sort</span>
+          <select value={sort} onChange={(e) => setSort(e.target.value)}>
+            {SORTS.map((s) => (
+              <option key={s.key} value={s.key}>{s.label}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {nothingMatches ? (
+        <p className="sch-status">Nothing matches those filters. Try widening them.</p>
+      ) : (
+        <>
+          {showScholarships && renderSection("Scholarships", scholarships)}
+          {showInternships && renderSection("Internships", internships)}
+        </>
+      )}
     </>
   );
 }
