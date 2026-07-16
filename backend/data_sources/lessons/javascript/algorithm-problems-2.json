@@ -1,0 +1,84 @@
+{
+  "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
+  "title": "Algorithm Problems: Part 2",
+  "summary": "Coordinate multiple state values and edge cases.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "runtime",
+    "timeout"
+  ],
+  "refresher": "A multi-step algorithm may track a value plus its index, or a count plus a total. State what remains true after each pass, and define empty input and tie behavior.",
+  "refresher_code": "let best=0;\nfor(let i=1;i<values.length;i++){\n if(values[i]>values[best]) best=i;\n}",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A multi-step algorithm may track a value plus its index, or a count plus a total. State what remains true after each pass, and define empty input and tie behavior. Coordinate multiple state values and edge cases."
+    },
+    {
+      "kind": "text",
+      "body": "Part 2 problems often need two related facts at once. A largest-value search may keep an index because that index provides both the value and its location. An invariant is simply a sentence that remains true after each pass, such as: `best` points to the largest item examined so far."
+    },
+    {
+      "kind": "code",
+      "caption": "The first item initializes the candidate; each later item may replace its index.",
+      "code": "function largestIndex(v){\n if(v.length===0)return -1;\n let best=0;\n for(let i=1;i<v.length;i++)if(v[i]>v[best])best=i;\n return best;\n}\nconsole.log(largestIndex([4,9,7]));",
+      "output": "1"
+    },
+    {
+      "kind": "compare",
+      "caption": "Guard the empty case before choosing a first candidate.",
+      "wrong_label": "Common mistake",
+      "wrong": "let best = 0;\nreturn values[best]; // fails when empty",
+      "right_label": "Clearer version",
+      "right": "if (values.length === 0) return null;\nlet best = 0;"
+    },
+    {
+      "kind": "text",
+      "body": "Trace `[4, 9, 7]`: best begins at zero, index one contains a larger value so best becomes one, and index two does not replace it. The invariant remains true after every comparison. Decide separately whether equal values should keep the first or last index."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Trace this carefully",
+      "body": "Empty input has no first candidate, so guard it before reading index zero and choose an explicit contract."
+    },
+    {
+      "kind": "check",
+      "prompt": "Why begin at index one?",
+      "code": "",
+      "choices": [
+        "index zero is already the candidate",
+        "arrays start at one",
+        "odd indexes lead",
+        "negative values are skipped"
+      ],
+      "answer_index": 0,
+      "why": "The first element was already used to initialize the best candidate."
+    },
+    {
+      "kind": "check",
+      "prompt": "With `>`, which tied maximum stays?",
+      "code": "const v=[8,3,8];",
+      "choices": [
+        "the first",
+        "the last",
+        "both",
+        "neither"
+      ],
+      "answer_index": 0,
+      "why": "The later equal value does not pass a strict greater-than test, so the first remains."
+    },
+    {
+      "kind": "list",
+      "title": "Algorithm Problems: Part 2 checklist",
+      "items": [
+        "Name each state meaning.",
+        "Choose a tie rule.",
+        "Guard empty input.",
+        "Trace an iteration table."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

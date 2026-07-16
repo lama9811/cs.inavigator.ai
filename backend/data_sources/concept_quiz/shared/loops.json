@@ -1,0 +1,409 @@
+{
+  "_note": "Loops. Curriculum sequence follows Foundations of Python Programming (Runestone) ch.7 and Think Python ch.7. Both are copyleft (GFDL / CC BY-NC-SA), so NO content is copied from either: only the topic order is used, and a topic sequence is not copyrightable. Every question below is original. Concepts covered: for over a sequence, range bounds and the off-by-one, the accumulator pattern, while conditions, the infinite loop, and loop-variable scope after the loop ends.",
+  "concept": "loops",
+  "concept_label": "Loops",
+  "questions": [
+    {
+      "id": "for-count-01",
+      "concept": "loops",
+      "difficulty": "easy",
+      "kind": "mcq-output",
+      "title": "How many times does the body run?",
+      "variants": {
+        "python": {
+          "code": "for i in range(3):\n    print(\"hi\")",
+          "prompt": "How many lines does this print?",
+          "choices": ["2", "3", "4", "It runs forever"],
+          "answer_index": 1,
+          "explanation": "`range(3)` produces 0, 1, 2. That is three numbers, so the body runs three times. The loop variable `i` is not used here, which is fine: sometimes you only want the repetition."
+        },
+        "java": {
+          "code": "for (int i = 0; i < 3; i++) {\n    System.out.println(\"hi\");\n}",
+          "prompt": "How many lines does this print?",
+          "choices": ["2", "3", "4", "It runs forever"],
+          "answer_index": 1,
+          "explanation": "`i` starts at 0 and the loop continues while `i < 3`, so the body runs for i = 0, 1, 2. That is three times. Reading a `for` header left to right (start, keep going while, do after each pass) tells you the count."
+        },
+        "javascript": {
+          "code": "for (let i = 0; i < 3; i++) {\n  console.log(\"hi\");\n}",
+          "prompt": "How many lines does this print?",
+          "choices": ["2", "3", "4", "It runs forever"],
+          "answer_index": 1,
+          "explanation": "`i` starts at 0 and the loop runs while `i < 3`, so the body runs for i = 0, 1, 2. Three times. Reading a `for` header left to right (start, keep going while, do after each pass) tells you the count."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    for (int i = 0; i < 3; i++) {\n        cout << \"hi\" << endl;\n    }\n    return 0;\n}",
+          "prompt": "How many lines does this print?",
+          "choices": ["2", "3", "4", "It runs forever"],
+          "answer_index": 1,
+          "explanation": "`i` starts at 0 and the loop continues while `i < 3`, so the body runs for i = 0, 1, 2. Three times. Reading a `for` header left to right (start, keep going while, do after each pass) tells you the count."
+        }
+      }
+    },
+    {
+      "id": "off-by-one-01",
+      "concept": "loops",
+      "difficulty": "easy",
+      "kind": "mcq-output",
+      "title": "Where does the counting stop?",
+      "error_class": "wrong_answer",
+      "variants": {
+        "python": {
+          "code": "for i in range(4):\n    print(i)",
+          "prompt": "What is the last number printed?",
+          "choices": ["3", "4", "5", "0"],
+          "answer_index": 0,
+          "explanation": "`range(4)` gives 0, 1, 2, 3. It stops just before 4 and never reaches it. If you picked 4, you have met the off-by-one error, which is the most common counting bug there is. To get 1 through 4, write `range(1, 5)`."
+        },
+        "java": {
+          "code": "for (int i = 0; i < 4; i++) {\n    System.out.println(i);\n}",
+          "prompt": "What is the last number printed?",
+          "choices": ["3", "4", "5", "0"],
+          "answer_index": 0,
+          "explanation": "The condition is `i < 4`, so when `i` reaches 4 the loop stops without running the body. The last value printed is 3. If you picked 4, you have met the off-by-one error. Changing `<` to `<=` would print 4 as well."
+        },
+        "javascript": {
+          "code": "for (let i = 0; i < 4; i++) {\n  console.log(i);\n}",
+          "prompt": "What is the last number printed?",
+          "choices": ["3", "4", "5", "0"],
+          "answer_index": 0,
+          "explanation": "The condition is `i < 4`, so when `i` becomes 4 the loop stops before running the body again. The last number printed is 3. If you picked 4, you have met the off-by-one error. Using `<=` would print 4 too."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    for (int i = 0; i < 4; i++) {\n        cout << i << endl;\n    }\n    return 0;\n}",
+          "prompt": "What is the last number printed?",
+          "choices": ["3", "4", "5", "0"],
+          "answer_index": 0,
+          "explanation": "The condition is `i < 4`, so when `i` reaches 4 the loop stops without running the body. The last value printed is 3. If you picked 4, you have met the off-by-one error. Using `<=` would print 4 as well."
+        }
+      }
+    },
+    {
+      "id": "accumulator-01",
+      "concept": "loops",
+      "difficulty": "easy",
+      "kind": "typein",
+      "title": "Add up a list",
+      "variants": {
+        "python": {
+          "code": "total = 0\nfor price in [4, 7, 2]:\n    total = total + price\nprint(total)",
+          "prompt": "What number does this print?",
+          "accepted": ["13"],
+          "explanation": "This is the accumulator pattern: start a total at 0, then add to it on every pass. 0 + 4 is 4, plus 7 is 11, plus 2 is 13. Almost every problem that asks you to sum, count, or collect is this pattern in disguise."
+        },
+        "java": {
+          "code": "int[] prices = {4, 7, 2};\nint total = 0;\nfor (int price : prices) {\n    total = total + price;\n}\nSystem.out.println(total);",
+          "prompt": "What number does this print?",
+          "accepted": ["13"],
+          "explanation": "This is the accumulator pattern: start a total at 0, then add to it on every pass. 0 + 4 is 4, plus 7 is 11, plus 2 is 13. Almost every problem that asks you to sum, count, or collect is this pattern in disguise."
+        },
+        "javascript": {
+          "code": "let total = 0;\nfor (const price of [4, 7, 2]) {\n  total = total + price;\n}\nconsole.log(total);",
+          "prompt": "What number does this print?",
+          "accepted": ["13"],
+          "explanation": "This is the accumulator pattern: start a total at 0, then add to it on every pass. 0 + 4 is 4, plus 7 is 11, plus 2 is 13. Almost every problem that asks you to sum, count, or collect is this pattern in disguise."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int prices[3] = {4, 7, 2};\n    int total = 0;\n    for (int i = 0; i < 3; i++) {\n        total = total + prices[i];\n    }\n    cout << total;\n    return 0;\n}",
+          "prompt": "What number does this print?",
+          "accepted": ["13"],
+          "explanation": "This is the accumulator pattern: start a total at 0, then add to it on every pass. 0 + 4 is 4, plus 7 is 11, plus 2 is 13. Almost every problem that asks you to sum, count, or collect is this pattern in disguise."
+        }
+      }
+    },
+    {
+      "id": "accumulator-reset-01",
+      "concept": "loops",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "The total that keeps forgetting",
+      "error_class": "wrong_answer",
+      "variants": {
+        "python": {
+          "code": "for price in [4, 7, 2]:\n    total = 0\n    total = total + price\nprint(total)",
+          "prompt": "What does this print?",
+          "choices": ["13", "2", "0", "4"],
+          "answer_index": 1,
+          "explanation": "Look at where `total = 0` sits. It is inside the loop, so it runs again on every pass and wipes out everything added so far. The last pass sets it to 0 and adds 2, so 2 prints. The accumulator has to be created before the loop, not inside it. This one runs without any error, which is what makes it dangerous."
+        },
+        "java": {
+          "code": "int[] prices = {4, 7, 2};\nint total = 0;\nfor (int price : prices) {\n    total = 0;\n    total = total + price;\n}\nSystem.out.println(total);",
+          "prompt": "What does this print?",
+          "choices": ["13", "2", "0", "4"],
+          "answer_index": 1,
+          "explanation": "The `total = 0;` inside the loop runs on every pass and wipes out everything added so far. The last pass resets it and adds 2, so 2 prints. The reset belongs outside the loop. Nothing here crashes, which is exactly what makes this bug hard to spot."
+        },
+        "javascript": {
+          "code": "let total = 0;\nfor (const price of [4, 7, 2]) {\n  total = 0;\n  total = total + price;\n}\nconsole.log(total);",
+          "prompt": "What does this print?",
+          "choices": ["13", "2", "0", "4"],
+          "answer_index": 1,
+          "explanation": "The `total = 0;` inside the loop runs on every pass and throws away everything added so far. The final pass resets it and adds 2, so 2 prints. The reset belongs outside the loop. Nothing crashes here, which is what makes the bug easy to miss."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int prices[3] = {4, 7, 2};\n    int total = 0;\n    for (int i = 0; i < 3; i++) {\n        total = 0;\n        total = total + prices[i];\n    }\n    cout << total;\n    return 0;\n}",
+          "prompt": "What does this print?",
+          "choices": ["13", "2", "0", "4"],
+          "answer_index": 1,
+          "explanation": "The `total = 0;` inside the loop runs on every pass and wipes out everything added so far. The last pass resets it and adds 2, so 2 prints. The reset belongs outside the loop. Nothing crashes, which is what makes this bug hard to find."
+        }
+      }
+    },
+    {
+      "id": "while-infinite-01",
+      "concept": "loops",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "A loop with no way out",
+      "error_class": "timeout",
+      "variants": {
+        "python": {
+          "code": "count = 1\nwhile count <= 3:\n    print(count)",
+          "prompt": "What happens when this runs?",
+          "choices": [
+            "It prints 1, 2, 3",
+            "It prints 1 forever",
+            "It prints nothing",
+            "It raises an error"
+          ],
+          "answer_index": 1,
+          "explanation": "Nothing inside the loop ever changes `count`, so `count <= 3` stays true and the loop never ends. Every `while` loop needs something in its body that eventually makes the condition false. When a run of yours times out, this is the first thing to check."
+        },
+        "java": {
+          "code": "int count = 1;\nwhile (count <= 3) {\n    System.out.println(count);\n}",
+          "prompt": "What happens when this runs?",
+          "choices": [
+            "It prints 1, 2, 3",
+            "It prints 1 forever",
+            "It prints nothing",
+            "It fails to compile"
+          ],
+          "answer_index": 1,
+          "explanation": "Nothing in the body ever changes `count`, so `count <= 3` stays true and the loop never ends. Every `while` loop needs something inside it that eventually makes the condition false. When a run times out, look here first."
+        },
+        "javascript": {
+          "code": "let count = 1;\nwhile (count <= 3) {\n  console.log(count);\n}",
+          "prompt": "What happens when this runs?",
+          "choices": [
+            "It prints 1, 2, 3",
+            "It prints 1 forever",
+            "It prints nothing",
+            "It throws a RangeError"
+          ],
+          "answer_index": 1,
+          "explanation": "Nothing in the body ever changes `count`, so `count <= 3` stays true forever. Every `while` loop needs something inside it that eventually makes the condition false. When a run times out, this is the first thing to check."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int count = 1;\n    while (count <= 3) {\n        cout << count << endl;\n    }\n    return 0;\n}",
+          "prompt": "What happens when this runs?",
+          "choices": [
+            "It prints 1, 2, 3",
+            "It prints 1 forever",
+            "It prints nothing",
+            "It fails to compile"
+          ],
+          "answer_index": 1,
+          "explanation": "Nothing in the body ever changes `count`, so `count <= 3` stays true and the loop never ends. Every `while` loop needs something inside it that eventually makes the condition false. When a run times out, look here first."
+        }
+      }
+    },
+    {
+      "id": "while-countdown-01",
+      "concept": "loops",
+      "difficulty": "easy",
+      "kind": "mcq-output",
+      "title": "Counting down",
+      "variants": {
+        "python": {
+          "code": "n = 3\nwhile n > 0:\n    print(n)\n    n = n - 1",
+          "prompt": "What does this print?",
+          "choices": ["3 2 1", "3 2 1 0", "2 1 0", "3"],
+          "answer_index": 0,
+          "explanation": "The condition is checked before each pass. It prints 3, 2, 1, and when `n` reaches 0 the check `n > 0` fails, so the body does not run again. 0 is never printed."
+        },
+        "java": {
+          "code": "int n = 3;\nwhile (n > 0) {\n    System.out.println(n);\n    n = n - 1;\n}",
+          "prompt": "What does this print?",
+          "choices": ["3 2 1", "3 2 1 0", "2 1 0", "3"],
+          "answer_index": 0,
+          "explanation": "The condition is checked before each pass. It prints 3, 2, 1, and once `n` hits 0 the check `n > 0` fails, so the body does not run again. 0 is never printed."
+        },
+        "javascript": {
+          "code": "let n = 3;\nwhile (n > 0) {\n  console.log(n);\n  n = n - 1;\n}",
+          "prompt": "What does this print?",
+          "choices": ["3 2 1", "3 2 1 0", "2 1 0", "3"],
+          "answer_index": 0,
+          "explanation": "The condition is checked before each pass. It prints 3, 2, 1, and once `n` reaches 0 the check `n > 0` fails, so the body does not run again. 0 is never printed."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int n = 3;\n    while (n > 0) {\n        cout << n << endl;\n        n = n - 1;\n    }\n    return 0;\n}",
+          "prompt": "What does this print?",
+          "choices": ["3 2 1", "3 2 1 0", "2 1 0", "3"],
+          "answer_index": 0,
+          "explanation": "The condition is checked before each pass. It prints 3, 2, 1, and once `n` reaches 0 the check `n > 0` fails, so the body does not run again. 0 is never printed."
+        }
+      }
+    },
+    {
+      "id": "nested-count-01",
+      "concept": "loops",
+      "difficulty": "medium",
+      "kind": "typein",
+      "title": "A loop inside a loop",
+      "variants": {
+        "python": {
+          "code": "count = 0\nfor i in range(3):\n    for j in range(4):\n        count = count + 1\nprint(count)",
+          "prompt": "What number does this print?",
+          "accepted": ["12"],
+          "explanation": "The inner loop runs all the way through for every single pass of the outer one. Three outer passes, four inner passes each, so 3 times 4 is 12. Nested loops multiply, they do not add. That is why a nested loop over a big list gets slow so fast."
+        },
+        "java": {
+          "code": "int count = 0;\nfor (int i = 0; i < 3; i++) {\n    for (int j = 0; j < 4; j++) {\n        count = count + 1;\n    }\n}\nSystem.out.println(count);",
+          "prompt": "What number does this print?",
+          "accepted": ["12"],
+          "explanation": "The inner loop runs all the way through for every pass of the outer one. Three outer passes, four inner passes each, so 3 times 4 is 12. Nested loops multiply, they do not add. That is why a nested loop over a big array gets slow so fast."
+        },
+        "javascript": {
+          "code": "let count = 0;\nfor (let i = 0; i < 3; i++) {\n  for (let j = 0; j < 4; j++) {\n    count = count + 1;\n  }\n}\nconsole.log(count);",
+          "prompt": "What number does this print?",
+          "accepted": ["12"],
+          "explanation": "The inner loop runs all the way through for every pass of the outer one. Three outer passes, four inner passes each, so 3 times 4 is 12. Nested loops multiply, they do not add. That is why a nested loop over a big array gets slow so fast."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int count = 0;\n    for (int i = 0; i < 3; i++) {\n        for (int j = 0; j < 4; j++) {\n            count = count + 1;\n        }\n    }\n    cout << count;\n    return 0;\n}",
+          "prompt": "What number does this print?",
+          "accepted": ["12"],
+          "explanation": "The inner loop runs all the way through for every pass of the outer one. Three outer passes, four inner passes each, so 3 times 4 is 12. Nested loops multiply, they do not add. That is why a nested loop over a big array gets slow so fast."
+        }
+      }
+    },
+    {
+      "id": "loop-body-scope-01",
+      "concept": "loops",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Inside the loop, or after it?",
+      "error_class": "wrong_answer",
+      "variants": {
+        "python": {
+          "code": "total = 0\nfor n in [1, 2, 3]:\n    total = total + n\n    print(total)",
+          "prompt": "How many lines does this print, and what is the last one?",
+          "choices": [
+            "3 lines, last is 6",
+            "1 line, which is 6",
+            "3 lines, last is 3",
+            "1 line, which is 3"
+          ],
+          "answer_index": 0,
+          "explanation": "The `print` is indented, so it sits inside the loop and runs on every pass: 1, then 3, then 6. Three lines. Un-indent that `print` and you get a single line showing 6. Whether a line is inside or after the loop decides whether you get a running report or one final answer, and both are useful. Decide which you want."
+        },
+        "java": {
+          "code": "int total = 0;\nfor (int n : new int[]{1, 2, 3}) {\n    total = total + n;\n    System.out.println(total);\n}",
+          "prompt": "How many lines does this print, and what is the last one?",
+          "choices": [
+            "3 lines, last is 6",
+            "1 line, which is 6",
+            "3 lines, last is 3",
+            "1 line, which is 3"
+          ],
+          "answer_index": 0,
+          "explanation": "The `println` is inside the braces, so it runs on every pass: 1, then 3, then 6. Three lines. Move it below the closing brace and you get one line showing 6. Whether a statement is inside or after the loop decides whether you get a running report or one final answer."
+        },
+        "javascript": {
+          "code": "let total = 0;\nfor (const n of [1, 2, 3]) {\n  total = total + n;\n  console.log(total);\n}",
+          "prompt": "How many lines does this print, and what is the last one?",
+          "choices": [
+            "3 lines, last is 6",
+            "1 line, which is 6",
+            "3 lines, last is 3",
+            "1 line, which is 3"
+          ],
+          "answer_index": 0,
+          "explanation": "The `console.log` is inside the braces, so it runs on every pass: 1, then 3, then 6. Three lines. Move it below the closing brace and you get one line showing 6. Inside or after the loop decides whether you see a running report or one final answer."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int nums[3] = {1, 2, 3};\n    int total = 0;\n    for (int i = 0; i < 3; i++) {\n        total = total + nums[i];\n        cout << total << endl;\n    }\n    return 0;\n}",
+          "prompt": "How many lines does this print, and what is the last one?",
+          "choices": [
+            "3 lines, last is 6",
+            "1 line, which is 6",
+            "3 lines, last is 3",
+            "1 line, which is 3"
+          ],
+          "answer_index": 0,
+          "explanation": "The `cout` is inside the braces, so it runs on every pass: 1, then 3, then 6. Three lines. Move it below the closing brace and you get one line showing 6. Inside or after the loop decides whether you see a running report or one final answer."
+        }
+      }
+    },
+    {
+      "id": "range-start-01",
+      "concept": "loops",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Counting from somewhere other than zero",
+      "variants": {
+        "python": {
+          "code": "for i in range(2, 6):\n    print(i)",
+          "prompt": "What does this print?",
+          "choices": ["2 3 4 5", "2 3 4 5 6", "1 2 3 4 5", "2 6"],
+          "answer_index": 0,
+          "explanation": "With two arguments, `range(start, stop)` begins at the start and stops just before the stop. So it gives 2, 3, 4, 5. The end is always excluded, which is the same rule as `range(4)` stopping at 3."
+        },
+        "java": {
+          "code": "for (int i = 2; i < 6; i++) {\n    System.out.println(i);\n}",
+          "prompt": "What does this print?",
+          "choices": ["2 3 4 5", "2 3 4 5 6", "1 2 3 4 5", "2 6"],
+          "answer_index": 0,
+          "explanation": "The header sets `i` to 2 and keeps going while `i < 6`, so it prints 2, 3, 4, 5 and stops. The first part of a `for` header is where you start, and the second is where you stop, so you can begin anywhere you like."
+        },
+        "javascript": {
+          "code": "for (let i = 2; i < 6; i++) {\n  console.log(i);\n}",
+          "prompt": "What does this print?",
+          "choices": ["2 3 4 5", "2 3 4 5 6", "1 2 3 4 5", "2 6"],
+          "answer_index": 0,
+          "explanation": "The header starts `i` at 2 and keeps going while `i < 6`, so it prints 2, 3, 4, 5. The first part of the header is where you start and the second is where you stop, so you can begin anywhere."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    for (int i = 2; i < 6; i++) {\n        cout << i << endl;\n    }\n    return 0;\n}",
+          "prompt": "What does this print?",
+          "choices": ["2 3 4 5", "2 3 4 5 6", "1 2 3 4 5", "2 6"],
+          "answer_index": 0,
+          "explanation": "The header starts `i` at 2 and keeps going while `i < 6`, so it prints 2, 3, 4, 5 and stops. The first part of the header is where you start and the second is where you stop, so you can begin anywhere."
+        }
+      }
+    },
+    {
+      "id": "count-matches-01",
+      "concept": "loops",
+      "difficulty": "medium",
+      "kind": "typein",
+      "title": "Count the ones that qualify",
+      "variants": {
+        "python": {
+          "code": "scores = [45, 82, 91, 60, 77]\npassing = 0\nfor s in scores:\n    if s >= 70:\n        passing = passing + 1\nprint(passing)",
+          "prompt": "What number does this print?",
+          "accepted": ["3"],
+          "explanation": "This is the counter pattern, which is the accumulator with an `if` in front of it. Walk the list and check each one: 45 no, 82 yes, 91 yes, 60 no, 77 yes. Three qualify. Notice the counter starts at 0 before the loop, and the `if` decides whether this pass adds anything."
+        },
+        "java": {
+          "code": "int[] scores = {45, 82, 91, 60, 77};\nint passing = 0;\nfor (int s : scores) {\n    if (s >= 70) {\n        passing = passing + 1;\n    }\n}\nSystem.out.println(passing);",
+          "prompt": "What number does this print?",
+          "accepted": ["3"],
+          "explanation": "This is the counter pattern, which is the accumulator with an `if` in front of it. Check each one: 45 no, 82 yes, 91 yes, 60 no, 77 yes. Three qualify. The counter starts at 0 before the loop, and the `if` decides whether a pass adds anything."
+        },
+        "javascript": {
+          "code": "const scores = [45, 82, 91, 60, 77];\nlet passing = 0;\nfor (const s of scores) {\n  if (s >= 70) {\n    passing = passing + 1;\n  }\n}\nconsole.log(passing);",
+          "prompt": "What number does this print?",
+          "accepted": ["3"],
+          "explanation": "This is the counter pattern, which is the accumulator with an `if` in front of it. Check each one: 45 no, 82 yes, 91 yes, 60 no, 77 yes. Three qualify. The counter starts at 0 before the loop, and the `if` decides whether a pass adds anything."
+        },
+        "cpp": {
+          "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int scores[5] = {45, 82, 91, 60, 77};\n    int passing = 0;\n    for (int i = 0; i < 5; i++) {\n        if (scores[i] >= 70) {\n            passing = passing + 1;\n        }\n    }\n    cout << passing;\n    return 0;\n}",
+          "prompt": "What number does this print?",
+          "accepted": ["3"],
+          "explanation": "This is the counter pattern, which is the accumulator with an `if` in front of it. Check each one: 45 no, 82 yes, 91 yes, 60 no, 77 yes. Three qualify. The counter starts at 0 before the loop, and the `if` decides whether a pass adds anything."
+        }
+      }
+    }
+  ]
+}

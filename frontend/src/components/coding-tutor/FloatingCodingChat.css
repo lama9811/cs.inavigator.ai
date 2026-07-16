@@ -1,3 +1,303 @@
+/* Component-owned overrides for the floating tutor. Keep new widget layout
+   rules here so they load after the legacy shared CodingTutor.css styles. */
+
+/* Floating chat is rendered outside .coding-app, so lock it by its own root. */
+.floating-coding-chat {
+  --ct-float-panel: var(--bg-surface-raised, #fffdf7);
+  --ct-float-panel-soft: var(--bg-surface-soft, #f7f0e6);
+  --ct-float-panel-base: var(--bg-surface, #fffdf7);
+  --ct-float-text: var(--text-main, #172033);
+  --ct-float-muted: var(--text-secondary, #596273);
+  --ct-float-border: var(--border-color, #ddd1c0);
+  --ct-float-border-strong: var(--border-strong, #b7c6d8);
+  --ct-float-primary: var(--primary, #002d72);
+  --ct-float-accent: var(--accent, #f58220);
+  --ct-float-accent-soft: var(--accent-soft, rgba(245, 130, 32, 0.14));
+}
+
+body.coding-dark .floating-coding-chat {
+  --ct-float-panel: #1c2a3f;
+  --ct-float-panel-soft: #152033;
+  --ct-float-panel-base: #172235;
+  --ct-float-text: #f4efe6;
+  --ct-float-muted: #b7c1cf;
+  --ct-float-border: #31415a;
+  --ct-float-border-strong: #435a78;
+  --ct-float-primary: #5f7fae;
+  --ct-float-accent: #e7a05b;
+  --ct-float-accent-soft: rgba(231, 160, 91, 0.18);
+}
+
+.floating-coding-chat :is(
+  .floating-chat-window,
+  .floating-chat-header,
+  .floating-chat-window .ai-status-card,
+  .floating-chat-messages,
+  .floating-chat-form,
+  .floating-chat-message.bot
+) {
+  background: var(--ct-float-panel-base) !important;
+  background-color: var(--ct-float-panel-base) !important;
+  background-image: none !important;
+  border-color: var(--ct-float-border) !important;
+  color: var(--ct-float-text) !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.floating-coding-chat .floating-chat-window {
+  background: var(--ct-float-panel) !important;
+  background-color: var(--ct-float-panel) !important;
+  border: 1px solid var(--ct-float-border-strong) !important;
+  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.22) !important;
+  overflow: hidden !important;
+}
+
+body.coding-dark .floating-coding-chat .floating-chat-window {
+  box-shadow: 0 24px 60px rgba(5, 10, 18, 0.62) !important;
+}
+
+.floating-coding-chat .floating-chat-header {
+  background: var(--ct-float-panel) !important;
+  border-bottom: 1px solid var(--ct-float-border) !important;
+}
+
+.floating-coding-chat .floating-chat-header strong,
+.floating-coding-chat .floating-chat-window strong,
+.floating-coding-chat .floating-chat-window h3,
+.floating-coding-chat .floating-chat-window h4 {
+  color: var(--ct-float-text) !important;
+}
+
+.floating-coding-chat .floating-chat-messages,
+.floating-coding-chat .floating-chat-input-row,
+.floating-coding-chat .floating-chat-input-row textarea {
+  background: var(--ct-float-panel-soft) !important;
+  background-color: var(--ct-float-panel-soft) !important;
+  border-color: var(--ct-float-border) !important;
+  color: var(--ct-float-text) !important;
+}
+
+.floating-coding-chat .floating-chat-window .ai-status-card {
+  background: var(--ct-float-panel-base) !important;
+  border: 1px solid var(--ct-float-border) !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  box-shadow: none !important;
+}
+
+.floating-coding-chat .floating-chat-window .ai-status-card dl {
+  display: grid !important;
+  grid-template-columns: 88px minmax(0, 1fr) !important;
+  gap: 8px 12px !important;
+  margin: 0 !important;
+}
+
+.floating-coding-chat .floating-chat-window .ai-status-card dt,
+.floating-coding-chat .floating-chat-window .ai-status-card dd,
+.floating-coding-chat .floating-chat-message,
+.floating-coding-chat .floating-chat-message p {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+}
+
+.floating-coding-chat .floating-chat-action,
+.floating-coding-chat .floating-chat-control,
+.floating-coding-chat .floating-chat-icon-btn {
+  background: var(--ct-float-panel-soft) !important;
+  border: 1px solid var(--ct-float-border) !important;
+  color: var(--ct-float-text) !important;
+}
+
+.floating-coding-chat .floating-chat-action:hover:not(:disabled),
+.floating-coding-chat .floating-chat-control:hover,
+.floating-coding-chat .floating-chat-icon-btn:hover:not(:disabled) {
+  background: var(--ct-float-accent-soft) !important;
+  border-color: color-mix(in srgb, var(--ct-float-accent) 48%, var(--ct-float-border)) !important;
+  color: var(--ct-float-accent) !important;
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--ct-float-accent) 18%, transparent) !important;
+}
+
+.floating-coding-chat .floating-chat-send,
+.floating-coding-chat .floating-chat-button {
+  background: var(--ct-float-primary) !important;
+  border-color: color-mix(in srgb, var(--ct-float-primary) 60%, var(--ct-float-border)) !important;
+  color: #ffffff !important;
+}
+
+.floating-coding-chat .floating-chat-send:hover:not(:disabled),
+.floating-coding-chat .floating-chat-button:hover {
+  background: var(--ct-float-accent) !important;
+  border-color: color-mix(in srgb, var(--ct-float-accent) 58%, var(--ct-float-border)) !important;
+  color: #182033 !important;
+}
+
+body.coding-dark .floating-coding-chat .floating-chat-send,
+body.coding-dark .floating-coding-chat .floating-chat-button {
+  color: #f8f3ea !important;
+}
+
+body.coding-dark .floating-coding-chat .floating-chat-send:hover:not(:disabled),
+body.coding-dark .floating-coding-chat .floating-chat-button:hover {
+  color: #172033 !important;
+}
+
+/* Floating chat layout repair: visible status, actions, messages, and input. */
+.floating-coding-chat .floating-chat-window {
+  width: min(470px, calc(100vw - 32px)) !important;
+  height: min(680px, calc(100vh - 36px)) !important;
+  max-height: calc(100vh - 36px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.floating-coding-chat .floating-chat-window.maximized {
+  width: min(920px, calc(100vw - 48px)) !important;
+  height: min(760px, calc(100vh - 48px)) !important;
+}
+
+.floating-coding-chat .floating-chat-header {
+  flex: 0 0 auto !important;
+  gap: 12px !important;
+  padding: 14px 16px 10px !important;
+}
+
+.floating-coding-chat .floating-chat-window-controls {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  gap: 8px !important;
+}
+
+.floating-coding-chat .floating-chat-window .ai-status-card {
+  flex: 0 0 auto !important;
+  margin: 12px 14px 10px !important;
+  padding: 12px 14px !important;
+}
+
+.floating-coding-chat .floating-chat-window .ai-status-card dl {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px 16px !important;
+  margin: 8px 0 0 !important;
+}
+
+.floating-coding-chat .floating-chat-window .ai-status-card dl div {
+  display: grid !important;
+  grid-template-columns: minmax(72px, max-content) minmax(0, 1fr) !important;
+  align-items: start !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+}
+
+.floating-coding-chat .floating-chat-window .ai-status-card dt,
+.floating-coding-chat .floating-chat-window .ai-status-card dd {
+  line-height: 1.25 !important;
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+}
+
+.floating-coding-chat .floating-chat-window .ai-status-card dd {
+  overflow-wrap: anywhere !important;
+}
+
+.floating-coding-chat .floating-chat-actions {
+  flex: 0 0 auto !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  padding: 0 14px 10px !important;
+}
+
+.floating-coding-chat .floating-chat-action {
+  min-width: 0 !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+}
+
+.floating-coding-chat .floating-chat-action:not(:disabled) {
+  background: linear-gradient(135deg, var(--ct-float-primary), color-mix(in srgb, var(--ct-float-primary) 76%, var(--ct-float-accent))) !important;
+  border-color: color-mix(in srgb, var(--ct-float-primary) 62%, var(--ct-float-border)) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--ct-float-primary) 16%, transparent) !important;
+}
+
+.floating-coding-chat .floating-chat-action:not(:disabled):hover {
+  background: var(--ct-float-accent) !important;
+  border-color: color-mix(in srgb, var(--ct-float-accent) 58%, var(--ct-float-border)) !important;
+  color: #182033 !important;
+}
+
+.floating-coding-chat .floating-chat-action:disabled {
+  background: transparent !important;
+  border-color: var(--ct-float-border) !important;
+  color: var(--ct-float-muted) !important;
+  opacity: 0.62 !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+}
+
+.floating-coding-chat .floating-chat-messages {
+  flex: 1 1 190px !important;
+  min-height: 150px !important;
+  margin: 0 14px 10px !important;
+  padding: 12px !important;
+  overflow-y: auto !important;
+}
+
+.floating-coding-chat .floating-chat-form {
+  flex: 0 0 auto !important;
+  padding: 0 14px 14px !important;
+  gap: 8px !important;
+}
+
+.floating-coding-chat .floating-chat-input-row {
+  display: grid !important;
+  grid-template-columns: 40px 40px minmax(0, 1fr) 40px !important;
+  align-items: end !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+}
+
+.floating-coding-chat .floating-chat-icon-btn,
+.floating-coding-chat .floating-chat-send {
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  flex: 0 0 40px !important;
+}
+
+.floating-coding-chat .floating-chat-voice-btn.listening {
+  background: var(--ct-float-accent) !important;
+  color: #182033 !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ct-float-accent) 22%, transparent) !important;
+}
+
+.floating-coding-chat .floating-chat-input-row textarea {
+  width: 100% !important;
+  min-height: 48px !important;
+  max-height: 128px !important;
+  resize: vertical !important;
+}
+
+@media (max-width: 520px) {
+  .floating-coding-chat .floating-chat-window {
+    width: calc(100vw - 24px) !important;
+    height: min(660px, calc(100vh - 24px)) !important;
+  }
+
+  .floating-coding-chat .floating-chat-window .ai-status-card dl {
+    grid-template-columns: 1fr !important;
+  }
+
+  .floating-coding-chat .floating-chat-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
 .floating-coding-chat .floating-chat-window {
   box-sizing: border-box !important;
   width: min(460px, calc(100vw - 40px)) !important;
@@ -277,21 +577,67 @@ body.coding-dark .floating-coding-chat .floating-chat-message li::marker {
   color: color-mix(in srgb, var(--ct-accent) 74%, #fff 26%) !important;
 }
 
-.floating-coding-chat .floating-apply-code-btn {
+.floating-coding-chat .floating-code-actions {
+  display: flex;
   flex: 0 0 auto;
+  gap: 8px;
   margin: 0 14px 10px;
+}
+
+.floating-coding-chat .floating-apply-code-btn,
+.floating-coding-chat .floating-undo-code-btn {
   min-height: 42px;
-  border: 0;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--ct-primary), color-mix(in srgb, var(--ct-primary) 72%, var(--ct-accent) 28%));
-  color: #fff;
+  padding: 8px 14px;
   font-weight: 800;
   cursor: pointer;
 }
 
-.floating-coding-chat .floating-apply-code-btn:hover {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--ct-accent) 82%, #fff 18%), color-mix(in srgb, var(--ct-primary) 76%, var(--ct-accent) 24%)) !important;
-  color: #172033 !important;
+.floating-coding-chat .floating-apply-code-btn {
+  flex: 1 1 auto;
+  margin: 0;
+  border: 0;
+}
+
+.floating-coding-chat .floating-undo-code-btn {
+  flex: 0 0 auto;
+  border: 1px solid var(--ct-float-border);
+  background: var(--ct-float-panel-soft);
+  color: var(--ct-float-text);
+}
+
+.floating-coding-chat .floating-undo-code-btn:hover,
+.floating-coding-chat .floating-undo-code-btn:focus-visible {
+  border-color: var(--ct-primary);
+  background: color-mix(in srgb, var(--ct-primary) 12%, var(--ct-float-panel-soft));
+}
+
+.floating-coding-chat .floating-show-earlier {
+  display: block;
+  margin: 2px auto 10px;
+  border: 1px solid var(--ct-float-border);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: var(--ct-float-panel-soft);
+  color: var(--ct-float-text);
+  font-size: 0.78rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.floating-coding-chat .floating-show-earlier:hover,
+.floating-coding-chat .floating-show-earlier:focus-visible {
+  border-color: var(--ct-primary);
+  color: var(--ct-primary);
+}
+
+.floating-coding-chat .floating-chat-window:focus {
+  outline: none;
+}
+
+.floating-coding-chat .floating-chat-header:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ct-primary) 70%, #fff);
+  outline-offset: -3px;
 }
 
 .floating-coding-chat .floating-apply-code-btn {
@@ -325,13 +671,22 @@ body.coding-dark .floating-coding-chat .floating-apply-code-btn:focus-visible {
   .floating-coding-chat .floating-chat-window,
   .floating-coding-chat .floating-chat-window.maximized {
     width: calc(100vw - 24px) !important;
-    height: min(650px, calc(100vh - 24px)) !important;
+    height: min(650px, calc(100dvh - 24px)) !important;
     max-width: calc(100vw - 24px) !important;
-    max-height: calc(100vh - 24px) !important;
+    max-height: calc(100dvh - 24px) !important;
   }
 }
 
 @media (max-width: 520px) {
+  .floating-coding-chat .floating-code-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .floating-coding-chat .floating-undo-code-btn {
+    width: 100%;
+  }
+
   .floating-coding-chat .floating-chat-header {
     grid-template-columns: minmax(0, 1fr) auto !important;
     gap: 8px !important;

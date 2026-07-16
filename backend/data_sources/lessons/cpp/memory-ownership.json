@@ -1,0 +1,88 @@
+{
+  "_note": "ORIGINAL content. Topic coverage was checked against Think C++ and the Google C++ Class outline. No prose, examples, or exercises were copied; the references are curriculum guides only.",
+  "title": "Memory Ownership",
+  "summary": "Make it clear which part of the program is responsible for a resource.",
+  "minutes": 10,
+  "error_classes": [
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "Prefer ordinary local values and standard containers first because they clean themselves up. When one part of a program must own a dynamically created object, use `std::unique_ptr` and `std::make_unique`. Move it when ownership must transfer.",
+  "refresher_code": "#include <memory>\nauto score = std::make_unique<int>(85);\nstd::cout << *score;",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Ownership answers one question: who is responsible for cleanup? Local strings, vectors, and other objects clean themselves up when their block ends. Start with those simple values before reaching for dynamic memory."
+    },
+    {
+      "kind": "text",
+      "body": "A `unique_ptr` owns one dynamically created object. It cleans up that object when the pointer leaves scope. It cannot be copied because that would create two supposed sole owners, but it can be moved to transfer responsibility."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Python handles more of this automatically",
+      "body": "Python usually decides when an unreachable object can be cleaned up. C++ lets a type such as `unique_ptr` show ownership directly. The extra detail helps make cleanup predictable."
+    },
+    {
+      "kind": "code",
+      "caption": "Pending first owns the Student. std::move transfers ownership to active, and the Student is cleaned up automatically when active leaves scope.",
+      "code": "#include <iostream>\n#include <memory>\n#include <string>\nstruct Student { std::string name; };\nint main() {\n  auto pending = std::make_unique<Student>(Student{\"Ada\"});\n  auto active = std::move(pending);\n  if (!pending) std::cout << active->name << \"\\n\";\n}",
+      "output": "Ada"
+    },
+    {
+      "kind": "compare",
+      "wrong_label": "Common mistake",
+      "wrong": "Student* student = new Student{\"Ada\"};\nuse(student);\n// delete is easy to forget",
+      "right_label": "Clearer version",
+      "right": "auto student = std::make_unique<Student>(Student{\"Ada\"});\nuse(student.get());\n// cleanup is automatic",
+      "caption": "Raw new separates allocation from cleanup. A unique pointer keeps both responsibilities in one object lifetime."
+    },
+    {
+      "kind": "text",
+      "body": "Before the move, `pending` owns the Student. After the move, `active` owns it and `pending` is empty. Check an emptied pointer before using it. When `main` ends, `active` cleans up the Student once."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Shared ownership is a special case",
+      "body": "Use `std::shared_ptr` only when several parts of the program truly need to keep the same object alive. Most beginner code is clearer with local values, vectors, references for temporary access, or one `unique_ptr` owner."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does `std::move` do to a unique_ptr?",
+      "code": "",
+      "choices": [
+        "Transfers its ownership to the destination",
+        "Copies the owned object automatically",
+        "Deletes both pointers",
+        "Makes the object global"
+      ],
+      "answer_index": 0,
+      "why": "Move transfers the unique ownership; the destination owns the object and the source becomes empty."
+    },
+    {
+      "kind": "check",
+      "prompt": "When is `shared_ptr` appropriate?",
+      "code": "",
+      "choices": [
+        "When several parts truly share ownership",
+        "For every local integer",
+        "Whenever a raw reference is enough",
+        "To avoid including memory"
+      ],
+      "answer_index": 0,
+      "why": "A shared pointer models multiple owners whose lifetimes overlap, not ordinary temporary access to an object."
+    },
+    {
+      "kind": "list",
+      "title": "Memory Ownership checklist",
+      "items": [
+        "Prefer values and standard containers first.",
+        "Use make_unique for one dynamic owner.",
+        "Move unique ownership deliberately.",
+        "Use shared ownership only when the model requires it."
+      ]
+    }
+  ]
+}

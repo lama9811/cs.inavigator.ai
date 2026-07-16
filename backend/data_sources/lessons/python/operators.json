@@ -1,0 +1,135 @@
+{
+  "_note": "ORIGINAL content. Topic sequence follows the standard free intro texts (Runestone FoPP ch.2 and ch.5, Think Python ch.1 and ch.5, OpenStax ch.3); sequences are not copyrightable. No prose, examples, or exercises are copied from any of them: all are copyleft (GFDL / CC BY-NC-SA), and copying would bind CS Navigator's content to those terms.",
+  "title": "Operators",
+  "summary": "Do math, and ask true-or-false questions about the answer.",
+  "minutes": 7,
+  "error_classes": [
+    "syntax",
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "Operators are the symbols that do work on values. `+ - * /` do the math you expect, and `/` always hands back a decimal. `//` divides and throws away the remainder, `%` keeps only the remainder, and `**` raises to a power. Comparisons like `== != < >` ask a question and answer it with True or False. The one to watch is `==` against `=`. A single `=` puts a value into a name. A double `==` asks whether two values match.",
+  "refresher_code": "print(7 / 2)\nprint(7 // 2)\nprint(7 % 2)\nprint(7 == 2)\n# 3.5\n# 3\n# 1\n# False",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "An operator is a symbol that does something to values. You already know most of them from math class. Python borrows the same symbols and adds a few of its own. That is how one line of code can compute a total, split a number into parts, or ask whether two things match."
+    },
+    {
+      "kind": "code",
+      "caption": "The four you already know. The last line is the surprise: dividing 10 by 5 gives 2.0, not 2. In Python, `/` always hands back a decimal, even when the numbers divide evenly.",
+      "code": "print(6 + 4)\nprint(6 - 4)\nprint(6 * 4)\nprint(10 / 5)",
+      "output": "10\n2\n24\n2.0"
+    },
+    {
+      "kind": "text",
+      "body": "That trailing `.0` matters more than it looks. A number with a decimal point is a float, and a whole number without one is an int. They print differently and they compare differently. So a stray `.0` in your output usually means a `/` snuck in where you wanted something else."
+    },
+    {
+      "kind": "code",
+      "caption": "Three ways to divide 17 by 5. Regular division keeps the decimal, floor division keeps only the whole part, and modulo keeps only what was left over. Together, `//` and `%` recover the two halves of a long-division answer.",
+      "code": "print(17 / 5)\nprint(17 // 5)\nprint(17 % 5)",
+      "output": "3.4\n3\n2"
+    },
+    {
+      "kind": "text",
+      "body": "Modulo is worth a second look, because it is the one operator with no everyday symbol. `a % b` gives you the remainder after dividing. It shows up constantly. `n % 2` is 0 when n is even and 1 when it is odd. That single line is how most programs test for an even number."
+    },
+    {
+      "kind": "code",
+      "caption": "Two everyday uses. Modulo tells you whether a number divides evenly, and `**` raises a number to a power. Note that `^` is not the power operator in Python. It means something else entirely, and it will quietly give you a wrong answer instead of an error.",
+      "code": "print(9 % 2)\nprint(10 % 2)\nprint(2 ** 5)\nprint(3 ** 2)",
+      "output": "1\n0\n32\n9"
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "Dividing by zero stops the program",
+      "body": "`10 / 0` does not give you a strange number. It raises a ZeroDivisionError and your program stops right there. The same is true for `//` and `%`. The number you divide by is often the result of a calculation, or something the user typed. Either way it can turn out to be 0 when you never meant it to be, so check it first."
+    },
+    {
+      "kind": "text",
+      "body": "When several operators sit in one line, Python does not simply read left to right. It follows precedence, which is the same order of operations you learned in math. Power first, then multiply and divide, then add and subtract. Parentheses beat all of it."
+    },
+    {
+      "kind": "code",
+      "caption": "The same numbers, two different answers. The multiplication happens before the addition unless parentheses say otherwise. When a formula is not obvious at a glance, add the parentheses even where they are not required. They cost nothing and they remove all doubt.",
+      "code": "print(2 + 3 * 4)\nprint((2 + 3) * 4)\nprint(2 ** 3 * 2)",
+      "output": "14\n20\n16"
+    },
+    {
+      "kind": "check",
+      "prompt": "What does this print?",
+      "code": "total = 20\nprint(total // 6)\nprint(total % 6)\nprint(total / 6)",
+      "choices": [
+        "3\n2\n3.3333333333333335",
+        "3.33\n2\n3.33",
+        "3\n3\n3.0",
+        "4\n2\n3.3333333333333335"
+      ],
+      "answer_index": 0,
+      "why": "20 divided by 6 is 3 with 2 left over. `//` reports the 3 and throws the rest away, so you get 3, not 3.33 and not 4. It cuts down, it does not round. `%` reports the 2 that was left over. Plain `/` keeps the full decimal, which is where that long tail of 3s comes from. If you picked 4, you were rounding: `//` never rounds up."
+    },
+    {
+      "kind": "text",
+      "body": "The other family of operators asks questions. A comparison takes two values and answers with True or False, and nothing else. That answer is a real value. You can store it in a variable or hand it to an `if` statement."
+    },
+    {
+      "kind": "code",
+      "caption": "Each line is a question, and each answer is True or False. `==` asks whether two values are the same, and `!=` asks whether they differ. The exclamation mark is Python's way of saying not.",
+      "code": "score = 75\n\nprint(score == 75)\nprint(score != 75)\nprint(score > 90)\nprint(score < 90)",
+      "output": "True\nFalse\nFalse\nTrue"
+    },
+    {
+      "kind": "compare",
+      "caption": "One equals sign puts a value into a name. Two equals signs ask whether two values match. Inside an `if`, the single `=` is not a wrong answer, it is a syntax error, so Python refuses to run the file at all.",
+      "wrong_label": "SyntaxError",
+      "wrong": "score = 75\nif score = 100:\n    print(\"Perfect\")\n# a single = assigns,\n# and you cannot\n# assign inside an if",
+      "right_label": "Works",
+      "right": "score = 75\nif score == 100:\n    print(\"Perfect\")\n# a double == compares,\n# which is the question\n# you meant to ask"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Typing = when you meant ==",
+      "body": "Read the line out loud. If the words are \"set score to 100\", you want one `=`. If the words are \"is score 100\", you want two. Python is on your side here. It will not run a file with `if score = 100` in it, so the mistake shows up straight away instead of hiding in a wrong result."
+    },
+    {
+      "kind": "text",
+      "body": "Finally, you can glue comparisons together. `and` is True only when both sides are True. `or` is True when at least one side is True. `not` flips a True into a False and back again."
+    },
+    {
+      "kind": "code",
+      "caption": "A grade check, written the way a person would say it. The first line is False because 88 is not above 90, and `and` needs both sides. The second is True because `or` is happy with either side on its own. The third flips `attended`, which was True, so `not attended` comes out False.",
+      "code": "grade = 88\nattended = True\n\nprint(grade > 90 and attended)\nprint(grade > 90 or attended)\nprint(not attended)",
+      "output": "False\nTrue\nFalse"
+    },
+    {
+      "kind": "check",
+      "prompt": "You want to print a message only when the age is between 13 and 19. Which line is right?",
+      "code": "age = 15",
+      "choices": [
+        "`if age >= 13 and age <= 19:`",
+        "`if age >= 13 or age <= 19:`",
+        "`if age = 13 and age = 19:`",
+        "`if age > 13 and age < 19:`"
+      ],
+      "answer_index": 0,
+      "why": "Between 13 and 19 means both things have to be true at once, and that is exactly what `and` does. The `or` version looks close, but it lets every age through. Try 5: it is not at least 13, but it is at most 19, and `or` only needs one side. That is a wrong answer rather than an error, so nothing warns you. The third line uses a single `=` and will not run at all. The last one is nearly right, but `>` and `<` leave out 13 and 19 themselves. Use `>=` and `<=` when the ends count."
+    },
+    {
+      "kind": "list",
+      "title": "Quick reference",
+      "items": [
+        "`/` always gives a decimal, so `4 / 2` is 2.0 and not 2",
+        "`//` divides and drops the remainder, cutting down rather than rounding",
+        "`%` keeps only the remainder, so `n % 2 == 0` tests for an even number",
+        "`**` raises to a power. `^` is not the power operator in Python",
+        "Precedence is the math order: power, then multiply and divide, then add and subtract",
+        "Parentheses always win. Add them whenever a formula makes you pause",
+        "`=` puts a value in a name. `==` asks whether two values match",
+        "Comparisons and `and` / `or` / `not` produce True or False, and nothing else"
+      ]
+    }
+  ]
+}

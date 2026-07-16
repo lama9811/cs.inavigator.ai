@@ -1,0 +1,89 @@
+{
+  "_note": "ORIGINAL content. Topic coverage was checked against Think C++ and the Google C++ Class outline. No prose, examples, or exercises were copied; the references are curriculum guides only.",
+  "title": "Classes & Objects",
+  "summary": "Create your own types by keeping related data and actions together.",
+  "minutes": 10,
+  "error_classes": [
+    "syntax",
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "A class describes a new kind of object. Data members store its state, methods perform its actions, and a constructor gives every new object a valid starting state. Public members are available to other code; private members stay inside the class.",
+  "refresher_code": "class Counter {\npublic:\n  Counter() : value_(0) {}\n  void increment() { value_++; }\n  int value() const { return value_; }\nprivate:\n  int value_;\n};",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A class is a plan for making objects. It gives related values and functions one name. For example, an `Account` object can keep a balance and provide a deposit method instead of passing a loose balance variable through the program."
+    },
+    {
+      "kind": "text",
+      "body": "Public members are the operations other code may use. Private members can be changed only through the class's own methods. A constructor runs when a new object is created and supplies its starting values."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "The idea matches Python classes",
+      "body": "Python uses `class` and usually initializes an object in `__init__`. C++ also uses `class`, but its constructor has the same name as the class and member types are written explicitly."
+    },
+    {
+      "kind": "code",
+      "caption": "The constructor starts the balance, deposit changes it only for a positive amount, and balance reads the current value.",
+      "code": "#include <iostream>\nclass Account {\npublic:\n  Account(int starting) : balance_(starting) {}\n  void deposit(int amount) { if (amount > 0) balance_ += amount; }\n  int balance() const { return balance_; }\nprivate:\n  int balance_;\n};\nint main() {\n  Account account(20);\n  account.deposit(5);\n  std::cout << account.balance() << \"\\n\";\n}",
+      "output": "25"
+    },
+    {
+      "kind": "compare",
+      "wrong_label": "Common mistake",
+      "wrong": "class Account {\npublic:\n  int balance;\n};\naccount.balance = -50;",
+      "right_label": "Clearer version",
+      "right": "class Account {\npublic:\n  void deposit(int amount);\n  int balance() const;\nprivate:\n  int balance_;\n};",
+      "caption": "Public data lets any caller create an invalid state. A small public interface can enforce the class rule in one place."
+    },
+    {
+      "kind": "text",
+      "body": "Each `Account` object has its own balance. Depositing into one account does not change another account. Inside a method, C++ knows which object received the call; that object is available through a pointer named `this`, although most beginner methods do not need to write it explicitly."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "The constructor sets the starting state",
+      "body": "The part after the constructor's colon is called a member initializer list. It gives members their starting values before the constructor body runs. Read `balance_(starting)` as: start the balance member with the value in starting."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is the main job of a constructor?",
+      "code": "",
+      "choices": [
+        "Establish a valid starting state",
+        "Delete the object",
+        "Make every member public",
+        "Run after every method"
+      ],
+      "answer_index": 0,
+      "why": "The constructor initializes the new object so its public operations can rely on a valid state."
+    },
+    {
+      "kind": "check",
+      "prompt": "Why make a getter method `const`?",
+      "code": "int balance() const;",
+      "choices": [
+        "It promises not to modify the object through that method",
+        "It makes the returned integer constant forever",
+        "It hides the method",
+        "It allocates the object"
+      ],
+      "answer_index": 0,
+      "why": "The trailing const lets callers and the compiler know that reading the balance does not change the account."
+    },
+    {
+      "kind": "list",
+      "title": "Classes & Objects checklist",
+      "items": [
+        "Give the class one clear purpose.",
+        "Initialize every member in the constructor.",
+        "Keep data private when methods need to protect its rules.",
+        "Mark methods const when they only read the object."
+      ]
+    }
+  ]
+}

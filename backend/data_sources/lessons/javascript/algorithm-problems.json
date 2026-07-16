@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
+  "title": "Algorithm Problems: Part 1",
+  "summary": "Arrange setup, repetition, decisions, and output into a method.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "Name the input and expected output, trace a small example, initialize needed state, perform each update, and return after the work is complete.",
+  "refresher_code": "let total=0;\nfor(const n of values) total+=n;\nreturn total;",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Name the input and expected output, trace a small example, initialize needed state, perform each update, and return after the work is complete. Arrange setup, repetition, decisions, and output into a method."
+    },
+    {
+      "kind": "text",
+      "body": "For a small algorithm, translate the prompt into four questions: what comes in, what must come out, what state must be remembered, and what work repeats? A running total remembers progress across iterations. Its starting value should behave neutrally for the operation, which is zero for addition."
+    },
+    {
+      "kind": "code",
+      "caption": "Zero initializes the accumulator, each value contributes once, and return follows the loop.",
+      "code": "function sum(values){\n let total=0;\n for(const value of values) total+=value;\n return total;\n}\nconsole.log(sum([3,5,2]));",
+      "output": "10"
+    },
+    {
+      "kind": "compare",
+      "caption": "Do not return an accumulator before traversal finishes.",
+      "wrong_label": "Common mistake",
+      "wrong": "for (const value of values) {\n  total += value;\n  return total;\n}",
+      "right_label": "Clearer version",
+      "right": "for (const value of values) {\n  total += value;\n}\nreturn total;"
+    },
+    {
+      "kind": "text",
+      "body": "With `[3, 5, 2]`, total changes from zero to three, then eight, then ten. Return belongs after those three updates. Try an empty array too: the loop makes no updates, and the initialized total of zero is still a sensible sum."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Trace this carefully",
+      "body": "Putting return inside the loop ends the function during its first pass and skips the remaining values."
+    },
+    {
+      "kind": "check",
+      "prompt": "What precedes total updates?",
+      "code": "",
+      "choices": [
+        "initialize the total",
+        "return the total",
+        "sort values",
+        "convert to text"
+      ],
+      "answer_index": 0,
+      "why": "The update needs an existing number, and zero is the correct additive starting point."
+    },
+    {
+      "kind": "check",
+      "prompt": "Where should a full-array maximum return?",
+      "code": "",
+      "choices": [
+        "after the loop",
+        "before setup",
+        "inside the first comparison",
+        "before each update"
+      ],
+      "answer_index": 0,
+      "why": "Every needed comparison must finish because a later element can replace the candidate."
+    },
+    {
+      "kind": "list",
+      "title": "Algorithm Problems: Part 1 checklist",
+      "items": [
+        "Write a tiny expected result.",
+        "Choose matching state.",
+        "Update each relevant item.",
+        "Return after required work."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

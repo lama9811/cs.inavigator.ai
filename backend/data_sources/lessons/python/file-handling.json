@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. Topic coverage follows the curriculum in Runestone Foundations of Python Programming, Think Python, and OpenStax Introduction to Python Programming. No prose, examples, or exercises were copied; the sources guide topic selection only.",
+  "title": "File Handling",
+  "summary": "Read and write text files without leaving resources open.",
+  "minutes": 10,
+  "error_classes": [
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "Open files with a `with` statement so Python closes them automatically. Use mode `\"r\"` to read, `\"w\"` to replace a file, and `\"a\"` to add at the end. Text read from a file is a string and often includes newline characters.",
+  "refresher_code": "with open(\"notes.txt\", \"r\", encoding=\"utf-8\") as file:\n    text = file.read()\nprint(text)",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Variables disappear when a program stops, but files remain. That makes files useful for saved settings, reports, and data that another program will read later. File work also introduces failures such as a missing path or denied access."
+    },
+    {
+      "kind": "code",
+      "caption": "The `with` block owns the open file. When the indented block ends, Python closes it even if an error interrupted the work.",
+      "code": "with open(\"courses.txt\", \"w\", encoding=\"utf-8\") as file:\n    file.write(\"CS101\\n\")\n    file.write(\"MATH120\\n\")\n\nwith open(\"courses.txt\", \"r\", encoding=\"utf-8\") as file:\n    print(file.read())",
+      "output": "CS101\nMATH120"
+    },
+    {
+      "kind": "text",
+      "body": "Mode `w` starts a fresh file and erases old contents. Mode `a` writes after what is already there. Mode `r` reads and raises FileNotFoundError if the path does not exist."
+    },
+    {
+      "kind": "compare",
+      "caption": "Keeping the read inside `with` avoids trying to use a closed file later. The text itself can be saved and used after the block.",
+      "wrong_label": "Closed file",
+      "wrong": "with open(\"notes.txt\") as file:\n    pass\ntext = file.read()",
+      "right_label": "Saved text",
+      "right": "with open(\"notes.txt\") as file:\n    text = file.read()\nprint(text)"
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "Writing can replace real data",
+      "body": "Check the mode before running file code. Opening an existing file with `\"w\"` clears it immediately. Choose `\"a\"` when the goal is to preserve the old text and add another record."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which mode adds new text without deleting existing text?",
+      "code": "open(\"log.txt\", mode)",
+      "choices": [
+        "\"a\"",
+        "\"w\"",
+        "\"r\"",
+        "\"x\""
+      ],
+      "answer_index": 0,
+      "why": "Append mode `a` positions writes at the end. Write mode `w` replaces existing contents, while read mode does not permit writing."
+    },
+    {
+      "kind": "text",
+      "body": "Reading line by line avoids loading a large file all at once. Each line usually ends with `\\n`; `strip()` removes surrounding whitespace when that newline is not part of the data."
+    },
+    {
+      "kind": "check",
+      "prompt": "Why is `strip()` used here?",
+      "code": "with open(\"names.txt\") as file:\n    for line in file:\n        print(line.strip())",
+      "choices": [
+        "To remove the newline around each line",
+        "To close the file",
+        "To convert each line to a number",
+        "To skip the first line"
+      ],
+      "answer_index": 0,
+      "why": "File iteration keeps the newline character at the end of most lines. `strip()` removes it so `print` does not add an extra blank line."
+    },
+    {
+      "kind": "list",
+      "title": "File handling checklist",
+      "items": [
+        "Use `with open(...)` to guarantee closing.",
+        "Specify UTF-8 for text you control.",
+        "Confirm whether the mode reads, replaces, or appends.",
+        "Expect missing paths and permission errors.",
+        "Process large files one line at a time."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,649 @@
+{
+  "_note": "Original Practice questions derived from CS Navigator's original Learn lesson for this topic.",
+  "concept": "operators",
+  "concept_label": "Operators",
+  "questions": [
+    {
+      "id": "operators-lesson-check-1",
+      "concept": "operators",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "Operators practice 1",
+      "variants": {
+        "python": {
+          "code": "total = 20\nprint(total // 6)\nprint(total % 6)\nprint(total / 6)",
+          "prompt": "What does this print?",
+          "choices": [
+            "3\n2\n3.3333333333333335",
+            "3.33\n2\n3.33",
+            "3\n3\n3.0",
+            "4\n2\n3.3333333333333335"
+          ],
+          "answer_index": 0,
+          "explanation": "20 divided by 6 is 3 with 2 left over. `//` reports the 3 and throws the rest away, so you get 3, not 3.33 and not 4. It cuts down, it does not round. `%` reports the 2 that was left over. Plain `/` keeps the full decimal, which is where that long tail of 3s comes from. If you picked 4, you were rounding: `//` never rounds up."
+        },
+        "java": {
+          "code": "int total = 7;\nint count = 2;\ndouble average = total / count;\nSystem.out.println(average);",
+          "prompt": "The result is stored in a `double`, so what does this print?",
+          "choices": [
+            "3.0",
+            "3.5",
+            "3",
+            "It does not compile"
+          ],
+          "answer_index": 0,
+          "explanation": "Java works out `total / count` on its own, before it ever looks at the left side. Both are `int`, so that is integer division and the answer is 3. Only then is the 3 stored in a `double`, which turns it into 3.0. The fraction was already gone by that point. If you picked 3.5, you assumed the `double` on the left reaches back and changes how the division is done. It does not. The type on the left says where the answer goes, not how it gets computed. Writing `(double) total / count` fixes it."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "What is `10 - 2 * 3`?",
+          "choices": [
+            "4",
+            "24",
+            "18",
+            "8"
+          ],
+          "answer_index": 0,
+          "explanation": "Multiplication produces six before that value is subtracted from ten."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "What is `10 - 2 * 3`?",
+          "choices": [
+            "4",
+            "24",
+            "18",
+            "8"
+          ],
+          "answer_index": 0,
+          "explanation": "Multiplication happens first, leaving ten minus six."
+        }
+      }
+    },
+    {
+      "id": "operators-lesson-check-2",
+      "concept": "operators",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "Operators practice 2",
+      "variants": {
+        "python": {
+          "code": "age = 15",
+          "prompt": "You want to print a message only when the age is between 13 and 19. Which line is right?",
+          "choices": [
+            "`if age >= 13 and age <= 19:`",
+            "`if age >= 13 or age <= 19:`",
+            "`if age = 13 and age = 19:`",
+            "`if age > 13 and age < 19:`"
+          ],
+          "answer_index": 0,
+          "explanation": "Between 13 and 19 means both things have to be true at once, and that is exactly what `and` does. The `or` version looks close, but it lets every age through. Try 5: it is not at least 13, but it is at most 19, and `or` only needs one side. That is a wrong answer rather than an error, so nothing warns you. The third line uses a single `=` and will not run at all. The last one is nearly right, but `>` and `<` leave out 13 and 19 themselves. Use `>=` and `<=` when the ends count."
+        },
+        "java": {
+          "code": "int x = 10;\nx += 5;\nSystem.out.println(x / 3);",
+          "prompt": "What does this print?",
+          "choices": [
+            "5",
+            "5.0",
+            "3",
+            "6"
+          ],
+          "answer_index": 0,
+          "explanation": "Take it one line at a time. `x` starts at 10, and `x += 5` makes it 15. Then `15 / 3` is an int divided by an int, and this one happens to come out even, so the answer is 5 and no fraction is lost. It prints as `5` rather than `5.0` because int division produces an `int`, and Java prints an int with no decimal point. If you picked 5.0, you were watching for the truncation trap, which is the right instinct aimed at the wrong line. The trap costs you nothing here, because 15 divides by 3 exactly."
+        },
+        "javascript": {
+          "code": "const value = \"7\";",
+          "prompt": "Which condition is true?",
+          "choices": [
+            "value === 7",
+            "value !== 7",
+            "value > 10",
+            "value === 8"
+          ],
+          "answer_index": 1,
+          "explanation": "The variable holds a string, so it is strictly unequal to the number seven."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "What is `9 % 4`?",
+          "choices": [
+            "1",
+            "2.25",
+            "4",
+            "0"
+          ],
+          "answer_index": 0,
+          "explanation": "The remainder after two groups of four is one."
+        }
+      }
+    },
+    {
+      "id": "operators-summary-01",
+      "concept": "operators",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "Operators summary",
+      "variants": {
+        "python": {
+          "code": null,
+          "prompt": "Which statement best describes Operators?",
+          "choices": [
+            "Do math, and ask true-or-false questions about the answer.",
+            "It is used only to print a message.",
+            "It automatically fixes every program error.",
+            "It removes the need for variables and tests."
+          ],
+          "answer_index": 0,
+          "explanation": "Operators are the symbols that do work on values. `+ - * /` do the math you expect, and `/` always hands back a decimal. `//` divides and throws away the remainder, `%` keeps only the remainder, and `**` raises to a power. Comparisons like `== != < >` ask a question and answer it with True or False. The one to watch is `==` against `=`. A single `=` puts a value into a name. A double `==` asks whether two values match."
+        },
+        "java": {
+          "code": null,
+          "prompt": "Which statement best describes Operators?",
+          "choices": [
+            "The symbols that do the work: arithmetic, comparison, and logic.",
+            "It is used only to print a message.",
+            "It automatically fixes every program error.",
+            "It removes the need for variables and tests."
+          ],
+          "answer_index": 0,
+          "explanation": "Operators are the symbols that combine values. `+ - * /` do arithmetic and `%` gives the remainder. Division is the one to watch: if both sides are `int`, Java divides as integers and throws the fraction away, so `7 / 2` is 3. Make one side a `double` to get 3.5. Comparisons like `==` and `<` produce a `boolean`, and `&&`, `||`, and `!` combine those booleans. Assignment is `=`. Comparison is `==`. They are different operators."
+        },
+        "javascript": {
+          "code": null,
+          "prompt": "Which statement best describes Operators?",
+          "choices": [
+            "Combine values with arithmetic, comparison, and logic.",
+            "It is used only to print a message.",
+            "It automatically fixes every program error.",
+            "It removes the need for variables and tests."
+          ],
+          "answer_index": 0,
+          "explanation": "Arithmetic operators calculate values, comparisons produce booleans, and logical operators join conditions. Prefer `===` so type and value must match."
+        },
+        "cpp": {
+          "code": null,
+          "prompt": "Which statement best describes Operators?",
+          "choices": [
+            "Calculate values and combine boolean conditions.",
+            "It is used only to print a message.",
+            "It automatically fixes every program error.",
+            "It removes the need for variables and tests."
+          ],
+          "answer_index": 0,
+          "explanation": "C++ arithmetic follows precedence rules, comparisons produce booleans, and `&&`, `||`, and `!` combine logic. Integer division discards the fractional part."
+        }
+      }
+    },
+    {
+      "id": "operators-supplement-01",
+      "concept": "operators",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "Operators practice 5",
+      "variants": {
+        "python": {
+          "code": "score = 75\nif score = 100:\n    print(\"Perfect\")",
+          "prompt": "What happens when you run `if score = 100:` inside an if statement?",
+          "choices": [
+            "A SyntaxError — Python refuses to run the file",
+            "It assigns 100 to score, then prints \"Perfect\"",
+            "It compares score to 100 the same as ==",
+            "It prints nothing but runs fine"
+          ],
+          "answer_index": 0,
+          "explanation": "A single `=` is assignment, and Python does not allow an assignment in an `if` condition, so it is a SyntaxError and nothing runs at all. You need `==`, which asks whether the values are equal. Because it fails to parse, you never even reach the print."
+        },
+        "java": {
+          "code": "int score = 3;\nif (score = 5) {\n    System.out.println(\"five\");\n}",
+          "prompt": "Why does `if (score = 5)` fail to compile when `score` is an int?",
+          "choices": [
+            "= produces an int, but an if needs a boolean",
+            "= is not a valid operator in Java",
+            "score cannot be reassigned inside an if",
+            "It compiles and prints \"five\""
+          ],
+          "answer_index": 0,
+          "explanation": "`score = 5` assigns and evaluates to the int 5, but an `if` requires a boolean, so the compiler rejects it: incompatible types, int cannot be converted to boolean. `==` produces the boolean the `if` needs. (In C or JavaScript the same slip compiles and causes a silent bug; Java catches it for numbers.)"
+        },
+        "javascript": {
+          "code": "const total = Number(\"12\") + 3; // 15",
+          "prompt": "What is the value of `total` in `const total = \"12\" + 3;`?",
+          "choices": [
+            "\"123\" — + with a string concatenates",
+            "15 — the string is converted to a number",
+            "\"15\"",
+            "NaN"
+          ],
+          "answer_index": 0,
+          "explanation": "When either side of `+` is a string, JavaScript concatenates, so `\"12\" + 3` becomes the string \"123\". To add, convert first: `Number(\"12\") + 3` is 15. This implicit coercion is why explicit `Number(...)` makes the intent clear."
+        },
+        "cpp": {
+          "code": "double average = static_cast<double>(total) / count;",
+          "prompt": "For `int total = 7, count = 2;`, what does `total / count` give, and why?",
+          "choices": [
+            "3 — integer division drops the remainder",
+            "3.5",
+            "4",
+            "3.0"
+          ],
+          "answer_index": 0,
+          "explanation": "Both operands are `int`, so `/` does integer division: 7 / 2 is 3, and the .5 is discarded before it can ever reach a double. Casting one side first, `static_cast<double>(total) / count`, forces real division and yields 3.5. Storing an int result into a double does not recover the lost remainder."
+        }
+      }
+    },
+    {
+      "id": "operators-authored-01",
+      "concept": "operators",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Operators concept check 1",
+      "variants": {
+        "python": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 1",
+          "code": null,
+          "prompt": "What does the lesson mean by \"Dividing by zero stops the program\"?",
+          "choices": [
+            "3.33\n2\n3.33",
+            "`10 / 0` does not give you a strange number. It raises a ZeroDivisionError and your program stops right there.",
+            "3\n3\n3.0",
+            "4\n2\n3.3333333333333335"
+          ],
+          "answer_index": 1,
+          "explanation": "Operators are the symbols that do work on values. `+ - * /` do the math you expect, and `/` always hands back a decimal. That reasoning supports the answer: `10 / 0` does not give you a strange number. It raises a ZeroDivisionError and your program stops right there."
+        },
+        "java": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 1",
+          "code": null,
+          "prompt": "What does the lesson mean by \"Integer division truncates\"?",
+          "choices": [
+            "3.5",
+            "When both sides of `/` are integers, Java keeps the whole-number part and discards the rest. `7 / 2` is 3.",
+            "3",
+            "It does not compile"
+          ],
+          "answer_index": 1,
+          "explanation": "Operators are the symbols that combine values. `+ - * /` do arithmetic and `%` gives the remainder. That reasoning supports the answer: When both sides of `/` are integers, Java keeps the whole-number part and discards the rest. `7 / 2` is 3."
+        },
+        "javascript": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 1",
+          "code": null,
+          "prompt": "What does the lesson mean by \"Watch this detail\"?",
+          "choices": [
+            "24",
+            "Loose equality may convert an operand first, so `5 == \"5\"` is true while `5 === \"5\"` is false.",
+            "18",
+            "8"
+          ],
+          "answer_index": 1,
+          "explanation": "Arithmetic operators calculate values, comparisons produce booleans, and logical operators join conditions. Prefer `===` so type and value must match. That reasoning supports the answer: Loose equality may convert an operand first, so `5 == \"5\"` is true while `5 === \"5\"` is false."
+        },
+        "cpp": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 1",
+          "code": null,
+          "prompt": "What does the lesson mean by \"C++ detail to check\"?",
+          "choices": [
+            "24",
+            "Use `==` for comparison. A single equals sign assigns a value, and an assignment inside a condition can silently alter program state.",
+            "18",
+            "8"
+          ],
+          "answer_index": 1,
+          "explanation": "C++ arithmetic follows precedence rules, comparisons produce booleans, and `&&`, `||`, and `!` combine logic. Integer division discards the fractional part. That reasoning supports the answer: Use `==` for comparison. A single equals sign assigns a value, and an assignment inside a condition can silently alter program state."
+        }
+      }
+    },
+    {
+      "id": "operators-authored-02",
+      "concept": "operators",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Operators concept check 2",
+      "variants": {
+        "python": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 2",
+          "code": null,
+          "prompt": "What does the lesson mean by \"Typing = when you meant ==\"?",
+          "choices": [
+            "`if age >= 13 or age <= 19:`",
+            "`if age = 13 and age = 19:`",
+            "Read the line out loud. If the words are \"set score to 100\", you want one `=`.",
+            "`if age > 13 and age < 19:`"
+          ],
+          "answer_index": 2,
+          "explanation": "Operators are the symbols that do work on values. `+ - * /` do the math you expect, and `/` always hands back a decimal. That reasoning supports the answer: Read the line out loud. If the words are \"set score to 100\", you want one `=`."
+        },
+        "java": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 2",
+          "code": null,
+          "prompt": "What does the lesson mean by \"x++ and ++x are not always the same\"?",
+          "choices": [
+            "5.0",
+            "6",
+            "The same pattern behind `+=` gives you `-=`, `*=`, `/=`, and `%=`, and `x--` subtracts 1 the way `x++` adds it. On a line of its own, `x++` and `++x` do the same job, so inside a loop either one is fine.",
+            "int score = 3;\n\nif (score = 5) {\n    System.out.println(\"five\");\n}\n// = assigns 5 to score,\n// so the if is handed\n// an int, not a boolean"
+          ],
+          "answer_index": 2,
+          "explanation": "Operators are the symbols that combine values. `+ - * /` do arithmetic and `%` gives the remainder. That reasoning supports the answer: The same pattern behind `+=` gives you `-=`, `*=`, `/=`, and `%=`, and `x--` subtracts 1 the way `x++` adds it. On a line of its own, `x++` and `++x` do the same job, so inside a loop either one is fine."
+        },
+        "javascript": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 2",
+          "code": null,
+          "prompt": "Which choice describes a reliable Operators practice?",
+          "choices": [
+            "value === 7",
+            "value > 10",
+            "Prefer strict equality.",
+            "value === 8"
+          ],
+          "answer_index": 2,
+          "explanation": "Arithmetic operators calculate values, comparisons produce booleans, and logical operators join conditions. Prefer `===` so type and value must match. That reasoning supports the answer: Prefer strict equality."
+        },
+        "cpp": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 2",
+          "code": null,
+          "prompt": "Which choice describes a reliable Operators practice?",
+          "choices": [
+            "2.25",
+            "4",
+            "Check operand types.",
+            "0"
+          ],
+          "answer_index": 2,
+          "explanation": "C++ arithmetic follows precedence rules, comparisons produce booleans, and `&&`, `||`, and `!` combine logic. Integer division discards the fractional part. That reasoning supports the answer: Check operand types."
+        }
+      }
+    },
+    {
+      "id": "operators-authored-03",
+      "concept": "operators",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Operators concept check 3",
+      "variants": {
+        "python": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 3",
+          "code": null,
+          "prompt": "Which recommendation belongs in a review of Operators code?",
+          "choices": [
+            "score = 75\nif score = 100:\n    print(\"Perfect\")\n# a single = assigns,\n# and you cannot\n# assign inside an if",
+            "4\n2\n3.3333333333333335",
+            "`if age >= 13 or age <= 19:`",
+            "`/` always gives a decimal, so `4 / 2` is 2.0 and not 2"
+          ],
+          "answer_index": 3,
+          "explanation": "Operators are the symbols that do work on values. `+ - * /` do the math you expect, and `/` always hands back a decimal. That reasoning supports the answer: `/` always gives a decimal, so `4 / 2` is 2.0 and not 2"
+        },
+        "java": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 3",
+          "code": null,
+          "prompt": "What does the lesson mean by \"Java catches this at compile time, with one exception\"?",
+          "choices": [
+            "It does not compile",
+            "5.0",
+            "6",
+            "Java checks types before it runs anything, so `if (score = 5)` is rejected by the compiler and the program never starts. That is a syntax-class error, and it is the good outcome, because you find out straight away."
+          ],
+          "answer_index": 3,
+          "explanation": "Operators are the symbols that combine values. `+ - * /` do arithmetic and `%` gives the remainder. That reasoning supports the answer: Java checks types before it runs anything, so `if (score = 5)` is rejected by the compiler and the program never starts. That is a syntax-class error, and it is the good outcome, because you find out straight away."
+        },
+        "javascript": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 3",
+          "code": null,
+          "prompt": "Which recommendation belongs in a review of Operators code?",
+          "choices": [
+            "const total = \"12\" + 3; // \"123\"",
+            "8",
+            "value === 7",
+            "Use `%` for a remainder."
+          ],
+          "answer_index": 3,
+          "explanation": "Arithmetic operators calculate values, comparisons produce booleans, and logical operators join conditions. Prefer `===` so type and value must match. That reasoning supports the answer: Use `%` for a remainder."
+        },
+        "cpp": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 3",
+          "code": null,
+          "prompt": "Which recommendation belongs in a review of Operators code?",
+          "choices": [
+            "double average = total / count;",
+            "8",
+            "2.25",
+            "Use equality for comparisons."
+          ],
+          "answer_index": 3,
+          "explanation": "C++ arithmetic follows precedence rules, comparisons produce booleans, and `&&`, `||`, and `!` combine logic. Integer division discards the fractional part. That reasoning supports the answer: Use equality for comparisons."
+        }
+      }
+    },
+    {
+      "id": "operators-authored-04",
+      "concept": "operators",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Operators concept check 4",
+      "variants": {
+        "python": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 4",
+          "code": null,
+          "prompt": "Which guideline helps prevent a common Operators mistake?",
+          "choices": [
+            "`//` divides and drops the remainder, cutting down rather than rounding",
+            "`if age = 13 and age = 19:`",
+            "`if age > 13 and age < 19:`",
+            "score = 75\nif score = 100:\n    print(\"Perfect\")\n# a single = assigns,\n# and you cannot\n# assign inside an if"
+          ],
+          "answer_index": 0,
+          "explanation": "Operators are the symbols that do work on values. `+ - * /` do the math you expect, and `/` always hands back a decimal. That reasoning supports the answer: `//` divides and drops the remainder, cutting down rather than rounding"
+        },
+        "java": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 4",
+          "code": null,
+          "prompt": "Which guideline helps prevent a common Operators mistake?",
+          "choices": [
+            "An average or a percentage came out too low, or came out as 0: you divided an `int` by an `int`. Cast one side with `(double)`.",
+            "int score = 3;\n\nif (score = 5) {\n    System.out.println(\"five\");\n}\n// = assigns 5 to score,\n// so the if is handed\n// an int, not a boolean",
+            "3.5",
+            "3"
+          ],
+          "answer_index": 0,
+          "explanation": "Operators are the symbols that combine values. `+ - * /` do arithmetic and `%` gives the remainder. That reasoning supports the answer: An average or a percentage came out too low, or came out as 0: you divided an `int` by an `int`. Cast one side with `(double)`."
+        },
+        "javascript": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 4",
+          "code": null,
+          "prompt": "Which guideline helps prevent a common Operators mistake?",
+          "choices": [
+            "Add clarifying parentheses.",
+            "value > 10",
+            "value === 8",
+            "const total = \"12\" + 3; // \"123\""
+          ],
+          "answer_index": 0,
+          "explanation": "Arithmetic operators calculate values, comparisons produce booleans, and logical operators join conditions. Prefer `===` so type and value must match. That reasoning supports the answer: Add clarifying parentheses."
+        },
+        "cpp": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 4",
+          "code": null,
+          "prompt": "Which guideline helps prevent a common Operators mistake?",
+          "choices": [
+            "Parenthesize dense logic.",
+            "4",
+            "0",
+            "double average = total / count;"
+          ],
+          "answer_index": 0,
+          "explanation": "C++ arithmetic follows precedence rules, comparisons produce booleans, and `&&`, `||`, and `!` combine logic. Integer division discards the fractional part. That reasoning supports the answer: Parenthesize dense logic."
+        }
+      }
+    },
+    {
+      "id": "operators-authored-05",
+      "concept": "operators",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Operators concept check 5",
+      "variants": {
+        "python": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 5",
+          "code": null,
+          "prompt": "A classmate is checking their understanding of Operators. Which advice is correct?",
+          "choices": [
+            "3.33\n2\n3.33",
+            "`%` keeps only the remainder, so `n % 2 == 0` tests for an even number",
+            "3\n3\n3.0",
+            "`if age = 13 and age = 19:`"
+          ],
+          "answer_index": 1,
+          "explanation": "Operators are the symbols that do work on values. `+ - * /` do the math you expect, and `/` always hands back a decimal. That reasoning supports the answer: `%` keeps only the remainder, so `n % 2 == 0` tests for an even number"
+        },
+        "java": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 5",
+          "code": null,
+          "prompt": "A classmate is checking their understanding of Operators. Which advice is correct?",
+          "choices": [
+            "6",
+            "Declaring the result as a `double` does not rescue you. `double avg = 7 / 2;` is 3.0, because the division finished before the assignment happened.",
+            "int score = 3;\n\nif (score = 5) {\n    System.out.println(\"five\");\n}\n// = assigns 5 to score,\n// so the if is handed\n// an int, not a boolean",
+            "3.5"
+          ],
+          "answer_index": 1,
+          "explanation": "Operators are the symbols that combine values. `+ - * /` do arithmetic and `%` gives the remainder. That reasoning supports the answer: Declaring the result as a `double` does not rescue you. `double avg = 7 / 2;` is 3.0, because the division finished before the assignment happened."
+        },
+        "javascript": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 5",
+          "code": null,
+          "prompt": "A classmate is checking their understanding of Operators. Which advice is correct?",
+          "choices": [
+            "24",
+            "Inspect types around plus.",
+            "18",
+            "value > 10"
+          ],
+          "answer_index": 1,
+          "explanation": "Arithmetic operators calculate values, comparisons produce booleans, and logical operators join conditions. Prefer `===` so type and value must match. That reasoning supports the answer: Inspect types around plus."
+        },
+        "cpp": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 5",
+          "code": null,
+          "prompt": "A classmate is checking their understanding of Operators. Which advice is correct?",
+          "choices": [
+            "24",
+            "Remember integer division.",
+            "18",
+            "4"
+          ],
+          "answer_index": 1,
+          "explanation": "C++ arithmetic follows precedence rules, comparisons produce booleans, and `&&`, `||`, and `!` combine logic. Integer division discards the fractional part. That reasoning supports the answer: Remember integer division."
+        }
+      }
+    },
+    {
+      "id": "operators-authored-06",
+      "concept": "operators",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Operators concept check 6",
+      "variants": {
+        "python": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 6",
+          "code": null,
+          "prompt": "Which choice shows sound reasoning about Operators?",
+          "choices": [
+            "`if age > 13 and age < 19:`",
+            "score = 75\nif score = 100:\n    print(\"Perfect\")\n# a single = assigns,\n# and you cannot\n# assign inside an if",
+            "`**` raises to a power. `^` is not the power operator in Python",
+            "3.33\n2\n3.33"
+          ],
+          "answer_index": 2,
+          "explanation": "Operators are the symbols that do work on values. `+ - * /` do the math you expect, and `/` always hands back a decimal. That reasoning supports the answer: `**` raises to a power. `^` is not the power operator in Python"
+        },
+        "java": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 6",
+          "code": null,
+          "prompt": "Which choice shows sound reasoning about Operators?",
+          "choices": [
+            "3",
+            "It does not compile",
+            "A condition never changes: count the equals signs. `=` assigns, `==` compares.",
+            "5.0"
+          ],
+          "answer_index": 2,
+          "explanation": "Operators are the symbols that combine values. `+ - * /` do arithmetic and `%` gives the remainder. That reasoning supports the answer: A condition never changes: count the equals signs. `=` assigns, `==` compares."
+        },
+        "javascript": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 6",
+          "code": null,
+          "prompt": "What is the main idea behind Operators?",
+          "choices": [
+            "value === 8",
+            "const total = \"12\" + 3; // \"123\"",
+            "Combine values with arithmetic, comparison, and logic.",
+            "24"
+          ],
+          "answer_index": 2,
+          "explanation": "Arithmetic operators calculate values, comparisons produce booleans, and logical operators join conditions. Prefer `===` so type and value must match. That reasoning supports the answer: Combine values with arithmetic, comparison, and logic."
+        },
+        "cpp": {
+          "difficulty": "medium",
+          "kind": "mcq-behavior",
+          "title": "Operators concept check 6",
+          "code": null,
+          "prompt": "What is the main idea behind Operators?",
+          "choices": [
+            "0",
+            "double average = total / count;",
+            "Calculate values and combine boolean conditions.",
+            "24"
+          ],
+          "answer_index": 2,
+          "explanation": "C++ arithmetic follows precedence rules, comparisons produce booleans, and `&&`, `||`, and `!` combine logic. Integer division discards the fractional part. That reasoning supports the answer: Calculate values and combine boolean conditions."
+        }
+      }
+    }
+  ]
+}

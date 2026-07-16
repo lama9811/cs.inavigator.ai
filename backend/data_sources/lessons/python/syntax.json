@@ -1,0 +1,112 @@
+{
+  "_note": "ORIGINAL content. Topic sequence follows the standard free intro texts (Runestone FoPP ch.1-2, Think Python ch.1, OpenStax ch.1); sequences are not copyrightable. No prose, examples, or exercises are copied from any of them: all three are copyleft (GFDL / CC BY-NC-SA), and copying would bind CS Navigator's content to those terms.",
+  "title": "Syntax",
+  "summary": "The shape a program has to have before Python will run it at all.",
+  "minutes": 6,
+  "error_classes": [
+    "syntax",
+    "runtime"
+  ],
+  "refresher": "Syntax is the set of rules your code has to follow before Python will run it. `print(\"Hi\")` needs the parentheses, and the text inside needs matching quotes. A `#` starts a comment, which Python ignores. Lines that end in a colon start a block, and the lines belonging to that block are indented underneath. In Python the indentation is not decoration. It is how you say which lines go together.",
+  "refresher_code": "# a comment, ignored by Python\nname = \"Ada\"\nif name == \"Ada\":\n    print(\"Hello, Ada\")",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Every language has rules about how you are allowed to arrange things. English wants a subject and a verb. Python wants parentheses in certain places, quotes around text, and lines lined up in a certain way. Those rules are called syntax. Get them right and your program runs. Get one of them wrong and Python stops before it runs a single line. That last part surprises people. A syntax error is not the computer disagreeing with your idea. It is the computer saying it could not read the sentence at all. Your logic might be perfect. Python never got far enough to find out."
+    },
+    {
+      "kind": "code",
+      "caption": "The smallest useful program. `print` is the instruction, the parentheses hold what you want shown, and the quotes mark where the text starts and stops.",
+      "code": "print(\"Hello, world\")",
+      "output": "Hello, world"
+    },
+    {
+      "kind": "text",
+      "body": "Each of those three pieces is doing a job. Without the parentheses, Python sees the word `print` and has nothing to print. Without the quotes, it reads `Hello` as the name of a variable and looks for one you never made. The punctuation is not there to look official. It is there to tell Python which parts are instructions and which parts are just text."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Quotes come in pairs",
+      "body": "A string is text with quotes around both ends. Single quotes and double quotes both work, so `'hi'` and `\"hi\"` are the same to Python. What matters is that you close with the same kind you opened with. If you need an apostrophe inside your text, open with double quotes: `\"it's fine\"`."
+    },
+    {
+      "kind": "compare",
+      "caption": "Python reads left to right looking for the closing quote, and when the line ends without one it stops right there. The message says the string was never terminated, and the little arrow underneath points at the quote that started it. Read the arrow. It is usually aiming straight at the problem.",
+      "wrong_label": "Syntax error",
+      "wrong": "print(\"Hello)\n# the quote after Hello\n# was never closed",
+      "right_label": "Works",
+      "right": "print(\"Hello\")\n# opened with \", closed with \"\n# and the parenthesis closed too"
+    },
+    {
+      "kind": "text",
+      "body": "Anything after a `#` on a line is a comment. Python skips it entirely. Comments are for the humans reading your code later, and one of those humans is you in three weeks, wondering what you meant."
+    },
+    {
+      "kind": "code",
+      "caption": "Proof that Python really does ignore comments. The first line looks like a sentence and the second ends with one, yet the only thing that runs is `print(\"Welcome\")`.",
+      "code": "# Prints a greeting for the user.\nprint(\"Welcome\")  # you can also comment at the end of a line",
+      "output": "Welcome"
+    },
+    {
+      "kind": "check",
+      "prompt": "What does this program print?",
+      "code": "# print(\"first\")\nprint(\"second\")\n# print(\"third\")",
+      "choices": [
+        "second",
+        "first\nsecond\nthird",
+        "first\nthird",
+        "Nothing, it is all commented out"
+      ],
+      "answer_index": 0,
+      "why": "The `#` at the start of the first and third lines turns them into comments, so Python never runs them. Only the middle line is real code. If you picked \"first, second, third\", you read the lines as code because they look like code, which is a fair mistake. Python does not care what a commented line looks like. It stops reading at the `#` and moves on."
+    },
+    {
+      "kind": "text",
+      "body": "Now the part that makes Python different from most other languages: the spaces at the start of a line carry meaning. Some lines end with a colon, which says \"a block is coming\". The lines that belong to that block are indented underneath it. That is how you tell Python where the block starts and where it ends. So two lines in the same block need the same amount of space in front of them. Four spaces on one line and two on the next will stop the program. On your screen those two lines look almost identical. To Python they are not."
+    },
+    {
+      "kind": "code",
+      "caption": "The colon opens the block and the four spaces put a line inside it. The last line is not indented, so it sits outside the `if` and runs no matter what.",
+      "code": "score = 90\n\nif score > 80:\n    print(\"Nice work\")\n    print(\"Keep it up\")\n\nprint(\"Done\")",
+      "output": "Nice work\nKeep it up\nDone"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "The forgotten colon",
+      "body": "Anything that opens a block needs a colon at the end of the line: `if`, `else`, `for`, `while`, `def`. Leave it off and Python reports a syntax error on that line or the next one. Experienced programmers still do this, because the colon is the easiest character in the language to skip over. When an error points at a line with `if` or `for` on it, check the end of the line first."
+    },
+    {
+      "kind": "check",
+      "prompt": "This code was meant to greet the user and then say goodbye. What is wrong with it?",
+      "code": "name = \"Ada\"\nif name == \"Ada\"\n    print(\"Hello, Ada\")\nprint(\"Goodbye\")",
+      "choices": [
+        "The `if` line is missing its colon",
+        "`print(\"Goodbye\")` should be indented",
+        "`name == \"Ada\"` should be `name = \"Ada\"`",
+        "Nothing is wrong, it prints both lines"
+      ],
+      "answer_index": 0,
+      "why": "The `if` line opens a block, so it has to end with a colon. Without it the file never runs, and neither line prints. If you picked the indentation, that is a very reasonable guess, and plenty of people make it. Indentation is the thing Python is famous for, so it is the first place your eye goes. Here it happens to be fine: `print(\"Hello, Ada\")` is correctly inside the `if`, and `print(\"Goodbye\")` is correctly outside it so it runs either way."
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "The error message is trying to help you",
+      "body": "A syntax error tells you the line, and usually draws an arrow at the exact character that confused Python. Beginners often skim past all of it and start rereading the whole file. Read it instead. `expected ':'` means a colon is missing. `'(' was never closed` means a parenthesis is still open. `unterminated string literal` means a quote never got its partner. The message is naming your bug out loud."
+    },
+    {
+      "kind": "list",
+      "title": "A checklist for your first syntax errors",
+      "items": [
+        "Every opening quote has a matching closing quote of the same kind",
+        "Every opening parenthesis has a closing one, including the one that closes `print(`",
+        "Every line that starts a block ends with a colon",
+        "Everything inside a block is indented, and indented by the same amount",
+        "Four spaces per level is the Python convention, and picking one style and sticking to it matters more than which style you pick",
+        "When you get a syntax error, read the arrow and the message before you change anything"
+      ]
+    }
+  ]
+}

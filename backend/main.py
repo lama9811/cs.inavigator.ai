@@ -34,6 +34,7 @@ from coding_runner import (
 )
 from practice_starters import build_starter_from_spec, get_arg_spec
 import concept_quiz
+import lessons
 
 from fastapi import FastAPI, HTTPException, Depends, status, File, UploadFile, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -85,7 +86,7 @@ print(f"[KEY] JWT_SECRET Check: {'FOUND' if os.getenv('JWT_SECRET') else 'MISSIN
 # SQLAlchemy Imports
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import OperationalError, ProgrammingError
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, text, or_, func
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, text, or_, and_, func
 
 # Vertex AI Agent Engine (replaces Pinecone + OpenAI RAG pipeline)
 from vertex_agent import query_agent, query_agent_stream, check_agent_health, reset_session
@@ -175,7 +176,7 @@ ADVISING_FILES_FOLDER = os.path.join(BACKEND_DIR, "uploads", "advising_forms")  
 
 ALLOWED_EXTENSIONS = {
     'png', 'jpg', 'jpeg', 'gif', 'pdf', 'txt', 'docx', 'doc', 'mov', 'mp4',
-    'py', 'java', 'cpp', 'c', 'h', 'hpp', 'js', 'jsx', 'ts', 'tsx', 'json',
+    'py', 'java', 'cpp', 'cc', 'c', 'h', 'hpp', 'js', 'jsx', 'ts', 'tsx', 'json',
     'md', 'html', 'css'
 }
 
@@ -774,6 +775,10 @@ class PracticeRunRequest(BaseModel):
     question_id: str
     language: str = "python"
     code: str
+    # Effort signals for attempt telemetry. Optional and client-reported, so an older
+    # client that omits them still runs — the row is just written without them.
+    hints_used: int = 0
+    seconds_since_open: Optional[int] = None
 
     @field_validator("code")
     @classmethod
@@ -787,6 +792,7 @@ class PracticeRunRequest(BaseModel):
 class PracticeFreeRunRequest(BaseModel):
     language: str = "python"
     code: str
+    seconds_since_open: Optional[int] = None
 
     @field_validator("code")
     @classmethod
@@ -5240,12 +5246,66 @@ async def list_concept_quiz_languages():
 
 @app.get("/api/coding/concept-quiz/{language}/categories")
 async def list_concept_quiz_categories(language: str):
-    """The 13 categories (12 shared + 1 language-specific) for one language,
-    each with a live question count so empty categories can be flagged/hidden."""
+    """Core categories plus any language-specific lesson-only extensions, each
+    with a live question count and beginner/intermediate track metadata.
+
+    Also reports `has_lesson` per category, so Learn mode can show which topics can be
+    read (and Practice can offer a "read the lesson first" nudge on a topic the student
+    keeps failing)."""
     categories = _concept_quiz_call(concept_quiz.categories_for_language, language)
+    lang = concept_quiz.normalize_language(language)
+    for category in categories:
+        category["has_lesson"] = lessons.has_lesson(lang, category["id"])
     return {
-        "language": concept_quiz.normalize_language(language),
+        "language": lang,
         "categories": categories,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Learn mode. The Practice Library's three modes are Learn -> Practice -> Code:
+# read the idea, check you got it, apply it. A beginner who doesn't know what a
+# function is has nowhere to start today; the quiz can only tell them they're wrong.
+#
+# The lesson and the in-quiz refresher come from the SAME file (see lessons.py), so
+# they cannot drift apart and tell a student two different things.
+# ---------------------------------------------------------------------------
+def _lesson_call(fn, *args):
+    """Run a lesson loader function, mapping its exceptions onto HTTP status codes."""
+    try:
+        return fn(*args)
+    except lessons.LessonError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except lessons.LessonDataError as exc:
+        # Malformed content is OUR bug, not the student's — 500, and loudly.
+        print(f"[ERROR] Lesson content is malformed: {exc}")
+        raise HTTPException(status_code=500, detail="This lesson is temporarily unavailable.") from exc
+
+
+@app.get("/api/coding/learn/{language}/{category}")
+async def read_lesson(language: str, category: str):
+    """One lesson. Returns `lesson: null` when the topic hasn't been authored yet —
+    NOT a 404. The category manifest is the roadmap of what the library will cover; the
+    lesson files are what exists so far, and the two are allowed to disagree while
+    authoring is in progress. (The quiz loader raised a 500 on exactly this mismatch,
+    which broke 10 of Python's 13 categories.)"""
+    lesson = _lesson_call(lessons.get_lesson, language, category)
+    return {
+        "language": lessons.normalize_language(language),
+        "category": category,
+        "lesson": lesson,
+    }
+
+
+@app.get("/api/coding/learn/{language}/{category}/refresher")
+async def read_lesson_refresher(language: str, category: str):
+    """The compact recap shown in the Learn tab INSIDE a quiz question — a reminder
+    mid-question, not the whole lesson."""
+    refresher = _lesson_call(lessons.get_refresher, language, category)
+    return {
+        "language": lessons.normalize_language(language),
+        "category": category,
+        "refresher": refresher,
     }
 
 
@@ -5287,19 +5347,34 @@ def _grade_concept_answer(question: dict[str, Any], answer: ConceptQuizAnswer) -
     """Grade one submitted answer against its question. Pure/stateless."""
     kind = question.get("kind")
     correct = False
+    student_answer: Any = None
+    correct_answer: Any = None
     if kind in {"mcq-output", "mcq-behavior"}:
         correct = answer.choice_index == question.get("answer_index")
+        choices = question.get("choices", [])
+        if isinstance(answer.choice_index, int) and 0 <= answer.choice_index < len(choices):
+            student_answer = choices[answer.choice_index]
+        correct_index = question.get("answer_index")
+        if isinstance(correct_index, int) and 0 <= correct_index < len(choices):
+            correct_answer = choices[correct_index]
     elif kind == "typein":
         # Case-sensitive exact match against accepted forms, but tolerant of
         # surrounding whitespace the student may have added.
         submitted = (answer.text or "").strip()
         correct = submitted in {a.strip() for a in question.get("accepted", [])}
+        student_answer = submitted or None
+        accepted = question.get("accepted", [])
+        correct_answer = accepted[0] if accepted else None
     elif kind == "parsons":
         correct = (answer.order or []) == question.get("lines", [])
+        student_answer = answer.order or None
+        correct_answer = question.get("lines", []) or None
     return {
         "question_id": question.get("id"),
         "kind": kind,
         "correct": correct,
+        "student_answer": student_answer,
+        "correct_answer": correct_answer,
         "explanation": question.get("explanation", ""),
     }
 
@@ -5368,6 +5443,8 @@ async def search_coding_study_resources(
         "source": "curated_cs_navigator_resources",
     }
 
+from services import attempt_telemetry, mastery
+
 @app.post("/api/coding/practice/run")
 async def run_practice_solution(
     req: PracticeRunRequest,
@@ -5428,6 +5505,21 @@ async def run_practice_solution(
     db.refresh(progress)
     serialized_progress = _serialize_practice_progress(progress)
 
+    # Append-only attempt telemetry. The progress row above records only the LATEST
+    # state; this records how each individual attempt failed, which is what per-topic
+    # mastery and the "common mistakes" panel are built from. Never raises.
+    attempt_telemetry.record_attempt(
+        db,
+        user_id=user["user_id"],
+        source="practice",
+        run_result=run_result,
+        language=language_key,
+        code=req.code,
+        question=question,
+        hints_used=req.hints_used,
+        seconds_since_open=req.seconds_since_open,
+    )
+
     return {
         **run_result,
         "progress_saved": progress_saved,
@@ -5439,11 +5531,14 @@ async def run_practice_solution(
 async def grade_interview_answers(
     req: InterviewGradeRequest,
     user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """Batch-grade a finished mock interview against authored test cases. Deterministic
     and free — reuses the same sandboxed runner as the Practice Library. Questions with
     no authored tests return gradedBy='none' (the client falls back to an AI review).
-    Does NOT write any progress to the DB (mock outcomes are self-reported / local)."""
+    Does NOT write any progress to the DB (mock outcomes are self-reported / local),
+    but DOES append attempt telemetry — an interview failure is just as informative
+    about a student's weak topics as a practice failure."""
     retry_after = check_practice_run_rate_limit(str(user["user_id"]))
     if retry_after is not None:
         raise HTTPException(
@@ -5484,6 +5579,24 @@ async def grade_interview_answers(
         if not cached_run:
             set_cached_practice_run(answer.question_id, language_key, answer.code, function_name, tests, run_result)
 
+        # Telemetry: an interview answer that fails tells us the same thing a practice
+        # failure does. Look up the question for its topic; a miss just means the event
+        # is recorded without one rather than dropped.
+        try:
+            interview_question = _find_question(answer.question_id, "interview")
+        except HTTPException:
+            interview_question = None
+        attempt_telemetry.record_attempt(
+            db,
+            user_id=user["user_id"],
+            source="interview",
+            run_result=run_result,
+            language=language_key,
+            code=answer.code,
+            question=interview_question,
+            question_id=answer.question_id,
+        )
+
         results.append({
             "question_id": answer.question_id,
             "gradedBy": "tests",
@@ -5499,8 +5612,13 @@ async def grade_interview_answers(
 async def free_run_practice_solution(
     req: PracticeFreeRunRequest,
     user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    """Run personal/workspace code without tests, grading, or saved progress."""
+    """Run personal/workspace code without tests, grading, or saved progress.
+
+    Still records attempt telemetry: a student repeatedly hitting a syntax error in the
+    scratch workspace is exactly the signal we want, even though there's no question to
+    grade against."""
     retry_after = check_practice_run_rate_limit(str(user["user_id"]))
     if retry_after is not None:
         raise HTTPException(
@@ -5530,6 +5648,16 @@ async def free_run_practice_solution(
     else:
         run_result = run_python_freeform(req.code)
 
+    attempt_telemetry.record_attempt(
+        db,
+        user_id=user["user_id"],
+        source="freerun",
+        run_result=run_result,
+        language=language_key,
+        code=req.code,
+        seconds_since_open=req.seconds_since_open,
+    )
+
     message = (
         "Ran your code. Output is shown below (not graded)."
         if run_result.get("status") == "ran"
@@ -5557,6 +5685,30 @@ async def list_practice_progress(
             return {"items": []}
     items = query.order_by(CodingPracticeProgress.updated_at.desc()).all()
     return {"items": [_serialize_practice_progress(item) for item in items]}
+
+@app.get("/api/coding/mastery")
+async def get_coding_mastery(
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Per-topic mastery, computed live from the attempt log.
+
+    Replaces the browser's solved/total ratio, which can't tell a cold first-try solve
+    from a six-attempt grind with three hints open. Weakest topic first, each with a
+    plain-English reason — an adaptive system that won't explain itself gets ignored.
+
+    Returns `weakest: null` when no topic has enough attempts yet (rather than guessing
+    from one data point). A brand-new student gets an empty list, not a fake score.
+    """
+    topics = mastery.compute_topic_mastery(db, user["user_id"])
+    weakest = mastery.weakest_topic(topics)
+    return {
+        "topics": topics,
+        "weakest": (
+            {**weakest, "reason": mastery.explain(weakest)} if weakest else None
+        ),
+        "min_attempts_for_score": mastery.MIN_ATTEMPTS_FOR_SCORE,
+    }
 
 @app.get("/api/coding/practice/questions/{question_id}/progress")
 async def get_practice_progress(
@@ -5871,16 +6023,50 @@ def _dedupe_near_duplicates(questions: list[str]) -> list[str]:
         kept.append(q)
     return kept
 
-# Coding-tutor quick-action prompts are logged to ChatHistory just like advising
-# questions, but they must NOT surface on the chat welcome screen (that screen is
-# for academic advising). Drop any question containing one of these coding-tutor
-# signal phrases (matched case-insensitively as substrings).
+# In-app feature panels (the Coding Tutor, the advising-form helper) log to ChatHistory
+# just like the general chat does, but their questions must NOT surface on the welcome
+# screen. The real defense is the session_id exclusion in the query below; these markers
+# are only a fallback.
+#
+# Two earlier filters were assumed to cover this and neither did, which is why questions
+# kept leaking:
+#
+#   * `mode == "regular"` — feature-panel rows are written with mode "regular", not
+#     "coding_tutor", so the mode filter lets them straight through. (Verified against
+#     real chat_history rows: every coding-* session is stored as mode "regular".)
+#   * the marker list below — it only matches five hard-coded phrases. "Can you provide
+#     a video that explains this?", asked inside the Coding Tutor, contains none of them
+#     and reached the home screen.
+#
+# The markers stay as a belt-and-suspenders fallback for any coding prompt that somehow
+# lands under a non-panel session id.
 _POPULAR_Q_CODING_MARKERS = (
     "my current code",
     "practice quiz",
     "debug my code",
     "rewrite my code",
     "review my code",
+)
+
+# Session-id prefixes for FEATURE PANELS: in-app helpers that happen to log to
+# chat_history but are not the general advising chat. Their questions only make sense
+# with that feature open in front of you, so they must never be offered as a welcome-screen
+# suggestion. A student who clicks "What should I write for my career goals?" from the home
+# screen lands in a general chat with no advising form in sight.
+#
+#   coding-          the Coding Tutor workspace ("coding-<ts>") and its floating widget
+#                    ("coding-widget-<ts>") — one prefix covers both
+#   advising-        the advising-form side panel ("advising-helper")
+#
+# ADD A PREFIX HERE whenever a new in-app panel starts posting to /chat. That is the whole
+# maintenance burden, and it's why this is a list rather than a chain of special cases.
+#
+# The mock-interview grader ("interview-grader") needs no entry: INTERNAL_SESSION_IDS now
+# stops it being written to chat_history at all, which is strictly better than filtering it
+# back out at read time.
+_POPULAR_Q_FEATURE_SESSION_PREFIXES = (
+    "coding-",
+    "advising-",
 )
 
 # Module-level cache: (epoch_seconds, questions). 5-minute TTL.
@@ -5962,6 +6148,24 @@ async def get_popular_questions(db: Session = Depends(get_db)):
             # Coding questions must not surface as Morgan CS suggestions. Legacy rows
             # predating the `mode` column are NULL -> treated as regular.
             .filter(func.coalesce(ChatHistory.mode, "regular") == "regular")
+            # Exclude in-app feature panels (Coding Tutor, advising helper). The `mode`
+            # filter above does NOT catch them: their rows are written with mode
+            # "regular", so they pass straight through it, and the marker list only
+            # matches five hard-coded phrases. Keying on the session id catches all of
+            # their traffic regardless of how the question was worded.
+            #
+            # NULL session_id is legacy advising data and must be KEPT — an unguarded
+            # NOT LIKE evaluates to NULL for those rows and would silently drop every one
+            # of them, emptying the welcome screen of exactly the questions it's for.
+            .filter(
+                or_(
+                    ChatHistory.session_id.is_(None),
+                    and_(*[
+                        ~ChatHistory.session_id.like(f"{prefix}%")
+                        for prefix in _POPULAR_Q_FEATURE_SESSION_PREFIXES
+                    ]),
+                )
+            )
             .group_by(normalized)
             # Tie-break on the text so the ranking is total, not just "by frequency".
             # Equal-frequency questions must order identically on every instance —

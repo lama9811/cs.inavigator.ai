@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Algorithm Problems: Part 1",
+  "summary": "Turn a small problem into ordered steps you can trace.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "First state the input and expected output. Choose any value the algorithm must remember, update it as you visit the data, and return only after all required work is finished.",
+  "refresher_code": "int total=0;\nfor(int n: values) total+=n;\nreturn total;",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "An algorithm is a clear sequence of steps for producing an answer. Before writing C++, describe the input, the output, what must be remembered, and what work repeats. Then translate each part into code."
+    },
+    {
+      "kind": "text",
+      "body": "To add a vector, remember a running total. Programmers often call a value like this an accumulator because it collects each update. Start it at zero, add every number, and return the total after the loop."
+    },
+    {
+      "kind": "code",
+      "caption": "Total begins at zero, receives every value, and is returned only after the loop is complete.",
+      "code": "#include <iostream>\n#include <vector>\n\nint sum(const std::vector<int>& values) {\n  int total = 0;\n\n  for (int value : values) {\n    total += value;\n  }\n\n  return total;\n}\n\nint main() {\n  std::cout << sum({3, 5, 2}) << \"\\n\";\n}",
+      "output": "10"
+    },
+    {
+      "kind": "compare",
+      "caption": "Keep the return outside the loop body.",
+      "wrong_label": "Common mistake",
+      "wrong": "for (int value : values) {\n  total += value;\n  return total;\n}",
+      "right_label": "Clearer version",
+      "right": "for (int value : values) {\n  total += value;\n}\nreturn total;"
+    },
+    {
+      "kind": "text",
+      "body": "For `{3, 5, 2}`, the running total becomes three, then eight, then ten. An empty vector performs no additions and returns zero. Trace both an ordinary case and the smallest allowed case to catch misplaced setup or return steps."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Finish the repeated work before returning",
+      "body": "A return inside the loop ends the function during the first pass. Put the final return after the loop when every element must contribute to the answer."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is the sum accumulator initialized to?",
+      "code": "",
+      "choices": [
+        "0",
+        "1",
+        "the vector size",
+        "the first index"
+      ],
+      "answer_index": 0,
+      "why": "Zero is the additive identity and works correctly even when the vector is empty."
+    },
+    {
+      "kind": "check",
+      "prompt": "Where does a full traversal return?",
+      "code": "",
+      "choices": [
+        "after the loop",
+        "before initialization",
+        "inside the first pass",
+        "before every update"
+      ],
+      "answer_index": 0,
+      "why": "Later elements can change the result, so the loop must finish first."
+    },
+    {
+      "kind": "list",
+      "title": "Algorithm Problems: Part 1 checklist",
+      "items": [
+        "Write expected output.",
+        "Choose correct initial state.",
+        "Visit each needed element.",
+        "Return after traversal."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

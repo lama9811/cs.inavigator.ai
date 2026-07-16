@@ -1,0 +1,127 @@
+{
+  "_note": "ORIGINAL content. Topic sequence follows the standard free intro texts (Runestone FoPP ch.5, Think Python ch.3, OpenStax ch.9); sequences are not copyrightable. No prose, examples, or exercises are copied from any of them: all three are copyleft (GFDL / CC BY-NC-SA), and copying would bind CS Navigator's content to those terms.",
+  "title": "Functions",
+  "summary": "Name a piece of work once, then run it whenever you need it.",
+  "minutes": 7,
+  "error_classes": [
+    "wrong_answer",
+    "runtime",
+    "syntax"
+  ],
+  "refresher": "A function is a named block of code you can run whenever you want. You define it with `def`, list the values it needs in the parentheses, and call it by writing its name with parentheses after it. To hand a value back to the caller, use `return`. Printing is not returning: `print` shows text on the screen, while `return` gives a value your code can store and use. A function with no `return` hands back `None`.",
+  "refresher_code": "def double(n):\n    return n * 2\n\nresult = double(5)\nprint(result)\n# 10",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A function is a name for a piece of work. You describe the work once, then run it as many times as you like by writing its name. If you find yourself copying the same three lines into four places, that is a function asking to be written."
+    },
+    {
+      "kind": "code",
+      "caption": "Two steps that are easy to blur together. The `def` block only describes the work. Nothing happens until the last line runs it.",
+      "code": "def greet():\n    print(\"Hello there!\")\n\ngreet()\ngreet()",
+      "output": "Hello there!\nHello there!"
+    },
+    {
+      "kind": "text",
+      "body": "Most functions need something to work with. You list the names for those values inside the parentheses of the `def` line. Those names are the parameters. The actual values you hand over when you call the function are the arguments. Same slot, two names, depending on which side you are standing on."
+    },
+    {
+      "kind": "code",
+      "caption": "Here `name` is the parameter, and the strings \"Ada\" and \"Grace\" are the arguments. The parameter is a variable that only exists while the function is running, and it holds whatever you passed in this time.",
+      "code": "def greet(name):\n    print(\"Hello, \" + name + \"!\")\n\ngreet(\"Ada\")\ngreet(\"Grace\")",
+      "output": "Hello, Ada!\nHello, Grace!"
+    },
+    {
+      "kind": "text",
+      "body": "So far these functions only print. That is fine when the point is to show something to a person. It falls apart the moment your program needs the answer for itself. For that you need `return`."
+    },
+    {
+      "kind": "code",
+      "caption": "`return` hands a value back to whoever called the function. That value can be stored, added to, or passed along, which is the whole reason it exists. The result is 106.0 and not 106, because multiplying by 1.06 gives a decimal number.",
+      "code": "def add_tax(price):\n    return price * 1.06\n\ntotal = add_tax(100)\nprint(total)\nprint(add_tax(50) + add_tax(50))",
+      "output": "106.0\n106.0"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "print shows a value. return gives a value back.",
+      "body": "If you take one thing from this lesson, take this one. `print` sends text to the screen for a human to read. Your program cannot pick that text back up and use it. `return` hands the value to the line that called the function, so it can be saved in a variable and used later. If you swap them, the screen may look exactly right while the program quietly has nothing to work with."
+    },
+    {
+      "kind": "compare",
+      "caption": "Both functions look correct when you run them, because both put 8 on the screen. Only one of them lets the next line of code do anything with that 8.",
+      "wrong_label": "Prints, returns nothing",
+      "wrong": "def add(a, b):\n    print(a + b)\n\nresult = add(3, 5)\nprint(result)\n# 8\n# None",
+      "right_label": "Returns a value",
+      "right": "def add(a, b):\n    return a + b\n\nresult = add(3, 5)\nprint(result)\n# 8"
+    },
+    {
+      "kind": "text",
+      "body": "The left version is not broken in an obvious way, and that is what makes it dangerous. A function with no `return` still hands something back. It hands back `None`, Python's way of saying \"nothing here\". So `result` becomes `None`, and any arithmetic you try on it later fails with a TypeError."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does this print?",
+      "code": "def square(n):\n    print(n * n)\n\nanswer = square(4)\nprint(answer)",
+      "choices": [
+        "16 then None",
+        "16 then 16",
+        "None then 16",
+        "16 only"
+      ],
+      "answer_index": 0,
+      "why": "The call to `square(4)` runs the function, and the `print` inside it puts 16 on the screen. But `square` has no `return`, so it hands back `None`. That is what lands in `answer`, and the last line prints it. If you picked \"16 then 16\", you assumed the printed value was also the returned value. It is not. Change `print(n * n)` to `return n * n` and you get 16 twice."
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "return also stops the function",
+      "body": "The moment a `return` runs, the function ends. Any lines below it in the function body never run. That is useful when you want to exit early, and confusing when you did not mean to, so keep an eye on what you put after a `return`."
+    },
+    {
+      "kind": "text",
+      "body": "A parameter can have a default value. You give it one with an equals sign on the `def` line. If the caller leaves that argument out, Python uses the default. If they pass one, theirs wins."
+    },
+    {
+      "kind": "code",
+      "caption": "One function, two ways to call it. Defaults let you keep the common case short without giving up the option to be specific.",
+      "code": "def greet(name, greeting=\"Hello\"):\n    return greeting + \", \" + name + \"!\"\n\nprint(greet(\"Ada\"))\nprint(greet(\"Ada\", \"Welcome\"))",
+      "output": "Hello, Ada!\nWelcome, Ada!"
+    },
+    {
+      "kind": "code",
+      "caption": "Variables made inside a function live only inside it. That area is the function's scope. This program prints HEY, then crashes on the last line. Nothing was misspelled: `message` was born inside `shout` and was gone the moment `shout` finished, so `print(message)` asks for a name that no longer exists. Python stops the program and reports a NameError, showing a traceback that ends with the line `NameError: name 'message' is not defined`.",
+      "code": "def shout(word):\n    message = word.upper()\n    return message\n\nprint(shout(\"hey\"))\nprint(message)",
+      "output": "HEY"
+    },
+    {
+      "kind": "text",
+      "body": "When Python hits an error it cannot handle, it stops and prints a traceback: several lines that name the file, the line that failed, and the error itself. The last line is the one that usually tells you what went wrong. Read tracebacks from the bottom up."
+    },
+    {
+      "kind": "check",
+      "prompt": "This function is supposed to return the larger of two numbers. What is wrong with it?",
+      "code": "def bigger(a, b):\n    if a > b:\n        return a\n\nprint(bigger(3, 9))",
+      "choices": [
+        "Nothing is wrong, it prints 9",
+        "It prints None, because no return runs when b is larger",
+        "It is a syntax error, since `if` needs an `else`",
+        "It prints 3, because the first parameter always wins"
+      ],
+      "answer_index": 1,
+      "why": "`a` is 3 and `b` is 9, so `a > b` is false and the indented `return a` never runs. The function reaches the end of its body with nothing returned, and a function that returns nothing hands back `None`. Python is fine with an `if` that has no `else`, so this is not a syntax error. It runs happily and gives you the wrong answer, which is the harder kind of bug to spot. Adding `return b` below the `if` fixes it."
+    },
+    {
+      "kind": "list",
+      "title": "A checklist for your next function",
+      "items": [
+        "Give it a verb-shaped name that says what it does: `calculate_gpa`, not `stuff`.",
+        "Ask what it needs to know. Those become the parameters.",
+        "Ask what it should hand back. If the answer is anything at all, you need a `return`.",
+        "If a value ever gets stored or reused, return it. Print it only when a human needs to read it.",
+        "Check that every path through the function reaches a `return`, including the paths inside an `if`.",
+        "Test it by calling it and printing the result, not by trusting what the function prints on its own."
+      ]
+    }
+  ]
+}

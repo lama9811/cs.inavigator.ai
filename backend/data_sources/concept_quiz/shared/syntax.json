@@ -254,13 +254,197 @@
           "prompt": "Write a statement that prints the word Hello using cout.",
           "accepted": [
             "cout << \"Hello\";",
-            "cout << \"Hello\"",
             "std::cout << \"Hello\";"
           ],
           "explanation": "C++ prints with cout << \"Hello\"; using the << stream operator (needs #include <iostream>)."
         }
       },
       "title": "Print a word"
+    },
+    {
+      "id": "syntax-delimiter-01",
+      "concept": "syntax",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Match the delimiters",
+      "error_class": "syntax",
+      "variants": {
+        "python": {
+          "code": "scores = [8, 10, 9\nprint(scores)",
+          "prompt": "Why does this code stop before it can run?",
+          "choices": ["The list is missing a closing bracket ]", "Lists cannot contain numbers", "print cannot display a list", "A comma is required after 9"],
+          "answer_index": 0,
+          "explanation": "The opening bracket starts a list, but no closing bracket ends it. Python cannot finish parsing the assignment. Matching each opening delimiter with its closing partner is a useful first syntax check."
+        },
+        "java": {
+          "code": "int[] scores = {8, 10, 9;\nSystem.out.println(scores.length);",
+          "prompt": "Why does this code fail to compile?",
+          "choices": ["The array initializer needs a closing brace } before the semicolon", "Arrays cannot contain ints", "length needs parentheses", "The array needs four values"],
+          "answer_index": 0,
+          "explanation": "The opening brace begins the array initializer, so a closing brace must end it before the semicolon. The compiler cannot determine where the initializer ends."
+        },
+        "javascript": {
+          "code": "const scores = [8, 10, 9;\nconsole.log(scores);",
+          "prompt": "Why does this code stop with a syntax error?",
+          "choices": ["The array is missing a closing bracket ]", "const cannot store arrays", "console.log cannot display an array", "Arrays require double quotes"],
+          "answer_index": 0,
+          "explanation": "The opening bracket starts the array, but the semicolon appears before a closing bracket. Add ] after 9 so JavaScript can finish parsing the array."
+        },
+        "cpp": {
+          "code": "int scores[] = {8, 10, 9;\ncout << scores[0];",
+          "prompt": "Why does this code fail to compile?",
+          "choices": ["The initializer needs a closing brace } before the semicolon", "C++ arrays cannot hold ints", "cout cannot print an array element", "The first index must be 1"],
+          "answer_index": 0,
+          "explanation": "The opening brace begins the initializer list and needs a matching closing brace. Add } after 9 before ending the declaration with a semicolon."
+        }
+      }
+    },
+    {
+      "id": "syntax-comment-01",
+      "concept": "syntax",
+      "difficulty": "easy",
+      "kind": "mcq-output",
+      "title": "Comments do not run",
+      "variants": {
+        "python": {
+          "code": "print(2)\n# print(99)\nprint(4)",
+          "prompt": "What does this print?",
+          "choices": ["2 then 4", "2 then 99 then 4", "99 only", "SyntaxError"],
+          "answer_index": 0,
+          "explanation": "A line beginning with # is a comment, so Python ignores it. Only the first and third lines run, printing 2 and then 4."
+        },
+        "java": {
+          "code": "System.out.println(2);\n// System.out.println(99);\nSystem.out.println(4);",
+          "prompt": "What does this print?",
+          "choices": ["2 then 4", "2 then 99 then 4", "99 only", "Compile error"],
+          "answer_index": 0,
+          "explanation": "Everything after // on that line is a comment. The commented call is ignored, so the program prints 2 and then 4."
+        },
+        "javascript": {
+          "code": "console.log(2);\n// console.log(99);\nconsole.log(4);",
+          "prompt": "What does this print?",
+          "choices": ["2 then 4", "2 then 99 then 4", "99 only", "SyntaxError"],
+          "answer_index": 0,
+          "explanation": "The // marks the rest of its line as a comment. JavaScript skips that line and logs 2 followed by 4."
+        },
+        "cpp": {
+          "code": "cout << 2 << endl;\n// cout << 99 << endl;\ncout << 4 << endl;",
+          "prompt": "What does this print?",
+          "choices": ["2 then 4", "2 then 99 then 4", "99 only", "Compile error"],
+          "answer_index": 0,
+          "explanation": "The // comments out the second output statement. The compiler ignores it, leaving the statements that print 2 and 4."
+        }
+      }
+    },
+    {
+      "id": "syntax-case-01",
+      "concept": "syntax",
+      "difficulty": "easy",
+      "kind": "mcq-behavior",
+      "title": "Capital letters matter",
+      "error_class": "syntax",
+      "variants": {
+        "python": {
+          "code": "Print(\"Hello\")",
+          "prompt": "Why does this fail?",
+          "choices": ["Python is case-sensitive, so Print is not print", "Strings cannot start with H", "Hello needs single quotes", "Functions cannot use parentheses"],
+          "answer_index": 0,
+          "explanation": "Python treats uppercase and lowercase letters as different. The built-in function is named print with a lowercase p, so Print is an unknown name."
+        },
+        "java": {
+          "code": "system.out.println(\"Hello\");",
+          "prompt": "Why does this fail to compile?",
+          "choices": ["Java is case-sensitive, so system must be System", "println must be uppercase", "Hello needs single quotes", "The semicolon should be removed"],
+          "answer_index": 0,
+          "explanation": "Java is case-sensitive. System is a class name with an uppercase S, while system refers to a different and undeclared name."
+        },
+        "javascript": {
+          "code": "Console.log(\"Hello\");",
+          "prompt": "Why does this fail?",
+          "choices": ["JavaScript is case-sensitive, so Console must be console", "log must be uppercase", "Strings cannot use double quotes", "The semicolon causes the error"],
+          "answer_index": 0,
+          "explanation": "The browser or runtime provides console with a lowercase c. Console is a different name and is not defined."
+        },
+        "cpp": {
+          "code": "Cout << \"Hello\";",
+          "prompt": "Why does this fail to compile?",
+          "choices": ["C++ is case-sensitive, so Cout must be cout", "The stream operator must be >>", "Hello needs single quotes", "The semicolon should be removed"],
+          "answer_index": 0,
+          "explanation": "C++ treats Cout and cout as different identifiers. The standard output stream is cout with a lowercase c."
+        }
+      }
+    },
+    {
+      "id": "syntax-line-break-01",
+      "concept": "syntax",
+      "difficulty": "medium",
+      "kind": "typein",
+      "typein_mode": "output",
+      "title": "Escape a line break",
+      "variants": {
+        "python": {
+          "code": "print(\"A\\nB\")",
+          "prompt": "Type the two output lines, with a line break between them.",
+          "accepted": ["A\nB"],
+          "explanation": "Inside a string, \\n represents a newline character. The print call outputs A, moves to the next line, and then outputs B."
+        },
+        "java": {
+          "code": "System.out.println(\"A\\nB\");",
+          "prompt": "Type the two output lines, with a line break between them.",
+          "accepted": ["A\nB"],
+          "explanation": "The escape sequence \\n inserts a newline inside the String. println adds its own final line ending after B."
+        },
+        "javascript": {
+          "code": "console.log(\"A\\nB\");",
+          "prompt": "Type the two output lines, with a line break between them.",
+          "accepted": ["A\nB"],
+          "explanation": "The \\n escape becomes a newline character, so A and B appear on separate lines."
+        },
+        "cpp": {
+          "code": "cout << \"A\\nB\";",
+          "prompt": "Type the two output lines, with a line break between them.",
+          "accepted": ["A\nB"],
+          "explanation": "The \\n escape tells the output stream to move to a new line between A and B."
+        }
+      }
+    },
+    {
+      "id": "syntax-block-01",
+      "concept": "syntax",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Mark the body of a decision",
+      "error_class": "syntax",
+      "variants": {
+        "python": {
+          "code": "score = 90\nif score >= 70\n    print(\"pass\")",
+          "prompt": "What syntax is missing?",
+          "choices": ["A colon after score >= 70", "A semicolon after score = 90", "Braces around print", "Parentheses around score"],
+          "answer_index": 0,
+          "explanation": "A Python if header ends with a colon. The indented line after it becomes the body that runs when the condition is true."
+        },
+        "java": {
+          "code": "int score = 90;\nif score >= 70 {\n    System.out.println(\"pass\");\n}",
+          "prompt": "What syntax is missing?",
+          "choices": ["Parentheses around score >= 70", "A colon after the condition", "A second semicolon after 70", "Square brackets around the body"],
+          "answer_index": 0,
+          "explanation": "Java requires the if condition inside parentheses. The corrected header is if (score >= 70) followed by the block."
+        },
+        "javascript": {
+          "code": "const score = 90;\nif score >= 70 {\n  console.log(\"pass\");\n}",
+          "prompt": "What syntax is missing?",
+          "choices": ["Parentheses around score >= 70", "A colon after the condition", "A semicolon between if and score", "Square brackets around the body"],
+          "answer_index": 0,
+          "explanation": "JavaScript requires parentheses around an if condition. Write if (score >= 70) before the opening brace."
+        },
+        "cpp": {
+          "code": "int score = 90;\nif score >= 70 {\n    cout << \"pass\";\n}",
+          "prompt": "What syntax is missing?",
+          "choices": ["Parentheses around score >= 70", "A colon after the condition", "A semicolon immediately after if", "Square brackets around the body"],
+          "answer_index": 0,
+          "explanation": "C++ requires the condition inside parentheses. Write if (score >= 70) and keep the statements inside braces."
+        }
+      }
     }
   ]
 }

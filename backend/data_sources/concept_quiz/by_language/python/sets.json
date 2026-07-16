@@ -1,0 +1,184 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "sets",
+  "concept_label": "Sets",
+  "language": "python",
+  "questions": [
+    {
+      "id": "python-sets-check-1",
+      "concept": "sets",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "python",
+      "title": "Sets practice 1",
+      "code": "a = {1, 2, 3}\nb = {2, 3, 4}\ncommon = a & b",
+      "prompt": "What is the value of `common`?",
+      "choices": [
+        "{2, 3}",
+        "{1, 2, 3, 4}",
+        "{1, 4}",
+        "[2, 3]"
+      ],
+      "answer_index": 0,
+      "explanation": "The `&` operator computes intersection, keeping only values present in both sets. The result remains a set, not a list."
+    },
+    {
+      "id": "python-sets-check-2",
+      "concept": "sets",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "python",
+      "title": "Sets practice 2",
+      "code": "ada = {\"CS101\", \"MATH120\"}\nben = {\"CS101\", \"ENG101\"}",
+      "prompt": "Which expression finds courses completed by Ada but not Ben?",
+      "choices": [
+        "ada - ben",
+        "ada | ben",
+        "ada & ben",
+        "ben - ada"
+      ],
+      "answer_index": 0,
+      "explanation": "Set difference keeps members from the left set that are absent from the right. Here the result is `{\"MATH120\"}`."
+    },
+    {
+      "id": "python-sets-output-01",
+      "concept": "sets",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "python",
+      "title": "Trace Sets",
+      "code": "courses = [\"CS101\", \"MATH120\", \"CS101\", \"ENG101\"]\nunique_courses = set(courses)\nprint(len(unique_courses))\nprint(\"CS101\" in unique_courses)",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "3\nTrue"
+      ],
+      "explanation": "Repeated values disappear when the list becomes a set. The result has three unique course codes even though the source list has four items. The resulting output is '3\\nTrue'."
+    },
+    {
+      "id": "python-sets-supplement-01",
+      "concept": "sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Sets practice 5",
+      "code": "clubs = {\"Robotics\"}\nclubs.discard(\"Chess\")",
+      "prompt": "How does `clubs.discard(\"Chess\")` behave when \"Chess\" is not in the set?",
+      "choices": [
+        "It does nothing and leaves the set unchanged",
+        "It raises a KeyError",
+        "It adds \"Chess\" to the set",
+        "It empties the set"
+      ],
+      "answer_index": 0,
+      "explanation": "`discard` removes the value if present and simply does nothing if it is absent, so the set is untouched. `remove` is the version that raises a KeyError on a missing value. `discard` never adds anything or clears the set."
+    },
+    {
+      "id": "python-sets-authored-01",
+      "concept": "sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Sets concept check 1",
+      "code": null,
+      "prompt": "What does the lesson mean by \"Curly braces have one empty exception\"?",
+      "choices": [
+        "{1, 2, 3, 4}",
+        "`{\"Python\"}` is a set, but `{}` is an empty dictionary. Write `set()` when you need an empty set, then add values to it.",
+        "{1, 4}",
+        "[2, 3]"
+      ],
+      "answer_index": 1,
+      "explanation": "A set is an unordered collection of unique values. Add with `add`, remove safely with `discard`, and use union, intersection, or difference to compare groups. That reasoning supports the answer: `{\"Python\"}` is a set, but `{}` is an empty dictionary. Write `set()` when you need an empty set, then add values to it."
+    },
+    {
+      "id": "python-sets-authored-02",
+      "concept": "sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Sets concept check 2",
+      "code": null,
+      "prompt": "Which choice describes a reliable Sets practice?",
+      "choices": [
+        "ada | ben",
+        "ada & ben",
+        "Use a set when duplicates have no meaning.",
+        "ben - ada"
+      ],
+      "answer_index": 2,
+      "explanation": "A set is an unordered collection of unique values. Add with `add`, remove safely with `discard`, and use union, intersection, or difference to compare groups. That reasoning supports the answer: Use a set when duplicates have no meaning."
+    },
+    {
+      "id": "python-sets-authored-03",
+      "concept": "sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Sets concept check 3",
+      "code": null,
+      "prompt": "Which recommendation belongs in a review of Sets code?",
+      "choices": [
+        "clubs = {\"Robotics\"}\nclubs.remove(\"Chess\")",
+        "[2, 3]",
+        "ada | ben",
+        "Do not depend on item positions."
+      ],
+      "answer_index": 3,
+      "explanation": "A set is an unordered collection of unique values. Add with `add`, remove safely with `discard`, and use union, intersection, or difference to compare groups. That reasoning supports the answer: Do not depend on item positions."
+    },
+    {
+      "id": "python-sets-authored-04",
+      "concept": "sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Sets concept check 4",
+      "code": null,
+      "prompt": "Which guideline helps prevent a common Sets mistake?",
+      "choices": [
+        "Prefer `discard` when a missing value is acceptable.",
+        "ada & ben",
+        "ben - ada",
+        "clubs = {\"Robotics\"}\nclubs.remove(\"Chess\")"
+      ],
+      "answer_index": 0,
+      "explanation": "A set is an unordered collection of unique values. Add with `add`, remove safely with `discard`, and use union, intersection, or difference to compare groups. That reasoning supports the answer: Prefer `discard` when a missing value is acceptable."
+    },
+    {
+      "id": "python-sets-authored-05",
+      "concept": "sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Sets concept check 5",
+      "code": null,
+      "prompt": "A classmate is checking their understanding of Sets. Which advice is correct?",
+      "choices": [
+        "{1, 2, 3, 4}",
+        "Use `&`, `|`, and `-` to compare groups.",
+        "{1, 4}",
+        "ada & ben"
+      ],
+      "answer_index": 1,
+      "explanation": "A set is an unordered collection of unique values. Add with `add`, remove safely with `discard`, and use union, intersection, or difference to compare groups. That reasoning supports the answer: Use `&`, `|`, and `-` to compare groups."
+    },
+    {
+      "id": "python-sets-authored-06",
+      "concept": "sets",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Sets concept check 6",
+      "code": null,
+      "prompt": "Which choice shows sound reasoning about Sets?",
+      "choices": [
+        "ben - ada",
+        "clubs = {\"Robotics\"}\nclubs.remove(\"Chess\")",
+        "Create an empty set with `set()`.",
+        "{1, 2, 3, 4}"
+      ],
+      "answer_index": 2,
+      "explanation": "A set is an unordered collection of unique values. Add with `add`, remove safely with `discard`, and use union, intersection, or difference to compare groups. That reasoning supports the answer: Create an empty set with `set()`."
+    }
+  ]
+}

@@ -1,0 +1,184 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "maps",
+  "concept_label": "Maps",
+  "language": "java",
+  "questions": [
+    {
+      "id": "java-maps-check-1",
+      "concept": "maps",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "java",
+      "title": "Maps practice 1",
+      "code": "Map<String, Integer> m = new HashMap<>();\nm.put(\"a\", 1);\nm.put(\"a\", 4);\nSystem.out.println(m.size() + \" \" + m.get(\"a\"));",
+      "prompt": "What prints after these statements?",
+      "choices": [
+        "1 4",
+        "2 1",
+        "2 4",
+        "1 1"
+      ],
+      "answer_index": 0,
+      "explanation": "Both calls use the same key, so the second call replaces its value. One mapping remains, and its current value is 4."
+    },
+    {
+      "id": "java-maps-check-2",
+      "concept": "maps",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "java",
+      "title": "Maps practice 2",
+      "code": "Map<String, Integer> grades = new HashMap<>();",
+      "prompt": "Which view gives both keys and values for a loop?",
+      "choices": [
+        "grades.entrySet()",
+        "grades.keySet()",
+        "grades.values()",
+        "grades.size()"
+      ],
+      "answer_index": 0,
+      "explanation": "`entrySet()` contains Map.Entry objects, and every entry exposes both sides of the mapping. The other views provide only keys or only values."
+    },
+    {
+      "id": "java-maps-output-01",
+      "concept": "maps",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "java",
+      "title": "Trace Maps",
+      "code": "Map<String, Integer> grades = new HashMap<>();\ngrades.put(\"CS101\", 90);\ngrades.put(\"MATH120\", 84);\ngrades.put(\"CS101\", 95);\nSystem.out.println(grades.size());\nSystem.out.println(grades.get(\"CS101\"));",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "2\n95"
+      ],
+      "explanation": "Declare variables with the Map interface and construct a HashMap. Each `put` connects one key to one value. The resulting output is '2\\n95'."
+    },
+    {
+      "id": "java-maps-supplement-01",
+      "concept": "maps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Maps practice 5",
+      "code": "int score = grades.getOrDefault(\"ENG101\", 0);",
+      "prompt": "How does `grades.getOrDefault(\"ENG101\", 0)` behave when the key is missing?",
+      "choices": [
+        "It returns 0, the supplied default",
+        "It returns null, which then throws when unboxed to int",
+        "It throws a KeyNotFoundException",
+        "It inserts \"ENG101\" into the map with value 0"
+      ],
+      "answer_index": 0,
+      "explanation": "`getOrDefault` returns the default when the key is absent, so `score` is 0 and no unboxing error can happen. Plain `get` would return `null`, which throws a NullPointerException when Java unboxes it into an `int`. `getOrDefault` only reads; it does not insert the key."
+    },
+    {
+      "id": "java-maps-authored-01",
+      "concept": "maps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Maps concept check 1",
+      "code": null,
+      "prompt": "What does the lesson mean by \"Null does not prove a key is absent\"?",
+      "choices": [
+        "2 1",
+        "A map is allowed to store null as a value. If that distinction matters, use `containsKey` to ask whether the key exists rather than guessing from `get`.",
+        "2 4",
+        "1 1"
+      ],
+      "answer_index": 1,
+      "explanation": "A `Map<K, V>` stores one value for each unique key. A `HashMap` is a common implementation. That reasoning supports the answer: A map is allowed to store null as a value. If that distinction matters, use `containsKey` to ask whether the key exists rather than guessing from `get`."
+    },
+    {
+      "id": "java-maps-authored-02",
+      "concept": "maps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Maps concept check 2",
+      "code": null,
+      "prompt": "Which choice describes a reliable Maps practice?",
+      "choices": [
+        "grades.keySet()",
+        "grades.values()",
+        "Program to `Map` and construct a suitable implementation.",
+        "grades.size()"
+      ],
+      "answer_index": 2,
+      "explanation": "A `Map<K, V>` stores one value for each unique key. A `HashMap` is a common implementation. That reasoning supports the answer: Program to `Map` and construct a suitable implementation."
+    },
+    {
+      "id": "java-maps-authored-03",
+      "concept": "maps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Maps concept check 3",
+      "code": null,
+      "prompt": "Which recommendation belongs in a review of Maps code?",
+      "choices": [
+        "int score = grades.get(\"ENG101\");",
+        "1 1",
+        "grades.keySet()",
+        "Choose immutable, stable keys when possible."
+      ],
+      "answer_index": 3,
+      "explanation": "A `Map<K, V>` stores one value for each unique key. A `HashMap` is a common implementation. That reasoning supports the answer: Choose immutable, stable keys when possible."
+    },
+    {
+      "id": "java-maps-authored-04",
+      "concept": "maps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Maps concept check 4",
+      "code": null,
+      "prompt": "Which guideline helps prevent a common Maps mistake?",
+      "choices": [
+        "Remember that `put` replaces an equal key.",
+        "grades.values()",
+        "grades.size()",
+        "int score = grades.get(\"ENG101\");"
+      ],
+      "answer_index": 0,
+      "explanation": "A `Map<K, V>` stores one value for each unique key. A `HashMap` is a common implementation. That reasoning supports the answer: Remember that `put` replaces an equal key."
+    },
+    {
+      "id": "java-maps-authored-05",
+      "concept": "maps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Maps concept check 5",
+      "code": null,
+      "prompt": "A classmate is checking their understanding of Maps. Which advice is correct?",
+      "choices": [
+        "2 1",
+        "Use `getOrDefault` for a meaningful fallback.",
+        "2 4",
+        "grades.values()"
+      ],
+      "answer_index": 1,
+      "explanation": "A `Map<K, V>` stores one value for each unique key. A `HashMap` is a common implementation. That reasoning supports the answer: Use `getOrDefault` for a meaningful fallback."
+    },
+    {
+      "id": "java-maps-authored-06",
+      "concept": "maps",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "Maps concept check 6",
+      "code": null,
+      "prompt": "Which choice shows sound reasoning about Maps?",
+      "choices": [
+        "grades.size()",
+        "int score = grades.get(\"ENG101\");",
+        "Use `entrySet` when processing keys and values together.",
+        "2 1"
+      ],
+      "answer_index": 2,
+      "explanation": "A `Map<K, V>` stores one value for each unique key. A `HashMap` is a common implementation. That reasoning supports the answer: Use `entrySet` when processing keys and values together."
+    }
+  ]
+}

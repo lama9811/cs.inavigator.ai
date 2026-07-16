@@ -69,7 +69,7 @@ function NavDropdown({ label, Icon, items }) {
   );
 }
 
-export default function NavBar({ role, onToggleSidebar, onBrandClick }) {
+export default function NavBar({ role, authenticated, onToggleSidebar, onBrandClick }) {
   const [scrolled, setScrolled] = useState(false);
   const [profilePicture, setProfilePicture] = useState("/user_icon.webp");
   const navigate = useNavigate();
@@ -125,7 +125,7 @@ export default function NavBar({ role, onToggleSidebar, onBrandClick }) {
 
   const linkClass = ({ isActive }) => "nav-link" + (isActive ? " active" : "");
   const pillClass = ({ isActive }) => "nav-pill" + (isActive ? " active" : "");
-  const isAuthed = useMemo(() => Boolean(role), [role]);
+  const isAuthed = useMemo(() => Boolean(authenticated), [authenticated]);
 
   // Primary feature nav — moved out of the sidebar into the top bar (ORA style).
   // The most-used items stay as flat pills; secondary tools/features (Planner,

@@ -1,0 +1,184 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "testing",
+  "concept_label": "Testing",
+  "language": "python",
+  "questions": [
+    {
+      "id": "python-testing-check-1",
+      "concept": "testing",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "python",
+      "title": "Testing practice 1",
+      "code": "def largest(numbers): ...",
+      "prompt": "Which input is the best boundary case for a function that finds the largest list item?",
+      "choices": [
+        "A list with one item",
+        "A list with ten random items",
+        "The same three-item list twice",
+        "A list already used in the demo"
+      ],
+      "answer_index": 0,
+      "explanation": "One item is the smallest valid list for this function. It checks whether the code wrongly assumes that a second item exists."
+    },
+    {
+      "id": "python-testing-check-2",
+      "concept": "testing",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "python",
+      "title": "Testing practice 2",
+      "code": "assert 2 + 2 == 5",
+      "prompt": "What happens when an assert expression is false?",
+      "choices": [
+        "Python raises AssertionError",
+        "Python changes 5 to 4",
+        "The line is ignored",
+        "Python returns False from the program"
+      ],
+      "answer_index": 0,
+      "explanation": "An assert statement stops at a false condition and raises AssertionError. Test tools catch that error and show which expectation failed."
+    },
+    {
+      "id": "python-testing-output-01",
+      "concept": "testing",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "python",
+      "title": "Trace Testing",
+      "code": "def is_even(number):\n    return number % 2 == 0\n\nassert is_even(4) is True\nassert is_even(7) is False\nprint(\"checks passed\")",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "checks passed"
+      ],
+      "explanation": "Each assertion states one expectation. If an expression is false, Python raises AssertionError and points to the failed check. The resulting output is 'checks passed'."
+    },
+    {
+      "id": "python-testing-supplement-01",
+      "concept": "testing",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Testing practice 5",
+      "code": "assert total([2, 3, 5]) == 10",
+      "prompt": "Why is `assert total([2, 3, 5]) == 10` a better test than `assert total(nums) == sum(x for x in nums)`?",
+      "choices": [
+        "It checks a known expected value instead of recomputing the answer a second way",
+        "assert cannot compare against sum()",
+        "The second version does not compile",
+        "10 is faster to compare than a generator"
+      ],
+      "answer_index": 0,
+      "explanation": "A good test states the answer you expect (10) so a reader can see at a glance what correct means. Recomputing the result with `sum(...)` just tests two implementations against each other, and both could share the same bug. The second line runs fine; the issue is that it verifies less."
+    },
+    {
+      "id": "python-testing-authored-01",
+      "concept": "testing",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Testing concept check 1",
+      "code": null,
+      "prompt": "What does the lesson mean by \"A passing test can still be weak\"?",
+      "choices": [
+        "A list with ten random items",
+        "A test proves only the case it checks. If every test uses positive numbers, a bug involving zero or negative values can remain hidden.",
+        "The same three-item list twice",
+        "A list already used in the demo"
+      ],
+      "answer_index": 1,
+      "explanation": "A test calls a small piece of code with known input and compares the result with the expected value. `assert` is useful for quick checks. That reasoning supports the answer: A test proves only the case it checks. If every test uses positive numbers, a bug involving zero or negative values can remain hidden."
+    },
+    {
+      "id": "python-testing-authored-02",
+      "concept": "testing",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Testing concept check 2",
+      "code": null,
+      "prompt": "Which choice describes a reliable Testing practice?",
+      "choices": [
+        "Python changes 5 to 4",
+        "The line is ignored",
+        "Test one clear behavior at a time.",
+        "Python returns False from the program"
+      ],
+      "answer_index": 2,
+      "explanation": "A test calls a small piece of code with known input and compares the result with the expected value. `assert` is useful for quick checks. That reasoning supports the answer: Test one clear behavior at a time."
+    },
+    {
+      "id": "python-testing-authored-03",
+      "concept": "testing",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Testing concept check 3",
+      "code": null,
+      "prompt": "Which recommendation belongs in a review of Testing code?",
+      "choices": [
+        "assert total(nums) == sum(x for x in nums)",
+        "A list already used in the demo",
+        "Python changes 5 to 4",
+        "Use fixed inputs with obvious expected results."
+      ],
+      "answer_index": 3,
+      "explanation": "A test calls a small piece of code with known input and compares the result with the expected value. `assert` is useful for quick checks. That reasoning supports the answer: Use fixed inputs with obvious expected results."
+    },
+    {
+      "id": "python-testing-authored-04",
+      "concept": "testing",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Testing concept check 4",
+      "code": null,
+      "prompt": "Which guideline helps prevent a common Testing mistake?",
+      "choices": [
+        "Include normal, boundary, and unusual cases.",
+        "The line is ignored",
+        "Python returns False from the program",
+        "assert total(nums) == sum(x for x in nums)"
+      ],
+      "answer_index": 0,
+      "explanation": "A test calls a small piece of code with known input and compares the result with the expected value. `assert` is useful for quick checks. That reasoning supports the answer: Include normal, boundary, and unusual cases."
+    },
+    {
+      "id": "python-testing-authored-05",
+      "concept": "testing",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Testing concept check 5",
+      "code": null,
+      "prompt": "A classmate is checking their understanding of Testing. Which advice is correct?",
+      "choices": [
+        "A list with ten random items",
+        "Give tests names that describe the behavior.",
+        "The same three-item list twice",
+        "The line is ignored"
+      ],
+      "answer_index": 1,
+      "explanation": "A test calls a small piece of code with known input and compares the result with the expected value. `assert` is useful for quick checks. That reasoning supports the answer: Give tests names that describe the behavior."
+    },
+    {
+      "id": "python-testing-authored-06",
+      "concept": "testing",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Testing concept check 6",
+      "code": null,
+      "prompt": "Which choice shows sound reasoning about Testing?",
+      "choices": [
+        "Python returns False from the program",
+        "assert total(nums) == sum(x for x in nums)",
+        "Run the tests again after every meaningful change.",
+        "A list with ten random items"
+      ],
+      "answer_index": 2,
+      "explanation": "A test calls a small piece of code with known input and compares the result with the expected value. `assert` is useful for quick checks. That reasoning supports the answer: Run the tests again after every meaningful change."
+    }
+  ]
+}

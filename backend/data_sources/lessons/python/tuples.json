@@ -1,0 +1,114 @@
+{
+  "_note": "ORIGINAL content. Topic sequence follows the standard free intro texts (Runestone FoPP ch.11, Think Python ch.10, OpenStax ch.7); sequences are not copyrightable. No prose, examples, or exercises are copied from any of them: all three are copyleft (GFDL / CC BY-NC-SA), and copying would bind CS Navigator's content to those terms.",
+  "title": "Tuples",
+  "summary": "An ordered group of values that cannot be changed after you make it.",
+  "minutes": 6,
+  "error_classes": [
+    "runtime",
+    "syntax",
+    "wrong_answer"
+  ],
+  "refresher": "A tuple holds several values in order, written with parentheses: `point = (3, 5)`. It works like a list for reading, so `point[0]` is 3. The difference is that a tuple is frozen once made, so assigning to `point[0]` raises a TypeError. You can unpack one into separate names in a single line, `x, y = point`, which is how a function returns more than one value. A tuple of one item needs a trailing comma: `(4,)`.",
+  "refresher_code": "point = (3, 5)\nx, y = point\nprint(x + y)\n# 8",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Sometimes a few values belong together and none of them should change. A point on a screen has an x and a y. A date has a year, a month, and a day. A tuple is how you keep those values as one thing, in order, and lock them so nothing can quietly rewrite them later."
+    },
+    {
+      "kind": "code",
+      "caption": "You build a tuple with parentheses and commas. Reading from it looks exactly like reading from a list, so if you have seen indexing before, you already know this part.",
+      "code": "point = (3, 5)\n\nprint(point)\nprint(point[0])\nprint(len(point))",
+      "output": "(3, 5)\n3\n2"
+    },
+    {
+      "kind": "text",
+      "body": "It is the commas that make a tuple, not the parentheses. Python accepts `point = 3, 5` and gives you the same thing. Most people write the parentheses anyway, because it makes the grouping obvious at a glance."
+    },
+    {
+      "kind": "text",
+      "body": "Here is the part that makes a tuple different from a list. Once a tuple exists, you cannot change what is inside it. There is no way to swap an item, add one, or remove one. If you want different values, you build a new tuple."
+    },
+    {
+      "kind": "compare",
+      "caption": "This is the mistake almost everyone makes on their first tuple. The index reads fine, so it looks like it should also assign. Python lets you look, but it does not let you touch.",
+      "wrong_label": "TypeError",
+      "wrong": "point = (3, 5)\npoint[0] = 10\n# TypeError: 'tuple' object\n# does not support item\n# assignment",
+      "right_label": "Works",
+      "right": "point = (3, 5)\npoint = (10, 5)\n# you cannot edit a tuple,\n# so make a new one and\n# reuse the name"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "A tuple cannot be edited in place",
+      "body": "If you see \"'tuple' object does not support item assignment\", you tried to write into something frozen. It usually means you reached for a list habit while holding a tuple. Either build a fresh tuple, or use a list if the values really do need to change."
+    },
+    {
+      "kind": "text",
+      "body": "So why choose the thing that can do less? Because a value that cannot change is a value you never have to worry about. When you pass a tuple into a function, you know for certain the function did not rearrange it behind your back. That guarantee is the whole point."
+    },
+    {
+      "kind": "check",
+      "prompt": "What happens when this runs?",
+      "code": "sizes = (\"small\", \"medium\", \"large\")\nsizes[1] = \"regular\"\nprint(sizes)",
+      "choices": [
+        "It raises a TypeError, because a tuple cannot be changed",
+        "It prints ('small', 'regular', 'large')",
+        "It prints ('small', 'medium', 'large') and ignores the change",
+        "It raises a syntax error, because tuples use square brackets"
+      ],
+      "answer_index": 0,
+      "why": "Reading `sizes[1]` is allowed, so the line looks harmless. Assigning to it is not, and Python stops the program with a TypeError. Nothing gets ignored quietly, and nothing gets changed. If you picked the second answer, you were reading `sizes` as a list, which is the exact swap this error exists to catch."
+    },
+    {
+      "kind": "text",
+      "body": "The other reason to like tuples is unpacking. You can pull the values out into their own names in a single line, as long as the number of names matches the number of items."
+    },
+    {
+      "kind": "code",
+      "caption": "One line replaces two lines of indexing, and the names tell the next reader what each number means. `point[0]` says nothing; `x` says everything.",
+      "code": "point = (3, 5)\nx, y = point\n\nprint(\"x is\", x)\nprint(\"y is\", y)",
+      "output": "x is 3\ny is 5"
+    },
+    {
+      "kind": "text",
+      "body": "Unpacking is also the answer to a question that comes up fast: how does a function give back more than one thing? It returns a tuple, and the caller unpacks it. You have probably already used this without noticing it was a tuple."
+    },
+    {
+      "kind": "code",
+      "caption": "The `return` line builds a tuple from those two values, and the call site takes it apart into two names. Nothing extra is needed to make this work.",
+      "code": "def min_and_max(numbers):\n    return min(numbers), max(numbers)\n\nlow, high = min_and_max([8, 3, 12, 5])\nprint(\"low:\", low)\nprint(\"high:\", high)",
+      "output": "low: 3\nhigh: 12"
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "A tuple of one needs a trailing comma",
+      "body": "`(4)` is not a tuple. The parentheses there are just grouping, the way they are in `(2 + 3) * 4`, so you get the plain number 4. To make a tuple with one item, add a comma: `(4,)`. It looks like a typo the first few times you write it. It is not."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does this print?",
+      "code": "a = (7)\nb = (7,)\nprint(type(a).__name__, type(b).__name__)",
+      "choices": [
+        "int tuple",
+        "tuple tuple",
+        "int int",
+        "tuple int"
+      ],
+      "answer_index": 0,
+      "why": "The comma is what makes a tuple, not the parentheses. `(7)` has no comma, so the parentheses only group the number, and `a` is a plain int. `b` has the trailing comma, so it really is a one-item tuple. If you answered \"tuple tuple\", you trusted the parentheses, which is the reasonable guess and the one Python does not share."
+    },
+    {
+      "kind": "list",
+      "title": "Tuple or list?",
+      "items": [
+        "The values will never change, like a coordinate or a fixed pair of settings: use a tuple",
+        "You need to add, remove, or edit items as the program runs: use a list",
+        "A function needs to hand back two or three values at once: return a tuple and unpack it",
+        "You want to be sure a function cannot alter what you passed in: pass a tuple",
+        "When you are unsure, start with a list. Switch to a tuple once you know the values are settled."
+      ]
+    }
+  ]
+}

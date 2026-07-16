@@ -1,0 +1,67 @@
+{
+  "_note": "ORIGINAL CS Navigator content added to align Learn with the existing Part 2 quiz category. No source prose, examples, or exercises were copied.",
+  "title": "Debug: Part 2",
+  "summary": "Trace mutation, aliases, boundaries, and multi-step state.",
+  "minutes": 7,
+  "error_classes": [
+    "runtime",
+    "wrong_answer",
+    "timeout"
+  ],
+  "refresher": "Deeper Python bugs often begin before the failing line. Track object identity when data is shared, inspect types beside values, and test empty, one-item, and boundary inputs.",
+  "refresher_code": "print(value, type(value).__name__)\nprint(items.copy())",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Deeper Python bugs often begin before the failing line. Track object identity when data is shared, inspect types beside values, and test empty, one-item, and boundary inputs. Trace mutation, aliases, boundaries, and multi-step state."
+    },
+    {
+      "kind": "code",
+      "caption": "The shallow list copy gives the two variables independent outer lists for this simple data.",
+      "code": "original = [1, 2]\ncopy = original.copy()\ncopy.append(3)\nprint(len(original))\nprint(len(copy))",
+      "output": "2\n3"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Track the state",
+      "body": "Assignment alone creates another reference to the same list. A mutation through either name then appears through both."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does `b = a` do for a list?",
+      "code": "a = [1]\nb = a",
+      "choices": [
+        "copies the reference",
+        "creates an independent list",
+        "freezes both lists",
+        "converts to a tuple"
+      ],
+      "answer_index": 0,
+      "why": "Both names refer to one list object, so later mutations are shared."
+    },
+    {
+      "kind": "check",
+      "prompt": "What should be tested before `items[-1]`?",
+      "code": "",
+      "choices": [
+        "whether the list is empty",
+        "whether it is sorted",
+        "whether it has strings",
+        "whether its name is items"
+      ],
+      "answer_index": 0,
+      "why": "Negative-one indexing still requires at least one element, so an empty list raises IndexError."
+    },
+    {
+      "kind": "list",
+      "title": "Debug: Part 2 checklist",
+      "items": [
+        "Test the smallest inputs.",
+        "Track shared references.",
+        "Log values with types.",
+        "Find the first wrong transition."
+      ]
+    }
+  ]
+}

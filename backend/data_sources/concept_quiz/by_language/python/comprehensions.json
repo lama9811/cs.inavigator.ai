@@ -1,0 +1,184 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "comprehensions",
+  "concept_label": "Comprehensions",
+  "language": "python",
+  "questions": [
+    {
+      "id": "python-comprehensions-check-1",
+      "concept": "comprehensions",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "python",
+      "title": "Comprehensions practice 1",
+      "code": "values = [n + 1 for n in [2, 4, 6]]",
+      "prompt": "What does this create?",
+      "choices": [
+        "[3, 5, 7]",
+        "[2, 4, 6, 1]",
+        "[2, 5, 8]",
+        "[1, 1, 1]"
+      ],
+      "answer_index": 0,
+      "explanation": "The expression `n + 1` runs once for each input value. Adding one to 2, 4, and 6 produces 3, 5, and 7."
+    },
+    {
+      "id": "python-comprehensions-check-2",
+      "concept": "comprehensions",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "python",
+      "title": "Comprehensions practice 2",
+      "code": "words = [\"cat\", \"tiger\"]",
+      "prompt": "Which expression creates a dictionary that maps each word to its length?",
+      "choices": [
+        "{word: len(word) for word in words}",
+        "[word, len(word) for word in words]",
+        "{len(word) for word in words}",
+        "dict(word for len(word) in words)"
+      ],
+      "answer_index": 0,
+      "explanation": "A dictionary comprehension needs a key expression, a colon, and a value expression before the for clause. Here each word is the key and its length is the value."
+    },
+    {
+      "id": "python-comprehensions-output-01",
+      "concept": "comprehensions",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "python",
+      "title": "Trace Comprehensions",
+      "code": "numbers = [1, 2, 3, 4]\nsquares = [number * number for number in numbers]\nprint(squares)",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "[1, 4, 9, 16]"
+      ],
+      "explanation": "Read the comprehension as: make `number * number` for each number in the range. It creates a new list and does not change the range. The resulting output is '[1, 4, 9, 16]'."
+    },
+    {
+      "id": "python-comprehensions-supplement-01",
+      "concept": "comprehensions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Comprehensions practice 5",
+      "code": "even_squares = [n * n for n in numbers\n                if n % 2 == 0]",
+      "prompt": "What does `[n * n for n in numbers if n % 2 == 0]` produce for `numbers = [1, 2, 3, 4]`?",
+      "choices": [
+        "[4, 16]",
+        "[1, 4, 9, 16]",
+        "[2, 4]",
+        "[1, 9]"
+      ],
+      "answer_index": 0,
+      "explanation": "The `if` keeps only even numbers (2 and 4), and the `n * n` squares each survivor, giving [4, 16]. [1, 4, 9, 16] would be every square with no filter; [2, 4] is the evens unsquared; [1, 9] is the odds squared. The filter runs first, then the expression."
+    },
+    {
+      "id": "python-comprehensions-authored-01",
+      "concept": "comprehensions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Comprehensions concept check 1",
+      "code": null,
+      "prompt": "What does the lesson mean by \"Short does not always mean clear\"?",
+      "choices": [
+        "[2, 4, 6, 1]",
+        "A comprehension is a good fit when you can say its rule in one breath. Choose a normal loop when you need several conditions, temporary names, logging, or error handling.",
+        "[2, 5, 8]",
+        "[1, 1, 1]"
+      ],
+      "answer_index": 1,
+      "explanation": "A comprehension builds a new collection by looping over an iterable. Write the result expression first, then the `for` part, and add an `if` part only when values should be filtered. That reasoning supports the answer: A comprehension is a good fit when you can say its rule in one breath. Choose a normal loop when you need several conditions, temporary names, logging, or error handling."
+    },
+    {
+      "id": "python-comprehensions-authored-02",
+      "concept": "comprehensions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Comprehensions concept check 2",
+      "code": null,
+      "prompt": "Which choice describes a reliable Comprehensions practice?",
+      "choices": [
+        "[word, len(word) for word in words]",
+        "{len(word) for word in words}",
+        "Use a comprehension to create a new collection.",
+        "dict(word for len(word) in words)"
+      ],
+      "answer_index": 2,
+      "explanation": "A comprehension builds a new collection by looping over an iterable. Write the result expression first, then the `for` part, and add an `if` part only when values should be filtered. That reasoning supports the answer: Use a comprehension to create a new collection."
+    },
+    {
+      "id": "python-comprehensions-authored-03",
+      "concept": "comprehensions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Comprehensions concept check 3",
+      "code": null,
+      "prompt": "Which recommendation belongs in a review of Comprehensions code?",
+      "choices": [
+        "result = [clean(x) if valid(x) else fix(x)\n          for x in data if keep(x)]",
+        "[1, 1, 1]",
+        "[word, len(word) for word in words]",
+        "Keep the expression and filter simple."
+      ],
+      "answer_index": 3,
+      "explanation": "A comprehension builds a new collection by looping over an iterable. Write the result expression first, then the `for` part, and add an `if` part only when values should be filtered. That reasoning supports the answer: Keep the expression and filter simple."
+    },
+    {
+      "id": "python-comprehensions-authored-04",
+      "concept": "comprehensions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Comprehensions concept check 4",
+      "code": null,
+      "prompt": "Which guideline helps prevent a common Comprehensions mistake?",
+      "choices": [
+        "Do not use one only to cause side effects.",
+        "{len(word) for word in words}",
+        "dict(word for len(word) in words)",
+        "result = [clean(x) if valid(x) else fix(x)\n          for x in data if keep(x)]"
+      ],
+      "answer_index": 0,
+      "explanation": "A comprehension builds a new collection by looping over an iterable. Write the result expression first, then the `for` part, and add an `if` part only when values should be filtered. That reasoning supports the answer: Do not use one only to cause side effects."
+    },
+    {
+      "id": "python-comprehensions-authored-05",
+      "concept": "comprehensions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Comprehensions concept check 5",
+      "code": null,
+      "prompt": "A classmate is checking their understanding of Comprehensions. Which advice is correct?",
+      "choices": [
+        "[2, 4, 6, 1]",
+        "Choose brackets for a list and braces for a set or dictionary.",
+        "[2, 5, 8]",
+        "{len(word) for word in words}"
+      ],
+      "answer_index": 1,
+      "explanation": "A comprehension builds a new collection by looping over an iterable. Write the result expression first, then the `for` part, and add an `if` part only when values should be filtered. That reasoning supports the answer: Choose brackets for a list and braces for a set or dictionary."
+    },
+    {
+      "id": "python-comprehensions-authored-06",
+      "concept": "comprehensions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "python",
+      "title": "Comprehensions concept check 6",
+      "code": null,
+      "prompt": "Which choice shows sound reasoning about Comprehensions?",
+      "choices": [
+        "dict(word for len(word) in words)",
+        "result = [clean(x) if valid(x) else fix(x)\n          for x in data if keep(x)]",
+        "Switch to a normal loop when the rule becomes hard to read.",
+        "[2, 4, 6, 1]"
+      ],
+      "answer_index": 2,
+      "explanation": "A comprehension builds a new collection by looping over an iterable. Write the result expression first, then the `for` part, and add an `if` part only when values should be filtered. That reasoning supports the answer: Switch to a normal loop when the rule becomes hard to read."
+    }
+  ]
+}

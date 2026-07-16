@@ -1,0 +1,184 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "async-promises",
+  "concept_label": "Async & Promises",
+  "language": "javascript",
+  "questions": [
+    {
+      "id": "javascript-async-promises-check-1",
+      "concept": "async-promises",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Async & Promises practice 1",
+      "code": null,
+      "prompt": "What does an async function always return?",
+      "choices": [
+        "A Promise",
+        "A timer id",
+        "A callback",
+        "Only undefined"
+      ],
+      "answer_index": 0,
+      "explanation": "JavaScript wraps a returned value in a fulfilled Promise, or returns a rejected Promise when the function throws."
+    },
+    {
+      "id": "javascript-async-promises-check-2",
+      "concept": "async-promises",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Async & Promises practice 2",
+      "code": null,
+      "prompt": "What happens when an awaited Promise rejects?",
+      "choices": [
+        "An error is thrown at the await expression",
+        "The browser closes",
+        "Await returns null automatically",
+        "The function restarts"
+      ],
+      "answer_index": 0,
+      "explanation": "Rejection enters the surrounding catch just like a synchronous throw, or rejects the async function when it is not caught."
+    },
+    {
+      "id": "javascript-async-promises-output-01",
+      "concept": "async-promises",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "javascript",
+      "title": "Trace Async & Promises",
+      "code": "async function showName() {\n  try {\n    const user = await loadUser();\n    console.log(user.name);\n  } catch (error) {\n    console.log(\"Could not load the user\");\n  }\n}",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "Depends on the request result."
+      ],
+      "explanation": "The function waits for loadUser to settle, then prints either the returned name or a controlled failure message. The resulting output is 'Depends on the request result.'."
+    },
+    {
+      "id": "javascript-async-promises-supplement-01",
+      "concept": "async-promises",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Async & Promises practice 5",
+      "code": "const response = await fetch(\"/api/user\");\nconst user = await response.json();\nconsole.log(user.name);",
+      "prompt": "In `const user = fetch(\"/api/user\"); console.log(user.name);`, why is `user.name` undefined?",
+      "choices": [
+        "fetch returns a Promise, not the user, so name must be awaited first",
+        "fetch always fails on a relative URL",
+        "console.log cannot print object properties",
+        "name is a reserved word in JavaScript"
+      ],
+      "answer_index": 0,
+      "explanation": "`fetch` hands back a Promise immediately, before the response exists, so `user` is that Promise and `user.name` is undefined. You must `await` the fetch and then `await response.json()` to reach the real object. The correct version does both. Nothing here is about reserved words or console.log's abilities."
+    },
+    {
+      "id": "javascript-async-promises-authored-01",
+      "concept": "async-promises",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Async & Promises concept check 1",
+      "code": null,
+      "prompt": "What does the lesson mean by \"Fetch does not reject every bad response\"?",
+      "choices": [
+        "A timer id",
+        "A response with status 404 or 500 still fulfills the fetch Promise. Check `response.ok` and throw or return an error result before parsing data you expected from a successful request.",
+        "A callback",
+        "Only undefined"
+      ],
+      "answer_index": 1,
+      "explanation": "A Promise represents a future result that can be pending, fulfilled, or rejected. An `async` function returns a Promise, and `await` pauses that function until a Promise settles without freezing the entire browser. That reasoning supports the answer: A response with status 404 or 500 still fulfills the fetch Promise. Check `response.ok` and throw or return an error result before parsing data you expected from a successful request."
+    },
+    {
+      "id": "javascript-async-promises-authored-02",
+      "concept": "async-promises",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Async & Promises concept check 2",
+      "code": null,
+      "prompt": "Which choice describes a reliable Async & Promises practice?",
+      "choices": [
+        "The browser closes",
+        "Await returns null automatically",
+        "Await the operation that produces the needed value.",
+        "The function restarts"
+      ],
+      "answer_index": 2,
+      "explanation": "A Promise represents a future result that can be pending, fulfilled, or rejected. An `async` function returns a Promise, and `await` pauses that function until a Promise settles without freezing the entire browser. That reasoning supports the answer: Await the operation that produces the needed value."
+    },
+    {
+      "id": "javascript-async-promises-authored-03",
+      "concept": "async-promises",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Async & Promises concept check 3",
+      "code": null,
+      "prompt": "Which recommendation belongs in a review of Async & Promises code?",
+      "choices": [
+        "const user = fetch(\"/api/user\");\nconsole.log(user.name);",
+        "Only undefined",
+        "The browser closes",
+        "Check HTTP response status explicitly."
+      ],
+      "answer_index": 3,
+      "explanation": "A Promise represents a future result that can be pending, fulfilled, or rejected. An `async` function returns a Promise, and `await` pauses that function until a Promise settles without freezing the entire browser. That reasoning supports the answer: Check HTTP response status explicitly."
+    },
+    {
+      "id": "javascript-async-promises-authored-04",
+      "concept": "async-promises",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Async & Promises concept check 4",
+      "code": null,
+      "prompt": "Which guideline helps prevent a common Async & Promises mistake?",
+      "choices": [
+        "Catch failures where recovery is possible.",
+        "Await returns null automatically",
+        "The function restarts",
+        "const user = fetch(\"/api/user\");\nconsole.log(user.name);"
+      ],
+      "answer_index": 0,
+      "explanation": "A Promise represents a future result that can be pending, fulfilled, or rejected. An `async` function returns a Promise, and `await` pauses that function until a Promise settles without freezing the entire browser. That reasoning supports the answer: Catch failures where recovery is possible."
+    },
+    {
+      "id": "javascript-async-promises-authored-05",
+      "concept": "async-promises",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Async & Promises concept check 5",
+      "code": null,
+      "prompt": "A classmate is checking their understanding of Async & Promises. Which advice is correct?",
+      "choices": [
+        "A timer id",
+        "Keep independent requests concurrent when appropriate.",
+        "A callback",
+        "Await returns null automatically"
+      ],
+      "answer_index": 1,
+      "explanation": "A Promise represents a future result that can be pending, fulfilled, or rejected. An `async` function returns a Promise, and `await` pauses that function until a Promise settles without freezing the entire browser. That reasoning supports the answer: Keep independent requests concurrent when appropriate."
+    },
+    {
+      "id": "javascript-async-promises-authored-06",
+      "concept": "async-promises",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "javascript",
+      "title": "Async & Promises concept check 6",
+      "code": null,
+      "prompt": "What is the main idea behind Async & Promises?",
+      "choices": [
+        "The function restarts",
+        "const user = fetch(\"/api/user\");\nconsole.log(user.name);",
+        "Work with values that become available after the current code finishes.",
+        "A timer id"
+      ],
+      "answer_index": 2,
+      "explanation": "A Promise represents a future result that can be pending, fulfilled, or rejected. An `async` function returns a Promise, and `await` pauses that function until a Promise settles without freezing the entire browser. That reasoning supports the answer: Work with values that become available after the current code finishes."
+    }
+  ]
+}

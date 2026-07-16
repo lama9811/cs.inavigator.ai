@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
+  "title": "Data Types",
+  "summary": "Recognize value types and convert at clear boundaries.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "JavaScript values include numbers, strings, booleans, undefined, objects, and other types. `typeof` inspects a value, while `Number(...)` converts numeric text.",
+  "refresher_code": "const raw = \"12\";\nconsole.log(Number(raw) + 1);",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "JavaScript values include numbers, strings, booleans, undefined, objects, and other types. `typeof` inspects a value, while `Number(...)` converts numeric text. Recognize value types and convert at clear boundaries."
+    },
+    {
+      "kind": "text",
+      "body": "JavaScript variables do not lock themselves to one type. The value stored at a given moment supplies the type, which is why the same variable can hold a number and later hold text. Flexible storage is convenient, but calculations become easier to trust when conversion happens at the input boundary instead of deep inside an expression."
+    },
+    {
+      "kind": "code",
+      "caption": "The first plus joins text; the second calculation converts before adding.",
+      "code": "const credits = \"12\";\nconsole.log(credits + 3);\nconsole.log(Number(credits) + 3);",
+      "output": "123\n15"
+    },
+    {
+      "kind": "compare",
+      "caption": "Check conversion before using the result.",
+      "wrong_label": "Common mistake",
+      "wrong": "const n = Number(\"twelve\");\nconsole.log(n + 1); // NaN",
+      "right_label": "Clearer version",
+      "right": "const n = Number(\"12\");\nif (!Number.isNaN(n)) console.log(n + 1);"
+    },
+    {
+      "kind": "text",
+      "body": "For the corrected path, `Number(\"12\")` produces the number twelve, the validation succeeds, and addition produces thirteen. Remember two special cases: `typeof null` reports `\"object\"`, and arrays are identified with `Array.isArray(value)`."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Watch this detail",
+      "body": "A failed conversion produces `NaN`. Since its typeof result is number, detect it with `Number.isNaN(value)`."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does `typeof true` return?",
+      "code": "",
+      "choices": [
+        "\"boolean\"",
+        "\"bool\"",
+        "\"true\"",
+        "\"object\""
+      ],
+      "answer_index": 0,
+      "why": "JavaScript names this primitive type boolean and returns that name as text."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is displayed?",
+      "code": "console.log(Boolean(0));\nconsole.log(Boolean(\"0\"));",
+      "choices": [
+        "false then true",
+        "false then false",
+        "true then true",
+        "true then false"
+      ],
+      "answer_index": 0,
+      "why": "Numeric zero is falsy, but a nonempty string is truthy."
+    },
+    {
+      "kind": "list",
+      "title": "Data Types checklist",
+      "items": [
+        "Inspect types explicitly.",
+        "Convert input before arithmetic.",
+        "Check NaN deliberately.",
+        "Use specialized array checks."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

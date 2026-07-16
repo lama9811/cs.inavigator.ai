@@ -1,0 +1,184 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "file-io",
+  "concept_label": "File I/O",
+  "language": "java",
+  "questions": [
+    {
+      "id": "java-file-io-check-1",
+      "concept": "file-io",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "java",
+      "title": "File I/O practice 1",
+      "code": "Path notes = Path.of(\"notes.txt\");",
+      "prompt": "Which type represents a file-system path?",
+      "choices": [
+        "Path",
+        "FileText",
+        "Scanner",
+        "StringBuilder"
+      ],
+      "answer_index": 0,
+      "explanation": "`Path` represents a location and can be passed to Files operations. A String contains characters but does not provide the file-system abstraction."
+    },
+    {
+      "id": "java-file-io-check-2",
+      "concept": "file-io",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "java",
+      "title": "File I/O practice 2",
+      "code": "try (Stream<String> lines = Files.lines(path)) {\n    lines.forEach(System.out::println);\n}",
+      "prompt": "Why use try-with-resources around `Files.lines(path)`?",
+      "choices": [
+        "It closes the stream automatically",
+        "It sorts every line",
+        "It prevents IOException at compile time",
+        "It converts the file to an array"
+      ],
+      "answer_index": 0,
+      "explanation": "The stream holds an open file resource. Try-with-resources calls its close method even when processing throws an exception."
+    },
+    {
+      "id": "java-file-io-output-01",
+      "concept": "file-io",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "java",
+      "title": "Trace File I/O",
+      "code": "Path path = Path.of(\"courses.txt\");\nFiles.writeString(path, \"CS101\\nMATH120\\n\", StandardCharsets.UTF_8);\nString text = Files.readString(path, StandardCharsets.UTF_8);\nSystem.out.print(text);",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "CS101\nMATH120"
+      ],
+      "explanation": "The same Path is used for writing and reading. UTF-8 makes the text encoding an explicit part of the file format. The resulting output is 'CS101\\nMATH120'."
+    },
+    {
+      "id": "java-file-io-supplement-01",
+      "concept": "file-io",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "File I/O practice 5",
+      "code": "Files.writeString(path, \"next\\n\",\n    StandardOpenOption.CREATE,\n    StandardOpenOption.APPEND);",
+      "prompt": "What do the CREATE and APPEND options change about `Files.writeString`?",
+      "choices": [
+        "New text is added to the end of the file instead of replacing what is there",
+        "The file is deleted first, then rewritten",
+        "The write is retried automatically if it fails",
+        "The text is compressed before writing"
+      ],
+      "answer_index": 0,
+      "explanation": "By default `writeString` truncates: it replaces the whole file. `APPEND` makes it add to the end, and `CREATE` makes the file first if it does not exist. Without APPEND the earlier contents are lost. The options do not delete, retry, or compress."
+    },
+    {
+      "id": "java-file-io-authored-01",
+      "concept": "file-io",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "File I/O concept check 1",
+      "code": null,
+      "prompt": "What does the lesson mean by \"Default writing replaces contents\"?",
+      "choices": [
+        "FileText",
+        "A successful write can still be the wrong action. If old records matter, include the append option or read, update, and rewrite the complete data intentionally.",
+        "Scanner",
+        "StringBuilder"
+      ],
+      "answer_index": 1,
+      "explanation": "Use `Path` with `Files.readString` and `Files.writeString` for straightforward text files. File methods can throw IOException, so catch it where recovery is possible or declare it with `throws`. That reasoning supports the answer: A successful write can still be the wrong action. If old records matter, include the append option or read, update, and rewrite the complete data intentionally."
+    },
+    {
+      "id": "java-file-io-authored-02",
+      "concept": "file-io",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "File I/O concept check 2",
+      "code": null,
+      "prompt": "Which choice describes a reliable File I/O practice?",
+      "choices": [
+        "It sorts every line",
+        "It prevents IOException at compile time",
+        "Represent locations with Path.",
+        "It converts the file to an array"
+      ],
+      "answer_index": 2,
+      "explanation": "Use `Path` with `Files.readString` and `Files.writeString` for straightforward text files. File methods can throw IOException, so catch it where recovery is possible or declare it with `throws`. That reasoning supports the answer: Represent locations with Path."
+    },
+    {
+      "id": "java-file-io-authored-03",
+      "concept": "file-io",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "File I/O concept check 3",
+      "code": null,
+      "prompt": "Which recommendation belongs in a review of File I/O code?",
+      "choices": [
+        "Files.writeString(path, \"next\\n\");",
+        "StringBuilder",
+        "It sorts every line",
+        "Select UTF-8 for portable text."
+      ],
+      "answer_index": 3,
+      "explanation": "Use `Path` with `Files.readString` and `Files.writeString` for straightforward text files. File methods can throw IOException, so catch it where recovery is possible or declare it with `throws`. That reasoning supports the answer: Select UTF-8 for portable text."
+    },
+    {
+      "id": "java-file-io-authored-04",
+      "concept": "file-io",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "File I/O concept check 4",
+      "code": null,
+      "prompt": "Which guideline helps prevent a common File I/O mistake?",
+      "choices": [
+        "Decide whether a write replaces or appends.",
+        "It prevents IOException at compile time",
+        "It converts the file to an array",
+        "Files.writeString(path, \"next\\n\");"
+      ],
+      "answer_index": 0,
+      "explanation": "Use `Path` with `Files.readString` and `Files.writeString` for straightforward text files. File methods can throw IOException, so catch it where recovery is possible or declare it with `throws`. That reasoning supports the answer: Decide whether a write replaces or appends."
+    },
+    {
+      "id": "java-file-io-authored-05",
+      "concept": "file-io",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "File I/O concept check 5",
+      "code": null,
+      "prompt": "A classmate is checking their understanding of File I/O. Which advice is correct?",
+      "choices": [
+        "FileText",
+        "Handle IOException at a layer that can respond.",
+        "Scanner",
+        "It prevents IOException at compile time"
+      ],
+      "answer_index": 1,
+      "explanation": "Use `Path` with `Files.readString` and `Files.writeString` for straightforward text files. File methods can throw IOException, so catch it where recovery is possible or declare it with `throws`. That reasoning supports the answer: Handle IOException at a layer that can respond."
+    },
+    {
+      "id": "java-file-io-authored-06",
+      "concept": "file-io",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "java",
+      "title": "File I/O concept check 6",
+      "code": null,
+      "prompt": "Which choice shows sound reasoning about File I/O?",
+      "choices": [
+        "It converts the file to an array",
+        "Files.writeString(path, \"next\\n\");",
+        "Stream large files and close the stream automatically.",
+        "FileText"
+      ],
+      "answer_index": 2,
+      "explanation": "Use `Path` with `Files.readString` and `Files.writeString` for straightforward text files. File methods can throw IOException, so catch it where recovery is possible or declare it with `throws`. That reasoning supports the answer: Stream large files and close the stream automatically."
+    }
+  ]
+}

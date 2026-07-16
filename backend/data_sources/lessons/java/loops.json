@@ -1,0 +1,172 @@
+{
+  "_note": "ORIGINAL content. Topic sequence follows the standard free Java text (Eck, 'Introduction to Programming Using Java', ch.3: the for/while/do-while family and the three parts of a for header); a topic sequence is not copyrightable, prose is. No sentence, example, or exercise is copied or paraphrased from it. Eck is CC BY-NC-SA, a copyleft license with a permanent NonCommercial clause, so copying its wording would bind CS Navigator's content to those terms forever. Every word here was written for this project. All code in this lesson was compiled and run on JDK 21 and the outputs are the real ones.",
+  "title": "Loops",
+  "summary": "Repeat work without writing it out again, and count the passes correctly.",
+  "minutes": 8,
+  "error_classes": [
+    "timeout",
+    "runtime",
+    "syntax",
+    "wrong_answer"
+  ],
+  "refresher": "A loop repeats a block of code. A `for` loop has three parts in its header, separated by semicolons: `for (int i = 0; i < n; i++)`. The first part runs once to set up the counter, the second is checked before every pass, and the third runs after every pass. Use `i < n` to run exactly n times. A `while` loop just repeats while its condition holds, so something inside it has to make that condition false or it never stops. To walk an array without counting at all, use the for-each loop: `for (int score : scores)`.",
+  "refresher_code": "for (int i = 0; i < 3; i++) {\n    System.out.println(i);\n}\n// prints 0, 1, 2",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A loop tells the computer to run the same block of code again. Without one, printing a greeting five times means writing five lines. With one, it takes three, and the number five sits in exactly one place where you can change it."
+    },
+    {
+      "kind": "code",
+      "caption": "The full wrapper, shown once so you know where loops live. Everything after this block is a statement that would sit inside `main`, and the class and `main` around it are assumed rather than repeated.",
+      "code": "public class Greeter {\n    public static void main(String[] args) {\n        for (int i = 0; i < 3; i++) {\n            System.out.println(\"Hello, world\");\n        }\n    }\n}",
+      "output": "Hello, world\nHello, world\nHello, world"
+    },
+    {
+      "kind": "text",
+      "body": "Look at the header: `for (int i = 0; i < 3; i++)`. It holds three separate parts, split by two semicolons, and each one runs at a different time. Learning which is which is most of what makes loops click."
+    },
+    {
+      "kind": "list",
+      "title": "The three parts of a for header",
+      "items": [
+        "Setup: `int i = 0`. Runs once, before anything else. It creates the counter.",
+        "Condition: `i < 3`. Checked before every pass. While it is true the body runs. The moment it is false the loop is over.",
+        "Update: `i++`. Runs after every pass, once the body has finished. `i++` is shorthand for `i = i + 1`.",
+        "So the order is: set up once, then check, run the body, update, check, run the body, update, and so on."
+      ]
+    },
+    {
+      "kind": "code",
+      "caption": "Counting from 0 is the Java habit, and it is not arbitrary. Array positions start at 0, so a counter that starts at 0 lines up with them. `i < 5` gives you five passes: 0, 1, 2, 3, 4.",
+      "code": "for (int i = 0; i < 5; i++) {\n    System.out.println(i);\n}",
+      "output": "0\n1\n2\n3\n4"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "i <= n runs one extra time",
+      "body": "`i < 5` runs five times. `i <= 5` runs six, because it also runs the pass where `i` is 5. One character, one extra pass. When a loop gives you an answer that is off by exactly one, or reaches one item past the end of an array, this is the first line to reread. The mistake is so ordinary that it has a name: an off-by-one error."
+    },
+    {
+      "kind": "check",
+      "prompt": "Count the passes. How many lines appear, and what is on the final one?",
+      "code": "for (int i = 0; i <= 3; i++) {\n    System.out.println(i);\n}",
+      "choices": [
+        "3 lines, ending with 2",
+        "3 lines, ending with 3",
+        "4 lines, ending with 3",
+        "5 lines, ending with 4"
+      ],
+      "answer_index": 2,
+      "why": "The condition is `i <= 3`, not `i < 3`. So `i` takes the values 0, 1, 2, and then 3, which still satisfies `i <= 3` and gets printed too. That is four lines, ending with 3. If you picked \"3 lines, ending with 2\", you read the header as `i < 3`, which is the version you meet far more often. The `=` is doing real work here: it buys one more pass."
+    },
+    {
+      "kind": "text",
+      "body": "That extra pass is worse than a wrong count when an array is involved. An array of 3 items has positions 0, 1, and 2. There is no position 3. Asking for one is not caught when your code is compiled, because the compiler cannot know what `i` will be. It surfaces while the program is running, as a crash."
+    },
+    {
+      "kind": "code",
+      "caption": "This compiles without a single complaint, prints all three scores, and then dies on the fourth pass. The last line of the error names the exact problem: index 3 does not exist in an array of length 3.",
+      "code": "int[] scores = {90, 85, 78};\nfor (int i = 0; i <= scores.length; i++) {\n    System.out.println(scores[i]);\n}",
+      "output": "90\n85\n78\nException in thread \"main\" java.lang.ArrayIndexOutOfBoundsException: Index 3 out of bounds for length 3"
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Two moments when Java can object",
+      "body": "Java checks types before it runs anything. Write `int count = \"three\";` and the compiler rejects the file, so not one line of your program runs, not even the correct lines above it. That is a compile error. The crash above is different: the file compiled fine and the program was already running when it hit a value it could not use. That is a runtime error. When something goes wrong, ask first whether you saw any output. Output means you got past the compiler."
+    },
+    {
+      "kind": "text",
+      "body": "When all you want is to visit every item in an array, you do not need a counter at all. The for-each loop hands you the items themselves, one per pass. No index, so no chance of an off-by-one."
+    },
+    {
+      "kind": "code",
+      "caption": "Read the colon as \"in\". On each pass, `name` holds the next item. You never write `i`, never compare it to a length, and never index the array, so three chances to slip are gone.",
+      "code": "String[] names = {\"Ada\", \"Grace\", \"Alan\"};\nfor (String name : names) {\n    System.out.println(\"Hello, \" + name);\n}",
+      "output": "Hello, Ada\nHello, Grace\nHello, Alan"
+    },
+    {
+      "kind": "text",
+      "body": "Use for-each when you just need each item. Use the counting `for` when you need the position itself, or when you are walking backwards, or skipping every second item. Prefer for-each when either would do, because a loop with no counter cannot get its counting wrong."
+    },
+    {
+      "kind": "compare",
+      "caption": "A semicolon right after the closing parenthesis is itself the loop body: an empty one. Java dutifully runs that empty body three times. The block underneath is then just an ordinary block of code, nothing to do with the loop, so it runs once. It compiles without a warning, because an empty loop body is legal and occasionally what someone wants.",
+      "wrong_label": "Prints once",
+      "wrong": "for (int i = 0; i < 3; i++);\n{\n    System.out.println(\"Go Bears\");\n}\n// the ; ends the loop.\n// the block is not its body.",
+      "right_label": "Prints three times",
+      "right": "for (int i = 0; i < 3; i++) {\n    System.out.println(\"Go Bears\");\n}\n// no semicolon, so the\n// block is the body."
+    },
+    {
+      "kind": "text",
+      "body": "That stray semicolon is worth slowing down for. Your code looks right, the indentation looks right, and nothing is reported as broken. The only clue is that the body ran once instead of many times. If a loop body seems to run exactly one time, check the end of the `for` line before you check anything else."
+    },
+    {
+      "kind": "text",
+      "body": "A `while` loop drops the counter and the update. It keeps one thing: a condition. It repeats for as long as that condition holds, which is what you want when the number of passes depends on something you cannot know when you write the code."
+    },
+    {
+      "kind": "code",
+      "caption": "The condition is tested at the top of every pass. Once `n` has been knocked down to 0, the test fails and the body is skipped, so the countdown ends at 1. Notice that `n = n - 1` is doing the job `i++` does in a `for` header. In a `while` loop, remembering that line is on you.",
+      "code": "int n = 3;\nwhile (n > 0) {\n    System.out.println(n);\n    n = n - 1;\n}\nSystem.out.println(\"Liftoff!\");",
+      "output": "3\n2\n1\nLiftoff!"
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "A loop that never stops",
+      "body": "Leave out `n = n - 1` and `n` stays 3 forever, so `n > 0` never turns false and the program prints 3 until something kills it. The same thing happens in a `for` loop if the update part is missing or changes the wrong variable. This code compiles perfectly, because an endless loop is legal Java and sometimes intentional. When a run of yours hangs or times out, ask one question about every loop in it: which line in here will eventually make this condition false? If you cannot point to that line, you have found the bug."
+    },
+    {
+      "kind": "check",
+      "prompt": "This is meant to print 0, 1, 2. What actually happens when you run it?",
+      "code": "int i = 0;\nwhile (i < 3) {\n    System.out.println(i);\n}",
+      "choices": [
+        "It prints 0, 1, 2",
+        "It refuses to compile, since `i` is never updated",
+        "It prints 0 over and over until the program is stopped",
+        "It prints nothing, since the condition is never rechecked"
+      ],
+      "answer_index": 2,
+      "why": "Nothing inside the body changes `i`. It stays 0, so `i < 3` stays true, and the loop prints 0 forever. The compiler will not save you here: it has no way to know you meant to count, and a deliberately endless loop is a normal thing to write, so there is nothing for it to object to. That is why a hang or a timeout is usually a loop with no exit rather than a typo. Adding `i++` inside the body fixes it."
+    },
+    {
+      "kind": "text",
+      "body": "One last shape. A `do-while` puts the condition at the bottom, so the body always runs at least once before the condition is ever looked at. Reach for it when the work has to happen once no matter what, such as showing a menu before you can ask whether the user wants to see it again."
+    },
+    {
+      "kind": "code",
+      "caption": "`m > 0` is false before the first pass, yet the body still runs once, because `do-while` tests only after the pass. A plain `while` with the same condition would print nothing. The semicolon after the closing parenthesis is required here, and this is the one loop that ends in one.",
+      "code": "int m = 0;\ndo {\n    System.out.println(\"Menu shown\");\n    m = m - 1;\n} while (m > 0);",
+      "output": "Menu shown"
+    },
+    {
+      "kind": "check",
+      "prompt": "You need to print every name in `String[] roster`, and you do not need the position of any name. Which loop is the safest choice?",
+      "code": "String[] roster = {\"Ada\", \"Grace\", \"Alan\"};\n\n// A: for (int i = 0; i <= roster.length; i++)\n// B: for (String name : roster)\n// C: int i = 0; while (i < roster.length)\n// D: do { ... } while (i < roster.length);",
+      "choices": [
+        "A, because a counting loop is the standard way to read an array",
+        "B, because for-each needs no index and cannot run off the end",
+        "C, because a while loop gives you the most control",
+        "D, because the roster should be printed at least once"
+      ],
+      "answer_index": 1,
+      "why": "For-each hands you each name directly, so there is no counter to start wrong, no condition to write with the wrong comparison, and no index to push past the end. A is in fact already broken: `i <= roster.length` reaches index 3 in an array of length 3 and throws ArrayIndexOutOfBoundsException. C would work if you remembered `i++` inside the body, but that is one more thing to get right for no benefit. D runs the body once even on an empty roster, which is not what you want here. Choose the loop that removes the mistakes rather than the one that lets you make them carefully."
+    },
+    {
+      "kind": "list",
+      "title": "Reaching for the right loop",
+      "items": [
+        "You want each item of an array and not its position: use the for-each loop.",
+        "You know the number of passes, or you need the index: use `for (int i = 0; i < n; i++)`.",
+        "To run exactly n times, the condition is `i < n`. Writing `i <= n` gives you n + 1 passes.",
+        "The number of passes depends on something you cannot predict, like what the user types: use `while`.",
+        "The body has to run at least once before you can test the condition: use `do-while`.",
+        "Never put a semicolon right after `for (...)` or `while (...)`. It makes the body empty. The only loop that ends in a semicolon is `do-while`.",
+        "Before you run any `while`, point at the line that will eventually make the condition false."
+      ]
+    }
+  ]
+}

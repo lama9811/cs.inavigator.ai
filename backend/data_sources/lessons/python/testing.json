@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. Topic coverage follows the curriculum in Runestone Foundations of Python Programming, Think Python, and OpenStax Introduction to Python Programming. No prose, examples, or exercises were copied; the sources guide topic selection only.",
+  "title": "Testing",
+  "summary": "Check that code gives the right result for normal and unusual inputs.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "A test calls a small piece of code with known input and compares the result with the expected value. `assert` is useful for quick checks. `unittest` organizes larger test groups and reports which case failed.",
+  "refresher_code": "def double(number):\n    return number * 2\n\nassert double(4) == 8",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Running a program once shows only that one path worked. Tests save examples of correct behavior so they can be repeated after the code changes."
+    },
+    {
+      "kind": "code",
+      "caption": "Each assertion states one expectation. If an expression is false, Python raises AssertionError and points to the failed check.",
+      "code": "def is_even(number):\n    return number % 2 == 0\n\nassert is_even(4) is True\nassert is_even(7) is False\nprint(\"checks passed\")",
+      "output": "checks passed"
+    },
+    {
+      "kind": "text",
+      "body": "Good tests include an ordinary case, a boundary, and an unusual but valid case. For a list function, that may mean several items, one item, and an empty list."
+    },
+    {
+      "kind": "compare",
+      "caption": "A test should check a result, not repeat the function's calculation in a more complicated form. Direct expected values are easier to review.",
+      "wrong_label": "Hard to trust",
+      "wrong": "assert total(nums) == sum(x for x in nums)",
+      "right_label": "Expected result is plain",
+      "right": "assert total([2, 3, 5]) == 10"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "A passing test can still be weak",
+      "body": "A test proves only the case it checks. If every test uses positive numbers, a bug involving zero or negative values can remain hidden."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which input is the best boundary case for a function that finds the largest list item?",
+      "code": "def largest(numbers): ...",
+      "choices": [
+        "A list with one item",
+        "A list with ten random items",
+        "The same three-item list twice",
+        "A list already used in the demo"
+      ],
+      "answer_index": 0,
+      "why": "One item is the smallest valid list for this function. It checks whether the code wrongly assumes that a second item exists."
+    },
+    {
+      "kind": "text",
+      "body": "The unittest module groups checks into methods. `setUp` can prepare fresh data before each test, and methods beginning with `test_` are discovered by the test runner."
+    },
+    {
+      "kind": "check",
+      "prompt": "What happens when an assert expression is false?",
+      "code": "assert 2 + 2 == 5",
+      "choices": [
+        "Python raises AssertionError",
+        "Python changes 5 to 4",
+        "The line is ignored",
+        "Python returns False from the program"
+      ],
+      "answer_index": 0,
+      "why": "An assert statement stops at a false condition and raises AssertionError. Test tools catch that error and show which expectation failed."
+    },
+    {
+      "kind": "list",
+      "title": "Testing checklist",
+      "items": [
+        "Test one clear behavior at a time.",
+        "Use fixed inputs with obvious expected results.",
+        "Include normal, boundary, and unusual cases.",
+        "Give tests names that describe the behavior.",
+        "Run the tests again after every meaningful change."
+      ]
+    }
+  ]
+}

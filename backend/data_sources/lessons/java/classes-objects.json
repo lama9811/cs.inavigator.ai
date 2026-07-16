@@ -1,0 +1,121 @@
+{
+  "_note": "ORIGINAL content. Topic sequence follows the standard free Java text (Eck, 'Introduction to Programming Using Java', ch.5: objects before inheritance, constructors before static); a topic sequence is not copyrightable. No prose, examples, or exercises are copied from it. Eck is CC BY-NC-SA, and copying would bind CS Navigator's content to those terms permanently, including the NonCommercial clause. Every sentence and every code sample here was written for this lesson and its output was verified against a real JDK.",
+  "title": "Classes & Objects",
+  "summary": "A class is a blueprint. An object is a thing built from it.",
+  "minutes": 8,
+  "error_classes": [
+    "runtime",
+    "syntax",
+    "wrong_answer"
+  ],
+  "refresher": "A class is a blueprint: it lists the fields an object will hold and the methods it can run. An object is one actual thing built from that blueprint. You build one with `new`, which hands back a reference to it, and you reach into it with a dot: `s.gpa` for a field, `s.describe()` for a method. A constructor is the special method that runs during `new` and fills in the fields, and inside it `this.name` means the field while `name` means the value that was passed in. A reference that points at no object is `null`, and using a dot on it throws a NullPointerException.",
+  "refresher_code": "Student s = new Student(\"Ada\", 3.9);\nSystem.out.println(s.gpa);\n// 3.9",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Suppose you want to track a student's name and GPA. With two variables that works fine. With two hundred students it falls apart: you are juggling parallel lists and hoping the third name still lines up with the third GPA. A class fixes that by letting you glue related values into a single thing."
+    },
+    {
+      "kind": "text",
+      "body": "A class is a blueprint. It says what every student will have and what every student can do. It is not itself a student. An object is one actual student, built from that blueprint. One blueprint, as many objects as you want."
+    },
+    {
+      "kind": "code",
+      "caption": "The whole file. `name` and `gpa` are fields: the state each Student carries, declared once in the class and then owned separately by every object built from it. `new Student()` builds one such object and hands back a reference to it, which is what `s` holds.",
+      "code": "public class Student {\n    String name;\n    double gpa;\n\n    public static void main(String[] args) {\n        Student s = new Student();\n        s.name = \"Ada\";\n        s.gpa = 3.9;\n        System.out.println(s.name);\n        System.out.println(s.gpa);\n    }\n}",
+      "output": "Ada\n3.9"
+    },
+    {
+      "kind": "text",
+      "body": "Read `Student s = new Student();` right to left. `new Student()` does the building. It sets aside memory for one object and hands back a reference to it, which is a way of pointing at the object rather than the object itself. `Student s` declares a variable that is allowed to hold such a reference. The `=` stores it there."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "You have been writing classes all along",
+      "body": "Every Java program you have written so far sat inside `public class Something { ... }`. That was not decoration. Java has nowhere to put code except inside a class, so even a one line program needs one. Today the class stops being a wrapper you ignore and becomes the thing you are actually designing."
+    },
+    {
+      "kind": "text",
+      "body": "Setting each field by hand after `new` gets tedious, and it is easy to forget one. A constructor does it for you. It is a method with the same name as the class and no return type, and it runs automatically as part of `new`."
+    },
+    {
+      "kind": "code",
+      "caption": "Methods are the behavior half of the blueprint, the way fields are the state half. Note that changing `grace` leaves `ada` untouched: they are two separate objects built from one class, each with its own copy of the fields.",
+      "code": "public class Student {\n    String name;\n    double gpa;\n\n    Student(String name, double gpa) {\n        this.name = name;\n        this.gpa = gpa;\n    }\n\n    String describe() {\n        return name + \" has a GPA of \" + gpa;\n    }\n\n    public static void main(String[] args) {\n        Student ada = new Student(\"Ada\", 3.9);\n        Student grace = new Student(\"Grace\", 2.5);\n        System.out.println(ada.describe());\n        System.out.println(grace.describe());\n        grace.gpa = 3.1;\n        System.out.println(grace.describe());\n        System.out.println(ada.describe());\n    }\n}",
+      "output": "Ada has a GPA of 3.9\nGrace has a GPA of 2.5\nGrace has a GPA of 3.1\nAda has a GPA of 3.9"
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "What `this` is for",
+      "body": "In that constructor, the parameter is called `name` and the field is also called `name`. Java resolves the plain name `name` to the parameter, because the closer one wins. So `this.name = name` means: take the value that was passed in, and store it in this object's field. Drop the `this.` and you write `name = name`, which quietly assigns the parameter to itself and leaves the field empty. It compiles. It just does nothing."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does this print?",
+      "code": "Student a = new Student(\"Ada\", 3.9);\nStudent b = a;\nb.gpa = 2.0;\nSystem.out.println(a.gpa);\n// constructor sets this.name and this.gpa",
+      "choices": [
+        "2.0",
+        "3.9",
+        "It does not compile",
+        "It throws a NullPointerException"
+      ],
+      "answer_index": 0,
+      "why": "`new` was called once, so there is exactly one object. `Student b = a;` copies the reference, not the object, so `a` and `b` are two names pointing at the same Student. Changing it through `b` changes what you see through `a`, and the answer is 2.0. If you picked 3.9, you read `b = a` as making a second student. It does not: only `new` builds an object, and there is no second `new` here."
+    },
+    {
+      "kind": "text",
+      "body": "Now for the `static` in `public static void main`. A static method belongs to the class itself, not to any object. That is exactly what `main` needs to be, because `main` is where your program starts. At that moment no objects exist yet, so there is nothing for a non-static method to be attached to. `main` runs first and builds the objects."
+    },
+    {
+      "kind": "code",
+      "caption": "`describe()` is an instance method: it needs a Student to describe. `main` is static, so it has no Student. Java catches this while compiling, before a single line runs. Nothing prints. You get: `error: non-static method describe() cannot be referenced from a static context`. The fix is to build an object first and call the method on it: `new Student().describe()`.",
+      "code": "public class Student {\n    String name;\n\n    String describe() {\n        return \"I am \" + name;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(describe());\n    }\n}",
+      "output": ""
+    },
+    {
+      "kind": "text",
+      "body": "That is worth pausing on, because it is a real difference from Python. Java checks types and method calls while compiling, so a mistake like this is caught before the program runs at all. An error that arrives with no output above it is a compile error, and it means the program never started. An error that arrives after some of your output has already printed is a runtime error, and it means the program was running fine until that line."
+    },
+    {
+      "kind": "compare",
+      "caption": "Both sides compile, which is what makes this one sting: the mistake survives the compiler and only shows up when you run it. Declaring a variable of type Student does not create a Student, so the NullPointerException side holds a reference pointing at nothing. The dot in `s.name` says \"go to the object and get its name\", and there is no object to go to.",
+      "wrong_label": "NullPointerException",
+      "wrong": "Student s = null;\nSystem.out.println(\"here\");\nSystem.out.println(s.name);\n// prints \"here\", then crashes:\n// nothing was ever built",
+      "right_label": "Works",
+      "right": "Student s = new Student(\"Ada\", 3.9);\nSystem.out.println(\"here\");\nSystem.out.println(s.name);\n// prints \"here\", then Ada:\n// new built the object"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "A NullPointerException means you never called new",
+      "body": "This is the error Java beginners hit most. It does not mean the object is broken. It means there is no object. Some reference is holding `null`, and you used a dot on it. Java tells you which line, so go to that line, find the variable before the dot, and trace backwards to where it should have been given a `new`. Usually you declared it in one branch of an `if` and used it outside."
+    },
+    {
+      "kind": "check",
+      "prompt": "The Student class declares `String name;` and `double gpa;` and has no constructor. What does this print?",
+      "code": "Student s = new Student();\nSystem.out.println(s.name);\nSystem.out.println(s.gpa);",
+      "choices": [
+        "null then 0.0",
+        "It throws a NullPointerException on the first println",
+        "It does not compile, since the fields were never set",
+        "An empty line then 0"
+      ],
+      "answer_index": 0,
+      "why": "`new` really did build an object, so `s` points at something and the dot works. Java fills unset fields with defaults: a `double` starts at 0.0, and any object type, including `String`, starts at `null`. So you get `null` and then `0.0`. If you picked the NullPointerException, you had the right idea about `null` but the wrong target: `s.name` is null, and `s` is not. Printing a null is fine. Only using a dot on a null crashes."
+    },
+    {
+      "kind": "list",
+      "title": "Working with a new class",
+      "items": [
+        "Name the class for the thing it represents, capitalized: `Student`, not `doStudentStuff`.",
+        "Fields are what it knows. Methods are what it can do. Sort your ideas into those two piles first.",
+        "Write a constructor as soon as an object needs more than one field, so an object can never exist half filled in.",
+        "Inside a constructor, write `this.field = parameter`. Leaving off `this.` compiles and silently does nothing.",
+        "Every object needs its own `new`. Assigning one reference to another gives you a second name for the same object, not a second object.",
+        "On a NullPointerException, look at the variable to the left of the dot on that line, then find where it was supposed to get its `new`."
+      ]
+    }
+  ]
+}

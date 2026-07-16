@@ -1,0 +1,90 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Variables",
+  "summary": "Give values clear names and decide whether they may change.",
+  "minutes": 10,
+  "error_classes": [
+    "syntax",
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "A C++ variable starts with a type, followed by its name and an optional value. For example, `int score = 10;` stores a whole number. Add `const` when the value should not be reassigned.",
+  "refresher_code": "const std::string course = \"CS 201\";\nint seats = 3;\nseats = 2;",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A variable is a named place to keep a value. In C++, you write the type before the name: `int attempts = 0;`. The type tells C++ what kind of value belongs there, and the semicolon ends the declaration."
+    },
+    {
+      "kind": "text",
+      "body": "A variable keeps the same type while it exists. A name declared inside braces can be used only inside that block. Give local variables a starting value before reading them so the program never has to guess what they contain."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Python chooses the type for you",
+      "body": "Python lets you write `score = 10`. C++ writes the type as part of the declaration: `int score = 10;`. That extra word lets the compiler catch assignments that do not match."
+    },
+    {
+      "kind": "code",
+      "caption": "The course name stays fixed because it is const. The enrolled count may change, so the program adds one before printing.",
+      "code": "#include <iostream>\n#include <string>\n\nint main() {\n  const std::string course = \"CS 201\";\n  int enrolled = 24;\n\n  enrolled++;\n  std::cout << course << \": \" << enrolled << \"\\n\";\n}",
+      "output": "CS 201: 25"
+    },
+    {
+      "kind": "compare",
+      "caption": "Initialize a local variable before any branch can read it.",
+      "wrong_label": "Common mistake",
+      "wrong": "int result;\nif (ready) result = 5;\nstd::cout << result;",
+      "right_label": "Clearer version",
+      "right": "int result = 0;\nif (ready) result = 5;\nstd::cout << result;"
+    },
+    {
+      "kind": "text",
+      "body": "If `ready` is false in the first version, `result` never receives a value. Starting it at zero gives the program a clear fallback. Use `const` for a value such as a course name or conversion rate that should stay fixed."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Initialize before use",
+      "body": "A local number without a starting value does not contain a dependable answer. Assign a value when you declare it, unless every possible path clearly assigns one before it is read."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which declaration creates a changing integer?",
+      "code": "",
+      "choices": [
+        "int attempts = 0;",
+        "const int attempts = 0;",
+        "attempts int = 0;",
+        "var attempts = 0;"
+      ],
+      "answer_index": 0,
+      "why": "A plain int variable can be reassigned after its initialized declaration."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is printed?",
+      "code": "int points=4;\npoints += 3;\nstd::cout << points;",
+      "choices": [
+        "7",
+        "43",
+        "4",
+        "nothing"
+      ],
+      "answer_index": 0,
+      "why": "Compound assignment adds three to the numeric value and stores seven."
+    },
+    {
+      "kind": "list",
+      "title": "Variables checklist",
+      "items": [
+        "Choose an accurate type.",
+        "Initialize before reading.",
+        "Use const for fixed values.",
+        "Keep scope as narrow as practical."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

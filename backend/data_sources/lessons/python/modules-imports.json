@@ -1,0 +1,84 @@
+{
+  "_note": "ORIGINAL content. Topic coverage follows the curriculum in Runestone Foundations of Python Programming, Think Python, and OpenStax Introduction to Python Programming. No prose, examples, or exercises were copied; the sources guide topic selection only.",
+  "title": "Modules & Imports",
+  "summary": "Split a program into files with clear jobs.",
+  "minutes": 9,
+  "error_classes": [
+    "runtime",
+    "syntax",
+    "wrong_answer"
+  ],
+  "refresher": "A Python file is a module. Use `import module` to keep its name visible, or `from module import name` to bring in one item. Put code that should run only when a file starts the program under `if __name__ == \"__main__\":`.",
+  "refresher_code": "import math\nprint(math.sqrt(25))\n# 5.0",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "One large file becomes difficult to scan. Modules let you place related functions and classes in smaller files. A grade calculator can live in one module while the main program handles input and output."
+    },
+    {
+      "kind": "code",
+      "caption": "Importing the module keeps the source of `sqrt` clear. The dot says that the function comes from math.",
+      "code": "import math\n\nside = 5\nprint(math.sqrt(side * side))",
+      "output": "5.0"
+    },
+    {
+      "kind": "text",
+      "body": "Python loads a module the first time it is imported during a run. It creates the module's names and makes them available to the importing file."
+    },
+    {
+      "kind": "compare",
+      "caption": "A wildcard import hides where names came from and can replace an existing name. Importing the module keeps that boundary visible.",
+      "wrong_label": "Names are unclear",
+      "wrong": "from math import *\nprint(sqrt(16))",
+      "right_label": "Source is clear",
+      "right": "import math\nprint(math.sqrt(16))"
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "Imported files can run code",
+      "body": "Statements at the top level run when Python imports the file. Place demo code and direct user input inside a main guard so importing the module does not start them."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which line makes the `random` module available under its own name?",
+      "code": "",
+      "choices": [
+        "import random",
+        "from random import randint",
+        "include random",
+        "using random"
+      ],
+      "answer_index": 0,
+      "why": "`import random` binds the module name. Its functions are then reached with a dot, such as `random.randint(1, 6)`."
+    },
+    {
+      "kind": "text",
+      "body": "The main guard checks how the file was started. Its block runs during direct execution, but not when another file imports the module."
+    },
+    {
+      "kind": "check",
+      "prompt": "When does this print?",
+      "code": "if __name__ == \"__main__\":\n    print(\"Run demo\")",
+      "choices": [
+        "When this file is run directly",
+        "Every time the file is imported",
+        "Only after an error",
+        "Before Python reads the file"
+      ],
+      "answer_index": 0,
+      "why": "Python sets `__name__` to `\"__main__\"` for the file that starts the program. Imported modules receive their module names instead."
+    },
+    {
+      "kind": "list",
+      "title": "Module checklist",
+      "items": [
+        "Group code by one clear purpose.",
+        "Prefer imports that show where a name came from.",
+        "Avoid wildcard imports.",
+        "Keep top-level work small.",
+        "Put demos and command-line input behind a main guard."
+      ]
+    }
+  ]
+}

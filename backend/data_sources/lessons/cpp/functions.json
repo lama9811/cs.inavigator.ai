@@ -1,0 +1,90 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Functions",
+  "summary": "Name a reusable task, give it inputs, and return a result.",
+  "minutes": 10,
+  "error_classes": [
+    "syntax",
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "A C++ function writes its return type before its name and gives every parameter a type. For example, `int square(int n)` accepts an integer and returns an integer. Use `void` when no value is returned.",
+  "refresher_code": "int square(int n){\n  return n*n;\n}",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A function gives a name to a reusable task. Its parameters receive input values, and `return` sends a result back to the caller. In C++, the function also states the type of each input and the type of its result."
+    },
+    {
+      "kind": "text",
+      "body": "Read `int larger(int a, int b)` from left to right: the function returns an `int`, its name is `larger`, and it receives two integer parameters. A call such as `larger(7, 4)` fills those parameters and waits for the returned answer."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "C++ types are the main difference from Python here",
+      "body": "Python writes `def square(n):`. C++ writes `int square(int n)`. Both name the function and its input, but C++ also states that the input and result are integers."
+    },
+    {
+      "kind": "code",
+      "caption": "The arguments 7 and 4 fill a and b. The function returns 7, and main prints it.",
+      "code": "#include <iostream>\n\nint larger(int a, int b) {\n  if (a > b) {\n    return a;\n  }\n  return b;\n}\n\nint main() {\n  std::cout << larger(7, 4) << \"\\n\";\n}",
+      "output": "7"
+    },
+    {
+      "kind": "compare",
+      "caption": "A non-void function must use return to send its answer back.",
+      "wrong_label": "Common mistake",
+      "wrong": "int square(int n) {\n  n * n;\n}",
+      "right_label": "Clearer version",
+      "right": "int square(int n) {\n  return n * n;\n}"
+    },
+    {
+      "kind": "text",
+      "body": "The first version calculates a value but throws it away. The corrected version returns the result to the line that called the function. Make sure every possible path in a non-void function returns the promised type."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Return the promised result",
+      "body": "If a function begins with a type such as `int` or `double`, the caller expects a result of that type. Use `return` on every possible path. A `void` function performs work without returning a value."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is the return type here?",
+      "code": "double average(int total,int count);",
+      "choices": [
+        "double",
+        "int",
+        "average",
+        "void"
+      ],
+      "answer_index": 0,
+      "why": "The type written before the function name declares the returned value type."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is printed?",
+      "code": "int twice(int n){return n*2;}\nstd::cout<<twice(3);",
+      "choices": [
+        "6",
+        "3",
+        "33",
+        "nothing"
+      ],
+      "answer_index": 0,
+      "why": "The argument initializes n, and the returned multiplication result is six."
+    },
+    {
+      "kind": "list",
+      "title": "Functions checklist",
+      "items": [
+        "Match each parameter type to its input.",
+        "Return the promised type on every path.",
+        "Give the function one clear purpose.",
+        "Use void only when no result is needed."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

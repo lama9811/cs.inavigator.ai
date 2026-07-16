@@ -1,0 +1,184 @@
+{
+  "_note": "Original Practice questions aligned with CS Navigator's original Learn lesson for this topic.",
+  "concept": "exceptions",
+  "concept_label": "Exceptions",
+  "language": "cpp",
+  "questions": [
+    {
+      "id": "cpp-exceptions-check-1",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Exceptions practice 1",
+      "code": null,
+      "prompt": "How should standard exceptions usually be caught?",
+      "choices": [
+        "By const reference",
+        "By raw pointer",
+        "By mutable global value",
+        "Only with catch-all"
+      ],
+      "answer_index": 0,
+      "explanation": "Catching by const reference avoids copying and preserves the dynamic exception information for the handler."
+    },
+    {
+      "id": "cpp-exceptions-check-2",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Exceptions practice 2",
+      "code": null,
+      "prompt": "What happens to local RAII objects during stack unwinding?",
+      "choices": [
+        "Their destructors run",
+        "They are always leaked",
+        "They become global",
+        "Their constructors run again"
+      ],
+      "answer_index": 0,
+      "explanation": "As exception control exits each scope, destructors run for fully constructed local objects and release their resources."
+    },
+    {
+      "id": "cpp-exceptions-output-01",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "typein",
+      "language": "cpp",
+      "title": "Trace Exceptions",
+      "code": "#include <iostream>\n#include <stdexcept>\nint requirePositive(int value) {\n  if (value <= 0) throw std::invalid_argument(\"value must be positive\");\n  return value;\n}\nint main() {\n  try {\n    std::cout << requirePositive(-2) << \"\\n\";\n  } catch (const std::invalid_argument& error) {\n    std::cout << error.what() << \"\\n\";\n  }\n}",
+      "prompt": "What output does this code produce? Enter each line in order.",
+      "accepted": [
+        "value must be positive"
+      ],
+      "explanation": "The parser either returns a valid positive count or throws a descriptive exception that the caller handles. The resulting output is 'value must be positive'."
+    },
+    {
+      "id": "cpp-exceptions-supplement-01",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Exceptions practice 5",
+      "code": "try { work(); }\ncatch (const std::runtime_error& error) {\n  std::cerr << error.what();\n}",
+      "prompt": "How does `catch (const std::runtime_error& error)` differ from `catch (...)`?",
+      "choices": [
+        "It catches only runtime_error and can read the error's message with error.what()",
+        "It catches every possible exception, the same as catch (...)",
+        "It re-throws the exception automatically after the block",
+        "It prevents work() from ever throwing"
+      ],
+      "answer_index": 0,
+      "explanation": "A typed catch handles one kind of exception and gives you the object, so `error.what()` can report the cause. `catch (...)` catches everything but hands you nothing to inspect, which is why an empty `catch (...)` hides the problem. Neither form stops `work()` from throwing or re-throws on its own."
+    },
+    {
+      "id": "cpp-exceptions-authored-01",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Exceptions concept check 1",
+      "code": null,
+      "prompt": "What does the lesson mean by \"Exceptions are not ordinary branch logic\"?",
+      "choices": [
+        "By raw pointer",
+        "Use an if statement for expected choices such as an empty search result. Reserve exceptions for a function that cannot complete its promised operation, especially when several callers need the failure information.",
+        "By mutable global value",
+        "Only with catch-all"
+      ],
+      "answer_index": 1,
+      "explanation": "Throw an exception when a function cannot fulfill its contract and the caller may recover at a higher level. Catch exceptions by const reference, handle only cases you understand, and preserve useful error details. That reasoning supports the answer: Use an if statement for expected choices such as an empty search result. Reserve exceptions for a function that cannot complete its promised operation, especially when several callers need the failure information."
+    },
+    {
+      "id": "cpp-exceptions-authored-02",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Exceptions concept check 2",
+      "code": null,
+      "prompt": "Which choice describes a reliable Exceptions practice?",
+      "choices": [
+        "They are always leaked",
+        "They become global",
+        "Throw a descriptive exception type.",
+        "Their constructors run again"
+      ],
+      "answer_index": 2,
+      "explanation": "Throw an exception when a function cannot fulfill its contract and the caller may recover at a higher level. Catch exceptions by const reference, handle only cases you understand, and preserve useful error details. That reasoning supports the answer: Throw a descriptive exception type."
+    },
+    {
+      "id": "cpp-exceptions-authored-03",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Exceptions concept check 3",
+      "code": null,
+      "prompt": "Which recommendation belongs in a review of Exceptions code?",
+      "choices": [
+        "try { work(); }\ncatch (...) { }",
+        "Only with catch-all",
+        "They are always leaked",
+        "Catch only where recovery or context is possible."
+      ],
+      "answer_index": 3,
+      "explanation": "Throw an exception when a function cannot fulfill its contract and the caller may recover at a higher level. Catch exceptions by const reference, handle only cases you understand, and preserve useful error details. That reasoning supports the answer: Catch only where recovery or context is possible."
+    },
+    {
+      "id": "cpp-exceptions-authored-04",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Exceptions concept check 4",
+      "code": null,
+      "prompt": "Which guideline helps prevent a common Exceptions mistake?",
+      "choices": [
+        "Catch standard exceptions by const reference.",
+        "They become global",
+        "Their constructors run again",
+        "try { work(); }\ncatch (...) { }"
+      ],
+      "answer_index": 0,
+      "explanation": "Throw an exception when a function cannot fulfill its contract and the caller may recover at a higher level. Catch exceptions by const reference, handle only cases you understand, and preserve useful error details. That reasoning supports the answer: Catch standard exceptions by const reference."
+    },
+    {
+      "id": "cpp-exceptions-authored-05",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Exceptions concept check 5",
+      "code": null,
+      "prompt": "A classmate is checking their understanding of Exceptions. Which advice is correct?",
+      "choices": [
+        "By raw pointer",
+        "Do not silence unknown failures.",
+        "By mutable global value",
+        "They become global"
+      ],
+      "answer_index": 1,
+      "explanation": "Throw an exception when a function cannot fulfill its contract and the caller may recover at a higher level. Catch exceptions by const reference, handle only cases you understand, and preserve useful error details. That reasoning supports the answer: Do not silence unknown failures."
+    },
+    {
+      "id": "cpp-exceptions-authored-06",
+      "concept": "exceptions",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Exceptions concept check 6",
+      "code": null,
+      "prompt": "What is the main idea behind Exceptions?",
+      "choices": [
+        "Their constructors run again",
+        "try { work(); }\ncatch (...) { }",
+        "Report failures across function calls without losing cleanup.",
+        "By raw pointer"
+      ],
+      "answer_index": 2,
+      "explanation": "Throw an exception when a function cannot fulfill its contract and the caller may recover at a higher level. Catch exceptions by const reference, handle only cases you understand, and preserve useful error details. That reasoning supports the answer: Report failures across function calls without losing cleanup."
+    }
+  ]
+}

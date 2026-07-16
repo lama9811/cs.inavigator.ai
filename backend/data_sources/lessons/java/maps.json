@@ -1,0 +1,84 @@
+{
+  "_note": "ORIGINAL content. Topic coverage follows David Eck's Introduction to Programming Using Java. No prose, examples, or exercises were copied; the source guides curriculum order only.",
+  "title": "Maps",
+  "summary": "Connect unique keys to values with Java's Map collection.",
+  "minutes": 10,
+  "error_classes": [
+    "runtime",
+    "syntax",
+    "wrong_answer"
+  ],
+  "refresher": "A `Map<K, V>` stores one value for each unique key. A `HashMap` is a common implementation. Use `put` to add or replace, `get` to retrieve, `containsKey` to check presence, and `getOrDefault` when absence has a useful fallback.",
+  "refresher_code": "Map<String, Integer> scores = new HashMap<>();\nscores.put(\"quiz\", 8);\nSystem.out.println(scores.get(\"quiz\"));",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "An ArrayList finds values by numbered position. A map finds them by a key that has meaning. Course codes can lead to grades, usernames can lead to profiles, and product IDs can lead to prices."
+    },
+    {
+      "kind": "code",
+      "caption": "Declare variables with the Map interface and construct a HashMap. Each `put` connects one key to one value.",
+      "code": "Map<String, Integer> grades = new HashMap<>();\ngrades.put(\"CS101\", 90);\ngrades.put(\"MATH120\", 84);\ngrades.put(\"CS101\", 95);\nSystem.out.println(grades.size());\nSystem.out.println(grades.get(\"CS101\"));",
+      "output": "2\n95"
+    },
+    {
+      "kind": "text",
+      "body": "Keys are unique. Putting `CS101` again replaces its earlier value instead of creating a duplicate entry. Different keys may still store equal values."
+    },
+    {
+      "kind": "compare",
+      "caption": "`get` returns null for a missing key, which can cause trouble when Java unboxes it to int. `getOrDefault` makes the absent case explicit.",
+      "wrong_label": "May fail",
+      "wrong": "int score = grades.get(\"ENG101\");",
+      "right_label": "Fallback",
+      "right": "int score = grades.getOrDefault(\"ENG101\", 0);"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Null does not prove a key is absent",
+      "body": "A map is allowed to store null as a value. If that distinction matters, use `containsKey` to ask whether the key exists rather than guessing from `get`."
+    },
+    {
+      "kind": "check",
+      "prompt": "What prints after these statements?",
+      "code": "Map<String, Integer> m = new HashMap<>();\nm.put(\"a\", 1);\nm.put(\"a\", 4);\nSystem.out.println(m.size() + \" \" + m.get(\"a\"));",
+      "choices": [
+        "1 4",
+        "2 1",
+        "2 4",
+        "1 1"
+      ],
+      "answer_index": 0,
+      "why": "Both calls use the same key, so the second call replaces its value. One mapping remains, and its current value is 4."
+    },
+    {
+      "kind": "text",
+      "body": "Use `entrySet()` when a loop needs keys and values together. Each entry provides `getKey()` and `getValue()` without a second lookup."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which view gives both keys and values for a loop?",
+      "code": "Map<String, Integer> grades = new HashMap<>();",
+      "choices": [
+        "grades.entrySet()",
+        "grades.keySet()",
+        "grades.values()",
+        "grades.size()"
+      ],
+      "answer_index": 0,
+      "why": "`entrySet()` contains Map.Entry objects, and every entry exposes both sides of the mapping. The other views provide only keys or only values."
+    },
+    {
+      "kind": "list",
+      "title": "Map checklist",
+      "items": [
+        "Program to `Map` and construct a suitable implementation.",
+        "Choose immutable, stable keys when possible.",
+        "Remember that `put` replaces an equal key.",
+        "Use `getOrDefault` for a meaningful fallback.",
+        "Use `entrySet` when processing keys and values together."
+      ]
+    }
+  ]
+}
