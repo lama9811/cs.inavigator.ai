@@ -762,3 +762,82 @@ def test_reminder_skips_missing_or_junk_deadline():
 def test_reminder_tolerates_non_dict_rows():
     """Junk in the list is ignored, not fatal."""
     assert ss.select_due_scholarship_reminders([None, "x", _saved(1, 3)], set())[0]["item"]["id"] == 1
+
+
+# --- dashboard rollup (build_saved_summary) ----------------------------------
+
+def test_summary_empty_is_all_zeros():
+    s = ss.build_saved_summary([])
+    assert s["total"] == 0
+    assert s["active"] == 0
+    assert s["next_deadlines"] == []
+    assert s["checklist"] == {"done": 0, "total": 0}
+    assert set(s["by_status"].values()) == {0}
+
+
+def test_summary_counts_totals_and_active():
+    items = [
+        _saved(1, 5, status="interested"),
+        _saved(2, 5, status="applying"),
+        _saved(3, 5, status="submitted"),
+        _saved(4, 5, status="awarded"),
+        _saved(5, 5, status="rejected"),
+    ]
+    s = ss.build_saved_summary(items)
+    assert s["total"] == 5
+    assert s["active"] == 3  # interested + applying + submitted
+    assert s["by_status"]["awarded"] == 1
+    assert s["by_status"]["rejected"] == 1
+
+
+def test_summary_by_kind():
+    items = [_saved(1, 5, kind="scholarship"), _saved(2, 5, kind="internship"),
+             _saved(3, 5, kind="internship")]
+    s = ss.build_saved_summary(items)
+    assert s["by_kind"] == {"scholarship": 1, "internship": 2}
+
+
+def test_summary_urgency_buckets_only_count_active():
+    items = [
+        _saved(1, 3, status="interested"),   # urgent + expiring_soon
+        _saved(2, 20, status="applying"),    # expiring_soon only
+        _saved(3, 3, status="awarded"),      # done -> ignored
+    ]
+    s = ss.build_saved_summary(items)
+    assert s["urgent"] == 1
+    assert s["expiring_soon"] == 2
+
+
+def test_summary_flags_expired_active_items():
+    """An active item whose deadline passed is surfaced, not silently dropped."""
+    items = [_saved(1, -5, status="applying"), _saved(2, -5, status="awarded")]
+    s = ss.build_saved_summary(items)
+    assert s["expired_active"] == 1  # only the active one
+
+
+def test_summary_sums_checklist_across_active_items():
+    a = _saved(1, 5, status="applying")
+    a["checklist"] = [{"label": "x", "done": True}, {"label": "y", "done": False}]
+    b = _saved(2, 5, status="interested")
+    b["checklist"] = [{"label": "z", "done": True}]
+    done_award = _saved(3, 5, status="awarded")
+    done_award["checklist"] = [{"label": "ignored", "done": True}]
+    s = ss.build_saved_summary([a, b, done_award])
+    assert s["checklist"] == {"done": 2, "total": 3}  # awarded item excluded
+
+
+def test_summary_next_deadlines_soonest_first_capped_at_3():
+    items = [_saved(i, offset, status="interested")
+             for i, offset in enumerate([10, 2, 25, 5, 1], start=1)]
+    s = ss.build_saved_summary(items)
+    days = [d["days_remaining"] for d in s["next_deadlines"]]
+    assert days == [1, 2, 5]  # sorted, top 3
+
+
+def test_summary_tolerates_missing_deadline_and_junk():
+    items = [{"id": 1, "status": "applying"},              # no deadline
+             {"id": 2, "status": "applying", "deadline": "nope"},
+             None, "x"]
+    s = ss.build_saved_summary(items)
+    assert s["total"] == 2  # the two dicts with valid status
+    assert s["next_deadlines"] == []

@@ -899,6 +899,94 @@ def checklist_progress(checklist: Optional[list]) -> dict:
     return {"done": done, "total": total}
 
 
+# --- dashboard rollup --------------------------------------------------------
+#
+# The plan's §2 ask: "Progress per application, and a dashboard rollup across all
+# of them." One glance should answer: how many am I tracking, how many are due
+# soon, and what's the very next deadline. Pure so it's testable without a DB;
+# it takes the same serialized dicts _saved_to_dict produces.
+
+# The "in progress" pipeline — statuses where the student still has work to do.
+_ACTIVE_STATUSES = ("interested", "applying", "submitted")
+
+
+def build_saved_summary(saved_items: list) -> dict:
+    """Roll up a student's saved opportunities for the dashboard.
+
+    Returns:
+        {
+          "total": int,                       # everything saved
+          "active": int,                      # not yet decided (interested/applying/submitted)
+          "by_status": {status: count, ...},  # all six statuses, zero-filled
+          "by_kind": {"scholarship": int, "internship": int},
+          "urgent": int,                       # active items due within 7 days
+          "expiring_soon": int,                # active items due within 30 days
+          "expired_active": int,               # active items whose deadline already passed
+          "checklist": {"done": int, "total": int},  # summed across active items
+          "next_deadlines": [ {id, name, kind, deadline, days_remaining}, ... up to 3 ],
+        }
+    Deliberately ignores awarded / rejected / expired items for the "what needs
+    attention" numbers — those are done. by_status still counts them so the
+    student sees the full picture.
+    """
+    by_status = {s: 0 for s in VALID_STATUSES}
+    by_kind = {k: 0 for k in VALID_KINDS}
+    urgent = expiring_soon = expired_active = 0
+    done_sum = total_sum = 0
+    upcoming: list[dict] = []
+
+    for item in saved_items:
+        if not isinstance(item, dict):
+            continue
+        status = str(item.get("status") or "interested").strip().lower()
+        if status in by_status:
+            by_status[status] += 1
+        kind = str(item.get("kind") or "scholarship").strip().lower()
+        if kind in by_kind:
+            by_kind[kind] += 1
+
+        if status not in _ACTIVE_STATUSES:
+            continue  # awarded/rejected/expired don't count toward "needs attention"
+
+        prog = checklist_progress(item.get("checklist"))
+        done_sum += prog["done"]
+        total_sum += prog["total"]
+
+        verdict = check_deadline(str(item.get("deadline") or ""))
+        days = verdict.get("days_remaining")
+        if not isinstance(days, int):
+            continue
+        if days < 0:
+            expired_active += 1
+            continue
+        if days <= 7:
+            urgent += 1
+        if days <= 30:
+            expiring_soon += 1
+        upcoming.append({
+            "id": item.get("id"),
+            "name": item.get("name"),
+            "kind": kind,
+            "deadline": item.get("deadline"),
+            "days_remaining": days,
+        })
+
+    upcoming.sort(key=lambda i: i["days_remaining"])
+    active = sum(by_status[s] for s in _ACTIVE_STATUSES)
+
+    return {
+        "total": sum(by_status.values()),
+        "active": active,
+        "by_status": by_status,
+        "by_kind": by_kind,
+        "urgent": urgent,
+        "expiring_soon": expiring_soon,
+        "expired_active": expired_active,
+        "checklist": {"done": done_sum, "total": total_sum},
+        "next_deadlines": upcoming[:3],
+    }
+
+
 # --- deadline nudges ---------------------------------------------------------
 #
 # The plan's §2 ask: "deadline-aware nudges — reuse the existing reminder engine
