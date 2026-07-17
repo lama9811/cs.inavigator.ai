@@ -186,30 +186,6 @@ body.coding-dark .navbar .nav-pill.active svg {
   color: #fff !important;
 }
 
-body.coding-dark .navbar .nav-dropdown-menu {
-  background: #101d33 !important;
-  border-color: #32466a !important;
-  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.4) !important;
-}
-
-body.coding-dark .navbar .nav-dropdown-item {
-  color: #d7e2f2 !important;
-}
-
-body.coding-dark .navbar .nav-dropdown-item:hover {
-  background: #1e2d49 !important;
-  color: #fff !important;
-}
-
-body.coding-dark .navbar .nav-dropdown-item.active {
-  background: #2f6fd6 !important;
-  color: #fff !important;
-}
-
-body.coding-dark .navbar .nav-dropdown-item svg {
-  color: inherit !important;
-}
-
 /* Admin button stays readable (it already uses white text in its own dark
    styles; just make sure the resting border reads on the dark shell). */
 body.coding-dark .navbar .admin-nav-btn {
