@@ -6,6 +6,7 @@ import { FaRegBookmark } from "@react-icons/all-files/fa/FaRegBookmark";
 import { FaBookmark } from "@react-icons/all-files/fa/FaBookmark";
 import { FaTrashAlt } from "@react-icons/all-files/fa/FaTrashAlt";
 import { FaRegListAlt } from "@react-icons/all-files/fa/FaRegListAlt";
+import { FaEyeSlash } from "@react-icons/all-files/fa/FaEyeSlash";
 import { getApiBase } from "../../lib/apiBase";
 import ScholarshipDetail from "./ScholarshipDetail";
 import "./ScholarshipsPage.css";
@@ -101,7 +102,7 @@ function findSaved(saved, item) {
   );
 }
 
-function OpportunityCard({ item, saved, onSave, onRemove, saving }) {
+function OpportunityCard({ item, saved, onSave, onRemove, onDismiss, saving }) {
   const days = daysLabel(item);
   const hasLink = item.url && item.url !== "(not listed)";
   const isInternship = item.kind === "internship";
@@ -175,6 +176,18 @@ function OpportunityCard({ item, saved, onSave, onRemove, saving }) {
             disabled={saving}
           >
             <FaRegBookmark size={12} /> Save
+          </button>
+        )}
+        {/* Not for saved items — hiding one you're tracking makes no sense. */}
+        {!saved && (
+          <button
+            type="button"
+            className="sch-dismiss"
+            onClick={() => onDismiss(item)}
+            disabled={saving}
+            title="Hide this — you won't see it in future searches"
+          >
+            <FaEyeSlash size={12} /> Hide
           </button>
         )}
       </div>
@@ -424,6 +437,36 @@ export default function ScholarshipsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
+  // Hide an opportunity from future searches, and drop it from the current
+  // results right away. The backend filters it out of every future search.
+  const dismissItem = useCallback(async (item) => {
+    const match = (i) =>
+      (i.name || "") === (item.name || "") && (i.url || "") === (item.url || "");
+    // Optimistically remove it from the visible results.
+    setResult((prev) => {
+      if (!prev?.groups) return prev;
+      const groups = {};
+      let removed = 0;
+      for (const [k, list] of Object.entries(prev.groups)) {
+        groups[k] = list.filter((i) => (match(i) ? (removed++, false) : true));
+      }
+      return { ...prev, groups, total: Math.max(0, (prev.total || 0) - removed) };
+    });
+    try {
+      const res = await fetch(`${API_BASE}/api/scholarships/dismiss`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: JSON.stringify({ name: item.name, url: item.url }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      // A failed dismiss isn't worth interrupting the student; it just means the
+      // item may reappear on the next search. Log for debugging.
+      console.error("Failed to dismiss opportunity");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
   // Merge a server-updated row (from status change or checklist edit) into the
   // saved list, so the card's progress bar and the detail view stay in sync.
   const mergeSaved = useCallback((row) => {
@@ -604,6 +647,7 @@ export default function ScholarshipsPage() {
                                 saved={findSaved(saved, item)}
                                 onSave={saveItem}
                                 onRemove={removeItem}
+                                onDismiss={dismissItem}
                                 saving={inFlight(item)}
                               />
                             ))}

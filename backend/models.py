@@ -573,3 +573,26 @@ class SavedScholarship(Base):
     )
 
     user = relationship("User", backref="saved_scholarships")
+
+
+class DismissedScholarship(Base):
+    """An opportunity a student has permanently hidden from their search results.
+
+    Lightweight on purpose: dismissing something you never saved shouldn't create
+    a full SavedScholarship row (with its checklist machinery). We only store the
+    dedupe key (a hash of name+url, the same client_key SavedScholarship uses) so
+    the same award is filtered out of future searches. Keeping the name is purely
+    so an admin/debugging view is readable."""
+    __tablename__ = "dismissed_scholarships"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    client_key = Column(String(80), nullable=False, index=True)
+    name = Column(String(300), nullable=True)   # for readability only
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "client_key", name="uq_dismissed_scholarship_user_key"),
+    )
+
+    user = relationship("User", backref="dismissed_scholarships")
