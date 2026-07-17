@@ -457,7 +457,12 @@ def _install_fake_genai(monkeypatch):
     class _Client:
         models = _Models()
 
-    fake_types = _t.SimpleNamespace(GenerateContentConfig=lambda **_kw: None)
+    fake_types = _t.SimpleNamespace(
+        GenerateContentConfig=lambda **_kw: None,
+        # generate_checklist now sets thinking_config; the stub must expose the
+        # constructor or the call raises AttributeError inside the try.
+        ThinkingConfig=lambda **_kw: None,
+    )
     fake_genai = _t.SimpleNamespace(
         Client=lambda **_kw: _Client(),
         types=fake_types,               # so `from google.genai import types` works
@@ -694,6 +699,64 @@ def test_live_available_via_grounding_without_any_key(monkeypatch):
     assert result["configured"] is True            # grounding counts as configured
     names = [i["name"] for b in result["groups"].values() for i in b]
     assert "Free Grounded" in names
+
+
+# --- grounding redirect unwrap -----------------------------------------------
+# Grounding returns citation links behind a Vertex redirect host; we resolve them
+# to the real destination so saved items don't link to an opaque Google redirect.
+
+REDIRECT = ("https://vertexaisearch.cloud.google.com/grounding-api-redirect/ABC123")
+
+
+def test_is_grounding_redirect_detects_the_wrapper():
+    assert ss._is_grounding_redirect(REDIRECT) is True
+    assert ss._is_grounding_redirect("https://tmcf.org/scholarships") is False
+    assert ss._is_grounding_redirect(None) is False
+    assert ss._is_grounding_redirect("") is False
+
+
+def test_unwrap_replaces_redirect_with_resolved_url(monkeypatch):
+    monkeypatch.setattr(ss, "_resolve_redirect", lambda u, **_kw: "https://real.org/apply")
+    items = [{"name": "A", "url": REDIRECT, "source_url": REDIRECT}]
+    out = ss._unwrap_redirect_urls(items)
+    assert out[0]["url"] == "https://real.org/apply"
+    assert out[0]["source_url"] == "https://real.org/apply"
+
+
+def test_unwrap_leaves_normal_urls_untouched(monkeypatch):
+    # If nothing is a redirect, _resolve_redirect must never be called.
+    called = {"n": 0}
+    def _boom(*_a, **_kw):
+        called["n"] += 1
+        return "x"
+    monkeypatch.setattr(ss, "_resolve_redirect", _boom)
+    items = [{"name": "A", "url": "https://tmcf.org/apply"}]
+    out = ss._unwrap_redirect_urls(items)
+    assert out[0]["url"] == "https://tmcf.org/apply"
+    assert called["n"] == 0
+
+
+def test_unwrap_resolves_each_unique_redirect_once(monkeypatch):
+    calls = []
+    monkeypatch.setattr(ss, "_resolve_redirect",
+                        lambda u, **_kw: (calls.append(u), "https://real.org")[1])
+    items = [{"url": REDIRECT}, {"url": REDIRECT}, {"url": REDIRECT}]
+    ss._unwrap_redirect_urls(items)
+    assert len(calls) == 1                         # deduped: one network call, not three
+
+
+def test_resolve_redirect_returns_original_on_failure(monkeypatch):
+    """A dead/slow redirect keeps the original URL rather than raising."""
+    import httpx
+    def _raise(*_a, **_kw):
+        raise httpx.ConnectError("boom")
+    monkeypatch.setattr(httpx, "head", _raise)
+    assert ss._resolve_redirect(REDIRECT) == REDIRECT
+
+
+def test_unwrap_tolerates_junk_items():
+    assert ss._unwrap_redirect_urls([]) == []
+    assert ss._unwrap_redirect_urls([None, "x", {"no_url": 1}]) == [None, "x", {"no_url": 1}]
 
 
 # --- expanded curated database -----------------------------------------------
