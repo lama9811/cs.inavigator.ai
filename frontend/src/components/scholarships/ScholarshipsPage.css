@@ -295,6 +295,7 @@
 /* Filter / sort toolbar on My Scholarships */
 .sch-toolbar {
   display: flex; flex-wrap: wrap; gap: 14px;
+  justify-content: center;   /* centre the filters so they don't sit one-sided */
   margin-bottom: 20px;
   padding: 12px 14px;
   border: 1px solid rgba(0,0,0,0.09);
