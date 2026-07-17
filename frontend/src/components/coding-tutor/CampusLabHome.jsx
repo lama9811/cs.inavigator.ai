@@ -51,6 +51,82 @@ function pickFocusTopics(topicPacks) {
   return { hasProgress: false, first: packs[0], second: packs[1] || null };
 }
 
+const DIFFICULTY_RANK = { easy: 0, medium: 1, hard: 2 };
+
+function statusOf(progress) {
+  if (progress?.status === "solved") return "solved";
+  if (progress?.status === "in_progress" || (progress?.attempt_count || 0) > 0) return "in_progress";
+  return "not_started";
+}
+
+function problemRank(question) {
+  return DIFFICULTY_RANK[String(question?.difficulty || "easy").toLowerCase()] ?? 1;
+}
+
+function titleCase(value = "") {
+  return value ? value[0].toUpperCase() + value.slice(1).replace("_", " ") : "";
+}
+
+function firstUnsolved(questions, progressByQuestion, predicate = () => true) {
+  return (questions || [])
+    .filter(predicate)
+    .filter(q => statusOf(progressByQuestion?.[q.id]) !== "solved")
+    .sort((a, b) => problemRank(a) - problemRank(b) || (a.title || "").localeCompare(b.title || ""))[0] || null;
+}
+
+function unsolvedByTopic(questions, progressByQuestion, topic) {
+  const wanted = String(topic || "").toLowerCase();
+  if (!wanted) return [];
+  return (questions || [])
+    .filter(q => String(q.topic || "").toLowerCase() === wanted)
+    .filter(q => statusOf(progressByQuestion?.[q.id]) !== "solved")
+    .sort((a, b) => problemRank(a) - problemRank(b) || (a.title || "").localeCompare(b.title || ""));
+}
+
+function buildTodayPath({ questions, progressByQuestion, resumeItem, nextUpQuestion, mastery, focus }) {
+  const path = [];
+  const used = new Set();
+  const add = (kind, label, question, fallback) => {
+    if (question?.id && !used.has(question.id)) {
+      used.add(question.id);
+      path.push({ kind, label, question });
+      return;
+    }
+    if (fallback) path.push({ kind, label, fallback });
+  };
+
+  add(
+    "start",
+    resumeItem?.question ? "Finish" : "Start",
+    resumeItem?.question || nextUpQuestion || firstUnsolved(questions, progressByQuestion),
+    "Open the Practice Library and choose one easy problem."
+  );
+
+  const weakTopic = mastery?.weakest?.topic || focus?.next?.topic || focus?.first?.topic;
+  const weakPick = unsolvedByTopic(questions, progressByQuestion, weakTopic)
+    .find(q => !used.has(q.id));
+  add(
+    "practice",
+    weakTopic ? `Practice ${titleCase(weakTopic)}` : "Practice a weak spot",
+    weakPick,
+    "Pick one topic that feels shaky and solve one problem from it."
+  );
+
+  const stretchPick = firstUnsolved(
+    questions,
+    progressByQuestion,
+    q => !used.has(q.id) && problemRank(q) >= 1
+  );
+  add(
+    "stretch",
+    "Stretch",
+    stretchPick,
+    "After one pass, try a medium problem or review a failed test."
+  );
+
+  return path.slice(0, 3);
+}
+
 function CampusHero({
   progressSummary,
   resumeItem,
@@ -138,19 +214,68 @@ function focusCopy(focus) {
   return `Start with ${focus.first.topic} and build from there.`;
 }
 
-function CampusLearningQueue({ nextUpQuestion, focus, onSelect, onOpenSnippets, onOpenQuizBank }) {
+function CampusLearningQueue({
+  questions,
+  progressByQuestion,
+  resumeItem,
+  nextUpQuestion,
+  focus,
+  mastery,
+  onSelect,
+  onOpenSnippets,
+  onOpenQuizBank,
+  onOpenTopic,
+}) {
   // The hero owns "what to do right now" (resume / recommended). This section is a
   // guided path: next track, personal workspace, and a data-driven focus nudge.
+  const todayPath = buildTodayPath({
+    questions,
+    progressByQuestion,
+    resumeItem,
+    nextUpQuestion,
+    mastery,
+    focus,
+  });
+  const firstPathQuestion = todayPath.find(step => step.question)?.question || null;
+  const focusTopic = focus?.hasProgress ? focus.next?.topic : focus?.first?.topic;
+  const focusTitle = focus?.hasProgress
+    ? `Practice ${titleCase(focus.next.topic)}`
+    : focus
+      ? `Start with ${titleCase(focus.first.topic)}`
+      : "Choose a topic";
+  const focusBlurb = focusTopic
+    ? "Opens the library with this topic selected."
+    : "Pick one topic and solve the first problem you see.";
   return (
     <section className="campus-learning-queue" aria-label="Your coding path">
       <div className="campus-section-heading">
         <span className="coding-kicker">Your Coding Path</span>
-        <h3>Continue your last attempt or start the next recommended problem.</h3>
       </div>
       <div className="campus-queue-grid three-up">
         <article className="campus-queue-item featured">
-          <span>Recommended Next</span>
-          <strong>{nextUpQuestion?.title || "Review your solved set"}</strong>
+          <span>Today&apos;s Path</span>
+          <strong>{todayPath[0]?.question?.title || "Start with one problem"}</strong>
+          <ol className="campus-path-list">
+            {todayPath.map((step, index) => (
+              <li key={`${step.kind}-${index}`}>
+                <span>{index + 1}</span>
+                <div>
+                  <b>{step.label}</b>
+                  {step.question ? (
+                    <button
+                      type="button"
+                      className="campus-path-step-btn"
+                      onClick={() => onSelect(step.question)}
+                    >
+                      {step.question.title}
+                    </button>
+                  ) : (
+                    <em>{step.fallback}</em>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ol>
           <p>
             {nextUpQuestion?.topic
               ? `${nextUpQuestion.topic} — a good next track for you.`
@@ -159,9 +284,9 @@ function CampusLearningQueue({ nextUpQuestion, focus, onSelect, onOpenSnippets, 
           <button
             type="button"
             className="campus-primary-action"
-            onClick={() => (nextUpQuestion ? onSelect(nextUpQuestion) : onOpenQuizBank())}
+            onClick={() => (firstPathQuestion ? onSelect(firstPathQuestion) : onOpenQuizBank())}
           >
-            {nextUpQuestion ? "Start problem" : "Browse Practice Library"}
+            {firstPathQuestion ? "Start first step" : "Browse Practice Library"}
           </button>
         </article>
         <article className="campus-queue-item personal">
@@ -172,15 +297,11 @@ function CampusLearningQueue({ nextUpQuestion, focus, onSelect, onOpenSnippets, 
         </article>
         <article className="campus-queue-item focus">
           <span>Recommended Focus</span>
-          <strong>
-            {focus?.hasProgress
-              ? `Level up ${focus.next.topic}`
-              : focus
-                ? `Begin with ${focus.first.topic}`
-                : "Find your track"}
-          </strong>
-          <p>{focusCopy(focus)}</p>
-          <button type="button" onClick={onOpenQuizBank}>Browse Practice Library</button>
+          <strong>{focusTitle}</strong>
+          <p>{focusBlurb}</p>
+          <button type="button" onClick={() => (focusTopic ? onOpenTopic?.(focusTopic) : onOpenQuizBank())}>
+            {focusTopic ? `Open ${titleCase(focusTopic)}` : "Browse Practice Library"}
+          </button>
         </article>
       </div>
     </section>
@@ -309,8 +430,10 @@ export default function CampusLabHome({
   onOpenSnippets,
   onSelectQuestion,
   onOpenQuizBank,
+  onOpenTopic,
   onPrompt,
   onSaveQuiz,
+  mastery,
 }) {
   const queueQuestions = questions || [];
   const resumeItem = findResumeItem(queueQuestions, progressByQuestion);
@@ -345,11 +468,16 @@ export default function CampusLabHome({
       />
 
       <CampusLearningQueue
+        questions={queueQuestions}
+        progressByQuestion={progressByQuestion}
+        resumeItem={resumeItem}
         nextUpQuestion={nextUpQuestion}
         focus={focus}
+        mastery={mastery}
         onSelect={onSelectQuestion}
         onOpenSnippets={onOpenSnippets}
         onOpenQuizBank={onOpenQuizBank}
+        onOpenTopic={onOpenTopic}
       />
 
       <CampusTutorActions

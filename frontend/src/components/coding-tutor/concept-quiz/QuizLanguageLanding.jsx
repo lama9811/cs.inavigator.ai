@@ -10,9 +10,10 @@ import {
   FaRegCircle,
   FaTrophy,
 } from "react-icons/fa";
-import { fetchQuizCategories, fetchQuizQuestions } from "./conceptQuizApi";
+import { fetchQuizCategories, fetchQuizProgress, fetchQuizQuestions } from "./conceptQuizApi";
 import { LANGUAGE_VISUALS } from "./languageVisuals";
 import { readCategoryProgress } from "./conceptQuizProgress";
+import PlacementCheck from "./PlacementCheck";
 
 // Language landing page: a progress hero plus an ACCORDION of categories. Each
 // category row expands inline to reveal its question table (name | type | status).
@@ -22,6 +23,53 @@ import { readCategoryProgress } from "./conceptQuizProgress";
 // A category counts toward the hero's "complete" tally once its best score
 // passes this bar.
 const PASS_THRESHOLD = 0.7;
+
+const TOPIC_ALIASES = {
+  arrays: "lists",
+  array: "lists",
+  "hash maps": "dictionaries",
+  "hash map": "dictionaries",
+  maps: "dictionaries",
+  map: "dictionaries",
+};
+
+function categoryForMastery(topic, categories) {
+  const normalized = String(topic || "").toLowerCase().trim();
+  // An empty topic must match nothing. Otherwise `category.id.includes("")` is
+  // always true and we'd spuriously return the first category when mastery is
+  // absent, leaving adaptiveCategory set with no real signal.
+  if (!normalized) return undefined;
+  const alias = TOPIC_ALIASES[normalized] || normalized.replaceAll(" ", "-");
+  return categories.find((category) =>
+    category.id === alias ||
+    category.id.includes(alias) ||
+    alias.includes(category.id)
+  );
+}
+
+function mergeProgress(local, remote) {
+  if (!local) return remote || null;
+  if (!remote) return local;
+  const localBest = local.best;
+  const remoteBest = remote.best;
+  const best = !localBest || (remoteBest?.score ?? -1) > (localBest.score ?? -1)
+    ? remoteBest
+    : localBest;
+  const localAt = Number(local.last?.at || 0);
+  const remoteAt = Date.parse(remote.last?.at || "") || 0;
+  const localIsNewer = localAt > remoteAt;
+  return {
+    ...remote,
+    best,
+    last: localIsNewer ? local.last : remote.last,
+    // Per-question status follows the same recency call as `last`, so a stale
+    // side never clobbers the newer attempt's answers. Fall back to whichever
+    // map exists when one is missing.
+    questions: localIsNewer
+      ? { ...(remote.questions || {}), ...(local.questions || {}) }
+      : { ...(local.questions || {}), ...(remote.questions || {}) },
+  };
+}
 
 const TRACKS = [
   {
@@ -179,6 +227,7 @@ export default function QuizLanguageLanding({
   apiBase,
   language,
   languageLabel,
+  mastery,
   onOpenQuestion,
 }) {
   const [categories, setCategories] = useState([]);
@@ -191,6 +240,8 @@ export default function QuizLanguageLanding({
   const [questionsByCat, setQuestionsByCat] = useState({});
   const [loadingCats, setLoadingCats] = useState(true);
   const [error, setError] = useState("");
+  const [serverProgress, setServerProgress] = useState({ categories: [], mistakes: [] });
+  const [placementOpen, setPlacementOpen] = useState(false);
 
   // Load the available shared and language-specific categories.
   useEffect(() => {
@@ -219,17 +270,38 @@ export default function QuizLanguageLanding({
     };
   }, [apiBase, language]);
 
+  useEffect(() => {
+    let alive = true;
+    fetchQuizProgress(apiBase, language)
+      .then((data) => {
+        if (alive) setServerProgress(data || { categories: [], mistakes: [] });
+      })
+      .catch(() => {
+        // Local progress remains available when sync is temporarily offline.
+        if (alive) setServerProgress({ categories: [], mistakes: [] });
+      });
+    return () => {
+      alive = false;
+    };
+  }, [apiBase, language]);
+
   // Saved progress per category, read fresh from the local store. This component
   // unmounts when the runner opens and re-mounts on return, so reading on
   // category load reflects the latest Submit.
   const progressByCat = useMemo(() => {
     const map = {};
+    const remote = Object.fromEntries(
+      (serverProgress.categories || []).map((item) => [item.category, item])
+    );
     categories.forEach((c) => {
-      const p = readCategoryProgress(language, c.id);
-      if (p) map[c.id] = p;
+      const progress = mergeProgress(
+        readCategoryProgress(language, c.id),
+        remote[c.id]
+      );
+      if (progress) map[c.id] = progress;
     });
     return map;
-  }, [categories, language]);
+  }, [categories, language, serverProgress]);
 
   const totalQuestions = useMemo(
     () => categories.reduce((sum, c) => sum + (c.count || 0), 0),
@@ -264,8 +336,33 @@ export default function QuizLanguageLanding({
     ? Math.round((doneCategories / readyCategories.length) * 100)
     : 0;
 
+  const mistakes = (serverProgress.mistakes || []).filter(
+    (item) => item.language === language
+  );
+  const adaptiveCategory = categoryForMastery(mastery?.weakest?.topic, readyCategories);
+  const nextCategory = adaptiveCategory || readyCategories.find(
+    (category) => (progressByCat[category.id]?.best?.score ?? 0) < PASS_THRESHOLD
+  );
+  const recommendationReason = adaptiveCategory
+    ? mastery.weakest.reason
+    : nextCategory
+      ? `This is the next ${nextCategory.track} topic you have not passed yet.`
+      : "You have completed every available category in this language.";
+
   const cacheQuestions = (categoryId, list) =>
     setQuestionsByCat((prev) => ({ ...prev, [categoryId]: list }));
+
+  const showRecommendation = (recommendation) => {
+    setPlacementOpen(false);
+    setOpenTracks({ beginner: false, intermediate: false, [recommendation.track]: true });
+    setOpenId(recommendation.category);
+    window.setTimeout(() => {
+      document.getElementById(`cq-category-${recommendation.category}`)?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 50);
+  };
 
   return (
     <div className="cq-landing">
@@ -304,6 +401,65 @@ export default function QuizLanguageLanding({
           </span>
         </div>
       </section>
+
+      <section className="cq-guidance-card">
+        <div>
+          <span className="cq-hero-eyebrow">Recommended next</span>
+          <h3>{nextCategory ? nextCategory.label : "All caught up"}</h3>
+          <p>{recommendationReason}</p>
+        </div>
+        <div className="cq-guidance-actions">
+          <button type="button" className="cq-btn cq-btn-ghost" onClick={() => setPlacementOpen(true)}>
+            Find my starting point
+          </button>
+          {nextCategory ? (
+            <button
+              type="button"
+              className="cq-btn cq-btn-primary"
+              onClick={() => showRecommendation({ track: nextCategory.track, category: nextCategory.id })}
+            >
+              Open this topic
+            </button>
+          ) : null}
+        </div>
+      </section>
+
+      {mistakes.length ? (
+        <section className="cq-mistake-review">
+          <div className="cq-mistake-review-head">
+            <div>
+              <span className="cq-hero-eyebrow">Review and retry</span>
+              <h3>Questions to look at again</h3>
+            </div>
+            <span>{mistakes.length} unresolved</span>
+          </div>
+          <div className="cq-mistake-grid">
+            {mistakes.slice(0, 5).map((mistake) => (
+              <article key={`${mistake.category}:${mistake.question_id}`}>
+                <small>{mistake.category.replaceAll("-", " ")}</small>
+                <h4>{mistake.title}</h4>
+                <p>{mistake.explanation}</p>
+                <button
+                  type="button"
+                  className="cq-question-link"
+                  onClick={() => onOpenQuestion(mistake.category, mistake.question_id)}
+                >
+                  Try this question again
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {placementOpen ? (
+        <PlacementCheck
+          apiBase={apiBase}
+          language={language}
+          onClose={() => setPlacementOpen(false)}
+          onUseRecommendation={showRecommendation}
+        />
+      ) : null}
 
       {error ? <p className="cq-error">{error}</p> : null}
 
@@ -369,6 +525,7 @@ export default function QuizLanguageLanding({
                         return (
                           <li
                             key={cat.id}
+                            id={`cq-category-${cat.id}`}
                             className={
                               "cq-accordion-item" +
                               (open ? " open" : "") +

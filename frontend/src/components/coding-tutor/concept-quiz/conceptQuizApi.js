@@ -17,6 +17,65 @@ async function getJson(url) {
   return res.json();
 }
 
+async function getAuthenticatedJson(url) {
+  const token = localStorage.getItem("token");
+  const res = await fetch(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) {
+    let detail = `Request failed (${res.status})`;
+    try {
+      const body = await res.json();
+      if (body?.detail) detail = body.detail;
+    } catch {
+      // keep generic
+    }
+    throw new Error(detail);
+  }
+  return res.json();
+}
+
+async function postAuthenticatedJson(url, body) {
+  const token = localStorage.getItem("token");
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    let detail = `Request failed (${res.status})`;
+    try {
+      const value = await res.json();
+      if (value?.detail) detail = value.detail;
+    } catch {
+      // keep generic
+    }
+    throw new Error(detail);
+  }
+  return res.json();
+}
+
+export function fetchQuizProgress(apiBase, language) {
+  const query = language ? `?language=${encodeURIComponent(language)}` : "";
+  return getAuthenticatedJson(`${apiBase}/api/coding/concept-quiz/progress${query}`);
+}
+
+export function fetchPlacementQuiz(apiBase, language) {
+  return getAuthenticatedJson(
+    `${apiBase}/api/coding/concept-quiz/placement/${encodeURIComponent(language)}`
+  );
+}
+
+export function gradePlacementQuiz(apiBase, language, answers) {
+  return postAuthenticatedJson(`${apiBase}/api/coding/concept-quiz/placement`, {
+    language,
+    answers,
+  });
+}
+
 // The 4 language cards shown when the student toggles to Quiz mode.
 export function fetchQuizLanguages(apiBase) {
   return getJson(`${apiBase}/api/coding/concept-quiz/languages`);

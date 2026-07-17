@@ -10,6 +10,18 @@ function titleCase(value = "") {
 // Caps the number of mounted cards so the grid stays fast as the bank grows.
 const PAGE_SIZE = 20;
 
+const PRACTICE_TOPIC_ORDER = [
+  "arrays", "strings", "stacks", "queues", "trees", "graphs", "recursion",
+  "hash maps", "sets", "two pointers", "sliding window", "binary search",
+  "dynamic programming", "prefix sums", "intervals", "heaps", "tries", "matrices",
+  "math", "disjoint sets", "conditionals",
+];
+const topicOrderIndex = (topic) => {
+  const index = PRACTICE_TOPIC_ORDER.indexOf(String(topic || "").toLowerCase());
+  return index === -1 ? PRACTICE_TOPIC_ORDER.length : index;
+};
+const sortTopics = (a, b) => topicOrderIndex(a) - topicOrderIndex(b) || String(a).localeCompare(String(b));
+
 const DIFFICULTY_OPTIONS = [
   { value: "easy", label: "Easy" },
   { value: "medium", label: "Medium" },
@@ -164,7 +176,7 @@ export default function QuizBank({
   // Topic options come from the whole set so the list is stable regardless of
   // the other active filters.
   const topicOptions = useMemo(
-    () => [...new Set(sourceQuestions.map(question => (question.topic || "").toLowerCase()).filter(Boolean))].sort(),
+    () => [...new Set(sourceQuestions.map(question => (question.topic || "").toLowerCase()).filter(Boolean))].sort(sortTopics),
     [sourceQuestions],
   );
 
@@ -272,7 +284,7 @@ export default function QuizBank({
       if (!groups.has(topic)) groups.set(topic, []);
       groups.get(topic).push(question);
     }
-    return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    return [...groups.entries()].sort((a, b) => sortTopics(a[0], b[0]));
   }, [groupByTopic, filteredQuestions]);
 
   // Paginate by WHOLE groups (never split a topic): include complete groups until
