@@ -240,17 +240,68 @@ def _is_grounding_redirect(url: str) -> bool:
     return isinstance(url, str) and _GROUNDING_REDIRECT_HOST in url and "grounding-api-redirect" in url
 
 
+def _host_is_public(host: str) -> bool:
+    """True only if EVERY IP `host` resolves to is a public, routable address.
+
+    Blocks SSRF: the redirect target is attacker-influenceable (it comes from a
+    web page the grounding model cited), so before/while fetching we must refuse
+    private, loopback, link-local, and cloud-metadata ranges — on Cloud Run,
+    169.254.169.254 / metadata.google.internal serves the service account token.
+    Fail closed: an unresolvable or suspicious host returns False."""
+    import socket
+    import ipaddress
+
+    if not host:
+        return False
+    # Reject the metadata hostname outright, before any DNS games.
+    if host.lower() in ("metadata.google.internal", "metadata"):
+        return False
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except (socket.gaierror, UnicodeError, OSError):
+        return False
+    for info in infos:
+        ip_str = info[4][0]
+        try:
+            ip = ipaddress.ip_address(ip_str)
+        except ValueError:
+            return False
+        if (ip.is_private or ip.is_loopback or ip.is_link_local
+                or ip.is_reserved or ip.is_multicast or ip.is_unspecified):
+            return False
+    return True
+
+
 def _resolve_redirect(url: str, timeout: float = 6.0) -> str:
     """Follow a grounding redirect to its real destination; return original on failure.
 
-    A HEAD with redirects followed is enough to learn the final URL without pulling
-    the page body. Never raises — a dead or slow redirect just keeps the original,
-    which still works (it simply points at the Google redirect)."""
+    SSRF-hardened: follows redirects MANUALLY so every hop's host is validated as
+    public before we connect to it (an attacker-influenced redirect could point at
+    an internal / cloud-metadata address). `trust_env=False` ignores proxy env
+    vars. Never raises — a dead, slow, or suspicious redirect keeps the original
+    URL, which still works (it just points at the Google redirect)."""
     try:
         import httpx
-        resp = httpx.head(url, follow_redirects=True, timeout=timeout)
-        final = str(resp.url)
-        return final if final else url
+        from urllib.parse import urlparse
+
+        current = url
+        with httpx.Client(
+            follow_redirects=False, trust_env=False, timeout=timeout
+        ) as client:
+            for _ in range(5):  # cap hops
+                parsed = urlparse(current)
+                if parsed.scheme not in ("http", "https"):
+                    return url
+                if not _host_is_public(parsed.hostname or ""):
+                    return url  # refuse to fetch an internal/suspicious host
+                resp = client.head(current)
+                location = resp.headers.get("location")
+                if resp.is_redirect and location:
+                    # Resolve relative redirects against the current URL.
+                    current = str(httpx.URL(current).join(location))
+                    continue
+                return current  # final, validated, public URL
+        return current
     except Exception:
         return url
 
@@ -760,7 +811,12 @@ def clear_cache() -> None:
     _result_cache.clear()
 
 
-def find_opportunities(query: str, student: dict, now: Optional[float] = None) -> dict:
+def find_opportunities(
+    query: str,
+    student: dict,
+    now: Optional[float] = None,
+    dismissed_keys: Optional[set] = None,
+) -> dict:
     """Search, filter by eligibility, and group by deadline urgency.
 
     Returns {"configured", "groups", "note", "total", "sources"}. Never raises --
@@ -769,10 +825,12 @@ def find_opportunities(query: str, student: dict, now: Optional[float] = None) -
     The curated core is always included and served free. Live web search augments
     it when TAVILY_API_KEY is set, and live results are cached and shared across
     students for CACHE_TTL_SECONDS so the department doesn't re-pay per search.
-    `now` is injectable for tests; defaults to wall-clock.
+    `now` is injectable for tests; defaults to wall-clock. `dismissed_keys` are
+    client_keys the student has permanently hidden — filtered out of every path.
     """
     import time
     now = time.time() if now is None else now
+    dismissed_keys = dismissed_keys or set()
 
     today = get_current_date()
     query = (query or "").strip() or "scholarships and internships for me"
@@ -789,7 +847,7 @@ def find_opportunities(query: str, student: dict, now: Optional[float] = None) -
     # is configured. Only when neither is usable do we show curated alone.
     live_available = grounding_enabled() or is_configured()
     if not live_available:
-        groups = _group_by_urgency(curated)
+        groups = _merge_and_group(curated, [], dismissed_keys)
         return {
             "configured": False,
             "groups": groups,
@@ -804,7 +862,7 @@ def find_opportunities(query: str, student: dict, now: Optional[float] = None) -
     key = _cache_key(query, student)
     cached = _cache_get(key, now)
     if cached is not None:
-        merged = _merge_and_group(curated, cached.get("live_items") or [])
+        merged = _merge_and_group(curated, cached.get("live_items") or [], dismissed_keys)
         return {
             "configured": True,
             "groups": merged,
@@ -820,7 +878,7 @@ def find_opportunities(query: str, student: dict, now: Optional[float] = None) -
     # so its eligibility filter always reflects the current student.
     _cache_put(key, {"live_items": live_items, "note": note, "sources": sources}, now)
 
-    merged = _merge_and_group(curated, live_items)
+    merged = _merge_and_group(curated, live_items, dismissed_keys)
     fallback_note = (
         note or "Showing our curated list; live search added nothing new this time."
     )
@@ -917,18 +975,27 @@ def _live_search(
     return [], [], ""
 
 
-def _merge_and_group(curated: list[dict], live: list[dict]) -> dict[str, list[dict]]:
+def _merge_and_group(
+    curated: list[dict], live: list[dict], dismissed_keys: Optional[set] = None
+) -> dict[str, list[dict]]:
     """Combine curated and live items, dedupe, and bucket by urgency.
 
     Curated comes first so a hand-vetted award wins over a live duplicate of the
     same thing. Dedupe is by normalized name — a curated 'Google STEP' and a live
     'Google STEP Internship' shouldn't both show.
+
+    `dismissed_keys` (client_keys the student has permanently hidden) are dropped
+    here, the single choke point every path funnels through, so a dismissed award
+    never reappears from curated, live, or cache.
     """
+    dismissed = dismissed_keys or set()
     combined: list[dict] = []
     seen: set[str] = set()
     for item in [*curated, *live]:
         if not isinstance(item, dict) or not item.get("name"):
             continue
+        if dismissed and client_key_for(item.get("name", ""), item.get("url", "")) in dismissed:
+            continue  # the student hid this one
         key = str(item["name"]).strip().lower()
         # Loose dedupe: collapse names where one contains the other.
         dup = any(key in s or s in key for s in seen)
