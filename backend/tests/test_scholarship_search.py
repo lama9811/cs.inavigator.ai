@@ -50,6 +50,49 @@ def test_check_deadline_rejects_garbage(bad):
     assert ss.check_deadline(bad)["status"] == "INVALID"
 
 
+# --- deadline_type (rolling / recurring / fixed / unknown) -------------------
+
+@pytest.mark.parametrize("dtype", ["fixed", "rolling", "recurring", "unknown"])
+def test_normalize_deadline_type_trusts_valid_values(dtype):
+    assert ss.normalize_deadline_type({"deadline_type": dtype}) == dtype
+
+
+def test_normalize_deadline_type_is_case_insensitive():
+    assert ss.normalize_deadline_type({"deadline_type": "Rolling"}) == "rolling"
+
+
+def test_normalize_deadline_type_infers_fixed_from_a_real_date():
+    """No/garbage type but a real future date -> fixed."""
+    assert ss.normalize_deadline_type({"deadline": _iso(20)}) == "fixed"
+    assert ss.normalize_deadline_type({"deadline": _iso(20), "deadline_type": "bogus"}) == "fixed"
+
+
+def test_normalize_deadline_type_defaults_unknown_without_a_date():
+    assert ss.normalize_deadline_type({"deadline": "(not listed)"}) == "unknown"
+    assert ss.normalize_deadline_type({}) == "unknown"
+
+
+def test_grouping_stamps_deadline_type_on_every_item():
+    """Every grouped item carries a valid deadline_type for the UI to read."""
+    items = [
+        {"name": "Fixed", "deadline": _iso(10)},
+        {"name": "Rolling", "deadline": "(not listed)", "deadline_type": "rolling"},
+        {"name": "Bare", "deadline": "(not listed)"},
+    ]
+    groups = ss._group_by_urgency(items)
+    all_items = [i for b in groups.values() for i in b]
+    assert {i["name"]: i["deadline_type"] for i in all_items} == {
+        "Fixed": "fixed", "Rolling": "rolling", "Bare": "unknown",
+    }
+
+
+def test_curated_items_carry_a_deadline_type():
+    """Curated results are normalized too, so the UI never shows a raw blank."""
+    items = ss.curated_opportunities({"gpa": 3.5})
+    assert items, "curated core should return something"
+    assert all(i.get("deadline_type") in ss.VALID_DEADLINE_TYPES for i in items)
+
+
 # --- configuration -----------------------------------------------------------
 
 def test_not_configured_without_key(monkeypatch):
@@ -253,6 +296,64 @@ def test_instruction_carries_the_eligibility_filter():
     assert "3.2" in text
     assert "SILENTLY" in text          # never explain why an award was skipped
     assert "NEVER show expired" in text
+
+
+# --- kind intent: internships search must not return scholarships ------------
+
+@pytest.mark.parametrize("q,expected", [
+    ("Summer internships for CS majors", "internship"),
+    ("software engineering internship openings", "internship"),
+    ("co-op positions in tech", "internship"),
+    ("Scholarships I qualify for", "scholarship"),
+    ("grants and fellowships for computer science", "scholarship"),
+    ("financial aid for HBCU students", "scholarship"),
+    ("scholarships and internships for me", "both"),
+    ("opportunities in tech", "both"),          # neither named -> both
+    ("", "both"),
+])
+def test_detect_kind_intent(q, expected):
+    assert ss.detect_kind_intent(q) == expected
+
+
+def test_curated_filtered_to_internships_only():
+    intern = ss.curated_opportunities({}, "internship")
+    assert intern, "there should be curated internships"
+    assert all(i["kind"] == "internship" for i in intern)
+
+
+def test_curated_filtered_to_scholarships_only():
+    sch = ss.curated_opportunities({}, "scholarship")
+    assert sch, "there should be curated scholarships"
+    assert all(i["kind"] == "scholarship" for i in sch)
+
+
+def test_curated_both_returns_everything():
+    both = ss.curated_opportunities({}, "both")
+    kinds = {i["kind"] for i in both}
+    assert kinds == {"scholarship", "internship"}
+
+
+def test_instruction_adds_strict_kind_filter():
+    intern = ss.build_instruction({}, ss.get_current_date(), "internship")
+    assert "ONLY for INTERNSHIPS" in intern
+    assert "Do NOT include any scholarships" in intern
+    sch = ss.build_instruction({}, ss.get_current_date(), "scholarship")
+    assert "ONLY for SCHOLARSHIPS" in sch
+    both = ss.build_instruction({}, ss.get_current_date(), "both")
+    assert "KIND FILTER" not in both        # no filter when both are wanted
+
+
+def test_filter_items_by_kind_drops_off_kind():
+    items = [
+        {"name": "A", "kind": "internship"},
+        {"name": "B", "kind": "scholarship"},
+        {"name": "C"},  # defaults to scholarship
+    ]
+    intern = ss._filter_items_by_kind(items, "internship")
+    assert [i["name"] for i in intern] == ["A"]
+    sch = ss._filter_items_by_kind(items, "scholarship")
+    assert [i["name"] for i in sch] == ["B", "C"]
+    assert ss._filter_items_by_kind(items, "both") == items
 
 
 # --- JSON extraction ---------------------------------------------------------
@@ -699,6 +800,29 @@ def test_live_available_via_grounding_without_any_key(monkeypatch):
     assert result["configured"] is True            # grounding counts as configured
     names = [i["name"] for b in result["groups"].values() for i in b]
     assert "Free Grounded" in names
+
+
+def test_internship_search_excludes_curated_scholarships(monkeypatch):
+    """An 'internships' query must not surface curated scholarships (the bug)."""
+    monkeypatch.setenv("SCHOLARSHIP_USE_GROUNDING", "false")
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)   # no live source -> curated only
+    ss.clear_cache()
+
+    result = ss.find_opportunities("summer internships for CS majors", {}, now=50.0)
+    kinds = {i.get("kind") for b in result["groups"].values() for i in b}
+    assert kinds <= {"internship"}, f"scholarships leaked into an internships search: {kinds}"
+    assert result["total"] > 0                     # curated internships still show
+
+
+def test_scholarship_search_excludes_curated_internships(monkeypatch):
+    monkeypatch.setenv("SCHOLARSHIP_USE_GROUNDING", "false")
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    ss.clear_cache()
+
+    result = ss.find_opportunities("scholarships I qualify for", {}, now=51.0)
+    kinds = {i.get("kind") for b in result["groups"].values() for i in b}
+    assert kinds <= {"scholarship"}, f"internships leaked into a scholarships search: {kinds}"
+    assert result["total"] > 0
 
 
 # --- grounding redirect unwrap -----------------------------------------------
