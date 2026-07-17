@@ -1,8 +1,14 @@
 # backend/models.py
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Float, ForeignKey, UniqueConstraint, Index, func, LargeBinary
+from sqlalchemy.dialects.mysql import LONGBLOB
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from db import Base
+
+# Advising upload blobs can approach the multi-MB upload cap. Plain LargeBinary
+# maps to MySQL BLOB, which truncates at 64KB — silently corrupting any real PDF.
+# Use LONGBLOB on MySQL (up to 4GB) and keep BLOB on SQLite for local dev.
+_UPLOAD_BLOB = LargeBinary().with_variant(LONGBLOB, "mysql")
 
 
 class ChatHistory(Base):
@@ -521,8 +527,8 @@ class AdvisingUpload(Base):
     """A file the student attached to their advising form (Course Sequence /
     DegreeWorks PDF or a scan). Stored as bytes IN THE DATABASE, not on local disk,
     so uploads survive a Cloud Run restart (the container filesystem is ephemeral).
-    Small files only (a few MB, capped at the upload limit). LargeBinary maps to
-    BLOB on SQLite and LONGBLOB/BLOB on MySQL, so it works on both."""
+    Small files only (a few MB, capped at the upload limit). Stored as LONGBLOB on
+    MySQL (plain BLOB truncates at 64KB) and BLOB on SQLite, so it works on both."""
     __tablename__ = "advising_uploads"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -530,7 +536,7 @@ class AdvisingUpload(Base):
     filename = Column(String(255), nullable=False)          # original name the student uploaded
     content_type = Column(String(100), nullable=True)       # MIME type, for serving back
     size_bytes = Column(Integer, nullable=True)
-    data = Column(LargeBinary, nullable=False)              # the file bytes
+    data = Column(_UPLOAD_BLOB, nullable=False)            # the file bytes (LONGBLOB on MySQL)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     user = relationship("User", backref="advising_uploads")
@@ -581,6 +587,11 @@ class SavedScholarship(Base):
     url = Column(String(1000), nullable=True)           # apply link
     source_url = Column(String(1000), nullable=True)    # where we found it
     why = Column(Text, nullable=True)                   # why it fits this student
+
+    # True if this came from our vetted curated list (vs a live web-search hit).
+    # Persisted so the saved view's "Recommended first" sort — which ranks curated
+    # awards above live ones — keeps working after a reload.
+    curated = Column(Boolean, nullable=False, default=False)
 
     # Where the student is in the process.
     # interested | applying | submitted | awarded | rejected | expired
