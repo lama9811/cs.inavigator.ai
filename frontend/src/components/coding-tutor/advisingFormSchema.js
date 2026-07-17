@@ -222,8 +222,14 @@ export const ADVISING_STEPS = [INTERNSHIP_FORM, ADVISING_FORM];
 // Back-compat: the chat-panel prototype (AdvisingFormPanel.jsx) consumes a flat
 // list of the Step-2 advising fields. Derive it from ADVISING_FORM so there is one
 // source of truth. `optional` is the inverse of `required` for that panel's API.
+// Field types the lightweight chat panel can't render safely (they need the full
+// page's course catalog / file uploader). Excluded from the panel + its required
+// check so they can't be "satisfied" as arbitrary free text.
+export const PANEL_UNSUPPORTED_TYPES = new Set(["course_picker", "file"]);
+
 export const ADVISING_FIELDS = ADVISING_FORM.sections
   .flatMap((s) => s.fields)
+  .filter((f) => !PANEL_UNSUPPORTED_TYPES.has(f.type))
   .map((f) => ({
     id: f.id,
     label: f.label,
@@ -231,6 +237,11 @@ export const ADVISING_FIELDS = ADVISING_FORM.sections
     hint: f.hint,
     options: f.options,
     optional: !f.required,
+    // Preserve the conditional-requirement metadata so the panel can show/require
+    // a field only when its trigger answer is met (e.g. the "explanation" field
+    // only when DegreeWorks requirements were NOT fulfilled). Dropping this made
+    // every conditional field read as always-optional.
+    requiredWhen: f.requiredWhen,
   }));
 
 // Count how many fields a form has that are currently visible/required given the

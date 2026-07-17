@@ -1,6 +1,14 @@
 import { useMemo, useState } from "react";
-import { ADVISING_FIELDS } from "./advisingFormSchema";
+import { ADVISING_FIELDS, isFieldActive } from "./advisingFormSchema";
 import "./AdvisingFormPanel.css";
+
+// A field is required in the panel when it's marked required, OR its conditional
+// trigger (requiredWhen) is currently met. Inactive conditional fields are neither
+// shown nor required.
+function isPanelRequired(field, values) {
+  if (field.requiredWhen) return isFieldActive(field, values);
+  return !field.optional;
+}
 
 // PROTOTYPE: an inline advising-form panel (Step 2 student fields) rendered as a
 // bot message in the chat. All entry happens IN the panel; the main chat box stays
@@ -35,19 +43,24 @@ export default function AdvisingFormPanel({ prefill = {}, disabled = false, onSu
   const setField = (id, val) => setValues((prev) => ({ ...prev, [id]: val }));
   const unlock = (id) => setLocked((prev) => ({ ...prev, [id]: false }));
 
-  // Required = every field except the ones marked optional.
-  const missing = useMemo(
-    () => ADVISING_FIELDS.filter((f) => !f.optional && !String(values[f.id] || "").trim()),
+  // Only currently-active fields participate. A conditional field (requiredWhen)
+  // that isn't triggered is hidden and neither counted nor required.
+  const activeFields = useMemo(
+    () => ADVISING_FIELDS.filter((f) => isFieldActive(f, values)),
     [values],
   );
-  const filledCount = ADVISING_FIELDS.filter((f) => String(values[f.id] || "").trim()).length;
+  const missing = useMemo(
+    () => activeFields.filter((f) => isPanelRequired(f, values) && !String(values[f.id] || "").trim()),
+    [activeFields, values],
+  );
+  const filledCount = activeFields.filter((f) => String(values[f.id] || "").trim()).length;
 
   const handleSubmit = () => {
     if (missing.length > 0 || disabled || submitted) return;
     setSubmitted(true);
-    // Hand back a clean object of field_id -> value.
+    // Hand back a clean object of field_id -> value (active fields only).
     const payload = {};
-    for (const f of ADVISING_FIELDS) {
+    for (const f of activeFields) {
       const val = String(values[f.id] || "").trim();
       if (val) payload[f.id] = val;
     }
@@ -59,19 +72,20 @@ export default function AdvisingFormPanel({ prefill = {}, disabled = false, onSu
       <div className="afp-head">
         <span className="afp-title">Advising Form</span>
         <span className="afp-progress" aria-live="polite">
-          {filledCount}/{ADVISING_FIELDS.length} filled
+          {filledCount}/{activeFields.length} filled
         </span>
       </div>
 
       <div className="afp-grid">
-        {ADVISING_FIELDS.map((f) => {
+        {activeFields.map((f) => {
           const isLocked = locked[f.id] && !submitted;
           const val = values[f.id] || "";
+          const optional = !isPanelRequired(f, values);
           return (
             <div className="afp-field" key={f.id}>
               <label className="afp-label" htmlFor={`afp-${f.id}`}>
                 {f.label}
-                {f.optional && <span className="afp-opt"> (optional)</span>}
+                {optional && <span className="afp-opt"> (optional)</span>}
               </label>
 
               {isLocked ? (
@@ -117,9 +131,9 @@ export default function AdvisingFormPanel({ prefill = {}, disabled = false, onSu
                 <input
                   id={`afp-${f.id}`}
                   className="afp-input"
-                  type={f.type === "number" ? "number" : "text"}
+                  type={f.type === "number" ? "number" : f.type === "date" ? "date" : "text"}
                   value={val}
-                  placeholder={f.hint || ""}
+                  placeholder={f.type === "date" ? "" : (f.hint || "")}
                   disabled={disabled || submitted}
                   onChange={(e) => setField(f.id, e.target.value)}
                 />

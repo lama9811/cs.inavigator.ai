@@ -1862,7 +1862,7 @@ export default function Chatbox({
                       <div className="bot-action-row">
                         <button
                           className={`tts-btn${isSpeaking ? ' tts-active' : ''}`}
-                          onClick={() => speak(msg.text)}
+                          onClick={() => speak(stripYesNoMarker(msg.text))}
                           title={isSpeaking ? "Stop speaking" : "Read response aloud"}
                         >
                           {isSpeaking ? <FaStop size={14}/> : <FaVolumeUp size={14}/>}
@@ -1909,14 +1909,14 @@ export default function Chatbox({
                             <div className="feedback-dropdown">
                               <button
                                 className="feedback-option feedback-option--helpful"
-                                onClick={() => handleFeedback(i, 'helpful', msg.text)}
+                                onClick={() => handleFeedback(i, 'helpful', stripYesNoMarker(msg.text))}
                               >
                                 <FaThumbsUp size={14} />
                                 <span>Helpful</span>
                               </button>
                               <button
                                 className="feedback-option feedback-option--not-helpful"
-                                onClick={() => handleFeedback(i, 'not_helpful', msg.text)}
+                                onClick={() => handleFeedback(i, 'not_helpful', stripYesNoMarker(msg.text))}
                               >
                                 <FaThumbsDown size={14} />
                                 <span>Not Helpful</span>

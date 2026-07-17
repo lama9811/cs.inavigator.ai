@@ -325,13 +325,15 @@ export default function AdvisingPage() {
     return out;
   }, [valuesByForm]);
 
-  // `submitted` is only sent when the student presses "Finish & save"; autosave and
-  // the plain "Save draft" button leave it out so the draft stays a draft.
+  // "Finish & save" sends submitted:true; autosave / "Save draft" send
+  // submitted:FALSE explicitly (not omitted). The backend only changes the stored
+  // flag when the key is present, so omitting it would leave a previously-submitted
+  // form stuck as "submitted" even after the student edits it. Sending false demotes
+  // an edited form back to a draft.
   const saveDraft = useCallback(async (submitted = false) => {
     setStatus((s) => ({ ...s, saving: true, error: "" }));
     try {
-      const body = { forms: buildDraftPayload() };
-      if (submitted) body.submitted = true;
+      const body = { forms: buildDraftPayload(), submitted: Boolean(submitted) };
       const res = await fetch(`${API_BASE}/api/advising/draft`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -347,6 +349,13 @@ export default function AdvisingPage() {
     }
   }, [token, buildDraftPayload]);
 
+  // Always-current handle to saveDraft, so the step effect can call the latest
+  // version WITHOUT listing saveDraft in its deps (saveDraft's identity changes on
+  // every keystroke via buildDraftPayload; depending on it made the step effect
+  // fire — and POST — on every keystroke).
+  const saveDraftRef = useRef(saveDraft);
+  useEffect(() => { saveDraftRef.current = saveDraft; }, [saveDraft]);
+
   // Debounced autosave: ~1.2s after the last edit, once the form is hydrated and the
   // user has actually changed something. The explicit "Save draft" button and
   // save-on-Next still work; this just means students rarely need to press them.
@@ -357,14 +366,14 @@ export default function AdvisingPage() {
     return () => { if (autosaveTimer.current) clearTimeout(autosaveTimer.current); };
   }, [valuesByForm, lockedByForm, saveDraft]);
 
-  // Persist the step immediately whenever it changes (after the initial load), so a
-  // reload keeps the student on the form they'd moved to — even if they never edited
-  // a field on it. Runs after stepRef is updated by the effect above.
+  // Persist the step ONLY when it actually changes (after the initial load), so a
+  // reload keeps the student on the form they'd moved to. Deps are [stepIndex] only
+  // — calling saveDraft through the ref keeps this from re-firing on every keystroke.
   useEffect(() => {
     if (!hydrated.current) return;
     stepRef.current = stepIndex;
-    saveDraft();
-  }, [stepIndex, saveDraft]);
+    saveDraftRef.current();
+  }, [stepIndex]);
 
   const downloadPdf = () => {
     // Browser print-to-PDF: open a clean printable doc of everything filled so far.
