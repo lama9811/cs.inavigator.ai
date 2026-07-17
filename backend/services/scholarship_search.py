@@ -190,6 +190,52 @@ def _grounded_prompt(instruction: str, query: str, today: dict) -> str:
     )
 
 
+# Gemini grounding returns citation links wrapped in a Vertex redirect host, e.g.
+# https://vertexaisearch.cloud.google.com/grounding-api-redirect/<token> . Those
+# work but are ugly, opaque, and can expire — a saved item should link to the real
+# employer/scholarship page, not a Google redirect. We resolve them to their final
+# destination once, at search time.
+_GROUNDING_REDIRECT_HOST = "vertexaisearch.cloud.google.com"
+
+
+def _is_grounding_redirect(url: str) -> bool:
+    return isinstance(url, str) and _GROUNDING_REDIRECT_HOST in url and "grounding-api-redirect" in url
+
+
+def _resolve_redirect(url: str, timeout: float = 6.0) -> str:
+    """Follow a grounding redirect to its real destination; return original on failure.
+
+    A HEAD with redirects followed is enough to learn the final URL without pulling
+    the page body. Never raises — a dead or slow redirect just keeps the original,
+    which still works (it simply points at the Google redirect)."""
+    try:
+        import httpx
+        resp = httpx.head(url, follow_redirects=True, timeout=timeout)
+        final = str(resp.url)
+        return final if final else url
+    except Exception:
+        return url
+
+
+def _unwrap_redirect_urls(items: list[dict]) -> list[dict]:
+    """Replace grounding-redirect links in items' `url`/`source_url` with the real
+    destination. Resolves each unique redirect once (cached in-call) and is bounded
+    by a small per-link timeout so a few slow redirects can't stall the search."""
+    if not items:
+        return items
+    cache: dict[str, str] = {}
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        for field in ("url", "source_url"):
+            u = item.get(field)
+            if _is_grounding_redirect(u):
+                if u not in cache:
+                    cache[u] = _resolve_redirect(u)
+                item[field] = cache[u]
+    return items
+
+
 def grounded_search(instruction: str, query: str, today: dict) -> Optional[dict]:
     """One grounded Gemini call: searches the web and returns the structured items.
 
@@ -213,13 +259,32 @@ def grounded_search(instruction: str, query: str, today: dict) -> Optional[dict]
                 # google_search cannot be combined with response_mime_type=JSON,
                 # so we parse the object out of the reply instead.
                 tools=[types.Tool(google_search=types.GoogleSearch())],
+                # Grounding reads live search results, so it needs SOME reasoning —
+                # but left unbounded, gemini-2.5-flash spent so much of its output
+                # budget thinking that the JSON came back truncated or empty. Cap the
+                # thinking budget and give an explicit, generous output ceiling so the
+                # full item list actually fits.
+                thinking_config=types.ThinkingConfig(thinking_budget=2048),
+                max_output_tokens=16384,
             ),
         )
     except Exception as exc:
         print(f"[WARN] Scholarship grounding call failed, will try Tavily: {exc}")
         return None
 
-    return _extract_json(getattr(response, "text", "") or "")
+    # A truncated reply parses as valid-looking partial data — treat it as a miss so
+    # the caller falls back to Tavily / curated rather than showing half a list.
+    candidates = getattr(response, "candidates", None) or []
+    if candidates and str(getattr(candidates[0], "finish_reason", "")).endswith("MAX_TOKENS"):
+        print("[WARN] Scholarship grounding hit the output-token cap; response truncated.")
+        return None
+
+    parsed = _extract_json(getattr(response, "text", "") or "")
+    # Turn the Vertex redirect links into real destination URLs so saved items point
+    # at the employer / scholarship page, not an opaque Google redirect.
+    if isinstance(parsed, dict) and isinstance(parsed.get("items"), list):
+        parsed["items"] = _unwrap_redirect_urls(parsed["items"])
+    return parsed
 
 
 # --- the student's eligibility profile ---------------------------------------
@@ -380,10 +445,13 @@ def _ask_gemini(instruction: str, search_results: list[dict], query: str) -> Opt
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0.1,           # near-deterministic; these are facts, not prose
-                # Six-plus items with full fields is a lot of JSON, and gemini-2.5-flash
-                # spends part of its budget on internal reasoning before emitting any
-                # text. At 4096 it hit MAX_TOKENS and truncated mid-object, so the JSON
-                # would not parse.
+                # gemini-2.5-flash is a THINKING model: it spends output tokens on
+                # internal reasoning before emitting any text, and that counts against
+                # max_output_tokens. On a big result list it burned the whole budget
+                # reasoning and hit MAX_TOKENS with the JSON truncated mid-object. This
+                # is pure extraction, not a reasoning task, so turn thinking OFF and give
+                # the full budget to the answer.
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
                 max_output_tokens=16384,
                 # Ask for JSON directly instead of hoping the prompt is obeyed. This
                 # also stops the model wrapping the object in a ```json fence.
@@ -910,6 +978,10 @@ def generate_checklist(item: dict) -> list[dict]:
             contents=_checklist_prompt(item),
             config=types.GenerateContentConfig(
                 temperature=0.2,
+                # Same thinking-model trap as _ask_gemini: reasoning tokens eat the
+                # output budget and truncate the list, silently dropping us to the
+                # default template. This is extraction, not reasoning — turn it off.
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
                 max_output_tokens=2048,
                 response_mime_type="application/json",
             ),
