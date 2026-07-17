@@ -368,6 +368,7 @@ def init_db():
         # in-progress + transfer credits, so it was overstating "credits earned." These
         # two columns store the applied total and the in-progress portion; earned is now
         # applied minus in-progress (see parsers.parse_degreeworks_audit_json).
+        _applied_was_missing = not _has_col("degreeworks_data", "total_credits_applied")
         for _col in ("total_credits_applied", "total_credits_in_progress"):
             if not _has_col("degreeworks_data", _col):
                 print(f"[WARN] '{_col}' column missing from degreeworks_data. Adding it now...")
@@ -377,6 +378,31 @@ def init_db():
                     print(f"[OK] Successfully added '{_col}' column!")
                 except Exception as e:
                     print(f"[ERROR] Failed to add {_col} column: {e}")
+
+        # Backfill legacy rows once, right after the columns are first added. Without
+        # this, existing rows keep total_credits_applied = NULL until the student
+        # resyncs, and any reader that coalesces NULL->0 would understate applied
+        # credits. Seed applied from the old earned total (the closest available
+        # value) and in-progress from 0; a later resync overwrites both with the
+        # real parsed figures. Guarded on _applied_was_missing so it runs exactly
+        # once (the migration is only "new" on the first boot after this deploy).
+        if _applied_was_missing and _has_col("degreeworks_data", "total_credits_earned"):
+            try:
+                conn.execute(text(
+                    "UPDATE degreeworks_data "
+                    "SET total_credits_applied = total_credits_earned "
+                    "WHERE total_credits_applied IS NULL "
+                    "AND total_credits_earned IS NOT NULL"
+                ))
+                conn.execute(text(
+                    "UPDATE degreeworks_data "
+                    "SET total_credits_in_progress = 0 "
+                    "WHERE total_credits_in_progress IS NULL"
+                ))
+                conn.commit()
+                print("[OK] Backfilled legacy total_credits_applied from earned.")
+            except Exception as e:
+                print(f"[ERROR] Failed to backfill credit columns: {e}")
 
         # 7. Check if support_tickets table exists
         if not _has_table("support_tickets"):
@@ -500,6 +526,30 @@ def init_db():
                 print("[OK] Successfully added 'deadline_type' column!")
             except Exception as e:
                 print(f"[ERROR] Failed to add deadline_type column: {e}")
+
+        # Same guard for `curated` — persisted so the saved view's "Recommended
+        # first" sort survives a reload. Default 0/FALSE works on SQLite + MySQL.
+        if _has_table("saved_scholarships") and not _has_col("saved_scholarships", "curated"):
+            print("[WARN] 'curated' column missing from saved_scholarships. Adding it now...")
+            try:
+                conn.execute(text("ALTER TABLE saved_scholarships ADD COLUMN curated BOOLEAN NOT NULL DEFAULT 0"))
+                conn.commit()
+                print("[OK] Successfully added 'curated' column!")
+            except Exception as e:
+                print(f"[ERROR] Failed to add curated column: {e}")
+
+        # Widen advising_uploads.data to LONGBLOB on MySQL. A table created before
+        # this change may be plain BLOB (64KB cap), which truncates real PDFs. This
+        # is a MySQL-only statement; on SQLite it errors harmlessly (BLOB is already
+        # unbounded) and the except swallows it.
+        if _has_table("advising_uploads"):
+            try:
+                conn.execute(text("ALTER TABLE advising_uploads MODIFY data LONGBLOB NOT NULL"))
+                conn.commit()
+                print("[OK] Ensured advising_uploads.data is LONGBLOB (MySQL).")
+            except Exception as e:
+                # Expected on SQLite (no MODIFY / no LONGBLOB); not an error there.
+                print(f"[INFO] Skipped advising_uploads LONGBLOB migration (non-MySQL or already applied): {e}")
 
     # 8. Create/Update admin account
     try:
@@ -1773,6 +1823,27 @@ async def upload_advising_document(file: UploadFile = File(...), user: dict = De
         print(f"[ERROR] Advising upload error: {e}")
         raise HTTPException(500, "Could not save file")
 
+    # The count/bytes checks above read totals BEFORE inserting, so two concurrent
+    # uploads could both pass and jointly exceed the cap (TOCTOU). Re-check the
+    # committed totals (which now include this row) and roll THIS row back if it
+    # pushed the user over — the last committer backs out, so the cap holds without
+    # needing a DB-specific row lock.
+    post_count = db.query(AdvisingUpload).filter(
+        AdvisingUpload.user_id == user["user_id"]
+    ).count()
+    post_bytes = db.query(func.coalesce(func.sum(AdvisingUpload.size_bytes), 0)).filter(
+        AdvisingUpload.user_id == user["user_id"]
+    ).scalar() or 0
+    if post_count > ADVISING_MAX_UPLOADS_PER_USER or post_bytes > ADVISING_MAX_TOTAL_BYTES_PER_USER:
+        db.delete(row)
+        db.commit()
+        cap_mb = ADVISING_MAX_TOTAL_BYTES_PER_USER // (1024 * 1024)
+        raise HTTPException(
+            413,
+            f"This would exceed your upload limit ({ADVISING_MAX_UPLOADS_PER_USER} files / "
+            f"{cap_mb}MB). Remove a file before uploading another.",
+        )
+
     # `stored_name` is the id-based reference the draft keeps; `filename` is what we show.
     return {"url": f"/api/advising/file/{row.id}", "filename": clean_name, "stored_name": str(row.id)}
 
@@ -1890,8 +1961,12 @@ async def search_scholarships(
     }
 
     try:
-        result = scholarship_search.find_opportunities(
-            query, student, dismissed_keys=dismissed_keys
+        # find_opportunities does blocking network I/O (sync httpx.Client for the
+        # grounded search + redirect HEADs); run it off the event loop so a slow
+        # search can't stall every other request on this worker.
+        result = await asyncio.to_thread(
+            scholarship_search.find_opportunities,
+            query, student, dismissed_keys=dismissed_keys,
         )
     except Exception as e:
         print(f"[ERROR] Scholarship search failed: {e}")
@@ -1941,6 +2016,7 @@ def _saved_to_dict(row: SavedScholarship) -> dict:
         "url": row.url,
         "source_url": row.source_url,
         "why": row.why,
+        "curated": bool(row.curated),
         "status": row.status,
         "urgency": urgency["status"],
         "days_remaining": urgency["days_remaining"],
@@ -2041,6 +2117,9 @@ async def save_scholarship(
     src = str(payload.get("source_url") or "").strip() or None
     row.source_url = src[:1000] if src else None
     row.why = (str(payload.get("why")).strip() if payload.get("why") else None)
+    # Persist whether this came from the curated list, so the saved view's
+    # "Recommended first" sort can rank curated awards above live ones on reload.
+    row.curated = bool(payload.get("curated"))
     # Snapshot the whole item as it was at save time.
     try:
         row.snapshot_json = json.dumps(payload)[:20000]
@@ -7894,7 +7973,10 @@ async def internal_reminders_dispatch(request: Request):
 
             users_processed += 1
             for item in due:
-                ok = send_deadline_reminder_email(user.email, item["assignment"])
+                # Blocking smtplib call — offload so it doesn't stall the loop.
+                ok = await asyncio.to_thread(
+                    send_deadline_reminder_email, user.email, item["assignment"]
+                )
                 if ok:
                     db.add(SentReminder(user_id=user_id, reminder_key=item["key"]))
                     sent_count += 1
@@ -7972,8 +8054,10 @@ async def internal_scholarship_reminders_dispatch(request: Request):
 
             users_processed += 1
             for entry in due:
-                ok = send_scholarship_deadline_email(
-                    user.email, entry["item"], entry["days_remaining"]
+                # Blocking smtplib call — offload so it doesn't stall the loop.
+                ok = await asyncio.to_thread(
+                    send_scholarship_deadline_email,
+                    user.email, entry["item"], entry["days_remaining"],
                 )
                 if ok:
                     db.add(SentReminder(user_id=user_id, reminder_key=entry["key"]))

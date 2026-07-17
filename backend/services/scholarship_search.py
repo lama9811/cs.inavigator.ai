@@ -292,28 +292,43 @@ def _host_is_public(host: str) -> bool:
     private, loopback, link-local, and cloud-metadata ranges — on Cloud Run,
     169.254.169.254 / metadata.google.internal serves the service account token.
     Fail closed: an unresolvable or suspicious host returns False."""
+    return _resolve_public_ip(host) is not None
+
+
+def _resolve_public_ip(host: str) -> Optional[str]:
+    """Resolve `host` once and return a single validated public IP, or None.
+
+    Returning the resolved IP lets the caller PIN it for the actual connection,
+    closing the DNS-rebinding window: without pinning, `_host_is_public` resolves
+    the name, then httpx resolves it AGAIN at connect time, and an attacker who
+    controls the DNS can return a public IP to the check and a private/metadata IP
+    to the connect. We validate every address the name resolves to (fail closed if
+    any is non-public) and hand back the first one to connect to."""
     import socket
     import ipaddress
 
     if not host:
-        return False
+        return None
     # Reject the metadata hostname outright, before any DNS games.
     if host.lower() in ("metadata.google.internal", "metadata"):
-        return False
+        return None
     try:
         infos = socket.getaddrinfo(host, None)
     except (socket.gaierror, UnicodeError, OSError):
-        return False
+        return None
+    pinned: Optional[str] = None
     for info in infos:
         ip_str = info[4][0]
         try:
             ip = ipaddress.ip_address(ip_str)
         except ValueError:
-            return False
+            return None
         if (ip.is_private or ip.is_loopback or ip.is_link_local
                 or ip.is_reserved or ip.is_multicast or ip.is_unspecified):
-            return False
-    return True
+            return None
+        if pinned is None:
+            pinned = ip_str
+    return pinned
 
 
 def _resolve_redirect(url: str, timeout: float = 6.0) -> str:
@@ -336,9 +351,20 @@ def _resolve_redirect(url: str, timeout: float = 6.0) -> str:
                 parsed = urlparse(current)
                 if parsed.scheme not in ("http", "https"):
                     return url
-                if not _host_is_public(parsed.hostname or ""):
+                host = parsed.hostname or ""
+                pinned_ip = _resolve_public_ip(host)
+                if pinned_ip is None:
                     return url  # refuse to fetch an internal/suspicious host
-                resp = client.head(current)
+                # Pin the connection to the IP we just validated so httpx can't
+                # re-resolve the hostname to a different (rebound) address between
+                # the check and the connect. Keep the Host header + SNI on the real
+                # hostname so vhosts and TLS cert verification still work.
+                pinned_url = str(httpx.URL(current).copy_with(host=pinned_ip))
+                resp = client.head(
+                    pinned_url,
+                    extensions={"sni_hostname": host},
+                    headers={"Host": host},
+                )
                 location = resp.headers.get("location")
                 if resp.is_redirect and location:
                     # Resolve relative redirects against the current URL.
@@ -987,8 +1013,16 @@ def find_opportunities(
     live_items, sources, note = _live_search(student, query, today, kind)
 
     # Cache the LIVE half (shared across students); curated is merged in per-call
-    # so its eligibility filter always reflects the current student.
-    _cache_put(key, {"live_items": live_items, "note": note, "sources": sources}, now)
+    # so its eligibility filter always reflects the current student. Strip the
+    # per-student "why" sentence before caching: it's written for THIS student
+    # ("why this fits you"), and the cache is shared across students who match the
+    # same coarse key (query|major|year|gpa-band), so caching it would serve one
+    # student's personalized reason to another. The eligibility filter still runs
+    # per-call; only the personalized blurb is dropped on a shared cache entry.
+    cacheable_items = [
+        {k: v for k, v in item.items() if k != "why"} for item in live_items
+    ]
+    _cache_put(key, {"live_items": cacheable_items, "note": note, "sources": sources}, now)
 
     merged = _merge_and_group(curated, live_items, dismissed_keys)
     fallback_note = (
