@@ -58,12 +58,24 @@ function daysLabel(item) {
   }
 }
 
-// Filter a list of result items by kind and timing. Timing maps onto the
-// deadline_type the backend now stamps on every item: "dated" = has a real fixed
-// date, else match the rolling/recurring type directly.
-function filterResultItems(items, kind, timing) {
+// The role categories the backend stamps on internships (role_category). Kept in
+// sync with ROLE_CATEGORIES in scholarship_search.py.
+const ROLE_CATEGORIES = [
+  "Software Engineering", "Data / ML", "Product", "Hardware", "Research",
+  "Security", "Other",
+];
+
+// Filter a list of result items by kind, timing, and (for internships) role.
+// Timing maps onto the deadline_type the backend stamps: "dated" = a real fixed
+// date, else match the rolling/recurring type. Role only narrows internships.
+function filterResultItems(items, kind, timing, role = "all") {
   return items.filter((it) => {
     if (kind !== "all" && (it.kind || "scholarship") !== kind) return false;
+    if (role !== "all") {
+      // A role filter only applies to internships; it hides scholarships.
+      if ((it.kind || "scholarship") !== "internship") return false;
+      if ((it.role_category || "Other") !== role) return false;
+    }
     if (timing === "all") return true;
     if (timing === "dated") return it.days_remaining != null;
     return (it.deadline_type || "unknown") === timing;
@@ -90,16 +102,16 @@ function toSavePayload(item) {
   };
 }
 
-// Match a search result against the saved list. The backend dedupes on a hash of
-// name+url; here we mirror that loosely so the Save button flips to "Saved" without
-// a round-trip. Exact name+url match is enough for the button state.
+// Match a search result against the saved list. Mirrors the backend's name-only
+// dedupe (client_key_for) so the Save button flips to "Saved" without a round-trip.
+// NOT url-based: grounding resolves redirect links to different urls across searches,
+// so a name-only match is what keeps the same award from looking "unsaved" again.
+function normName(s) {
+  return (s || "").trim().toLowerCase().split(/\s+/).join(" ");
+}
 function findSaved(saved, item) {
-  const url = (item.url || "").trim().toLowerCase();
-  const name = (item.name || "").trim().toLowerCase();
-  return saved.find(
-    (s) => (s.name || "").trim().toLowerCase() === name &&
-           (s.url || "").trim().toLowerCase() === url
-  );
+  const name = normName(item.name);
+  return saved.find((s) => normName(s.name) === name);
 }
 
 function OpportunityCard({ item, saved, onSave, onRemove, onDismiss, saving }) {
@@ -305,6 +317,7 @@ export default function ScholarshipsPage() {
   // Filters applied to the SEARCH results (client-side, over what came back).
   const [fltKind, setFltKind] = useState("all");     // all | scholarship | internship
   const [fltTiming, setFltTiming] = useState("all"); // all | dated | rolling | recurring
+  const [fltRole, setFltRole] = useState("all");     // all | <a role category>
 
   const token = localStorage.getItem("token");
   const authHeaders = { Authorization: `Bearer ${token}` };
@@ -511,8 +524,9 @@ export default function ScholarshipsPage() {
           <FaGraduationCap /> Scholarships &amp; Internships
         </h1>
         <p className="sch-sub">
-          Matched against your DegreeWorks data, so you only see what you can actually
-          apply for. Save the ones you want and track them as you apply.
+          Matched to your profile using your DegreeWorks data — always check each
+          opportunity&apos;s eligibility before you apply. Save the ones you want and
+          track them as you go.
         </p>
       </header>
 
@@ -626,12 +640,24 @@ export default function ScholarshipsPage() {
                         <option value="recurring">Recurring</option>
                       </select>
                     </label>
+                    {/* Role only makes sense for internships. */}
+                    {fltKind !== "scholarship" && (
+                      <label className="sch-toolbar-field">
+                        <span>Role</span>
+                        <select value={fltRole} onChange={(e) => setFltRole(e.target.value)}>
+                          <option value="all">All roles</option>
+                          {ROLE_CATEGORIES.map((r) => (
+                            <option key={r} value={r}>{r}</option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
                   </div>
 
                   {(() => {
                     const rendered = GROUPS.map(({ key, label, hint }) => {
                       const items = filterResultItems(
-                        result.groups?.[key] || [], fltKind, fltTiming
+                        result.groups?.[key] || [], fltKind, fltTiming, fltRole
                       );
                       if (!items.length) return null;
                       return (
@@ -685,6 +711,7 @@ export default function ScholarshipsPage() {
         </>
       ) : openItem ? (
         <ScholarshipDetail
+          key={openItem.id}
           item={openItem}
           onBack={() => setOpenId(null)}
           onSaved={mergeSaved}
@@ -710,12 +737,16 @@ const SORTS = [
   { key: "deadline", label: "Deadline (soonest)" },
   { key: "recommended", label: "Recommended first" },
   { key: "name", label: "Name (A–Z)" },
+  { key: "role", label: "Role (A–Z)" },
 ];
 
 function sortSaved(items, sort) {
   const copy = [...items];
   if (sort === "name") {
     copy.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  } else if (sort === "role") {
+    // Order by role text (internships); items without a role fall to the end.
+    copy.sort((a, b) => (a.role || "~").localeCompare(b.role || "~"));
   } else if (sort === "recommended") {
     copy.sort((a, b) => (b.curated ? 1 : 0) - (a.curated ? 1 : 0));
   } else {
@@ -829,6 +860,7 @@ function SavedView({ saved, onStatus, onRemove, onOpen, inFlight, onGoSearch }) 
   const [kind, setKind] = useState("all");        // all | scholarship | internship
   const [status, setStatus] = useState("all");    // all | <a pipeline status>
   const [sort, setSort] = useState("deadline");
+  const [role, setRole] = useState("all");        // all | <a role category>
 
   if (!saved.length) {
     return (
@@ -852,7 +884,13 @@ function SavedView({ saved, onStatus, onRemove, onOpen, inFlight, onGoSearch }) 
     : saved.filter((s) => s.status === status);
 
   const scholarships = sortSaved(afterStatus.filter((s) => s.kind !== "internship"), sort);
-  const internships = sortSaved(afterStatus.filter((s) => s.kind === "internship"), sort);
+  const internships = sortSaved(
+    afterStatus.filter((s) =>
+      s.kind === "internship" &&
+      (role === "all" || (s.role_category || "Other") === role)
+    ),
+    sort
+  );
 
   const showScholarships = kind !== "internship";
   const showInternships = kind !== "scholarship";
@@ -903,6 +941,18 @@ function SavedView({ saved, onStatus, onRemove, onOpen, inFlight, onGoSearch }) 
             ))}
           </select>
         </label>
+        {/* Role only filters internships. */}
+        {kind !== "scholarship" && (
+          <label className="sch-toolbar-field">
+            <span>Role</span>
+            <select value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="all">All roles</option>
+              {ROLE_CATEGORIES.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </label>
+        )}
         <label className="sch-toolbar-field">
           <span>Sort</span>
           <select value={sort} onChange={(e) => setSort(e.target.value)}>
