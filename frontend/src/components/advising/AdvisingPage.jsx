@@ -77,7 +77,7 @@ export default function AdvisingPage() {
   const [lockedByForm, setLockedByForm] = useState({});   // { formId: Set(fieldId) } — DegreeWorks-prefilled, still read-only
   const [courseSuggestions, setCourseSuggestions] = useState([]);  // Planner course codes (upcoming-semester pickers)
   const [registeredCourses, setRegisteredCourses] = useState([]);  // student's current/registered course codes (current-semester picker)
-  const [status, setStatus] = useState({ loading: true, saving: false, saved: false, error: "" });
+  const [status, setStatus] = useState({ loading: true, saving: false, saved: false, submitted: false, error: "" });
   // A "help me write this" request from a free-writing field: { field, currentText, nonce }.
   // The nonce lets the helper re-fire even if the same field is clicked twice.
   const [writingRequest, setWritingRequest] = useState(null);
@@ -143,7 +143,7 @@ export default function AdvisingPage() {
         setValuesByForm(seededValues);
         setLockedByForm(seededLocked);
         hydrated.current = true;   // enable autosave now that seeded values are in place
-        setStatus((s) => ({ ...s, loading: false }));
+        setStatus((s) => ({ ...s, loading: false, submitted: Boolean(draft?.submitted) }));
       } catch {
         if (!cancelled) { hydrated.current = true; setStatus((s) => ({ ...s, loading: false, error: "Could not load your data. You can still fill the form manually." })); }
       }
@@ -231,6 +231,21 @@ export default function AdvisingPage() {
     return { id: String(id), filename: data?.filename || file.name };
   }, [token]);
 
+  // Delete the stored blob when a student removes a file, so it doesn't linger as
+  // an orphan in the DB. Non-fatal: a failed delete just leaves a sweepable orphan,
+  // it must never block the UI from removing the file reference.
+  const deleteDocument = useCallback(async (id) => {
+    if (!id) return;
+    try {
+      await fetch(`${API_BASE}/api/advising/file/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch {
+      /* best-effort cleanup; ignore */
+    }
+  }, [token]);
+
   const values = useMemo(() => valuesByForm[form.id] || {}, [valuesByForm, form.id]);
   const locked = lockedByForm[form.id] || new Set();
 
@@ -262,7 +277,8 @@ export default function AdvisingPage() {
   const setField = useCallback((fieldId, val) => {
     dirty.current = true;
     setValuesByForm((prev) => ({ ...prev, [form.id]: { ...(prev[form.id] || {}), [fieldId]: val } }));
-    setStatus((s) => ({ ...s, saved: false }));
+    // Editing after "Finish & save" means it's a draft again, so drop the badge.
+    setStatus((s) => ({ ...s, saved: false, submitted: false }));
   }, [form.id]);
 
   // Hand a free-writing field to the side-panel helper. The nonce (a counter via
@@ -309,16 +325,21 @@ export default function AdvisingPage() {
     return out;
   }, [valuesByForm]);
 
-  const saveDraft = useCallback(async () => {
+  // `submitted` is only sent when the student presses "Finish & save"; autosave and
+  // the plain "Save draft" button leave it out so the draft stays a draft.
+  const saveDraft = useCallback(async (submitted = false) => {
     setStatus((s) => ({ ...s, saving: true, error: "" }));
     try {
+      const body = { forms: buildDraftPayload() };
+      if (submitted) body.submitted = true;
       const res = await fetch(`${API_BASE}/api/advising/draft`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ forms: buildDraftPayload() }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error("save failed");
-      setStatus((s) => ({ ...s, saving: false, saved: true }));
+      const data = await res.json().catch(() => ({}));
+      setStatus((s) => ({ ...s, saving: false, saved: true, submitted: Boolean(data.submitted) }));
       return true;
     } catch {
       setStatus((s) => ({ ...s, saving: false, error: "Couldn't save your draft. Check your connection and try again." }));
@@ -411,13 +432,14 @@ export default function AdvisingPage() {
             onChange={setField}
             onUnlock={unlock}
             onUpload={uploadDocument}
+            onDeleteFile={deleteDocument}
             onWritingHelp={requestWritingHelp}
           />
 
           <footer className="advising-actions">
             <div className="advising-actions-left">
-              <button type="button" className="advising-btn ghost" onClick={saveDraft} disabled={status.saving}>
-                {status.saving ? "Saving…" : status.saved ? "Draft saved ✓" : "Save draft"}
+              <button type="button" className="advising-btn ghost" onClick={() => saveDraft()} disabled={status.saving}>
+                {status.saving ? "Saving…" : status.submitted ? "Submitted ✓" : status.saved ? "Draft saved ✓" : "Save draft"}
               </button>
               <span className="advising-autosave-hint">Changes save automatically</span>
             </div>
@@ -433,8 +455,8 @@ export default function AdvisingPage() {
                   Next: Advising Form <FaArrowRight size={13} />
                 </button>
               ) : (
-                <button type="button" className="advising-btn primary" onClick={saveDraft} disabled={missing.length > 0 || status.saving}>
-                  Finish & save
+                <button type="button" className="advising-btn primary" onClick={() => saveDraft(true)} disabled={missing.length > 0 || status.saving}>
+                  {status.submitted ? "Submitted ✓" : "Finish & save"}
                 </button>
               )}
             </div>

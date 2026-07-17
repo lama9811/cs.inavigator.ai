@@ -239,7 +239,7 @@ function CoursePicker({ value, disabled, seeds = [], onChange }) {
 // file and "||"-join them, the same multi-value format multi_select/course_picker use,
 // so the draft, summary and print paths all handle it without special-casing.
 // Files are removed individually with their own X — never by replacing the whole field.
-function FileField({ field, value, disabled, onChange, onUpload }) {
+function FileField({ field, value, disabled, onChange, onUpload, onDeleteFile }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const inputRef = useRef(null);
@@ -270,6 +270,10 @@ function FileField({ field, value, disabled, onChange, onUpload }) {
   };
 
   const removeAt = (idx) => {
+    const removed = attached[idx];
+    // Delete the stored blob (best-effort) so it doesn't orphan in the DB, then
+    // drop it from the field either way.
+    if (removed?.id) onDeleteFile?.(removed.id);
     onChange(serializeFileList(attached.filter((_, i) => i !== idx)));
   };
 
@@ -326,7 +330,7 @@ function FileField({ field, value, disabled, onChange, onUpload }) {
 // Controlled: the parent owns `values` and `locked` (the set of pre-filled fields
 // still locked) and passes setters. This component only renders + reports changes.
 
-function FieldControl({ field, value, disabled, courseSuggestions, registeredCourses, onChange, onUpload }) {
+function FieldControl({ field, value, disabled, courseSuggestions, registeredCourses, onChange, onUpload, onDeleteFile }) {
   const common = { id: `af-${field.id}`, className: "af-input", disabled };
 
   if (field.type === "choice") {
@@ -390,7 +394,7 @@ function FieldControl({ field, value, disabled, courseSuggestions, registeredCou
   }
 
   if (field.type === "file") {
-    return <FileField field={field} value={value} disabled={disabled} onChange={onChange} onUpload={onUpload} />;
+    return <FileField field={field} value={value} disabled={disabled} onChange={onChange} onUpload={onUpload} onDeleteFile={onDeleteFile} />;
   }
 
   if (field.type === "multi_choice") {
@@ -446,7 +450,7 @@ function FieldControl({ field, value, disabled, courseSuggestions, registeredCou
 }
 
 export default function FormRenderer({
-  form, values, locked, disabled = false, courseSuggestions = [], registeredCourses = [], onChange, onUnlock, onUpload, onWritingHelp,
+  form, values, locked, disabled = false, courseSuggestions = [], registeredCourses = [], onChange, onUnlock, onUpload, onDeleteFile, onWritingHelp,
 }) {
   // Only fields whose conditions are met are shown.
   const visibleBySection = useMemo(
@@ -517,6 +521,7 @@ export default function FormRenderer({
                       registeredCourses={registeredCourses}
                       onChange={(val) => onChange(field.id, val)}
                       onUpload={onUpload}
+                      onDeleteFile={onDeleteFile}
                     />
                   )}
 

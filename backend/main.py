@@ -1698,6 +1698,19 @@ async def save_advising_draft(payload: dict, user: dict = Depends(get_current_us
 # scan/photo of them). Kept narrower than the general chat-upload allow-list.
 ADVISING_ALLOWED_EXTENSIONS = {"pdf", "png", "jpg", "jpeg"}
 
+# Serve downloads with a MIME derived from the (validated) extension, NOT the
+# user-supplied content_type — a student could upload HTML bytes with a spoofed
+# content_type and, served inline, it would execute as a page. This map + nosniff
+# neutralizes that. Per-user upload limits guard against DB-blob bloat.
+ADVISING_SAFE_MIME = {
+    "pdf": "application/pdf",
+    "png": "image/png",
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+}
+ADVISING_MAX_UPLOADS_PER_USER = 20
+ADVISING_MAX_TOTAL_BYTES_PER_USER = 50 * 1024 * 1024  # 50MB of stored blobs per user
+
 
 @app.post("/api/advising/upload")
 async def upload_advising_document(file: UploadFile = File(...), user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -1707,6 +1720,21 @@ async def upload_advising_document(file: UploadFile = File(...), user: dict = De
     ext = (file.filename or "").rsplit(".", 1)[-1].lower() if "." in (file.filename or "") else ""
     if ext not in ADVISING_ALLOWED_EXTENSIONS:
         raise HTTPException(400, "Please upload a PDF or image (pdf, png, jpg).")
+
+    # Per-user cap: bound how many blobs (and how many bytes) a single user can
+    # store, so churn or abuse can't bloat Cloud SQL storage without limit.
+    existing_count = db.query(AdvisingUpload).filter(
+        AdvisingUpload.user_id == user["user_id"]
+    ).count()
+    if existing_count >= ADVISING_MAX_UPLOADS_PER_USER:
+        raise HTTPException(
+            413,
+            f"You've reached the {ADVISING_MAX_UPLOADS_PER_USER}-file limit. "
+            "Remove a file before uploading another.",
+        )
+    existing_bytes = db.query(func.coalesce(func.sum(AdvisingUpload.size_bytes), 0)).filter(
+        AdvisingUpload.user_id == user["user_id"]
+    ).scalar() or 0
 
     # Read into memory with a size cap (files are small; enforce the limit as we go).
     chunks = []
@@ -1719,6 +1747,15 @@ async def upload_advising_document(file: UploadFile = File(...), user: dict = De
     data = b"".join(chunks)
     if not data:
         raise HTTPException(400, "The uploaded file is empty.")
+
+    # Enforce the per-user total-bytes cap now that we know this file's size.
+    if existing_bytes + total > ADVISING_MAX_TOTAL_BYTES_PER_USER:
+        cap_mb = ADVISING_MAX_TOTAL_BYTES_PER_USER // (1024 * 1024)
+        raise HTTPException(
+            413,
+            f"This would exceed your {cap_mb}MB total upload limit. "
+            "Remove a file before uploading another.",
+        )
 
     clean_name = re.sub(r'[^a-zA-Z0-9_. -]', '_', file.filename or f"document.{ext}").strip() or f"document.{ext}"
     try:
@@ -1742,12 +1779,39 @@ async def upload_advising_document(file: UploadFile = File(...), user: dict = De
 
 @app.get("/api/advising/file/{upload_id}")
 async def get_advising_document(upload_id: int, user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Serve a previously uploaded advising document from the DB. Owner-only."""
+    """Serve a previously uploaded advising document from the DB. Owner-only.
+
+    The MIME type is derived from the stored filename's extension, NOT the
+    user-supplied content_type, and X-Content-Type-Options: nosniff is set — so an
+    uploaded file whose bytes are HTML can never be served/sniffed as an executable
+    page (stored-XSS guard)."""
     row = db.query(AdvisingUpload).filter(AdvisingUpload.id == upload_id).first()
     if not row or row.user_id != user["user_id"]:
         raise HTTPException(404, "File not found")
-    headers = {"Content-Disposition": f'inline; filename="{row.filename}"'}
-    return Response(content=row.data, media_type=row.content_type or "application/octet-stream", headers=headers)
+    ext = (row.filename or "").rsplit(".", 1)[-1].lower() if "." in (row.filename or "") else ""
+    media_type = ADVISING_SAFE_MIME.get(ext, "application/octet-stream")
+    headers = {
+        "Content-Disposition": f'inline; filename="{row.filename}"',
+        "X-Content-Type-Options": "nosniff",
+    }
+    return Response(content=row.data, media_type=media_type, headers=headers)
+
+
+@app.delete("/api/advising/file/{upload_id}")
+async def delete_advising_document(upload_id: int, user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Delete an uploaded advising document. Owner-only, idempotent.
+
+    Called when a student removes a file from the form, so the DB blob doesn't
+    linger as an orphan. A missing/foreign row returns ok without leaking whether
+    it existed."""
+    row = db.query(AdvisingUpload).filter(
+        AdvisingUpload.id == upload_id,
+        AdvisingUpload.user_id == user["user_id"],
+    ).first()
+    if row is not None:
+        db.delete(row)
+        db.commit()
+    return {"ok": True, "id": upload_id}
 
 
 # =============================================================================
