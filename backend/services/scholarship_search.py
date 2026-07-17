@@ -409,6 +409,11 @@ opportunities SILENTLY -- do not mention them or explain why they were dropped.
    - NEVER show expired opportunities. Skip them silently.
    - URGENT if under 7 days out, UPCOMING if under 30 days, OPEN otherwise.
    - Within each group, sort by soonest deadline first.
+   - PREFER opportunities that publish a real, specific application deadline.
+     When you must choose which results to include, favor the ones with a
+     concrete date over vague "rolling" / "opens in the fall" listings. This is
+     a preference, NOT a filter: still include strong undated opportunities
+     (rule 3) -- just lead with the dated ones.
 
 2. Return ONLY a JSON object. No prose, no markdown fence, no commentary:
 
@@ -566,6 +571,15 @@ def normalize_deadline_type(item: dict) -> str:
     return "unknown"
 
 
+# Ordering preference among UNDATED items: a knowable cadence beats "no idea".
+# Lower sorts first. (Dated "fixed" items never reach this — they sort by date.)
+_TIMING_RANK = {"fixed": 0, "rolling": 1, "recurring": 2, "unknown": 3}
+
+
+def _timing_rank(deadline_type: Optional[str]) -> int:
+    return _TIMING_RANK.get(str(deadline_type or "unknown").lower(), 3)
+
+
 def _group_by_urgency(items: list[dict]) -> dict[str, list[dict]]:
     """Sort items into URGENT / UPCOMING / OPEN, dropping anything expired.
 
@@ -607,12 +621,17 @@ def _group_by_urgency(items: list[dict]) -> dict[str, list[dict]]:
             not i.get("curated"),                     # tie-break: recommended first
         ))
 
-    # OPEN has no pressing deadline, so lead with the vetted "Recommended" awards,
-    # then fall back to soonest-deadline within each of those two halves.
+    # OPEN ordering PREFERS opportunities with a real date (they're the most
+    # actionable), without hiding the undated ones. Order:
+    #   1. dated items first (has a real deadline the student can plan around),
+    #   2. among dated: recommended, then soonest deadline,
+    #   3. among undated: recommended, then by timing quality
+    #      (rolling/recurring — a knowable cadence — above "unknown").
     groups["OPEN"].sort(key=lambda i: (
-        not i.get("curated"),                         # recommended at the very top
-        i.get("days_remaining") is None,              # then dated before undated
-        i.get("days_remaining") or 0,                 # then soonest first
+        i.get("days_remaining") is None,              # dated (False) sorts before undated (True)
+        not i.get("curated"),                         # recommended first within each half
+        i.get("days_remaining") or 0,                 # dated: soonest first
+        _timing_rank(i.get("deadline_type")),         # undated: rolling/recurring before unknown
     ))
     return groups
 

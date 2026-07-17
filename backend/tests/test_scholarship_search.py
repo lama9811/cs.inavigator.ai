@@ -244,6 +244,33 @@ def test_a_real_close_deadline_still_beats_a_recommended_rolling_one():
     assert order[0] == "Due in 5 days"
 
 
+def test_open_prefers_a_dated_item_over_an_undated_recommended_one():
+    """A dated OPEN item leads even over a curated undated one — a real deadline is
+    the most actionable thing, so it goes first (option A: prefer dated)."""
+    groups = ss._group_by_urgency([
+        {"name": "Curated rolling", "deadline": "(not listed)", "curated": True},
+        {"name": "Dated far-off", "deadline": _iso(60)},   # OPEN, has a real date
+    ])
+    assert [i["name"] for i in groups["OPEN"]] == ["Dated far-off", "Curated rolling"]
+
+
+def test_open_undated_orders_rolling_recurring_before_unknown():
+    """Among undated OPEN items, a knowable cadence beats 'no idea'."""
+    groups = ss._group_by_urgency([
+        {"name": "Unknown", "deadline": "(not listed)", "deadline_type": "unknown"},
+        {"name": "Recurring", "deadline": "(not listed)", "deadline_type": "recurring"},
+        {"name": "Rolling", "deadline": "(not listed)", "deadline_type": "rolling"},
+    ])
+    assert [i["name"] for i in groups["OPEN"]] == ["Rolling", "Recurring", "Unknown"]
+
+
+def test_prompt_prefers_dated_opportunities():
+    """Option D: the prompt nudges toward date-publishing sources, as a preference."""
+    text = ss.build_instruction({}, ss.get_current_date())
+    assert "PREFER opportunities that publish a real" in text
+    assert "NOT a filter" in text          # must not hide undated ones
+
+
 def test_malformed_items_are_skipped():
     """The model can emit junk; grouping must not raise on it."""
     groups = ss._group_by_urgency([
