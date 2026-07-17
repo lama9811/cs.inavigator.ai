@@ -357,6 +357,37 @@ class CodingAttemptEvent(Base):
     user = relationship("User", backref="coding_attempt_events")
 
 
+class CodingConceptQuizAttempt(Base):
+    """Append-only concept-quiz result used for cross-device progress and review.
+
+    ``results_json`` stores only question ids, kinds, and correct/incorrect flags.
+    Student-entered text or code is deliberately excluded: the review screen can
+    rebuild the prompt, correct answer, and explanation from the authored bank
+    without turning the progress table into a source-code store.
+    """
+    __tablename__ = "coding_concept_quiz_attempts"
+    __table_args__ = (
+        Index(
+            "ix_concept_quiz_user_language_category",
+            "user_id",
+            "language",
+            "category",
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    language = Column(String(30), nullable=False, index=True)
+    category = Column(String(80), nullable=False, index=True)
+    correct = Column(Integer, nullable=False, default=0)
+    total = Column(Integer, nullable=False, default=0)
+    score = Column(Float, nullable=False, default=0.0)
+    results_json = Column(Text, nullable=False, default="[]")
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+
+    user = relationship("User", backref="coding_concept_quiz_attempts")
+
+
 class FailedQuery(Base):
     """Tracks questions the chatbot couldn't answer (KB misses).
     Used by the auto-research agent to find and fill knowledge gaps."""

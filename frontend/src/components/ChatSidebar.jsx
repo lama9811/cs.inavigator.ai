@@ -1,14 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from 'sonner';
 import { FaPlus } from "@react-icons/all-files/fa/FaPlus";
 import { FaSearch } from "@react-icons/all-files/fa/FaSearch";
-import { FaBook } from "@react-icons/all-files/fa/FaBook";
-import { FaChalkboardTeacher } from "@react-icons/all-files/fa/FaChalkboardTeacher";
-import { FaChartLine } from "@react-icons/all-files/fa/FaChartLine";
-import { FaProjectDiagram } from "@react-icons/all-files/fa/FaProjectDiagram";
-import { FaLaptopCode } from "@react-icons/all-files/fa/FaLaptopCode";
 import { FaTrash } from "@react-icons/all-files/fa/FaTrash";
 import { FaUser } from "@react-icons/all-files/fa/FaUser";
 import { FaSignOutAlt } from "@react-icons/all-files/fa/FaSignOutAlt";
@@ -16,8 +11,6 @@ import { FaEllipsisV } from "@react-icons/all-files/fa/FaEllipsisV";
 import { FaThumbtack } from "@react-icons/all-files/fa/FaThumbtack";
 import { FaArchive } from "@react-icons/all-files/fa/FaArchive";
 import { FaPencilAlt } from "@react-icons/all-files/fa/FaPencilAlt";
-import { FaMoon } from "@react-icons/all-files/fa/FaMoon";
-import { FaSun } from "@react-icons/all-files/fa/FaSun";
 import { FaDownload } from "@react-icons/all-files/fa/FaDownload";
 import { FaChevronRight } from "@react-icons/all-files/fa/FaChevronRight";
 import { FaHeadset } from "@react-icons/all-files/fa/FaHeadset";
@@ -42,8 +35,6 @@ export default function ChatSidebar({
   onPin,
   onArchive,
   onRename,
-  darkMode,
-  onToggleTheme,
   onCollapseSidebar,
   onSidebarResize
 }) {
@@ -76,8 +67,6 @@ export default function ChatSidebar({
   const [ticketSuccess, setTicketSuccess] = useState(false);
 
   const API_BASE = getApiBase();
-  const location = useLocation();
-  const codingTutorActive = location.pathname === "/coding";
 
   // PWA install prompt
   const deferredPromptRef = useRef(null);
@@ -344,20 +333,6 @@ export default function ChatSidebar({
     });
   };
   
-  const handleCurriculumClick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    closeContextMenu();
-    navigate("/curriculum");
-  };
-
-  const handleMyClassesClick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    closeContextMenu();
-    navigate("/my-classes");
-  };
-
   const handleProfileClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
