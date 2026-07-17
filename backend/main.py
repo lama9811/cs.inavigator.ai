@@ -490,6 +490,17 @@ def init_db():
             except Exception as e:
                 print(f"[ERROR] Failed to add checklist_json column: {e}")
 
+        # Same guard for deadline_type (fixed/rolling/recurring/unknown), added after
+        # the table already existed on some deployments.
+        if _has_table("saved_scholarships") and not _has_col("saved_scholarships", "deadline_type"):
+            print("[WARN] 'deadline_type' column missing from saved_scholarships. Adding it now...")
+            try:
+                conn.execute(text("ALTER TABLE saved_scholarships ADD COLUMN deadline_type VARCHAR(20)"))
+                conn.commit()
+                print("[OK] Successfully added 'deadline_type' column!")
+            except Exception as e:
+                print(f"[ERROR] Failed to add deadline_type column: {e}")
+
     # 8. Create/Update admin account
     try:
         db = SessionLocal()
@@ -1843,6 +1854,7 @@ def _saved_to_dict(row: SavedScholarship) -> dict:
         "location": row.location,
         "role": row.role,
         "deadline": row.deadline,
+        "deadline_type": row.deadline_type or "unknown",
         "url": row.url,
         "source_url": row.source_url,
         "why": row.why,
@@ -1934,6 +1946,9 @@ async def save_scholarship(
     row.location = (str(payload.get("location")).strip()[:200] if payload.get("location") else None)
     row.role = (str(payload.get("role")).strip()[:200] if payload.get("role") else None)
     row.deadline = (str(payload.get("deadline")).strip()[:40] if payload.get("deadline") else None)
+    # Normalize the deadline_type (fixed/rolling/recurring/unknown) so the saved
+    # copy carries the same timing hint the search result showed.
+    row.deadline_type = scholarship_search.normalize_deadline_type(payload)[:20]
     row.url = url[:1000] if url else None
     src = str(payload.get("source_url") or "").strip() or None
     row.source_url = src[:1000] if src else None

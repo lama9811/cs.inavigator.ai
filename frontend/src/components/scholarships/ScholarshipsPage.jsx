@@ -39,13 +39,34 @@ const EXAMPLES = [
   "Research programs (REU) for undergrads",
 ];
 
+// What to show for an item's timing. A real countdown when there's a fixed date;
+// otherwise a meaningful word from deadline_type instead of a bare "(not listed)".
 function daysLabel(item) {
   const d = item.days_remaining;
-  if (d == null) return null;
-  if (d === 0) return "Due today";
-  if (d === 1) return "1 day left";
-  if (d < 0) return "Deadline passed";
-  return `${d} days left`;
+  if (d != null) {
+    if (d === 0) return "Due today";
+    if (d === 1) return "1 day left";
+    if (d < 0) return "Deadline passed";
+    return `${d} days left`;
+  }
+  switch (item.deadline_type) {
+    case "rolling": return "Rolling — apply anytime";
+    case "recurring": return "Reopens on a cycle";
+    case "fixed": return null; // fixed but no parsed date; nothing useful to add
+    default: return "No deadline listed";
+  }
+}
+
+// Filter a list of result items by kind and timing. Timing maps onto the
+// deadline_type the backend now stamps on every item: "dated" = has a real fixed
+// date, else match the rolling/recurring type directly.
+function filterResultItems(items, kind, timing) {
+  return items.filter((it) => {
+    if (kind !== "all" && (it.kind || "scholarship") !== kind) return false;
+    if (timing === "all") return true;
+    if (timing === "dated") return it.days_remaining != null;
+    return (it.deadline_type || "unknown") === timing;
+  });
 }
 
 // The fields we send to the backend when saving. Kept in one place so a search
@@ -61,6 +82,7 @@ function toSavePayload(item) {
     location: item.location,
     role: item.role,
     deadline: item.deadline,
+    deadline_type: item.deadline_type,
     url: item.url,
     source_url: item.source_url,
     why: item.why,
@@ -120,8 +142,12 @@ function OpportunityCard({ item, saved, onSave, onRemove, saving }) {
         <div>
           <dt>Deadline</dt>
           <dd>
-            {item.deadline && item.deadline !== "(not listed)" ? item.deadline : "Not listed"}
-            {days && <span className="sch-days"> · {days}</span>}
+            {item.deadline && item.deadline !== "(not listed)"
+              ? item.deadline
+              : (days || "Not listed")}
+            {item.deadline && item.deadline !== "(not listed)" && days && (
+              <span className="sch-days"> · {days}</span>
+            )}
           </dd>
         </div>
       </dl>
@@ -181,8 +207,10 @@ function SavedCard({ item, onStatus, onRemove, onOpen, busy }) {
         <div>
           <dt>Deadline</dt>
           <dd>
-            {item.deadline && item.deadline !== "(not listed)" ? item.deadline : "Not listed"}
-            {days && (
+            {item.deadline && item.deadline !== "(not listed)"
+              ? item.deadline
+              : (days || "Not listed")}
+            {item.deadline && item.deadline !== "(not listed)" && days && (
               <span className={`sch-days ${expired ? "is-expired" : ""}`}> · {days}</span>
             )}
           </dd>
@@ -232,12 +260,27 @@ function SavedCard({ item, onStatus, onRemove, onOpen, busy }) {
   );
 }
 
+// Persist the search across navigation so leaving the page and coming back doesn't
+// wipe the query and results. sessionStorage (not local) is the right lifetime: it
+// survives route changes and reloads within the tab, but clears when the tab closes.
+const SS_KEY = "sch:searchState";
+
+function loadSearchState() {
+  try {
+    const raw = sessionStorage.getItem(SS_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function ScholarshipsPage() {
-  const [tab, setTab] = useState("search"); // "search" | "saved"
-  const [query, setQuery] = useState("");
+  const persisted = loadSearchState();
+  const [tab, setTab] = useState(persisted?.tab || "search"); // "search" | "saved"
+  const [query, setQuery] = useState(persisted?.query || "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState(persisted?.result || null);
   // null = still checking; false = the backend has no TAVILY_API_KEY.
   const [configured, setConfigured] = useState(null);
 
@@ -246,8 +289,22 @@ export default function ScholarshipsPage() {
   const [openId, setOpenId] = useState(null);        // saved id shown in the detail view
   const [saveError, setSaveError] = useState("");    // surfaced save/unsave failures
 
+  // Filters applied to the SEARCH results (client-side, over what came back).
+  const [fltKind, setFltKind] = useState("all");     // all | scholarship | internship
+  const [fltTiming, setFltTiming] = useState("all"); // all | dated | rolling | recurring
+
   const token = localStorage.getItem("token");
   const authHeaders = { Authorization: `Bearer ${token}` };
+
+  // Save the search across navigation. Persist only the query, results and active
+  // tab — not transient flags (busy/error) or the saved list (that reloads live).
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(SS_KEY, JSON.stringify({ tab, query, result }));
+    } catch {
+      /* storage full/blocked — persistence is a nicety, never block the UI */
+    }
+  }, [tab, query, result]);
 
   // Ask up front whether search is even usable, so we can explain rather than
   // let the student type a query and hit a 503.
@@ -508,29 +565,58 @@ export default function ScholarshipsPage() {
 
               {total > 0 && (
                 <>
-                  {GROUPS.map(({ key, label, hint }) => {
-                    const items = result.groups?.[key] || [];
-                    if (!items.length) return null;
-                    return (
-                      <section className="sch-group" key={key}>
-                        <h2 className={`sch-group-head sch-group-${key.toLowerCase()}`}>
-                          {label} <span className="sch-group-hint">{hint}</span>
-                        </h2>
-                        <ul className="sch-list">
-                          {items.map((item, i) => (
-                            <OpportunityCard
-                              key={`${item.name}-${i}`}
-                              item={item}
-                              saved={findSaved(saved, item)}
-                              onSave={saveItem}
-                              onRemove={removeItem}
-                              saving={inFlight(item)}
-                            />
-                          ))}
-                        </ul>
-                      </section>
+                  <div className="sch-toolbar">
+                    <label className="sch-toolbar-field">
+                      <span>Show</span>
+                      <select value={fltKind} onChange={(e) => setFltKind(e.target.value)}>
+                        <option value="all">All</option>
+                        <option value="scholarship">Scholarships</option>
+                        <option value="internship">Internships</option>
+                      </select>
+                    </label>
+                    <label className="sch-toolbar-field">
+                      <span>Deadline</span>
+                      <select value={fltTiming} onChange={(e) => setFltTiming(e.target.value)}>
+                        <option value="all">Any</option>
+                        <option value="dated">Has a date</option>
+                        <option value="rolling">Rolling</option>
+                        <option value="recurring">Recurring</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  {(() => {
+                    const rendered = GROUPS.map(({ key, label, hint }) => {
+                      const items = filterResultItems(
+                        result.groups?.[key] || [], fltKind, fltTiming
+                      );
+                      if (!items.length) return null;
+                      return (
+                        <section className="sch-group" key={key}>
+                          <h2 className={`sch-group-head sch-group-${key.toLowerCase()}`}>
+                            {label} <span className="sch-group-hint">{hint}</span>
+                          </h2>
+                          <ul className="sch-list">
+                            {items.map((item, i) => (
+                              <OpportunityCard
+                                key={`${item.name}-${i}`}
+                                item={item}
+                                saved={findSaved(saved, item)}
+                                onSave={saveItem}
+                                onRemove={removeItem}
+                                saving={inFlight(item)}
+                              />
+                            ))}
+                          </ul>
+                        </section>
+                      );
+                    });
+                    return rendered.some(Boolean) ? rendered : (
+                      <p className="sch-status">
+                        Nothing matches those filters. Try widening them.
+                      </p>
                     );
-                  })}
+                  })()}
 
                   {result.note && <p className="sch-note">{result.note}</p>}
 

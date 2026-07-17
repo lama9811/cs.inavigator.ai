@@ -10,11 +10,18 @@ const API_BASE = getApiBase();
 
 function daysLabel(item) {
   const d = item.days_remaining;
-  if (d == null) return null;
-  if (d === 0) return "Due today";
-  if (d === 1) return "1 day left";
-  if (d < 0) return "Deadline passed";
-  return `${d} days left`;
+  if (d != null) {
+    if (d === 0) return "Due today";
+    if (d === 1) return "1 day left";
+    if (d < 0) return "Deadline passed";
+    return `${d} days left`;
+  }
+  switch (item.deadline_type) {
+    case "rolling": return "Rolling — apply anytime";
+    case "recurring": return "Reopens on a cycle";
+    case "fixed": return null;
+    default: return "No deadline listed";
+  }
 }
 
 // Give a brand-new blank row a client-unique id. The backend re-ids on save, so
@@ -162,8 +169,10 @@ export default function ScholarshipDetail({ item, onBack, onSaved }) {
         <div>
           <dt>Deadline</dt>
           <dd>
-            {item.deadline && item.deadline !== "(not listed)" ? item.deadline : "Not listed"}
-            {days && (
+            {item.deadline && item.deadline !== "(not listed)"
+              ? item.deadline
+              : (days || "Not listed")}
+            {item.deadline && item.deadline !== "(not listed)" && days && (
               <span className={`sch-days ${item.urgency === "EXPIRED" ? "is-expired" : ""}`}>
                 {" "}· {days}
               </span>
