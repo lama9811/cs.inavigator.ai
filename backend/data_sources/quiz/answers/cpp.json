@@ -2492,6 +2492,705 @@
           ]
         }
       ]
+    },
+    {
+      "question_id": "easy-21",
+      "function_name": "countDigits",
+      "runner_tests": [
+        {
+          "name": "regular number",
+          "args": [
+            5029
+          ],
+          "expected": 4
+        },
+        {
+          "name": "zero",
+          "args": [
+            0
+          ],
+          "expected": 1
+        },
+        {
+          "name": "one digit",
+          "args": [
+            7
+          ],
+          "expected": 1
+        }
+      ]
+    },
+    {
+      "question_id": "easy-22",
+      "function_name": "matrixColumnSums",
+      "runner_tests": [
+        {
+          "name": "two rows",
+          "args": [
+            [
+              [
+                1,
+                2,
+                3
+              ],
+              [
+                4,
+                5,
+                6
+              ]
+            ]
+          ],
+          "expected": [
+            5,
+            7,
+            9
+          ]
+        },
+        {
+          "name": "single row",
+          "args": [
+            [
+              [
+                2,
+                8
+              ]
+            ]
+          ],
+          "expected": [
+            2,
+            8
+          ]
+        },
+        {
+          "name": "empty matrix",
+          "args": [
+            []
+          ],
+          "expected": []
+        }
+      ]
+    },
+    {
+      "question_id": "easy-23",
+      "function_name": "canVote",
+      "runner_tests": [
+        {
+          "name": "exactly eighteen",
+          "args": [
+            18
+          ],
+          "expected": true
+        },
+        {
+          "name": "too young",
+          "args": [
+            16
+          ],
+          "expected": false
+        },
+        {
+          "name": "older adult",
+          "args": [
+            21
+          ],
+          "expected": true
+        }
+      ]
+    },
+    {
+      "question_id": "easy-24",
+      "function_name": "uniqueCount",
+      "runner_tests": [
+        {
+          "name": "duplicates",
+          "args": [
+            [
+              4,
+              4,
+              2,
+              7,
+              2
+            ]
+          ],
+          "expected": 3
+        },
+        {
+          "name": "empty",
+          "args": [
+            []
+          ],
+          "expected": 0
+        },
+        {
+          "name": "all same",
+          "args": [
+            [
+              5,
+              5,
+              5
+            ]
+          ],
+          "expected": 1
+        }
+      ]
+    },
+    {
+      "question_id": "medium-21",
+      "function_name": "pairSumSorted",
+      "runner_tests": [
+        {
+          "name": "pair exists",
+          "args": [
+            [
+              1,
+              2,
+              4,
+              7
+            ],
+            9
+          ],
+          "expected": true
+        },
+        {
+          "name": "no pair",
+          "args": [
+            [
+              1,
+              3,
+              5
+            ],
+            10
+          ],
+          "expected": false
+        },
+        {
+          "name": "uses two indexes",
+          "args": [
+            [
+              4
+            ],
+            8
+          ],
+          "expected": false
+        }
+      ]
+    },
+    {
+      "question_id": "medium-22",
+      "function_name": "binarySearchExact",
+      "runner_tests": [
+        {
+          "name": "found",
+          "args": [
+            [
+              2,
+              4,
+              6,
+              8
+            ],
+            6
+          ],
+          "expected": 2
+        },
+        {
+          "name": "missing",
+          "args": [
+            [
+              2,
+              4,
+              6,
+              8
+            ],
+            5
+          ],
+          "expected": -1
+        },
+        {
+          "name": "empty",
+          "args": [
+            [],
+            3
+          ],
+          "expected": -1
+        }
+      ]
+    },
+    {
+      "question_id": "medium-23",
+      "function_name": "helpDeskQueue",
+      "runner_tests": [
+        {
+          "name": "serve several",
+          "args": [
+            [
+              "join Ana",
+              "join Bo",
+              "serve",
+              "serve",
+              "serve"
+            ]
+          ],
+          "expected": [
+            "Ana",
+            "Bo",
+            "none"
+          ]
+        },
+        {
+          "name": "serve empty first",
+          "args": [
+            [
+              "serve",
+              "join Kim",
+              "serve"
+            ]
+          ],
+          "expected": [
+            "none",
+            "Kim"
+          ]
+        },
+        {
+          "name": "no serves",
+          "args": [
+            [
+              "join A",
+              "join B"
+            ]
+          ],
+          "expected": []
+        }
+      ]
+    },
+    {
+      "question_id": "medium-24",
+      "function_name": "recursiveDigitSum",
+      "runner_tests": [
+        {
+          "name": "three digits",
+          "args": [
+            407
+          ],
+          "expected": 11
+        },
+        {
+          "name": "zero",
+          "args": [
+            0
+          ],
+          "expected": 0
+        },
+        {
+          "name": "many digits",
+          "args": [
+            9999
+          ],
+          "expected": 36
+        }
+      ]
+    },
+    {
+      "question_id": "medium-25",
+      "function_name": "rangeSumQueries",
+      "runner_tests": [
+        {
+          "name": "two queries",
+          "args": [
+            [
+              2,
+              4,
+              1,
+              3
+            ],
+            [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                3
+              ]
+            ]
+          ],
+          "expected": [
+            6,
+            8
+          ]
+        },
+        {
+          "name": "single item range",
+          "args": [
+            [
+              5,
+              -2,
+              7
+            ],
+            [
+              [
+                1,
+                1
+              ]
+            ]
+          ],
+          "expected": [
+            -2
+          ]
+        },
+        {
+          "name": "whole range",
+          "args": [
+            [
+              1,
+              2,
+              3
+            ],
+            [
+              [
+                0,
+                2
+              ]
+            ]
+          ],
+          "expected": [
+            6
+          ]
+        }
+      ]
+    },
+    {
+      "question_id": "medium-26",
+      "function_name": "mergeOverlappingIntervals",
+      "runner_tests": [
+        {
+          "name": "overlap",
+          "args": [
+            [
+              [
+                1,
+                3
+              ],
+              [
+                2,
+                6
+              ],
+              [
+                8,
+                10
+              ]
+            ]
+          ],
+          "expected": [
+            [
+              1,
+              6
+            ],
+            [
+              8,
+              10
+            ]
+          ]
+        },
+        {
+          "name": "touching intervals merge",
+          "args": [
+            [
+              [
+                1,
+                2
+              ],
+              [
+                2,
+                3
+              ]
+            ]
+          ],
+          "expected": [
+            [
+              1,
+              3
+            ]
+          ]
+        },
+        {
+          "name": "unsorted",
+          "args": [
+            [
+              [
+                5,
+                7
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                2,
+                4
+              ]
+            ]
+          ],
+          "expected": [
+            [
+              1,
+              4
+            ],
+            [
+              5,
+              7
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "question_id": "medium-27",
+      "function_name": "maximumWindowSum",
+      "runner_tests": [
+        {
+          "name": "middle best",
+          "args": [
+            [
+              2,
+              1,
+              5,
+              1,
+              3
+            ],
+            3
+          ],
+          "expected": 9
+        },
+        {
+          "name": "whole list",
+          "args": [
+            [
+              1,
+              2,
+              3
+            ],
+            3
+          ],
+          "expected": 6
+        },
+        {
+          "name": "negative values",
+          "args": [
+            [
+              -5,
+              -2,
+              -7
+            ],
+            2
+          ],
+          "expected": -7
+        }
+      ]
+    },
+    {
+      "question_id": "hard-21",
+      "function_name": "topKScores",
+      "runner_tests": [
+        {
+          "name": "keeps duplicates",
+          "args": [
+            [
+              88,
+              91,
+              72,
+              91,
+              84
+            ],
+            3
+          ],
+          "expected": [
+            91,
+            91,
+            88
+          ]
+        },
+        {
+          "name": "one score",
+          "args": [
+            [
+              4,
+              1,
+              9
+            ],
+            1
+          ],
+          "expected": [
+            9
+          ]
+        },
+        {
+          "name": "all scores",
+          "args": [
+            [
+              3,
+              2,
+              1
+            ],
+            3
+          ],
+          "expected": [
+            3,
+            2,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "question_id": "hard-22",
+      "function_name": "anyWordHasPrefix",
+      "runner_tests": [
+        {
+          "name": "prefix exists",
+          "args": [
+            [
+              "cat",
+              "car",
+              "dog"
+            ],
+            "ca"
+          ],
+          "expected": true
+        },
+        {
+          "name": "prefix missing",
+          "args": [
+            [
+              "cat",
+              "car",
+              "dog"
+            ],
+            "doe"
+          ],
+          "expected": false
+        },
+        {
+          "name": "empty prefix",
+          "args": [
+            [
+              "cat"
+            ],
+            ""
+          ],
+          "expected": true
+        }
+      ]
+    },
+    {
+      "question_id": "hard-23",
+      "function_name": "earliestConnectedTime",
+      "runner_tests": [
+        {
+          "name": "connects all",
+          "args": [
+            3,
+            [
+              [
+                1,
+                0,
+                1
+              ],
+              [
+                4,
+                1,
+                2
+              ]
+            ]
+          ],
+          "expected": 4
+        },
+        {
+          "name": "never connects",
+          "args": [
+            4,
+            [
+              [
+                1,
+                0,
+                1
+              ],
+              [
+                2,
+                2,
+                3
+              ]
+            ]
+          ],
+          "expected": -1
+        },
+        {
+          "name": "events unsorted",
+          "args": [
+            3,
+            [
+              [
+                10,
+                1,
+                2
+              ],
+              [
+                3,
+                0,
+                1
+              ]
+            ]
+          ],
+          "expected": 10
+        }
+      ]
+    },
+    {
+      "question_id": "hard-24",
+      "function_name": "treeLevelSums",
+      "runner_tests": [
+        {
+          "name": "standard tree",
+          "args": [
+            [
+              3,
+              9,
+              20,
+              -1,
+              -1,
+              15,
+              7
+            ]
+          ],
+          "expected": [
+            3,
+            29,
+            22
+          ]
+        },
+        {
+          "name": "empty tree",
+          "args": [
+            []
+          ],
+          "expected": []
+        },
+        {
+          "name": "missing child",
+          "args": [
+            [
+              1,
+              2,
+              -1,
+              4
+            ]
+          ],
+          "expected": [
+            1,
+            2,
+            4
+          ]
+        }
+      ]
     }
   ]
 }

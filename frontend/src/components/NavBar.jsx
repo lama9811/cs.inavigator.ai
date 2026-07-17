@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { FaBars } from "@react-icons/all-files/fa/FaBars";
 import { FaUser } from "@react-icons/all-files/fa/FaUser";
 import { FaUserShield } from "@react-icons/all-files/fa/FaUserShield";
@@ -9,11 +9,70 @@ import { FaBook } from "@react-icons/all-files/fa/FaBook";
 import { FaChartLine } from "@react-icons/all-files/fa/FaChartLine";
 import { FaProjectDiagram } from "@react-icons/all-files/fa/FaProjectDiagram";
 import { FaCalendarAlt } from "@react-icons/all-files/fa/FaCalendarAlt";
+import { FaThLarge } from "@react-icons/all-files/fa/FaThLarge";
+import { FaChevronDown } from "@react-icons/all-files/fa/FaChevronDown";
 import "../index.css";
 import "./NavBar.css";
 
 import { getApiBase } from "../lib/apiBase";
 const API_BASE = getApiBase();
+
+function NavDropdown({ label, Icon, items }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!open) return;
+    const handleDocumentMouseDown = (event) => {
+      if (ref.current && !ref.current.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleDocumentMouseDown);
+    return () => document.removeEventListener("mousedown", handleDocumentMouseDown);
+  }, [open]);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
+  const groupActive = items.some((item) => location.pathname.startsWith(item.to));
+
+  return (
+    <div className="nav-dropdown" ref={ref}>
+      <button
+        type="button"
+        className={"nav-pill nav-dropdown-trigger" + (groupActive ? " active" : "")}
+        onClick={() => setOpen((current) => !current)}
+        aria-haspopup="true"
+        aria-expanded={open}
+        title={label}
+      >
+        <Icon size={15} />
+        <span>{label}</span>
+        <FaChevronDown size={11} className={"nav-dropdown-caret" + (open ? " open" : "")} />
+      </button>
+
+      {open && (
+        <div className="nav-dropdown-menu" role="menu">
+          {items.map(({ to, label: itemLabel, Icon: ItemIcon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              role="menuitem"
+              className={({ isActive }) => "nav-dropdown-item" + (isActive ? " active" : "")}
+            >
+              <ItemIcon size={14} />
+              <span>{itemLabel}</span>
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function NavBar({ role, authenticated, onToggleSidebar, onBrandClick }) {
   const [scrolled, setScrolled] = useState(false);
   const [profilePicture, setProfilePicture] = useState("/user_icon.webp");
@@ -76,9 +135,11 @@ export default function NavBar({ role, authenticated, onToggleSidebar, onBrandCl
   const primaryNav = [
     { to: "/my-classes", label: "My Classes", Icon: FaChalkboardTeacher },
     { to: "/coding", label: "Coding Tutor", Icon: FaLaptopCode },
+    { to: "/grade-analysis", label: "Grade Surgeon", Icon: FaChartLine },
+  ];
+  const toolsNav = [
     { to: "/curriculum", label: "Curriculum", Icon: FaBook },
     { to: "/planner", label: "Planner", Icon: FaCalendarAlt },
-    { to: "/grade-analysis", label: "Grade Surgeon", Icon: FaChartLine },
     { to: "/ripple-effect", label: "Ripple Effect", Icon: FaProjectDiagram },
   ];
 
@@ -132,6 +193,7 @@ export default function NavBar({ role, authenticated, onToggleSidebar, onBrandCl
                 <span>{label}</span>
               </NavLink>
             ))}
+            <NavDropdown label="Tools" Icon={FaThLarge} items={toolsNav} />
           </nav>
         )}
 

@@ -81,6 +81,69 @@
 /* navbar-right sits right after the pills with a small gap, not a second push */
 .nav-primary-links + .navbar-right { margin-left: 12px; }
 
+/* ---------- Tools nav dropdown (same footprint as a pill) ---------- */
+.nav-dropdown {
+  position: relative;
+  display: inline-flex;
+}
+
+.nav-dropdown-trigger {
+  cursor: pointer;
+}
+
+.nav-dropdown-caret {
+  transition: transform var(--transition-fast);
+  opacity: 0.75;
+}
+
+.nav-dropdown-caret.open {
+  transform: rotate(180deg);
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 190px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.25);
+  z-index: 300;
+}
+
+.nav-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.nav-dropdown-item:hover {
+  color: var(--msu-blue);
+  background: var(--msu-blue-50);
+}
+
+.nav-dropdown-item.active {
+  color: #fff;
+  background: var(--msu-blue);
+}
+
+.nav-dropdown-item svg {
+  flex-shrink: 0;
+}
+
 /* Collapse pill labels to icons on tighter widths so the bar never overflows */
 @media (max-width: 1180px) {
   .nav-pill span { display: none; }

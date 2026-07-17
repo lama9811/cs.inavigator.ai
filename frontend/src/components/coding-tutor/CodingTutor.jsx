@@ -2597,6 +2597,7 @@ export default function CodingTutor({
       onOpenQuizBank={() => navigate(PRACTICE_CODE_PATH)}
       onPrompt={sendDashboardPrompt}
       onSaveQuiz={saveLatestQuizAsPdf}
+      mastery={mastery}
     />
   );
 

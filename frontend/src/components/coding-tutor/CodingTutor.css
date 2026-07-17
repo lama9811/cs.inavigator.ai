@@ -6561,6 +6561,79 @@ body.coding-dark .campus-hero-focus {
   font-size: 1.22rem;
 }
 
+.campus-path-list {
+  display: grid;
+  gap: 9px;
+  margin: 10px 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.campus-path-list li {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.campus-path-list li > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-primary) 11%, var(--ct-panel));
+  color: var(--ct-primary);
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 24%, var(--ct-border));
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.campus-path-list div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.campus-path-list b {
+  color: var(--ct-primary);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.campus-path-list button {
+  justify-self: start;
+  width: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ct-ink);
+  font-weight: 750;
+  text-align: left;
+}
+
+.campus-queue-item .campus-path-list button:hover,
+.campus-queue-item .campus-path-list button:focus-visible {
+  color: var(--ct-primary) !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  text-decoration: underline;
+}
+
+.campus-path-list em {
+  color: var(--ct-muted);
+  font-style: normal;
+  font-size: 0.88rem;
+}
+
+.campus-queue-item.featured .campus-path-list + p {
+  display: none;
+}
+
 .campus-queue-item.personal {
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--ct-accent) 10%, transparent), transparent 58%),
