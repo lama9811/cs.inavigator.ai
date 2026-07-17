@@ -271,6 +271,44 @@ def test_prompt_prefers_dated_opportunities():
     assert "NOT a filter" in text          # must not hide undated ones
 
 
+# --- dismissed opportunities (hide from results) -----------------------------
+
+def test_merge_drops_dismissed_items():
+    """A dismissed client_key is filtered out of the merged results."""
+    live = [
+        {"name": "Keep Me", "url": "https://keep.org", "deadline": _iso(10)},
+        {"name": "Hide Me", "url": "https://hide.org", "deadline": _iso(10)},
+    ]
+    dismissed = {ss.client_key_for("Hide Me", "https://hide.org")}
+    groups = ss._merge_and_group([], live, dismissed)
+    names = [i["name"] for b in groups.values() for i in b]
+    assert names == ["Keep Me"]
+
+
+def test_merge_without_dismissed_keeps_everything():
+    live = [{"name": "A", "deadline": _iso(10)}, {"name": "B", "deadline": _iso(10)}]
+    groups = ss._merge_and_group([], live)          # no dismissed set
+    assert len({i["name"] for b in groups.values() for i in b}) == 2
+
+
+def test_find_opportunities_excludes_dismissed(monkeypatch):
+    """An end-to-end dismiss: the hidden curated award never appears."""
+    monkeypatch.setenv("SCHOLARSHIP_USE_GROUNDING", "false")
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)   # curated only
+    ss.clear_cache()
+
+    # Grab a real curated item and dismiss it by its client_key.
+    curated = ss.curated_opportunities({})
+    target = curated[0]
+    key = ss.client_key_for(target["name"], target.get("url", ""))
+
+    result = ss.find_opportunities(
+        "scholarships and internships", {}, now=60.0, dismissed_keys={key},
+    )
+    names = {i["name"] for b in result["groups"].values() for i in b}
+    assert target["name"] not in names
+
+
 def test_malformed_items_are_skipped():
     """The model can emit junk; grouping must not raise on it."""
     groups = ss._group_by_urgency([
@@ -899,15 +937,74 @@ def test_unwrap_resolves_each_unique_redirect_once(monkeypatch):
 def test_resolve_redirect_returns_original_on_failure(monkeypatch):
     """A dead/slow redirect keeps the original URL rather than raising."""
     import httpx
-    def _raise(*_a, **_kw):
-        raise httpx.ConnectError("boom")
-    monkeypatch.setattr(httpx, "head", _raise)
+    monkeypatch.setattr(ss, "_host_is_public", lambda h: True)  # get past the SSRF gate
+
+    class _BoomClient:
+        def __init__(self, *a, **k): pass
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def head(self, *a, **k):
+            raise httpx.ConnectError("boom")
+    monkeypatch.setattr(httpx, "Client", _BoomClient)
     assert ss._resolve_redirect(REDIRECT) == REDIRECT
 
 
 def test_unwrap_tolerates_junk_items():
     assert ss._unwrap_redirect_urls([]) == []
     assert ss._unwrap_redirect_urls([None, "x", {"no_url": 1}]) == [None, "x", {"no_url": 1}]
+
+
+# --- SSRF hardening on redirect resolution -----------------------------------
+
+@pytest.mark.parametrize("host", [
+    "metadata.google.internal",   # GCP metadata hostname
+    "metadata",
+    "localhost",
+    "127.0.0.1",
+    "169.254.169.254",            # link-local / cloud metadata IP
+    "10.0.0.5",                   # private
+    "192.168.1.1",                # private
+    "0.0.0.0",                    # unspecified
+])
+def test_host_is_public_rejects_internal(host):
+    assert ss._host_is_public(host) is False
+
+
+def test_host_is_public_rejects_empty():
+    assert ss._host_is_public("") is False
+
+
+def test_host_is_public_allows_a_real_public_host():
+    # A well-known always-public host. This does a DNS lookup; if the test env has
+    # no network it will (correctly) fail closed to False — so only assert the
+    # positive when resolution succeeds.
+    import socket
+    try:
+        socket.getaddrinfo("google.com", None)
+    except Exception:
+        pytest.skip("no DNS in test env")
+    assert ss._host_is_public("google.com") is True
+
+
+def test_resolve_redirect_refuses_internal_host(monkeypatch):
+    """A redirect that points at an internal host must NOT be fetched — return original."""
+    import httpx
+    # Pretend the redirect URL itself is internal.
+    monkeypatch.setattr(ss, "_host_is_public", lambda h: False)
+
+    called = {"n": 0}
+    class _Client:
+        def __init__(self, *a, **k): pass
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def head(self, *a, **k):
+            called["n"] += 1
+            raise AssertionError("must not fetch an internal host")
+    monkeypatch.setattr(httpx, "Client", _Client)
+
+    assert ss._resolve_redirect("http://169.254.169.254/latest/meta-data/") == \
+        "http://169.254.169.254/latest/meta-data/"
+    assert called["n"] == 0                        # never connected
 
 
 # --- expanded curated database -----------------------------------------------
