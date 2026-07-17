@@ -996,7 +996,7 @@ export default function App() {
         <Route
           path="/advising"
           element={
-            <RequireAuth>
+            <RequireAuth onExpired={handleLogout}>
               <SidebarLayout
                 sessions={sessions}
                 activeId={activeId}
@@ -1023,7 +1023,7 @@ export default function App() {
         <Route
           path="/scholarships"
           element={
-            <RequireAuth>
+            <RequireAuth onExpired={handleLogout}>
               <SidebarLayout
                 sessions={sessions}
                 activeId={activeId}

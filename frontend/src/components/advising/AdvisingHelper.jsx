@@ -43,6 +43,9 @@ export default function AdvisingHelper({ form, courseSuggestions = [], writingRe
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const endRef = useRef(null);
+  // Holds a writing-help request that arrived while a prior one was in flight, so
+  // it can be run when loading clears instead of being dropped.
+  const pendingRequestRef = useRef(null);
   const token = localStorage.getItem("token");
   // Keep the latest filled-form snapshot in a ref so the writing-help handler can read
   // it without being a dependency (which would re-fire the effect on every keystroke).
@@ -119,7 +122,13 @@ export default function AdvisingHelper({ form, courseSuggestions = [], writingRe
   // polishes THEIR wording. Either way it pulls in their already-filled answers as
   // context and never invents facts.
   const askWritingHelp = async (field, currentText) => {
-    if (loading) return;
+    // A click arriving mid-request would otherwise be dropped (the nonce already
+    // changed, so the effect won't re-fire it). Stash the LATEST such request and
+    // run it once this one finishes, so a student's second click isn't silently lost.
+    if (loading) {
+      pendingRequestRef.current = { field, currentText };
+      return;
+    }
     const draft = (currentText || "").trim();
     const context = relevantContext(field.label);
     const userLabel = draft
@@ -163,6 +172,12 @@ export default function AdvisingHelper({ form, courseSuggestions = [], writingRe
       setMessages((m) => [...m, { role: "bot", text: "I'm having trouble connecting right now. Please try again." }]);
     } finally {
       setLoading(false);
+      // If a request came in while we were loading, run the most recent one now.
+      const queued = pendingRequestRef.current;
+      if (queued) {
+        pendingRequestRef.current = null;
+        askWritingHelp(queued.field, queued.currentText);
+      }
     }
   };
 

@@ -22,7 +22,10 @@ function displayFieldValue(field, raw) {
   }
   // File fields hold "name::id" pairs; print the filenames, never the storage ids.
   if (field.type === "file") return fileListLabel(raw);
-  return esc(raw);
+  // Return normalized RAW text (expand the "||" separator), NOT HTML-escaped: the
+  // row builder escapes every cell once via esc(...), so escaping here too would
+  // double-encode (& -> &amp;amp;). Keep the single escape pass at the call site.
+  return String(raw ?? "").replaceAll("||", ", ");
 }
 
 export function buildAdvisingPrintDoc(steps, valuesByForm) {

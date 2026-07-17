@@ -71,8 +71,11 @@ const ROLE_CATEGORIES = [
 function filterResultItems(items, kind, timing, role = "all") {
   return items.filter((it) => {
     if (kind !== "all" && (it.kind || "scholarship") !== kind) return false;
-    if (role !== "all") {
-      // A role filter only applies to internships; it hides scholarships.
+    // The role filter only makes sense for internships. Skip it entirely in
+    // scholarship-only mode, otherwise a role value left over from a previous
+    // internship search would filter out every scholarship (they have no
+    // role_category), returning an empty list.
+    if (role !== "all" && kind !== "scholarship") {
       if ((it.kind || "scholarship") !== "internship") return false;
       if ((it.role_category || "Other") !== role) return false;
     }
@@ -99,6 +102,9 @@ function toSavePayload(item) {
     url: item.url,
     source_url: item.source_url,
     why: item.why,
+    // Persist whether this was a curated result so the saved view's "Recommended
+    // first" sort keeps ranking curated awards on top after a reload.
+    curated: Boolean(item.curated),
   };
 }
 
@@ -572,6 +578,7 @@ export default function ScholarshipsPage() {
             <input
               type="text"
               className="sch-input"
+              aria-label="Search scholarships and internships"
               placeholder="What are you looking for? e.g. summer internships for juniors"
               value={query}
               maxLength={500}

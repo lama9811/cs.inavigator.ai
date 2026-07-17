@@ -251,8 +251,11 @@ function FileField({ field, value, disabled, onChange, onUpload, onDeleteFile })
     if (!files.length) return;
     setBusy(true);
     setErr("");
+    // Track successful uploads OUTSIDE the try so we can roll them back if a
+    // later file in the batch fails — otherwise those blobs are stored on the
+    // backend but never referenced by the draft (orphaned, unreachable).
+    const added = [];
     try {
-      const added = [];
       for (const file of files) {
         const stored = await onUpload(file);
         // The uploader returns null on failure; don't silently drop the file.
@@ -262,6 +265,13 @@ function FileField({ field, value, disabled, onChange, onUpload, onDeleteFile })
       onChange(serializeFileList([...attached, ...added]));
     } catch {
       setErr("Upload failed. Check the file and try again.");
+      // Delete the files that DID upload before the failure, so a partial batch
+      // doesn't leave orphaned blobs on the backend. Best-effort; ignore errors.
+      for (const item of added) {
+        if (item.id) {
+          try { await onDeleteFile?.(item.id); } catch { /* best-effort cleanup */ }
+        }
+      }
     } finally {
       setBusy(false);
       // Clear the input so re-picking the same filename still fires onChange.
