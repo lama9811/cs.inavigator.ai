@@ -9,8 +9,13 @@
       "eligibility": "Enrolled Morgan State students; one application matches you to many institutional and external awards.",
       "eligibility_min_gpa": null,
       "deadline": "Rolling / varies by award",
+      "deadline_type": "rolling",
       "url": "https://morgan.scholarshipuniverse.com",
-      "tags": ["morgan", "institutional", "general"],
+      "tags": [
+        "morgan",
+        "institutional",
+        "general"
+      ],
       "why": "The single most important stop: one Morgan profile matches you to dozens of institutional and partner awards you'd otherwise never see."
     },
     {
@@ -21,8 +26,14 @@
       "eligibility": "Morgan State students; FAFSA on file is usually required.",
       "eligibility_min_gpa": null,
       "deadline": "Varies; FAFSA priority deadlines apply",
+      "deadline_type": "recurring",
       "url": "https://www.morgan.edu/financial-aid/scholarships",
-      "tags": ["morgan", "institutional", "need-based", "general"],
+      "tags": [
+        "morgan",
+        "institutional",
+        "need-based",
+        "general"
+      ],
       "why": "Morgan's own need- and merit-based aid. Filing the FAFSA on time is what unlocks most of it."
     },
     {
@@ -33,8 +44,14 @@
       "eligibility": "African American students; many programs require a minimum 2.5–3.0 GPA and financial need.",
       "eligibility_min_gpa": 2.5,
       "deadline": "Rolling; individual programs have their own deadlines",
+      "deadline_type": "rolling",
       "url": "https://uncf.org/scholarships",
-      "tags": ["hbcu", "national", "need-based", "general"],
+      "tags": [
+        "hbcu",
+        "national",
+        "need-based",
+        "general"
+      ],
       "why": "The largest source of scholarships for Black students; one UNCF profile opens many programs at once."
     },
     {
@@ -45,8 +62,13 @@
       "eligibility": "Students at TMCF member HBCUs (Morgan State is a member); typically 3.0+ GPA.",
       "eligibility_min_gpa": 3.0,
       "deadline": "Varies by program; many open in spring",
+      "deadline_type": "recurring",
       "url": "https://www.tmcf.org/students-alumni/scholarship/",
-      "tags": ["hbcu", "national", "general"],
+      "tags": [
+        "hbcu",
+        "national",
+        "general"
+      ],
       "why": "Morgan is a TMCF member school, so you're directly eligible for its scholarships and its corporate recruiting pipeline."
     },
     {
@@ -57,8 +79,14 @@
       "eligibility": "Community-college students transferring to a four-year school; high achievement and financial need.",
       "eligibility_min_gpa": 3.5,
       "deadline": "Opens fall, closes winter",
+      "deadline_type": "recurring",
       "url": "https://www.jkcf.org/our-scholarships/undergraduate-transfer-scholarship/",
-      "tags": ["national", "transfer", "need-based", "high-value"],
+      "tags": [
+        "national",
+        "transfer",
+        "need-based",
+        "high-value"
+      ],
       "why": "One of the most generous transfer awards in the country — worth it if you transferred into Morgan from a two-year school."
     },
     {
@@ -69,8 +97,14 @@
       "eligibility": "Students in computer science or a related field from historically marginalized groups.",
       "eligibility_min_gpa": null,
       "deadline": "Opens winter/spring",
+      "deadline_type": "recurring",
       "url": "https://buildyourfuture.withgoogle.com/scholarships",
-      "tags": ["cs", "national", "tech", "high-value"],
+      "tags": [
+        "cs",
+        "national",
+        "tech",
+        "high-value"
+      ],
       "why": "Built specifically for CS students from underrepresented groups — directly your field, and it comes with a retreat and community."
     },
     {
@@ -81,8 +115,13 @@
       "eligibility": "CS and related-major students; several programs target HBCU students.",
       "eligibility_min_gpa": null,
       "deadline": "Varies by program",
+      "deadline_type": "rolling",
       "url": "https://buildyourfuture.withgoogle.com/scholarships",
-      "tags": ["cs", "tech", "hbcu"],
+      "tags": [
+        "cs",
+        "tech",
+        "hbcu"
+      ],
       "why": "Google runs multiple CS scholarships and dev programs; the hub lists which are open right now."
     },
     {
@@ -93,8 +132,13 @@
       "eligibility": "Students pursuing CS, computer engineering, or a related STEM field; underrepresented groups encouraged.",
       "eligibility_min_gpa": 3.0,
       "deadline": "Varies",
+      "deadline_type": "rolling",
       "url": "https://www.microsoft.com/en-us/diversity/programs/microsoft-scholarship-program",
-      "tags": ["cs", "tech", "national"],
+      "tags": [
+        "cs",
+        "tech",
+        "national"
+      ],
       "why": "A tech-company tuition scholarship aimed squarely at CS majors from underrepresented backgrounds."
     },
     {
@@ -105,8 +149,14 @@
       "eligibility": "U.S. citizens in STEM fields; commit to work for the DoD after graduation.",
       "eligibility_min_gpa": 3.0,
       "deadline": "Opens August, closes early December",
+      "deadline_type": "recurring",
       "url": "https://www.smartscholarship.org/smart",
-      "tags": ["stem", "national", "service", "high-value"],
+      "tags": [
+        "stem",
+        "national",
+        "service",
+        "high-value"
+      ],
       "why": "Pays full tuition plus a stipend and hands you a guaranteed job — the trade is a service commitment to the DoD."
     },
     {
@@ -117,8 +167,14 @@
       "eligibility": "NSBE members in engineering/CS fields.",
       "eligibility_min_gpa": null,
       "deadline": "Varies by scholarship",
+      "deadline_type": "rolling",
       "url": "https://www.nsbe.org/scholarships",
-      "tags": ["cs", "engineering", "national", "membership"],
+      "tags": [
+        "cs",
+        "engineering",
+        "national",
+        "membership"
+      ],
       "why": "If you're a NSBE member (or join), it opens a whole catalog of engineering and CS awards plus its career fair."
     },
     {
@@ -129,8 +185,13 @@
       "eligibility": "African American students; some awards are tied to your congressional district.",
       "eligibility_min_gpa": 2.5,
       "deadline": "Opens winter, closes spring",
+      "deadline_type": "recurring",
       "url": "https://www.cbcfinc.org/scholarships/",
-      "tags": ["national", "need-based", "general"],
+      "tags": [
+        "national",
+        "need-based",
+        "general"
+      ],
       "why": "District-linked awards for Black students; being in a Maryland district can work in your favor."
     },
     {
@@ -141,8 +202,13 @@
       "eligibility": "Open to a wide range of students; many no-essay and HBCU-specific awards.",
       "eligibility_min_gpa": null,
       "deadline": "Rolling",
+      "deadline_type": "rolling",
       "url": "https://bold.org/scholarships/",
-      "tags": ["national", "no-essay", "general"],
+      "tags": [
+        "national",
+        "no-essay",
+        "general"
+      ],
       "why": "Low-effort, high-volume: many awards are quick to apply for, and some are HBCU- or CS-specific."
     },
     {
@@ -153,8 +219,14 @@
       "eligibility": "ACM student members in computing fields.",
       "eligibility_min_gpa": null,
       "deadline": "Varies by program",
+      "deadline_type": "rolling",
       "url": "https://www.acm.org/membership/scholarships",
-      "tags": ["cs", "national", "membership", "research"],
+      "tags": [
+        "cs",
+        "national",
+        "membership",
+        "research"
+      ],
       "why": "Being an ACM student member unlocks travel grants and research scholarships tied to the biggest CS conferences."
     },
     {
@@ -165,8 +237,14 @@
       "eligibility": "Women and non-binary students in computing.",
       "eligibility_min_gpa": null,
       "deadline": "Opens spring",
+      "deadline_type": "recurring",
       "url": "https://ghc.anitab.org/attend/scholarships/",
-      "tags": ["cs", "women-in-tech", "national", "conference"],
+      "tags": [
+        "cs",
+        "women-in-tech",
+        "national",
+        "conference"
+      ],
       "why": "Sends you to the largest gathering of women technologists in the world — the recruiting there is unmatched."
     },
     {
@@ -177,8 +255,14 @@
       "eligibility": "Women in ABET-accredited engineering and computing programs.",
       "eligibility_min_gpa": 3.0,
       "deadline": "Opens spring for sophomores+",
+      "deadline_type": "recurring",
       "url": "https://swe.org/scholarships/",
-      "tags": ["cs", "engineering", "women-in-tech", "national"],
+      "tags": [
+        "cs",
+        "engineering",
+        "women-in-tech",
+        "national"
+      ],
       "why": "One SWE application is scored against its entire scholarship pool, so a single form reaches many awards."
     },
     {
@@ -189,8 +273,13 @@
       "eligibility": "Students of Hispanic heritage; 3.0 GPA and FAFSA required.",
       "eligibility_min_gpa": 3.0,
       "deadline": "Opens fall, closes winter",
+      "deadline_type": "recurring",
       "url": "https://www.hsf.net/scholarship",
-      "tags": ["national", "need-based", "general"],
+      "tags": [
+        "national",
+        "need-based",
+        "general"
+      ],
       "why": "The country's largest scholarship for Hispanic students, and it comes with career support, not just money."
     },
     {
@@ -201,8 +290,13 @@
       "eligibility": "Minority high-achieving students with significant financial need (Pell-eligible).",
       "eligibility_min_gpa": 3.3,
       "deadline": "Opens summer, closes fall",
+      "deadline_type": "recurring",
       "url": "https://www.thegatesscholarship.org/scholarship",
-      "tags": ["national", "need-based", "high-value"],
+      "tags": [
+        "national",
+        "need-based",
+        "high-value"
+      ],
       "why": "Covers everything tuition doesn't — one of the most complete rides in the country for high-need students."
     },
     {
@@ -213,8 +307,13 @@
       "eligibility": "High school seniors (apply before college); leadership and service focus.",
       "eligibility_min_gpa": 3.0,
       "deadline": "Opens August, closes fall",
+      "deadline_type": "recurring",
       "url": "https://www.coca-colascholarsfoundation.org/apply/",
-      "tags": ["national", "leadership", "high-value"],
+      "tags": [
+        "national",
+        "leadership",
+        "high-value"
+      ],
       "why": "A high-value, achievement-based award — worth flagging early for incoming students and anyone mentoring them."
     },
     {
@@ -225,8 +324,14 @@
       "eligibility": "Maryland residents; many awards require the FAFSA or MD State Financial Aid Application.",
       "eligibility_min_gpa": null,
       "deadline": "MD FAFSA priority: March 1",
+      "deadline_type": "recurring",
       "url": "https://mhec.maryland.gov/preparing/Pages/FinancialAid/descriptionfinaid.aspx",
-      "tags": ["state", "maryland", "need-based", "general"],
+      "tags": [
+        "state",
+        "maryland",
+        "need-based",
+        "general"
+      ],
       "why": "State aid you're eligible for as a Maryland resident — filing by the March 1 priority date is what secures it."
     },
     {
@@ -237,8 +342,13 @@
       "eligibility": "High-achieving high school seniors with leadership and community impact.",
       "eligibility_min_gpa": 3.7,
       "deadline": "Opens spring, closes summer",
+      "deadline_type": "recurring",
       "url": "https://www.bryancameroneducationfoundation.org/",
-      "tags": ["national", "merit", "high-value"],
+      "tags": [
+        "national",
+        "merit",
+        "high-value"
+      ],
       "why": "A full-tuition merit award for standout students — flag it for incoming or transferring high-achievers."
     },
     {
@@ -249,8 +359,13 @@
       "eligibility": "Students active in social-justice movements with financial need.",
       "eligibility_min_gpa": null,
       "deadline": "Opens winter, closes spring",
+      "deadline_type": "recurring",
       "url": "https://www.davisputter.org/apply-for-grants/",
-      "tags": ["national", "need-based", "service"],
+      "tags": [
+        "national",
+        "need-based",
+        "service"
+      ],
       "why": "Rewards community organizing and activism alongside academics — a fit if your service record is strong."
     },
     {
@@ -261,8 +376,14 @@
       "eligibility": "CS or related-field students who have a disability.",
       "eligibility_min_gpa": null,
       "deadline": "Opens winter",
+      "deadline_type": "recurring",
       "url": "https://buildyourfuture.withgoogle.com/scholarships",
-      "tags": ["cs", "tech", "disability", "national"],
+      "tags": [
+        "cs",
+        "tech",
+        "disability",
+        "national"
+      ],
       "why": "A CS scholarship specifically for students with disabilities, plus access to Google's accessibility community."
     }
   ],
@@ -278,8 +399,15 @@
       "eligibility": "First- and second-year undergraduates in CS or a related field; strong interest in software engineering.",
       "eligibility_min_gpa": null,
       "deadline": "Opens fall, closes winter",
+      "deadline_type": "recurring",
       "url": "https://buildyourfuture.withgoogle.com/programs/step",
-      "tags": ["cs", "tech", "underclassmen", "hbcu-recruiting", "high-value"],
+      "tags": [
+        "cs",
+        "tech",
+        "underclassmen",
+        "hbcu-recruiting",
+        "high-value"
+      ],
       "why": "One of the few elite tech internships built for first- and second-years — apply early, before you think you're 'ready'."
     },
     {
@@ -293,8 +421,15 @@
       "eligibility": "First- and second-year college students interested in software engineering and product.",
       "eligibility_min_gpa": null,
       "deadline": "Opens fall, closes winter",
+      "deadline_type": "recurring",
       "url": "https://careers.microsoft.com/students/us/en/usexploremicrosoftprogram",
-      "tags": ["cs", "tech", "underclassmen", "hbcu-recruiting", "high-value"],
+      "tags": [
+        "cs",
+        "tech",
+        "underclassmen",
+        "hbcu-recruiting",
+        "high-value"
+      ],
       "why": "A rotational program for underclassmen — you try both engineering and PM before committing to a track."
     },
     {
@@ -308,8 +443,15 @@
       "eligibility": "Rising juniors from underrepresented communities; coding experience but a non-traditional path is welcome.",
       "eligibility_min_gpa": null,
       "deadline": "Opens winter",
+      "deadline_type": "recurring",
       "url": "https://www.metacareers.com/careerprograms/pathways/metauniversity",
-      "tags": ["cs", "tech", "underrepresented", "hbcu-recruiting", "high-value"],
+      "tags": [
+        "cs",
+        "tech",
+        "underrepresented",
+        "hbcu-recruiting",
+        "high-value"
+      ],
       "why": "Explicitly built for students from underrepresented backgrounds — it values potential over a polished resume."
     },
     {
@@ -323,8 +465,13 @@
       "eligibility": "Undergraduates in CS; Propel supports students from underrepresented groups.",
       "eligibility_min_gpa": null,
       "deadline": "Opens fall",
+      "deadline_type": "recurring",
       "url": "https://www.amazon.jobs/en/teams/internships-for-students",
-      "tags": ["cs", "tech", "hbcu-recruiting"],
+      "tags": [
+        "cs",
+        "tech",
+        "hbcu-recruiting"
+      ],
       "why": "Amazon hires a large SDE intern class and runs Propel to bring in underrepresented CS students."
     },
     {
@@ -338,8 +485,12 @@
       "eligibility": "Undergraduate and graduate students in CS/engineering.",
       "eligibility_min_gpa": null,
       "deadline": "Rolling; apply early fall",
+      "deadline_type": "rolling",
       "url": "https://www.apple.com/careers/us/students.html",
-      "tags": ["cs", "tech"],
+      "tags": [
+        "cs",
+        "tech"
+      ],
       "why": "Broad intern program across many teams; apply early because roles fill on a rolling basis."
     },
     {
@@ -353,8 +504,14 @@
       "eligibility": "U.S. citizens; undergraduates in STEM with a 3.0+ GPA (varies by project).",
       "eligibility_min_gpa": 3.0,
       "deadline": "Three cycles a year; check portal",
+      "deadline_type": "recurring",
       "url": "https://intern.nasa.gov/",
-      "tags": ["stem", "government", "research", "citizens-only"],
+      "tags": [
+        "stem",
+        "government",
+        "research",
+        "citizens-only"
+      ],
       "why": "Government research with real mission work; three cycles a year means more chances to land one."
     },
     {
@@ -368,8 +525,13 @@
       "eligibility": "Undergraduates in CS or related; Capital One recruits heavily at HBCUs.",
       "eligibility_min_gpa": null,
       "deadline": "Opens late summer / fall",
+      "deadline_type": "recurring",
       "url": "https://www.capitalonecareers.com/students-and-grads",
-      "tags": ["cs", "finance-tech", "hbcu-recruiting"],
+      "tags": [
+        "cs",
+        "finance-tech",
+        "hbcu-recruiting"
+      ],
       "why": "A strong HBCU recruiter close to Morgan geographically, with a large tech intern class."
     },
     {
@@ -383,8 +545,13 @@
       "eligibility": "Undergraduates in CS; Code for Good is an entry hackathon that feeds the internship.",
       "eligibility_min_gpa": null,
       "deadline": "Opens fall",
+      "deadline_type": "recurring",
       "url": "https://careers.jpmorgan.com/us/en/students/programs",
-      "tags": ["cs", "finance-tech", "hbcu-recruiting"],
+      "tags": [
+        "cs",
+        "finance-tech",
+        "hbcu-recruiting"
+      ],
       "why": "Code for Good is a low-barrier way in — do the hackathon, and it can turn into the summer internship."
     },
     {
@@ -398,8 +565,13 @@
       "eligibility": "All Morgan students.",
       "eligibility_min_gpa": null,
       "deadline": "Rolling",
+      "deadline_type": "rolling",
       "url": "https://www.morgan.edu/career-development",
-      "tags": ["morgan", "general", "handshake"],
+      "tags": [
+        "morgan",
+        "general",
+        "handshake"
+      ],
       "why": "Morgan-vetted postings on Handshake, including employers who specifically recruit here — start local."
     },
     {
@@ -413,8 +585,13 @@
       "eligibility": "Undergraduates in CS/related; IBM recruits at HBCUs.",
       "eligibility_min_gpa": null,
       "deadline": "Opens fall",
+      "deadline_type": "recurring",
       "url": "https://www.ibm.com/careers/internships",
-      "tags": ["cs", "tech", "hbcu-recruiting"],
+      "tags": [
+        "cs",
+        "tech",
+        "hbcu-recruiting"
+      ],
       "why": "Broad tech internships across software, data, and cloud, with an active HBCU recruiting presence."
     },
     {
@@ -428,8 +605,15 @@
       "eligibility": "U.S. citizens; able to obtain a security clearance; strong GPA.",
       "eligibility_min_gpa": 3.0,
       "deadline": "Apply ~9-12 months ahead (clearance takes time)",
+      "deadline_type": "recurring",
       "url": "https://www.intelligencecareers.gov/nsa/students-and-internships",
-      "tags": ["cs", "cybersecurity", "government", "citizens-only", "maryland"],
+      "tags": [
+        "cs",
+        "cybersecurity",
+        "government",
+        "citizens-only",
+        "maryland"
+      ],
       "why": "Right in your backyard at Fort Meade — but the clearance takes months, so applying early is the whole game."
     },
     {
@@ -443,8 +627,14 @@
       "eligibility": "U.S. citizens in CS/engineering; many roles need clearance eligibility.",
       "eligibility_min_gpa": 3.0,
       "deadline": "Opens fall",
+      "deadline_type": "recurring",
       "url": "https://www.lockheedmartinjobs.com/students",
-      "tags": ["cs", "engineering", "government", "citizens-only"],
+      "tags": [
+        "cs",
+        "engineering",
+        "government",
+        "citizens-only"
+      ],
       "why": "Defense-sector software work with locations near Maryland; apply early since clearance roles move slowly."
     },
     {
@@ -458,8 +648,15 @@
       "eligibility": "U.S. citizens in CS/engineering; clearance eligibility for many roles.",
       "eligibility_min_gpa": 3.0,
       "deadline": "Opens fall",
+      "deadline_type": "recurring",
       "url": "https://www.northropgrumman.com/careers/students-and-new-grads/",
-      "tags": ["cs", "engineering", "government", "citizens-only", "maryland"],
+      "tags": [
+        "cs",
+        "engineering",
+        "government",
+        "citizens-only",
+        "maryland"
+      ],
       "why": "A major Maryland-area defense employer with a large intern class and a strong HBCU pipeline."
     },
     {
@@ -473,8 +670,14 @@
       "eligibility": "CS students from underrepresented backgrounds; free CodePath courses feed it.",
       "eligibility_min_gpa": null,
       "deadline": "Aligned with the school year",
+      "deadline_type": "recurring",
       "url": "https://www.codepath.org/",
-      "tags": ["cs", "underrepresented", "training", "hbcu-recruiting"],
+      "tags": [
+        "cs",
+        "underrepresented",
+        "training",
+        "hbcu-recruiting"
+      ],
       "why": "Free CodePath courses double as a pipeline into partner internships — low barrier, high payoff for underrepresented students."
     },
     {
@@ -488,8 +691,13 @@
       "eligibility": "Undergraduates in CS/related; active HBCU recruiting.",
       "eligibility_min_gpa": null,
       "deadline": "Opens summer/fall (early!)",
+      "deadline_type": "recurring",
       "url": "https://campus.bankofamerica.com/",
-      "tags": ["cs", "finance-tech", "hbcu-recruiting"],
+      "tags": [
+        "cs",
+        "finance-tech",
+        "hbcu-recruiting"
+      ],
       "why": "Finance-tech roles with heavy HBCU recruiting; applications open very early, so watch for them in the summer."
     }
   ]
