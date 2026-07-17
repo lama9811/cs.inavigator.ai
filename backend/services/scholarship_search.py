@@ -120,6 +120,44 @@ def check_deadline(deadline_date: str) -> dict:
     return {"status": "OPEN", "days_remaining": delta}
 
 
+# --- query intent: scholarships vs internships -------------------------------
+#
+# "Summer internships for CS majors" should NOT return scholarships. We detect the
+# kind the student asked for and use it to (a) filter the curated core, (b) steer
+# the AI prompt, and (c) shape the Tavily searches. Keyword-based on purpose: it's
+# instant, deterministic, and needs no extra AI call.
+
+# `intern\w*` catches intern / interns / internship / internships in one branch —
+# an alternation like (internship|interns?) fails on "internships" because the
+# first alternative matches then the trailing \b lands mid-word.
+_INTERNSHIP_WORDS = re.compile(
+    r"\b(intern\w*|co-?op|apprenticeship|new\s?grad|entry[-\s]?level|swe|"
+    r"work\s+experience|placement)\b",
+    re.IGNORECASE,
+)
+_SCHOLARSHIP_WORDS = re.compile(
+    r"\b(scholarship\w*|grant\w*|fellowship\w*|bursary|financial\s+aid|"
+    r"tuition|award\w*|funding)\b",
+    re.IGNORECASE,
+)
+
+
+def detect_kind_intent(query: str) -> str:
+    """Infer whether the query wants 'scholarship', 'internship', or 'both'.
+
+    Returns 'both' when the query names neither or both kinds — the safe default
+    that preserves the original behavior. Only narrows to one kind when the query
+    clearly asks for that kind and not the other."""
+    q = query or ""
+    wants_intern = bool(_INTERNSHIP_WORDS.search(q))
+    wants_scholar = bool(_SCHOLARSHIP_WORDS.search(q))
+    if wants_intern and not wants_scholar:
+        return "internship"
+    if wants_scholar and not wants_intern:
+        return "scholarship"
+    return "both"
+
+
 # --- web search (Julian's web_search.py) -------------------------------------
 
 def web_search(query: str, max_results: int = 5) -> dict[str, Any]:
@@ -330,12 +368,34 @@ def _profile_block(student: dict) -> str:
 
 # --- the prompt (Julian's instruction, adapted) -------------------------------
 
-def build_instruction(student: dict, today: dict) -> str:
+def _kind_directive(kind: str) -> str:
+    """A hard instruction telling the model which kind(s) to return."""
+    if kind == "internship":
+        return (
+            "=== KIND FILTER (STRICT) ===\n"
+            "The student asked ONLY for INTERNSHIPS. Return internships, co-ops and "
+            "apprenticeships ONLY. Do NOT include any scholarships, grants, or "
+            'fellowships. Every item must have "kind": "internship".\n'
+        )
+    if kind == "scholarship":
+        return (
+            "=== KIND FILTER (STRICT) ===\n"
+            "The student asked ONLY for SCHOLARSHIPS. Return scholarships, grants and "
+            "fellowships ONLY. Do NOT include any internships or co-ops. Every item "
+            'must have "kind": "scholarship".\n'
+        )
+    return ""
+
+
+def build_instruction(student: dict, today: dict, kind: str = "both") -> str:
     """Julian's scholarship-agent prompt: urgency grouping, silent-skip of
-    ineligible awards, exact section headers, HBCU-recruiting internship list."""
+    ineligible awards, exact section headers, HBCU-recruiting internship list.
+
+    `kind` ('scholarship' | 'internship' | 'both') adds a strict filter so an
+    internships search never returns scholarships and vice versa."""
     return f"""You are the Morgan State Scholarship & Internship specialist for Computer Science students. Today is {today['formatted']} ({today['date']}), semester: {today['semester']}.
 
-=== STUDENT DATA ===
+{_kind_directive(kind)}=== STUDENT DATA ===
 {_profile_block(student)}
 
 Use this to AUTOMATICALLY filter results. Do NOT recommend anything the student is
@@ -360,6 +420,7 @@ opportunities SILENTLY -- do not mention them or explain why they were dropped.
       "award": "Award amount or pay, or '(not listed)'",
       "eligibility": "Who qualifies",
       "deadline": "YYYY-MM-DD, or '(not listed)' if truly unknown",
+      "deadline_type": "fixed" | "rolling" | "recurring" | "unknown",
       "url": "Direct application link, or '(not listed)'",
       "why": "One short sentence on why this fits THIS student"
     }}
@@ -368,9 +429,18 @@ opportunities SILENTLY -- do not mention them or explain why they were dropped.
 }}
 
 3. A MISSING DEADLINE IS NOT A REASON TO DROP AN OPPORTUNITY. Most pages do not
-   state a date. If you cannot find a real deadline, set "deadline": "(not listed)"
-   and STILL INCLUDE the item -- it will be shown under "Open". Only exclude an
-   opportunity when you can see that its deadline has actually PASSED.
+   state a single date. Still INCLUDE the item -- it will be shown under "Open".
+   Only exclude an opportunity when you can see that its deadline has actually
+   PASSED. Classify EVERY item's "deadline_type" so the student knows what kind of
+   timing it has:
+   - "fixed":     there is a real calendar deadline. Put it in "deadline" (YYYY-MM-DD).
+   - "rolling":   applications are accepted on an ongoing basis / "apply anytime".
+                  Set "deadline": "(not listed)".
+   - "recurring": it reopens on a cycle you can see (e.g. "opens every fall",
+                  "applications open in winter"). Set "deadline": "(not listed)" and
+                  put the cycle wording in "eligibility" or "why" if helpful.
+   - "unknown":   you genuinely cannot tell. Set "deadline": "(not listed)".
+   Only use a real date with "fixed". NEVER invent a date to make something "fixed".
 
 4. AIM FOR AT LEAST SIX ITEMS. Every distinct scholarship, internship, or program
    named anywhere in the search results counts, including ones named inside a
@@ -474,6 +544,28 @@ def _ask_gemini(instruction: str, search_results: list[dict], query: str) -> Opt
 
 # --- urgency grouping (the shape the UI renders) ------------------------------
 
+# How to describe an item's timing when there is no single calendar date. The
+# model classifies each item; we normalize it so the UI can show "Rolling — apply
+# anytime" or "Reopens on a cycle" instead of a bare "(not listed)".
+VALID_DEADLINE_TYPES = ("fixed", "rolling", "recurring", "unknown")
+
+
+def normalize_deadline_type(item: dict) -> str:
+    """Return a valid deadline_type for an item, inferring one when it's missing.
+
+    Trusts the model's value when it's one we recognize. Otherwise infers: a
+    parseable real date is "fixed"; anything else defaults to "unknown". This runs
+    on every item so downstream code (and the UI) can always rely on the field.
+    """
+    raw = str(item.get("deadline_type") or "").strip().lower()
+    if raw in VALID_DEADLINE_TYPES:
+        return raw
+    # No usable hint from the model — infer from the deadline itself.
+    if check_deadline(str(item.get("deadline", ""))).get("status") not in ("INVALID", None):
+        return "fixed"
+    return "unknown"
+
+
 def _group_by_urgency(items: list[dict]) -> dict[str, list[dict]]:
     """Sort items into URGENT / UPCOMING / OPEN, dropping anything expired.
 
@@ -486,6 +578,9 @@ def _group_by_urgency(items: list[dict]) -> dict[str, list[dict]]:
     for item in items:
         if not isinstance(item, dict) or not item.get("name"):
             continue
+
+        # Always stamp a normalized deadline_type so the UI never sees a raw blank.
+        item["deadline_type"] = normalize_deadline_type(item)
 
         verdict = check_deadline(str(item.get("deadline", "")))
         status = verdict.get("status")
@@ -566,14 +661,24 @@ def _eligible(entry: dict, student: dict) -> bool:
     return student_gpa >= float(min_gpa)
 
 
-def curated_opportunities(student: dict) -> list[dict]:
-    """The curated awards a student is eligible for, in the item shape the UI uses."""
+def curated_opportunities(student: dict, kind: str = "both") -> list[dict]:
+    """The curated awards a student is eligible for, in the item shape the UI uses.
+
+    `kind` filters the pool: 'scholarship' or 'internship' returns only that kind,
+    'both' (default) returns everything. This is how an "internships" search stops
+    pulling in curated scholarships."""
     data = _load_curated()
+    if kind == "scholarship":
+        pool = list(data["scholarships"])
+    elif kind == "internship":
+        pool = list(data["internships"])
+    else:
+        pool = [*data["scholarships"], *data["internships"]]
     out: list[dict] = []
-    for entry in [*data["scholarships"], *data["internships"]]:
+    for entry in pool:
         if not entry.get("name") or not _eligible(entry, student):
             continue
-        out.append({
+        item = {
             "name": entry.get("name"),
             "kind": entry.get("kind", "scholarship"),
             "award": entry.get("award") or "(not listed)",
@@ -583,10 +688,13 @@ def curated_opportunities(student: dict) -> list[dict]:
             "location": entry.get("location"),
             "eligibility": entry.get("eligibility") or "",
             "deadline": entry.get("deadline") or "(not listed)",
+            "deadline_type": entry.get("deadline_type"),  # normalized just below
             "url": entry.get("url") or "(not listed)",
             "why": entry.get("why") or "",
             "curated": True,   # so the UI can badge it "Recommended"
-        })
+        }
+        item["deadline_type"] = normalize_deadline_type(item)
+        out.append(item)
     return out
 
 
@@ -650,8 +758,13 @@ def find_opportunities(query: str, student: dict, now: Optional[float] = None) -
     today = get_current_date()
     query = (query or "").strip() or "scholarships and internships for me"
 
-    # The curated core is always available, free, and eligibility-filtered.
-    curated = curated_opportunities(student)
+    # What kind did the student ask for? Used to filter curated, steer the prompt,
+    # and shape the Tavily searches so "internships" doesn't return scholarships.
+    kind = detect_kind_intent(query)
+
+    # The curated core is always available, free, and eligibility-filtered — but
+    # only the kind the student asked for.
+    curated = curated_opportunities(student, kind)
 
     # Live search is available if EITHER grounding is on (free, no key) or Tavily
     # is configured. Only when neither is usable do we show curated alone.
@@ -682,7 +795,7 @@ def find_opportunities(query: str, student: dict, now: Optional[float] = None) -
             "cached": True,
         }
 
-    live_items, sources, note = _live_search(student, query, today)
+    live_items, sources, note = _live_search(student, query, today, kind)
 
     # Cache the LIVE half (shared across students); curated is merged in per-call
     # so its eligibility filter always reflects the current student.
@@ -702,15 +815,34 @@ def find_opportunities(query: str, student: dict, now: Optional[float] = None) -
     }
 
 
-def _live_search(student: dict, query: str, today: dict) -> tuple[list[dict], list[dict], str]:
+def _filter_items_by_kind(items: list[dict], kind: str) -> list[dict]:
+    """Drop items that don't match the requested kind. 'both' keeps everything.
+
+    Belt-and-suspenders: even with a kind-steered prompt the model can slip in an
+    off-kind result, so we enforce it in code before the student ever sees it."""
+    if kind == "both":
+        return items
+    out = []
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        if str(it.get("kind") or "scholarship").strip().lower() == kind:
+            out.append(it)
+    return out
+
+
+def _live_search(
+    student: dict, query: str, today: dict, kind: str = "both"
+) -> tuple[list[dict], list[dict], str]:
     """Run live search: Gemini grounding first (free), Tavily as fallback.
 
     Returns (live_items, sources, note). Always returns — an empty items list on
     total failure, so the caller still shows the curated core. Grounding is the
     default because it costs nothing; Tavily only runs if grounding is off or
-    yields nothing AND a Tavily key is present.
+    yields nothing AND a Tavily key is present. `kind` narrows results to the kind
+    the student asked for (scholarship / internship), else 'both'.
     """
-    instruction = build_instruction(student, today)
+    instruction = build_instruction(student, today, kind)
 
     # 1. Gemini google_search grounding — free, no key, no quota.
     if grounding_enabled():
@@ -719,18 +851,28 @@ def _live_search(student: dict, query: str, today: dict) -> tuple[list[dict], li
         if items:
             # Grounding embeds its own citations in the items' urls; no separate
             # source list the way Tavily returns one.
-            return items, [], (parsed.get("note") or "")
+            return _filter_items_by_kind(items, kind), [], (parsed.get("note") or "")
 
     # 2. Tavily fallback — only if a key is set. Julian's fetch-then-summarize path.
     if is_configured():
         year = student.get("classification", "")
         major = student.get("major", "computer science")
-        searches = [
+        scholarship_q = (
             f"list of {major} scholarships {today['year']} {year} "
-            f"application deadline award amount".strip(),
+            f"application deadline award amount".strip()
+        )
+        internship_q = (
             f"computer science internships {today['year']} applications open "
-            f"deadline Google STEP Microsoft Explore HBCU students",
-        ][:MAX_SEARCHES]
+            f"deadline Google STEP Microsoft Explore HBCU students"
+        )
+        # Only search for what the student asked for; 'both' runs both queries.
+        if kind == "scholarship":
+            searches = [scholarship_q]
+        elif kind == "internship":
+            searches = [internship_q]
+        else:
+            searches = [scholarship_q, internship_q]
+        searches = searches[:MAX_SEARCHES]
 
         results: list[dict] = []
         seen_urls: set[str] = set()
@@ -748,7 +890,7 @@ def _live_search(student: dict, query: str, today: dict) -> tuple[list[dict], li
             parsed = _ask_gemini(instruction, results, query)
             sources = [{"title": r["title"], "url": r["url"]} for r in results[:8]]
             if parsed and parsed.get("items"):
-                return parsed["items"], sources, (parsed.get("note") or "")
+                return _filter_items_by_kind(parsed["items"], kind), sources, (parsed.get("note") or "")
             # Summarize failed but we still have raw links to show.
             return [], sources, ""
 
