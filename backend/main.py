@@ -148,7 +148,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingSnippet, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingSnippet, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -1808,8 +1808,17 @@ async def search_scholarships(
 
     student = scholarship_search.build_student_profile(dw, profile)
 
+    # Opportunities the student has permanently dismissed — filtered out of results.
+    dismissed_keys = {
+        d.client_key for d in db.query(DismissedScholarship.client_key).filter(
+            DismissedScholarship.user_id == user["user_id"]
+        ).all()
+    }
+
     try:
-        result = scholarship_search.find_opportunities(query, student)
+        result = scholarship_search.find_opportunities(
+            query, student, dismissed_keys=dismissed_keys
+        )
     except Exception as e:
         print(f"[ERROR] Scholarship search failed: {e}")
         raise HTTPException(502, "Scholarship search is temporarily unavailable.")
@@ -2014,6 +2023,64 @@ async def delete_saved_scholarship(
     db.delete(row)
     db.commit()
     return {"ok": True, "id": saved_id}
+
+
+# --- Dismissed opportunities (hide from search results) ----------------------
+# "Hide ones I've dismissed" — otherwise the same irrelevant results come back
+# forever. Stored as a lightweight (user_id, client_key) row; find_opportunities
+# filters these out of every result path.
+
+@app.post("/api/scholarships/dismiss")
+async def dismiss_scholarship(
+    payload: dict,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Permanently hide an opportunity from this student's future search results.
+
+    Body: { "name": <str>, "url": <str optional> }. Idempotent: dismissing the
+    same award twice is a no-op (upsert on the client_key)."""
+    name = str(payload.get("name") or "").strip()
+    if not name:
+        raise HTTPException(400, "A name is required to dismiss an opportunity.")
+    url = str(payload.get("url") or "").strip()
+    key = scholarship_search.client_key_for(name, url)
+
+    existing = (
+        db.query(DismissedScholarship)
+        .filter(
+            DismissedScholarship.user_id == user["user_id"],
+            DismissedScholarship.client_key == key,
+        )
+        .first()
+    )
+    if existing is None:
+        db.add(DismissedScholarship(
+            user_id=user["user_id"], client_key=key, name=name[:300],
+        ))
+        db.commit()
+    return {"ok": True, "client_key": key}
+
+
+@app.delete("/api/scholarships/dismiss/{client_key}")
+async def undismiss_scholarship(
+    client_key: str,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Un-dismiss: let a previously hidden opportunity show up again."""
+    row = (
+        db.query(DismissedScholarship)
+        .filter(
+            DismissedScholarship.user_id == user["user_id"],
+            DismissedScholarship.client_key == client_key,
+        )
+        .first()
+    )
+    if row is not None:
+        db.delete(row)
+        db.commit()
+    return {"ok": True, "client_key": client_key}
 
 
 # --- Application checklists ---------------------------------------------------
