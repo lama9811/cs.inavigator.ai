@@ -224,6 +224,7 @@ function CampusLearningQueue({
   onSelect,
   onOpenSnippets,
   onOpenQuizBank,
+  onOpenTopic,
 }) {
   // The hero owns "what to do right now" (resume / recommended). This section is a
   // guided path: next track, personal workspace, and a data-driven focus nudge.
@@ -235,11 +236,20 @@ function CampusLearningQueue({
     mastery,
     focus,
   });
+  const firstPathQuestion = todayPath.find(step => step.question)?.question || null;
+  const focusTopic = focus?.hasProgress ? focus.next?.topic : focus?.first?.topic;
+  const focusTitle = focus?.hasProgress
+    ? `Practice ${titleCase(focus.next.topic)}`
+    : focus
+      ? `Start with ${titleCase(focus.first.topic)}`
+      : "Choose a topic";
+  const focusBlurb = focusTopic
+    ? "Opens the library with this topic selected."
+    : "Pick one topic and solve the first problem you see.";
   return (
     <section className="campus-learning-queue" aria-label="Your coding path">
       <div className="campus-section-heading">
         <span className="coding-kicker">Your Coding Path</span>
-        <h3>Three small steps. No giant problem wall.</h3>
       </div>
       <div className="campus-queue-grid three-up">
         <article className="campus-queue-item featured">
@@ -252,7 +262,11 @@ function CampusLearningQueue({
                 <div>
                   <b>{step.label}</b>
                   {step.question ? (
-                    <button type="button" onClick={() => onSelect(step.question)}>
+                    <button
+                      type="button"
+                      className="campus-path-step-btn"
+                      onClick={() => onSelect(step.question)}
+                    >
                       {step.question.title}
                     </button>
                   ) : (
@@ -270,9 +284,9 @@ function CampusLearningQueue({
           <button
             type="button"
             className="campus-primary-action"
-            onClick={() => (nextUpQuestion ? onSelect(nextUpQuestion) : onOpenQuizBank())}
+            onClick={() => (firstPathQuestion ? onSelect(firstPathQuestion) : onOpenQuizBank())}
           >
-            {nextUpQuestion ? "Start problem" : "Browse Practice Library"}
+            {firstPathQuestion ? "Start first step" : "Browse Practice Library"}
           </button>
         </article>
         <article className="campus-queue-item personal">
@@ -283,15 +297,11 @@ function CampusLearningQueue({
         </article>
         <article className="campus-queue-item focus">
           <span>Recommended Focus</span>
-          <strong>
-            {focus?.hasProgress
-              ? `Level up ${focus.next.topic}`
-              : focus
-                ? `Begin with ${focus.first.topic}`
-                : "Find your track"}
-          </strong>
-          <p>{focusCopy(focus)}</p>
-          <button type="button" onClick={onOpenQuizBank}>Browse Practice Library</button>
+          <strong>{focusTitle}</strong>
+          <p>{focusBlurb}</p>
+          <button type="button" onClick={() => (focusTopic ? onOpenTopic?.(focusTopic) : onOpenQuizBank())}>
+            {focusTopic ? `Open ${titleCase(focusTopic)}` : "Browse Practice Library"}
+          </button>
         </article>
       </div>
     </section>
@@ -420,6 +430,7 @@ export default function CampusLabHome({
   onOpenSnippets,
   onSelectQuestion,
   onOpenQuizBank,
+  onOpenTopic,
   onPrompt,
   onSaveQuiz,
   mastery,
@@ -466,6 +477,7 @@ export default function CampusLabHome({
         onSelect={onSelectQuestion}
         onOpenSnippets={onOpenSnippets}
         onOpenQuizBank={onOpenQuizBank}
+        onOpenTopic={onOpenTopic}
       />
 
       <CampusTutorActions

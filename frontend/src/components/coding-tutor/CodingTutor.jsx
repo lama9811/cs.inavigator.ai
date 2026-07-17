@@ -67,6 +67,10 @@ const PRACTICE_LIBRARY_TOPICS = [
   "dynamic programming", "prefix sums", "intervals", "heaps", "tries", "matrices",
   "math", "disjoint sets", "conditionals",
 ];
+const topicOrderIndex = (topic) => {
+  const index = PRACTICE_LIBRARY_TOPICS.indexOf(String(topic || "").toLowerCase());
+  return index === -1 ? PRACTICE_LIBRARY_TOPICS.length : index;
+};
 // Prerequisite labels used on interview problems don't always match the library's exact
 // topic name. This maps a label -> the library topic it should filter by. Anything not
 // here and not already a library topic has NO matching problems -> shown greyed out.
@@ -937,7 +941,9 @@ export default function CodingTutor({
       if ((progress?.attempt_count || 0) > 0 || progress?.status === "solved") existing.attempted += 1;
       grouped.set(topic, existing);
     });
-    return [...grouped.values()].sort((a, b) => b.count - a.count || a.topic.localeCompare(b.topic)).slice(0, 8);
+    return [...grouped.values()]
+      .sort((a, b) => topicOrderIndex(a.topic) - topicOrderIndex(b.topic) || a.topic.localeCompare(b.topic))
+      .slice(0, 8);
   }, [allQuestions, progressByQuestion]);
   const activeSnapshotKey = activeProblem ? `${activeProblem.id}:${selectedLanguageKey}` : "personal";
   const activeSnapshots = useMemo(
@@ -2595,6 +2601,7 @@ export default function CodingTutor({
       onOpenSnippets={openMySnippets}
       onSelectQuestion={selectQuestion}
       onOpenQuizBank={() => navigate(PRACTICE_CODE_PATH)}
+      onOpenTopic={openPracticeTopic}
       onPrompt={sendDashboardPrompt}
       onSaveQuiz={saveLatestQuizAsPdf}
       mastery={mastery}
@@ -2679,7 +2686,12 @@ export default function CodingTutor({
           terminalOpen={terminalOpen}
           testOutput={testOutput}
           solutionReview={{
-            studentCode: code,
+            // Show the code that actually passed, captured at run time — not the
+            // live buffer, which keeps changing after the tests went green.
+            studentCode:
+              typeof activeSnapshots.lastPassing === "string"
+                ? activeSnapshots.lastPassing
+                : code,
             reference: activeSolution?.reference_solution || "",
             complexity: activeSolution?.complexity || "",
           }}

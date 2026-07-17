@@ -5948,14 +5948,31 @@ body.coding-dark .coding-app .campus-section-nav > button:focus-visible {
 }
 
 .campus-queue-item {
-  display: grid;
-  align-content: space-between;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 10px;
   min-height: 170px;
   padding: 18px;
   border-radius: 20px;
   border: 1px solid var(--ct-border);
   background: var(--ct-panel);
+}
+
+/* Keep the eyebrow → title → text stacked tightly at the top; only the action
+   sinks to the card's bottom edge. `align-content: space-between` used to spread
+   ALL rows, which left a big gap between the title and subtext on the sparse
+   Personal / Focus cards. */
+.campus-queue-item > button,
+.campus-queue-item .campus-primary-action {
+  margin-top: auto;
+  align-self: stretch;
+}
+
+/* The path list should span the full card width, not shrink to content. */
+.campus-queue-item > .campus-path-list,
+.campus-queue-item > p {
+  align-self: stretch;
 }
 
 .campus-queue-item > span {
@@ -6563,17 +6580,21 @@ body.coding-dark .campus-hero-focus {
 
 .campus-path-list {
   display: grid;
-  gap: 9px;
-  margin: 10px 0 14px;
+  gap: 8px;
+  margin: 14px 0 18px;
   padding: 0;
   list-style: none;
 }
 
 .campus-path-list li {
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr);
-  gap: 10px;
-  align-items: start;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 12%, var(--ct-border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ct-panel) 88%, var(--ct-paper));
 }
 
 .campus-path-list li > span {
@@ -6592,7 +6613,7 @@ body.coding-dark .campus-hero-focus {
 
 .campus-path-list div {
   display: grid;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
 }
 
@@ -6603,7 +6624,10 @@ body.coding-dark .campus-hero-focus {
   letter-spacing: 0.04em;
 }
 
-.campus-path-list button {
+/* Scoped under .campus-queue-item so it outranks the same-specificity
+   `.campus-queue-item button` secondary rule that would otherwise re-tint these
+   into navy pills. These are plain text links, not buttons. */
+.campus-queue-item .campus-path-list button {
   justify-self: start;
   width: auto;
   min-height: 0;
@@ -6612,8 +6636,10 @@ body.coding-dark .campus-hero-focus {
   background: transparent;
   box-shadow: none;
   color: var(--ct-ink);
+  font-size: 0.92rem;
   font-weight: 750;
   text-align: left;
+  line-height: 1.2;
 }
 
 .campus-queue-item .campus-path-list button:hover,
@@ -6621,7 +6647,7 @@ body.coding-dark .campus-hero-focus {
   color: var(--ct-primary) !important;
   background: transparent !important;
   border-color: transparent !important;
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 .campus-path-list em {
@@ -6828,7 +6854,10 @@ body.coding-dark .campus-hero-focus {
    deep navy base) so it reads "clickable", not disabled, plus crisp white text. */
 .campus-primary-action,
 .campus-recommendation-card button,
-.campus-queue-item.featured button,
+/* Only the primary action gets the solid navy fill. The path-step links inside
+   the list are plain text buttons (styled at .campus-path-list button), so
+   exclude them or they render as navy pills that clip their own white text. */
+.campus-queue-item.featured .campus-primary-action,
 .campus-daily-mission .daily-practice-btn {
   background: linear-gradient(135deg, color-mix(in srgb, var(--ct-primary) 84%, #2f6fd6), var(--ct-primary));
   border-color: color-mix(in srgb, var(--ct-primary) 70%, #2f6fd6);
@@ -6845,7 +6874,7 @@ body.coding-dark .campus-hero-focus {
    quiet, so attention lands on the primary. */
 body.coding-dark .campus-primary-action,
 body.coding-dark .campus-recommendation-card button,
-body.coding-dark .campus-queue-item.featured button,
+body.coding-dark .campus-queue-item.featured .campus-primary-action,
 body.coding-dark .campus-daily-mission .daily-practice-btn {
   /* !important on the daily button is required: an earlier broad rule
      (`body.coding-dark .daily-practice-btn`) forces a pale periwinkle with
@@ -6858,7 +6887,7 @@ body.coding-dark .campus-daily-mission .daily-practice-btn {
 
 body.coding-dark .campus-primary-action:hover:not(:disabled),
 body.coding-dark .campus-recommendation-card button:hover:not(:disabled),
-body.coding-dark .campus-queue-item.featured button:hover:not(:disabled),
+body.coding-dark .campus-queue-item.featured .campus-primary-action:hover:not(:disabled),
 body.coding-dark .campus-daily-mission .daily-practice-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #4c8ef0, #3a78de) !important;
   border-color: #5b9bf0 !important;
@@ -6887,6 +6916,13 @@ body.coding-dark .campus-language-card button,
 body.coding-dark .campus-daily-mission .daily-link {
   color: #dbe6f7;
   border-color: color-mix(in srgb, var(--ct-primary) 46%, var(--ct-border));
+}
+
+/* Path-step links stay borderless in dark mode too (the rule above adds a
+   border to real secondary buttons; these aren't one). */
+body.coding-dark .campus-queue-item .campus-path-list button {
+  border: 0;
+  color: #dbe6f7;
 }
 
 .campus-primary-action:hover,

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { FaBars } from "@react-icons/all-files/fa/FaBars";
 import { FaUser } from "@react-icons/all-files/fa/FaUser";
@@ -126,9 +126,11 @@ export default function NavBar({ role, authenticated, onToggleSidebar, onBrandCl
         {/* Primary feature nav as pills (top bar, ORA style) */}
         {isAuthed && (
           <nav className="nav-primary-links" aria-label="Primary navigation">
+            {/* eslint-disable-next-line no-unused-vars -- Icon is used as a JSX
+               component below; this config lacks react/jsx-uses-vars to see that. */}
             {primaryNav.map(({ to, label, Icon }) => (
               <NavLink key={to} to={to} className={pillClass} title={label}>
-                {React.createElement(Icon, { size: 15 })}
+                <Icon size={15} />
                 <span>{label}</span>
               </NavLink>
             ))}

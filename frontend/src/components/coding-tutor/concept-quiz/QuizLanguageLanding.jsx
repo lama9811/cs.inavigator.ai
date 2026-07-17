@@ -35,6 +35,10 @@ const TOPIC_ALIASES = {
 
 function categoryForMastery(topic, categories) {
   const normalized = String(topic || "").toLowerCase().trim();
+  // An empty topic must match nothing. Otherwise `category.id.includes("")` is
+  // always true and we'd spuriously return the first category when mastery is
+  // absent, leaving adaptiveCategory set with no real signal.
+  if (!normalized) return undefined;
   const alias = TOPIC_ALIASES[normalized] || normalized.replaceAll(" ", "-");
   return categories.find((category) =>
     category.id === alias ||
@@ -53,11 +57,17 @@ function mergeProgress(local, remote) {
     : localBest;
   const localAt = Number(local.last?.at || 0);
   const remoteAt = Date.parse(remote.last?.at || "") || 0;
+  const localIsNewer = localAt > remoteAt;
   return {
     ...remote,
     best,
-    last: localAt > remoteAt ? local.last : remote.last,
-    questions: { ...(remote.questions || {}), ...(local.questions || {}) },
+    last: localIsNewer ? local.last : remote.last,
+    // Per-question status follows the same recency call as `last`, so a stale
+    // side never clobbers the newer attempt's answers. Fall back to whichever
+    // map exists when one is missing.
+    questions: localIsNewer
+      ? { ...(remote.questions || {}), ...(local.questions || {}) }
+      : { ...(local.questions || {}), ...(remote.questions || {}) },
   };
 }
 

@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchPlacementQuiz, gradePlacementQuiz } from "./conceptQuizApi";
 
 export default function PlacementCheck({ apiBase, language, onClose, onUseRecommendation }) {
+  const dialogRef = useRef(null);
   const [questions, setQuestions] = useState([]);
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -27,6 +28,24 @@ export default function PlacementCheck({ apiBase, language, onClose, onUseRecomm
       alive = false;
     };
   }, [apiBase, language]);
+
+  // Native <dialog> gives us focus-move-on-open, a focus trap, Escape-to-close,
+  // and focus restore on close for free. showModal() records the previously
+  // focused element and returns focus there when the dialog closes.
+  useEffect(() => {
+    const node = dialogRef.current;
+    if (!node) return undefined;
+    if (!node.open) node.showModal();
+    const handleCancel = (event) => {
+      event.preventDefault(); // don't let Escape close without running onClose
+      onClose?.();
+    };
+    node.addEventListener("cancel", handleCancel);
+    return () => {
+      node.removeEventListener("cancel", handleCancel);
+      if (node.open) node.close();
+    };
+  }, [onClose]);
 
   const answeredCount = useMemo(
     () => questions.filter((question) => answers[question.id]?.choice_index != null).length,
@@ -55,13 +74,13 @@ export default function PlacementCheck({ apiBase, language, onClose, onUseRecomm
   };
 
   return (
-    <div className="cq-placement-backdrop" role="presentation">
-      <section
-        className="cq-placement-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="cq-placement-title"
-      >
+    <dialog
+      ref={dialogRef}
+      className="cq-placement-dialog"
+      aria-labelledby="cq-placement-title"
+      onClose={onClose}
+    >
+      <div className="cq-placement-dialog-inner">
         <header className="cq-placement-header">
           <div>
             <span className="cq-hero-eyebrow">Five quick questions</span>
@@ -154,7 +173,7 @@ export default function PlacementCheck({ apiBase, language, onClose, onUseRecomm
             </div>
           </div>
         ) : null}
-      </section>
-    </div>
+      </div>
+    </dialog>
   );
 }

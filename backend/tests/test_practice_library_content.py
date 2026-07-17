@@ -92,6 +92,11 @@ def test_runner_tests_are_present_and_well_shaped():
                 continue
             if len(tests) < 3:
                 problems.append(f"{language}/{qid}: fewer than 3 tests")
+            # A blank function_name lets runtime grading silently fall back to a
+            # default entrypoint (solve), so tests would run against the wrong
+            # function; require it whenever runner_tests are present.
+            if not str(item.get("function_name") or "").strip():
+                problems.append(f"{language}/{qid}: missing function_name")
             for index, test in enumerate(tests, start=1):
                 if "name" not in test or "args" not in test or "expected" not in test:
                     problems.append(f"{language}/{qid}: malformed test {index}")

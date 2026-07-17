@@ -4758,7 +4758,12 @@ def _save_concept_attempt(
         db.refresh(row)
         return row
     except Exception as exc:
-        db.rollback()
+        # A rollback that itself raises must not mask the save failure or the
+        # None return the caller relies on to report "progress not saved".
+        try:
+            db.rollback()
+        except Exception as rollback_exc:  # pragma: no cover - defensive
+            print(f"[WARN] Concept-quiz rollback also failed: {rollback_exc}")
         print(f"[WARN] Concept-quiz progress was not saved: {exc}")
         return None
 
@@ -5068,6 +5073,10 @@ async def grade_concept_quiz_placement(
 ):
     normalized = _concept_quiz_call(concept_quiz.normalize_language, req.language)
     questions = _concept_quiz_call(_placement_questions, normalized)
+    # Same readiness gate the GET uses: never grade or persist a partial
+    # placement when this language is missing a foundation question.
+    if len(questions) < len(PLACEMENT_CATEGORIES):
+        raise HTTPException(status_code=503, detail="The placement check is not ready for this language yet.")
     by_id = {str(question.get("id")): question for question in questions}
     submitted = {answer.question_id: answer for answer in req.answers}
     if set(submitted) != set(by_id):
@@ -5143,15 +5152,30 @@ async def grade_concept_quiz(
     )
     by_id = {str(q.get("id")): q for q in bank["questions"]}
 
+    # Persist a score only for a complete, one-answer-per-question submission.
+    # Reject unknown ids, duplicates, and missing ids so a partial or padded
+    # set can never be saved as if the whole bank were answered.
+    submitted_ids = [answer.question_id for answer in req.answers]
+    unknown = [qid for qid in submitted_ids if qid not in by_id]
+    if unknown:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Question '{unknown[0]}' is not in {req.language}/{req.category}.",
+        )
+    if len(submitted_ids) != len(set(submitted_ids)):
+        raise HTTPException(
+            status_code=400,
+            detail="Each question may only be answered once.",
+        )
+    if set(submitted_ids) != set(by_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Answer every question in this quiz before submitting.",
+        )
+
     results: list[dict[str, Any]] = []
     for answer in req.answers:
-        question = by_id.get(answer.question_id)
-        if question is None:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Question '{answer.question_id}' is not in {req.language}/{req.category}.",
-            )
-        results.append(_grade_concept_answer(question, answer))
+        results.append(_grade_concept_answer(by_id[answer.question_id], answer))
 
     total = len(results)
     correct = sum(1 for r in results if r["correct"])
