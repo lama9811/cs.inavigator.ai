@@ -574,6 +574,10 @@ class SavedScholarship(Base):
     role = Column(String(200), nullable=True)
 
     deadline = Column(String(40), nullable=True)        # "YYYY-MM-DD" / "(not listed)"
+    # How to read the deadline when there's no single date:
+    # fixed | rolling | recurring | unknown. Lets the UI show "Rolling — apply
+    # anytime" instead of a bare "(not listed)".
+    deadline_type = Column(String(20), nullable=True)
     url = Column(String(1000), nullable=True)           # apply link
     source_url = Column(String(1000), nullable=True)    # where we found it
     why = Column(Text, nullable=True)                   # why it fits this student
