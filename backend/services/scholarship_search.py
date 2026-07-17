@@ -158,6 +158,50 @@ def detect_kind_intent(query: str) -> str:
     return "both"
 
 
+# --- internship role categories ----------------------------------------------
+#
+# Internships carry a free-text `role` ("Software Engineering (first-year)"). To let
+# a student browse "all SWE roles", we map that text (and the name) to one of a few
+# categories. Keyword-based like detect_kind_intent: deterministic, no AI call.
+# Order matters — the FIRST category whose pattern matches wins, so put the more
+# specific ones (Security, Data) before the broad "Software Engineering".
+ROLE_CATEGORIES = (
+    "Security", "Data / ML", "Hardware", "Product", "Research",
+    "Software Engineering", "Other",
+)
+
+# NB: use \w* suffixes, not \b, so a stem matches its inflections — "cyber\w*"
+# catches "cybersecurity", "manage\w*" catches "management". A bare \b after a stem
+# fails mid-word (the same trap detect_kind_intent's regex hit).
+_ROLE_PATTERNS = (
+    ("Security", re.compile(r"\b(security|secur\w*|cyber\w*|infosec|cryptolog\w*|nsa)\b", re.I)),
+    ("Data / ML", re.compile(
+        r"\b(data|machine\s*learning|\bml\b|\bai\b|analytic\w*|statistic\w*)\b", re.I)),
+    ("Hardware", re.compile(
+        r"\b(hardware|electrical|firmware|embedded|chip|circuit|asic|fpga)\b", re.I)),
+    ("Product", re.compile(
+        r"\b(product\s*manage\w*|product\s*design\w*|\bpm\b|\bux\b|user\s*experience|"
+        r"design\w*)\b", re.I)),
+    ("Research", re.compile(r"\b(research\w*|\breu\b|scientist|\blab\b|phd)\b", re.I)),
+    ("Software Engineering", re.compile(
+        r"\b(software|\bswe\b|\bsde\b|develop\w*|programm\w*|coding|engineer\w*|"
+        r"full[-\s]?stack|backend|front[-\s]?end)\b", re.I)),
+)
+
+
+def role_category(item: dict) -> str:
+    """Classify an internship into a role category from its role/name text.
+
+    Returns one of ROLE_CATEGORIES; 'Other' when nothing matches. Only meaningful
+    for internships — scholarships have no role, so callers stamp it on internships
+    only."""
+    text = f"{item.get('role') or ''} {item.get('name') or ''}"
+    for label, pattern in _ROLE_PATTERNS:
+        if pattern.search(text):
+            return label
+    return "Other"
+
+
 # --- web search (Julian's web_search.py) -------------------------------------
 
 def web_search(query: str, max_results: int = 5) -> dict[str, Any]:
@@ -647,6 +691,11 @@ def _group_by_urgency(items: list[dict]) -> dict[str, list[dict]]:
         # Always stamp a normalized deadline_type so the UI never sees a raw blank.
         item["deadline_type"] = normalize_deadline_type(item)
 
+        # Internships get a role category so the UI can filter/sort by role.
+        # Scholarships have no role, so leave the field off them.
+        if str(item.get("kind") or "").strip().lower() == "internship":
+            item["role_category"] = role_category(item)
+
         verdict = check_deadline(str(item.get("deadline", "")))
         status = verdict.get("status")
 
@@ -802,13 +851,76 @@ def _cache_get(key: str, now: float) -> Optional[dict]:
     return value
 
 
+_CACHE_MAX_ENTRIES = int(os.getenv("SCHOLARSHIP_CACHE_MAX_ENTRIES", "2000"))
+
+
 def _cache_put(key: str, value: dict, now: float) -> None:
     _result_cache[key] = (now, value)
+    # Bound the shared cache so a stream of distinct queries can't grow it without
+    # limit and OOM the Cloud Run instance (per-key TTL alone never caps SIZE).
+    if len(_result_cache) > _CACHE_MAX_ENTRIES:
+        # Evict oldest-stored first until back under the cap. dict preserves
+        # insertion order, but stored_at is authoritative, so sort by it.
+        for stale_key, _ in sorted(_result_cache.items(), key=lambda kv: kv[1][0])[
+            : len(_result_cache) - _CACHE_MAX_ENTRIES
+        ]:
+            _result_cache.pop(stale_key, None)
 
 
 def clear_cache() -> None:
     """Drop all cached results. For tests and admin refresh."""
     _result_cache.clear()
+
+
+# --- per-user rate limiting on search ----------------------------------------
+# A grounded search costs a Gemini call (+ maybe paid Tavily + outbound HEADs), so
+# an authenticated caller looping distinct queries could drive unbounded cost. The
+# shared cache only collapses IDENTICAL queries; this caps the RATE per user.
+# Same shape as coding_runner.check_practice_run_rate_limit (deque + lock + sweep).
+import math as _math
+import time as _time
+from collections import deque as _deque
+from threading import Lock as _Lock
+
+SEARCH_RATE_LIMIT = int(os.getenv("SCHOLARSHIP_SEARCH_RATE_LIMIT", "10"))
+SEARCH_RATE_WINDOW_SECONDS = int(os.getenv("SCHOLARSHIP_SEARCH_RATE_WINDOW", "60"))
+_search_rate: dict[str, "_deque[float]"] = {}
+_search_rate_lock = _Lock()
+
+
+def check_search_rate_limit(
+    user_key: str,
+    *,
+    limit: int = SEARCH_RATE_LIMIT,
+    window_seconds: int = SEARCH_RATE_WINDOW_SECONDS,
+) -> Optional[int]:
+    """Return retry-after seconds when a user exceeds the search limit, else None.
+
+    Records the call when allowed. Sweeps stale user entries so the map itself
+    stays bounded. Uses a monotonic clock so wall-clock changes can't skew it."""
+    now = _time.monotonic()
+    with _search_rate_lock:
+        timestamps = _search_rate.setdefault(str(user_key), _deque())
+        while timestamps and now - timestamps[0] >= window_seconds:
+            timestamps.popleft()
+        if len(timestamps) >= limit:
+            return max(1, _math.ceil(window_seconds - (now - timestamps[0])))
+        timestamps.append(now)
+
+        if len(_search_rate) > 10000:
+            stale = [
+                k for k, v in _search_rate.items()
+                if not v or now - v[-1] >= window_seconds
+            ]
+            for k in stale:
+                _search_rate.pop(k, None)
+    return None
+
+
+def reset_rate_limits() -> None:
+    """Clear the per-user search rate map. For tests."""
+    with _search_rate_lock:
+        _search_rate.clear()
 
 
 def find_opportunities(
@@ -1019,16 +1131,18 @@ VALID_STATUSES = (
 )
 
 
-def client_key_for(name: str, url: str) -> str:
-    """A stable dedupe key for a saved item.
+def client_key_for(name: str, url: str = "") -> str:
+    """A stable dedupe key for a saved/dismissed item, keyed on the NAME only.
 
-    Keyed on name + apply URL so the SAME award re-saved from a later search
-    updates the existing row instead of piling up duplicates. Case- and
-    whitespace-insensitive on the name; the URL anchors it when two awards share
-    a name. Short hash — collisions across a single student's saved list are
-    astronomically unlikely and would only merge two genuinely identical saves.
+    Deliberately name-only (case- and whitespace-insensitive). The URL is NOT part
+    of the key: grounding resolves redirect links to their real destination, so the
+    same award comes back with a *different* url across searches — keying on url
+    would mint a new key each time and pile up duplicate saves. Two genuinely
+    different awards almost never share an exact normalized name, so the rare
+    merge that name-only risks is far cheaper than routine duplicates. `url` is
+    kept in the signature for call-site compatibility but ignored.
     """
-    basis = f"{(name or '').strip().lower()}|{(url or '').strip().lower()}"
+    basis = " ".join((name or "").strip().lower().split())
     return hashlib.sha1(basis.encode("utf-8")).hexdigest()[:32]
 
 

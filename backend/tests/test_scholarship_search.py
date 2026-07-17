@@ -93,6 +93,16 @@ def test_curated_items_carry_a_deadline_type():
     assert all(i.get("deadline_type") in ss.VALID_DEADLINE_TYPES for i in items)
 
 
+def test_no_curated_item_is_unknown():
+    """Every curated entry declares a real timing type (rolling/recurring/fixed),
+    so none renders the misleading 'No deadline listed'. The curated deadlines are
+    descriptive windows, so without an explicit deadline_type they'd all infer to
+    'unknown' — this guards that the JSON keeps declaring them."""
+    items = ss.curated_opportunities({})
+    unknown = [i["name"] for i in items if i.get("deadline_type") == "unknown"]
+    assert not unknown, f"curated entries missing a deadline_type: {unknown}"
+
+
 # --- configuration -----------------------------------------------------------
 
 def test_not_configured_without_key(monkeypatch):
@@ -421,6 +431,43 @@ def test_filter_items_by_kind_drops_off_kind():
     assert ss._filter_items_by_kind(items, "both") == items
 
 
+# --- internship role categories ----------------------------------------------
+
+@pytest.mark.parametrize("role,expected", [
+    ("Software Engineering (first-year students)", "Software Engineering"),
+    ("Software Development Engineer", "Software Engineering"),
+    ("Full-stack developer", "Software Engineering"),
+    ("Data Science", "Data / ML"),
+    ("Machine learning research", "Data / ML"),   # ML wins over Research (order)
+    ("Analytics track", "Data / ML"),
+    ("Software or hardware engineering", "Hardware"),  # hardware wins over software (order)
+    ("Firmware / embedded", "Hardware"),
+    ("Product management rotation", "Product"),
+    ("UX design", "Product"),
+    ("Undergraduate research (REU)", "Research"),
+    ("Cybersecurity intern", "Security"),
+    ("NSA computer science intern", "Security"),
+    ("General rotational program", "Other"),
+])
+def test_role_category_classifies(role, expected):
+    assert ss.role_category({"role": role}) == expected
+
+
+def test_role_category_uses_name_when_role_missing():
+    assert ss.role_category({"name": "Google Cybersecurity Internship"}) == "Security"
+
+
+def test_grouping_stamps_role_category_on_internships_only():
+    items = [
+        {"name": "SWE Intern", "kind": "internship", "role": "Software engineer", "deadline": _iso(10)},
+        {"name": "A Scholarship", "kind": "scholarship", "deadline": _iso(10)},
+    ]
+    groups = ss._group_by_urgency(items)
+    by_name = {i["name"]: i for b in groups.values() for i in b}
+    assert by_name["SWE Intern"]["role_category"] == "Software Engineering"
+    assert "role_category" not in by_name["A Scholarship"]
+
+
 # --- JSON extraction ---------------------------------------------------------
 
 def test_extracts_json_from_a_markdown_fence():
@@ -469,10 +516,19 @@ def test_client_key_ignores_case_and_whitespace():
     assert a == b
 
 
-def test_client_key_differs_by_name_and_url():
+def test_client_key_differs_by_name():
     base = ss.client_key_for("Award A", "https://a.org")
-    assert base != ss.client_key_for("Award B", "https://a.org")   # name differs
-    assert base != ss.client_key_for("Award A", "https://b.org")   # url differs
+    assert base != ss.client_key_for("Award B", "https://a.org")   # name differs -> different key
+
+
+def test_client_key_ignores_url_to_prevent_duplicate_saves():
+    """The key is name-ONLY: grounding resolves redirect links to different urls
+    across searches, so the same award MUST map to the same key regardless of url,
+    or it piles up duplicate saves."""
+    a = ss.client_key_for("Google STEP", "https://vertexaisearch.cloud.google.com/redirect/abc")
+    b = ss.client_key_for("Google STEP", "https://google.com/careers/step")
+    c = ss.client_key_for("Google STEP", "")
+    assert a == b == c
 
 
 def test_client_key_survives_missing_url():
@@ -790,6 +846,48 @@ def test_cache_stores_and_expires(monkeypatch):
     r3 = ss.find_opportunities("scholarships", student, now=1000.0 + ss.CACHE_TTL_SECONDS + 10)
     assert r3.get("cached") is False
     assert calls["web"] > first_calls
+
+
+def test_cache_is_size_bounded(monkeypatch):
+    """A stream of distinct queries can't grow the shared cache without limit."""
+    monkeypatch.setattr(ss, "_CACHE_MAX_ENTRIES", 5)
+    ss.clear_cache()
+    for i in range(20):
+        ss._cache_put(f"q{i}", {"live_items": []}, now=float(i))
+    assert len(ss._result_cache) <= 5
+    # The most recently stored keys survive; the oldest are evicted.
+    assert "q19" in ss._result_cache
+    assert "q0" not in ss._result_cache
+
+
+# --- per-user search rate limiting -------------------------------------------
+
+def test_rate_limit_allows_up_to_the_cap_then_blocks():
+    ss.reset_rate_limits()
+    for _ in range(10):                              # default limit is 10/min
+        assert ss.check_search_rate_limit("u1", limit=10, window_seconds=60) is None
+    blocked = ss.check_search_rate_limit("u1", limit=10, window_seconds=60)
+    assert isinstance(blocked, int) and blocked > 0  # retry-after seconds
+
+
+def test_rate_limit_is_per_user():
+    ss.reset_rate_limits()
+    for _ in range(3):
+        ss.check_search_rate_limit("a", limit=3, window_seconds=60)
+    assert ss.check_search_rate_limit("a", limit=3, window_seconds=60) is not None  # a blocked
+    assert ss.check_search_rate_limit("b", limit=3, window_seconds=60) is None      # b fine
+
+
+def test_rate_limit_window_slides(monkeypatch):
+    """Old calls age out of the window so a paced user is never blocked."""
+    ss.reset_rate_limits()
+    clock = {"t": 1000.0}
+    monkeypatch.setattr(ss._time, "monotonic", lambda: clock["t"])
+    for _ in range(3):
+        assert ss.check_search_rate_limit("u", limit=3, window_seconds=60) is None
+    assert ss.check_search_rate_limit("u", limit=3, window_seconds=60) is not None  # 4th blocked
+    clock["t"] += 61                                 # window passes
+    assert ss.check_search_rate_limit("u", limit=3, window_seconds=60) is None      # allowed again
 
 
 # --- live search: grounding primary, Tavily fallback -------------------------

@@ -1790,6 +1790,16 @@ async def search_scholarships(
     if len(query) > 500:
         raise HTTPException(400, "Query is too long (500 characters max).")
 
+    # Throttle per user: a grounded search costs a Gemini call (+ maybe paid Tavily
+    # + outbound HEADs), so cap the rate to prevent a script from driving cost.
+    retry_after = scholarship_search.check_search_rate_limit(user["user_id"])
+    if retry_after is not None:
+        raise HTTPException(
+            status_code=429,
+            detail="You're searching too fast. Please wait a moment and try again.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
     # No 503 when Tavily is unset: the curated core still returns real awards, so
     # find_opportunities degrades to that instead of failing. The response's
     # `configured` flag tells the frontend whether live search was available.
@@ -1870,6 +1880,11 @@ def _saved_to_dict(row: SavedScholarship) -> dict:
         "status": row.status,
         "urgency": urgency["status"],
         "days_remaining": urgency["days_remaining"],
+        # Role category for the saved-view role filter (internships only).
+        "role_category": (
+            scholarship_search.role_category({"role": row.role, "name": row.name})
+            if row.kind == "internship" else None
+        ),
         "saved_at": row.created_at.isoformat() if row.created_at else None,
         # null until generated; the frontend shows "Build my checklist" in that case.
         "checklist": checklist,
