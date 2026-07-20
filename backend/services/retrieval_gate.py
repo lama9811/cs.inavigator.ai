@@ -22,7 +22,7 @@ from google.api_core.client_options import ClientOptions
 log = logging.getLogger(__name__)
 
 # Configuration
-GCP_PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT", "csnavigator-vertex-ai")
+GCP_PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT", "cs-navigator-498115")
 DATASTORE_ID = "csnavigator-kb-v7"
 LOCATION = "us"
 API_ENDPOINT = f"{LOCATION}-discoveryengine.googleapis.com"

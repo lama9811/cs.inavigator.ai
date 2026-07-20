@@ -1,0 +1,341 @@
+/* Advising section page + data-driven form renderer.
+   Navy/blue palette to match the app. Light-only for now — like the other Tools
+   pages (Planner/Curriculum), dark mode is Coding-Tutor-only at the moment. */
+.advising-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 24px 80px;
+  color: var(--text-main, #1a2438);
+}
+
+/* Form on the left, AI helper on the right. Helper drops below on narrow screens. */
+.advising-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: start;
+}
+.advising-main { min-width: 0; }
+.advising-side { position: sticky; top: 16px; }
+@media (max-width: 900px) {
+  .advising-body { grid-template-columns: 1fr; }
+  .advising-side { position: static; }
+}
+.af-loading { padding: 60px 0; text-align: center; color: var(--text-muted, #6b7280); }
+
+/* Hero */
+.advising-hero {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 26px;
+}
+/* Download sits at the top-right of the hero, aligned with the heading. */
+.advising-hero-download {
+  margin-left: auto;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .advising-hero { flex-wrap: wrap; }
+  .advising-hero-download { margin-left: 60px; }  /* line up under the text, past the icon */
+}
+.advising-hero-icon {
+  flex-shrink: 0;
+  width: 44px; height: 44px;
+  display: grid; place-items: center;
+  border-radius: 12px;
+  background: #2c4a7c; color: #fff;
+}
+.advising-hero h1 { margin: 0 0 4px; font-size: 1.6rem; }
+.advising-hero p { margin: 0; color: var(--text-muted, #5a6472); font-size: 0.92rem; max-width: 64ch; line-height: 1.5; }
+.advising-hero em { font-style: normal; font-weight: 600; color: #2c4a7c; }
+
+/* Step indicator */
+.advising-steps {
+  display: flex; gap: 10px; list-style: none;
+  margin: 0 0 22px; padding: 0;
+}
+.advising-step {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border-radius: 999px;
+  border: 1px solid var(--border-color, #e2ddd4);
+  font-size: 0.85rem; font-weight: 600;
+  color: var(--text-muted, #8a93a3);
+}
+.advising-step-num {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--border-color, #e2ddd4); color: #fff; font-size: 12px;
+}
+.advising-step.current { border-color: #2c4a7c; color: #2c4a7c; }
+.advising-step.current .advising-step-num { background: #2c4a7c; }
+.advising-step.done { color: #2f8f4e; border-color: #bfe0c9; }
+.advising-step.done .advising-step-num { background: transparent; color: #2f8f4e; }
+
+.advising-form-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 12px; margin-bottom: 14px;
+}
+.advising-form-head h2 { margin: 0; font-size: 1.15rem; }
+.advising-form-sub { margin: 2px 0 0; font-size: 0.82rem; color: var(--text-muted, #8a93a3); }
+.advising-progress {
+  font-size: 0.8rem; font-variant-numeric: tabular-nums;
+  color: var(--text-muted, #6b7280); white-space: nowrap;
+}
+
+.advising-alert {
+  padding: 10px 14px; border-radius: 10px; margin-bottom: 16px;
+  background: #fdf2f2; color: #a12d2d; border: 1px solid #f3cfcf; font-size: 0.88rem;
+}
+
+/* ---------- Form renderer (af-*) ---------- */
+.af-form { display: flex; flex-direction: column; gap: 22px; }
+.af-section {
+  border: 1px solid var(--border-color, #e2ddd4);
+  border-radius: 14px; padding: 16px 18px 20px; margin: 0;
+  background: var(--bg-card, #fffefb);
+}
+.af-section-title {
+  padding: 0 8px; font-weight: 700; font-size: 0.82rem;
+  text-transform: uppercase; letter-spacing: 0.06em; color: #2c4a7c;
+}
+.af-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 18px; margin-top: 8px;
+}
+@media (max-width: 640px) { .af-grid { grid-template-columns: 1fr; } }
+
+.af-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.af-label { font-size: 0.82rem; font-weight: 600; }
+.af-opt { font-weight: 400; color: var(--text-muted, #9ca3af); }
+.af-hint { font-size: 0.72rem; color: var(--text-muted, #9ca3af); }
+
+/* "Help me write this" link under free-writing fields (opens the side-panel helper). */
+.af-write-help {
+  align-self: flex-start; margin-top: 2px;
+  border: none; background: none; cursor: pointer; padding: 0;
+  font-size: 0.76rem; font-weight: 600; color: #4285F4;
+}
+.af-write-help:hover { text-decoration: underline; }
+
+.af-input {
+  width: 100%; box-sizing: border-box; padding: 8px 10px;
+  border: 1px solid rgba(0,0,0,0.14); border-radius: 8px;
+  font-size: 0.9rem; background: #fff; color: #1a2438;
+}
+.af-textarea { resize: vertical; min-height: 68px; line-height: 1.45; font-family: inherit; }
+.af-input:focus-visible { outline: 2px solid #4285F4; outline-offset: 1px; border-color: transparent; }
+/* Number fields read as plain textboxes: hide the up/down spinner arrows while
+   keeping numeric input + validation (e.g. Total Credits Earned). */
+.af-input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+.af-input[type="number"]::-webkit-outer-spin-button,
+.af-input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.af-toggle-row { display: flex; gap: 6px; }
+.af-toggle {
+  flex: 1; padding: 8px 0; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+  border: 1.5px solid rgba(0,0,0,0.14); background: #fff; color: #1a2438; cursor: pointer;
+}
+.af-toggle.on { background: #4285F4; color: #fff; border-color: #4285F4; }
+.af-toggle:disabled { opacity: 0.6; cursor: default; }
+
+/* multi-select dropdown */
+.af-multiselect { position: relative; }
+.af-multiselect-trigger {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  text-align: left; cursor: pointer;
+}
+.af-ms-placeholder { color: #6b7280; }
+.af-ms-caret { flex-shrink: 0; opacity: 0.6; transition: transform 0.15s ease; }
+.af-ms-caret.open { transform: rotate(180deg); }
+.af-multiselect-menu {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20;
+  max-height: 240px; overflow-y: auto;
+  background: #fff; border: 1px solid rgba(0,0,0,0.14); border-radius: 8px;
+  box-shadow: 0 8px 24px -8px rgba(0,0,0,0.25); padding: 4px;
+}
+.af-ms-option {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 9px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;
+}
+.af-ms-option:hover { background: rgba(66,133,244,0.08); }
+.af-ms-option input { accent-color: #4285F4; }
+
+/* A field that needs the whole row (course pickers, file upload). */
+.af-field-wide { grid-column: 1 / -1; }
+
+/* Downloadable reference docs shown at the top of a section (curriculum sheets). */
+.af-refs {
+  margin: 4px 8px 12px;
+  padding: 10px 12px; border-radius: 10px;
+  background: rgba(66,133,244,0.06); border: 1px solid rgba(66,133,244,0.18);
+}
+.af-refs-label { display: block; font-size: 0.78rem; font-weight: 600; color: #2c4a7c; margin-bottom: 6px; }
+.af-refs-links { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.af-ref-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.82rem; font-weight: 500; color: #4285F4; text-decoration: none;
+}
+.af-ref-link:hover { text-decoration: underline; }
+
+/* ---------- Course picker (searchable dropdown multiselector + chips) ---------- */
+.af-coursepicker { display: flex; flex-direction: column; gap: 10px; }
+.af-cp-select { position: relative; }
+.af-cp-trigger {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  text-align: left; cursor: pointer;
+}
+.af-cp-menu {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20;
+  background: #fff; border: 1px solid rgba(0,0,0,0.14); border-radius: 8px;
+  box-shadow: 0 8px 24px -8px rgba(0,0,0,0.25); padding: 8px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.af-cp-search { width: 100%; }
+.af-cp-list { max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; }
+.af-cp-group {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: #6b7280; padding: 8px 6px 4px;
+}
+.af-cp-group-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.af-cp-addall {
+  border: none; background: none; cursor: pointer; padding: 0;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0; text-transform: none;
+  color: #4285F4;
+}
+.af-cp-addall:hover { text-decoration: underline; }
+.af-cp-option {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 6px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;
+}
+.af-cp-option:hover { background: rgba(66,133,244,0.08); }
+.af-cp-option input { accent-color: #4285F4; flex-shrink: 0; }
+.af-cp-empty { padding: 10px 6px; font-size: 0.83rem; color: #6b7280; }
+.af-cp-addtyped {
+  text-align: left; margin-top: 4px; padding: 8px 6px; border-radius: 6px;
+  border: none; background: rgba(66,133,244,0.08); color: #2c4a7c;
+  font-size: 0.83rem; font-weight: 600; cursor: pointer;
+}
+.af-cp-addtyped:hover { background: rgba(66,133,244,0.16); }
+.af-cp-chips { margin-top: 2px; }
+.af-cp-chip { display: inline-flex; align-items: center; gap: 6px; }
+.af-cp-chip-x {
+  display: grid; place-items: center; border: none; cursor: pointer;
+  background: rgba(255,255,255,0.25); color: #fff; border-radius: 50%;
+  width: 15px; height: 15px; padding: 0;
+}
+.af-cp-chip-x:hover { background: rgba(255,255,255,0.45); }
+.af-cp-chip-x:disabled { opacity: 0.5; cursor: default; }
+
+/* ---------- File upload (multiple documents, each removable) ---------- */
+.af-file { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.af-file-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.af-file-input { display: none; }
+.af-file-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+  border: 1.5px solid #4285F4; background: #fff; color: #4285F4; cursor: pointer;
+}
+.af-file-btn:hover:not(:disabled) { background: rgba(66,133,244,0.08); }
+.af-file-btn:disabled { opacity: 0.6; cursor: default; }
+.af-file-err { font-size: 0.8rem; color: #a12d2d; }
+
+/* One row per attached document, with its own remove (X) control. */
+.af-file-list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: 6px;
+  width: 100%; max-width: 460px;
+}
+.af-file-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 7px 10px; border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.12); background: rgba(66,133,244,0.05);
+}
+.af-file-name {
+  font-size: 0.82rem; color: var(--text-muted, #5a6472);
+  word-break: break-all; min-width: 0;
+}
+.af-file-x {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 50%;
+  border: none; background: transparent; color: #7a8494; cursor: pointer;
+}
+.af-file-x:hover:not(:disabled) { background: rgba(161,45,45,0.12); color: #a12d2d; }
+.af-file-x:disabled { opacity: 0.5; cursor: default; }
+
+.af-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.af-chip {
+  padding: 6px 11px; border-radius: 999px; font-size: 0.8rem; font-weight: 600;
+  border: 1.5px solid rgba(0,0,0,0.14); background: #fff; color: #4a5468; cursor: pointer;
+}
+.af-chip.on { background: #2c4a7c; color: #fff; border-color: #2c4a7c; }
+.af-chip:disabled { opacity: 0.6; cursor: default; }
+
+.af-locked {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  border: 1px dashed rgba(66,133,244,0.4); border-radius: 8px; background: rgba(66,133,244,0.05);
+}
+.af-locked-val { flex: 1; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.af-edit { font-size: 0.75rem; font-weight: 600; color: #4285F4; background: none; border: none; cursor: pointer; }
+.af-edit:hover { text-decoration: underline; }
+.af-edit:disabled { color: var(--text-muted, #9ca3af); cursor: default; }
+
+/* ---------- Actions footer ---------- */
+.advising-actions {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-top: 24px; padding-top: 18px;
+  border-top: 1px solid var(--border-color, #e2ddd4); flex-wrap: wrap;
+}
+.advising-actions-left, .advising-actions-right { display: flex; align-items: center; gap: 10px; }
+.advising-missing { font-size: 0.8rem; color: #b8842a; }
+.advising-autosave-hint { font-size: 0.78rem; color: #7a808c; }
+.advising-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 16px; border-radius: 10px; font-size: 0.88rem; font-weight: 600; cursor: pointer;
+  border: 1px solid transparent; transition: background 0.15s ease, color 0.15s ease;
+}
+.advising-btn.primary { background: #4285F4; color: #fff; }
+.advising-btn.primary:hover:not(:disabled) { background: #2c4a7c; }
+.advising-btn.primary:disabled { background: #b7c6e0; cursor: default; }
+.advising-btn.ghost { background: transparent; color: #4285F4; border-color: #4285F4; }
+.advising-btn.ghost:hover:not(:disabled) { background: rgba(66,133,244,0.08); }
+.advising-btn.ghost:disabled { opacity: 0.6; cursor: default; }
+
+/* ---------- AI field-helper side panel ---------- */
+.advising-helper {
+  display: flex; flex-direction: column;
+  border: 1px solid var(--border-color, #e2ddd4);
+  border-radius: 14px; background: var(--bg-card, #fffefb);
+  max-height: 560px; overflow: hidden;
+}
+.ah-head {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 14px 16px; border-bottom: 1px solid var(--border-color, #e2ddd4);
+  color: #2c4a7c;
+}
+.ah-head strong { display: block; font-size: 0.92rem; }
+.ah-head p { margin: 2px 0 0; font-size: 0.76rem; color: var(--text-muted, #6b7280); line-height: 1.4; }
+.ah-scroll { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.ah-starters { display: flex; flex-direction: column; gap: 8px; }
+.ah-starter {
+  text-align: left; padding: 9px 12px; border-radius: 10px; cursor: pointer;
+  border: 1px solid rgba(66,133,244,0.3); background: rgba(66,133,244,0.05);
+  color: #2c4a7c; font-size: 0.82rem; font-weight: 500;
+}
+.ah-starter:hover { background: rgba(66,133,244,0.12); }
+.ah-msg { font-size: 0.85rem; line-height: 1.5; padding: 9px 12px; border-radius: 12px; max-width: 92%; white-space: pre-wrap; }
+.ah-msg.user { align-self: flex-end; background: #2c4a7c; color: #fff; border-bottom-right-radius: 3px; }
+.ah-msg.bot { align-self: flex-start; background: #f0ede6; color: #1a2438; border-bottom-left-radius: 3px; }
+.ah-typing { color: var(--text-muted, #6b7280); font-style: italic; }
+.ah-input-row { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border-color, #e2ddd4); }
+.ah-input {
+  flex: 1; padding: 8px 12px; border-radius: 10px; font-size: 0.85rem;
+  border: 1px solid rgba(0,0,0,0.14); background: #fff; color: #1a2438;
+}
+.ah-input:focus-visible { outline: 2px solid #4285F4; outline-offset: 1px; border-color: transparent; }
+.ah-send {
+  flex-shrink: 0; width: 38px; border-radius: 10px; border: none; cursor: pointer;
+  background: #4285F4; color: #fff; display: grid; place-items: center;
+}
+.ah-send:disabled { background: #b7c6e0; cursor: default; }

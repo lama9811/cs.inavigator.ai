@@ -23,6 +23,10 @@ import { getFileIcon } from "./chatbox/FileIcon";
 import ReportModal from "./chatbox/ReportModal";
 import WelcomePanel from "./chatbox/WelcomePanel";
 import YouTubeEmbed from "./chatbox/YouTubeEmbed";
+import AdvisingFormPanel from "./coding-tutor/AdvisingFormPanel";
+import {
+  hasAdvisingPanel, stripAdvisingPanel, parseAdvisingPrefill,
+} from "./coding-tutor/advisingPanelMarker";
 import SearchSuggestions from "./chatbox/SearchSuggestions";
 import { getYouTubeVideoId } from "../lib/youtube";
 import "./Chatbox.css";
@@ -41,6 +45,36 @@ const MessageMarkdown = React.memo(function MessageMarkdown({ text, components }
     </ReactMarkdown>
   );
 });
+
+// The advising-form flow emits a "[YES/NO_QUESTION]: <question>" marker so the UI
+// renders Yes/No buttons instead of expecting typed input. Detect it on a bot
+// message; the marker is stripped from the displayed text and buttons are shown.
+const YESNO_MARKER_RE = /\[YES\/NO_QUESTION\]:\s*/i;
+// Multiple-choice question: "[CHOICE_QUESTION]: A | B | C" -> clickable buttons,
+// one per option. The option list runs to the end of that line.
+const CHOICE_MARKER_RE = /\[CHOICE_QUESTION\]:\s*(.+)/i;
+// Internal flow tags the advising agent emits for the backend state machine; never
+// shown to the student.
+const FLOW_TAG_RE = /\[INTERNSHIP_COMPLETE\]\s*/gi;
+function hasYesNoQuestion(text) {
+  return typeof text === "string" && YESNO_MARKER_RE.test(text);
+}
+// Returns the list of options for a choice question, or [] if none.
+function getChoiceOptions(text) {
+  if (typeof text !== "string") return [];
+  const m = text.match(CHOICE_MARKER_RE);
+  if (!m) return [];
+  return m[1].split("|").map((o) => o.trim()).filter(Boolean);
+}
+function stripYesNoMarker(text) {
+  if (typeof text !== "string") return text;
+  return stripAdvisingPanel(
+    text
+      .replace(YESNO_MARKER_RE, "")
+      .replace(CHOICE_MARKER_RE, "")
+      .replace(FLOW_TAG_RE, ""),
+  );
+}
 
 // Featured questions that showcase chatbot capabilities
 const FEATURED_QUESTIONS = [
@@ -1711,9 +1745,74 @@ export default function Chatbox({
                   <div className="message-bubble">
 
                     <MessageMarkdown
-                      text={msg.sender === "user" ? getDisplayMessageText(msg.text) : msg.text}
+                      text={msg.sender === "user" ? getDisplayMessageText(msg.text) : stripYesNoMarker(msg.text)}
                       components={markdownComponents}
                     />
+
+                    {/* Advising-form Yes/No buttons: only on the latest bot message,
+                        once it's done streaming and carries the marker. Clicking sends
+                        "Yes"/"No" as the next message so the flow advances. */}
+                    {msg.sender === "bot" && !msg.isStreaming &&
+                      i === mainMessages.length - 1 && !isLoading &&
+                      hasYesNoQuestion(msg.text) && (
+                      <div className="yesno-btn-row">
+                        <button
+                          type="button"
+                          className="yesno-btn yesno-yes"
+                          onClick={() => handleSend(null, "Yes")}
+                        >
+                          Yes
+                        </button>
+                        <button
+                          type="button"
+                          className="yesno-btn yesno-no"
+                          onClick={() => handleSend(null, "No")}
+                        >
+                          No
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Multiple-choice buttons: one per option on the latest bot
+                        message when it carries a [CHOICE_QUESTION] marker. Clicking
+                        sends the option text as the next message. */}
+                    {msg.sender === "bot" && !msg.isStreaming &&
+                      i === mainMessages.length - 1 && !isLoading &&
+                      getChoiceOptions(msg.text).length > 0 && (
+                      <div className="choice-btn-row">
+                        {getChoiceOptions(msg.text).map((opt) => (
+                          <button
+                            key={opt}
+                            type="button"
+                            className="choice-btn"
+                            onClick={() => handleSend(null, opt)}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Advising-form panel: rendered inline on the latest bot message
+                        when it carries the panel marker. Entry happens IN the panel;
+                        Submit posts the collected values back as one structured turn. */}
+                    {msg.sender === "bot" && !msg.isStreaming &&
+                      i === mainMessages.length - 1 &&
+                      hasAdvisingPanel(msg.text) && (
+                      <AdvisingFormPanel
+                        prefill={parseAdvisingPrefill(msg.text)}
+                        disabled={isLoading}
+                        onSubmit={(payload) => {
+                          const lines = Object.entries(payload)
+                            .map(([k, v]) => `${k}: ${v}`)
+                            .join("\n");
+                          handleSend(
+                            null,
+                            `Here are my advising form answers:\n${lines}\n\nPlease confirm.`,
+                          );
+                        }}
+                      />
+                    )}
 
                     {/* Streaming indicator - show steps when no text, cursor when text is streaming */}
                     {msg.isStreaming && !msg.text && (
@@ -1763,7 +1862,7 @@ export default function Chatbox({
                       <div className="bot-action-row">
                         <button
                           className={`tts-btn${isSpeaking ? ' tts-active' : ''}`}
-                          onClick={() => speak(msg.text)}
+                          onClick={() => speak(stripYesNoMarker(msg.text))}
                           title={isSpeaking ? "Stop speaking" : "Read response aloud"}
                         >
                           {isSpeaking ? <FaStop size={14}/> : <FaVolumeUp size={14}/>}
@@ -1810,14 +1909,14 @@ export default function Chatbox({
                             <div className="feedback-dropdown">
                               <button
                                 className="feedback-option feedback-option--helpful"
-                                onClick={() => handleFeedback(i, 'helpful', msg.text)}
+                                onClick={() => handleFeedback(i, 'helpful', stripYesNoMarker(msg.text))}
                               >
                                 <FaThumbsUp size={14} />
                                 <span>Helpful</span>
                               </button>
                               <button
                                 className="feedback-option feedback-option--not-helpful"
-                                onClick={() => handleFeedback(i, 'not_helpful', msg.text)}
+                                onClick={() => handleFeedback(i, 'not_helpful', stripYesNoMarker(msg.text))}
                               >
                                 <FaThumbsDown size={14} />
                                 <span>Not Helpful</span>

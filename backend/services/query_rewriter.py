@@ -54,7 +54,7 @@ def _get_client():
 
     try:
         from google import genai
-        project = os.getenv("GOOGLE_CLOUD_PROJECT", "csnavigator-vertex-ai")
+        project = os.getenv("GOOGLE_CLOUD_PROJECT", "cs-navigator-498115")
         try:
             _gemini_client = genai.Client(vertexai=True, project=project, location="us-central1")
             print("   [REWRITE] Gemini client initialized (Vertex AI)")

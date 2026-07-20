@@ -77,6 +77,19 @@
 /* ========================================
    DEGREE PROGRESS SECTION - GLOWING GRADIENT
    ======================================== */
+/* Minor curriculum — bottom-of-page section, only when a minor is declared.
+   Reuses .table-container / .category-section / .curriculum-table styles; these
+   rules just give the minor its own accent (amber) so it reads as distinct from
+   the major groups above. */
+.minor-curriculum { margin-top: 8px; }
+.category-title.minor-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #b8860b;
+}
+.category-title.minor-title svg { color: #f59e0b; }
+
 .progress-section {
   max-width: 1400px;
   margin: 24px auto 24px auto;
