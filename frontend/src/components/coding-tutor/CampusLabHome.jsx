@@ -308,7 +308,7 @@ function CampusLearningQueue({
   );
 }
 
-function CampusTutorActions({ latestQuizResponse, onPrompt, onSaveQuiz }) {
+function CampusTutorActions({ latestQuizResponse, onPrompt, onOpenInterviewPrep, onSaveQuiz }) {
   return (
     <section className="campus-tutor-actions" aria-label="Ask the tutor">
       <div className="campus-section-heading">
@@ -323,7 +323,7 @@ function CampusTutorActions({ latestQuizResponse, onPrompt, onSaveQuiz }) {
           <FaCode aria-hidden="true" />
           <span>Review my current code</span>
         </button>
-        <button type="button" onClick={() => onPrompt("Help me prepare for a technical interview problem with hints first.", { title: "Interview prep" })}>
+        <button type="button" onClick={onOpenInterviewPrep}>
           <FaChartLine aria-hidden="true" />
           <span>Start a mock interview</span>
         </button>
@@ -431,6 +431,7 @@ export default function CampusLabHome({
   onSelectQuestion,
   onOpenQuizBank,
   onOpenTopic,
+  onOpenInterviewPrep,
   onPrompt,
   onSaveQuiz,
   mastery,
@@ -483,6 +484,7 @@ export default function CampusLabHome({
       <CampusTutorActions
         latestQuizResponse={latestQuizResponse}
         onPrompt={onPrompt}
+        onOpenInterviewPrep={onOpenInterviewPrep}
         onSaveQuiz={onSaveQuiz}
       />
     </section>

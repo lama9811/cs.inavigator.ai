@@ -2602,6 +2602,7 @@ export default function CodingTutor({
       onSelectQuestion={selectQuestion}
       onOpenQuizBank={() => navigate(PRACTICE_CODE_PATH)}
       onOpenTopic={openPracticeTopic}
+      onOpenInterviewPrep={() => goToPage("interview")}
       onPrompt={sendDashboardPrompt}
       onSaveQuiz={saveLatestQuizAsPdf}
       mastery={mastery}
