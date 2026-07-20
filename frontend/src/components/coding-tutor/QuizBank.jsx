@@ -10,6 +10,18 @@ function titleCase(value = "") {
 // Caps the number of mounted cards so the grid stays fast as the bank grows.
 const PAGE_SIZE = 20;
 
+const PRACTICE_TOPIC_ORDER = [
+  "arrays", "strings", "stacks", "queues", "trees", "graphs", "recursion",
+  "hash maps", "sets", "two pointers", "sliding window", "binary search",
+  "dynamic programming", "prefix sums", "intervals", "heaps", "tries", "matrices",
+  "math", "disjoint sets", "conditionals",
+];
+const topicOrderIndex = (topic) => {
+  const index = PRACTICE_TOPIC_ORDER.indexOf(String(topic || "").toLowerCase());
+  return index === -1 ? PRACTICE_TOPIC_ORDER.length : index;
+};
+const sortTopics = (a, b) => topicOrderIndex(a) - topicOrderIndex(b) || String(a).localeCompare(String(b));
+
 const DIFFICULTY_OPTIONS = [
   { value: "easy", label: "Easy" },
   { value: "medium", label: "Medium" },
@@ -120,6 +132,9 @@ export default function QuizBank({
   onSelectProblem,
   initialTopic = null,
   onConsumeInitialTopic,
+  // Server-computed per-topic mastery (GET /api/coding/mastery). Null until it
+  // loads, and `weakest` is null until some topic has enough attempts to score.
+  mastery = null,
 }) {
   // The full cross-difficulty set is the source for browsing/filtering. The
   // parent loads all difficulties into allQuestions; fall back to the current
@@ -135,8 +150,8 @@ export default function QuizBank({
   const [sortBy, setSortBy] = useState("topic");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [topicSearch, setTopicSearch] = useState("");
-  // How many topic-progress rows are visible; "Show more" reveals 5 at a time.
-  const [visibleTopicCount, setVisibleTopicCount] = useState(5);
+  // (Topic-progress paging removed — the list is now a collapsed <details> that shows
+  // every topic at once when opened, so an incremental "show 5 more" no longer applies.)
   // How many problem cards are visible; "Show more" reveals PAGE_SIZE at a time.
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
@@ -161,7 +176,7 @@ export default function QuizBank({
   // Topic options come from the whole set so the list is stable regardless of
   // the other active filters.
   const topicOptions = useMemo(
-    () => [...new Set(sourceQuestions.map(question => (question.topic || "").toLowerCase()).filter(Boolean))].sort(),
+    () => [...new Set(sourceQuestions.map(question => (question.topic || "").toLowerCase()).filter(Boolean))].sort(sortTopics),
     [sourceQuestions],
   );
 
@@ -269,7 +284,7 @@ export default function QuizBank({
       if (!groups.has(topic)) groups.set(topic, []);
       groups.get(topic).push(question);
     }
-    return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    return [...groups.entries()].sort((a, b) => sortTopics(a[0], b[0]));
   }, [groupByTopic, filteredQuestions]);
 
   // Paginate by WHOLE groups (never split a topic): include complete groups until
@@ -381,10 +396,10 @@ export default function QuizBank({
     return { topic, solved, total: group.length };
   }), [topicsInView, filteredQuestions, progressByQuestion]);
 
-  // Weakest topic: lowest solved/total ratio among the topics in view, ties
-  // broken toward the larger group (more room to improve). Null until there's at
-  // least one solve to compare against, so we don't shame a brand-new student.
-  const weakestTopic = useMemo(() => {
+  // Fallback weakest topic: lowest solved/total ratio among the topics in view.
+  // Only used before the server has enough attempts to say anything real — a ratio
+  // can't tell a first-try solve from a six-attempt grind with three hints open.
+  const weakestByRatio = useMemo(() => {
     const anySolved = topicProgress.some(t => t.solved > 0);
     if (!anySolved || topicProgress.length < 2) return null;
     return [...topicProgress].sort((a, b) => {
@@ -395,10 +410,24 @@ export default function QuizBank({
     })[0];
   }, [topicProgress]);
 
-  // NOTE: "Common mistakes" panel is hidden for now. The curated copy was the same
-  // for every user (not personalized), so it's parked until we can scope it per
-  // student — see ROADMAP "Practice Guide: per-user common mistakes". The
-  // TOPIC_INSIGHTS map + insightForTopic() are kept as the seed copy for that work.
+  // The real answer, when we have it: computed server-side from the attempt log,
+  // weighted by difficulty, attempts-to-solve, hints used, and recency. Comes with
+  // a reason, because a recommendation that won't explain itself gets ignored.
+  const masteryWeakest = mastery?.weakest || null;
+
+  // Per-topic mastery scores, keyed for a quick lookup in the topic-progress list.
+  const scoreByTopic = useMemo(() => {
+    const map = new Map();
+    for (const row of mastery?.topics || []) {
+      if (row.scored && row.score !== null) map.set(row.topic, row);
+    }
+    return map;
+  }, [mastery]);
+
+  // NOTE: the "Common mistakes" panel was parked because its copy was identical for
+  // every student. `masteryWeakest.reason` is the per-student version — every claim
+  // in it is drawn from a counted field in the attempt log (dominant error class,
+  // average attempts-to-solve, average hints used), never invented copy.
 
   return (
     <section className="coding-page-panel quiz-bank-page">
@@ -698,49 +727,77 @@ export default function QuizBank({
             )}
           </section>
 
-          {weakestTopic && (
+          {(masteryWeakest || weakestByRatio) && (
             <section className="practice-guide-section">
               <h3>Focus next</h3>
-              <p className="practice-guide-weakest">
-                <strong>{titleCase(weakestTopic.topic)}</strong> is your weakest topic in view
-                ({weakestTopic.solved}/{weakestTopic.total} solved). Try another one next.
-              </p>
+              {masteryWeakest ? (
+                <div className="practice-guide-focus">
+                  <p className="practice-guide-weakest is-mastery">
+                    <strong>{titleCase(masteryWeakest.topic)}</strong>
+                    <span className={`practice-mastery-band is-${masteryWeakest.band}`}>
+                      {Math.round(masteryWeakest.score)}
+                    </span>
+                  </p>
+                  {/* The "why". Every claim is a counted fact from this student's own
+                      attempt log — no LLM, so nothing can invent a diagnosis. */}
+                  <p className="practice-guide-reason">{masteryWeakest.reason}</p>
+                  <button
+                    type="button"
+                    className="practice-guide-focus-cta"
+                    onClick={() => setTopicFilters([masteryWeakest.topic])}
+                  >
+                    Practice {titleCase(masteryWeakest.topic)}
+                  </button>
+                </div>
+              ) : (
+                <p className="practice-guide-weakest">
+                  <strong>{titleCase(weakestByRatio.topic)}</strong> is your weakest topic in view
+                  ({weakestByRatio.solved}/{weakestByRatio.total} solved). Try another one next.
+                </p>
+              )}
             </section>
           )}
 
-          <section className="practice-guide-section">
-            <h3>Topic progress</h3>
-            {topicProgress.length ? (
-              <>
-                <ul className="practice-guide-progress">
-                  {topicProgress.slice(0, visibleTopicCount).map(({ topic, solved, total }) => (
+          {/* Topic progress is COLLAPSED by default. The guide's job is to answer
+              "what should I do next", and one clear answer does that better than a
+              23-row table does — this list is reference, not the headline. Collapsing
+              it also keeps the panel a fixed height as the library grows toward 500
+              questions across 23+ topics, instead of scrolling ever further off-screen. */}
+          {topicProgress.length ? (
+            <details className="practice-guide-topics">
+              <summary>
+                All topics
+                <span className="practice-guide-topics-count">{topicProgress.length}</span>
+              </summary>
+              <ul className="practice-guide-progress">
+                {topicProgress.map(({ topic, solved, total }) => {
+                  const scored = scoreByTopic.get(topic);
+                  return (
                     <li key={topic}>
                       <span>{titleCase(topic)}</span>
-                      <strong>{solved}/{total} solved</strong>
+                      <strong>
+                        {solved}/{total}
+                        {scored && (
+                          <span className={`practice-mastery-band is-${scored.band}`}>
+                            {Math.round(scored.score)}
+                          </span>
+                        )}
+                      </strong>
                     </li>
-                  ))}
-                </ul>
-                {topicProgress.length > 5 && (
-                  <button
-                    type="button"
-                    className="practice-guide-viewall"
-                    onClick={() =>
-                      setVisibleTopicCount(count =>
-                        count >= topicProgress.length ? 5 : Math.min(count + 5, topicProgress.length),
-                      )
-                    }
-                  >
-                    {visibleTopicCount >= topicProgress.length ? "Show less" : "Show more"}
-                  </button>
-                )}
-              </>
-            ) : (
+                  );
+                })}
+              </ul>
+            </details>
+          ) : (
+            <section className="practice-guide-section">
+              <h3>Topic progress</h3>
               <p>Pick a topic or clear filters to see progress.</p>
-            )}
-          </section>
+            </section>
+          )}
 
-          {/* "Common mistakes" panel hidden until it can be scoped per user —
-              see ROADMAP "Practice Guide: per-user common mistakes". */}
+          {/* The old "Common mistakes" panel is now unnecessary: its per-user version
+              IS the reason line under Focus next, generated from this student's own
+              attempt log rather than the identical curated copy that got it parked. */}
         </aside>
       </div>
     </section>

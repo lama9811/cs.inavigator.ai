@@ -1,0 +1,138 @@
+{
+  "_note": "ORIGINAL content. Topic sequence follows the standard free intro texts (Runestone FoPP ch.3 on debugging and the syntax / runtime / semantic error split, Think Python ch.1, OpenStax); sequences are not copyrightable. No prose, examples, or exercises are copied from any of them: all are copyleft (GFDL / CC BY-NC-SA), and copying would bind CS Navigator's content to those terms.",
+  "title": "Debug",
+  "summary": "Find and fix common beginner bugs.",
+  "minutes": 7,
+  "error_classes": [
+    "syntax",
+    "runtime",
+    "wrong_answer",
+    "timeout"
+  ],
+  "refresher": "When Python prints an error, read the last line first. It names the error type and says what went wrong. The line above it points at the code. Bugs come in three families. A syntax error means the program never ran. A runtime error means it started and then crashed. A wrong answer means it ran fine but gave you the wrong result. When you cannot see the bug, print the values you are unsure about.",
+  "refresher_code": "total = 0\nfor n in [1, 2, 3]:\n    print(\"n is\", n, \"total is\", total)\n    total = total + n\n# print() shows you what the code actually did,\n# not what you assumed it did",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Your code will break. Everyone's does, every day, including the people who wrote Python. Working programmers spend a large part of their week fixing things that do not work yet, so this is not the part you get past. It is most of the job. What changes with experience is how fast you find the problem, and that comes down to one habit: reading what the computer is actually telling you instead of guessing."
+    },
+    {
+      "kind": "text",
+      "body": "So start there. When something goes wrong, Python prints a block of text called a traceback. It looks like a wall. It is not. It is a short message with directions attached, and you can learn to read it in about a minute."
+    },
+    {
+      "kind": "code",
+      "caption": "The last line is the answer. It gives the error type, `ZeroDivisionError`, and a plain description. The line above tells you where: file, line number, and the exact code that failed. Everything in the middle is the path Python took to get there, and you can ignore it at first.",
+      "code": "scores = []\naverage = sum(scores) / len(scores)\nprint(average)",
+      "output": "Traceback (most recent call last):\n  File \"grades.py\", line 2, in <module>\n    average = sum(scores) / len(scores)\nZeroDivisionError: division by zero"
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Read the traceback bottom to top",
+      "body": "Start at the last line and work upward. The last line says what happened. The line above says where. Most students skim the whole block, feel overwhelmed, and change something at random. Reading two lines, in that order, replaces guessing with knowing."
+    },
+    {
+      "kind": "text",
+      "body": "Once you can read the message, the next question is which kind of bug you have. There are three families, and they fail at three different moments. Knowing which one you are looking at tells you where to look."
+    },
+    {
+      "kind": "list",
+      "title": "The three families of bug",
+      "items": [
+        "Syntax error: the program never runs at all. Python could not understand what you wrote, so it refuses to start.",
+        "Runtime error: the program starts, runs for a while, then crashes. The code was legal, but it asked for something impossible.",
+        "Wrong answer: the program runs all the way to the end without complaining, and the result is wrong. Python has no idea anything is amiss, because nothing is broken from its point of view. This one is also called a semantic error."
+      ]
+    },
+    {
+      "kind": "code",
+      "caption": "Here is the signature of a syntax error: nothing printed at all. The `print` on line 1 is perfectly good code, and it still never ran. Python reads the whole file before it runs any of it, so one missing colon on line 2 stops the program before it starts.",
+      "code": "print(\"starting\")\nif 5 > 3\n    print(\"bigger\")",
+      "output": "  File \"check.py\", line 2\n    if 5 > 3\n            ^\nSyntaxError: expected ':'"
+    },
+    {
+      "kind": "code",
+      "caption": "And here is the signature of a runtime error: you got some output first. The program really did run, right up until it asked for something impossible. The list has items at positions 0, 1, and 2, so position 3 is not there. If you see output and then a traceback, the bug is at the point where the output stopped.",
+      "code": "names = [\"Ada\", \"Grace\", \"Alan\"]\nprint(\"list is ready\")\nprint(names[3])",
+      "output": "list is ready\nTraceback (most recent call last):\n  File \"roster.py\", line 3, in <module>\n    print(names[3])\nIndexError: list index out of range"
+    },
+    {
+      "kind": "text",
+      "body": "A syntax error and a runtime error both announce themselves. A wrong answer does not, and that is what makes it the hardest of the three. Your program prints a number, the number looks like a number, and nothing suggests it is the wrong one."
+    },
+    {
+      "kind": "compare",
+      "caption": "Both versions run. Neither prints an error. The one on the left resets `total` on every pass, so it ends up holding only the last price. You get 2 instead of 13, and Python is perfectly happy about it. Nothing on your screen will tell you which version you wrote. That is why this family is the hardest to catch.",
+      "wrong_label": "Runs, wrong result",
+      "wrong": "for price in [4, 7, 2]:\n    total = 0\n    total = total + price\nprint(total)\n# prints 2",
+      "right_label": "Runs, right result",
+      "right": "total = 0\nfor price in [4, 7, 2]:\n    total = total + price\nprint(total)\n# prints 13"
+    },
+    {
+      "kind": "check",
+      "prompt": "Work out by hand what the average of 2, 4, and 6 should be. Then read the code. This run prints a number and shows no error. Which family of bug is this?",
+      "code": "def average(numbers):\n    return sum(numbers) / len(numbers) + 1\n\nprint(average([2, 4, 6]))",
+      "choices": [
+        "Wrong answer, because it runs to the end and the number it prints is not the average",
+        "Syntax error, because the function is written incorrectly",
+        "Runtime error, because dividing can crash",
+        "No bug at all, since Python printed a number without complaining"
+      ],
+      "answer_index": 0,
+      "why": "The code is legal Python, so there is no syntax error. Nothing crashes, so there is no runtime error. It runs happily and prints 5.0. But the average of 2, 4, and 6 is 4.0. That stray `+ 1` makes the result wrong while leaving the program perfectly runnable. If you picked the last option, that is exactly the trap. A program that prints a number without complaint is not the same as a program that is correct. Python checks that your instructions are legal. It never checks that they are what you meant."
+    },
+    {
+      "kind": "text",
+      "body": "So how do you find a wrong answer, when the computer will not point at it for you? You look. The oldest technique in programming is still the most useful one. Add `print()` lines that show you the values as they actually are, at the moment they are being used."
+    },
+    {
+      "kind": "code",
+      "caption": "Print the thing you are unsure about, and label it. Labels matter here. Three bare numbers tell you very little, but `total before adding: 0` tells you which variable, at which moment. Read the output and the bug is impossible to miss: `total` is back to 0 at the start of every pass, so it never gets a chance to add anything up.",
+      "code": "for price in [4, 7, 2]:\n    total = 0\n    print(\"total before adding:\", total)\n    total = total + price\n    print(\"total after adding:\", total)",
+      "output": "total before adding: 0\ntotal after adding: 4\ntotal before adding: 0\ntotal after adding: 7\ntotal before adding: 0\ntotal after adding: 2"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Changing things at random is not debugging",
+      "body": "When you are stuck, it is tempting to move a line, flip a sign, add a bracket, and run it again. Over and over, hoping something sticks. It feels like effort, which is what makes it so easy to keep doing. If you fix it that way, you will not know what was wrong, so it will happen again. Try this instead. Change one thing. Predict what it should do. Then run it and see whether you were right. If you were wrong, you have just found the spot where your understanding is off, which is the thing you were actually looking for."
+    },
+    {
+      "kind": "text",
+      "body": "There is one more failure worth naming, because it looks like nothing at all. Sometimes your code does not print an error and does not print an answer. It simply never finishes. That is a timeout, and it almost always means a loop that has no way to stop."
+    },
+    {
+      "kind": "check",
+      "prompt": "This run never finishes and gets cut off. Which family of bug is it?",
+      "code": "count = 10\nwhile count > 0:\n    print(count)\n    count = count + 1",
+      "choices": [
+        "Timeout, because `count` grows instead of shrinking, so `count > 0` never becomes false",
+        "Runtime error, because `count` eventually gets too big to store",
+        "Syntax error, because the `while` condition is written backwards",
+        "Wrong answer, because it prints the numbers in the wrong order"
+      ],
+      "answer_index": 0,
+      "why": "The condition is `count > 0`, and the body adds one to `count` every pass. So `count` moves further away from 0 forever, and the condition stays true forever. The loop never ends, the run gets cut off, and you see a timeout. Change that last line to `count = count - 1` and it stops. The tempting wrong choice is the runtime one, but Python handles very large whole numbers without complaint, so it will never crash on size. Whenever a run of yours times out, look at your loops first. Ask which line is supposed to make the condition false."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Run it early, run it often",
+      "body": "Do not write forty lines and then run them for the first time. When something breaks, you will have forty lines to search. Run after every few lines instead, so when an error appears you already know it came from the part you just wrote. Small failures are easy to read. Big ones are a hunt."
+    },
+    {
+      "kind": "list",
+      "title": "What to do when you are stuck",
+      "items": [
+        "Read the last line of the traceback first. It names the error type and describes it in plain words.",
+        "Then read the line just above it. That is your file and your line number. Go look at that line.",
+        "No error at all, but the answer is wrong: the code is doing what you wrote rather than what you meant. Print your values and compare them to what you expected.",
+        "Nothing happens and the run never ends: suspect a loop with no exit, and find the line that is meant to stop it.",
+        "Fix one thing at a time and rerun. Change two things at once, and a working program tells you nothing about which one mattered.",
+        "Explain the broken code out loud, line by line, to a friend or to an empty room. You will often catch the bug halfway through your own sentence.",
+        "Still stuck after a real effort? Bring the code and the exact error message when you ask. Those two things together are usually enough for anyone to help you in a minute."
+      ]
+    }
+  ]
+}

@@ -16,6 +16,31 @@ OR_PREREQ_COURSES = {
     "MATH 241",  # Placement alternatives: ENGR 101, MATH 114, MATH 141, or dept permission
 }
 
+# Curriculum-sequence position: which semester (1-8) each course sits in on the
+# official Computer Science Curriculum Sequence sheet. Used as a soft ordering hint
+# so the planner recommends the courses that come NEXT in the sequence rather than
+# skipping ahead. It's a guide, not a hard rule — students who are off-sequence
+# still get eligible courses; earlier-sequence ones are just preferred. Electives
+# have no fixed slot, so they're left out (default: late).
+CURRICULUM_SEQUENCE = {
+    # Semester 1
+    "COSC 111": 1, "MATH 241": 1,
+    # Semester 2
+    "COSC 112": 2, "MATH 242": 2,
+    # Semester 3
+    "COSC 220": 3, "COSC 241": 3, "COSC 201": 3,
+    # Semester 4
+    "COSC 281": 4, "MATH 312": 4,
+    # Semester 5
+    "COSC 349": 5, "COSC 351": 5, "COSC 352": 5,
+    # Semester 6
+    "COSC 354": 6, "MATH 331": 6,
+    # Semester 7
+    "COSC 458": 7, "COSC 459": 7, "COSC 490": 7,
+    # Cloud Computing sequence anchors (shared program)
+    "CLCO 261": 4, "CLCO 490": 7, "CLCO 401": 8,
+}
+
 
 def parse_prerequisites(prereq_list: list[str], course_code: str = "") -> dict:
     """Parse a prerequisites list into structured data with AND/OR logic.
@@ -165,6 +190,7 @@ def build_prerequisite_graph(dw_dict: Optional[dict], canvas_dict: Optional[dict
             "credits": course["credits"],
             "category": course["category"],
             "offered": course["offered"],
+            "sequence": CURRICULUM_SEQUENCE.get(code),  # curriculum-sequence semester (1-8), or None
             "status": status,
             "current_score": current_score,
             "grade": grade,

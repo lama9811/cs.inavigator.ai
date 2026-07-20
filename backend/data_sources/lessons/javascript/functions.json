@@ -1,0 +1,84 @@
+{
+  "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
+  "title": "Functions",
+  "summary": "Package reusable behavior with inputs and returned results.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "runtime",
+    "syntax"
+  ],
+  "refresher": "Parameters receive arguments, and `return` sends a result to the caller. Local variables stay inside their call. Braced arrow functions need an explicit return.",
+  "refresher_code": "const square=n=>n*n;\nconsole.log(square(4));",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Parameters receive arguments, and `return` sends a result to the caller. Local variables stay inside their call. Braced arrow functions need an explicit return. Package reusable behavior with inputs and returned results."
+    },
+    {
+      "kind": "text",
+      "body": "Calling a function creates a local workspace for its parameters and variables. Arguments fill the parameters, statements run in order, and `return` sends one result back while ending that call. If execution reaches the closing brace without return, the result is `undefined`."
+    },
+    {
+      "kind": "code",
+      "caption": "The arguments fill two parameters, and return supplies the finished label.",
+      "code": "function label(code,section){\n  return `${code}-${section}`;\n}\nconsole.log(label(\"CS101\",2));",
+      "output": "CS101-2"
+    },
+    {
+      "kind": "compare",
+      "caption": "Return a calculation when another part of the program needs it.",
+      "wrong_label": "Common mistake",
+      "wrong": "function total(a, b) {\n  console.log(a + b);\n}\nconst result = total(2, 3);",
+      "right_label": "Clearer version",
+      "right": "function total(a, b) {\n  return a + b;\n}\nconst result = total(2, 3);"
+    },
+    {
+      "kind": "text",
+      "body": "In the corrected call, `a` receives two and `b` receives three. The expression produces five, return hands five to the assignment, and `result` stores it. Printing can happen later without tying the function to one display choice."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Check the boundary",
+      "body": "Console logging displays a value but does not return it; a function without return evaluates to `undefined`."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is stored in answer?",
+      "code": "function add(a,b){console.log(a+b);}\nconst answer=add(2,3);",
+      "choices": [
+        "undefined",
+        "5",
+        "\"5\"",
+        "null"
+      ],
+      "answer_index": 0,
+      "why": "The function prints five but reaches its end without returning a value."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which arrow doubles input?",
+      "code": "",
+      "choices": [
+        "const double=n=>n*2;",
+        "const double=n=>{n*2;};",
+        "const double=>n*2;",
+        "const double=return n*2;"
+      ],
+      "answer_index": 0,
+      "why": "The expression-bodied arrow returns automatically; the braced choice omits return."
+    },
+    {
+      "kind": "list",
+      "title": "Functions checklist",
+      "items": [
+        "Define clear parameters.",
+        "Return needed data.",
+        "Keep temporary names local.",
+        "Test edge arguments."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

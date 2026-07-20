@@ -1,0 +1,88 @@
+{
+  "_note": "ORIGINAL content. Topic coverage was checked against Think C++ and the Google C++ Class outline. No prose, examples, or exercises were copied; the references are curriculum guides only.",
+  "title": "Exceptions",
+  "summary": "Send a clear failure to code that knows how to handle it.",
+  "minutes": 10,
+  "error_classes": [
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "Use `throw` when a function cannot complete its promised job. Put code that may fail inside `try`, and handle a known exception in `catch`. Preserve the error message so the caller knows what went wrong.",
+  "refresher_code": "try {\n  enroll(student);\n} catch (const std::exception& error) {\n  std::cerr << error.what() << \"\\n\";\n}",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Sometimes a function cannot produce a valid result. An exception lets it stop the normal path and send failure information to a caller. This is clearer than returning a made-up number that might be mistaken for a real answer."
+    },
+    {
+      "kind": "text",
+      "body": "When code throws, C++ looks back through the active function calls for a matching `catch`. As it leaves each function, local objects are cleaned up. This is why standard containers, strings, and file streams remain safe during an exception."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "The shape is similar to Python",
+      "body": "Python uses `try`, `raise`, and `except`. C++ uses `try`, `throw`, and `catch`. In both languages, expected choices still belong in ordinary `if` statements."
+    },
+    {
+      "kind": "code",
+      "caption": "The function either returns a positive value or throws a message. Main catches that specific failure and prints the explanation.",
+      "code": "#include <iostream>\n#include <stdexcept>\nint requirePositive(int value) {\n  if (value <= 0) throw std::invalid_argument(\"value must be positive\");\n  return value;\n}\nint main() {\n  try {\n    std::cout << requirePositive(-2) << \"\\n\";\n  } catch (const std::invalid_argument& error) {\n    std::cout << error.what() << \"\\n\";\n  }\n}",
+      "output": "value must be positive"
+    },
+    {
+      "kind": "compare",
+      "wrong_label": "Common mistake",
+      "wrong": "try { work(); }\ncatch (...) { }",
+      "right_label": "Clearer version",
+      "right": "try { work(); }\ncatch (const std::runtime_error& error) {\n  std::cerr << error.what();\n}",
+      "caption": "A catch-all that does nothing hides the cause. Catch a meaningful type where a useful response is possible."
+    },
+    {
+      "kind": "text",
+      "body": "For the negative input, `requirePositive` cannot fulfill its rule, so it throws `invalid_argument`. The normal path stops. Main catches that type, reads its message, and then continues after the catch block."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Exceptions are not ordinary branch logic",
+      "body": "Use an `if` for an expected choice, such as an empty search result. Use an exception when a function cannot complete the job it promised and a caller needs the failure information."
+    },
+    {
+      "kind": "check",
+      "prompt": "How should standard exceptions usually be caught?",
+      "code": "",
+      "choices": [
+        "By const reference",
+        "By raw pointer",
+        "By mutable global value",
+        "Only with catch-all"
+      ],
+      "answer_index": 0,
+      "why": "Catching by const reference avoids copying and preserves the dynamic exception information for the handler."
+    },
+    {
+      "kind": "check",
+      "prompt": "What happens to local objects when an exception leaves their block?",
+      "code": "",
+      "choices": [
+        "They are cleaned up as the block is exited",
+        "They are always leaked",
+        "They become global",
+        "Their constructors run again"
+      ],
+      "answer_index": 0,
+      "why": "C++ exits each active block on the way to a matching catch, so fully created local objects run their normal cleanup."
+    },
+    {
+      "kind": "list",
+      "title": "Exceptions checklist",
+      "items": [
+        "Throw a descriptive exception type.",
+        "Catch only where recovery or context is possible.",
+        "Catch standard exceptions by const reference.",
+        "Do not silence unknown failures."
+      ]
+    }
+  ]
+}

@@ -36,7 +36,7 @@
         "Error"
       ],
       "answer_index": 1,
-      "explanation": "*p dereferences the pointer \u00e2\u20ac\u201d it reads the value at the stored address. Since p points to x, *p is 42.",
+      "explanation": "*p dereferences the pointer - it reads the value at the stored address. Since p points to x, *p is 42.",
       "title": "Dereference a pointer"
     },
     {
@@ -74,6 +74,115 @@
       "answer_index": 1,
       "explanation": "In a declaration, int* means 'pointer to int'. The same * symbol means dereference when used on an existing pointer (like *p), which is a common source of confusion.",
       "title": "Meaning of int*"
+    },
+    {
+      "id": "cpp-pointers-05",
+      "concept": "pointers",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "language": "cpp",
+      "code": "int a = 4;\nint b = 9;\nint* p = &a;\np = &b;\ncout << *p;",
+      "prompt": "What does this output?",
+      "choices": [
+        "4",
+        "9",
+        "The address of b",
+        "Compile error"
+      ],
+      "answer_index": 1,
+      "explanation": "The pointer first stores the address of a, then p = &b replaces that address. Dereferencing p now reads b, so the program prints 9. Reassigning the pointer does not change a.",
+      "title": "Point somewhere new"
+    },
+    {
+      "id": "cpp-pointers-06",
+      "concept": "pointers",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "error_class": "runtime",
+      "code": "int* p = nullptr;\ncout << *p;",
+      "prompt": "What is wrong with this code?",
+      "choices": [
+        "nullptr contains the number 0, so it safely prints 0",
+        "Dereferencing a null pointer causes undefined behavior",
+        "Pointers cannot be printed with cout",
+        "p must be declared as double*"
+      ],
+      "answer_index": 1,
+      "explanation": "nullptr deliberately points to no object. Dereferencing it asks for a value at an invalid location, which causes undefined behavior and often crashes. Check that a pointer is not null before using *p.",
+      "title": "Do not dereference null"
+    },
+    {
+      "id": "cpp-pointers-supplement-01",
+      "concept": "pointers",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Pointers practice 7",
+      "code": "int* score = nullptr;\nif (score != nullptr) {\n  std::cout << *score;\n}",
+      "prompt": "A pointer `score` is `nullptr`. What does `if (score != nullptr) { std::cout << *score; }` do?",
+      "choices": [
+        "Nothing prints, because the guard is false and the body is skipped",
+        "It prints 0, because nullptr holds the value zero",
+        "It crashes, because *score runs before the check",
+        "It fails to compile, because you cannot compare a pointer to nullptr"
+      ],
+      "answer_index": 0,
+      "explanation": "`score` is null, so `score != nullptr` is false and the block is skipped. Nothing is dereferenced and nothing prints. That is the whole point of the guard: it reaches `*score` only when there is a real object to read. Comparing a pointer to nullptr is normal and compiles fine."
+    },
+    {
+      "id": "cpp-pointers-authored-01",
+      "concept": "pointers",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Pointers concept check 1",
+      "code": null,
+      "prompt": "Which warning about Pointers should a student remember?",
+      "choices": [
+        "a copy of x",
+        "An uninitialized or null pointer does not identify a valid object. Dereferencing it has undefined behavior and can crash the program.",
+        "the type of x",
+        "always zero"
+      ],
+      "answer_index": 1,
+      "explanation": "A pointer holds an address. `&value` obtains an address, `*pointer` dereferences it, and `nullptr` represents no object. That reasoning supports the answer: An uninitialized or null pointer does not identify a valid object. Dereferencing it has undefined behavior and can crash the program."
+    },
+    {
+      "id": "cpp-pointers-authored-02",
+      "concept": "pointers",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Pointers concept check 2",
+      "code": null,
+      "prompt": "Which choice describes a reliable Pointers practice?",
+      "choices": [
+        "a new pointer",
+        "the address of p",
+        "Initialize every pointer.",
+        "pointer multiplication"
+      ],
+      "answer_index": 2,
+      "explanation": "A pointer holds an address. `&value` obtains an address, `*pointer` dereferences it, and `nullptr` represents no object. That reasoning supports the answer: Initialize every pointer."
+    },
+    {
+      "id": "cpp-pointers-authored-03",
+      "concept": "pointers",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "language": "cpp",
+      "title": "Pointers concept check 3",
+      "code": null,
+      "prompt": "Which recommendation belongs in a review of Pointers code?",
+      "choices": [
+        "int* score = nullptr;\nstd::cout << *score;",
+        "always zero",
+        "a new pointer",
+        "Use nullptr for no target."
+      ],
+      "answer_index": 3,
+      "explanation": "A pointer holds an address. `&value` obtains an address, `*pointer` dereferences it, and `nullptr` represents no object. That reasoning supports the answer: Use nullptr for no target."
     }
   ]
 }

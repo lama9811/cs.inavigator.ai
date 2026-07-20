@@ -51,7 +51,7 @@ const TOPIC_ICONS = {
 // Preferred warmup order for the Recommended Path: confidence-building topics
 // first, harder structural topics later. Only topics that actually exist in the
 // loaded set are shown, so this adapts if the question bank changes.
-const PATH_ORDER = ["arrays", "strings", "stacks", "recursion", "linked-lists", "trees", "graphs", "bit-manipulation"];
+const PATH_ORDER = ["arrays", "strings", "recursion", "stacks", "linked-lists", "trees", "graphs", "bit-manipulation"];
 
 function difficultyOf(question) {
   return (question.difficulty || "easy").toLowerCase();
@@ -95,7 +95,13 @@ function groupByTopic(questions, reviewed, solved = new Set()) {
         total: sorted.length,
       };
     })
-    .sort((a, b) => b.total - a.total || a.topic.localeCompare(b.topic));
+    .sort((a, b) => {
+      const aIndex = PATH_ORDER.indexOf(a.topic);
+      const bIndex = PATH_ORDER.indexOf(b.topic);
+      const aRank = aIndex === -1 ? PATH_ORDER.length : aIndex;
+      const bRank = bIndex === -1 ? PATH_ORDER.length : bIndex;
+      return aRank - bRank || b.total - a.total || a.topic.localeCompare(b.topic);
+    });
 }
 
 function PageShell({ title, subtitle, heroAside, children }) {
@@ -165,49 +171,34 @@ export default function InterviewPrep({ questions = [], loading = false, onSolve
   }, [search, allGroups]);
 
   const totals = useMemo(() => {
-    const pathTopics = PATH_ORDER.filter(t => allGroups.some(g => g.topic === t));
-    // Next-to-practice topic within the recommended path = first not-fully-reviewed
-    // topic; falls back to the last if the whole path is done. Drives the warmup CTA
-    // and the "current" marker in the checklist.
-    const nextIndex = pathTopics.findIndex((t) => {
-      const g = allGroups.find(gg => gg.topic === t);
-      return g && g.reviewedCount < g.total;
+    const pathTopics = PATH_ORDER.filter(topic => allGroups.some(group => group.topic === topic));
+    const gateTopics = pathTopics.slice(0, 3);
+    const gateProgress = gateTopics.map((topic) => {
+      const group = allGroups.find(item => item.topic === topic);
+      const target = Math.min(2, group?.total || 0);
+      const current = Math.min(group?.reviewedCount || 0, target);
+      return { topic, current, target, done: target > 0 && current >= target };
     });
-    const focusIndex = nextIndex === -1 ? pathTopics.length - 1 : nextIndex;
-    const nextTopic = pathTopics[focusIndex] || null;
-    // Whole path finished? (every path topic fully reviewed) → hide the warmup CTA.
-    const pathComplete =
-      pathTopics.length > 0 &&
-      pathTopics.every((t) => {
-        const g = allGroups.find(gg => gg.topic === t);
-        return g && g.reviewedCount >= g.total;
-      });
-
-    // ── Mock-interview readiness ──────────────────────────────────────────────
-    // "Ready" = the first N recommended-path topics are fully reviewed. This keeps
-    // the goal close (100% after just a few topics) instead of tying it to the
-    // whole question bank. The mock is never hard-locked — this only drives the
-    // encouragement copy + the "ready" glow on the CTA.
-    const READINESS_TOPIC_COUNT = 3;
-    const gateTopics = pathTopics.slice(0, READINESS_TOPIC_COUNT);
-    const gateDone = gateTopics.filter((t) => {
-      const g = allGroups.find(gg => gg.topic === t);
-      return g && g.reviewedCount >= g.total;
+    const warmupsComplete = gateProgress.reduce((sum, item) => sum + item.current, 0);
+    const warmupsGoal = gateProgress.reduce((sum, item) => sum + item.target, 0);
+    const readyPct = warmupsGoal ? Math.round((warmupsComplete / warmupsGoal) * 100) : 0;
+    const isReady = warmupsGoal > 0 && warmupsComplete >= warmupsGoal;
+    const nextGate = gateProgress.find(item => !item.done);
+    const nextPathTopic = pathTopics.find((topic) => {
+      const group = allGroups.find(item => item.topic === topic);
+      return group && group.reviewedCount < group.total;
     });
-    const readyPct = gateTopics.length
-      ? Math.round((gateDone.length / gateTopics.length) * 100)
-      : 0;
-    const isReady = gateTopics.length > 0 && gateDone.length >= gateTopics.length;
-    const topicsToReady = Math.max(0, gateTopics.length - gateDone.length);
 
     return {
-      nextTopic,
       pathTopics,
-      pathComplete,
       gateTopics,
+      gateProgress,
+      warmupsComplete,
+      warmupsGoal,
+      remainingWarmups: Math.max(0, warmupsGoal - warmupsComplete),
       readyPct,
       isReady,
-      topicsToReady,
+      nextTopic: nextGate?.topic || nextPathTopic || pathTopics[0] || null,
     };
   }, [allGroups]);
 
@@ -229,13 +220,14 @@ export default function InterviewPrep({ questions = [], loading = false, onSolve
 
   const startWarmup = (topic) => {
     const group = allGroups.find(g => g.topic === topic);
-    const first = group?.questions.find(q => !reviewed.has(q.id)) || group?.questions[0];
+    const first = group?.questions.find(question => !reviewed.has(question.id)) || group?.questions[0];
     if (first) onSolve?.(first);
   };
 
   return (
     <PageShell
       title="Practice common coding interview patterns"
+      subtitle="Learn common patterns, practice by topic, and try a timed mock when you feel ready."
       heroAside={
         history.length > 0 && onOpenHistory ? (
           <button
@@ -287,126 +279,112 @@ export default function InterviewPrep({ questions = [], loading = false, onSolve
       <div className={`iv-ladder ${totals.isReady ? "is-ready" : ""}`}>
         <div className="iv-ladder-top">
           <div className="iv-ladder-copy">
+            <span className="iv-ladder-eyebrow">Mock interview</span>
             <h3 className="iv-ladder-title">
-              {totals.isReady
-                ? "You're ready — simulate a real interview"
-                : "Ready to simulate a real interview?"}
+              {totals.isReady ? "Warm-ups complete. Try a real simulation." : "Build confidence before the timer starts"}
             </h3>
             <p className="iv-ladder-sub">
-              Test your skills in a safe environment — a timed, mixed-topic mock
-              interview: 3 problems in 45 minutes, graded with feedback.
+              Complete {totals.warmupsGoal} recommended problems by solving them or marking them reviewed. You can start the 45-minute mock anytime.
             </p>
           </div>
-          {/* Readiness meter — how close you are to the mock interview. */}
           <div
             className="iv-ready-meter"
             role="progressbar"
-            aria-valuenow={totals.readyPct}
+            aria-valuenow={totals.warmupsComplete}
             aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label="Mock interview readiness"
+            aria-valuemax={totals.warmupsGoal}
+            aria-label="Recommended warm-up progress"
           >
             <div className="iv-ready-meter-head">
               <FaBolt aria-hidden="true" />
-              <span>
-                {totals.isReady
-                  ? "100% ready for a mock interview"
-                  : `${totals.readyPct}% ready for a mock interview`}
-              </span>
+              <span>Warm-up progress</span>
+              <strong>{totals.warmupsComplete} / {totals.warmupsGoal}</strong>
             </div>
             <div className="iv-ready-track">
               <span className="iv-ready-fill" style={{ width: `${totals.readyPct}%` }} />
             </div>
             <span className="iv-ready-hint">
               {totals.isReady
-                ? "Warm-ups complete. Go show what you've got 💪"
-                : `Complete ${totals.topicsToReady} more warm-up topic${totals.topicsToReady === 1 ? "" : "s"} to reach 100% readiness.`}
+                ? "You completed the recommended warm-ups."
+                : `${totals.remainingWarmups} recommended problem${totals.remainingWarmups === 1 ? "" : "s"} remaining.`}
             </span>
           </div>
         </div>
 
-        {/* Prerequisite checklist — gate topics → the Mock Interview node. Reads as
-            an if/then ladder: finish these, and you reach the mock. */}
-        {totals.gateTopics.length > 0 && (
-          <ol className="iv-checklist">
-            {totals.gateTopics.map((topic) => {
-              const g = allGroups.find(gg => gg.topic === topic);
-              const done = g && g.reviewedCount >= g.total;
-              const current = !done && topic === totals.nextTopic;
-              // Future topics (not done, not current) just read as grayed-out — no
-              // text label, so the timeline stays uncluttered.
-              const future = !done && !current;
+        {totals.gateProgress.length > 0 && (
+          <ol className="iv-checklist" aria-label="Recommended warm-up topics">
+            {totals.gateProgress.map((step) => {
+              const current = !step.done && step.topic === totals.nextTopic;
               return (
                 <li
-                  key={topic}
-                  className={`iv-check-step ${done ? "done" : ""} ${current ? "current" : ""} ${future ? "future" : ""}`}
+                  key={step.topic}
+                  className={`iv-check-step ${step.done ? "done" : ""} ${current ? "current" : ""}`}
                 >
                   <span className="iv-check-mark" aria-hidden="true">
-                    {done ? <FaCheck /> : current ? <FaRoute /> : ""}
+                    {step.done ? <FaCheck /> : current ? <FaRoute /> : ""}
                   </span>
                   <span className="iv-check-label">
-                    {titleCase(topic)}
-                    {(done || current) && <small>{done ? "Done" : "Active"}</small>}
+                    {titleCase(step.topic)}
+                    <small>{step.current} / {step.target} complete{current ? " - next" : ""}</small>
                   </span>
                 </li>
               );
             })}
-            <li className={`iv-check-step goal ${totals.isReady ? "unlocked" : "locked"}`}>
-              <span className="iv-check-mark" aria-hidden="true">
-                <FaBolt />
-              </span>
+            <li className={`iv-check-step goal ${totals.isReady ? "unlocked" : "available"}`}>
+              <span className="iv-check-mark" aria-hidden="true"><FaBolt /></span>
               <span className="iv-check-label">
                 Mock Interview
-                <small>{totals.isReady ? "Unlocked" : `Ready at ${totals.gateTopics.length} done`}</small>
+                <small>{totals.isReady ? "Warm-ups complete" : "Available anytime"}</small>
               </span>
             </li>
           </ol>
         )}
 
-        {/* CTA row at the bottom of the hero; hierarchy flips on readiness. Shifted
-            slightly right to fill the gutter (the "not confident?" nudge is gone). */}
-        <div className="iv-ladder-actions">
-          {totals.isReady || totals.pathComplete ? (
-            <>
-              <button
-                type="button"
-                className="iv-ladder-cta primary glow"
-                onClick={() => onStartMock?.()}
-              >
-                <FaBolt aria-hidden="true" />
-                You're ready! Start Mock Interview
-              </button>
-              {!totals.pathComplete && totals.nextTopic && (
+        <div className="iv-ladder-actions-row">
+          <div className="iv-ladder-actions">
+            {totals.isReady ? (
+              <>
                 <button
                   type="button"
-                  className="iv-ladder-cta ghost"
-                  onClick={() => startWarmup(totals.nextTopic)}
+                  className="iv-ladder-cta primary glow"
+                  onClick={() => onStartMock?.()}
                 >
-                  Keep warming up ({titleCase(totals.nextTopic)})
+                  <FaBolt aria-hidden="true" />
+                  Start mock interview
                 </button>
-              )}
-            </>
-          ) : (
-            <>
-              {totals.nextTopic && (
+                {totals.nextTopic && (
+                  <button
+                    type="button"
+                    className="iv-ladder-cta secondary"
+                    onClick={() => startWarmup(totals.nextTopic)}
+                  >
+                    Keep practicing {titleCase(totals.nextTopic)}
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                {totals.nextTopic && (
+                  <button
+                    type="button"
+                    className="iv-ladder-cta primary"
+                    onClick={() => startWarmup(totals.nextTopic)}
+                  >
+                    <FaRoute aria-hidden="true" />
+                    Continue with {titleCase(totals.nextTopic)}
+                  </button>
+                )}
                 <button
                   type="button"
-                  className="iv-ladder-cta primary"
-                  onClick={() => startWarmup(totals.nextTopic)}
+                  className="iv-ladder-cta secondary"
+                  onClick={() => onStartMock?.()}
                 >
-                  <FaRoute aria-hidden="true" />
-                  Start {titleCase(totals.nextTopic)} warmup
+                  Start mock now
                 </button>
-              )}
-              <button
-                type="button"
-                className="iv-ladder-cta ghost"
-                onClick={() => onStartMock?.()}
-              >
-                Try Mock Interview
-              </button>
-            </>
-          )}
+              </>
+            )}
+          </div>
+          {!totals.isReady && <p className="iv-ladder-note">Warm-ups are recommended, not required.</p>}
         </div>
       </div>
 
@@ -423,6 +401,8 @@ export default function InterviewPrep({ questions = [], loading = false, onSolve
             const shown = view.showAll ? rows : rows.slice(0, ROWS_BEFORE_COLLAPSE);
             const pct = group.total ? Math.round((group.reviewedCount / group.total) * 100) : 0;
             const isDone = group.total > 0 && group.reviewedCount >= group.total;
+            const isWarmupTopic = totals.gateTopics.includes(group.topic);
+            const isNextTopic = !totals.isReady && group.topic === totals.nextTopic;
             const bd = group.breakdown;
 
             const setView = (patch) =>
@@ -441,12 +421,19 @@ export default function InterviewPrep({ questions = [], loading = false, onSolve
                 >
                   <span className="iv-topic-icon" aria-hidden="true"><Icon /></span>
                   <span className="iv-topic-meta">
-                    <h3>{titleCase(group.topic)}</h3>
+                    <span className="iv-topic-title-row">
+                      <h3>{titleCase(group.topic)}</h3>
+                      {isWarmupTopic && (
+                        <span className={`iv-topic-recommended ${isNextTopic ? "next" : ""}`}>
+                          {isNextTopic ? "Next" : "Warm-up"}
+                        </span>
+                      )}
+                    </span>
                     <p className="iv-topic-counts">
                       {group.total} question{group.total === 1 ? "" : "s"}
                       <span className="iv-topic-breakdown">
                         {bd.easy > 0 && <span className="iv-bd-chip b-easy">{bd.easy} Easy</span>}
-                        {bd.medium > 0 && <span className="iv-bd-chip b-med">{bd.medium} Med</span>}
+                        {bd.medium > 0 && <span className="iv-bd-chip b-med">{bd.medium} Medium</span>}
                         {bd.hard > 0 && <span className="iv-bd-chip b-hard">{bd.hard} Hard</span>}
                       </span>
                     </p>
@@ -457,10 +444,10 @@ export default function InterviewPrep({ questions = [], loading = false, onSolve
                     <span
                       className={`iv-ring ${isDone ? "done" : ""}`}
                       style={{ "--pct": pct }}
-                      title={`${group.reviewedCount} of ${group.total} reviewed`}
+                      title={`${group.reviewedCount} of ${group.total} completed; ${group.solvedCount} solved`}
                     >
                       <span className="iv-ring-label">
-                        {isDone ? <FaCheck aria-hidden="true" /> : `${pct}%`}
+                        {isDone ? <FaCheck aria-hidden="true" /> : `${group.reviewedCount}/${group.total}`}
                       </span>
                     </span>
                     <FaChevronDown className="iv-topic-chevron" aria-hidden="true" />
@@ -484,15 +471,18 @@ export default function InterviewPrep({ questions = [], loading = false, onSolve
 
                     <ul className="iv-question-list">
                       {shown.map((question) => {
-                        const isReviewed = reviewed.has(question.id) || solved.has(question.id);
                         const isSolved = solved.has(question.id);
+                        const isManuallyReviewed = reviewed.has(question.id) && !isSolved;
+                        const isReviewed = isManuallyReviewed || isSolved;
                         return (
                           <li key={question.id} className={`iv-question-row ${isReviewed ? "reviewed" : ""}`}>
                             <button
                               type="button"
                               className={`iv-review-check ${isReviewed ? "on" : ""}`}
                               aria-pressed={isReviewed}
-                              title={isReviewed ? "Reviewed — click to clear" : "Mark as reviewed"}
+                              aria-label={isSolved ? `${question.title} is solved` : isManuallyReviewed ? `Clear reviewed status for ${question.title}` : `Mark ${question.title} as reviewed`}
+                              title={isSolved ? "Solved" : isManuallyReviewed ? "Marked reviewed - click to clear" : "Mark as reviewed"}
+                              disabled={isSolved}
                               onClick={() => toggleReviewed(question.id)}
                             >
                               {isReviewed ? <FaCheck aria-hidden="true" /> : <FaRegCheckCircle aria-hidden="true" />}
@@ -504,6 +494,7 @@ export default function InterviewPrep({ questions = [], loading = false, onSolve
                                   {titleCase(question.difficulty)}
                                 </span>
                                 {isSolved && <span className="iv-question-solved"><FaCheck aria-hidden="true" /> Solved</span>}
+                                {isManuallyReviewed && <span className="iv-question-reviewed">Marked reviewed</span>}
                               </span>
                               {(() => {
                                 // Drop the section's own topic (redundant under a topic

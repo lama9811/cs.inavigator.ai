@@ -34,13 +34,14 @@ from coding_runner import (
 )
 from practice_starters import build_starter_from_spec, get_arg_spec
 import concept_quiz
+import lessons
 
 from fastapi import FastAPI, HTTPException, Depends, status, File, UploadFile, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import StreamingResponse, HTMLResponse
+from fastapi.responses import StreamingResponse, HTMLResponse, Response
 from pydantic import BaseModel, field_validator
 from collections import Counter
 import io
@@ -85,7 +86,7 @@ print(f"[KEY] JWT_SECRET Check: {'FOUND' if os.getenv('JWT_SECRET') else 'MISSIN
 # SQLAlchemy Imports
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import OperationalError, ProgrammingError
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, text, or_, func
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, text, or_, and_, func
 
 # Vertex AI Agent Engine (replaces Pinecone + OpenAI RAG pipeline)
 from vertex_agent import query_agent, query_agent_stream, check_agent_health, reset_session
@@ -147,7 +148,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingSnippet, ReminderSubscription, SentReminder, LiveSection
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingSnippet, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -171,15 +172,16 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "4320
 # Upload configuration
 UPLOAD_FOLDER = os.path.join(BACKEND_DIR, "uploads", "profile_pictures")
 CHAT_FILES_FOLDER = os.path.join(BACKEND_DIR, "uploads", "chat_files") #  NEW: Chat files folder
+ADVISING_FILES_FOLDER = os.path.join(BACKEND_DIR, "uploads", "advising_forms")  # Advising doc uploads (DegreeWorks/course sequence)
 
 ALLOWED_EXTENSIONS = {
     'png', 'jpg', 'jpeg', 'gif', 'pdf', 'txt', 'docx', 'doc', 'mov', 'mp4',
-    'py', 'java', 'cpp', 'c', 'h', 'hpp', 'js', 'jsx', 'ts', 'tsx', 'json',
+    'py', 'java', 'cpp', 'cc', 'c', 'h', 'hpp', 'js', 'jsx', 'ts', 'tsx', 'json',
     'md', 'html', 'css'
 }
 
 # Create folders if not exist
-for folder in [UPLOAD_FOLDER, CHAT_FILES_FOLDER]:
+for folder in [UPLOAD_FOLDER, CHAT_FILES_FOLDER, ADVISING_FILES_FOLDER]:
     if not os.path.exists(folder):
         os.makedirs(folder, exist_ok=True)
         print(f"[OK] Created folder: {folder}")
@@ -327,18 +329,22 @@ def init_db():
                         student_name VARCHAR(255),
                         student_id VARCHAR(50),
                         degree_program VARCHAR(255),
+                        minor VARCHAR(255),
                         catalog_year VARCHAR(20),
                         classification VARCHAR(50),
                         advisor VARCHAR(255),
                         overall_gpa FLOAT,
                         major_gpa FLOAT,
                         total_credits_earned FLOAT,
+                        total_credits_applied FLOAT,
+                        total_credits_in_progress FLOAT,
                         credits_required FLOAT,
                         credits_remaining FLOAT,
                         courses_completed TEXT,
                         courses_in_progress TEXT,
                         courses_remaining TEXT,
                         requirements_status TEXT,
+                        gened_areas TEXT,
                         raw_data TEXT,
                         synced_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -359,6 +365,66 @@ def init_db():
                 print("[OK] Successfully added 'data_source' column!")
             except Exception as e:
                 print(f"[ERROR] Failed to add data_source column: {e}")
+
+        # 6c. Add minor column to degreeworks_data if missing (captured from DegreeWorks goalArray)
+        if not _has_col("degreeworks_data", "minor"):
+            print("[WARN] 'minor' column missing from degreeworks_data. Adding it now...")
+            try:
+                conn.execute(text("ALTER TABLE degreeworks_data ADD COLUMN minor VARCHAR(255)"))
+                conn.commit()
+                print("[OK] Successfully added 'minor' column!")
+            except Exception as e:
+                print(f"[ERROR] Failed to add minor column: {e}")
+
+        # 6d. Add gened_areas column (DegreeWorks-computed GenEd area completion %)
+        if not _has_col("degreeworks_data", "gened_areas"):
+            print("[WARN] 'gened_areas' column missing from degreeworks_data. Adding it now...")
+            try:
+                conn.execute(text("ALTER TABLE degreeworks_data ADD COLUMN gened_areas TEXT"))
+                conn.commit()
+                print("[OK] Successfully added 'gened_areas' column!")
+            except Exception as e:
+                print(f"[ERROR] Failed to add gened_areas column: {e}")
+
+        # 6e. Split credits into EARNED vs APPLIED. DegreeWorks' creditsApplied bundles
+        # in-progress + transfer credits, so it was overstating "credits earned." These
+        # two columns store the applied total and the in-progress portion; earned is now
+        # applied minus in-progress (see parsers.parse_degreeworks_audit_json).
+        _applied_was_missing = not _has_col("degreeworks_data", "total_credits_applied")
+        for _col in ("total_credits_applied", "total_credits_in_progress"):
+            if not _has_col("degreeworks_data", _col):
+                print(f"[WARN] '{_col}' column missing from degreeworks_data. Adding it now...")
+                try:
+                    conn.execute(text(f"ALTER TABLE degreeworks_data ADD COLUMN {_col} FLOAT"))
+                    conn.commit()
+                    print(f"[OK] Successfully added '{_col}' column!")
+                except Exception as e:
+                    print(f"[ERROR] Failed to add {_col} column: {e}")
+
+        # Backfill legacy rows once, right after the columns are first added. Without
+        # this, existing rows keep total_credits_applied = NULL until the student
+        # resyncs, and any reader that coalesces NULL->0 would understate applied
+        # credits. Seed applied from the old earned total (the closest available
+        # value) and in-progress from 0; a later resync overwrites both with the
+        # real parsed figures. Guarded on _applied_was_missing so it runs exactly
+        # once (the migration is only "new" on the first boot after this deploy).
+        if _applied_was_missing and _has_col("degreeworks_data", "total_credits_earned"):
+            try:
+                conn.execute(text(
+                    "UPDATE degreeworks_data "
+                    "SET total_credits_applied = total_credits_earned "
+                    "WHERE total_credits_applied IS NULL "
+                    "AND total_credits_earned IS NOT NULL"
+                ))
+                conn.execute(text(
+                    "UPDATE degreeworks_data "
+                    "SET total_credits_in_progress = 0 "
+                    "WHERE total_credits_in_progress IS NULL"
+                ))
+                conn.commit()
+                print("[OK] Backfilled legacy total_credits_applied from earned.")
+            except Exception as e:
+                print(f"[ERROR] Failed to backfill credit columns: {e}")
 
         # 7. Check if support_tickets table exists
         if not _has_table("support_tickets"):
@@ -458,6 +524,54 @@ def init_db():
                 print("[OK] Successfully created 'sent_reminders' table!")
             except Exception as e:
                 print(f"[ERROR] Failed to create sent_reminders table: {e}")
+
+        # 7b. Add checklist_json to saved_scholarships if the table predates it.
+        # create_all() makes new tables but never adds columns to an existing one,
+        # so a server that created saved_scholarships before the checklist feature
+        # would 500 on every read/write of the missing column.
+        if _has_table("saved_scholarships") and not _has_col("saved_scholarships", "checklist_json"):
+            print("[WARN] 'checklist_json' column missing from saved_scholarships. Adding it now...")
+            try:
+                conn.execute(text("ALTER TABLE saved_scholarships ADD COLUMN checklist_json TEXT"))
+                conn.commit()
+                print("[OK] Successfully added 'checklist_json' column!")
+            except Exception as e:
+                print(f"[ERROR] Failed to add checklist_json column: {e}")
+
+        # Same guard for deadline_type (fixed/rolling/recurring/unknown), added after
+        # the table already existed on some deployments.
+        if _has_table("saved_scholarships") and not _has_col("saved_scholarships", "deadline_type"):
+            print("[WARN] 'deadline_type' column missing from saved_scholarships. Adding it now...")
+            try:
+                conn.execute(text("ALTER TABLE saved_scholarships ADD COLUMN deadline_type VARCHAR(20)"))
+                conn.commit()
+                print("[OK] Successfully added 'deadline_type' column!")
+            except Exception as e:
+                print(f"[ERROR] Failed to add deadline_type column: {e}")
+
+        # Same guard for `curated` — persisted so the saved view's "Recommended
+        # first" sort survives a reload. Default 0/FALSE works on SQLite + MySQL.
+        if _has_table("saved_scholarships") and not _has_col("saved_scholarships", "curated"):
+            print("[WARN] 'curated' column missing from saved_scholarships. Adding it now...")
+            try:
+                conn.execute(text("ALTER TABLE saved_scholarships ADD COLUMN curated BOOLEAN NOT NULL DEFAULT 0"))
+                conn.commit()
+                print("[OK] Successfully added 'curated' column!")
+            except Exception as e:
+                print(f"[ERROR] Failed to add curated column: {e}")
+
+        # Widen advising_uploads.data to LONGBLOB on MySQL. A table created before
+        # this change may be plain BLOB (64KB cap), which truncates real PDFs. This
+        # is a MySQL-only statement; on SQLite it errors harmlessly (BLOB is already
+        # unbounded) and the except swallows it.
+        if _has_table("advising_uploads"):
+            try:
+                conn.execute(text("ALTER TABLE advising_uploads MODIFY data LONGBLOB NOT NULL"))
+                conn.commit()
+                print("[OK] Ensured advising_uploads.data is LONGBLOB (MySQL).")
+            except Exception as e:
+                # Expected on SQLite (no MODIFY / no LONGBLOB); not an error there.
+                print(f"[INFO] Skipped advising_uploads LONGBLOB migration (non-MySQL or already applied): {e}")
 
     # 8. Create/Update admin account
     try:
@@ -744,6 +858,10 @@ class PracticeRunRequest(BaseModel):
     question_id: str
     language: str = "python"
     code: str
+    # Effort signals for attempt telemetry. Optional and client-reported, so an older
+    # client that omits them still runs — the row is just written without them.
+    hints_used: int = 0
+    seconds_since_open: Optional[int] = None
 
     @field_validator("code")
     @classmethod
@@ -757,6 +875,7 @@ class PracticeRunRequest(BaseModel):
 class PracticeFreeRunRequest(BaseModel):
     language: str = "python"
     code: str
+    seconds_since_open: Optional[int] = None
 
     @field_validator("code")
     @classmethod
@@ -1591,12 +1710,15 @@ async def get_degreeworks(user: dict = Depends(get_current_user), db: Session = 
             "student_name": dw_data.student_name,
             "student_id": dw_data.student_id,
             "degree_program": dw_data.degree_program,
+            "minor": dw_data.minor,
             "catalog_year": dw_data.catalog_year,
             "classification": dw_data.classification,
             "advisor": dw_data.advisor,
             "overall_gpa": dw_data.overall_gpa,
             "major_gpa": dw_data.major_gpa,
             "total_credits_earned": dw_data.total_credits_earned,
+            "total_credits_applied": getattr(dw_data, "total_credits_applied", None),
+            "total_credits_in_progress": getattr(dw_data, "total_credits_in_progress", None),
             "credits_required": dw_data.credits_required,
             "credits_remaining": dw_data.credits_remaining,
             "courses_completed": json.loads(dw_data.courses_completed) if dw_data.courses_completed else [],
@@ -1607,6 +1729,625 @@ async def get_degreeworks(user: dict = Depends(get_current_user), db: Session = 
             "updated_at": dw_data.updated_at.isoformat() if dw_data.updated_at else None
         }
     }
+
+
+@app.get("/api/advising/draft")
+async def get_advising_draft(user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Return the user's saved advising-form draft (both forms), or empty if none."""
+    row = db.query(AdvisingFormDraft).filter(AdvisingFormDraft.user_id == user["user_id"]).first()
+    if not row or not row.forms_json:
+        return {"forms": {}, "submitted": False}
+    try:
+        forms = json.loads(row.forms_json)
+    except Exception:
+        forms = {}
+    return {"forms": forms, "submitted": bool(row.submitted), "updated_at": row.updated_at.isoformat() if row.updated_at else None}
+
+
+@app.post("/api/advising/draft")
+async def save_advising_draft(payload: dict, user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Save (upsert) the user's advising-form draft. Body: { forms: {form_id: {field: value}}, submitted?: bool }."""
+    forms = payload.get("forms")
+    if not isinstance(forms, dict):
+        raise HTTPException(400, "Expected 'forms' object")
+    # Guard size: the forms are small; reject absurd payloads.
+    encoded = json.dumps(forms)
+    if len(encoded) > 100_000:
+        raise HTTPException(413, "Advising draft too large")
+
+    row = db.query(AdvisingFormDraft).filter(AdvisingFormDraft.user_id == user["user_id"]).first()
+    if row is None:
+        row = AdvisingFormDraft(user_id=user["user_id"])
+        db.add(row)
+    row.forms_json = encoded
+    if isinstance(payload.get("submitted"), bool):
+        row.submitted = payload["submitted"]
+    db.commit()
+    return {"saved": True, "submitted": bool(row.submitted)}
+
+
+# Documents the advising form accepts: the Course Sequence + DegreeWorks PDF (or a
+# scan/photo of them). Kept narrower than the general chat-upload allow-list.
+ADVISING_ALLOWED_EXTENSIONS = {"pdf", "png", "jpg", "jpeg"}
+
+# Serve downloads with a MIME derived from the (validated) extension, NOT the
+# user-supplied content_type — a student could upload HTML bytes with a spoofed
+# content_type and, served inline, it would execute as a page. This map + nosniff
+# neutralizes that. Per-user upload limits guard against DB-blob bloat.
+ADVISING_SAFE_MIME = {
+    "pdf": "application/pdf",
+    "png": "image/png",
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+}
+ADVISING_MAX_UPLOADS_PER_USER = 20
+ADVISING_MAX_TOTAL_BYTES_PER_USER = 50 * 1024 * 1024  # 50MB of stored blobs per user
+
+
+@app.post("/api/advising/upload")
+async def upload_advising_document(file: UploadFile = File(...), user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Store an advising document (Course Sequence / DegreeWorks PDF) IN THE DATABASE
+    and return an id-based URL. Bytes live in the DB (not local disk) so uploads
+    survive a Cloud Run restart, where the container filesystem is ephemeral."""
+    ext = (file.filename or "").rsplit(".", 1)[-1].lower() if "." in (file.filename or "") else ""
+    if ext not in ADVISING_ALLOWED_EXTENSIONS:
+        raise HTTPException(400, "Please upload a PDF or image (pdf, png, jpg).")
+
+    # Per-user cap: bound how many blobs (and how many bytes) a single user can
+    # store, so churn or abuse can't bloat Cloud SQL storage without limit.
+    existing_count = db.query(AdvisingUpload).filter(
+        AdvisingUpload.user_id == user["user_id"]
+    ).count()
+    if existing_count >= ADVISING_MAX_UPLOADS_PER_USER:
+        raise HTTPException(
+            413,
+            f"You've reached the {ADVISING_MAX_UPLOADS_PER_USER}-file limit. "
+            "Remove a file before uploading another.",
+        )
+    existing_bytes = db.query(func.coalesce(func.sum(AdvisingUpload.size_bytes), 0)).filter(
+        AdvisingUpload.user_id == user["user_id"]
+    ).scalar() or 0
+
+    # Read into memory with a size cap (files are small; enforce the limit as we go).
+    chunks = []
+    total = 0
+    while chunk := await file.read(64 * 1024):
+        total += len(chunk)
+        if total > MAX_UPLOAD_SIZE:
+            raise HTTPException(413, f"File too large. Maximum size is {MAX_UPLOAD_SIZE // (1024*1024)}MB")
+        chunks.append(chunk)
+    data = b"".join(chunks)
+    if not data:
+        raise HTTPException(400, "The uploaded file is empty.")
+
+    # Enforce the per-user total-bytes cap now that we know this file's size.
+    if existing_bytes + total > ADVISING_MAX_TOTAL_BYTES_PER_USER:
+        cap_mb = ADVISING_MAX_TOTAL_BYTES_PER_USER // (1024 * 1024)
+        raise HTTPException(
+            413,
+            f"This would exceed your {cap_mb}MB total upload limit. "
+            "Remove a file before uploading another.",
+        )
+
+    clean_name = re.sub(r'[^a-zA-Z0-9_. -]', '_', file.filename or f"document.{ext}").strip() or f"document.{ext}"
+    try:
+        row = AdvisingUpload(
+            user_id=user["user_id"],
+            filename=clean_name,
+            content_type=file.content_type or None,
+            size_bytes=total,
+            data=data,
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+    except Exception as e:
+        print(f"[ERROR] Advising upload error: {e}")
+        raise HTTPException(500, "Could not save file")
+
+    # The count/bytes checks above read totals BEFORE inserting, so two concurrent
+    # uploads could both pass and jointly exceed the cap (TOCTOU). Re-check the
+    # committed totals (which now include this row) and roll THIS row back if it
+    # pushed the user over — the last committer backs out, so the cap holds without
+    # needing a DB-specific row lock.
+    post_count = db.query(AdvisingUpload).filter(
+        AdvisingUpload.user_id == user["user_id"]
+    ).count()
+    post_bytes = db.query(func.coalesce(func.sum(AdvisingUpload.size_bytes), 0)).filter(
+        AdvisingUpload.user_id == user["user_id"]
+    ).scalar() or 0
+    if post_count > ADVISING_MAX_UPLOADS_PER_USER or post_bytes > ADVISING_MAX_TOTAL_BYTES_PER_USER:
+        db.delete(row)
+        db.commit()
+        cap_mb = ADVISING_MAX_TOTAL_BYTES_PER_USER // (1024 * 1024)
+        raise HTTPException(
+            413,
+            f"This would exceed your upload limit ({ADVISING_MAX_UPLOADS_PER_USER} files / "
+            f"{cap_mb}MB). Remove a file before uploading another.",
+        )
+
+    # `stored_name` is the id-based reference the draft keeps; `filename` is what we show.
+    return {"url": f"/api/advising/file/{row.id}", "filename": clean_name, "stored_name": str(row.id)}
+
+
+@app.get("/api/advising/file/{upload_id}")
+async def get_advising_document(upload_id: int, user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Serve a previously uploaded advising document from the DB. Owner-only.
+
+    The MIME type is derived from the stored filename's extension, NOT the
+    user-supplied content_type, and X-Content-Type-Options: nosniff is set — so an
+    uploaded file whose bytes are HTML can never be served/sniffed as an executable
+    page (stored-XSS guard)."""
+    row = db.query(AdvisingUpload).filter(AdvisingUpload.id == upload_id).first()
+    if not row or row.user_id != user["user_id"]:
+        raise HTTPException(404, "File not found")
+    ext = (row.filename or "").rsplit(".", 1)[-1].lower() if "." in (row.filename or "") else ""
+    media_type = ADVISING_SAFE_MIME.get(ext, "application/octet-stream")
+    headers = {
+        "Content-Disposition": f'inline; filename="{row.filename}"',
+        "X-Content-Type-Options": "nosniff",
+    }
+    return Response(content=row.data, media_type=media_type, headers=headers)
+
+
+@app.delete("/api/advising/file/{upload_id}")
+async def delete_advising_document(upload_id: int, user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Delete an uploaded advising document. Owner-only, idempotent.
+
+    Called when a student removes a file from the form, so the DB blob doesn't
+    linger as an orphan. A missing/foreign row returns ok without leaking whether
+    it existed."""
+    row = db.query(AdvisingUpload).filter(
+        AdvisingUpload.id == upload_id,
+        AdvisingUpload.user_id == user["user_id"],
+    ).first()
+    if row is not None:
+        db.delete(row)
+        db.commit()
+    return {"ok": True, "id": upload_id}
+
+
+# =============================================================================
+# SCHOLARSHIPS & INTERNSHIPS
+# Ported from Julian Ng's scholarship agent (juliannng/cs-navigator,
+# feat/tutor-scholarship-v2-port). See backend/services/scholarship_search.py.
+# =============================================================================
+from services import scholarship_search
+
+
+@app.get("/api/scholarships/status")
+async def scholarship_status(user: dict = Depends(get_current_user)):
+    """Whether live search is usable, so the page can explain itself before a search.
+
+    Live search is available if EITHER free Gemini grounding is enabled or a Tavily
+    key is set. The curated core shows regardless, so this only tells the UI whether
+    to promise live results on top of it.
+    """
+    live = scholarship_search.grounding_enabled() or scholarship_search.is_configured()
+    return {
+        "configured": live,
+        "grounding": scholarship_search.grounding_enabled(),
+        "tavily": scholarship_search.is_configured(),
+    }
+
+
+@app.post("/api/scholarships/search")
+async def search_scholarships(
+    payload: dict,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Find scholarships and internships, filtered by the student's DegreeWorks data.
+
+    Body: { "query": "<what they're looking for>" } (optional).
+    Returns items grouped by deadline urgency (URGENT / UPCOMING / OPEN). Expired
+    opportunities are dropped server-side, not merely discouraged in the prompt.
+    """
+    query = str(payload.get("query") or "").strip()
+    if len(query) > 500:
+        raise HTTPException(400, "Query is too long (500 characters max).")
+
+    # Throttle per user: a grounded search costs a Gemini call (+ maybe paid Tavily
+    # + outbound HEADs), so cap the rate to prevent a script from driving cost.
+    retry_after = scholarship_search.check_search_rate_limit(user["user_id"])
+    if retry_after is not None:
+        raise HTTPException(
+            status_code=429,
+            detail="You're searching too fast. Please wait a moment and try again.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
+    # No 503 when Tavily is unset: the curated core still returns real awards, so
+    # find_opportunities degrades to that instead of failing. The response's
+    # `configured` flag tells the frontend whether live search was available.
+
+    # Eligibility filtering is the whole point: never show an award they can't win.
+    dw_row = db.query(DegreeWorksData).filter(DegreeWorksData.user_id == user["user_id"]).first()
+    dw = {
+        "overall_gpa": dw_row.overall_gpa,
+        "degree_program": dw_row.degree_program,
+        "classification": dw_row.classification,
+        "minor": dw_row.minor,
+    } if dw_row else None
+
+    user_row = db.query(User).filter(User.id == user["user_id"]).first()
+    profile = {"name": user_row.name, "major": user_row.major} if user_row else None
+
+    student = scholarship_search.build_student_profile(dw, profile)
+
+    # Opportunities the student has permanently dismissed — filtered out of results.
+    dismissed_keys = {
+        d.client_key for d in db.query(DismissedScholarship.client_key).filter(
+            DismissedScholarship.user_id == user["user_id"]
+        ).all()
+    }
+
+    try:
+        # find_opportunities does blocking network I/O (sync httpx.Client for the
+        # grounded search + redirect HEADs); run it off the event loop so a slow
+        # search can't stall every other request on this worker.
+        result = await asyncio.to_thread(
+            scholarship_search.find_opportunities,
+            query, student, dismissed_keys=dismissed_keys,
+        )
+    except Exception as e:
+        print(f"[ERROR] Scholarship search failed: {e}")
+        raise HTTPException(502, "Scholarship search is temporarily unavailable.")
+
+    result["has_degreeworks"] = bool(dw_row)
+    return result
+
+
+# --- Saved scholarships (My Scholarships) ------------------------------------
+# Saving is what turns the search box into a feature: a student can find an award,
+# save it, and come back to it after the tab closes. Split by `kind` so
+# scholarships and internships render and filter separately on the frontend.
+
+def _load_checklist(row: SavedScholarship) -> Optional[list]:
+    """Parse the stored checklist JSON, tolerant of a null or corrupt value.
+
+    Returns None when no checklist has been generated yet (so the frontend knows
+    to offer "generate"), or the item list once it has.
+    """
+    if not row.checklist_json:
+        return None
+    try:
+        data = json.loads(row.checklist_json)
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return None
+    return data if isinstance(data, list) else None
+
+
+def _saved_to_dict(row: SavedScholarship) -> dict:
+    """Serialize a saved row, recomputing urgency from today so the badge is fresh."""
+    urgency = scholarship_search.recompute_urgency(row.deadline)
+    checklist = _load_checklist(row)
+    return {
+        "id": row.id,
+        "client_key": row.client_key,
+        "kind": row.kind,
+        "name": row.name,
+        "award": row.award,
+        "eligibility": row.eligibility,
+        "pay": row.pay,
+        "term": row.term,
+        "location": row.location,
+        "role": row.role,
+        "deadline": row.deadline,
+        "deadline_type": row.deadline_type or "unknown",
+        "url": row.url,
+        "source_url": row.source_url,
+        "why": row.why,
+        "curated": bool(row.curated),
+        "status": row.status,
+        "urgency": urgency["status"],
+        "days_remaining": urgency["days_remaining"],
+        # Role category for the saved-view role filter (internships only).
+        "role_category": (
+            scholarship_search.role_category({"role": row.role, "name": row.name})
+            if row.kind == "internship" else None
+        ),
+        "saved_at": row.created_at.isoformat() if row.created_at else None,
+        # null until generated; the frontend shows "Build my checklist" in that case.
+        "checklist": checklist,
+        "checklist_progress": scholarship_search.checklist_progress(checklist),
+    }
+
+
+@app.get("/api/scholarships/saved")
+async def list_saved_scholarships(
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Every opportunity this student has saved, newest first, urgency recomputed."""
+    rows = (
+        db.query(SavedScholarship)
+        .filter(SavedScholarship.user_id == user["user_id"])
+        .order_by(SavedScholarship.created_at.desc())
+        .all()
+    )
+    return {"items": [_saved_to_dict(r) for r in rows]}
+
+
+@app.get("/api/scholarships/summary")
+async def scholarship_summary(
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Dashboard rollup across this student's saved opportunities.
+
+    One glance: how many they're tracking, how many are due soon, checklist
+    progress, and the next few deadlines. Computed from the same serialized
+    rows the list endpoint returns, so the numbers can't drift from the list."""
+    rows = (
+        db.query(SavedScholarship)
+        .filter(SavedScholarship.user_id == user["user_id"])
+        .all()
+    )
+    items = [_saved_to_dict(r) for r in rows]
+    return scholarship_search.build_saved_summary(items)
+
+
+@app.post("/api/scholarships/saved")
+async def save_scholarship(
+    payload: dict,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Save an opportunity from a search result.
+
+    Upserts on (user_id, client_key): re-saving the same award updates the stored
+    copy rather than creating a duplicate. Snapshots the item as-sent so a later
+    source change can't rot the saved copy.
+    """
+    name = str(payload.get("name") or "").strip()
+    if not name:
+        raise HTTPException(400, "A scholarship name is required to save it.")
+
+    kind = str(payload.get("kind") or "scholarship").strip().lower()
+    if kind not in scholarship_search.VALID_KINDS:
+        kind = "scholarship"
+
+    url = str(payload.get("url") or "").strip() or None
+    key = scholarship_search.client_key_for(name, url or "")
+
+    row = (
+        db.query(SavedScholarship)
+        .filter(
+            SavedScholarship.user_id == user["user_id"],
+            SavedScholarship.client_key == key,
+        )
+        .first()
+    )
+    if row is None:
+        row = SavedScholarship(user_id=user["user_id"], client_key=key)
+        db.add(row)
+
+    row.kind = kind
+    row.name = name[:300]
+    row.award = (str(payload.get("award")).strip()[:200] if payload.get("award") else None)
+    row.eligibility = (str(payload.get("eligibility")).strip() if payload.get("eligibility") else None)
+    row.pay = (str(payload.get("pay")).strip()[:120] if payload.get("pay") else None)
+    row.term = (str(payload.get("term")).strip()[:120] if payload.get("term") else None)
+    row.location = (str(payload.get("location")).strip()[:200] if payload.get("location") else None)
+    row.role = (str(payload.get("role")).strip()[:200] if payload.get("role") else None)
+    row.deadline = (str(payload.get("deadline")).strip()[:40] if payload.get("deadline") else None)
+    # Normalize the deadline_type (fixed/rolling/recurring/unknown) so the saved
+    # copy carries the same timing hint the search result showed.
+    row.deadline_type = scholarship_search.normalize_deadline_type(payload)[:20]
+    row.url = url[:1000] if url else None
+    src = str(payload.get("source_url") or "").strip() or None
+    row.source_url = src[:1000] if src else None
+    row.why = (str(payload.get("why")).strip() if payload.get("why") else None)
+    # Persist whether this came from the curated list, so the saved view's
+    # "Recommended first" sort can rank curated awards above live ones on reload.
+    row.curated = bool(payload.get("curated"))
+    # Snapshot the whole item as it was at save time.
+    try:
+        row.snapshot_json = json.dumps(payload)[:20000]
+    except (TypeError, ValueError):
+        row.snapshot_json = None
+
+    db.commit()
+    db.refresh(row)
+    return _saved_to_dict(row)
+
+
+@app.patch("/api/scholarships/saved/{saved_id}")
+async def update_saved_scholarship(
+    saved_id: int,
+    payload: dict,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Move a saved item along its pipeline (interested → applying → submitted → …)."""
+    row = (
+        db.query(SavedScholarship)
+        .filter(
+            SavedScholarship.id == saved_id,
+            SavedScholarship.user_id == user["user_id"],
+        )
+        .first()
+    )
+    if row is None:
+        raise HTTPException(404, "That saved opportunity was not found.")
+
+    status = str(payload.get("status") or "").strip().lower()
+    if status:
+        if status not in scholarship_search.VALID_STATUSES:
+            raise HTTPException(400, f"Unknown status '{status}'.")
+        row.status = status
+
+    db.commit()
+    db.refresh(row)
+    return _saved_to_dict(row)
+
+
+@app.delete("/api/scholarships/saved/{saved_id}")
+async def delete_saved_scholarship(
+    saved_id: int,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Un-save an opportunity."""
+    row = (
+        db.query(SavedScholarship)
+        .filter(
+            SavedScholarship.id == saved_id,
+            SavedScholarship.user_id == user["user_id"],
+        )
+        .first()
+    )
+    if row is None:
+        raise HTTPException(404, "That saved opportunity was not found.")
+    db.delete(row)
+    db.commit()
+    return {"ok": True, "id": saved_id}
+
+
+# --- Dismissed opportunities (hide from search results) ----------------------
+# "Hide ones I've dismissed" — otherwise the same irrelevant results come back
+# forever. Stored as a lightweight (user_id, client_key) row; find_opportunities
+# filters these out of every result path.
+
+@app.post("/api/scholarships/dismiss")
+async def dismiss_scholarship(
+    payload: dict,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Permanently hide an opportunity from this student's future search results.
+
+    Body: { "name": <str>, "url": <str optional> }. Idempotent: dismissing the
+    same award twice is a no-op (upsert on the client_key)."""
+    name = str(payload.get("name") or "").strip()
+    if not name:
+        raise HTTPException(400, "A name is required to dismiss an opportunity.")
+    url = str(payload.get("url") or "").strip()
+    key = scholarship_search.client_key_for(name, url)
+
+    existing = (
+        db.query(DismissedScholarship)
+        .filter(
+            DismissedScholarship.user_id == user["user_id"],
+            DismissedScholarship.client_key == key,
+        )
+        .first()
+    )
+    if existing is None:
+        db.add(DismissedScholarship(
+            user_id=user["user_id"], client_key=key, name=name[:300],
+        ))
+        db.commit()
+    return {"ok": True, "client_key": key}
+
+
+@app.delete("/api/scholarships/dismiss/{client_key}")
+async def undismiss_scholarship(
+    client_key: str,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Un-dismiss: let a previously hidden opportunity show up again."""
+    row = (
+        db.query(DismissedScholarship)
+        .filter(
+            DismissedScholarship.user_id == user["user_id"],
+            DismissedScholarship.client_key == client_key,
+        )
+        .first()
+    )
+    if row is not None:
+        db.delete(row)
+        db.commit()
+    return {"ok": True, "client_key": client_key}
+
+
+# --- Application checklists ---------------------------------------------------
+# The checklist is what turns "I saved it" into "I applied". Generated from the
+# award's own requirements, then the student checks items off and adds notes.
+
+def _get_saved_row_or_404(saved_id: int, user_id: int, db: Session) -> SavedScholarship:
+    row = (
+        db.query(SavedScholarship)
+        .filter(SavedScholarship.id == saved_id, SavedScholarship.user_id == user_id)
+        .first()
+    )
+    if row is None:
+        raise HTTPException(404, "That saved opportunity was not found.")
+    return row
+
+
+def _sanitize_checklist(raw) -> list:
+    """Coerce a client-sent checklist into the stored shape, dropping junk.
+
+    The frontend owns the whole list and PUTs it back on every edit, so this is
+    the one place we validate it: each item becomes {id, label, done, note} with
+    trimmed, length-capped strings. A blank label drops the item.
+    """
+    if not isinstance(raw, list):
+        return []
+    out: list = []
+    for i, it in enumerate(raw):
+        if not isinstance(it, dict):
+            continue
+        label = str(it.get("label") or "").strip()
+        if not label:
+            continue
+        out.append({
+            "id": str(it.get("id") or f"item-{i}")[:40],
+            "label": label[:200],
+            "done": bool(it.get("done")),
+            "note": str(it.get("note") or "").strip()[:500],
+        })
+    return out
+
+
+@app.post("/api/scholarships/saved/{saved_id}/checklist/generate")
+async def generate_saved_checklist(
+    saved_id: int,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Build the application checklist for a saved item from its requirements.
+
+    Idempotent-ish: regenerating replaces the list. The frontend only calls this
+    when there's no checklist yet, or when the student explicitly asks to rebuild.
+    Never fails hard — generation degrades to a default template.
+    """
+    row = _get_saved_row_or_404(saved_id, user["user_id"], db)
+
+    item = {
+        "kind": row.kind, "name": row.name, "award": row.award, "pay": row.pay,
+        "eligibility": row.eligibility, "role": row.role, "deadline": row.deadline,
+        "why": row.why,
+    }
+    checklist = scholarship_search.generate_checklist(item)
+    row.checklist_json = json.dumps(checklist)
+    db.commit()
+    db.refresh(row)
+    return _saved_to_dict(row)
+
+
+@app.put("/api/scholarships/saved/{saved_id}/checklist")
+async def update_saved_checklist(
+    saved_id: int,
+    payload: dict,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Replace a saved item's checklist wholesale.
+
+    The client sends the full list on every change (toggle, edit, add, delete,
+    note). Replacing the whole thing is simpler and race-free versus per-item
+    PATCHes, and a checklist is small.
+    """
+    checklist = _sanitize_checklist(payload.get("checklist"))
+    row = _get_saved_row_or_404(saved_id, user["user_id"], db)
+    row.checklist_json = json.dumps(checklist)
+    db.commit()
+    db.refresh(row)
+    return _saved_to_dict(row)
 
 
 @app.get("/api/degreeworks/debug")
@@ -1625,6 +2366,7 @@ async def debug_degreeworks(user: dict = Depends(get_current_user), db: Session 
             "student_name": dw_data.student_name,
             "student_id": dw_data.student_id,
             "degree_program": dw_data.degree_program,
+            "minor": dw_data.minor,
             "catalog_year": dw_data.catalog_year,
             "classification": dw_data.classification,
             "advisor": dw_data.advisor,
@@ -2613,6 +3355,7 @@ async def planning_next_semester(
     time_pref: str = Query("any"),
     max_credits: int = Query(15),
     interests: str = Query(""),
+    variant: int = Query(0),
     user: dict = Depends(get_current_user),
 ):
     """Suggest 2-3 conflict-free schedules for an upcoming semester.
@@ -2664,8 +3407,14 @@ async def planning_next_semester(
     else:
         schedules_src, data_source, as_of = _SCHEDULES, "static", None
 
+    # GenEd + minor courses to blend into each option (they count toward credits but
+    # have no class times — the student picks sections in WEBSIS).
+    from services.requirement_planner import build_requirements
+    requirements = build_requirements(dw_dict, dw_dict.get("minor") or "")
+
     raw_options = (
-        generate_schedule_options(eligible, sem_key, prefs, schedules_src, classification)
+        generate_schedule_options(eligible, sem_key, prefs, schedules_src, classification,
+                                  requirements=requirements, variant=max(0, int(variant or 0)))
         if sem_key else []
     )
 
@@ -2677,8 +3426,11 @@ async def planning_next_semester(
         courses = []
         for c in opt["courses"]:
             node = node_by_id.get(c["code"], {})
+            untimed = c.get("untimed", False)
             t = c.get("time") or "TBA"
-            if t.upper().startswith("TBA"):
+            # Untimed GenEd/minor courses legitimately have no time ("TBD") — that's
+            # not a TBA scheduling gap, so don't raise the TBA warning for them.
+            if not untimed and t.upper().startswith("TBA"):
                 has_tba = True
             open_flag = c.get("open_section")
             if open_flag is True:
@@ -2697,6 +3449,9 @@ async def planning_next_semester(
                 "room": c.get("room", "TBA"),
                 "satisfies": c.get("category") or node.get("category", ""),
                 "unlocks": node.get("unlocks", []),
+                # GenEd/minor courses blended in — no class time; student picks section.
+                "untimed": untimed,
+                "kind": c.get("kind"),   # "gened" | "minor" | None (CS)
                 # Live availability (nulls when data_source == "static"):
                 "crn": c.get("crn"),
                 "seats_available": c.get("seats_available"),
@@ -2719,6 +3474,9 @@ async def planning_next_semester(
         notes.append("Seat availability is not live — verify open seats in Banner before registering.")
     notes.append("Based on your last DegreeWorks sync.")
 
+    # `requirements` (GenEd + minor) was computed above and blended into each option.
+    # It's also returned raw so the UI can show a remaining-requirements summary.
+
     return {
         "connected": True,
         "semester": sem_key,
@@ -2727,6 +3485,7 @@ async def planning_next_semester(
         "credits_remaining": dw_dict.get("credits_remaining"),
         "eligible_count": len(eligible),
         "options": options,
+        "requirements": requirements,
         "notes": notes,
         "data_source": data_source,
         "as_of": as_of.isoformat() if as_of else None,
@@ -2848,6 +3607,7 @@ def _fetch_dw_sync(user_id: int) -> Optional[dict]:
             "student_id": dw.student_id,
             "classification": dw.classification,
             "degree_program": dw.degree_program,
+            "minor": dw.minor,
             "overall_gpa": dw.overall_gpa,
             "major_gpa": dw.major_gpa,
             "total_credits_earned": dw.total_credits_earned,
@@ -2858,6 +3618,7 @@ def _fetch_dw_sync(user_id: int) -> Optional[dict]:
             "courses_completed": dw.courses_completed,
             "courses_in_progress": dw.courses_in_progress,
             "courses_remaining": dw.courses_remaining,
+            "gened_areas": getattr(dw, 'gened_areas', None),
             "raw_data": dw.raw_data,
             "data_source": getattr(dw, 'data_source', None) or "manual_entry",
         }
@@ -2927,7 +3688,7 @@ from youtube_search import search_youtube_videos, youtube_api_available
 # mock grader posts to /chat with session_id="interview-grader"). These are system
 # prompts, NOT student conversation — they must NEVER be saved to chat_history or
 # returned by /chat-history, or they leak into the main chat sidebar / front page.
-INTERNAL_SESSION_IDS = {"interview-grader"}
+INTERNAL_SESSION_IDS = {"interview-grader", "advising-helper"}
 
 
 def is_persistable_session(session_id: str) -> bool:
@@ -3124,6 +3885,7 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
     student_context = ""
     canvas_context = ""
     memory_context = ""
+    planner_state = None  # set by the schedule-planner block below (guard for cache-skip)
     conversation_context = _build_conversation_context(history_dicts, session_summary)
 
     if not is_coding_tutor:
@@ -3167,6 +3929,11 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
             planner_state = {"phase": "ask_semester"}
             set_planner_state(user["user_id"], session_id, planner_state)
             student_context += build_planner_context(planner_state)
+
+        # NOTE: the in-chat advising state machine was removed. Advising now lives on
+        # its own page (Tools -> Advising Form), which persists to AdvisingFormDraft.
+        # The chat version kept answers in an in-memory dict that never reached the DB,
+        # so a student's answers vanished on restart and never showed up on the page.
 
     mode_context = build_mode_context(req.mode)
     if mode_context:
@@ -3366,6 +4133,7 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
     student_context = ""
     canvas_context = ""
     memory_context = ""
+    planner_state = None  # set by the schedule-planner block below (guard for cache-skip)
 
     if not is_coding_tutor:
         student_context = _build_student_context(dw_dict) if dw_dict else ""
@@ -3409,6 +4177,9 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
             planner_state = {"phase": "ask_semester"}
             set_planner_state(user_id, session_id, planner_state)
             student_context += build_planner_context(planner_state)
+
+        # NOTE: the in-chat advising state machine was removed here too. See the /chat
+        # handler above. Advising is now the Tools -> Advising Form page.
 
     mode_context = build_mode_context(req.mode)
     if mode_context:
@@ -3507,11 +4278,16 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
     allow_semantic = not (bool(dw_dict) or bool(canvas_dict))
     mark_timing("cache_ready")
 
-    skip_response_cache = req.skip_cache or (is_coding_tutor and _coding_tutor_query_has_workspace_code(user_q))
+    # Never serve a cached answer while the schedule-planner flow is active: the reply
+    # must come from the live agent WITH the injected flow instructions, or the flow
+    # silently breaks.
+    in_flow = bool(planner_state)
+    skip_response_cache = req.skip_cache or in_flow or (is_coding_tutor and _coding_tutor_query_has_workspace_code(user_q))
 
     # Skip cache when user taps "Regenerate" or when Coding Tutor includes live workspace code.
     if skip_response_cache:
-        reason = "workspace code" if is_coding_tutor and _coding_tutor_query_has_workspace_code(user_q) else "regenerate"
+        reason = ("planner flow" if in_flow else
+                  "workspace code" if is_coding_tutor and _coding_tutor_query_has_workspace_code(user_q) else "regenerate")
         print(f"[CACHE] SKIP ({reason}) for query: {user_q[:50]}...")
         cached_response = None
         if req.skip_cache:
@@ -4861,6 +5637,218 @@ def _concept_quiz_call(fn, *args):
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
+PLACEMENT_CATEGORIES = ("syntax", "data-types", "conditionals", "loops", "functions")
+
+
+def _concept_correct_answer(question: dict[str, Any]) -> Any:
+    """Return the authored answer in the same readable shape used by quiz review."""
+    kind = question.get("kind")
+    if kind in {"mcq-output", "mcq-behavior"}:
+        choices = question.get("choices") or []
+        index = question.get("answer_index")
+        return choices[index] if isinstance(index, int) and 0 <= index < len(choices) else None
+    if kind == "typein":
+        accepted = question.get("accepted") or []
+        return accepted[0] if accepted else None
+    if kind == "parsons":
+        return question.get("lines") or None
+    return None
+
+
+def _stored_concept_results(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Strip answers before persistence; quiz analytics never stores typed code/text."""
+    return [
+        {
+            "question_id": str(result.get("question_id") or "")[:120],
+            "kind": str(result.get("kind") or "")[:30],
+            "correct": bool(result.get("correct")),
+        }
+        for result in results
+        if result.get("question_id")
+    ]
+
+
+def _save_concept_attempt(
+    db: Session,
+    *,
+    user_id: int,
+    language: str,
+    category: str,
+    correct: int,
+    total: int,
+    score: float,
+    results: list[dict[str, Any]],
+) -> Optional[CodingConceptQuizAttempt]:
+    """Save progress without turning a temporary DB issue into a lost quiz result."""
+    row = CodingConceptQuizAttempt(
+        user_id=user_id,
+        language=concept_quiz.normalize_language(language),
+        category=str(category)[:80],
+        correct=max(0, int(correct)),
+        total=max(0, int(total)),
+        score=max(0.0, min(1.0, float(score))),
+        results_json=json.dumps(_stored_concept_results(results)),
+    )
+    try:
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return row
+    except Exception as exc:
+        # A rollback that itself raises must not mask the save failure or the
+        # None return the caller relies on to report "progress not saved".
+        try:
+            db.rollback()
+        except Exception as rollback_exc:  # pragma: no cover - defensive
+            print(f"[WARN] Concept-quiz rollback also failed: {rollback_exc}")
+        print(f"[WARN] Concept-quiz progress was not saved: {exc}")
+        return None
+
+
+def _concept_attempt_results(row: CodingConceptQuizAttempt) -> list[dict[str, Any]]:
+    try:
+        value = json.loads(row.results_json or "[]")
+        return value if isinstance(value, list) else []
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return []
+
+
+def _serialize_concept_progress(rows: list[CodingConceptQuizAttempt]) -> dict[str, Any]:
+    """Fold append-only attempts into category cards and unresolved mistake review."""
+    categories: dict[tuple[str, str], dict[str, Any]] = {}
+    latest_questions: dict[tuple[str, str, str], dict[str, Any]] = {}
+
+    def attempt_sort_key(item: CodingConceptQuizAttempt) -> tuple[float, int]:
+        created = item.created_at
+        if created is None:
+            stamp = 0.0
+        else:
+            if created.tzinfo is None:
+                created = created.replace(tzinfo=timezone.utc)
+            stamp = created.timestamp()
+        return stamp, item.id or 0
+
+    for row in sorted(rows, key=attempt_sort_key):
+        key = (row.language, row.category)
+        attempt = {
+            "correct": row.correct,
+            "total": row.total,
+            "score": row.score,
+            "at": row.created_at.isoformat() if row.created_at else None,
+        }
+        record = categories.setdefault(key, {
+            "language": row.language,
+            "category": row.category,
+            "attempts": 0,
+            "best": None,
+            "last": None,
+            "questions": {},
+        })
+        record["attempts"] += 1
+        record["last"] = attempt
+        if record["best"] is None or row.score > record["best"]["score"]:
+            record["best"] = attempt
+
+        for result in _concept_attempt_results(row):
+            question_id = str(result.get("question_id") or "")
+            if not question_id:
+                continue
+            status_value = "correct" if result.get("correct") else "incorrect"
+            record["questions"][question_id] = status_value
+            latest_questions[(row.language, row.category, question_id)] = {
+                "language": row.language,
+                "category": row.category,
+                "question_id": question_id,
+                "kind": result.get("kind"),
+                "status": status_value,
+                "at": attempt["at"],
+            }
+
+    mistakes: list[dict[str, Any]] = []
+    for item in latest_questions.values():
+        if item["status"] != "incorrect" or item["category"] == "placement":
+            continue
+        try:
+            question = concept_quiz.find_question(
+                item["language"], item["category"], item["question_id"]
+            )
+        except (concept_quiz.ConceptQuizError, concept_quiz.ConceptQuizDataError):
+            continue
+        mistakes.append({
+            **item,
+            "title": question.get("title") or question.get("prompt") or item["question_id"],
+            "prompt": question.get("prompt") or "",
+            "correct_answer": _concept_correct_answer(question),
+            "explanation": question.get("explanation") or "",
+        })
+
+    mistakes.sort(key=lambda item: item.get("at") or "", reverse=True)
+    visible_categories = [
+        value for key, value in categories.items() if key[1] != "placement"
+    ]
+    visible_categories.sort(key=lambda item: (item["language"], item["category"]))
+    placement = [
+        value for key, value in categories.items() if key[1] == "placement"
+    ]
+    return {
+        "categories": visible_categories,
+        "mistakes": mistakes[:30],
+        "placement": placement,
+    }
+
+
+def _placement_questions(language: str) -> list[dict[str, Any]]:
+    """Pick one authored multiple-choice question from five foundation topics."""
+    selected: list[dict[str, Any]] = []
+    for category in PLACEMENT_CATEGORIES:
+        bank = concept_quiz.questions_for_category(language, category)
+        question = next(
+            (q for q in bank["questions"] if q.get("kind") in {"mcq-output", "mcq-behavior"}),
+            None,
+        )
+        if question:
+            selected.append({**question, "placement_category": category})
+    return selected
+
+
+def _public_placement_question(question: dict[str, Any]) -> dict[str, Any]:
+    hidden = {"answer_index", "accepted", "explanation", "lines"}
+    return {key: value for key, value in question.items() if key not in hidden}
+
+
+@app.get("/api/coding/concept-quiz/progress")
+async def get_concept_quiz_progress(
+    language: Optional[str] = Query(None),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Cross-device category progress plus currently unresolved quiz mistakes."""
+    query = db.query(CodingConceptQuizAttempt).filter(
+        CodingConceptQuizAttempt.user_id == user["user_id"]
+    )
+    if language:
+        normalized = _concept_quiz_call(concept_quiz.normalize_language, language)
+        query = query.filter(CodingConceptQuizAttempt.language == normalized)
+    rows = query.order_by(CodingConceptQuizAttempt.created_at.asc()).all()
+    return _serialize_concept_progress(rows)
+
+
+@app.get("/api/coding/concept-quiz/placement/{language}")
+async def get_concept_quiz_placement(
+    language: str,
+    user: dict = Depends(get_current_user),
+):
+    normalized = _concept_quiz_call(concept_quiz.normalize_language, language)
+    questions = _concept_quiz_call(_placement_questions, normalized)
+    if len(questions) < len(PLACEMENT_CATEGORIES):
+        raise HTTPException(status_code=503, detail="The placement check is not ready for this language yet.")
+    return {
+        "language": normalized,
+        "total": len(questions),
+        "questions": [_public_placement_question(question) for question in questions],
+    }
+
+
 @app.get("/api/coding/concept-quiz/languages")
 async def list_concept_quiz_languages():
     """The 4 language cards shown when the student toggles to Quiz mode."""
@@ -4876,12 +5864,66 @@ async def list_concept_quiz_languages():
 
 @app.get("/api/coding/concept-quiz/{language}/categories")
 async def list_concept_quiz_categories(language: str):
-    """The 13 categories (12 shared + 1 language-specific) for one language,
-    each with a live question count so empty categories can be flagged/hidden."""
+    """Core categories plus any language-specific lesson-only extensions, each
+    with a live question count and beginner/intermediate track metadata.
+
+    Also reports `has_lesson` per category, so Learn mode can show which topics can be
+    read (and Practice can offer a "read the lesson first" nudge on a topic the student
+    keeps failing)."""
     categories = _concept_quiz_call(concept_quiz.categories_for_language, language)
+    lang = concept_quiz.normalize_language(language)
+    for category in categories:
+        category["has_lesson"] = lessons.has_lesson(lang, category["id"])
     return {
-        "language": concept_quiz.normalize_language(language),
+        "language": lang,
         "categories": categories,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Learn mode. The Practice Library's three modes are Learn -> Practice -> Code:
+# read the idea, check you got it, apply it. A beginner who doesn't know what a
+# function is has nowhere to start today; the quiz can only tell them they're wrong.
+#
+# The lesson and the in-quiz refresher come from the SAME file (see lessons.py), so
+# they cannot drift apart and tell a student two different things.
+# ---------------------------------------------------------------------------
+def _lesson_call(fn, *args):
+    """Run a lesson loader function, mapping its exceptions onto HTTP status codes."""
+    try:
+        return fn(*args)
+    except lessons.LessonError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except lessons.LessonDataError as exc:
+        # Malformed content is OUR bug, not the student's — 500, and loudly.
+        print(f"[ERROR] Lesson content is malformed: {exc}")
+        raise HTTPException(status_code=500, detail="This lesson is temporarily unavailable.") from exc
+
+
+@app.get("/api/coding/learn/{language}/{category}")
+async def read_lesson(language: str, category: str):
+    """One lesson. Returns `lesson: null` when the topic hasn't been authored yet —
+    NOT a 404. The category manifest is the roadmap of what the library will cover; the
+    lesson files are what exists so far, and the two are allowed to disagree while
+    authoring is in progress. (The quiz loader raised a 500 on exactly this mismatch,
+    which broke 10 of Python's 13 categories.)"""
+    lesson = _lesson_call(lessons.get_lesson, language, category)
+    return {
+        "language": lessons.normalize_language(language),
+        "category": category,
+        "lesson": lesson,
+    }
+
+
+@app.get("/api/coding/learn/{language}/{category}/refresher")
+async def read_lesson_refresher(language: str, category: str):
+    """The compact recap shown in the Learn tab INSIDE a quiz question — a reminder
+    mid-question, not the whole lesson."""
+    refresher = _lesson_call(lessons.get_refresher, language, category)
+    return {
+        "language": lessons.normalize_language(language),
+        "category": category,
+        "refresher": refresher,
     }
 
 
@@ -4919,24 +5961,117 @@ class ConceptQuizGradeRequest(BaseModel):
     answers: list[ConceptQuizAnswer]
 
 
+class ConceptQuizPlacementRequest(BaseModel):
+    language: str
+    answers: list[ConceptQuizAnswer]
+
+
 def _grade_concept_answer(question: dict[str, Any], answer: ConceptQuizAnswer) -> dict[str, Any]:
     """Grade one submitted answer against its question. Pure/stateless."""
     kind = question.get("kind")
     correct = False
+    student_answer: Any = None
+    correct_answer: Any = None
     if kind in {"mcq-output", "mcq-behavior"}:
         correct = answer.choice_index == question.get("answer_index")
+        choices = question.get("choices", [])
+        if isinstance(answer.choice_index, int) and 0 <= answer.choice_index < len(choices):
+            student_answer = choices[answer.choice_index]
+        correct_index = question.get("answer_index")
+        if isinstance(correct_index, int) and 0 <= correct_index < len(choices):
+            correct_answer = choices[correct_index]
     elif kind == "typein":
         # Case-sensitive exact match against accepted forms, but tolerant of
         # surrounding whitespace the student may have added.
         submitted = (answer.text or "").strip()
         correct = submitted in {a.strip() for a in question.get("accepted", [])}
+        student_answer = submitted or None
+        accepted = question.get("accepted", [])
+        correct_answer = accepted[0] if accepted else None
     elif kind == "parsons":
         correct = (answer.order or []) == question.get("lines", [])
+        student_answer = answer.order or None
+        correct_answer = question.get("lines", []) or None
     return {
         "question_id": question.get("id"),
         "kind": kind,
         "correct": correct,
+        "student_answer": student_answer,
+        "correct_answer": correct_answer,
         "explanation": question.get("explanation", ""),
+    }
+
+
+@app.post("/api/coding/concept-quiz/placement")
+async def grade_concept_quiz_placement(
+    req: ConceptQuizPlacementRequest,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    normalized = _concept_quiz_call(concept_quiz.normalize_language, req.language)
+    questions = _concept_quiz_call(_placement_questions, normalized)
+    # Same readiness gate the GET uses: never grade or persist a partial
+    # placement when this language is missing a foundation question.
+    if len(questions) < len(PLACEMENT_CATEGORIES):
+        raise HTTPException(status_code=503, detail="The placement check is not ready for this language yet.")
+    by_id = {str(question.get("id")): question for question in questions}
+    submitted = {answer.question_id: answer for answer in req.answers}
+    if set(submitted) != set(by_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Answer all five placement questions before submitting.",
+        )
+
+    results = []
+    for question in questions:
+        result = _grade_concept_answer(question, submitted[str(question.get("id"))])
+        result["placement_category"] = question["placement_category"]
+        results.append(result)
+
+    correct = sum(1 for result in results if result["correct"])
+    total = len(results)
+    score = round(correct / total, 4) if total else 0.0
+    first_missed = next(
+        (result["placement_category"] for result in results if not result["correct"]),
+        None,
+    )
+    if score >= 1.0:
+        track = "intermediate"
+        available = concept_quiz.categories_for_language(normalized)
+        next_category = next(
+            (item["id"] for item in available if item.get("track") == "intermediate" and item.get("count", 0) > 0),
+            "algorithm-problems",
+        )
+        reason = "You answered every foundation question correctly, so you are ready for a gentle intermediate topic."
+    else:
+        track = "beginner"
+        next_category = first_missed or "syntax"
+        reason = (
+            f"Start with {next_category.replace('-', ' ')} because it was the first foundation topic that needs another look."
+        )
+
+    saved = _save_concept_attempt(
+        db,
+        user_id=user["user_id"],
+        language=normalized,
+        category="placement",
+        correct=correct,
+        total=total,
+        score=score,
+        results=results,
+    )
+    return {
+        "language": normalized,
+        "correct": correct,
+        "total": total,
+        "score": score,
+        "results": results,
+        "recommendation": {
+            "track": track,
+            "category": next_category,
+            "reason": reason,
+        },
+        "progress_saved": saved is not None,
     }
 
 
@@ -4944,6 +6079,7 @@ def _grade_concept_answer(question: dict[str, Any], answer: ConceptQuizAnswer) -
 async def grade_concept_quiz(
     req: ConceptQuizGradeRequest,
     user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """Server-verified grading for a submitted quiz set. Returns a per-question
     correct/incorrect breakdown plus a score, powering the green/red results
@@ -4953,25 +6089,53 @@ async def grade_concept_quiz(
     )
     by_id = {str(q.get("id")): q for q in bank["questions"]}
 
+    # Persist a score only for a complete, one-answer-per-question submission.
+    # Reject unknown ids, duplicates, and missing ids so a partial or padded
+    # set can never be saved as if the whole bank were answered.
+    submitted_ids = [answer.question_id for answer in req.answers]
+    unknown = [qid for qid in submitted_ids if qid not in by_id]
+    if unknown:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Question '{unknown[0]}' is not in {req.language}/{req.category}.",
+        )
+    if len(submitted_ids) != len(set(submitted_ids)):
+        raise HTTPException(
+            status_code=400,
+            detail="Each question may only be answered once.",
+        )
+    if set(submitted_ids) != set(by_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Answer every question in this quiz before submitting.",
+        )
+
     results: list[dict[str, Any]] = []
     for answer in req.answers:
-        question = by_id.get(answer.question_id)
-        if question is None:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Question '{answer.question_id}' is not in {req.language}/{req.category}.",
-            )
-        results.append(_grade_concept_answer(question, answer))
+        results.append(_grade_concept_answer(by_id[answer.question_id], answer))
 
     total = len(results)
     correct = sum(1 for r in results if r["correct"])
+    score = round(correct / total, 4) if total else 0.0
+    saved = _save_concept_attempt(
+        db,
+        user_id=user["user_id"],
+        language=bank["language"],
+        category=bank["category"],
+        correct=correct,
+        total=total,
+        score=score,
+        results=results,
+    )
     return {
         "language": bank["language"],
         "category": bank["category"],
         "total": total,
         "correct": correct,
-        "score": round(correct / total, 4) if total else 0.0,
+        "score": score,
         "results": results,
+        "progress_saved": saved is not None,
+        "attempt_id": saved.id if saved else None,
     }
 
 @app.post("/api/coding/resources/search")
@@ -5003,6 +6167,8 @@ async def search_coding_study_resources(
         "results": ranked[:req.limit],
         "source": "curated_cs_navigator_resources",
     }
+
+from services import attempt_telemetry, mastery
 
 @app.post("/api/coding/practice/run")
 async def run_practice_solution(
@@ -5064,6 +6230,21 @@ async def run_practice_solution(
     db.refresh(progress)
     serialized_progress = _serialize_practice_progress(progress)
 
+    # Append-only attempt telemetry. The progress row above records only the LATEST
+    # state; this records how each individual attempt failed, which is what per-topic
+    # mastery and the "common mistakes" panel are built from. Never raises.
+    attempt_telemetry.record_attempt(
+        db,
+        user_id=user["user_id"],
+        source="practice",
+        run_result=run_result,
+        language=language_key,
+        code=req.code,
+        question=question,
+        hints_used=req.hints_used,
+        seconds_since_open=req.seconds_since_open,
+    )
+
     return {
         **run_result,
         "progress_saved": progress_saved,
@@ -5075,11 +6256,14 @@ async def run_practice_solution(
 async def grade_interview_answers(
     req: InterviewGradeRequest,
     user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """Batch-grade a finished mock interview against authored test cases. Deterministic
     and free — reuses the same sandboxed runner as the Practice Library. Questions with
     no authored tests return gradedBy='none' (the client falls back to an AI review).
-    Does NOT write any progress to the DB (mock outcomes are self-reported / local)."""
+    Does NOT write any progress to the DB (mock outcomes are self-reported / local),
+    but DOES append attempt telemetry — an interview failure is just as informative
+    about a student's weak topics as a practice failure."""
     retry_after = check_practice_run_rate_limit(str(user["user_id"]))
     if retry_after is not None:
         raise HTTPException(
@@ -5120,6 +6304,24 @@ async def grade_interview_answers(
         if not cached_run:
             set_cached_practice_run(answer.question_id, language_key, answer.code, function_name, tests, run_result)
 
+        # Telemetry: an interview answer that fails tells us the same thing a practice
+        # failure does. Look up the question for its topic; a miss just means the event
+        # is recorded without one rather than dropped.
+        try:
+            interview_question = _find_question(answer.question_id, "interview")
+        except HTTPException:
+            interview_question = None
+        attempt_telemetry.record_attempt(
+            db,
+            user_id=user["user_id"],
+            source="interview",
+            run_result=run_result,
+            language=language_key,
+            code=answer.code,
+            question=interview_question,
+            question_id=answer.question_id,
+        )
+
         results.append({
             "question_id": answer.question_id,
             "gradedBy": "tests",
@@ -5135,8 +6337,13 @@ async def grade_interview_answers(
 async def free_run_practice_solution(
     req: PracticeFreeRunRequest,
     user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    """Run personal/workspace code without tests, grading, or saved progress."""
+    """Run personal/workspace code without tests, grading, or saved progress.
+
+    Still records attempt telemetry: a student repeatedly hitting a syntax error in the
+    scratch workspace is exactly the signal we want, even though there's no question to
+    grade against."""
     retry_after = check_practice_run_rate_limit(str(user["user_id"]))
     if retry_after is not None:
         raise HTTPException(
@@ -5166,6 +6373,16 @@ async def free_run_practice_solution(
     else:
         run_result = run_python_freeform(req.code)
 
+    attempt_telemetry.record_attempt(
+        db,
+        user_id=user["user_id"],
+        source="freerun",
+        run_result=run_result,
+        language=language_key,
+        code=req.code,
+        seconds_since_open=req.seconds_since_open,
+    )
+
     message = (
         "Ran your code. Output is shown below (not graded)."
         if run_result.get("status") == "ran"
@@ -5193,6 +6410,30 @@ async def list_practice_progress(
             return {"items": []}
     items = query.order_by(CodingPracticeProgress.updated_at.desc()).all()
     return {"items": [_serialize_practice_progress(item) for item in items]}
+
+@app.get("/api/coding/mastery")
+async def get_coding_mastery(
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Per-topic mastery, computed live from the attempt log.
+
+    Replaces the browser's solved/total ratio, which can't tell a cold first-try solve
+    from a six-attempt grind with three hints open. Weakest topic first, each with a
+    plain-English reason — an adaptive system that won't explain itself gets ignored.
+
+    Returns `weakest: null` when no topic has enough attempts yet (rather than guessing
+    from one data point). A brand-new student gets an empty list, not a fake score.
+    """
+    topics = mastery.compute_topic_mastery(db, user["user_id"])
+    weakest = mastery.weakest_topic(topics)
+    return {
+        "topics": topics,
+        "weakest": (
+            {**weakest, "reason": mastery.explain(weakest)} if weakest else None
+        ),
+        "min_attempts_for_score": mastery.MIN_ATTEMPTS_FOR_SCORE,
+    }
 
 @app.get("/api/coding/practice/questions/{question_id}/progress")
 async def get_practice_progress(
@@ -5507,16 +6748,50 @@ def _dedupe_near_duplicates(questions: list[str]) -> list[str]:
         kept.append(q)
     return kept
 
-# Coding-tutor quick-action prompts are logged to ChatHistory just like advising
-# questions, but they must NOT surface on the chat welcome screen (that screen is
-# for academic advising). Drop any question containing one of these coding-tutor
-# signal phrases (matched case-insensitively as substrings).
+# In-app feature panels (the Coding Tutor, the advising-form helper) log to ChatHistory
+# just like the general chat does, but their questions must NOT surface on the welcome
+# screen. The real defense is the session_id exclusion in the query below; these markers
+# are only a fallback.
+#
+# Two earlier filters were assumed to cover this and neither did, which is why questions
+# kept leaking:
+#
+#   * `mode == "regular"` — feature-panel rows are written with mode "regular", not
+#     "coding_tutor", so the mode filter lets them straight through. (Verified against
+#     real chat_history rows: every coding-* session is stored as mode "regular".)
+#   * the marker list below — it only matches five hard-coded phrases. "Can you provide
+#     a video that explains this?", asked inside the Coding Tutor, contains none of them
+#     and reached the home screen.
+#
+# The markers stay as a belt-and-suspenders fallback for any coding prompt that somehow
+# lands under a non-panel session id.
 _POPULAR_Q_CODING_MARKERS = (
     "my current code",
     "practice quiz",
     "debug my code",
     "rewrite my code",
     "review my code",
+)
+
+# Session-id prefixes for FEATURE PANELS: in-app helpers that happen to log to
+# chat_history but are not the general advising chat. Their questions only make sense
+# with that feature open in front of you, so they must never be offered as a welcome-screen
+# suggestion. A student who clicks "What should I write for my career goals?" from the home
+# screen lands in a general chat with no advising form in sight.
+#
+#   coding-          the Coding Tutor workspace ("coding-<ts>") and its floating widget
+#                    ("coding-widget-<ts>") — one prefix covers both
+#   advising-        the advising-form side panel ("advising-helper")
+#
+# ADD A PREFIX HERE whenever a new in-app panel starts posting to /chat. That is the whole
+# maintenance burden, and it's why this is a list rather than a chain of special cases.
+#
+# The mock-interview grader ("interview-grader") needs no entry: INTERNAL_SESSION_IDS now
+# stops it being written to chat_history at all, which is strictly better than filtering it
+# back out at read time.
+_POPULAR_Q_FEATURE_SESSION_PREFIXES = (
+    "coding-",
+    "advising-",
 )
 
 # Module-level cache: (epoch_seconds, questions). 5-minute TTL.
@@ -5598,6 +6873,24 @@ async def get_popular_questions(db: Session = Depends(get_db)):
             # Coding questions must not surface as Morgan CS suggestions. Legacy rows
             # predating the `mode` column are NULL -> treated as regular.
             .filter(func.coalesce(ChatHistory.mode, "regular") == "regular")
+            # Exclude in-app feature panels (Coding Tutor, advising helper). The `mode`
+            # filter above does NOT catch them: their rows are written with mode
+            # "regular", so they pass straight through it, and the marker list only
+            # matches five hard-coded phrases. Keying on the session id catches all of
+            # their traffic regardless of how the question was worded.
+            #
+            # NULL session_id is legacy advising data and must be KEPT — an unguarded
+            # NOT LIKE evaluates to NULL for those rows and would silently drop every one
+            # of them, emptying the welcome screen of exactly the questions it's for.
+            .filter(
+                or_(
+                    ChatHistory.session_id.is_(None),
+                    and_(*[
+                        ~ChatHistory.session_id.like(f"{prefix}%")
+                        for prefix in _POPULAR_Q_FEATURE_SESSION_PREFIXES
+                    ]),
+                )
+            )
             .group_by(normalized)
             # Tie-break on the text so the ranking is total, not just "by frequency".
             # Equal-frequency questions must order identically on every instance —
@@ -6949,9 +8242,94 @@ async def internal_reminders_dispatch(request: Request):
 
             users_processed += 1
             for item in due:
-                ok = send_deadline_reminder_email(user.email, item["assignment"])
+                # Blocking smtplib call — offload so it doesn't stall the loop.
+                ok = await asyncio.to_thread(
+                    send_deadline_reminder_email, user.email, item["assignment"]
+                )
                 if ok:
                     db.add(SentReminder(user_id=user_id, reminder_key=item["key"]))
+                    sent_count += 1
+            db.commit()
+
+        return {"status": "ok", "users_processed": users_processed, "reminders_sent": sent_count}
+    finally:
+        db.close()
+
+
+@app.post("/api/internal/scholarships/reminders/dispatch")
+async def internal_scholarship_reminders_dispatch(request: Request):
+    """Triggered daily by Cloud Scheduler. Emails a student when a saved
+    scholarship / internship deadline is within the lead window (default 7 days).
+    Idempotent: the same SentReminder ledger used for Canvas reminders dedupes
+    each nudge, keyed with an 'sch:' prefix so the two never collide. Computes
+    entirely from the saved_scholarships table — no web re-fetch."""
+    secret = request.headers.get("X-Research-Secret", "")
+    expected = os.getenv("RESEARCH_SECRET", "")
+    if not expected or secret != expected:
+        raise HTTPException(status_code=403, detail="Invalid research secret")
+
+    from services import scholarship_search
+    from email_service import send_scholarship_deadline_email, is_email_configured
+
+    if not is_email_configured():
+        return {"status": "skipped", "reason": "SMTP not configured"}
+
+    now = datetime.now(timezone.utc)
+    sent_count = 0
+    users_processed = 0
+
+    db = SessionLocal()
+    try:
+        # Group every saved row by student. The selector drops terminal statuses
+        # (submitted / awarded / rejected / expired) and out-of-window deadlines.
+        rows = db.query(SavedScholarship).all()
+        rows_by_user: dict[int, list] = {}
+        for r in rows:
+            rows_by_user.setdefault(r.user_id, []).append(r)
+
+        if not rows_by_user:
+            return {"status": "ok", "users_processed": 0, "reminders_sent": 0}
+
+        for user_id, saved_rows in rows_by_user.items():
+            items = [
+                {
+                    "id": r.id,
+                    "name": r.name,
+                    "kind": r.kind,
+                    "deadline": r.deadline,
+                    "status": r.status,
+                    "award": r.award,
+                    "pay": r.pay,
+                    "url": r.url,
+                }
+                for r in saved_rows
+            ]
+
+            sent_keys = {
+                sr.reminder_key for sr in db.query(SentReminder).filter(
+                    SentReminder.user_id == user_id
+                ).all()
+            }
+
+            due = scholarship_search.select_due_scholarship_reminders(
+                items, sent_keys, now
+            )
+            if not due:
+                continue
+
+            user = db.query(User).filter(User.id == user_id).first()
+            if not user or not user.email:
+                continue
+
+            users_processed += 1
+            for entry in due:
+                # Blocking smtplib call — offload so it doesn't stall the loop.
+                ok = await asyncio.to_thread(
+                    send_scholarship_deadline_email,
+                    user.email, entry["item"], entry["days_remaining"],
+                )
+                if ok:
+                    db.add(SentReminder(user_id=user_id, reminder_key=entry["key"]))
                     sent_count += 1
             db.commit()
 

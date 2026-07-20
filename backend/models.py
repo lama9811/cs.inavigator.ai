@@ -1,8 +1,14 @@
 # backend/models.py
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Float, ForeignKey, UniqueConstraint, func
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Float, ForeignKey, UniqueConstraint, Index, func, LargeBinary
+from sqlalchemy.dialects.mysql import LONGBLOB
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from db import Base
+
+# Advising upload blobs can approach the multi-MB upload cap. Plain LargeBinary
+# maps to MySQL BLOB, which truncates at 64KB — silently corrupting any real PDF.
+# Use LONGBLOB on MySQL (up to 4GB) and keep BLOB on SQLite for local dev.
+_UPLOAD_BLOB = LargeBinary().with_variant(LONGBLOB, "mysql")
 
 
 class ChatHistory(Base):
@@ -80,6 +86,7 @@ class DegreeWorksData(Base):
     student_name = Column(String(255), nullable=True)
     student_id = Column(String(50), nullable=True)
     degree_program = Column(String(255), nullable=True)  # e.g., "Bachelor of Science in Computer Science"
+    minor = Column(String(255), nullable=True)  # e.g., "Mathematics" (from DegreeWorks goalArray MINOR)
     catalog_year = Column(String(20), nullable=True)  # e.g., "2022-2023"
     classification = Column(String(50), nullable=True)  # e.g., "Senior", "Junior"
     advisor = Column(String(255), nullable=True)
@@ -87,7 +94,9 @@ class DegreeWorksData(Base):
     # Academic Progress
     overall_gpa = Column(Float, nullable=True)
     major_gpa = Column(Float, nullable=True)
-    total_credits_earned = Column(Float, nullable=True)
+    total_credits_earned = Column(Float, nullable=True)      # passed credits (excludes in-progress)
+    total_credits_applied = Column(Float, nullable=True)     # credits applied to the degree (incl. in-progress + transfer)
+    total_credits_in_progress = Column(Float, nullable=True) # credits currently in progress (not yet earned)
     credits_required = Column(Float, nullable=True)
     credits_remaining = Column(Float, nullable=True)
 
@@ -96,6 +105,7 @@ class DegreeWorksData(Base):
     courses_in_progress = Column(Text, nullable=True)  # JSON: [{code, name, credits, semester}]
     courses_remaining = Column(Text, nullable=True)  # JSON: [{code, name, credits, category}]
     requirements_status = Column(Text, nullable=True)  # JSON: [{category, status, details}]
+    gened_areas = Column(Text, nullable=True)  # JSON: {area_code: percent} e.g. {"IM":100,"AH":50} (DegreeWorks-computed)
 
     # Raw data backup
     raw_data = Column(Text, nullable=True)  # Full JSON dump for reference
@@ -304,6 +314,100 @@ class CodingSnippet(Base):
     user = relationship("User", backref="coding_snippets")
 
 
+class CodingAttemptEvent(Base):
+    """Append-only log of coding attempts — one row per Run / Submit / free run.
+
+    CodingPracticeProgress only records *that* a student solved a question. This
+    records *how they got there*: which attempt failed, what kind of failure it was,
+    which tests broke, how many hints they had open, and how long they'd been on the
+    problem. That difference is what per-topic mastery, the adaptive ladder, and a
+    real "common mistakes" panel are built from — none of which can be derived from
+    the current progress row.
+
+    Append-only on purpose. Rows are never updated or deleted by the app, so the
+    history stays a faithful record of what actually happened.
+
+    Privacy: we store the *shape* of a failure (error class, which test names broke),
+    never the student's source code. `code_len` is a size, not the code.
+    """
+    __tablename__ = "coding_attempt_events"
+    __table_args__ = (
+        # The two queries this table exists to serve: "how is this student doing on
+        # this topic" and "what do students get wrong on this question".
+        Index("ix_coding_attempt_user_question", "user_id", "question_id"),
+        Index("ix_coding_attempt_question_created", "question_id", "created_at"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+
+    # Where the attempt came from: "practice" | "freerun" | "interview".
+    # Free runs have no question, so question_id is nullable.
+    source = Column(String(20), nullable=False, default="practice")
+    question_id = Column(String(80), nullable=True, index=True)
+    # Denormalized from the question bank at write time so mastery queries don't have
+    # to re-load the JSON bank, and so the row still means something if a question is
+    # later retitled or recategorized.
+    topic = Column(String(80), nullable=True, index=True)
+    difficulty = Column(String(20), nullable=True)
+    language = Column(String(30), nullable=False, default="python")
+
+    # "pass" | "fail" | "error" | "timeout"  — what happened overall.
+    outcome = Column(String(20), nullable=False)
+    # "syntax" | "runtime" | "wrong_answer" | "timeout" | None (on a pass).
+    # The single most valuable field here: "didn't know the language" and "didn't know
+    # the algorithm" are different problems and need different teaching.
+    error_class = Column(String(30), nullable=True, index=True)
+
+    tests_passed = Column(Integer, nullable=False, default=0)
+    tests_total = Column(Integer, nullable=False, default=0)
+    # JSON-encoded array of failing test names. Text (not a JSON column) so it works on
+    # both local SQLite and Cloud SQL MySQL, matching CodingUserProgress.daily_days.
+    failed_tests = Column(Text, nullable=True)
+
+    # Client-reported effort signals. Best-effort: a student can reload the page and
+    # reset the timer, so treat these as a trend, not a measurement.
+    hints_used = Column(Integer, nullable=False, default=0)
+    seconds_since_open = Column(Integer, nullable=True)
+
+    code_len = Column(Integer, nullable=False, default=0)
+    duration_ms = Column(Integer, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+
+    user = relationship("User", backref="coding_attempt_events")
+
+
+class CodingConceptQuizAttempt(Base):
+    """Append-only concept-quiz result used for cross-device progress and review.
+
+    ``results_json`` stores only question ids, kinds, and correct/incorrect flags.
+    Student-entered text or code is deliberately excluded: the review screen can
+    rebuild the prompt, correct answer, and explanation from the authored bank
+    without turning the progress table into a source-code store.
+    """
+    __tablename__ = "coding_concept_quiz_attempts"
+    __table_args__ = (
+        Index(
+            "ix_concept_quiz_user_language_category",
+            "user_id",
+            "language",
+            "category",
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    language = Column(String(30), nullable=False, index=True)
+    category = Column(String(80), nullable=False, index=True)
+    correct = Column(Integer, nullable=False, default=0)
+    total = Column(Integer, nullable=False, default=0)
+    score = Column(Float, nullable=False, default=0.0)
+    results_json = Column(Text, nullable=False, default="[]")
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+
+    user = relationship("User", backref="coding_concept_quiz_attempts")
+
+
 class FailedQuery(Base):
     """Tracks questions the chatbot couldn't answer (KB misses).
     Used by the auto-research agent to find and fill knowledge gaps."""
@@ -412,3 +516,139 @@ class LiveSection(Base):
     wait_capacity = Column(Integer, nullable=False, default=0)
     wait_available = Column(Integer, nullable=False, default=0)
     fetched_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+
+
+class AdvisingFormDraft(Base):
+    """Per-user saved draft of the advising section forms (Internship + Advising).
+    One row per user; `forms_json` holds a JSON object of { form_id: {field: value} }.
+    Text (not JSON column) so it works on both SQLite and Cloud SQL MySQL."""
+    __tablename__ = "advising_form_drafts"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_advising_form_draft_user"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    forms_json = Column(Text, nullable=True)
+    submitted = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", backref="advising_form_drafts")
+
+
+class AdvisingUpload(Base):
+    """A file the student attached to their advising form (Course Sequence /
+    DegreeWorks PDF or a scan). Stored as bytes IN THE DATABASE, not on local disk,
+    so uploads survive a Cloud Run restart (the container filesystem is ephemeral).
+    Small files only (a few MB, capped at the upload limit). Stored as LONGBLOB on
+    MySQL (plain BLOB truncates at 64KB) and BLOB on SQLite, so it works on both."""
+    __tablename__ = "advising_uploads"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    filename = Column(String(255), nullable=False)          # original name the student uploaded
+    content_type = Column(String(100), nullable=True)       # MIME type, for serving back
+    size_bytes = Column(Integer, nullable=True)
+    data = Column(_UPLOAD_BLOB, nullable=False)            # the file bytes (LONGBLOB on MySQL)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    user = relationship("User", backref="advising_uploads")
+
+
+class SavedScholarship(Base):
+    """A scholarship or internship a student saved from a search.
+
+    Search is ephemeral; applying is not. A student finds an award, means to
+    apply, and loses it. This table is what lets them come back to it — the whole
+    reason Scholarships is a feature and not just a search box.
+
+    `kind` splits the two objects that were previously mashed together: a
+    scholarship has an `award` and `eligibility`; an internship has pay, a term,
+    a location and a role. Both share this row, but the frontend renders and
+    filters them separately.
+
+    We snapshot the details at save time (`snapshot_json`). The source page
+    changes or 404s, and a saved award that silently becomes a dead link is worse
+    than no feature — so we keep what we knew and can re-check it later."""
+    __tablename__ = "saved_scholarships"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+
+    # Stable dedupe key (a hash of name+url), so re-saving the same award from a
+    # later search updates the existing row instead of creating a duplicate.
+    client_key = Column(String(80), nullable=False, index=True)
+
+    kind = Column(String(20), nullable=False, default="scholarship")  # scholarship | internship
+    name = Column(String(300), nullable=False)
+
+    # Scholarship-shaped fields.
+    award = Column(String(200), nullable=True)          # "$5,000" / "(not listed)"
+    eligibility = Column(Text, nullable=True)
+
+    # Internship-shaped fields. Null on scholarships.
+    pay = Column(String(120), nullable=True)            # "$45/hr" / "Paid"
+    term = Column(String(120), nullable=True)           # "Summer 2026"
+    location = Column(String(200), nullable=True)
+    role = Column(String(200), nullable=True)
+
+    deadline = Column(String(40), nullable=True)        # "YYYY-MM-DD" / "(not listed)"
+    # How to read the deadline when there's no single date:
+    # fixed | rolling | recurring | unknown. Lets the UI show "Rolling — apply
+    # anytime" instead of a bare "(not listed)".
+    deadline_type = Column(String(20), nullable=True)
+    url = Column(String(1000), nullable=True)           # apply link
+    source_url = Column(String(1000), nullable=True)    # where we found it
+    why = Column(Text, nullable=True)                   # why it fits this student
+
+    # True if this came from our vetted curated list (vs a live web-search hit).
+    # Persisted so the saved view's "Recommended first" sort — which ranks curated
+    # awards above live ones — keeps working after a reload.
+    curated = Column(Boolean, nullable=False, default=False)
+
+    # Where the student is in the process.
+    # interested | applying | submitted | awarded | rejected | expired
+    status = Column(String(20), nullable=False, default="interested")
+
+    # Full snapshot of the item as it was at save time, so a later source change
+    # can't silently rot the saved copy. JSON string.
+    snapshot_json = Column(Text, nullable=True)
+
+    # The application checklist, as a JSON list of
+    # {id, label, done, note} items. Generated from the award's own requirements
+    # (via the AI) the first time the student opens the detail view, then editable.
+    # Null until generated; an empty list means "generated, but nothing found".
+    checklist_json = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "client_key", name="uq_saved_scholarship_user_key"),
+    )
+
+    user = relationship("User", backref="saved_scholarships")
+
+
+class DismissedScholarship(Base):
+    """An opportunity a student has permanently hidden from their search results.
+
+    Lightweight on purpose: dismissing something you never saved shouldn't create
+    a full SavedScholarship row (with its checklist machinery). We only store the
+    dedupe key (a hash of name+url, the same client_key SavedScholarship uses) so
+    the same award is filtered out of future searches. Keeping the name is purely
+    so an admin/debugging view is readable."""
+    __tablename__ = "dismissed_scholarships"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    client_key = Column(String(80), nullable=False, index=True)
+    name = Column(String(300), nullable=True)   # for readability only
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "client_key", name="uq_dismissed_scholarship_user_key"),
+    )
+
+    user = relationship("User", backref="dismissed_scholarships")

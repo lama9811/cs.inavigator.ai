@@ -2,6 +2,39 @@
 
 All notable changes to CS Navigator are documented here.
 
+## [7.0.0] - 2026-07-17
+### Added
+- **Scholarships & Internships, v2 — a real feature, not a search box.** The Tools → Scholarships page now finds opportunities via Google grounding search over a curated database and lets a student **save and track** each one. Saved items get a **detail page** and an **application checklist** (internship checklists follow the real hiring pipeline: apply → OA → phone screen → onsite → offer). A **dashboard rollup** summarizes saved opportunities, and **deadline nudges** surface what's due soon.
+- **Deadline-type classification.** Undated opportunities are no longer shown as a bare "(not listed)". Every opportunity is classified `fixed` / `rolling` / `recurring` / `unknown`, so a rolling program reads as "Rolling — apply anytime" instead of looking broken. Dated opportunities are preferred in ranking but undated ones are never hidden.
+- **Internship role categories.** Internships are auto-tagged (Software Engineering / Data-ML / Product / Hardware / Research / Security / Other) so students can **filter and sort by role**.
+- **Search filters + persisted state.** Search results can be filtered by kind (scholarship vs internship), timing, and role, and sorted (including Role A–Z). The search state survives navigating away and back within the tab (sessionStorage), so a student doesn't lose their results by clicking into a detail page.
+- **Hide-dismissed.** A student can permanently hide an opportunity from their results; dismissed items stay gone across future searches.
+- **Advising form uploads persist in the database** with per-user caps, and a student can now **delete an uploaded document** (which actually removes the stored blob, not just the reference).
+### Changed
+- **Scholarship-vs-internship separation.** Searching for internships no longer returns scholarships (and vice-versa) — kind intent is detected from the query and enforced through ranking and grouping.
+- **Advising "Finish & save" now means something.** The `submitted` flag is wired end-to-end: finishing a completed form marks it submitted (shown as "Submitted ✓"), and editing a submitted form reverts it to a draft. Plain "Save draft" and autosave keep it a draft.
+### Security
+- **SSRF-hardened the grounding redirect resolver.** Grounding returns Google redirect URLs that must be resolved to their real destination; the resolver now validates every hop against a public-host allowlist (rejects private / loopback / link-local / reserved / cloud-metadata addresses), disables environment proxies, and caps redirect depth — so a crafted redirect can't be used to reach the Cloud Run metadata server and exfiltrate the service-account token.
+- **Stored-XSS-safe advising downloads.** Uploaded advising documents are served with a MIME type derived from the validated file **extension** (never the user-supplied `content_type`) plus `X-Content-Type-Options: nosniff`, so an HTML-with-`<script>` payload uploaded as `x.pdf` can't execute when viewed.
+- **Per-user upload caps + orphan-blob cleanup** on advising uploads (bounded file count and total bytes per student), closing an unbounded-storage path; removing a file now deletes its database row instead of orphaning the blob forever.
+### Fixed
+- **Grounding search returned zero results** under load: the extraction call spent its whole output-token budget on model "thinking" and hit the token ceiling, truncating the JSON. Extraction now runs with the thinking budget disabled (grounding keeps a small budget), and grounding redirect links are unwrapped to real URLs.
+- **Duplicate saved opportunities** — grounding resolved the same award to different redirect URLs across searches, so the save key minted duplicates. The key now hashes on the normalized name only.
+- Internship keyword matching missed plurals/suffixes ("internships", "cybersecurity", "management") because word-boundary regexes landed mid-word; switched to stem matching.
+- Centered the scholarship filter toolbar so it no longer sits one-sided.
+### Verified
+- 550 backend tests pass on the merged `feat/scholarships` + `dev/coding_tutor_updates` tree (includes a new 19-test advising suite covering draft/upload/download/delete, tenant isolation, and the stored-XSS download guard); frontend builds clean. A throwaway merge check confirmed the two branches merge with only mechanical/cosmetic conflicts.
+
+## [6.8.0] - 2026-07-15
+### Added
+- **Learn tracks, all four languages** — the Learn mode now has authored lessons for Python, Java, JavaScript, and C++, each split into a **Beginner** and **Intermediate** track. The Learn flow is four URL-backed views (languages → tracks → lessons → lesson) so Back/Forward and refresh all behave.
+- **Concept-quiz banks filled and made real** — every shared and language-specific concept-quiz bank is authored: **412 real questions across 44 banks**, no "coming soon" slots. Former templated filler was rewritten into real behavioral questions with topic-specific distractors, and guard tests now fail the build on filler stems, duplicate prompts, or answer-restating explanations.
+- **Read-aloud lessons** — a "Listen to this lesson" play bar on lesson pages, built on the free browser `speechSynthesis` (no API key, no dependency). Reads the prose, announces code by caption, and skips the raw code and Check-yourself blocks. Play/pause + section skip; stops on navigation and never autoplays. (The Web Speech API has no seekable timeline, so skip is by section, not seconds.)
+- **Floating Coding Tutor on Learn** — the widget now appears on the Learn track-chooser and lesson pages so a student can ask a question while reading, and it drags freely then **snaps to the nearest of four corners** (persisted, resize-safe, honors `prefers-reduced-motion`).
+- **Progress badges for Learn and concept quizzes** — the achievements page previously rewarded only the code-problem path. New badges cover reading lessons and concept quizzes (first quiz, a perfect 100%, topics passed, quiz polyglot), plus a cross-surface "Full Circle" (read a lesson, pass a quiz, solve a problem). Interview badges now reward performance in a mock (pass 2 of 3, or solve all 3) rather than just finishing.
+### Changed
+- **Clearer lesson prose** — C++ lesson wording simplified toward plain beginner language, and JS terms glossed on first use (booleans, reference, arrays) so nothing is used before it's introduced.
+
 ## [6.7.0] - 2026-07-01
 ### Added
 - **Coding Tutor Milestones / trophy case** — rebuilt the Progress page into an achievements page. A `buildBadges(stats)` data layer drives **37 badges** grouped into 8 labelled categories (Starter, Consistency, Persistence, Languages, Topics, Testing, Interview Prep, Mastery), each with a rarity chip (Common / Uncommon / Rare / Epic) and, on locked count-based badges, a percentage progress bar. Boolean badges show a clear requirement instead of a fake bar. Earned badges sort to the top of their category. A "Next up" nudge names the nearest milestone. Page order is header → stat tiles → badge grids. All badge signals reuse existing progress data; per-card `aria-label`s make each card read as one phrase for screen readers.

@@ -1,0 +1,89 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Data Types",
+  "summary": "Choose a type that matches the value you need to store.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "Use `int` for whole numbers, `double` for decimals, `char` for one character, `bool` for true or false, and `std::string` for text. The type affects which values and calculations are possible.",
+  "refresher_code": "double average = static_cast<double>(total) / count;",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A type describes the kind of value a variable can store. Start with five common choices: `int` for whole numbers, `double` for decimals, `char` for one character, `bool` for true or false, and `std::string` for text."
+    },
+    {
+      "kind": "text",
+      "body": "The type matters during calculations. Dividing two integers drops the decimal part. Storing a decimal in an integer also drops the fraction. When the fraction matters, use a `double` before the calculation happens."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "A useful Python comparison",
+      "body": "Python uses `/` to produce a decimal result. In C++, `7 / 2` is `3` because both values are integers. Write `7.0 / 2` or convert one value to `double` when you need `3.5`."
+    },
+    {
+      "kind": "code",
+      "caption": "Changing total to a double before division keeps the fractional part, so seven divided by two becomes 3.5.",
+      "code": "#include <iostream>\n\nint main() {\n  int total = 7;\n  int count = 2;\n  double average = static_cast<double>(total) / count;\n  std::cout << average << \"\\n\";\n}",
+      "output": "3.5"
+    },
+    {
+      "kind": "compare",
+      "caption": "Keep fractional data in a matching type.",
+      "wrong_label": "Common mistake",
+      "wrong": "int gpa = 3.75;",
+      "right_label": "Clearer version",
+      "right": "double gpa = 3.75;"
+    },
+    {
+      "kind": "text",
+      "body": "The first declaration changes `3.75` into the whole number `3`. The second keeps the decimal value. C++ may allow a conversion that loses information, so compare the variable's type with the value you actually need."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "A type can change the answer",
+      "body": "Putting a decimal into an `int` removes the fractional part. The compiler may accept the line even when the result is not what the problem asks for."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which type stores one character?",
+      "code": "",
+      "choices": [
+        "char",
+        "string",
+        "double",
+        "bool"
+      ],
+      "answer_index": 0,
+      "why": "The char type represents one character value such as a letter."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is stored in `n`?",
+      "code": "int n = 4.9;",
+      "choices": [
+        "4",
+        "4.9",
+        "5",
+        "a string"
+      ],
+      "answer_index": 0,
+      "why": "Conversion to int truncates the fractional part rather than rounding it."
+    },
+    {
+      "kind": "list",
+      "title": "Data Types checklist",
+      "items": [
+        "Match type to meaning.",
+        "Cast before integer division.",
+        "Watch narrowing conversions.",
+        "Use string for text."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

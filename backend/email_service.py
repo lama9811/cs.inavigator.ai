@@ -186,6 +186,77 @@ def send_deadline_reminder_email(to_email: str, assignment: dict) -> bool:
     return _send_email(to_email, f"Reminder: {subject_title} is due soon", html)
 
 
+def send_scholarship_deadline_email(to_email: str, item: dict, days_remaining: int) -> bool:
+    """Email a student when a saved scholarship / internship deadline is near.
+
+    `item` is a saved-opportunity dict {name, kind, deadline, award, url, ...}.
+    The name and award originate from web search / the source page (untrusted),
+    so every interpolated value is HTML-escaped and the apply link is
+    scheme-validated before it reaches the outbound email — same discipline as
+    the Canvas reminder above."""
+    raw_name = item.get("name") or "A saved opportunity"
+    kind = str(item.get("kind") or "scholarship").strip().lower()
+    noun = "internship" if kind == "internship" else "scholarship"
+
+    name = _html_escape(str(raw_name))
+    deadline = _html_escape(str(item.get("deadline") or "soon"))
+    award = _html_escape(str(item.get("award") or item.get("pay") or ""))
+    saved_url = _html_escape(f"{APP_URL}/scholarships", quote=True)
+
+    # "in 1 day" reads better than "in 1 days".
+    when = "tomorrow" if days_remaining == 1 else f"in {days_remaining} days"
+
+    award_line = ""
+    if award:
+        award_line = f"""
+            <p style="color: #5f6368; font-size: 14px; line-height: 1.6; margin: 4px 0 0;">
+                {award}
+            </p>"""
+
+    safe_url = _safe_http_url(item.get("url"))
+    open_btn = ""
+    if safe_url:
+        href = _html_escape(safe_url, quote=True)
+        open_btn = f"""
+            <div style="text-align: center; margin: 24px 0;">
+                <a href="{href}" style="display: inline-block; padding: 12px 32px; background: #34A853; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px;">
+                    Open the application
+                </a>
+            </div>"""
+
+    html = f"""
+    <div style="font-family: 'Google Sans', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #4285F4; font-size: 24px; margin: 0;">CS Navigator</h1>
+            <p style="color: #5f6368; font-size: 14px;">{noun.capitalize()} deadline</p>
+        </div>
+        <div style="background: #f8f9fa; border-radius: 12px; padding: 24px; border: 1px solid #dadce0;">
+            <h2 style="color: #202124; font-size: 18px; margin: 0 0 12px;">Deadline {when}</h2>
+            <p style="color: #202124; font-size: 15px; line-height: 1.6; margin: 0 0 4px;">
+                <strong>{name}</strong>
+            </p>
+            <p style="color: #5f6368; font-size: 14px; line-height: 1.6; margin: 0;">
+                Due {deadline}
+            </p>
+            {award_line}
+            {open_btn}
+            <p style="color: #9aa0a6; font-size: 12px; line-height: 1.5; margin: 16px 0 0;">
+                You saved this in CS Navigator. Check your
+                <a href="{saved_url}" style="color: #4285F4;">My Scholarships</a> list to
+                finish the checklist before the deadline.
+            </p>
+        </div>
+        <p style="color: #9aa0a6; font-size: 11px; text-align: center; margin-top: 16px;">
+            You're getting this because you saved this {noun}. Remove it from your
+            <a href="{saved_url}" style="color: #9aa0a6;">My Scholarships</a> list to stop reminders.
+        </p>
+    </div>
+    """
+    # Subject is a header: collapse whitespace/newlines to prevent header injection.
+    subject_name = " ".join(str(raw_name).split())[:120] or "A saved opportunity"
+    return _send_email(to_email, f"Deadline {when}: {subject_name}", html)
+
+
 def send_password_reset_email(to_email: str, token: str) -> bool:
     """Send password reset link."""
     reset_url = f"{APP_URL}/reset-password?token={token}"

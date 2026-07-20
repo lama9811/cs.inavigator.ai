@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
+  "title": "Objects",
+  "summary": "Group related values under named properties.",
+  "minutes": 10,
+  "error_classes": [
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "Objects store values under keys. Dot notation reads a known simple key, while brackets evaluate a computed key. Assignment copies an object reference.",
+  "refresher_code": "const student={name:\"Ada\",credits:15};\nconsole.log(student.name);",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Objects store values under keys. Dot notation reads a known simple key, while brackets evaluate a computed key. Assignment copies an object reference. Group related values under named properties."
+    },
+    {
+      "kind": "text",
+      "body": "An object groups facts under names instead of numeric positions. Dot notation uses a property name written directly in the code. Bracket notation evaluates an expression to choose the key at runtime. Objects are references, so two variables can lead to the same set of properties."
+    },
+    {
+      "kind": "code",
+      "caption": "Dot notation reads a fixed name, while brackets use the string stored in field.",
+      "code": "const student={name:\"Ada\",major:\"CS\"};\nconst field=\"major\";\nconsole.log(student.name);\nconsole.log(student[field]);",
+      "output": "Ada\nCS"
+    },
+    {
+      "kind": "compare",
+      "caption": "Use brackets when the property name comes from a variable.",
+      "wrong_label": "Common mistake",
+      "wrong": "const key = \"credits\";\nconsole.log(student.key);",
+      "right_label": "Clearer version",
+      "right": "const key = \"credits\";\nconsole.log(student[key]);"
+    },
+    {
+      "kind": "text",
+      "body": "In the wrong version, JavaScript looks for a property literally named `key`. In the corrected version, it evaluates the variable to `\"credits\"` and reads that property. Before following a nested property, optional chaining such as `student.advisor?.name` can handle a missing middle value."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Trace this carefully",
+      "body": "Reading a missing property returns undefined; an error may occur later when code tries to use that absent value."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which uses the value in key?",
+      "code": "const key=\"credits\";",
+      "choices": [
+        "student[key]",
+        "student.key",
+        "student->key",
+        "student(key)"
+      ],
+      "answer_index": 0,
+      "why": "Brackets evaluate the variable, while dot notation searches for a property literally named key."
+    },
+    {
+      "kind": "check",
+      "prompt": "What becomes of first.score?",
+      "code": "const first={score:10};\nconst second=first;\nsecond.score=20;",
+      "choices": [
+        "20",
+        "10",
+        "the object is copied",
+        "a const error"
+      ],
+      "answer_index": 0,
+      "why": "Both variables refer to one object, so the property change is visible through first."
+    },
+    {
+      "kind": "list",
+      "title": "Objects checklist",
+      "items": [
+        "Use dots for fixed keys.",
+        "Use brackets for computed keys.",
+        "Check optional properties.",
+        "Copy before independent mutation."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

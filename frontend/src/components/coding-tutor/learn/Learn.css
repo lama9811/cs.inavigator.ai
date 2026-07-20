@@ -1,0 +1,1140 @@
+/* Learn mode — the Practice Library's reading surface.
+   Themed with the Coding Tutor's --ct-* tokens; dark mode is keyed on
+   `body.coding-dark` (NOT the retired global `body.dark`, and not a [data-theme] attr). */
+
+/* ---------------------------------------------------------------------------
+   Lesson list (one language's topics)
+   --------------------------------------------------------------------------- */
+.learn-list {
+  padding: 4px 0 24px;
+}
+
+.learn-list-head {
+  margin-bottom: 18px;
+}
+
+.learn-list-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 6px;
+  font-size: 1.35rem;
+  color: var(--ct-text);
+}
+
+.learn-list-head h2 svg {
+  color: var(--ct-accent);
+  font-size: 1.05rem;
+}
+
+.learn-list-head p {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--ct-muted, #6b7280);
+}
+
+.learn-lesson-grid {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  counter-reset: lesson;
+}
+
+.learn-lesson-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 13px 15px;
+  border: 1px solid var(--ct-border, rgba(148, 163, 184, 0.25));
+  border-radius: 10px;
+  background: var(--ct-panel);
+  color: var(--ct-text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.12s ease, background 0.15s ease;
+}
+
+/* Same app-wide-button-hover bleed as the track cards: these rows are <button>s, so
+   `.coding-app :is(button, ...):hover:not(:disabled)` (0,4,0, all !important) repaints
+   the row blue — background, border, and TEXT — and its forced `transition: color`
+   animates the flash. Neutralize it at (0,5,0) and pin the text so nothing turns blue;
+   keep only the nudge + accent border + a soft shadow. Locked rows are `disabled`, so
+   the app-wide :hover:not(:disabled) never fires on them — no guard needed here. */
+.coding-app .learn-lesson-card {
+  transition: border-color 0.15s ease, transform 0.12s ease,
+    box-shadow 0.15s ease, background 0.15s ease !important;
+}
+
+.coding-app .learn-lesson-card,
+.coding-app .learn-lesson-card:hover:not(.locked) {
+  background: var(--ct-panel) !important;
+  color: var(--ct-text) !important;
+}
+
+.coding-app .learn-lesson-card:hover:not(.locked) {
+  border-color: var(--ct-accent) !important;
+  transform: translateX(2px) !important;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--ct-accent) 14%, transparent) !important;
+}
+
+/* Pin the text spans: the blue "link" tint was the button's hover color cascading in. */
+.coding-app .learn-lesson-card:hover:not(.locked) .learn-lesson-title {
+  color: var(--ct-text) !important;
+}
+.coding-app .learn-lesson-card:hover:not(.locked) .learn-lesson-blurb,
+.coding-app .learn-lesson-card:hover:not(.locked) .learn-lesson-meta {
+  color: var(--ct-muted, #6b7280) !important;
+}
+
+.learn-lesson-card:focus-visible {
+  outline: 2px solid var(--ct-accent);
+  outline-offset: 2px;
+}
+
+.learn-lesson-card.locked {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* The step number. A lesson list IS a sequence — the numbering encodes real order
+   (you learn variables before loops), so it isn't decoration. */
+.learn-lesson-num {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ct-accent) 14%, transparent);
+  color: var(--ct-accent);
+  font-size: 0.74rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.learn-lesson-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.learn-lesson-title {
+  font-size: 0.94rem;
+  font-weight: 600;
+}
+
+.learn-lesson-blurb {
+  font-size: 0.78rem;
+  color: var(--ct-muted, #6b7280);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learn-lesson-meta {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.75rem;
+  color: var(--ct-muted, #6b7280);
+}
+
+.learn-lesson-qcount {
+  font-variant-numeric: tabular-nums;
+}
+
+.learn-lesson-soon {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Lesson view
+   --------------------------------------------------------------------------- */
+.lesson-view,
+.lesson-empty {
+  /* ~65ch of running text. Wider than this and the eye loses the line. */
+  max-width: 68ch;
+  margin: 0 auto;
+  padding: 8px 0 32px;
+}
+
+.lesson-head {
+  margin-bottom: 22px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--ct-border, rgba(148, 163, 184, 0.25));
+}
+
+.lesson-kicker {
+  display: inline-block;
+  margin-bottom: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  /* --ct-primary (MSU blue), NOT --ct-accent: the sub-brand theme re-points
+     --ct-accent to orange in light mode, which fought the blue/green track cards
+     below (three temperatures on one page). Blue keys to the app palette. */
+  color: var(--ct-primary);
+}
+
+/* --- Listen-to-this-lesson play bar (free browser TTS) --- */
+.lesson-playbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 22px;
+  padding: 10px 14px;
+  border: 1px solid var(--ct-border, rgba(148, 163, 184, 0.25));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ct-primary) 5%, var(--ct-panel));
+}
+
+.lesson-playbar-icon {
+  display: grid;
+  place-items: center;
+  color: var(--ct-primary);
+  font-size: 0.95rem;
+}
+
+.lesson-playbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Scoped resets so the app-wide `.coding-app :is(button,...):hover` doesn't repaint
+   these controls orange or lift them like free-standing cards. Same fix used across
+   the coding UI. */
+.coding-app .lesson-playbar-btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--ct-border, rgba(148, 163, 184, 0.3));
+  border-radius: 50%;
+  background: var(--ct-panel);
+  color: var(--ct-text);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.coding-app .lesson-playbar-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ct-primary) 10%, var(--ct-panel)) !important;
+  border-color: color-mix(in srgb, var(--ct-primary) 40%, var(--ct-border)) !important;
+  color: var(--ct-primary) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.coding-app .lesson-playbar-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* The play/pause button leads: filled primary, white glyph. */
+.coding-app .lesson-playbar-btn.is-primary,
+.coding-app .lesson-playbar-btn.is-primary:hover:not(:disabled) {
+  width: 40px;
+  height: 40px;
+  border-color: transparent !important;
+  background: var(--ct-primary) !important;
+  color: var(--cq-on-primary, #fff) !important;
+  font-size: 0.9rem;
+}
+
+.coding-app .lesson-playbar-btn.is-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.lesson-playbar-btn:focus-visible {
+  outline: 2px solid var(--ct-primary);
+  outline-offset: 2px;
+}
+
+.lesson-playbar-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.lesson-playbar-track {
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-border) 70%, transparent);
+  overflow: hidden;
+}
+
+.lesson-playbar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ct-primary);
+  transition: width 0.25s ease;
+}
+
+.lesson-playbar-count {
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ct-muted, #6b7280);
+}
+
+.lesson-head h1 {
+  margin: 0 0 8px;
+  font-size: 1.75rem;
+  line-height: 1.2;
+  text-wrap: balance;
+  color: var(--ct-text);
+}
+
+.lesson-summary {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--ct-muted, #6b7280);
+}
+
+.lesson-minutes {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  color: var(--ct-muted, #6b7280);
+}
+
+.lesson-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.lesson-text {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--ct-text);
+}
+
+.lesson-body code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ct-accent) 11%, transparent);
+  color: var(--ct-accent);
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.87em;
+}
+
+/* --- Worked example --- */
+.lesson-code {
+  margin: 0;
+}
+
+.lesson-code figcaption {
+  margin-bottom: 8px;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--ct-muted, #6b7280);
+}
+
+.lesson-code pre,
+.lesson-compare pre,
+.lesson-output pre {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--ct-border, rgba(148, 163, 184, 0.25));
+  border-radius: 8px;
+  background: var(--ct-editor-bg, #0f172a);
+  /* Long lines scroll INSIDE the block; the page body never scrolls sideways. */
+  overflow-x: auto;
+}
+
+.lesson-code pre code,
+.lesson-compare pre code,
+.lesson-output pre code {
+  padding: 0;
+  background: none;
+  color: var(--ct-editor-text, #e2e8f0);
+  font-size: 0.84rem;
+  line-height: 1.6;
+  white-space: pre;
+}
+
+.lesson-output {
+  margin-top: 8px;
+}
+
+.lesson-output-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ct-muted, #6b7280);
+}
+
+.lesson-output pre {
+  background: color-mix(in srgb, #22c55e 8%, var(--ct-editor-bg, #0f172a));
+  border-color: color-mix(in srgb, #22c55e 28%, transparent);
+}
+
+/* --- Callouts. Semantic color, separate from the brand accent: these encode
+       *kind*, so they must read at a glance without being mistaken for branding. --- */
+.lesson-callout {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border-left: 3px solid;
+}
+
+.lesson-callout-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.lesson-callout p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--ct-text);
+}
+
+.lesson-callout.is-tip {
+  border-color: #3b82f6;
+  background: color-mix(in srgb, #3b82f6 8%, transparent);
+}
+.lesson-callout.is-tip .lesson-callout-head { color: #1d4ed8; }
+
+.lesson-callout.is-warning {
+  border-color: #f59e0b;
+  background: color-mix(in srgb, #f59e0b 10%, transparent);
+}
+.lesson-callout.is-warning .lesson-callout-head { color: #b45309; }
+
+.lesson-callout.is-mistake {
+  border-color: #ef4444;
+  background: color-mix(in srgb, #ef4444 8%, transparent);
+}
+.lesson-callout.is-mistake .lesson-callout-head { color: #b91c1c; }
+
+body.coding-dark .lesson-callout.is-tip .lesson-callout-head { color: #60a5fa; }
+body.coding-dark .lesson-callout.is-warning .lesson-callout-head { color: #fbbf24; }
+body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f87171; }
+
+/* --- Right vs wrong, side by side. The most effective block for teaching the
+       mistakes the telemetry actually records. --- */
+.lesson-compare {
+  margin: 0;
+}
+
+.lesson-compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.lesson-compare-col {
+  min-width: 0;
+}
+
+.lesson-compare-label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.lesson-compare-col.is-wrong .lesson-compare-label { color: #b91c1c; }
+.lesson-compare-col.is-right .lesson-compare-label { color: #15803d; }
+
+body.coding-dark .lesson-compare-col.is-wrong .lesson-compare-label { color: #f87171; }
+body.coding-dark .lesson-compare-col.is-right .lesson-compare-label { color: #4ade80; }
+
+.lesson-compare-col.is-wrong pre {
+  border-color: color-mix(in srgb, #ef4444 35%, transparent);
+}
+.lesson-compare-col.is-right pre {
+  border-color: color-mix(in srgb, #22c55e 35%, transparent);
+}
+
+.lesson-compare figcaption {
+  margin-top: 8px;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--ct-muted, #6b7280);
+}
+
+/* Stack the comparison on narrow screens — two code columns at half-width are
+   unreadable, and students do use this in a split window. */
+@media (max-width: 720px) {
+  .lesson-compare-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- List --- */
+.lesson-list-block h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  color: var(--ct-text);
+}
+
+.lesson-list-block ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.lesson-list-block li {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--ct-text);
+}
+
+.lesson-list-block li svg {
+  flex: none;
+  margin-top: 4px;
+  font-size: 0.72rem;
+  color: #22c55e;
+}
+
+/* --- Check yourself. An inline question, answered in the lesson, nothing recorded.
+       Learn is the one place in the Coding Tutor that isn't a test; these exist so the
+       student *does* something before Practice, not so they're scored. --- */
+.lesson-check {
+  padding: 15px 16px 16px;
+  border: 1px solid var(--ct-border, rgba(148, 163, 184, 0.25));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ct-accent) 4%, var(--ct-panel));
+}
+
+.lesson-check-kicker {
+  display: inline-block;
+  margin-bottom: 7px;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ct-accent);
+}
+
+.lesson-check-prompt {
+  margin: 0 0 11px;
+  font-size: 0.94rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--ct-text);
+}
+
+.lesson-check-code {
+  margin: 0 0 12px;
+  padding: 11px 13px;
+  border: 1px solid var(--ct-border, rgba(148, 163, 184, 0.25));
+  border-radius: 8px;
+  background: var(--ct-editor-bg, #0f172a);
+  overflow-x: auto;
+}
+
+.lesson-check-code code {
+  padding: 0;
+  background: none;
+  color: var(--ct-editor-text, #e2e8f0);
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.83rem;
+  line-height: 1.6;
+  white-space: pre;
+}
+
+.lesson-check-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lesson-check-choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--ct-border, rgba(148, 163, 184, 0.3));
+  border-radius: 8px;
+  background: var(--ct-panel);
+  color: var(--ct-text);
+  font-family: inherit;
+  font-size: 0.88rem;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.14s ease, background 0.14s ease, opacity 0.14s ease;
+}
+
+.lesson-check-choice:hover:not(:disabled) {
+  border-color: var(--ct-accent);
+  background: color-mix(in srgb, var(--ct-accent) 7%, var(--ct-panel));
+}
+
+.lesson-check-choice:focus-visible {
+  outline: 2px solid var(--ct-accent);
+  outline-offset: 2px;
+}
+
+.lesson-check-choice:disabled {
+  cursor: default;
+}
+
+.lesson-check-marker {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+/* After answering, always show which choice was RIGHT, not just that the student's pick
+   was wrong. "Wrong, try again" teaches nothing. */
+.lesson-check-choice.is-correct {
+  border-color: color-mix(in srgb, #22c55e 55%, transparent);
+  background: color-mix(in srgb, #22c55e 11%, transparent);
+  color: #15803d;
+  font-weight: 600;
+}
+
+.lesson-check-choice.is-wrong {
+  border-color: color-mix(in srgb, #ef4444 55%, transparent);
+  background: color-mix(in srgb, #ef4444 10%, transparent);
+  color: #b91c1c;
+}
+
+.lesson-check-choice.is-dimmed {
+  opacity: 0.45;
+}
+
+body.coding-dark .lesson-check-choice.is-correct { color: #4ade80; }
+body.coding-dark .lesson-check-choice.is-wrong { color: #f87171; }
+
+.lesson-check-why {
+  margin-top: 12px;
+  padding: 11px 13px;
+  border-radius: 8px;
+  border-left: 3px solid;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--ct-text);
+}
+
+.lesson-check-why.is-correct {
+  border-color: #22c55e;
+  background: color-mix(in srgb, #22c55e 8%, transparent);
+}
+
+.lesson-check-why.is-wrong {
+  border-color: #f59e0b;
+  background: color-mix(in srgb, #f59e0b 9%, transparent);
+}
+
+.lesson-check-verdict {
+  font-weight: 700;
+}
+
+.lesson-check-why.is-correct .lesson-check-verdict { color: #15803d; }
+.lesson-check-why.is-wrong .lesson-check-verdict { color: #b45309; }
+
+body.coding-dark .lesson-check-why.is-correct .lesson-check-verdict { color: #4ade80; }
+body.coding-dark .lesson-check-why.is-wrong .lesson-check-verdict { color: #fbbf24; }
+
+/* --- The handoff. A lesson always exits into practice on the same topic:
+       reading without doing doesn't stick. --- */
+.lesson-foot {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid var(--ct-border, rgba(148, 163, 184, 0.25));
+  text-align: center;
+}
+
+.lesson-foot p {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  color: var(--ct-muted, #6b7280);
+}
+
+.lesson-practice-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--ct-accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.12s ease;
+}
+
+.lesson-practice-cta:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.lesson-practice-cta:focus-visible {
+  outline: 2px solid var(--ct-accent);
+  outline-offset: 3px;
+}
+
+/* --- Not-yet-authored lesson. An expected state, not an error. --- */
+.lesson-empty {
+  text-align: center;
+  padding-top: 40px;
+}
+
+.lesson-empty h2 {
+  margin: 0 0 8px;
+  font-size: 1.3rem;
+  color: var(--ct-text);
+}
+
+.lesson-empty p {
+  margin: 0 auto 18px;
+  max-width: 44ch;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--ct-muted, #6b7280);
+}
+
+/* Center the back link in the empty state (it's a flex inline-flex by default). */
+.lesson-empty .learn-back-link {
+  margin: 14px auto 0;
+}
+
+/* --- The Learn card on a language-cards grid --- */
+.cq-language-card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: auto;
+  padding-top: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ct-accent);
+}
+/* ---------------------------------------------------------------------------
+   Track chooser (one language -> Beginner or Intermediate)
+   --------------------------------------------------------------------------- */
+.learn-tracks {
+  padding: 4px 0 24px;
+}
+
+/* Back to the language grid. A plain text link, not the heavy full-width bordered
+   bar it used to be — a secondary action should read as secondary. */
+.learn-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 16px;
+  padding: 4px 2px;
+  border: 0;
+  background: none;
+  color: var(--ct-muted, #6b7280);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.learn-back-link svg {
+  font-size: 0.72rem;
+  transition: transform 0.15s ease;
+}
+
+.learn-back-link:hover {
+  color: var(--ct-text);
+}
+
+.learn-back-link:hover svg {
+  transform: translateX(-3px);
+}
+
+.learn-back-link:focus-visible {
+  outline: 2px solid var(--ct-accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.learn-tracks-head {
+  max-width: 680px;
+  margin-bottom: 20px;
+}
+
+.learn-tracks-head h2 {
+  margin: 5px 0 7px;
+  font-size: clamp(1.35rem, 2vw, 1.7rem);
+  color: var(--ct-text);
+}
+
+.learn-tracks-head p {
+  margin: 0;
+  color: var(--ct-muted, #6b7280);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.learn-track-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.learn-track-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 260px;
+  padding: 24px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--learn-track-accent) 28%, var(--ct-border));
+  border-radius: 16px;
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      color-mix(in srgb, var(--learn-track-accent) 12%, transparent),
+      transparent 55%
+    ),
+    var(--ct-panel);
+  /* Resting shadow so the card lifts off the near-white page instead of reading as
+     a flat outline. On dark mode the panel/canvas contrast did this for free. */
+  box-shadow: 0 4px 14px rgba(15, 37, 69, 0.07), 0 1px 3px rgba(15, 37, 69, 0.05);
+  color: var(--ct-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+body.coding-dark .learn-track-card {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.32);
+}
+
+/* The left rail. Thicker so it reads on a pale card, where a 4px strip vanished. */
+.learn-track-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: var(--learn-track-accent);
+}
+
+/* The card IS a <button>, so the app-wide `.coding-app :is(button, ...):hover`
+   rule in CodingTutor.css (loaded later, all !important) otherwise repaints the
+   whole card: blue background, blue border, blue TEXT, and a 26px glow. That is
+   the "everything turned blue on hover" bug. Neutralize that rule here and keep
+   only the intended lift + accent border + soft shadow. Same source-order fix as
+   the segmented toggle pills. */
+/* IMPORTANT — specificity, not just source order. The app-wide rule is
+   `.coding-app :is(button, ...):hover:not(:disabled)`, which computes to (0,4,0)
+   with !important. A bare `.learn-track-card:hover:not(:disabled)` is only (0,3,0),
+   so it LOSES even with !important — that was why the card still went blue. These
+   resets are scoped under `.coding-app` to reach (0,5,0) and win outright. */
+
+/* The app-wide rule also forces `transition: ... color 120ms ... !important`. Even
+   though our reset pins the color, that 120ms color transition animates the blue
+   in and back out for one hover frame — the "quick flash". Override the transition
+   so color/background change INSTANTLY; only the lift and shadow ease. */
+.coding-app .learn-track-card {
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease !important;
+}
+
+/* The app-wide rule sets `background-color: var(--ct-hover-bg) !important` as a
+   SEPARATE longhand. Our `background` shorthand resets background-color to
+   transparent, so that orange longhand shows THROUGH our transparent gradient —
+   that was the "whole card turns orange on hover". Pin background-color explicitly. */
+.coding-app .learn-track-card,
+.coding-app .learn-tracks .learn-track-card:hover:not(:disabled) {
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      color-mix(in srgb, var(--learn-track-accent) 12%, transparent),
+      transparent 55%
+    ),
+    var(--ct-panel) !important;
+  background-color: var(--ct-panel) !important;
+  color: var(--ct-text) !important;
+}
+
+.coding-app .learn-tracks .learn-track-card:hover:not(:disabled) {
+  transform: translateY(-3px) !important;
+  border-color: var(--learn-track-accent) !important;
+  /* Deepen the resting shadow, tinted to the card's OWN accent (green/blue), never
+     the global orange --ct-hover-border the app-wide rule would use. */
+  box-shadow: 0 16px 32px color-mix(in srgb, var(--learn-track-accent) 20%, transparent) !important;
+}
+
+/* The blue "link" look was the button's hover `color` cascading into the text
+   spans. Pin each span so a stray inherited color can never repaint them. */
+.coding-app .learn-tracks .learn-track-card:hover:not(:disabled) .learn-track-title,
+.coding-app .learn-tracks .learn-track-card:hover:not(:disabled) .learn-track-stat-num {
+  color: var(--ct-text) !important;
+}
+.coding-app .learn-tracks .learn-track-card:hover:not(:disabled) .learn-track-description {
+  color: color-mix(in srgb, var(--ct-text) 78%, transparent) !important;
+}
+.coding-app .learn-tracks .learn-track-card:hover:not(:disabled) .learn-track-stat-label {
+  color: color-mix(in srgb, var(--ct-text) 60%, transparent) !important;
+}
+.coding-app .learn-tracks .learn-track-card:hover:not(:disabled) .learn-track-kicker,
+.coding-app .learn-tracks .learn-track-card:hover:not(:disabled) .learn-track-cta {
+  color: var(--learn-track-accent) !important;
+}
+
+.learn-track-card:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--learn-track-accent) 50%, transparent);
+  outline-offset: 3px;
+}
+
+/* Beginner is where most students should start, so it leads: a slightly heavier
+   accent wash and a thicker rail. Intermediate stays quieter, the deliberate
+   second choice rather than a mirror-image twin. */
+/* Beginner leads, but through a CORNER GLOW + thicker rail + stronger border — not a
+   full green flood, which on a white card read as "selected/success" rather than
+   "recommended". The wash is pulled into the top-right corner and kept light. */
+.learn-track-card.is-beginner {
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      color-mix(in srgb, var(--learn-track-accent) 16%, transparent),
+      transparent 42%
+    ),
+    var(--ct-panel);
+  border-color: color-mix(in srgb, var(--learn-track-accent) 40%, var(--ct-border));
+}
+
+.coding-app .learn-track-card.is-beginner,
+.coding-app .learn-track-card.is-beginner:hover:not(:disabled) {
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      color-mix(in srgb, var(--learn-track-accent) 16%, transparent),
+      transparent 42%
+    ),
+    var(--ct-panel) !important;
+  background-color: var(--ct-panel) !important;
+}
+
+.learn-track-card.is-beginner::before {
+  width: 7px;
+}
+
+/* The kicker is a LABEL, so it should whisper, not shout. Dropped the filled pill
+   and the 800 weight — it was out-shouting the title beneath it. Now a quiet
+   accent-tinted tag that ranks below the headline. */
+.learn-track-kicker {
+  display: inline-flex;
+  margin-bottom: 14px;
+  color: var(--learn-track-accent);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+/* The headline. It leads the card, so it is clearly the biggest, boldest thing —
+   above the stat number, not tied with it. Tight to its description below (they
+   are one unit). */
+.learn-track-title {
+  margin-bottom: 7px;
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: var(--ct-text);
+}
+
+/* Brighter than the muted grey it was — this copy tells the student what the track
+   IS, so it should read as content, not footnote. */
+.learn-track-description {
+  color: color-mix(in srgb, var(--ct-text) 78%, transparent);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+/* The question count is the strongest selling point after the content fill, so it
+   reads as a stat (big tabular number + readable label), not as dim footnote text.
+   Extra top margin sets the stats apart from the title+description unit above. */
+.learn-track-stats {
+  display: flex;
+  gap: 30px;
+  margin-top: 22px;
+}
+
+.learn-track-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.learn-track-stat-num {
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ct-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Was 0.72rem muted grey and near-invisible on the gradient. Bumped size and
+   contrast so "practice questions" actually reads. */
+.learn-track-stat-label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  color: color-mix(in srgb, var(--ct-text) 60%, transparent);
+}
+
+.learn-track-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 24px;
+  color: var(--learn-track-accent);
+  font-size: 0.84rem;
+  font-weight: 750;
+}
+
+.learn-track-cta svg {
+  font-size: 0.72rem;
+  transition: transform 0.15s ease;
+}
+
+.learn-track-card:hover .learn-track-cta svg {
+  transform: translateX(3px);
+}
+
+@media (max-width: 700px) {
+  .learn-track-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .learn-track-card {
+    min-height: 230px;
+    padding: 20px;
+  }
+}
+
+
+/* Track chooser hierarchy: keep the decision focused and add useful context
+   without stretching two short cards across the full application canvas. */
+.learn-tracks {
+  width: min(100%, 1080px);
+  margin-inline: auto;
+}
+
+.learn-tracks-head {
+  max-width: 720px;
+}
+
+.learn-back-link {
+  font-size: 0.86rem;
+  color: color-mix(in srgb, var(--ct-text) 68%, transparent);
+}
+
+.learn-track-kicker {
+  font-size: 0.72rem;
+  opacity: 1;
+}
+
+.learn-track-topics {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 18px;
+  color: color-mix(in srgb, var(--ct-text) 72%, transparent);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.learn-track-topics-label {
+  color: var(--learn-track-accent);
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.learn-track-stat-label {
+  color: color-mix(in srgb, var(--ct-text) 68%, transparent);
+  font-size: 0.78rem;
+}
+
+@media (max-width: 700px) {
+  .learn-tracks {
+    width: 100%;
+  }
+
+  .learn-track-topics {
+    margin-top: 14px;
+  }
+}
+
+
+/* Keep the track chooser's back action quiet. The app-wide button hover adds an
+   orange fill and large glow to every button; navigation links should only get a
+   small blue tint and arrow movement. */
+.coding-app .learn-tracks .learn-back-link,
+.coding-app .learn-tracks .learn-back-link:hover:not(:disabled) {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.coding-app .learn-tracks .learn-back-link {
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: transparent !important;
+  background-color: transparent !important;
+  color: color-mix(in srgb, var(--ct-text) 68%, transparent) !important;
+}
+
+.coding-app .learn-tracks .learn-back-link:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ct-primary) 7%, transparent) !important;
+  background-color: color-mix(in srgb, var(--ct-primary) 7%, transparent) !important;
+  color: var(--ct-text) !important;
+  transform: none !important;
+}
+
+.coding-app .learn-tracks .learn-back-link:focus-visible {
+  outline-color: var(--ct-primary);
+}

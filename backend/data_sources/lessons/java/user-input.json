@@ -1,0 +1,123 @@
+{
+  "_note": "ORIGINAL content. Topic sequence follows the standard free Java text (Eck, 'Introduction to Programming Using Java', ch.2 on TextIO/Scanner input); a topic sequence is not copyrightable. No prose, examples, or exercises are copied from it: it is CC BY-NC-SA, and copying would bind CS Navigator's content to those terms permanently, including the NonCommercial clause. Every code example here was compiled and run on JDK 21, and each 'output' is the exact text the program printed.",
+  "title": "User Input",
+  "summary": "Read what the user types, and survive the two ways it goes wrong.",
+  "minutes": 8,
+  "error_classes": [
+    "runtime",
+    "syntax",
+    "wrong_answer"
+  ],
+  "refresher": "To read what someone types, you need a Scanner. Put `import java.util.Scanner;` at the top of the file, then build one with `Scanner sc = new Scanner(System.in);`. Ask it for the type you want: `nextInt()` for a whole number, `nextDouble()` for a decimal, `nextLine()` for a whole line of text. The catch is that `nextInt()` and `nextDouble()` read the number and stop, leaving the rest of the line unread. A `nextLine()` straight after one of them picks up that leftover and hands you an empty string.",
+  "refresher_code": "import java.util.Scanner;\n\nScanner sc = new Scanner(System.in);\nint age = sc.nextInt();\nsc.nextLine();          // eat the leftover newline\nString name = sc.nextLine();",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "So far your programs have known everything in advance. Every value was one you typed into the code yourself. A program that asks a question is different: it does not know the answer until someone is there to give it. In Java, the thing that reads typing is a `Scanner`. It does not come loaded by default, so you do two things before you can use one. Import it at the top of the file, then create one that is pointed at the keyboard."
+    },
+    {
+      "kind": "code",
+      "caption": "`System.in` is the keyboard. You hand it to the Scanner once, and from then on `sc` is the object you ask for input. Notice the prompt uses `print` and not `println`, so the cursor stays on the same line as the question. That is why the greeting appears right after the colon.",
+      "code": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n\n        System.out.print(\"Your name: \");\n        String name = sc.nextLine();\n\n        System.out.println(\"Hi, \" + name + \"!\");\n    }\n}",
+      "output": "Your name: Hi, Ada!"
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "Forgetting the import",
+      "body": "Leave out `import java.util.Scanner;` and the compiler stops with \"cannot find symbol\" pointing at the word `Scanner`. It is not saying Scanner does not exist. It is saying you never told it where to look. The import line goes above the `class` line, at the very top of the file."
+    },
+    {
+      "kind": "text",
+      "body": "From here on the examples show only the statements inside `main`. Assume the class wrapper and the import are still there, because they always have to be. One more thing to get used to: you do not read input in general. You read a specific type, and you pick the method that matches it."
+    },
+    {
+      "kind": "list",
+      "title": "The reading methods, and what each one gives back",
+      "items": [
+        "`nextInt()` reads one whole number and gives you an `int`.",
+        "`nextDouble()` reads one decimal number and gives you a `double`.",
+        "`nextLine()` reads everything up to the end of the line and gives you a `String`.",
+        "`next()` reads a single word, stopping at the first space."
+      ]
+    },
+    {
+      "kind": "code",
+      "caption": "Two numbers of different types, read with the matching method. The last line prints 42.0 rather than 42, because a `double` times an `int` is a `double`. Java keeps the more precise type.",
+      "code": "Scanner sc = new Scanner(System.in);\n\nSystem.out.print(\"GPA: \");\ndouble gpa = sc.nextDouble();\n\nSystem.out.print(\"Credits: \");\nint credits = sc.nextInt();\n\nSystem.out.println(\"GPA \" + gpa + \" over \" + credits + \" credits\");\nSystem.out.println(\"Points: \" + gpa * credits);",
+      "output": "GPA: Credits: GPA 3.5 over 12 credits\nPoints: 42.0"
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "The wrong method is caught before the program runs",
+      "body": "Write `int age = sc.nextLine();` and the program never starts. The compiler rejects it with \"incompatible types: String cannot be converted to int\", because `nextLine()` hands back a String and you asked to store it in an `int`. Java checks types while compiling, which is good news here: the mismatch is caught before a single prompt is printed or a single keystroke is read."
+    },
+    {
+      "kind": "text",
+      "body": "Now the bug this lesson exists for. Reading the code out loud will not reveal it, because the code looks completely reasonable. Picture the input as a long ribbon of characters, with the Enter key sitting on that ribbon as an invisible newline. `nextInt()` scans along, grabs the number, and stops the instant the number ends. It does not step over the newline. That newline is still sitting there, next in line. So when `nextLine()` runs, it reads from where it is to the end of the current line, finds nothing between here and the newline, and hands you an empty string. It never pauses for you to type."
+    },
+    {
+      "kind": "compare",
+      "caption": "The fix is one throwaway `sc.nextLine();` whose only job is to consume the leftover newline. You ignore what it returns. In the broken version the program does not even stop at the Name prompt, and that is the tell: if a prompt flashes past without waiting, an unread newline is why.",
+      "wrong_label": "Name comes back empty",
+      "wrong": "System.out.print(\"Age: \");\nint age = sc.nextInt();\n\nSystem.out.print(\"Name: \");\nString name = sc.nextLine();\n\nSystem.out.println(\"[\" + name + \"]\");\n// Age: Name: []",
+      "right_label": "Name is read",
+      "right": "System.out.print(\"Age: \");\nint age = sc.nextInt();\nsc.nextLine();   // eat the newline\n\nSystem.out.print(\"Name: \");\nString name = sc.nextLine();\n\nSystem.out.println(\"[\" + name + \"]\");\n// Age: Name: [Ada]"
+    },
+    {
+      "kind": "check",
+      "prompt": "The user types 90, presses Enter, types Great work, and presses Enter. What does this print?",
+      "code": "int score = sc.nextInt();\nString comment = sc.nextLine();\nSystem.out.println(\"Comment: [\" + comment + \"]\");",
+      "choices": [
+        "Comment: []",
+        "Comment: [Great work]",
+        "Comment: [90]",
+        "It crashes with an InputMismatchException"
+      ],
+      "answer_index": 0,
+      "why": "`nextInt()` takes the 90 and stops, leaving the newline from that first Enter unread. `nextLine()` then reads to the end of that same line, which is nothing at all, so `comment` is the empty string and the brackets print with nothing between them. The words Great work are still waiting on the next line, unread. Put a bare `sc.nextLine();` between the two lines and the comment arrives."
+    },
+    {
+      "kind": "text",
+      "body": "The same leftover explains a smaller oddity. `next()` reads one word and stops at the space after it, so a `nextLine()` afterwards returns the rest of that line with the space still attached. Reading `Ada Lovelace` with `next()` then `nextLine()` gives you `Ada`, then `\" Lovelace\"`, leading space included. Every one of these surprises comes from one fact: a reading method stops where it stops, and leaves the rest for the next one."
+    },
+    {
+      "kind": "code",
+      "caption": "The user typed the word twelve at a prompt that called `nextInt()`. Java cannot turn that into an `int`, so it throws an InputMismatchException and the program stops there. The line `You typed` never prints. This is a runtime error: the code compiled fine, and only the actual input broke it.",
+      "code": "System.out.print(\"How many credits? \");\nint credits = sc.nextInt();\nSystem.out.println(\"You typed \" + credits);",
+      "output": "How many credits? Exception in thread \"main\" java.util.InputMismatchException"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "A crash on input is not a crash in your code",
+      "body": "An InputMismatchException means the program asked for a number and got something else. Check the obvious cause first: are you reading the values in the same order the user is typing them? Asking for a name and an age but reading the age first will throw this every single time, and the fault is in the order, not in the Scanner."
+    },
+    {
+      "kind": "check",
+      "prompt": "The user types 2, a space, then 3, and presses Enter. What does this print?",
+      "code": "System.out.print(\"Enter two numbers: \");\nint a = sc.nextInt();\nint b = sc.nextInt();\nSystem.out.println(\"Sum: \" + a + b);",
+      "choices": [
+        "Enter two numbers: Sum: 23",
+        "Enter two numbers: Sum: 5",
+        "Enter two numbers: Sum: 2 3",
+        "It crashes, because two numbers on one line need two Enters"
+      ],
+      "answer_index": 0,
+      "why": "Both `nextInt()` calls work, and they read across the space happily, so `a` is 2 and `b` is 3. The trap is the last line. Java works left to right, and `\"Sum: \" + a` is a String joined to a number, which produces the String `\"Sum: 2\"`. Joining 3 to that gives `\"Sum: 23\"`. The `+` only adds when both sides are numbers; once a String is involved it glues instead. To get 5, do the arithmetic in its own parentheses: `\"Sum: \" + (a + b)`."
+    },
+    {
+      "kind": "list",
+      "title": "Working rules for reading input",
+      "items": [
+        "Import `java.util.Scanner` and create the Scanner once, near the top of `main`. One Scanner for the whole program is enough.",
+        "Prompt before every read, with `print` rather than `println`, so the user knows what you are waiting for.",
+        "Match the method to the type: `nextInt()` for `int`, `nextDouble()` for `double`, `nextLine()` for `String`.",
+        "After any `nextInt()`, `nextDouble()`, or `next()`, put a bare `sc.nextLine();` before your next `nextLine()`.",
+        "If a prompt appears but the program does not stop and wait, an unread newline is the reason.",
+        "If you get an InputMismatchException, compare the order you are reading values in against the order the user types them."
+      ]
+    }
+  ]
+}

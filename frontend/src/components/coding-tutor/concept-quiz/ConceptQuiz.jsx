@@ -12,9 +12,9 @@ import QuizLanguageLanding from "./QuizLanguageLanding";
 import QuizRunner from "./QuizRunner";
 
 // Top-level concept-quiz container. Driven by the route target parsed in
-// CodingTutor (view: "toggle" | "language" | "runner"). Renders the 4 language
-// cards, the language landing page, or the sequential runner, and owns the
-// data fetches that span views (question bank for the runner, grading).
+// CodingTutor (view: "quiz" | "language" | "runner" — "code" never reaches here).
+// Renders the 4 language cards, the language landing page, or the sequential runner,
+// and owns the data fetches that span views (question bank for the runner, grading).
 //
 // Navigation is URL-first: every view change calls a navigate-* callback that
 // rewrites the path, so Back/Forward and deep links work.
@@ -158,9 +158,13 @@ export default function ConceptQuiz({
   apiBase,
   target,
   languageLabels,
+  mastery,
   onNavigateToLanguages,
   onNavigateToLanguage,
   onNavigateToQuestion,
+  // "I don't remember this" → the full lesson on this exact topic. The in-quiz Learn tab
+  // is only a refresher; this is the escape hatch to the real thing.
+  onOpenLesson,
 }) {
   // The runner needs the full question list + the current index derived from
   // the questionId in the URL. Fetch the bank whenever we're in runner view for
@@ -201,7 +205,11 @@ export default function ConceptQuiz({
   const labelFor = (langId) =>
     languageLabels[langId] || langId.toUpperCase();
 
-  if (target.view === "toggle") {
+  // "quiz" is the bare /coding/practice landing (the Quiz front door). Anything this
+  // component doesn't recognize ALSO lands here rather than falling through to the
+  // runner below — a runner with no question bank renders "Loading quiz…" forever, so
+  // an unknown view used to hang the page silently instead of failing visibly.
+  if (target.view === "quiz" || target.view === "toggle" || !target.view) {
     return <LanguageCards apiBase={apiBase} onPickLanguage={onNavigateToLanguage} />;
   }
 
@@ -211,6 +219,7 @@ export default function ConceptQuiz({
         apiBase={apiBase}
         language={target.language}
         languageLabel={labelFor(target.language)}
+        mastery={mastery}
         onBackToLanguages={onNavigateToLanguages}
         onOpenQuestion={(category, questionId) =>
           onNavigateToQuestion(target.language, category, questionId)
@@ -241,6 +250,9 @@ export default function ConceptQuiz({
 
   return (
     <QuizRunner
+      apiBase={apiBase}
+      language={target.language}
+      category={target.category}
       categoryLabel={bank.category_label}
       questions={bank.questions}
       index={runnerIndex}
@@ -249,6 +261,7 @@ export default function ConceptQuiz({
         if (q) onNavigateToQuestion(target.language, target.category, q.id);
       }}
       onBackToCategory={() => onNavigateToLanguage(target.language)}
+      onOpenLesson={onOpenLesson}
       onGrade={(answers) =>
         gradeQuiz(apiBase, {
           language: target.language,

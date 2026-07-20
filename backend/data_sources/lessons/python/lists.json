@@ -1,0 +1,120 @@
+{
+  "_note": "ORIGINAL content. Topic sequence follows the standard free intro texts (Runestone FoPP ch.9, Think Python ch.10, OpenStax ch.6); sequences are not copyrightable. No prose, examples, or exercises are copied from any of them: all three are copyleft (GFDL / CC BY-NC-SA), and copying would bind CS Navigator's content to those terms.",
+  "title": "Lists / Arrays",
+  "summary": "Hold many values under one name, in order.",
+  "minutes": 7,
+  "error_classes": [
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "A list holds several values in order, written in square brackets: `scores = [88, 92, 75]`. You reach an item by its position, and positions start at 0, so `scores[0]` is the first one. `len(scores)` tells you how many items there are. Because counting starts at 0, the last valid position is always one less than the length. Lists can change after you make them: `.append(x)` adds to the end, `.pop()` removes the last item, and `.remove(x)` removes the first item equal to x.",
+  "refresher_code": "scores = [88, 92, 75]\nprint(scores[0])\nprint(scores[-1])\nprint(len(scores))\n# 88\n# 75\n# 3",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Sooner or later one variable stops being enough. Four test scores would mean four names to keep track of. Thirty students would mean thirty. A list lets you keep all of them under a single name, lined up in order, and get at any one of them when you need it."
+    },
+    {
+      "kind": "code",
+      "caption": "Square brackets make a list, and commas separate the items. `len()` counts them, which is how you find out how big a list is without going through it yourself.",
+      "code": "scores = [88, 92, 75, 100]\nprint(scores)\nprint(len(scores))",
+      "output": "[88, 92, 75, 100]\n4"
+    },
+    {
+      "kind": "text",
+      "body": "The items sit in a fixed order, and each one has a position number called its index. Here is the part that surprises people: Python starts counting at 0. The first item is at index 0, the second is at index 1, and so on. So a list of four items has positions 0, 1, 2, and 3."
+    },
+    {
+      "kind": "code",
+      "caption": "A negative index counts backwards from the end, so `-1` is the last item. It saves you from writing `students[len(students) - 1]` every time you want the final one.",
+      "code": "students = [\"Ada\", \"Grace\", \"Alan\", \"Katherine\"]\nprint(students[0])\nprint(students[2])\nprint(students[-1])",
+      "output": "Ada\nAlan\nKatherine"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "The length is one past the last index",
+      "body": "A list with 4 items has a length of 4, but its last index is 3. Asking for `scores[4]` reaches past the end and Python stops with an IndexError. The length is a count of items, not a position, and the two are always off by one. When you want the last item, ask for `scores[-1]` or `scores[len(scores) - 1]`."
+    },
+    {
+      "kind": "check",
+      "prompt": "What happens when this runs?",
+      "code": "colors = [\"red\", \"green\", \"blue\"]\nprint(colors[len(colors)])",
+      "choices": [
+        "It raises an IndexError",
+        "It prints blue",
+        "It prints red",
+        "It prints 3"
+      ],
+      "answer_index": 0,
+      "why": "`len(colors)` is 3, so this asks for `colors[3]`. The valid indexes are 0, 1, and 2, so index 3 is one step past the end and Python raises an IndexError. If you picked \"blue\", you reasoned that the length points at the last item, which is the exact assumption that causes this error. To get \"blue\", subtract one: `colors[len(colors) - 1]`, or just write `colors[-1]`."
+    },
+    {
+      "kind": "text",
+      "body": "Unlike a number or a string, a list can be changed after you create it. You do not rebuild it from scratch to add one thing. You reach into the list you already have and modify it in place."
+    },
+    {
+      "kind": "code",
+      "caption": "`.append()` adds to the end, `.remove()` deletes by value, and `.pop()` deletes the last item and hands it back to you. Notice that `.pop()` returns something while the other two return nothing useful.",
+      "code": "tasks = [\"read\", \"code\"]\ntasks.append(\"submit\")\nprint(tasks)\n\ntasks.remove(\"read\")\nprint(tasks)\n\nlast = tasks.pop()\nprint(last)\nprint(tasks)",
+      "output": "['read', 'code', 'submit']\n['code', 'submit']\nsubmit\n['code']"
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "remove takes a value, pop takes a position",
+      "body": "The two are easy to mix up. `tasks.remove(\"code\")` looks for the item \"code\" and deletes the first one it finds. `tasks.pop(0)` deletes whatever is sitting at position 0, no matter what it is. If you hand `.remove()` a value that is not in the list, Python raises a ValueError, so check with `in` first when you are not certain."
+    },
+    {
+      "kind": "code",
+      "caption": "Slicing takes a run of items and gives you a new list. The start is included and the stop is left out, which is the same rule `range()` follows, so it is the same off-by-one habit in a new place.",
+      "code": "letters = [\"a\", \"b\", \"c\", \"d\", \"e\"]\nprint(letters[1:4])\nprint(letters[:2])\nprint(letters[2:])",
+      "output": "['b', 'c', 'd']\n['a', 'b']\n['c', 'd', 'e']"
+    },
+    {
+      "kind": "code",
+      "caption": "A `for` loop walks a list without you ever mentioning an index, so there is no index to get wrong and no IndexError to trip over. The `in` keyword also answers a plain yes or no question: is this value anywhere in the list?",
+      "code": "prices = [4, 7, 2]\ntotal = 0\nfor p in prices:\n    total = total + p\nprint(total)\n\nprint(\"apple\" in [\"apple\", \"pear\"])\nprint(\"fig\" in [\"apple\", \"pear\"])",
+      "output": "13\nTrue\nFalse"
+    },
+    {
+      "kind": "compare",
+      "caption": "Removing items from a list while you loop over it makes the loop skip items. The loop tracks its place by position, so deleting an item shifts everything after it back by one, and the loop moves forward past the item that just slid into the empty spot. Build a new list instead and nothing shifts underneath you.",
+      "wrong_label": "Skips items",
+      "wrong": "nums = [1, 2, 2, 3, 2]\nfor n in nums:\n    if n == 2:\n        nums.remove(n)\nprint(nums)\n# [1, 3, 2]\n# two 2s left behind",
+      "right_label": "Keeps what you want",
+      "right": "nums = [1, 2, 2, 3, 2]\nkeep = []\nfor n in nums:\n    if n != 2:\n        keep.append(n)\nprint(keep)\n# [1, 3]\n# every 2 is gone"
+    },
+    {
+      "kind": "check",
+      "prompt": "This code is trying to delete every 2. It prints `[1, 3, 2]`. Why is a 2 still there?",
+      "code": "nums = [1, 2, 2, 3, 2]\nfor n in nums:\n    if n == 2:\n        nums.remove(n)\nprint(nums)",
+      "choices": [
+        "Removing an item shifts the rest left, so the loop steps over the item that moved into the gap",
+        "`.remove()` only ever deletes one item, no matter how many times you call it",
+        "The loop ends early because the list got shorter than it started",
+        "`.remove()` cannot delete numbers, only strings"
+      ],
+      "answer_index": 0,
+      "why": "The loop keeps its place by position. It checks position 1, finds a 2, and removes it. Everything after that slides one step to the left, but the loop still advances to position 2, so the 2 that just moved into position 1 is never looked at. `.remove()` worked fine every time you called it, which is why the second choice is tempting and still wrong. The real problem is that you changed the list out from under the loop. Loop over the list to decide what to keep, and put those items in a new list."
+    },
+    {
+      "kind": "callout",
+      "tone": "warning",
+      "title": "When a list result is close but not quite right",
+      "body": "A list that comes out one item short, or one item long, or missing exactly the values that sat next to each other, is almost always one of two bugs. Either an index is off by one, or you changed the list while looping over it. Print the list before and after the loop and compare. The difference usually names the bug for you."
+    },
+    {
+      "kind": "list",
+      "title": "Habits that keep lists out of trouble",
+      "items": [
+        "The first item is at index 0, and the last is at `len(lst) - 1`. Use `lst[-1]` and skip the arithmetic.",
+        "Loop with `for item in lst:` when you only need the values. A loop that never touches an index has no index to get wrong.",
+        "Avoid adding to or removing from a list while you loop over it. Build a new list of what you want to keep.",
+        "Check with `in` before calling `.remove()`, because removing something that is not there raises a ValueError.",
+        "Slices leave out the stop position: `lst[0:3]` gives you items 0, 1, and 2.",
+        "When a list surprises you, print it. Seeing the actual contents beats guessing at them."
+      ]
+    }
+  ]
+}

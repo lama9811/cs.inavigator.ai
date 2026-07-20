@@ -1,0 +1,253 @@
+{
+  "_note": "Original Debug Part 2 questions. Difficulty rises through edge cases, nested state, and multi-step logic while staying introductory.",
+  "questions": [
+    {
+      "id": "debug-p2-01",
+      "concept": "debug-2",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Empty input divides by zero",
+      "error_class": "runtime",
+      "prompt": "Which input exposes the bug, and what should be checked?",
+      "choices": [
+        "An empty collection; handle zero items before dividing",
+        "A one-item collection; skip the first value",
+        "Negative values; convert them to strings",
+        "Duplicate values; sort them first"
+      ],
+      "answer_index": 0,
+      "explanation": "The normal case hides the missing edge-case check. When there are no values, the divisor is zero. Decide what an empty average should mean before performing division.",
+      "variants": {
+        "python": {
+          "code": "def average(nums):\n    return sum(nums) / len(nums)"
+        },
+        "java": {
+          "code": "double average(int[] nums) {\n    int total = 0;\n    for (int n : nums) total += n;\n    return (double) total / nums.length;\n}"
+        },
+        "javascript": {
+          "code": "function average(nums) {\n  let total = 0;\n  for (const n of nums) total += n;\n  return total / nums.length;\n}"
+        },
+        "cpp": {
+          "code": "double average(int nums[], int size) {\n    int total = 0;\n    for (int i = 0; i < size; i++) total += nums[i];\n    return static_cast<double>(total) / size;\n}"
+        }
+      }
+    },
+    {
+      "id": "debug-p2-02",
+      "concept": "debug-2",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Row total never resets",
+      "error_class": "wrong_answer",
+      "prompt": "Why does the second row total include values from the first row?",
+      "choices": [
+        "rowTotal is initialized outside the outer loop",
+        "The inner loop should run only once",
+        "best must start at 1",
+        "Rows must be processed backward"
+      ],
+      "answer_index": 0,
+      "explanation": "State that belongs to one row must be reset for each row. Move rowTotal = 0 inside the outer loop before scanning the current row.",
+      "variants": {
+        "python": {
+          "code": "row_total = 0\nfor row in grid:\n    for value in row:\n        row_total += value\n    print(row_total)"
+        },
+        "java": {
+          "code": "int rowTotal = 0;\nfor (int[] row : grid) {\n    for (int value : row) rowTotal += value;\n    System.out.println(rowTotal);\n}"
+        },
+        "javascript": {
+          "code": "let rowTotal = 0;\nfor (const row of grid) {\n  for (const value of row) rowTotal += value;\n  console.log(rowTotal);\n}"
+        },
+        "cpp": {
+          "code": "int rowTotal = 0;\nfor (auto& row : grid) {\n    for (int value : row) rowTotal += value;\n    cout << rowTotal << endl;\n}"
+        }
+      }
+    },
+    {
+      "id": "debug-p2-03",
+      "concept": "debug-2",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Binary search discards the target",
+      "error_class": "wrong_answer",
+      "prompt": "What is wrong when the middle value is smaller than the target?",
+      "choices": [
+        "The lower bound should move to mid + 1, not mid - 1",
+        "The upper bound should always increase",
+        "The list should be searched from both ends",
+        "mid must always be zero"
+      ],
+      "answer_index": 0,
+      "explanation": "A middle value below the target means the target can only be to the right. Moving low backward discards the correct half and may repeat positions.",
+      "variants": {
+        "python": {
+          "code": "if nums[mid] < target:\n    low = mid - 1"
+        },
+        "java": {
+          "code": "if (nums[mid] < target) {\n    low = mid - 1;\n}"
+        },
+        "javascript": {
+          "code": "if (nums[mid] < target) {\n  low = mid - 1;\n}"
+        },
+        "cpp": {
+          "code": "if (nums[mid] < target) {\n    low = mid - 1;\n}"
+        }
+      }
+    },
+    {
+      "id": "debug-p2-04",
+      "concept": "debug-2",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Removing while moving forward",
+      "error_class": "wrong_answer",
+      "prompt": "Why can adjacent negative values be skipped?",
+      "choices": [
+        "Removing an item shifts the next value into the current index",
+        "Negative values cannot be compared",
+        "The loop must start at index 1",
+        "The collection becomes read-only after removal"
+      ],
+      "answer_index": 0,
+      "explanation": "After removal, later values shift left while the loop advances right. Iterate backward, adjust the index, or build a separate filtered collection.",
+      "variants": {
+        "python": {
+          "code": "i = 0\nwhile i < len(nums):\n    if nums[i] < 0:\n        nums.pop(i)\n    i += 1"
+        },
+        "java": {
+          "code": "for (int i = 0; i < nums.size(); i++) {\n    if (nums.get(i) < 0) nums.remove(i);\n}"
+        },
+        "javascript": {
+          "code": "for (let i = 0; i < nums.length; i++) {\n  if (nums[i] < 0) nums.splice(i, 1);\n}"
+        },
+        "cpp": {
+          "code": "for (int i = 0; i < nums.size(); i++) {\n    if (nums[i] < 0) nums.erase(nums.begin() + i);\n}"
+        }
+      }
+    },
+    {
+      "id": "debug-p2-05",
+      "concept": "debug-2",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "The best value fails on negatives",
+      "error_class": "wrong_answer",
+      "prompt": "Why can this report 0 when every value is negative?",
+      "choices": [
+        "best starts at a value that may not exist in the data",
+        "The comparison should use ==",
+        "The loop should skip negative values",
+        "The collection must be sorted first"
+      ],
+      "answer_index": 0,
+      "explanation": "Zero is not a safe initial maximum for all-negative input. Initialize best from the first actual value, then compare the remaining values.",
+      "variants": {
+        "python": {
+          "code": "best = 0\nfor n in [-8, -2, -5]:\n    if n > best: best = n\nprint(best)"
+        },
+        "java": {
+          "code": "int best = 0;\nfor (int n : new int[]{-8, -2, -5})\n    if (n > best) best = n;\nSystem.out.println(best);"
+        },
+        "javascript": {
+          "code": "let best = 0;\nfor (const n of [-8, -2, -5])\n  if (n > best) best = n;\nconsole.log(best);"
+        },
+        "cpp": {
+          "code": "int best = 0;\nfor (int n : {-8, -2, -5})\n    if (n > best) best = n;\ncout << best;"
+        }
+      }
+    },
+    {
+      "id": "debug-p2-06",
+      "concept": "debug-2",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Duplicate maximum breaks second place",
+      "error_class": "wrong_answer",
+      "prompt": "Why might this report the same value for largest and second largest?",
+      "choices": [
+        "It does not require the second value to be distinct from largest",
+        "It ignores values below zero",
+        "It begins at index 0",
+        "It uses two variables instead of a list"
+      ],
+      "answer_index": 0,
+      "explanation": "Second largest usually means a distinct value. The update must reject a value equal to largest before considering it for second place.",
+      "variants": {
+        "python": {
+          "code": "if n >= largest:\n    second = largest\n    largest = n"
+        },
+        "java": {
+          "code": "if (n >= largest) {\n    second = largest;\n    largest = n;\n}"
+        },
+        "javascript": {
+          "code": "if (n >= largest) {\n  second = largest;\n  largest = n;\n}"
+        },
+        "cpp": {
+          "code": "if (n >= largest) {\n    second = largest;\n    largest = n;\n}"
+        }
+      }
+    },
+    {
+      "id": "debug-p2-07",
+      "concept": "debug-2",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Prefix sum starts at the wrong place",
+      "error_class": "wrong_answer",
+      "prompt": "Why is the first output value already too large?",
+      "choices": [
+        "total should start at 0, not at the first value before the loop",
+        "The loop must begin with the last value",
+        "The output collection should start with 1",
+        "Addition should be multiplication"
+      ],
+      "answer_index": 0,
+      "explanation": "The loop adds the first value itself, so preloading total with that same value counts it twice. Start at zero or skip the first iteration deliberately.",
+      "variants": {
+        "python": {
+          "code": "nums = [2, 3, 5]\ntotal = nums[0]\nrunning = []\nfor n in nums:\n    total += n\n    running.append(total)"
+        },
+        "java": {
+          "code": "int[] nums = {2, 3, 5};\nint total = nums[0];\nfor (int n : nums) {\n    total += n;\n    running.add(total);\n}"
+        },
+        "javascript": {
+          "code": "const nums = [2, 3, 5];\nlet total = nums[0];\nconst running = [];\nfor (const n of nums) {\n  total += n;\n  running.push(total);\n}"
+        },
+        "cpp": {
+          "code": "vector<int> nums = {2, 3, 5};\nint total = nums[0];\nvector<int> running;\nfor (int n : nums) {\n    total += n;\n    running.push_back(total);\n}"
+        }
+      }
+    },
+    {
+      "id": "debug-p2-08",
+      "concept": "debug-2",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Palindrome compares the same side",
+      "error_class": "wrong_answer",
+      "prompt": "Why does this fail to compare mirrored characters?",
+      "choices": [
+        "Both indexes point from the left; the second must count from the right",
+        "Strings cannot be indexed",
+        "The loop must inspect characters twice",
+        "The comparison should use assignment"
+      ],
+      "answer_index": 0,
+      "explanation": "A palindrome check pairs position i with length - i - 1. Using i + 1 only compares neighboring characters on the same side.",
+      "variants": {
+        "python": {
+          "code": "for i in range(len(text) // 2):\n    if text[i] != text[i + 1]:\n        return False"
+        },
+        "java": {
+          "code": "for (int i = 0; i < text.length() / 2; i++) {\n    if (text.charAt(i) != text.charAt(i + 1)) return false;\n}"
+        },
+        "javascript": {
+          "code": "for (let i = 0; i < text.length / 2; i++) {\n  if (text[i] !== text[i + 1]) return false;\n}"
+        },
+        "cpp": {
+          "code": "for (int i = 0; i < text.size() / 2; i++) {\n    if (text[i] != text[i + 1]) return false;\n}"
+        }
+      }
+    }
+  ]
+}

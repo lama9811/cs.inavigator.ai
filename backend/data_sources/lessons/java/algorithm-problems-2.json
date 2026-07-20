@@ -1,0 +1,67 @@
+{
+  "_note": "ORIGINAL CS Navigator content added to align Learn with the existing Part 2 quiz category. No source prose, examples, or exercises were copied.",
+  "title": "Algorithm Problems: Part 2",
+  "summary": "Coordinate related state and guard unavailable candidates.",
+  "minutes": 7,
+  "error_classes": [
+    "wrong_answer",
+    "runtime",
+    "timeout"
+  ],
+  "refresher": "A multi-step Java algorithm may preserve a best value and index or a total and count. Define what each variable means after a pass, including empty input and ties.",
+  "refresher_code": "int best = 0;\nfor (int i = 1; i < values.length; i++) {\n    if (values[i] > values[best]) best = i;\n}",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A multi-step Java algorithm may preserve a best value and index or a total and count. Define what each variable means after a pass, including empty input and ties. Coordinate related state and guard unavailable candidates."
+    },
+    {
+      "kind": "code",
+      "caption": "The first array item initializes the candidate, and the empty guard prevents invalid access.",
+      "code": "static int largestIndex(int[] values) {\n    if (values.length == 0) return -1;\n    int best = 0;\n    for (int i = 1; i < values.length; i++) {\n        if (values[i] > values[best]) best = i;\n    }\n    return best;\n}",
+      "output": "Returns 1 for {4, 9, 7}"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Track the state",
+      "body": "An empty array has no element zero, so define its result before initializing the candidate from array data."
+    },
+    {
+      "kind": "check",
+      "prompt": "Why does `i` start at one?",
+      "code": "",
+      "choices": [
+        "zero already initialized best",
+        "arrays begin at one",
+        "only odd indexes matter",
+        "it skips negatives"
+      ],
+      "answer_index": 0,
+      "why": "Index zero has already supplied the current candidate, leaving later elements to compare."
+    },
+    {
+      "kind": "check",
+      "prompt": "With `>`, which equal maximum stays?",
+      "code": "int[] values = {8, 3, 8};",
+      "choices": [
+        "the first",
+        "the last",
+        "both indexes",
+        "no result"
+      ],
+      "answer_index": 0,
+      "why": "Equality does not replace the stored index when the update condition uses greater-than."
+    },
+    {
+      "kind": "list",
+      "title": "Algorithm Problems: Part 2 checklist",
+      "items": [
+        "Explain each variable.",
+        "Guard zero length.",
+        "Set tie behavior.",
+        "Trace the state table."
+      ]
+    }
+  ]
+}

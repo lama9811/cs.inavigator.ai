@@ -1,0 +1,124 @@
+{
+  "_note": "ORIGINAL content. Topic sequence follows the standard free intro texts (Runestone FoPP ch.5, Think Python ch.5, OpenStax ch.4); sequences are not copyrightable. No prose, examples, or exercises are copied from any of them: all three are copyleft (GFDL / CC BY-NC-SA), and copying would bind CS Navigator's content to those terms.",
+  "title": "Conditionals",
+  "summary": "Let your program choose what to do next.",
+  "minutes": 6,
+  "error_classes": [
+    "syntax",
+    "wrong_answer"
+  ],
+  "refresher": "An `if` statement runs its indented body only when its condition is true. `elif` offers another condition to try, and `else` catches everything left over. The line ends in a colon, and the indented lines under it are the body. Python checks the branches in order and stops at the first one that is true, so it never runs more than one branch in a chain. Use `==` to compare two values. A single `=` assigns instead, and Python will not let you put a bare `=` between the two values you are comparing.",
+  "refresher_code": "score = 85\nif score >= 90:\n    print(\"A\")\nelif score >= 80:\n    print(\"B\")\nelse:\n    print(\"C\")\n# prints B",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "So far your programs run every line, top to bottom, every time. A conditional lets them make a choice. You give Python a question that is either true or false, and Python runs some lines only when the answer is true."
+    },
+    {
+      "kind": "code",
+      "caption": "The condition sits between `if` and the colon. When it is true, the indented line runs. When it is false, Python skips it and moves on as if it were not there.",
+      "code": "age = 20\nif age >= 18:\n    print(\"You can vote.\")\nprint(\"Done.\")",
+      "output": "You can vote.\nDone."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "The colon and the indentation are both part of the sentence",
+      "body": "Two pieces of punctuation do real work here. The colon at the end of the `if` line says \"the body comes next\". The indentation says which lines are that body. Un-indent a line and it leaves the `if`, which means it runs every time, whether the condition was true or not. Forgetting the colon is a syntax error, and Python will point at the line for you."
+    },
+    {
+      "kind": "text",
+      "body": "The condition is just a question with a yes or no answer. You build it with a comparison operator. Each one hands back either True or False, and that is the only thing `if` cares about."
+    },
+    {
+      "kind": "list",
+      "title": "The comparison operators",
+      "items": [
+        "`==` is equal to. `x == 5` asks whether x holds 5.",
+        "`!=` is not equal to.",
+        "`<` and `>` are less than and greater than.",
+        "`<=` and `>=` are less than or equal to, and greater than or equal to.",
+        "They work on text too. `name == \"Ada\"` is a fair question to ask."
+      ]
+    },
+    {
+      "kind": "compare",
+      "caption": "Inside a condition you are always asking a question, never storing a value, so you want the double equals. Get it wrong and Python stops before the program starts, which is the friendliest outcome available: this is one mistake that cannot hide from you.",
+      "wrong_label": "Syntax error",
+      "wrong": "grade = 90\nif grade = 90:\n    print(\"Perfect\")\n# one =, so Python\n# cannot even parse\n# the line",
+      "right_label": "Works",
+      "right": "grade = 90\nif grade == 90:\n    print(\"Perfect\")\n# two ==, so Python\n# reads it as a\n# question",
+      "output": "Perfect"
+    },
+    {
+      "kind": "text",
+      "body": "`else` is the catch-all. It has no condition of its own, because it only runs when the `if` above it turned out false. Two outcomes are often not enough, though, and that is what `elif` is for. It is short for \"else if\", and it offers another condition to try. You can stack as many `elif` branches as you need between the `if` and the `else`."
+    },
+    {
+      "kind": "code",
+      "caption": "Python walks down the chain and tests each condition in turn. Here the first one is false and the second is true, so it prints B and never looks at the rest.",
+      "code": "score = 85\nif score >= 90:\n    print(\"A\")\nelif score >= 80:\n    print(\"B\")\nelif score >= 70:\n    print(\"C\")\nelse:\n    print(\"Not passing yet\")",
+      "output": "B"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "A chain stops at the first true branch",
+      "body": "Once one branch runs, Python leaves the whole chain. It does not keep checking the others, even when they would also be true. A score of 95 is both above 90 and above 80, and it still only prints A. That is why order matters so much: put the strictest condition first. Flip those two branches around and every A student in your class gets a B, and the code will look perfectly reasonable while it does it."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does this print?",
+      "code": "score = 95\nif score >= 80:\n    print(\"B\")\nelif score >= 90:\n    print(\"A\")\nelse:\n    print(\"C\")",
+      "choices": [
+        "B",
+        "A",
+        "B and A, on two lines",
+        "C"
+      ],
+      "answer_index": 0,
+      "why": "Python tests the branches in order. `score >= 80` is the first one it reaches, and 95 is indeed at least 80, so it prints B and leaves the chain. The `elif score >= 90` branch is never even tested. If you picked A, you read the code the way a human reads a grading table, looking for the best match. Python does not look for the best match. It takes the first true one and stops, which is why the strictest condition has to go first."
+    },
+    {
+      "kind": "text",
+      "body": "You can also join conditions together. `and` is true only when both sides are true. `or` is true when at least one side is true. `not` flips a condition to its opposite."
+    },
+    {
+      "kind": "code",
+      "caption": "Each side of `and` has to be a complete question on its own. Writing `if age >= 13 and <= 19` looks reasonable and does not work, because `<= 19` by itself is not asking about anything.",
+      "code": "age = 16\n\nif age >= 13 and age <= 19:\n    print(\"Teen price\")\n\nif age < 5 or age >= 65:\n    print(\"Free admission\")",
+      "output": "Teen price"
+    },
+    {
+      "kind": "code",
+      "caption": "An `if` can live inside another `if`. That is called nesting, and it says \"first this has to be true, and only then does the next question matter\". Indent one more level for each layer you go in. Here the ticket is only checked for people old enough to get in.",
+      "code": "age = 20\nhas_ticket = False\n\nif age >= 18:\n    if has_ticket:\n        print(\"Come in\")\n    else:\n        print(\"Buy a ticket first\")\nelse:\n    print(\"Sorry, adults only\")",
+      "output": "Buy a ticket first"
+    },
+    {
+      "kind": "check",
+      "prompt": "One line in this code is a syntax error. Which one, and why?",
+      "code": "hour = 9\nif hour < 12\n    print(\"Good morning\")\nelse:\n    print(\"Good afternoon\")",
+      "choices": [
+        "`if hour < 12` is missing its colon",
+        "`else:` should be `elif:`",
+        "`print(\"Good morning\")` is indented too far",
+        "Nothing is wrong, it prints Good morning"
+      ],
+      "answer_index": 0,
+      "why": "Every `if`, `elif`, and `else` line ends in a colon, and this one does not. Python stops before running a single line and reports a syntax error on that line. The indentation is fine, and `else` is exactly right for the catch-all here. When Python points at an `if` line and says something about invalid syntax, the colon is the first thing to look at, closely followed by a single `=` where you meant `==`."
+    },
+    {
+      "kind": "list",
+      "title": "Habits that keep conditionals honest",
+      "items": [
+        "Put the strictest condition first in a chain, since the first true branch wins.",
+        "Use `==` to compare and `=` to assign. Inside an `if`, you are always comparing.",
+        "End every `if`, `elif`, and `else` line with a colon.",
+        "Give each side of `and` and `or` its own complete comparison.",
+        "Test the edges. If the rule is `score >= 90`, try exactly 90, and try 89.",
+        "When nesting gets more than two levels deep, ask whether an `and` would say the same thing more simply."
+      ]
+    }
+  ]
+}

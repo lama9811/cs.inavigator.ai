@@ -235,7 +235,7 @@ def _extract_memories(transcript: str, existing_memories: str, client=None) -> l
         from google import genai
 
         if client is None:
-            project = os.getenv("GOOGLE_CLOUD_PROJECT", "csnavigator-vertex-ai")
+            project = os.getenv("GOOGLE_CLOUD_PROJECT", "cs-navigator-498115")
             try:
                 client = genai.Client(vertexai=True, project=project, location="us-central1")
             except Exception:

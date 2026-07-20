@@ -104,7 +104,53 @@ function TestCaseRow({ test, index, onAsk }) {
   );
 }
 
-function TerminalTestsPane({ output, tests, onExplainFailedTests, onRequestReview, onExplainOneTest }) {
+function SolutionReview({ review }) {
+  const [open, setOpen] = useState(false);
+  if (!review?.studentCode || !review?.reference) return null;
+
+  const referenceLooksLikeCode = /\n|\b(def|class|function|return)\b|[{};]/.test(review.reference);
+  return (
+    <section className="terminal-solution-review">
+      <button
+        type="button"
+        className="terminal-solution-review-toggle"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <span>
+          <strong>Review your passing solution</strong>
+          <small>Compare your work with one reference approach.</small>
+        </span>
+        <span aria-hidden="true">{open ? "Hide" : "Show"}</span>
+      </button>
+      {open ? (
+        <div className="terminal-solution-review-body">
+          <p>
+            Your code passed the authored tests. The reference is another approach,
+            not the only correct answer.
+          </p>
+          <div className="terminal-solution-columns">
+            <div>
+              <span>Your solution</span>
+              <pre><code>{review.studentCode}</code></pre>
+            </div>
+            <div>
+              <span>Reference approach</span>
+              {referenceLooksLikeCode
+                ? <pre><code>{review.reference}</code></pre>
+                : <p className="terminal-reference-note">{review.reference}</p>}
+            </div>
+          </div>
+          {review.complexity ? (
+            <p className="terminal-complexity-note"><strong>Complexity:</strong> {review.complexity}</p>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function TerminalTestsPane({ output, tests, onExplainFailedTests, onRequestReview, onExplainOneTest, solutionReview }) {
   const hasSummary = typeof output.passed === "number" && typeof output.total === "number";
   const hasFailedTests = tests.some(test => !test.passed);
 
@@ -173,6 +219,7 @@ function TerminalTestsPane({ output, tests, onExplainFailedTests, onRequestRevie
           Test cases will appear here after you run a local practice problem.
         </div>
       )}
+      {output.status === "passed" ? <SolutionReview review={solutionReview} /> : null}
     </section>
   );
 }
@@ -187,6 +234,7 @@ export default function TerminalPanel({
   onExplainError,
   onExplainOneTest,
   onRequestReview,
+  solutionReview,
 }) {
   const output = typeof testOutput === "string" ? { status: "ready", message: testOutput } : (testOutput || {});
   const tests = output.tests || [];
@@ -226,6 +274,7 @@ export default function TerminalPanel({
           onExplainFailedTests={onExplainFailedTests}
           onRequestReview={onRequestReview}
           onExplainOneTest={onExplainOneTest}
+          solutionReview={solutionReview}
         />
       </div>
     </div>

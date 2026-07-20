@@ -1,0 +1,89 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Strings",
+  "summary": "Store text, read individual characters, and build new strings.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "`std::string` stores text. Indexes begin at zero, `.size()` gives the character count, and `+` joins compatible strings. Include `<string>` before using this type.",
+  "refresher_code": "#include <string>\nstd::string name = \"Ada\";\nchar first = name[0];",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Use `std::string` for words and sentences. Include `<string>`, then create a value such as `std::string name = \"Ada\";`. A single `char` stores only one character, while a string stores many."
+    },
+    {
+      "kind": "text",
+      "body": "String positions start at zero. In `\"code\"`, index zero is `c` and index three is `e`. `.size()` returns the number of characters, so the final valid index is one less than the size. Check that a string is not empty before asking for its last character."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Strings feel familiar from Python",
+      "body": "Python and C++ strings both start indexing at zero. Python writes `len(word)`, while C++ writes `word.size()`. C++ also places the type in the `std` library namespace, which is why its full name is `std::string`."
+    },
+    {
+      "kind": "code",
+      "caption": "The first bracket reads the first character. substr starts at index one and takes three characters.",
+      "code": "#include <iostream>\n#include <string>\n\nint main() {\n  std::string word = \"campus\";\n  std::cout << word[0] << \"\\n\";\n  std::cout << word.substr(1, 3) << \"\\n\";\n}",
+      "output": "c\namp"
+    },
+    {
+      "kind": "compare",
+      "caption": "Check that text exists before reading its final character.",
+      "wrong_label": "Common mistake",
+      "wrong": "char last = text[text.size() - 1]; // unsafe when empty",
+      "right_label": "Clearer version",
+      "right": "if (!text.empty()) {\n  char last = text.back();\n}"
+    },
+    {
+      "kind": "text",
+      "body": "For a nonempty word, `back()` returns the final character. An empty string has no final character, so the `if` condition skips that access. Remember that a size is a count, not a position."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "The size is one past the last index",
+      "body": "A four-character string has a size of four but valid indexes from zero through three. `text[text.size()]` goes one position beyond the string."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is `std::string(\"Ada\").size()`?",
+      "code": "",
+      "choices": [
+        "3",
+        "2",
+        "4",
+        "0"
+      ],
+      "answer_index": 0,
+      "why": "The string contains three characters, so its size is three."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does `substr(1,2)` return from `\"code\"`?",
+      "code": "",
+      "choices": [
+        "\"od\"",
+        "\"ode\"",
+        "\"co\"",
+        "\"d\""
+      ],
+      "answer_index": 0,
+      "why": "The call starts at index one and takes two characters, producing od."
+    },
+    {
+      "kind": "list",
+      "title": "Strings checklist",
+      "items": [
+        "Include the string header.",
+        "Count indexes from zero.",
+        "Distinguish count from final index.",
+        "Check emptiness before using the last character."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}

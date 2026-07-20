@@ -1,0 +1,589 @@
+/* Scholarships & Internships page.
+   Navy/blue palette to match the other Tools pages (Advising/Planner/Curriculum).
+   Light-only, same as those — dark mode is Coding-Tutor-only at the moment. */
+.sch-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 28px 24px 80px;
+  color: var(--text-main, #1a2438);
+}
+
+/* Header */
+.sch-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 6px;
+  font-size: 1.7rem;
+  color: #0B2545;
+}
+.sch-sub {
+  margin: 0 0 22px;
+  color: var(--text-muted, #5a6472);
+  font-size: 0.92rem;
+  max-width: 62ch;
+}
+
+/* Search bar */
+.sch-search { display: flex; gap: 10px; margin-bottom: 14px; }
+.sch-input {
+  flex: 1; min-width: 0;
+  padding: 11px 14px;
+  border: 1.5px solid rgba(0,0,0,0.14);
+  border-radius: 10px;
+  font-size: 0.92rem;
+  background: #fff;
+  color: inherit;
+}
+.sch-input:focus {
+  outline: none;
+  border-color: #4285F4;
+  box-shadow: 0 0 0 3px rgba(66,133,244,0.14);
+}
+.sch-input:disabled { background: #f4f5f7; cursor: not-allowed; }
+.sch-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 11px 20px;
+  border: none; border-radius: 10px;
+  background: #0B2545; color: #fff;
+  font-size: 0.9rem; font-weight: 600;
+  cursor: pointer;
+}
+.sch-btn:hover:not(:disabled) { background: #143a6b; }
+.sch-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* Example prompts */
+.sch-examples {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-bottom: 20px;
+}
+.sch-examples-label { font-size: 0.82rem; color: var(--text-muted, #6b7280); }
+.sch-chip {
+  padding: 6px 12px;
+  border: 1.5px solid rgba(0,0,0,0.12);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.8rem; color: #35507d;
+  cursor: pointer;
+}
+.sch-chip:hover { border-color: #4285F4; background: rgba(66,133,244,0.06); }
+
+/* Notices */
+.sch-notice {
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(66,133,244,0.3);
+  background: rgba(66,133,244,0.07);
+  font-size: 0.87rem;
+}
+.sch-notice-warn {
+  border-color: rgba(214,158,46,0.4);
+  background: rgba(214,158,46,0.1);
+}
+.sch-notice-error {
+  border-color: rgba(161,45,45,0.35);
+  background: rgba(161,45,45,0.08);
+  color: #8c2626;
+}
+.sch-status {
+  padding: 22px 0;
+  color: var(--text-muted, #6b7280);
+  font-size: 0.9rem;
+}
+
+/* Urgency groups */
+.sch-group { margin-bottom: 28px; }
+.sch-group-head {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 12px;
+  padding-bottom: 7px;
+  border-bottom: 2px solid rgba(0,0,0,0.08);
+  font-size: 1.05rem;
+}
+/* The border colour IS the signal — closing soon reads as urgent at a glance. */
+.sch-group-urgent   { border-bottom-color: #c0392b; color: #96271b; }
+.sch-group-upcoming { border-bottom-color: #d69e2e; color: #8a6516; }
+.sch-group-open     { border-bottom-color: #2f8f4e; color: #226b3a; }
+.sch-group-hint {
+  font-size: 0.76rem; font-weight: 500;
+  color: var(--text-muted, #6b7280);
+}
+
+/* Cards */
+.sch-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.sch-card {
+  padding: 16px 18px;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 12px;
+  background: #fff;
+}
+.sch-card-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; margin-bottom: 6px;
+}
+.sch-card-name { margin: 0; font-size: 1rem; color: #0B2545; }
+.sch-rec {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(214,158,46,0.15);
+  color: #8a6516;
+  font-size: 0.68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.03em;
+  vertical-align: middle;
+}
+.sch-kind {
+  flex: none;
+  padding: 3px 9px; border-radius: 999px;
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.sch-kind-scholarship { background: rgba(66,133,244,0.12); color: #2a5db0; }
+.sch-kind-internship  { background: rgba(47,143,78,0.12);  color: #226b3a; }
+
+.sch-award { margin: 0 0 6px; font-weight: 600; color: #226b3a; font-size: 0.9rem; }
+.sch-why {
+  margin: 0 0 10px;
+  font-size: 0.86rem; font-style: italic;
+  color: var(--text-muted, #5a6472);
+}
+
+.sch-meta { margin: 0 0 12px; display: grid; gap: 6px; }
+.sch-meta div { display: flex; gap: 8px; font-size: 0.85rem; }
+.sch-meta dt {
+  flex: none; width: 78px;
+  font-weight: 600; color: var(--text-muted, #6b7280);
+}
+.sch-meta dd { margin: 0; min-width: 0; }
+.sch-days { color: #96271b; font-weight: 600; }
+
+.sch-apply {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.85rem; font-weight: 600;
+  color: #2a5db0; text-decoration: none;
+}
+.sch-apply:hover { text-decoration: underline; }
+
+/* Footer note + sources */
+.sch-note {
+  margin: 22px 0 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(66,133,244,0.06);
+  font-size: 0.87rem;
+}
+.sch-sources { margin-top: 16px; font-size: 0.84rem; }
+.sch-sources summary {
+  cursor: pointer;
+  color: var(--text-muted, #6b7280);
+}
+.sch-sources ul { margin: 10px 0 0; padding-left: 18px; }
+.sch-sources li { margin-bottom: 5px; }
+.sch-sources a { color: #2a5db0; word-break: break-all; }
+
+/* Tabs: Search / My Scholarships */
+.sch-tabs {
+  display: flex; gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 1.5px solid rgba(0,0,0,0.08);
+}
+.sch-tab {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 16px;
+  border: none;
+  border-bottom: 2.5px solid transparent;
+  background: none;
+  font-size: 0.9rem; font-weight: 600;
+  color: var(--text-muted, #6b7280);
+  cursor: pointer;
+  margin-bottom: -1.5px;
+}
+.sch-tab:hover { color: #2a5db0; }
+.sch-tab.is-active { color: #0B2545; border-bottom-color: #0B2545; }
+.sch-tab-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 999px;
+  background: #0B2545; color: #fff;
+  font-size: 0.68rem; font-weight: 700;
+}
+
+/* Card actions row (apply link + save button) */
+.sch-card-actions {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-top: 4px;
+}
+.sch-card-actions .sch-apply { margin-right: auto; }
+
+/* Save / Saved toggle */
+.sch-save {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 13px;
+  border: 1.5px solid rgba(66,133,244,0.4);
+  border-radius: 8px;
+  background: #fff;
+  color: #2a5db0;
+  font-size: 0.83rem; font-weight: 600;
+  cursor: pointer;
+}
+.sch-save:hover:not(:disabled) { background: rgba(66,133,244,0.08); }
+.sch-save.is-saved {
+  border-color: #0B2545;
+  background: #0B2545;
+  color: #fff;
+}
+.sch-save:disabled { opacity: 0.6; cursor: default; }
+
+/* Hide/dismiss — quiet, secondary; it removes the card from future searches */
+.sch-dismiss {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  border: 1.5px solid rgba(0,0,0,0.12);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text-muted, #6b7280);
+  font-size: 0.83rem; font-weight: 600;
+  cursor: pointer;
+}
+.sch-dismiss:hover:not(:disabled) {
+  border-color: rgba(161,45,45,0.4);
+  background: rgba(161,45,45,0.06);
+  color: #8a2525;
+}
+.sch-dismiss:disabled { opacity: 0.6; cursor: default; }
+
+/* Saved cards */
+.sch-saved-card.is-expired { opacity: 0.7; }
+.sch-days.is-expired { color: #96271b; }
+
+.sch-status-pick {
+  display: inline-flex; align-items: center; gap: 7px;
+  margin-right: auto;
+}
+.sch-status-label {
+  font-size: 0.78rem; font-weight: 600;
+  color: var(--text-muted, #6b7280);
+}
+.sch-status-select {
+  padding: 5px 9px;
+  border: 1.5px solid rgba(0,0,0,0.16);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.82rem; font-weight: 600;
+  color: #35507d;
+  cursor: pointer;
+}
+/* The status colour is a signal: awarded reads as a win, rejected as closed. */
+.sch-status-select.is-awarded  { border-color: #2f8f4e; color: #226b3a; }
+.sch-status-select.is-rejected { border-color: rgba(0,0,0,0.16); color: #6b7280; }
+.sch-status-select.is-expired  { border-color: #c0392b; color: #96271b; }
+
+.sch-remove {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  border: 1.5px solid rgba(161,45,45,0.25);
+  border-radius: 8px;
+  background: #fff;
+  color: #a12d2d;
+  cursor: pointer;
+}
+.sch-remove:hover:not(:disabled) { background: rgba(161,45,45,0.08); }
+.sch-remove:disabled { opacity: 0.5; cursor: default; }
+
+/* Filter / sort toolbar on My Scholarships */
+.sch-toolbar {
+  display: flex; flex-wrap: wrap; gap: 14px;
+  justify-content: center;   /* centre the filters so they don't sit one-sided */
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  border: 1px solid rgba(0,0,0,0.09);
+  border-radius: 10px;
+  background: #fafbfc;
+}
+.sch-toolbar-field {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 0.82rem;
+}
+.sch-toolbar-field > span {
+  font-weight: 600; color: var(--text-muted, #6b7280);
+}
+.sch-toolbar-field select {
+  padding: 6px 10px;
+  border: 1.5px solid rgba(0,0,0,0.16);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.82rem; font-weight: 600;
+  color: #35507d;
+  cursor: pointer;
+}
+.sch-toolbar-field select:focus {
+  outline: none; border-color: #4285F4;
+}
+
+/* Dashboard rollup across saved opportunities */
+.sch-summary {
+  margin-bottom: 20px;
+  padding: 16px 18px;
+  border: 1px solid rgba(11,37,69,0.12);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(66,133,244,0.05), rgba(66,133,244,0.02));
+}
+.sch-summary-stats {
+  display: flex; flex-wrap: wrap; gap: 12px;
+}
+.sch-stat {
+  flex: 1 1 120px;
+  min-width: 110px;
+  padding: 12px 14px;
+  border: 1px solid rgba(0,0,0,0.07);
+  border-radius: 10px;
+  background: #fff;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.sch-stat-num {
+  font-size: 1.5rem; font-weight: 700; line-height: 1;
+  color: #0B2545;
+}
+.sch-stat-label {
+  font-size: 0.76rem; font-weight: 600;
+  color: var(--text-muted, #6b7280);
+}
+.sch-stat-urgent { border-color: rgba(214,158,46,0.5); background: rgba(214,158,46,0.08); }
+.sch-stat-urgent .sch-stat-num { color: #b7791f; }
+.sch-stat-progress .sch-stat-num { color: #226b3a; }
+
+.sch-summary-warn {
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(161,45,45,0.08);
+  color: #8a2525;
+  font-size: 0.82rem; font-weight: 600;
+}
+
+.sch-summary-next {
+  margin-top: 14px;
+}
+.sch-summary-next-head {
+  display: block;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted, #6b7280);
+  margin-bottom: 6px;
+}
+.sch-summary-next ul {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.sch-summary-next li {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  font-size: 0.86rem;
+}
+.sch-summary-next-name {
+  color: #0B2545; font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sch-summary-next-when {
+  flex-shrink: 0;
+  color: #b7791f; font-weight: 600; font-size: 0.8rem;
+}
+
+/* Empty state for My Scholarships */
+.sch-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-muted, #6b7280);
+}
+.sch-empty p { margin: 0; font-size: 0.95rem; }
+.sch-empty-sub { font-size: 0.86rem; max-width: 42ch; }
+.sch-empty .sch-btn { margin-top: 8px; }
+
+/* Open / View button on saved cards */
+.sch-open {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 13px;
+  border: 1.5px solid rgba(11,37,69,0.25);
+  border-radius: 8px;
+  background: #fff;
+  color: #0B2545;
+  font-size: 0.83rem; font-weight: 600;
+  cursor: pointer;
+}
+.sch-open:hover { background: rgba(11,37,69,0.06); }
+
+/* Progress bar (shared by card + detail) */
+.sch-progress {
+  flex: 1; min-width: 0;
+  height: 7px;
+  background: rgba(0,0,0,0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.sch-progress-bar {
+  height: 100%;
+  background: #2f8f4e;
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+.sch-card-progress {
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 0 12px;
+}
+.sch-card-progress-label {
+  flex: none;
+  font-size: 0.76rem; font-weight: 600;
+  color: var(--text-muted, #6b7280);
+}
+
+/* ===== Detail view ===== */
+.sch-detail-back {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 0; margin-bottom: 16px;
+  border: none; background: none;
+  font-size: 0.86rem; font-weight: 600;
+  color: #2a5db0;
+  cursor: pointer;
+}
+.sch-detail-back:hover { text-decoration: underline; }
+
+.sch-detail-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.sch-detail-name { margin: 0 0 6px; font-size: 1.3rem; color: #0B2545; }
+.sch-detail-apply {
+  flex: none;
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 16px;
+  border-radius: 9px;
+  background: #0B2545; color: #fff;
+  font-size: 0.86rem; font-weight: 600;
+  text-decoration: none;
+}
+.sch-detail-apply:hover { background: #143a6b; }
+
+.sch-detail-meta {
+  margin: 0 0 14px;
+  display: grid; gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid rgba(0,0,0,0.09);
+  border-radius: 12px;
+  background: #fafbfc;
+}
+.sch-detail-meta div { display: flex; gap: 10px; font-size: 0.88rem; }
+.sch-detail-meta dt {
+  flex: none; width: 92px;
+  font-weight: 600; color: var(--text-muted, #6b7280);
+}
+.sch-detail-meta dd { margin: 0; min-width: 0; }
+.sch-detail-why {
+  margin: 0 0 20px;
+  font-size: 0.9rem; font-style: italic;
+  color: var(--text-muted, #5a6472);
+}
+
+/* ===== Checklist ===== */
+.sch-checklist {
+  padding: 18px 20px;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 12px;
+  background: #fff;
+}
+.sch-checklist-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; margin-bottom: 12px;
+}
+.sch-checklist-head h3 { margin: 0; font-size: 1.05rem; color: #0B2545; }
+.sch-checklist-count {
+  font-size: 0.8rem; font-weight: 600;
+  color: #226b3a;
+}
+.sch-checklist .sch-progress { margin-bottom: 16px; height: 8px; }
+
+.sch-checklist-empty {
+  text-align: center; padding: 16px 8px;
+  color: var(--text-muted, #6b7280);
+}
+.sch-checklist-empty p { margin: 0 0 14px; font-size: 0.9rem; }
+
+.sch-checklist-items { list-style: none; margin: 0 0 14px; padding: 0; }
+.sch-check-item {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.sch-check-item:last-child { border-bottom: none; }
+.sch-check-row {
+  display: flex; align-items: center; gap: 10px;
+}
+.sch-check-row input[type="checkbox"] {
+  flex: none; width: 17px; height: 17px; cursor: pointer;
+  accent-color: #2f8f4e;
+}
+.sch-check-label {
+  flex: 1; min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 0.9rem;
+  background: transparent;
+  color: inherit;
+}
+.sch-check-label:hover { border-color: rgba(0,0,0,0.1); }
+.sch-check-label:focus { outline: none; border-color: #4285F4; background: #fff; }
+.sch-check-item.is-done .sch-check-label {
+  text-decoration: line-through;
+  color: var(--text-muted, #9aa2ac);
+}
+.sch-check-remove {
+  flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+  border: none; border-radius: 6px;
+  background: none; color: #9aa2ac;
+  cursor: pointer;
+}
+.sch-check-remove:hover { background: rgba(161,45,45,0.08); color: #a12d2d; }
+.sch-check-note {
+  width: 100%;
+  margin-top: 4px; margin-left: 27px;
+  max-width: calc(100% - 27px);
+  padding: 4px 8px;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 7px;
+  font-size: 0.8rem;
+  background: #fafbfc;
+  color: var(--text-muted, #5a6472);
+}
+.sch-check-note:focus { outline: none; border-color: #4285F4; background: #fff; }
+
+.sch-checklist-actions {
+  display: flex; gap: 10px; flex-wrap: wrap;
+}
+.sch-check-add, .sch-check-regen {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 13px;
+  border: 1.5px solid rgba(0,0,0,0.14);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.82rem; font-weight: 600;
+  color: #35507d;
+  cursor: pointer;
+}
+.sch-check-add:hover, .sch-check-regen:hover {
+  border-color: #4285F4; background: rgba(66,133,244,0.06);
+}
+.sch-check-regen:disabled, .sch-check-add:disabled { opacity: 0.6; cursor: default; }
+
+@media (max-width: 640px) {
+  .sch-search { flex-direction: column; }
+  .sch-meta div { flex-direction: column; gap: 2px; }
+  .sch-meta dt { width: auto; }
+  .sch-card-actions { gap: 8px; }
+  .sch-status-pick { margin-right: 0; }
+  .sch-detail-meta div { flex-direction: column; gap: 2px; }
+  .sch-detail-meta dt { width: auto; }
+}

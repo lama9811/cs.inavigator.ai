@@ -1,0 +1,148 @@
+{
+  "_comment": "Morgan State academic minors — verified requirement roadmaps. Mirrors frontend/src/components/minorsData.js. Used by services/requirement_planner.py to tell a student which minor courses they still need. 9 of 24 minors transcribed; the rest are on the ROADMAP. Keys are lowercased minor names as DegreeWorks reports them.",
+  "minors": {
+    "criminal justice": {
+      "name": "Criminal Justice",
+      "department": "Sociology & Anthropology",
+      "credits": 18,
+      "rule": "Choose six (6) courses (grade of C or better in each).",
+      "choose": 6,
+      "courses": [
+        {"code": "SOCI 305", "name": "Juvenile Justice and Delinquency", "credits": 3},
+        {"code": "SOCI 308", "name": "Criminology", "credits": 3},
+        {"code": "SOCI 310", "name": "Social Psychology", "credits": 3},
+        {"code": "SOCI 315", "name": "Sociology of Law and Law Enforcement", "credits": 3},
+        {"code": "SOCI 330", "name": "Sociology of Jails and Prisons", "credits": 3},
+        {"code": "SOCI 331", "name": "Community-Based Corrections", "credits": 3},
+        {"code": "SOCI 332", "name": "Law Enforcement, Policing and Society", "credits": 3},
+        {"code": "SOCI 401", "name": "Forensic Anthropology", "credits": 3},
+        {"code": "SOCI 408", "name": "Research Methods in Criminal Justice and Criminology", "credits": 3},
+        {"code": "SOCI 425", "name": "Gender and Violence", "credits": 3},
+        {"code": "SOCI 429", "name": "Victimology", "credits": 3},
+        {"code": "SOCI 430", "name": "Sociology of Deviance", "credits": 3},
+        {"code": "SOCI 453", "name": "Internship / Independent Research", "credits": 3}
+      ]
+    },
+    "computer science": {
+      "name": "Computer Science",
+      "department": "Computer Science (SCMNS)",
+      "credits": 18,
+      "rule": "All five courses are required.",
+      "choose": null,
+      "courses": [
+        {"code": "COSC 111", "name": "Introduction to Computer Science I", "credits": 4},
+        {"code": "COSC 112", "name": "Introduction to Computer Science II", "credits": 4},
+        {"code": "COSC 220", "name": "Data Structures and Algorithms", "credits": 4},
+        {"code": "COSC 241", "name": "Computer Systems and Digital Logic", "credits": 3},
+        {"code": "COSC 243", "name": "Computer Architecture", "credits": 3}
+      ]
+    },
+    "mathematics": {
+      "name": "Mathematics (General Track)",
+      "department": "Mathematics (SCMNS)",
+      "credits": 18,
+      "rule": "Complete ONE track (18 credits): Track A for science/engineering majors, or Track B for all other majors.",
+      "choose": null,
+      "courses": [
+        {"code": "MATH 341", "name": "Advanced Calculus I", "credits": 3, "note": "Track A"},
+        {"code": "MATH 343", "name": "Complex Variables", "credits": 3, "note": "Track A"},
+        {"code": "MATH 413", "name": "Algebraic Structures I", "credits": 3, "note": "Track A"},
+        {"code": "MATH 431", "name": "Mathematical Theory of Statistics I", "credits": 3, "note": "Track A"},
+        {"code": "MATH 450", "name": "Senior Seminar", "credits": 3, "note": "Track A"},
+        {"code": "MATH 479", "name": "Point Set Topology", "credits": 3, "note": "Track A"},
+        {"code": "MATH 215", "name": "Foundations for Advanced Mathematics I", "credits": 3, "note": "Track B"},
+        {"code": "MATH 241", "name": "Calculus I", "credits": 4, "note": "Track B"},
+        {"code": "MATH 242", "name": "Calculus II", "credits": 4, "note": "Track B"},
+        {"code": "MATH 243", "name": "Calculus III", "credits": 4, "note": "Track B"},
+        {"code": "MATH 312", "name": "Linear Algebra I", "credits": 3, "note": "Track B"}
+      ]
+    },
+    "sociology": {
+      "name": "Sociology",
+      "department": "Sociology & Anthropology",
+      "credits": 18,
+      "rule": "Five required courses + one Sociology (SOCI) elective. None may double-count toward your major.",
+      "choose": null,
+      "courses": [
+        {"code": "SOCI 101", "name": "Introduction to Sociology", "credits": 3},
+        {"code": "SOCI 205", "name": "Contemporary Social Problems", "credits": 3},
+        {"code": "SOCI 302", "name": "Social Theory", "credits": 3},
+        {"code": "SOCI 351", "name": "Introduction to Social Statistics", "credits": 3},
+        {"code": "SOCI 380", "name": "Methods of Social Research I", "credits": 3}
+      ]
+    },
+    "physics": {
+      "name": "Physics",
+      "department": "Physics & Engineering Physics",
+      "credits": 18,
+      "rule": "3 required courses + 3 upper-level (300/400) PHYS electives.",
+      "choose": null,
+      "courses": [
+        {"code": "PHYS 300", "name": "Modern Physics I", "credits": 3},
+        {"code": "PHYS 408", "name": "Introduction to Quantum Mechanics", "credits": 3},
+        {"code": "PHYS 409", "name": "Experimental Physics", "credits": 3}
+      ]
+    },
+    "psychology": {
+      "name": "Psychology",
+      "department": "Psychology",
+      "credits": 18,
+      "rule": "PSYC 101 + choose 3 from Group 1 + choose 2 from Group 2 (grade of C or better).",
+      "choose": null,
+      "courses": [
+        {"code": "PSYC 101", "name": "General Psychology", "credits": 3},
+        {"code": "PSYC 102", "name": "Developmental Psychology", "credits": 3, "note": "Group 1"},
+        {"code": "PSYC 210", "name": "Abnormal Psychology", "credits": 3, "note": "Group 1"},
+        {"code": "PSYC 231", "name": "Social Psychology", "credits": 3, "note": "Group 1"},
+        {"code": "PSYC 205", "name": "Psychology of Adjustment", "credits": 3, "note": "Group 2"},
+        {"code": "PSYC 310", "name": "Health Psychology", "credits": 3, "note": "Group 2"}
+      ]
+    },
+    "business administration": {
+      "name": "Business Administration",
+      "department": "Earl G. Graves School of Business & Management",
+      "credits": 24,
+      "rule": "15 credits required + 9 credits of electives (choose 3).",
+      "choose": null,
+      "courses": [
+        {"code": "ENTR 351", "name": "Entrepreneurship", "credits": 3},
+        {"code": "BUAD 361", "name": "Fundamentals of Risk Management", "credits": 3},
+        {"code": "BUAD 371", "name": "Principles of Real Estate", "credits": 3},
+        {"code": "BUAD 382", "name": "Business Law", "credits": 3},
+        {"code": "ENTR 384", "name": "Entrepreneurial Opportunity Recognition", "credits": 3}
+      ]
+    },
+    "management": {
+      "name": "Management",
+      "department": "Earl G. Graves School of Business & Management",
+      "credits": 24,
+      "rule": "12 credits required + 12 credits of electives (choose 4).",
+      "choose": null,
+      "courses": [
+        {"code": "MGMT 329", "name": "Human Resource Management", "credits": 3},
+        {"code": "MGMT 330", "name": "Compensation and Benefits Management", "credits": 3},
+        {"code": "MGMT 421", "name": "Training and Development", "credits": 3},
+        {"code": "MGMT 425", "name": "Staffing and Performance Management", "credits": 3}
+      ]
+    },
+    "entrepreneurship": {
+      "name": "Entrepreneurship",
+      "department": "Earl G. Graves School of Business & Management",
+      "credits": 27,
+      "rule": "15 credits required + 12 credits of electives.",
+      "choose": null,
+      "courses": [
+        {"code": "ENTR 351", "name": "Entrepreneurship", "credits": 3},
+        {"code": "ENTR 353", "name": "Social Entrepreneurship", "credits": 3},
+        {"code": "BUAD 382", "name": "Business Law", "credits": 3},
+        {"code": "ENTR 384", "name": "Entrepreneurial Opportunity Recognition", "credits": 3},
+        {"code": "ENTR 452", "name": "Advanced Entrepreneurship", "credits": 3}
+      ]
+    }
+  },
+  "aliases": {
+    "cyber security": "cybersecurity",
+    "math": "mathematics",
+    "business": "business administration"
+  }
+}

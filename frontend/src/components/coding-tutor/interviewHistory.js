@@ -53,6 +53,26 @@ export function clearInterviewHistory() {
   window.dispatchEvent(new Event("interview-history-change"));
 }
 
+// Fold the stored attempts into the signals the achievement badges read. A mock
+// carries several problems, so `solved`/`total` per attempt lets us reward *how
+// well* a mock went, not just that it finished. Reads best-of across attempts.
+export function summarizeInterviewHistory() {
+  const list = readHistory();
+  let bestSolved = 0;      // most problems passed in any single mock
+  let clearedAllMock = false; // a mock where every problem was solved
+  list.forEach((attempt) => {
+    const solved = Number(attempt?.solved) || 0;
+    const total = Number(attempt?.total) || 0;
+    if (solved > bestSolved) bestSolved = solved;
+    if (total > 0 && solved >= total) clearedAllMock = true;
+  });
+  return {
+    mockAttempts: list.length,
+    bestMockSolved: bestSolved,
+    clearedAllMock,
+  };
+}
+
 // React hook: the list of past attempts, kept in sync across mounts via a custom event
 // (the native "storage" event only fires across tabs, not within one).
 export function useInterviewHistory() {

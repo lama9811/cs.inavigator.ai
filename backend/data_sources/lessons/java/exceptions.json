@@ -1,0 +1,84 @@
+{
+  "_note": "ORIGINAL content. Topic coverage follows David Eck's Introduction to Programming Using Java. No prose, examples, or exercises were copied; the source guides curriculum order only.",
+  "title": "Exceptions",
+  "summary": "Handle expected failures without covering up unrelated defects.",
+  "minutes": 10,
+  "error_classes": [
+    "runtime",
+    "syntax",
+    "wrong_answer"
+  ],
+  "refresher": "Place risky work in `try` and catch a specific exception that the method can handle. Checked exceptions must be caught or declared. Use `finally` or try-with-resources for cleanup, and preserve the original exception when adding context.",
+  "refresher_code": "try {\n    int credits = Integer.parseInt(raw);\n} catch (NumberFormatException error) {\n    System.out.println(\"Enter a whole number\");\n}",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "An exception is an object describing why an operation could not finish. Invalid input, a missing file, and using a null reference are different problems, so they should not all receive one vague response."
+    },
+    {
+      "kind": "code",
+      "caption": "The catch type matches the conversion failure. Code after the failed parse inside try is skipped, then execution continues after catch.",
+      "code": "String raw = \"twelve\";\ntry {\n    int credits = Integer.parseInt(raw);\n    System.out.println(credits);\n} catch (NumberFormatException error) {\n    System.out.println(\"Credits must be a whole number\");\n}",
+      "output": "Credits must be a whole number"
+    },
+    {
+      "kind": "text",
+      "body": "Runtime exceptions can compile without a catch. Checked exceptions, including IOException, must be caught or listed in a method's `throws` clause. That rule forces file and network failures into the method design."
+    },
+    {
+      "kind": "compare",
+      "caption": "Catching Exception can mislabel a NullPointerException as bad input. The narrow catch handles only the case the message describes.",
+      "wrong_label": "Too broad",
+      "wrong": "try { loadCredits(raw); }\ncatch (Exception e) {\n    System.out.println(\"Bad number\");\n}",
+      "right_label": "Specific",
+      "right": "try { loadCredits(raw); }\ncatch (NumberFormatException e) {\n    System.out.println(\"Bad number\");\n}"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Keep the cause when adding context",
+      "body": "If you create a new exception, pass the original one as its cause. Without that link, the stack trace loses the failure that started the chain and makes diagnosis harder."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which exception comes from `Integer.parseInt(\"3.5\")`?",
+      "code": "Integer.parseInt(\"3.5\");",
+      "choices": [
+        "NumberFormatException",
+        "ClassCastException",
+        "IOException",
+        "NullPointerException"
+      ],
+      "answer_index": 0,
+      "why": "The text does not match Java's integer format. The method reports that content problem with NumberFormatException."
+    },
+    {
+      "kind": "text",
+      "body": "A finally block runs after try and catch on either path. Try-with-resources is usually clearer for objects that implement AutoCloseable because closing becomes part of the declaration."
+    },
+    {
+      "kind": "check",
+      "prompt": "What must a method do with a checked IOException?",
+      "code": "String load(Path path) { /* reads a file */ }",
+      "choices": [
+        "Catch it or declare it with `throws`",
+        "Ignore it because all exceptions are optional",
+        "Convert it to an int",
+        "Place it in a static field"
+      ],
+      "answer_index": 0,
+      "why": "Java's compiler tracks checked exceptions. The method must handle the IOException or state in its signature that a caller is responsible for it."
+    },
+    {
+      "kind": "list",
+      "title": "Exception checklist",
+      "items": [
+        "Catch a type that matches the recovery you can perform.",
+        "Keep the protected block small.",
+        "Distinguish checked exceptions from runtime exceptions.",
+        "Preserve an original cause when wrapping.",
+        "Use try-with-resources for closeable objects."
+      ]
+    }
+  ]
+}

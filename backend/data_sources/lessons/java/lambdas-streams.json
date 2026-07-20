@@ -1,0 +1,84 @@
+{
+  "_note": "ORIGINAL content. Topic coverage follows David Eck's Introduction to Programming Using Java. No prose, examples, or exercises were copied; the source guides curriculum order only.",
+  "title": "Lambdas & Streams",
+  "summary": "Describe a small action and apply it across collection data.",
+  "minutes": 11,
+  "error_classes": [
+    "syntax",
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "A lambda is a short function value, such as `name -> name.length()`. A stream processes collection data through steps like `filter`, `map`, and `sorted`, then finishes with an operation such as `toList`, `count`, or `forEach`. Stream steps do not change the original collection unless your code changes its objects.",
+  "refresher_code": "List<String> shortNames = names.stream()\n    .filter(name -> name.length() < 5)\n    .toList();",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Some collection work follows a clear sequence: keep certain items, change each one, then collect the results. Streams let the code state those steps in the same order."
+    },
+    {
+      "kind": "code",
+      "caption": "The filter keeps passing scores. The map adds five points to each remaining score. `toList` starts the work and gathers the results.",
+      "code": "List<Integer> scores = List.of(72, 48, 90);\nList<Integer> adjusted = scores.stream()\n    .filter(score -> score >= 60)\n    .map(score -> score + 5)\n    .toList();\nSystem.out.println(adjusted);",
+      "output": "[77, 95]"
+    },
+    {
+      "kind": "text",
+      "body": "The expression before the arrow names each input. The expression after it produces a result. Braces are needed when the lambda body has more than one statement."
+    },
+    {
+      "kind": "compare",
+      "caption": "A stream needs a final operation. Without `toList`, `count`, or another terminal step, the earlier steps describe work but do not run it.",
+      "wrong_label": "No result requested",
+      "wrong": "scores.stream()\n    .filter(score -> score >= 60);",
+      "right_label": "Result collected",
+      "right": "List<Integer> passing = scores.stream()\n    .filter(score -> score >= 60)\n    .toList();"
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "A loop may be clearer",
+      "body": "Use a regular loop when the work needs several changing variables, early exits, detailed error handling, or many side effects. Streams fit best when data moves through a short set of clear steps."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which stream operation keeps only items that pass a condition?",
+      "code": "names.stream().____(name -> name.length() > 3)",
+      "choices": [
+        "filter",
+        "map",
+        "count",
+        "toList"
+      ],
+      "answer_index": 0,
+      "why": "Filter receives a condition and keeps values for which that condition is true. Map changes values instead of deciding whether to keep them."
+    },
+    {
+      "kind": "text",
+      "body": "Map changes every selected value into another value. The output type may differ from the input type, such as changing each String into an Integer length."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does this stream produce?",
+      "code": "List<String> names = List.of(\"Ada\", \"Grace\");\nList<Integer> lengths = names.stream()\n    .map(name -> name.length())\n    .toList();",
+      "choices": [
+        "[3, 5]",
+        "[Ada, Grace]",
+        "[true, true]",
+        "8"
+      ],
+      "answer_index": 0,
+      "why": "Map replaces each String with the Integer returned by `length()`. Ada has three characters and Grace has five."
+    },
+    {
+      "kind": "list",
+      "title": "Lambda and stream checklist",
+      "items": [
+        "Use a lambda for one small action.",
+        "Read a stream from top to bottom as data steps.",
+        "Use filter to keep and map to change.",
+        "Finish with a terminal operation.",
+        "Choose a loop when the stream would hide the real work."
+      ]
+    }
+  ]
+}

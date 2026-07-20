@@ -3323,6 +3323,185 @@ body.coding-dark .practice-guide-title {
   color: var(--ct-text);
 }
 
+/* Focus next: the guide's headline, and the one thing it wants the student to do.
+   The whole block is the accent card (the old design put only the sentence in one). */
+.practice-guide-focus {
+  padding: 11px 12px 12px;
+  border-left: 3px solid var(--ct-accent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ct-accent) 8%, var(--ct-panel));
+}
+
+/* Topic name + mastery score on one baseline. Overrides the inherited card padding
+   and background — this <p> now sits INSIDE the card rather than being it. */
+.practice-guide-weakest.is-mastery {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border-left: 0;
+  border-radius: 0;
+  background: none;
+  font-size: 0.95rem;
+}
+
+.practice-guide-weakest.is-mastery strong {
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+/* The action. Full-width so it reads as "do this", not as an incidental link. */
+.practice-guide-focus-cta {
+  display: block;
+  width: 100%;
+  margin-top: 2px;
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--ct-accent) 45%, transparent);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ct-accent);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.practice-guide-focus-cta:hover {
+  background: color-mix(in srgb, var(--ct-accent) 12%, transparent);
+  border-color: var(--ct-accent);
+}
+
+.practice-guide-focus-cta:focus-visible {
+  outline: 2px solid var(--ct-accent);
+  outline-offset: 2px;
+}
+
+/* The "why" line under Focus next. Generated from the student's own attempt log
+   (dominant error class, attempts-to-solve, hints used) — never canned copy. */
+.practice-guide-reason {
+  margin: 8px 0 10px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--ct-muted, #6b7280);
+}
+
+/* Collapsed "All topics" list. Closed by default: the guide's headline is ONE next
+   action, and a 23-row table competing with it buries the thing the student should
+   actually do. Fixed max-height so the panel doesn't grow without bound as the
+   library expands. */
+.practice-guide-topics {
+  margin-top: 4px;
+}
+
+.practice-guide-topics > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  padding: 7px 0;
+  list-style: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ct-muted, #6b7280);
+  border-top: 1px solid var(--ct-border, rgba(148, 163, 184, 0.25));
+}
+
+/* Kill the default disclosure marker in both engines, then draw our own caret so it
+   can sit on the right and rotate. */
+.practice-guide-topics > summary::-webkit-details-marker {
+  display: none;
+}
+
+.practice-guide-topics > summary::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translate(-1px, -1px);
+  transition: transform 0.18s ease;
+  flex: none;
+}
+
+.practice-guide-topics[open] > summary::after {
+  transform: rotate(-135deg) translate(-2px, -2px);
+}
+
+.practice-guide-topics > summary:hover,
+.practice-guide-topics > summary:focus-visible {
+  color: var(--ct-text);
+}
+
+.practice-guide-topics-count {
+  margin-left: auto;
+  margin-right: 4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ct-muted, #6b7280);
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+/* Scrolls inside itself rather than stretching the sidebar. */
+.practice-guide-topics[open] .practice-guide-progress {
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
+  padding-bottom: 4px;
+}
+
+/* Mastery score chip (0-100). Semantic color, deliberately separate from --ct-accent:
+   this encodes *state*, so it must read at a glance without being read as branding. */
+.practice-mastery-band {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid transparent;
+}
+
+.practice-mastery-band.is-strong {
+  color: #15803d;
+  background: color-mix(in srgb, #22c55e 14%, transparent);
+  border-color: color-mix(in srgb, #22c55e 35%, transparent);
+}
+
+.practice-mastery-band.is-steady {
+  color: #1d4ed8;
+  background: color-mix(in srgb, #3b82f6 14%, transparent);
+  border-color: color-mix(in srgb, #3b82f6 35%, transparent);
+}
+
+.practice-mastery-band.is-shaky {
+  color: #b45309;
+  background: color-mix(in srgb, #f59e0b 16%, transparent);
+  border-color: color-mix(in srgb, #f59e0b 38%, transparent);
+}
+
+.practice-mastery-band.is-weak {
+  color: #b91c1c;
+  background: color-mix(in srgb, #ef4444 14%, transparent);
+  border-color: color-mix(in srgb, #ef4444 35%, transparent);
+}
+
+/* Dark lab theme. The Coding Tutor themes on `body.coding-dark` (see
+   CodingTutorTheme.css) — NOT the retired global `body.dark`, and not a
+   [data-theme] attribute. The light-mode text colors fail contrast on the dark
+   panel, so lift each hue rather than inverting the chip, which would lose the
+   semantic reading (green = strong, red = weak). */
+body.coding-dark .practice-mastery-band.is-strong { color: #4ade80; }
+body.coding-dark .practice-mastery-band.is-steady { color: #60a5fa; }
+body.coding-dark .practice-mastery-band.is-shaky { color: #fbbf24; }
+body.coding-dark .practice-mastery-band.is-weak { color: #f87171; }
+
 /* Topics-in-view chips. */
 .practice-guide-chips {
   display: flex;
@@ -3530,13 +3709,24 @@ body.coding-dark .quiz-bank-page .quiz-insight-panel {
      floats over everything — the terminal must never hide it. */
   z-index: 1300;
   touch-action: none;
+  /* Snap-to-corner glide: when the widget is released it settles onto the nearest
+     corner, and this eases left/top into place (Grammarly-style). Disabled while
+     dragging below so the widget tracks the cursor 1:1 with no lag. */
+  transition: left 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    top 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.floating-coding-chat.dragging {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .floating-coding-chat {
+    transition: none;
+  }
 }
 
-.floating-coding-chat.closed {
-  right: 24px;
-  bottom: 24px;
-}
-
+/* Both states are positioned by inline left/top (from the snapped corner), so no
+   fixed right/bottom anchors here — they would fight the inline position. */
+.floating-coding-chat.closed,
 .floating-coding-chat.open {
   right: auto;
   bottom: auto;
@@ -5245,303 +5435,6 @@ body.coding-dark .coding-app .floating-chat-window {
   }
 }
 
-/* Floating chat is rendered outside .coding-app, so lock it by its own root. */
-.floating-coding-chat {
-  --ct-float-panel: var(--bg-surface-raised, #fffdf7);
-  --ct-float-panel-soft: var(--bg-surface-soft, #f7f0e6);
-  --ct-float-panel-base: var(--bg-surface, #fffdf7);
-  --ct-float-text: var(--text-main, #172033);
-  --ct-float-muted: var(--text-secondary, #596273);
-  --ct-float-border: var(--border-color, #ddd1c0);
-  --ct-float-border-strong: var(--border-strong, #b7c6d8);
-  --ct-float-primary: var(--primary, #002d72);
-  --ct-float-accent: var(--accent, #f58220);
-  --ct-float-accent-soft: var(--accent-soft, rgba(245, 130, 32, 0.14));
-}
-
-body.coding-dark .floating-coding-chat {
-  --ct-float-panel: #1c2a3f;
-  --ct-float-panel-soft: #152033;
-  --ct-float-panel-base: #172235;
-  --ct-float-text: #f4efe6;
-  --ct-float-muted: #b7c1cf;
-  --ct-float-border: #31415a;
-  --ct-float-border-strong: #435a78;
-  --ct-float-primary: #5f7fae;
-  --ct-float-accent: #e7a05b;
-  --ct-float-accent-soft: rgba(231, 160, 91, 0.18);
-}
-
-.floating-coding-chat :is(
-  .floating-chat-window,
-  .floating-chat-header,
-  .floating-chat-window .ai-status-card,
-  .floating-chat-messages,
-  .floating-chat-form,
-  .floating-chat-message.bot
-) {
-  background: var(--ct-float-panel-base) !important;
-  background-color: var(--ct-float-panel-base) !important;
-  background-image: none !important;
-  border-color: var(--ct-float-border) !important;
-  color: var(--ct-float-text) !important;
-  opacity: 1 !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-.floating-coding-chat .floating-chat-window {
-  background: var(--ct-float-panel) !important;
-  background-color: var(--ct-float-panel) !important;
-  border: 1px solid var(--ct-float-border-strong) !important;
-  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.22) !important;
-  overflow: hidden !important;
-}
-
-body.coding-dark .floating-coding-chat .floating-chat-window {
-  box-shadow: 0 24px 60px rgba(5, 10, 18, 0.62) !important;
-}
-
-.floating-coding-chat .floating-chat-header {
-  background: var(--ct-float-panel) !important;
-  border-bottom: 1px solid var(--ct-float-border) !important;
-}
-
-.floating-coding-chat .floating-chat-header strong,
-.floating-coding-chat .floating-chat-window strong,
-.floating-coding-chat .floating-chat-window h3,
-.floating-coding-chat .floating-chat-window h4 {
-  color: var(--ct-float-text) !important;
-}
-
-.floating-coding-chat .floating-chat-messages,
-.floating-coding-chat .floating-chat-input-row,
-.floating-coding-chat .floating-chat-input-row textarea {
-  background: var(--ct-float-panel-soft) !important;
-  background-color: var(--ct-float-panel-soft) !important;
-  border-color: var(--ct-float-border) !important;
-  color: var(--ct-float-text) !important;
-}
-
-.floating-coding-chat .floating-chat-window .ai-status-card {
-  background: var(--ct-float-panel-base) !important;
-  border: 1px solid var(--ct-float-border) !important;
-  border-radius: 14px !important;
-  overflow: hidden !important;
-  box-shadow: none !important;
-}
-
-.floating-coding-chat .floating-chat-window .ai-status-card dl {
-  display: grid !important;
-  grid-template-columns: 88px minmax(0, 1fr) !important;
-  gap: 8px 12px !important;
-  margin: 0 !important;
-}
-
-.floating-coding-chat .floating-chat-window .ai-status-card dt,
-.floating-coding-chat .floating-chat-window .ai-status-card dd,
-.floating-coding-chat .floating-chat-message,
-.floating-coding-chat .floating-chat-message p {
-  min-width: 0 !important;
-  max-width: 100% !important;
-  overflow-wrap: anywhere !important;
-  word-break: normal !important;
-}
-
-.floating-coding-chat .floating-chat-action,
-.floating-coding-chat .floating-chat-control,
-.floating-coding-chat .floating-chat-icon-btn {
-  background: var(--ct-float-panel-soft) !important;
-  border: 1px solid var(--ct-float-border) !important;
-  color: var(--ct-float-text) !important;
-}
-
-.floating-coding-chat .floating-chat-action:hover:not(:disabled),
-.floating-coding-chat .floating-chat-control:hover,
-.floating-coding-chat .floating-chat-icon-btn:hover:not(:disabled) {
-  background: var(--ct-float-accent-soft) !important;
-  border-color: color-mix(in srgb, var(--ct-float-accent) 48%, var(--ct-float-border)) !important;
-  color: var(--ct-float-accent) !important;
-  box-shadow: 0 10px 22px color-mix(in srgb, var(--ct-float-accent) 18%, transparent) !important;
-}
-
-.floating-coding-chat .floating-chat-send,
-.floating-coding-chat .floating-chat-button {
-  background: var(--ct-float-primary) !important;
-  border-color: color-mix(in srgb, var(--ct-float-primary) 60%, var(--ct-float-border)) !important;
-  color: #ffffff !important;
-}
-
-.floating-coding-chat .floating-chat-send:hover:not(:disabled),
-.floating-coding-chat .floating-chat-button:hover {
-  background: var(--ct-float-accent) !important;
-  border-color: color-mix(in srgb, var(--ct-float-accent) 58%, var(--ct-float-border)) !important;
-  color: #182033 !important;
-}
-
-body.coding-dark .floating-coding-chat .floating-chat-send,
-body.coding-dark .floating-coding-chat .floating-chat-button {
-  color: #f8f3ea !important;
-}
-
-body.coding-dark .floating-coding-chat .floating-chat-send:hover:not(:disabled),
-body.coding-dark .floating-coding-chat .floating-chat-button:hover {
-  color: #172033 !important;
-}
-
-/* Floating chat layout repair: visible status, actions, messages, and input. */
-.floating-coding-chat .floating-chat-window {
-  width: min(470px, calc(100vw - 32px)) !important;
-  height: min(680px, calc(100vh - 36px)) !important;
-  max-height: calc(100vh - 36px) !important;
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-.floating-coding-chat .floating-chat-window.maximized {
-  width: min(920px, calc(100vw - 48px)) !important;
-  height: min(760px, calc(100vh - 48px)) !important;
-}
-
-.floating-coding-chat .floating-chat-header {
-  flex: 0 0 auto !important;
-  gap: 12px !important;
-  padding: 14px 16px 10px !important;
-}
-
-.floating-coding-chat .floating-chat-window-controls {
-  flex: 0 0 auto !important;
-  display: flex !important;
-  gap: 8px !important;
-}
-
-.floating-coding-chat .floating-chat-window .ai-status-card {
-  flex: 0 0 auto !important;
-  margin: 12px 14px 10px !important;
-  padding: 12px 14px !important;
-}
-
-.floating-coding-chat .floating-chat-window .ai-status-card dl {
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 8px 16px !important;
-  margin: 8px 0 0 !important;
-}
-
-.floating-coding-chat .floating-chat-window .ai-status-card dl div {
-  display: grid !important;
-  grid-template-columns: minmax(72px, max-content) minmax(0, 1fr) !important;
-  align-items: start !important;
-  gap: 8px !important;
-  min-width: 0 !important;
-}
-
-.floating-coding-chat .floating-chat-window .ai-status-card dt,
-.floating-coding-chat .floating-chat-window .ai-status-card dd {
-  line-height: 1.25 !important;
-  white-space: normal !important;
-  word-break: normal !important;
-  overflow-wrap: normal !important;
-}
-
-.floating-coding-chat .floating-chat-window .ai-status-card dd {
-  overflow-wrap: anywhere !important;
-}
-
-.floating-coding-chat .floating-chat-actions {
-  flex: 0 0 auto !important;
-  display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  gap: 8px !important;
-  padding: 0 14px 10px !important;
-}
-
-.floating-coding-chat .floating-chat-action {
-  min-width: 0 !important;
-  justify-content: center !important;
-  white-space: nowrap !important;
-}
-
-.floating-coding-chat .floating-chat-action:not(:disabled) {
-  background: linear-gradient(135deg, var(--ct-float-primary), color-mix(in srgb, var(--ct-float-primary) 76%, var(--ct-float-accent))) !important;
-  border-color: color-mix(in srgb, var(--ct-float-primary) 62%, var(--ct-float-border)) !important;
-  color: #ffffff !important;
-  box-shadow: 0 8px 18px color-mix(in srgb, var(--ct-float-primary) 16%, transparent) !important;
-}
-
-.floating-coding-chat .floating-chat-action:not(:disabled):hover {
-  background: var(--ct-float-accent) !important;
-  border-color: color-mix(in srgb, var(--ct-float-accent) 58%, var(--ct-float-border)) !important;
-  color: #182033 !important;
-}
-
-.floating-coding-chat .floating-chat-action:disabled {
-  background: transparent !important;
-  border-color: var(--ct-float-border) !important;
-  color: var(--ct-float-muted) !important;
-  opacity: 0.62 !important;
-  box-shadow: none !important;
-  cursor: not-allowed !important;
-}
-
-.floating-coding-chat .floating-chat-messages {
-  flex: 1 1 190px !important;
-  min-height: 150px !important;
-  margin: 0 14px 10px !important;
-  padding: 12px !important;
-  overflow-y: auto !important;
-}
-
-.floating-coding-chat .floating-chat-form {
-  flex: 0 0 auto !important;
-  padding: 0 14px 14px !important;
-  gap: 8px !important;
-}
-
-.floating-coding-chat .floating-chat-input-row {
-  display: grid !important;
-  grid-template-columns: 40px 40px minmax(0, 1fr) 40px !important;
-  align-items: end !important;
-  gap: 8px !important;
-  min-width: 0 !important;
-}
-
-.floating-coding-chat .floating-chat-icon-btn,
-.floating-coding-chat .floating-chat-send {
-  width: 40px !important;
-  height: 40px !important;
-  min-width: 40px !important;
-  flex: 0 0 40px !important;
-}
-
-.floating-coding-chat .floating-chat-voice-btn.listening {
-  background: var(--ct-float-accent) !important;
-  color: #182033 !important;
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ct-float-accent) 22%, transparent) !important;
-}
-
-.floating-coding-chat .floating-chat-input-row textarea {
-  width: 100% !important;
-  min-height: 48px !important;
-  max-height: 128px !important;
-  resize: vertical !important;
-}
-
-@media (max-width: 520px) {
-  .floating-coding-chat .floating-chat-window {
-    width: calc(100vw - 24px) !important;
-    height: min(660px, calc(100vh - 24px)) !important;
-  }
-
-  .floating-coding-chat .floating-chat-window .ai-status-card dl {
-    grid-template-columns: 1fr !important;
-  }
-
-  .floating-coding-chat .floating-chat-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-}
-
 /* --------------------------------------------------------------------------
    Campus Lab Home refresh
    -------------------------------------------------------------------------- */
@@ -6055,14 +5948,31 @@ body.coding-dark .coding-app .campus-section-nav > button:focus-visible {
 }
 
 .campus-queue-item {
-  display: grid;
-  align-content: space-between;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 10px;
   min-height: 170px;
   padding: 18px;
   border-radius: 20px;
   border: 1px solid var(--ct-border);
   background: var(--ct-panel);
+}
+
+/* Keep the eyebrow → title → text stacked tightly at the top; only the action
+   sinks to the card's bottom edge. `align-content: space-between` used to spread
+   ALL rows, which left a big gap between the title and subtext on the sparse
+   Personal / Focus cards. */
+.campus-queue-item > button,
+.campus-queue-item .campus-primary-action {
+  margin-top: auto;
+  align-self: stretch;
+}
+
+/* The path list should span the full card width, not shrink to content. */
+.campus-queue-item > .campus-path-list,
+.campus-queue-item > p {
+  align-self: stretch;
 }
 
 .campus-queue-item > span {
@@ -6668,6 +6578,88 @@ body.coding-dark .campus-hero-focus {
   font-size: 1.22rem;
 }
 
+.campus-path-list {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.campus-path-list li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 12%, var(--ct-border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ct-panel) 88%, var(--ct-paper));
+}
+
+.campus-path-list li > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-primary) 11%, var(--ct-panel));
+  color: var(--ct-primary);
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 24%, var(--ct-border));
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.campus-path-list div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.campus-path-list b {
+  color: var(--ct-primary);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Scoped under .campus-queue-item so it outranks the same-specificity
+   `.campus-queue-item button` secondary rule that would otherwise re-tint these
+   into navy pills. These are plain text links, not buttons. */
+.campus-queue-item .campus-path-list button {
+  justify-self: start;
+  width: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ct-ink);
+  font-size: 0.92rem;
+  font-weight: 750;
+  text-align: left;
+  line-height: 1.2;
+}
+
+.campus-queue-item .campus-path-list button:hover,
+.campus-queue-item .campus-path-list button:focus-visible {
+  color: var(--ct-primary) !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  text-decoration: none;
+}
+
+.campus-path-list em {
+  color: var(--ct-muted);
+  font-style: normal;
+  font-size: 0.88rem;
+}
+
+.campus-queue-item.featured .campus-path-list + p {
+  display: none;
+}
+
 .campus-queue-item.personal {
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--ct-accent) 10%, transparent), transparent 58%),
@@ -6862,7 +6854,10 @@ body.coding-dark .campus-hero-focus {
    deep navy base) so it reads "clickable", not disabled, plus crisp white text. */
 .campus-primary-action,
 .campus-recommendation-card button,
-.campus-queue-item.featured button,
+/* Only the primary action gets the solid navy fill. The path-step links inside
+   the list are plain text buttons (styled at .campus-path-list button), so
+   exclude them or they render as navy pills that clip their own white text. */
+.campus-queue-item.featured .campus-primary-action,
 .campus-daily-mission .daily-practice-btn {
   background: linear-gradient(135deg, color-mix(in srgb, var(--ct-primary) 84%, #2f6fd6), var(--ct-primary));
   border-color: color-mix(in srgb, var(--ct-primary) 70%, #2f6fd6);
@@ -6879,7 +6874,7 @@ body.coding-dark .campus-hero-focus {
    quiet, so attention lands on the primary. */
 body.coding-dark .campus-primary-action,
 body.coding-dark .campus-recommendation-card button,
-body.coding-dark .campus-queue-item.featured button,
+body.coding-dark .campus-queue-item.featured .campus-primary-action,
 body.coding-dark .campus-daily-mission .daily-practice-btn {
   /* !important on the daily button is required: an earlier broad rule
      (`body.coding-dark .daily-practice-btn`) forces a pale periwinkle with
@@ -6892,7 +6887,7 @@ body.coding-dark .campus-daily-mission .daily-practice-btn {
 
 body.coding-dark .campus-primary-action:hover:not(:disabled),
 body.coding-dark .campus-recommendation-card button:hover:not(:disabled),
-body.coding-dark .campus-queue-item.featured button:hover:not(:disabled),
+body.coding-dark .campus-queue-item.featured .campus-primary-action:hover:not(:disabled),
 body.coding-dark .campus-daily-mission .daily-practice-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #4c8ef0, #3a78de) !important;
   border-color: #5b9bf0 !important;
@@ -6921,6 +6916,13 @@ body.coding-dark .campus-language-card button,
 body.coding-dark .campus-daily-mission .daily-link {
   color: #dbe6f7;
   border-color: color-mix(in srgb, var(--ct-primary) 46%, var(--ct-border));
+}
+
+/* Path-step links stay borderless in dark mode too (the rule above adds a
+   border to real secondary buttons; these aren't one). */
+body.coding-dark .campus-queue-item .campus-path-list button {
+  border: 0;
+  color: #dbe6f7;
 }
 
 .campus-primary-action:hover,
@@ -7171,4 +7173,121 @@ body.coding-dark .coding-problem-empty button:hover {
   border-color: #5b9bf0 !important;
   color: #fff !important;
   box-shadow: 0 10px 24px rgba(47, 111, 214, 0.5) !important;
+}
+
+
+/* Keep the primary Coding Tutor destinations visible and group lower-frequency
+   tools under a compact native disclosure menu. */
+.coding-app .campus-section-nav .coding-nav-more {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.coding-app .campus-section-nav .coding-nav-more > summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1px solid var(--ct-border);
+  border-radius: 999px;
+  background: var(--ct-panel);
+  color: var(--ct-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.coding-app .campus-section-nav .coding-nav-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.coding-app .campus-section-nav .coding-nav-more > summary:hover,
+.coding-app .campus-section-nav .coding-nav-more > summary:focus-visible {
+  background: color-mix(in srgb, var(--ct-primary) 9%, var(--ct-panel));
+  border-color: color-mix(in srgb, var(--ct-primary) 42%, var(--ct-border));
+  color: var(--ct-primary);
+}
+
+.coding-app .campus-section-nav .coding-nav-more > summary.active {
+  background: var(--ct-primary);
+  border-color: var(--ct-primary);
+  color: #fff;
+}
+
+.coding-nav-more-menu {
+  position: absolute;
+  z-index: 80;
+  top: calc(100% + 9px);
+  right: 0;
+  display: grid;
+  width: 220px;
+  padding: 8px;
+  border: 1px solid var(--ct-border);
+  border-radius: 14px;
+  background: var(--ct-panel);
+  box-shadow: 0 16px 36px rgba(15, 37, 69, 0.16);
+}
+
+.coding-app .campus-section-nav .coding-nav-more-menu > button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 11px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ct-text);
+  font: inherit;
+  font-size: 0.84rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.coding-app .campus-section-nav .coding-nav-more-menu > button:hover,
+.coding-app .campus-section-nav .coding-nav-more-menu > button:focus-visible,
+.coding-app .campus-section-nav .coding-nav-more-menu > button.active {
+  background: color-mix(in srgb, var(--ct-primary) 10%, var(--ct-panel)) !important;
+  color: var(--ct-primary) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.coding-app .campus-section-nav > button:hover,
+.coding-app .campus-section-nav > button:focus-visible {
+  background: color-mix(in srgb, var(--ct-primary) 9%, var(--ct-panel)) !important;
+  border-color: color-mix(in srgb, var(--ct-primary) 42%, var(--ct-border)) !important;
+  color: var(--ct-primary) !important;
+}
+
+.coding-app .campus-section-nav > button.active {
+  border-color: var(--ct-primary) !important;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--ct-primary) 24%, transparent) !important;
+}
+
+.coding-app .campus-section-nav > button.active::after {
+  background: var(--ct-primary) !important;
+}
+
+body.coding-dark .coding-nav-more-menu {
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.42);
+}
+
+@media (max-width: 1180px) {
+  .coding-app .campus-section-nav .coding-nav-more > summary {
+    width: 42px;
+    min-width: 42px;
+    height: 42px;
+    min-height: 42px;
+    padding: 0;
+  }
+
+  .coding-app .campus-section-nav .coding-nav-more > summary .coding-nav-label {
+    display: none;
+  }
 }

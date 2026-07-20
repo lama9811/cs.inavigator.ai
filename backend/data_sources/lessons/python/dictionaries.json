@@ -1,0 +1,83 @@
+{
+  "_note": "ORIGINAL content. Topic coverage follows the curriculum in Runestone Foundations of Python Programming, Think Python, and OpenStax Introduction to Python Programming. No prose, examples, or exercises were copied; the sources guide topic selection only.",
+  "title": "Dictionaries",
+  "summary": "Store related values under names that describe what they mean.",
+  "minutes": 10,
+  "error_classes": [
+    "runtime",
+    "wrong_answer"
+  ],
+  "refresher": "A dictionary connects each unique key to a value. Read or update with square brackets, test membership with `in`, and use `get` when a missing key should return a fallback instead of raising KeyError.",
+  "refresher_code": "student = {\"name\": \"Ada\", \"credits\": 15}\nprint(student[\"name\"])\n# Ada",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A list answers questions by position: item zero, item one, item two. A dictionary answers by meaning. A student record can keep a name under `\"name\"` and a credit count under `\"credits\"`, so the code explains what each value represents."
+    },
+    {
+      "kind": "code",
+      "caption": "Keys appear before colons and values appear after them. Square brackets use a key to find its value.",
+      "code": "student = {\"name\": \"Ada\", \"credits\": 15}\nprint(student[\"name\"])\nstudent[\"credits\"] = 18\nstudent[\"major\"] = \"CS\"\nprint(student)",
+      "output": "Ada\n{'name': 'Ada', 'credits': 18, 'major': 'CS'}"
+    },
+    {
+      "kind": "text",
+      "body": "Assigning an existing key replaces its value. Assigning a new key adds another pair. Keys must be unique, while several keys may point to equal values."
+    },
+    {
+      "kind": "compare",
+      "caption": "Bracket lookup is useful when a key is required. `get` is better when absence is normal and you have a sensible fallback.",
+      "wrong_label": "KeyError",
+      "wrong": "scores = {\"quiz\": 8}\nprint(scores[\"exam\"])",
+      "right_label": "Fallback",
+      "right": "scores = {\"quiz\": 8}\nprint(scores.get(\"exam\", 0))"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Membership checks keys",
+      "body": "`\"Ada\" in student` looks through the keys, not the values. Use `\"name\" in student` to ask whether that field exists. Use `\"Ada\" in student.values()` only when you truly need to search values."
+    },
+    {
+      "kind": "check",
+      "prompt": "What does this print?",
+      "code": "prices = {\"pen\": 2}\nprices[\"pen\"] = 3\nprices[\"book\"] = 8\nprint(len(prices), prices[\"pen\"])",
+      "choices": [
+        "2 3",
+        "3 2",
+        "2 2",
+        "3 3"
+      ],
+      "answer_index": 0,
+      "why": "Updating `pen` does not create a second key. Adding `book` makes two keys total, and the current value stored under `pen` is 3."
+    },
+    {
+      "kind": "text",
+      "body": "Looping over a dictionary gives its keys. Use `.items()` when a loop needs each key and value together. Unpacking gives both clear names on every pass."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which loop prints both each course name and its grade?",
+      "code": "grades = {\"CS101\": 90, \"MATH120\": 84}",
+      "choices": [
+        "for course, grade in grades.items():",
+        "for course, grade in grades:",
+        "for grade in grades.values, course:",
+        "for item in grades.keys().values():"
+      ],
+      "answer_index": 0,
+      "why": "`items()` produces key-value pairs that can be unpacked into two variables. Iterating over the dictionary alone produces only keys."
+    },
+    {
+      "kind": "list",
+      "title": "Dictionary checklist",
+      "items": [
+        "Choose stable, descriptive keys.",
+        "Use brackets when a missing key is an error.",
+        "Use `get` for an optional value with a fallback.",
+        "Use `.items()` when a loop needs keys and values.",
+        "Remember that assigning the same key updates rather than duplicates it."
+      ]
+    }
+  ]
+}

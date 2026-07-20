@@ -1,9 +1,15 @@
+import { useState } from "react";
 import {
   FaBolt,
+  FaBookOpen,
+  FaBookReader,
   FaBrain,
   FaBug,
+  FaBullseye,
   FaCalendarCheck,
   FaCheckCircle,
+  FaCheckDouble,
+  FaClipboardCheck,
   FaCode,
   FaCompass,
   FaCubes,
@@ -129,11 +135,25 @@ function hasSolvedTopic(solvedByTopic = {}, topicPart = "") {
 // Derive the raw progress signals every badge reads from. Keeping this separate
 // from buildBadges() means the badge list is pure declaration — no counting
 // logic inline — which the categories / rarity / percent work builds on.
-function computeStats({ questions = {}, progressByQuestion = {}, progressByLanguage = {}, progressSummary = {} } = {}) {
+function computeStats({ questions = {}, progressByQuestion = {}, progressByLanguage = {}, progressSummary = {}, learnQuizStats = {}, interviewStats = {} } = {}) {
   const solvedByTopic = countSolvedByTopic(questions, progressByQuestion);
   const solvedByDifficulty = countSolvedByDifficulty(questions, progressByQuestion);
   const attemptedByDifficulty = countAttemptedByDifficulty(questions, progressByQuestion);
   return {
+    // Learn + concept-quiz signals (from the local progress store). These reward
+    // the read-the-lesson / take-the-quiz path, which the code-problem badges above
+    // never touched — a student can now earn milestones without writing a runner.
+    lessonsRead: learnQuizStats.lessonsRead || 0,
+    quizCategoriesAttempted: learnQuizStats.quizCategoriesAttempted || 0,
+    quizCategoriesPassed: learnQuizStats.quizCategoriesPassed || 0,
+    quizPerfectCategories: learnQuizStats.quizPerfectCategories || 0,
+    quizLanguagesCount: learnQuizStats.quizLanguagesCount || 0,
+    totalQuizCorrect: learnQuizStats.totalQuizCorrect || 0,
+    // Mock-interview quality signals (from the local attempt history): the best
+    // number of problems passed in a single mock, and whether any mock was a clean
+    // sweep. Lets interview badges reward performance, not just showing up.
+    bestMockSolved: interviewStats.bestMockSolved || 0,
+    clearedAllMock: !!interviewStats.clearedAllMock,
     solvedByTopic,
     solvedByDifficulty,
     attemptedByDifficulty,
@@ -178,31 +198,31 @@ function buildBadges(stats) {
     count({ id: "first-solve", label: "First Solve", detail: "Solved your first problem", icon: FaMedal, tone: "orange", category: "Starter", rarity: "common", current: s.solvedCount, goal: 1 }),
     count({ id: "topic-sampler", label: "Branching Out", detail: "Solved problems in two topics", icon: FaStar, tone: "purple", category: "Topics", rarity: "uncommon", current: s.uniqueTopicsSolved, goal: 2 }),
     bool({ id: "python-path", label: "Pythonista", detail: "Solved a problem in Python", icon: FaPython, tone: "green", category: "Languages", rarity: "uncommon", earned: s.solvedPython }),
-    bool({ id: "javascript-path", label: "In the Script", detail: "Solved a problem in JavaScript", icon: FaJsSquare, tone: "gold", category: "Languages", rarity: "uncommon", earned: s.solvedJavaScript }),
+    bool({ id: "javascript-path", label: "JavaScript Start", detail: "Solved a problem in JavaScript", icon: FaJsSquare, tone: "gold", category: "Languages", rarity: "uncommon", earned: s.solvedJavaScript }),
     count({ id: "five-solved", label: "High Five", detail: "Solved 5 problems", icon: FaTrophy, tone: "red", category: "Mastery", rarity: "uncommon", current: s.solvedCount, goal: 5 }),
     bool({ id: "steady-streak", label: "Steady Streak", detail: "Practiced 3 days straight", icon: FaFire, tone: "pink", category: "Consistency", rarity: "uncommon", earned: s.bestStreak >= 3 }),
     bool({ id: "halfway", label: "Halfway There", detail: "Solved half the set", icon: FaCode, tone: "cyan", category: "Mastery", rarity: "rare", earned: s.completionPercent >= 50 }),
-    count({ id: "ten-solved", label: "Perfect Ten", detail: "Solved 10 problems", icon: FaRocket, tone: "blue", category: "Mastery", rarity: "uncommon", current: s.solvedCount, goal: 10 }),
+    count({ id: "ten-solved", label: "Ten Down", detail: "Solved 10 problems", icon: FaRocket, tone: "blue", category: "Mastery", rarity: "uncommon", current: s.solvedCount, goal: 10 }),
     count({ id: "twenty-solved", label: "Twenty Club", detail: "Solved 20 problems", icon: FaGraduationCap, tone: "purple", category: "Mastery", rarity: "rare", current: s.solvedCount, goal: 20 }),
     bool({ id: "completionist", label: "Completionist", detail: "Solved all problems", icon: FaCheckCircle, tone: "green", category: "Mastery", rarity: "epic", earned: s.completionPercent >= 100 }),
     count({ id: "three-runs", label: "Warming Up", detail: "Ran tests 3 times", icon: FaTasks, tone: "cyan", category: "Testing", rarity: "common", current: s.totalAttempts, goal: 3 }),
     count({ id: "ten-runs", label: "Test Driven", detail: "Ran tests 10 times", icon: FaKeyboard, tone: "orange", category: "Testing", rarity: "uncommon", current: s.totalAttempts, goal: 10 }),
-    bool({ id: "easy-starter", label: "Off the Mark", detail: "Solved an Easy problem", icon: FaSeedling, tone: "green", category: "Starter", rarity: "common", earned: s.easySolved >= 1 }),
+    bool({ id: "easy-starter", label: "Easy Win", detail: "Solved an Easy problem", icon: FaSeedling, tone: "green", category: "Starter", rarity: "common", earned: s.easySolved >= 1 }),
     bool({ id: "medium-climber", label: "Stepping Up", detail: "Solved a Medium problem", icon: FaCompass, tone: "gold", category: "Mastery", rarity: "uncommon", earned: s.mediumSolved >= 1 }),
     bool({ id: "hard-hunter", label: "Deep End", detail: "Solved a Hard problem", icon: FaShieldAlt, tone: "red", category: "Mastery", rarity: "rare", earned: s.hardSolved >= 1 }),
     bool({ id: "strings-spark", label: "String Theory", detail: "Solved a strings problem", icon: FaLightbulb, tone: "orange", category: "Topics", rarity: "common", earned: hasSolvedTopic(s.solvedByTopic, "string") }),
     bool({ id: "arrays-ace", label: "Array Adept", detail: "Solved an arrays problem", icon: FaLayerGroup, tone: "blue", category: "Topics", rarity: "common", earned: hasSolvedTopic(s.solvedByTopic, "array") }),
     bool({ id: "sets-scout", label: "Set Solver", detail: "Solved a sets problem", icon: FaDatabase, tone: "cyan", category: "Topics", rarity: "uncommon", earned: hasSolvedTopic(s.solvedByTopic, "set") }),
     bool({ id: "graph-guide", label: "Well Connected", detail: "Solved a graph problem", icon: FaCubes, tone: "purple", category: "Topics", rarity: "rare", earned: hasSolvedTopic(s.solvedByTopic, "graph") }),
-    bool({ id: "debug-persistence", label: "Rubber Duck", detail: "Kept debugging until it passed", icon: FaBug, tone: "pink", category: "Persistence", rarity: "uncommon", earned: s.totalAttempts >= s.solvedCount + 3 && s.totalAttempts >= 3 }),
-    bool({ id: "polyglot", label: "Polyglot", detail: "Solved in two languages", icon: FaBrain, tone: "gold", category: "Languages", rarity: "rare", earned: s.solvedPython && s.solvedJavaScript }),
+    count({ id: "debug-persistence", label: "Rubber Duck", detail: "Learned from 3 test runs that did not pass", icon: FaBug, tone: "pink", category: "Persistence", rarity: "uncommon", current: Math.max(s.totalAttempts - s.solvedCount, 0), goal: 3 }),
+    bool({ id: "polyglot", label: "Polyglot", detail: "Solved in two languages", icon: FaBrain, tone: "gold", category: "Languages", rarity: "rare", earned: s.solvedLanguages >= 2 }),
     count({ id: "warmup-master", label: "Easy Does It", detail: "Attempted 5 Easy problems", icon: FaFire, tone: "red", category: "Starter", rarity: "uncommon", current: s.easyAttempted, goal: 5 }),
     bool({ id: "interview-ready", label: "Interview Ready", detail: "Solved across three topics", icon: FaTrophy, tone: "green", category: "Interview Prep", rarity: "epic", earned: s.solvedCount >= 8 && s.uniqueTopicsSolved >= 3 }),
 
     // ── Added badges: persistence, daily habit, curiosity, breadth ──
-    bool({ id: "comeback-kid", label: "Green Build", detail: "Passed after 3+ failed runs", icon: FaRedo, tone: "pink", category: "Persistence", rarity: "uncommon", earned: s.comebacks >= 1 }),
-    bool({ id: "daily-devotee", label: "Showed Up", detail: "Did a daily challenge", icon: FaCalendarCheck, tone: "cyan", category: "Consistency", rarity: "common", earned: s.dailyDaysCompleted >= 1 }),
-    count({ id: "daily-triple", label: "Daily Grind", detail: "Daily challenge 3 days straight", icon: FaFire, tone: "orange", category: "Consistency", rarity: "rare", current: Math.max(s.displayStreak, s.bestStreak), goal: 3 }),
+    bool({ id: "comeback-kid", label: "Green Build", detail: "Passed after more than one try", icon: FaRedo, tone: "pink", category: "Persistence", rarity: "uncommon", earned: s.comebacks >= 1 }),
+    bool({ id: "daily-devotee", label: "Daily Debut", detail: "Completed a daily challenge", icon: FaCalendarCheck, tone: "cyan", category: "Consistency", rarity: "common", earned: s.dailyDaysCompleted >= 1 }),
+    count({ id: "daily-triple", label: "Three-Day Rhythm", detail: "Completed daily challenges 3 days straight", icon: FaFire, tone: "orange", category: "Consistency", rarity: "rare", current: Math.max(s.displayStreak, s.bestStreak), goal: 3 }),
     count({ id: "topic-explorer", label: "Curious Mind", detail: "Tried problems in 3 topics", icon: FaCompass, tone: "purple", category: "Topics", rarity: "uncommon", current: s.attemptedTopics, goal: 3 }),
     bool({ id: "recursion-ranger", label: "Base Case", detail: "Solved a recursion problem", icon: FaSync, tone: "gold", category: "Topics", rarity: "uncommon", earned: hasSolvedTopic(s.solvedByTopic, "recursion") }),
     bool({ id: "trees-tracker", label: "Tree Solver", detail: "Solved a tree problem", icon: FaSitemap, tone: "green", category: "Topics", rarity: "rare", earned: hasSolvedTopic(s.solvedByTopic, "tree") }),
@@ -214,9 +234,28 @@ function buildBadges(stats) {
     bool({ id: "full-house", label: "Full House", detail: "Solved an Easy, Medium, and Hard", icon: FaThLarge, tone: "orange", category: "Mastery", rarity: "rare", earned: s.easySolved >= 1 && s.mediumSolved >= 1 && s.hardSolved >= 1 }),
     bool({ id: "topic-master", label: "Topic Master", detail: "Cleared every problem in a topic", icon: FaCrown, tone: "purple", category: "Mastery", rarity: "epic", earned: s.clearedAnyTopic }),
 
-    // ── Mock interview badges (backed by the per-device mock-completion counter) ──
+    // ── Mock interview badges. "Finished" rewards showing up; the two below reward
+    //    how the mock actually went (best problems-passed in one mock). A standard
+    //    mock is 3 problems, so 2/3 is a strong pass and 3/3 is a clean sweep. ──
     bool({ id: "mock-rookie", label: "First Interview", detail: "Finished a mock interview", icon: FaUserTie, tone: "cyan", category: "Interview Prep", rarity: "uncommon", earned: s.mockCompleted >= 1 }),
-    count({ id: "mock-veteran", label: "Seasoned", detail: "Finished 5 mock interviews", icon: FaUserGraduate, tone: "gold", category: "Interview Prep", rarity: "epic", current: s.mockCompleted, goal: 5 }),
+    bool({ id: "mock-clean-sweep", label: "Clean Sweep", detail: "Solved all 3 problems in one mock", icon: FaUserGraduate, tone: "purple", category: "Interview Prep", rarity: "epic", earned: s.clearedAllMock || s.bestMockSolved >= 3 }),
+    bool({ id: "mock-veteran", label: "Strong Interview", detail: "Solved 2 of 3 problems in one mock", icon: FaCrown, tone: "gold", category: "Interview Prep", rarity: "rare", earned: s.bestMockSolved >= 2 }),
+
+    // ── Learn badges: reading the lesson before the test (from the local store) ──
+    count({ id: "first-lesson", label: "Open Book", detail: "Opened your first lesson", icon: FaBookOpen, tone: "blue", category: "Learn", rarity: "common", current: s.lessonsRead, goal: 1 }),
+    count({ id: "five-lessons", label: "Lesson Explorer", detail: "Opened 5 lessons", icon: FaBookReader, tone: "purple", category: "Learn", rarity: "uncommon", current: s.lessonsRead, goal: 5 }),
+    count({ id: "fifteen-lessons", label: "Lesson Regular", detail: "Opened 15 lessons", icon: FaGraduationCap, tone: "green", category: "Learn", rarity: "rare", current: s.lessonsRead, goal: 15 }),
+
+    // ── Concept-quiz badges: the Practice side, which had zero coverage before ──
+    count({ id: "first-quiz", label: "Quiz Started", detail: "Finished your first concept quiz", icon: FaClipboardCheck, tone: "cyan", category: "Concept Quizzes", rarity: "common", current: s.quizCategoriesAttempted, goal: 1 }),
+    bool({ id: "quiz-perfect", label: "Flawless", detail: "Scored 100% on a concept quiz", icon: FaBullseye, tone: "gold", category: "Concept Quizzes", rarity: "rare", earned: s.quizPerfectCategories >= 1 }),
+    count({ id: "quiz-five-pass", label: "Concept Collector", detail: "Passed 5 concept-quiz topics", icon: FaCheckDouble, tone: "green", category: "Concept Quizzes", rarity: "uncommon", current: s.quizCategoriesPassed, goal: 5 }),
+    count({ id: "quiz-ten-pass", label: "Quiz Champion", detail: "Passed 10 concept-quiz topics", icon: FaTrophy, tone: "purple", category: "Concept Quizzes", rarity: "epic", current: s.quizCategoriesPassed, goal: 10 }),
+    count({ id: "quiz-polyglot", label: "Quiz Polyglot", detail: "Took quizzes in 3 languages", icon: FaLanguage, tone: "blue", category: "Concept Quizzes", rarity: "rare", current: s.quizLanguagesCount, goal: 3 }),
+    count({ id: "quiz-fifty-correct", label: "50 Correct", detail: "Answered 50 quiz questions correctly", icon: FaMountain, tone: "red", category: "Concept Quizzes", rarity: "rare", current: s.totalQuizCorrect, goal: 50 }),
+
+    // ── Cross-surface: rewards using the whole Learn -> Practice -> Code flow ──
+    bool({ id: "full-loop", label: "Full Circle", detail: "Read a lesson, passed a quiz, solved a problem", icon: FaSync, tone: "gold", category: "Mastery", rarity: "epic", earned: s.lessonsRead >= 1 && s.quizCategoriesPassed >= 1 && s.solvedCount >= 1 }),
   ];
 }
 
@@ -224,6 +263,8 @@ function buildBadges(stats) {
 // falls into a trailing "More" group so nothing silently disappears.
 const CATEGORY_ORDER = [
   "Starter",
+  "Learn",
+  "Concept Quizzes",
   "Consistency",
   "Persistence",
   "Languages",
@@ -272,10 +313,14 @@ function pickNearestMilestone(badges) {
   return candidates[0];
 }
 
-// One-line screen-reader summary so the card reads as a single coherent phrase
-// ("First Run, Common, locked, 0 of 1") instead of fragmented pieces.
+function getBadgeState(badge) {
+  if (badge.earned) return "earned";
+  if (badge.kind === "count" && (badge.current || 0) > 0) return "in-progress";
+  return "not-started";
+}
+
 function badgeAriaLabel(badge, current) {
-  const state = badge.earned ? "earned" : "locked";
+  const state = getBadgeState(badge).replace("-", " ");
   const rarity = RARITY_LABEL[badge.rarity] || badge.rarity;
   const progress = badge.kind === "count" && !badge.earned ? `, ${current} of ${badge.goal}` : "";
   return `${badge.label}, ${rarity}, ${state}${progress}. ${badge.detail}`;
@@ -283,18 +328,17 @@ function badgeAriaLabel(badge, current) {
 
 function BadgeCard({ badge }) {
   const Icon = badge.icon;
-  // Show a progress bar only on count-based badges that aren't earned yet.
-  // Boolean badges have no partial progress; earned badges show the pill.
+  const state = getBadgeState(badge);
   const showProgress = badge.kind === "count" && !badge.earned;
   const current = Math.min(badge.current || 0, badge.goal);
   const percent = badge.goal > 0 ? Math.round((current / badge.goal) * 100) : 0;
+  const stateLabel = state === "earned" ? "Earned" : state === "in-progress" ? "In progress" : "Not started";
+
   return (
     <article
-      className={`progress-badge-card ${badge.tone} rarity-${badge.rarity} ${badge.earned ? "earned" : "locked"}`}
+      className={`progress-badge-card ${badge.tone} rarity-${badge.rarity} ${state}`}
       aria-label={badgeAriaLabel(badge, current)}
     >
-      {/* Inner pieces are aria-hidden: the article's aria-label already speaks the
-          whole card, so screen readers don't re-read each fragment. */}
       <span className="progress-badge-icon" aria-hidden="true"><Icon /></span>
       <div className="progress-badge-body" aria-hidden="true">
         <div className="progress-badge-titlerow">
@@ -311,54 +355,160 @@ function BadgeCard({ badge }) {
           </div>
         )}
       </div>
-      <strong aria-hidden="true">{badge.earned ? "Earned" : "Locked"}</strong>
+      <strong className={`badge-state badge-state-${state}`} aria-hidden="true">{stateLabel}</strong>
     </article>
   );
 }
 
-// `midSlot` renders between the header trio (Milestones + earned count + Next-up
-// nudge) and the badge category grids — the Progress tab passes the stat tiles
-// here so the page reads: achievements framing → at-a-glance stats → the badges.
-export default function ProgressBadges({ questions = [], progressByQuestion = {}, progressByLanguage = {}, progressSummary = {}, midSlot = null }) {
-  const stats = computeStats({ questions, progressByQuestion, progressByLanguage, progressSummary });
-  const badges = buildBadges(stats);
+function BadgeGroups({ badges }) {
   const groups = groupByCategory(badges);
+  return groups.map((group) => {
+    const groupEarned = group.badges.filter(badge => badge.earned).length;
+    return (
+      <div key={group.category} className="progress-badge-group">
+        <div className="progress-badge-group-head">
+          <h3>{group.category}</h3>
+          <span>{groupEarned}/{group.badges.length} earned</span>
+        </div>
+        <div className="progress-badge-grid">
+          {group.badges.map((badge) => <BadgeCard key={badge.id} badge={badge} />)}
+        </div>
+      </div>
+    );
+  });
+}
 
-  const earnedCount = badges.filter(badge => badge.earned).length;
+function getNextAction(category) {
+  const actions = {
+    Starter: "Run a test or solve your first practice problem.",
+    Learn: "Open a lesson and mark it complete.",
+    "Concept Quizzes": "Take another concept quiz.",
+    Consistency: "Complete today's daily challenge.",
+    Persistence: "Keep testing and improving one solution.",
+    Languages: "Try a problem in another language.",
+    Topics: "Choose a practice problem from a new topic.",
+    Testing: "Run your code against the test cases.",
+    "Interview Prep": "Start a mock interview.",
+    Mastery: "Solve another practice problem.",
+  };
+  return actions[category] || "Keep practicing to reach this milestone.";
+}
+
+export default function ProgressBadges({ questions = [], progressByQuestion = {}, progressByLanguage = {}, progressSummary = {}, learnQuizStats = {}, interviewStats = {}, midSlot = null }) {
+  const [activeFilter, setActiveFilter] = useState("in-progress");
+  const stats = computeStats({ questions, progressByQuestion, progressByLanguage, progressSummary, learnQuizStats, interviewStats });
+  const badges = buildBadges(stats);
+  const earnedBadges = badges.filter(badge => badge.earned);
+  const inProgressBadges = badges.filter(badge => getBadgeState(badge) === "in-progress");
+  const notStartedBadges = badges.filter(badge => getBadgeState(badge) === "not-started");
+  const activeBadges = [...earnedBadges, ...inProgressBadges];
+
+  const visibleBadges = activeFilter === "earned"
+    ? earnedBadges
+    : activeFilter === "all"
+      ? activeBadges
+      : inProgressBadges;
+
   const nearest = pickNearestMilestone(badges);
-  // Nearest-milestone nudge: concrete goal when something's in progress, else a
-  // generic start-here for brand-new users. aria-live so SR users hear it update.
-  const nearestText = nearest
-    ? `You're ${nearest.remaining} away from ${nearest.badge.label}.`
-    : "Run your first test or solve a problem to start unlocking milestones.";
+  const nearestBadge = nearest?.badge;
+  const nearestCurrent = nearestBadge ? Math.min(nearestBadge.current || 0, nearestBadge.goal) : 0;
+  const nearestPercent = nearestBadge?.goal > 0 ? Math.round((nearestCurrent / nearestBadge.goal) * 100) : 0;
+
+  const filters = [
+    { id: "in-progress", label: "In progress", count: inProgressBadges.length },
+    { id: "earned", label: "Earned", count: earnedBadges.length },
+    { id: "all", label: "All", count: badges.length },
+  ];
 
   return (
-    <section className="progress-badge-section" aria-label="Coding progress badges">
+    <section className="progress-badge-section" aria-labelledby="milestones-title">
       <div className="progress-badge-header">
-        <span className="coding-kicker">Milestones</span>
-        <span>{earnedCount}/{badges.length} earned</span>
+        <div>
+          <span className="coding-kicker">Your progress</span>
+          <h2 id="milestones-title">Milestones</h2>
+          <p>See what you have earned and what to work toward next.</p>
+        </div>
+        <span>{earnedBadges.length}/{badges.length} earned</span>
       </div>
-      <div className="progress-badge-nudge" role="status" aria-live="polite">
-        <span className="progress-badge-nudge-tag">Next up</span>
-        <span className="progress-badge-nudge-text">{nearestText}</span>
-      </div>
-      {midSlot}
-      {groups.map((group) => {
-        const groupEarned = group.badges.filter(b => b.earned).length;
-        return (
-          <div key={group.category} className="progress-badge-group">
-            <div className="progress-badge-group-head">
-              <h3>{group.category}</h3>
-              <span>{groupEarned}/{group.badges.length}</span>
+
+      <div className="progress-badge-next" role="status" aria-live="polite">
+        <div className="progress-badge-next-copy">
+          <span className="progress-badge-nudge-tag">Next up</span>
+          {nearestBadge ? (
+            <>
+              <h3>{nearestBadge.label}</h3>
+              <p>{nearestBadge.detail}</p>
+              <span className="progress-badge-next-action">{getNextAction(nearestBadge.category)}</span>
+            </>
+          ) : (
+            <>
+              <h3>Start your first milestone</h3>
+              <p>Run a test, read a lesson, or take a concept quiz.</p>
+            </>
+          )}
+        </div>
+        {nearestBadge && (
+          <div className="progress-badge-next-progress" aria-label={`${nearestCurrent} of ${nearestBadge.goal} complete`}>
+            <strong>{nearestPercent}%</strong>
+            <span>{nearestCurrent} / {nearestBadge.goal}</span>
+            <div className="progress-badge-meter-track">
+              <span className="progress-badge-meter-fill" style={{ width: `${nearestPercent}%` }} />
             </div>
-            <div className="progress-badge-grid">
-              {group.badges.map((badge) => (
-                <BadgeCard key={badge.id} badge={badge} />
-              ))}
-            </div>
+            <small>{nearest.remaining} to go</small>
           </div>
-        );
-      })}
+        )}
+      </div>
+
+      {midSlot}
+
+      <div className="progress-badge-toolbar">
+        <div>
+          <h2>Achievement badges</h2>
+          <p>Focus on active goals, or review what you have earned.</p>
+        </div>
+        <div className="progress-badge-filters" role="group" aria-label="Filter milestone badges">
+          {filters.map(filter => (
+            <button
+              key={filter.id}
+              type="button"
+              className={activeFilter === filter.id ? "active" : ""}
+              aria-pressed={activeFilter === filter.id}
+              onClick={() => setActiveFilter(filter.id)}
+            >
+              {filter.label} <span>{filter.count}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {visibleBadges.length > 0 ? (
+        <BadgeGroups badges={visibleBadges} />
+      ) : (
+        <div className="progress-badge-empty">
+          <FaSeedling aria-hidden="true" />
+          <h3>{activeFilter === "earned" ? "No badges earned yet" : activeFilter === "all" ? "No active milestones yet" : "No milestones in progress yet"}</h3>
+          <p>
+            {activeFilter === "earned"
+              ? "Complete a lesson, quiz, or coding problem to earn your first badge."
+              : "Start a lesson, quiz, or coding problem and your active goals will appear here."}
+          </p>
+          {activeFilter !== "all" && (
+            <button type="button" onClick={() => setActiveFilter("all")}>View all milestones</button>
+          )}
+        </div>
+      )}
+
+      {(activeFilter === "all" || activeFilter === "in-progress") && notStartedBadges.length > 0 && (
+        <details className="progress-badge-locked">
+          <summary>
+            <span>Not started</span>
+            <small>{notStartedBadges.length} milestones</small>
+          </summary>
+          <div className="progress-badge-locked-content">
+            <BadgeGroups badges={notStartedBadges} />
+          </div>
+        </details>
+      )}
     </section>
   );
 }

@@ -1,0 +1,67 @@
+{
+  "_note": "ORIGINAL CS Navigator content added to align Learn with the existing Part 2 quiz category. No source prose, examples, or exercises were copied.",
+  "title": "Algorithm Problems: Part 2",
+  "summary": "Coordinate multiple values and define edge-case behavior.",
+  "minutes": 7,
+  "error_classes": [
+    "wrong_answer",
+    "runtime",
+    "timeout"
+  ],
+  "refresher": "A multi-step algorithm may track a value and its index or combine a count with a total. State what remains true after each pass, then handle empty input and ties deliberately.",
+  "refresher_code": "best = 0\nfor i in range(1, len(values)):\n    if values[i] > values[best]:\n        best = i",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "A multi-step algorithm may track a value and its index or combine a count with a total. State what remains true after each pass, then handle empty input and ties deliberately. Coordinate multiple values and define edge-case behavior."
+    },
+    {
+      "kind": "code",
+      "caption": "The empty guard runs before indexing, and every later value can replace the candidate index.",
+      "code": "def largest_index(values):\n    if not values:\n        return -1\n    best = 0\n    for i in range(1, len(values)):\n        if values[i] > values[best]:\n            best = i\n    return best\n\nprint(largest_index([4, 9, 7]))",
+      "output": "1"
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Track the state",
+      "body": "Without the empty case, the first access fails before the loop can establish any useful state."
+    },
+    {
+      "kind": "check",
+      "prompt": "Why begin the loop at one?",
+      "code": "",
+      "choices": [
+        "index zero is already the candidate",
+        "lists begin at one",
+        "odd positions lead",
+        "negative values are skipped"
+      ],
+      "answer_index": 0,
+      "why": "The first element has already initialized the best candidate, so comparison starts with the next item."
+    },
+    {
+      "kind": "check",
+      "prompt": "With `>`, which tied maximum remains?",
+      "code": "values = [8, 3, 8]",
+      "choices": [
+        "the first",
+        "the last",
+        "both",
+        "neither"
+      ],
+      "answer_index": 0,
+      "why": "An equal later value does not satisfy strict greater-than, leaving the earlier index unchanged."
+    },
+    {
+      "kind": "list",
+      "title": "Algorithm Problems: Part 2 checklist",
+      "items": [
+        "Name each state variable.",
+        "Guard empty input.",
+        "Choose a tie rule.",
+        "Trace every update."
+      ]
+    }
+  ]
+}

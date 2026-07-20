@@ -38,6 +38,16 @@ def parse_degreeworks_audit_json(audit: dict) -> dict:
     result["student_id"] = header.get("studentId") or None
     result["overall_gpa"] = _to_float(header.get("studentSystemGpa") or header.get("degreeworksGpa"))
 
+    # --- Credits: distinguish EARNED (passed) from APPLIED (counts toward the degree).
+    # DegreeWorks' block `creditsApplied` bundles in-progress + transfer + exam credits,
+    # so it is NOT "credits earned." The header breaks it down:
+    #   creditsApplied = residentApplied + residentAppliedInProgress + transferApplied + examApplied
+    # "Earned" = everything applied MINUS what's still in progress (not yet passed).
+    # We keep the applied + in-progress numbers too so nothing that needs "counts toward
+    # degree" (e.g. remaining-to-graduate) loses them.
+    in_progress_credits = _to_float(header.get("residentAppliedInProgress")) or 0.0
+    result["total_credits_in_progress"] = in_progress_credits or None
+
     # --- degreeInformation: degree, classification, catalog year ---
     deg_info = audit.get("degreeInformation") or {}
     deg_array = deg_info.get("degreeDataArray") or []
@@ -70,9 +80,15 @@ def parse_degreeworks_audit_json(audit: dict) -> dict:
             block_gpa = _to_float(block.get("gpa"))
 
             if credits_applied:
-                result["total_credits_earned"] = credits_applied
+                # APPLIED = counts toward the degree (includes in-progress + transfer).
+                result["total_credits_applied"] = credits_applied
+                # EARNED = applied minus what's still in progress (passed credits only).
+                # If in-progress isn't known, earned == applied (best available).
+                result["total_credits_earned"] = max(0.0, credits_applied - (in_progress_credits or 0.0))
             if credits_required:
                 result["credits_required"] = credits_required
+            # Remaining-to-graduate is measured against APPLIED (in-progress credits do
+            # count toward finishing), matching DegreeWorks' own "needed" figure.
             if credits_applied and credits_required:
                 result["credits_remaining"] = max(0, credits_required - credits_applied)
             if block_gpa and not result.get("overall_gpa"):
@@ -121,6 +137,37 @@ def parse_degreeworks_audit_json(audit: dict) -> dict:
     if remaining:
         result["courses_remaining"] = json.dumps(remaining)
 
+    # --- GenEd area completion (authoritative source for "which GenEd is done") ---
+    # DegreeWorks computes each General Education distribution area's completion %,
+    # accounting for transfer credits, cross-counts (MATH 241 -> MQ), and proficiency
+    # credit that plain course-code matching would miss. We capture {area_code: pct}
+    # (e.g. {"IM": 100, "AH": 50, "HH": 100}) so the planner can trust it. The area
+    # code is the (XX) tag in a rule label like "Health and Healthful Living (HH)".
+    gened_areas = {}
+    _AREA_CODES = {"IM", "EC", "CT", "MQ", "AH", "BP", "SB", "HH", "CI"}
+
+    def _scan_rules_for_gened(rules):
+        for rule in rules or []:
+            label = (rule.get("label") or "")
+            m = re.search(r'\(([A-Z]{2})\)', label)
+            if m and m.group(1) in _AREA_CODES:
+                code = m.group(1)
+                pct = rule.get("percentComplete")
+                try:
+                    pct = int(float(pct))
+                except (TypeError, ValueError):
+                    pct = None
+                if pct is not None:
+                    # Keep the max % seen for an area (some appear in multiple blocks).
+                    gened_areas[code] = max(gened_areas.get(code, 0), pct)
+            # Rules can nest sub-rules.
+            _scan_rules_for_gened(rule.get("ruleArray"))
+
+    for block in blocks:
+        _scan_rules_for_gened(block.get("ruleArray"))
+    if gened_areas:
+        result["gened_areas"] = json.dumps(gened_areas)
+
     # --- Find major from degreeInformation ---
     for deg in deg_array:
         school_lit = (deg.get("schoolLiteral") or "").strip()
@@ -136,6 +183,12 @@ def parse_degreeworks_audit_json(audit: dict) -> dict:
         code = goal.get("code", "")
         if code == "MAJOR":
             major_name = (goal.get("valueLiteral") or "").strip()
+        elif code == "MINOR":
+            # DegreeWorks carries a declared minor as a goalArray entry, same shape
+            # as MAJOR. Capture its name so the advising form / profile can show it.
+            minor_name = (goal.get("valueLiteral") or "").strip()
+            if minor_name:
+                result["minor"] = minor_name
         elif code == "ADVISOR":
             advisor_name = (goal.get("advisorName") or "").strip()
             if advisor_name:

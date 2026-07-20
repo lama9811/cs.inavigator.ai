@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FaRegQuestionCircle, FaBookOpen } from "react-icons/fa";
+import { FaRegQuestionCircle, FaBookOpen, FaArrowRight } from "react-icons/fa";
 
 // Sequential concept-quiz runner. Renders one question at a time in a split
 // layout (code/statement left with Question|Learn tabs, answer UI right),
@@ -13,6 +13,32 @@ import { FaRegQuestionCircle, FaBookOpen } from "react-icons/fa";
 // Grading is done server-side via `onGrade` (the /grade endpoint) so answers
 // aren't trusted from the client. The parent supplies questions, current index
 // (from the URL), and navigation callbacks so the Back button steps through.
+
+// In-progress answers, saved per quiz for the session. The runner unmounts whenever the
+// student leaves (to read a lesson, to look at Code), and without this every answer they
+// had given was destroyed — a half-finished quiz simply could not be resumed.
+//
+// sessionStorage on purpose: it survives a detour, but an abandoned quiz shouldn't still
+// be sitting there next week. Storage failures are swallowed — a student in private mode
+// loses resume, not the quiz.
+function readAnswers(key) {
+  try {
+    const raw = sessionStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeAnswers(key, answers) {
+  try {
+    if (!answers || !Object.keys(answers).length) sessionStorage.removeItem(key);
+    else sessionStorage.setItem(key, JSON.stringify(answers));
+  } catch {
+    // Storage unavailable/full — the quiz still works, it just won't resume.
+  }
+}
 
 // Deterministic shuffle seeded by the question id, so the scrambled Parsons
 // order is stable across re-renders (no Math.random re-scrambling on keypress)
@@ -127,7 +153,7 @@ function AnswerPanel({ question, answer, onAnswer }) {
           autoComplete="off"
           value={answer?.text ?? ""}
           placeholder={
-            question.typein_mode === "code" ? "e.g. print(\"Hello\")" : "Your answer"
+            question.typein_mode === "code" ? "Enter one statement" : "Your answer"
           }
           onChange={(event) => onAnswer({ text: event.target.value })}
         />
@@ -173,20 +199,98 @@ function AnswerPanel({ question, answer, onAnswer }) {
   );
 }
 
-function LearnTab({ categoryLabel }) {
+// The refresher, shown beside the question the student is answering.
+//
+// This is deliberately NOT the whole lesson — mid-question, a student needs a reminder,
+// not a chapter. It comes from the SAME file as the full lesson (see backend/lessons.py),
+// so the two can never drift apart and tell them different things. If a reminder isn't
+// enough, "Read the full lesson" takes them to Learn on this exact topic.
+function LearnTab({ apiBase, language, category, categoryLabel, onOpenLesson }) {
+  const [refresher, setRefresher] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    setRefresher(null);
+    fetch(`${apiBase}/api/coding/learn/${language}/${category}/refresher`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (alive) setRefresher(data?.refresher || null);
+      })
+      .catch(() => {
+        // A missing refresher is not an error the student needs to see — the Question
+        // tab still works. Fall through to the "not written yet" copy below.
+        if (alive) setRefresher(null);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [apiBase, language, category]);
+
+  if (loading) return <div className="cq-learn-panel"><p>Loading…</p></div>;
+
+  if (!refresher) {
+    return (
+      <div className="cq-learn-panel">
+        <div className="cq-learn-badge">Coming soon</div>
+        <h4>Learn: {categoryLabel}</h4>
+        <p>
+          The lesson for {categoryLabel.toLowerCase()} is still being written. Use the
+          Question tab — and the floating Coding Tutor is always there if you get stuck.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="cq-learn-panel">
-      <div className="cq-learn-badge">Coming soon</div>
-      <h4>Learn: {categoryLabel}</h4>
-      <p>
-        Short lessons on {categoryLabel.toLowerCase()} will live here so you can
-        brush up before you practice. For now, use the Question tab — and the
-        floating Coding Tutor is always available if you get stuck.
-      </p>
+      <h4>{refresher.title}</h4>
+      <p className="cq-learn-refresher">{withInlineCode(refresher.refresher)}</p>
+      {refresher.refresher_code ? (
+        <pre className="cq-learn-code">
+          <code>{refresher.refresher_code}</code>
+        </pre>
+      ) : null}
+      {onOpenLesson ? (
+        <button
+          type="button"
+          className="cq-learn-more"
+          onClick={() => onOpenLesson(language, category)}
+        >
+          Read the full lesson <FaArrowRight aria-hidden="true" />
+        </button>
+      ) : null}
     </div>
   );
 }
 
+// `inline code` → <code>. Not a markdown parser: refresher text is plain sentences we
+// author ourselves, so pulling in a renderer would mean sanitizing HTML we already control.
+function withInlineCode(text) {
+  const parts = String(text || "").split(/(`[^`]+`)/g);
+  return parts.map((part, i) =>
+    part.startsWith("`") && part.endsWith("`") && part.length > 2 ? (
+      <code key={i}>{part.slice(1, -1)}</code>
+    ) : (
+      part
+    )
+  );
+}
+
+function splitExplanation(text) {
+  const sentences = String(text || "")
+    .trim()
+    .split(/(?<=[.!?])\s+/)
+    .filter(Boolean);
+  return {
+    summary: sentences.slice(0, 2).join(" "),
+    detail: sentences.slice(2).join(" "),
+  };
+}
 function ResultsScreen({ grade, questions, onRetry, onBackToCategory }) {
   const byId = useMemo(() => {
     const map = {};
@@ -197,6 +301,11 @@ function ResultsScreen({ grade, questions, onRetry, onBackToCategory }) {
   }, [grade]);
 
   const pct = Math.round((grade.score || 0) * 100);
+  const formatAnswer = (value) => {
+    if (Array.isArray(value)) return value.join("\n");
+    if (value == null || value === "") return "No answer";
+    return String(value);
+  };
   return (
     <div className="cq-results">
       <div className="cq-results-header">
@@ -233,9 +342,33 @@ function ResultsScreen({ grade, questions, onRetry, onBackToCategory }) {
                   </span>
                 </div>
                 <p className="cq-result-prompt">{q.prompt}</p>
-                {r.explanation ? (
-                  <p className="cq-result-explanation">{r.explanation}</p>
+                {!ok ? (
+                  <div className="cq-result-answer-review">
+                    <div className="cq-result-answer student">
+                      <span>Your answer</span>
+                      <code>{formatAnswer(r.student_answer)}</code>
+                    </div>
+                    <div className="cq-result-answer correct">
+                      <span>Correct answer</span>
+                      <code>{formatAnswer(r.correct_answer)}</code>
+                    </div>
+                  </div>
                 ) : null}
+                {r.explanation ? (() => {
+                  const explanation = splitExplanation(r.explanation);
+                  return (
+                    <div className="cq-result-explanation">
+                      <strong>{ok ? "Why it works" : "What happened"}</strong>
+                      <p>{explanation.summary}</p>
+                      {explanation.detail ? (
+                        <details className="cq-result-more">
+                          <summary>More detail</summary>
+                          <p>{explanation.detail}</p>
+                        </details>
+                      ) : null}
+                    </div>
+                  );
+                })() : null}
               </div>
             </li>
           );
@@ -255,6 +388,9 @@ function ResultsScreen({ grade, questions, onRetry, onBackToCategory }) {
 }
 
 export default function QuizRunner({
+  apiBase,
+  language,
+  category,
   categoryLabel,
   questions,
   index,
@@ -262,13 +398,36 @@ export default function QuizRunner({
   onGrade,
   onSaveResult,
   onBackToCategory,
+  onOpenLesson,
 }) {
   const [tab, setTab] = useState("question");
+
   // answersById: { [questionId]: { choice_index? , text?, order? } }
-  const [answersById, setAnswersById] = useState({});
+  //
+  // Persisted per (language, category) for the SESSION, because this component unmounts
+  // the moment a student leaves the quiz — to check a lesson, to look at Code, to answer
+  // the door. Held in plain state, every answer they'd given was silently destroyed, and
+  // a half-finished quiz could not be resumed at all.
+  //
+  // sessionStorage, not localStorage: an abandoned quiz should not still be sitting there
+  // next week. It should survive a detour, not outlive the visit.
+  const storageKey = `cq_answers:${language}:${category}`;
+  const [answersById, setAnswersById] = useState(() => readAnswers(storageKey));
   const [grade, setGrade] = useState(null);
   const [grading, setGrading] = useState(false);
   const [error, setError] = useState("");
+
+  // Load the saved answers when the student switches to a DIFFERENT quiz (the component
+  // is reused across categories, so the initial state above only runs once).
+  useEffect(() => {
+    setAnswersById(readAnswers(storageKey));
+    setGrade(null);
+    setError("");
+  }, [storageKey]);
+
+  useEffect(() => {
+    writeAnswers(storageKey, answersById);
+  }, [storageKey, answersById]);
 
   // Reset the Learn/Question tab back to Question whenever the question changes.
   useEffect(() => {
@@ -432,7 +591,13 @@ export default function QuizRunner({
                 ) : null}
               </div>
             ) : (
-              <LearnTab categoryLabel={categoryLabel} />
+              <LearnTab
+                apiBase={apiBase}
+                language={language}
+                category={category}
+                categoryLabel={categoryLabel}
+                onOpenLesson={onOpenLesson}
+              />
             )}
           </div>
         </div>

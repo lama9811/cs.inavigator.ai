@@ -59,10 +59,17 @@ CLAUDE.md
 AGENTS.md
 ROADMAP.md
 
+# Planning docs — internal implementation queues, kept local (never pushed)
+docs/plans/
+
 # Presentation / talk notes (kept local, not for public repo)
 docs/aaas_talk.md
 docs/*_talk.md
 docs/presentation*.md
+
+# Planning docs — the WHOLE folder, so anything added here later is covered too.
+# These are internal roadmaps/design notes and must never reach the public repo.
+docs/plans/
 
 # Text extraction service (cloned repo)
 text-extract-api/
@@ -80,6 +87,8 @@ backend/backend/
 
 # PDFs (reports, student data)
 *.pdf
+# ...except the official curriculum-sequence sheets we ship as advising references
+!frontend/public/docs/*.pdf
 
 # Test / temp scripts
 generate_report.py

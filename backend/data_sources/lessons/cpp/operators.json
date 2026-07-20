@@ -1,0 +1,89 @@
+{
+  "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
+  "title": "Operators",
+  "summary": "Calculate values, compare them, and combine conditions.",
+  "minutes": 10,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "C++ uses familiar arithmetic operators such as `+`, `-`, `*`, and `/`. Comparisons such as `>=` produce true or false. Use `&&` for and, `||` for or, `!` for not, and `==` to compare equality.",
+  "refresher_code": "bool ready = credits >= 12 && holds == 0;",
+  "blocks": [
+    {
+      "kind": "text",
+      "body": "Operators perform work with values. Arithmetic operators calculate, comparison operators ask a true-or-false question, and logical operators join those questions. Parentheses make a longer expression easier to follow."
+    },
+    {
+      "kind": "text",
+      "body": "The types on both sides affect the result. Two integers divided together produce an integer, so `7 / 2` gives `3`. The logical operators `&&` and `||` stop as soon as the final answer is known, which can prevent the expression on the right from running."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Logical words look different in Python",
+      "body": "Python spells these operators `and`, `or`, and `not`. C++ writes the same ideas as `&&`, `||`, and `!`. The meaning is the same even though the symbols differ."
+    },
+    {
+      "kind": "code",
+      "caption": "The first calculation uses two integers and drops the fraction. Writing 7.0 makes the second calculation use decimal arithmetic.",
+      "code": "#include <iostream>\n\nint main() {\n  std::cout << 7 / 2 << \"\\n\";\n  std::cout << 7.0 / 2 << \"\\n\";\n}",
+      "output": "3\n3.5"
+    },
+    {
+      "kind": "compare",
+      "caption": "Convert before the operation that would lose information.",
+      "wrong_label": "Common mistake",
+      "wrong": "double average = total / count;",
+      "right_label": "Clearer version",
+      "right": "double average = static_cast<double>(total) / count;"
+    },
+    {
+      "kind": "text",
+      "body": "If `total` is seven and `count` is two, integer division produces three before assignment happens. Storing that result in a double changes it to `3.0`, but the missing half is already gone. Convert before dividing."
+    },
+    {
+      "kind": "callout",
+      "tone": "mistake",
+      "title": "Comparison uses two equals signs",
+      "body": "Use `==` to ask whether two values are equal. A single `=` stores a new value. Mixing them up inside a condition can change a variable when you only meant to compare it."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is `10 - 2 * 3`?",
+      "code": "",
+      "choices": [
+        "4",
+        "24",
+        "18",
+        "8"
+      ],
+      "answer_index": 0,
+      "why": "Multiplication happens first, leaving ten minus six."
+    },
+    {
+      "kind": "check",
+      "prompt": "What is `9 % 4`?",
+      "code": "",
+      "choices": [
+        "1",
+        "2.25",
+        "4",
+        "0"
+      ],
+      "answer_index": 0,
+      "why": "The remainder after two groups of four is one."
+    },
+    {
+      "kind": "list",
+      "title": "Operators checklist",
+      "items": [
+        "Check operand types.",
+        "Use equality for comparisons.",
+        "Parenthesize dense logic.",
+        "Remember integer division."
+      ]
+    }
+  ],
+  "_beginner_expanded": true
+}
