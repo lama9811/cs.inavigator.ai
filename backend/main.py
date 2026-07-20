@@ -2972,6 +2972,95 @@ from services.context_builders import (
 )
 
 
+# --- Memory-port post-commit background tasks -------------------------------
+# All run AFTER the HTTP response is sent (asyncio.create_task), so they add
+# zero user-facing latency. Each is independently env-flag-gated and self-gates
+# on its trigger. RuntimeError (no running loop, e.g. sync tests) is swallowed.
+_realtime_extraction_locks: dict = {}
+
+
+def _is_extraction_turn(turn_count: int) -> bool:
+    """Realtime extraction fires every 6th turn."""
+    return turn_count > 0 and turn_count % 6 == 0
+
+
+def _get_user_realtime_lock(user_id: int):
+    lock = _realtime_extraction_locks.get(user_id)
+    if lock is None:
+        lock = asyncio.Lock()
+        _realtime_extraction_locks[user_id] = lock
+    return lock
+
+
+async def _run_extraction_locked(user_id: int):
+    from services.memory_service import consolidate_user_memories_single
+    lock = _get_user_realtime_lock(user_id)
+    if lock.locked():
+        return
+    async with lock:
+        await asyncio.to_thread(consolidate_user_memories_single, user_id, 2)
+
+
+def _schedule_session_summary(user_id: int, session_id: str):
+    if os.getenv("ENABLE_SESSION_SUMMARY", "true").lower() not in ("1", "true", "yes"):
+        return
+    from services.memory_service import run_session_summary
+    try:
+        asyncio.create_task(asyncio.to_thread(run_session_summary, user_id, session_id))
+    except RuntimeError:
+        pass
+
+
+def _schedule_embed_turn(chat_history_id: int):
+    if os.getenv("ENABLE_VERBATIM_RECALL", "true").lower() not in ("1", "true", "yes"):
+        return
+    from services.memory_service import embed_and_store_turn
+    try:
+        asyncio.create_task(asyncio.to_thread(embed_and_store_turn, chat_history_id))
+    except RuntimeError:
+        pass
+
+
+def _schedule_touch_last_chat(user_id: int):
+    from services.memory_service import touch_user_last_chat_at
+    try:
+        asyncio.create_task(asyncio.to_thread(touch_user_last_chat_at, user_id))
+    except RuntimeError:
+        pass
+
+
+def _schedule_realtime_extraction(user_id: int, session_id: str):
+    if os.getenv("ENABLE_REALTIME_MEMORY", "true").lower() not in ("1", "true", "yes"):
+        return
+    try:
+        with SessionLocal() as _db:
+            turn_count = (
+                _db.query(ChatHistory)
+                .filter(ChatHistory.user_id == user_id, ChatHistory.session_id == session_id)
+                .count()
+            )
+    except Exception as e:
+        print(f"[MEMORY] turn-count query failed user={user_id}: {e}")
+        return
+    if not _is_extraction_turn(turn_count):
+        return
+    try:
+        asyncio.create_task(_run_extraction_locked(user_id))
+    except RuntimeError:
+        pass
+
+
+def _schedule_post_commit_memory_tasks(user_id: int, session_id: str, chat_id: int):
+    """Fire all memory background tasks after a chat turn commits. Never raises."""
+    try:
+        _schedule_session_summary(user_id, session_id)
+        _schedule_touch_last_chat(user_id)
+        _schedule_embed_turn(chat_id)
+        _schedule_realtime_extraction(user_id, session_id)
+    except Exception as e:
+        print(f"[MEMORY] post-commit scheduling failed: {e}")
+
+
 # --- CHAT ROUTES (WITH CONVERSATION MEMORY + PERSONALIZATION) ---
 @app.post("/chat")
 async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: Session = Depends(get_db)):
@@ -3112,6 +3201,8 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
                     )
                     db.add(new_chat)
                     db.commit()
+                    if not is_coding_tutor:
+                        _schedule_post_commit_memory_tasks(user["user_id"], session_id, new_chat.id)
                 except Exception as e:
                     print(f"[ERROR] Failed to save video chat history: {e}")
             return {"response": answer}
@@ -3178,6 +3269,8 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
             )
             db.add(new_chat)
             db.commit()
+            if not is_coding_tutor:
+                _schedule_post_commit_memory_tasks(user["user_id"], session_id, new_chat.id)
         except Exception as e:
             print(f"[ERROR] Failed to save chat history: {e}")
 
@@ -3375,6 +3468,9 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                         )
                         save_db.add(new_chat)
                         save_db.commit()
+                        _new_chat_id = new_chat.id
+                    if not is_coding_tutor:
+                        _schedule_post_commit_memory_tasks(user_id, session_id, _new_chat_id)
                 except Exception as e:
                     print(f"[ERROR] Failed to save video chat history: {e}")
                 mark_timing("total")
@@ -3469,6 +3565,9 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                         )
                         save_db.add(new_chat)
                         save_db.commit()
+                        _new_chat_id = new_chat.id
+                    if not is_coding_tutor:
+                        _schedule_post_commit_memory_tasks(user_id, session_id, _new_chat_id)
                 except Exception as e:
                     print(f"[ERROR] Failed to save cached chat history: {e}")
 
@@ -3579,6 +3678,9 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                     )
                     save_db.add(new_chat)
                     save_db.commit()
+                    _new_chat_id = new_chat.id
+                if not is_coding_tutor:
+                    _schedule_post_commit_memory_tasks(user_id, session_id, _new_chat_id)
             except Exception as e:
                 print(f"[ERROR] Failed to save streamed chat history: {e}")
 
