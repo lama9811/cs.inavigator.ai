@@ -341,13 +341,23 @@ def build_student_context(dw: dict) -> str:
     return ctx
 
 
-def build_conversation_context(history_dicts: list) -> str:
-    """Build conversation context string from history dicts."""
-    if not history_dicts:
-        return ""
-    ctx = "Previous conversation:\n"
-    for h in history_dicts:
-        ctx += f"User: {h['user_query']}\n"
-        ctx += f"Assistant: {h['bot_response']}\n"
-    ctx += "\n"
-    return ctx
+def build_conversation_context(history_dicts: list, session_summary: str = None) -> str:
+    """Prior turns + optional rolling summary for the agent's context.
+
+    When session_summary is present (set after ~8+ turns), inject it BEFORE the
+    raw last-5-turn window so older context is preserved.
+    """
+    parts = []
+    if session_summary:
+        parts.append(f"EARLIER IN THIS SESSION:\n{session_summary.strip()}\n")
+    if history_dicts:
+        lines = ["PRIOR CONVERSATION:"]
+        for h in history_dicts[-5:]:
+            u = (h.get("user_query") or "").strip()
+            b = (h.get("bot_response") or "").strip()
+            if u:
+                lines.append(f"User: {u}")
+            if b:
+                lines.append(f"Assistant: {b[:500]}")
+        parts.append("\n".join(lines))
+    return ("\n".join(parts) + "\n") if parts else ""

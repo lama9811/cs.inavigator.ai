@@ -2913,7 +2913,10 @@ from services.context_builders import (
 from services.query_rewriter import rewrite_query, is_likely_followup
 
 # Tier 2: Long-term user memory
-from services.memory_service import fetch_user_memories_sync, build_memory_context
+from services.memory_service import (
+    fetch_user_memories_sync, build_memory_context,
+    retrieve_relevant_memories, retrieve_relevant_turns,
+)
 from services.course_context import build_course_context
 
 # Verified YouTube video search (curated + YouTube Data API)
@@ -2932,8 +2935,13 @@ def is_persistable_session(session_id: str) -> bool:
     return (session_id or "default") not in INTERNAL_SESSION_IDS
 
 
-def _fetch_history_sync(user_id: int, session_id: str, limit: int = 10) -> list:
-    """Fetch chat history in a separate DB session for parallel execution."""
+def _fetch_history_sync(user_id: int, session_id: str, limit: int = 10):
+    """Fetch chat history + latest rolling summary in one DB session.
+
+    Returns (turns_list, session_summary). turns_list keeps the previous
+    [{user_query, bot_response}] shape so query_rewriter / is_likely_followup
+    callers stay unchanged. session_summary is None until Layer 2 fires.
+    """
     db = SessionLocal()
     try:
         history = db.query(ChatHistory)\
@@ -2941,7 +2949,19 @@ def _fetch_history_sync(user_id: int, session_id: str, limit: int = 10) -> list:
             .order_by(ChatHistory.timestamp.desc())\
             .limit(limit)\
             .all()
-        return [{"user_query": h.user_query, "bot_response": h.bot_response} for h in reversed(history)]
+        turns = [{"user_query": h.user_query, "bot_response": h.bot_response} for h in reversed(history)]
+        summary_row = (
+            db.query(ChatHistory.session_summary)
+            .filter(
+                ChatHistory.user_id == user_id,
+                ChatHistory.session_id == session_id,
+                ChatHistory.session_summary.isnot(None),
+            )
+            .order_by(ChatHistory.id.desc())
+            .first()
+        )
+        summary = summary_row[0] if summary_row else None
+        return turns, summary
     finally:
         db.close()
 
@@ -2976,30 +2996,37 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
     has_course_code = bool(re.search(r'\b[A-Z]{2,4}\s*\d{3}\b', user_q, re.IGNORECASE))
     needs_canvas = (not is_coding_tutor) and (has_course_code or any(kw in user_q.lower() for kw in CANVAS_KEYWORDS))
 
-    # Parallel fetch: DegreeWorks + Canvas (if needed) + chat history (for rewriting) + long-term memory
+    # Parallel fetch: DegreeWorks + Canvas (if needed) + chat history (for rewriting)
+    # + long-term memory + semantic/verbatim recall.
+    # _fetch_history_sync now returns (turns, session_summary).
     if is_coding_tutor:
         fetch_tasks = [asyncio.to_thread(_fetch_history_sync, user["user_id"], session_id, 5)]
+        results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
+        dw_dict = None
+        hist_res = results[0]
+        history_dicts, session_summary = hist_res if not isinstance(hist_res, Exception) else ([], None)
+        memory_dicts, relevant_memories, relevant_turns = [], [], []
+        canvas_dict = None
     else:
         fetch_tasks = [
             asyncio.to_thread(_fetch_dw_sync, user["user_id"]),
             asyncio.to_thread(_fetch_history_sync, user["user_id"], session_id, 5),
             asyncio.to_thread(fetch_user_memories_sync, user["user_id"], 10),
+            asyncio.to_thread(retrieve_relevant_memories, user["user_id"], user_q, 5, 0.55),
+            asyncio.to_thread(retrieve_relevant_turns, user["user_id"], user_q, 3, 0.62, session_id),
         ]
+        canvas_idx = None
         if needs_canvas:
+            canvas_idx = len(fetch_tasks)
             fetch_tasks.append(asyncio.to_thread(_fetch_canvas_sync, user["user_id"]))
-
-    results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
-
-    if is_coding_tutor:
-        dw_dict = None
-        history_dicts = results[0] if not isinstance(results[0], Exception) else []
-        memory_dicts = []
-        canvas_dict = None
-    else:
+        results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
         dw_dict = results[0] if not isinstance(results[0], Exception) else None
-        history_dicts = results[1] if not isinstance(results[1], Exception) else []
+        hist_res = results[1]
+        history_dicts, session_summary = hist_res if not isinstance(hist_res, Exception) else ([], None)
         memory_dicts = results[2] if not isinstance(results[2], Exception) else []
-        canvas_dict = results[3] if needs_canvas and len(results) > 3 and not isinstance(results[3], Exception) else None
+        relevant_memories = results[3] if not isinstance(results[3], Exception) else []
+        relevant_turns = results[4] if not isinstance(results[4], Exception) else []
+        canvas_dict = results[canvas_idx] if canvas_idx is not None and not isinstance(results[canvas_idx], Exception) else None
 
     # Tier 1: Rewrite follow-up queries to be self-contained (fixes pronoun resolution)
     if USE_VERTEX_AGENT and history_dicts and not is_coding_tutor and is_likely_followup(user_q):
@@ -3008,12 +3035,15 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
     student_context = ""
     canvas_context = ""
     memory_context = ""
-    conversation_context = _build_conversation_context(history_dicts)
+    conversation_context = _build_conversation_context(history_dicts, session_summary)
 
     if not is_coding_tutor:
         student_context = _build_student_context(dw_dict) if dw_dict else ""
         canvas_context = _build_canvas_context(canvas_dict) if canvas_dict else ""
-        memory_context = build_memory_context(memory_dicts)
+        # Prepend recent turns + summary so the model has within-conversation memory
+        # (delivered via state_delta, kept out of the session context hash).
+        memory_context = build_memory_context(memory_dicts, relevant_memories, relevant_turns)
+        memory_context = conversation_context + (memory_context or "")
 
         # Inject basic profile info so agent knows who they're talking to
         profile_parts = []
@@ -3096,7 +3126,8 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
             clean_query = re.sub(r'\[.*?\]\(.*?\)', '', user_q).strip()
             if not clean_query: clean_query = "Summarize this file."
 
-            file_context = f"{student_context}{canvas_context}{conversation_context}File Content:\n{file_content}\n"
+            # conversation_context is already folded into memory_context (state_delta).
+            file_context = f"{student_context}{canvas_context}File Content:\n{file_content}\n"
             answer = query_agent(
                 query=clean_query,
                 user_id=agent_user_id,
@@ -3201,31 +3232,38 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
     needs_canvas = (not is_coding_tutor) and (has_course_code or any(kw in user_q.lower() for kw in CANVAS_KEYWORDS))
 
     # Coding Tutor is intentionally lean: session history only. Regular tutor
-    # keeps the full academic context stack.
+    # keeps the full academic context stack + long-term/semantic memory.
+    # _fetch_history_sync now returns (turns, session_summary).
     if is_coding_tutor:
         fetch_tasks = [asyncio.to_thread(_fetch_history_sync, user_id, session_id, 5)]
+        results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
+        mark_timing("context_fetch")
+        dw_dict = None
+        hist_res = results[0]
+        history_dicts, session_summary = hist_res if not isinstance(hist_res, Exception) else ([], None)
+        memory_dicts, relevant_memories, relevant_turns = [], [], []
+        canvas_dict = None
     else:
         fetch_tasks = [
             asyncio.to_thread(_fetch_dw_sync, user_id),
             asyncio.to_thread(_fetch_history_sync, user_id, session_id, 5),
             asyncio.to_thread(fetch_user_memories_sync, user_id, 10),
+            asyncio.to_thread(retrieve_relevant_memories, user_id, user_q, 5, 0.55),
+            asyncio.to_thread(retrieve_relevant_turns, user_id, user_q, 3, 0.62, session_id),
         ]
+        canvas_idx = None
         if needs_canvas:
+            canvas_idx = len(fetch_tasks)
             fetch_tasks.append(asyncio.to_thread(_fetch_canvas_sync, user_id))
-
-    results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
-    mark_timing("context_fetch")
-
-    if is_coding_tutor:
-        dw_dict = None
-        history_dicts = results[0] if not isinstance(results[0], Exception) else []
-        memory_dicts = []
-        canvas_dict = None
-    else:
+        results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
+        mark_timing("context_fetch")
         dw_dict = results[0] if not isinstance(results[0], Exception) else None
-        history_dicts = results[1] if not isinstance(results[1], Exception) else []
+        hist_res = results[1]
+        history_dicts, session_summary = hist_res if not isinstance(hist_res, Exception) else ([], None)
         memory_dicts = results[2] if not isinstance(results[2], Exception) else []
-        canvas_dict = results[3] if needs_canvas and len(results) > 3 and not isinstance(results[3], Exception) else None
+        relevant_memories = results[3] if not isinstance(results[3], Exception) else []
+        relevant_turns = results[4] if not isinstance(results[4], Exception) else []
+        canvas_dict = results[canvas_idx] if canvas_idx is not None and not isinstance(results[canvas_idx], Exception) else None
 
     # Tier 1: Rewrite follow-up queries (resolve pronouns before KB search)
     if not is_coding_tutor and history_dicts and is_likely_followup(user_q):
@@ -3239,7 +3277,11 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
     if not is_coding_tutor:
         student_context = _build_student_context(dw_dict) if dw_dict else ""
         canvas_context = _build_canvas_context(canvas_dict) if canvas_dict else ""
-        memory_context = build_memory_context(memory_dicts)
+        # Prepend recent turns + summary so the model has within-conversation memory
+        # (delivered via state_delta, kept out of the session context hash).
+        conversation_context = _build_conversation_context(history_dicts, session_summary)
+        memory_context = build_memory_context(memory_dicts, relevant_memories, relevant_turns)
+        memory_context = conversation_context + (memory_context or "")
 
         # Inject basic profile info (email, name, student ID) so agent knows who they're talking to
         profile_parts = []
