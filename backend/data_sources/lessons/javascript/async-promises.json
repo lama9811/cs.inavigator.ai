@@ -1,22 +1,22 @@
 {
   "_note": "ORIGINAL content. Topic coverage was checked against javascript.info and Eloquent JavaScript. No prose, examples, or exercises were copied; the references are curriculum guides only.",
   "title": "Async & Promises",
-  "summary": "Work with values that become available after the current code finishes.",
+  "summary": "Work with results that arrive later.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "A Promise represents a future result that can be pending, fulfilled, or rejected. An `async` function returns a Promise, and `await` pauses that function until a Promise settles without freezing the entire browser.",
+  "refresher": "A Promise is a placeholder for a result that is not ready yet. `async` marks a function that works with Promises. `await` waits inside that function until the Promise finishes, while the rest of the browser can keep working.",
   "refresher_code": "async function loadUser() {\n  const response = await fetch(\"/api/user\");\n  if (!response.ok) throw new Error(\"Request failed\");\n  return response.json();\n}",
   "blocks": [
     {
       "kind": "text",
-      "body": "Network requests, timers, and many browser APIs do not finish immediately. JavaScript starts the work, continues handling other events, and schedules a reaction for when the result or error becomes available."
+      "body": "Some work takes time. A request to a server, a timer, or a file read may finish later. JavaScript starts that work, then keeps the page responsive while it waits for the result."
     },
     {
       "kind": "text",
-      "body": "Await makes asynchronous steps read in order, but it is valid only inside an async function or supported module top level. A rejected Promise behaves like a thrown error at the await line, so try and catch can provide an expected recovery path."
+      "body": "`await` lets you write those steps in a readable order. It only works inside an `async` function, or in a module that supports top-level await. If the Promise fails, JavaScript treats that failure like an error on the await line."
     },
     {
       "kind": "code",
@@ -34,13 +34,13 @@
     },
     {
       "kind": "text",
-      "body": "Call order and completion order can differ. The request starts first, showName yields control at await, other browser work can run, and showName resumes only after the Promise settles. This is coordination, not a blocking sleep."
+      "body": "Starting order and finishing order are not always the same. The function pauses at await, other browser work can happen, and then the function continues when the Promise is done."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "Fetch does not reject every bad response",
-      "body": "A response with status 404 or 500 still fulfills the fetch Promise. Check `response.ok` and throw or return an error result before parsing data you expected from a successful request."
+      "body": "A 404 or 500 response usually still gives you a response object. Check `response.ok` before you treat the body like successful data."
     },
     {
       "kind": "check",
@@ -72,10 +72,10 @@
       "kind": "list",
       "title": "Async & Promises checklist",
       "items": [
-        "Await the operation that produces the needed value.",
-        "Check HTTP response status explicitly.",
-        "Catch failures where recovery is possible.",
-        "Keep independent requests concurrent when appropriate."
+        "Await the step that gives you the value you need.",
+        "Check response.ok for HTTP requests.",
+        "Use try/catch where you can recover.",
+        "Do not make unrelated requests wait on each other unless they have to."
       ]
     }
   ]

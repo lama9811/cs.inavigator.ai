@@ -306,6 +306,8 @@ export default function Chatbox({
       `Language: ${context.selectedLanguage || "Not selected"}`,
       `Attempts: ${context.attempts ?? 0}`,
       `Tutor mode: ${effectiveTutorMode}`,
+      context.learningStyleLabel ? `Learning preference: ${context.learningStyleLabel}` : "",
+      context.learningStyleInstruction ? `How to adapt: ${context.learningStyleInstruction}` : "",
       inferredIntent?.action ? `Detected student intent: ${inferredIntent.action}` : "",
       `Active tab: ${context.workspaceTab || "Unknown"}`,
       context.note ? `Student note: ${limitTutorContext(context.note, 1200)}` : "",

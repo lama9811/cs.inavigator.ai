@@ -19,10 +19,29 @@ import { FaCog } from "@react-icons/all-files/fa/FaCog";
 import { FaShieldAlt } from "@react-icons/all-files/fa/FaShieldAlt";
 import { FaClock } from "@react-icons/all-files/fa/FaClock";
 import { FaExclamationTriangle } from "@react-icons/all-files/fa/FaExclamationTriangle";
+import { FaLaptopCode } from "@react-icons/all-files/fa/FaLaptopCode";
 import "./ProfilePage.css";
 
 import { getApiBase } from "../lib/apiBase";
 const API_BASE = getApiBase();
+
+const CODING_LEARNING_STYLES = [
+  {
+    id: "worked_examples",
+    title: "Show me an example first",
+    body: "Start with a worked example, then let me try a similar problem.",
+  },
+  {
+    id: "try_then_hint",
+    title: "Let me try, then help me",
+    body: "Put me in the problem first. If I get stuck, give me a small hint.",
+  },
+  {
+    id: "concept_then_code",
+    title: "Explain the idea, then show code",
+    body: "Teach the main idea in plain English before moving into code.",
+  },
+];
 
 export default function ProfilePage({ userEmail, onLogout }) {
   const navigate = useNavigate();
@@ -39,6 +58,8 @@ export default function ProfilePage({ userEmail, onLogout }) {
   const [canvasProgress, setCanvasProgress] = useState([]);
   const [canvasSummary, setCanvasSummary] = useState(null);
   const [canvasError, setCanvasError] = useState("");
+  const [codingLearningStyle, setCodingLearningStyle] = useState("try_then_hint");
+  const [codingPrefSaving, setCodingPrefSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
   
   const [profile, setProfile] = useState({
@@ -73,6 +94,7 @@ export default function ProfilePage({ userEmail, onLogout }) {
   // Fetch profile data on mount
   useEffect(() => {
     fetchProfile();
+    fetchCodingPreferences();
     fetchDegreeWorksData();
     // Fetch Canvas connection status
     const token = localStorage.getItem("token");
@@ -95,6 +117,21 @@ export default function ProfilePage({ userEmail, onLogout }) {
         .catch(() => {});
     }
   }, []);
+
+  const fetchCodingPreferences = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const response = await fetch(`${API_BASE}/api/coding/preferences`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.learning_style) setCodingLearningStyle(data.learning_style);
+    } catch (error) {
+      console.error("Error fetching Coding Tutor preferences:", error);
+    }
+  };
 
   const fetchProfile = async () => {
   try {
@@ -432,6 +469,37 @@ export default function ProfilePage({ userEmail, onLogout }) {
     }
   };
 
+  const handleCodingLearningStyleSave = async (style) => {
+    if (!style || style === codingLearningStyle) return;
+    setCodingPrefSaving(true);
+    setMessage({ type: "", text: "" });
+    const previous = codingLearningStyle;
+    setCodingLearningStyle(style);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE}/api/coding/preferences`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ learning_style: style }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || "Could not save Coding Tutor preference.");
+      }
+      const data = await response.json();
+      setCodingLearningStyle(data.learning_style || style);
+      setMessage({ type: "success", text: "Coding Tutor preference saved." });
+    } catch (error) {
+      setCodingLearningStyle(previous);
+      setMessage({ type: "error", text: error.message || "Could not save Coding Tutor preference." });
+    } finally {
+      setCodingPrefSaving(false);
+    }
+  };
+
   const [showPdfUpload, setShowPdfUpload] = useState(false);
   const [pdfUploading, setPdfUploading] = useState(false);
 
@@ -638,6 +706,35 @@ export default function ProfilePage({ userEmail, onLogout }) {
               </div>
             )}
           </form>
+        </div>
+
+        {/* Coding Tutor Preferences */}
+        <div className="profile-section">
+          <div className="section-header">
+            <h3><FaLaptopCode /> Coding Tutor preferences</h3>
+          </div>
+          <p className="coding-pref-intro">
+            Choose how the Coding Tutor should help when a topic feels shaky.
+          </p>
+          <div className="coding-pref-grid" role="radiogroup" aria-label="Coding Tutor learning style">
+            {CODING_LEARNING_STYLES.map((style) => {
+              const selected = codingLearningStyle === style.id;
+              return (
+                <button
+                  key={style.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  className={`coding-pref-card ${selected ? "selected" : ""}`}
+                  onClick={() => handleCodingLearningStyleSave(style.id)}
+                  disabled={codingPrefSaving}
+                >
+                  <span>{style.title}</span>
+                  <small>{style.body}</small>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Password Section */}

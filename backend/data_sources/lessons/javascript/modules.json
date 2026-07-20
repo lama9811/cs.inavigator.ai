@@ -1,23 +1,23 @@
 {
   "_note": "ORIGINAL content. Topic coverage was checked against javascript.info and Eloquent JavaScript. No prose, examples, or exercises were copied; the references are curriculum guides only.",
   "title": "Modules",
-  "summary": "Split a program into files with explicit exports and imports.",
+  "summary": "Split code into files without losing track of what each file shares.",
   "minutes": 10,
   "error_classes": [
     "syntax",
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "A module exposes selected values with `export` and uses another module with `import`. Named imports must match their exported names. Browser module scripts use `type=\"module\"` and have their own top-level scope.",
+  "refresher": "A module is a JavaScript file that can share selected values with other files. `export` makes a value available. `import` brings it into another file. Keep side effects small so importing a file does not surprise you.",
   "refresher_code": "// math.js\nexport function add(a, b) { return a + b; }\n// app.js\nimport { add } from \"./math.js\";",
   "blocks": [
     {
       "kind": "text",
-      "body": "As a program grows, one file becomes difficult to scan and easy to break. Modules let each file own one focused responsibility while declaring exactly which pieces other files may use."
+      "body": "As a program grows, one file becomes hard to read. Modules let you split code into smaller files. Each file can keep its helper details private and export only the pieces other files should use."
     },
     {
       "kind": "text",
-      "body": "An export is a public doorway, not a copy of every variable in the file. An import creates a live connection to that exported binding. The relative path begins with `./` when the module sits beside the importing file."
+      "body": "`export` shares a function, class, or value. `import` brings that shared piece into another file. The path tells JavaScript where to find it."
     },
     {
       "kind": "code",
@@ -35,7 +35,7 @@
     },
     {
       "kind": "text",
-      "body": "When app.js loads, JavaScript first resolves math.js, evaluates its top-level declarations once, and then gives app.js access to `double`. Module files use strict mode automatically and do not add their top-level names to the global object."
+      "body": "A module runs when it is imported. That is why top-level code should be calm. Put actions inside functions when you want the caller to choose when they run."
     },
     {
       "kind": "callout",
@@ -73,10 +73,10 @@
       "kind": "list",
       "title": "Modules checklist",
       "items": [
-        "Give each module one clear responsibility.",
-        "Export only values other files need.",
-        "Match named and default import styles.",
-        "Check relative paths and file extensions."
+        "Export only what another file needs.",
+        "Import from the correct relative path.",
+        "Keep surprise work out of the top level.",
+        "Group related helpers in the same module."
       ]
     }
   ]

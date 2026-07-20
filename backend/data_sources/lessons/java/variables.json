@@ -1,32 +1,32 @@
 {
   "_note": "ORIGINAL content. Topic order follows the standard free Java text (Eck, 'Introduction to Programming Using Java', ch.2); a topic sequence is not copyrightable, but prose is. No sentence, example, or exercise here is copied or paraphrased from it. Eck is CC BY-NC-SA, and copying would bind CS Navigator's content to that license permanently, including its NonCommercial clause. Prose is also written fresh rather than adapted from the Python variables lesson, so the two do not read as one template with the keywords swapped.",
   "title": "Variables",
-  "summary": "Give a value a name, and give that name a type.",
+  "summary": "Give a value a name, and tell Java what kind of value it will hold.",
   "minutes": 6,
   "error_classes": [
     "syntax",
     "wrong_answer"
   ],
-  "refresher": "In Java you declare a variable by naming its type first: `int score = 10;`. The type stays with the name for as long as the variable exists, so a name declared `int` can only ever hold whole numbers. The `=` assigns a value, it does not compare. Every statement ends in a semicolon. Two rules the compiler enforces before your program runs: you cannot read a local variable you never gave a value, and you cannot declare the same name twice in the same block.",
+  "refresher": "A Java variable has a type, a name, and usually a value. In `int score = 10;`, `int` says the variable holds whole numbers, `score` is the name, and `10` is the starting value. Later assignments must still fit the declared type.",
   "refresher_code": "int score = 10;\nscore = score + 5;\nSystem.out.println(score);\n// 15",
   "blocks": [
     {
       "kind": "text",
-      "body": "A variable holds a value under a name you pick. Java wants one thing up front that several other languages do not: you have to say what kind of value the name will hold before you use it. Introducing the name is called declaring it, and the kind of value is its type."
+      "body": "A variable is a name for a value. Java adds one extra step: before the name, you say what kind of value belongs there. That type is a promise. If you say `int`, Java expects whole numbers in that variable."
     },
     {
       "kind": "code",
-      "caption": "`int` is the type, `score` is the name, `10` is the value. The class and `main` wrapper is shown once here so you know where a variable lives; the later examples are the statements that go inside `main`.",
+      "caption": "Each variable says its type first. Java checks those types before the program runs.",
       "code": "public class Main {\n    public static void main(String[] args) {\n        int score = 10;\n        System.out.println(score);\n    }\n}",
       "output": "10"
     },
     {
       "kind": "text",
-      "body": "Read the declaration left to right and it tells you what it does. `int score = 10;` says: make room for a whole number, call it `score`, put 10 in it. The semicolon closes the statement. Java requires it, and leaving it off is a compile error."
+      "body": "The equals sign assigns a value. It does not ask whether two things are equal. Read `score = score + 5` as: take the old score, add five, and store the new result back in score."
     },
     {
       "kind": "code",
-      "caption": "Three types, picked to match three kinds of value. `String` holds text, `int` holds whole numbers, `boolean` holds true or false. The type is written once, at the declaration, and never again for that name.",
+      "caption": "A variable can change, but the new value still has to fit the type Java was promised.",
       "code": "String name = \"Ada\";\nint age = 36;\nboolean isStudent = true;\n\nSystem.out.println(name);\nSystem.out.println(age);\nSystem.out.println(isStudent);",
       "output": "Ada\n36\ntrue"
     },
@@ -34,7 +34,7 @@
       "kind": "callout",
       "tone": "tip",
       "title": "The type stays for life",
-      "body": "Once `score` is declared `int`, it stays an `int` until the end of its block. Change the value as often as you like. You cannot change the type. Putting text in it later is not a problem that waits for that line to run: the compiler reads the file first and refuses to build it, reporting `incompatible types: String cannot be converted to int`. In Python the same mistake would sit quietly in the file until that line happened to execute."
+      "body": "A name does not exist until you declare it. If you spell it two different ways, Java treats those as two different names. `score` and `Score` are not the same variable."
     },
     {
       "kind": "callout",
@@ -122,11 +122,11 @@
       "kind": "list",
       "title": "Before you move on",
       "items": [
-        "Declare and initialize on one line where you can: `int score = 10;`",
-        "Pick the type from the value: whole number is `int`, decimal is `double`, text is `String`, yes or no is `boolean`.",
-        "Reassign with the name alone. The type appears at the declaration and nowhere else.",
-        "Reach for `final` when a value should be set once and never touched again.",
-        "Read the compiler message before changing anything. It gives you the variable and the line, and for both mistakes in this lesson it names the problem outright."
+        "Put the type before the name.",
+        "Pick names that say what the value means.",
+        "Use = to store a value.",
+        "Use == later when you want to compare.",
+        "Keep the value compatible with the declared type."
       ]
     }
   ]

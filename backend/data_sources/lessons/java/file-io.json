@@ -1,29 +1,31 @@
 {
   "_note": "ORIGINAL content. Topic coverage follows David Eck's Introduction to Programming Using Java. No prose, examples, or exercises were copied; the source guides curriculum order only.",
   "title": "File I/O",
-  "summary": "Save and load text while handling Java's checked I/O failures.",
+  "summary": "Read and write text files without losing track of errors.",
   "minutes": 11,
   "error_classes": [
     "runtime",
     "syntax",
     "wrong_answer"
   ],
-  "refresher": "Use `Path` with `Files.readString` and `Files.writeString` for straightforward text files. File methods can throw IOException, so catch it where recovery is possible or declare it with `throws`. Choose UTF-8 and be clear about replacing versus appending.",
+  "refresher": "Java reads files through library classes such as `Files` and `Path`. A path names the file. Reading can fail if the file is missing or blocked, so file code often uses exceptions or declares that an exception may be thrown.",
   "refresher_code": "Path path = Path.of(\"notes.txt\");\nFiles.writeString(path, \"Study loops\", StandardCharsets.UTF_8);",
   "blocks": [
     {
       "kind": "text",
-      "body": "Files let data outlive one run of a program. Java separates a path, which names a location, from the operation that reads or writes it. Modern `Path` and `Files` methods keep simple text work compact."
+      "body": "A file lets your program keep data after the program ends. Java needs two things before it can read one: where the file is, and what should happen if reading fails."
     },
     {
       "kind": "code",
       "caption": "The same Path is used for writing and reading. UTF-8 makes the text encoding an explicit part of the file format.",
       "code": "Path path = Path.of(\"courses.txt\");\nFiles.writeString(path, \"CS101\\nMATH120\\n\", StandardCharsets.UTF_8);\nString text = Files.readString(path, StandardCharsets.UTF_8);\nSystem.out.print(text);",
-      "output": "CS101\nMATH120"
+      "output": "CS101\nMATH120",
+      "body": "`Path` names the file. `Files.readString` reads the text from that path. If the file is not there, Java reports the problem instead of pretending the text exists."
     },
     {
       "kind": "text",
-      "body": "These operations report IOException because disks, permissions, and paths can fail outside the program's control. Java requires the method to catch that checked exception or declare that it may pass upward."
+      "body": "These operations report IOException because disks, permissions, and paths can fail outside the program's control. Java requires the method to catch that checked exception or declare that it may pass upward.",
+      "caption": "The path points to the file. readString returns the file contents as one String."
     },
     {
       "kind": "compare",
@@ -31,7 +33,8 @@
       "wrong_label": "Replaces",
       "wrong": "Files.writeString(path, \"next\\n\");",
       "right_label": "Appends",
-      "right": "Files.writeString(path, \"next\\n\",\n    StandardOpenOption.CREATE,\n    StandardOpenOption.APPEND);"
+      "right": "Files.writeString(path, \"next\\n\",\n    StandardOpenOption.CREATE,\n    StandardOpenOption.APPEND);",
+      "body": "File paths are a common beginner headache. If Java cannot find the file, check the folder your program is running from, not only the folder where the source file lives."
     },
     {
       "kind": "callout",
@@ -73,11 +76,11 @@
       "kind": "list",
       "title": "File I/O checklist",
       "items": [
-        "Represent locations with Path.",
-        "Select UTF-8 for portable text.",
-        "Decide whether a write replaces or appends.",
-        "Handle IOException at a layer that can respond.",
-        "Stream large files and close the stream automatically."
+        "Use Path to name the file.",
+        "Use Files helpers for simple text files.",
+        "Expect missing-file errors.",
+        "Close resources or use helpers that close them for you.",
+        "Check the working folder when a file cannot be found."
       ]
     }
   ]

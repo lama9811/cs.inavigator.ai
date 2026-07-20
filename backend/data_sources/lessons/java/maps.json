@@ -1,29 +1,31 @@
 {
   "_note": "ORIGINAL content. Topic coverage follows David Eck's Introduction to Programming Using Java. No prose, examples, or exercises were copied; the source guides curriculum order only.",
   "title": "Maps",
-  "summary": "Connect unique keys to values with Java's Map collection.",
+  "summary": "Look up values by a meaningful key instead of by position.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "syntax",
     "wrong_answer"
   ],
-  "refresher": "A `Map<K, V>` stores one value for each unique key. A `HashMap` is a common implementation. Use `put` to add or replace, `get` to retrieve, `containsKey` to check presence, and `getOrDefault` when absence has a useful fallback.",
+  "refresher": "A Java `HashMap` connects keys to values. Use `put` to store a pair, `get` to look up a value, and `containsKey` when a missing key needs special handling. The key type and value type go inside angle brackets.",
   "refresher_code": "Map<String, Integer> scores = new HashMap<>();\nscores.put(\"quiz\", 8);\nSystem.out.println(scores.get(\"quiz\"));",
   "blocks": [
     {
       "kind": "text",
-      "body": "An ArrayList finds values by numbered position. A map finds them by a key that has meaning. Course codes can lead to grades, usernames can lead to profiles, and product IDs can lead to prices."
+      "body": "A list is great when position matters. A map is better when a meaningful key matters. If you want a grade by student id, the student id should be the key."
     },
     {
       "kind": "code",
       "caption": "Declare variables with the Map interface and construct a HashMap. Each `put` connects one key to one value.",
       "code": "Map<String, Integer> grades = new HashMap<>();\ngrades.put(\"CS101\", 90);\ngrades.put(\"MATH120\", 84);\ngrades.put(\"CS101\", 95);\nSystem.out.println(grades.size());\nSystem.out.println(grades.get(\"CS101\"));",
-      "output": "2\n95"
+      "output": "2\n95",
+      "body": "HashMap is Java?s everyday map. It stores key-value pairs. The first type in angle brackets is the key type. The second type is the value type."
     },
     {
       "kind": "text",
-      "body": "Keys are unique. Putting `CS101` again replaces its earlier value instead of creating a duplicate entry. Different keys may still store equal values."
+      "body": "Keys are unique. Putting `CS101` again replaces its earlier value instead of creating a duplicate entry. Different keys may still store equal values.",
+      "caption": "put stores the pair. get uses the key to find the value."
     },
     {
       "kind": "compare",
@@ -31,7 +33,8 @@
       "wrong_label": "May fail",
       "wrong": "int score = grades.get(\"ENG101\");",
       "right_label": "Fallback",
-      "right": "int score = grades.getOrDefault(\"ENG101\", 0);"
+      "right": "int score = grades.getOrDefault(\"ENG101\", 0);",
+      "body": "A missing key returns `null`. That is not always an error, but it is something you must plan for. Use `containsKey` when you need to know whether the key was present."
     },
     {
       "kind": "callout",
@@ -73,11 +76,11 @@
       "kind": "list",
       "title": "Map checklist",
       "items": [
-        "Program to `Map` and construct a suitable implementation.",
-        "Choose immutable, stable keys when possible.",
-        "Remember that `put` replaces an equal key.",
-        "Use `getOrDefault` for a meaningful fallback.",
-        "Use `entrySet` when processing keys and values together."
+        "Use a map when lookup by name or id matters.",
+        "Use put to store a key-value pair.",
+        "Use get to read by key.",
+        "Check containsKey before treating a missing value as real data.",
+        "Pick clear key and value types."
       ]
     }
   ]

@@ -1,28 +1,28 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Pointers",
-  "summary": "Understand addresses, pointers, and safe access to another value.",
+  "summary": "Understand addresses before you follow them.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "A pointer stores the address of another value. `&value` gets an address, `*pointer` follows it, and `nullptr` means the pointer currently points to nothing. Check for `nullptr` before dereferencing.",
+  "refresher": "A pointer stores the address of another value. `&value` gets the address. `*pointer` follows the address to reach the value. `nullptr` means the pointer points to nothing, so check before using `*pointer`.",
   "refresher_code": "int value=7;\nint* p=&value;\nstd::cout << *p;",
   "blocks": [
     {
       "kind": "text",
-      "body": "Every variable lives somewhere in memory. A pointer stores that location instead of storing another copy of the value. This lets code reach or change the original value through its address."
+      "body": "Every variable lives at some spot in memory. A pointer stores that spot. It does not store a second copy of the value. It stores directions to the original value."
     },
     {
       "kind": "text",
-      "body": "In `int* pointer = &score;`, the star says `pointer` stores the address of an integer, and `&score` gets score's address. Later, `*pointer` follows that address to read or change score. The star has two related jobs: declaring a pointer and following one."
+      "body": "In `int* pointer = &score;`, `&score` means ?the address of score.? Later, `*pointer` means ?go to that address and use the value there.? The star has two jobs: it helps declare a pointer, and it helps follow one."
     },
     {
       "kind": "callout",
       "tone": "tip",
       "title": "Python usually hides this layer",
-      "body": "Python variables also let code refer to objects, but Python manages those references for you. C++ exposes addresses directly when you use pointers, which gives more control and also creates more responsibility."
+      "body": "Python keeps this layer mostly hidden. C++ lets you work with addresses directly. That gives you control, but it also means you must check where a pointer points before using it."
     },
     {
       "kind": "code",
@@ -40,7 +40,7 @@
     },
     {
       "kind": "text",
-      "body": "The first pointer contains `nullptr`, which means there is no integer to follow. Dereferencing it is invalid and may crash the program. The condition in the second version makes sure a real address exists first."
+      "body": "`nullptr` means there is no target. Following it is like walking through a door that is not there. Check first, then use `*pointer` only when the pointer has a real address."
     },
     {
       "kind": "callout",
@@ -79,9 +79,9 @@
       "title": "Pointers checklist",
       "items": [
         "Initialize every pointer.",
-        "Use nullptr for no target.",
-        "Check before dereferencing.",
-        "Prefer references when null is not meaningful."
+        "Use nullptr when there is no target.",
+        "Check before using *pointer.",
+        "Use a reference when ?nothing? is not allowed."
       ]
     }
   ],

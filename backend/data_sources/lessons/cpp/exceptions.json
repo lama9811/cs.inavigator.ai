@@ -1,22 +1,22 @@
 {
   "_note": "ORIGINAL content. Topic coverage was checked against Think C++ and the Google C++ Class outline. No prose, examples, or exercises were copied; the references are curriculum guides only.",
   "title": "Exceptions",
-  "summary": "Send a clear failure to code that knows how to handle it.",
+  "summary": "Report a failure without pretending the program can keep going normally.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "Use `throw` when a function cannot complete its promised job. Put code that may fail inside `try`, and handle a known exception in `catch`. Preserve the error message so the caller knows what went wrong.",
+  "refresher": "A C++ exception reports a problem across function calls. `throw` sends the problem out. `try` marks code that may throw. `catch` handles a specific kind of problem. Catch only what you can handle.",
   "refresher_code": "try {\n  enroll(student);\n} catch (const std::exception& error) {\n  std::cerr << error.what() << \"\\n\";\n}",
   "blocks": [
     {
       "kind": "text",
-      "body": "Sometimes a function cannot produce a valid result. An exception lets it stop the normal path and send failure information to a caller. This is clearer than returning a made-up number that might be mistaken for a real answer."
+      "body": "An exception means the code hit a problem it cannot handle in the normal path. Instead of returning a fake answer, it reports the failure to a place that may know what to do."
     },
     {
       "kind": "text",
-      "body": "When code throws, C++ looks back through the active function calls for a matching `catch`. As it leaves each function, local objects are cleaned up. This is why standard containers, strings, and file streams remain safe during an exception."
+      "body": "`throw` sends the problem out. `try` surrounds the risky work. `catch` handles a matching problem. Keep the try block small so the failing line is easier to find."
     },
     {
       "kind": "callout",
@@ -78,10 +78,10 @@
       "kind": "list",
       "title": "Exceptions checklist",
       "items": [
-        "Throw a descriptive exception type.",
-        "Catch only where recovery or context is possible.",
-        "Catch standard exceptions by const reference.",
-        "Do not silence unknown failures."
+        "Throw when the normal answer would be dishonest.",
+        "Catch the specific problem you can handle.",
+        "Keep try blocks small.",
+        "Do not hide errors you still need to fix."
       ]
     }
   ]

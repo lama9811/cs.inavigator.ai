@@ -12,6 +12,8 @@ ROOT = Path(__file__).resolve().parents[2]
 CHATBOX = ROOT / "frontend" / "src" / "components" / "Chatbox.jsx"
 CODING_TUTOR = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "CodingTutor.jsx"
 FLOATING_CHAT = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "FloatingCodingChat.jsx"
+PROFILE_PAGE = ROOT / "frontend" / "src" / "components" / "ProfilePage.jsx"
+MAIN_API = ROOT / "backend" / "main.py"
 
 
 def read(path: Path) -> str:
@@ -53,3 +55,25 @@ def test_floating_chat_exposes_history_and_accessibility_controls():
     assert "Show {Math.min(20, hiddenMessageCount)} earlier messages" in source
     assert 'aria-label="Attach code or notes"' in source
     assert 'aria-label="Start voice input"' in source
+
+
+def test_coding_tutor_learning_style_is_saved_and_used_in_context():
+    main_source = read(MAIN_API)
+    profile_source = read(PROFILE_PAGE)
+    tutor_source = read(CODING_TUTOR)
+    chatbox_source = read(CHATBOX)
+
+    assert '"/api/coding/preferences"' in main_source
+    assert "CodingTutorPreference" in main_source
+    assert "try_then_hint" in main_source
+
+    assert "Coding Tutor preferences" in profile_source
+    assert "CODING_LEARNING_STYLES" in profile_source
+    assert "/api/coding/preferences" in profile_source
+
+    assert "LEARNING_STYLE_COPY" in tutor_source
+    assert "learningStyleInstruction" in tutor_source
+    assert "openRecommendedTopic" in tutor_source
+
+    assert "Learning preference:" in chatbox_source
+    assert "How to adapt:" in chatbox_source

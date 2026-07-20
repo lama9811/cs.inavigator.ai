@@ -1,38 +1,39 @@
 {
   "_note": "ORIGINAL content. Topic sequence follows the standard free intro texts (David Eck's Introduction to Programming Using Java, ch.2, alongside the shared ordering used by Runestone FoPP and Think Python); a sequence of topics is not copyrightable. No prose, examples, or exercises are copied from any of them. Eck is CC BY-NC-SA, and copying its wording would bind CS Navigator's content to those terms, including the NonCommercial clause, permanently.",
   "title": "Syntax",
-  "summary": "The shape a Java program has to have before it will compile.",
+  "summary": "Learn the small pieces every Java program needs before it can run.",
   "minutes": 7,
   "error_classes": [
     "syntax",
     "runtime"
   ],
-  "refresher": "Java code lives inside a class, and the class goes in a file named after it, with `.java` on the end. Your program starts at `public static void main(String[] args)`. Each statement ends with a semicolon, and curly braces mark where a block starts and stops. Indentation is only there for people to read; the braces are what Java goes by. `System.out.println(\"Hi\")` prints a line, `//` starts a comment, and names are case sensitive, so `main` and `Main` are two different words.",
+  "refresher": "Java is picky about shape. A basic program lives inside a class, starts running at main, and uses braces to group code. Semicolons end most statements. If one of those pieces is missing, the compiler usually stops before the program ever runs.",
   "refresher_code": "// saved as Hello.java\npublic class Hello {\n    public static void main(String[] args) {\n        System.out.println(\"Hi\");\n    }\n}",
   "blocks": [
     {
       "kind": "text",
-      "body": "Java asks for a lot of scaffolding before it will print a single word. It helps to know what each piece of that scaffolding is for. Once you can name the parts, the block of text at the top of every file stops being a wall and turns into three ordinary ideas stacked on each other."
+      "body": "Java asks for more structure than Python. Even a tiny program sits inside a class, and the first code that runs goes inside a method named main. At first, that wrapper may feel like extra typing. Think of it as the envelope Java needs before it can read your message."
     },
     {
       "kind": "code",
-      "caption": "The smallest Java program that does anything. Three layers: the class is the container, `main` is where the program starts, and the statement inside `main` does the work.",
+      "caption": "The class is the outside box. main is where Java starts. The print line is the one instruction we wrote.",
       "code": "public class Hello {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, world\");\n    }\n}",
       "output": "Hello, world"
     },
     {
       "kind": "text",
-      "body": "Read it from the outside in. `public class Hello` opens a class, which is the container your code has to sit in. Inside it, `public static void main(String[] args)` is the starting line, and when you run a Java program that is the exact method it goes looking for. You will not understand every word of it yet, and you do not have to. `public` means anything may call it, `static` means it belongs to the class rather than to an object, `void` means it hands nothing back, and `String[] args` is a slot for words typed on the command line. Copy the line exactly for now. It gets explained for real once you have written a class or two of your own."
+      "body": "Braces mark where a block starts and ends. The class has its own pair. main has its own pair inside the class. Most beginner syntax errors come from losing one brace, one quote, or one semicolon."
     },
     {
       "kind": "callout",
       "tone": "warning",
       "title": "The file name has to match the class name",
-      "body": "A `public class Hello` has to be saved in a file called `Hello.java`. Same spelling, same capital letters. Save it as `hello.java` or `Main.java` and the compiler rejects it. There is no deep reason for this. Java made it a rule, and it will hold you to it."
+      "body": "Python uses indentation to show what belongs together. Java uses braces. Good indentation still matters because it helps your eyes match the braces, but Java follows the braces, not the spaces."
     },
     {
       "kind": "text",
-      "body": "Inside `main` you write statements. A statement is one instruction, and it ends with a semicolon. Java pays no attention to where your lines break. The semicolon is what tells it where one instruction stops and the next one starts, so leaving one off means the compiler cannot find the end of your sentence."
+      "body": "Inside `main` you write statements. A statement is one instruction, and it ends with a semicolon. Java pays no attention to where your lines break. The semicolon is what tells it where one instruction stops and the next one starts, so leaving one off means the compiler cannot find the end of your sentence.",
+      "caption": "The broken version forgets the semicolon after println. Java points near the line where it got confused."
     },
     {
       "kind": "compare",
@@ -40,7 +41,8 @@
       "wrong_label": "Will not compile",
       "wrong": "int score = 90\nSystem.out.println(score);\n// nothing closes the first\n// statement, so Java reads on",
       "right_label": "Compiles",
-      "right": "int score = 90;\nSystem.out.println(score);\n// each instruction is closed,\n// so Java can tell them apart"
+      "right": "int score = 90;\nSystem.out.println(score);\n// each instruction is closed,\n// so Java can tell them apart",
+      "body": "When Java gives a compiler error, read the first one first. Later errors are often just aftershocks from the first missing symbol."
     },
     {
       "kind": "code",
@@ -100,12 +102,11 @@
       "kind": "list",
       "title": "What to check when Java refuses to compile",
       "items": [
-        "The file name matches the public class name, capital letters included",
-        "The starting line reads `public static void main(String[] args)`, exactly",
-        "Each statement ends with a semicolon. A `';' expected` error points at the tail of the unfinished line, so read the end of it",
-        "Each `{` has a matching `}`. Click on one and your editor will highlight its partner",
-        "The capitals are right: `System`, not `system`, and `String`, not `string`",
-        "Fix the first error, then compile again. Some mistakes hide others, and a single missing brace can produce a dozen complaints that tend to disappear together"
+        "Class name and file name should match when the class is public.",
+        "main is the starting point.",
+        "Braces group code into blocks.",
+        "Most statements end with a semicolon.",
+        "Read the first compiler error before changing five things."
       ]
     }
   ]
