@@ -1,29 +1,31 @@
 {
   "_note": "ORIGINAL content. Topic coverage follows David Eck's Introduction to Programming Using Java. No prose, examples, or exercises were copied; the source guides curriculum order only.",
   "title": "Exceptions",
-  "summary": "Handle expected failures without covering up unrelated defects.",
+  "summary": "Handle expected failures without hiding real bugs.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "syntax",
     "wrong_answer"
   ],
-  "refresher": "Place risky work in `try` and catch a specific exception that the method can handle. Checked exceptions must be caught or declared. Use `finally` or try-with-resources for cleanup, and preserve the original exception when adding context.",
+  "refresher": "An exception is Java?s way to report that something went wrong while the program was running. Use `try` around the risky work and `catch` for the failure you know how to handle. Do not catch everything just to make the error disappear.",
   "refresher_code": "try {\n    int credits = Integer.parseInt(raw);\n} catch (NumberFormatException error) {\n    System.out.println(\"Enter a whole number\");\n}",
   "blocks": [
     {
       "kind": "text",
-      "body": "An exception is an object describing why an operation could not finish. Invalid input, a missing file, and using a null reference are different problems, so they should not all receive one vague response."
+      "body": "An exception means the program hit a problem while running. Maybe a file was missing. Maybe input was not a number. Java can stop and hand that problem to code that knows how to respond."
     },
     {
       "kind": "code",
       "caption": "The catch type matches the conversion failure. Code after the failed parse inside try is skipped, then execution continues after catch.",
       "code": "String raw = \"twelve\";\ntry {\n    int credits = Integer.parseInt(raw);\n    System.out.println(credits);\n} catch (NumberFormatException error) {\n    System.out.println(\"Credits must be a whole number\");\n}",
-      "output": "Credits must be a whole number"
+      "output": "Credits must be a whole number",
+      "body": "`try` holds the risky work. `catch` handles a specific kind of failure. The goal is not to hide the problem. The goal is to recover when recovery makes sense."
     },
     {
       "kind": "text",
-      "body": "Runtime exceptions can compile without a catch. Checked exceptions, including IOException, must be caught or listed in a method's `throws` clause. That rule forces file and network failures into the method design."
+      "body": "Runtime exceptions can compile without a catch. Checked exceptions, including IOException, must be caught or listed in a method's `throws` clause. That rule forces file and network failures into the method design.",
+      "caption": "The catch block handles bad number input and gives the user a clear message."
     },
     {
       "kind": "compare",
@@ -31,7 +33,8 @@
       "wrong_label": "Too broad",
       "wrong": "try { loadCredits(raw); }\ncatch (Exception e) {\n    System.out.println(\"Bad number\");\n}",
       "right_label": "Specific",
-      "right": "try { loadCredits(raw); }\ncatch (NumberFormatException e) {\n    System.out.println(\"Bad number\");\n}"
+      "right": "try { loadCredits(raw); }\ncatch (NumberFormatException e) {\n    System.out.println(\"Bad number\");\n}",
+      "body": "Do not wrap huge sections of code in one catch-all block. If everything is inside the try, it becomes harder to tell which line actually failed."
     },
     {
       "kind": "callout",
@@ -73,11 +76,11 @@
       "kind": "list",
       "title": "Exception checklist",
       "items": [
-        "Catch a type that matches the recovery you can perform.",
-        "Keep the protected block small.",
-        "Distinguish checked exceptions from runtime exceptions.",
-        "Preserve an original cause when wrapping.",
-        "Use try-with-resources for closeable objects."
+        "Use try for work that may fail.",
+        "Catch the specific failure you can handle.",
+        "Keep the try block small.",
+        "Do not silence errors you still need to fix.",
+        "Preserve useful error details while debugging."
       ]
     }
   ]

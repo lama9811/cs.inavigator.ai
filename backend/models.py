@@ -277,6 +277,27 @@ class CodingUserProgress(Base):
     user = relationship("User", backref="coding_user_progress")
 
 
+class CodingTutorPreference(Base):
+    """Per-user Coding Tutor learning preference.
+
+    This is intentionally separate from the general User profile. It belongs to the
+    Coding Tutor experience and can grow later without turning the account table into
+    a pile of feature-specific columns.
+    """
+    __tablename__ = "coding_tutor_preferences"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_coding_tutor_preference_user"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    learning_style = Column(String(40), nullable=False, default="try_then_hint")
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", backref="coding_tutor_preference")
+
+
 class CodingSnippet(Base):
     """Per-user personal code snippets ("My Snippets") — the student's own code,
     not tied to a graded quiz problem. Synced from the browser localStorage."""

@@ -1,4 +1,4 @@
-import { FaBook, FaChartLine, FaCode, FaLaptopCode, FaPlay, FaRegCompass } from "react-icons/fa";
+import { FaBook, FaChartLine, FaLaptopCode, FaPlay, FaRegCompass } from "react-icons/fa";
 
 function findResumeItem(questions, progressByQuestion) {
   return Object.entries(progressByQuestion || {})
@@ -65,6 +65,12 @@ function problemRank(question) {
 
 function titleCase(value = "") {
   return value ? value[0].toUpperCase() + value.slice(1).replace("_", " ") : "";
+}
+
+function learningStyleHint(style) {
+  if (style === "worked_examples") return "Start with a worked example, then try one similar problem.";
+  if (style === "concept_then_code") return "Start with the idea in plain English, then move into code.";
+  return "Try one problem first. If you get stuck, ask for a small hint.";
 }
 
 function firstUnsolved(questions, progressByQuestion, predicate = () => true) {
@@ -225,6 +231,7 @@ function CampusLearningQueue({
   onOpenSnippets,
   onOpenQuizBank,
   onOpenTopic,
+  learningStyle,
 }) {
   // The hero owns "what to do right now" (resume / recommended). This section is a
   // guided path: next track, personal workspace, and a data-driven focus nudge.
@@ -244,8 +251,9 @@ function CampusLearningQueue({
       ? `Start with ${titleCase(focus.first.topic)}`
       : "Choose a topic";
   const focusBlurb = focusTopic
-    ? "Opens the library with this topic selected."
+    ? learningStyleHint(learningStyle)
     : "Pick one topic and solve the first problem you see.";
+  const focusButton = learningStyle === "try_then_hint" ? "Open practice" : "Open lesson";
   return (
     <section className="campus-learning-queue" aria-label="Your coding path">
       <div className="campus-section-heading">
@@ -300,7 +308,7 @@ function CampusLearningQueue({
           <strong>{focusTitle}</strong>
           <p>{focusBlurb}</p>
           <button type="button" onClick={() => (focusTopic ? onOpenTopic?.(focusTopic) : onOpenQuizBank())}>
-            {focusTopic ? `Open ${titleCase(focusTopic)}` : "Browse Practice Library"}
+            {focusTopic ? `${focusButton}: ${titleCase(focusTopic)}` : "Browse Practice Library"}
           </button>
         </article>
       </div>
@@ -319,9 +327,9 @@ function CampusTutorActions({ latestQuizResponse, onPrompt, onOpenInterviewPrep,
           <FaBook aria-hidden="true" />
           <span>Generate a 5-question quiz</span>
         </button>
-        <button type="button" onClick={() => onPrompt("Review my current code and explain the biggest issue first.", { title: "Code review" })}>
-          <FaCode aria-hidden="true" />
-          <span>Review my current code</span>
+        <button type="button" onClick={() => onPrompt("Help me pick what to practice next based on my progress. Keep it short and give me three clear steps.", { title: "Practice plan" })}>
+          <FaRegCompass aria-hidden="true" />
+          <span>Plan my next practice</span>
         </button>
         <button type="button" onClick={onOpenInterviewPrep}>
           <FaChartLine aria-hidden="true" />
@@ -435,6 +443,7 @@ export default function CampusLabHome({
   onPrompt,
   onSaveQuiz,
   mastery,
+  learningStyle = "try_then_hint",
 }) {
   const queueQuestions = questions || [];
   const resumeItem = findResumeItem(queueQuestions, progressByQuestion);
@@ -479,6 +488,7 @@ export default function CampusLabHome({
         onOpenSnippets={onOpenSnippets}
         onOpenQuizBank={onOpenQuizBank}
         onOpenTopic={onOpenTopic}
+        learningStyle={learningStyle}
       />
 
       <CampusTutorActions

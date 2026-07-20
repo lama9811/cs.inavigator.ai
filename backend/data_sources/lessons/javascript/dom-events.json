@@ -1,22 +1,22 @@
 {
   "_note": "ORIGINAL content. Topic coverage was checked against javascript.info and Eloquent JavaScript. No prose, examples, or exercises were copied; the references are curriculum guides only.",
   "title": "DOM & Events",
-  "summary": "Connect JavaScript behavior to page elements and user actions.",
+  "summary": "Connect JavaScript to the page the student can see and click.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "The DOM represents the page as objects. Select an element, verify it exists, then register an event listener. The listener runs later when the browser reports an action such as a click or input change.",
+  "refresher": "The DOM is the browser?s object version of the page. JavaScript can find elements, change text or classes, and listen for events like clicks or typing. Event listeners let code run when the user does something.",
   "refresher_code": "const button = document.querySelector(\"#save\");\nbutton?.addEventListener(\"click\", () => {\n  status.textContent = \"Saved\";\n});",
   "blocks": [
     {
       "kind": "text",
-      "body": "JavaScript in a browser becomes interactive by working with the Document Object Model. An element object exposes properties such as `textContent` and methods such as `addEventListener`, letting code respond without reloading the whole page."
+      "body": "The DOM is how JavaScript sees the page. A button, heading, or input becomes an object your code can find and change."
     },
     {
       "kind": "text",
-      "body": "`querySelector` returns the first matching element or null. An event listener receives an event object that describes what happened. The listener should update the smallest necessary part of the interface and keep data decisions separate from display changes."
+      "body": "An event is something that happens on the page, like a click or a key press. An event listener is the function you ask the browser to run when that event happens."
     },
     {
       "kind": "code",
@@ -72,10 +72,10 @@
       "kind": "list",
       "title": "DOM & Events checklist",
       "items": [
-        "Select the intended element precisely.",
-        "Check a selector result before use.",
-        "Keep listeners short and focused.",
-        "Display untrusted text with textContent."
+        "Find the element before changing it.",
+        "Use event listeners for user actions.",
+        "Read input values when the event happens.",
+        "Keep page-changing code small and clear."
       ]
     }
   ]

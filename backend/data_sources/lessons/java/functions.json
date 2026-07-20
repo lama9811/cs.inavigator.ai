@@ -1,29 +1,31 @@
 {
   "_note": "ORIGINAL content. Topic sequence follows the standard free Java text (Eck, 'Introduction to Programming Using Java', ch.4 on subroutines); a topic sequence is not copyrightable, but prose is. No sentence, example, or exercise is copied or closely paraphrased from it. Eck is CC BY-NC-SA, a copyleft NonCommercial license, and copying his words would bind CS Navigator's content to those terms permanently. Every word here was written for this lesson. All code blocks were compiled and run with javac/java 21; every 'output' field is real program output, and every compile error quoted is the real javac message. Prose is also deliberately written to share no sentences with python/functions.json: the two lessons teach the same topic, and the reuse test hashes Python and Java together.",
   "title": "Functions",
-  "summary": "Methods in Java: declare what goes in, declare what comes out, and let the compiler hold you to it.",
+  "summary": "Put a repeatable piece of work into a method.",
   "minutes": 8,
   "error_classes": [
     "syntax",
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "In Java a function is called a method. It lives inside a class, and its first line is the signature: a modifier such as `public static`, then the return type, then the name, then the parameters in parentheses. Use `return` to send a value back, and that value has to match the type you declared. Declare `void` when nothing comes back. Showing and returning are different jobs: `System.out.println` paints text on the screen, while `return` produces a value the rest of your code can catch and keep.",
+  "refresher": "Java calls functions methods. A method has a name, a return type, and optional parameters. `void` means it does not return a value. A non-void method must return the kind of value it promised.",
   "refresher_code": "public static int doubled(int n) {\n    return n * 2;\n}\n\nint result = doubled(5);\nSystem.out.println(result);\n// 10",
   "blocks": [
     {
       "kind": "text",
-      "body": "Java calls a function a method. Same idea, different word, and since everyone writing Java says method, this lesson says it too. A method bundles up some work and puts a name on it. Write the work down once, then trigger it later just by mentioning that name. Three lines you keep pasting into four different spots are three lines begging to become a method."
+      "body": "Java calls a function a method. Same idea, different word. A method gives a name to a piece of work so you can use it again without copying the same lines all over your program."
     },
     {
       "kind": "code",
       "caption": "Notice that defining and running are two different events. The body of `greet` sits there inert until `main` says its name. Here `main` says it twice, and only then does anything appear on screen.",
       "code": "public class Main {\n    public static void greet() {\n        System.out.println(\"Welcome to Morgan State.\");\n    }\n\n    public static void main(String[] args) {\n        greet();\n        greet();\n    }\n}",
-      "output": "Welcome to Morgan State.\nWelcome to Morgan State."
+      "output": "Welcome to Morgan State.\nWelcome to Morgan State.",
+      "body": "The first line of a method tells Java how the method can be used. The return type says what comes back. The name says what to call. The parentheses hold the values the method needs from you."
     },
     {
       "kind": "text",
-      "body": "The opening line of a method is called its signature, and it packs four decisions into one line. `public` is the modifier, controlling who may call it. `static` gets its own explanation later on. `void` is the return type, announcing what kind of value will come back. `greet` is the name. The empty parentheses are the parameter list, and empty means this method asks nothing of you. To keep things readable, the rest of this lesson prints only the methods. Picture the `public class Main { ... }` shell wrapped around each one."
+      "body": "The opening line of a method is called its signature, and it packs four decisions into one line. `public` is the modifier, controlling who may call it. `static` gets its own explanation later on. `void` is the return type, announcing what kind of value will come back. `greet` is the name. The empty parentheses are the parameter list, and empty means this method asks nothing of you. To keep things readable, the rest of this lesson prints only the methods. Picture the `public class Main { ... }` shell wrapped around each one.",
+      "caption": "This method takes a name and returns a greeting. It does not print by itself; it hands the String back to the caller."
     },
     {
       "kind": "list",
@@ -34,13 +36,15 @@
         "`int` is the return type: the kind of value `return` sends back. Use `void` when nothing does.",
         "`doubled` is the name. Java style is a verb in camelCase, so `calculateGpa`, not `calculate_gpa`.",
         "`(int n)` is the parameter list: what the method needs, and the type of each thing it needs."
-      ]
+      ],
+      "body": "`return` and `System.out.println` are not the same. Printing shows a value to a person. Returning gives a value back to the program so another line can use it."
     },
     {
       "kind": "code",
       "caption": "Inside the parentheses, `String name` is a parameter. Out at the call sites, \"Ada\" and \"Grace\" are the arguments. A parameter behaves like a variable that flickers into existence for one run of the method, carrying whatever got passed that time. Because you wrote its type, slipping a number in where a `String` belongs is caught while you compile, long before anyone runs the thing.",
       "code": "public static void greet(String name) {\n    System.out.println(\"Hello, \" + name + \"!\");\n}\n\n// inside main:\ngreet(\"Ada\");\ngreet(\"Grace\");",
-      "output": "Hello, Ada!\nHello, Grace!"
+      "output": "Hello, Ada!\nHello, Grace!",
+      "body": "You will see `static` a lot in beginner Java because `main` is static. For now, read a static method as one you can call from main without building an object first."
     },
     {
       "kind": "text",
@@ -126,13 +130,11 @@
       "kind": "list",
       "title": "Before you call a method done",
       "items": [
-        "Name it after what it does, in camelCase: `calculateGpa`, not `doStuff`.",
-        "Work out what facts it needs. Each one turns into a parameter with a declared type.",
-        "Work out what it owes the caller. Anything other than nothing means the return type is not `void`.",
-        "Return the value whenever code will hold onto it. Print it only when a person is reading.",
-        "Trace each branch of each `if` and make sure none of them slips past a `return`.",
-        "Keep it `static` for as long as your program is one class with `main` calling its helpers.",
-        "Check it by capturing what it returns and printing that, rather than believing what it prints itself."
+        "Give the method one clear job.",
+        "Use parameters for values the method needs.",
+        "Use return when the program needs the answer back.",
+        "Use void only when there is no answer to return.",
+        "Match the returned value to the promised return type."
       ]
     }
   ]

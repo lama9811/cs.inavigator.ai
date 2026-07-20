@@ -156,6 +156,53 @@
   box-shadow: var(--shadow-sm);
 }
 
+.coding-pref-intro {
+  margin: 0 0 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.coding-pref-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.coding-pref-card {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.coding-pref-card span {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.coding-pref-card small {
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.coding-pref-card:hover:not(:disabled) {
+  border-color: var(--msu-blue, #002d72);
+  box-shadow: 0 10px 24px rgba(0, 45, 114, 0.12);
+  transform: translateY(-1px);
+}
+
+.coding-pref-card.selected {
+  border-color: var(--msu-blue, #002d72);
+  background: color-mix(in srgb, var(--msu-blue, #002d72) 8%, var(--bg-card));
+  box-shadow: inset 4px 0 0 var(--msu-blue, #002d72);
+}
+
 .section-header {
   display: flex;
   justify-content: space-between;

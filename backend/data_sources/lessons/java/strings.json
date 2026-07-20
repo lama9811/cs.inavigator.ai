@@ -1,39 +1,42 @@
 {
   "_note": "Original content. Topic sequence follows the standard free Java text (Eck, 'Introduction to Programming Using Java', ch.2-3, on String as an object, its methods, and immutability); a topic sequence is not copyrightable, but prose is. No sentence, example, or exercise here is copied or paraphrased from it. Eck is CC BY-NC-SA, so copying would permanently tie this project's content to those terms, including the NonCommercial clause. Every word was written for this lesson. All code was compiled and run on JDK 21 to confirm each stated output.",
   "title": "Strings",
-  "summary": "Text is an object in Java, and comparing two of them has one right way.",
+  "summary": "Work with text, compare it safely, and avoid the == trap.",
   "minutes": 8,
   "error_classes": [
     "runtime",
     "wrong_answer",
     "syntax"
   ],
-  "refresher": "A `String` holds text in double quotes: `\"Ada\"`. It is an object, not a primitive, so it carries methods you call with a dot: `s.length()`, `s.charAt(0)`, `s.substring(1, 4)`, `s.toUpperCase()`, `s.trim()`, `s.split(\",\")`. Indexes start at 0, so the last character is at `s.length() - 1`. Strings are immutable, so every method returns a new String and changes nothing. Compare two Strings with `a.equals(b)`. Using `==` compares whether they are the same object in memory, which is not the question you meant to ask.",
+  "refresher": "A Java `String` is text stored as an object. Use methods like `.length()` and `.substring()` to work with it. Use `.equals()` to compare text. `==` checks whether two variables point to the same object, which is not the same question.",
   "refresher_code": "String s = \"Morgan\";\nSystem.out.println(s.length());\nSystem.out.println(s.charAt(0));\nSystem.out.println(s.substring(0, 3));\nSystem.out.println(s.equals(\"Morgan\"));\n// 6\n// M\n// Mor\n// true",
   "blocks": [
     {
       "kind": "text",
-      "body": "Strings hold the words your program works with: someone's name, a menu choice, a line typed at the keyboard. You write one inside double quotes. Java gives single quotes a separate job, so `\"A\"` is a String while `'A'` is a single `char`. Learn that split now and a whole family of errors never finds you."
+      "body": "A String holds text. It can be one word, a full sentence, or an empty string. In Java, String is an object, so you use a dot to ask it questions or call methods on it."
     },
     {
       "kind": "text",
-      "body": "Java has eight primitive types, such as `int`, `double`, `boolean`, and `char`. A primitive holds a plain value and nothing else. String is not one of them. String is an object, and that single fact explains almost everything in this lesson: why you call methods on it with a dot, and why comparing two of them is not as simple as it looks."
+      "body": "Java has eight primitive types, such as `int`, `double`, `boolean`, and `char`. A primitive holds a plain value and nothing else. String is not one of them. String is an object, and that single fact explains almost everything in this lesson: why you call methods on it with a dot, and why comparing two of them is not as simple as it looks.",
+      "caption": "The dot calls String methods. length counts characters. toUpperCase makes a new uppercase String."
     },
     {
       "kind": "code",
       "caption": "This is the wrapper every Java program needs. Later examples show only the statements that go inside `main`, and you can assume this class around them. Note the capital S in `String`: it is capitalized because it is an object type, while `int` is lowercase because it is a primitive.",
       "code": "public class Demo {\n    public static void main(String[] args) {\n        String school = \"Morgan State\";\n        System.out.println(school);\n        System.out.println(school.length());\n    }\n}",
-      "output": "Morgan State\n12"
+      "output": "Morgan State\n12",
+      "body": "The big beginner trap is comparison. If you want to know whether two Strings contain the same letters, use `.equals()`. Do not use `==` for text equality."
     },
     {
       "kind": "text",
-      "body": "`school.length()` is a method call. You are asking the String object to do something and hand back an answer. That is what the dot means. It needs the parentheses, because you are calling it. Write `school.length` with no parentheses and the compiler stops you, saying it cannot find a variable named `length`."
+      "body": "`school.length()` is a method call. You are asking the String object to do something and hand back an answer. That is what the dot means. It needs the parentheses, because you are calling it. Write `school.length` with no parentheses and the compiler stops you, saying it cannot find a variable named `length`.",
+      "caption": "The wrong version asks whether both variables are the same object. The right version asks whether the text matches."
     },
     {
       "kind": "callout",
       "tone": "tip",
       "title": "Java catches type errors before it runs anything",
-      "body": "Java checks the types of everything while it compiles, which is before a single line of your program has run. So `int n = \"hello\";` never gets the chance to misbehave. The compiler refuses it outright and prints `incompatible types: String cannot be converted to int`. That is a compile error, and no output appears at all. Compare that with an error thrown while the program is running, which happens after some of your output has already printed. Where the error shows up tells you which kind you are looking at."
+      "body": "Strings do not change in place. A method like `trim()` or `toLowerCase()` returns a new String. Save that result if you want to keep it."
     },
     {
       "kind": "code",
@@ -127,13 +130,11 @@
       "kind": "list",
       "title": "Habits that save you hours",
       "items": [
-        "Compare text with `a.equals(b)`. Reach for `==` on Strings and you are asking about memory, not about text.",
-        "To ignore capitalization, use `a.equalsIgnoreCase(b)` instead of uppercasing both sides.",
-        "Typed input arrives with stray spaces, so trim it first: `answer.trim().equalsIgnoreCase(\"yes\")`",
-        "The last valid index is `s.length() - 1`. Ask for `s.length()` itself and you get a StringIndexOutOfBoundsException.",
-        "`substring(a, b)` stops just before b, so `substring(0, 3)` gives you three characters.",
-        "Every String method returns a new String and changes nothing. Store the result or it is lost.",
-        "`length()` has parentheses on a String. On an array, `parts.length` has none. Mixing them up is a compile error, so the compiler tells you immediately."
+        "Use double quotes for String values.",
+        "Call methods with a dot.",
+        "Use .equals() for text comparison.",
+        "Save the result of methods that return a changed String.",
+        "Check indexes carefully; Java starts counting at 0."
       ]
     }
   ]

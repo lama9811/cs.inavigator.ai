@@ -148,7 +148,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingSnippet, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingSnippet, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -831,6 +831,21 @@ class CodingUserProgressUpdate(BaseModel):
     mock_completed: Optional[int] = None
     best_streak: Optional[int] = None
     daily_days: Optional[list[str]] = None
+
+VALID_LEARNING_STYLES = {"worked_examples", "try_then_hint", "concept_then_code"}
+DEFAULT_LEARNING_STYLE = "try_then_hint"
+
+class CodingTutorPreferenceUpdate(BaseModel):
+    learning_style: str = DEFAULT_LEARNING_STYLE
+
+    @field_validator("learning_style")
+    @classmethod
+    def validate_learning_style(cls, value):
+        normalized = (value or "").strip().lower()
+        if normalized not in VALID_LEARNING_STYLES:
+            valid = ", ".join(sorted(VALID_LEARNING_STYLES))
+            raise ValueError(f"learning_style must be one of: {valid}")
+        return normalized
 
 class PracticeRunRequest(BaseModel):
     question_id: str
@@ -6418,6 +6433,60 @@ async def update_coding_user_progress(
     db.commit()
     db.refresh(row)
     return _serialize_coding_user_progress(row)
+
+
+# ---------------------------------------------------------------------------
+# Coding Tutor learning preference — one explicit student choice, used to shape
+# the first surface they see for a weak topic.
+# ---------------------------------------------------------------------------
+LEARNING_STYLE_LABELS = {
+    "worked_examples": "Worked examples first",
+    "try_then_hint": "Try first, then hint",
+    "concept_then_code": "Concept, then code",
+}
+
+def _serialize_coding_tutor_preference(row: Optional[CodingTutorPreference]) -> dict[str, Any]:
+    style = row.learning_style if row and row.learning_style in VALID_LEARNING_STYLES else DEFAULT_LEARNING_STYLE
+    return {
+        "learning_style": style,
+        "label": LEARNING_STYLE_LABELS.get(style, LEARNING_STYLE_LABELS[DEFAULT_LEARNING_STYLE]),
+        "updated_at": row.updated_at.isoformat() if row and row.updated_at else None,
+    }
+
+def _get_or_create_coding_tutor_preference(db: Session, user_id: int) -> CodingTutorPreference:
+    row = (
+        db.query(CodingTutorPreference)
+        .filter(CodingTutorPreference.user_id == user_id)
+        .first()
+    )
+    if row:
+        return row
+    row = CodingTutorPreference(user_id=user_id, learning_style=DEFAULT_LEARNING_STYLE)
+    db.add(row)
+    return row
+
+@app.get("/api/coding/preferences")
+async def get_coding_tutor_preferences(
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    row = _get_or_create_coding_tutor_preference(db, user["user_id"])
+    db.commit()
+    db.refresh(row)
+    return _serialize_coding_tutor_preference(row)
+
+@app.put("/api/coding/preferences")
+async def update_coding_tutor_preferences(
+    req: CodingTutorPreferenceUpdate,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    row = _get_or_create_coding_tutor_preference(db, user["user_id"])
+    row.learning_style = req.learning_style
+    row.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(row)
+    return _serialize_coding_tutor_preference(row)
 
 
 # ---------------------------------------------------------------------------

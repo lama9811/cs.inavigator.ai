@@ -13,7 +13,7 @@ export default function LessonPlayBar({ lesson }) {
   // nothing rather than a dead control.
   if (!speech.supported) return null;
 
-  const { isPlaying, index, total } = speech;
+  const { isPlaying, index, total, currentLabel } = speech;
   // Spoken position is 1-based for display; the bar fills as segments complete.
   const current = Math.min(index + 1, total);
   const percent = total > 0 ? Math.round((current / total) * 100) : 0;
@@ -65,6 +65,11 @@ export default function LessonPlayBar({ lesson }) {
         <span className="lesson-playbar-count" aria-live="polite">
           Section {current} / {total}
         </span>
+        {currentLabel ? (
+          <span className="lesson-playbar-current" aria-live="polite">
+            Reading: {currentLabel}
+          </span>
+        ) : null}
       </div>
     </div>
   );

@@ -1,29 +1,31 @@
 {
   "_note": "ORIGINAL content. Topic coverage follows David Eck's Introduction to Programming Using Java. No prose, examples, or exercises were copied; the source guides curriculum order only.",
   "title": "Generics",
-  "summary": "Tell Java what type a collection or reusable class should hold.",
+  "summary": "Tell Java what type a collection is meant to hold.",
   "minutes": 10,
   "error_classes": [
     "syntax",
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "Generics place a type inside angle brackets, such as `List<String>`. The compiler then checks what can enter and leave the collection. A type parameter like `T` lets one class or method work safely with several reference types.",
+  "refresher": "Generics are the type names inside angle brackets, such as `ArrayList<String>`. They tell Java what kind of values belong in a collection. That lets Java catch the wrong type before the program runs.",
   "refresher_code": "List<String> names = new ArrayList<>();\nnames.add(\"Ada\");\nString first = names.get(0);",
   "blocks": [
     {
       "kind": "text",
-      "body": "A list can hold names, grades, or Student objects. Java needs to know which kind you intend. The type inside angle brackets gives the compiler that information."
+      "body": "Generics are the type labels inside angle brackets. In `ArrayList<String>`, the list is meant to hold Strings. That promise helps Java protect you from putting the wrong kind of value into the list."
     },
     {
       "kind": "code",
       "caption": "This list accepts String values. Getting an item returns a String, so no cast is needed.",
       "code": "List<String> courses = new ArrayList<>();\ncourses.add(\"CS101\");\ncourses.add(\"MATH120\");\nString first = courses.get(0);\nSystem.out.println(first);",
-      "output": "CS101"
+      "output": "CS101",
+      "body": "Without generics, Java would not know what comes back out of a collection. With generics, `names.get(0)` is already known to be a String, so you do not have to guess or cast it by hand."
     },
     {
       "kind": "text",
-      "body": "Without a type argument, an older raw list treats its items as Object. That loses useful checks and can move a type mistake from compilation to runtime."
+      "body": "Without a type argument, an older raw list treats its items as Object. That loses useful checks and can move a type mistake from compilation to runtime.",
+      "caption": "The list is for Strings. Java rejects a number before the program runs."
     },
     {
       "kind": "compare",
@@ -31,7 +33,8 @@
       "wrong_label": "Raw list",
       "wrong": "List values = new ArrayList();\nvalues.add(42);\nString name = (String) values.get(0);",
       "right_label": "Checked list",
-      "right": "List<String> names = new ArrayList<>();\nnames.add(\"Ada\");\nString name = names.get(0);"
+      "right": "List<String> names = new ArrayList<>();\nnames.add(\"Ada\");\nString name = names.get(0);",
+      "body": "Angle brackets can look noisy at first. Read them as a label on the box: this box is for this type of thing."
     },
     {
       "kind": "callout",
@@ -73,11 +76,11 @@
       "kind": "list",
       "title": "Generics checklist",
       "items": [
-        "Give every collection an element type.",
-        "Use wrapper types for primitive values.",
-        "Avoid raw collection types.",
-        "Let the diamond `<>` copy the type from the declaration.",
-        "Use a type parameter when one design works for several types."
+        "Put the element type in angle brackets.",
+        "Use ArrayList<String> for a list of Strings.",
+        "Let Java catch the wrong type early.",
+        "Avoid raw collections in new code.",
+        "Read generics as labels on containers."
       ]
     }
   ]

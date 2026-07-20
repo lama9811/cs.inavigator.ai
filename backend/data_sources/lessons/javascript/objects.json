@@ -1,22 +1,22 @@
 {
   "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
   "title": "Objects",
-  "summary": "Group related values under named properties.",
+  "summary": "Keep related values together under names you choose.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "Objects store values under keys. Dot notation reads a known simple key, while brackets evaluate a computed key. Assignment copies an object reference.",
+  "refresher": "A JavaScript object stores values under keys. Use dot notation when the key is written directly in your code. Use brackets when the key comes from a variable. Assigning an object to another variable copies the reference, not a fresh object.",
   "refresher_code": "const student={name:\"Ada\",credits:15};\nconsole.log(student.name);",
   "blocks": [
     {
       "kind": "text",
-      "body": "Objects store values under keys. Dot notation reads a known simple key, while brackets evaluate a computed key. Assignment copies an object reference. Group related values under named properties."
+      "body": "An object is a small bundle of named facts. Instead of remembering that index 0 means name and index 1 means credits, you can write `student.name` and `student.credits`."
     },
     {
       "kind": "text",
-      "body": "An object groups facts under names instead of numeric positions. Dot notation uses a property name written directly in the code. Bracket notation evaluates an expression to choose the key at runtime. Objects are references, so two variables can lead to the same set of properties."
+      "body": "Use a dot when you know the property name while writing the code. Use brackets when the property name is stored in a variable. That one choice prevents a lot of quiet bugs."
     },
     {
       "kind": "code",
@@ -34,13 +34,13 @@
     },
     {
       "kind": "text",
-      "body": "In the wrong version, JavaScript looks for a property literally named `key`. In the corrected version, it evaluates the variable to `\"credits\"` and reads that property. Before following a nested property, optional chaining such as `student.advisor?.name` can handle a missing middle value."
+      "body": "In the wrong version, JavaScript searches for a property literally named `key`. In the fixed version, JavaScript looks inside the variable `key`, finds `\"credits\"`, and uses that as the property name."
     },
     {
       "kind": "callout",
       "tone": "mistake",
-      "title": "Trace this carefully",
-      "body": "Reading a missing property returns undefined; an error may occur later when code tries to use that absent value."
+      "title": "A missing property is quiet at first",
+      "body": "Reading a missing property gives you undefined. The error often shows up on the next line, when your code tries to use that missing value as if it were real."
     },
     {
       "kind": "check",
@@ -72,10 +72,10 @@
       "kind": "list",
       "title": "Objects checklist",
       "items": [
-        "Use dots for fixed keys.",
-        "Use brackets for computed keys.",
-        "Check optional properties.",
-        "Copy before independent mutation."
+        "Use dots for property names written in the code.",
+        "Use brackets when the key comes from a variable.",
+        "Check optional data before going deeper.",
+        "Copy the object first if you need a separate object."
       ]
     }
   ],
