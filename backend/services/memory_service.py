@@ -108,16 +108,35 @@ def fetch_user_memories_sync(user_id: int, limit: int = 10) -> list[dict]:
         db.close()
 
 
-def build_memory_context(memories: list[dict]) -> str:
-    """Build a context string from user memories for agent injection."""
-    if not memories:
-        return ""
+def build_memory_context(memories, relevant_memories=None, relevant_turns=None):
+    """Up to three concatenated sections: long-term facts, semantic fact recall,
+    verbatim past-turn recall."""
+    parts = []
 
-    ctx = "\nUSER MEMORY (long-term context from past sessions):\n"
-    for m in memories:
-        ctx += f"[{m['memory_type']}] {m['content']}\n"
-    ctx += "(Use this context to personalize responses. Do not repeat these facts verbatim.)\n"
-    return ctx
+    if memories:
+        ctx = "\nUSER MEMORY (long-term context from past sessions):\n"
+        for m in memories:
+            ctx += f"[{m['memory_type']}] {m['content']}\n"
+        ctx += "(Use this context to personalize responses. Do not repeat these facts verbatim.)\n"
+        parts.append(ctx)
+
+    if relevant_memories:
+        ctx = "\nRELEVANT FROM PAST MEMORIES (semantically matched to current query):\n"
+        for m in relevant_memories:
+            ctx += f"[{m['memory_type']}] {m['content']}\n"
+        parts.append(ctx)
+
+    if relevant_turns:
+        ctx = "\nFROM PAST CONVERSATIONS (you may reference these earlier exchanges):\n"
+        for t in relevant_turns:
+            ts = (t.get("timestamp") or "")[:10]
+            uq = (t.get("user_query") or "").strip()[:200]
+            br = (t.get("bot_response") or "").strip()[:400]
+            ctx += f"  [{ts}] Student asked: \"{uq}\"\n"
+            ctx += f"     You answered: \"{br}\"\n"
+        parts.append(ctx)
+
+    return "".join(parts)
 
 
 def consolidate_user_memories(hours_back: int = 24) -> dict:
@@ -318,3 +337,144 @@ def _merge_memories(db: Session, user_id: int, new_memories: list[dict], existin
             oldest.embedding = emb_serialized
             oldest.embedding_model = emb_model
             oldest.updated_at = datetime.utcnow()
+
+
+# ============================================================================
+# Semantic + verbatim retrieval (Layer 4)
+# ============================================================================
+
+def retrieve_relevant_memories(user_id, query, k=5, threshold=0.55):
+    """Rank a user's UserMemory rows by cosine similarity to the query. Skips
+    paused / unembedded rows. Always returns a list."""
+    from models import UserMemory
+    from services.embedding_util import embed_text, cosine_sim
+
+    if not _semantic_recall_enabled() or not query or not query.strip():
+        return []
+
+    q_vec = embed_text(query)
+    if not q_vec:
+        return []
+
+    db = SessionLocal()
+    try:
+        rows = (
+            db.query(UserMemory)
+            .filter(
+                UserMemory.user_id == user_id,
+                UserMemory.paused == False,  # noqa: E712
+                UserMemory.embedding.isnot(None),
+            )
+            .all()
+        )
+        scored = []
+        for r in rows:
+            vec = _deserialize_embedding(r.embedding)
+            if not vec:
+                continue
+            sim = cosine_sim(q_vec, vec)
+            if sim >= threshold:
+                scored.append((sim, r))
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return [
+            {
+                "memory_type": r.memory_type,
+                "content": r.content,
+                "updated_at": r.updated_at.isoformat() if r.updated_at else "",
+                "similarity": round(sim, 3),
+            }
+            for sim, r in scored[:k]
+        ]
+    except Exception as e:
+        print(f"[MEMORY] retrieve_relevant_memories failed: {e}")
+        return []
+    finally:
+        db.close()
+
+
+def retrieve_relevant_turns(user_id, query, k=3, threshold=0.62, exclude_session_id=None, scan_limit=1000):
+    """Return the user's top-k most-similar past turns (excluding current session).
+    Scan bounded to the most recent scan_limit embedded turns."""
+    from models import ChatHistory
+    from services.embedding_util import embed_text, cosine_sim
+
+    if not _verbatim_recall_enabled() or not query or not query.strip():
+        return []
+
+    q_vec = embed_text(query)
+    if not q_vec:
+        return []
+
+    db = SessionLocal()
+    try:
+        q = db.query(ChatHistory).filter(
+            ChatHistory.user_id == user_id,
+            ChatHistory.embedding.isnot(None),
+        )
+        if exclude_session_id:
+            q = q.filter(ChatHistory.session_id != exclude_session_id)
+        rows = q.order_by(ChatHistory.id.desc()).limit(scan_limit).all()
+
+        scored = []
+        for r in rows:
+            vec = _deserialize_embedding(r.embedding)
+            if not vec:
+                continue
+            sim = cosine_sim(q_vec, vec)
+            if sim >= threshold:
+                scored.append((sim, r))
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return [
+            {
+                "id": r.id,
+                "session_id": r.session_id,
+                "timestamp": r.timestamp.isoformat() if r.timestamp else "",
+                "user_query": r.user_query,
+                "bot_response": r.bot_response,
+                "topic_label": r.topic_label,
+                "similarity": round(sim, 3),
+            }
+            for sim, r in scored[:k]
+        ]
+    except Exception as e:
+        print(f"[MEMORY] retrieve_relevant_turns failed: {e}")
+        return []
+    finally:
+        db.close()
+
+
+def embed_and_store_turn(chat_history_id):
+    """Background task: embed a freshly-committed chat turn and persist.
+    Idempotent; no-ops if verbatim recall is off."""
+    if not _verbatim_recall_enabled():
+        return False
+
+    from models import ChatHistory
+    from services.embedding_util import embed_text
+
+    db = SessionLocal()
+    try:
+        row = db.query(ChatHistory).filter(ChatHistory.id == chat_history_id).first()
+        if not row:
+            return False
+        if row.embedding:
+            return True
+
+        uq = (row.user_query or "").strip()
+        br = (row.bot_response or "").strip()
+        if not uq and not br:
+            return False
+        combined = f"User: {uq}\nAssistant: {br[:1500]}"
+        vec = embed_text(combined)
+        if not vec:
+            return False
+
+        row.embedding = _serialize_embedding(vec)
+        row.embedding_model = EMBEDDING_MODEL_VERSION
+        db.commit()
+        return True
+    except Exception as e:
+        print(f"[MEMORY] embed_and_store_turn failed id={chat_history_id}: {e}")
+        return False
+    finally:
+        db.close()
