@@ -69,6 +69,61 @@ body .coding-app {
   --ct-terminal-text: #d8e2f4;
 }
 
+/* Light-mode accent cleanup:
+   orange stays available for true ORA actions, but guide/lesson chrome should
+   sit with the cool navy card system instead of sprinkling orange on every
+   helper surface. */
+body .coding-app .quiz-bank-page .quiz-insight-panel {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ct-primary) 5%, var(--ct-panel)),
+    var(--ct-panel)
+  ) !important;
+  border-color: color-mix(in srgb, var(--ct-primary) 20%, var(--ct-border)) !important;
+  border-top-color: var(--ct-primary) !important;
+}
+
+body .coding-app .practice-guide-weakest,
+body .coding-app .practice-guide-focus {
+  border-left-color: var(--ct-primary) !important;
+  background: color-mix(in srgb, var(--ct-primary) 6%, var(--ct-panel)) !important;
+}
+
+body .coding-app .practice-guide-focus-cta {
+  border-color: color-mix(in srgb, var(--ct-primary) 34%, transparent) !important;
+  color: var(--ct-primary) !important;
+}
+
+body .coding-app .practice-guide-focus-cta:hover {
+  background: color-mix(in srgb, var(--ct-primary) 9%, transparent) !important;
+  border-color: var(--ct-primary) !important;
+}
+
+body .coding-app .practice-guide-focus-cta:focus-visible {
+  outline-color: var(--ct-primary) !important;
+}
+
+body .coding-app .learn-list-head h2 svg,
+body .coding-app .lesson-check-kicker {
+  color: var(--ct-primary) !important;
+}
+
+body .coding-app .learn-lesson-card:hover:not(.locked),
+body .coding-app .lesson-check-choice:hover:not(:disabled) {
+  border-color: var(--ct-primary) !important;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--ct-primary) 12%, transparent) !important;
+}
+
+body .coding-app .lesson-check,
+body .coding-app .lesson-check-choice:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ct-primary) 5%, var(--ct-panel)) !important;
+}
+
+body .coding-app .learn-lesson-card:focus-visible,
+body .coding-app .lesson-check-choice:focus-visible {
+  outline-color: var(--ct-primary) !important;
+}
+
 /* ---------- Dark mode: warm-slate coding environment ----------
    NOTE: a warm-slate dark lab palette ALREADY exists in CodingTutor.css
    (the `body.coding-dark .coding-app` block around line 2925: navy #789dca,
