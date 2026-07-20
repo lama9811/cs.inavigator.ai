@@ -3887,7 +3887,6 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
                 canvas_context=canvas_context,
                 memory_context=memory_context,
                 chat_mode=req.mode,
-                flow_context=advising_flow,
             )
         except Exception as e:
             print(f"   Vertex AI Chat Error: {e}")
@@ -4239,7 +4238,6 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                 canvas_context=canvas_context,
                 memory_context=memory_context,
                 chat_mode=req.mode,
-                flow_context=advising_flow,
             ):
                 if first_event:
                     mark_timing("agent_first_event")
