@@ -478,3 +478,206 @@ def embed_and_store_turn(chat_history_id):
         return False
     finally:
         db.close()
+
+
+# ============================================================================
+# Session summary (Layer 2)
+# ============================================================================
+
+def summarize_older_turns(transcript, client=None):
+    """LLM-summarize the older portion of a session. None on empty/failure.
+    `client` may be injected (tests)."""
+    if not transcript or not transcript.strip():
+        return None
+    try:
+        from google import genai
+
+        if client is None:
+            project = os.getenv("GOOGLE_CLOUD_PROJECT", "")
+            try:
+                if project:
+                    client = genai.Client(vertexai=True, project=project, location="us-central1")
+                else:
+                    client = genai.Client(vertexai=True)
+            except Exception:
+                api_key = os.getenv("GEMINI_API_KEY", "")
+                if not api_key:
+                    print("   [MEMORY] No Gemini client for session summary")
+                    return None
+                client = genai.Client(api_key=api_key)
+
+        prompt = (
+            "Summarize the earlier part of this conversation between a student and "
+            "CS Navigator (Morgan State University CS academic advisor).\n\n"
+            "Goal: a concise 1-2 paragraph summary that captures:\n"
+            "- What the student asked about\n"
+            "- Any specifics they mentioned (courses, track, career goals, deadlines, commitments)\n"
+            "- What the assistant told them — especially specific course info, contacts, dates, or links\n\n"
+            "Be specific. Avoid filler. Aim for under 400 tokens.\n\n"
+            f"Conversation:\n{transcript[:3000]}\n\nSummary:"
+        )
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config={"temperature": 0.1, "max_output_tokens": 500},
+        )
+        text = (response.text or "").strip()
+        return text or None
+    except Exception as e:
+        print(f"[MEMORY] Session summary failed: {e}")
+        return None
+
+
+def run_session_summary(user_id, session_id):
+    """Build + persist a rolling session summary. Gate: >=8 turns and new older
+    turns beyond the last summary. Returns the summary or None."""
+    from models import ChatHistory
+
+    db = SessionLocal()
+    try:
+        all_turns = (
+            db.query(ChatHistory)
+            .filter(ChatHistory.user_id == user_id, ChatHistory.session_id == session_id)
+            .order_by(ChatHistory.id.asc())
+            .all()
+        )
+        if len(all_turns) < 8:
+            return None
+
+        prior_summary = None
+        prior_through_id = 0
+        for t in reversed(all_turns):
+            if t.session_summary:
+                prior_summary = t.session_summary
+                prior_through_id = t.summary_through_id or 0
+                break
+
+        older_turns = all_turns[:-5]
+        new_older_turns = [t for t in older_turns if t.id > prior_through_id]
+        if not new_older_turns:
+            return None
+
+        transcript_parts = []
+        if prior_summary:
+            transcript_parts.append(f"EARLIER SUMMARY: {prior_summary}")
+        for t in new_older_turns:
+            transcript_parts.append(
+                f"User: {t.user_query}\nAssistant: {(t.bot_response or '')[:500]}"
+            )
+        transcript = "\n\n".join(transcript_parts)
+
+        summary = summarize_older_turns(transcript)
+        if not summary:
+            return None
+
+        latest_row = all_turns[-1]
+        latest_row.session_summary = summary
+        latest_row.summary_through_id = older_turns[-1].id
+        db.commit()
+        print(f"[MEMORY] session summary user={user_id} session={session_id} through={latest_row.summary_through_id}")
+        return summary
+    except Exception as e:
+        print(f"[MEMORY] run_session_summary failed: {e}")
+        return None
+    finally:
+        db.close()
+
+
+# ============================================================================
+# Realtime + idle extraction (Layer 3)
+# ============================================================================
+
+def consolidate_user_memories_single(user_id, hours_back=2):
+    """Run the extraction pipeline for ONE user (post-commit / idle / manual)."""
+    if not _realtime_enabled():
+        return {"status": "disabled"}
+
+    from models import UserMemory, ChatHistory
+
+    db = SessionLocal()
+    try:
+        cutoff = datetime.utcnow() - timedelta(hours=hours_back)
+        chats = (
+            db.query(ChatHistory)
+            .filter(ChatHistory.user_id == user_id, ChatHistory.timestamp >= cutoff)
+            .order_by(ChatHistory.timestamp.asc())
+            .limit(50)
+            .all()
+        )
+        if not chats or len(chats) < 3:
+            return {"status": "skipped_too_few_messages", "user_id": user_id, "count": len(chats)}
+
+        transcript = "\n".join(
+            f"Student: {c.user_query}\nBot: {(c.bot_response or '')[:200]}" for c in chats
+        )
+        existing = db.query(UserMemory).filter(UserMemory.user_id == user_id).all()
+        existing_text = "\n".join(f"[{m.memory_type}] {m.content}" for m in existing) if existing else "None"
+
+        new_memories = _extract_memories(transcript, existing_text)
+        if not new_memories:
+            return {"status": "no_new_facts", "user_id": user_id}
+
+        _merge_memories(db, user_id, new_memories, existing)
+        db.commit()
+        print(f"[MEMORY] realtime extract user={user_id} new={len(new_memories)} hours={hours_back}")
+        return {"status": "ok", "user_id": user_id, "new_facts": len(new_memories)}
+    except Exception as e:
+        print(f"[MEMORY] consolidate_user_memories_single failed user={user_id}: {e}")
+        return {"status": "error", "user_id": user_id, "error": str(e)}
+    finally:
+        db.close()
+
+
+def touch_user_last_chat_at(user_id):
+    """Cheap single-column UPDATE of users.last_chat_at = now()."""
+    from models import User
+
+    db = SessionLocal()
+    try:
+        db.query(User).filter(User.id == user_id).update(
+            {User.last_chat_at: datetime.utcnow()}, synchronize_session=False
+        )
+        db.commit()
+    except Exception as e:
+        print(f"[MEMORY] touch_user_last_chat_at failed user={user_id}: {e}")
+    finally:
+        db.close()
+
+
+def consolidate_idle_users(idle_min=5, idle_max=10):
+    """Find users whose last chat was idle_min..idle_max minutes ago and extract."""
+    if not _realtime_enabled():
+        return {"status": "disabled"}
+
+    from models import User
+
+    db = SessionLocal()
+    try:
+        max_cutoff = datetime.utcnow() - timedelta(minutes=idle_min)
+        min_cutoff = datetime.utcnow() - timedelta(minutes=idle_max)
+        users = (
+            db.query(User.id)
+            .filter(User.last_chat_at.isnot(None))
+            .filter(User.last_chat_at <= max_cutoff)
+            .filter(User.last_chat_at >= min_cutoff)
+            .all()
+        )
+    except Exception as e:
+        print(f"[MEMORY] consolidate_idle_users query failed: {e}")
+        return {"status": "error", "error": str(e)}
+    finally:
+        db.close()
+
+    if not users:
+        return {"status": "no_idle_users", "processed": 0}
+
+    processed = 0
+    errors = 0
+    for (uid,) in users:
+        try:
+            consolidate_user_memories_single(uid, hours_back=2)
+            processed += 1
+        except Exception as e:
+            print(f"[MEMORY] idle-sweep user={uid} failed: {e}")
+            errors += 1
+    return {"status": "completed", "processed": processed, "errors": errors}
