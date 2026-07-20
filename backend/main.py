@@ -294,6 +294,28 @@ def init_db():
                 except Exception:
                     pass
 
+        # 5b. Memory-port columns (embedding/summary/paused/last_chat_at).
+        #     MySQL DDL; on SQLite/local the ALTERs error harmlessly (columns
+        #     already exist via create_all) and are caught below.
+        for _tbl, _col, _ddl in [
+            ("chat_history", "session_summary", "ALTER TABLE chat_history ADD COLUMN session_summary MEDIUMTEXT NULL"),
+            ("chat_history", "summary_through_id", "ALTER TABLE chat_history ADD COLUMN summary_through_id INT NULL"),
+            ("chat_history", "embedding", "ALTER TABLE chat_history ADD COLUMN embedding MEDIUMTEXT NULL"),
+            ("chat_history", "embedding_model", "ALTER TABLE chat_history ADD COLUMN embedding_model VARCHAR(64) NULL"),
+            ("chat_history", "topic_label", "ALTER TABLE chat_history ADD COLUMN topic_label VARCHAR(128) NULL"),
+            ("user_memories", "embedding", "ALTER TABLE user_memories ADD COLUMN embedding MEDIUMTEXT NULL"),
+            ("user_memories", "embedding_model", "ALTER TABLE user_memories ADD COLUMN embedding_model VARCHAR(64) NULL"),
+            ("user_memories", "paused", "ALTER TABLE user_memories ADD COLUMN paused BOOLEAN NOT NULL DEFAULT FALSE"),
+            ("users", "last_chat_at", "ALTER TABLE users ADD COLUMN last_chat_at DATETIME NULL"),
+        ]:
+            if not _has_col(_tbl, _col):
+                try:
+                    conn.execute(text(_ddl))
+                    conn.commit()
+                    print(f"[OK] Added memory column {_tbl}.{_col}")
+                except Exception as e:
+                    print(f"[init_db] skip {_tbl}.{_col}: {e}")
+
         # 6. Check if degreeworks_data table exists
         if not _has_table("degreeworks_data"):
             print("[WARN] 'degreeworks_data' table missing. Creating it now...")

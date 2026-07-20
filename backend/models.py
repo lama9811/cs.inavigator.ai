@@ -16,6 +16,13 @@ class ChatHistory(Base):
     bot_response = Column(Text)
     mode = Column(String(20), default="regular")  # regular | general | coding_tutor
     timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    # Memory port — Layer 2 rolling session summary (latest non-null wins on read).
+    session_summary = Column(Text, nullable=True)
+    summary_through_id = Column(Integer, nullable=True)
+    # Memory port — Layer 4 verbatim turn embedding (JSON 256-float in TEXT).
+    embedding = Column(Text, nullable=True)
+    embedding_model = Column(String(64), nullable=True)
+    topic_label = Column(String(128), nullable=True)
 
 
 class Feedback(Base):
@@ -55,6 +62,8 @@ class User(Base):
     disabled_at = Column(DateTime, nullable=True)
     disabled_reason = Column(Text, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    # Memory port — idle-sweep marker: when the user last chatted.
+    last_chat_at = Column(DateTime, nullable=True)
 
     # Relationship to DegreeWorks data
     degreeworks = relationship("DegreeWorksData", back_populates="user", uselist=False)
@@ -211,10 +220,15 @@ class UserMemory(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    memory_type = Column(String(50), nullable=False)  # interest, preference, goal, context
+    memory_type = Column(String(50), nullable=False)  # major_track, interest, career_goal, preference, context
     content = Column(Text, nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # Memory port — Layer 4 semantic recall: JSON 256-float embedding in TEXT.
+    embedding = Column(Text, nullable=True)
+    embedding_model = Column(String(64), nullable=True)
+    # Per-row pause: skipped during semantic retrieval when True.
+    paused = Column(Boolean, nullable=False, default=False)
 
     user = relationship("User", backref="memories")
 
