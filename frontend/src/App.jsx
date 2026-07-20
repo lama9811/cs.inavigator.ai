@@ -30,11 +30,6 @@ import { getApiBase } from "./lib/apiBase";
 import { generateChatTitle, shouldAutoRenameSession } from "./lib/chatTitles";
 const API_BASE = getApiBase();
 const ACTIVE_CHAT_SESSION_KEY = "active_chat_session_id";
-// Set at login, consumed by the /chat-history restore effect: a fresh sign-in
-// always lands on a blank "New Chat" (the welcome screen) instead of resuming
-// the last conversation. sessionStorage (not localStorage) so a plain refresh
-// mid-conversation still keeps the user where they were.
-const FRESH_LOGIN_SESSION_KEY = "fresh_login_session_id";
 
 function makeBlankSession(id) {
   return { id, title: "New Chat", messages: [], pinned: false, archived: false, mode: "regular" };
@@ -358,28 +353,27 @@ export default function App() {
 
   // chat‐session state
   const [sessions, setSessions] = useState(() => {
-    // Try to load from local storage first for immediate UI
+    // Always open on a fresh blank "New Chat" (the welcome screen) — never resume
+    // a prior conversation on app open/reload. Previously-saved NON-EMPTY chats
+    // stay in the sidebar for quick access; empty "New Chat" placeholders are
+    // dropped so they don't pile up across reloads. The /chat-history effect
+    // below re-syncs the sidebar from the server once the token is known.
     const saved = JSON.parse(localStorage.getItem("chat_sessions") || "[]");
-    if (!saved.length) {
-      const id = Date.now().toString();
-      return [{ id, title: "New Chat", messages: [], pinned: false, archived: false, mode: "regular" }];
-    }
-    return saved.map(s => ({
-      ...s,
-      pinned: s.pinned || false,
-      archived: s.archived || false,
-      autoTitle: s.autoTitle ?? shouldAutoRenameSession(s, s.messages || []),
-      title: shouldAutoRenameSession(s, s.messages || []) ? generateChatTitle(s.messages || [], s.mode || "regular") : s.title,
-      mode: s.mode || (String(s.id).startsWith("coding-") ? "coding_tutor" : "regular")
-    }));
+    const nonEmpty = saved
+      .filter(s => (s.messages || []).length > 0)
+      .map(s => ({
+        ...s,
+        pinned: s.pinned || false,
+        archived: s.archived || false,
+        autoTitle: s.autoTitle ?? shouldAutoRenameSession(s, s.messages || []),
+        title: shouldAutoRenameSession(s, s.messages || []) ? generateChatTitle(s.messages || [], s.mode || "regular") : s.title,
+        mode: s.mode || (String(s.id).startsWith("coding-") ? "coding_tutor" : "regular")
+      }));
+    return [makeBlankSession(Date.now().toString()), ...nonEmpty];
   });
-  
-  const [activeId, setActiveId] = useState(() => {
-    const savedActiveId = localStorage.getItem(ACTIVE_CHAT_SESSION_KEY);
-    return sessions.some((session) => session.id === savedActiveId)
-      ? savedActiveId
-      : sessions[0]?.id || "";
-  });
+
+  // Always the fresh blank session created above — the app opens on the welcome screen.
+  const [activeId, setActiveId] = useState(() => sessions[0]?.id || "");
   const [pendingChatAction, setPendingChatAction] = useState(null);
   
   useEffect(() => {
@@ -396,11 +390,6 @@ export default function App() {
   useEffect(() => {
     async function loadHistory() {
       if (!token) return;
-      // Non-null only on the load that immediately follows a sign-in. It holds
-      // the id of the blank session onLoggedIn already created, so we reuse it
-      // rather than creating a second empty chat.
-      const freshLoginId = sessionStorage.getItem(FRESH_LOGIN_SESSION_KEY);
-      if (freshLoginId) sessionStorage.removeItem(FRESH_LOGIN_SESSION_KEY);
       try {
         const res = await fetch(`${API_BASE}/chat-history`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -453,35 +442,15 @@ export default function App() {
                   mode: String(sid).startsWith("coding-") ? "coding_tutor" : "regular"
               }));
 
-              if (freshLoginId) {
-                // Fresh sign-in: keep the whole history in the sidebar, but sit
-                // on a blank chat so the user lands on the welcome screen.
-                setSessions([
-                  makeBlankSession(freshLoginId),
-                  ...dbSessions.filter((session) => session.id !== freshLoginId)
-                ]);
-                setActiveId(freshLoginId);
-                return;
-              }
-
-              // Update state with database sessions
-              setSessions(dbSessions);
-
-              // Keep the user's selected chat after refresh when it still exists;
-              // otherwise default to the MOST RECENTLY ACTIVE session (by real
-              // message time), not just the last one in array order.
-              if (dbSessions.length > 0) {
-                const savedActiveId = localStorage.getItem(ACTIVE_CHAT_SESSION_KEY);
-                const savedSession = dbSessions.find((session) => session.id === savedActiveId);
-                const mostRecent = dbSessions.reduce((a, b) =>
-                  (b.lastActivity || 0) > (a.lastActivity || 0) ? b : a
-                );
-                setActiveId(savedSession?.id || mostRecent.id);
-              }
+              // Always land on a fresh blank "New Chat" (welcome screen); keep the
+              // full server-side history in the sidebar. Never auto-resume a prior
+              // conversation on app open — the user opens a new chat every time.
+              const freshId = Date.now().toString();
+              setSessions([makeBlankSession(freshId), ...dbSessions]);
+              setActiveId(freshId);
           } else {
-              // New account or no history - reset to a fresh session
-              // This clears any stale sessions from a previous account
-              const freshId = freshLoginId || Date.now().toString();
+              // New account or no history - just the fresh blank session.
+              const freshId = Date.now().toString();
               setSessions([makeBlankSession(freshId)]);
               setActiveId(freshId);
           }
@@ -770,13 +739,9 @@ export default function App() {
           element={
             <Login
               onLoggedIn={(tk) => {
-                // Land on a blank chat, not the last conversation. Done here
-                // (not just in the /chat-history effect) so the stale session
-                // restored from localStorage never flashes on screen first.
-                const freshId = Date.now().toString();
-                sessionStorage.setItem(FRESH_LOGIN_SESSION_KEY, freshId);
-                setSessions((prev) => [makeBlankSession(freshId), ...prev]);
-                setActiveId(freshId);
+                // The /chat-history effect (fired by setToken) lands the user on a
+                // fresh blank chat; the initial state is already blank, so no stale
+                // conversation flashes before it resolves.
                 setToken(tk);
                 navigate("/chat", { replace: true });
               }}
