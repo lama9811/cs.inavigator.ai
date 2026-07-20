@@ -6717,6 +6717,109 @@ async def internal_memory_consolidate(request: Request):
     return result
 
 
+@app.post("/api/internal/memory/idle-sweep")
+async def internal_memory_idle_sweep(request: Request):
+    """Idle-sweep cron (every 5 min): extract facts for users idle 5-10 min so
+    mid-session facts aren't lost before the 3am cron. Same X-Research-Secret auth."""
+    secret = request.headers.get("X-Research-Secret", "")
+    expected = os.getenv("RESEARCH_SECRET", "")
+    if not expected or secret != expected:
+        raise HTTPException(status_code=403, detail="Invalid research secret")
+    from services.memory_service import consolidate_idle_users
+    result = await asyncio.to_thread(consolidate_idle_users, 5, 10)
+    return result
+
+
+# --- Student-facing memory management (backend-only; no UI yet) --------------
+@app.get("/api/me/memories")
+async def get_my_memories(user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """List the student's stored long-term facts + memory stats (FERPA transparency)."""
+    from models import UserMemory, ChatHistory
+    facts = (
+        db.query(UserMemory)
+        .filter(UserMemory.user_id == user["user_id"])
+        .order_by(UserMemory.updated_at.desc())
+        .all()
+    )
+    embedded = (
+        db.query(func.count(ChatHistory.id))
+        .filter(ChatHistory.user_id == user["user_id"], ChatHistory.embedding.isnot(None))
+        .scalar()
+    )
+    return {
+        "facts": [
+            {
+                "id": m.id, "type": m.memory_type, "content": m.content,
+                "created_at": m.created_at.isoformat() if m.created_at else "",
+                "updated_at": m.updated_at.isoformat() if m.updated_at else "",
+                "paused": bool(m.paused),
+            }
+            for m in facts
+        ],
+        "stats": {"fact_count": len(facts), "embedded_turns": int(embedded or 0)},
+    }
+
+
+@app.patch("/api/me/memories/{memory_id}")
+async def patch_my_memory(memory_id: int, req: dict, user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Edit a fact's content and/or pause it. Recomputes the embedding on content change."""
+    from models import UserMemory
+    from services.memory_service import _serialize_embedding, EMBEDDING_MODEL_VERSION
+    from services.embedding_util import embed_text
+    m = db.query(UserMemory).filter(UserMemory.id == memory_id, UserMemory.user_id == user["user_id"]).first()
+    if not m:
+        raise HTTPException(404, "Memory not found")
+    if "paused" in req:
+        m.paused = bool(req["paused"])
+    if "content" in req and req["content"]:
+        m.content = str(req["content"]).strip()
+        vec = embed_text(m.content)
+        m.embedding = _serialize_embedding(vec) if vec else None
+        m.embedding_model = EMBEDDING_MODEL_VERSION if vec else None
+    db.commit()
+    return {"message": "updated", "id": m.id, "paused": bool(m.paused)}
+
+
+@app.delete("/api/me/memories/{memory_id}")
+async def delete_my_memory(memory_id: int, user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Delete a single stored fact (ownership-checked)."""
+    from models import UserMemory
+    m = db.query(UserMemory).filter(UserMemory.id == memory_id, UserMemory.user_id == user["user_id"]).first()
+    if not m:
+        raise HTTPException(404, "Memory not found")
+    db.delete(m)
+    db.commit()
+    return {"message": "deleted", "id": memory_id}
+
+
+@app.delete("/api/me/memories")
+async def delete_all_my_memories(user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Right-to-erasure: delete all stored facts + null all turn embeddings."""
+    from models import UserMemory, ChatHistory
+    n = db.query(UserMemory).filter(UserMemory.user_id == user["user_id"]).delete(synchronize_session=False)
+    db.query(ChatHistory).filter(ChatHistory.user_id == user["user_id"]).update(
+        {ChatHistory.embedding: None, ChatHistory.embedding_model: None}, synchronize_session=False
+    )
+    db.commit()
+    return {"message": "erased", "facts_deleted": int(n)}
+
+
+@app.delete("/api/me/conversations/{chat_id}")
+async def delete_my_conversation_turn(chat_id: int, hard: bool = False, user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Un-index (default) or hard-delete a single past turn."""
+    from models import ChatHistory
+    row = db.query(ChatHistory).filter(ChatHistory.id == chat_id, ChatHistory.user_id == user["user_id"]).first()
+    if not row:
+        raise HTTPException(404, "Not found")
+    if hard:
+        db.delete(row)
+    else:
+        row.embedding = None
+        row.embedding_model = None
+    db.commit()
+    return {"message": "deleted" if hard else "unindexed", "id": chat_id}
+
+
 @app.post("/api/internal/canvas/sync")
 async def internal_canvas_sync(request: Request):
     """Triggered by Cloud Scheduler daily at 4am. Refreshes Canvas data for all synced users.
