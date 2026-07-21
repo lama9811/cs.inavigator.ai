@@ -330,8 +330,9 @@ function FloatingChatWindow({
               type="button"
               className="floating-apply-code-btn"
               onClick={onApplyAICode}
+              title="Full suggestions replace only when they preserve the wrapper; partial examples are added as comments."
             >
-              Review and apply tutor code
+              Add tutor suggestion safely
             </button>
           )}
           {canUndoAICode && onUndoAICode && (
@@ -463,6 +464,7 @@ function FloatingChatWindow({
             type="submit"
             className="floating-chat-send"
             title="Send message"
+            aria-label="Send message"
             disabled={isLoading || (!input.trim() && !pendingFile)}
           >
             <BsArrowUpCircleFill aria-hidden="true" />

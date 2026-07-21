@@ -6624,6 +6624,16 @@ body.coding-dark .campus-hero-focus {
   letter-spacing: 0.04em;
 }
 
+.campus-path-reason {
+  color: var(--ct-muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* Scoped under .campus-queue-item so it outranks the same-specificity
    `.campus-queue-item button` secondary rule that would otherwise re-tint these
    into navy pills. These are plain text links, not buttons. */

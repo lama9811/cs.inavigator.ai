@@ -35,7 +35,7 @@ import MockSummary from "./MockSummary";
 import MockConfirm from "./MockConfirm";
 import { gradeMockSummary, scoreFromGraded } from "./interviewGrade";
 import { appendInterviewAttempt, summarizeInterviewHistory } from "./interviewHistory";
-import { markInterviewSolved, useInterviewSolved } from "./interviewProgress";
+import { fetchInterviewProgress, markInterviewSolved, saveInterviewProgress, useInterviewReviewed, useInterviewSolved } from "./interviewProgress";
 import {
   saveDraft,
   readDraft,
@@ -147,6 +147,47 @@ const LEARNING_STYLE_COPY = {
 };
 const learningStyleInfo = (style) =>
   LEARNING_STYLE_COPY[style] || LEARNING_STYLE_COPY[DEFAULT_LEARNING_STYLE];
+
+function commentPrefixForLanguage(languageName = "Python") {
+  return languageName === "Python" ? "# " : "// ";
+}
+
+function extractDeclarationNames(code = "", languageName = "Python") {
+  const names = new Set();
+  const patterns = languageName === "Python"
+    ? [/^\s*def\s+([A-Za-z_]\w*)\s*\(/gm, /^\s*class\s+([A-Za-z_]\w*)\s*[:(]/gm]
+    : [
+        /\b(?:public|private|protected|static|final|async|\s)*\s*(?:[\w<>\[\]]+\s+)?([A-Za-z_]\w*)\s*\([^;{}]*\)\s*\{/gm,
+        /\bclass\s+([A-Za-z_]\w*)\b/gm,
+      ];
+  patterns.forEach((pattern) => {
+    let match;
+    while ((match = pattern.exec(code)) !== null) {
+      if (match[1] && !["if", "for", "while", "switch", "catch"].includes(match[1])) {
+        names.add(match[1]);
+      }
+    }
+  });
+  return names;
+}
+
+function suggestedCodeLooksLikeSafeReplacement(currentCode = "", suggestion = "", languageName = "Python") {
+  if (!currentCode.trim()) return true;
+  const currentNames = extractDeclarationNames(currentCode, languageName);
+  if (!currentNames.size) return suggestion.length >= currentCode.trim().length * 0.8;
+  const suggestedNames = extractDeclarationNames(suggestion, languageName);
+  return [...currentNames].some(name => suggestedNames.has(name));
+}
+
+function buildCommentedTutorSuggestion(suggestion = "", languageName = "Python") {
+  const prefix = commentPrefixForLanguage(languageName);
+  return [
+    "",
+    `${prefix}Tutor suggestion to try next:`,
+    `${prefix}Kept as comments so your imports/function wrapper are not erased.`,
+    ...suggestion.trim().split(/\r?\n/).map(line => `${prefix}${line}`),
+  ].join("\n");
+}
 
 const CODING_PAGES = [
   { id: "dashboard", label: "Home", icon: FaHome },
@@ -710,6 +751,8 @@ export default function CodingTutor({
   // problems, no autograder/progress. Loaded independently of the practice set.
   const [interviewQuestions, setInterviewQuestions] = useState([]);
   const [interviewLoading, setInterviewLoading] = useState(true);
+  const [interviewProgressByQuestion, setInterviewProgressByQuestion] = useState({});
+  const { reviewed: interviewReviewed } = useInterviewReviewed();
   const interviewSolved = useInterviewSolved();
   // Mock Interview session: a timed run through N picked interview problems.
   // { questions, index, endsAt, startedAt, problemStartedAt,
@@ -783,6 +826,7 @@ export default function CodingTutor({
   codeRef.current = code;
   langKeyRef.current = selectedLanguageKey;
   const activeLanguageProgress = activeProblem ? progressByLanguage[activeProblem.id]?.[selectedLanguageKey] : null;
+  const activeInterviewProgress = activeProblem ? interviewProgressByQuestion[activeProblem.id]?.[selectedLanguageKey] : null;
   const activeProgress = activeLanguageProgress || (activeProblem ? progressByQuestion[activeProblem.id] : null);
   const attempts = activeProgress?.attempt_count || 0;
   // Interview simulation: pick your language on the FIRST question of the mock, then it
@@ -996,21 +1040,26 @@ export default function CodingTutor({
   const runnerSummary = useMemo(() => summarizeRunForTutor(testOutput), [testOutput]);
   const applyAiCode = useCallback(() => {
     if (!suggestedCodeBlock || suggestedCodeBlock === code) return;
-    if (code.trim() && !window.confirm("Replace the current workspace code with this tutor suggestion? You can undo this change afterward.")) {
-      return;
-    }
+    const shouldReplace = suggestedCodeLooksLikeSafeReplacement(code, suggestedCodeBlock, selectedLanguage);
+    const nextCode = shouldReplace
+      ? suggestedCodeBlock
+      : `${code.trimEnd()}${buildCommentedTutorSuggestion(suggestedCodeBlock, selectedLanguage)}`;
+    const confirmMessage = shouldReplace
+      ? "Replace the current workspace code with this tutor suggestion? You can undo this change afterward."
+      : "This looks like a partial example, so it will be added as comments under your code instead of replacing your workspace.";
+    if (code.trim() && !window.confirm(confirmMessage)) return;
     setWorkspaceSnapshots(prev => ({
       ...prev,
       [activeSnapshotKey]: {
         ...(prev[activeSnapshotKey] || {}),
         beforeAiRewrite: code,
         aiRewrite: suggestedCodeBlock,
-        current: suggestedCodeBlock,
+        current: nextCode,
       },
     }));
-    setCode(suggestedCodeBlock);
-    toast.success("Tutor code applied. Undo is available in the chat.");
-  }, [activeSnapshotKey, code, suggestedCodeBlock]);
+    setCode(nextCode);
+    toast.success(shouldReplace ? "Tutor code applied. Undo is available in the chat." : "Tutor suggestion added as comments.");
+  }, [activeSnapshotKey, code, selectedLanguage, suggestedCodeBlock]);
 
   const undoAiCode = useCallback(() => {
     const previousCode = activeSnapshots.beforeAiRewrite;
@@ -1241,6 +1290,17 @@ export default function CodingTutor({
     const starter = activeSolution?.starter_code || "";
     const handle = setTimeout(() => {
       saveDraft(problemId, language, code);
+      if (activeProblem.source === "interview") {
+        saveInterviewWorkspaceProgress(
+          problemId,
+          {
+            status: activeInterviewProgress?.status === "solved" ? "solved" : "in_progress",
+            code,
+          },
+          language,
+        );
+        return;
+      }
       if (
         isQuizBankProblem &&
         activeLanguageProgress?.status !== "solved" &&
@@ -1367,6 +1427,28 @@ export default function CodingTutor({
     return () => { cancelled = true; };
   }, [apiBase, difficulty]);
 
+  const mergeInterviewProgressItems = (items = []) => {
+    if (!Array.isArray(items) || !items.length) return;
+    setInterviewProgressByQuestion(prev => {
+      const next = { ...prev };
+      items.forEach((item) => {
+        if (!item?.question_id || !item?.language) return;
+        next[item.question_id] = {
+          ...(next[item.question_id] || {}),
+          [item.language]: item,
+        };
+      });
+      return next;
+    });
+  };
+
+  const saveInterviewWorkspaceProgress = async (questionId, updates = {}, language = selectedLanguageKey) => {
+    if (!questionId) return null;
+    const saved = await saveInterviewProgress(questionId, { language, ...updates });
+    if (saved) mergeInterviewProgressItems([saved]);
+    return saved;
+  };
+
   // Load the interview library once (set=interview, all difficulties). Separate
   // from the practice loader: these are reference problems with no progress to
   // join, so they don't need the per-language progress plumbing above.
@@ -1385,7 +1467,11 @@ export default function CodingTutor({
               }),
           ),
         );
-        if (!cancelled) setInterviewQuestions(results.flat());
+        const progressItems = await fetchInterviewProgress();
+        if (!cancelled) {
+          setInterviewQuestions(results.flat());
+          mergeInterviewProgressItems(progressItems);
+        }
       } catch (error) {
         console.error("[interview-prep] load failed", error);
         if (!cancelled) setInterviewQuestions([]);
@@ -1593,12 +1679,21 @@ export default function CodingTutor({
       // back to a generic stub (see interviewStarterStub) — TODO: author Java/JS/C++.
       if (interviewLanguageLocked) return;
       saveDraft(activeProblem.id, selectedLanguageKey, code);
+      saveInterviewWorkspaceProgress(
+        activeProblem.id,
+        {
+          status: activeInterviewProgress?.status === "solved" ? "solved" : "in_progress",
+          code,
+        },
+        selectedLanguageKey,
+      );
       const nextLanguageName = displayLanguageName(languageName);
       const nextLanguageKey = PRACTICE_LANGUAGE_API[nextLanguageName] || "python";
       const draftCode = readDraft(activeProblem.id, nextLanguageKey);
+      const serverCode = interviewProgressByQuestion[activeProblem.id]?.[nextLanguageKey]?.code;
       setSelectedLanguage(nextLanguageName);
       setPracticeLanguage(nextLanguageName);
-      setCode(draftCode ?? interviewStarterStub(activeProblem, nextLanguageName));
+      setCode(draftCode ?? serverCode ?? interviewStarterStub(activeProblem, nextLanguageName));
       saveLastWorkspace(activeProblem.id, nextLanguageKey);
       if (activeProblem?.mock) {
         setMockSession((prev) => (prev ? { ...prev, language: nextLanguageName } : prev));
@@ -1690,8 +1785,9 @@ export default function CodingTutor({
       const languageName = practiceLanguage;
       const languageKey = PRACTICE_LANGUAGE_API[languageName] || "python";
       const draftCode = readDraft(question.id, languageKey);
+      const serverCode = interviewProgressByQuestion[question.id]?.[languageKey]?.code;
       setSelectedLanguage(languageName);
-      setCode(draftCode ?? interviewStarterStub(question, languageName));
+      setCode(draftCode ?? serverCode ?? interviewStarterStub(question, languageName));
     }
     saveLastWorkspace(
       question.id,
@@ -2426,6 +2522,16 @@ export default function CodingTutor({
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || `runner ${response.status}`);
       setTestOutput(data);
+      if (isInterviewWorkspaceProblem && activeProblem?.id) {
+        saveInterviewWorkspaceProgress(
+          activeProblem.id,
+          {
+            status: activeInterviewProgress?.status === "solved" ? "solved" : "in_progress",
+            code,
+          },
+          selectedLanguageKey,
+        );
+      }
       setWorkspaceSnapshots(prev => ({
         ...prev,
         [activeSnapshotKey]: {
@@ -2572,10 +2678,11 @@ export default function CodingTutor({
     if (isInterviewWorkspaceProblem && activeProblem?.id) {
       saveDraft(activeProblem.id, selectedLanguageKey, code);
       markInterviewSolved(activeProblem.id);
+      await saveInterviewWorkspaceProgress(activeProblem.id, { status: "solved", code }, selectedLanguageKey);
       setTerminalOpen(true);
       setTestOutput({
         status: "success",
-        message: `${activeProblem.title || "Interview problem"} marked solved. Your code is saved on this device.`,
+        message: `${activeProblem.title || "Interview problem"} marked solved. Your code is saved to your account.`,
       });
       toast.success("Interview problem marked solved.");
       return;
@@ -2594,11 +2701,19 @@ export default function CodingTutor({
     if (activeProblem && activeProblem.source !== "leetcode" && activeProblem.source !== "personal") {
       if (hasStarterCodeChanged(code, activeSolution?.starter_code)) {
         try {
-          await saveProgress(
-            activeProblem.id,
-            { status: activeLanguageProgress?.status === "solved" ? "solved" : "in_progress", code },
-            selectedLanguageKey,
-          );
+          if (activeProblem.source === "interview") {
+            await saveInterviewWorkspaceProgress(
+              activeProblem.id,
+              { status: activeInterviewProgress?.status === "solved" ? "solved" : "in_progress", code },
+              selectedLanguageKey,
+            );
+          } else {
+            await saveProgress(
+              activeProblem.id,
+              { status: activeLanguageProgress?.status === "solved" ? "solved" : "in_progress", code },
+              selectedLanguageKey,
+            );
+          }
         } catch (error) {
           console.warn("[coding-practice] save before clear failed", error);
         }
@@ -2827,7 +2942,11 @@ export default function CodingTutor({
         progressByLanguage={progressByLanguage}
         progressSummary={progressSummary}
         learnQuizStats={summarizeLearnQuizProgress()}
-        interviewStats={summarizeInterviewHistory()}
+        interviewStats={{
+          ...summarizeInterviewHistory(),
+          warmupsReviewed: interviewReviewed.size,
+          warmupsSolved: interviewSolved.size,
+        }}
         midSlot={<StatTiles progressSummary={progressSummary} />}
       />
     </section>

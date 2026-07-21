@@ -552,6 +552,7 @@ export default function InterviewPrep({ questions = [], loading = false, onSolve
                                   target="_blank"
                                   rel="noreferrer"
                                   title="View worked solution"
+                                  aria-label={`View worked solution for ${question.title}`}
                                   onClick={() => markInterviewReviewed(question.id)}
                                 >
                                   {question.answer_kind === "video" ? <FaVideo aria-hidden="true" /> : <FaExternalLinkAlt aria-hidden="true" />}

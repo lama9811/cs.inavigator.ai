@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { getApiBase } from "../../lib/apiBase";
 
 // Interview-prep problems are reference problems (has_tests=false), so there is no
 // autograder to record "solved". Progress here is a lightweight, student-driven
@@ -7,6 +8,8 @@ import { useCallback, useEffect, useState } from "react";
 // topic" callouts on the Interview Prep page.
 
 const REVIEWED_KEY = "csnav.interviewReviewed";
+const API_BASE = getApiBase();
+const CHANGE_EVENT = "interview-reviewed-change";
 
 function readReviewedSet() {
   try {
@@ -27,6 +30,59 @@ function writeReviewedSet(set) {
   }
 }
 
+function authHeaders() {
+  const token = localStorage.getItem("token");
+  return token
+    ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` }
+    : null;
+}
+
+function mergeServerProgress(items = []) {
+  const reviewed = readReviewedSet();
+  const solved = readSolvedSet();
+  items.forEach((item) => {
+    if (item.status === "reviewed" || item.status === "solved") reviewed.add(item.question_id);
+    if (item.status === "solved") solved.add(item.question_id);
+  });
+  writeReviewedSet(reviewed);
+  writeSolvedSet(solved);
+  window.dispatchEvent(new Event(CHANGE_EVENT));
+}
+
+export async function fetchInterviewProgress() {
+  const headers = authHeaders();
+  if (!headers) return [];
+  try {
+    const response = await fetch(`${API_BASE}/api/coding/interview/progress`, { headers });
+    if (!response.ok) return [];
+    const data = await response.json();
+    const items = Array.isArray(data.items) ? data.items : [];
+    mergeServerProgress(items);
+    return items;
+  } catch {
+    return [];
+  }
+}
+
+export async function saveInterviewProgress(questionId, updates = {}) {
+  if (!questionId) return null;
+  const headers = authHeaders();
+  if (!headers) return null;
+  try {
+    const response = await fetch(`${API_BASE}/api/coding/interview/questions/${encodeURIComponent(questionId)}/progress`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(updates),
+    });
+    if (!response.ok) return null;
+    const saved = await response.json();
+    mergeServerProgress([saved]);
+    return saved;
+  } catch {
+    return null;
+  }
+}
+
 // React hook: returns the reviewed Set plus toggle/mark helpers. A custom window
 // event keeps multiple mounts (e.g. the page and a future mini-widget) in sync,
 // since the native "storage" event only fires across tabs, not within one.
@@ -35,10 +91,11 @@ export function useInterviewReviewed() {
 
   useEffect(() => {
     const sync = () => setReviewed(readReviewedSet());
-    window.addEventListener("interview-reviewed-change", sync);
+    fetchInterviewProgress();
+    window.addEventListener(CHANGE_EVENT, sync);
     window.addEventListener("storage", sync);
     return () => {
-      window.removeEventListener("interview-reviewed-change", sync);
+      window.removeEventListener(CHANGE_EVENT, sync);
       window.removeEventListener("storage", sync);
     };
   }, []);
@@ -50,7 +107,8 @@ export function useInterviewReviewed() {
     else next.delete(questionId);
     writeReviewedSet(next);
     setReviewed(next);
-    window.dispatchEvent(new Event("interview-reviewed-change"));
+    window.dispatchEvent(new Event(CHANGE_EVENT));
+    saveInterviewProgress(questionId, { status: isReviewed ? "reviewed" : "not_started" });
   }, []);
 
   const toggleReviewed = useCallback(
@@ -63,13 +121,15 @@ export function useInterviewReviewed() {
 
 // Marks a single problem reviewed outside of React (e.g. when "View solution" is
 // clicked from anywhere). Fires the same sync event the hook listens for.
-export function markInterviewReviewed(questionId) {
+export function markInterviewReviewed(questionId, updates = {}) {
   if (!questionId) return;
   const next = readReviewedSet();
-  if (next.has(questionId)) return;
-  next.add(questionId);
-  writeReviewedSet(next);
-  window.dispatchEvent(new Event("interview-reviewed-change"));
+  if (!next.has(questionId)) {
+    next.add(questionId);
+    writeReviewedSet(next);
+    window.dispatchEvent(new Event(CHANGE_EVENT));
+  }
+  saveInterviewProgress(questionId, { status: "reviewed", ...updates });
 }
 
 // ── Solved tracking ────────────────────────────────────────────────────────
@@ -99,7 +159,7 @@ function writeSolvedSet(set) {
 
 // Mark an interview problem solved (from a mock Mark-Solved or a passing grade). Also
 // counts as reviewed. Idempotent; fires the sync event so the topic cards update live.
-export function markInterviewSolved(questionId) {
+export function markInterviewSolved(questionId, updates = {}) {
   if (!questionId) return;
   const solved = readSolvedSet();
   if (!solved.has(questionId)) {
@@ -107,8 +167,9 @@ export function markInterviewSolved(questionId) {
     writeSolvedSet(solved);
   }
   // Solving implies reviewed, so it also counts toward review progress.
-  markInterviewReviewed(questionId);
-  window.dispatchEvent(new Event("interview-reviewed-change"));
+  markInterviewReviewed(questionId, updates);
+  window.dispatchEvent(new Event(CHANGE_EVENT));
+  saveInterviewProgress(questionId, { status: "solved", ...updates });
 }
 
 // React hook: the set of solved interview problem ids, kept in sync across mounts.
@@ -116,10 +177,11 @@ export function useInterviewSolved() {
   const [solved, setSolved] = useState(readSolvedSet);
   useEffect(() => {
     const sync = () => setSolved(readSolvedSet());
-    window.addEventListener("interview-reviewed-change", sync);
+    fetchInterviewProgress();
+    window.addEventListener(CHANGE_EVENT, sync);
     window.addEventListener("storage", sync);
     return () => {
-      window.removeEventListener("interview-reviewed-change", sync);
+      window.removeEventListener(CHANGE_EVENT, sync);
       window.removeEventListener("storage", sync);
     };
   }, []);

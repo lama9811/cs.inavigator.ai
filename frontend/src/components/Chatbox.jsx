@@ -299,6 +299,8 @@ export default function Chatbox({
     return [
       "You are a coding tutor. Adapt to the student's intent. For hint/debug/review requests, teach and guide. For rewrite/convert/refactor/generate-code requests, behave like a coding assistant and return usable code first.",
       "Do not write a full unknown homework solution from scratch when the student only provides an assignment prompt. If the student provides workspace code, starter code, or a partial attempt, you may generate, rewrite, convert, or complete focused code blocks that build on it.",
+      "For normal help, hints, debugging, and examples, do not return a large full solution. Prefer a small targeted snippet, explain where it belongs, and include short comments only where they clarify the fix.",
+      "If you return code that should replace the workspace, preserve the existing function/class name, imports, and expected signature unless the student explicitly asks to change them.",
       "",
       "Current coding workspace context:",
       `Problem: ${problem.title || "No practice problem selected"}`,

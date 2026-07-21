@@ -149,7 +149,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingSnippet, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -847,6 +847,52 @@ QUESTION_LIBRARIES = {
     "interview": INTERVIEW_QUESTIONS_DIR,
 }
 PRACTICE_DIFFICULTIES = {"easy", "medium", "hard"}
+INTERVIEW_HINT_LADDERS: dict[str, list[str]] = {
+    "iv-easy-02": ["Each input array is already sorted, so the next answer is always at one of the array fronts.", "A simple version can put all values into one list and sort it.", "A stronger version keeps one pointer per array and repeatedly chooses the smallest current value."],
+    "iv-easy-03": ["If you merge from the front, you can overwrite useful values in A.", "Start from the back of A where the empty space is.", "Compare the largest remaining values from A and B, place the larger one at the back, then move backward."],
+    "iv-easy-05": ["A stack only lets you remove the top item, so recursion can act like the hidden waiting area.", "Pop the top item, reverse the smaller stack, then place that popped item at the bottom.", "You may need a helper that inserts one item at the bottom of a stack."],
+    "iv-easy-06": ["To print backward, wait until you reach the end before printing the current node.", "Use recursion to visit next nodes first.", "After the recursive call returns, print the current node's value."],
+    "iv-easy-07": ["XOR adds bits where there is no carry.", "AND finds the carry bits, and shifting left moves each carry to the next column.", "Repeat with sum-without-carry and carry until there is no carry left."],
+    "iv-easy-09": ["Use the second stack as a sorted holding area.", "Take one item from the original stack and move larger items out of the holding stack until it fits.", "Put the moved items back and repeat until the original stack is empty."],
+    "iv-easy-10": ["A stack removes the newest item first, but a queue removes the oldest item first.", "One approach is to make push do extra work: add the new item, then rotate older items behind it.", "After that rotation, pop can simply remove from the front of the queue."],
+    "iv-easy-11": ["A palindrome reads the same from the front and the back.", "Put the first half of the linked list values onto a stack.", "Walk the second half and compare each value with the stack top."],
+    "iv-easy-15": ["Use two pointers that move at different speeds.", "Move the slow pointer one step and the fast pointer two steps.", "If they ever meet, there is a cycle; if the fast pointer reaches the end, there is no cycle."],
+    "iv-easy-16": ["Keep a set of values you have already kept.", "Walk the linked list with a current node and a previous node.", "If the current value is already in the set, skip that node; otherwise record it and move forward."],
+    "iv-easy-17": ["A slow pointer and fast pointer can find the middle of a linked list.", "Move slow one step and fast two steps until fast reaches the end.", "Cut the list at the slow pointer to create the two halves."],
+    "iv-easy-18": ["Keep two pointers separated by n nodes.", "Move the lead pointer n steps first.", "Then move both pointers together; when the lead pointer reaches the end, the other pointer is the answer."],
+    "iv-medium-01": ["Put all numbers into a set so membership checks are quick.", "Only start counting from a number if number - 1 is not in the set.", "Count upward from each sequence start and keep the longest length."],
+    "iv-medium-02": ["First find every row and column that contains true.", "Store those row indexes and column indexes before changing the matrix.", "Make a second pass and set a cell to true if its row or column was marked."],
+    "iv-medium-04": ["Use the sorted rows and columns instead of scanning every cell.", "Start at the top-right corner: moving left makes values smaller and moving down makes them larger.", "Move until you find x or leave the matrix."],
+    "iv-medium-05": ["Use a running sum as you scan the array.", "If the same running sum appears twice, the values between those positions add to zero.", "Store each running sum's first index so you can return the subarray when a repeat appears."],
+    "iv-medium-06": ["Choose one item to place in the current position.", "Recurse on the remaining unused items.", "When no items remain, add the built permutation to the result."],
+    "iv-medium-10": ["For each node, ask whether its subtree contains either target node.", "If the current node is one target, return it upward.", "The first node where the two targets split into different sides is the lowest common ancestor."],
+    "iv-medium-13": ["A balanced tree needs left and right subtree heights that differ by no more than 1 at every node.", "Have a helper return the height of a subtree.", "If any subtree is already unbalanced, pass that failure upward instead of doing extra work."],
+    "iv-medium-14": ["Every node in a binary search tree has a valid value range.", "When you go left, the upper limit becomes the current value; when you go right, the lower limit becomes the current value.", "If any node falls outside its allowed range, return false."],
+    "iv-medium-15": ["Think of the last coin you choose before reaching the amount.", "Try each coin that is not bigger than the remaining amount.", "Save answers for smaller amounts so you do not solve the same amount again."],
+    "iv-medium-17": ["Compare the full expected range 1 through n with the numbers you were given.", "A set-based first solution can mark every present number.", "Scan 1 through n and collect the two numbers that never appeared."],
+    "iv-medium-18": ["A rotate moves bits off one end and brings them back on the other end.", "Use one shifted copy for the bits that stay in range.", "Use another shifted copy for the wrapped bits, then combine them."],
+    "iv-medium-19": ["Sort the list first so duplicates and pointer movement are easier to control.", "Choose one number, then use two pointers on the remaining section.", "When a triple sums to zero, record it and skip duplicate values before continuing."],
+    "iv-medium-21": ["Count how often each string appears.", "Sort strings by count or keep the best counts in a heap.", "Return the string at the kth position after ordering by frequency."],
+    "iv-easy-08": ["Inorder traversal visits left subtree, current node, then right subtree.", "Use a stack to remember nodes whose left side you are still exploring.", "When you cannot go left anymore, pop, record the node, then move to its right child."],
+    "iv-easy-19": ["Level order means reading the tree one row at a time.", "Use a queue and start it with the root.", "For each level, process the current queue size, then add children for the next level."],
+    "iv-medium-03": ["Let each cell represent the largest square ending at that cell.", "A 1 can extend a square only if its top, left, and top-left neighbors can support it.", "Use 1 plus the smallest of those three neighbor values, and track the largest side."],
+    "iv-medium-07": ["Give each stack its own top pointer.", "Store all stack values in one shared array.", "When pushing or popping, update only the top pointer for that stack."],
+    "iv-medium-08": ["Treat each project as a node and each dependency as an arrow.", "Start with projects that have no unfinished dependencies.", "Remove finished projects from the graph; if some projects never become available, there is a cycle."],
+    "iv-medium-09": ["Each node should know the size of its subtree.", "When choosing randomly, use the left size, current node, and right size as weighted choices.", "After insertions, update sizes on the path back up."],
+    "iv-medium-11": ["An inorder walk of a binary search tree gives values in sorted order.", "Keep track of the previous node you visited.", "Link previous to current and current back to previous as the traversal runs."],
+    "iv-medium-12": ["Each node can extend a consecutive path only if it is one more than its parent.", "Pass the expected next value and current length into the recursive call.", "Reset the length to 1 whenever the sequence breaks."],
+    "iv-medium-16": ["Use one normal stack for values.", "Use a second stack to remember the maximum value at each depth.", "On push and pop, update both stacks so max can be answered quickly."],
+    "iv-medium-20": ["A prefix tree stores one character per step.", "Insert each word while creating missing child nodes.", "To autocomplete, walk the prefix first, then collect every word below that node."],
+    "iv-hard-01": ["Use binary search on the smaller array, not both arrays fully.", "Pick a cut in each array so the left side has half the combined values.", "The correct cut has every left-side value less than or equal to every right-side value."],
+    "iv-hard-02": ["For each item, decide between taking it or skipping it.", "The remaining capacity changes only when you take an item.", "Store best values by item index and remaining capacity so repeated choices are reused."],
+    "iv-hard-03": ["For each cell, track the maximum and minimum product ending there because negatives can flip signs.", "When moving right or down, combine the current cell with both previous max and previous min.", "The answer is the max product stored at the bottom-right cell."],
+    "iv-hard-04": ["If edges have different weights, pick the unvisited node with the smallest known distance next.", "Relax each neighbor by checking whether the path through the current node is cheaper.", "Stop when the target is chosen or when no reachable nodes remain."],
+    "iv-hard-05": ["Process the big number as digits instead of converting it to a normal integer.", "Keep a running remainder.", "For each digit, update remainder as (remainder * 10 + digit) % mod."],
+    "iv-hard-06": ["First create a copy node for every original node.", "Store a map from original node to copied node.", "Make a second pass to connect next and random pointers using the map."],
+    "iv-hard-07": ["This is about whether one string can be formed by deleting letters from the other.", "Use two pointers, one for each string.", "Move through the larger string and advance the smaller pointer only when characters match."],
+    "iv-hard-08": ["Build a table where each cell means how many matching characters end at those two positions.", "If the characters match, extend the diagonal value by 1.", "If they do not match, reset that cell to 0 and keep the largest value seen."],
+    "iv-hard-09": ["A priority queue returns the highest-priority item first.", "Store each item with its priority.", "When removing, choose the item with the best priority and update the structure before the next operation."],
+}
 PRACTICE_LANGUAGES = {
     "python": "Python",
     "java": "Java",
@@ -856,6 +902,7 @@ PRACTICE_LANGUAGES = {
 }
 
 VALID_PRACTICE_STATUSES = {"not_started", "in_progress", "solved"}
+VALID_INTERVIEW_STATUSES = {"not_started", "in_progress", "reviewed", "solved"}
 
 class PracticeProgressUpdate(BaseModel):
     language: str = "python"
@@ -895,6 +942,22 @@ class CodingTutorPreferenceUpdate(BaseModel):
         if normalized not in VALID_LEARNING_STYLES:
             valid = ", ".join(sorted(VALID_LEARNING_STYLES))
             raise ValueError(f"learning_style must be one of: {valid}")
+        return normalized
+
+class CodingInterviewProgressUpdate(BaseModel):
+    language: str = "python"
+    status: Optional[str] = None
+    code: Optional[str] = None
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value):
+        if value is None:
+            return value
+        normalized = value.lower().strip()
+        if normalized not in VALID_INTERVIEW_STATUSES:
+            valid = ", ".join(sorted(VALID_INTERVIEW_STATUSES))
+            raise ValueError(f"Status must be one of: {valid}")
         return normalized
 
 class PracticeRunRequest(BaseModel):
@@ -5220,6 +5283,11 @@ def _normalize_question(raw: dict[str, Any], *, difficulty: str, question_set: s
     question["has_tests"] = bool(question.get("has_tests", True))
     question["source"] = str(question.get("source") or "cs-navigator")
     question["set"] = str(question.get("set") or question_set)
+    hints = question.get("hints")
+    if question_set == "interview" and (not isinstance(hints, list) or len(hints) < 3):
+        fallback_hints = INTERVIEW_HINT_LADDERS.get(str(question.get("id") or "").strip())
+        if fallback_hints:
+            question["hints"] = fallback_hints
     if "pack" not in question:
         question["pack"] = None
     if "answer_url" not in question:
@@ -5595,6 +5663,46 @@ def _get_or_create_practice_progress(
         return progress
 
     progress = CodingPracticeProgress(
+        user_id=user_id,
+        question_id=question_id,
+        language=language_key,
+        status="in_progress",
+    )
+    db.add(progress)
+    return progress
+
+def _serialize_interview_progress(progress: CodingInterviewProgress) -> dict[str, Any]:
+    return {
+        "id": progress.id,
+        "question_id": progress.question_id,
+        "language": progress.language,
+        "status": progress.status,
+        "code": progress.code or "",
+        "reviewed_at": progress.reviewed_at.isoformat() if progress.reviewed_at else None,
+        "solved_at": progress.solved_at.isoformat() if progress.solved_at else None,
+        "updated_at": progress.updated_at.isoformat() if progress.updated_at else None,
+    }
+
+def _get_or_create_interview_progress(
+    db: Session,
+    user_id: int,
+    question_id: str,
+    language: str,
+) -> CodingInterviewProgress:
+    language_key, _ = _normalize_practice_language(language)
+    progress = (
+        db.query(CodingInterviewProgress)
+        .filter(
+            CodingInterviewProgress.user_id == user_id,
+            CodingInterviewProgress.question_id == question_id,
+            CodingInterviewProgress.language == language_key,
+        )
+        .first()
+    )
+    if progress:
+        return progress
+
+    progress = CodingInterviewProgress(
         user_id=user_id,
         question_id=question_id,
         language=language_key,
@@ -6544,6 +6652,59 @@ async def update_practice_progress(
 # Per-user, so badge/streak signals sync across devices (the browser localStorage
 # stays as an offline cache; the server is the source of truth).
 # ---------------------------------------------------------------------------
+@app.get("/api/coding/interview/progress")
+async def list_interview_progress(
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    items = (
+        db.query(CodingInterviewProgress)
+        .filter(CodingInterviewProgress.user_id == user["user_id"])
+        .order_by(CodingInterviewProgress.updated_at.desc())
+        .all()
+    )
+    return {"items": [_serialize_interview_progress(item) for item in items]}
+
+
+@app.patch("/api/coding/interview/questions/{question_id}/progress")
+async def update_interview_progress(
+    question_id: str,
+    req: CodingInterviewProgressUpdate,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _find_question(question_id, "interview")
+    language_key, _ = _normalize_practice_language(req.language)
+    progress = _get_or_create_interview_progress(db, user["user_id"], question_id, language_key)
+
+    if req.code is not None:
+        if len(req.code) > 20000:
+            raise HTTPException(status_code=413, detail="Interview draft is too large.")
+        progress.code = req.code
+
+    if req.status:
+        progress.status = req.status
+        now = datetime.now(timezone.utc)
+        if req.status == "solved":
+            progress.solved_at = now
+            progress.reviewed_at = progress.reviewed_at or now
+        elif req.status == "reviewed":
+            progress.reviewed_at = now
+            progress.solved_at = None
+        elif req.status == "not_started":
+            progress.reviewed_at = None
+            progress.solved_at = None
+        else:
+            progress.solved_at = None
+    elif progress.status == "not_started":
+        progress.status = "in_progress"
+
+    progress.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(progress)
+    return _serialize_interview_progress(progress)
+
+
 MAX_DAILY_DAYS = 370  # ~a year; matches the frontend's cap in recordDailyChallengeDay
 
 def _is_valid_iso_date(d) -> bool:
