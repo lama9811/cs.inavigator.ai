@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { FaBookOpen, FaArrowRight, FaArrowLeft, FaLock } from "react-icons/fa";
 import { LANGUAGE_VISUALS } from "../concept-quiz/languageVisuals";
+import { countReadLessons, hasReadLesson } from "../concept-quiz/conceptQuizProgress";
+import { fetchQuizQuestions } from "../concept-quiz/conceptQuizApi";
 import LessonView from "./LessonView";
 
 // Learn is the first Practice Library mode: Learn -> Practice -> Code.
@@ -113,6 +115,8 @@ function TrackCards({ language, languageLabel, categories, onPick, onBack }) {
             (category) => category.track === track.id
           );
           const ready = trackCategories.filter((category) => category.has_lesson).length;
+          const completed = countReadLessons(language, trackCategories);
+          const percent = ready ? Math.round((completed / ready) * 100) : 0;
           const accent = track.id === "beginner" ? "#16a34a" : languageAccent;
 
           return (
@@ -144,6 +148,13 @@ function TrackCards({ language, languageLabel, categories, onPick, onBack }) {
                     lesson{ready === 1 ? "" : "s"}
                   </span>
                 </span>
+                <span className="learn-track-stat">
+                  <span className="learn-track-stat-num">{completed}</span>
+                  <span className="learn-track-stat-label">complete</span>
+                </span>
+              </span>
+              <span className="learn-track-progress" aria-label={`${completed} of ${ready} lessons complete`}>
+                <span style={{ width: `${percent}%` }} />
               </span>
               <span className="learn-track-cta">
                 {track.cta} <FaArrowRight aria-hidden="true" />
@@ -183,11 +194,12 @@ function LessonList({
       <ol className="learn-lesson-grid">
         {categories.map((category, index) => {
           const locked = !category.has_lesson;
+          const completed = hasReadLesson(language, category.id);
           return (
             <li key={category.id}>
               <button
                 type="button"
-                className={`learn-lesson-card ${locked ? "locked" : ""}`}
+                className={`learn-lesson-card ${locked ? "locked" : ""} ${completed ? "is-complete" : ""}`}
                 disabled={locked}
                 onClick={() => onOpen(language, category.id, track.id)}
               >
@@ -203,6 +215,8 @@ function LessonList({
                     <span className="learn-lesson-soon">
                       <FaLock aria-hidden="true" /> Coming soon
                     </span>
+                  ) : completed ? (
+                    <span className="learn-lesson-complete">Completed</span>
                   ) : (
                     <>
                       {category.count > 0 ? (
@@ -243,6 +257,17 @@ export default function LearnMode({
   const [error, setError] = useState("");
 
   const labelFor = (id) => languageLabels[id] || (id || "").toUpperCase();
+
+  const startPracticeCategory = (language, category) => {
+    fetchQuizQuestions(apiBase, language, category)
+      .then((data) => {
+        const firstQuestionId = data?.questions?.[0]?.id;
+        onPracticeCategory(language, category, firstQuestionId);
+      })
+      .catch(() => {
+        onPracticeCategory(language, category);
+      });
+  };
 
   useEffect(() => {
     if (target.view !== "languages") return undefined;
@@ -303,7 +328,7 @@ export default function LearnMode({
         language={target.language}
         category={target.category}
         languageLabel={labelFor(target.language)}
-        onPractice={() => onPracticeCategory(target.language, target.category)}
+        onPractice={() => startPracticeCategory(target.language, target.category)}
         onBack={() =>
           target.track
             ? onNavigateToTrack(target.language, target.track)

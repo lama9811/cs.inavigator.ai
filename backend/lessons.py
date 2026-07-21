@@ -65,6 +65,7 @@ VALID_TONES = {"tip", "warning", "mistake"}
 # immediately, nothing recorded. Grading them would make Learn feel like a test, which is
 # the one thing it exists not to be.
 MIN_CHECKS_PER_LESSON = 2
+MIN_SECTIONS_PER_LESSON = 2
 
 
 class LessonError(ValueError):
@@ -192,6 +193,110 @@ def _normalize_block(raw: Any, *, where: str) -> dict[str, Any]:
     return block
 
 
+def _normalize_section(raw: Any, *, where: str) -> dict[str, Any]:
+    if not isinstance(raw, dict):
+        raise LessonDataError(f"{where}: a lesson section must be an object.")
+
+    section_id = str(raw.get("id", "") or "").strip()
+    title = str(raw.get("title", "") or "").strip()
+    if not section_id:
+        raise LessonDataError(f"{where}: section needs an id.")
+    if not title:
+        raise LessonDataError(f"{where}: section needs a title.")
+
+    blocks_raw = raw.get("blocks")
+    if not isinstance(blocks_raw, list) or not blocks_raw:
+        raise LessonDataError(f"{where}: section needs a non-empty blocks array.")
+
+    return {
+        "id": section_id,
+        "title": title,
+        "summary": str(raw.get("summary", "") or "").strip(),
+        "question_ids": [
+            str(q).strip() for q in (raw.get("question_ids") or []) if str(q).strip()
+        ],
+        "blocks": [
+            _normalize_block(block, where=f"{where}.blocks[{i}]")
+            for i, block in enumerate(blocks_raw)
+        ],
+    }
+
+
+def _section_from_blocks(
+    *,
+    section_id: str,
+    title: str,
+    summary: str,
+    blocks: list[dict[str, Any]],
+) -> dict[str, Any]:
+    return {
+        "id": section_id,
+        "title": title,
+        "summary": summary,
+        "question_ids": [],
+        "blocks": blocks,
+    }
+
+
+def _auto_sections_from_blocks(
+    blocks: list[dict[str, Any]],
+    *,
+    lesson_title: str,
+    lesson_summary: str,
+) -> list[dict[str, Any]]:
+    """Give legacy flat lessons smaller reading stops without changing their files."""
+    checks = [block for block in blocks if block["kind"] == "check"]
+    non_checks = [block for block in blocks if block["kind"] != "check"]
+    first_example = next(
+        (i for i, block in enumerate(non_checks) if block["kind"] in {"code", "compare"}),
+        max(1, len(non_checks) // 2),
+    )
+    first_example = max(1, first_example)
+
+    intro = non_checks[:first_example]
+    practice = non_checks[first_example:]
+    sections: list[dict[str, Any]] = []
+
+    if intro:
+        sections.append(
+            _section_from_blocks(
+                section_id="idea",
+                title=f"What {lesson_title} means",
+                summary=lesson_summary or "Start with the main idea before looking at code.",
+                blocks=intro,
+            )
+        )
+
+    if practice:
+        sections.append(
+            _section_from_blocks(
+                section_id="examples",
+                title="See it in code",
+                summary="Read the example slowly, then compare it with the common mistake.",
+                blocks=practice,
+            )
+        )
+
+    if checks:
+        sections.append(
+            _section_from_blocks(
+                section_id="check",
+                title="Check your understanding",
+                summary="Try these quick checks before moving into Practice.",
+                blocks=checks,
+            )
+        )
+
+    return sections or [
+        _section_from_blocks(
+            section_id="lesson",
+            title=lesson_title,
+            summary=lesson_summary,
+            blocks=blocks,
+        )
+    ]
+
+
 def _normalize_lesson(raw: dict[str, Any], language: str, category_id: str) -> dict[str, Any]:
     where = f"{language}/{category_id}"
     if not isinstance(raw, dict):
@@ -201,10 +306,32 @@ def _normalize_lesson(raw: dict[str, Any], language: str, category_id: str) -> d
     if not title:
         raise LessonDataError(f"{where}: lesson needs a title.")
 
-    blocks_raw = raw.get("blocks")
-    if not isinstance(blocks_raw, list) or not blocks_raw:
-        raise LessonDataError(f"{where}: lesson needs a non-empty blocks array.")
-    blocks = [_normalize_block(b, where=f"{where}[{i}]") for i, b in enumerate(blocks_raw)]
+    sections_raw = raw.get("sections")
+    if isinstance(sections_raw, list) and sections_raw:
+        sections = [
+            _normalize_section(section, where=f"{where}.sections[{i}]")
+            for i, section in enumerate(sections_raw)
+        ]
+        section_ids = [section["id"] for section in sections]
+        if len(section_ids) != len(set(section_ids)):
+            raise LessonDataError(f"{where}: section ids must be unique.")
+        if len(sections) < MIN_SECTIONS_PER_LESSON:
+            raise LessonDataError(
+                f"{where}: has {len(sections)} section(s); sectioned lessons need at least "
+                f"{MIN_SECTIONS_PER_LESSON} so the topic is split into smaller chunks."
+            )
+        blocks = [block for section in sections for block in section["blocks"]]
+    else:
+        blocks_raw = raw.get("blocks")
+        if not isinstance(blocks_raw, list) or not blocks_raw:
+            raise LessonDataError(f"{where}: lesson needs a non-empty blocks array.")
+        blocks = [_normalize_block(b, where=f"{where}[{i}]") for i, b in enumerate(blocks_raw)]
+        sections = _auto_sections_from_blocks(
+            blocks,
+            lesson_title=title,
+            lesson_summary=str(raw.get("summary", "") or "").strip(),
+        )
+        blocks = [block for section in sections for block in section["blocks"]]
 
     # Enforced here rather than left to authoring discipline, because it is the thing
     # most easily skipped and the thing that most decides whether a lesson works.
@@ -228,6 +355,7 @@ def _normalize_lesson(raw: dict[str, Any], language: str, category_id: str) -> d
         "title": title,
         "summary": str(raw.get("summary", "") or "").strip(),
         "minutes": int(raw.get("minutes", 0) or 0) or None,
+        "sections": sections,
         "blocks": blocks,
         "refresher": refresher,
         "refresher_code": str(raw.get("refresher_code", "") or ""),

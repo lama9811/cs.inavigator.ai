@@ -3121,8 +3121,12 @@ export default function CodingTutor({
                 navigate(learnPathForLesson(language, category, track))
               }
               // The whole point of Learn: it hands off to Practice on the same topic.
-              onPracticeCategory={(language, category) =>
-                navigate(quizPathForLanguage(language) + `#${category}`)
+              onPracticeCategory={(language, category, questionId) =>
+                navigate(
+                  questionId
+                    ? quizPathForQuestion(language, category, questionId)
+                    : quizPathForLanguage(language) + `#${category}`
+                )
               }
             />
           ) : mode === "quiz" ? (
