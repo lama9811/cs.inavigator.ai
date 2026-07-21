@@ -36,6 +36,12 @@ _cache_lock = threading.Lock()
 _cache_ts: float = 0
 _CACHE_TTL = 300  # 5 min
 
+# Per-doc excerpt injected into the prompt. _EXCERPT_LEAD is how much context
+# to keep before a matched course code so its section/instructor lines (which
+# follow the code) are always inside the window.
+_EXCERPT_CHARS = 1500
+_EXCERPT_LEAD = 300
+
 _STOPWORDS = {
     "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
     "have", "has", "had", "do", "does", "did", "will", "would", "could",
@@ -144,7 +150,24 @@ def prefetch_kb_context(query: str, top_k: int = 3) -> str:
                 score += 3.0
 
         if score > 0:
-            preview = f"[{title}] {content[:1500]}" if title else content[:1500]
+            # Center the excerpt on the matched course code instead of always
+            # taking the head. The schedule docs are ~10k chars listing courses
+            # alphabetically, so content[:1500] only ever reaches ~COSC 110 --
+            # "COSC 354" sits at char ~6000 and could never be injected, which
+            # left the pre-injection useless exactly when Gemini skipped the
+            # search tool (the case this backstop exists for).
+            lower_content = content.lower()
+            pos = -1
+            for ent in entities:
+                pos = lower_content.find(ent.lower())
+                if pos >= 0:
+                    break
+            if pos > _EXCERPT_LEAD:
+                start = pos - _EXCERPT_LEAD
+                excerpt = "..." + content[start:start + _EXCERPT_CHARS]
+            else:
+                excerpt = content[:_EXCERPT_CHARS]
+            preview = f"[{title}] {excerpt}" if title else excerpt
             scored.append((preview, score))
 
     scored.sort(key=lambda x: -x[1])
