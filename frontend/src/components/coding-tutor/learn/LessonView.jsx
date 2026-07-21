@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FaClock,
   FaArrowRight,
@@ -44,7 +44,7 @@ function withInlineCode(text) {
   );
 }
 
-function Block({ block }) {
+function Block({ block, checkKey, picked, onCheckAnswered }) {
   if (block.kind === "text") {
     return <p className="lesson-text">{withInlineCode(block.body)}</p>;
   }
@@ -125,7 +125,13 @@ function Block({ block }) {
   }
 
   if (block.kind === "check") {
-    return <CheckBlock block={block} />;
+    return (
+      <CheckBlock
+        block={block}
+        picked={picked}
+        onPick={(choiceIndex) => onCheckAnswered(checkKey, choiceIndex)}
+      />
+    );
   }
 
   return null;
@@ -140,8 +146,7 @@ function Block({ block }) {
 //
 // Answering is one-way on purpose. Once you've seen why, re-picking would only let you
 // paper over a wrong guess, and the wrong guess is the part worth sitting with.
-function CheckBlock({ block }) {
-  const [picked, setPicked] = useState(null);
+function CheckBlock({ block, picked, onPick }) {
   const answered = picked !== null;
   const correct = picked === block.answer_index;
 
@@ -177,7 +182,7 @@ function CheckBlock({ block }) {
               aria-checked={isPicked}
               disabled={answered}
               className={`lesson-check-choice ${state}`}
-              onClick={() => setPicked(i)}
+              onClick={() => onPick(i)}
             >
               <span className="lesson-check-marker">
                 {answered && isAnswer ? (
@@ -217,12 +222,15 @@ export default function LessonView({
   const [lesson, setLesson] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activeSectionId, setActiveSectionId] = useState("");
+  const [checkAnswers, setCheckAnswers] = useState({});
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
     setError("");
     setLesson(null);
+    setCheckAnswers({});
     fetch(`${apiBase}/api/coding/learn/${language}/${category}`)
       .then((r) => {
         if (!r.ok) throw new Error("Could not load this lesson.");
@@ -230,10 +238,10 @@ export default function LessonView({
       })
       .then((data) => {
         // `lesson: null` means "not authored yet" — a real, expected state, not an error.
-        if (alive) setLesson(data.lesson);
-        // Record the read only when a real lesson loaded, so "not authored yet"
-        // pages don't count toward the reading badges.
-        if (alive && data.lesson) markLessonRead(language, category);
+        if (alive) {
+          setLesson(data.lesson);
+          setActiveSectionId(data.lesson?.sections?.[0]?.id || "");
+        }
       })
       .catch((err) => {
         if (alive) setError(err.message || "Could not load this lesson.");
@@ -245,6 +253,66 @@ export default function LessonView({
       alive = false;
     };
   }, [apiBase, language, category]);
+
+  const sections = useMemo(() => {
+    if (!lesson) return [];
+    return Array.isArray(lesson.sections) && lesson.sections.length
+      ? lesson.sections
+      : [
+          {
+            id: "lesson",
+            title: lesson.title,
+            summary: lesson.summary,
+            blocks: lesson.blocks || [],
+          },
+        ];
+  }, [lesson]);
+  const activeSection =
+    sections.find((section) => section.id === activeSectionId) || sections[0] || null;
+  const activeIndex = activeSection
+    ? Math.max(0, sections.findIndex((section) => section.id === activeSection.id))
+    : 0;
+  const hasMultipleSections = sections.length > 1;
+  const checkKeys = useMemo(() => (
+    sections.flatMap((section) =>
+      (section.blocks || [])
+        .map((block, index) => (
+          block.kind === "check" ? `${section.id}:${index}` : null
+        ))
+        .filter(Boolean)
+    )
+  ), [sections]);
+  const sectionLesson = useMemo(() => {
+    if (!lesson || !activeSection) return lesson;
+    return {
+      ...lesson,
+      title: activeSection.title || lesson.title,
+      summary: activeSection.summary || lesson.summary,
+      blocks: activeSection.blocks || [],
+    };
+  }, [activeSection, lesson]);
+  const goToSection = (index) => {
+    const next = sections[index];
+    if (next) setActiveSectionId(next.id);
+  };
+  const handleCheckAnswered = (checkKey, choiceIndex) => {
+    if (!checkKey) return;
+    setCheckAnswers((current) => (
+      Object.prototype.hasOwnProperty.call(current, checkKey)
+        ? current
+        : { ...current, [checkKey]: choiceIndex }
+    ));
+  };
+
+  useEffect(() => {
+    if (!lesson || checkKeys.length === 0) return;
+    const answeredCount = checkKeys.filter((key) =>
+      Object.prototype.hasOwnProperty.call(checkAnswers, key)
+    ).length;
+    if (answeredCount === checkKeys.length) {
+      markLessonRead(language, category);
+    }
+  }, [category, checkAnswers, checkKeys, language, lesson]);
 
   if (loading) return <p className="cq-loading">Loading lesson…</p>;
   if (error) return <p className="cq-error">{error}</p>;
@@ -281,17 +349,84 @@ export default function LessonView({
       </header>
 
       {/* Read-aloud. Free browser TTS — reads the prose, skips code and the checks. */}
-      <LessonPlayBar lesson={lesson} />
+      {hasMultipleSections ? (
+        <nav className="lesson-section-nav" aria-label={`${lesson.title} lesson sections`}>
+          {sections.map((section, i) => (
+            <button
+              key={section.id}
+              type="button"
+              className={`lesson-section-tab ${section.id === activeSection.id ? "is-active" : ""}`}
+              onClick={() => setActiveSectionId(section.id)}
+              aria-current={section.id === activeSection.id ? "step" : undefined}
+            >
+              <span>{i + 1}</span>
+              {section.title}
+            </button>
+          ))}
+        </nav>
+      ) : null}
+
+      <LessonPlayBar lesson={sectionLesson} />
 
       <div className="lesson-body">
-        {lesson.blocks.map((block, i) => (
-          <Block key={i} block={block} />
-        ))}
+        {hasMultipleSections ? (
+          <div className="lesson-section-head">
+            <span className="lesson-section-count">
+              Part {activeIndex + 1} of {sections.length}
+            </span>
+            <h2>{activeSection.title}</h2>
+            {activeSection.summary ? <p>{activeSection.summary}</p> : null}
+          </div>
+        ) : null}
+        {(activeSection.blocks || []).map((block, i) => {
+          const checkKey = `${activeSection.id}:${i}`;
+          return (
+            <Block
+              key={i}
+              block={block}
+              checkKey={checkKey}
+              picked={
+                Object.prototype.hasOwnProperty.call(checkAnswers, checkKey)
+                  ? checkAnswers[checkKey]
+                  : null
+              }
+              onCheckAnswered={handleCheckAnswered}
+            />
+          );
+        })}
       </div>
+
+      {hasMultipleSections ? (
+        <div className="lesson-section-controls" aria-label="Lesson section navigation">
+          <button
+            type="button"
+            onClick={() => goToSection(activeIndex - 1)}
+            disabled={activeIndex <= 0}
+          >
+            <FaArrowLeft aria-hidden="true" /> Previous part
+          </button>
+          {activeIndex >= sections.length - 1 ? (
+            <button
+              type="button"
+              className="is-practice"
+              onClick={onPractice}
+            >
+              Practice {lesson.title} <FaArrowRight aria-hidden="true" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => goToSection(activeIndex + 1)}
+            >
+              Next part <FaArrowRight aria-hidden="true" />
+            </button>
+          )}
+        </div>
+      ) : null}
 
       {/* The handoff. Reading without doing doesn't stick, so a lesson always exits
           into the quiz on the same topic rather than into nothing. */}
-      <footer className="lesson-foot">
+      <footer className={`lesson-foot ${hasMultipleSections ? "is-sectioned" : ""}`}>
         <p>Ready to check it?</p>
         <button type="button" className="lesson-practice-cta" onClick={onPractice}>
           Practice {lesson.title} <FaArrowRight aria-hidden="true" />

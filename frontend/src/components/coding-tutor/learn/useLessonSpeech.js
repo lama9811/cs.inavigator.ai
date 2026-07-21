@@ -38,11 +38,11 @@ export function lessonToSegments(lesson) {
   for (const block of lesson.blocks || []) {
     switch (block.kind) {
       case "text":
-        push("Text", block.body);
+        push("Idea", block.body);
         break;
       case "callout":
         // Read the callout as "Tip. <body>" so the listener knows its weight.
-        push(block.title || block.tone || "Note", `${block.title || block.tone || "Note"}. ${block.body}`);
+        push(block.title || "Note", `${block.title || block.tone || "Note"}. ${block.body}`);
         break;
       case "code":
         // Announce code by its caption only; never read the code characters.
@@ -88,7 +88,7 @@ export function useLessonSpeech(lesson) {
     setIndex(clamped);
 
     const utterance = new SpeechSynthesisUtterance(segments[clamped].text);
-    utterance.rate = 1;
+    utterance.rate = 0.95;
     utterance.onend = () => {
       // Natural end of a segment (not a manual skip/stop): advance, or finish.
       if (suppressAdvanceRef.current) return;

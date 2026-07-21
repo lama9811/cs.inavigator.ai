@@ -9,79 +9,152 @@
   ],
   "refresher": "A small C++ program usually includes a header, defines `main`, and places statements between braces. Most statements end with a semicolon. `std::cout` prints information on the screen.",
   "refresher_code": "#include <iostream>\nint main() { std::cout << \"Hi\\n\"; }",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "C++ needs a little more structure than Python. The program below includes the tool used for printing, begins in a function named `main`, and places the work between `{` and `}`. Most action lines end with a semicolon."
-    },
-    {
-      "kind": "text",
-      "body": "Before C++ runs, a compiler translates the code into a program the computer can execute. If a semicolon, quote, or brace is missing, the compiler stops and points to a nearby line. Fix the first error, build again, and then look at anything that remains."
-    },
-    {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "If you have seen Python",
-      "body": "Python can run a short print statement by itself. C++ asks you to put that statement inside `main` and compile the program before it runs. Both languages still execute instructions from top to bottom."
-    },
-    {
-      "kind": "code",
-      "caption": "Read this from top to bottom: add the printing tool, begin main, print one line, and finish successfully.",
-      "code": "#include <iostream>\n\nint main() {\n  std::cout << \"Welcome\\n\";\n  return 0;\n}",
-      "output": "Welcome"
-    },
-    {
-      "kind": "compare",
-      "caption": "A complete statement and balanced function body let compilation continue.",
-      "wrong_label": "Common mistake",
-      "wrong": "int main() {\n  std::cout << \"Hello\\n\"\n}",
-      "right_label": "Clearer version",
-      "right": "int main() {\n  std::cout << \"Hello\\n\";\n}"
-    },
-    {
-      "kind": "text",
-      "body": "Read the corrected program one piece at a time. `main` is where execution starts. Braces surround the function's work. `std::cout` prints the text, and the semicolon finishes that instruction."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Start with the first error",
-      "body": "One missing semicolon or brace can cause several compiler messages. Fix the earliest message first because the later ones may disappear with it."
-    },
-    {
-      "kind": "check",
-      "prompt": "Which line is a complete output statement?",
-      "code": "",
-      "choices": [
-        "std::cout << \"Hi\";",
-        "std::cout >> \"Hi\";",
-        "cout \"Hi\";",
-        "std::cout << \"Hi\""
+      "id": "program-shape",
+      "title": "The shape of a C++ program",
+      "summary": "Start with the parts C++ expects: a header, `main`, braces, and statements.",
+      "question_ids": [
+        "output-05",
+        "syntax-delimiter-01"
       ],
-      "answer_index": 0,
-      "why": "Output uses the insertion operator and the statement ends with a semicolon."
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "C++ needs more setup than Python. A small program usually includes a header, starts in `main`, and puts the work between `{` and `}`. Most action lines end with a semicolon."
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "If you have seen Python",
+          "body": "Python can run `print(\"Hi\")` by itself. In C++, the print line goes inside `main`, and the program is compiled before it runs."
+        },
+        {
+          "kind": "code",
+          "caption": "Read this from top to bottom: include the print tool, start `main`, print one line, and finish.",
+          "code": "#include <iostream>\n\nint main() {\n  std::cout << \"Welcome\\n\";\n  return 0;\n}",
+          "output": "Welcome"
+        },
+        {
+          "kind": "compare",
+          "caption": "The semicolon finishes the output statement. The braces hold the body of `main`.",
+          "wrong_label": "Missing semicolon",
+          "wrong": "int main() {\n  std::cout << \"Hello\\n\"\n}",
+          "right_label": "Complete statement",
+          "right": "int main() {\n  std::cout << \"Hello\\n\";\n}"
+        }
+      ]
     },
     {
-      "kind": "check",
-      "prompt": "Where does execution begin?",
-      "code": "",
-      "choices": [
-        "main",
-        "iostream",
-        "cout",
-        "return"
+      "id": "printing-and-values",
+      "title": "Printing text, numbers, and stored values",
+      "summary": "`std::cout` sends values to the screen. It can print text, math results, and variables.",
+      "question_ids": [
+        "output-01",
+        "output-02",
+        "output-03",
+        "output-04",
+        "syntax-line-break-01"
       ],
-      "answer_index": 0,
-      "why": "A hosted C++ program begins by calling its main function."
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "`std::cout` prints what you send into it with `<<`. Text goes in quotes. Numbers can be used directly. A variable prints the value it holds."
+        },
+        {
+          "kind": "code",
+          "caption": "The first output prints math. The second output prints text and a variable.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n  int score = 15 + 6;\n  std::string name = \"Ada\";\n\n  std::cout << score << \"\\n\";\n  std::cout << \"Hello, \" << name << \"\\n\";\n}",
+          "output": "21\nHello, Ada"
+        },
+        {
+          "kind": "text",
+          "body": "C++ does the math before printing. If both sides of `/` are integers, the answer is an integer too. That is why `7 / 2` becomes `3` instead of `3.5`."
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "New lines",
+          "body": "The characters `\\n` mean move to the next line. They are written inside a string, like `\"A\\nB\"`."
+        }
+      ]
     },
     {
-      "kind": "list",
-      "title": "Syntax checklist",
-      "items": [
-        "Include required headers.",
-        "Balance all braces.",
-        "End statements with semicolons.",
-        "Start with the first compiler error."
+      "id": "small-symbols-that-matter",
+      "title": "Small symbols that change the program",
+      "summary": "Comments, capital letters, and parentheses all matter in C++.",
+      "question_ids": [
+        "syntax-comment-01",
+        "syntax-case-01",
+        "syntax-block-01"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A comment is a note for people reading the code. C++ ignores anything after `//` on that line."
+        },
+        {
+          "kind": "text",
+          "body": "C++ is case-sensitive. That means `cout`, `Cout`, and `COUT` are three different names. The print stream is `std::cout` with a lowercase `c`."
+        },
+        {
+          "kind": "compare",
+          "caption": "An `if` condition needs parentheses. The statements that belong to the `if` go inside braces.",
+          "wrong_label": "Missing parentheses",
+          "wrong": "if score >= 70 {\n  std::cout << \"Pass\";\n}",
+          "right_label": "Condition in parentheses",
+          "right": "if (score >= 70) {\n  std::cout << \"Pass\";\n}"
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Start with the first compiler error",
+          "body": "One missing semicolon, quote, parenthesis, or brace can cause several compiler messages. Fix the earliest message first because the later ones may disappear."
+        }
+      ]
+    },
+    {
+      "id": "check",
+      "title": "Check your understanding",
+      "summary": "Try these before moving into the Syntax practice questions.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "Which line is a complete output statement?",
+          "code": "",
+          "choices": [
+            "std::cout << \"Hi\";",
+            "std::cout >> \"Hi\";",
+            "cout \"Hi\";",
+            "std::cout << \"Hi\""
+          ],
+          "answer_index": 0,
+          "why": "Output uses `<<`, the text is in quotes, and the statement ends with a semicolon."
+        },
+        {
+          "kind": "check",
+          "prompt": "Why does this fail to compile?",
+          "code": "if score >= 70 {\n  std::cout << \"Pass\";\n}",
+          "choices": [
+            "The condition needs parentheses.",
+            "The word score must be uppercase.",
+            "The output statement cannot be inside an if.",
+            "The braces should be square brackets."
+          ],
+          "answer_index": 0,
+          "why": "C++ writes the condition as `if (score >= 70)`. The braces then hold the code that runs when the condition is true."
+        },
+        {
+          "kind": "list",
+          "title": "Syntax checklist",
+          "items": [
+            "Include the headers you need.",
+            "Use `main` as the starting point.",
+            "Balance quotes, parentheses, and braces.",
+            "End statements with semicolons.",
+            "Use the exact capital letters in each name."
+          ]
+        }
       ]
     }
   ],

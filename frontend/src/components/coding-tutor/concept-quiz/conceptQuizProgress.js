@@ -69,10 +69,10 @@ export function readQuestionStatus(language, category, questionId) {
 }
 
 // ── Lesson-read tracking ────────────────────────────────────────────────────
-// Learn has no backend yet, so "did the student read this lesson" lives in the
-// same local store as quiz progress, one flat set of "language:category" keys.
+// Learn has no backend yet, so "completed this lesson" lives in the same local store
+// as quiz progress, one flat set of "language:category" keys.
 // Swappable for a coding_learn_progress table later without touching callers.
-const LESSONS_KEY = `${PREFIX}:lessons_read`;
+const LESSONS_KEY = `${PREFIX}:lessons_completed_v2`;
 
 function readLessonSet() {
   try {
@@ -86,6 +86,19 @@ function readLessonSet() {
 
 // Mark one lesson as read. Idempotent — called on lesson open, so it fires often
 // and must stay cheap and side-effect-free beyond the write.
+export function hasReadLesson(language, category) {
+  if (!language || !category) return false;
+  return readLessonSet().has(`${language}:${category}`);
+}
+
+export function countReadLessons(language, categories = []) {
+  if (!language || !Array.isArray(categories)) return 0;
+  const set = readLessonSet();
+  return categories.filter((category) =>
+    category?.has_lesson && set.has(`${language}:${category.id}`)
+  ).length;
+}
+
 export function markLessonRead(language, category) {
   if (!language || !category) return;
   const set = readLessonSet();
