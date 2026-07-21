@@ -22,6 +22,7 @@ import time
 import logging
 from typing import Optional
 from cachetools import TTLCache
+import threading
 from threading import Lock
 
 import numpy as np
@@ -204,7 +205,11 @@ class L2Cache:
         self._client = None
         self._connected = False
         self._stats = {"hits": 0, "misses": 0, "errors": 0}
-        self._connect()
+        # Connect off the import path: this is a network round trip to Redis
+        # Cloud that measured ~3.5s on Cloud Run, and it ran before the app
+        # could serve traffic. Until it lands, _connected stays False and we
+        # serve L1-only -- the same graceful degradation as an unreachable Redis.
+        threading.Thread(target=self._connect, name="l2-cache-connect", daemon=True).start()
 
     def _connect(self):
         """Initialize Redis connection."""
@@ -341,7 +346,11 @@ class SemanticCache:
         self._genai_client = None
         self._available = False
         self._stats = {"hits": 0, "misses": 0, "errors": 0, "embed_time_ms": 0}
-        self._init_client()
+        # Off the import path for the same reason as L2Cache._connect: building
+        # the genai client resolves ADC via the metadata server and then reads
+        # persisted entries out of Redis (~2.5s on Cloud Run). Until it lands,
+        # _available stays False and semantic lookups are simply skipped.
+        threading.Thread(target=self._init_client, name="semantic-cache-init", daemon=True).start()
 
     def _init_client(self):
         """Initialize Google embedding client."""

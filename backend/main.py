@@ -629,8 +629,12 @@ def build_qa_chain():
 @asynccontextmanager
 async def lifespan(app):
     """Modern lifespan event handler for FastAPI"""
-    # Startup
-    build_qa_chain()
+    # Startup. The ADK probe runs in the background: it only logs a status line
+    # and gates nothing, but a blocking call here delays "application startup
+    # complete", and Cloud Run withholds traffic until then. When the ADK was
+    # cold this cost ~15s on every backend cold start (i.e. slow logins).
+    # Live agent status is still reported on demand by /health.
+    asyncio.create_task(asyncio.to_thread(build_qa_chain))
     yield
     # Shutdown (cleanup if needed)
 

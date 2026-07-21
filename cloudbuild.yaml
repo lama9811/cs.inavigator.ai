@@ -100,7 +100,11 @@ steps:
       - '--port=8080'
       - '--memory=2Gi'
       - '--cpu=2'
-      - '--min-instances=0'
+      # Keep one ADK instance warm: chat is browser -> frontend -> backend -> adk,
+      # so a cold ADK added ~5s to the first question after any idle period.
+      # Costs an always-on 2Gi/2CPU instance (~$25-40/mo); set back to 0 to
+      # trade that money back for the idle stall.
+      - '--min-instances=1'
       - '--max-instances=3'
       - '--timeout=300'
       - '--concurrency=80'
