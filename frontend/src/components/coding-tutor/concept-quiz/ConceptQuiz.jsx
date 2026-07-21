@@ -89,22 +89,14 @@ function LanguageCards({ apiBase, onPickLanguage }) {
           const Icon = accent.Icon;
           const stat = stats[lang.id];
           const recommended = lang.id === "python";
-          const readyPct =
-            stat && stat.total ? Math.round((stat.ready / stat.total) * 100) : 0;
           return (
-            <div
+            <button
+              type="button"
               key={lang.id}
               className={`cq-language-card ${recommended ? "recommended" : ""}`}
               style={{ "--cq-card-tint": accent.tint || "var(--ct-primary)" }}
-              role="button"
-              tabIndex={0}
               onClick={() => onPickLanguage(lang.id)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onPickLanguage(lang.id);
-                }
-              }}
+              aria-label={`Practice ${lang.label} concept quizzes`}
             >
               {recommended ? (
                 <span className="cq-language-card-flag">Beginner friendly</span>
@@ -130,23 +122,10 @@ function LanguageCards({ apiBase, onPickLanguage }) {
                 </span>
               </span>
 
-              {/* Category progress bar (ready categories out of total). */}
-              <span className="cq-language-card-progress">
-                <span className="cq-language-progress-track">
-                  <span
-                    className="cq-language-progress-fill"
-                    style={{ width: `${readyPct}%` }}
-                  />
-                </span>
-                <span className="cq-language-progress-label">
-                  {stat ? `${stat.ready}/${stat.total} categories ready` : "…"}
-                </span>
-              </span>
-
               <span className="cq-language-card-cta">
                 Practice <FaArrowRight aria-hidden="true" />
               </span>
-            </div>
+            </button>
           );
         })}
       </div>

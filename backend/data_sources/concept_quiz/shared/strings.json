@@ -24,7 +24,7 @@
         },
         "java": {
           "code": "String word = \"Bears\";\nSystem.out.println(word.charAt(word.length()));",
-          "prompt": "What does this do?",
+          "prompt": "What happens when Java asks for `charAt(word.length())`?",
           "choices": [
             "It throws a StringIndexOutOfBoundsException",
             "It prints s",
@@ -126,7 +126,7 @@
       "variants": {
         "python": {
           "code": null,
-          "prompt": "Which statement best describes Strings?",
+          "prompt": "Which statement best describes how Python strings work?",
           "choices": [
             "Text you can measure, cut apart, and reshape.",
             "It is used only to print a message.",
@@ -138,7 +138,7 @@
         },
         "java": {
           "code": null,
-          "prompt": "Which statement best describes Strings?",
+          "prompt": "Which statement best describes how Java strings work?",
           "choices": [
             "Text is an object in Java, and comparing two of them has one right way.",
             "It is used only to print a message.",
@@ -150,7 +150,7 @@
         },
         "javascript": {
           "code": null,
-          "prompt": "Which statement best describes Strings?",
+          "prompt": "Which statement best describes how JavaScript strings work?",
           "choices": [
             "Read and transform text without changing the original value.",
             "It is used only to print a message.",
@@ -162,7 +162,7 @@
         },
         "cpp": {
           "code": null,
-          "prompt": "Which statement best describes Strings?",
+          "prompt": "Which statement best describes how C++ strings work?",
           "choices": [
             "Create, index, compare, and combine text.",
             "It is used only to print a message.",

@@ -73,6 +73,14 @@ function learningStyleHint(style) {
   return "Try one problem first. If you get stuck, ask for a small hint.";
 }
 
+function compactWeakTopicReason({ mastery, weakTopic }) {
+  if (mastery?.weakest?.topic) {
+    return `Recent practice points to ${titleCase(weakTopic)}.`;
+  }
+  if (weakTopic) return `This topic could use another pass.`;
+  return "Pick one shaky topic.";
+}
+
 function firstUnsolved(questions, progressByQuestion, predicate = () => true) {
   return (questions || [])
     .filter(predicate)
@@ -92,20 +100,23 @@ function unsolvedByTopic(questions, progressByQuestion, topic) {
 function buildTodayPath({ questions, progressByQuestion, resumeItem, nextUpQuestion, mastery, focus }) {
   const path = [];
   const used = new Set();
-  const add = (kind, label, question, fallback) => {
+  const add = (kind, label, question, fallback, reason) => {
     if (question?.id && !used.has(question.id)) {
       used.add(question.id);
-      path.push({ kind, label, question });
+      path.push({ kind, label, question, reason });
       return;
     }
-    if (fallback) path.push({ kind, label, fallback });
+    if (fallback) path.push({ kind, label, fallback, reason });
   };
 
   add(
     "start",
     resumeItem?.question ? "Finish" : "Start",
     resumeItem?.question || nextUpQuestion || firstUnsolved(questions, progressByQuestion),
-    "Open the Practice Library and choose one easy problem."
+    "Open the Practice Library and choose one easy problem.",
+    resumeItem?.question
+      ? "You already started this one."
+      : "This is a good first problem for today."
   );
 
   const weakTopic = mastery?.weakest?.topic || focus?.next?.topic || focus?.first?.topic;
@@ -115,7 +126,8 @@ function buildTodayPath({ questions, progressByQuestion, resumeItem, nextUpQuest
     "practice",
     weakTopic ? `Practice ${titleCase(weakTopic)}` : "Practice a weak spot",
     weakPick,
-    "Pick one topic that feels shaky and solve one problem from it."
+    "Pick one topic that feels shaky and solve one problem from it.",
+    compactWeakTopicReason({ mastery, weakTopic })
   );
 
   const stretchPick = firstUnsolved(
@@ -127,7 +139,8 @@ function buildTodayPath({ questions, progressByQuestion, resumeItem, nextUpQuest
     "stretch",
     "Stretch",
     stretchPick,
-    "After one pass, try a medium problem or review a failed test."
+    "After one pass, try a medium problem or review a failed test.",
+    "A slightly harder step after the warm-up."
   );
 
   return path.slice(0, 3);
@@ -220,6 +233,14 @@ function focusCopy(focus) {
   return `Start with ${focus.first.topic} and build from there.`;
 }
 
+function focusReason(focus) {
+  if (!focus) return "No progress pattern yet, so start with one small problem.";
+  if (focus.hasProgress) {
+    return `${titleCase(focus.next.topic)} is your next useful focus.`;
+  }
+  return "This is a beginner-friendly place to start.";
+}
+
 function CampusLearningQueue({
   questions,
   progressByQuestion,
@@ -251,7 +272,7 @@ function CampusLearningQueue({
       ? `Start with ${titleCase(focus.first.topic)}`
       : "Choose a topic";
   const focusBlurb = focusTopic
-    ? learningStyleHint(learningStyle)
+    ? `${focusReason(focus)} ${learningStyleHint(learningStyle)}`
     : "Pick one topic and solve the first problem you see.";
   const focusButton = learningStyle === "try_then_hint" ? "Open practice" : "Open lesson";
   return (
@@ -280,6 +301,7 @@ function CampusLearningQueue({
                   ) : (
                     <em>{step.fallback}</em>
                   )}
+                  {step.reason && <small className="campus-path-reason">{step.reason}</small>}
                 </div>
               </li>
             ))}
