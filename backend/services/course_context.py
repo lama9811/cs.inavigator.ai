@@ -61,10 +61,14 @@ try:
         current_code = None
         for line in content.split("\n"):
             line = line.strip()
-            code_match = re.match(r'^([A-Z]{2,4}\d{3})\s*-\s*(.+)', line)
+            # Accept both "COSC354 - X" and "COSC 354 - X". The schedule docs
+            # write the code spaced so Vertex AI Search can retrieve it (an
+            # unspaced COSC354 indexes as one token that no "cosc 354" query
+            # ever matches), but older/hand-edited snapshots may still be
+            # unspaced -- either form normalizes to the spaced form below.
+            code_match = re.match(r'^([A-Z]{2,4})\s?(\d{3}[A-Z]?)\s*-\s*(.+)', line)
             if code_match:
-                raw_code = code_match.group(1)
-                current_code = re.sub(r'([A-Z]+)(\d+)', r'\1 \2', raw_code)
+                current_code = f"{code_match.group(1)} {code_match.group(2)}"
                 if current_code not in courses:
                     courses[current_code] = []
                 continue
