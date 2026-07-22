@@ -1,0 +1,38 @@
+- generic [ref=e2]:
+  - region "Notifications alt+T"
+  - navigation [ref=e3]:
+    - generic [ref=e4]:
+      - generic "Return to Home" [ref=e5] [cursor=pointer]:
+        - img "Morgan State University" [ref=e6]
+        - generic [ref=e7]:
+          - generic [ref=e8]: CS NAVIGATOR
+          - generic [ref=e9]: Morgan State University
+      - generic "Primary navigation" [ref=e10]:
+        - link "Try Free" [ref=e11] [cursor=pointer]:
+          - /url: /trychat
+        - link "Login" [ref=e12] [cursor=pointer]:
+          - /url: /login
+        - link "Sign Up" [ref=e13] [cursor=pointer]:
+          - /url: /signup
+  - generic [ref=e16]:
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - strong [ref=e20]: 15:00
+        - text: free trial • Timer starts on your first message
+      - generic [ref=e21]: "|"
+      - button "Create an account for unlimited access" [ref=e22] [cursor=pointer]
+    - generic [ref=e24]:
+      - img "MSU Logo" [ref=e25]
+      - heading "Morgan State CS Navigator" [level=1] [ref=e26]
+      - paragraph [ref=e27]: How can I assist with your academic journey today?
+      - generic [ref=e28]:
+        - button "What degrees does the CS department offer?" [ref=e29] [cursor=pointer]
+        - button "What are the prerequisites for COSC 220 Data Structures?" [ref=e30] [cursor=pointer]
+        - button "Who are the faculty in the CS department?" [ref=e31] [cursor=pointer]
+        - button "How many credits do I need to graduate with a B.S. in CS?" [ref=e32] [cursor=pointer]
+        - button "What's the 4+1 accelerated B.S./M.S. program?" [ref=e33] [cursor=pointer]
+        - button "Where can I find tutoring and academic support?" [ref=e34] [cursor=pointer]
+    - generic [ref=e36]:
+      - textbox "Type your message..." [active] [ref=e37]
+      - button "Send message" [disabled] [ref=e38]
+    - generic [ref=e41]: CS Navigator 2026 | Morgan State University Department of Computer Science
