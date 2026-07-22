@@ -1,0 +1,106 @@
+- generic [ref=f1e2]:
+  - region "Notifications alt+T"
+  - navigation [ref=f1e9]:
+    - generic [ref=f1e10]:
+      - button "Toggle sidebar" [ref=f1e79] [cursor=pointer]
+      - generic "Go to your most recent chat" [ref=f1e82] [cursor=pointer]:
+        - img "Morgan State University" [ref=f1e12]
+        - generic [ref=f1e13]:
+          - generic [ref=f1e14]: CS NAVIGATOR
+          - generic [ref=f1e15]: Morgan State University
+      - navigation "Primary navigation" [ref=f1e83]:
+        - link "My Classes" [ref=f1e84] [cursor=pointer]:
+          - /url: /my-classes
+        - link "Coding Tutor" [ref=f1e88] [cursor=pointer]:
+          - /url: /coding
+        - link "Grade Surgeon" [ref=f1e92] [cursor=pointer]:
+          - /url: /grade-analysis
+        - button "Tools" [ref=f1e97] [cursor=pointer]
+      - generic [ref=f1e103]:
+        - button "Open admin dashboard" [ref=f1e104] [cursor=pointer]:
+          - generic [ref=f1e107]: Admin
+        - button "Open profile settings" [ref=f1e108] [cursor=pointer]
+  - generic [ref=f1e112]:
+    - generic [ref=f1e113]:
+      - separator "Drag to collapse or expand sidebar" [ref=f1e114]
+      - generic [ref=f1e115]:
+        - generic [ref=f1e116]:
+          - button "New Chat" [ref=f1e117] [cursor=pointer]
+          - button "Close sidebar" [ref=f1e121] [cursor=pointer]
+        - generic "Search through your conversations" [ref=f1e124]:
+          - textbox "Search chats..." [ref=f1e125]
+      - generic [ref=f1e127]:
+        - generic [ref=f1e128]: Today
+        - 'generic "Select conversation: New Chat" [ref=f1e129] [cursor=pointer]':
+          - generic [ref=f1e130]: New Chat
+          - generic [ref=f1e131]: 3:28 PM
+          - button "More options" [ref=f1e132]
+        - 'generic "Select conversation: Based Know Interests Goals" [ref=f1e135] [cursor=pointer]':
+          - generic [ref=f1e136]: Based Know Interests Goals
+          - generic [ref=f1e137]: 1:40 PM
+          - button "More options" [ref=f1e138]
+        - 'generic "Select conversation: Interested Cybersecurity Track Program" [ref=f1e141] [cursor=pointer]':
+          - generic [ref=f1e142]: Interested Cybersecurity Track Program
+          - generic [ref=f1e143]: 1:39 PM
+          - button "More options" [ref=f1e144]
+        - 'generic "Select conversation: Cosc 111" [ref=f1e147] [cursor=pointer]':
+          - generic [ref=f1e148]: Cosc 111
+          - generic [ref=f1e149]: 1:20 PM
+          - button "More options" [ref=f1e150]
+        - 'generic "Select conversation: Who Chairs Department" [ref=f1e153] [cursor=pointer]':
+          - generic [ref=f1e154]: Who Chairs Department
+          - generic [ref=f1e155]: 1:17 PM
+          - button "More options" [ref=f1e156]
+        - 'generic "Select conversation: Just Asking" [ref=f1e159] [cursor=pointer]':
+          - generic [ref=f1e160]: Just Asking
+          - generic [ref=f1e161]: 1:05 PM
+          - button "More options" [ref=f1e162]
+        - 'generic "Select conversation: Interested Machine Learning" [ref=f1e165] [cursor=pointer]':
+          - generic [ref=f1e166]: Interested Machine Learning
+          - generic [ref=f1e167]: 1:05 PM
+          - button "More options" [ref=f1e168]
+        - 'generic "Select conversation: Who Chair Department" [ref=f1e171] [cursor=pointer]':
+          - generic [ref=f1e172]: Who Chair Department
+          - generic [ref=f1e173]: 1:04 PM
+          - button "More options" [ref=f1e174]
+        - 'generic "Select conversation: Interested Cybersecurity Track" [ref=f1e177] [cursor=pointer]':
+          - generic [ref=f1e178]: Interested Cybersecurity Track
+          - generic [ref=f1e179]: 12:49 PM
+          - button "More options" [ref=f1e180]
+      - generic [ref=f1e183]:
+        - generic [ref=f1e184]:
+          - button "Contact Support" [ref=f1e185] [cursor=pointer]
+          - button "Install App" [ref=f1e189] [cursor=pointer]
+        - generic "Open your profile and account settings" [ref=f1e193] [cursor=pointer]:
+          - generic [ref=f1e198]:
+            - generic [ref=f1e199]: admin@morgan.edu
+            - generic [ref=f1e200]: Free Plan
+          - button "Sign out of CS Navigator" [ref=f1e201]
+        - link "Open Source" [ref=f1e204] [cursor=pointer]:
+          - /url: https://github.com/theaayushstha1/cs-navigator
+    - generic [ref=f1e208]:
+      - group "Tutor mode" [ref=f1e210]:
+        - 'button "CS Nav: Morgan State CS questions — courses, advising, requirements, and campus info." [ref=f1e211] [cursor=pointer]': CS Nav
+        - 'button "General: General knowledge and the live web — non-Morgan questions." [ref=f1e212] [cursor=pointer]': General
+        - 'button "Coding Tutor: Practice, run, debug, and review code with a guided tutor." [ref=f1e213] [cursor=pointer]': Coding Tutor
+      - generic [ref=f1e215]:
+        - img "MSU Logo" [ref=f1e216]
+        - heading "Morgan State CS Navigator" [level=1] [ref=f1e217]
+        - paragraph [ref=f1e218]: How can I assist with your academic journey today?
+        - generic [ref=f1e219]:
+          - button "I am interested in machine learning." [ref=f1e220] [cursor=pointer]
+          - button "I am interested in the cybersecurity track in the CS program." [ref=f1e222] [cursor=pointer]
+          - button "I am interested in the cybersecurity track." [ref=f1e224] [cursor=pointer]
+          - button "I want to go to grad school for cybersecurity after I graduate." [ref=f1e226] [cursor=pointer]
+          - button "What electives fit a security focus?" [ref=f1e228] [cursor=pointer]
+          - button "What electives should I take, given that?" [ref=f1e230] [cursor=pointer]
+          - button "What is COSC 111?" [ref=f1e232] [cursor=pointer]
+          - button "What security courses does Morgan offer?" [ref=f1e234] [cursor=pointer]
+          - button "Which courses fit that interest?" [ref=f1e236] [cursor=pointer]
+          - button "What courses should I take next semester if I'm interested in AI/ML?" [ref=f1e238] [cursor=pointer]
+      - generic [ref=f1e241]:
+        - button "Attach a file" [ref=f1e242] [cursor=pointer]
+        - button "Voice input" [ref=f1e245] [cursor=pointer]
+        - textbox "Ask about Morgan State CS — courses, advising, requirements..." [active] [ref=f1e248]
+        - button "Send message" [disabled] [ref=f1e249]
+        - button "Enter Live Mode" [ref=f1e252] [cursor=pointer]
