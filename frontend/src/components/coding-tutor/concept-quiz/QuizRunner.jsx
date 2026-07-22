@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FaRegQuestionCircle, FaBookOpen, FaArrowRight } from "react-icons/fa";
+import { readQuizDraftAnswers, writeQuizDraftAnswers } from "./conceptQuizProgress";
 
 // Sequential concept-quiz runner. Renders one question at a time in a split
 // layout (code/statement left with Question|Learn tabs, answer UI right),
@@ -411,8 +412,9 @@ export default function QuizRunner({
   //
   // sessionStorage, not localStorage: an abandoned quiz should not still be sitting there
   // next week. It should survive a detour, not outlive the visit.
-  const storageKey = `cq_answers:${language}:${category}`;
-  const [answersById, setAnswersById] = useState(() => readAnswers(storageKey));
+  const [answersById, setAnswersById] = useState(() =>
+    readQuizDraftAnswers(language, category)
+  );
   const [grade, setGrade] = useState(null);
   const [grading, setGrading] = useState(false);
   const [error, setError] = useState("");
@@ -420,14 +422,14 @@ export default function QuizRunner({
   // Load the saved answers when the student switches to a DIFFERENT quiz (the component
   // is reused across categories, so the initial state above only runs once).
   useEffect(() => {
-    setAnswersById(readAnswers(storageKey));
+    setAnswersById(readQuizDraftAnswers(language, category));
     setGrade(null);
     setError("");
-  }, [storageKey]);
+  }, [language, category]);
 
   useEffect(() => {
-    writeAnswers(storageKey, answersById);
-  }, [storageKey, answersById]);
+    writeQuizDraftAnswers(language, category, answersById);
+  }, [language, category, answersById]);
 
   // Reset the Learn/Question tab back to Question whenever the question changes.
   useEffect(() => {
