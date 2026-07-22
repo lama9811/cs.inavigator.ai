@@ -138,7 +138,12 @@ def _select_model(callback_context, llm_request):
         if user_text and len(user_text) > 10:
             try:
                 from .kb_prefetch import prefetch_kb_context
-                kb_ctx = prefetch_kb_context(user_text)
+                # top_k=5, not 3: for a course question the three catalog docs
+                # (courses / prerequisites / degree requirements) all match the
+                # course code and crowd out the schedule doc, which is the only
+                # one carrying instructors and meeting times. At 3 an instructor
+                # question could never be grounded from the pre-injection.
+                kb_ctx = prefetch_kb_context(user_text, top_k=5)
                 if kb_ctx:
                     llm_request.append_instructions([kb_ctx])
             except Exception:
