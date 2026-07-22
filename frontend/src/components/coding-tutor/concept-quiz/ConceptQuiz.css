@@ -897,9 +897,18 @@ body.coding-dark .cq-question-table tbody tr:hover .cq-question-link {
   color: #d0493b;
   fill: currentColor;
 }
+.coding-app .cq-status-icon.in-progress,
+.coding-app .cq-status-icon.in-progress svg {
+  color: #d99516;
+  fill: currentColor;
+}
 body.coding-dark .coding-app .cq-status-icon.incorrect,
 body.coding-dark .coding-app .cq-status-icon.incorrect svg {
   color: #f0685a;
+}
+body.coding-dark .coding-app .cq-status-icon.in-progress,
+body.coding-dark .coding-app .cq-status-icon.in-progress svg {
+  color: #fbbf24;
 }
 
 /* Best-score badge on the category header: plain text badge with a trophy, no
@@ -919,6 +928,41 @@ body.coding-dark .coding-app .cq-status-icon.incorrect svg {
 }
 .cq-accordion-best.try {
   color: var(--ct-accent);
+}
+
+.cq-accordion-progress-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+}
+
+.cq-progress-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0.18rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.cq-progress-badge.in-progress {
+  background: color-mix(in srgb, #f59e0b 13%, transparent);
+  color: #b45309;
+}
+
+.cq-progress-badge.complete {
+  background: color-mix(in srgb, #22c55e 12%, transparent);
+  color: #15803d;
+}
+
+body.coding-dark .cq-progress-badge.in-progress {
+  color: #fbbf24;
+}
+
+body.coding-dark .cq-progress-badge.complete {
+  color: #4ade80;
 }
 
 /* Type badges: color-grouped + iconed so Multiple choice / Type-in / Drag & drop

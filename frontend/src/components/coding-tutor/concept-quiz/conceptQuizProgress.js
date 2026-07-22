@@ -11,6 +11,7 @@
 //   }
 
 const PREFIX = "concept_quiz_progress";
+const QUIZ_DRAFT_PREFIX = "cq_answers";
 
 function key(language, category) {
   return `${PREFIX}:${language}:${category}`;
@@ -66,6 +67,30 @@ export function saveCategoryResult(language, category, grade, stampAt) {
 export function readQuestionStatus(language, category, questionId) {
   const prog = readCategoryProgress(language, category);
   return prog?.questions?.[questionId] || null;
+}
+
+export function quizDraftKey(language, category) {
+  return `${QUIZ_DRAFT_PREFIX}:${language}:${category}`;
+}
+
+export function readQuizDraftAnswers(language, category) {
+  try {
+    const raw = sessionStorage.getItem(quizDraftKey(language, category));
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function writeQuizDraftAnswers(language, category, answers) {
+  try {
+    const draftKey = quizDraftKey(language, category);
+    if (!answers || !Object.keys(answers).length) sessionStorage.removeItem(draftKey);
+    else sessionStorage.setItem(draftKey, JSON.stringify(answers));
+  } catch {
+    // Storage unavailable/full — the quiz still works, it just won't resume.
+  }
 }
 
 // ── Lesson-read tracking ────────────────────────────────────────────────────
