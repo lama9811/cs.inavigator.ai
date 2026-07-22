@@ -331,7 +331,7 @@ def _apply_faithfulness_gate(text: str, chat_mode: str = "regular") -> str:
     return text
 
 
-def _apply_grounding_gate(text: str, chunks: int, coverage: float = 0.0, has_student_data: bool = False, chat_mode: str = "regular") -> str:
+def _apply_grounding_gate(text: str, chunks: int, coverage: float = 0.0, has_student_data: bool = False, chat_mode: str = "regular", bounced: bool = False) -> str:
     """Append a disclaimer when the agent answered with insufficient data sources.
 
     Checks both chunk count AND coverage ratio. A response needs either:
@@ -340,18 +340,17 @@ def _apply_grounding_gate(text: str, chunks: int, coverage: float = 0.0, has_stu
     - Student data present (DegreeWorks/Canvas)
 
     This prevents responses that cite 1 chunk but are 90% hallucinated from passing.
+
+    On chunks == 0 the old code returned unconditionally, which was the blind spot:
+    "no KB chunks" has three very different causes and they were all treated as the
+    benign one. See _classify_zero_chunk below.
     """
     if chat_mode == "coding_tutor":
         return text
     if not text or _SKIP_GROUNDING_RE.match(text):
         return text
-    # chunks == 0 means the KB was not used for this answer. That is either the
-    # GENERAL LANE (a non-Morgan question answered from general knowledge — a
-    # "verify with the CS dept" note would be nonsensical) or a Morgan question the
-    # model already refused per the hard rule (its refusal already carries the
-    # contact info). In both cases, do NOT append the Morgan disclaimer.
     if chunks == 0:
-        return text
+        return _handle_zero_chunks(text, chat_mode, has_student_data, bounced)
     if has_student_data:
         return text
     if chunks >= _GROUNDING_MIN_CHUNKS:
@@ -360,6 +359,53 @@ def _apply_grounding_gate(text: str, chunks: int, coverage: float = 0.0, has_stu
         return text
     print(f"   [GROUNDING] Low confidence ({chunks} chunks, {coverage:.1%} coverage, no student data) - appending disclaimer")
     return text + _GROUNDING_DISCLAIMER
+
+
+def _handle_zero_chunks(text: str, chat_mode: str, has_student_data: bool, bounced: bool) -> str:
+    """Disambiguate a zero-KB-chunk answer instead of waving all of them through.
+
+    Zero chunks used to mean one thing to this gate ("not a KB answer, leave it
+    alone"). It actually means one of four things, and only three are benign:
+
+    1. GENERAL lane   — answered from the web. Correct to skip.
+    2. Mode bounce    — "ask this in CS Nav mode". Not an answer. Correct to skip.
+    3. Student data   — answered from DegreeWorks/Canvas. Correct to skip.
+    4. CS Nav lane, no retrieval at all — THE BUG. Either the model refused
+       without ever searching (a false refusal: the KB may well hold the answer),
+       or it asserted Morgan facts with nothing backing them.
+
+    Case 4 was silent. A genuine KB miss in CS Nav mode still comes back with
+    chunks > 0 — the search runs and ranks *something*, just nothing relevant
+    (verified: "enrollment cap for COSC 999" and "CS PhD acceptance rate" both
+    refuse with 6 and 10 chunks). So zero chunks in this lane means the retrieval
+    never happened, and the refusal is not evidence of absence.
+
+    This function NEVER modifies the answer text. Case 4 is deliberately
+    detection-only: an unretrieved answer is often still correct (it can come from
+    the kb_prefetch excerpts), and appending "I may not have complete information"
+    to a correct answer is noise the student pays for. Flag it, log it, leave it.
+    """
+    if chat_mode != "regular":
+        return text
+    if bounced:
+        return text
+
+    if _looks_like_kb_refusal(text):
+        # No disclaimer — the refusal already carries the contact info. The fix
+        # here is making it *visible* instead of silent.
+        _flag_false_refusal()
+        print(
+            "   [GROUNDING] FALSE-REFUSAL SUSPECTED: CS Nav mode refused with 0 KB "
+            "chunks, i.e. no retrieval ran. The knowledge base may hold this answer."
+        )
+        return text
+
+    if not has_student_data:
+        # Log-only: an assertive Morgan answer with no retrieval behind it. Not
+        # surfaced to the student by design (see docstring), but worth seeing in
+        # Cloud Logging if the rate ever climbs.
+        print("   [GROUNDING] CS Nav answer with 0 KB chunks (no retrieval ran) - not flagged, logging only")
+    return text
 
 
 # Session reuse settings
@@ -554,7 +600,20 @@ def _set_grounding(kb_grounded: bool, chunks: int, coverage: float, web_chunks: 
         "grounding_chunks": chunks,
         "grounding_coverage": coverage,
         "web_chunks": web_chunks,
+        # Set by the grounding gate when it catches a refusal that no retrieval
+        # backed. Lets research_agent tell "the KB lacks this" apart from "the
+        # agent never looked" — they produce identical answer text.
+        "false_refusal_suspected": False,
     }
+
+
+def _flag_false_refusal():
+    """Mark the current thread's answer as a suspected false refusal."""
+    data = getattr(_grounding_local, "data", None)
+    if data is None:
+        data = {"kb_grounded": False, "grounding_chunks": 0, "grounding_coverage": 0.0, "web_chunks": 0}
+        _grounding_local.data = data
+    data["false_refusal_suspected"] = True
 
 
 def _run_query(message: str, user_id: str, session_id: str, retried: bool = False, context: str = "", model: str = "", canvas_context: str = "", memory_context: str = "", chat_mode: str = "regular") -> str:
@@ -683,10 +742,12 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
             # Bounce marker: strip it from the (complete) text and record which mode
             # to suggest on the thread-local so callers can offer the bounce.
             _active_marker, _bounce_target = _MODE_BOUNCE.get(chat_mode, (None, None))
+            _bounced = False
             if _active_marker:
                 stripped, marker_found = _strip_leading_marker(final_text, _active_marker)
                 if marker_found:
                     final_text = stripped or ""
+                    _bounced = True
                     _grounding_local.data = {**getattr(_grounding_local, "data", {}), "suggested_mode": _bounce_target}
 
             # Clean up citation artifacts from Gemini grounding
@@ -719,7 +780,7 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
 
             # Grounding validation gate: flag low-grounded responses
             has_data = bool(context or canvas_context)
-            final_text = _apply_grounding_gate(final_text, grounding_chunks, coverage=grounding_coverage, has_student_data=has_data, chat_mode=chat_mode)
+            final_text = _apply_grounding_gate(final_text, grounding_chunks, coverage=grounding_coverage, has_student_data=has_data, chat_mode=chat_mode, bounced=_bounced)
 
             # Faithfulness backstop: flag invented "Dr./Prof. X" faculty names
             final_text = _apply_faithfulness_gate(final_text, chat_mode=chat_mode)
@@ -759,7 +820,7 @@ def get_last_grounding() -> dict:
         grounding_chunks: Number of KB documents cited
         grounding_coverage: Fraction of response text backed by KB sources (0.0-1.0)
     """
-    return getattr(_grounding_local, "data", {"kb_grounded": True, "grounding_chunks": 0, "grounding_coverage": 1.0, "web_chunks": 0})
+    return getattr(_grounding_local, "data", {"kb_grounded": True, "grounding_chunks": 0, "grounding_coverage": 1.0, "web_chunks": 0, "false_refusal_suspected": False})
 
 
 def check_agent_health() -> dict:
@@ -1040,7 +1101,7 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
 
         # Grounding validation gate: append disclaimer if low-grounded
         has_data = bool(context or canvas_context)
-        final = _apply_grounding_gate(cleaned, grounding_chunks, coverage=grounding_coverage, has_student_data=has_data, chat_mode=chat_mode)
+        final = _apply_grounding_gate(cleaned, grounding_chunks, coverage=grounding_coverage, has_student_data=has_data, chat_mode=chat_mode, bounced=suggested_mode is not None)
         if final != cleaned:
             disclaimer = final[len(cleaned):]
             yield {"type": "chunk", "content": disclaimer}

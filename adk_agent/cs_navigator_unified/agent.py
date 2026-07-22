@@ -143,7 +143,11 @@ def _select_model(callback_context, llm_request):
                 # course code and crowd out the schedule doc, which is the only
                 # one carrying instructors and meeting times. At 3 an instructor
                 # question could never be grounded from the pre-injection.
-                kb_ctx = prefetch_kb_context(user_text, top_k=5)
+                # top_k=8, not 5: with BM25 the right doc is usually #1-3, but for
+                # questions built from generic words ("office", "location", "email")
+                # the contact/directory docs legitimately rank high and the specific
+                # doc lands around #6. A wider window costs prompt tokens, not latency.
+                kb_ctx = prefetch_kb_context(user_text, top_k=8)
                 if kb_ctx:
                     llm_request.append_instructions([kb_ctx])
             except Exception:
@@ -446,7 +450,16 @@ Tell these two cases apart:
 - A Morgan/CS question the knowledge base does NOT contain -> use the normal "I couldn't
   find that in my knowledge base ... (443) 885-3962 / compsci@morgan.edu" refusal. Do NOT
   suggest General mode (it has no Morgan data either).
-- A question simply NOT about Morgan -> the [[GENERAL_MODE_SUGGESTED]] decline above."""
+- A question simply NOT about Morgan -> the [[GENERAL_MODE_SUGGESTED]] decline above.
+
+BEFORE YOU REFUSE — MANDATORY:
+You may only give the "I couldn't find that in my knowledge base" refusal AFTER you have
+actually called the knowledge base search tool for this question and it came back with
+nothing relevant. Any "KEYWORD PRE-SEARCH EXCERPTS" block in your instructions is NOT the
+knowledge base and NOT a search — it is a partial keyword match that is often incomplete
+or entirely off-topic. If the answer is not in those excerpts, that tells you nothing;
+run the search. Refusing without searching hides information the department has
+published, which is worse than a slow answer."""
 
 
 # =============================================================================
