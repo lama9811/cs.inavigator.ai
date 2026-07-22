@@ -5,6 +5,7 @@ sys.stdout.reconfigure(line_buffering=True)
 print("[OK] main.py loaded successfully")
 
 import os
+import hmac
 import re
 import json
 import time
@@ -760,6 +761,29 @@ class LoginRequest(BaseModel):
 
 VALID_MODELS = {"", "inav-1.0", "inav-1.1"}
 VALID_CHAT_MODES = {"regular", "general", "coding_tutor"}
+
+
+def _require_research_secret(request: Request) -> None:
+    """Guard every /api/internal/* cron endpoint. Raises 403 unless the caller
+    presents the shared secret.
+
+    Both sides are stripped before comparing. This is not cosmetic: Secret Manager
+    stores the payload verbatim, and the RESEARCH_SECRET secret was created with a
+    trailing newline. Cloud Run mounts that newline into the env var, but an HTTP
+    header cannot carry a trailing newline -- so an exact `!=` could never match and
+    EVERY cron endpoint returned 403 for the lifetime of the deployment. Reminder
+    emails and the live-seat refresh were dead on arrival, independent of whether
+    Cloud Scheduler was enabled.
+
+    compare_digest keeps the comparison constant-time so the secret can't be
+    recovered by timing the 403.
+    """
+    expected = os.getenv("RESEARCH_SECRET", "").strip()
+    if not expected:
+        raise HTTPException(status_code=403, detail="Invalid research secret")
+    provided = request.headers.get("X-Research-Secret", "").strip()
+    if not hmac.compare_digest(provided, expected):
+        raise HTTPException(status_code=403, detail="Invalid research secret")
 
 CODING_TUTOR_CONTEXT = """
 CODING TUTOR MODE:
@@ -3506,10 +3530,7 @@ async def internal_schedule_refresh(request: Request):
     subject that fails to fetch is logged and skipped with its previous rows intact;
     a DB write that fails rolls back (delete + insert together) leaving the old
     snapshot in place. One subject never breaks the others."""
-    secret = request.headers.get("X-Research-Secret", "")
-    expected = os.getenv("RESEARCH_SECRET", "")
-    if not expected or secret != expected:
-        raise HTTPException(status_code=403, detail="Invalid research secret")
+    _require_research_secret(request)
 
     from banner_scraper import class_search
 
@@ -7994,10 +8015,7 @@ async def list_failed_queries(status: str = "all", user: dict = Depends(get_curr
 @app.post("/api/internal/research/run")
 async def internal_research_trigger(request: Request):
     """Triggered by Cloud Scheduler daily at 2am. Auth via shared secret."""
-    secret = request.headers.get("X-Research-Secret", "")
-    expected = os.getenv("RESEARCH_SECRET", "")
-    if not expected or secret != expected:
-        raise HTTPException(status_code=403, detail="Invalid research secret")
+    _require_research_secret(request)
     result = await asyncio.to_thread(run_research_batch)
     return result
 
@@ -8005,10 +8023,7 @@ async def internal_research_trigger(request: Request):
 @app.post("/api/internal/memory/consolidate")
 async def internal_memory_consolidate(request: Request):
     """Triggered by Cloud Scheduler daily at 3am. Consolidates conversations into long-term user memories."""
-    secret = request.headers.get("X-Research-Secret", "")
-    expected = os.getenv("RESEARCH_SECRET", "")
-    if not expected or secret != expected:
-        raise HTTPException(status_code=403, detail="Invalid research secret")
+    _require_research_secret(request)
     from services.memory_service import consolidate_user_memories
     result = await asyncio.to_thread(consolidate_user_memories, 24)
     return result
@@ -8018,10 +8033,7 @@ async def internal_memory_consolidate(request: Request):
 async def internal_memory_idle_sweep(request: Request):
     """Idle-sweep cron (every 5 min): extract facts for users idle 5-10 min so
     mid-session facts aren't lost before the 3am cron. Same X-Research-Secret auth."""
-    secret = request.headers.get("X-Research-Secret", "")
-    expected = os.getenv("RESEARCH_SECRET", "")
-    if not expected or secret != expected:
-        raise HTTPException(status_code=403, detail="Invalid research secret")
+    _require_research_secret(request)
     from services.memory_service import consolidate_idle_users
     result = await asyncio.to_thread(consolidate_idle_users, 5, 10)
     return result
@@ -8121,10 +8133,7 @@ async def delete_my_conversation_turn(chat_id: int, hard: bool = False, user: di
 async def internal_canvas_sync(request: Request):
     """Triggered by Cloud Scheduler daily at 4am. Refreshes Canvas data for all synced users.
     Requires canvas_client.refresh_canvas_data() to be implemented."""
-    secret = request.headers.get("X-Research-Secret", "")
-    expected = os.getenv("RESEARCH_SECRET", "")
-    if not expected or secret != expected:
-        raise HTTPException(status_code=403, detail="Invalid research secret")
+    _require_research_secret(request)
 
     # Canvas uses LDAP session auth. Cannot auto-refresh without storing credentials.
     # This endpoint reports stale records so admins know which students have old data.
@@ -8156,10 +8165,7 @@ async def internal_canvas_sync(request: Request):
 async def internal_degreeworks_sync(request: Request):
     """Triggered by Cloud Scheduler monthly (1st of month at 5am). Refreshes DegreeWorks data.
     Requires banner_scraper.client.refresh_degreeworks_data() to be implemented."""
-    secret = request.headers.get("X-Research-Secret", "")
-    expected = os.getenv("RESEARCH_SECRET", "")
-    if not expected or secret != expected:
-        raise HTTPException(status_code=403, detail="Invalid research secret")
+    _require_research_secret(request)
 
     # DegreeWorks uses CAS session auth (no API tokens). Cannot auto-refresh
     # without student credentials. This endpoint reports stale records for admin awareness.
@@ -8193,10 +8199,7 @@ async def internal_reminders_dispatch(request: Request):
     assignment in an opted-in class is due. Idempotent: a SentReminder ledger
     prevents the same assignment from being emailed twice. Computes purely from
     each student's last Canvas sync (no Canvas re-fetch / no stored credentials)."""
-    secret = request.headers.get("X-Research-Secret", "")
-    expected = os.getenv("RESEARCH_SECRET", "")
-    if not expected or secret != expected:
-        raise HTTPException(status_code=403, detail="Invalid research secret")
+    _require_research_secret(request)
 
     from services import reminder_engine
     from email_service import send_deadline_reminder_email, is_email_configured
@@ -8267,10 +8270,7 @@ async def internal_scholarship_reminders_dispatch(request: Request):
     Idempotent: the same SentReminder ledger used for Canvas reminders dedupes
     each nudge, keyed with an 'sch:' prefix so the two never collide. Computes
     entirely from the saved_scholarships table — no web re-fetch."""
-    secret = request.headers.get("X-Research-Secret", "")
-    expected = os.getenv("RESEARCH_SECRET", "")
-    if not expected or secret != expected:
-        raise HTTPException(status_code=403, detail="Invalid research secret")
+    _require_research_secret(request)
 
     from services import scholarship_search
     from email_service import send_scholarship_deadline_email, is_email_configured
