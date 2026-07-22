@@ -97,6 +97,16 @@ def detect_and_log_failed_query(user_query: str, bot_response: str, user_id: int
         grounding = get_last_grounding()
         grounding_chunks = grounding.get("grounding_chunks", 0)
 
+        if grounding.get("false_refusal_suspected"):
+            # The agent refused without any retrieval running, so this is NOT
+            # evidence the KB lacks the content — filing it as a content gap would
+            # send someone off researching an answer the KB may already hold.
+            log.warning(
+                f"[RESEARCH] Skipping FailedQuery log: refusal had no retrieval "
+                f"behind it (suspected agent-side false refusal): {query[:60]}"
+            )
+            return False
+
         if (not grounding.get("kb_grounded", True) or grounding_chunks == 0) and not has_student_data:
             is_kb_miss = True
             log.info(f"[RESEARCH] KB miss (0 grounding chunks): {query[:60]}")

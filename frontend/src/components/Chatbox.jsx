@@ -23,11 +23,11 @@ import { getFileIcon } from "./chatbox/FileIcon";
 import ReportModal from "./chatbox/ReportModal";
 import WelcomePanel from "./chatbox/WelcomePanel";
 import YouTubeEmbed from "./chatbox/YouTubeEmbed";
-import SearchSuggestions from "./chatbox/SearchSuggestions";
 import AdvisingFormPanel from "./coding-tutor/AdvisingFormPanel";
 import {
   hasAdvisingPanel, stripAdvisingPanel, parseAdvisingPrefill,
 } from "./coding-tutor/advisingPanelMarker";
+import SearchSuggestions from "./chatbox/SearchSuggestions";
 import { getYouTubeVideoId } from "../lib/youtube";
 import "./Chatbox.css";
 import "./chatbox/ChatHeader.css";

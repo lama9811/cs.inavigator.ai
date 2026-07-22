@@ -5,6 +5,7 @@ sys.stdout.reconfigure(line_buffering=True)
 print("[OK] main.py loaded successfully")
 
 import os
+import hmac
 import re
 import json
 import time
@@ -295,6 +296,28 @@ def init_db():
                     print(f"[OK] Added '{col}' column to users")
                 except Exception:
                     pass
+
+        # 5b. Memory-port columns (embedding/summary/paused/last_chat_at).
+        #     MySQL DDL; on SQLite/local the ALTERs error harmlessly (columns
+        #     already exist via create_all) and are caught below.
+        for _tbl, _col, _ddl in [
+            ("chat_history", "session_summary", "ALTER TABLE chat_history ADD COLUMN session_summary MEDIUMTEXT NULL"),
+            ("chat_history", "summary_through_id", "ALTER TABLE chat_history ADD COLUMN summary_through_id INT NULL"),
+            ("chat_history", "embedding", "ALTER TABLE chat_history ADD COLUMN embedding MEDIUMTEXT NULL"),
+            ("chat_history", "embedding_model", "ALTER TABLE chat_history ADD COLUMN embedding_model VARCHAR(64) NULL"),
+            ("chat_history", "topic_label", "ALTER TABLE chat_history ADD COLUMN topic_label VARCHAR(128) NULL"),
+            ("user_memories", "embedding", "ALTER TABLE user_memories ADD COLUMN embedding MEDIUMTEXT NULL"),
+            ("user_memories", "embedding_model", "ALTER TABLE user_memories ADD COLUMN embedding_model VARCHAR(64) NULL"),
+            ("user_memories", "paused", "ALTER TABLE user_memories ADD COLUMN paused BOOLEAN NOT NULL DEFAULT FALSE"),
+            ("users", "last_chat_at", "ALTER TABLE users ADD COLUMN last_chat_at DATETIME NULL"),
+        ]:
+            if not _has_col(_tbl, _col):
+                try:
+                    conn.execute(text(_ddl))
+                    conn.commit()
+                    print(f"[OK] Added memory column {_tbl}.{_col}")
+                except Exception as e:
+                    print(f"[init_db] skip {_tbl}.{_col}: {e}")
 
         # 6. Check if degreeworks_data table exists
         if not _has_table("degreeworks_data"):
@@ -607,8 +630,12 @@ def build_qa_chain():
 @asynccontextmanager
 async def lifespan(app):
     """Modern lifespan event handler for FastAPI"""
-    # Startup
-    build_qa_chain()
+    # Startup. The ADK probe runs in the background: it only logs a status line
+    # and gates nothing, but a blocking call here delays "application startup
+    # complete", and Cloud Run withholds traffic until then. When the ADK was
+    # cold this cost ~15s on every backend cold start (i.e. slow logins).
+    # Live agent status is still reported on demand by /health.
+    asyncio.create_task(asyncio.to_thread(build_qa_chain))
     yield
     # Shutdown (cleanup if needed)
 
@@ -734,6 +761,29 @@ class LoginRequest(BaseModel):
 
 VALID_MODELS = {"", "inav-1.0", "inav-1.1"}
 VALID_CHAT_MODES = {"regular", "general", "coding_tutor"}
+
+
+def _require_research_secret(request: Request) -> None:
+    """Guard every /api/internal/* cron endpoint. Raises 403 unless the caller
+    presents the shared secret.
+
+    Both sides are stripped before comparing. This is not cosmetic: Secret Manager
+    stores the payload verbatim, and the RESEARCH_SECRET secret was created with a
+    trailing newline. Cloud Run mounts that newline into the env var, but an HTTP
+    header cannot carry a trailing newline -- so an exact `!=` could never match and
+    EVERY cron endpoint returned 403 for the lifetime of the deployment. Reminder
+    emails and the live-seat refresh were dead on arrival, independent of whether
+    Cloud Scheduler was enabled.
+
+    compare_digest keeps the comparison constant-time so the secret can't be
+    recovered by timing the 403.
+    """
+    expected = os.getenv("RESEARCH_SECRET", "").strip()
+    if not expected:
+        raise HTTPException(status_code=403, detail="Invalid research secret")
+    provided = request.headers.get("X-Research-Secret", "").strip()
+    if not hmac.compare_digest(provided, expected):
+        raise HTTPException(status_code=403, detail="Invalid research secret")
 
 CODING_TUTOR_CONTEXT = """
 CODING TUTOR MODE:
@@ -3558,10 +3608,7 @@ async def internal_schedule_refresh(request: Request):
     subject that fails to fetch is logged and skipped with its previous rows intact;
     a DB write that fails rolls back (delete + insert together) leaving the old
     snapshot in place. One subject never breaks the others."""
-    secret = request.headers.get("X-Research-Secret", "")
-    expected = os.getenv("RESEARCH_SECRET", "")
-    if not expected or secret != expected:
-        raise HTTPException(status_code=403, detail="Invalid research secret")
+    _require_research_secret(request)
 
     from banner_scraper import class_search
 
@@ -3730,7 +3777,10 @@ from services.context_builders import (
 from services.query_rewriter import rewrite_query, is_likely_followup
 
 # Tier 2: Long-term user memory
-from services.memory_service import fetch_user_memories_sync, build_memory_context
+from services.memory_service import (
+    fetch_user_memories_sync, build_memory_context,
+    retrieve_relevant_memories, retrieve_relevant_turns,
+)
 from services.course_context import build_course_context
 
 # Verified YouTube video search (curated + YouTube Data API)
@@ -3749,8 +3799,13 @@ def is_persistable_session(session_id: str) -> bool:
     return (session_id or "default") not in INTERNAL_SESSION_IDS
 
 
-def _fetch_history_sync(user_id: int, session_id: str, limit: int = 10) -> list:
-    """Fetch chat history in a separate DB session for parallel execution."""
+def _fetch_history_sync(user_id: int, session_id: str, limit: int = 10):
+    """Fetch chat history + latest rolling summary in one DB session.
+
+    Returns (turns_list, session_summary). turns_list keeps the previous
+    [{user_query, bot_response}] shape so query_rewriter / is_likely_followup
+    callers stay unchanged. session_summary is None until Layer 2 fires.
+    """
     db = SessionLocal()
     try:
         history = db.query(ChatHistory)\
@@ -3758,7 +3813,19 @@ def _fetch_history_sync(user_id: int, session_id: str, limit: int = 10) -> list:
             .order_by(ChatHistory.timestamp.desc())\
             .limit(limit)\
             .all()
-        return [{"user_query": h.user_query, "bot_response": h.bot_response} for h in reversed(history)]
+        turns = [{"user_query": h.user_query, "bot_response": h.bot_response} for h in reversed(history)]
+        summary_row = (
+            db.query(ChatHistory.session_summary)
+            .filter(
+                ChatHistory.user_id == user_id,
+                ChatHistory.session_id == session_id,
+                ChatHistory.session_summary.isnot(None),
+            )
+            .order_by(ChatHistory.id.desc())
+            .first()
+        )
+        summary = summary_row[0] if summary_row else None
+        return turns, summary
     finally:
         db.close()
 
@@ -3767,6 +3834,95 @@ from services.context_builders import (
     build_student_context as _build_student_context,
     build_conversation_context as _build_conversation_context,
 )
+
+
+# --- Memory-port post-commit background tasks -------------------------------
+# All run AFTER the HTTP response is sent (asyncio.create_task), so they add
+# zero user-facing latency. Each is independently env-flag-gated and self-gates
+# on its trigger. RuntimeError (no running loop, e.g. sync tests) is swallowed.
+_realtime_extraction_locks: dict = {}
+
+
+def _is_extraction_turn(turn_count: int) -> bool:
+    """Realtime extraction fires every 6th turn."""
+    return turn_count > 0 and turn_count % 6 == 0
+
+
+def _get_user_realtime_lock(user_id: int):
+    lock = _realtime_extraction_locks.get(user_id)
+    if lock is None:
+        lock = asyncio.Lock()
+        _realtime_extraction_locks[user_id] = lock
+    return lock
+
+
+async def _run_extraction_locked(user_id: int):
+    from services.memory_service import consolidate_user_memories_single
+    lock = _get_user_realtime_lock(user_id)
+    if lock.locked():
+        return
+    async with lock:
+        await asyncio.to_thread(consolidate_user_memories_single, user_id, 2)
+
+
+def _schedule_session_summary(user_id: int, session_id: str):
+    if os.getenv("ENABLE_SESSION_SUMMARY", "true").lower() not in ("1", "true", "yes"):
+        return
+    from services.memory_service import run_session_summary
+    try:
+        asyncio.create_task(asyncio.to_thread(run_session_summary, user_id, session_id))
+    except RuntimeError:
+        pass
+
+
+def _schedule_embed_turn(chat_history_id: int):
+    if os.getenv("ENABLE_VERBATIM_RECALL", "true").lower() not in ("1", "true", "yes"):
+        return
+    from services.memory_service import embed_and_store_turn
+    try:
+        asyncio.create_task(asyncio.to_thread(embed_and_store_turn, chat_history_id))
+    except RuntimeError:
+        pass
+
+
+def _schedule_touch_last_chat(user_id: int):
+    from services.memory_service import touch_user_last_chat_at
+    try:
+        asyncio.create_task(asyncio.to_thread(touch_user_last_chat_at, user_id))
+    except RuntimeError:
+        pass
+
+
+def _schedule_realtime_extraction(user_id: int, session_id: str):
+    if os.getenv("ENABLE_REALTIME_MEMORY", "true").lower() not in ("1", "true", "yes"):
+        return
+    try:
+        with SessionLocal() as _db:
+            turn_count = (
+                _db.query(ChatHistory)
+                .filter(ChatHistory.user_id == user_id, ChatHistory.session_id == session_id)
+                .count()
+            )
+    except Exception as e:
+        print(f"[MEMORY] turn-count query failed user={user_id}: {e}")
+        return
+    if not _is_extraction_turn(turn_count):
+        return
+    try:
+        asyncio.create_task(_run_extraction_locked(user_id))
+    except RuntimeError:
+        pass
+
+
+def _schedule_post_commit_memory_tasks(user_id: int, session_id: str, chat_id: int):
+    """Fire all memory background tasks after a chat turn commits. Never raises."""
+    try:
+        _schedule_session_summary(user_id, session_id)
+        _schedule_touch_last_chat(user_id)
+        _schedule_embed_turn(chat_id)
+        _schedule_realtime_extraction(user_id, session_id)
+    except Exception as e:
+        print(f"[MEMORY] post-commit scheduling failed: {e}")
 
 
 # --- CHAT ROUTES (WITH CONVERSATION MEMORY + PERSONALIZATION) ---
@@ -3793,30 +3949,37 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
     has_course_code = bool(re.search(r'\b[A-Z]{2,4}\s*\d{3}\b', user_q, re.IGNORECASE))
     needs_canvas = (not is_coding_tutor) and (has_course_code or any(kw in user_q.lower() for kw in CANVAS_KEYWORDS))
 
-    # Parallel fetch: DegreeWorks + Canvas (if needed) + chat history (for rewriting) + long-term memory
+    # Parallel fetch: DegreeWorks + Canvas (if needed) + chat history (for rewriting)
+    # + long-term memory + semantic/verbatim recall.
+    # _fetch_history_sync now returns (turns, session_summary).
     if is_coding_tutor:
         fetch_tasks = [asyncio.to_thread(_fetch_history_sync, user["user_id"], session_id, 5)]
+        results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
+        dw_dict = None
+        hist_res = results[0]
+        history_dicts, session_summary = hist_res if not isinstance(hist_res, Exception) else ([], None)
+        memory_dicts, relevant_memories, relevant_turns = [], [], []
+        canvas_dict = None
     else:
         fetch_tasks = [
             asyncio.to_thread(_fetch_dw_sync, user["user_id"]),
             asyncio.to_thread(_fetch_history_sync, user["user_id"], session_id, 5),
             asyncio.to_thread(fetch_user_memories_sync, user["user_id"], 10),
+            asyncio.to_thread(retrieve_relevant_memories, user["user_id"], user_q, 5, 0.55),
+            asyncio.to_thread(retrieve_relevant_turns, user["user_id"], user_q, 3, 0.62, session_id),
         ]
+        canvas_idx = None
         if needs_canvas:
+            canvas_idx = len(fetch_tasks)
             fetch_tasks.append(asyncio.to_thread(_fetch_canvas_sync, user["user_id"]))
-
-    results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
-
-    if is_coding_tutor:
-        dw_dict = None
-        history_dicts = results[0] if not isinstance(results[0], Exception) else []
-        memory_dicts = []
-        canvas_dict = None
-    else:
+        results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
         dw_dict = results[0] if not isinstance(results[0], Exception) else None
-        history_dicts = results[1] if not isinstance(results[1], Exception) else []
+        hist_res = results[1]
+        history_dicts, session_summary = hist_res if not isinstance(hist_res, Exception) else ([], None)
         memory_dicts = results[2] if not isinstance(results[2], Exception) else []
-        canvas_dict = results[3] if needs_canvas and len(results) > 3 and not isinstance(results[3], Exception) else None
+        relevant_memories = results[3] if not isinstance(results[3], Exception) else []
+        relevant_turns = results[4] if not isinstance(results[4], Exception) else []
+        canvas_dict = results[canvas_idx] if canvas_idx is not None and not isinstance(results[canvas_idx], Exception) else None
 
     # Tier 1: Rewrite follow-up queries to be self-contained (fixes pronoun resolution)
     if USE_VERTEX_AGENT and history_dicts and not is_coding_tutor and is_likely_followup(user_q):
@@ -3826,12 +3989,15 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
     canvas_context = ""
     memory_context = ""
     planner_state = None  # set by the schedule-planner block below (guard for cache-skip)
-    conversation_context = _build_conversation_context(history_dicts)
+    conversation_context = _build_conversation_context(history_dicts, session_summary)
 
     if not is_coding_tutor:
         student_context = _build_student_context(dw_dict) if dw_dict else ""
         canvas_context = _build_canvas_context(canvas_dict) if canvas_dict else ""
-        memory_context = build_memory_context(memory_dicts)
+        # Prepend recent turns + summary so the model has within-conversation memory
+        # (delivered via state_delta, kept out of the session context hash).
+        memory_context = build_memory_context(memory_dicts, relevant_memories, relevant_turns)
+        memory_context = conversation_context + (memory_context or "")
 
         # Inject basic profile info so agent knows who they're talking to
         profile_parts = []
@@ -3905,6 +4071,8 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
                     )
                     db.add(new_chat)
                     db.commit()
+                    if not is_coding_tutor:
+                        _schedule_post_commit_memory_tasks(user["user_id"], session_id, new_chat.id)
                 except Exception as e:
                     print(f"[ERROR] Failed to save video chat history: {e}")
             return {"response": answer}
@@ -3919,7 +4087,8 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
             clean_query = re.sub(r'\[.*?\]\(.*?\)', '', user_q).strip()
             if not clean_query: clean_query = "Summarize this file."
 
-            file_context = f"{student_context}{canvas_context}{conversation_context}File Content:\n{file_content}\n"
+            # conversation_context is already folded into memory_context (state_delta).
+            file_context = f"{student_context}{canvas_context}File Content:\n{file_content}\n"
             answer = query_agent(
                 query=clean_query,
                 user_id=agent_user_id,
@@ -3970,6 +4139,8 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
             )
             db.add(new_chat)
             db.commit()
+            if not is_coding_tutor:
+                _schedule_post_commit_memory_tasks(user["user_id"], session_id, new_chat.id)
         except Exception as e:
             print(f"[ERROR] Failed to save chat history: {e}")
 
@@ -4024,31 +4195,38 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
     needs_canvas = (not is_coding_tutor) and (has_course_code or any(kw in user_q.lower() for kw in CANVAS_KEYWORDS))
 
     # Coding Tutor is intentionally lean: session history only. Regular tutor
-    # keeps the full academic context stack.
+    # keeps the full academic context stack + long-term/semantic memory.
+    # _fetch_history_sync now returns (turns, session_summary).
     if is_coding_tutor:
         fetch_tasks = [asyncio.to_thread(_fetch_history_sync, user_id, session_id, 5)]
+        results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
+        mark_timing("context_fetch")
+        dw_dict = None
+        hist_res = results[0]
+        history_dicts, session_summary = hist_res if not isinstance(hist_res, Exception) else ([], None)
+        memory_dicts, relevant_memories, relevant_turns = [], [], []
+        canvas_dict = None
     else:
         fetch_tasks = [
             asyncio.to_thread(_fetch_dw_sync, user_id),
             asyncio.to_thread(_fetch_history_sync, user_id, session_id, 5),
             asyncio.to_thread(fetch_user_memories_sync, user_id, 10),
+            asyncio.to_thread(retrieve_relevant_memories, user_id, user_q, 5, 0.55),
+            asyncio.to_thread(retrieve_relevant_turns, user_id, user_q, 3, 0.62, session_id),
         ]
+        canvas_idx = None
         if needs_canvas:
+            canvas_idx = len(fetch_tasks)
             fetch_tasks.append(asyncio.to_thread(_fetch_canvas_sync, user_id))
-
-    results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
-    mark_timing("context_fetch")
-
-    if is_coding_tutor:
-        dw_dict = None
-        history_dicts = results[0] if not isinstance(results[0], Exception) else []
-        memory_dicts = []
-        canvas_dict = None
-    else:
+        results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
+        mark_timing("context_fetch")
         dw_dict = results[0] if not isinstance(results[0], Exception) else None
-        history_dicts = results[1] if not isinstance(results[1], Exception) else []
+        hist_res = results[1]
+        history_dicts, session_summary = hist_res if not isinstance(hist_res, Exception) else ([], None)
         memory_dicts = results[2] if not isinstance(results[2], Exception) else []
-        canvas_dict = results[3] if needs_canvas and len(results) > 3 and not isinstance(results[3], Exception) else None
+        relevant_memories = results[3] if not isinstance(results[3], Exception) else []
+        relevant_turns = results[4] if not isinstance(results[4], Exception) else []
+        canvas_dict = results[canvas_idx] if canvas_idx is not None and not isinstance(results[canvas_idx], Exception) else None
 
     # Tier 1: Rewrite follow-up queries (resolve pronouns before KB search)
     if not is_coding_tutor and history_dicts and is_likely_followup(user_q):
@@ -4063,7 +4241,11 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
     if not is_coding_tutor:
         student_context = _build_student_context(dw_dict) if dw_dict else ""
         canvas_context = _build_canvas_context(canvas_dict) if canvas_dict else ""
-        memory_context = build_memory_context(memory_dicts)
+        # Prepend recent turns + summary so the model has within-conversation memory
+        # (delivered via state_delta, kept out of the session context hash).
+        conversation_context = _build_conversation_context(history_dicts, session_summary)
+        memory_context = build_memory_context(memory_dicts, relevant_memories, relevant_turns)
+        memory_context = conversation_context + (memory_context or "")
 
         # Inject basic profile info (email, name, student ID) so agent knows who they're talking to
         profile_parts = []
@@ -4160,6 +4342,9 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                         )
                         save_db.add(new_chat)
                         save_db.commit()
+                        _new_chat_id = new_chat.id
+                    if not is_coding_tutor:
+                        _schedule_post_commit_memory_tasks(user_id, session_id, _new_chat_id)
                 except Exception as e:
                     print(f"[ERROR] Failed to save video chat history: {e}")
                 mark_timing("total")
@@ -4259,6 +4444,9 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                         )
                         save_db.add(new_chat)
                         save_db.commit()
+                        _new_chat_id = new_chat.id
+                    if not is_coding_tutor:
+                        _schedule_post_commit_memory_tasks(user_id, session_id, _new_chat_id)
                 except Exception as e:
                     print(f"[ERROR] Failed to save cached chat history: {e}")
 
@@ -4369,6 +4557,9 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
                     )
                     save_db.add(new_chat)
                     save_db.commit()
+                    _new_chat_id = new_chat.id
+                if not is_coding_tutor:
+                    _schedule_post_commit_memory_tasks(user_id, session_id, _new_chat_id)
             except Exception as e:
                 print(f"[ERROR] Failed to save streamed chat history: {e}")
 
@@ -8054,10 +8245,7 @@ async def list_failed_queries(status: str = "all", user: dict = Depends(get_curr
 @app.post("/api/internal/research/run")
 async def internal_research_trigger(request: Request):
     """Triggered by Cloud Scheduler daily at 2am. Auth via shared secret."""
-    secret = request.headers.get("X-Research-Secret", "")
-    expected = os.getenv("RESEARCH_SECRET", "")
-    if not expected or secret != expected:
-        raise HTTPException(status_code=403, detail="Invalid research secret")
+    _require_research_secret(request)
     result = await asyncio.to_thread(run_research_batch)
     return result
 
@@ -8065,23 +8253,117 @@ async def internal_research_trigger(request: Request):
 @app.post("/api/internal/memory/consolidate")
 async def internal_memory_consolidate(request: Request):
     """Triggered by Cloud Scheduler daily at 3am. Consolidates conversations into long-term user memories."""
-    secret = request.headers.get("X-Research-Secret", "")
-    expected = os.getenv("RESEARCH_SECRET", "")
-    if not expected or secret != expected:
-        raise HTTPException(status_code=403, detail="Invalid research secret")
+    _require_research_secret(request)
     from services.memory_service import consolidate_user_memories
     result = await asyncio.to_thread(consolidate_user_memories, 24)
     return result
+
+
+@app.post("/api/internal/memory/idle-sweep")
+async def internal_memory_idle_sweep(request: Request):
+    """Idle-sweep cron (every 5 min): extract facts for users idle 5-10 min so
+    mid-session facts aren't lost before the 3am cron. Same X-Research-Secret auth."""
+    _require_research_secret(request)
+    from services.memory_service import consolidate_idle_users
+    result = await asyncio.to_thread(consolidate_idle_users, 5, 10)
+    return result
+
+
+# --- Student-facing memory management (backend-only; no UI yet) --------------
+@app.get("/api/me/memories")
+async def get_my_memories(user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """List the student's stored long-term facts + memory stats (FERPA transparency)."""
+    from models import UserMemory, ChatHistory
+    facts = (
+        db.query(UserMemory)
+        .filter(UserMemory.user_id == user["user_id"])
+        .order_by(UserMemory.updated_at.desc())
+        .all()
+    )
+    embedded = (
+        db.query(func.count(ChatHistory.id))
+        .filter(ChatHistory.user_id == user["user_id"], ChatHistory.embedding.isnot(None))
+        .scalar()
+    )
+    return {
+        "facts": [
+            {
+                "id": m.id, "type": m.memory_type, "content": m.content,
+                "created_at": m.created_at.isoformat() if m.created_at else "",
+                "updated_at": m.updated_at.isoformat() if m.updated_at else "",
+                "paused": bool(m.paused),
+            }
+            for m in facts
+        ],
+        "stats": {"fact_count": len(facts), "embedded_turns": int(embedded or 0)},
+    }
+
+
+@app.patch("/api/me/memories/{memory_id}")
+async def patch_my_memory(memory_id: int, req: dict, user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Edit a fact's content and/or pause it. Recomputes the embedding on content change."""
+    from models import UserMemory
+    from services.memory_service import _serialize_embedding, EMBEDDING_MODEL_VERSION
+    from services.embedding_util import embed_text
+    m = db.query(UserMemory).filter(UserMemory.id == memory_id, UserMemory.user_id == user["user_id"]).first()
+    if not m:
+        raise HTTPException(404, "Memory not found")
+    if "paused" in req:
+        m.paused = bool(req["paused"])
+    if "content" in req and req["content"]:
+        m.content = str(req["content"]).strip()
+        vec = embed_text(m.content)
+        m.embedding = _serialize_embedding(vec) if vec else None
+        m.embedding_model = EMBEDDING_MODEL_VERSION if vec else None
+    db.commit()
+    return {"message": "updated", "id": m.id, "paused": bool(m.paused)}
+
+
+@app.delete("/api/me/memories/{memory_id}")
+async def delete_my_memory(memory_id: int, user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Delete a single stored fact (ownership-checked)."""
+    from models import UserMemory
+    m = db.query(UserMemory).filter(UserMemory.id == memory_id, UserMemory.user_id == user["user_id"]).first()
+    if not m:
+        raise HTTPException(404, "Memory not found")
+    db.delete(m)
+    db.commit()
+    return {"message": "deleted", "id": memory_id}
+
+
+@app.delete("/api/me/memories")
+async def delete_all_my_memories(user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Right-to-erasure: delete all stored facts + null all turn embeddings."""
+    from models import UserMemory, ChatHistory
+    n = db.query(UserMemory).filter(UserMemory.user_id == user["user_id"]).delete(synchronize_session=False)
+    db.query(ChatHistory).filter(ChatHistory.user_id == user["user_id"]).update(
+        {ChatHistory.embedding: None, ChatHistory.embedding_model: None}, synchronize_session=False
+    )
+    db.commit()
+    return {"message": "erased", "facts_deleted": int(n)}
+
+
+@app.delete("/api/me/conversations/{chat_id}")
+async def delete_my_conversation_turn(chat_id: int, hard: bool = False, user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Un-index (default) or hard-delete a single past turn."""
+    from models import ChatHistory
+    row = db.query(ChatHistory).filter(ChatHistory.id == chat_id, ChatHistory.user_id == user["user_id"]).first()
+    if not row:
+        raise HTTPException(404, "Not found")
+    if hard:
+        db.delete(row)
+    else:
+        row.embedding = None
+        row.embedding_model = None
+    db.commit()
+    return {"message": "deleted" if hard else "unindexed", "id": chat_id}
 
 
 @app.post("/api/internal/canvas/sync")
 async def internal_canvas_sync(request: Request):
     """Triggered by Cloud Scheduler daily at 4am. Refreshes Canvas data for all synced users.
     Requires canvas_client.refresh_canvas_data() to be implemented."""
-    secret = request.headers.get("X-Research-Secret", "")
-    expected = os.getenv("RESEARCH_SECRET", "")
-    if not expected or secret != expected:
-        raise HTTPException(status_code=403, detail="Invalid research secret")
+    _require_research_secret(request)
 
     # Canvas uses LDAP session auth. Cannot auto-refresh without storing credentials.
     # This endpoint reports stale records so admins know which students have old data.
@@ -8113,10 +8395,7 @@ async def internal_canvas_sync(request: Request):
 async def internal_degreeworks_sync(request: Request):
     """Triggered by Cloud Scheduler monthly (1st of month at 5am). Refreshes DegreeWorks data.
     Requires banner_scraper.client.refresh_degreeworks_data() to be implemented."""
-    secret = request.headers.get("X-Research-Secret", "")
-    expected = os.getenv("RESEARCH_SECRET", "")
-    if not expected or secret != expected:
-        raise HTTPException(status_code=403, detail="Invalid research secret")
+    _require_research_secret(request)
 
     # DegreeWorks uses CAS session auth (no API tokens). Cannot auto-refresh
     # without student credentials. This endpoint reports stale records for admin awareness.
@@ -8150,10 +8429,7 @@ async def internal_reminders_dispatch(request: Request):
     assignment in an opted-in class is due. Idempotent: a SentReminder ledger
     prevents the same assignment from being emailed twice. Computes purely from
     each student's last Canvas sync (no Canvas re-fetch / no stored credentials)."""
-    secret = request.headers.get("X-Research-Secret", "")
-    expected = os.getenv("RESEARCH_SECRET", "")
-    if not expected or secret != expected:
-        raise HTTPException(status_code=403, detail="Invalid research secret")
+    _require_research_secret(request)
 
     from services import reminder_engine
     from email_service import send_deadline_reminder_email, is_email_configured
@@ -8224,10 +8500,7 @@ async def internal_scholarship_reminders_dispatch(request: Request):
     Idempotent: the same SentReminder ledger used for Canvas reminders dedupes
     each nudge, keyed with an 'sch:' prefix so the two never collide. Computes
     entirely from the saved_scholarships table — no web re-fetch."""
-    secret = request.headers.get("X-Research-Secret", "")
-    expected = os.getenv("RESEARCH_SECRET", "")
-    if not expected or secret != expected:
-        raise HTTPException(status_code=403, detail="Invalid research secret")
+    _require_research_secret(request)
 
     from services import scholarship_search
     from email_service import send_scholarship_deadline_email, is_email_configured

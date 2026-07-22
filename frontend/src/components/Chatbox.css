@@ -2627,8 +2627,21 @@ body.dark .send-btn:hover:not(:disabled) {
   .welcome-title {
     font-size: 2rem;
   }
-.suggestions {
+
+  .suggestions {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Two columns here leaves each card ~230px wide, where the longest questions need a
+     third line. Give them one rather than ellipsising — a chopped-off suggestion is
+     worse than a taller card. Heights stay uniform because every card gets the same
+     three-line box. */
+  .suggestion-btn {
+    min-height: calc(3 * 1.35em + 18px);
+  }
+
+  .suggestion-btn__text {
+    -webkit-line-clamp: 3;
   }
 
   .chat-input-wrapper {
@@ -4123,13 +4136,14 @@ body.dark .model-selector-header .header-home-btn:focus-visible {
     padding-right: 16px;
   }
 
+  /* Narrow the grid to fit the viewport, but keep both columns. This block used to also
+     force grid-template-columns:1fr, and being the last matching rule it beat the
+     two-column rules above it — so every screen under 1100px silently collapsed to a
+     single column, including most laptops. Single-column is the phone layout; it belongs
+     to the <=767px rule, not here. */
   .suggestions {
     width: min(100%, 760px);
     max-width: calc(100vw - 112px);
-  }
-
-  .suggestions {
-    grid-template-columns: 1fr;
   }
 }
 
