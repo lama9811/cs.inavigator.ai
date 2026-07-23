@@ -109,13 +109,18 @@ function readSavedCorner() {
 }
 
 
-function FloatingChatButton({ onOpen }) {
+function FloatingChatButton({ onOpen, onDragStart, shouldSuppressOpen }) {
   return (
     <button
       type="button"
       className="floating-chat-button"
-      onClick={onOpen}
+      onPointerDown={onDragStart}
+      onClick={() => {
+        if (shouldSuppressOpen?.()) return;
+        onOpen();
+      }}
       aria-label="Open coding tutor chat"
+      title="Open or drag the Coding Tutor"
     >
       <FaCommentDots aria-hidden="true" />
       <span>Coding Tutor</span>
@@ -325,8 +330,9 @@ function FloatingChatWindow({
               type="button"
               className="floating-apply-code-btn"
               onClick={onApplyAICode}
+              title="Full suggestions replace only when they preserve the wrapper; partial examples are added as comments."
             >
-              Review and apply tutor code
+              Add tutor suggestion safely
             </button>
           )}
           {canUndoAICode && onUndoAICode && (
@@ -458,6 +464,7 @@ function FloatingChatWindow({
             type="submit"
             className="floating-chat-send"
             title="Send message"
+            aria-label="Send message"
             disabled={isLoading || (!input.trim() && !pendingFile)}
           >
             <BsArrowUpCircleFill aria-hidden="true" />
@@ -480,12 +487,12 @@ export default function FloatingCodingChat({ isOpen, isMaximized, onOpen, ...win
   const [, setViewportRevision] = useState(0);
   const dragFrameRef = useRef(null);
   const dragPositionRef = useRef(null);
+  const suppressNextOpenRef = useRef(false);
 
   // Rendered position. The live drag position is honored ONLY while the OPEN window
-  // is being dragged; in every other case (and always when closed) the widget sits
-  // statically on its corner. Without the isOpen guard, a lingering dragPosition made
-  // the closed launcher chase the cursor.
-  const positionBase = (isOpen && dragPosition)
+  // or CLOSED launcher is being dragged; otherwise the widget sits statically on
+  // its saved corner.
+  const positionBase = dragPosition
     ? dragPosition
     : cornerToPosition(corner, isOpen, isMaximized);
   const safePosition = clampPosition(positionBase, isOpen, isMaximized);
@@ -528,18 +535,26 @@ export default function FloatingCodingChat({ isOpen, isMaximized, onOpen, ...win
 
   const startDrag = (event) => {
     if (event.button !== 0 || event.target.closest?.("textarea, input, a, .floating-chat-window-controls button, .floating-chat-form button")) return;
-    event.preventDefault();
     event.currentTarget.setPointerCapture?.(event.pointerId);
-    setIsDragging(true);
+    if (isOpen) event.preventDefault();
     const startX = event.clientX;
     const startY = event.clientY;
     // Start from wherever the widget currently sits (its corner's pixel spot).
     const startPosition = clampPosition(cornerToPosition(corner, isOpen, isMaximized), isOpen, isMaximized);
+    let movedEnoughToDrag = false;
 
     const handleMove = (moveEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const deltaY = moveEvent.clientY - startY;
+      if (!movedEnoughToDrag && Math.hypot(deltaX, deltaY) < 6) return;
+      if (!movedEnoughToDrag) {
+        movedEnoughToDrag = true;
+        setIsDragging(true);
+        if (!isOpen) suppressNextOpenRef.current = true;
+      }
       dragPositionRef.current = clampPosition({
-        x: startPosition.x + moveEvent.clientX - startX,
-        y: startPosition.y + moveEvent.clientY - startY,
+        x: startPosition.x + deltaX,
+        y: startPosition.y + deltaY,
       }, isOpen, isMaximized);
       if (dragFrameRef.current) return;
       dragFrameRef.current = window.requestAnimationFrame(() => {
@@ -554,14 +569,17 @@ export default function FloatingCodingChat({ isOpen, isMaximized, onOpen, ...win
         dragFrameRef.current = null;
       }
       setIsDragging(false);
-      const finalPosition = clampPosition({
-        x: startPosition.x + upEvent.clientX - startX,
-        y: startPosition.y + upEvent.clientY - startY,
-      }, isOpen, isMaximized);
+      const finalPosition = movedEnoughToDrag
+        ? clampPosition({
+            x: startPosition.x + upEvent.clientX - startX,
+            y: startPosition.y + upEvent.clientY - startY,
+          }, isOpen, isMaximized)
+        : startPosition;
       dragPositionRef.current = null;
       // Snap to the nearest corner. Clearing dragPosition lets the rendered
       // position fall back to the corner, and the CSS transition animates the glide.
-      saveCorner(nearestCorner(finalPosition, isOpen, isMaximized));
+      if (movedEnoughToDrag) saveCorner(nearestCorner(finalPosition, isOpen, isMaximized));
+      else setDragPosition(null);
       window.removeEventListener("pointermove", handleMove);
       window.removeEventListener("pointerup", handleUp);
       window.removeEventListener("pointercancel", handleUp);
@@ -589,7 +607,15 @@ export default function FloatingCodingChat({ isOpen, isMaximized, onOpen, ...win
           onMoveToCorner={moveToCorner}
         />
       ) : (
-        <FloatingChatButton onOpen={onOpen} />
+        <FloatingChatButton
+          onOpen={onOpen}
+          onDragStart={startDrag}
+          shouldSuppressOpen={() => {
+            if (!suppressNextOpenRef.current) return false;
+            suppressNextOpenRef.current = false;
+            return true;
+          }}
+        />
       )}
     </div>
   );

@@ -358,28 +358,28 @@
       "variants": {
         "python": {
           "code": "value = 7\nvalue = \"seven\"\nprint(value)",
-          "prompt": "What happens?",
+          "prompt": "What is printed after `value` changes from a number to text?",
           "choices": ["It prints seven", "It raises TypeError on the second assignment", "It prints 7", "It prints both values"],
           "answer_index": 0,
           "explanation": "Python variables are dynamically typed names. The name value can refer to an int and later refer to a string, so the final print shows seven."
         },
         "java": {
           "code": "int value = 7;\nvalue = \"seven\";\nSystem.out.println(value);",
-          "prompt": "What happens?",
+          "prompt": "What happens when Java tries to store text in an `int` variable?",
           "choices": ["It prints seven", "It fails to compile because a String cannot be assigned to an int", "It prints 7", "It converts seven to a number"],
           "answer_index": 1,
           "explanation": "The declaration fixes value as an int variable. Java rejects a later String assignment because the types are incompatible."
         },
         "javascript": {
           "code": "let value = 7;\nvalue = \"seven\";\nconsole.log(value);",
-          "prompt": "What happens?",
+          "prompt": "What is logged after `value` changes from a number to text?",
           "choices": ["It logs seven", "It throws TypeError on the second assignment", "It logs 7", "It logs undefined"],
           "answer_index": 0,
           "explanation": "A JavaScript variable can hold values of different types over time. The string replaces the number, so seven is logged."
         },
         "cpp": {
           "code": "int value = 7;\nvalue = \"seven\";\ncout << value;",
-          "prompt": "What happens?",
+          "prompt": "What happens when C++ tries to store text in an `int` variable?",
           "choices": ["It prints seven", "It fails to compile because a string cannot be assigned to an int", "It prints 7", "It converts seven to zero"],
           "answer_index": 1,
           "explanation": "The declaration fixes value as an int. A string literal is not an int value, so the compiler rejects the assignment."

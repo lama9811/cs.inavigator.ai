@@ -1,23 +1,23 @@
 {
   "_note": "ORIGINAL content. Topic coverage was checked against Think C++ and the Google C++ Class outline. No prose, examples, or exercises were copied; the references are curriculum guides only.",
   "title": "Classes & Objects",
-  "summary": "Create your own types by keeping related data and actions together.",
+  "summary": "Build a type that keeps its data and actions together.",
   "minutes": 10,
   "error_classes": [
     "syntax",
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "A class describes a new kind of object. Data members store its state, methods perform its actions, and a constructor gives every new object a valid starting state. Public members are available to other code; private members stay inside the class.",
+  "refresher": "A C++ class defines a new type. Data members store the object's data. Constructors set up new objects. Member functions are actions that belong to the object. Public members can be used from outside the class; private members are kept inside.",
   "refresher_code": "class Counter {\npublic:\n  Counter() : value_(0) {}\n  void increment() { value_++; }\n  int value() const { return value_; }\nprivate:\n  int value_;\n};",
   "blocks": [
     {
       "kind": "text",
-      "body": "A class is a plan for making objects. It gives related values and functions one name. For example, an `Account` object can keep a balance and provide a deposit method instead of passing a loose balance variable through the program."
+      "body": "A class lets you create your own type. Instead of passing a loose group of values around, you can make one object that keeps the related data together."
     },
     {
       "kind": "text",
-      "body": "Public members are the operations other code may use. Private members can be changed only through the class's own methods. A constructor runs when a new object is created and supplies its starting values."
+      "body": "Data members are the values inside the object. A constructor sets them up. Member functions are the actions that use that data."
     },
     {
       "kind": "callout",
@@ -79,10 +79,10 @@
       "kind": "list",
       "title": "Classes & Objects checklist",
       "items": [
-        "Give the class one clear purpose.",
-        "Initialize every member in the constructor.",
-        "Keep data private when methods need to protect its rules.",
-        "Mark methods const when they only read the object."
+        "Use a class when data and behavior belong together.",
+        "Use a constructor to set starting values.",
+        "Keep helper details private when outside code does not need them.",
+        "Write small member functions with clear jobs."
       ]
     }
   ]

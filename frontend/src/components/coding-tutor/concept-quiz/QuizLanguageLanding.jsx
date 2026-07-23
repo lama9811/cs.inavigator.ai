@@ -9,10 +9,11 @@ import {
   FaTimesCircle,
   FaRegCircle,
   FaTrophy,
+  FaHourglassHalf,
 } from "react-icons/fa";
 import { fetchQuizCategories, fetchQuizProgress, fetchQuizQuestions } from "./conceptQuizApi";
 import { LANGUAGE_VISUALS } from "./languageVisuals";
-import { readCategoryProgress } from "./conceptQuizProgress";
+import { readCategoryProgress, readQuizDraftAnswers } from "./conceptQuizProgress";
 import PlacementCheck from "./PlacementCheck";
 
 // Language landing page: a progress hero plus an ACCORDION of categories. Each
@@ -115,6 +116,15 @@ const KIND_META = {
   parsons: { group: "parsons", label: "Drag & drop", Icon: FaArrowsAltV },
 };
 
+function hasDraftAnswer(answer) {
+  return (
+    answer != null &&
+    (answer.choice_index != null ||
+      (answer.text != null && answer.text.trim() !== "") ||
+      (answer.order != null && answer.order.length > 0))
+  );
+}
+
 // The inner question table shown when a category is expanded. Loads that
 // category's questions on first open and caches them in the parent.
 function CategoryQuestions({
@@ -127,6 +137,7 @@ function CategoryQuestions({
   onOpenQuestion,
 }) {
   const statusByQuestion = progress?.questions || {};
+  const draftAnswers = readQuizDraftAnswers(language, category.id);
   const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState("");
   const questions = cached || [];
@@ -195,6 +206,13 @@ function CategoryQuestions({
             <td className="cq-question-status">
               {(() => {
                 const status = statusByQuestion[q.id]; // "correct" | "incorrect" | undefined
+                if (hasDraftAnswer(draftAnswers[q.id])) {
+                  return (
+                    <span className="cq-status-icon in-progress" title="In progress">
+                      <FaHourglassHalf aria-label="In progress" />
+                    </span>
+                  );
+                }
                 if (status === "correct") {
                   return (
                     <span className="cq-status-icon correct" title="Passed">
@@ -522,6 +540,13 @@ export default function QuizLanguageLanding({
                         const open = openId === cat.id && !empty;
                         const best = progressByCat[cat.id]?.best;
                         const bestPct = best ? Math.round(best.score * 100) : null;
+                        const draftAnswers = readQuizDraftAnswers(language, cat.id);
+                        const draftCount = Object.values(draftAnswers).filter(hasDraftAnswer).length;
+                        const submittedQuestions = Object.keys(
+                          progressByCat[cat.id]?.questions || {}
+                        ).length;
+                        const completedCount = Math.min(cat.count || 0, submittedQuestions);
+                        const inProgressCount = draftCount;
                         return (
                           <li
                             key={cat.id}
@@ -561,6 +586,20 @@ export default function QuizLanguageLanding({
                                   >
                                     <FaTrophy aria-hidden="true" />
                                     Best score: {bestPct}% ({best.correct}/{best.total})
+                                  </span>
+                                ) : null}
+                                {!empty && (completedCount > 0 || inProgressCount > 0) ? (
+                                  <span className="cq-accordion-progress-badges">
+                                    {inProgressCount > 0 ? (
+                                      <span className="cq-progress-badge in-progress">
+                                        {inProgressCount} in progress
+                                      </span>
+                                    ) : null}
+                                    {completedCount > 0 ? (
+                                      <span className="cq-progress-badge complete">
+                                        {completedCount}/{cat.count} completed
+                                      </span>
+                                    ) : null}
                                   </span>
                                 ) : null}
                               </span>

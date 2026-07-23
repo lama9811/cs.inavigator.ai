@@ -269,6 +269,20 @@ def test_every_block_kind_is_valid():
             )
 
 
+def test_every_lesson_exposes_reading_sections():
+    """Learn topics should be split into smaller stops, not one long page."""
+    for language, category, lesson in authored_lessons():
+        assert lesson["sections"], f"{language}/{category}: no lesson sections"
+        flattened = [block for section in lesson["sections"] for block in section["blocks"]]
+        assert flattened == lesson["blocks"], (
+            f"{language}/{category}: section blocks do not match lesson blocks"
+        )
+        for section in lesson["sections"]:
+            assert section["id"], f"{language}/{category}: section without id"
+            assert section["title"], f"{language}/{category}: section without title"
+            assert section["blocks"], f"{language}/{category}: empty section"
+
+
 def test_code_blocks_explain_themselves():
     """A code block with no caption is a snippet, not a lesson. The whole reason Learn
     exists is to say WHY, not just show."""

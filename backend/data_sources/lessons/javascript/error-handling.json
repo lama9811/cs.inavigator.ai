@@ -1,22 +1,22 @@
 {
   "_note": "ORIGINAL content. Topic coverage was checked against javascript.info and Eloquent JavaScript. No prose, examples, or exercises were copied; the references are curriculum guides only.",
   "title": "Error Handling",
-  "summary": "Handle expected failures while keeping real programming mistakes visible.",
+  "summary": "Handle expected failures and keep real bugs visible.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "Use `try` around an operation that can fail and `catch` to respond to the resulting Error. Inspect the error, give the user a useful response, and avoid empty catch blocks that hide the cause.",
+  "refresher": "JavaScript uses `throw` to report an error and `try/catch` to handle one. Catch errors when you know what to do next. Do not catch every error just to make the console quiet.",
   "refresher_code": "try {\n  const data = JSON.parse(raw);\n} catch (error) {\n  console.log(error.message);\n}",
   "blocks": [
     {
       "kind": "text",
-      "body": "Some failures are part of normal program behavior. A user can paste malformed JSON, a network request can fail, or required data can be missing. Error handling gives those cases a planned path instead of letting the program stop without context."
+      "body": "Errors are not all the same. Some are expected, like bad user input. Some are bugs you need to fix. Good error handling tells those apart."
     },
     {
       "kind": "text",
-      "body": "The `try` block runs normally until a statement throws. JavaScript immediately leaves that block and enters `catch`, where the error object explains what happened. Code after the failing statement inside try is skipped. A finally block, when present, runs after either outcome and is useful for cleanup."
+      "body": "`try` holds the risky code. `catch` runs if that code throws. Keep the try block small so you can tell what failed."
     },
     {
       "kind": "code",
@@ -72,10 +72,10 @@
       "kind": "list",
       "title": "Error Handling checklist",
       "items": [
-        "Protect only operations you expect can fail.",
-        "Read the Error name and message.",
-        "Give users a specific recovery path.",
-        "Rethrow errors the current layer cannot handle."
+        "Use throw when code cannot safely continue.",
+        "Catch errors where you can recover.",
+        "Keep try blocks small.",
+        "Do not hide bugs by catching everything silently."
       ]
     }
   ]

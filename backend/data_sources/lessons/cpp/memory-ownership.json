@@ -1,28 +1,28 @@
 {
   "_note": "ORIGINAL content. Topic coverage was checked against Think C++ and the Google C++ Class outline. No prose, examples, or exercises were copied; the references are curriculum guides only.",
   "title": "Memory Ownership",
-  "summary": "Make it clear which part of the program is responsible for a resource.",
+  "summary": "Make cleanup obvious.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "Prefer ordinary local values and standard containers first because they clean themselves up. When one part of a program must own a dynamically created object, use `std::unique_ptr` and `std::make_unique`. Move it when ownership must transfer.",
+  "refresher": "Prefer local values, strings, and vectors first because they clean themselves up. When one object must own something created on the heap, use `std::unique_ptr` with `std::make_unique`. Move it only when ownership should transfer.",
   "refresher_code": "#include <memory>\nauto score = std::make_unique<int>(85);\nstd::cout << *score;",
   "blocks": [
     {
       "kind": "text",
-      "body": "Ownership answers one question: who is responsible for cleanup? Local strings, vectors, and other objects clean themselves up when their block ends. Start with those simple values before reaching for dynamic memory."
+      "body": "Ownership asks a simple question: who is in charge of cleaning this up? Most beginner C++ code can avoid the hard version of that question by using local values, strings, and vectors. They clean themselves up when they leave their block."
     },
     {
       "kind": "text",
-      "body": "A `unique_ptr` owns one dynamically created object. It cleans up that object when the pointer leaves scope. It cannot be copied because that would create two supposed sole owners, but it can be moved to transfer responsibility."
+      "body": "`unique_ptr` means one owner. It owns one object and cleans it up when the pointer leaves scope. You cannot copy it, because then two places would both claim to be the only owner. You can move it when the responsibility should transfer."
     },
     {
       "kind": "callout",
       "tone": "tip",
       "title": "Python handles more of this automatically",
-      "body": "Python usually decides when an unreachable object can be cleaned up. C++ lets a type such as `unique_ptr` show ownership directly. The extra detail helps make cleanup predictable."
+      "body": "Python usually decides cleanup for you when an object is no longer reachable. C++ lets you show ownership in the type. That extra detail makes cleanup predictable."
     },
     {
       "kind": "code",
@@ -36,11 +36,11 @@
       "wrong": "Student* student = new Student{\"Ada\"};\nuse(student);\n// delete is easy to forget",
       "right_label": "Clearer version",
       "right": "auto student = std::make_unique<Student>(Student{\"Ada\"});\nuse(student.get());\n// cleanup is automatic",
-      "caption": "Raw new separates allocation from cleanup. A unique pointer keeps both responsibilities in one object lifetime."
+      "caption": "Raw new makes you remember cleanup later. unique_ptr ties the object and its cleanup together."
     },
     {
       "kind": "text",
-      "body": "Before the move, `pending` owns the Student. After the move, `active` owns it and `pending` is empty. Check an emptied pointer before using it. When `main` ends, `active` cleans up the Student once."
+      "body": "Before the move, `pending` owns the Student. After the move, `active` owns it and `pending` is empty. Check an emptied pointer before using it. When main ends, active cleans up the Student once."
     },
     {
       "kind": "callout",
@@ -79,9 +79,9 @@
       "title": "Memory Ownership checklist",
       "items": [
         "Prefer values and standard containers first.",
-        "Use make_unique for one dynamic owner.",
-        "Move unique ownership deliberately.",
-        "Use shared ownership only when the model requires it."
+        "Use make_unique for one owner.",
+        "Move ownership on purpose.",
+        "Use shared ownership only when the design truly needs it."
       ]
     }
   ]

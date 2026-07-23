@@ -234,6 +234,10 @@ export default function CodeWorkspace({
               role="separator"
               aria-orientation="horizontal"
               aria-label="Resize terminal"
+              aria-valuemin={TERMINAL_MIN_H}
+              aria-valuemax={TERMINAL_MAX_H}
+              aria-valuenow={Math.round(terminalHeight)}
+              aria-valuetext={`Terminal height ${Math.round(terminalHeight)} pixels`}
               tabIndex={0}
               onPointerDown={onDividerPointerDown}
               onPointerMove={onDividerPointerMove}

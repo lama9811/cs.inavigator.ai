@@ -35,7 +35,7 @@ import MockSummary from "./MockSummary";
 import MockConfirm from "./MockConfirm";
 import { gradeMockSummary, scoreFromGraded } from "./interviewGrade";
 import { appendInterviewAttempt, summarizeInterviewHistory } from "./interviewHistory";
-import { markInterviewSolved } from "./interviewProgress";
+import { fetchInterviewProgress, markInterviewSolved, saveInterviewProgress, useInterviewReviewed, useInterviewSolved } from "./interviewProgress";
 import {
   saveDraft,
   readDraft,
@@ -85,6 +85,25 @@ const PREREQ_TO_LIBRARY_TOPIC = {
   "bfs": "graphs",
   "prefix sums": "prefix sums",
 };
+const PRACTICE_TOPIC_TO_LESSON = {
+  arrays: "lists",
+  strings: "strings",
+  conditionals: "conditionals",
+  recursion: "functions",
+  sets: "sets",
+  "hash maps": "dictionaries",
+};
+function lessonCategoryForPracticeTopic(topic, languageKey) {
+  const normalized = String(topic || "").toLowerCase();
+  if (normalized === "hash maps") {
+    if (languageKey === "java") return "maps";
+    if (languageKey === "javascript") return "objects";
+    if (languageKey === "cpp") return null;
+    return "dictionaries";
+  }
+  if (normalized === "sets" && languageKey !== "python") return null;
+  return PRACTICE_TOPIC_TO_LESSON[normalized] || null;
+}
 // Resolve a prerequisite label to a real Practice Library topic, or null if the library
 // has nothing for it (so the UI can grey it out instead of dead-linking).
 function resolvePracticeTopic(label) {
@@ -107,8 +126,68 @@ const PRACTICE_LANGUAGE_NAME = {
   javascript: "JavaScript",
   cpp: "C++",
 };
+const displayLanguageName = (value) =>
+  PRACTICE_LANGUAGE_NAME[value] || (PRACTICE_LANGUAGE_API[value] ? value : "Python");
 const PRACTICE_LANGUAGE_KEYS = ["python", "java", "javascript", "cpp"];
 const PRACTICE_DIFFICULTIES = ["easy", "medium", "hard"];
+const DEFAULT_LEARNING_STYLE = "try_then_hint";
+const LEARNING_STYLE_COPY = {
+  worked_examples: {
+    label: "examples first",
+    prompt: "This student prefers a worked example before trying a similar task.",
+  },
+  try_then_hint: {
+    label: "try first",
+    prompt: "This student prefers to try first, then receive a small hint when stuck.",
+  },
+  concept_then_code: {
+    label: "concept first",
+    prompt: "This student prefers a plain-English concept explanation before code.",
+  },
+};
+const learningStyleInfo = (style) =>
+  LEARNING_STYLE_COPY[style] || LEARNING_STYLE_COPY[DEFAULT_LEARNING_STYLE];
+
+function commentPrefixForLanguage(languageName = "Python") {
+  return languageName === "Python" ? "# " : "// ";
+}
+
+function extractDeclarationNames(code = "", languageName = "Python") {
+  const names = new Set();
+  const patterns = languageName === "Python"
+    ? [/^\s*def\s+([A-Za-z_]\w*)\s*\(/gm, /^\s*class\s+([A-Za-z_]\w*)\s*[:(]/gm]
+    : [
+        /\b(?:public|private|protected|static|final|async|\s)*\s*(?:[\w<>[\]]+\s+)?([A-Za-z_]\w*)\s*\([^;{}]*\)\s*\{/gm,
+        /\bclass\s+([A-Za-z_]\w*)\b/gm,
+      ];
+  patterns.forEach((pattern) => {
+    let match;
+    while ((match = pattern.exec(code)) !== null) {
+      if (match[1] && !["if", "for", "while", "switch", "catch"].includes(match[1])) {
+        names.add(match[1]);
+      }
+    }
+  });
+  return names;
+}
+
+function suggestedCodeLooksLikeSafeReplacement(currentCode = "", suggestion = "", languageName = "Python") {
+  if (!currentCode.trim()) return true;
+  const currentNames = extractDeclarationNames(currentCode, languageName);
+  if (!currentNames.size) return suggestion.length >= currentCode.trim().length * 0.8;
+  const suggestedNames = extractDeclarationNames(suggestion, languageName);
+  return [...currentNames].some(name => suggestedNames.has(name));
+}
+
+function buildCommentedTutorSuggestion(suggestion = "", languageName = "Python") {
+  const prefix = commentPrefixForLanguage(languageName);
+  return [
+    "",
+    `${prefix}Tutor suggestion to try next:`,
+    `${prefix}Kept as comments so your imports/function wrapper are not erased.`,
+    ...suggestion.trim().split(/\r?\n/).map(line => `${prefix}${line}`),
+  ].join("\n");
+}
 
 const CODING_PAGES = [
   { id: "dashboard", label: "Home", icon: FaHome },
@@ -638,6 +717,7 @@ export default function CodingTutor({
   const [workspaceTab, setWorkspaceTab] = useState("Editor");
   const [dailyChallenge, setDailyChallenge] = useState(null);
   const [dailyChallengeLoading, setDailyChallengeLoading] = useState(false);
+  const [learningStyle, setLearningStyle] = useState(DEFAULT_LEARNING_STYLE);
   // Recorded local dates (YYYY-MM-DD) the student practiced the daily challenge.
   // Drives the real "day streak" tile instead of a derived guess.
   const [dailyStreakDays, setDailyStreakDays] = useState(() => readDailyStreakDays());
@@ -671,6 +751,9 @@ export default function CodingTutor({
   // problems, no autograder/progress. Loaded independently of the practice set.
   const [interviewQuestions, setInterviewQuestions] = useState([]);
   const [interviewLoading, setInterviewLoading] = useState(true);
+  const [interviewProgressByQuestion, setInterviewProgressByQuestion] = useState({});
+  const { reviewed: interviewReviewed } = useInterviewReviewed();
+  const interviewSolved = useInterviewSolved();
   // Mock Interview session: a timed run through N picked interview problems.
   // { questions, index, endsAt, startedAt, problemStartedAt,
   //   outcomes: {id: "unattempted"|"attempted"|"solved"|"skipped"},
@@ -743,6 +826,7 @@ export default function CodingTutor({
   codeRef.current = code;
   langKeyRef.current = selectedLanguageKey;
   const activeLanguageProgress = activeProblem ? progressByLanguage[activeProblem.id]?.[selectedLanguageKey] : null;
+  const activeInterviewProgress = activeProblem ? interviewProgressByQuestion[activeProblem.id]?.[selectedLanguageKey] : null;
   const activeProgress = activeLanguageProgress || (activeProblem ? progressByQuestion[activeProblem.id] : null);
   const attempts = activeProgress?.attempt_count || 0;
   // Interview simulation: pick your language on the FIRST question of the mock, then it
@@ -768,6 +852,7 @@ export default function CodingTutor({
     : -1;
   const isQuizBankProblem = Boolean(activeProblem && activeQuestionIndex >= 0 && activeProblem.source !== "personal");
   const isPersonalMode = activeProblem?.source === "personal";
+  const isInterviewWorkspaceProblem = Boolean(activeProblem?.source === "interview" && !activeProblem?.mock);
   // Next/Back cycle only through unsolved problems. Solved problems can still be
   // opened directly from Quiz Bank, but are skipped here to focus on what is left.
   const findAdjacentUnsolvedIndex = useCallback((fromIndex, direction) => {
@@ -780,8 +865,10 @@ export default function CodingTutor({
   const canGoNext = activeQuestionIndex >= 0 && findAdjacentUnsolvedIndex(activeQuestionIndex, 1) >= 0;
   const activeQuestionProgress = activeProblem ? progressByQuestion[activeProblem.id] : null;
   const activeSolvedLanguages = activeQuestionProgress?.solved_languages || [];
-  const isActiveProblemSolved = isQuizBankProblem
-    && (activeQuestionProgress?.status === "solved" || activeLanguageProgress?.status === "solved");
+  const isActiveProblemSolved = (
+    isQuizBankProblem
+      && (activeQuestionProgress?.status === "solved" || activeLanguageProgress?.status === "solved")
+  ) || (isInterviewWorkspaceProblem && interviewSolved.has(activeProblem?.id));
 
   const progressQuestions = useMemo(
     () => (allQuestions.length ? allQuestions : questions),
@@ -953,21 +1040,26 @@ export default function CodingTutor({
   const runnerSummary = useMemo(() => summarizeRunForTutor(testOutput), [testOutput]);
   const applyAiCode = useCallback(() => {
     if (!suggestedCodeBlock || suggestedCodeBlock === code) return;
-    if (code.trim() && !window.confirm("Replace the current workspace code with this tutor suggestion? You can undo this change afterward.")) {
-      return;
-    }
+    const shouldReplace = suggestedCodeLooksLikeSafeReplacement(code, suggestedCodeBlock, selectedLanguage);
+    const nextCode = shouldReplace
+      ? suggestedCodeBlock
+      : `${code.trimEnd()}${buildCommentedTutorSuggestion(suggestedCodeBlock, selectedLanguage)}`;
+    const confirmMessage = shouldReplace
+      ? "Replace the current workspace code with this tutor suggestion? You can undo this change afterward."
+      : "This looks like a partial example, so it will be added as comments under your code instead of replacing your workspace.";
+    if (code.trim() && !window.confirm(confirmMessage)) return;
     setWorkspaceSnapshots(prev => ({
       ...prev,
       [activeSnapshotKey]: {
         ...(prev[activeSnapshotKey] || {}),
         beforeAiRewrite: code,
         aiRewrite: suggestedCodeBlock,
-        current: suggestedCodeBlock,
+        current: nextCode,
       },
     }));
-    setCode(suggestedCodeBlock);
-    toast.success("Tutor code applied. Undo is available in the chat.");
-  }, [activeSnapshotKey, code, suggestedCodeBlock]);
+    setCode(nextCode);
+    toast.success(shouldReplace ? "Tutor code applied. Undo is available in the chat." : "Tutor suggestion added as comments.");
+  }, [activeSnapshotKey, code, selectedLanguage, suggestedCodeBlock]);
 
   const undoAiCode = useCallback(() => {
     const previousCode = activeSnapshots.beforeAiRewrite;
@@ -1098,6 +1190,25 @@ export default function CodingTutor({
   }, []);
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${apiBase}/api/coding/preferences`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (!cancelled) setLearningStyle(data.learning_style || DEFAULT_LEARNING_STYLE);
+      } catch {
+        // Preference is a personalization layer. If it fails, keep the default.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [apiBase]);
+
+  useEffect(() => {
     // The chat should use the student's workspace code whenever there IS code (or
     // a loaded problem) — not only while the Workspace tab is the active page. This
     // keeps the floating chat grounded in the current attempt from any sub-page.
@@ -1111,13 +1222,16 @@ export default function CodingTutor({
       workspaceTab: activePage === "workspace" && workspaceVisible ? workspaceTab : activePage,
       note: useWorkspace ? note : "",
       tutorMode,
+      learningStyle,
+      learningStyleLabel: learningStyleInfo(learningStyle).label,
+      learningStyleInstruction: learningStyleInfo(learningStyle).prompt,
       runnerSummary: useWorkspace ? runnerSummary : "",
       suggestedCodeBlock,
       onApplyAICode: suggestedCodeBlock ? applyAiCode : null,
       onUndoAICode: typeof activeSnapshots.beforeAiRewrite === "string" ? undoAiCode : null,
       canUndoAICode: typeof activeSnapshots.beforeAiRewrite === "string",
     });
-  }, [activePage, activeProblem, attempts, code, note, onContextChange, selectedLanguage, suggestedCodeBlock, tutorMode, workspaceTab, workspaceVisible, runnerSummary, activeSnapshots.beforeAiRewrite, applyAiCode, undoAiCode]);
+  }, [activePage, activeProblem, attempts, code, note, onContextChange, selectedLanguage, suggestedCodeBlock, tutorMode, learningStyle, workspaceTab, workspaceVisible, runnerSummary, activeSnapshots.beforeAiRewrite, applyAiCode, undoAiCode]);
 
   useEffect(() => {
     onActivePageChange?.(activePage);
@@ -1176,6 +1290,17 @@ export default function CodingTutor({
     const starter = activeSolution?.starter_code || "";
     const handle = setTimeout(() => {
       saveDraft(problemId, language, code);
+      if (activeProblem.source === "interview") {
+        saveInterviewWorkspaceProgress(
+          problemId,
+          {
+            status: activeInterviewProgress?.status === "solved" ? "solved" : "in_progress",
+            code,
+          },
+          language,
+        );
+        return;
+      }
       if (
         isQuizBankProblem &&
         activeLanguageProgress?.status !== "solved" &&
@@ -1302,6 +1427,28 @@ export default function CodingTutor({
     return () => { cancelled = true; };
   }, [apiBase, difficulty]);
 
+  const mergeInterviewProgressItems = (items = []) => {
+    if (!Array.isArray(items) || !items.length) return;
+    setInterviewProgressByQuestion(prev => {
+      const next = { ...prev };
+      items.forEach((item) => {
+        if (!item?.question_id || !item?.language) return;
+        next[item.question_id] = {
+          ...(next[item.question_id] || {}),
+          [item.language]: item,
+        };
+      });
+      return next;
+    });
+  };
+
+  const saveInterviewWorkspaceProgress = async (questionId, updates = {}, language = selectedLanguageKey) => {
+    if (!questionId) return null;
+    const saved = await saveInterviewProgress(questionId, { language, ...updates });
+    if (saved) mergeInterviewProgressItems([saved]);
+    return saved;
+  };
+
   // Load the interview library once (set=interview, all difficulties). Separate
   // from the practice loader: these are reference problems with no progress to
   // join, so they don't need the per-language progress plumbing above.
@@ -1320,7 +1467,11 @@ export default function CodingTutor({
               }),
           ),
         );
-        if (!cancelled) setInterviewQuestions(results.flat());
+        const progressItems = await fetchInterviewProgress();
+        if (!cancelled) {
+          setInterviewQuestions(results.flat());
+          mergeInterviewProgressItems(progressItems);
+        }
       } catch (error) {
         console.error("[interview-prep] load failed", error);
         if (!cancelled) setInterviewQuestions([]);
@@ -1527,11 +1678,25 @@ export default function CodingTutor({
       // always free. Only Python ships an authored starter today; other languages fall
       // back to a generic stub (see interviewStarterStub) — TODO: author Java/JS/C++.
       if (interviewLanguageLocked) return;
-      setSelectedLanguage(languageName);
-      setPracticeLanguage(languageName);
-      setCode(interviewStarterStub(activeProblem, languageName));
+      saveDraft(activeProblem.id, selectedLanguageKey, code);
+      saveInterviewWorkspaceProgress(
+        activeProblem.id,
+        {
+          status: activeInterviewProgress?.status === "solved" ? "solved" : "in_progress",
+          code,
+        },
+        selectedLanguageKey,
+      );
+      const nextLanguageName = displayLanguageName(languageName);
+      const nextLanguageKey = PRACTICE_LANGUAGE_API[nextLanguageName] || "python";
+      const draftCode = readDraft(activeProblem.id, nextLanguageKey);
+      const serverCode = interviewProgressByQuestion[activeProblem.id]?.[nextLanguageKey]?.code;
+      setSelectedLanguage(nextLanguageName);
+      setPracticeLanguage(nextLanguageName);
+      setCode(draftCode ?? serverCode ?? interviewStarterStub(activeProblem, nextLanguageName));
+      saveLastWorkspace(activeProblem.id, nextLanguageKey);
       if (activeProblem?.mock) {
-        setMockSession((prev) => (prev ? { ...prev, language: languageName } : prev));
+        setMockSession((prev) => (prev ? { ...prev, language: nextLanguageName } : prev));
       }
       return;
     }
@@ -1584,13 +1749,10 @@ export default function CodingTutor({
     goToPage("workspace");
   };
 
-  // Open an Interview Prep problem in the workspace. Modeled on the daily challenge:
-  // a real prompt + examples to work out in the editor, but NO autograder (these
-  // are reference problems, has_tests=false). source="interview" keeps the runner
-  // on free-run (runAttempt routes non-quiz-bank sources to runFreeform) and hides
-  // "Run tests" / "Mark solved" / problem-nav (all gated on isQuizBankProblem). The
-  // worked solution stays a "View solution" link out (answer_url), shown in the
-  // problem panel. opts.mock tags it as part of a timed mock session.
+  // Open an Interview Prep problem in the workspace. These are reference problems:
+  // the editor can run code freely, drafts are restored from localStorage, and the
+  // student can mark warm-ups solved from the workspace even without autograder tests.
+  // opts.mock tags the problem as part of a timed mock session.
   const openInterviewProblem = (question, opts = {}) => {
     if (!question) return;
     // Opening a normal interview problem (not part of a mock) ends any lingering
@@ -1615,12 +1777,22 @@ export default function CodingTutor({
     // otherwise seed the fresh starter stub. This is what stops mock navigation
     // from wiping the student's in-progress code.
     if (opts.restoreCode != null) {
-      setSelectedLanguage(opts.restoreLanguage || practiceLanguage);
+      const restoreLanguageName = displayLanguageName(opts.restoreLanguage || practiceLanguage);
+      setSelectedLanguage(restoreLanguageName);
+      setPracticeLanguage(restoreLanguageName);
       setCode(opts.restoreCode);
     } else {
-      setSelectedLanguage(practiceLanguage);
-      setCode(interviewStarterStub(question, practiceLanguage));
+      const languageName = practiceLanguage;
+      const languageKey = PRACTICE_LANGUAGE_API[languageName] || "python";
+      const draftCode = readDraft(question.id, languageKey);
+      const serverCode = interviewProgressByQuestion[question.id]?.[languageKey]?.code;
+      setSelectedLanguage(languageName);
+      setCode(draftCode ?? serverCode ?? interviewStarterStub(question, languageName));
     }
+    saveLastWorkspace(
+      question.id,
+      PRACTICE_LANGUAGE_API[displayLanguageName(opts.restoreLanguage || practiceLanguage)] || "python",
+    );
     setNote(`Interview prep: ${question.title}`);
     setTestOutput({
       status: "ready",
@@ -2350,6 +2522,16 @@ export default function CodingTutor({
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || `runner ${response.status}`);
       setTestOutput(data);
+      if (isInterviewWorkspaceProblem && activeProblem?.id) {
+        saveInterviewWorkspaceProgress(
+          activeProblem.id,
+          {
+            status: activeInterviewProgress?.status === "solved" ? "solved" : "in_progress",
+            code,
+          },
+          selectedLanguageKey,
+        );
+      }
       setWorkspaceSnapshots(prev => ({
         ...prev,
         [activeSnapshotKey]: {
@@ -2493,6 +2675,18 @@ export default function CodingTutor({
   };
 
   const markSolved = async () => {
+    if (isInterviewWorkspaceProblem && activeProblem?.id) {
+      saveDraft(activeProblem.id, selectedLanguageKey, code);
+      markInterviewSolved(activeProblem.id);
+      await saveInterviewWorkspaceProgress(activeProblem.id, { status: "solved", code }, selectedLanguageKey);
+      setTerminalOpen(true);
+      setTestOutput({
+        status: "success",
+        message: `${activeProblem.title || "Interview problem"} marked solved. Your code is saved to your account.`,
+      });
+      toast.success("Interview problem marked solved.");
+      return;
+    }
     if (!activeProblem || !isQuizBankProblem) return;
     await saveProgress(activeProblem.id, { status: "solved", code });
     clearDraft(activeProblem.id, selectedLanguageKey);
@@ -2507,11 +2701,19 @@ export default function CodingTutor({
     if (activeProblem && activeProblem.source !== "leetcode" && activeProblem.source !== "personal") {
       if (hasStarterCodeChanged(code, activeSolution?.starter_code)) {
         try {
-          await saveProgress(
-            activeProblem.id,
-            { status: activeLanguageProgress?.status === "solved" ? "solved" : "in_progress", code },
-            selectedLanguageKey,
-          );
+          if (activeProblem.source === "interview") {
+            await saveInterviewWorkspaceProgress(
+              activeProblem.id,
+              { status: activeInterviewProgress?.status === "solved" ? "solved" : "in_progress", code },
+              selectedLanguageKey,
+            );
+          } else {
+            await saveProgress(
+              activeProblem.id,
+              { status: activeLanguageProgress?.status === "solved" ? "solved" : "in_progress", code },
+              selectedLanguageKey,
+            );
+          }
         } catch (error) {
           console.warn("[coding-practice] save before clear failed", error);
         }
@@ -2601,10 +2803,12 @@ export default function CodingTutor({
       onOpenSnippets={openMySnippets}
       onSelectQuestion={selectQuestion}
       onOpenQuizBank={() => navigate(PRACTICE_CODE_PATH)}
-      onOpenTopic={openPracticeTopic}
+      onOpenTopic={openRecommendedTopic}
+      onOpenInterviewPrep={() => goToPage("interview")}
       onPrompt={sendDashboardPrompt}
       onSaveQuiz={saveLatestQuizAsPdf}
       mastery={mastery}
+      learningStyle={learningStyle}
     />
   );
 
@@ -2695,7 +2899,7 @@ export default function CodingTutor({
             reference: activeSolution?.reference_solution || "",
             complexity: activeSolution?.complexity || "",
           }}
-          canMarkSolved={isQuizBankProblem}
+          canMarkSolved={isQuizBankProblem || isInterviewWorkspaceProblem}
           isPersonalMode={isPersonalMode}
           onCodeChange={setCode}
           onLanguageChange={changeSelectedLanguage}
@@ -2738,7 +2942,11 @@ export default function CodingTutor({
         progressByLanguage={progressByLanguage}
         progressSummary={progressSummary}
         learnQuizStats={summarizeLearnQuizProgress()}
-        interviewStats={summarizeInterviewHistory()}
+        interviewStats={{
+          ...summarizeInterviewHistory(),
+          warmupsReviewed: interviewReviewed.size,
+          warmupsSolved: interviewSolved.size,
+        }}
         midSlot={<StatTiles progressSummary={progressSummary} />}
       />
     </section>
@@ -2754,6 +2962,18 @@ export default function CodingTutor({
     // The CODE path, not the bare one — a "go practice this fundamental" link promises
     // code problems on that topic. The bare path is now the Quiz landing.
     navigate(PRACTICE_CODE_PATH);
+  };
+
+  const openRecommendedTopic = (label) => {
+    const topic = resolvePracticeTopic(label);
+    if (!topic) return;
+    const languageKey = PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
+    const lessonCategory = lessonCategoryForPracticeTopic(topic, languageKey);
+    if (learningStyle !== "try_then_hint" && lessonCategory) {
+      navigate(learnPathForLesson(languageKey, lessonCategory));
+      return;
+    }
+    openPracticeTopic(topic);
   };
 
   const renderInterviewPrep = () => (
@@ -2901,8 +3121,12 @@ export default function CodingTutor({
                 navigate(learnPathForLesson(language, category, track))
               }
               // The whole point of Learn: it hands off to Practice on the same topic.
-              onPracticeCategory={(language, category) =>
-                navigate(quizPathForLanguage(language) + `#${category}`)
+              onPracticeCategory={(language, category, questionId) =>
+                navigate(
+                  questionId
+                    ? quizPathForQuestion(language, category, questionId)
+                    : quizPathForLanguage(language) + `#${category}`
+                )
               }
             />
           ) : mode === "quiz" ? (

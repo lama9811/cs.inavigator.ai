@@ -154,6 +154,8 @@ function computeStats({ questions = {}, progressByQuestion = {}, progressByLangu
     // sweep. Lets interview badges reward performance, not just showing up.
     bestMockSolved: interviewStats.bestMockSolved || 0,
     clearedAllMock: !!interviewStats.clearedAllMock,
+    interviewWarmupsReviewed: interviewStats.warmupsReviewed || 0,
+    interviewWarmupsSolved: interviewStats.warmupsSolved || 0,
     solvedByTopic,
     solvedByDifficulty,
     attemptedByDifficulty,
@@ -238,6 +240,8 @@ function buildBadges(stats) {
     //    how the mock actually went (best problems-passed in one mock). A standard
     //    mock is 3 problems, so 2/3 is a strong pass and 3/3 is a clean sweep. ──
     bool({ id: "mock-rookie", label: "First Interview", detail: "Finished a mock interview", icon: FaUserTie, tone: "cyan", category: "Interview Prep", rarity: "uncommon", earned: s.mockCompleted >= 1 }),
+    count({ id: "interview-warmup-review", label: "Warmup Notes", detail: "Reviewed 3 interview warmups", icon: FaClipboardCheck, tone: "blue", category: "Interview Prep", rarity: "common", current: s.interviewWarmupsReviewed, goal: 3 }),
+    count({ id: "interview-warmup-solve", label: "Warmup Wins", detail: "Solved 3 interview warmups", icon: FaCheckDouble, tone: "green", category: "Interview Prep", rarity: "uncommon", current: s.interviewWarmupsSolved, goal: 3 }),
     bool({ id: "mock-clean-sweep", label: "Clean Sweep", detail: "Solved all 3 problems in one mock", icon: FaUserGraduate, tone: "purple", category: "Interview Prep", rarity: "epic", earned: s.clearedAllMock || s.bestMockSolved >= 3 }),
     bool({ id: "mock-veteran", label: "Strong Interview", detail: "Solved 2 of 3 problems in one mock", icon: FaCrown, tone: "gold", category: "Interview Prep", rarity: "rare", earned: s.bestMockSolved >= 2 }),
 

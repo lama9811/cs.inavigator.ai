@@ -38,18 +38,20 @@ export function lessonToSegments(lesson) {
   for (const block of lesson.blocks || []) {
     switch (block.kind) {
       case "text":
-        push("Text", block.body);
+        push("Idea", block.body);
+        if (block.caption) push("Note", block.caption);
         break;
       case "callout":
         // Read the callout as "Tip. <body>" so the listener knows its weight.
-        push("Callout", `${block.title || block.tone || "Note"}. ${block.body}`);
+        push(block.title || "Note", `${block.title || block.tone || "Note"}. ${block.body}`);
         break;
       case "code":
         // Announce code by its caption only; never read the code characters.
-        if (block.caption) push("Example", `Example. ${block.caption}`);
+        if (block.caption) push("Example", `Example. ${block.caption} The code is shown on screen.`);
         break;
       case "compare":
-        if (block.caption) push("Comparison", `Comparison. ${block.caption}`);
+        if (block.caption) push("Comparison", `Comparison. ${block.caption} The two versions are shown side by side on screen.`);
+        if (block.body) push("Comparison note", block.body);
         break;
       case "list": {
         const items = (block.items || []).map(stripInlineCode).join(". ");
@@ -88,7 +90,7 @@ export function useLessonSpeech(lesson) {
     setIndex(clamped);
 
     const utterance = new SpeechSynthesisUtterance(segments[clamped].text);
-    utterance.rate = 1;
+    utterance.rate = 0.95;
     utterance.onend = () => {
       // Natural end of a segment (not a manual skip/stop): advance, or finish.
       if (suppressAdvanceRef.current) return;
@@ -159,6 +161,8 @@ export function useLessonSpeech(lesson) {
     isPlaying,
     isPaused,
     index,
+    currentLabel: segments[index]?.label || "",
+    currentText: segments[index]?.text || "",
     total: segments.length,
     play,
     pause,

@@ -291,6 +291,55 @@ class CodingUserProgress(Base):
     user = relationship("User", backref="coding_user_progress")
 
 
+class CodingTutorPreference(Base):
+    """Per-user Coding Tutor learning preference.
+
+    This is intentionally separate from the general User profile. It belongs to the
+    Coding Tutor experience and can grow later without turning the account table into
+    a pile of feature-specific columns.
+    """
+    __tablename__ = "coding_tutor_preferences"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_coding_tutor_preference_user"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    learning_style = Column(String(40), nullable=False, default="try_then_hint")
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", backref="coding_tutor_preference")
+
+
+class CodingInterviewProgress(Base):
+    """Per-user Interview Prep progress.
+
+    Interview Prep questions are often study/warm-up prompts instead of fully
+    autograded practice problems, so they need their own state: in-progress
+    drafts, reviewed walkthroughs, and manually/deterministically solved items.
+    Kept separate from CodingPracticeProgress so the normal practice library keeps
+    its stricter not_started/in_progress/solved model.
+    """
+    __tablename__ = "coding_interview_progress"
+    __table_args__ = (
+        UniqueConstraint("user_id", "question_id", "language", name="uq_coding_interview_user_question_language"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    question_id = Column(String(80), nullable=False, index=True)
+    language = Column(String(30), nullable=False, default="python")
+    status = Column(String(30), nullable=False, default="in_progress")
+    code = Column(Text, nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    solved_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", backref="coding_interview_progress")
+
+
 class CodingSnippet(Base):
     """Per-user personal code snippets ("My Snippets") — the student's own code,
     not tied to a graded quiz problem. Synced from the browser localStorage."""

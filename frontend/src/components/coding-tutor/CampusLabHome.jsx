@@ -1,4 +1,4 @@
-import { FaBook, FaChartLine, FaCode, FaLaptopCode, FaPlay, FaRegCompass } from "react-icons/fa";
+import { FaBook, FaChartLine, FaLaptopCode, FaPlay, FaRegCompass } from "react-icons/fa";
 
 function findResumeItem(questions, progressByQuestion) {
   return Object.entries(progressByQuestion || {})
@@ -67,6 +67,20 @@ function titleCase(value = "") {
   return value ? value[0].toUpperCase() + value.slice(1).replace("_", " ") : "";
 }
 
+function learningStyleHint(style) {
+  if (style === "worked_examples") return "Start with a worked example, then try one similar problem.";
+  if (style === "concept_then_code") return "Start with the idea in plain English, then move into code.";
+  return "Try one problem first. If you get stuck, ask for a small hint.";
+}
+
+function compactWeakTopicReason({ mastery, weakTopic }) {
+  if (mastery?.weakest?.topic) {
+    return `Recent practice points to ${titleCase(weakTopic)}.`;
+  }
+  if (weakTopic) return `This topic could use another pass.`;
+  return "Pick one shaky topic.";
+}
+
 function firstUnsolved(questions, progressByQuestion, predicate = () => true) {
   return (questions || [])
     .filter(predicate)
@@ -86,20 +100,23 @@ function unsolvedByTopic(questions, progressByQuestion, topic) {
 function buildTodayPath({ questions, progressByQuestion, resumeItem, nextUpQuestion, mastery, focus }) {
   const path = [];
   const used = new Set();
-  const add = (kind, label, question, fallback) => {
+  const add = (kind, label, question, fallback, reason) => {
     if (question?.id && !used.has(question.id)) {
       used.add(question.id);
-      path.push({ kind, label, question });
+      path.push({ kind, label, question, reason });
       return;
     }
-    if (fallback) path.push({ kind, label, fallback });
+    if (fallback) path.push({ kind, label, fallback, reason });
   };
 
   add(
     "start",
     resumeItem?.question ? "Finish" : "Start",
     resumeItem?.question || nextUpQuestion || firstUnsolved(questions, progressByQuestion),
-    "Open the Practice Library and choose one easy problem."
+    "Open the Practice Library and choose one easy problem.",
+    resumeItem?.question
+      ? "You already started this one."
+      : "This is a good first problem for today."
   );
 
   const weakTopic = mastery?.weakest?.topic || focus?.next?.topic || focus?.first?.topic;
@@ -109,7 +126,8 @@ function buildTodayPath({ questions, progressByQuestion, resumeItem, nextUpQuest
     "practice",
     weakTopic ? `Practice ${titleCase(weakTopic)}` : "Practice a weak spot",
     weakPick,
-    "Pick one topic that feels shaky and solve one problem from it."
+    "Pick one topic that feels shaky and solve one problem from it.",
+    compactWeakTopicReason({ mastery, weakTopic })
   );
 
   const stretchPick = firstUnsolved(
@@ -121,7 +139,8 @@ function buildTodayPath({ questions, progressByQuestion, resumeItem, nextUpQuest
     "stretch",
     "Stretch",
     stretchPick,
-    "After one pass, try a medium problem or review a failed test."
+    "After one pass, try a medium problem or review a failed test.",
+    "A slightly harder step after the warm-up."
   );
 
   return path.slice(0, 3);
@@ -214,6 +233,14 @@ function focusCopy(focus) {
   return `Start with ${focus.first.topic} and build from there.`;
 }
 
+function focusReason(focus) {
+  if (!focus) return "No progress pattern yet, so start with one small problem.";
+  if (focus.hasProgress) {
+    return `${titleCase(focus.next.topic)} is your next useful focus.`;
+  }
+  return "This is a beginner-friendly place to start.";
+}
+
 function CampusLearningQueue({
   questions,
   progressByQuestion,
@@ -225,6 +252,7 @@ function CampusLearningQueue({
   onOpenSnippets,
   onOpenQuizBank,
   onOpenTopic,
+  learningStyle,
 }) {
   // The hero owns "what to do right now" (resume / recommended). This section is a
   // guided path: next track, personal workspace, and a data-driven focus nudge.
@@ -244,8 +272,9 @@ function CampusLearningQueue({
       ? `Start with ${titleCase(focus.first.topic)}`
       : "Choose a topic";
   const focusBlurb = focusTopic
-    ? "Opens the library with this topic selected."
+    ? `${focusReason(focus)} ${learningStyleHint(learningStyle)}`
     : "Pick one topic and solve the first problem you see.";
+  const focusButton = learningStyle === "try_then_hint" ? "Open practice" : "Open lesson";
   return (
     <section className="campus-learning-queue" aria-label="Your coding path">
       <div className="campus-section-heading">
@@ -272,6 +301,7 @@ function CampusLearningQueue({
                   ) : (
                     <em>{step.fallback}</em>
                   )}
+                  {step.reason && <small className="campus-path-reason">{step.reason}</small>}
                 </div>
               </li>
             ))}
@@ -300,7 +330,7 @@ function CampusLearningQueue({
           <strong>{focusTitle}</strong>
           <p>{focusBlurb}</p>
           <button type="button" onClick={() => (focusTopic ? onOpenTopic?.(focusTopic) : onOpenQuizBank())}>
-            {focusTopic ? `Open ${titleCase(focusTopic)}` : "Browse Practice Library"}
+            {focusTopic ? `${focusButton}: ${titleCase(focusTopic)}` : "Browse Practice Library"}
           </button>
         </article>
       </div>
@@ -308,7 +338,7 @@ function CampusLearningQueue({
   );
 }
 
-function CampusTutorActions({ latestQuizResponse, onPrompt, onSaveQuiz }) {
+function CampusTutorActions({ latestQuizResponse, onPrompt, onOpenInterviewPrep, onSaveQuiz }) {
   return (
     <section className="campus-tutor-actions" aria-label="Ask the tutor">
       <div className="campus-section-heading">
@@ -319,11 +349,11 @@ function CampusTutorActions({ latestQuizResponse, onPrompt, onSaveQuiz }) {
           <FaBook aria-hidden="true" />
           <span>Generate a 5-question quiz</span>
         </button>
-        <button type="button" onClick={() => onPrompt("Review my current code and explain the biggest issue first.", { title: "Code review" })}>
-          <FaCode aria-hidden="true" />
-          <span>Review my current code</span>
+        <button type="button" onClick={() => onPrompt("Help me pick what to practice next based on my progress. Keep it short and give me three clear steps.", { title: "Practice plan" })}>
+          <FaRegCompass aria-hidden="true" />
+          <span>Plan my next practice</span>
         </button>
-        <button type="button" onClick={() => onPrompt("Help me prepare for a technical interview problem with hints first.", { title: "Interview prep" })}>
+        <button type="button" onClick={onOpenInterviewPrep}>
           <FaChartLine aria-hidden="true" />
           <span>Start a mock interview</span>
         </button>
@@ -431,9 +461,11 @@ export default function CampusLabHome({
   onSelectQuestion,
   onOpenQuizBank,
   onOpenTopic,
+  onOpenInterviewPrep,
   onPrompt,
   onSaveQuiz,
   mastery,
+  learningStyle = "try_then_hint",
 }) {
   const queueQuestions = questions || [];
   const resumeItem = findResumeItem(queueQuestions, progressByQuestion);
@@ -478,11 +510,13 @@ export default function CampusLabHome({
         onOpenSnippets={onOpenSnippets}
         onOpenQuizBank={onOpenQuizBank}
         onOpenTopic={onOpenTopic}
+        learningStyle={learningStyle}
       />
 
       <CampusTutorActions
         latestQuizResponse={latestQuizResponse}
         onPrompt={onPrompt}
+        onOpenInterviewPrep={onOpenInterviewPrep}
         onSaveQuiz={onSaveQuiz}
       />
     </section>

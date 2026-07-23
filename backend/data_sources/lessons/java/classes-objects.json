@@ -1,39 +1,39 @@
 {
   "_note": "ORIGINAL content. Topic sequence follows the standard free Java text (Eck, 'Introduction to Programming Using Java', ch.5: objects before inheritance, constructors before static); a topic sequence is not copyrightable. No prose, examples, or exercises are copied from it. Eck is CC BY-NC-SA, and copying would bind CS Navigator's content to those terms permanently, including the NonCommercial clause. Every sentence and every code sample here was written for this lesson and its output was verified against a real JDK.",
   "title": "Classes & Objects",
-  "summary": "A class is a blueprint. An object is a thing built from it.",
+  "summary": "Build your own type by keeping related data and behavior together.",
   "minutes": 8,
   "error_classes": [
     "runtime",
     "syntax",
     "wrong_answer"
   ],
-  "refresher": "A class is a blueprint: it lists the fields an object will hold and the methods it can run. An object is one actual thing built from that blueprint. You build one with `new`, which hands back a reference to it, and you reach into it with a dot: `s.gpa` for a field, `s.describe()` for a method. A constructor is the special method that runs during `new` and fills in the fields, and inside it `this.name` means the field while `name` means the value that was passed in. A reference that points at no object is `null`, and using a dot on it throws a NullPointerException.",
+  "refresher": "A class is a blueprint for objects. Fields store each object's data. A constructor sets up a new object. Methods describe what the object can do. `new` creates an object from the class.",
   "refresher_code": "Student s = new Student(\"Ada\", 3.9);\nSystem.out.println(s.gpa);\n// 3.9",
   "blocks": [
     {
       "kind": "text",
-      "body": "Suppose you want to track a student's name and GPA. With two variables that works fine. With two hundred students it falls apart: you are juggling parallel lists and hoping the third name still lines up with the third GPA. A class fixes that by letting you glue related values into a single thing."
+      "body": "A class lets you create your own kind of value. Instead of passing around a loose name, id, and GPA, you can make one Student object that keeps those facts together."
     },
     {
       "kind": "text",
-      "body": "A class is a blueprint. It says what every student will have and what every student can do. It is not itself a student. An object is one actual student, built from that blueprint. One blueprint, as many objects as you want."
+      "body": "Fields are the data each object carries. A constructor runs when you create a new object and fills in the starting values. Methods are actions that belong with that object."
     },
     {
       "kind": "code",
-      "caption": "The whole file. `name` and `gpa` are fields: the state each Student carries, declared once in the class and then owned separately by every object built from it. `new Student()` builds one such object and hands back a reference to it, which is what `s` holds.",
+      "caption": "The constructor fills the fields. The displayName method uses the data stored inside this Student.",
       "code": "public class Student {\n    String name;\n    double gpa;\n\n    public static void main(String[] args) {\n        Student s = new Student();\n        s.name = \"Ada\";\n        s.gpa = 3.9;\n        System.out.println(s.name);\n        System.out.println(s.gpa);\n    }\n}",
       "output": "Ada\n3.9"
     },
     {
       "kind": "text",
-      "body": "Read `Student s = new Student();` right to left. `new Student()` does the building. It sets aside memory for one object and hands back a reference to it, which is a way of pointing at the object rather than the object itself. `Student s` declares a variable that is allowed to hold such a reference. The `=` stores it there."
+      "body": "`new Student(...)` creates one object. If you call it again, you get a separate object with its own field values. Changing one student does not change the other."
     },
     {
       "kind": "callout",
       "tone": "tip",
       "title": "You have been writing classes all along",
-      "body": "Every Java program you have written so far sat inside `public class Something { ... }`. That was not decoration. Java has nowhere to put code except inside a class, so even a one line program needs one. Today the class stops being a wrapper you ignore and becomes the thing you are actually designing."
+      "body": "Python lets you add attributes more freely. Java wants the class to say its fields up front. That feels strict at first, but it helps Java catch misspelled or missing data early."
     },
     {
       "kind": "text",
@@ -109,12 +109,11 @@
       "kind": "list",
       "title": "Working with a new class",
       "items": [
-        "Name the class for the thing it represents, capitalized: `Student`, not `doStudentStuff`.",
-        "Fields are what it knows. Methods are what it can do. Sort your ideas into those two piles first.",
-        "Write a constructor as soon as an object needs more than one field, so an object can never exist half filled in.",
-        "Inside a constructor, write `this.field = parameter`. Leaving off `this.` compiles and silently does nothing.",
-        "Every object needs its own `new`. Assigning one reference to another gives you a second name for the same object, not a second object.",
-        "On a NullPointerException, look at the variable to the left of the dot on that line, then find where it was supposed to get its `new`."
+        "Use a class when data belongs together.",
+        "Fields hold object data.",
+        "Constructors set starting values.",
+        "Methods define useful actions.",
+        "Use new to create an object."
       ]
     }
   ]

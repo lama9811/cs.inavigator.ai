@@ -11,6 +11,7 @@
 //   }
 
 const PREFIX = "concept_quiz_progress";
+const QUIZ_DRAFT_PREFIX = "cq_answers";
 
 function key(language, category) {
   return `${PREFIX}:${language}:${category}`;
@@ -68,16 +69,46 @@ export function readQuestionStatus(language, category, questionId) {
   return prog?.questions?.[questionId] || null;
 }
 
+export function quizDraftKey(language, category) {
+  return `${QUIZ_DRAFT_PREFIX}:${language}:${category}`;
+}
+
+export function readQuizDraftAnswers(language, category) {
+  try {
+    const raw = sessionStorage.getItem(quizDraftKey(language, category));
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function writeQuizDraftAnswers(language, category, answers) {
+  try {
+    const draftKey = quizDraftKey(language, category);
+    if (!answers || !Object.keys(answers).length) sessionStorage.removeItem(draftKey);
+    else sessionStorage.setItem(draftKey, JSON.stringify(answers));
+  } catch {
+    // Storage unavailable/full — the quiz still works, it just won't resume.
+  }
+}
+
 // ── Lesson-read tracking ────────────────────────────────────────────────────
-// Learn has no backend yet, so "did the student read this lesson" lives in the
-// same local store as quiz progress, one flat set of "language:category" keys.
+// Learn has no backend yet, so "completed this lesson" lives in the same local store
+// as quiz progress, one flat set of "language:category" keys.
 // Swappable for a coding_learn_progress table later without touching callers.
-const LESSONS_KEY = `${PREFIX}:lessons_read`;
+const LESSONS_KEY = `${PREFIX}:lessons_completed_v2`;
+const LEGACY_LESSONS_KEY = `${PREFIX}:lessons_read`;
 
 function readLessonSet() {
   try {
-    const raw = localStorage.getItem(LESSONS_KEY);
+    const raw =
+      localStorage.getItem(LESSONS_KEY) ??
+      localStorage.getItem(LEGACY_LESSONS_KEY);
     const arr = raw ? JSON.parse(raw) : [];
+    if (!localStorage.getItem(LESSONS_KEY) && raw) {
+      localStorage.setItem(LESSONS_KEY, JSON.stringify(arr));
+    }
     return Array.isArray(arr) ? new Set(arr) : new Set();
   } catch {
     return new Set();
@@ -86,6 +117,19 @@ function readLessonSet() {
 
 // Mark one lesson as read. Idempotent — called on lesson open, so it fires often
 // and must stay cheap and side-effect-free beyond the write.
+export function hasReadLesson(language, category) {
+  if (!language || !category) return false;
+  return readLessonSet().has(`${language}:${category}`);
+}
+
+export function countReadLessons(language, categories = []) {
+  if (!language || !Array.isArray(categories)) return 0;
+  const set = readLessonSet();
+  return categories.filter((category) =>
+    category?.has_lesson && set.has(`${language}:${category.id}`)
+  ).length;
+}
+
 export function markLessonRead(language, category) {
   if (!language || !category) return;
   const set = readLessonSet();
@@ -124,7 +168,7 @@ export function summarizeLearnQuizProgress() {
   try {
     for (let i = 0; i < localStorage.length; i += 1) {
       const k = localStorage.key(i);
-      if (!k || !k.startsWith(`${PREFIX}:`) || k === LESSONS_KEY) continue;
+      if (!k || !k.startsWith(`${PREFIX}:`) || k === LESSONS_KEY || k === LEGACY_LESSONS_KEY) continue;
       // key shape: concept_quiz_progress:<language>:<category>
       const parts = k.split(":");
       if (parts.length < 3) continue;

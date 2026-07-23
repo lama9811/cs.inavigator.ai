@@ -23,8 +23,8 @@ from typing import Any
 
 # ── Canonical argument spec (source of truth for ALL languages) ──────────────
 # fn (camelCase) -> ([(argName, kind), ...], returnKind)
-# kinds: "int" | "double" | "bool" | "string" | "intlist" | "strlist" | "grid"
-# returnKind: "int" | "bool" | "string" | "intlist" | "strlist" | "list"
+# kinds: "int" | "double" | "bool" | "string" | "intlist" | "strlist" | "grid" | "strgrid"
+# returnKind: "int" | "bool" | "string" | "intlist" | "strlist" | "grid" | "list"
 #
 # Deliberately EXCLUDED — these fall back to the legacy Value/Object[] union path,
 # which a clean native signature cannot express (verified by tests/test_native_bridge):
@@ -38,9 +38,12 @@ from typing import Any
 PRACTICE_ARG_SPECS: dict[str, tuple[list[tuple[str, str]], str]] = {
     "alienDictionaryOrder": ([("words", "strlist")], "string"),
     "balancedBrackets": ([("text", "string")], "bool"),
+    "binarySearchExact": ([("nums", "intlist"), ("target", "int")], "int"),
     "binarySearchInsertPosition": ([("nums", "intlist"), ("target", "int")], "int"),
+    "canVote": ([("age", "int")], "bool"),
     "clampScore": ([("score", "int")], "int"),
     "compressRuns": ([("text", "string")], "string"),
+    "countDigits": ([("n", "int")], "int"),
     "countIslands": ([("grid", "grid")], "int"),
     "countVowels": ([("text", "string")], "int"),
     "countWords": ([("sentence", "string")], "int"),
@@ -48,24 +51,32 @@ PRACTICE_ARG_SPECS: dict[str, tuple[list[tuple[str, str]], str]] = {
     "coursePrerequisiteChain": ([("pairs", "strgrid"), ("course", "string"), ("prereq", "string")], "bool"),
     "decodeWays": ([("digits", "string")], "int"),
     "editDistance": ([("source", "string"), ("target", "string")], "int"),
+    "earliestConnectedTime": ([("n", "int"), ("events", "grid")], "int"),
     "expressionEvaluator": ([("expression", "string")], "int"),
     "firstMissingPositiveSmall": ([("nums", "intlist")], "int"),
     "gradeBucket": ([("score", "int")], "string"),
+    "helpDeskQueue": ([("commands", "strlist")], "strlist"),
     "initials": ([("fullName", "string")], "string"),
     "isPalindrome": ([("text", "string")], "bool"),
     "lastDigit": ([("number", "int")], "int"),
     "longestIncreasingSubsequenceLength": ([("nums", "intlist")], "int"),
     "longestUniqueWindow": ([("text", "string")], "int"),
     "matrixRowSums": ([("matrix", "grid")], "intlist"),
+    "matrixColumnSums": ([("matrix", "grid")], "intlist"),
     "maximalSquare": ([("matrix", "grid")], "int"),
     "maximumSubarrayWithOneDeletion": ([("nums", "intlist")], "int"),
+    "maximumWindowSum": ([("nums", "intlist"), ("k", "int")], "int"),
     "mergeNames": ([("firstNames", "strlist"), ("secondNames", "strlist")], "strlist"),
+    "mergeOverlappingIntervals": ([("intervals", "grid")], "grid"),
     "mergeSortedLists": ([("left", "intlist"), ("right", "intlist")], "intlist"),
     "minStackOperations": ([("commands", "strlist")], "intlist"),
     "minimumMeetingRooms": ([("intervals", "grid")], "int"),
     "normalizeEmailList": ([("emails", "strlist")], "strlist"),
+    "pairSumSorted": ([("nums", "intlist"), ("target", "int")], "bool"),
     "prefixSearch": ([("words", "strlist"), ("prefix", "string")], "strlist"),
+    "rangeSumQueries": ([("nums", "intlist"), ("queries", "grid")], "intlist"),
     "removeDuplicatesKeepOrder": ([("nums", "intlist")], "intlist"),
+    "recursiveDigitSum": ([("n", "int")], "int"),
     "reverseWords": ([("sentence", "string")], "string"),
     "rotateListRight": ([("items", "intlist"), ("k", "int")], "intlist"),
     "runningTotal": ([("nums", "intlist")], "intlist"),
@@ -73,13 +84,17 @@ PRACTICE_ARG_SPECS: dict[str, tuple[list[tuple[str, str]], str]] = {
     "subarraySumEqualsK": ([("nums", "intlist"), ("k", "int")], "int"),
     "sumEvenNumbers": ([("nums", "intlist")], "int"),
     "temperatureAboveThreshold": ([("readings", "intlist"), ("threshold", "int")], "int"),
+    "topKScores": ([("scores", "intlist"), ("k", "int")], "intlist"),
     "topKFrequent": ([("items", "intlist"), ("k", "int")], "intlist"),
+    "treeLevelSums": ([("tree", "intlist")], "intlist"),
     "triePrefixCounts": ([("commands", "strlist")], "intlist"),
     "twoSumIndexes": ([("nums", "intlist"), ("target", "int")], "intlist"),
     "unionFindComponents": ([("n", "int"), ("pairs", "grid")], "int"),
+    "uniqueCount": ([("nums", "intlist")], "int"),
     "validCourseCodeShape": ([("code", "string")], "bool"),
     "validStudySchedule": ([("intervals", "grid")], "bool"),
     "wordLadderSteps": ([("start", "string"), ("end", "string"), ("dictionary", "strlist")], "int"),
+    "anyWordHasPrefix": ([("words", "strlist"), ("prefix", "string")], "bool"),
 }
 
 
@@ -110,7 +125,7 @@ _PY_TYPES = {
 }
 _PY_RETURNS = {
     "int": "int", "bool": "bool", "string": "str",
-    "intlist": "list[int]", "strlist": "list[str]", "list": "list",
+    "intlist": "list[int]", "strlist": "list[str]", "grid": "list[list[int]]", "list": "list",
 }
 
 _JS_TYPES = {
@@ -120,7 +135,7 @@ _JS_TYPES = {
 }
 _JS_RETURNS = {
     "int": "number", "bool": "boolean", "string": "string",
-    "intlist": "number[]", "strlist": "string[]", "list": "unknown[]",
+    "intlist": "number[]", "strlist": "string[]", "grid": "number[][]", "list": "unknown[]",
 }
 
 
@@ -160,6 +175,7 @@ def _build_javascript(function_name: str, spec: tuple[list[tuple[str, str]], str
 _JAVA_DEFAULT_RETURN = {
     "int": "return 0;", "bool": "return false;", "string": 'return "";',
     "intlist": "return new int[0];", "strlist": "return new String[0];",
+    "grid": "return new int[0][0];",
     "list": "return new int[0];",
 }
 
@@ -182,7 +198,8 @@ def _build_java(function_name: str, spec: tuple[list[tuple[str, str]], str]) -> 
 # like a normal file. A hidden harness bridge unpacks the inputs and calls it.
 _CPP_DEFAULT_RETURN = {
     "int": "return 0;", "bool": "return false;", "string": 'return "";',
-    "intlist": "return {};", "strlist": "return {};", "list": "return {};",
+    "intlist": "return {};", "strlist": "return {};", "grid": "return {};",
+    "list": "return {};",
 }
 
 
@@ -239,6 +256,7 @@ _CPP_NATIVE_TYPE = {
 _CPP_RET_TYPE = {
     "int": "long long", "bool": "bool", "string": "std::string",
     "intlist": "std::vector<long long>", "strlist": "std::vector<std::string>",
+    "grid": "std::vector<std::vector<long long>>",
     "list": "std::vector<long long>",
 }
 
@@ -287,6 +305,8 @@ def cpp_native_bridge(function_name: str, spec) -> str:
         wrap = "std::vector<Value> __v; for (auto& __x : __r) __v.push_back(Value((long long)__x)); return Value(__v);"
     elif ret == "strlist":
         wrap = "std::vector<Value> __v; for (auto& __x : __r) __v.push_back(Value(std::string(__x))); return Value(__v);"
+    elif ret == "grid":
+        wrap = "std::vector<Value> __rows; for (auto& __row : __r) { std::vector<Value> __v; for (auto& __x : __row) __v.push_back(Value((long long)__x)); __rows.push_back(Value(__v)); } return Value(__rows);"
     else:
         wrap = "return Value();"
     return f"""// Native-type conversion helpers (harness-provided).
@@ -325,7 +345,7 @@ _JAVA_NATIVE_TYPE = {
 }
 _JAVA_RET_TYPE = {
     "int": "int", "bool": "boolean", "string": "String",
-    "intlist": "int[]", "strlist": "String[]", "list": "int[]",
+    "intlist": "int[]", "strlist": "String[]", "grid": "int[][]", "list": "int[]",
 }
 
 
@@ -373,6 +393,15 @@ def java_native_bridge(function_name: str, spec) -> str:
                 "        Object[] __o = new Object[__r.length];\n"
                 "        for (int __i = 0; __i < __r.length; __i++) __o[__i] = __r[__i];\n"
                 "        return __o;")
+    elif ret == "grid":
+        wrap = ("int[][] __r = Solution." + function_name + f"({unpacks});\n"
+                "        Object[] __rows = new Object[__r.length];\n"
+                "        for (int __i = 0; __i < __r.length; __i++) {\n"
+                "            Object[] __row = new Object[__r[__i].length];\n"
+                "            for (int __j = 0; __j < __r[__i].length; __j++) __row[__j] = (long) __r[__i][__j];\n"
+                "            __rows[__i] = __row;\n"
+                "        }\n"
+                "        return __rows;")
     else:
         wrap = f"return Solution.{function_name}({unpacks});"
     return f"""    static int[] __toIntArr(Object o) {{

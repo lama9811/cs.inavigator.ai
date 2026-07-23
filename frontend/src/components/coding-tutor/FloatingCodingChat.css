@@ -703,3 +703,73 @@ body.coding-dark .floating-coding-chat .floating-apply-code-btn:focus-visible {
     -webkit-line-clamp: 2 !important;
   }
 }
+
+/* Final widget guardrails: keep the composer visible and make speaker turns clear. */
+.floating-coding-chat .floating-chat-window {
+  min-height: min(560px, calc(100dvh - 36px)) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.floating-coding-chat .floating-chat-window > * {
+  min-width: 0 !important;
+}
+
+.floating-coding-chat .floating-chat-messages {
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+.floating-coding-chat .floating-chat-form {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 6 !important;
+  box-shadow: 0 -12px 24px color-mix(in srgb, var(--ct-float-panel-base) 78%, transparent) !important;
+}
+
+.floating-coding-chat .floating-chat-message {
+  width: fit-content !important;
+  max-width: min(92%, 620px) !important;
+  padding: 10px 12px !important;
+  border-radius: 16px !important;
+  border: 1px solid var(--ct-float-border) !important;
+}
+
+.floating-coding-chat .floating-chat-message.bot {
+  margin-right: auto !important;
+  background: color-mix(in srgb, var(--ct-float-primary) 10%, var(--ct-float-panel-base)) !important;
+  border-color: color-mix(in srgb, var(--ct-float-primary) 32%, var(--ct-float-border)) !important;
+  box-shadow: inset 4px 0 0 color-mix(in srgb, var(--ct-float-primary) 68%, var(--ct-float-accent)) !important;
+}
+
+.floating-coding-chat .floating-chat-message.user {
+  margin-left: auto !important;
+  background: color-mix(in srgb, var(--ct-float-accent) 15%, var(--ct-float-panel-base)) !important;
+  border-color: color-mix(in srgb, var(--ct-float-accent) 40%, var(--ct-float-border)) !important;
+  box-shadow: inset -4px 0 0 var(--ct-float-accent) !important;
+}
+
+body.coding-dark .floating-coding-chat .floating-chat-message.bot {
+  background: color-mix(in srgb, #5f7fae 24%, #172235) !important;
+  border-color: rgba(143, 174, 215, 0.42) !important;
+  box-shadow: inset 4px 0 0 #8faed7 !important;
+}
+
+body.coding-dark .floating-coding-chat .floating-chat-message.user {
+  background: color-mix(in srgb, #e7a05b 20%, #172235) !important;
+  border-color: rgba(231, 160, 91, 0.46) !important;
+  box-shadow: inset -4px 0 0 #e7a05b !important;
+}
+
+@media (max-height: 720px) {
+  .floating-coding-chat .floating-chat-window {
+    min-height: min(500px, calc(100dvh - 28px)) !important;
+  }
+
+  .floating-coding-chat .floating-chat-window .ai-status-card,
+  .floating-coding-chat .floating-code-context,
+  .floating-coding-chat .floating-code-actions {
+    margin-bottom: 8px !important;
+  }
+}

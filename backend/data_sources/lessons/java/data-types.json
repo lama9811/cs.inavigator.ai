@@ -1,22 +1,22 @@
 {
   "_note": "ORIGINAL content. The topic order follows the standard free Java text (Eck, 'Introduction to Programming Using Java', ch.2: primitive types, literals, type conversion). A topic sequence is not copyrightable; prose is. No sentence, example, or exercise here is copied or paraphrased from it. Eck's book is CC BY-NC-SA, so copying its words would bind CS Navigator's content to that license permanently, including its NonCommercial clause. Every word below was written for this project.",
   "title": "Data Types",
-  "summary": "Whole numbers, decimals, true or false, single characters, and text, plus what happens when you mix them.",
+  "summary": "Choose the kind of value a variable is allowed to hold.",
   "minutes": 8,
   "error_classes": [
     "wrong_answer",
     "syntax"
   ],
-  "refresher": "In Java you announce the type before the name: `int score = 90;`. The four primitives you will use most are `int` for whole numbers, `double` for decimals, `boolean` for true or false, and `char` for a single character in single quotes. `String` is not a primitive. It is an object, and it holds text in double quotes. Dividing two ints gives an int, so `5 / 2` is 2, not 2.5. Make one side a double to get a decimal answer. Java also checks types before your program runs, so putting text in an int is a compile error and nothing runs at all.",
+  "refresher": "Java has small built-in types such as `int`, `double`, `boolean`, and `char`. `int` is for whole numbers. `double` is for decimals. `boolean` is true or false. `String` is text, but it is an object, not a primitive type.",
   "refresher_code": "int total = 7;\nint count = 2;\nSystem.out.println(total / count);\n// 3\nSystem.out.println((double) total / count);\n// 3.5",
   "blocks": [
     {
       "kind": "text",
-      "body": "In Java, every variable has a type, and you write that type down yourself. Python looks at the value and guesses. Java makes you say it first, on the same line, in front of the name. That extra word buys you something: Java can check your types before the program ever runs."
+      "body": "A type tells Java what kind of value a variable can hold. That lets Java catch many mistakes before the program runs. If a variable is an `int`, Java will not quietly place a sentence inside it."
     },
     {
       "kind": "code",
-      "caption": "The full wrapper is shown once here so you can see where these lines live. Every later example in this lesson is just the statements from inside `main`, with the class and the `main` method around them assumed.",
+      "caption": "Use int for whole numbers, double for decimals, boolean for true/false values, char for one character, and String for text.",
       "code": "public class Main {\n    public static void main(String[] args) {\n        int studentCount = 42;\n        double gpa = 3.75;\n        boolean isEnrolled = true;\n        char grade = 'A';\n        String name = \"Ada\";\n\n        System.out.println(studentCount);\n        System.out.println(gpa);\n        System.out.println(isEnrolled);\n        System.out.println(grade);\n        System.out.println(name);\n    }\n}",
       "output": "42\n3.75\ntrue\nA\nAda"
     },
@@ -29,19 +29,20 @@
         "`boolean` holds exactly one of two values: `true` or `false`, lowercase, no quotes.",
         "`char` holds one single character in single quotes: 'A', '7', '?'.",
         "`String` holds text in double quotes: \"Ada\", \"7\", \"hello world\"."
-      ]
+      ],
+      "body": "The type also affects math. When Java divides two `int` values, the result is still an `int`. The decimal part is dropped. If you need a decimal answer, make at least one number a `double`."
     },
     {
       "kind": "code",
-      "caption": "The first four in that list are primitives, meaning a plain value and nothing more. `String` is the odd one out. It is an object, so it carries methods you can call on it. That is the practical difference: a `String` can tell you its own length, and a `char` cannot.",
-      "code": "char initial = 'A';\nString fullName = \"Ada\";\n\nSystem.out.println(initial);\nSystem.out.println(fullName.length());",
-      "output": "A\n3"
+      "caption": "The first division uses two ints, so Java keeps only the whole-number part. The second uses a double, so the decimal survives.",
+      "code": "int total = 7;\nint count = 2;\n\nSystem.out.println(total / count);\nSystem.out.println((double) total / count);",
+      "output": "3\n3.5"
     },
     {
       "kind": "callout",
       "tone": "warning",
-      "title": "Single quotes and double quotes are not interchangeable",
-      "body": "`char c = \"A\";` does not compile. Java reads the double quotes, sees a `String`, then finds a `char` waiting for it, and stops with `incompatible types: String cannot be converted to char`. One character in double quotes is still a `String`. If you want a `char`, use single quotes."
+      "title": "Casting changes how Java treats a value",
+      "body": "Casting means asking Java to treat a value as another type. Use it when you mean it. Casting can also throw information away, like turning `3.9` into `3`."
     },
     {
       "kind": "text",
@@ -117,13 +118,11 @@
       "kind": "list",
       "title": "Habits that prevent most type bugs in Java",
       "items": [
-        "If you want a decimal out of a division, make sure at least one side is a `double` before the `/` runs.",
-        "Casting truncates. `(int) 9.99` is 9. If you meant to round, use `Math.round` instead.",
-        "Single quotes give you a `char`. Double quotes give you a `String`. They are not the same type.",
-        "Text that looks like a number is still text. Use `Integer.parseInt` or `Double.parseDouble` to get the number out of it.",
-        "Put a `String` on either side of a `+` and Java glues instead of adding, so `\"Score: \" + 5` gives you Score: 5.",
-        "A compile error means nothing ran. Fix the types first, then go back to the logic.",
-        "When an answer comes out as 0, or as a whole number with .0 stuck on the end, look for two ints on either side of a `/`."
+        "Use int for whole numbers.",
+        "Use double when decimals matter.",
+        "Use boolean for decisions.",
+        "Use String for text.",
+        "Watch integer division before assuming the math is wrong."
       ]
     }
   ]
