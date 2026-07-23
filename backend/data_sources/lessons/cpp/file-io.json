@@ -8,7 +8,7 @@
     "wrong_answer"
   ],
   "refresher": "C++ uses file streams for file work. `std::ifstream` reads from a file. `std::ofstream` writes to a file. Always check that the stream opened before reading or writing.",
-  "refresher_code": "#include <fstream>\nstd::ifstream input(\"courses.txt\");\nif (!input) {\n  std::cerr << \"Could not open file\\n\";\n}",
+  "refresher_code": "#include <fstream>\n#include <iostream>\nstd::ifstream input(\"courses.txt\");\nif (!input) {\n  std::cerr << \"Could not open file\\n\";\n}",
   "blocks": [
     {
       "kind": "text",

@@ -20,7 +20,7 @@
       "caption": "Declare variables with the Map interface and construct a HashMap. Each `put` connects one key to one value.",
       "code": "Map<String, Integer> grades = new HashMap<>();\ngrades.put(\"CS101\", 90);\ngrades.put(\"MATH120\", 84);\ngrades.put(\"CS101\", 95);\nSystem.out.println(grades.size());\nSystem.out.println(grades.get(\"CS101\"));",
       "output": "2\n95",
-      "body": "HashMap is Java?s everyday map. It stores key-value pairs. The first type in angle brackets is the key type. The second type is the value type."
+      "body": "HashMap is Java's everyday map. It stores key-value pairs. The first type in angle brackets is the key type. The second type is the value type."
     },
     {
       "kind": "text",

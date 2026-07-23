@@ -46,7 +46,16 @@ function withInlineCode(text) {
 
 function Block({ block, checkKey, picked, onCheckAnswered }) {
   if (block.kind === "text") {
-    return <p className="lesson-text">{withInlineCode(block.body)}</p>;
+    return (
+      <>
+        <p className="lesson-text">{withInlineCode(block.body)}</p>
+        {block.caption ? (
+          <p className="lesson-text lesson-text-caption">
+            {withInlineCode(block.caption)}
+          </p>
+        ) : null}
+      </>
+    );
   }
 
   if (block.kind === "code") {
@@ -103,6 +112,9 @@ function Block({ block, checkKey, picked, onCheckAnswered }) {
         </div>
         {block.caption ? (
           <figcaption>{withInlineCode(block.caption)}</figcaption>
+        ) : null}
+        {block.body ? (
+          <p className="lesson-compare-body">{withInlineCode(block.body)}</p>
         ) : null}
       </figure>
     );

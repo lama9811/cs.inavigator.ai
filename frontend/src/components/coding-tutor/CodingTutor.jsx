@@ -157,7 +157,7 @@ function extractDeclarationNames(code = "", languageName = "Python") {
   const patterns = languageName === "Python"
     ? [/^\s*def\s+([A-Za-z_]\w*)\s*\(/gm, /^\s*class\s+([A-Za-z_]\w*)\s*[:(]/gm]
     : [
-        /\b(?:public|private|protected|static|final|async|\s)*\s*(?:[\w<>\[\]]+\s+)?([A-Za-z_]\w*)\s*\([^;{}]*\)\s*\{/gm,
+        /\b(?:public|private|protected|static|final|async|\s)*\s*(?:[\w<>[\]]+\s+)?([A-Za-z_]\w*)\s*\([^;{}]*\)\s*\{/gm,
         /\bclass\s+([A-Za-z_]\w*)\b/gm,
       ];
   patterns.forEach((pattern) => {

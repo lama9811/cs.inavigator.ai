@@ -98,11 +98,17 @@ export function writeQuizDraftAnswers(language, category, answers) {
 // as quiz progress, one flat set of "language:category" keys.
 // Swappable for a coding_learn_progress table later without touching callers.
 const LESSONS_KEY = `${PREFIX}:lessons_completed_v2`;
+const LEGACY_LESSONS_KEY = `${PREFIX}:lessons_read`;
 
 function readLessonSet() {
   try {
-    const raw = localStorage.getItem(LESSONS_KEY);
+    const raw =
+      localStorage.getItem(LESSONS_KEY) ??
+      localStorage.getItem(LEGACY_LESSONS_KEY);
     const arr = raw ? JSON.parse(raw) : [];
+    if (!localStorage.getItem(LESSONS_KEY) && raw) {
+      localStorage.setItem(LESSONS_KEY, JSON.stringify(arr));
+    }
     return Array.isArray(arr) ? new Set(arr) : new Set();
   } catch {
     return new Set();
@@ -162,7 +168,7 @@ export function summarizeLearnQuizProgress() {
   try {
     for (let i = 0; i < localStorage.length; i += 1) {
       const k = localStorage.key(i);
-      if (!k || !k.startsWith(`${PREFIX}:`) || k === LESSONS_KEY) continue;
+      if (!k || !k.startsWith(`${PREFIX}:`) || k === LESSONS_KEY || k === LEGACY_LESSONS_KEY) continue;
       // key shape: concept_quiz_progress:<language>:<category>
       const parts = k.split(":");
       if (parts.length < 3) continue;

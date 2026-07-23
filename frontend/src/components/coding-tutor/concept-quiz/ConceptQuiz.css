@@ -224,6 +224,7 @@ body.coding-dark .practice-library {
 }
 .cq-language-card {
   --cq-card-tint: var(--ct-primary);
+
   appearance: none;
   display: flex;
   flex-direction: column;
@@ -885,22 +886,22 @@ body.coding-dark .cq-question-table tbody tr:hover .cq-question-link {
 }
 .coding-app .cq-status-icon svg {
   color: inherit;
-  fill: currentColor;
+  fill: currentcolor;
 }
 .coding-app .cq-status-icon.correct,
 .coding-app .cq-status-icon.correct svg {
   color: var(--ct-success);
-  fill: currentColor;
+  fill: currentcolor;
 }
 .coding-app .cq-status-icon.incorrect,
 .coding-app .cq-status-icon.incorrect svg {
   color: #d0493b;
-  fill: currentColor;
+  fill: currentcolor;
 }
 .coding-app .cq-status-icon.in-progress,
 .coding-app .cq-status-icon.in-progress svg {
   color: #d99516;
-  fill: currentColor;
+  fill: currentcolor;
 }
 body.coding-dark .coding-app .cq-status-icon.incorrect,
 body.coding-dark .coding-app .cq-status-icon.incorrect svg {
