@@ -8,12 +8,15 @@ import "./MomentumScore.css";
 
 const API = getApiBase();
 
+// Display labels only. The keys are the API contract and must not change.
+// Plain-English names: "Trajectory" and "Credit Pace" read as advisor jargon
+// to a student, and neither says what is actually being measured.
 const FACTOR_ICONS = {
-  timeliness: { label: "On-Time", emoji: "clock" },
-  trajectory: { label: "Trajectory", emoji: "chart" },
-  credit_pace: { label: "Credit Pace", emoji: "grad" },
-  workload: { label: "Workload", emoji: "check" },
-  missing_penalty: { label: "Missing", emoji: "warn" },
+  timeliness: { label: "On Time", emoji: "clock" },
+  trajectory: { label: "Grade Trend", emoji: "chart" },
+  credit_pace: { label: "Graduation Pace", emoji: "grad" },
+  workload: { label: "Work Completed", emoji: "check" },
+  missing_penalty: { label: "Missing Work", emoji: "warn" },
 };
 
 const scoreColor = (s) => {
