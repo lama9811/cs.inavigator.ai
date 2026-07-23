@@ -176,7 +176,7 @@ export default function GradeSurgeon() {
               <div className="gs-dna">
                 {Object.entries(detail.performance_dna).sort((a, b) => b[1] - a[1]).map(([name, pct]) => (
                   <div key={name} className="gs-dna-row">
-                    <span className="gs-dna-label">{name}</span>
+                    <span className="gs-dna-label" title={name}>{name}</span>
                     <div className="gs-dna-bar-wrap">
                       <div className="gs-dna-bar" style={{ width: `${Math.min(pct, 100)}%`, background: scoreColor(pct) }} />
                     </div>

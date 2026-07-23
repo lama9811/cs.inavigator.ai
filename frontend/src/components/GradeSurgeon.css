@@ -51,7 +51,11 @@
 /* Performance DNA */
 .gs-dna { display: flex; flex-direction: column; gap: 12px; }
 .gs-dna-row { display: flex; align-items: center; gap: 12px; }
-.gs-dna-label { width: 160px; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-align: right; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Canvas assignment-group names are frequently longer than one line
+   ("Experiential Education: Internship Reflection"). A fixed width with
+   white-space:nowrap silently ellipsised them, so the student could not tell
+   which category the bar belonged to. Wrap to two lines instead. */
+.gs-dna-label { width: 200px; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-align: right; flex-shrink: 0; line-height: 1.3; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .gs-dna-bar-wrap { flex: 1; height: 12px; background: var(--bg-secondary); border-radius: 6px; overflow: hidden; }
 .gs-dna-bar { height: 100%; border-radius: 6px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
 .gs-dna-pct { width: 55px; font-size: 0.85rem; font-weight: 700; text-align: right; }
@@ -118,7 +122,7 @@ body.dark .gs-asn-row:hover { background: var(--bg-tertiary, #333); }
   .gs-hero-letter { font-size: 1.4rem; }
   .gs-hero-meta { margin-left: 0; }
   .gs-section { padding: 16px 18px; }
-  .gs-dna-label { width: 100px; font-size: 0.65rem; }
+  .gs-dna-label { width: 120px; font-size: 0.68rem; -webkit-line-clamp: 3; }
   .gs-target-num { font-size: 1.8rem; }
   .gs-tab { min-width: 100px; padding: 8px 12px; }
 }
