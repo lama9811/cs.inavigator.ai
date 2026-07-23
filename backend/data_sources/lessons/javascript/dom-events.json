@@ -7,7 +7,7 @@
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "The DOM is the browser?s object version of the page. JavaScript can find elements, change text or classes, and listen for events like clicks or typing. Event listeners let code run when the user does something.",
+  "refresher": "The DOM is the browser's object version of the page. JavaScript can find elements, change text or classes, and listen for events like clicks or typing. Event listeners let code run when the user does something.",
   "refresher_code": "const button = document.querySelector(\"#save\");\nbutton?.addEventListener(\"click\", () => {\n  status.textContent = \"Saved\";\n});",
   "blocks": [
     {

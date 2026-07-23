@@ -8,7 +8,7 @@
     "syntax",
     "wrong_answer"
   ],
-  "refresher": "A class is a blueprint for objects. Fields store each object?s data. A constructor sets up a new object. Methods describe what the object can do. `new` creates an object from the class.",
+  "refresher": "A class is a blueprint for objects. Fields store each object's data. A constructor sets up a new object. Methods describe what the object can do. `new` creates an object from the class.",
   "refresher_code": "Student s = new Student(\"Ada\", 3.9);\nSystem.out.println(s.gpa);\n// 3.9",
   "blocks": [
     {

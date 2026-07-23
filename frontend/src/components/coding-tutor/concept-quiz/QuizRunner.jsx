@@ -494,6 +494,8 @@ export default function QuizRunner({
       const result = await onGrade(answers);
       // Persist the graded result (status dots + best score on the landing).
       onSaveResult?.(result);
+      writeQuizDraftAnswers(language, category, {});
+      setAnswersById({});
       setGrade(result);
     } catch (err) {
       setError(err.message || "Could not grade the quiz. Please try again.");

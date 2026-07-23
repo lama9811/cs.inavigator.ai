@@ -8,7 +8,7 @@
     "syntax",
     "wrong_answer"
   ],
-  "refresher": "An exception is Java?s way to report that something went wrong while the program was running. Use `try` around the risky work and `catch` for the failure you know how to handle. Do not catch everything just to make the error disappear.",
+  "refresher": "An exception is Java's way to report that something went wrong while the program was running. Use `try` around the risky work and `catch` for the failure you know how to handle. Do not catch everything just to make the error disappear.",
   "refresher_code": "try {\n    int credits = Integer.parseInt(raw);\n} catch (NumberFormatException error) {\n    System.out.println(\"Enter a whole number\");\n}",
   "blocks": [
     {

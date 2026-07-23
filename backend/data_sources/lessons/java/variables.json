@@ -34,7 +34,7 @@
       "kind": "callout",
       "tone": "tip",
       "title": "The type stays for life",
-      "body": "A name does not exist until you declare it. If you spell it two different ways, Java treats those as two different names. `score` and `Score` are not the same variable."
+      "body": "After you declare a variable, its type stays the same. An `int score` can receive another whole number later, but it cannot later hold text like `\"ten\"`."
     },
     {
       "kind": "callout",

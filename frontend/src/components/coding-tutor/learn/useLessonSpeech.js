@@ -39,6 +39,7 @@ export function lessonToSegments(lesson) {
     switch (block.kind) {
       case "text":
         push("Idea", block.body);
+        if (block.caption) push("Note", block.caption);
         break;
       case "callout":
         // Read the callout as "Tip. <body>" so the listener knows its weight.
@@ -50,6 +51,7 @@ export function lessonToSegments(lesson) {
         break;
       case "compare":
         if (block.caption) push("Comparison", `Comparison. ${block.caption} The two versions are shown side by side on screen.`);
+        if (block.body) push("Comparison note", block.body);
         break;
       case "list": {
         const items = (block.items || []).map(stripInlineCode).join(". ");

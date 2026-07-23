@@ -206,6 +206,13 @@ function CategoryQuestions({
             <td className="cq-question-status">
               {(() => {
                 const status = statusByQuestion[q.id]; // "correct" | "incorrect" | undefined
+                if (hasDraftAnswer(draftAnswers[q.id])) {
+                  return (
+                    <span className="cq-status-icon in-progress" title="In progress">
+                      <FaHourglassHalf aria-label="In progress" />
+                    </span>
+                  );
+                }
                 if (status === "correct") {
                   return (
                     <span className="cq-status-icon correct" title="Passed">
@@ -217,13 +224,6 @@ function CategoryQuestions({
                   return (
                     <span className="cq-status-icon incorrect" title="Missed">
                       <FaTimesCircle aria-label="Missed" />
-                    </span>
-                  );
-                }
-                if (hasDraftAnswer(draftAnswers[q.id])) {
-                  return (
-                    <span className="cq-status-icon in-progress" title="In progress">
-                      <FaHourglassHalf aria-label="In progress" />
                     </span>
                   );
                 }
@@ -546,7 +546,7 @@ export default function QuizLanguageLanding({
                           progressByCat[cat.id]?.questions || {}
                         ).length;
                         const completedCount = Math.min(cat.count || 0, submittedQuestions);
-                        const inProgressCount = Math.max(0, draftCount - completedCount);
+                        const inProgressCount = draftCount;
                         return (
                           <li
                             key={cat.id}

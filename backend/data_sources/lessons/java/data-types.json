@@ -35,13 +35,13 @@
     {
       "kind": "code",
       "caption": "The first division uses two ints, so Java keeps only the whole-number part. The second uses a double, so the decimal survives.",
-      "code": "char initial = 'A';\nString fullName = \"Ada\";\n\nSystem.out.println(initial);\nSystem.out.println(fullName.length());",
-      "output": "A\n3"
+      "code": "int total = 7;\nint count = 2;\n\nSystem.out.println(total / count);\nSystem.out.println((double) total / count);",
+      "output": "3\n3.5"
     },
     {
       "kind": "callout",
       "tone": "warning",
-      "title": "Single quotes and double quotes are not interchangeable",
+      "title": "Casting changes how Java treats a value",
       "body": "Casting means asking Java to treat a value as another type. Use it when you mean it. Casting can also throw information away, like turning `3.9` into `3`."
     },
     {

@@ -28,7 +28,7 @@
       "kind": "callout",
       "tone": "warning",
       "title": "The file name has to match the class name",
-      "body": "Python uses indentation to show what belongs together. Java uses braces. Good indentation still matters because it helps your eyes match the braces, but Java follows the braces, not the spaces."
+      "body": "If a Java class is marked `public`, the file name must match that class name exactly. `public class Hello` belongs in `Hello.java`. A mismatch stops the program before it runs."
     },
     {
       "kind": "text",

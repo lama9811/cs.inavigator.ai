@@ -16,7 +16,7 @@
     },
     {
       "kind": "text",
-      "body": "In `int* pointer = &score;`, `&score` means ?the address of score.? Later, `*pointer` means ?go to that address and use the value there.? The star has two jobs: it helps declare a pointer, and it helps follow one."
+      "body": "In `int* pointer = &score;`, `&score` means \"the address of score.\" Later, `*pointer` means \"go to that address and use the value there.\" The star has two jobs: it helps declare a pointer, and it helps follow one."
     },
     {
       "kind": "callout",
@@ -81,7 +81,7 @@
         "Initialize every pointer.",
         "Use nullptr when there is no target.",
         "Check before using *pointer.",
-        "Use a reference when ?nothing? is not allowed."
+        "Use a reference when \"nothing\" is not allowed."
       ]
     }
   ],
