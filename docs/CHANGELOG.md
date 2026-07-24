@@ -9,6 +9,7 @@ All notable changes to CS Navigator are documented here.
 - **Concept quiz progress indicators.** Concept quiz language/category views now show in-progress and completed status so students can return to unfinished work.
 - **Clearer workspace hint ladder UI.** Hint controls now show the active ladder step, such as "Show hint 1 of 4", and disable once all available hints are shown.
 - **Server-gated Coding Tutor hint state.** Practice and Interview Prep workspace hints now ask the backend how many ladder steps are unlocked from real saved attempts before revealing deeper guidance.
+- **Backend-backed last workspace state.** Coding Tutor now remembers the last practice/interview problem, language, and source per user so another device can reopen the same workspace when localStorage has no draft.
 
 ### Changed
 - Coding Tutor Home recommendations now route honestly: try-first learners open Code practice filtered to the focus topic, while example-first/concept-first learners open the matching lesson when available.
@@ -16,10 +17,13 @@ All notable changes to CS Navigator are documented here.
 - "Explain error" in the Coding Tutor workspace now starts Socratic-first by asking what the student expected before explaining the error and one next fix.
 - Workspace Discussion now shows the current saved Coding Tutor widget thread instead of only the latest one-off feedback response.
 - Lesson renderer and browser TTS now handle captions and compare-block notes so authored lesson guidance is not hidden from students.
+- Practice and Interview Prep workspace drafts now prefer the freshest saved code between backend progress and local unrun drafts, with localStorage kept as the offline fallback instead of the source of truth.
+- Coding Tutor chat-history reload now preserves widget metadata for `coding-*` sessions so saved threads reopen in the floating tutor context instead of blending into regular chat.
 
 ### Fixed
 - Fixed Coding Tutor streaming after removing the old in-chat advising flow.
 - Fixed Interview Prep warmup draft/solved-state persistence issues in the workspace flow.
+- Fixed workspace readability issues where passed-test details and solution-review labels could lose contrast in light/dark mode.
 - Fixed PR review issues in lesson/question content, including malformed apostrophes, a missing C++ include, unsafe arithmetic-swap guidance, Java lesson mismatches, hidden lesson fields, quiz draft clearing, and concept quiz progress fallback behavior.
 
 ### Verified

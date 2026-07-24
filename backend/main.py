@@ -149,7 +149,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, CodingAttemptEvent, CodingHintEvent, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, CodingAttemptEvent, CodingHintEvent, CodingWorkspaceState, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -971,6 +971,19 @@ class CodingHintRequest(BaseModel):
         if value < 1 or value > 4:
             raise ValueError("Hint level must be between 1 and 4.")
         return value
+
+class CodingWorkspaceStateUpdate(BaseModel):
+    problem_id: Optional[str] = None
+    language: str = "python"
+    source: str = "practice"
+
+    @field_validator("source")
+    @classmethod
+    def validate_source(cls, value):
+        normalized = (value or "practice").strip().lower()
+        if normalized not in {"practice", "interview"}:
+            raise ValueError("source must be practice or interview")
+        return normalized
 
 class PracticeRunRequest(BaseModel):
     question_id: str
@@ -6894,6 +6907,58 @@ async def update_interview_progress(
     db.commit()
     db.refresh(progress)
     return _serialize_interview_progress(progress)
+
+def _serialize_workspace_state(row: Optional[CodingWorkspaceState]) -> dict[str, Any]:
+    if not row or not row.problem_id:
+        return {
+            "problem_id": None,
+            "language": "python",
+            "source": "practice",
+            "updated_at": None,
+        }
+    return {
+        "problem_id": row.problem_id,
+        "language": row.language,
+        "source": row.source,
+        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+    }
+
+@app.get("/api/coding/workspace-state")
+async def get_coding_workspace_state(
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    row = (
+        db.query(CodingWorkspaceState)
+        .filter(CodingWorkspaceState.user_id == user["user_id"])
+        .first()
+    )
+    return _serialize_workspace_state(row)
+
+@app.patch("/api/coding/workspace-state")
+async def update_coding_workspace_state(
+    req: CodingWorkspaceStateUpdate,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    language_key, _ = _normalize_practice_language(req.language)
+    if req.problem_id:
+        _find_question(req.problem_id, "interview" if req.source == "interview" else DEFAULT_QUESTION_SET)
+    row = (
+        db.query(CodingWorkspaceState)
+        .filter(CodingWorkspaceState.user_id == user["user_id"])
+        .first()
+    )
+    if not row:
+        row = CodingWorkspaceState(user_id=user["user_id"])
+        db.add(row)
+    row.problem_id = req.problem_id
+    row.language = language_key
+    row.source = req.source
+    row.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(row)
+    return _serialize_workspace_state(row)
 
 
 MAX_DAILY_DAYS = 370  # ~a year; matches the frontend's cap in recordDailyChallengeDay

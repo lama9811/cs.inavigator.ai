@@ -13,6 +13,8 @@ if str(BACKEND) not in sys.path:
 MAIN_API = ROOT / "backend" / "main.py"
 CODING_TUTOR = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "CodingTutor.jsx"
 CHATBOX = ROOT / "frontend" / "src" / "components" / "Chatbox.jsx"
+APP = ROOT / "frontend" / "src" / "App.jsx"
+WORKSPACE_DRAFT = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "workspaceDraft.js"
 
 
 def read(path: Path) -> str:
@@ -65,3 +67,26 @@ def test_hint_requests_are_recorded_server_side_and_sent_to_chat_context():
     assert "/hints/request" in tutor_source
     assert "hintState" in tutor_source
     assert "Hint ladder state:" in chatbox_source
+
+
+def test_workspace_state_syncs_last_problem_and_prefers_newer_drafts():
+    main_source = read(MAIN_API)
+    tutor_source = read(CODING_TUTOR)
+    draft_source = read(WORKSPACE_DRAFT)
+
+    assert '"/api/coding/workspace-state"' in main_source
+    assert "CodingWorkspaceState" in main_source
+    assert "saveWorkspaceState(problem.id, language, \"practice\")" in tutor_source
+    assert "saveWorkspaceState(question.id, openedLanguageKey, \"interview\")" in tutor_source
+    assert "loadWorkspaceState" in tutor_source
+    assert "chooseWorkspaceCode" in tutor_source
+    assert "Date.parse(serverProgress?.updated_at || \"\")" in tutor_source
+    assert "export function readDraftEntry" in draft_source
+
+
+def test_coding_chat_history_preserves_widget_metadata():
+    app_source = read(APP)
+
+    assert 'String(sid).startsWith("coding-")' in app_source
+    assert 'surface: "widget"' in app_source
+    assert 'widgetSessionId: sid' in app_source

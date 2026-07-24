@@ -408,6 +408,10 @@ export default function App() {
               // Group the flat list of messages by their session_id
               data.history.forEach(item => {
                   const sid = item.session_id || "default";
+                  const isCodingSession = String(sid).startsWith("coding-");
+                  const messageMeta = isCodingSession
+                    ? { mode: "coding_tutor", surface: "widget", widgetSessionId: sid }
+                    : { mode: "regular", surface: "main" };
                   if (!grouped[sid]) grouped[sid] = [];
 
                   const ts = new Date(item.time).getTime();
@@ -419,14 +423,16 @@ export default function App() {
                   grouped[sid].push({
                     text: getDisplayChatText(item.user),
                     sender: "user",
-                    time: new Date(item.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+                    time: new Date(item.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+                    ...messageMeta,
                   });
 
                   // Add Bot Message
                   grouped[sid].push({
                     text: item.bot,
                     sender: "bot",
-                    time: new Date(item.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+                    time: new Date(item.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+                    ...messageMeta,
                   });
               });
 

@@ -76,16 +76,20 @@ export function saveDraft(problemId, language, code) {
 }
 
 // Read a saved draft's code for a problem + language (or null if none).
-export function readDraft(problemId, language) {
+export function readDraftEntry(problemId, language) {
   if (!problemId || !language) return null;
   try {
     const raw = localStorage.getItem(draftKey(problemId, language));
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    return typeof parsed?.code === "string" ? parsed.code : null;
+    return typeof parsed?.code === "string" ? parsed : null;
   } catch {
     return null;
   }
+}
+
+export function readDraft(problemId, language) {
+  return readDraftEntry(problemId, language)?.code || null;
 }
 
 // Clear a draft once it's no longer needed (problem solved, explicit reset).

@@ -38,7 +38,7 @@ import { appendInterviewAttempt, summarizeInterviewHistory } from "./interviewHi
 import { fetchInterviewProgress, markInterviewSolved, saveInterviewProgress, useInterviewReviewed, useInterviewSolved } from "./interviewProgress";
 import {
   saveDraft,
-  readDraft,
+  readDraftEntry,
   clearDraft,
   saveLastWorkspace,
   readLastWorkspace,
@@ -544,6 +544,20 @@ function hasStarterCodeChanged(code = "", starterCode = "") {
   return Boolean(normalizedCode) && normalizedCode !== normalizedStarter;
 }
 
+function chooseWorkspaceCode({ explicitCode = null, draftEntry = null, serverProgress = null, starterCode = "" }) {
+  if (explicitCode != null) return explicitCode;
+  const draftCode = typeof draftEntry?.code === "string" ? draftEntry.code : null;
+  const serverCode = typeof serverProgress?.code === "string" && serverProgress.code.trim()
+    ? serverProgress.code
+    : null;
+  if (draftCode && serverCode) {
+    const draftTime = Number(draftEntry?.savedAt || 0);
+    const serverTime = Date.parse(serverProgress?.updated_at || "") || 0;
+    return draftTime > serverTime ? draftCode : serverCode;
+  }
+  return draftCode ?? serverCode ?? starterCode;
+}
+
 function detectLanguageMismatch(code = "", languageKey = "python") {
   const source = String(code);
   const looksPython = /^\s*def\s+\w+\s*\(/m.test(source)
@@ -825,6 +839,7 @@ export default function CodingTutor({
   const restoredWorkspaceTargetRef = useRef(null);
   // Ensures the "auto-reopen last workspace" fallback only fires once per mount.
   const autoReopenedRef = useRef(false);
+  const lastSyncedWorkspaceStateRef = useRef("");
   const selectedLanguageKey = PRACTICE_LANGUAGE_API[selectedLanguage] || "python";
   // Mirror the live editor code + language into refs every render so the mock-nav
   // handlers can read the current answer synchronously when switching questions.
@@ -834,6 +849,52 @@ export default function CodingTutor({
   const activeInterviewProgress = activeProblem ? interviewProgressByQuestion[activeProblem.id]?.[selectedLanguageKey] : null;
   const activeProgress = activeLanguageProgress || (activeProblem ? progressByQuestion[activeProblem.id] : null);
   const attempts = activeProgress?.attempt_count || 0;
+
+  const saveWorkspaceState = useCallback(async (problemId, languageKey, source = "practice") => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    const normalizedSource = source === "interview" ? "interview" : "practice";
+    const normalizedLanguage = languageKey || "python";
+    const signature = `${problemId || ""}:${normalizedLanguage}:${normalizedSource}`;
+    if (lastSyncedWorkspaceStateRef.current === signature) return;
+    lastSyncedWorkspaceStateRef.current = signature;
+    try {
+      const response = await fetch(`${apiBase}/api/coding/workspace-state`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          problem_id: problemId || null,
+          language: normalizedLanguage,
+          source: normalizedSource,
+        }),
+      });
+      if (!response.ok) throw new Error(`workspace-state ${response.status}`);
+    } catch (error) {
+      // Local draft/last-workspace still works offline. Reset the signature so a
+      // later online edit gets another chance to sync.
+      lastSyncedWorkspaceStateRef.current = "";
+      console.warn("[coding-workspace] workspace-state sync failed", error);
+    }
+  }, [apiBase]);
+
+  const loadWorkspaceState = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return null;
+    try {
+      const response = await fetch(`${apiBase}/api/coding/workspace-state`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error(`workspace-state ${response.status}`);
+      const data = await response.json();
+      return data?.problem_id ? data : null;
+    } catch (error) {
+      console.warn("[coding-workspace] workspace-state load failed", error);
+      return null;
+    }
+  }, [apiBase]);
   // Interview simulation: pick your language on the FIRST question of the mock, then it
   // LOCKS for the rest of the round (advancing past Q1 commits it — like committing to a
   // language in a real interview). Stays locked even if you go Back to Q1, so a committed
@@ -1351,6 +1412,7 @@ export default function CodingTutor({
     const handle = setTimeout(() => {
       saveDraft(problemId, language, code);
       if (activeProblem.source === "interview") {
+        if (activeInterviewProgress?.code === code && activeInterviewProgress?.status !== "not_started") return;
         saveInterviewWorkspaceProgress(
           problemId,
           {
@@ -1364,15 +1426,17 @@ export default function CodingTutor({
       if (
         isQuizBankProblem &&
         activeLanguageProgress?.status !== "solved" &&
-        hasStarterCodeChanged(code, starter)
+        hasStarterCodeChanged(code, starter) &&
+        activeLanguageProgress?.code !== code
       ) {
         markInProgressLocal(problemId, language, code);
+        saveProgress(problemId, { status: "in_progress", code }, language);
       }
     }, 400);
     return () => clearTimeout(handle);
     // markInProgressLocal is a stable setState closure; excluded on purpose.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeProblem, selectedLanguageKey, code, activeSolution, isQuizBankProblem, activeLanguageProgress]);
+  }, [activeProblem, selectedLanguageKey, code, activeSolution, isQuizBankProblem, activeLanguageProgress, activeInterviewProgress]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1671,12 +1735,18 @@ export default function CodingTutor({
     setPracticeLanguage(languageName);
     // Code precedence: an explicit restore wins, then a local unrun draft (freshest
     // edit, survives unmount), then saved backend progress, then the starter stub.
-    const draftCode = existingCode == null ? readDraft(problem.id, language) : null;
-    const nextCode = existingCode ?? draftCode ?? progress?.code ?? solution?.starter_code ?? "";
+    const draftEntry = existingCode == null ? readDraftEntry(problem.id, language) : null;
+    const nextCode = chooseWorkspaceCode({
+      explicitCode: existingCode,
+      draftEntry,
+      serverProgress: progress,
+      starterCode: solution?.starter_code || "",
+    });
     setCode(nextCode);
     // Remember this problem+language so the workspace can auto-reopen it if the
     // student navigates to the full chat (which unmounts the workspace) and back.
     saveLastWorkspace(problem.id, language);
+    saveWorkspaceState(problem.id, language, "practice");
     setWorkspaceSnapshots(prev => ({
       ...prev,
       [`${problem.id}:${language}`]: {
@@ -1781,12 +1851,16 @@ export default function CodingTutor({
       );
       const nextLanguageName = displayLanguageName(languageName);
       const nextLanguageKey = PRACTICE_LANGUAGE_API[nextLanguageName] || "python";
-      const draftCode = readDraft(activeProblem.id, nextLanguageKey);
-      const serverCode = interviewProgressByQuestion[activeProblem.id]?.[nextLanguageKey]?.code;
+      const serverProgress = interviewProgressByQuestion[activeProblem.id]?.[nextLanguageKey];
       setSelectedLanguage(nextLanguageName);
       setPracticeLanguage(nextLanguageName);
-      setCode(draftCode ?? serverCode ?? interviewStarterStub(activeProblem, nextLanguageName));
+      setCode(chooseWorkspaceCode({
+        draftEntry: readDraftEntry(activeProblem.id, nextLanguageKey),
+        serverProgress,
+        starterCode: interviewStarterStub(activeProblem, nextLanguageName),
+      }));
       saveLastWorkspace(activeProblem.id, nextLanguageKey);
+      saveWorkspaceState(activeProblem.id, nextLanguageKey, "interview");
       if (activeProblem?.mock) {
         setMockSession((prev) => (prev ? { ...prev, language: nextLanguageName } : prev));
       }
@@ -1868,23 +1942,28 @@ export default function CodingTutor({
     // Restore a saved mock answer (with its language) if the caller passed one;
     // otherwise seed the fresh starter stub. This is what stops mock navigation
     // from wiping the student's in-progress code.
+    let openedLanguageKey = PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
     if (opts.restoreCode != null) {
       const restoreLanguageName = displayLanguageName(opts.restoreLanguage || practiceLanguage);
+      openedLanguageKey = PRACTICE_LANGUAGE_API[restoreLanguageName] || "python";
       setSelectedLanguage(restoreLanguageName);
       setPracticeLanguage(restoreLanguageName);
       setCode(opts.restoreCode);
     } else {
-      const languageName = practiceLanguage;
+      const languageName = displayLanguageName(opts.restoreLanguage || practiceLanguage);
       const languageKey = PRACTICE_LANGUAGE_API[languageName] || "python";
-      const draftCode = readDraft(question.id, languageKey);
-      const serverCode = interviewProgressByQuestion[question.id]?.[languageKey]?.code;
+      openedLanguageKey = languageKey;
+      const serverProgress = interviewProgressByQuestion[question.id]?.[languageKey];
       setSelectedLanguage(languageName);
-      setCode(draftCode ?? serverCode ?? interviewStarterStub(question, languageName));
+      setPracticeLanguage(languageName);
+      setCode(chooseWorkspaceCode({
+        draftEntry: readDraftEntry(question.id, languageKey),
+        serverProgress,
+        starterCode: interviewStarterStub(question, languageName),
+      }));
     }
-    saveLastWorkspace(
-      question.id,
-      PRACTICE_LANGUAGE_API[displayLanguageName(opts.restoreLanguage || practiceLanguage)] || "python",
-    );
+    saveLastWorkspace(question.id, openedLanguageKey);
+    if (!opts.mock) saveWorkspaceState(question.id, openedLanguageKey, "interview");
     setNote(`Interview prep: ${question.title}`);
     setTestOutput({
       status: "ready",
@@ -2343,8 +2422,8 @@ export default function CodingTutor({
   // Fetch a single problem by id from the right library (practice vs interview)
   // and open it in the workspace. Used to RESTORE a /coding/workspace/problem/:id
   // URL on a cold load / refresh, when the problem isn't already active.
-  const restoreWorkspaceProblem = useCallback(async (problemId) => {
-    const set = questionSetForId(problemId);
+  const restoreWorkspaceProblem = useCallback(async (problemId, restoreLanguageKey = null, restoreSource = null) => {
+    const set = restoreSource === "interview" ? "interview" : questionSetForId(problemId);
     try {
       const response = await fetch(
         `${apiBase}/api/coding/practice/questions/${encodeURIComponent(problemId)}?set=${set}`
@@ -2352,16 +2431,22 @@ export default function CodingTutor({
       if (!response.ok) throw new Error(`question ${response.status}`);
       const question = await response.json();
       if (set === "interview") {
-        openInterviewProblem(question);
+        openInterviewProblem(question, {
+          restoreLanguage: PRACTICE_LANGUAGE_NAME[restoreLanguageKey] || practiceLanguage,
+        });
       } else {
         // Restore the language the student last used on THIS problem (defaulting to
         // the current practice language) so a reopen doesn't reset them to Python.
         // loadQuestionSolution then restores that language's saved draft.
         const last = readLastWorkspace();
         const restoreLanguage =
-          last?.problemId === question.id && PRACTICE_LANGUAGE_NAME[last.language]
-            ? PRACTICE_LANGUAGE_NAME[last.language]
-            : practiceLanguage;
+          PRACTICE_LANGUAGE_NAME[restoreLanguageKey]
+            ? PRACTICE_LANGUAGE_NAME[restoreLanguageKey]
+            : (
+              last?.problemId === question.id && PRACTICE_LANGUAGE_NAME[last.language]
+                ? PRACTICE_LANGUAGE_NAME[last.language]
+                : practiceLanguage
+            );
         await loadQuestionSolution(question, restoreLanguage);
       }
     } catch (error) {
@@ -2426,24 +2511,27 @@ export default function CodingTutor({
     if (mockSession && activeProblem?.mock) return;
     if (workspaceTargetFromPath(location.pathname).kind !== "none") return; // a specific target owns it
     if (listLoading) return; // wait until the practice list is ready
-    const last = readLastWorkspace();
-    if (!last?.problemId || questionSetForId(last.problemId) === "interview") return;
     autoReopenedRef.current = true;
-    const languageName = PRACTICE_LANGUAGE_NAME[last.language] || practiceLanguage;
     (async () => {
+      const localLast = readLastWorkspace();
+      const serverLast = localLast?.problemId ? null : await loadWorkspaceState();
+      const last = localLast?.problemId
+        ? { problemId: localLast.problemId, language: localLast.language, source: questionSetForId(localLast.problemId) }
+        : serverLast?.problem_id
+          ? { problemId: serverLast.problem_id, language: serverLast.language, source: serverLast.source }
+          : null;
+      if (!last?.problemId) {
+        autoReopenedRef.current = false;
+        return;
+      }
       try {
-        const response = await fetch(
-          `${apiBase}/api/coding/practice/questions/${encodeURIComponent(last.problemId)}?set=practice`
-        );
-        if (!response.ok) throw new Error(`question ${response.status}`);
-        const question = await response.json();
-        await loadQuestionSolution(question, languageName);
+        await restoreWorkspaceProblem(last.problemId, last.language, last.source);
       } catch (error) {
         console.warn("[coding-workspace] auto-reopen last workspace failed", error);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activePage, listLoading]);
+  }, [activePage, listLoading, loadWorkspaceState, restoreWorkspaceProblem]);
 
   // Returns the saved record, or null if the user cancelled the name prompt.
   const handleSaveSnippet = () => {
@@ -2814,6 +2902,7 @@ export default function CodingTutor({
     // Explicit clear = don't auto-reopen this problem next time (the draft stays,
     // so reopening it from the library still restores the code on demand).
     clearLastWorkspace();
+    saveWorkspaceState(null, selectedLanguageKey, "practice");
     autoReopenedRef.current = true;
     setActiveProblem(null);
     setActiveSolution(null);
@@ -2878,7 +2967,6 @@ export default function CodingTutor({
     const unlocked = hintSteps.filter(hint => !hint.locked).length;
     if (unlocked < hintSteps.length) toast.info(hintGate?.reason || "Run another attempt to unlock the next hint.");
     for (let level = revealedHints + 1; level <= unlocked; level += 1) {
-      // eslint-disable-next-line no-await-in-loop
       const allowed = await requestHintLevel(level);
       if (!allowed) return;
     }

@@ -451,6 +451,27 @@ class CodingHintEvent(Base):
     user = relationship("User", backref="coding_hint_events")
 
 
+class CodingWorkspaceState(Base):
+    """Last Coding Tutor workspace opened by a user.
+
+    Practice/interview code itself lives in the progress tables. This row only
+    remembers which problem/language/source to reopen on another device.
+    """
+    __tablename__ = "coding_workspace_state"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_coding_workspace_state_user"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    problem_id = Column(String(80), nullable=True)
+    language = Column(String(30), nullable=False, default="python")
+    source = Column(String(20), nullable=False, default="practice")
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", backref="coding_workspace_state")
+
+
 class CodingConceptQuizAttempt(Base):
     """Append-only concept-quiz result used for cross-device progress and review.
 
