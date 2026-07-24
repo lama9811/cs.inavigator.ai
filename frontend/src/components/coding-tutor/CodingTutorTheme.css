@@ -442,3 +442,59 @@ body.coding-dark .coding-app .workspace-tabs > button.active {
   color: #eaf0fb !important;
   border-bottom-color: #3b82f6 !important;
 }
+
+/* Final workspace-tab polish: editor-style, not orange selector boxes. */
+.coding-app .workspace-tabs {
+  align-items: center !important;
+  gap: 0.55rem !important;
+  padding: 0.2rem 0.35rem 0 !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--ct-border, #d8cbb8) 86%, transparent) !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(248, 250, 252, 0.52)) !important;
+}
+
+body.coding-dark .coding-app .workspace-tabs {
+  border-bottom-color: rgba(148, 163, 184, 0.22) !important;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.72), rgba(15, 23, 42, 0.48)) !important;
+}
+
+.coding-app .workspace-tabs > button,
+.coding-app .workspace-tabs > button:hover,
+.coding-app .workspace-tabs > button:focus-visible,
+.coding-app .workspace-tabs > button.active,
+.coding-app .workspace-tabs > button.active:hover {
+  min-height: 34px !important;
+  padding: 0.48rem 0.2rem 0.56rem !important;
+  letter-spacing: 0.01em !important;
+  color: color-mix(in srgb, var(--ct-text, #10243a) 62%, #64748b) !important;
+  border-bottom-color: transparent !important;
+}
+
+.coding-app .workspace-tabs > button:hover {
+  color: var(--ct-primary, #002d72) !important;
+}
+
+.coding-app .workspace-tabs > button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--ct-primary, #002d72) 34%, transparent) !important;
+  outline-offset: 3px !important;
+}
+
+.coding-app .workspace-tabs > button.active,
+.coding-app .workspace-tabs > button.active:hover {
+  color: var(--ct-primary, #002d72) !important;
+  border-bottom-color: var(--ct-primary, #002d72) !important;
+}
+
+body.coding-dark .coding-app .workspace-tabs > button,
+body.coding-dark .coding-app .workspace-tabs > button:hover,
+body.coding-dark .coding-app .workspace-tabs > button:focus-visible,
+body.coding-dark .coding-app .workspace-tabs > button.active,
+body.coding-dark .coding-app .workspace-tabs > button.active:hover {
+  color: #aebbd0 !important;
+}
+
+body.coding-dark .coding-app .workspace-tabs > button:hover,
+body.coding-dark .coding-app .workspace-tabs > button.active,
+body.coding-dark .coding-app .workspace-tabs > button.active:hover {
+  color: #f4f8ff !important;
+  border-bottom-color: #6ea8fe !important;
+}

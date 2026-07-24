@@ -19,6 +19,7 @@ All notable changes to CS Navigator are documented here.
 - Lesson renderer and browser TTS now handle captions and compare-block notes so authored lesson guidance is not hidden from students.
 - Practice and Interview Prep workspace drafts now prefer the freshest saved code between backend progress and local unrun drafts, with localStorage kept as the offline fallback instead of the source of truth.
 - Coding Tutor chat-history reload now preserves widget metadata for `coding-*` sessions so saved threads reopen in the floating tutor context instead of blending into regular chat.
+- Coding Tutor workspace now uses a draggable problem-guide divider and quieter editor-style tabs so the workspace feels like one connected coding surface.
 
 ### Fixed
 - Fixed Coding Tutor streaming after removing the old in-chat advising flow.

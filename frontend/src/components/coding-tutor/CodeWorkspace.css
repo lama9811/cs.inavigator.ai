@@ -231,13 +231,71 @@ body.coding-dark .coding-app .workspace-tabs .terminal-tab.active {
 
 .coding-app.coding-workspace-active .coding-workbench-main {
   flex: 1 1 auto;
-  gap: 14px;
+  display: grid;
+  grid-template-columns: minmax(240px, var(--workspace-guide-width, 340px)) 12px minmax(0, 1fr);
+  gap: 0;
+}
+
+.workspace-guide-divider {
+  align-self: stretch;
+  position: relative;
+  cursor: ew-resize;
+  background:
+    linear-gradient(180deg, transparent, color-mix(in srgb, var(--ct-border, #d8cbb8) 78%, transparent), transparent);
+  border: 0;
+  touch-action: none;
+  min-width: 12px;
+  z-index: 2;
+}
+
+.workspace-guide-divider::before {
+  content: "";
+  position: absolute;
+  inset: 12px 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-border, #d8cbb8) 70%, transparent);
+  opacity: 0.85;
+  transition: background 0.16s ease, opacity 0.16s ease, box-shadow 0.16s ease;
+}
+
+.workspace-guide-divider:hover::before,
+.workspace-guide-divider:focus-visible::before {
+  background: color-mix(in srgb, var(--ct-primary, #0b2a4a) 70%, var(--ct-accent, #f58220));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ct-primary, #0b2a4a) 16%, transparent);
+  opacity: 1;
+}
+
+.workspace-guide-divider:focus-visible {
+  outline: none;
+}
+
+.workspace-guide-divider-grip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-text, #1d2a3a) 28%, transparent);
+}
+
+.workspace-guide-divider:hover .workspace-guide-divider-grip,
+.workspace-guide-divider:focus-visible .workspace-guide-divider-grip {
+  background: #fff;
+}
+
+body.ct-guide-resizing,
+body.ct-guide-resizing * {
+  cursor: ew-resize !important;
+  user-select: none !important;
 }
 
 .coding-app.coding-workspace-active .coding-problem-panel,
 .coding-app.coding-workspace-active .coding-editor-center {
   min-height: 0 !important;
   max-height: 100%;
+  border-radius: 16px !important;
 }
 
 .coding-app.coding-workspace-active .workspace-tab-body {
@@ -264,7 +322,18 @@ body.coding-dark .coding-app .workspace-tabs .terminal-tab.active {
 
 @media (max-height: 780px), (max-width: 1180px) {
   .coding-app.coding-workspace-active .coding-workbench-main {
+    gap: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .coding-app.coding-workspace-active .coding-workbench-main {
+    grid-template-columns: minmax(0, 1fr);
     gap: 10px;
+  }
+
+  .workspace-guide-divider {
+    display: none;
   }
 }
 

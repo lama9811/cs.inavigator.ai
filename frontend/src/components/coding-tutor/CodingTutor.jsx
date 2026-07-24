@@ -51,6 +51,23 @@ import "./CodingTutor.css";
 import "./CodingTutorTheme.css";
 
 const CODE_LANGUAGES = ["Python", "Java", "JavaScript", "C++"];
+const WORKSPACE_GUIDE_MIN_W = 260;
+const WORKSPACE_GUIDE_MAX_W = 560;
+const WORKSPACE_GUIDE_DEFAULT_W = 340;
+const WORKSPACE_GUIDE_W_KEY = "csnav.workspaceGuideWidth";
+
+function readStoredWorkspaceGuideWidth() {
+  try {
+    const raw = window.localStorage.getItem(WORKSPACE_GUIDE_W_KEY);
+    const value = raw ? parseInt(raw, 10) : NaN;
+    if (Number.isFinite(value)) {
+      return Math.min(WORKSPACE_GUIDE_MAX_W, Math.max(WORKSPACE_GUIDE_MIN_W, value));
+    }
+  } catch {
+    /* localStorage can be blocked; default width is fine */
+  }
+  return WORKSPACE_GUIDE_DEFAULT_W;
+}
 // Concept-quiz language ids (backend keys) → display labels, for the quiz views.
 const CONCEPT_QUIZ_LABELS = {
   python: "Python",
@@ -814,10 +831,12 @@ export default function CodingTutor({
   const [note, setNote] = useState("");
   const [testOutput, setTestOutput] = useState({ status: "ready", message: "" });
   const [terminalOpen, setTerminalOpen] = useState(false);
+  const [workspaceGuideWidth, setWorkspaceGuideWidth] = useState(readStoredWorkspaceGuideWidth);
   const [isRunning, setIsRunning] = useState(false);
   // Lets the Stop button abort an in-flight run. The backend's hard CPU/time
   // limit also kills a truly stuck process, so this frees the UI immediately.
   const runAbortRef = useRef(null);
+  const guideResizeRef = useRef(null);
 
   const stopRun = useCallback(() => {
     if (runAbortRef.current) {
@@ -826,6 +845,60 @@ export default function CodingTutor({
     }
     setIsRunning(false);
     setTestOutput({ status: "error", free_run: true, tests: [], stdout: "", stderr: "Run stopped.", message: "You stopped the run." });
+  }, []);
+
+  const onGuideDividerPointerDown = useCallback((event) => {
+    event.preventDefault();
+    guideResizeRef.current = {
+      startX: event.clientX,
+      startWidth: workspaceGuideWidth,
+    };
+    document.body.classList.add("ct-guide-resizing");
+    try {
+      event.target.setPointerCapture?.(event.pointerId);
+    } catch {
+      /* pointer capture is best-effort */
+    }
+  }, [workspaceGuideWidth]);
+
+  const onGuideDividerPointerMove = useCallback((event) => {
+    const state = guideResizeRef.current;
+    if (!state) return;
+    const delta = event.clientX - state.startX;
+    const next = Math.min(
+      WORKSPACE_GUIDE_MAX_W,
+      Math.max(WORKSPACE_GUIDE_MIN_W, state.startWidth + delta),
+    );
+    setWorkspaceGuideWidth(next);
+  }, []);
+
+  const endGuideResize = useCallback(() => {
+    if (!guideResizeRef.current) return;
+    guideResizeRef.current = null;
+    document.body.classList.remove("ct-guide-resizing");
+    setWorkspaceGuideWidth((value) => {
+      try {
+        window.localStorage.setItem(WORKSPACE_GUIDE_W_KEY, String(Math.round(value)));
+      } catch {
+        /* ignore storage errors */
+      }
+      return value;
+    });
+  }, []);
+
+  const onGuideDividerKeyDown = useCallback((event) => {
+    const step = event.shiftKey ? 48 : 16;
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      setWorkspaceGuideWidth((value) => Math.max(WORKSPACE_GUIDE_MIN_W, value - step));
+    } else if (event.key === "ArrowRight") {
+      event.preventDefault();
+      setWorkspaceGuideWidth((value) => Math.min(WORKSPACE_GUIDE_MAX_W, value + step));
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => document.body.classList.remove("ct-guide-resizing");
   }, []);
   const [revealedHints, setRevealedHints] = useState(0);
   const [hintGate, setHintGate] = useState(null);
@@ -3062,7 +3135,10 @@ export default function CodingTutor({
         onFinish={finishMock}
         onEnd={confirmEndMock}
       />
-      <div className="coding-workbench-main">
+      <div
+        className="coding-workbench-main"
+        style={{ "--workspace-guide-width": `${Math.round(workspaceGuideWidth)}px` }}
+      >
         {isPersonalMode ? (
           <PersonalPanel
             snippets={snippets}
@@ -3098,6 +3174,25 @@ export default function CodingTutor({
             onViewSolutionMock={requestViewSolutionMock}
           />
         )}
+        <div
+          className="workspace-guide-divider"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize problem guide"
+          aria-valuemin={WORKSPACE_GUIDE_MIN_W}
+          aria-valuemax={WORKSPACE_GUIDE_MAX_W}
+          aria-valuenow={Math.round(workspaceGuideWidth)}
+          aria-valuetext={`Problem guide width ${Math.round(workspaceGuideWidth)} pixels`}
+          tabIndex={0}
+          title="Drag to resize the problem guide"
+          onPointerDown={onGuideDividerPointerDown}
+          onPointerMove={onGuideDividerPointerMove}
+          onPointerUp={endGuideResize}
+          onPointerCancel={endGuideResize}
+          onKeyDown={onGuideDividerKeyDown}
+        >
+          <span className="workspace-guide-divider-grip" aria-hidden="true" />
+        </div>
         <CodeWorkspace
           activeProblem={activeProblem}
           code={code}
