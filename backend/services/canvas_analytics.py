@@ -382,35 +382,47 @@ def _calc_weighted_targets(group_map: dict, current: Optional[float]) -> dict:
     if current is None:
         return {k: {"required_avg": None, "achievable": False} for k in GRADE_TARGETS}
 
-    # Calculate weight of graded vs remaining
-    graded_weight = 0.0
-    remaining_weight = 0.0
-    weighted_earned = 0.0
+    # Split each group's weight between what is banked and what is still winnable,
+    # in proportion to its POINTS. A group holding both graded and ungraded work
+    # used to be counted at its full weight on both sides at once, so the required
+    # average came out wrong mid-semester — precisely when a student checks it.
+    #
+    # For one group scoring x (a fraction) on its remaining points, its final
+    # percentage is (earned + x*remaining) / (possible + remaining), so its
+    # contribution to the weighted total splits cleanly into a fixed part and a
+    # part proportional to x. Summing those two parts across groups gives:
+    #     required_avg = (target * total_weight - locked) / winnable
+    locked = 0.0        # weight-scaled percentage already banked
+    winnable = 0.0      # weight still up for grabs
+    total_weight = 0.0
 
     for g in group_map.values():
-        if g["weight"] <= 0:
+        weight = g["weight"]
+        if weight <= 0:
             continue
-        if g["graded_possible"] > 0:
-            group_pct = (g["graded_earned"] / g["graded_possible"]) * 100
-            weighted_earned += group_pct * g["weight"]
-            graded_weight += g["weight"]
-        if g["remaining_possible"] > 0:
-            remaining_weight += g["weight"]
-
-    # Some weight may overlap (group has both graded and remaining)
-    # Use total weight minus pure-graded weight for remaining
-    total_weight = sum(g["weight"] for g in group_map.values() if g["weight"] > 0)
+        graded_possible = g["graded_possible"]
+        remaining_possible = g["remaining_possible"]
+        group_points = graded_possible + remaining_possible
+        if group_points <= 0:
+            # A weighted group the professor never populated. Canvas drops it
+            # from the base rather than scoring it zero, so we must too — leaving
+            # it in silently charged the student for work that does not exist.
+            continue
+        total_weight += weight
+        if graded_possible > 0:
+            group_pct = (g["graded_earned"] / graded_possible) * 100
+            locked += group_pct * weight * (graded_possible / group_points)
+        winnable += weight * (remaining_possible / group_points)
 
     result = {}
     for key, target in GRADE_TARGETS.items():
-        if remaining_weight <= 0:
+        if winnable <= 0:
             result[key] = {
                 "required_avg": None,
                 "achievable": current >= target,
             }
         else:
-            # target = (weighted_earned + required_avg * remaining_weight) / total_weight
-            needed = ((target * total_weight) - weighted_earned) / remaining_weight
+            needed = ((target * total_weight) - locked) / winnable
             result[key] = {
                 "required_avg": round(needed, 1),
                 "achievable": needed <= 100,
