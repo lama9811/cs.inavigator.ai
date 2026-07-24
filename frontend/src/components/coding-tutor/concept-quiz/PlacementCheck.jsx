@@ -168,7 +168,7 @@ export default function PlacementCheck({ apiBase, language, onClose, onUseRecomm
                 className="cq-btn cq-btn-primary"
                 onClick={() => onUseRecommendation(result.recommendation)}
               >
-                Show my recommended topic
+                Start recommended topic
               </button>
             </div>
           </div>

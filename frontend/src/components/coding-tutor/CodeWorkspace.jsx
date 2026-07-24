@@ -40,6 +40,7 @@ export default function CodeWorkspace({
   revealedHints,
   isRunning,
   latestFeedback,
+  discussionMessages = [],
   terminalOpen,
   testOutput,
   solutionReview,
@@ -144,11 +145,29 @@ export default function CodeWorkspace({
     if (workspaceTab === "Discussion") {
       return (
         <div className="workspace-discussion-panel">
-          {latestFeedback ? (
+          {discussionMessages.length ? (
+            <div className="workspace-discussion-thread" role="log" aria-label="Coding tutor discussion">
+              {discussionMessages.map((message) => (
+                <article
+                  key={message.id || `${message.sender}-${message.time}-${message.text?.slice(0, 20)}`}
+                  className={`workspace-discussion-message ${message.sender === "user" ? "user" : "bot"}`}
+                >
+                  <span className="workspace-discussion-speaker">
+                    {message.sender === "user" ? "You" : "Coding Tutor"}
+                  </span>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ code: codeRenderer }}>
+                    {message.text || (message.isStreaming ? "Thinking..." : "")}
+                  </ReactMarkdown>
+                </article>
+              ))}
+            </div>
+          ) : latestFeedback ? (
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ code: codeRenderer }}>
               {latestFeedback}
             </ReactMarkdown>
-          ) : <p>Tutor replies will appear here after you ask for review, debugging, or edge cases.</p>}
+          ) : (
+            <p>Tutor replies will appear here after you ask for review, debugging, or edge cases.</p>
+          )}
         </div>
       );
     }

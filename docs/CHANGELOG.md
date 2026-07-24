@@ -2,6 +2,32 @@
 
 All notable changes to CS Navigator are documented here.
 
+## [Unreleased]
+### Added
+- **Coding Tutor learning-style preference.** Students can choose whether they want examples first, to try first and then get hints, or to hear the concept before code. The preference is saved per user and used by Coding Tutor recommendations and tutor context.
+- **Section-based lesson flow and completion tracking.** Learn lessons can be split into smaller sections, with previous/next controls, a final Practice CTA, and completion gated on answering the lesson’s check-yourself questions.
+- **Concept quiz progress indicators.** Concept quiz language/category views now show in-progress and completed status so students can return to unfinished work.
+- **Clearer workspace hint ladder UI.** Hint controls now show the active ladder step, such as "Show hint 1 of 4", and disable once all available hints are shown.
+- **Server-gated Coding Tutor hint state.** Practice and Interview Prep workspace hints now ask the backend how many ladder steps are unlocked from real saved attempts before revealing deeper guidance.
+
+### Changed
+- Coding Tutor Home recommendations now route honestly: try-first learners open Code practice filtered to the focus topic, while example-first/concept-first learners open the matching lesson when available.
+- Coding Tutor light-mode helper surfaces use the navy learning palette instead of decorative orange where the accent was clashing.
+- "Explain error" in the Coding Tutor workspace now starts Socratic-first by asking what the student expected before explaining the error and one next fix.
+- Workspace Discussion now shows the current saved Coding Tutor widget thread instead of only the latest one-off feedback response.
+- Lesson renderer and browser TTS now handle captions and compare-block notes so authored lesson guidance is not hidden from students.
+
+### Fixed
+- Fixed Coding Tutor streaming after removing the old in-chat advising flow.
+- Fixed Interview Prep warmup draft/solved-state persistence issues in the workspace flow.
+- Fixed PR review issues in lesson/question content, including malformed apostrophes, a missing C++ include, unsafe arithmetic-swap guidance, Java lesson mismatches, hidden lesson fields, quiz draft clearing, and concept quiz progress fallback behavior.
+
+### Verified
+- JSON parse checks for edited lesson/question files pass.
+- Backend `py_compile` passes for Coding Tutor touched modules.
+- Frontend `npm run build` passes.
+- Frontend `npm run lint` passes with existing warnings only.
+
 ## [7.0.0] - 2026-07-17
 ### Added
 - **Scholarships & Internships, v2 — a real feature, not a search box.** The Tools → Scholarships page now finds opportunities via Google grounding search over a curated database and lets a student **save and track** each one. Saved items get a **detail page** and an **application checklist** (internship checklists follow the real hiring pipeline: apply → OA → phone screen → onsite → offer). A **dashboard rollup** summarizes saved opportunities, and **deadline nudges** surface what's due soon.

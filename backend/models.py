@@ -426,6 +426,31 @@ class CodingAttemptEvent(Base):
     user = relationship("User", backref="coding_attempt_events")
 
 
+class CodingHintEvent(Base):
+    """Append-only log of hint ladder reveals.
+
+    Runs tell us what happened after code executes; this table records when a
+    student asks for guidance before the next run. It lets the app enforce the
+    same hint ladder across reloads/devices without pretending a hint click is a
+    code attempt.
+    """
+    __tablename__ = "coding_hint_events"
+    __table_args__ = (
+        Index("ix_coding_hint_user_question", "user_id", "question_id"),
+        Index("ix_coding_hint_question_created", "question_id", "created_at"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    source = Column(String(20), nullable=False, default="practice")
+    question_id = Column(String(80), nullable=False, index=True)
+    language = Column(String(30), nullable=False, default="python")
+    level = Column(Integer, nullable=False, default=1)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+
+    user = relationship("User", backref="coding_hint_events")
+
+
 class CodingConceptQuizAttempt(Base):
     """Append-only concept-quiz result used for cross-device progress and review.
 

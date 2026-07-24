@@ -649,38 +649,42 @@ function topicVideoUrl(topic = "") {
   return "https://www.youtube.com/watch?v=MK-NZ4hN7rs";
 }
 
-function buildHintSteps(problem, solution, attempts) {
+function buildHintSteps(problem, solution, attempts, hintGate = null) {
   if (!problem) return [];
   const topic = problem.topic || "the main pattern";
-  const givenHints = problem.hints || [];
+  const gateHints = Array.isArray(hintGate?.hints) ? hintGate.hints : [];
+  const givenHints = gateHints.map(item => item.hint).filter(Boolean);
   const guided = solution?.guided_steps || [];
   const shapeSnippet = buildShapeSnippet(solution || {});
+  const unlockedCount = Number.isFinite(hintGate?.unlocked_count)
+    ? hintGate.unlocked_count
+    : attempts >= 2 ? 4 : 3;
   return [
     {
       level: 1,
-      title: "Strategy",
-      body: givenHints[0] || `Describe the ${topic} idea in plain English first. Name what you compare, count, or store before writing the loop.`,
-      locked: false,
+      title: "Question Check",
+      body: givenHints[0] || `Reread the prompt and name what the answer should return. Then try one tiny example by hand before changing code.`,
+      locked: unlockedCount < 1,
     },
     {
       level: 2,
-      title: "Key Condition",
-      body: givenHints[1] || guided[0] || "Find the exact condition that changes your answer. Test that condition with the smallest input first.",
-      locked: false,
+      title: "Concept",
+      body: givenHints[1] || guided[0] || `Focus on the ${topic} idea: decide what you need to remember as you scan, compare, or build the answer.`,
+      locked: unlockedCount < 2,
     },
     {
       level: 3,
-      title: "Code Shape",
+      title: "Pseudocode / Code Shape",
       body: shapeSnippet
         ? `Use this only as a shape check:\n\n\`\`\`\n${shapeSnippet}\n\`\`\``
         : givenHints[2] || guided[1] || "Write just the loop or branch that updates your answer, then stop and test it manually.",
-      locked: false,
+      locked: unlockedCount < 3,
     },
     {
       level: 4,
-      title: "Near Solution",
+      title: "Small Code Fragment",
       body: guided[2] || givenHints[2] || "Connect the helper logic to the return value, then test an empty, one-item, and typical input.",
-      locked: attempts < 2,
+      locked: unlockedCount < 4,
     },
   ];
 }
@@ -810,6 +814,7 @@ export default function CodingTutor({
     setTestOutput({ status: "error", free_run: true, tests: [], stdout: "", stderr: "Run stopped.", message: "You stopped the run." });
   }, []);
   const [revealedHints, setRevealedHints] = useState(0);
+  const [hintGate, setHintGate] = useState(null);
   const [tutorMode, setTutorMode] = useState("Guided Tutor");
   const [quizPdfStartIndex, setQuizPdfStartIndex] = useState(null);
   const [workspaceSnapshots, setWorkspaceSnapshots] = useState({});
@@ -834,7 +839,7 @@ export default function CodingTutor({
   // language in a real interview). Stays locked even if you go Back to Q1, so a committed
   // language can't be swapped mid-round. Outside a mock it's freely switchable.
   const interviewLanguageLocked = Boolean(mockSession && activeProblem?.mock && mockSession.languageCommitted);
-  const hintSteps = useMemo(() => buildHintSteps(activeProblem, activeSolution, attempts), [activeProblem, activeSolution, attempts]);
+  const hintSteps = useMemo(() => buildHintSteps(activeProblem, activeSolution, attempts, hintGate), [activeProblem, activeSolution, attempts, hintGate]);
   const latestFeedback = messages.slice().reverse().find((msg) =>
     msg.sender === "bot"
     && msg.text
@@ -842,6 +847,15 @@ export default function CodingTutor({
     && msg.surface === "widget"
     && msg.widgetSessionId === currentWidgetSessionId
   )?.text || "";
+  const discussionMessages = useMemo(
+    () =>
+      messages.filter((msg) =>
+        msg.mode === "coding_tutor"
+        && msg.surface === "widget"
+        && msg.widgetSessionId === currentWidgetSessionId
+      ),
+    [messages, currentWidgetSessionId]
+  );
   const suggestedCodeBlock = latestFeedback.match(/```(?:\w+)?\n([\s\S]*?)```/)?.[1]?.trim() || "";
   const latestQuizResponse = quizPdfStartIndex !== null
     ? messages.slice(quizPdfStartIndex).slice().reverse().find((msg) => msg.sender === "bot" && msg.text)?.text || ""
@@ -869,6 +883,47 @@ export default function CodingTutor({
     isQuizBankProblem
       && (activeQuestionProgress?.status === "solved" || activeLanguageProgress?.status === "solved")
   ) || (isInterviewWorkspaceProblem && interviewSolved.has(activeProblem?.id));
+
+  useEffect(() => {
+    if (!activeProblem?.id) {
+      setHintGate(null);
+      return undefined;
+    }
+    if (!isQuizBankProblem && !isInterviewWorkspaceProblem) {
+      setHintGate(null);
+      return undefined;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setHintGate(null);
+      return undefined;
+    }
+
+    const questionSet = isInterviewWorkspaceProblem ? "interview" : "practice";
+    const controller = new AbortController();
+    setHintGate(null);
+    fetch(`${apiBase}/api/coding/practice/questions/${encodeURIComponent(activeProblem.id)}/hint-state?set=${questionSet}&language=${selectedLanguageKey}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal,
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(`hint-state ${response.status}`);
+        return response.json();
+      })
+      .then((data) => {
+        setHintGate(data);
+        setRevealedHints((current) => Math.min(current, data.unlocked_count || 0));
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") {
+          console.warn("[coding-hints] server hint gate unavailable; using local fallback", error);
+          setHintGate(null);
+        }
+      });
+
+    return () => controller.abort();
+  }, [activeProblem?.id, activeProblem?.source, apiBase, attempts, isInterviewWorkspaceProblem, isQuizBankProblem, selectedLanguageKey]);
 
   const progressQuestions = useMemo(
     () => (allQuestions.length ? allQuestions : questions),
@@ -1127,7 +1182,7 @@ export default function CodingTutor({
       return;
     }
     sendToWidget([
-      "My code produced this error when I ran it. In plain English: what does this error mean, what is the most likely cause, and what is one focused fix to try? Do not rewrite my whole program.",
+      "My code produced this error when I ran it. Start by asking me what I expected the code to do. Then explain the error in plain English, name the most likely cause, and give one focused fix to try. Do not rewrite my whole program.",
       "",
       `Language: ${selectedLanguage}`,
       "Error output:",
@@ -1225,13 +1280,18 @@ export default function CodingTutor({
       learningStyle,
       learningStyleLabel: learningStyleInfo(learningStyle).label,
       learningStyleInstruction: learningStyleInfo(learningStyle).prompt,
+      hintState: hintGate ? {
+        unlockedCount: hintGate.unlocked_count || 0,
+        solutionUnlocked: Boolean(hintGate.solution_unlocked),
+        reason: hintGate.reason || "",
+      } : null,
       runnerSummary: useWorkspace ? runnerSummary : "",
       suggestedCodeBlock,
       onApplyAICode: suggestedCodeBlock ? applyAiCode : null,
       onUndoAICode: typeof activeSnapshots.beforeAiRewrite === "string" ? undoAiCode : null,
       canUndoAICode: typeof activeSnapshots.beforeAiRewrite === "string",
     });
-  }, [activePage, activeProblem, attempts, code, note, onContextChange, selectedLanguage, suggestedCodeBlock, tutorMode, learningStyle, workspaceTab, workspaceVisible, runnerSummary, activeSnapshots.beforeAiRewrite, applyAiCode, undoAiCode]);
+  }, [activePage, activeProblem, attempts, code, note, onContextChange, selectedLanguage, suggestedCodeBlock, tutorMode, learningStyle, hintGate, workspaceTab, workspaceVisible, runnerSummary, activeSnapshots.beforeAiRewrite, applyAiCode, undoAiCode]);
 
   useEffect(() => {
     onActivePageChange?.(activePage);
@@ -1585,8 +1645,8 @@ export default function CodingTutor({
     const solutionCacheKey = `${problem.id}:${language}`;
     let solution = solutionCacheRef.current[solutionCacheKey];
     if (!solution) {
-      const response = await fetch(`${apiBase}/api/coding/practice/questions/${problem.id}/solution?language=${language}`);
-      if (!response.ok) throw new Error(`solution ${response.status}`);
+      const response = await fetch(`${apiBase}/api/coding/practice/questions/${problem.id}/materials?language=${language}`);
+      if (!response.ok) throw new Error(`materials ${response.status}`);
       solution = await response.json();
       solutionCacheRef.current[solutionCacheKey] = solution;
     }
@@ -1634,6 +1694,38 @@ export default function CodingTutor({
     setRevealedHints(0);
     navigate(workspacePathForProblem(problem.id));
   };
+
+  const loadUnlockedReferenceSolution = async (problem = activeProblem, language = selectedLanguageKey) => {
+    if (!problem?.id || problem.source === "interview" || problem.source === "personal" || problem.source === "leetcode") return null;
+    const token = localStorage.getItem("token");
+    if (!token) return null;
+    try {
+      const response = await fetch(`${apiBase}/api/coding/practice/questions/${problem.id}/solution?language=${language}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.status === 423) {
+        if (data?.detail?.hint_state) setHintGate(data.detail.hint_state);
+        return null;
+      }
+      if (!response.ok) throw new Error(data.detail || `solution ${response.status}`);
+      setActiveSolution((current) => current && problem.id === activeProblem?.id
+        ? { ...current, ...data }
+        : current
+      );
+      if (data.hint_state) setHintGate(data.hint_state);
+      return data;
+    } catch (error) {
+      console.warn("[coding-solution] reference solution unavailable", error);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    if (!hintGate?.solution_unlocked || activeSolution?.reference_solution) return;
+    loadUnlockedReferenceSolution(activeProblem, selectedLanguageKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hintGate?.solution_unlocked, activeSolution?.reference_solution, activeProblem?.id, selectedLanguageKey]);
 
   // Persist the CURRENT quiz problem as in-progress if its code changed from the
   // starter, so editing a problem (even without running it) makes it show up under
@@ -2734,19 +2826,62 @@ export default function CodingTutor({
     toast.success("Workspace cleared. Reopen a problem from the Practice Library to restore it.");
   };
 
-  const showNextHint = () => {
+  const requestHintLevel = async (level) => {
+    if (!activeProblem?.id) return false;
+    if (!isQuizBankProblem && !isInterviewWorkspaceProblem) return true;
+    const token = localStorage.getItem("token");
+    if (!token) return true;
+    const questionSet = isInterviewWorkspaceProblem ? "interview" : "practice";
+    try {
+      const response = await fetch(`${apiBase}/api/coding/practice/questions/${encodeURIComponent(activeProblem.id)}/hints/request`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          language: selectedLanguageKey,
+          set: questionSet,
+          level,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.status === 423) {
+        const state = data?.detail?.hint_state;
+        if (state) setHintGate(state);
+        toast.info(data?.detail?.message || state?.reason || "Run another attempt to unlock the next hint.");
+        return false;
+      }
+      if (!response.ok) throw new Error(data.detail || `hint ${response.status}`);
+      setHintGate(data);
+      return true;
+    } catch (error) {
+      console.warn("[coding-hints] could not record hint reveal; using local fallback", error);
+      return true;
+    }
+  };
+
+  const showNextHint = async () => {
     const unlocked = hintSteps.filter(hint => !hint.locked).length;
     if (revealedHints >= unlocked && hintSteps.some(hint => hint.locked)) {
-      toast.info("Final hint unlocks after 2 Run attempts.");
+      toast.info(hintGate?.reason || "Run another attempt to unlock the next hint.");
       return;
     }
+    const nextLevel = Math.min(revealedHints + 1, unlocked);
+    const allowed = await requestHintLevel(nextLevel);
+    if (!allowed) return;
     setRevealedHints(prev => Math.min(prev + 1, unlocked));
     setWorkspaceTab("Hints");
   };
 
-  const showAllHints = () => {
+  const showAllHints = async () => {
     const unlocked = hintSteps.filter(hint => !hint.locked).length;
-    if (unlocked < hintSteps.length) toast.info("Final hint unlocks after 2 Run attempts.");
+    if (unlocked < hintSteps.length) toast.info(hintGate?.reason || "Run another attempt to unlock the next hint.");
+    for (let level = revealedHints + 1; level <= unlocked; level += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      const allowed = await requestHintLevel(level);
+      if (!allowed) return;
+    }
     setRevealedHints(unlocked);
     setWorkspaceTab("Hints");
   };
@@ -2886,6 +3021,7 @@ export default function CodingTutor({
           revealedHints={revealedHints}
           isRunning={isRunning}
           latestFeedback={latestFeedback}
+          discussionMessages={discussionMessages}
           suggestedCodeBlock={suggestedCodeBlock}
           terminalOpen={terminalOpen}
           testOutput={testOutput}
@@ -2964,12 +3100,13 @@ export default function CodingTutor({
     navigate(PRACTICE_CODE_PATH);
   };
 
-  const openRecommendedTopic = (label) => {
+  const openRecommendedTopic = (label, action = null) => {
     const topic = resolvePracticeTopic(label);
     if (!topic) return;
     const languageKey = PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
     const lessonCategory = lessonCategoryForPracticeTopic(topic, languageKey);
-    if (learningStyle !== "try_then_hint" && lessonCategory) {
+    const wantsLesson = action === "lesson" || (!action && learningStyle !== "try_then_hint");
+    if (wantsLesson && lessonCategory) {
       navigate(learnPathForLesson(languageKey, lessonCategory));
       return;
     }

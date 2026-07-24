@@ -382,6 +382,35 @@ export default function QuizLanguageLanding({
     }, 50);
   };
 
+  const startRecommendedTopic = async (recommendation) => {
+    showRecommendation(recommendation);
+    setError("");
+
+    const categoryId = recommendation?.category;
+    if (!categoryId) return;
+
+    try {
+      const questions = questionsByCat[categoryId] || (
+        await fetchQuizQuestions(apiBase, language, categoryId)
+      ).questions || [];
+      if (!questionsByCat[categoryId]) cacheQuestions(categoryId, questions);
+
+      const categoryProgress = progressByCat[categoryId]?.questions || {};
+      const draftAnswers = readQuizDraftAnswers(language, categoryId);
+      const draftQuestion = questions.find((question) => hasDraftAnswer(draftAnswers[question.id]));
+      const nextQuestion =
+        draftQuestion ||
+        questions.find((question) => categoryProgress[question.id] !== "correct") ||
+        questions[0];
+
+      if (nextQuestion?.id) {
+        onOpenQuestion(categoryId, nextQuestion.id);
+      }
+    } catch (err) {
+      setError(err.message || "Could not open the recommended topic yet.");
+    }
+  };
+
   return (
     <div className="cq-landing">
 
@@ -475,7 +504,7 @@ export default function QuizLanguageLanding({
           apiBase={apiBase}
           language={language}
           onClose={() => setPlacementOpen(false)}
-          onUseRecommendation={showRecommendation}
+          onUseRecommendation={startRecommendedTopic}
         />
       ) : null}
 

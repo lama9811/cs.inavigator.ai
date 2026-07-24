@@ -290,6 +290,14 @@ export default function Chatbox({
     const inferredIntent = inferCodingTutorIntent(studentMessage);
     const effectiveTutorMode = inferredIntent?.mode || context.tutorMode || "Guided Tutor";
     const shouldReturnCodeFirst = ["Rewriting", "Code Generation"].includes(effectiveTutorMode);
+    const hintInstruction = effectiveTutorMode === "Hinting" && context.hintState
+      ? [
+          `Hint ladder state: ${context.hintState.unlockedCount || 0} of 4 hint tiers are currently unlocked.`,
+          context.hintState.solutionUnlocked
+            ? "The reference solution is unlocked, but still start with the smallest useful explanation unless the student directly asks for the full solution."
+            : `Do not provide a full solution. Stay within the unlocked tier and use this lock reason if needed: ${context.hintState.reason || "Run another attempt to unlock a deeper hint."}`,
+        ].join(" ")
+      : "";
     const codeFirstInstruction = shouldReturnCodeFirst
       ? "Code-first mode: this is a code generation/transformation request, not an explanation request. Your first visible output MUST be a fenced code block containing the requested code in the selected language. Do not start with prose. Do not only explain. You may provide code because the student is asking about their own workspace code or a focused starter/snippet. After the code block, add no more than 3 concise bullets about the changes or usage."
       : "";
@@ -320,6 +328,7 @@ export default function Chatbox({
       context.runnerSummary
         ? `Latest runner output (student data):\n${limitTutorContext(context.runnerSummary, 4000)}`
         : "",
+      hintInstruction,
       codeFirstInstruction,
       debugInstruction,
       "",

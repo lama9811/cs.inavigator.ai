@@ -149,7 +149,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, CodingAttemptEvent, CodingHintEvent, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -959,6 +959,18 @@ class CodingInterviewProgressUpdate(BaseModel):
             valid = ", ".join(sorted(VALID_INTERVIEW_STATUSES))
             raise ValueError(f"Status must be one of: {valid}")
         return normalized
+
+class CodingHintRequest(BaseModel):
+    language: str = "python"
+    set: str = DEFAULT_QUESTION_SET
+    level: int
+
+    @field_validator("level")
+    @classmethod
+    def validate_level(cls, value):
+        if value < 1 or value > 4:
+            raise ValueError("Hint level must be between 1 and 4.")
+        return value
 
 class PracticeRunRequest(BaseModel):
     question_id: str
@@ -5608,6 +5620,32 @@ def _find_language_solution(question_id: str, language: str, question: Optional[
             return solution
     raise HTTPException(status_code=404, detail="Practice solution not found for that question and language.")
 
+def _practice_solution_materials(solution: dict[str, Any]) -> dict[str, Any]:
+    """Return the safe client payload needed to seed the workspace.
+
+    Reference solutions and runner tests stay server-side until the student has
+    earned solution review access. The runner endpoint still loads the full
+    solution internally when grading.
+    """
+    allowed = {
+        "language",
+        "question_id",
+        "function_name",
+        "starter_code",
+        "starter_guidance",
+        "guided_steps",
+        "complexity",
+        "input_contract",
+        "output_contract",
+    }
+    return {key: value for key, value in solution.items() if key in allowed}
+
+def _practice_solution_review_payload(solution: dict[str, Any]) -> dict[str, Any]:
+    return {
+        **_practice_solution_materials(solution),
+        "reference_solution": solution.get("reference_solution") or "",
+    }
+
 def _find_interview_solution(question_id: str, language: str) -> Optional[dict[str, Any]]:
     """Look up authored interview test cases for a question+language. Returns None (not a
     404) when no answer file / entry exists — interview questions are only PARTIALLY
@@ -5747,24 +5785,177 @@ async def get_practice_question(question_id: str, set: str = Query(DEFAULT_QUEST
     set_name, _ = _resolve_question_set(set)
     return _find_question(question_id, set_name)
 
-@app.get("/api/coding/practice/questions/{question_id}/hints")
-async def get_practice_question_hints(question_id: str, level: str = Query("1")):
+def _hint_unlock_count(attempt_count: int, solved: bool = False) -> int:
+    """Server-side ladder gate for practice/interview hints.
+
+    The first hint is always a gentle reread/check. Deeper hints require real Run
+    attempts saved in CodingAttemptEvent, so the frontend cannot simply unlock the
+    whole ladder by changing local state.
+    """
+    attempts = max(0, int(attempt_count or 0))
+    if solved or attempts >= 3:
+        return 4
+    if attempts >= 2:
+        return 3
+    if attempts >= 1:
+        return 2
+    return 1
+
+def _hint_unlock_reason(unlocked_count: int) -> str:
+    if unlocked_count >= 4:
+        return "All hints are unlocked for this problem."
+    if unlocked_count == 3:
+        return "Run one more attempt to unlock the near-solution hint."
+    if unlocked_count == 2:
+        return "Run another attempt to unlock the code-shape hint."
+    return "Run your code once to unlock the concept hint."
+
+def _practice_progress_for(
+    db: Session,
+    user_id: int,
+    question_id: str,
+    language_key: str,
+) -> Optional[CodingPracticeProgress]:
+    return (
+        db.query(CodingPracticeProgress)
+        .filter(
+            CodingPracticeProgress.user_id == user_id,
+            CodingPracticeProgress.question_id == question_id,
+            CodingPracticeProgress.language == language_key,
+        )
+        .first()
+    )
+
+def _hint_state_payload(
+    db: Session,
+    user_id: int,
+    question: dict[str, Any],
+    *,
+    language_key: str,
+    set_name: str,
+) -> dict[str, Any]:
+    source = "interview" if set_name == "interview" else "practice"
+    events = (
+        db.query(CodingAttemptEvent)
+        .filter(
+            CodingAttemptEvent.user_id == user_id,
+            CodingAttemptEvent.question_id == question["id"],
+            CodingAttemptEvent.source == source,
+        )
+        .all()
+    )
+    attempt_count = len(events)
+    solved = any(event.outcome == "pass" for event in events)
+    if source == "practice":
+        progress = _practice_progress_for(db, user_id, question["id"], language_key)
+        solved = solved or progress is not None and progress.status == "solved"
+        attempt_count = max(attempt_count, progress.attempt_count if progress else 0)
+    unlocked_count = _hint_unlock_count(attempt_count, solved)
+    authored = question.get("hints") if isinstance(question.get("hints"), list) else []
+    total = 4
+    hints = []
+    for level in range(1, total + 1):
+        hints.append({
+            "level": level,
+            "hint": authored[level - 1] if level <= len(authored) else None,
+            "locked": level > unlocked_count,
+        })
+    return {
+        "question_id": question["id"],
+        "set": set_name,
+        "language": language_key,
+        "attempt_count": attempt_count,
+        "solved": solved,
+        "unlocked_count": unlocked_count,
+        "solution_unlocked": solved or attempt_count >= 3,
+        "solution_required_attempts": 3,
+        "total": total,
+        "reason": _hint_unlock_reason(unlocked_count),
+        "hints": hints,
+    }
+
+@app.get("/api/coding/practice/questions/{question_id}/hint-state")
+async def get_practice_question_hint_state(
+    question_id: str,
+    set: str = Query(DEFAULT_QUESTION_SET),
+    language: str = Query("python"),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    set_name, _ = _resolve_question_set(set)
+    question = _find_question(question_id, set_name)
+    language_key, _ = _normalize_practice_language(language)
+    return _hint_state_payload(db, user["user_id"], question, language_key=language_key, set_name=set_name)
+
+@app.post("/api/coding/practice/questions/{question_id}/hints/request")
+async def request_practice_question_hint(
+    question_id: str,
+    req: CodingHintRequest,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    set_name, _ = _resolve_question_set(req.set)
+    question = _find_question(question_id, set_name)
+    language_key, _ = _normalize_practice_language(req.language)
+    state = _hint_state_payload(db, user["user_id"], question, language_key=language_key, set_name=set_name)
+    if req.level > state["unlocked_count"]:
+        raise HTTPException(
+            status_code=423,
+            detail={
+                "message": state["reason"],
+                "hint_state": state,
+            },
+        )
+
+    source = "interview" if set_name == "interview" else "practice"
+    db.add(CodingHintEvent(
+        user_id=user["user_id"],
+        source=source,
+        question_id=question["id"],
+        language=language_key,
+        level=req.level,
+    ))
+    db.commit()
+    hint = next((item for item in state["hints"] if item["level"] == req.level), None)
+    return {
+        **state,
+        "requested_level": req.level,
+        "hint": hint,
+        "recorded": True,
+    }
+
+@app.get("/api/coding/practice/questions/{question_id}/materials")
+async def get_practice_question_materials(question_id: str, language: str = Query("python")):
     question = _find_practice_question(question_id)
-    hints = question.get("hints", [])
-    if level.lower() == "all":
-        return {"question_id": question["id"], "hints": hints}
-    try:
-        requested = int(level)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail="Hint level must be 1, 2, 3, or all.") from exc
-    if requested < 1 or requested > len(hints):
-        raise HTTPException(status_code=400, detail=f"Hint level must be between 1 and {len(hints)} for this question.")
-    return {"question_id": question["id"], "level": requested, "hint": hints[requested - 1]}
+    solution = _find_language_solution(question_id, language, question)
+    return _practice_solution_materials(solution)
 
 @app.get("/api/coding/practice/questions/{question_id}/solution")
-async def get_practice_question_solution(question_id: str, language: str = Query("python")):
+async def get_practice_question_solution(
+    question_id: str,
+    language: str = Query("python"),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     question = _find_practice_question(question_id)
-    return _find_language_solution(question_id, language, question)
+    language_key, _ = _normalize_practice_language(language)
+    state = _hint_state_payload(db, user["user_id"], question, language_key=language_key, set_name=DEFAULT_QUESTION_SET)
+    if not state["solution_unlocked"]:
+        raise HTTPException(
+            status_code=423,
+            detail={
+                "message": (
+                    f"The reference unlocks after {state['solution_required_attempts']} real runs "
+                    "or after you solve the problem."
+                ),
+                "hint_state": state,
+            },
+        )
+    solution = _find_language_solution(question_id, language_key, question)
+    return {
+        **_practice_solution_review_payload(solution),
+        "hint_state": state,
+    }
 
 # ---------------------------------------------------------------------------
 # Concept quizzes (CodeChef-style MCQ / type-in / drag-and-drop). Distinct from

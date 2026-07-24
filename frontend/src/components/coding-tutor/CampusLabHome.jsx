@@ -73,6 +73,10 @@ function learningStyleHint(style) {
   return "Try one problem first. If you get stuck, ask for a small hint.";
 }
 
+function focusActionKind(style) {
+  return style === "try_then_hint" ? "practice" : "lesson";
+}
+
 function compactWeakTopicReason({ mastery, weakTopic }) {
   if (mastery?.weakest?.topic) {
     return `Recent practice points to ${titleCase(weakTopic)}.`;
@@ -220,7 +224,7 @@ function CampusHero({
 }
 
 // Build the "Recommended Focus" copy from real per-topic progress.
-function focusCopy(focus) {
+function _focusCopy(focus) {
   if (!focus) {
     return "Start with the Practice Library, then build a steady weekly rhythm.";
   }
@@ -274,7 +278,8 @@ function CampusLearningQueue({
   const focusBlurb = focusTopic
     ? `${focusReason(focus)} ${learningStyleHint(learningStyle)}`
     : "Pick one topic and solve the first problem you see.";
-  const focusButton = learningStyle === "try_then_hint" ? "Open practice" : "Open lesson";
+  const focusAction = focusActionKind(learningStyle);
+  const focusButton = focusAction === "practice" ? "Open practice" : "Open lesson";
   return (
     <section className="campus-learning-queue" aria-label="Your coding path">
       <div className="campus-section-heading">
@@ -329,7 +334,10 @@ function CampusLearningQueue({
           <span>Recommended Focus</span>
           <strong>{focusTitle}</strong>
           <p>{focusBlurb}</p>
-          <button type="button" onClick={() => (focusTopic ? onOpenTopic?.(focusTopic) : onOpenQuizBank())}>
+          <button
+            type="button"
+            onClick={() => (focusTopic ? onOpenTopic?.(focusTopic, focusAction) : onOpenQuizBank())}
+          >
             {focusTopic ? `${focusButton}: ${titleCase(focusTopic)}` : "Browse Practice Library"}
           </button>
         </article>

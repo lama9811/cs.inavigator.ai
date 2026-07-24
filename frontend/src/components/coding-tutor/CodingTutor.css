@@ -3681,6 +3681,46 @@ body.coding-dark .quiz-bank-page .quiz-insight-panel {
   min-height: 0;
 }
 
+.workspace-discussion-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.workspace-discussion-message {
+  max-width: min(88%, 820px);
+  border: 1px solid var(--ct-border);
+  border-radius: 16px;
+  padding: 0.85rem 1rem;
+  background: var(--ct-panel-soft);
+  color: var(--ct-text);
+}
+
+.workspace-discussion-message.user {
+  align-self: flex-end;
+  max-width: min(82%, 760px);
+  background: color-mix(in srgb, var(--ct-primary-soft) 72%, var(--ct-panel));
+  border-color: color-mix(in srgb, var(--ct-primary) 42%, var(--ct-border));
+}
+
+.workspace-discussion-message.bot {
+  align-self: flex-start;
+}
+
+.workspace-discussion-speaker {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--ct-muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.workspace-discussion-message p:last-child {
+  margin-bottom: 0;
+}
+
 .leetcode-editor {
   flex: 0 0 auto;
   min-height: clamp(260px, calc(100vh - 470px), 460px);

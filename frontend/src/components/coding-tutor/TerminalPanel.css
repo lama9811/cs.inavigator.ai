@@ -358,9 +358,13 @@
   max-width: 100%;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  color: #9aa7b8;
+  color: #d7e0ec;
   font-family: "JetBrains Mono", "Fira Code", "SF Mono", Consolas, "Courier New", monospace;
   font-size: 0.78rem;
+}
+
+.terminal-panel-test.passed .terminal-panel-test-detail code {
+  color: #e7eef8;
 }
 
 .terminal-panel-test-detail small {
@@ -471,7 +475,7 @@ body.coding-dark .terminal-panel-body {
 .terminal-solution-columns > div > span {
   display: block;
   margin-bottom: 6px;
-  color: var(--ct-text);
+  color: #e7eef8;
   font-size: 0.78rem;
   font-weight: 800;
 }

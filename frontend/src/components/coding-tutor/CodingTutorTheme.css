@@ -124,6 +124,34 @@ body .coding-app .lesson-check-choice:focus-visible {
   outline-color: var(--ct-primary) !important;
 }
 
+/* More light-mode accent cleanup:
+   Orange should mean a brand/action moment, not every helper box. Keep these
+   everyday learning surfaces in the navy system so the cards feel calmer. */
+body .coding-app .coding-stat-tile.stat-streak,
+body .coding-app .personal-empty,
+body .coding-app .campus-queue-item.personal,
+body .coding-app .campus-queue-item.focus {
+  border-color: color-mix(in srgb, var(--ct-primary) 24%, var(--ct-border)) !important;
+  background: color-mix(in srgb, var(--ct-primary) 5%, var(--ct-panel)) !important;
+}
+
+body .coding-app .personal-snippet-item:hover,
+body .coding-app .personal-snippet-item.active {
+  border-color: color-mix(in srgb, var(--ct-primary) 46%, var(--ct-border)) !important;
+}
+
+body .coding-app .personal-snippet-item.active {
+  background: color-mix(in srgb, var(--ct-primary) 8%, var(--ct-panel-soft)) !important;
+}
+
+body .coding-app .personal-new-btn:hover,
+body .coding-app .campus-queue-item.personal button:hover,
+body .coding-app .campus-queue-item.focus button:hover {
+  background: var(--ct-primary) !important;
+  border-color: var(--ct-primary) !important;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--ct-primary) 24%, transparent) !important;
+}
+
 /* ---------- Dark mode: warm-slate coding environment ----------
    NOTE: a warm-slate dark lab palette ALREADY exists in CodingTutor.css
    (the `body.coding-dark .coding-app` block around line 2925: navy #789dca,
