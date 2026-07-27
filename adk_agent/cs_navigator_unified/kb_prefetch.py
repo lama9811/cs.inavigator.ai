@@ -37,21 +37,17 @@ _cache_lock = threading.Lock()
 _cache_ts: float = 0
 _CACHE_TTL = 300  # 5 min
 
-# BM25 index, rebuilt with the doc cache. Held separately so scoring never has to
-# re-tokenize all 70 docs on every query (the old scorer did, per request).
+# TF-IDF index, rebuilt with the doc cache. Held separately so scoring never has
+# to re-tokenize all 70 docs on every query (the original scorer did, per request).
 _doc_tf: dict[str, Counter] = {}   # doc_id -> term frequencies
-_doc_len: dict[str, int] = {}      # doc_id -> token count
+_doc_norm: dict[str, float] = {}   # doc_id -> L2 norm of its log-tf vector
 _doc_title_tokens: dict[str, set] = {}
 _df: Counter = Counter()           # term -> number of docs containing it
-_avg_doc_len: float = 1.0
 
-# BM25 params. k1 controls term-frequency saturation, b the doc-length
-# normalization. 1.5/0.75 are the standard defaults and were what the ranking
-# was validated against.
-_BM25_K1 = 1.5
-_BM25_B = 0.75
 # An exact course-code hit ("COSC 354") is a far stronger signal than any word
-# overlap, so it stays a large additive bonus on top of the BM25 score.
+# overlap, so it stays a large additive bonus on top of the TF-IDF score. A single
+# term contributes at most idf (<= ln(70) = 4.25) once cosine-normalized, so this
+# stays dominant without having to be retuned per query.
 _ENTITY_BONUS = 10.0
 
 # Per-doc excerpt injected into the prompt. _EXCERPT_LEAD is how much context
@@ -80,6 +76,40 @@ def _tokenize(text: str) -> list[str]:
 
 _bg_loading = False
 
+
+def _build_index(cache: dict[str, dict]) -> tuple[dict, dict, dict, Counter]:
+    """Build the ranking index over a doc cache. Pure CPU over local data, so it
+    runs outside the cache lock. Kept separate from the fetch so the ranking can
+    be exercised against a known corpus without touching Discovery Engine.
+
+    `norm` is the L2 length of the doc's log-tf vector — the cosine denominator.
+    It replaces dividing by raw token count: a long doc is compared by the
+    *direction* of its term vector, not shortened into irrelevance."""
+    tf, norm, title_tokens, df = {}, {}, {}, Counter()
+    for doc_id, data in cache.items():
+        title = data.get("title", "")
+        tokens = _tokenize(f"{title} {data.get('content', '')}")
+        counts = Counter(tokens)
+        tf[doc_id] = counts
+        norm[doc_id] = math.sqrt(sum(_log_tf(f) ** 2 for f in counts.values())) or 1.0
+        title_tokens[doc_id] = set(_tokenize(title))
+        for term in counts:
+            df[term] += 1
+    return tf, norm, title_tokens, df
+
+
+def _install_cache(new_cache: dict[str, dict]) -> None:
+    """Swap in a new doc cache plus its index, atomically."""
+    tf, norm, title_tokens, df = _build_index(new_cache)
+    global _doc_tf, _doc_norm, _doc_title_tokens, _df, _cache_ts
+    with _cache_lock:
+        _cache.clear()
+        _cache.update(new_cache)
+        _doc_tf, _doc_norm, _doc_title_tokens = tf, norm, title_tokens
+        _df = df
+        _cache_ts = time.time()
+
+
 def _load_cache_sync():
     """Fetch all docs from Discovery Engine into memory."""
     global _cache_ts, _bg_loading
@@ -100,25 +130,7 @@ def _load_cache_sync():
         _bg_loading = False
         return
 
-    # Build the BM25 index outside the lock — it is pure CPU over local data.
-    tf, dlen, title_tokens, df = {}, {}, {}, Counter()
-    for doc_id, data in new_cache.items():
-        title = data.get("title", "")
-        tokens = _tokenize(f"{title} {data.get('content', '')}")
-        tf[doc_id] = Counter(tokens)
-        dlen[doc_id] = len(tokens) or 1
-        title_tokens[doc_id] = set(_tokenize(title))
-        for term in tf[doc_id]:
-            df[term] += 1
-    avg_len = (sum(dlen.values()) / len(dlen)) if dlen else 1.0
-
-    global _doc_tf, _doc_len, _doc_title_tokens, _df, _avg_doc_len
-    with _cache_lock:
-        _cache.clear()
-        _cache.update(new_cache)
-        _doc_tf, _doc_len, _doc_title_tokens = tf, dlen, title_tokens
-        _df, _avg_doc_len = df, avg_len
-        _cache_ts = time.time()
+    _install_cache(new_cache)
     _bg_loading = False
     log.info(f"[KB_PREFETCH] Cached {len(new_cache)} docs, indexed {len(df)} terms")
 
@@ -144,25 +156,47 @@ def _load_cache() -> dict[str, dict]:
         return dict(_cache)
 
 
+def _log_tf(freq: int) -> float:
+    """Sublinear term frequency, 1 + log(f). A doc that repeats a word 50 times is
+    not 50x more about it than one saying it twice — that raw-count assumption is
+    how long listing docs used to swamp the ranking."""
+    return 1.0 + math.log(freq) if freq > 0 else 0.0
+
+
 def _idf(term: str, n_docs: int) -> float:
-    """BM25 inverse document frequency. A term in 1 of 70 docs ('amjad') scores far
-    above one in 40 ('office') — the property the old TF-only scorer lacked, which
-    let generic words decide the ranking."""
+    """Textbook inverse document frequency, log(N/df).
+
+    A term in 1 of 70 docs ('amjad') scores far above one in 40 ('office') — the
+    property the original TF-only scorer lacked entirely, which let generic words
+    decide the ranking. Note this goes to exactly 0 when df == n_docs: a word every
+    document contains cannot discriminate between them, and contributing 0 is the
+    correct answer, not an edge case to smooth away."""
     df = _df.get(term, 0)
-    return math.log(1 + (n_docs - df + 0.5) / (df + 0.5))
+    if df <= 0:
+        return 0.0
+    return math.log(n_docs / df)
 
 
 def prefetch_kb_context(query: str, top_k: int = 3) -> str:
-    """Search cached KB docs with BM25 scoring, return formatted context.
+    """Search cached KB docs with TF-IDF scoring, return formatted context.
+
+    Scoring is cosine-normalized TF-IDF (lnc.ltc in SMART notation): each doc term
+    weighs `(1 + log tf) / ||d||`, each query term multiplies in `log(N/df)`.
 
     Scoring notes (this was rewritten after it caused false "not in my knowledge
     base" refusals on questions the KB answered):
-    - BM25, not raw TF. The previous scorer divided term frequency by document
-      length with no IDF, so a rare surname scored ~0.01 while a coincidental
+    - TF-IDF, not raw TF. The original scorer divided term frequency by document
+      length with no IDF at all, so a rare surname scored ~0.01 while a coincidental
       title match scored 3.0 — content relevance could not affect the ranking.
     - Title matching is on TOKENS, not substrings. `"dr" in "Academic Withdrawal
       Refunds"` used to be true (withDRawal), which is what buried the faculty doc
       at rank #28 for "Dr. Amjad Ali's office and email".
+
+    Advisory only. The result is appended to the system instruction so the model
+    always has real KB text in front of it and never has to answer a Morgan
+    question from training memory. It is NOT the retriever and it produces no
+    grounding metadata — `VertexAiSearchTool` is the authoritative lookup, and
+    only its `groundingMetadata` feeds the gates in vertex_agent.py.
     """
     docs = _load_cache()
     if not docs:
@@ -176,8 +210,7 @@ def prefetch_kb_context(query: str, top_k: int = 3) -> str:
         return ""
 
     with _cache_lock:
-        doc_tf, doc_len, title_tokens = _doc_tf, _doc_len, _doc_title_tokens
-        avg_len = _avg_doc_len
+        doc_tf, doc_norm, title_tokens = _doc_tf, _doc_norm, _doc_title_tokens
     n_docs = len(doc_tf) or 1
     unique_query_tokens = set(query_tokens)
     scored = []
@@ -195,12 +228,11 @@ def prefetch_kb_context(query: str, top_k: int = 3) -> str:
 
         tf = doc_tf.get(doc_id)
         if tf:
-            dl = doc_len.get(doc_id, 1)
-            norm = _BM25_K1 * (1 - _BM25_B + _BM25_B * dl / avg_len)
+            norm = doc_norm.get(doc_id, 1.0)
             for token in unique_query_tokens:
                 f = tf.get(token, 0)
                 if f:
-                    score += _idf(token, n_docs) * (f * (_BM25_K1 + 1)) / (f + norm)
+                    score += _idf(token, n_docs) * _log_tf(f) / norm
 
         # Title match: token-level, and weighted by how discriminating the term is
         # so a common word in a title cannot outrank a rare word in the body.

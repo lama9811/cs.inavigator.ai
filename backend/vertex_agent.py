@@ -101,11 +101,35 @@ _BUSY_MSG = (
     "The system is temporarily busy. Please try your question again in a moment."
 )
 
-# Grounding validation: minimum thresholds before flagging a response
-_GROUNDING_MIN_CHUNKS = 2       # At least 2 KB docs must be cited
+# --- Grounding gate policy ---------------------------------------------------
+# An answer ships if it clears EITHER arm. Both arms were tightened in 2026-07:
+#   * sources counts DISTINCT KB documents, not raw chunks. Vertex often returns
+#     several chunks from one file, and one document cannot corroborate itself.
+#   * coverage rose 0.3 -> 0.5.
+_GROUNDING_MIN_SOURCES = 2      # distinct KB documents backing the answer
+_GROUNDING_MIN_COVERAGE = 0.5   # fraction of the answer traceable to KB segments
+_GROUNDING_REQUIRE_BOTH = False # False => sources OR coverage. True => AND.
+
+# Coverage assigned when Vertex returns KB chunks but no groundingSupports. This
+# was 0.5 — which silently cleared a 0.5 threshold on a magic number, in exactly
+# the case where we have the least evidence. Missing evidence is not half evidence.
+_NO_SEGMENT_COVERAGE = 0.0
+
+# Watch mode (default) logs the verdict and leaves today's behaviour untouched:
+# a failing answer still ships with the disclaimer appended. Enforce mode REPLACES
+# a failing answer with the refusal. Flip via GROUNDING_ENFORCE=true once a few
+# days of [GROUNDING-VERDICT] logs show the thresholds are not refusing good work.
+_GROUNDING_ENFORCE = os.getenv("GROUNDING_ENFORCE", "false").strip().lower() in ("1", "true", "yes")
+
 _GROUNDING_DISCLAIMER = (
     "\n\n---\n*I may not have complete information on this topic in my knowledge base. "
     "Please verify with the CS department at (443) 885-3962 or compsci@morgan.edu.*"
+)
+# Enforce-mode replacement. Used INSTEAD of the answer, so it must stand alone.
+_UNGROUNDED_REPLACEMENT = (
+    "I don't have enough verified information in my knowledge base to answer that "
+    "accurately, and I'd rather not guess on something you may act on.\n\n"
+    "Please check with the CS department at (443) 885-3962 or compsci@morgan.edu."
 )
 
 # Patterns that are inherently non-KB (greetings, security refusals, outages)
@@ -209,6 +233,51 @@ def _classify_grounding_chunks(chunks) -> tuple[int, int]:
         elif chunk.get("web"):
             web += 1
     return kb, web
+
+
+def _count_distinct_kb_sources(chunks) -> int:
+    """Count DISTINCT KB documents in a groundingChunks array.
+
+    `_classify_grounding_chunks` counts chunks, and Vertex routinely returns
+    several chunks from the same document — so "2 chunks" was never "2 sources".
+    Two excerpts of `academic_faculty.json` is one document agreeing with itself,
+    which is precisely what a corroboration bar is supposed to reject.
+
+    Chunks carrying no identifier collapse into a single bucket: if we cannot tell
+    two chunks apart we must not assume they are independent. That keeps the gate
+    conservative (harder to pass) rather than optimistic.
+    """
+    seen = set()
+    for chunk in chunks or []:
+        if not isinstance(chunk, dict):
+            continue
+        ctx = chunk.get("retrievedContext")
+        if not isinstance(ctx, dict):
+            continue
+        # document_name is the stable Vertex resource id; uri/title are fallbacks.
+        key = ctx.get("document_name") or ctx.get("uri") or ctx.get("title") or "__unidentified__"
+        seen.add(key)
+    return len(seen)
+
+
+def _compute_coverage(supports, text: str, kb_chunks: int) -> float:
+    """Fraction of the answer's characters covered by groundingSupports segments.
+
+    Extracted because both `_run_query` and `_run_query_stream` carried an
+    identical copy, and the no-segment fallback needed fixing in both.
+    """
+    if supports and text:
+        total_chars = len(text)
+        if total_chars <= 0:
+            return 0.0
+        grounded_chars = sum(
+            s.get("segment", {}).get("endIndex", 0) - s.get("segment", {}).get("startIndex", 0)
+            for s in supports
+        )
+        return grounded_chars / total_chars
+    if kb_chunks:
+        return _NO_SEGMENT_COVERAGE
+    return 0.0
 
 
 def _extract_web_sources(chunks) -> list[dict]:
@@ -331,19 +400,38 @@ def _apply_faithfulness_gate(text: str, chat_mode: str = "regular") -> str:
     return text
 
 
-def _apply_grounding_gate(text: str, chunks: int, coverage: float = 0.0, has_student_data: bool = False, chat_mode: str = "regular", bounced: bool = False) -> str:
-    """Append a disclaimer when the agent answered with insufficient data sources.
+def _apply_grounding_gate(
+    text: str,
+    chunks: int,
+    coverage: float = 0.0,
+    sources: int = 0,
+    has_student_data: bool = False,
+    chat_mode: str = "regular",
+    bounced: bool = False,
+) -> str:
+    """Decide whether an answer is backed well enough by the KB to ship.
 
-    Checks both chunk count AND coverage ratio. A response needs either:
-    - At least 2 KB chunks cited, OR
-    - Coverage >= 0.3 (30% of response backed by KB), OR
-    - Student data present (DegreeWorks/Canvas)
+    An answer passes on EITHER arm (`_GROUNDING_REQUIRE_BOTH = False`):
+    - at least `_GROUNDING_MIN_SOURCES` DISTINCT KB documents, OR
+    - `_GROUNDING_MIN_COVERAGE` of the answer traceable to KB segments
 
-    This prevents responses that cite 1 chunk but are 90% hallucinated from passing.
+    plus the standing exemptions: coding_tutor, General mode, student-data answers
+    (DegreeWorks/Canvas come from the database, not the KB), and the skip patterns.
 
-    On chunks == 0 the old code returned unconditionally, which was the blind spot:
-    "no KB chunks" has three very different causes and they were all treated as the
-    benign one. See _classify_zero_chunk below.
+    `sources` counts distinct documents, NOT chunks. The old bar was `chunks >= 2`,
+    which several excerpts of one file satisfied — one document corroborating
+    itself. See `_count_distinct_kb_sources`.
+
+    On failure the behaviour depends on `_GROUNDING_ENFORCE`:
+    - watch (default) — append the disclaimer, exactly as before. Students see no
+      change; the verdict goes to the log so the thresholds can be tuned against
+      real traffic before anything is refused.
+    - enforce — REPLACE the answer with `_UNGROUNDED_REPLACEMENT`. This is the
+      only place in the pipeline that actually prevents an ungrounded answer from
+      reaching a student; every other gate can merely annotate.
+
+    `chunks == 0` is NOT handled here — it has four distinct causes and its own
+    handler, which never rewrites text by design. See `_handle_zero_chunks`.
     """
     if chat_mode == "coding_tutor":
         return text
@@ -351,13 +439,29 @@ def _apply_grounding_gate(text: str, chunks: int, coverage: float = 0.0, has_stu
         return text
     if chunks == 0:
         return _handle_zero_chunks(text, chat_mode, has_student_data, bounced)
+    if chat_mode != "regular":
+        # General mode grounds on Google Search and has no KB chunks by design.
+        return text
     if has_student_data:
         return text
-    if chunks >= _GROUNDING_MIN_CHUNKS:
+
+    has_sources = sources >= _GROUNDING_MIN_SOURCES
+    has_coverage = coverage >= _GROUNDING_MIN_COVERAGE
+    passed = (has_sources and has_coverage) if _GROUNDING_REQUIRE_BOTH else (has_sources or has_coverage)
+
+    # Logged on BOTH outcomes, deliberately: the failing branch alone tells us
+    # nothing about the distribution, which is why nobody has ever known what
+    # coverage real answers achieve.
+    print(
+        f"   [GROUNDING-VERDICT] {'PASS' if passed else 'FAIL'} "
+        f"sources={sources} chunks={chunks} coverage={coverage:.1%} "
+        f"mode={'enforce' if _GROUNDING_ENFORCE else 'watch'}"
+    )
+    if passed:
         return text
-    if coverage >= 0.3:
-        return text
-    print(f"   [GROUNDING] Low confidence ({chunks} chunks, {coverage:.1%} coverage, no student data) - appending disclaimer")
+    if _GROUNDING_ENFORCE:
+        print("   [GROUNDING] Ungrounded answer REPLACED with refusal")
+        return _UNGROUNDED_REPLACEMENT
     return text + _GROUNDING_DISCLAIMER
 
 
@@ -689,6 +793,7 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
         final_text = ""
         code_candidate = ""
         grounding_chunks = 0
+        kb_sources = 0
         web_chunks = 0
         web_sources = []
         grounding_coverage = 0.0
@@ -713,17 +818,11 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
                 chunks = gm.get("groundingChunks", [])
                 supports = gm.get("groundingSupports", [])
                 grounding_chunks, web_chunks = _classify_grounding_chunks(chunks)
+                kb_sources = _count_distinct_kb_sources(chunks)
                 web_sources = _extract_web_sources(chunks)
-                if supports and final_text:
-                    total_chars = len(final_text)
-                    grounded_chars = sum(
-                        s.get("segment", {}).get("endIndex", 0) - s.get("segment", {}).get("startIndex", 0)
-                        for s in supports
-                    )
-                    grounding_coverage = grounded_chars / total_chars if total_chars > 0 else 0.0
-                elif grounding_chunks:
-                    grounding_coverage = 0.5  # Has KB chunks but no segment info
-                    print(f"   [GROUNDING] KB chunks present ({grounding_chunks}) but no segment data - using conservative 0.5 coverage")
+                grounding_coverage = _compute_coverage(supports, final_text, grounding_chunks)
+                if not supports and grounding_chunks:
+                    print(f"   [GROUNDING] KB chunks present ({grounding_chunks}) but no segment data - coverage 0")
 
             # Extract text from model responses (skip function_call / function_response)
             content = event.get("content", {})
@@ -787,7 +886,7 @@ def _run_query(message: str, user_id: str, session_id: str, retried: bool = Fals
 
             # Grounding validation gate: flag low-grounded responses
             has_data = bool(context or canvas_context)
-            final_text = _apply_grounding_gate(final_text, grounding_chunks, coverage=grounding_coverage, has_student_data=has_data, chat_mode=chat_mode, bounced=_bounced)
+            final_text = _apply_grounding_gate(final_text, grounding_chunks, coverage=grounding_coverage, sources=kb_sources, has_student_data=has_data, chat_mode=chat_mode, bounced=_bounced)
 
             # Faithfulness backstop: flag invented "Dr./Prof. X" faculty names
             final_text = _apply_faithfulness_gate(final_text, chat_mode=chat_mode)
@@ -965,6 +1064,7 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
         best_text = ""
         code_candidate = ""
         grounding_chunks = 0
+        kb_sources = 0
         web_chunks = 0
         web_sources = []
         search_entry_point = ""
@@ -996,19 +1096,13 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
                 chunks = gm.get("groundingChunks", [])
                 supports = gm.get("groundingSupports", [])
                 grounding_chunks, web_chunks = _classify_grounding_chunks(chunks)
+                kb_sources = _count_distinct_kb_sources(chunks)
                 web_sources = _extract_web_sources(chunks)
                 search_entry_point = (gm.get("searchEntryPoint") or {}).get("renderedContent", "") or search_entry_point
                 web_queries = (gm.get("webSearchQueries") or []) or web_queries
-                if supports and full_text:
-                    total_chars = len(full_text)
-                    grounded_chars = sum(
-                        s.get("segment", {}).get("endIndex", 0) - s.get("segment", {}).get("startIndex", 0)
-                        for s in supports
-                    )
-                    grounding_coverage = grounded_chars / total_chars if total_chars > 0 else 0.0
-                elif grounding_chunks:
-                    grounding_coverage = 0.5
-                    print(f"   [GROUNDING] KB chunks present ({grounding_chunks}) but no segment data - using conservative 0.5 coverage")
+                grounding_coverage = _compute_coverage(supports, full_text, grounding_chunks)
+                if not supports and grounding_chunks:
+                    print(f"   [GROUNDING] KB chunks present ({grounding_chunks}) but no segment data - coverage 0")
 
             content = event.get("content", {})
             if not isinstance(content, dict):
@@ -1114,7 +1208,7 @@ def _run_query_stream(message: str, user_id: str, session_id: str, retried: bool
 
         # Grounding validation gate: append disclaimer if low-grounded
         has_data = bool(context or canvas_context)
-        final = _apply_grounding_gate(cleaned, grounding_chunks, coverage=grounding_coverage, has_student_data=has_data, chat_mode=chat_mode, bounced=suggested_mode is not None)
+        final = _apply_grounding_gate(cleaned, grounding_chunks, coverage=grounding_coverage, sources=kb_sources, has_student_data=has_data, chat_mode=chat_mode, bounced=suggested_mode is not None)
         if final != cleaned:
             disclaimer = final[len(cleaned):]
             yield {"type": "chunk", "content": disclaimer}

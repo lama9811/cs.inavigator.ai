@@ -143,7 +143,7 @@ def _select_model(callback_context, llm_request):
                 # course code and crowd out the schedule doc, which is the only
                 # one carrying instructors and meeting times. At 3 an instructor
                 # question could never be grounded from the pre-injection.
-                # top_k=8, not 5: with BM25 the right doc is usually #1-3, but for
+                # top_k=8, not 5: with TF-IDF the right doc is usually #1-3, but for
                 # questions built from generic words ("office", "location", "email")
                 # the contact/directory docs legitimately rank high and the specific
                 # doc lands around #6. A wider window costs prompt tokens, not latency.
