@@ -1,37 +1,217 @@
 {
-  "_note": "Original advanced lesson. Language-specific code appears through block variants.",
+  "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Hash Maps & Sets",
-  "summary": "Use sets for membership and maps for key/value information like counts.",
-  "minutes": 12,
-  "error_classes": ["wrong_answer", "runtime"],
-  "refresher": "A set answers “have I seen this?” A hash map answers “what value belongs to this key?” Counts, indexes, and grouped data often use maps.",
-  "refresher_code": "seen.add(value); counts[key] += 1",
+  "summary": "Use a set to remember what you have seen. Use a map when each key needs a value, such as a count.",
+  "minutes": 17,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "A set answers membership questions: have I seen this value before? A map stores a value for each key, such as a frequency count. Both are useful when repeated scanning would be too slow.",
+  "refresher_code": "seen.add(x)\ncounts[x] = counts.get(x, 0) + 1",
+  "learn_cards": {
+    "advanced-set-membership": {
+      "title": "Sets answer seen-before questions",
+      "body": "A set stores unique values and lets you check membership quickly.",
+      "example": "if value in seen: return True",
+      "notice": "You care whether the value exists, not how many times.",
+      "mistake": "Using a list works, but each lookup can scan the whole list.",
+      "section_id": "sets-membership"
+    },
+    "advanced-map-counts": {
+      "title": "Maps attach a value to each key",
+      "body": "A frequency map uses the item as the key and the count as the value.",
+      "example": "counts['a'] = 3",
+      "notice": "The key is what you look up. The value is what you store about it.",
+      "mistake": "Increasing a missing key before creating it causes errors in many languages.",
+      "section_id": "maps-counts"
+    },
+    "advanced-map-default": {
+      "title": "Start missing counts at zero",
+      "body": "Before you add one, decide what a missing key should mean. For counts, missing usually means zero.",
+      "example": "counts[x] = counts.get(x, 0) + 1",
+      "notice": "The default prevents a missing-key crash.",
+      "mistake": "Do not assume every key already exists.",
+      "section_id": "maps-counts"
+    }
+  },
   "sections": [
     {
       "id": "sets-membership",
-      "title": "Sets answer membership questions",
-      "summary": "A set keeps one copy of each value.",
-      "question_ids": ["advanced-set-membership", "advanced-set-trace", "advanced-set-vs-map", "advanced-set-common-bug"],
+      "title": "Set: remember unique values",
+      "summary": "A set is for fast yes-or-no membership checks.",
+      "question_ids": [
+        "advanced-set-membership",
+        "advanced-set-trace",
+        "advanced-set-common-bug",
+        "advanced-set-vs-map"
+      ],
       "blocks": [
-        {"kind": "text", "body": "Use a set when you only care whether a value has appeared. It is perfect for duplicate checks because lookup is fast and the code stays small."},
-        {"kind": "code", "caption": "The second time a value appears, membership tells you it is a repeat.", "variants": {
-          "python": {"code": "seen = set()\nfor value in [4, 2, 4]:\n    if value in seen:\n        print(value)\n    seen.add(value)", "output": "4"},
-          "java": {"code": "Set<Integer> seen = new HashSet<>();\nfor (int value : List.of(4, 2, 4)) {\n    if (seen.contains(value)) System.out.println(value);\n    seen.add(value);\n}", "output": "4"},
-          "javascript": {"code": "const seen = new Set();\nfor (const value of [4, 2, 4]) {\n  if (seen.has(value)) console.log(value);\n  seen.add(value);\n}", "output": "4"},
-          "cpp": {"code": "#include <unordered_set>\n#include <iostream>\n\nstd::unordered_set<long long> seen;\nfor (long long value : std::vector<long long>{4, 2, 4}) {\n  if (seen.count(value)) std::cout << value << \"\\n\";\n  seen.insert(value);\n}", "output": "4"}
-        }},
-        {"kind": "check", "prompt": "Which structure is best for asking “have I seen this value before?”", "choices": ["Set", "String", "Boolean flag only", "One integer counter"], "answer_index": 0, "why": "A set stores unique values and gives a direct membership check."}
+        {
+          "kind": "text",
+          "body": "Use a set when the question asks whether a value appeared before, whether duplicates exist, or whether two groups share values. A set does not care about order or counts. It cares about membership."
+        },
+        {
+          "kind": "code",
+          "caption": "A duplicate checker looks before it adds.",
+          "variants": {
+            "python": {
+              "code": "seen = set()\nfor value in [4, 7, 4]:\n    if value in seen:\n        print(\"repeat\", value)\n        break\n    seen.add(value)",
+              "output": "repeat 4"
+            },
+            "java": {
+              "code": "Set<Integer> seen = new HashSet<>();\nfor (int value : List.of(4, 7, 4)) {\n    if (seen.contains(value)) {\n        System.out.println(\"repeat \" + value);\n        break;\n    }\n    seen.add(value);\n}",
+              "output": "repeat 4"
+            },
+            "javascript": {
+              "code": "const seen = new Set();\nfor (const value of [4, 7, 4]) {\n  if (seen.has(value)) {\n    console.log(\"repeat\", value);\n    break;\n  }\n  seen.add(value);\n}",
+              "output": "repeat 4"
+            },
+            "cpp": {
+              "code": "#include <iostream>\n#include <unordered_set>\n#include <vector>\n\nstd::unordered_set<long long> seen;\nfor (long long value : std::vector<long long>{4, 7, 4}) {\n    if (seen.count(value)) {\n        std::cout << \"repeat \" << value << \"\\n\";\n        break;\n    }\n    seen.insert(value);\n}",
+              "output": "repeat 4"
+            }
+          }
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Check before adding",
+          "body": "If you add first, the current value will always look seen. That makes every value look like a duplicate."
+        },
+        {
+          "kind": "check",
+          "prompt": "Why does the duplicate checker test membership before adding the value?",
+          "choices": [
+            "So the current value does not count as its own duplicate",
+            "So the set stays sorted",
+            "So the loop runs backward",
+            "So duplicates are removed from the input"
+          ],
+          "answer_index": 0,
+          "why": "The set should only contain earlier values. That is why the check comes first."
+        }
       ]
     },
     {
       "id": "maps-counts",
-      "title": "Maps connect keys to values",
-      "summary": "A map stores a value under a key.",
-      "question_ids": ["advanced-map-counts", "advanced-map-default", "advanced-map-update-order", "advanced-map-keys-values"],
+      "title": "Map: store a value for each key",
+      "summary": "A map is for relationships like item -> count.",
+      "question_ids": [
+        "advanced-map-counts",
+        "advanced-map-default",
+        "advanced-map-update-order",
+        "advanced-map-keys-values"
+      ],
       "blocks": [
-        {"kind": "text", "body": "Use a map when a value needs attached information. For example, a character can point to how many times it appears."},
-        {"kind": "compare", "caption": "A set can tell you a letter appeared. A map can tell you how many times.", "wrong_label": "Not enough information", "wrong": "seen contains 'a'", "right_label": "Keeps the count", "right": "counts['a'] == 3"},
-        {"kind": "check", "prompt": "Why use a map for an anagram check?", "choices": ["It can count each character.", "It sorts the string automatically.", "It removes all vowels.", "It prevents loops."], "answer_index": 0, "why": "An anagram check needs matching character counts, not just membership."}
+        {
+          "kind": "text",
+          "body": "Use a map when one piece of data needs another piece attached to it. In a frequency map, the key is the item and the value is how many times it appears."
+        },
+        {
+          "kind": "code",
+          "caption": "Count frequencies by reading each item once.",
+          "variants": {
+            "python": {
+              "code": "counts = {}\nfor ch in \"banana\":\n    counts[ch] = counts.get(ch, 0) + 1\nprint(counts[\"a\"])",
+              "output": "3"
+            },
+            "java": {
+              "code": "Map<Character, Integer> counts = new HashMap<>();\nfor (char ch : \"banana\".toCharArray()) {\n    counts.put(ch, counts.getOrDefault(ch, 0) + 1);\n}\nSystem.out.println(counts.get('a'));",
+              "output": "3"
+            },
+            "javascript": {
+              "code": "const counts = new Map();\nfor (const ch of \"banana\") {\n  counts.set(ch, (counts.get(ch) ?? 0) + 1);\n}\nconsole.log(counts.get(\"a\"));",
+              "output": "3"
+            },
+            "cpp": {
+              "code": "#include <iostream>\n#include <unordered_map>\n#include <string>\n\nstd::unordered_map<char, long long> counts;\nfor (char ch : std::string(\"banana\")) {\n    counts[ch] += 1;\n}\nstd::cout << counts['a'] << \"\\n\";",
+              "output": "3"
+            }
+          }
+        },
+        {
+          "kind": "list",
+          "title": "Read the update pattern",
+          "items": [
+            "Look up the old count.",
+            "Use zero if the key is missing.",
+            "Add one.",
+            "Store the new count back under the same key."
+          ]
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "C++ note",
+          "body": "`counts[ch] += 1` creates the key with value `0` if it is missing, then adds one. That is convenient for counts."
+        },
+        {
+          "kind": "check",
+          "prompt": "In a frequency map for course codes, what is the key?",
+          "choices": [
+            "The course code",
+            "The total number of courses",
+            "The loop index",
+            "The final answer only"
+          ],
+          "answer_index": 0,
+          "why": "The key is the thing you look up. The count is the value stored for that key."
+        }
+      ]
+    },
+    {
+      "id": "choose-set-or-map",
+      "title": "Choose the right one",
+      "summary": "Ask whether you need a count or only membership.",
+      "blocks": [
+        {
+          "kind": "compare",
+          "caption": "Sets and maps solve different questions.",
+          "wrong_label": "Wrong tool",
+          "wrong": "Use a set when you need counts: seen.add(code)",
+          "right_label": "Right tool",
+          "right": "Use a map when you need counts: counts[code] += 1",
+          "body": "A set can say a code appeared. A map can say how many times."
+        },
+        {
+          "kind": "list",
+          "title": "Quick decision rule",
+          "items": [
+            "Need yes/no? Use a set.",
+            "Need counts, positions, or labels? Use a map.",
+            "Need order too? Use the language's ordered structure or store a list as well."
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "You need to know whether a name appears at least once. Which structure is enough?",
+          "choices": [
+            "Set",
+            "Map",
+            "Stack",
+            "Queue"
+          ],
+          "answer_index": 0,
+          "why": "A set is enough because the question only asks whether the name exists."
+        }
+      ]
+    },
+    {
+      "id": "practice-handoff",
+      "title": "Practice handoff",
+      "summary": "Trace the keys, not the whole input.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "When a map question feels messy, draw a two-column table: key on the left, value on the right. Update one row per loop step."
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Do not mix up keys and values",
+          "body": "If the prompt asks for the most common value, the answer may be a key. The count is only evidence you use to choose it."
+        }
       ]
     }
   ]

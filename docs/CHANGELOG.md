@@ -15,6 +15,7 @@ All notable changes to CS Navigator are documented here.
 - **Backend-backed last workspace state.** Coding Tutor now remembers the last practice/interview problem, language, and source per user so another device can reopen the same workspace when localStorage has no draft.
 
 ### Changed
+- Advanced V1 lessons were expanded from short outlines into fuller teaching pages with operation walkthroughs, line-by-line code shape, trace examples, common mistakes, and language-specific examples for Python, Java, JavaScript, and C++.
 - Learn track cards and Concept Quiz category accordions now treat Advanced as a first-class track alongside Beginner and Intermediate.
 - Coding Tutor weak-topic routing now sends advanced practice topics such as graphs, trees, stacks, queues, binary search, and sliding window to matching advanced lessons.
 - Coding Tutor Home recommendations now route honestly: try-first learners open Code practice filtered to the focus topic, while example-first/concept-first learners open the matching lesson when available.

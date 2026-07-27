@@ -1,37 +1,194 @@
 {
-  "_note": "Original advanced lesson. Language-specific code appears through block variants.",
+  "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Binary Search",
-  "summary": "Search sorted data by cutting the possible range in half each time.",
-  "minutes": 12,
-  "error_classes": ["wrong_answer", "runtime"],
-  "refresher": "Binary search only works when the search space is sorted or monotonic. Keep low and high bounds, check the middle, and discard the half that cannot contain the answer.",
-  "refresher_code": "mid = low + (high - low) // 2",
+  "summary": "Binary search works when the search space is sorted or has a clear true/false boundary.",
+  "minutes": 17,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "Binary search cuts the search space in half each step. It needs sorted data or a monotonic condition. After checking mid, move past mid so the range gets smaller.",
+  "refresher_code": "while low <= high:\n    mid = (low + high) // 2",
+  "learn_cards": {
+    "advanced-bs-sorted": {
+      "title": "Binary search needs order",
+      "body": "Ordinary binary search only works when smaller values are on one side and larger values are on the other.",
+      "example": "[2, 5, 9, 12]",
+      "notice": "The comparison at mid tells you which half can be ignored.",
+      "mistake": "On unsorted data, mid tells you almost nothing.",
+      "section_id": "bounds"
+    },
+    "advanced-bs-mid": {
+      "title": "Mid is the test point",
+      "body": "Mid is the index in the middle of the current low-to-high range.",
+      "example": "low=0, high=6, mid=3",
+      "notice": "Mid changes as the range shrinks.",
+      "mistake": "Do not keep checking the same mid forever.",
+      "section_id": "bounds"
+    },
+    "advanced-bs-stuck": {
+      "title": "Move past mid",
+      "body": "When mid is not the answer, remove it from the remaining range.",
+      "example": "low = mid + 1 or high = mid - 1",
+      "notice": "The range must shrink every loop.",
+      "mistake": "`low = mid` can get stuck when low and mid are the same.",
+      "section_id": "move-past-mid"
+    }
+  },
   "sections": [
     {
       "id": "bounds",
-      "title": "Keep clear bounds",
-      "summary": "Low and high describe the part still possible.",
-      "question_ids": ["advanced-bs-sorted", "advanced-bs-mid", "advanced-bs-move-right", "advanced-bs-move-left", "advanced-bs-one-item", "advanced-bs-monotonic"],
+      "title": "Search inside low and high",
+      "summary": "Low and high mark the range still worth checking.",
+      "question_ids": [
+        "advanced-bs-sorted",
+        "advanced-bs-mid",
+        "advanced-bs-one-item"
+      ],
       "blocks": [
-        {"kind": "text", "body": "At each step, `low` and `high` mark the range where the answer may still live. The middle value lets you remove half of that range."},
-        {"kind": "code", "caption": "This version returns the target index or -1 when the target is absent.", "variants": {
-          "python": {"code": "def binary_search(nums, target):\n    low, high = 0, len(nums) - 1\n    while low <= high:\n        mid = low + (high - low) // 2\n        if nums[mid] == target:\n            return mid\n        if nums[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1", "output": ""},
-          "java": {"code": "static int binarySearch(int[] nums, int target) {\n    int low = 0, high = nums.length - 1;\n    while (low <= high) {\n        int mid = low + (high - low) / 2;\n        if (nums[mid] == target) return mid;\n        if (nums[mid] < target) low = mid + 1;\n        else high = mid - 1;\n    }\n    return -1;\n}", "output": ""},
-          "javascript": {"code": "function binarySearch(nums, target) {\n  let low = 0, high = nums.length - 1;\n  while (low <= high) {\n    const mid = low + Math.floor((high - low) / 2);\n    if (nums[mid] === target) return mid;\n    if (nums[mid] < target) low = mid + 1;\n    else high = mid - 1;\n  }\n  return -1;\n}", "output": ""},
-          "cpp": {"code": "long long binarySearch(std::vector<long long> nums, long long target) {\n  long long low = 0, high = (long long)nums.size() - 1;\n  while (low <= high) {\n    long long mid = low + (high - low) / 2;\n    if (nums[mid] == target) return mid;\n    if (nums[mid] < target) low = mid + 1;\n    else high = mid - 1;\n  }\n  return -1;\n}", "output": ""}
-        }},
-        {"kind": "check", "prompt": "What must be true before ordinary binary search is safe?", "choices": ["The data is sorted", "The data has no zeroes", "The data is all strings", "The data has exactly two values"], "answer_index": 0, "why": "Binary search discards half the data based on order, so the order must be reliable."}
+        {
+          "kind": "text",
+          "body": "Binary search is not just a faster loop. It is a promise: because the data is ordered, one comparison can rule out half of the remaining positions."
+        },
+        {
+          "kind": "list",
+          "title": "Closed-range variables",
+          "items": [
+            "`low` is the first possible index.",
+            "`high` is the last possible index.",
+            "`mid` is the index you check now.",
+            "`low <= high` keeps a one-item range searchable."
+          ]
+        },
+        {
+          "kind": "code",
+          "caption": "Find a target in sorted numbers.",
+          "variants": {
+            "python": {
+              "code": "def binary_search(nums, target):\n    low = 0\n    high = len(nums) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if nums[mid] == target:\n            return mid\n        if nums[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1",
+              "output": ""
+            },
+            "java": {
+              "code": "static int binarySearch(int[] nums, int target) {\n    int low = 0;\n    int high = nums.length - 1;\n    while (low <= high) {\n        int mid = low + (high - low) / 2;\n        if (nums[mid] == target) return mid;\n        if (nums[mid] < target) low = mid + 1;\n        else high = mid - 1;\n    }\n    return -1;\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "function binarySearch(nums, target) {\n  let low = 0;\n  let high = nums.length - 1;\n  while (low <= high) {\n    const mid = Math.floor((low + high) / 2);\n    if (nums[mid] === target) return mid;\n    if (nums[mid] < target) low = mid + 1;\n    else high = mid - 1;\n  }\n  return -1;\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "int binarySearch(const std::vector<long long>& nums, long long target) {\n    int low = 0;\n    int high = (int)nums.size() - 1;\n    while (low <= high) {\n        int mid = low + (high - low) / 2;\n        if (nums[mid] == target) return mid;\n        if (nums[mid] < target) low = mid + 1;\n        else high = mid - 1;\n    }\n    return -1;\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "C++ runner note",
+          "body": "Many CS Navigator C++ practice functions use `std::vector<long long>` so large integer tests are safe. The binary search idea is the same as with `int`."
+        }
       ]
     },
     {
       "id": "move-past-mid",
-      "title": "Move past the middle",
-      "summary": "Use `mid + 1` or `mid - 1` after checking mid.",
-      "question_ids": ["advanced-bs-stuck", "advanced-bs-parsons"],
+      "title": "Move past mid",
+      "summary": "The range must shrink on every loop.",
+      "question_ids": [
+        "advanced-bs-move-right",
+        "advanced-bs-move-left",
+        "advanced-bs-stuck",
+        "advanced-bs-parsons"
+      ],
       "blocks": [
-        {"kind": "text", "body": "Once `mid` has been checked, keeping it inside the next range can trap the loop on the same value."},
-        {"kind": "compare", "caption": "After checking mid, move beyond it.", "wrong_label": "Can get stuck", "wrong": "low = mid", "right_label": "Shrinks the range", "right": "low = mid + 1"},
-        {"kind": "check", "prompt": "Why use `low <= high` in a closed-range binary search?", "choices": ["A one-item range still needs to be checked", "It skips the middle", "It sorts the list", "It avoids all comparisons"], "answer_index": 0, "why": "When low equals high, there is one candidate left and it may be the target."}
+        {
+          "kind": "text",
+          "body": "If `nums[mid]` is too small, everything at mid and to the left is too small. Move `low` to `mid + 1`. If `nums[mid]` is too large, move `high` to `mid - 1`."
+        },
+        {
+          "kind": "compare",
+          "caption": "Move past values you already ruled out.",
+          "wrong_label": "Can get stuck",
+          "wrong": "if nums[mid] < target:\n    low = mid",
+          "right_label": "Shrinks range",
+          "right": "if nums[mid] < target:\n    low = mid + 1",
+          "body": "When `low == mid`, setting `low = mid` changes nothing."
+        },
+        {
+          "kind": "list",
+          "title": "Trace target 9 in [2, 4, 6, 9, 12]",
+          "items": [
+            "low=0, high=4, mid=2, value=6.",
+            "6 is too small, so low becomes 3.",
+            "low=3, high=4, mid=3, value=9.",
+            "Target found at index 3."
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "In ascending order, `nums[mid]` is less than the target. What should move?",
+          "choices": [
+            "low to mid + 1",
+            "high to mid - 1",
+            "target to mid",
+            "nothing"
+          ],
+          "answer_index": 0,
+          "why": "The left side is too small, including mid, so low moves right past mid."
+        }
+      ]
+    },
+    {
+      "id": "answer-search",
+      "title": "Binary search beyond arrays",
+      "summary": "You can binary search an answer range when true/false changes once.",
+      "question_ids": [
+        "advanced-bs-monotonic"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Binary search can also work when you are searching for the smallest value that passes a test, or the largest value that still works. The key word is monotonic: once the answer becomes true, it stays true, or once it becomes false, it stays false."
+        },
+        {
+          "kind": "list",
+          "title": "Examples of monotonic questions",
+          "items": [
+            "Smallest speed that finishes on time.",
+            "First bad version.",
+            "Smallest capacity that can ship all packages.",
+            "First index where a condition becomes true."
+          ]
+        },
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "No boundary, no binary search",
+          "body": "If true and false values are mixed randomly, the mid result cannot tell you which side to discard."
+        }
+      ]
+    },
+    {
+      "id": "practice-handoff",
+      "title": "Practice handoff",
+      "summary": "Write the range meaning before the loop.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Before coding binary search, write one sentence: `low` and `high` cover the possible answer range. That sentence helps you choose `<=`, `mid + 1`, and `mid - 1` correctly."
+        },
+        {
+          "kind": "check",
+          "prompt": "Why does `low <= high` matter in a closed-range search?",
+          "choices": [
+            "It lets one remaining item still be checked",
+            "It skips the middle",
+            "It sorts the list",
+            "It prevents all loops"
+          ],
+          "answer_index": 0,
+          "why": "When low equals high, there is exactly one candidate left. It still deserves a check."
+        }
       ]
     }
   ]

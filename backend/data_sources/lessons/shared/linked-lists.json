@@ -1,37 +1,257 @@
 {
-  "_note": "Original advanced lesson. Language-specific code appears through block variants.",
+  "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Linked Lists",
-  "summary": "A linked list stores values in nodes, and each node points to the next node.",
-  "minutes": 14,
-  "error_classes": ["wrong_answer", "runtime"],
-  "refresher": "A node holds data and a link to the next node. To insert or delete, change links carefully so the list does not lose the rest of itself.",
-  "refresher_code": "node.value + node.next",
+  "summary": "A linked list is made of nodes. Each node stores data and a link to the next node.",
+  "minutes": 19,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "A linked list stores values in nodes. Each node has data and a next link. The head points to the first node, and traversal follows next links until there is no next node.",
+  "refresher_code": "node = data + next\nhead -> first node",
+  "learn_cards": {
+    "advanced-node-parts": {
+      "title": "A node has data and a next link",
+      "body": "The data is the value. The next link points to the following node.",
+      "example": "A -> B -> C",
+      "notice": "The list order comes from links, not from array positions.",
+      "mistake": "Changing a link too early can lose the rest of the list.",
+      "section_id": "node-shape"
+    },
+    "advanced-head-meaning": {
+      "title": "Head means first node",
+      "body": "The head reference points to where traversal starts.",
+      "example": "head -> A -> B -> null",
+      "notice": "If head is null, the list is empty.",
+      "mistake": "Do not treat head like a value. It is a reference to a node.",
+      "section_id": "node-shape"
+    },
+    "advanced-insert-after": {
+      "title": "Insert without losing the chain",
+      "body": "Point the new node to the old next node before changing the current node's next link.",
+      "example": "new.next = current.next; current.next = new",
+      "notice": "Save the old link first.",
+      "mistake": "Assigning current.next first can disconnect the rest of the list.",
+      "section_id": "insert-delete"
+    }
+  },
   "sections": [
     {
       "id": "node-shape",
-      "title": "The node shape",
-      "summary": "A node is one value plus one link.",
-      "question_ids": ["advanced-node-parts", "advanced-head-meaning", "advanced-traverse-list", "advanced-linked-vs-array", "advanced-cycle-risk"],
+      "title": "Node shape",
+      "summary": "Every linked list starts with the node idea.",
+      "question_ids": [
+        "advanced-node-parts",
+        "advanced-head-meaning",
+        "advanced-traverse-list",
+        "advanced-linked-vs-array"
+      ],
       "blocks": [
-        {"kind": "text", "body": "A linked list is not stored by index like an array. You start at the head node and follow `next` links until the list ends."},
-        {"kind": "code", "caption": "The node class is the building block. Value stores data; next points to the next node.", "variants": {
-          "python": {"code": "class Node:\n    def __init__(self, value, next=None):\n        self.value = value\n        self.next = next", "output": ""},
-          "java": {"code": "class Node {\n    int value;\n    Node next;\n\n    Node(int value) {\n        this.value = value;\n    }\n}", "output": ""},
-          "javascript": {"code": "class Node {\n  constructor(value, next = null) {\n    this.value = value;\n    this.next = next;\n  }\n}", "output": ""},
-          "cpp": {"code": "struct Node {\n  long long value;\n  Node* next;\n\n  Node(long long v) : value(v), next(nullptr) {}\n};", "output": ""}
-        }},
-        {"kind": "check", "prompt": "What does `next` store?", "choices": ["A link to the next node", "The list length", "The previous value only", "A sorted copy"], "answer_index": 0, "why": "`next` tells the program which node comes after the current one."}
+        {
+          "kind": "text",
+          "body": "A linked list does not store items side by side like an array. It stores small objects called nodes. Each node carries one value and a link to the next node."
+        },
+        {
+          "kind": "code",
+          "caption": "A minimal node class.",
+          "variants": {
+            "python": {
+              "code": "class Node:\n    def __init__(self, value):\n        self.value = value\n        self.next = None",
+              "output": ""
+            },
+            "java": {
+              "code": "class Node {\n    int value;\n    Node next;\n\n    Node(int value) {\n        this.value = value;\n        this.next = null;\n    }\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "class Node {\n  constructor(value) {\n    this.value = value;\n    this.next = null;\n  }\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "struct Node {\n    long long value;\n    Node* next;\n\n    Node(long long value) {\n        this->value = value;\n        this->next = nullptr;\n    }\n};",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "list",
+          "title": "Read the node",
+          "items": [
+            "`value` is the data stored in this node.",
+            "`next` points to the next node.",
+            "`None`, `null`, or `nullptr` means there is no next node.",
+            "The `head` variable points to the first node in the list."
+          ]
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "C++ pointer note",
+          "body": "`Node*` means the variable holds the address of a node. `nullptr` means it points to no node right now."
+        },
+        {
+          "kind": "check",
+          "prompt": "What does `head` usually point to?",
+          "choices": [
+            "The first node",
+            "The last node",
+            "The number of nodes",
+            "A copy of every value"
+          ],
+          "answer_index": 0,
+          "why": "The head is the starting reference for the list."
+        }
+      ]
+    },
+    {
+      "id": "traverse-list",
+      "title": "Walk through a linked list",
+      "summary": "Traversal means following next links one at a time.",
+      "question_ids": [
+        "advanced-traverse-list",
+        "advanced-cycle-risk"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "You cannot jump straight to item 10 in a basic linked list. You start at head, read the current node, then move to current.next."
+        },
+        {
+          "kind": "code",
+          "caption": "Traversal keeps moving until the current node is missing.",
+          "variants": {
+            "python": {
+              "code": "current = head\nwhile current is not None:\n    print(current.value)\n    current = current.next",
+              "output": ""
+            },
+            "java": {
+              "code": "Node current = head;\nwhile (current != null) {\n    System.out.println(current.value);\n    current = current.next;\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "let current = head;\nwhile (current !== null) {\n  console.log(current.value);\n  current = current.next;\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "Node* current = head;\nwhile (current != nullptr) {\n    std::cout << current->value << \"\\n\";\n    current = current->next;\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Move the pointer",
+          "body": "If you forget `current = current.next`, the loop keeps looking at the same node forever."
+        },
+        {
+          "kind": "check",
+          "prompt": "When does a basic traversal stop?",
+          "choices": [
+            "When current becomes null/None/nullptr",
+            "After exactly two nodes",
+            "When the value is zero",
+            "Before reading head"
+          ],
+          "answer_index": 0,
+          "why": "The end of the list is marked by a missing next node."
+        }
       ]
     },
     {
       "id": "insert-delete",
-      "title": "Changing links",
-      "summary": "Insert and delete by rewiring links in the right order.",
-      "question_ids": ["advanced-insert-after", "advanced-delete-after", "advanced-lost-link"],
+      "title": "Insert and delete by changing links",
+      "summary": "Linked-list edits are mostly careful link updates.",
+      "question_ids": [
+        "advanced-insert-after",
+        "advanced-delete-after",
+        "advanced-lost-link"
+      ],
       "blocks": [
-        {"kind": "text", "body": "To insert after a node, point the new node at the old next node first. Then point the current node at the new node. That order keeps the rest of the list reachable."},
-        {"kind": "compare", "caption": "The order matters because losing a link can lose the rest of the list.", "wrong_label": "Loses the old next node", "wrong": "current.next = newNode\nnewNode.next = current.next", "right_label": "Keeps the chain", "right": "newNode.next = current.next\ncurrent.next = newNode"},
-        {"kind": "check", "prompt": "Why save or reuse the old `next` link before overwriting it?", "choices": ["So the rest of the list is not lost", "So the value becomes bigger", "So indexes start at one", "So the node sorts itself"], "answer_index": 0, "why": "If you overwrite the only link to the rest of the list, those nodes become unreachable."}
+        {
+          "kind": "text",
+          "body": "To insert after a node, the new node must point to the old next node. Then the current node can point to the new node."
+        },
+        {
+          "kind": "compare",
+          "caption": "The order matters when inserting after `current`.",
+          "wrong_label": "Loses the old next",
+          "wrong": "current.next = newNode\nnewNode.next = current.next",
+          "right_label": "Keeps the chain",
+          "right": "newNode.next = current.next\ncurrent.next = newNode",
+          "body": "The safer version saves the old link before replacing it."
+        },
+        {
+          "kind": "text",
+          "body": "To delete the node after `current`, skip over it. Point `current.next` to the node after the deleted node."
+        },
+        {
+          "kind": "code",
+          "caption": "Delete the node after current.",
+          "variants": {
+            "python": {
+              "code": "if current.next is not None:\n    current.next = current.next.next",
+              "output": ""
+            },
+            "java": {
+              "code": "if (current.next != null) {\n    current.next = current.next.next;\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "if (current.next !== null) {\n  current.next = current.next.next;\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "if (current->next != nullptr) {\n    current->next = current->next->next;\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "C++ ownership note",
+          "body": "In real C++, deleting a node may also require freeing memory. The practice runner focuses on pointer shape first, but production code should use safe ownership patterns."
+        }
+      ]
+    },
+    {
+      "id": "trace-links",
+      "title": "Trace the arrows",
+      "summary": "Draw arrows before writing pointer code.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Insert X after A in A -> B",
+          "items": [
+            "Before: A.next points to B.",
+            "Make X.next point to B.",
+            "Make A.next point to X.",
+            "After: A -> X -> B."
+          ]
+        },
+        {
+          "kind": "list",
+          "title": "Delete B after A in A -> B -> C",
+          "items": [
+            "Before: A.next points to B.",
+            "B.next points to C.",
+            "Make A.next point to C.",
+            "After: A -> C."
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "Why is `current.next = newNode` too early during insert?",
+          "choices": [
+            "It can lose the old next node",
+            "It sorts the list",
+            "It makes the list circular on purpose",
+            "It copies every node"
+          ],
+          "answer_index": 0,
+          "why": "Once current.next changes, you may no longer have a path to the old next node."
+        }
       ]
     }
   ]

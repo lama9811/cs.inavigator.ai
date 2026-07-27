@@ -1,37 +1,233 @@
 {
-  "_note": "Original advanced lesson. Language-specific code appears through block variants.",
+  "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Recursion Patterns",
-  "summary": "Solve a problem by handling a small case, then calling the same function on a smaller version.",
-  "minutes": 12,
-  "error_classes": ["wrong_answer", "runtime", "timeout"],
-  "refresher": "A recursive function needs a base case that stops and a recursive call that moves closer to that stop. If the call does not shrink the problem, recursion can run forever.",
-  "refresher_code": "if base_case: return answer\nreturn solve(smaller_input)",
+  "summary": "Recursion solves a problem by handling a small case and asking the same function to solve a smaller version.",
+  "minutes": 18,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "A recursive function needs a base case and a smaller recursive call. The base case stops the calls. The smaller call moves the problem toward that stop point.",
+  "refresher_code": "if done: return answer\nreturn work + solve(smaller_input)",
+  "learn_cards": {
+    "advanced-recursion-base-case": {
+      "title": "The base case stops recursion",
+      "body": "A base case is the simple answer the function can return immediately.",
+      "example": "factorial(0) returns 1",
+      "notice": "Without a reachable base case, recursion keeps calling itself.",
+      "mistake": "A base case that never runs is the same as no base case.",
+      "section_id": "base-case"
+    },
+    "advanced-recursion-shrink": {
+      "title": "Each call must get smaller",
+      "body": "The recursive call should move closer to the base case.",
+      "example": "factorial(n - 1), not factorial(n)",
+      "notice": "Same input means same problem forever.",
+      "mistake": "Calling with unchanged input causes infinite recursion.",
+      "section_id": "smaller-call"
+    }
+  },
   "sections": [
     {
       "id": "base-case",
       "title": "Base case first",
-      "summary": "The base case is the stopping rule.",
-      "question_ids": ["advanced-recursion-base-case", "advanced-recursion-trace", "advanced-recursion-stack"],
+      "summary": "The base case is the stop sign.",
+      "question_ids": [
+        "advanced-recursion-base-case",
+        "advanced-recursion-infinite"
+      ],
       "blocks": [
-        {"kind": "text", "body": "A base case handles the smallest version directly. For factorial, `0!` and `1!` are both 1, so the function can stop there."},
-        {"kind": "code", "caption": "Each call uses a smaller n until it reaches the base case.", "variants": {
-          "python": {"code": "def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)", "output": ""},
-          "java": {"code": "static long factorial(long n) {\n    if (n <= 1) return 1;\n    return n * factorial(n - 1);\n}", "output": ""},
-          "javascript": {"code": "function factorial(n) {\n  if (n <= 1) return 1;\n  return n * factorial(n - 1);\n}", "output": ""},
-          "cpp": {"code": "long long factorial(long long n) {\n  if (n <= 1) return 1;\n  return n * factorial(n - 1);\n}", "output": ""}
-        }},
-        {"kind": "check", "prompt": "What is the job of the base case?", "choices": ["Stop the recursion", "Make the list sorted", "Skip the return value", "Create a queue"], "answer_index": 0, "why": "Without a base case, the function has no clear place to stop."}
+        {
+          "kind": "text",
+          "body": "Recursion is a function calling itself. That sounds strange at first, but the pattern is simple: stop when the answer is obvious, otherwise solve a smaller version."
+        },
+        {
+          "kind": "code",
+          "caption": "Factorial has an obvious stop at 0.",
+          "variants": {
+            "python": {
+              "code": "def factorial(n):\n    if n == 0:\n        return 1\n    return n * factorial(n - 1)\n\nprint(factorial(3))",
+              "output": "6"
+            },
+            "java": {
+              "code": "static long factorial(long n) {\n    if (n == 0) {\n        return 1;\n    }\n    return n * factorial(n - 1);\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "function factorial(n) {\n  if (n === 0) {\n    return 1;\n  }\n  return n * factorial(n - 1);\n}\n\nconsole.log(factorial(3));",
+              "output": "6"
+            },
+            "cpp": {
+              "code": "long long factorial(long long n) {\n    if (n == 0) {\n        return 1;\n    }\n    return n * factorial(n - 1);\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "list",
+          "title": "Read it line by line",
+          "items": [
+            "If `n` is 0, return 1 right away.",
+            "Otherwise, multiply `n` by the answer for `n - 1`.",
+            "`n - 1` is closer to 0, so the calls eventually stop.",
+            "Each unfinished call waits for the smaller call to return."
+          ]
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Same input means stuck",
+          "body": "`factorial(n)` inside `factorial` calls the same problem again. Nothing gets smaller, so it cannot naturally stop."
+        },
+        {
+          "kind": "check",
+          "prompt": "What is the job of the base case?",
+          "choices": [
+            "Stop the recursion with a direct answer",
+            "Make the input bigger",
+            "Print every call",
+            "Skip all returns"
+          ],
+          "answer_index": 0,
+          "why": "The base case gives the function a place to stop."
+        }
       ]
     },
     {
       "id": "smaller-call",
       "title": "Make the problem smaller",
-      "summary": "Every recursive call must move toward the base case.",
-      "question_ids": ["advanced-recursion-shrink", "advanced-recursion-infinite", "advanced-recursion-order", "advanced-recursion-tree", "advanced-recursion-when-not"],
+      "summary": "The recursive call should move toward the base case.",
+      "question_ids": [
+        "advanced-recursion-shrink",
+        "advanced-recursion-trace",
+        "advanced-recursion-order"
+      ],
       "blocks": [
-        {"kind": "text", "body": "The recursive call should not repeat the same input. If `factorial(n)` calls `factorial(n)` again, nothing changes and the program keeps calling itself."},
-        {"kind": "compare", "caption": "The call must move toward the stopping rule.", "wrong_label": "Does not shrink", "wrong": "return n * factorial(n);", "right_label": "Shrinks by one", "right": "return n * factorial(n - 1);"},
-        {"kind": "check", "prompt": "Why does `factorial(n - 1)` eventually stop?", "choices": ["n gets smaller until it reaches the base case", "n becomes a string", "The compiler guesses the answer", "The loop removes the function"], "answer_index": 0, "why": "Each call gets closer to `n <= 1`, where the function returns without another call."}
+        {
+          "kind": "text",
+          "body": "A recursive call is not a guess. It should solve the same kind of problem with less input: one smaller number, the rest of a list, or a child node in a tree."
+        },
+        {
+          "kind": "code",
+          "caption": "Sum a list by taking the first item and asking recursion to sum the rest.",
+          "variants": {
+            "python": {
+              "code": "def sum_list(nums):\n    if len(nums) == 0:\n        return 0\n    return nums[0] + sum_list(nums[1:])\n\nprint(sum_list([2, 4, 6]))",
+              "output": "12"
+            },
+            "java": {
+              "code": "static long sumList(long[] nums, int index) {\n    if (index == nums.length) {\n        return 0;\n    }\n    return nums[index] + sumList(nums, index + 1);\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "function sumList(nums, index = 0) {\n  if (index === nums.length) {\n    return 0;\n  }\n  return nums[index] + sumList(nums, index + 1);\n}\n\nconsole.log(sumList([2, 4, 6]));",
+              "output": "12"
+            },
+            "cpp": {
+              "code": "long long sumList(const std::vector<long long>& nums, int index) {\n    if (index == (int)nums.size()) {\n        return 0;\n    }\n    return nums[index] + sumList(nums, index + 1);\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "list",
+          "title": "Trace `sum_list([2, 4, 6])`",
+          "items": [
+            "2 + sum of [4, 6]",
+            "2 + 4 + sum of [6]",
+            "2 + 4 + 6 + sum of []",
+            "The empty list returns 0, then the waiting calls add back up to 12."
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "Where do unfinished recursive calls wait?",
+          "choices": [
+            "On the call stack",
+            "Inside a set",
+            "In the browser cache",
+            "Nowhere; they disappear"
+          ],
+          "answer_index": 0,
+          "why": "The call stack remembers each unfinished function call until its smaller call returns."
+        }
+      ]
+    },
+    {
+      "id": "tree-recursion",
+      "title": "Recursion fits trees",
+      "summary": "A tree problem often repeats on left and right children.",
+      "question_ids": [
+        "advanced-recursion-tree"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Tree recursion works because each child is the root of a smaller tree. A height function can ask for the height of the left subtree and the right subtree, then combine them."
+        },
+        {
+          "kind": "code",
+          "caption": "Tree height combines two smaller answers.",
+          "variants": {
+            "python": {
+              "code": "def height(node):\n    if node is None:\n        return 0\n    return 1 + max(height(node.left), height(node.right))",
+              "output": ""
+            },
+            "java": {
+              "code": "static int height(Node node) {\n    if (node == null) return 0;\n    return 1 + Math.max(height(node.left), height(node.right));\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "function height(node) {\n  if (node === null) return 0;\n  return 1 + Math.max(height(node.left), height(node.right));\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "int height(Node* node) {\n    if (node == nullptr) return 0;\n    return 1 + std::max(height(node->left), height(node->right));\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Name what comes back",
+          "body": "A recursive function should have a clear return meaning. Here, `height(node)` means the height of the tree starting at `node`."
+        }
+      ]
+    },
+    {
+      "id": "when-recursion-hurts",
+      "title": "When recursion can be slow",
+      "summary": "Some recursive solutions repeat the same work.",
+      "question_ids": [
+        "advanced-recursion-when-not"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Recursion is not automatically efficient. Naive Fibonacci is a classic warning because it recalculates the same values many times."
+        },
+        {
+          "kind": "compare",
+          "caption": "Repeated work can grow quickly.",
+          "wrong_label": "Repeated recursion",
+          "wrong": "fib(n) = fib(n - 1) + fib(n - 2)\n// repeats many calls",
+          "right_label": "Memoized or iterative",
+          "right": "store earlier answers or use a loop\n// each answer is computed once",
+          "body": "The idea is not that recursion is bad. The idea is to notice repeated work."
+        },
+        {
+          "kind": "check",
+          "prompt": "Why can naive recursive Fibonacci be slow?",
+          "choices": [
+            "It repeats the same subproblems many times",
+            "It has no numbers",
+            "It always uses a queue",
+            "It cannot return a value"
+          ],
+          "answer_index": 0,
+          "why": "The same Fibonacci values are recomputed again and again."
+        }
       ]
     }
   ]

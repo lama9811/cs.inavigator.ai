@@ -1,37 +1,250 @@
 {
-  "_note": "Original advanced lesson. Language-specific code appears through block variants.",
+  "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Trees",
-  "summary": "A tree stores values in parent and child nodes, with one root at the top.",
-  "minutes": 14,
-  "error_classes": ["wrong_answer", "runtime"],
-  "refresher": "A tree node stores a value and links to child nodes. Traversal means visiting nodes in a clear order, such as root-left-right or level by level.",
-  "refresher_code": "visit node, then visit children",
+  "summary": "A tree stores nodes in parent-child relationships. Many tree problems repeat the same work on left and right children.",
+  "minutes": 19,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "A binary tree node stores a value plus left and right child links. Traversal means visiting nodes in a chosen order. Most recursive tree functions start with a null check.",
+  "refresher_code": "if node is None: return base_answer\nsolve(node.left)\nsolve(node.right)",
+  "learn_cards": {
+    "advanced-tree-root": {
+      "title": "Root is the starting node",
+      "body": "The root is the top node of the tree. Traversal usually begins there.",
+      "example": "root -> left child and right child",
+      "notice": "A missing root means the tree is empty.",
+      "mistake": "Do not confuse root with leaf. A root can have children.",
+      "section_id": "tree-node"
+    },
+    "advanced-tree-leaf": {
+      "title": "Leaf means no children",
+      "body": "A leaf node has no left or right child.",
+      "example": "node.left is null and node.right is null",
+      "notice": "Leaves are where many recursive paths stop.",
+      "mistake": "A node with one child is not a leaf.",
+      "section_id": "tree-node"
+    }
+  },
   "sections": [
     {
       "id": "tree-node",
       "title": "Tree node shape",
-      "summary": "A binary tree node has a value, a left child, and a right child.",
-      "question_ids": ["advanced-tree-root", "advanced-tree-leaf", "advanced-tree-null"],
+      "summary": "A binary tree node points left and right.",
+      "question_ids": [
+        "advanced-tree-root",
+        "advanced-tree-leaf",
+        "advanced-tree-null"
+      ],
       "blocks": [
-        {"kind": "text", "body": "A tree starts at the root. From there, each node can point to children. A binary tree has at most two children: left and right."},
-        {"kind": "code", "caption": "This is the basic binary tree node shape.", "variants": {
-          "python": {"code": "class TreeNode:\n    def __init__(self, value, left=None, right=None):\n        self.value = value\n        self.left = left\n        self.right = right", "output": ""},
-          "java": {"code": "class TreeNode {\n    int value;\n    TreeNode left;\n    TreeNode right;\n    TreeNode(int value) { this.value = value; }\n}", "output": ""},
-          "javascript": {"code": "class TreeNode {\n  constructor(value, left = null, right = null) {\n    this.value = value;\n    this.left = left;\n    this.right = right;\n  }\n}", "output": ""},
-          "cpp": {"code": "struct TreeNode {\n  long long value;\n  TreeNode* left;\n  TreeNode* right;\n  TreeNode(long long v) : value(v), left(nullptr), right(nullptr) {}\n};", "output": ""}
-        }},
-        {"kind": "check", "prompt": "What is the root?", "choices": ["The first/top node of the tree", "The last leaf only", "A sorted array", "A queue operation"], "answer_index": 0, "why": "Traversal usually starts at the root, then moves to children."}
+        {
+          "kind": "text",
+          "body": "A tree is made of nodes. In a binary tree, each node can have a left child and a right child. The first node is called the root."
+        },
+        {
+          "kind": "code",
+          "caption": "A basic binary tree node.",
+          "variants": {
+            "python": {
+              "code": "class TreeNode:\n    def __init__(self, value):\n        self.value = value\n        self.left = None\n        self.right = None",
+              "output": ""
+            },
+            "java": {
+              "code": "class TreeNode {\n    int value;\n    TreeNode left;\n    TreeNode right;\n\n    TreeNode(int value) {\n        this.value = value;\n    }\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "class TreeNode {\n  constructor(value) {\n    this.value = value;\n    this.left = null;\n    this.right = null;\n  }\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "struct TreeNode {\n    long long value;\n    TreeNode* left;\n    TreeNode* right;\n\n    TreeNode(long long value) : value(value), left(nullptr), right(nullptr) {}\n};",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "list",
+          "title": "Tree words",
+          "items": [
+            "Root: the first node.",
+            "Child: a node below another node.",
+            "Leaf: a node with no children.",
+            "Subtree: a smaller tree starting at some node."
+          ]
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Null checks come early",
+          "body": "Most tree functions start by checking for `None`, `null`, or `nullptr`. Without that check, reading `node.left` on a missing node can crash."
+        },
+        {
+          "kind": "check",
+          "prompt": "What is a leaf node?",
+          "choices": [
+            "A node with no children",
+            "The first node only",
+            "Any node with a value",
+            "A node with exactly two children"
+          ],
+          "answer_index": 0,
+          "why": "A leaf is an end node. It has no left or right child."
+        }
       ]
     },
     {
       "id": "traversal",
-      "title": "Traversal order",
+      "title": "Traversal orders",
       "summary": "Traversal is the order you visit nodes.",
-      "question_ids": ["advanced-tree-preorder", "advanced-tree-inorder", "advanced-tree-level-order", "advanced-tree-height", "advanced-tree-parsons"],
+      "question_ids": [
+        "advanced-tree-preorder",
+        "advanced-tree-inorder",
+        "advanced-tree-parsons"
+      ],
       "blocks": [
-        {"kind": "text", "body": "Depth-first traversal follows one branch before backing up. Breadth-first traversal visits nodes level by level using a queue."},
-        {"kind": "compare", "caption": "Different traversals answer different questions.", "wrong_label": "Unclear", "wrong": "Visit nodes somehow", "right_label": "Clear order", "right": "Preorder: node, left, right"},
-        {"kind": "check", "prompt": "Which structure helps visit a tree level by level?", "choices": ["Queue", "Single integer", "String builder only", "Modulo"], "answer_index": 0, "why": "A queue keeps older discovered nodes first, which matches level order."}
+        {
+          "kind": "text",
+          "body": "Traversal means visiting every node. The three common depth-first orders use the same three actions: visit the node, traverse left, traverse right. Only the order changes."
+        },
+        {
+          "kind": "list",
+          "title": "Depth-first orders",
+          "items": [
+            "Preorder: node, left, right.",
+            "Inorder: left, node, right.",
+            "Postorder: left, right, node."
+          ]
+        },
+        {
+          "kind": "code",
+          "caption": "Preorder traversal visits the node before its children.",
+          "variants": {
+            "python": {
+              "code": "def preorder(node):\n    if node is None:\n        return\n    print(node.value)\n    preorder(node.left)\n    preorder(node.right)",
+              "output": ""
+            },
+            "java": {
+              "code": "static void preorder(TreeNode node) {\n    if (node == null) return;\n    System.out.println(node.value);\n    preorder(node.left);\n    preorder(node.right);\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "function preorder(node) {\n  if (node === null) return;\n  console.log(node.value);\n  preorder(node.left);\n  preorder(node.right);\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "void preorder(TreeNode* node) {\n    if (node == nullptr) return;\n    std::cout << node->value << \"\\n\";\n    preorder(node->left);\n    preorder(node->right);\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "check",
+          "prompt": "What is preorder?",
+          "choices": [
+            "Visit node, then left, then right",
+            "Visit left, then node, then right",
+            "Visit left, then right, then node",
+            "Visit only leaves"
+          ],
+          "answer_index": 0,
+          "why": "Preorder starts with the current node before going to children."
+        }
+      ]
+    },
+    {
+      "id": "combine-answers",
+      "title": "Return values from subtrees",
+      "summary": "Many tree functions combine left and right answers.",
+      "question_ids": [
+        "advanced-tree-height"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Tree recursion often asks the left child for an answer, asks the right child for an answer, then combines those two answers."
+        },
+        {
+          "kind": "code",
+          "caption": "Count nodes by counting left and right subtrees.",
+          "variants": {
+            "python": {
+              "code": "def count_nodes(node):\n    if node is None:\n        return 0\n    return 1 + count_nodes(node.left) + count_nodes(node.right)",
+              "output": ""
+            },
+            "java": {
+              "code": "static int countNodes(TreeNode node) {\n    if (node == null) return 0;\n    return 1 + countNodes(node.left) + countNodes(node.right);\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "function countNodes(node) {\n  if (node === null) return 0;\n  return 1 + countNodes(node.left) + countNodes(node.right);\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "int countNodes(TreeNode* node) {\n    if (node == nullptr) return 0;\n    return 1 + countNodes(node->left) + countNodes(node->right);\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "list",
+          "title": "Read the return line",
+          "items": [
+            "`1` counts the current node.",
+            "`count(left)` counts everything on the left.",
+            "`count(right)` counts everything on the right.",
+            "Adding them gives the full tree count."
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "A height function gets left height and right height. What should it return?",
+          "choices": [
+            "1 plus the larger height",
+            "The smaller height only",
+            "Always 0",
+            "The node value"
+          ],
+          "answer_index": 0,
+          "why": "Height follows the longest path, so it uses the larger child height plus the current node."
+        }
+      ]
+    },
+    {
+      "id": "level-order",
+      "title": "Level order uses a queue",
+      "summary": "Breadth-first tree traversal visits one level at a time.",
+      "question_ids": [
+        "advanced-tree-level-order"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Level-order traversal visits the root, then its children, then its grandchildren. A queue keeps that order because nodes that arrive first are processed first."
+        },
+        {
+          "kind": "code",
+          "caption": "Level-order traversal pattern.",
+          "variants": {
+            "python": {
+              "code": "from collections import deque\n\ndef level_order(root):\n    if root is None:\n        return\n    queue = deque([root])\n    while queue:\n        node = queue.popleft()\n        print(node.value)\n        if node.left:\n            queue.append(node.left)\n        if node.right:\n            queue.append(node.right)",
+              "output": ""
+            },
+            "java": {
+              "code": "static void levelOrder(TreeNode root) {\n    if (root == null) return;\n    Queue<TreeNode> queue = new ArrayDeque<>();\n    queue.offer(root);\n    while (!queue.isEmpty()) {\n        TreeNode node = queue.poll();\n        System.out.println(node.value);\n        if (node.left != null) queue.offer(node.left);\n        if (node.right != null) queue.offer(node.right);\n    }\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "function levelOrder(root) {\n  if (root === null) return;\n  const queue = [root];\n  while (queue.length > 0) {\n    const node = queue.shift();\n    console.log(node.value);\n    if (node.left) queue.push(node.left);\n    if (node.right) queue.push(node.right);\n  }\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "void levelOrder(TreeNode* root) {\n    if (root == nullptr) return;\n    std::queue<TreeNode*> queue;\n    queue.push(root);\n    while (!queue.empty()) {\n        TreeNode* node = queue.front();\n        queue.pop();\n        std::cout << node->value << \"\\n\";\n        if (node->left != nullptr) queue.push(node->left);\n        if (node->right != nullptr) queue.push(node->right);\n    }\n}",
+              "output": ""
+            }
+          }
+        }
       ]
     }
   ]
