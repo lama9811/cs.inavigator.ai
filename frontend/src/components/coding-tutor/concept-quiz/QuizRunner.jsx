@@ -1,15 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FaRegQuestionCircle, FaBookOpen, FaArrowRight } from "react-icons/fa";
+import {
+  FaRegQuestionCircle,
+  FaBookOpen,
+  FaArrowRight,
+  FaCheckCircle,
+  FaTimesCircle,
+} from "react-icons/fa";
 import { readQuizDraftAnswers, writeQuizDraftAnswers } from "./conceptQuizProgress";
+
+const AUTO_ADVANCE_MS = 900;
 
 // Sequential concept-quiz runner. Renders one question at a time in a split
 // layout (code/statement left with Question|Learn tabs, answer UI right),
 // tracks answers, and on Submit shows a green/red results screen.
 //
 // Question kinds:
-//   mcq-output / mcq-behavior → pick one of `choices` (grade vs answer_index)
-//   typein                    → type text (grade vs `accepted`, case-sensitive)
-//   parsons                   → drag the shuffled `lines` into the correct order
+//   mcq-output / mcq-behavior -> pick one of `choices` (grade vs answer_index)
+//   typein                    -> type text (grade vs `accepted`, case-sensitive)
+//   parsons                   -> drag the shuffled `lines` into the correct order
 //
 // Grading is done server-side via `onGrade` (the /grade endpoint) so answers
 // aren't trusted from the client. The parent supplies questions, current index
@@ -17,10 +25,10 @@ import { readQuizDraftAnswers, writeQuizDraftAnswers } from "./conceptQuizProgre
 
 // In-progress answers, saved per quiz for the session. The runner unmounts whenever the
 // student leaves (to read a lesson, to look at Code), and without this every answer they
-// had given was destroyed — a half-finished quiz simply could not be resumed.
+// had given was destroyed, so a half-finished quiz simply could not be resumed.
 //
 // sessionStorage on purpose: it survives a detour, but an abandoned quiz shouldn't still
-// be sitting there next week. Storage failures are swallowed — a student in private mode
+// be sitting there next week. Storage failures are swallowed; a student in private mode
 // loses resume, not the quiz.
 function readAnswers(key) {
   try {
@@ -37,7 +45,7 @@ function writeAnswers(key, answers) {
     if (!answers || !Object.keys(answers).length) sessionStorage.removeItem(key);
     else sessionStorage.setItem(key, JSON.stringify(answers));
   } catch {
-    // Storage unavailable/full — the quiz still works, it just won't resume.
+    // Storage unavailable/full; the quiz still works, it just won't resume.
   }
 }
 
@@ -63,7 +71,7 @@ function seededShuffle(list, seed) {
   return arr.map((item) => item.value);
 }
 
-function ParsonsBoard({ question, value, onChange }) {
+function ParsonsBoard({ question, value, onChange, disabled = false }) {
   // `value` is the student's current ordering (array of line strings).
   const initial = useMemo(
     () => value ?? seededShuffle(question.lines, question.id),
@@ -77,11 +85,14 @@ function ParsonsBoard({ question, value, onChange }) {
   // Keep parent in sync when we first mount / re-seed for a new question.
   useEffect(() => {
     setOrder(initial);
-    onChange(initial);
+    if (!value) {
+      onChange(initial);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [question.id]);
 
   const move = (from, to) => {
+    if (disabled) return;
     if (from === to || from == null || to == null) return;
     const next = order.slice();
     const [moved] = next.splice(from, 1);
@@ -97,37 +108,39 @@ function ParsonsBoard({ question, value, onChange }) {
         {order.map((line, index) => (
           <li
             key={`${line}-${index}`}
-            className="cq-parsons-line"
-            draggable
+            className={`cq-parsons-line ${disabled ? "locked" : ""}`}
+            draggable={!disabled}
             onDragStart={() => {
+              if (disabled) return;
               dragIndex.current = index;
             }}
             onDragOver={(event) => event.preventDefault()}
             onDrop={() => {
+              if (disabled) return;
               move(dragIndex.current, index);
               dragIndex.current = null;
             }}
           >
             <span className="cq-parsons-grip" aria-hidden="true">
-              ⠿
+              drag
             </span>
-            <code>{line || " "}</code>
+            <code>{line || " "}</code>
             <span className="cq-parsons-controls">
               <button
                 type="button"
                 aria-label="Move line up"
-                disabled={index === 0}
+                disabled={disabled || index === 0}
                 onClick={() => move(index, index - 1)}
               >
-                ↑
+                Up
               </button>
               <button
                 type="button"
                 aria-label="Move line down"
-                disabled={index === order.length - 1}
+                disabled={disabled || index === order.length - 1}
                 onClick={() => move(index, index + 1)}
               >
-                ↓
+                Down
               </button>
             </span>
           </li>
@@ -137,7 +150,7 @@ function ParsonsBoard({ question, value, onChange }) {
   );
 }
 
-function AnswerPanel({ question, answer, onAnswer }) {
+function AnswerPanel({ question, answer, onAnswer, locked = false }) {
   if (question.kind === "typein") {
     return (
       <div className="cq-answer cq-answer-typein">
@@ -153,6 +166,7 @@ function AnswerPanel({ question, answer, onAnswer }) {
           spellCheck={false}
           autoComplete="off"
           value={answer?.text ?? ""}
+          disabled={locked}
           placeholder={
             question.typein_mode === "code" ? "Enter one statement" : "Your answer"
           }
@@ -168,6 +182,7 @@ function AnswerPanel({ question, answer, onAnswer }) {
         question={question}
         value={answer?.order}
         onChange={(order) => onAnswer({ order })}
+        disabled={locked}
       />
     );
   }
@@ -186,6 +201,7 @@ function AnswerPanel({ question, answer, onAnswer }) {
             role="radio"
             aria-checked={selected}
             className={`cq-choice ${selected ? "selected" : ""}`}
+            disabled={locked}
             onClick={() => onAnswer({ choice_index: index })}
           >
             <span className="cq-choice-marker">
@@ -202,7 +218,7 @@ function AnswerPanel({ question, answer, onAnswer }) {
 
 // The refresher, shown beside the question the student is answering.
 //
-// This is deliberately NOT the whole lesson — mid-question, a student needs a reminder,
+// This is deliberately NOT the whole lesson; mid-question, a student needs a reminder,
 // not a chapter. It comes from the SAME file as the full lesson (see backend/lessons.py),
 // so the two can never drift apart and tell them different things. If a reminder isn't
 // enough, "Read the full lesson" takes them to Learn on this exact topic.
@@ -221,7 +237,7 @@ function LearnTab({ apiBase, language, category, categoryLabel, questionId, onOp
         if (alive) setRefresher(data?.refresher || null);
       })
       .catch(() => {
-        // A missing refresher is not an error the student needs to see — the Question
+        // A missing refresher is not an error the student needs to see; the Question
         // tab still works. Fall through to the "not written yet" copy below.
         if (alive) setRefresher(null);
       })
@@ -233,7 +249,7 @@ function LearnTab({ apiBase, language, category, categoryLabel, questionId, onOp
     };
   }, [apiBase, language, category, questionId]);
 
-  if (loading) return <div className="cq-learn-panel"><p>Loading…</p></div>;
+  if (loading) return <div className="cq-learn-panel"><p>Loading...</p></div>;
 
   if (!refresher) {
     return (
@@ -242,7 +258,7 @@ function LearnTab({ apiBase, language, category, categoryLabel, questionId, onOp
         <h4>Learn: {categoryLabel}</h4>
         <p>
           The lesson for {categoryLabel.toLowerCase()} is still being written. Use the
-          Question tab — and the floating Coding Tutor is always there if you get stuck.
+          Question tab, and the floating Coding Tutor is always there if you get stuck.
         </p>
       </div>
     );
@@ -280,7 +296,7 @@ function LearnTab({ apiBase, language, category, categoryLabel, questionId, onOp
   );
 }
 
-// `inline code` → <code>. Not a markdown parser: refresher text is plain sentences we
+// `inline code` becomes <code>. Not a markdown parser: refresher text is plain sentences we
 // author ourselves, so pulling in a renderer would mean sanitizing HTML we already control.
 function withInlineCode(text) {
   const parts = String(text || "").split(/(`[^`]+`)/g);
@@ -303,6 +319,213 @@ function splitExplanation(text) {
     detail: sentences.slice(2).join(" "),
   };
 }
+
+function formatAnswer(value) {
+  if (Array.isArray(value)) return value.join("\n");
+  if (value == null || value === "") return "No answer";
+  return String(value);
+}
+
+function isAnswerComplete(answer) {
+  return (
+    answer != null &&
+    (answer.choice_index != null ||
+      (answer.text != null && answer.text.trim() !== "") ||
+      (answer.order != null && answer.order.length > 0))
+  );
+}
+
+function firstParsonsMismatch(studentLines, expectedLines) {
+  const max = Math.max(studentLines.length, expectedLines.length);
+  for (let index = 0; index < max; index += 1) {
+    if (studentLines[index] !== expectedLines[index]) return index;
+  }
+  return -1;
+}
+
+function gradeAnswerLocally(question, answer) {
+  if (!question || !answer) {
+    return {
+      correct: false,
+      studentAnswer: null,
+      correctAnswer: null,
+    };
+  }
+
+  if (question.kind === "mcq-output" || question.kind === "mcq-behavior") {
+    const selected = answer.choice_index;
+    const correctIndex = question.answer_index;
+    return {
+      correct: selected === correctIndex,
+      studentAnswer:
+        typeof selected === "number" ? question.choices?.[selected] : null,
+      correctAnswer:
+        typeof correctIndex === "number" ? question.choices?.[correctIndex] : null,
+    };
+  }
+
+  if (question.kind === "typein") {
+    const submitted = String(answer.text || "").trim();
+    const accepted = question.accepted || [];
+    return {
+      correct: accepted.map((item) => String(item).trim()).includes(submitted),
+      studentAnswer: submitted || null,
+      correctAnswer: accepted[0] || null,
+    };
+  }
+
+  if (question.kind === "parsons") {
+    const order = answer.order || [];
+    const expected = question.lines || [];
+    const firstMismatch = firstParsonsMismatch(order, expected);
+    return {
+      correct:
+        order.length === expected.length &&
+        order.every((line, index) => line === expected[index]),
+      studentAnswer: order,
+      correctAnswer: expected,
+      firstMismatch,
+    };
+  }
+
+  return {
+    correct: false,
+    studentAnswer: null,
+    correctAnswer: null,
+  };
+}
+
+function buildImmediateReview(question, result, explanation) {
+  if (result.correct) {
+    return {
+      summary:
+        explanation.summary || "This answer follows the rule being tested.",
+      points: [],
+      nextStep: "",
+    };
+  }
+
+  const points = [];
+  let summary =
+    explanation.summary ||
+    "Your answer does not match the behavior this question is testing yet.";
+
+  if (question.kind === "mcq-output" || question.kind === "mcq-behavior") {
+    points.push(
+      `Your choice points to "${formatAnswer(result.studentAnswer)}", but this question expects "${formatAnswer(result.correctAnswer)}".`
+    );
+    if (question.code) {
+      points.push(
+        "Trace the code in order. Write down each value as it changes, then compare the final value or behavior to the choices."
+      );
+    } else {
+      points.push(
+        "Look for the rule in the prompt that separates the correct choice from the nearby choices."
+      );
+    }
+  } else if (question.kind === "typein") {
+    points.push(
+      `You typed "${formatAnswer(result.studentAnswer)}", but the expected answer is "${formatAnswer(result.correctAnswer)}".`
+    );
+    points.push(
+      "For type-in questions, check the exact value first: spelling, punctuation, capitalization, spacing, and whether quotes are needed."
+    );
+    if (question.typein_mode === "code") {
+      points.push(
+        "If this is code, compare the operator, variable name, and syntax one piece at a time."
+      );
+    }
+  } else if (question.kind === "parsons") {
+    const step = result.firstMismatch >= 0 ? result.firstMismatch + 1 : 1;
+    const studentLine = Array.isArray(result.studentAnswer)
+      ? result.studentAnswer[result.firstMismatch]
+      : null;
+    const expectedLine = Array.isArray(result.correctAnswer)
+      ? result.correctAnswer[result.firstMismatch]
+      : null;
+    points.push(
+      `The first line that looks out of place is step ${step}. You placed "${formatAnswer(studentLine)}", but that spot should be "${formatAnswer(expectedLine)}".`
+    );
+    points.push(
+      "Read the lines like a small recipe: setup first, then the repeated work or decision, then the final return or print."
+    );
+  }
+
+  if (explanation.detail) {
+    points.push(explanation.detail);
+  }
+
+  return {
+    summary,
+    points,
+    nextStep:
+      "Use the Learn tab to review the exact idea, then move on when the rule makes sense.",
+  };
+}
+
+function ImmediateFeedback({ question, answer, onReviewLesson, autoAdvance = false }) {
+  if (!answer?.checked) return null;
+
+  const result = gradeAnswerLocally(question, answer);
+  const explanation = splitExplanation(question.explanation);
+  const review = buildImmediateReview(question, result, explanation);
+  const Icon = result.correct ? FaCheckCircle : FaTimesCircle;
+
+  return (
+    <aside
+      className={`cq-immediate-feedback ${result.correct ? "correct" : "incorrect"}`}
+      aria-live="polite"
+    >
+      <div className="cq-immediate-feedback-head">
+        <Icon aria-hidden="true" />
+        <div>
+          <strong>{result.correct ? "Correct" : "Not quite"}</strong>
+          <span>{result.correct ? "Why it works" : "What went wrong"}</span>
+        </div>
+      </div>
+
+      {!result.correct ? (
+        <div className="cq-immediate-answer-review">
+          <div>
+            <span>Your answer</span>
+            <code>{formatAnswer(result.studentAnswer)}</code>
+          </div>
+          <div>
+            <span>Correct answer</span>
+            <code>{formatAnswer(result.correctAnswer)}</code>
+          </div>
+        </div>
+      ) : null}
+
+      <p>{review.summary}</p>
+
+      {!result.correct && review.points.length ? (
+        <ul className="cq-feedback-points">
+          {review.points.map((point, pointIndex) => (
+            <li key={pointIndex}>{point}</li>
+          ))}
+        </ul>
+      ) : null}
+
+      {!result.correct && review.nextStep ? (
+        <p className="cq-feedback-next">
+          <strong>Next:</strong> {review.nextStep}
+        </p>
+      ) : null}
+
+      {result.correct && autoAdvance ? (
+        <p className="cq-feedback-next">Correct - moving to the next question.</p>
+      ) : null}
+
+      {!result.correct && onReviewLesson ? (
+        <button type="button" className="cq-feedback-review" onClick={onReviewLesson}>
+          Review this in Learn
+        </button>
+      ) : null}
+    </aside>
+  );
+}
+
 function ResultsScreen({ grade, questions, onRetry, onBackToCategory }) {
   const byId = useMemo(() => {
     const map = {};
@@ -313,11 +536,6 @@ function ResultsScreen({ grade, questions, onRetry, onBackToCategory }) {
   }, [grade]);
 
   const pct = Math.round((grade.score || 0) * 100);
-  const formatAnswer = (value) => {
-    if (Array.isArray(value)) return value.join("\n");
-    if (value == null || value === "") return "No answer";
-    return String(value);
-  };
   return (
     <div className="cq-results">
       <div className="cq-results-header">
@@ -417,7 +635,7 @@ export default function QuizRunner({
   // answersById: { [questionId]: { choice_index? , text?, order? } }
   //
   // Persisted per (language, category) for the SESSION, because this component unmounts
-  // the moment a student leaves the quiz — to check a lesson, to look at Code, to answer
+  // the moment a student leaves the quiz  to check a lesson, to look at Code, to answer
   // the door. Held in plain state, every answer they'd given was silently destroyed, and
   // a half-finished quiz could not be resumed at all.
   //
@@ -429,13 +647,23 @@ export default function QuizRunner({
   const [grade, setGrade] = useState(null);
   const [grading, setGrading] = useState(false);
   const [error, setError] = useState("");
+  const autoAdvanceTimerRef = useRef(null);
+
+  const clearAutoAdvance = () => {
+    if (autoAdvanceTimerRef.current) {
+      window.clearTimeout(autoAdvanceTimerRef.current);
+      autoAdvanceTimerRef.current = null;
+    }
+  };
 
   // Load the saved answers when the student switches to a DIFFERENT quiz (the component
   // is reused across categories, so the initial state above only runs once).
   useEffect(() => {
+    clearAutoAdvance();
     setAnswersById(readQuizDraftAnswers(language, category));
     setGrade(null);
     setError("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language, category]);
 
   useEffect(() => {
@@ -444,29 +672,32 @@ export default function QuizRunner({
 
   // Reset the Learn/Question tab back to Question whenever the question changes.
   useEffect(() => {
+    clearAutoAdvance();
     setTab("question");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
+
+  useEffect(
+    () => () => {
+      clearAutoAdvance();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
   const question = questions[index];
   const total = questions.length;
   const answered = question ? answersById[question.id] : undefined;
-  const isAnswered =
-    answered != null &&
-    (answered.choice_index != null ||
-      (answered.text != null && answered.text.trim() !== "") ||
-      (answered.order != null && answered.order.length > 0));
+  const isAnswered = isAnswerComplete(answered);
+  const isChecked = Boolean(answered?.checked);
 
   const answeredCount = useMemo(
-    () =>
-      questions.filter((q) => {
-        const a = answersById[q.id];
-        return (
-          a != null &&
-          (a.choice_index != null ||
-            (a.text != null && a.text.trim() !== "") ||
-            (a.order != null && a.order.length > 0))
-        );
-      }).length,
+    () => questions.filter((q) => isAnswerComplete(answersById[q.id])).length,
+    [questions, answersById]
+  );
+
+  const checkedCount = useMemo(
+    () => questions.filter((q) => answersById[q.id]?.checked).length,
     [questions, answersById]
   );
 
@@ -490,18 +721,64 @@ export default function QuizRunner({
     return <div className="cq-empty">This category has no questions yet.</div>;
   }
 
+  const isLast = index === total - 1;
+  const allChecked = checkedCount === total;
+
+  const scheduleAutoAdvanceIfCorrect = (nextAnswer) => {
+    clearAutoAdvance();
+    const result = gradeAnswerLocally(question, nextAnswer);
+    if (!result.correct || isLast) return;
+
+    autoAdvanceTimerRef.current = window.setTimeout(() => {
+      autoAdvanceTimerRef.current = null;
+      onNavigateIndex(index + 1);
+    }, AUTO_ADVANCE_MS);
+  };
+
   const setAnswer = (patch) => {
-    setAnswersById((prev) => ({ ...prev, [question.id]: patch }));
+    const shouldCheck =
+      question.kind === "mcq-output" || question.kind === "mcq-behavior";
+    const nextAnswer = {
+      ...patch,
+      checked: shouldCheck,
+    };
+
+    setAnswersById((prev) => ({
+      ...prev,
+      [question.id]: nextAnswer,
+    }));
+
+    if (shouldCheck) {
+      scheduleAutoAdvanceIfCorrect(nextAnswer);
+    } else {
+      clearAutoAdvance();
+    }
+  };
+
+  const checkAnswer = () => {
+    if (!isAnswered) return;
+    const nextAnswer = {
+      ...(answered || {}),
+      checked: true,
+    };
+    setAnswersById((prev) => ({
+      ...prev,
+      [question.id]: nextAnswer,
+    }));
+    scheduleAutoAdvanceIfCorrect(nextAnswer);
   };
 
   const submit = async () => {
     setGrading(true);
     setError("");
     try {
-      const answers = questions.map((q) => ({
-        question_id: q.id,
-        ...(answersById[q.id] || {}),
-      }));
+      const answers = questions.map((q) => {
+        const { checked: _checked, ...answer } = answersById[q.id] || {};
+        return {
+          question_id: q.id,
+          ...answer,
+        };
+      });
       const result = await onGrade(answers);
       // Persist the graded result (status dots + best score on the landing).
       onSaveResult?.(result);
@@ -515,7 +792,8 @@ export default function QuizRunner({
     }
   };
 
-  const isLast = index === total - 1;
+  const checkedResult = isChecked ? gradeAnswerLocally(question, answered) : null;
+  const willAutoAdvance = Boolean(checkedResult?.correct && !isLast);
 
   return (
     <div className="cq-runner cq-runner-full">
@@ -552,10 +830,12 @@ export default function QuizRunner({
             <span>
               Question {index + 1} of {total}
             </span>
-            <span>·</span>
+            <span>/</span>
             <span>{answeredCount} answered</span>
+            <span>/</span>
+            <span>{checkedCount} checked</span>
             <span className="cq-progress-pct">
-              {Math.round((answeredCount / total) * 100)}%
+              {Math.round((checkedCount / total) * 100)}%
             </span>
           </div>
           <div
@@ -567,11 +847,7 @@ export default function QuizRunner({
           >
             {questions.map((q, i) => {
               const a = answersById[q.id];
-              const done =
-                a != null &&
-                (a.choice_index != null ||
-                  (a.text != null && a.text.trim() !== "") ||
-                  (a.order != null && a.order.length > 0));
+              const done = Boolean(a?.checked);
               return (
                 <button
                   type="button"
@@ -624,6 +900,13 @@ export default function QuizRunner({
               question={question}
               answer={answered}
               onAnswer={setAnswer}
+              locked={isChecked}
+            />
+            <ImmediateFeedback
+              question={question}
+              answer={answered}
+              onReviewLesson={() => setTab("learn")}
+              autoAdvance={willAutoAdvance}
             />
             {error ? <p className="cq-error">{error}</p> : null}
           </div>
@@ -638,14 +921,24 @@ export default function QuizRunner({
             >
               Previous
             </button>
-            {isLast ? (
+            {!isChecked ? (
               <button
                 type="button"
                 className="cq-btn cq-btn-primary"
-                disabled={grading}
-                onClick={submit}
+                disabled={!isAnswered}
+                onClick={checkAnswer}
               >
-                {grading ? "Grading…" : "Submit quiz"}
+                Check answer
+              </button>
+            ) : isLast ? (
+              <button
+                type="button"
+                className="cq-btn cq-btn-primary"
+                disabled={grading || !allChecked}
+                onClick={submit}
+                title={!allChecked ? "Check every question before submitting." : ""}
+              >
+                {grading ? "Grading..." : "Submit quiz"}
               </button>
             ) : (
               <button

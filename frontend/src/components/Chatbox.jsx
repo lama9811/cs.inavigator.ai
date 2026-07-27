@@ -1638,13 +1638,24 @@ export default function Chatbox({
     );
   };
 
-  // Drag and drop handlers
+  // Drag and drop handlers. Only react to real file drags. Internal UI drags
+  // like Parsons-question reordering also bubble through this container, and
+  // treating those as uploads flashes the "Drop file here" overlay.
+  const isFileDrag = (event) => {
+    const transfer = event?.dataTransfer;
+    if (!transfer) return false;
+    if (transfer.files && transfer.files.length > 0) return true;
+    return Array.from(transfer.types || []).includes("Files");
+  };
+
   const handleDragOver = (e) => {
+    if (!isFileDrag(e)) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
   };
   const handleDragLeave = (e) => {
+    if (!isFileDrag(e)) return;
     e.preventDefault();
     e.stopPropagation();
     if (!e.currentTarget.contains(e.relatedTarget)) {
@@ -1652,6 +1663,7 @@ export default function Chatbox({
     }
   };
   const handleDrop = (e) => {
+    if (!isFileDrag(e)) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);

@@ -8,6 +8,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "FIFO order",
+      "code": "Queue state, front -> back:\nA, B, C\n\nOperation:\ndequeue()",
       "prompt": "A queue receives A, then B, then C. One item is removed. Which item comes out?",
       "choices": [
         "A",
@@ -30,6 +31,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Queue front",
+      "code": "Queue state, front -> back:\nred, blue, green\n\nOperation:\npeek()",
       "prompt": "What does `peek` or `front` return in a queue?",
       "choices": [
         "The oldest item without removing it",
@@ -75,6 +77,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Wrong removal end",
+      "code": "Queue attempt:\nadd A to back\nadd B to back\nremove from back",
       "prompt": "A queue implementation adds to the back but also removes from the back. What behavior did it create?",
       "choices": [
         "Stack-like LIFO behavior",
@@ -97,6 +100,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "BFS structure",
+      "code": "BFS waiting line:\nfront [start-neighbor-1, start-neighbor-2] back\n\nNext node comes from the front.",
       "prompt": "Which structure helps breadth-first search process nodes level by level?",
       "choices": [
         "Queue",
@@ -119,6 +123,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Deque meaning",
+      "code": "Deque idea:\nfront <-> [A, B, C] <-> back\n\nBoth ends can add or remove.",
       "prompt": "What is a deque?",
       "choices": [
         "A double-ended queue that can add or remove at both ends",
@@ -141,6 +146,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Priority queue",
+      "code": "Waiting tasks:\n{name: \"print\", priority: 1}\n{name: \"alarm\", priority: 5}\n\nWhich rule decides what leaves first?",
       "prompt": "How is a priority queue different from a regular FIFO queue?",
       "choices": [
         "Priority decides what leaves first",

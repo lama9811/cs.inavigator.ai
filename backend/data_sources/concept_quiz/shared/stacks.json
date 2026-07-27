@@ -8,6 +8,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "LIFO order",
+      "code": "Stack state, bottom -> top:\nA, B, C\n\nOperation:\npop()",
       "prompt": "A stack receives A, then B, then C. One item is popped. Which item comes out?",
       "choices": [
         "C",
@@ -30,6 +31,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Peek operation",
+      "code": "Stack state, bottom -> top:\nred, blue, green\n\nOperation:\npeek()",
       "prompt": "What should `peek` do in a stack?",
       "choices": [
         "Return the top item without removing it",
@@ -75,6 +77,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Balanced symbols",
+      "code": "Expression:\n( [ ] )\n\nOpenings wait on the stack until a matching closing symbol appears.",
       "prompt": "Why is a stack useful for checking balanced parentheses?",
       "choices": [
         "The newest opening symbol must be matched first.",
@@ -97,6 +100,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Empty pop",
+      "code": "Stack state:\n[]\n\nOperation:\npop()",
       "prompt": "Why should stack code check for empty before popping?",
       "choices": [
         "Popping from an empty stack can fail or return no useful value.",
@@ -141,6 +145,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Stack ADT",
+      "code": "Stack behavior:\npush(item)\npop()\npeek()\nis_empty()\nsize()",
       "prompt": "What does it mean to describe stack as an ADT?",
       "choices": [
         "Describe the operations and behavior before the implementation details",
@@ -163,6 +168,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "List-backed stack",
+      "code": "List-backed stack:\nitems = [\"A\", \"B\"]\n# right side is the top",
       "prompt": "If the end of a list is the stack top, which pair of operations fits best?",
       "choices": [
         "append and pop from the end",
