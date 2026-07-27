@@ -1,0 +1,183 @@
+{
+  "_note": "Original advanced concept questions for stacks.",
+  "concept": "stacks",
+  "questions": [
+    {
+      "id": "advanced-stack-lifo",
+      "concept": "stacks",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "LIFO order",
+      "prompt": "A stack receives A, then B, then C. One item is popped. Which item comes out?",
+      "choices": [
+        "C",
+        "A",
+        "B",
+        "Nothing"
+      ],
+      "answer_index": 0,
+      "explanation": "A stack is last-in, first-out. C was added last, so C is popped first.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-stack-peek",
+      "concept": "stacks",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Peek operation",
+      "prompt": "What should `peek` do in a stack?",
+      "choices": [
+        "Return the top item without removing it",
+        "Remove the bottom item",
+        "Add two items",
+        "Sort the stack"
+      ],
+      "answer_index": 0,
+      "explanation": "Peek lets you inspect the top item while leaving the stack unchanged.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-stack-trace",
+      "concept": "stacks",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Pop trace",
+      "code": "push 2\npush 5\npop\npush 8\npeek",
+      "prompt": "What value does peek see?",
+      "choices": [
+        "8",
+        "5",
+        "2",
+        "Empty"
+      ],
+      "answer_index": 0,
+      "explanation": "The pop removes 5. Then 8 is pushed, so 8 is on top.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-stack-parentheses",
+      "concept": "stacks",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Balanced symbols",
+      "prompt": "Why is a stack useful for checking balanced parentheses?",
+      "choices": [
+        "The newest opening symbol must be matched first.",
+        "The oldest opening symbol must always close first.",
+        "Parentheses must be sorted.",
+        "A stack removes random symbols."
+      ],
+      "answer_index": 0,
+      "explanation": "Nested symbols close in reverse order, which matches stack behavior.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-stack-empty-pop",
+      "concept": "stacks",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Empty pop",
+      "prompt": "Why should stack code check for empty before popping?",
+      "choices": [
+        "Popping from an empty stack can fail or return no useful value.",
+        "It makes the stack FIFO.",
+        "It adds a new item.",
+        "It reverses the whole stack."
+      ],
+      "answer_index": 0,
+      "explanation": "There is no top item in an empty stack, so the code needs a clear rule before popping.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-stack-parsons",
+      "concept": "stacks",
+      "difficulty": "medium",
+      "kind": "parsons",
+      "title": "Reverse with a stack",
+      "prompt": "Arrange the steps to use a stack to reverse a list.",
+      "lines": [
+        "Create an empty stack.",
+        "Push each input item onto the stack.",
+        "Create an empty result list.",
+        "While the stack is not empty, pop from the stack.",
+        "Append each popped item to the result."
+      ],
+      "explanation": "Popping returns items from newest to oldest, so the result is reversed.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-stack-adt",
+      "concept": "stacks",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Stack ADT",
+      "prompt": "What does it mean to describe stack as an ADT?",
+      "choices": [
+        "Describe the operations and behavior before the implementation details",
+        "Require the stack to use only arrays",
+        "Require the stack to sort values",
+        "Describe only the color of the UI"
+      ],
+      "answer_index": 0,
+      "explanation": "An abstract data type focuses on behavior such as push, pop, peek, and is_empty.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-stack-list-top",
+      "concept": "stacks",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "List-backed stack",
+      "prompt": "If the end of a list is the stack top, which pair of operations fits best?",
+      "choices": [
+        "append and pop from the end",
+        "insert at front and pop from end",
+        "sort and reverse",
+        "enqueue and dequeue"
+      ],
+      "answer_index": 0,
+      "explanation": "Adding and removing at the same end gives LIFO behavior.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    }
+  ]
+}

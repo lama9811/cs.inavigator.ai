@@ -28,8 +28,10 @@ const PASS_THRESHOLD = 0.7;
 const TOPIC_ALIASES = {
   arrays: "lists",
   array: "lists",
-  stacks: "stacks-queues",
-  queues: "stacks-queues",
+  stacks: "stacks",
+  stack: "stacks",
+  queues: "queues",
+  queue: "queues",
   "hash maps": "hash-maps-sets",
   "hash map": "hash-maps-sets",
   maps: "hash-maps-sets",

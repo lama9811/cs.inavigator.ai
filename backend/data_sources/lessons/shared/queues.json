@@ -1,0 +1,328 @@
+{
+  "_note": "Advanced lesson authored from COSC 220 / Runestone-style topic structure. Original prose and examples only.",
+  "title": "Queues",
+  "summary": "A queue is a linear structure where the oldest item comes out first.",
+  "minutes": 23,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "A queue follows FIFO: first in, first out. You enqueue to add to the back, dequeue to remove from the front, and peek to look at the front without removing it.",
+  "refresher_code": "enqueue A, enqueue B, enqueue C\ndequeue -> A",
+  "learn_cards": {
+    "advanced-queue-fifo": {
+      "title": "FIFO means oldest first",
+      "body": "A queue removes the item that has been waiting the longest.",
+      "example": "enqueue A, enqueue B, enqueue C, dequeue -> A",
+      "notice": "Add at the back. Remove from the front.",
+      "mistake": "Removing C first turns the behavior into a stack.",
+      "section_id": "what-is-queue"
+    },
+    "advanced-queue-bfs": {
+      "title": "Queues fit level-by-level work",
+      "body": "BFS uses a queue so nodes discovered first are processed first.",
+      "example": "visit start, enqueue neighbors, remove oldest neighbor next",
+      "notice": "The queue preserves discovery order.",
+      "mistake": "A stack would dive down one path instead of moving level by level.",
+      "section_id": "queue-applications"
+    },
+    "advanced-queue-trace": {
+      "title": "Trace the front",
+      "body": "When tracing a queue, track the front and back separately.",
+      "example": "add 2, add 5, remove -> 2",
+      "notice": "The oldest item leaves first.",
+      "mistake": "If you remove from the same end you added to, it is not FIFO.",
+      "section_id": "queue-trace"
+    },
+    "advanced-queue-mistake": {
+      "title": "Back removal breaks FIFO",
+      "body": "A queue adds at the back and removes from the front.",
+      "example": "add A, add B, remove should return A",
+      "notice": "Both ends matter.",
+      "mistake": "Adding and removing at the back behaves like a stack.",
+      "section_id": "queue-adt"
+    }
+  },
+  "sections": [
+    {
+      "id": "what-is-queue",
+      "title": "What is a queue?",
+      "summary": "A queue is FIFO: first in, first out.",
+      "question_ids": [
+        "advanced-queue-fifo"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A queue is a linear data structure. It stores items in arrival order. The first item added is the first item removed."
+        },
+        {
+          "kind": "text",
+          "body": "That rule is called FIFO, which stands for first in, first out. Think about a line at a help desk. The person who arrived first should be helped first."
+        },
+        {
+          "kind": "list",
+          "title": "Queue vocabulary",
+          "items": [
+            "`front` is where the next item leaves.",
+            "`back` or `rear` is where a new item joins.",
+            "`enqueue` means add an item to the back.",
+            "`dequeue` means remove and return the front item.",
+            "`peek` or `front` means look at the front item without removing it.",
+            "`is_empty` checks whether there is anything to remove."
+          ]
+        },
+        {
+          "kind": "code",
+          "caption": "Trace the FIFO rule by hand before writing code.",
+          "variants": {
+            "python": {
+              "code": "from collections import deque\n\nqueue = deque()\nqueue.append(\"A\")\nqueue.append(\"B\")\nqueue.append(\"C\")\nprint(queue.popleft())\nprint(queue.popleft())",
+              "output": "A\nB"
+            },
+            "java": {
+              "code": "Queue<String> queue = new ArrayDeque<>();\nqueue.offer(\"A\");\nqueue.offer(\"B\");\nqueue.offer(\"C\");\nSystem.out.println(queue.poll());\nSystem.out.println(queue.poll());",
+              "output": "A\nB"
+            },
+            "javascript": {
+              "code": "const queue = [];\nqueue.push(\"A\");\nqueue.push(\"B\");\nqueue.push(\"C\");\nconsole.log(queue.shift());\nconsole.log(queue.shift());",
+              "output": "A\nB"
+            },
+            "cpp": {
+              "code": "#include <iostream>\n#include <queue>\n#include <string>\n\nstd::queue<std::string> queue;\nqueue.push(\"A\");\nqueue.push(\"B\");\nqueue.push(\"C\");\nstd::cout << queue.front() << \"\\n\";\nqueue.pop();\nstd::cout << queue.front() << \"\\n\";",
+              "output": "A\nB"
+            }
+          }
+        },
+        {
+          "kind": "check",
+          "prompt": "A queue receives A, then B, then C. What is removed first?",
+          "choices": [
+            "A",
+            "B",
+            "C",
+            "None"
+          ],
+          "answer_index": 0,
+          "why": "A arrived first, so A is at the front."
+        }
+      ]
+    },
+    {
+      "id": "queue-adt",
+      "title": "The Queue ADT",
+      "summary": "A queue's behavior is about two ends: back for adding, front for removing.",
+      "question_ids": [
+        "advanced-queue-mistake"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A queue ADT describes the operations a queue must support. You can build the inside with an array, a linked list, or a library structure. The outside behavior should still be FIFO."
+        },
+        {
+          "kind": "list",
+          "title": "Queue operations",
+          "items": [
+            "`enqueue(item)`: add item to the back.",
+            "`dequeue()`: remove and return the front item.",
+            "`peek()`: return the front item without removing it.",
+            "`is_empty()`: return true if the queue has no items.",
+            "`size()`: return how many items are stored."
+          ]
+        },
+        {
+          "kind": "compare",
+          "caption": "A queue uses opposite ends.",
+          "wrong_label": "Stack-like",
+          "wrong": "add A, add B, remove B",
+          "right_label": "Queue-like",
+          "right": "add A, add B, remove A",
+          "body": "If the same end handles add and remove, the newest item leaves first. That is not FIFO."
+        },
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "Do not confuse dequeue and deque",
+          "body": "`dequeue` is the action of removing from the front. `deque`, pronounced deck, is a double-ended queue data type."
+        },
+        {
+          "kind": "check",
+          "prompt": "Which operation adds an item to the back of a queue?",
+          "choices": [
+            "push",
+            "enqueue",
+            "peek",
+            "pop"
+          ],
+          "answer_index": 1,
+          "why": "Enqueue is the queue word for adding at the back."
+        }
+      ]
+    },
+    {
+      "id": "queue-implementation",
+      "title": "Implement a queue",
+      "summary": "A beginner queue can use a list, but some structures are better for front removal.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A simple queue can store items in a list: append to the back and remove from the front. That teaches the idea well. For larger inputs, many languages offer a deque or queue class so front removal stays fast."
+        },
+        {
+          "kind": "code",
+          "caption": "A small queue class shows the basic operations.",
+          "variants": {
+            "python": {
+              "code": "class Queue:\n    def __init__(self):\n        self.items = []\n\n    def is_empty(self):\n        return len(self.items) == 0\n\n    def enqueue(self, item):\n        self.items.append(item)\n\n    def dequeue(self):\n        if self.is_empty():\n            return None\n        return self.items.pop(0)\n\n    def peek(self):\n        if self.is_empty():\n            return None\n        return self.items[0]\n\n    def size(self):\n        return len(self.items)",
+              "output": ""
+            },
+            "java": {
+              "code": "class QueueBox<T> {\n    private LinkedList<T> items = new LinkedList<>();\n\n    boolean isEmpty() { return items.isEmpty(); }\n\n    void enqueue(T item) { items.addLast(item); }\n\n    T dequeue() {\n        if (isEmpty()) return null;\n        return items.removeFirst();\n    }\n\n    T peek() {\n        if (isEmpty()) return null;\n        return items.getFirst();\n    }\n\n    int size() { return items.size(); }\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "class Queue {\n  constructor() {\n    this.items = [];\n  }\n\n  isEmpty() { return this.items.length === 0; }\n\n  enqueue(item) { this.items.push(item); }\n\n  dequeue() {\n    if (this.isEmpty()) return null;\n    return this.items.shift();\n  }\n\n  peek() {\n    if (this.isEmpty()) return null;\n    return this.items[0];\n  }\n\n  size() { return this.items.length; }\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "#include <deque>\n\ntemplate <typename T>\nclass QueueBox {\nprivate:\n    std::deque<T> items;\n\npublic:\n    bool isEmpty() const { return items.empty(); }\n    void enqueue(T item) { items.push_back(item); }\n\n    T dequeue() {\n        T front = items.front();\n        items.pop_front();\n        return front;\n    }\n\n    T peek() const { return items.front(); }\n    int size() const { return (int)items.size(); }\n};",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "list",
+          "title": "Read the Python class line by line",
+          "items": [
+            "`__init__` creates an empty list.",
+            "`enqueue` uses `append` because new items join at the back.",
+            "`dequeue` uses `pop(0)` because the front item is at index 0.",
+            "`peek` returns `items[0]` without removing it.",
+            "`size` uses `len` to count the stored items."
+          ]
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Performance note",
+          "body": "Python `pop(0)` is simple but shifts the remaining items. `collections.deque` is better when you need many fast queue operations."
+        }
+      ]
+    },
+    {
+      "id": "queue-trace",
+      "title": "Trace queue state",
+      "summary": "Draw the front and back.",
+      "question_ids": [
+        "advanced-queue-trace"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Queue bugs usually come from mixing up the front and the back. Draw both ends while tracing."
+        },
+        {
+          "kind": "list",
+          "title": "Trace",
+          "items": [
+            "start: []",
+            "enqueue 4 -> front [4] back",
+            "enqueue 9 -> front [4, 9] back",
+            "dequeue -> removes 4, queue becomes [9]",
+            "enqueue 2 -> front [9, 2] back"
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "After enqueue 4, enqueue 9, dequeue, enqueue 2, what is at the front?",
+          "choices": [
+            "4",
+            "9",
+            "2",
+            "Empty"
+          ],
+          "answer_index": 1,
+          "why": "The dequeue removes 4. The oldest remaining item is 9."
+        }
+      ]
+    },
+    {
+      "id": "queue-types",
+      "title": "Deque, circular queue, and priority queue",
+      "summary": "Queue ideas grow into several useful variations.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A basic queue is FIFO. A deque lets you add or remove from both ends. A circular queue uses a fixed-size array and wraps around instead of shifting items. A priority queue removes the highest-priority item first instead of the oldest item."
+        },
+        {
+          "kind": "list",
+          "title": "Queue family",
+          "items": [
+            "Queue: oldest item leaves first.",
+            "Deque: both ends are open for add and remove.",
+            "Circular queue: fixed space, front and back wrap around.",
+            "Priority queue: priority decides who leaves first.",
+            "Heap: a common way to implement a priority queue efficiently."
+          ]
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Why heaps belong later",
+          "body": "A heap is not just another queue method. It needs its own lesson because students must learn the tree-like shape, parent/child indexes, and how values move up or down."
+        }
+      ]
+    },
+    {
+      "id": "queue-applications",
+      "title": "Where queues show up",
+      "summary": "Queues are used when work should be handled in arrival order.",
+      "question_ids": [
+        "advanced-queue-bfs"
+      ],
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Common queue uses",
+          "items": [
+            "Task scheduling: first waiting task gets handled first.",
+            "Print jobs: documents wait their turn.",
+            "Breadth-first search: nodes discovered first are visited first.",
+            "Streams and buffers: incoming work waits safely instead of being dropped immediately.",
+            "Round-robin scheduling: each task gets a turn, then goes to the back if more work remains."
+          ]
+        },
+        {
+          "kind": "code",
+          "caption": "BFS uses a queue to visit level by level.",
+          "variants": {
+            "python": {
+              "code": "from collections import deque\n\ndef bfs(graph, start):\n    visited = {start}\n    queue = deque([start])\n    while queue:\n        node = queue.popleft()\n        print(node)\n        for neighbor in graph[node]:\n            if neighbor not in visited:\n                visited.add(neighbor)\n                queue.append(neighbor)",
+              "output": ""
+            },
+            "java": {
+              "code": "static void bfs(Map<String, List<String>> graph, String start) {\n    Set<String> visited = new HashSet<>();\n    Queue<String> queue = new ArrayDeque<>();\n    visited.add(start);\n    queue.offer(start);\n    while (!queue.isEmpty()) {\n        String node = queue.poll();\n        System.out.println(node);\n        for (String neighbor : graph.getOrDefault(node, List.of())) {\n            if (!visited.contains(neighbor)) {\n                visited.add(neighbor);\n                queue.offer(neighbor);\n            }\n        }\n    }\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "function bfs(graph, start) {\n  const visited = new Set([start]);\n  const queue = [start];\n  while (queue.length > 0) {\n    const node = queue.shift();\n    console.log(node);\n    for (const neighbor of graph.get(node) ?? []) {\n      if (!visited.has(neighbor)) {\n        visited.add(neighbor);\n        queue.push(neighbor);\n      }\n    }\n  }\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "void bfs(const std::unordered_map<std::string, std::vector<std::string>>& graph,\n         const std::string& start) {\n    std::unordered_set<std::string> visited;\n    std::queue<std::string> queue;\n    visited.insert(start);\n    queue.push(start);\n    while (!queue.empty()) {\n        std::string node = queue.front();\n        queue.pop();\n        std::cout << node << \"\\n\";\n        for (const std::string& neighbor : graph.at(node)) {\n            if (!visited.count(neighbor)) {\n                visited.insert(neighbor);\n                queue.push(neighbor);\n            }\n        }\n    }\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "BFS needs queue order",
+          "body": "If you use a stack instead, the code may still visit nodes, but it will not be breadth-first."
+        }
+      ]
+    }
+  ]
+}

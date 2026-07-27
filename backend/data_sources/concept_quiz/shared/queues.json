@@ -1,0 +1,183 @@
+{
+  "_note": "Original advanced concept questions for queues.",
+  "concept": "queues",
+  "questions": [
+    {
+      "id": "advanced-queue-fifo",
+      "concept": "queues",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "FIFO order",
+      "prompt": "A queue receives A, then B, then C. One item is removed. Which item comes out?",
+      "choices": [
+        "A",
+        "C",
+        "B",
+        "Nothing"
+      ],
+      "answer_index": 0,
+      "explanation": "A queue is first-in, first-out. A was added first, so A leaves first.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-queue-front",
+      "concept": "queues",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Queue front",
+      "prompt": "What does `peek` or `front` return in a queue?",
+      "choices": [
+        "The oldest item without removing it",
+        "The newest item and removes it",
+        "Every item sorted",
+        "The queue size only"
+      ],
+      "answer_index": 0,
+      "explanation": "Peek/front reads the next item that would be dequeued, but leaves it in the queue.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-queue-trace",
+      "concept": "queues",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Dequeue trace",
+      "code": "enqueue 2\nenqueue 5\ndequeue\nenqueue 8\npeek",
+      "prompt": "What value does peek see?",
+      "choices": [
+        "5",
+        "8",
+        "2",
+        "Empty"
+      ],
+      "answer_index": 0,
+      "explanation": "The dequeue removes 2. The oldest remaining value is 5.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-queue-mistake",
+      "concept": "queues",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Wrong removal end",
+      "prompt": "A queue implementation adds to the back but also removes from the back. What behavior did it create?",
+      "choices": [
+        "Stack-like LIFO behavior",
+        "Correct FIFO behavior",
+        "A sorted priority queue",
+        "A tree traversal"
+      ],
+      "answer_index": 0,
+      "explanation": "Adding and removing from the same end removes the newest item first, which is stack behavior.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-queue-bfs",
+      "concept": "queues",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "BFS structure",
+      "prompt": "Which structure helps breadth-first search process nodes level by level?",
+      "choices": [
+        "Queue",
+        "Stack",
+        "Plain integer",
+        "Sorted string"
+      ],
+      "answer_index": 0,
+      "explanation": "A queue processes older discovered nodes first, which keeps BFS level by level.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-queue-deque",
+      "concept": "queues",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Deque meaning",
+      "prompt": "What is a deque?",
+      "choices": [
+        "A double-ended queue that can add or remove at both ends",
+        "A queue that can only remove from the back",
+        "A stack with no pop",
+        "A sorted array"
+      ],
+      "answer_index": 0,
+      "explanation": "A deque opens both ends, so it can support stack-like or queue-like operations.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-queue-priority",
+      "concept": "queues",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Priority queue",
+      "prompt": "How is a priority queue different from a regular FIFO queue?",
+      "choices": [
+        "Priority decides what leaves first",
+        "The oldest item always leaves first",
+        "It cannot store numbers",
+        "It must use recursion"
+      ],
+      "answer_index": 0,
+      "explanation": "A priority queue removes by priority, not plain arrival order.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-queue-parsons",
+      "concept": "queues",
+      "difficulty": "medium",
+      "kind": "parsons",
+      "title": "BFS queue steps",
+      "prompt": "Arrange the main queue steps for BFS.",
+      "lines": [
+        "Create a queue and add the start node.",
+        "Mark the start node as visited.",
+        "While the queue is not empty, remove the front node.",
+        "Visit or process that node.",
+        "Add each unvisited neighbor to the back of the queue and mark it visited."
+      ],
+      "explanation": "BFS keeps nodes in discovery order by adding new neighbors to the back and removing old nodes from the front.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    }
+  ]
+}

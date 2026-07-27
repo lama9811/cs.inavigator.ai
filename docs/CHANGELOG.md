@@ -4,8 +4,9 @@ All notable changes to CS Navigator are documented here.
 
 ## [Unreleased]
 ### Added
+- **Separated Advanced Stacks and Queues.** The former combined Stacks & Queues topic is now split into distinct Advanced lessons and concept quiz banks so students can digest LIFO stacks before moving into FIFO queues, queue variants, and BFS-style processing.
 - **Advanced Coding Tutor track.** Learn and Concept Quiz now support a third Advanced track for core data-structure and interview-pattern topics across Python, Java, JavaScript, and C++.
-- **Advanced V1 lessons and quizzes.** Added sectioned advanced lessons plus 8-question concept quiz banks for Stacks & Queues, Hash Maps & Sets, Linked Lists, Recursion Patterns, Binary Search, Two Pointers & Sliding Window, Trees, and Graphs.
+- **Advanced V1 lessons and quizzes.** Added sectioned advanced lessons plus 8-question concept quiz banks for Stacks, Queues, Hash Maps & Sets, Linked Lists, Recursion Patterns, Binary Search, Two Pointers & Sliding Window, Trees, and Graphs.
 - **Question-specific Learn cards.** The in-question Learn tab can now show a targeted micro-lesson for the current question, fall back to the matching lesson section, and then fall back to the category refresher.
 - **Coding Tutor learning-style preference.** Students can choose whether they want examples first, to try first and then get hints, or to hear the concept before code. The preference is saved per user and used by Coding Tutor recommendations and tutor context.
 - **Section-based lesson flow and completion tracking.** Learn lessons can be split into smaller sections, with previous/next controls, a final Practice CTA, and completion gated on answering the lesson’s check-yourself questions.
