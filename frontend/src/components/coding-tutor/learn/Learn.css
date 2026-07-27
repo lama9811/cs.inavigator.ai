@@ -717,7 +717,6 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
   font-weight: 900;
   box-shadow: 0 8px 18px rgba(8, 35, 67, 0.08);
   transition:
-    transform 180ms ease,
     border-color 180ms ease,
     background-color 180ms ease,
     box-shadow 180ms ease;
@@ -791,7 +790,7 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
   stroke: var(--ct-border-strong, #94a3b8);
   stroke-width: 4;
   stroke-linecap: round;
-  transition: stroke 180ms ease, stroke-width 180ms ease;
+  transition: opacity 180ms ease, stroke 180ms ease;
 }
 
 .lesson-visual-edge.is-active {
@@ -802,7 +801,7 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
   fill: var(--ct-panel, #fff);
   stroke: var(--ct-border-strong, #94a3b8);
   stroke-width: 3;
-  transition: fill 180ms ease, stroke 180ms ease, transform 180ms ease;
+  transition: fill 180ms ease, stroke 180ms ease;
 }
 
 .lesson-visual-node.is-active circle {
@@ -875,47 +874,64 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
 .lesson-visual-diagram.anim-add .lesson-visual-token.is-active,
 .lesson-visual-diagram.anim-enqueue .lesson-visual-token.is-active,
 .lesson-visual-diagram.anim-visit .lesson-visual-node.is-active circle {
-  animation: lessonVisualPop 420ms ease;
+  animation: lessonVisualSoftEnter 360ms ease;
 }
 
 .lesson-visual-diagram.anim-pop .lesson-visual-token.is-active,
 .lesson-visual-diagram.anim-remove .lesson-visual-token.is-active,
 .lesson-visual-diagram.anim-dequeue .lesson-visual-token.is-active {
-  animation: lessonVisualLift 420ms ease;
+  animation: lessonVisualSoftExit 360ms ease;
 }
 
 .lesson-visual-diagram.anim-slide .lesson-visual-token.is-active,
 .lesson-visual-diagram.anim-grow .lesson-visual-token.is-window,
 .lesson-visual-diagram.anim-shrink .lesson-visual-token.is-window {
-  animation: lessonVisualGlow 520ms ease;
+  animation: lessonVisualSoftGlow 460ms ease;
 }
 
 .lesson-visual-diagram.anim-highlight .lesson-visual-edge.is-active,
 .lesson-visual-diagram.anim-return .lesson-visual-token.is-active {
-  animation: lessonVisualPulse 520ms ease;
+  animation: lessonVisualSoftPulse 460ms ease;
 }
 
-@keyframes lessonVisualPop {
-  0% { transform: translateY(10px) scale(0.92); opacity: 0.45; }
-  100% { transform: translateY(0) scale(1); opacity: 1; }
+@keyframes lessonVisualSoftEnter {
+  0% {
+    opacity: 0.62;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--ct-accent, #f97316) 8%, transparent);
+  }
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ct-accent, #f97316) 18%, transparent);
+  }
 }
 
-@keyframes lessonVisualLift {
-  0% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-10px) scale(1.05); }
-  100% { transform: translateY(0) scale(1); }
+@keyframes lessonVisualSoftExit {
+  0% {
+    opacity: 0.78;
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--ct-accent, #f97316) 14%, transparent);
+  }
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ct-accent, #f97316) 18%, transparent);
+  }
 }
 
-@keyframes lessonVisualGlow {
-  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ct-accent, #f97316) 0%, transparent); }
-  50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--ct-accent, #f97316) 18%, transparent); }
-  100% { box-shadow: 0 8px 18px rgba(8, 35, 67, 0.08); }
+@keyframes lessonVisualSoftGlow {
+  0% {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--ct-accent, #f97316) 8%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--ct-accent, #f97316) 14%, transparent);
+  }
+  100% {
+    box-shadow: 0 8px 18px rgba(8, 35, 67, 0.08);
+  }
 }
 
-@keyframes lessonVisualPulse {
-  0% { stroke-width: 4; transform: scale(1); }
-  50% { stroke-width: 7; transform: scale(1.04); }
-  100% { stroke-width: 4; transform: scale(1); }
+@keyframes lessonVisualSoftPulse {
+  0% { opacity: 0.68; }
+  50% { opacity: 1; }
+  100% { opacity: 0.9; }
 }
 
 @media (prefers-reduced-motion: reduce) {
