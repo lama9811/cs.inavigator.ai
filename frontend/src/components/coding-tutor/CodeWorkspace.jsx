@@ -5,10 +5,11 @@ import CodeEditor from "./CodeEditor";
 import HintPanel from "./HintPanel";
 import RunControls from "./RunControls";
 import TerminalPanel from "./TerminalPanel";
+import { WorkspaceVisualizerModal, WorkspaceVisualizerPanel } from "./WorkspaceVisualizer";
 import "./CodeWorkspace.css";
 import "./TerminalPanel.css";
 
-const WORKSPACE_TABS = ["Editor", "Hints", "Discussion"];
+const WORKSPACE_TABS = ["Editor", "Hints", "Discussion", "Visualize"];
 
 // Docked-terminal height bounds (px). The drag handle clamps within this range.
 const TERMINAL_MIN_H = 140;
@@ -63,6 +64,8 @@ export default function CodeWorkspace({
   onExplainOneTest,
   onStopRun,
   onRequestReview,
+  visualizerOpen = false,
+  onCloseVisualizer,
   onSaveSnippet,
   onUploadFile,
   codeRenderer,
@@ -170,6 +173,9 @@ export default function CodeWorkspace({
           )}
         </div>
       );
+    }
+    if (workspaceTab === "Visualize") {
+      return <WorkspaceVisualizerPanel activeProblem={activeProblem} />;
     }
     // The editor "window": a title bar (filename + language selector, like
     // LeetCode's code panel) and a bottom status bar.
@@ -283,6 +289,9 @@ export default function CodeWorkspace({
           </>
         )}
       </div>
+      {visualizerOpen ? (
+        <WorkspaceVisualizerModal activeProblem={activeProblem} onClose={onCloseVisualizer} />
+      ) : null}
     </main>
   );
 }

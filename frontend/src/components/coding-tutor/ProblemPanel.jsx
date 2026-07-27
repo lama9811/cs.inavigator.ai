@@ -1,3 +1,5 @@
+import { VisualizeButton } from "./WorkspaceVisualizer";
+
 export default function ProblemPanel({
   problem,
   solution,
@@ -14,6 +16,7 @@ export default function ProblemPanel({
   solutionUnlocked = true,
   onStuck,
   onViewSolutionMock,
+  onOpenVisualizer,
 }) {
   return (
     <aside className={`coding-problem-panel ${mockMode ? "is-mock" : ""}`}>
@@ -56,6 +59,7 @@ export default function ProblemPanel({
             </div>
           )}
           <p>{problem.prompt}</p>
+          {onOpenVisualizer ? <VisualizeButton onClick={onOpenVisualizer} /> : null}
           {(solution?.starter_guidance || solution?.guided_steps?.length > 0) && (
             <section className="starter-guidance-panel">
               <h3>Starter Guidance</h3>

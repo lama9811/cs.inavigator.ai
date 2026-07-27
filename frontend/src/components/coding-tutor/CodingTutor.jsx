@@ -20,6 +20,7 @@ import CampusLabHome from "./CampusLabHome";
 import DailyChallengeCard from "./DailyChallengeCard";
 import PersonalPanel from "./PersonalPanel";
 import ProblemPanel from "./ProblemPanel";
+import { problemHasVisualizer } from "./workspaceVisualizerUtils";
 import ProgressBadges from "./ProgressBadges";
 import QuizBank from "./QuizBank";
 import ConceptQuiz from "./concept-quiz/ConceptQuiz";
@@ -766,6 +767,7 @@ export default function CodingTutor({
   const [lastNonWorkspacePage, setLastNonWorkspacePage] = useState("dashboard");
   const [workspaceVisible, setWorkspaceVisible] = useState(true);
   const [workspaceTab, setWorkspaceTab] = useState("Editor");
+  const [visualizerModalOpen, setVisualizerModalOpen] = useState(false);
   const [dailyChallenge, setDailyChallenge] = useState(null);
   const [dailyChallengeLoading, setDailyChallengeLoading] = useState(false);
   const [learningStyle, setLearningStyle] = useState(DEFAULT_LEARNING_STYLE);
@@ -1056,10 +1058,21 @@ export default function CodingTutor({
   const canGoNext = activeQuestionIndex >= 0 && findAdjacentUnsolvedIndex(activeQuestionIndex, 1) >= 0;
   const activeQuestionProgress = activeProblem ? progressByQuestion[activeProblem.id] : null;
   const activeSolvedLanguages = activeQuestionProgress?.solved_languages || [];
+  const canOpenVisualizer = problemHasVisualizer(activeProblem);
+  const openProblemVisualizer = useCallback(() => {
+    if (!problemHasVisualizer(activeProblem)) return;
+    setWorkspaceVisible(true);
+    setWorkspaceTab("Visualize");
+    setVisualizerModalOpen(true);
+  }, [activeProblem]);
   const isActiveProblemSolved = (
     isQuizBankProblem
       && (activeQuestionProgress?.status === "solved" || activeLanguageProgress?.status === "solved")
   ) || (isInterviewWorkspaceProblem && interviewSolved.has(activeProblem?.id));
+
+  useEffect(() => {
+    setVisualizerModalOpen(false);
+  }, [activeProblem?.id]);
 
   useEffect(() => {
     if (!activeProblem?.id) {
@@ -3229,6 +3242,7 @@ export default function CodingTutor({
             }
             onStuck={markMockStuck}
             onViewSolutionMock={requestViewSolutionMock}
+            onOpenVisualizer={canOpenVisualizer ? openProblemVisualizer : null}
           />
         )}
         <div
@@ -3295,6 +3309,8 @@ export default function CodingTutor({
           onExplainOneTest={explainOneTest}
           onStopRun={stopRun}
           onRequestReview={activeProblem?.source === "interview" ? null : requestReview}
+          visualizerOpen={visualizerModalOpen}
+          onCloseVisualizer={() => setVisualizerModalOpen(false)}
           onSaveSnippet={handleSaveSnippet}
           onUploadFile={() => personalFileInputRef.current?.click()}
           codeRenderer={codeRenderer}
