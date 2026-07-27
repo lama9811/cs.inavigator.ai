@@ -93,10 +93,24 @@ def test_greeting_still_skipped_before_zero_chunk_logic():
 
 # --- regression: the existing non-zero behaviour is unchanged -------------
 
-def test_two_chunks_still_passes():
+def test_two_chunks_from_one_document_no_longer_passes():
+    """Policy change (2026-07): the bar is 2 DISTINCT documents, not 2 chunks.
+
+    This test previously asserted that 2 chunks at 0% coverage passed. Vertex
+    routinely returns several chunks from the same file, so that let one document
+    corroborate itself. Passing `sources=1` is what 2 chunks of one document now
+    looks like, and it must fail. See test_grounding_gate_thresholds.py.
+    """
     _reset()
     text = "COSC 354 requires COSC 220 and COSC 241."
-    assert va._apply_grounding_gate(text, 2, coverage=0.0, chat_mode="regular") == text
+    out = va._apply_grounding_gate(text, 2, coverage=0.0, sources=1, chat_mode="regular")
+    assert out.endswith(DISCLAIMER)
+
+
+def test_two_distinct_documents_still_pass():
+    _reset()
+    text = "COSC 354 requires COSC 220 and COSC 241."
+    assert va._apply_grounding_gate(text, 2, coverage=0.0, sources=2, chat_mode="regular") == text
 
 
 def test_one_chunk_low_coverage_still_flagged():
