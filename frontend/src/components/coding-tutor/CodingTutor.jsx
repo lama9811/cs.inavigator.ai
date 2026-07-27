@@ -324,7 +324,7 @@ function practiceTargetFromPath(pathname) {
   // --- Learn ---
   // New tracked routes add one level without breaking links created before tracks existed.
   const trackedLesson = clean.match(
-    /^\/coding\/practice\/learn\/([^/]+)\/(beginner|intermediate)\/([^/]+)$/
+    /^\/coding\/practice\/learn\/([^/]+)\/(beginner|intermediate|advanced)\/([^/]+)$/
   );
   if (trackedLesson) {
     return {
@@ -336,7 +336,7 @@ function practiceTargetFromPath(pathname) {
     };
   }
   const trackedList = clean.match(
-    /^\/coding\/practice\/learn\/([^/]+)\/(beginner|intermediate)$/
+    /^\/coding\/practice\/learn\/([^/]+)\/(beginner|intermediate|advanced)$/
   );
   if (trackedList) {
     return {
