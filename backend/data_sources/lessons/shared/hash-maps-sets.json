@@ -52,6 +52,77 @@
           "body": "Use a set when the question asks whether a value appeared before, whether duplicates exist, or whether two groups share values. A set does not care about order or counts. It cares about membership."
         },
         {
+          "kind": "visual",
+          "title": "Track counts with a map",
+          "concept": "hash-maps-sets",
+          "caption": "Watch a frequency table change as values are read.",
+          "initial_state": {
+            "items": [
+              "cat",
+              "dog",
+              "cat"
+            ]
+          },
+          "steps": [
+            {
+              "title": "Read cat",
+              "body": "cat is not in the table yet, so its count starts at 1.",
+              "state": {
+                "active": [
+                  0
+                ],
+                "table": [
+                  {
+                    "key": "cat",
+                    "value": 1,
+                    "active": true
+                  }
+                ]
+              }
+            },
+            {
+              "title": "Read dog",
+              "body": "dog gets its own key with count 1.",
+              "state": {
+                "active": [
+                  1
+                ],
+                "table": [
+                  {
+                    "key": "cat",
+                    "value": 1
+                  },
+                  {
+                    "key": "dog",
+                    "value": 1,
+                    "active": true
+                  }
+                ]
+              }
+            },
+            {
+              "title": "Read cat again",
+              "body": "cat is already a key, so update its old value.",
+              "state": {
+                "active": [
+                  2
+                ],
+                "table": [
+                  {
+                    "key": "cat",
+                    "value": 2,
+                    "active": true
+                  },
+                  {
+                    "key": "dog",
+                    "value": 1
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
           "kind": "code",
           "caption": "A duplicate checker looks before it adds.",
           "variants": {

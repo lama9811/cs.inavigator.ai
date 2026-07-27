@@ -42,6 +42,72 @@
           "body": "Recursion is a function calling itself. That sounds strange at first, but the pattern is simple: stop when the answer is obvious, otherwise solve a smaller version."
         },
         {
+          "kind": "visual",
+          "title": "Follow the call stack",
+          "concept": "recursion-patterns",
+          "caption": "Watch calls pile up until the base case, then return back down.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Call fact(3)",
+              "body": "The first call cannot answer yet. It needs fact(2).",
+              "state": {
+                "call_stack": [
+                  "fact(3)"
+                ],
+                "active_call": 0
+              }
+            },
+            {
+              "title": "Call fact(2)",
+              "body": "fact(2) also needs a smaller answer.",
+              "state": {
+                "call_stack": [
+                  "fact(3)",
+                  "fact(2)"
+                ],
+                "active_call": 1
+              }
+            },
+            {
+              "title": "Call fact(1)",
+              "body": "fact(1) is the base case, so it can answer immediately.",
+              "state": {
+                "call_stack": [
+                  "fact(3)",
+                  "fact(2)",
+                  "fact(1)"
+                ],
+                "active_call": 2,
+                "note": "fact(1) returns 1"
+              }
+            },
+            {
+              "title": "Return upward",
+              "body": "Now each waiting call can finish using the smaller answer.",
+              "state": {
+                "call_stack": [
+                  "fact(3)",
+                  "fact(2)"
+                ],
+                "active_call": 1,
+                "note": "fact(2) returns 2"
+              }
+            },
+            {
+              "title": "Finish",
+              "body": "fact(3) uses fact(2)'s result and returns 6.",
+              "state": {
+                "call_stack": [
+                  "fact(3)"
+                ],
+                "active_call": 0,
+                "note": "fact(3) returns 6"
+              }
+            }
+          ]
+        },
+        {
           "kind": "code",
           "caption": "Factorial has an obvious stop at 0.",
           "variants": {

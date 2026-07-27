@@ -4,6 +4,8 @@ All notable changes to CS Navigator are documented here.
 
 ## [Unreleased]
 ### Added
+- **Advanced lesson visualizers.** Advanced Learn lessons now support modal "Visualize this" walkthroughs built from reusable SVG/HTML state, with step controls for stacks, queues, maps/sets, linked lists, recursion, binary search, two pointers, sliding window, trees, and graphs.
+- **Separated Advanced Two Pointers and Sliding Window.** The former combined topic is now split into distinct Advanced lessons and concept quiz banks so students can learn pointer-pair movement separately from window grow/shrink state.
 - **Separated Advanced Stacks and Queues.** The former combined Stacks & Queues topic is now split into distinct Advanced lessons and concept quiz banks so students can digest LIFO stacks before moving into FIFO queues, queue variants, and BFS-style processing.
 - **Advanced Coding Tutor track.** Learn and Concept Quiz now support a third Advanced track for core data-structure and interview-pattern topics across Python, Java, JavaScript, and C++.
 - **Advanced V1 lessons and quizzes.** Added sectioned advanced lessons plus 8-question concept quiz banks for Stacks, Queues, Hash Maps & Sets, Linked Lists, Recursion Patterns, Binary Search, Two Pointers & Sliding Window, Trees, and Graphs.
@@ -16,6 +18,7 @@ All notable changes to CS Navigator are documented here.
 - **Backend-backed last workspace state.** Coding Tutor now remembers the last practice/interview problem, language, and source per user so another device can reopen the same workspace when localStorage has no draft.
 
 ### Changed
+- Lesson TTS now treats visualizer blocks like diagrams: it reads the caption and invites the student to open the visualizer, instead of reading raw diagram state.
 - Concept quizzes now reveal immediate teaching feedback after each checked answer, showing "Why it works" for correct answers and "What went wrong" plus the correct answer for missed questions, while keeping the final review screen.
 - Advanced concept quiz questions now include small code/state blurbs where useful, so operation questions show something concrete to trace instead of rendering as plain text on an empty panel.
 - Advanced V1 lessons were expanded from short outlines into fuller teaching pages with operation walkthroughs, line-by-line code shape, trace examples, common mistakes, and language-specific examples for Python, Java, JavaScript, and C++.

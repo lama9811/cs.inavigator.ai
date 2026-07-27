@@ -53,6 +53,9 @@ export function lessonToSegments(lesson) {
         if (block.caption) push("Comparison", `Comparison. ${block.caption} The two versions are shown side by side on screen.`);
         if (block.body) push("Comparison note", block.body);
         break;
+      case "visual":
+        push("Visualizer", `Visualizer. ${block.caption || block.title}. Open the visualizer on screen to step through it.`);
+        break;
       case "list": {
         const items = (block.items || []).map(stripInlineCode).join(". ");
         push("List", `${block.title ? block.title + ". " : ""}${items}`);

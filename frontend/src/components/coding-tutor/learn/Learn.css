@@ -527,6 +527,280 @@ body.coding-dark .lesson-callout.is-tip .lesson-callout-head { color: #60a5fa; }
 body.coding-dark .lesson-callout.is-warning .lesson-callout-head { color: #fbbf24; }
 body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f87171; }
 
+/* --- Interactive concept visualizer --- */
+.lesson-visual-block {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary, #0b315f) 24%, var(--ct-border, #cbd5e1));
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--ct-accent, #f97316) 9%, transparent), transparent 34%),
+    var(--ct-panel, #fff);
+}
+
+.lesson-visual-block figcaption {
+  margin: 0 0 4px;
+  color: var(--ct-text);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.lesson-visual-block p {
+  margin: 0;
+  color: var(--ct-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.lesson-visual-open,
+.lesson-visual-modal button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--ct-border-strong, #94a3b8);
+  border-radius: 999px;
+  background: var(--ct-surface, #f8fafc);
+  color: var(--ct-text);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.lesson-visual-open {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+}
+
+.lesson-visual-open:hover,
+.lesson-visual-modal button:hover:not(:disabled) {
+  border-color: var(--ct-accent, #f97316);
+  color: var(--ct-accent, #f97316);
+}
+
+.lesson-visual-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(8, 20, 38, 0.58);
+}
+
+.lesson-visual-modal {
+  width: min(880px, 100%);
+  max-height: min(760px, 92vh);
+  overflow: auto;
+  padding: 20px;
+  border: 1px solid var(--ct-border-strong, #94a3b8);
+  border-radius: 22px;
+  background: var(--ct-panel, #fff);
+  box-shadow: 0 24px 70px rgba(8, 20, 38, 0.26);
+}
+
+.lesson-visual-modal-head,
+.lesson-visual-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.lesson-visual-modal-head span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ct-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lesson-visual-modal-head h3 {
+  margin: 0;
+  color: var(--ct-text);
+}
+
+.lesson-visual-modal button {
+  min-height: 38px;
+  padding: 8px 13px;
+}
+
+.lesson-visual-modal button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.lesson-visual-diagram {
+  margin: 18px 0;
+  padding: 22px;
+  border: 1px solid var(--ct-border, #cbd5e1);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--ct-surface, #f8fafc) 88%, var(--ct-panel, #fff));
+}
+
+.lesson-visual-row,
+.lesson-visual-labels {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.lesson-visual-labels {
+  justify-content: space-between;
+  max-width: 460px;
+  margin: 8px auto 0;
+  color: var(--ct-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.lesson-visual-token {
+  min-width: 52px;
+  min-height: 48px;
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid var(--ct-border-strong, #94a3b8);
+  border-radius: 13px;
+  background: var(--ct-panel, #fff);
+  color: var(--ct-text);
+  font-weight: 900;
+  box-shadow: 0 8px 18px rgba(8, 35, 67, 0.08);
+}
+
+.lesson-visual-token small {
+  color: var(--ct-accent, #f97316);
+  font-size: 0.64rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.lesson-visual-token.is-active {
+  border-color: var(--ct-accent, #f97316);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ct-accent, #f97316) 18%, transparent);
+}
+
+.lesson-visual-token.is-window {
+  background: color-mix(in srgb, #22c55e 14%, var(--ct-panel, #fff));
+  border-color: color-mix(in srgb, #22c55e 52%, var(--ct-border-strong, #94a3b8));
+}
+
+.lesson-visual-stack,
+.lesson-visual-call-stack {
+  display: grid;
+  justify-content: center;
+  gap: 8px;
+}
+
+.lesson-visual-empty,
+.lesson-visual-state-note {
+  margin: 10px 0 0;
+  color: var(--ct-muted);
+  text-align: center;
+}
+
+.lesson-visual-table {
+  display: grid;
+  max-width: 420px;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid var(--ct-border, #cbd5e1);
+  border-radius: 14px;
+}
+
+.lesson-visual-table-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--ct-panel, #fff);
+  color: var(--ct-text);
+}
+
+.lesson-visual-table-row + .lesson-visual-table-row {
+  border-top: 1px solid var(--ct-border, #cbd5e1);
+}
+
+.lesson-visual-table-row.is-active {
+  background: color-mix(in srgb, var(--ct-accent, #f97316) 13%, var(--ct-panel, #fff));
+}
+
+.lesson-visual-svg {
+  display: block;
+  width: min(100%, 620px);
+  min-height: 260px;
+  margin: 0 auto;
+}
+
+.lesson-visual-edge {
+  stroke: var(--ct-border-strong, #94a3b8);
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.lesson-visual-edge.is-active {
+  stroke: var(--ct-accent, #f97316);
+}
+
+.lesson-visual-node circle {
+  fill: var(--ct-panel, #fff);
+  stroke: var(--ct-border-strong, #94a3b8);
+  stroke-width: 3;
+}
+
+.lesson-visual-node.is-active circle {
+  fill: color-mix(in srgb, var(--ct-accent, #f97316) 18%, var(--ct-panel, #fff));
+  stroke: var(--ct-accent, #f97316);
+}
+
+.lesson-visual-node text {
+  fill: var(--ct-text);
+  font-size: 0.85rem;
+  font-weight: 900;
+}
+
+.lesson-visual-node-note {
+  fill: var(--ct-muted) !important;
+  font-size: 0.66rem !important;
+}
+
+.lesson-visual-step-copy {
+  padding: 14px 16px;
+  border-left: 4px solid var(--ct-accent, #f97316);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ct-accent, #f97316) 8%, transparent);
+}
+
+.lesson-visual-step-copy h4 {
+  margin: 0 0 6px;
+  color: var(--ct-text);
+}
+
+.lesson-visual-step-copy p {
+  margin: 0;
+  color: var(--ct-text);
+  line-height: 1.55;
+}
+
+.lesson-visual-controls {
+  margin-top: 16px;
+}
+
+.lesson-visual-controls > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 /* --- Right vs wrong, side by side. The most effective block for teaching the
        mistakes the telemetry actually records. --- */
 .lesson-compare {
@@ -575,6 +849,19 @@ body.coding-dark .lesson-compare-col.is-right .lesson-compare-label { color: #4a
 /* Stack the comparison on narrow screens — two code columns at half-width are
    unreadable, and students do use this in a split window. */
 @media (max-width: 720px) {
+  .lesson-visual-block,
+  .lesson-visual-modal-head,
+  .lesson-visual-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .lesson-visual-open,
+  .lesson-visual-controls > div,
+  .lesson-visual-controls button {
+    width: 100%;
+  }
+
   .lesson-compare-grid {
     grid-template-columns: 1fr;
   }

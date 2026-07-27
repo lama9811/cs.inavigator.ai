@@ -41,6 +41,16 @@ LANGUAGE_KEYS = ("python", "java", "javascript", "cpp")
 VALID_KINDS = {"mcq-output", "mcq-behavior", "typein", "parsons"}
 VALID_TRACKS = {"beginner", "intermediate", "advanced"}
 
+LEGACY_SHARED_CATEGORIES = {
+    "two-pointers-sliding-window": {
+        "id": "two-pointers-sliding-window",
+        "label": "Two Pointers & Sliding Window",
+        "file": "two-pointers-sliding-window",
+        "track": "advanced",
+        "blurb": "Legacy combined topic. New lessons split this into Two Pointers and Sliding Window.",
+    },
+}
+
 # ---------------------------------------------------------------------------
 # Raised for bad input (unknown language/category) — the API layer maps these
 # to 400/404. Bad CONTENT (malformed files) raises ConceptQuizDataError → 500.
@@ -169,6 +179,10 @@ def _resolve_category(language: str, category_id: str) -> tuple[dict[str, Any], 
     for extension in manifest.get("language_extensions", {}).get(lang, []):
         if extension["id"] == wanted:
             return extension, "language", _by_language_path(lang, extension["file"])
+
+    legacy = LEGACY_SHARED_CATEGORIES.get(wanted)
+    if legacy:
+        return legacy, "shared", _shared_path(legacy["file"])
 
     raise ConceptQuizError(
         f"Category '{category_id}' is not available for {lang}."

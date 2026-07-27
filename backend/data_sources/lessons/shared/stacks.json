@@ -57,6 +57,75 @@
           "body": "A stack is a linear data structure. Linear means the items are arranged in a sequence. Stack order has one special rule: the last item you add is the first item you remove."
         },
         {
+          "kind": "visual",
+          "title": "Watch LIFO in action",
+          "concept": "stacks",
+          "caption": "Step through push, peek, and pop so the top of the stack is visible.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Start empty",
+              "body": "The stack has no items yet.",
+              "state": {
+                "stack": [],
+                "note": "A stack removes from the same end where it adds."
+              }
+            },
+            {
+              "title": "Push A",
+              "body": "Push puts A on top.",
+              "state": {
+                "stack": [
+                  "A"
+                ],
+                "active": [
+                  0
+                ]
+              }
+            },
+            {
+              "title": "Push B",
+              "body": "B is newer, so B becomes the top.",
+              "state": {
+                "stack": [
+                  "A",
+                  "B"
+                ],
+                "active": [
+                  1
+                ]
+              }
+            },
+            {
+              "title": "Peek",
+              "body": "Peek reads B without removing it.",
+              "state": {
+                "stack": [
+                  "A",
+                  "B"
+                ],
+                "active": [
+                  1
+                ],
+                "note": "peek returns B"
+              }
+            },
+            {
+              "title": "Pop",
+              "body": "Pop removes the newest item, so B comes out first.",
+              "state": {
+                "stack": [
+                  "A"
+                ],
+                "active": [
+                  0
+                ],
+                "note": "pop returned B"
+              }
+            }
+          ]
+        },
+        {
           "kind": "text",
           "body": "That rule is called LIFO, which stands for last in, first out. Think about a pile of plates. You place a clean plate on top. If you need a plate later, the top plate is the easiest one to take."
         },

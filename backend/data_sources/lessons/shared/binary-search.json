@@ -51,6 +51,90 @@
           "body": "Binary search is not just a faster loop. It is a promise: because the data is ordered, one comparison can rule out half of the remaining positions."
         },
         {
+          "kind": "visual",
+          "title": "Cut the search space",
+          "concept": "binary-search",
+          "caption": "Watch low, mid, and high move while searching a sorted list.",
+          "initial_state": {
+            "items": [
+              2,
+              4,
+              6,
+              9,
+              12,
+              15,
+              20
+            ]
+          },
+          "steps": [
+            {
+              "title": "Start with the full range",
+              "body": "low and high cover every possible index.",
+              "state": {
+                "pointers": {
+                  "low": 0,
+                  "high": 6
+                },
+                "window": [
+                  0,
+                  6
+                ]
+              }
+            },
+            {
+              "title": "Check mid",
+              "body": "mid points to 9. The target is 15, so 9 is too small.",
+              "state": {
+                "pointers": {
+                  "low": 0,
+                  "mid": 3,
+                  "high": 6
+                },
+                "active": [
+                  3
+                ],
+                "window": [
+                  0,
+                  6
+                ]
+              }
+            },
+            {
+              "title": "Move low right",
+              "body": "Everything at mid and left of mid is too small, so discard it.",
+              "state": {
+                "pointers": {
+                  "low": 4,
+                  "high": 6
+                },
+                "window": [
+                  4,
+                  6
+                ]
+              }
+            },
+            {
+              "title": "Check new mid",
+              "body": "mid points to 15, which matches the target.",
+              "state": {
+                "pointers": {
+                  "low": 4,
+                  "mid": 5,
+                  "high": 6
+                },
+                "active": [
+                  5
+                ],
+                "window": [
+                  4,
+                  6
+                ],
+                "note": "found at index 5"
+              }
+            }
+          ]
+        },
+        {
           "kind": "list",
           "title": "Closed-range variables",
           "items": [

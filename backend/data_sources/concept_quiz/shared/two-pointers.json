@@ -1,0 +1,190 @@
+{
+  "_note": "Original advanced concept questions for two pointers.",
+  "concept": "two-pointers",
+  "questions": [
+    {
+      "id": "advanced-tp-purpose",
+      "concept": "two-pointers",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Two-pointer purpose",
+      "prompt": "What is the main idea of a two-pointer solution?",
+      "explanation": "Two pointers work because each pointer move removes choices you no longer need.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      },
+      "code": "nums = [1, 2, 4, 7, 11]\nleft -> 1\nright -> 11",
+      "choices": [
+        "Move two indexes using a rule",
+        "Try every possible program",
+        "Sort every character",
+        "Avoid conditions"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "advanced-tp-sorted-sum",
+      "concept": "two-pointers",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Sorted two-sum",
+      "prompt": "In a sorted list, the left+right sum is too small. Which pointer should move?",
+      "explanation": "Moving left rightward increases the sum because the list is sorted.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      },
+      "code": "nums = [1, 2, 4, 7, 11]\ntarget = 10\nleft value = 1\nright value = 7\nsum = 8",
+      "choices": [
+        "Move left rightward",
+        "Move right leftward",
+        "Return false immediately",
+        "Move both backward"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "advanced-tp-large-sum",
+      "concept": "two-pointers",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Too-large sum",
+      "prompt": "In a sorted list, the left+right sum is too large. Which pointer should move?",
+      "explanation": "Moving right leftward lowers the sum because the right value gets smaller.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      },
+      "code": "nums = [1, 2, 4, 7, 11]\ntarget = 10\nleft value = 4\nright value = 11\nsum = 15",
+      "choices": [
+        "Move right leftward",
+        "Move left rightward",
+        "Return the left value",
+        "Append a new value"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "advanced-tp-palindrome",
+      "concept": "two-pointers",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Palindrome pointers",
+      "prompt": "Which pair is checked first?",
+      "explanation": "The first check compares the outer characters before the pointers move inward.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      },
+      "code": "word = \"level\"\nleft = 0\nright = 4",
+      "choices": [
+        "l and l",
+        "e and e",
+        "v and v",
+        "l and e"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "advanced-tp-found-pair",
+      "concept": "two-pointers",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "After finding a pair",
+      "prompt": "After finding one valid pair, why might code move both pointers?",
+      "explanation": "Both used values have already formed the current pair, so moving both looks for a new pair without repeating the same one.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      },
+      "code": "nums = [1, 2, 4, 6, 8]\ntarget = 10\nleft value = 2\nright value = 8\nsum = 10",
+      "choices": [
+        "To search for another pair without reusing the same two values",
+        "Because the array is no longer sorted",
+        "Because left must always move twice",
+        "To delete the target"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "advanced-tp-loop-stop",
+      "concept": "two-pointers",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "When to stop",
+      "prompt": "Why do many two-pointer loops stop when `left >= right`?",
+      "explanation": "When the pointers meet or cross, there is no pair of two different positions left to check.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      },
+      "code": "while left < right:\n    # check a pair",
+      "choices": [
+        "There is no two-position pair left",
+        "The list becomes empty",
+        "The target changes",
+        "The code must sort again"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "advanced-tp-parsons",
+      "concept": "two-pointers",
+      "difficulty": "medium",
+      "kind": "parsons",
+      "title": "Two-pointer pair search",
+      "prompt": "Arrange the two-pointer pair-sum steps.",
+      "explanation": "The search checks a pair, then moves exactly the pointer that the sum proves is safe to move.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      },
+      "lines": [
+        "Set left to 0 and right to the last index.",
+        "While left is less than right, compute the pair sum.",
+        "If the sum equals target, return true.",
+        "If the sum is too small, move left rightward.",
+        "If the sum is too large, move right leftward.",
+        "Return false when the pointers cross."
+      ]
+    },
+    {
+      "id": "advanced-tp-common-bug",
+      "concept": "two-pointers",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Pointer bug",
+      "prompt": "What is a common bug in two-pointer code?",
+      "explanation": "Every pointer move should be justified by what the current comparison tells you.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      },
+      "code": "while left < right:\n    # pointer moves should match what the comparison tells you",
+      "choices": [
+        "Moving a pointer without a reason tied to the condition",
+        "Using variables",
+        "Returning an answer",
+        "Checking a comparison"
+      ],
+      "answer_index": 0
+    }
+  ]
+}

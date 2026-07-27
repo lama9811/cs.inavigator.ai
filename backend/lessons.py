@@ -54,6 +54,7 @@ VALID_BLOCKS = {
     "compare",   # two snippets side by side (right vs wrong)
     "list",      # a bulleted list
     "check",     # an inline "did that land?" question, answered right in the lesson
+    "visual",    # an interactive step-by-step diagram for abstract topics
 }
 
 VALID_TONES = {"tip", "warning", "mistake"}
@@ -179,6 +180,7 @@ def _normalize_block(raw: Any, *, where: str, language: str | None = None) -> di
         block["wrong_label"] = str(raw.get("wrong_label", "") or "Doesn't work").strip()
         block["right_label"] = str(raw.get("right_label", "") or "Works").strip()
         block["caption"] = str(raw.get("caption", "") or "").strip()
+        block["body"] = str(raw.get("body", "") or "").strip()
 
     elif kind == "list":
         items = raw.get("items")
@@ -186,6 +188,34 @@ def _normalize_block(raw: Any, *, where: str, language: str | None = None) -> di
             raise LessonDataError(f"{where}: a list block needs a non-empty items array.")
         block["items"] = [str(i).strip() for i in items if str(i).strip()]
         block["title"] = str(raw.get("title", "") or "").strip()
+
+    elif kind == "visual":
+        title = str(raw.get("title", "") or "").strip()
+        concept = str(raw.get("concept", "") or "").strip().lower()
+        caption = str(raw.get("caption", "") or "").strip()
+        steps = raw.get("steps")
+        if not title:
+            raise LessonDataError(f"{where}: a visual block needs a title.")
+        if not concept:
+            raise LessonDataError(f"{where}: a visual block needs a concept.")
+        if not isinstance(steps, list) or not steps:
+            raise LessonDataError(f"{where}: a visual block needs a non-empty steps array.")
+        normalized_steps: list[dict[str, Any]] = []
+        for index, step_raw in enumerate(steps):
+            if not isinstance(step_raw, dict):
+                raise LessonDataError(f"{where}.steps[{index}]: visual step must be an object.")
+            step_title = str(step_raw.get("title", "") or "").strip()
+            step_body = str(step_raw.get("body", "") or "").strip()
+            if not step_title or not step_body:
+                raise LessonDataError(
+                    f"{where}.steps[{index}]: visual step needs title and body."
+                )
+            normalized_steps.append(dict(step_raw, title=step_title, body=step_body))
+        block["title"] = title
+        block["concept"] = concept
+        block["caption"] = caption
+        block["initial_state"] = raw.get("initial_state") or {}
+        block["steps"] = normalized_steps
 
     elif kind == "check":
         # Multiple choice, answered and revealed inline. Deliberately NOT graded and NOT

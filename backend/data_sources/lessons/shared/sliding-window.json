@@ -1,0 +1,255 @@
+{
+  "_note": "Original advanced lesson. Shared across languages with language-specific code variants.",
+  "title": "Sliding Window",
+  "summary": "Track one contiguous range as it grows and shrinks.",
+  "minutes": 18,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "A sliding window is the current range from left to right. As the right side grows, update the window state. When the window breaks a rule, move left and update the state again.",
+  "refresher_code": "left = 0\ntotal = 0\nfor right in range(len(nums)):\n    total += nums[right]",
+  "learn_cards": {
+    "advanced-window-meaning": {
+      "title": "A window is a current slice",
+      "body": "A sliding window is the group between left and right.",
+      "example": "nums[left:right+1]",
+      "notice": "The state must match the current slice.",
+      "mistake": "Moving a pointer without updating the state leaves stale data.",
+      "section_id": "meaning"
+    },
+    "advanced-window-shrink": {
+      "title": "Shrink when the rule breaks",
+      "body": "Move left only when the current window is no longer valid.",
+      "example": "while total > limit: ...",
+      "notice": "The while loop keeps shrinking until the rule is fixed.",
+      "mistake": "Using if when you may need to remove several left values can leave the window invalid.",
+      "section_id": "grow-shrink"
+    },
+    "advanced-window-stale-state": {
+      "title": "Keep state honest",
+      "body": "If left moves, remove the old left value from your saved total or count.",
+      "example": "total -= nums[left]",
+      "notice": "The stored state should describe the real window.",
+      "mistake": "A stale total makes future choices wrong.",
+      "section_id": "trace"
+    }
+  },
+  "sections": [
+    {
+      "id": "meaning",
+      "title": "What the window means",
+      "summary": "The window is one current slice.",
+      "question_ids": [
+        "advanced-window-meaning",
+        "advanced-window-fixed-size"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A sliding window is a contiguous part of the input. Contiguous means the values sit next to each other with no gaps. The window usually starts small, grows on the right, and sometimes shrinks on the left."
+        },
+        {
+          "kind": "visual",
+          "title": "Grow right, shrink left",
+          "concept": "sliding-window",
+          "caption": "Watch a running sum stay matched to the current window.",
+          "initial_state": {
+            "items": [
+              2,
+              1,
+              4,
+              1
+            ]
+          },
+          "steps": [
+            {
+              "title": "Add 2",
+              "body": "right moves to 0 and total becomes 2.",
+              "state": {
+                "pointers": {
+                  "left": 0,
+                  "right": 0
+                },
+                "window": [
+                  0,
+                  0
+                ],
+                "active": [
+                  0
+                ],
+                "note": "total = 2, limit = 5"
+              }
+            },
+            {
+              "title": "Add 1",
+              "body": "The window grows to include 2 and 1.",
+              "state": {
+                "pointers": {
+                  "left": 0,
+                  "right": 1
+                },
+                "window": [
+                  0,
+                  1
+                ],
+                "active": [
+                  1
+                ],
+                "note": "total = 3"
+              }
+            },
+            {
+              "title": "Add 4",
+              "body": "The total is now too large, so the rule is broken.",
+              "state": {
+                "pointers": {
+                  "left": 0,
+                  "right": 2
+                },
+                "window": [
+                  0,
+                  2
+                ],
+                "active": [
+                  2
+                ],
+                "note": "total = 7"
+              }
+            },
+            {
+              "title": "Shrink left",
+              "body": "Subtract nums[left] and move left until the window is valid again.",
+              "state": {
+                "pointers": {
+                  "left": 1,
+                  "right": 2
+                },
+                "window": [
+                  1,
+                  2
+                ],
+                "active": [
+                  1,
+                  2
+                ],
+                "note": "total = 5"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "list",
+          "title": "Window vocabulary",
+          "items": [
+            "left is the first index in the window.",
+            "right is the newest index added to the window.",
+            "state is the total, count, or table that describes the current window.",
+            "best is the answer you have found so far."
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "What does the current window include?",
+          "choices": [
+            "Values from left through right",
+            "Only the final answer",
+            "Every value ever seen",
+            "Only sorted values"
+          ],
+          "answer_index": 0,
+          "why": "The window is the current contiguous slice."
+        }
+      ]
+    },
+    {
+      "id": "grow-shrink",
+      "title": "Grow right, shrink left",
+      "summary": "Update state every time the window changes.",
+      "question_ids": [
+        "advanced-window-shrink",
+        "advanced-window-trace",
+        "advanced-window-total"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Most sliding-window code has two movements. The right side moves to include a new value. The left side moves only when the current window breaks a rule."
+        },
+        {
+          "kind": "code",
+          "caption": "Longest subarray with sum at most limit, assuming nonnegative numbers.",
+          "variants": {
+            "python": {
+              "code": "def longest_at_most(nums, limit):\n    left = 0\n    total = 0\n    best = 0\n    for right in range(len(nums)):\n        total += nums[right]\n        while total > limit:\n            total -= nums[left]\n            left += 1\n        best = max(best, right - left + 1)\n    return best",
+              "output": ""
+            },
+            "java": {
+              "code": "static int longestAtMost(int[] nums, int limit) {\n    int left = 0, total = 0, best = 0;\n    for (int right = 0; right < nums.length; right++) {\n        total += nums[right];\n        while (total > limit) {\n            total -= nums[left];\n            left++;\n        }\n        best = Math.max(best, right - left + 1);\n    }\n    return best;\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "function longestAtMost(nums, limit) {\n  let left = 0, total = 0, best = 0;\n  for (let right = 0; right < nums.length; right++) {\n    total += nums[right];\n    while (total > limit) {\n      total -= nums[left];\n      left++;\n    }\n    best = Math.max(best, right - left + 1);\n  }\n  return best;\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "int longestAtMost(const std::vector<long long>& nums, long long limit) {\n    int left = 0, best = 0;\n    long long total = 0;\n    for (int right = 0; right < (int)nums.size(); right++) {\n        total += nums[right];\n        while (total > limit) {\n            total -= nums[left];\n            left++;\n        }\n        best = std::max(best, right - left + 1);\n    }\n    return best;\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "check",
+          "prompt": "The window sum is too large. What should happen next?",
+          "choices": [
+            "Remove from the left and move left",
+            "Move right backward",
+            "Return immediately",
+            "Sort the window"
+          ],
+          "answer_index": 0,
+          "why": "Shrinking from the left fixes the broken rule."
+        }
+      ]
+    },
+    {
+      "id": "trace",
+      "title": "Trace the state",
+      "summary": "The saved state must match the window.",
+      "question_ids": [
+        "advanced-window-parsons",
+        "advanced-window-stale-state",
+        "advanced-window-negative-caveat"
+      ],
+      "blocks": [
+        {
+          "kind": "compare",
+          "caption": "Keep the running total matched to the real window.",
+          "wrong_label": "Stale total",
+          "wrong": "left += 1\n# forgot total -= nums[left]",
+          "right_label": "Updated total",
+          "right": "total -= nums[left]\nleft += 1",
+          "body": "If left moves but total does not change, the code is now reasoning about the wrong window."
+        },
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "Sliding window needs the right kind of data",
+          "body": "The sum example assumes nonnegative numbers. Negative numbers can make the grow-and-shrink rule unreliable."
+        },
+        {
+          "kind": "check",
+          "prompt": "Why is a stale total dangerous?",
+          "choices": [
+            "The code makes decisions from an old window",
+            "It changes Python into Java",
+            "It deletes the input",
+            "It always makes the answer zero"
+          ],
+          "answer_index": 0,
+          "why": "The saved total must describe the same values that left and right describe."
+        }
+      ]
+    }
+  ]
+}

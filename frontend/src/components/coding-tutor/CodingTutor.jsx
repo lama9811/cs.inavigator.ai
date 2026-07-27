@@ -113,8 +113,8 @@ const PRACTICE_TOPIC_TO_LESSON = {
   queues: "queues",
   "linked lists": "linked-lists",
   "binary search": "binary-search",
-  "two pointers": "two-pointers-sliding-window",
-  "sliding window": "two-pointers-sliding-window",
+  "two pointers": "two-pointers",
+  "sliding window": "sliding-window",
   trees: "trees",
   graphs: "graphs",
 };

@@ -43,6 +43,131 @@
           "body": "A tree is made of nodes. In a binary tree, each node can have a left child and a right child. The first node is called the root."
         },
         {
+          "kind": "visual",
+          "title": "Trace a tree traversal",
+          "concept": "trees",
+          "caption": "Watch preorder visit the node, then left side, then right side.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Visit root A",
+              "body": "Preorder starts with the current node.",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 210,
+                    "y": 40,
+                    "active": true
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 120,
+                    "y": 125
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 300,
+                    "y": 125
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B"
+                  },
+                  {
+                    "from": "A",
+                    "to": "C"
+                  }
+                ],
+                "note": "order: A"
+              }
+            },
+            {
+              "title": "Go left to B",
+              "body": "After the node, preorder visits the left subtree.",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 210,
+                    "y": 40
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 120,
+                    "y": 125,
+                    "active": true
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 300,
+                    "y": 125
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B",
+                    "active": true
+                  },
+                  {
+                    "from": "A",
+                    "to": "C"
+                  }
+                ],
+                "note": "order: A, B"
+              }
+            },
+            {
+              "title": "Go right to C",
+              "body": "After the left side is done, preorder visits the right subtree.",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 210,
+                    "y": 40
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 120,
+                    "y": 125
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 300,
+                    "y": 125,
+                    "active": true
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B"
+                  },
+                  {
+                    "from": "A",
+                    "to": "C",
+                    "active": true
+                  }
+                ],
+                "note": "order: A, B, C"
+              }
+            }
+          ]
+        },
+        {
           "kind": "code",
           "caption": "A basic binary tree node.",
           "variants": {

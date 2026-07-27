@@ -8,6 +8,10 @@ import {
   FaTimesCircle,
   FaCheck,
   FaTimes,
+  FaProjectDiagram,
+  FaUndo,
+  FaChevronLeft,
+  FaChevronRight,
 } from "react-icons/fa";
 import { markLessonRead } from "../concept-quiz/conceptQuizProgress";
 import LessonPlayBar from "./LessonPlayBar";
@@ -41,6 +45,246 @@ function withInlineCode(text) {
     ) : (
       part
     )
+  );
+}
+
+function VisualTokenRow({ items = [], active = [], pointers = {}, window = null }) {
+  const activeSet = new Set(active || []);
+  const pointerEntries = Object.entries(pointers || {});
+  const windowStart = Array.isArray(window) ? window[0] : null;
+  const windowEnd = Array.isArray(window) ? window[1] : null;
+
+  return (
+    <div className="lesson-visual-row" aria-label="Visualizer values">
+      {items.map((item, index) => {
+        const pointerLabels = pointerEntries
+          .filter(([, value]) => value === index)
+          .map(([label]) => label);
+        const inWindow =
+          Number.isInteger(windowStart) &&
+          Number.isInteger(windowEnd) &&
+          index >= windowStart &&
+          index <= windowEnd;
+        return (
+          <div
+            key={`${item}-${index}`}
+            className={`lesson-visual-token ${activeSet.has(index) ? "is-active" : ""} ${
+              inWindow ? "is-window" : ""
+            }`}
+          >
+            <span>{item}</span>
+            {pointerLabels.length ? (
+              <small>{pointerLabels.join(" / ")}</small>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function VisualStack({ items = [], active = [] }) {
+  const activeSet = new Set(active || []);
+  return (
+    <div className="lesson-visual-stack" aria-label="Stack state">
+      {[...items].reverse().map((item, reverseIndex) => {
+        const index = items.length - 1 - reverseIndex;
+        return (
+          <div
+            key={`${item}-${index}`}
+            className={`lesson-visual-token ${activeSet.has(index) ? "is-active" : ""}`}
+          >
+            <span>{item}</span>
+            {reverseIndex === 0 ? <small>top</small> : null}
+          </div>
+        );
+      })}
+      {!items.length ? <p className="lesson-visual-empty">empty</p> : null}
+    </div>
+  );
+}
+
+function VisualTable({ rows = [] }) {
+  return (
+    <div className="lesson-visual-table" aria-label="Table state">
+      {rows.map((row, index) => (
+        <div
+          key={`${row.key}-${index}`}
+          className={`lesson-visual-table-row ${row.active ? "is-active" : ""}`}
+        >
+          <span>{row.key}</span>
+          <strong>{row.value}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function VisualNodes({ nodes = [], edges = [] }) {
+  if (!nodes.length) return null;
+  const byId = Object.fromEntries(nodes.map((node) => [node.id, node]));
+  return (
+    <svg className="lesson-visual-svg" viewBox="0 0 420 220" role="img" aria-label="Node diagram">
+      {edges.map((edge, index) => {
+        const from = byId[edge.from];
+        const to = byId[edge.to];
+        if (!from || !to) return null;
+        return (
+          <line
+            key={`${edge.from}-${edge.to}-${index}`}
+            x1={from.x}
+            y1={from.y}
+            x2={to.x}
+            y2={to.y}
+            className={`lesson-visual-edge ${edge.active ? "is-active" : ""}`}
+          />
+        );
+      })}
+      {nodes.map((node) => (
+        <g key={node.id} className={`lesson-visual-node ${node.active ? "is-active" : ""}`}>
+          <circle cx={node.x} cy={node.y} r="24" />
+          <text x={node.x} y={node.y + 5} textAnchor="middle">
+            {node.label || node.id}
+          </text>
+          {node.note ? (
+            <text x={node.x} y={node.y + 42} textAnchor="middle" className="lesson-visual-node-note">
+              {node.note}
+            </text>
+          ) : null}
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+function VisualDiagram({ block, step }) {
+  const state = { ...(block.initial_state || {}), ...(step.state || {}) };
+  const mainItems = state.items || state.array || state.values || state.queue || [];
+  return (
+    <div className={`lesson-visual-diagram is-${block.concept}`}>
+      {state.stack ? <VisualStack items={state.stack} active={state.active} /> : null}
+      {state.queue ? (
+        <div>
+          <VisualTokenRow items={state.queue} active={state.active} />
+          <div className="lesson-visual-labels">
+            <span>front</span>
+            <span>back</span>
+          </div>
+        </div>
+      ) : null}
+      {!state.stack && !state.queue && mainItems.length ? (
+        <VisualTokenRow
+          items={mainItems}
+          active={state.active}
+          pointers={state.pointers}
+          window={state.window}
+        />
+      ) : null}
+      {state.table ? <VisualTable rows={state.table} /> : null}
+      {state.nodes ? <VisualNodes nodes={state.nodes} edges={state.edges || []} /> : null}
+      {state.call_stack ? (
+        <div className="lesson-visual-call-stack">
+          {state.call_stack.map((call, index) => (
+            <div
+              key={`${call}-${index}`}
+              className={`lesson-visual-token ${index === state.active_call ? "is-active" : ""}`}
+            >
+              <span>{call}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {state.note ? <p className="lesson-visual-state-note">{state.note}</p> : null}
+    </div>
+  );
+}
+
+function VisualBlock({ block }) {
+  const [open, setOpen] = useState(false);
+  const [stepIndex, setStepIndex] = useState(0);
+  const steps = block.steps || [];
+  const step = steps[stepIndex] || steps[0] || {};
+  const canGoBack = stepIndex > 0;
+  const canGoNext = stepIndex < steps.length - 1;
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
+
+  return (
+    <figure className="lesson-visual-block">
+      <div>
+        <figcaption>{block.title}</figcaption>
+        {block.caption ? <p>{withInlineCode(block.caption)}</p> : null}
+      </div>
+      <button
+        type="button"
+        className="lesson-visual-open"
+        onClick={() => {
+          setStepIndex(0);
+          setOpen(true);
+        }}
+      >
+        <FaProjectDiagram aria-hidden="true" />
+        Visualize this
+      </button>
+
+      {open ? (
+        <div className="lesson-visual-backdrop" role="presentation" onMouseDown={() => setOpen(false)}>
+          <section
+            className="lesson-visual-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={block.title}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <header className="lesson-visual-modal-head">
+              <div>
+                <span>Step {stepIndex + 1} of {steps.length}</span>
+                <h3>{block.title}</h3>
+              </div>
+              <button type="button" onClick={() => setOpen(false)} autoFocus>
+                Close
+              </button>
+            </header>
+
+            <VisualDiagram block={block} step={step} />
+
+            <div className="lesson-visual-step-copy">
+              <h4>{step.title}</h4>
+              <p>{withInlineCode(step.body)}</p>
+            </div>
+
+            <footer className="lesson-visual-controls">
+              <button type="button" onClick={() => setStepIndex(0)}>
+                <FaUndo aria-hidden="true" /> Reset
+              </button>
+              <div>
+                <button
+                  type="button"
+                  disabled={!canGoBack}
+                  onClick={() => setStepIndex((current) => Math.max(0, current - 1))}
+                >
+                  <FaChevronLeft aria-hidden="true" /> Previous
+                </button>
+                <button
+                  type="button"
+                  disabled={!canGoNext}
+                  onClick={() => setStepIndex((current) => Math.min(steps.length - 1, current + 1))}
+                >
+                  Next <FaChevronRight aria-hidden="true" />
+                </button>
+              </div>
+            </footer>
+          </section>
+        </div>
+      ) : null}
+    </figure>
   );
 }
 
@@ -144,6 +388,10 @@ function Block({ block, checkKey, picked, onCheckAnswered }) {
         onPick={(choiceIndex) => onCheckAnswered(checkKey, choiceIndex)}
       />
     );
+  }
+
+  if (block.kind === "visual") {
+    return <VisualBlock block={block} />;
   }
 
   return null;

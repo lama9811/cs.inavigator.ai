@@ -43,6 +43,191 @@
           "body": "A graph is useful when relationships matter more than order. Friends in a network, prerequisites between courses, roads between cities, and links between pages can all be represented as graphs."
         },
         {
+          "kind": "visual",
+          "title": "BFS uses a queue and visited set",
+          "concept": "graphs",
+          "caption": "Watch BFS mark nodes so cycles do not repeat forever.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Start at A",
+              "body": "Put A in the queue and mark it visited.",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 90,
+                    "y": 90,
+                    "active": true,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 210,
+                    "y": 40
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 210,
+                    "y": 140
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 330,
+                    "y": 90
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B"
+                  },
+                  {
+                    "from": "A",
+                    "to": "C"
+                  },
+                  {
+                    "from": "B",
+                    "to": "D"
+                  },
+                  {
+                    "from": "C",
+                    "to": "D"
+                  }
+                ],
+                "queue": [
+                  "A"
+                ]
+              }
+            },
+            {
+              "title": "Visit A's neighbors",
+              "body": "Add B and C because they have not been visited yet.",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 90,
+                    "y": 90,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 210,
+                    "y": 40,
+                    "active": true,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 210,
+                    "y": 140,
+                    "active": true,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 330,
+                    "y": 90
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B",
+                    "active": true
+                  },
+                  {
+                    "from": "A",
+                    "to": "C",
+                    "active": true
+                  },
+                  {
+                    "from": "B",
+                    "to": "D"
+                  },
+                  {
+                    "from": "C",
+                    "to": "D"
+                  }
+                ],
+                "queue": [
+                  "B",
+                  "C"
+                ]
+              }
+            },
+            {
+              "title": "Visit D once",
+              "body": "D can be reached from B and C, but visited keeps it from being added twice.",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 90,
+                    "y": 90,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 210,
+                    "y": 40,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 210,
+                    "y": 140,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 330,
+                    "y": 90,
+                    "active": true,
+                    "note": "visited"
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B"
+                  },
+                  {
+                    "from": "A",
+                    "to": "C"
+                  },
+                  {
+                    "from": "B",
+                    "to": "D",
+                    "active": true
+                  },
+                  {
+                    "from": "C",
+                    "to": "D"
+                  }
+                ],
+                "queue": [
+                  "C",
+                  "D"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "kind": "code",
           "caption": "An adjacency list maps each node to its neighbors.",
           "variants": {

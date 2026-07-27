@@ -27,7 +27,8 @@
     {"id": "linked-lists", "label": "Linked Lists", "file": "linked-lists", "track": "advanced", "blurb": "Follow nodes, links, insertion, and deletion step by step."},
     {"id": "recursion-patterns", "label": "Recursion Patterns", "file": "recursion-patterns", "track": "advanced", "blurb": "Solve problems with base cases and smaller calls."},
     {"id": "binary-search", "label": "Binary Search", "file": "binary-search", "track": "advanced", "blurb": "Cut a sorted search space in half safely."},
-    {"id": "two-pointers-sliding-window", "label": "Two Pointers & Sliding Window", "file": "two-pointers-sliding-window", "track": "advanced", "blurb": "Move indexes with purpose instead of checking every pair."},
+    {"id": "two-pointers", "label": "Two Pointers", "file": "two-pointers", "track": "advanced", "blurb": "Move two indexes with a clear rule instead of checking every pair."},
+    {"id": "sliding-window", "label": "Sliding Window", "file": "sliding-window", "track": "advanced", "blurb": "Grow and shrink a current range while keeping its state accurate."},
     {"id": "trees", "label": "Trees", "file": "trees", "track": "advanced", "blurb": "Trace parent/child structure with traversal patterns."},
     {"id": "graphs", "label": "Graphs", "file": "graphs", "track": "advanced", "blurb": "Visit connected data with BFS, DFS, and a visited set."}
   ],

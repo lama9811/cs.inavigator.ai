@@ -57,6 +57,61 @@
           "body": "A queue is a linear data structure. It stores items in arrival order. The first item added is the first item removed."
         },
         {
+          "kind": "visual",
+          "title": "Watch FIFO in action",
+          "concept": "queues",
+          "caption": "Step through enqueue and dequeue so front and back are clear.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Start empty",
+              "body": "The queue has no waiting items.",
+              "state": {
+                "queue": [],
+                "note": "A queue removes the oldest item first."
+              }
+            },
+            {
+              "title": "Enqueue A",
+              "body": "A joins at the back.",
+              "state": {
+                "queue": [
+                  "A"
+                ],
+                "active": [
+                  0
+                ]
+              }
+            },
+            {
+              "title": "Enqueue B",
+              "body": "B joins behind A.",
+              "state": {
+                "queue": [
+                  "A",
+                  "B"
+                ],
+                "active": [
+                  1
+                ]
+              }
+            },
+            {
+              "title": "Dequeue",
+              "body": "A leaves first because A waited the longest.",
+              "state": {
+                "queue": [
+                  "B"
+                ],
+                "active": [
+                  0
+                ],
+                "note": "dequeue returned A"
+              }
+            }
+          ]
+        },
+        {
           "kind": "text",
           "body": "That rule is called FIFO, which stands for first in, first out. Think about a line at a help desk. The person who arrived first should be helped first."
         },

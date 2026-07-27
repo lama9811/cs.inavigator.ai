@@ -52,6 +52,153 @@
           "body": "A linked list does not store items side by side like an array. It stores small objects called nodes. Each node carries one value and a link to the next node."
         },
         {
+          "kind": "visual",
+          "title": "Do not lose the link",
+          "concept": "linked-lists",
+          "caption": "Watch how a new node is inserted between two existing nodes.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Start with two nodes",
+              "body": "A points to C. Head points to A.",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 90,
+                    "y": 95,
+                    "note": "head"
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 310,
+                    "y": 95
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "C"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "Create B",
+              "body": "Make the new node before changing links.",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 90,
+                    "y": 95
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 200,
+                    "y": 40,
+                    "active": true
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 310,
+                    "y": 95
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "C"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "Point B to C",
+              "body": "B should remember the node that used to come after A.",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 90,
+                    "y": 95
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 200,
+                    "y": 40,
+                    "active": true
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 310,
+                    "y": 95
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "C"
+                  },
+                  {
+                    "from": "B",
+                    "to": "C",
+                    "active": true
+                  }
+                ]
+              }
+            },
+            {
+              "title": "Point A to B",
+              "body": "Now A can point to B. The final order is A, B, C.",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 90,
+                    "y": 95,
+                    "active": true
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 200,
+                    "y": 95,
+                    "active": true
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 310,
+                    "y": 95
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B",
+                    "active": true
+                  },
+                  {
+                    "from": "B",
+                    "to": "C",
+                    "active": true
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
           "kind": "code",
           "caption": "A minimal node class.",
           "variants": {
