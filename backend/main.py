@@ -6274,10 +6274,10 @@ async def read_lesson(language: str, category: str):
 
 
 @app.get("/api/coding/learn/{language}/{category}/refresher")
-async def read_lesson_refresher(language: str, category: str):
+async def read_lesson_refresher(language: str, category: str, question_id: Optional[str] = None):
     """The compact recap shown in the Learn tab INSIDE a quiz question — a reminder
     mid-question, not the whole lesson."""
-    refresher = _lesson_call(lessons.get_refresher, language, category)
+    refresher = _lesson_call(lessons.get_refresher, language, category, question_id)
     return {
         "language": lessons.normalize_language(language),
         "category": category,

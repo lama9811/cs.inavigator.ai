@@ -106,19 +106,20 @@ const PRACTICE_TOPIC_TO_LESSON = {
   arrays: "lists",
   strings: "strings",
   conditionals: "conditionals",
-  recursion: "functions",
-  sets: "sets",
-  "hash maps": "dictionaries",
+  recursion: "recursion-patterns",
+  sets: "hash-maps-sets",
+  "hash maps": "hash-maps-sets",
+  stacks: "stacks-queues",
+  queues: "stacks-queues",
+  "linked lists": "linked-lists",
+  "binary search": "binary-search",
+  "two pointers": "two-pointers-sliding-window",
+  "sliding window": "two-pointers-sliding-window",
+  trees: "trees",
+  graphs: "graphs",
 };
 function lessonCategoryForPracticeTopic(topic, languageKey) {
   const normalized = String(topic || "").toLowerCase();
-  if (normalized === "hash maps") {
-    if (languageKey === "java") return "maps";
-    if (languageKey === "javascript") return "objects";
-    if (languageKey === "cpp") return null;
-    return "dictionaries";
-  }
-  if (normalized === "sets" && languageKey !== "python") return null;
   return PRACTICE_TOPIC_TO_LESSON[normalized] || null;
 }
 // Resolve a prerequisite label to a real Practice Library topic, or null if the library

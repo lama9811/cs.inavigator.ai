@@ -9,6 +9,24 @@
   ],
   "refresher": "Operators are the symbols that combine values. `+ - * /` do arithmetic and `%` gives the remainder. Division is the one to watch: if both sides are `int`, Java divides as integers and throws the fraction away, so `7 / 2` is 3. Make one side a `double` to get 3.5. Comparisons like `==` and `<` produce a `boolean`, and `&&`, `||`, and `!` combine those booleans. Assignment is `=`. Comparison is `==`. They are different operators.",
   "refresher_code": "int total = 7;\nint count = 2;\n\nSystem.out.println(total / count);\n// 3\n\nSystem.out.println(total / 2.0);\n// 3.5",
+  "learn_cards": {
+    "operators-lesson-check-1": {
+      "title": "Integer division happens before storage",
+      "body": "This question is about how Java evaluates arithmetic. Java computes the right side first, then stores the result.",
+      "example": "double average = 7 / 2;\n// 3.0",
+      "notice": "If both operands are `int`, Java uses integer division even if the answer is stored in a `double` later.",
+      "mistake": "The `double` on the left does not reach back and change `7 / 2` into decimal division.",
+      "section_id": "core"
+    },
+    "operators-lesson-check-2": {
+      "title": "Trace compound assignment first",
+      "body": "This question is about the order of updates. Handle `x += 5` before you divide.",
+      "example": "int x = 10;\nx += 5;\n// x is now 15",
+      "notice": "After the update, `15 / 3` is exact, so the output is `5`.",
+      "mistake": "Do not assume every division question loses a fraction. Here there is no fraction to lose.",
+      "section_id": "core"
+    }
+  },
   "blocks": [
     {
       "kind": "text",

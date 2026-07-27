@@ -1,0 +1,38 @@
+{
+  "_note": "Original advanced lesson. Language-specific code appears through block variants.",
+  "title": "Recursion Patterns",
+  "summary": "Solve a problem by handling a small case, then calling the same function on a smaller version.",
+  "minutes": 12,
+  "error_classes": ["wrong_answer", "runtime", "timeout"],
+  "refresher": "A recursive function needs a base case that stops and a recursive call that moves closer to that stop. If the call does not shrink the problem, recursion can run forever.",
+  "refresher_code": "if base_case: return answer\nreturn solve(smaller_input)",
+  "sections": [
+    {
+      "id": "base-case",
+      "title": "Base case first",
+      "summary": "The base case is the stopping rule.",
+      "question_ids": ["advanced-recursion-base-case", "advanced-recursion-trace", "advanced-recursion-stack"],
+      "blocks": [
+        {"kind": "text", "body": "A base case handles the smallest version directly. For factorial, `0!` and `1!` are both 1, so the function can stop there."},
+        {"kind": "code", "caption": "Each call uses a smaller n until it reaches the base case.", "variants": {
+          "python": {"code": "def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)", "output": ""},
+          "java": {"code": "static long factorial(long n) {\n    if (n <= 1) return 1;\n    return n * factorial(n - 1);\n}", "output": ""},
+          "javascript": {"code": "function factorial(n) {\n  if (n <= 1) return 1;\n  return n * factorial(n - 1);\n}", "output": ""},
+          "cpp": {"code": "long long factorial(long long n) {\n  if (n <= 1) return 1;\n  return n * factorial(n - 1);\n}", "output": ""}
+        }},
+        {"kind": "check", "prompt": "What is the job of the base case?", "choices": ["Stop the recursion", "Make the list sorted", "Skip the return value", "Create a queue"], "answer_index": 0, "why": "Without a base case, the function has no clear place to stop."}
+      ]
+    },
+    {
+      "id": "smaller-call",
+      "title": "Make the problem smaller",
+      "summary": "Every recursive call must move toward the base case.",
+      "question_ids": ["advanced-recursion-shrink", "advanced-recursion-infinite", "advanced-recursion-order", "advanced-recursion-tree", "advanced-recursion-when-not"],
+      "blocks": [
+        {"kind": "text", "body": "The recursive call should not repeat the same input. If `factorial(n)` calls `factorial(n)` again, nothing changes and the program keeps calling itself."},
+        {"kind": "compare", "caption": "The call must move toward the stopping rule.", "wrong_label": "Does not shrink", "wrong": "return n * factorial(n);", "right_label": "Shrinks by one", "right": "return n * factorial(n - 1);"},
+        {"kind": "check", "prompt": "Why does `factorial(n - 1)` eventually stop?", "choices": ["n gets smaller until it reaches the base case", "n becomes a string", "The compiler guesses the answer", "The loop removes the function"], "answer_index": 0, "why": "Each call gets closer to `n <= 1`, where the function returns without another call."}
+      ]
+    }
+  ]
+}

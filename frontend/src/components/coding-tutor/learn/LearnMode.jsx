@@ -9,7 +9,7 @@ import LessonView from "./LessonView";
 //
 // Four URL-backed views keep the address bar, Back/Forward, and refresh in sync:
 //   languages -> the four language cards
-//   tracks    -> Beginner and Intermediate cards for one language
+//   tracks    -> Beginner, Intermediate, and Advanced cards for one language
 //   lessons   -> the selected track's smaller lesson list
 //   lesson    -> one authored lesson
 
@@ -29,6 +29,14 @@ const TRACKS = [
     description:
       "Build on Part 1 with multi-step problems and the next concepts that matter most in this language.",
     cta: "Explore next steps",
+  },
+  {
+    id: "advanced",
+    label: "Advanced Track",
+    kicker: "Interview ready",
+    description:
+      "Break down data structures and coding patterns before trying harder practice.",
+    cta: "Study advanced patterns",
   },
 ];
 
@@ -117,7 +125,11 @@ function TrackCards({ language, languageLabel, categories, onPick, onBack }) {
           const ready = trackCategories.filter((category) => category.has_lesson).length;
           const completed = countReadLessons(language, trackCategories);
           const percent = ready ? Math.round((completed / ready) * 100) : 0;
-          const accent = track.id === "beginner" ? "#16a34a" : languageAccent;
+          const accent = track.id === "beginner"
+            ? "#16a34a"
+            : track.id === "advanced"
+              ? "#ea580c"
+              : languageAccent;
 
           return (
             <button

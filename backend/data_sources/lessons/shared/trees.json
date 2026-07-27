@@ -1,0 +1,38 @@
+{
+  "_note": "Original advanced lesson. Language-specific code appears through block variants.",
+  "title": "Trees",
+  "summary": "A tree stores values in parent and child nodes, with one root at the top.",
+  "minutes": 14,
+  "error_classes": ["wrong_answer", "runtime"],
+  "refresher": "A tree node stores a value and links to child nodes. Traversal means visiting nodes in a clear order, such as root-left-right or level by level.",
+  "refresher_code": "visit node, then visit children",
+  "sections": [
+    {
+      "id": "tree-node",
+      "title": "Tree node shape",
+      "summary": "A binary tree node has a value, a left child, and a right child.",
+      "question_ids": ["advanced-tree-root", "advanced-tree-leaf", "advanced-tree-null"],
+      "blocks": [
+        {"kind": "text", "body": "A tree starts at the root. From there, each node can point to children. A binary tree has at most two children: left and right."},
+        {"kind": "code", "caption": "This is the basic binary tree node shape.", "variants": {
+          "python": {"code": "class TreeNode:\n    def __init__(self, value, left=None, right=None):\n        self.value = value\n        self.left = left\n        self.right = right", "output": ""},
+          "java": {"code": "class TreeNode {\n    int value;\n    TreeNode left;\n    TreeNode right;\n    TreeNode(int value) { this.value = value; }\n}", "output": ""},
+          "javascript": {"code": "class TreeNode {\n  constructor(value, left = null, right = null) {\n    this.value = value;\n    this.left = left;\n    this.right = right;\n  }\n}", "output": ""},
+          "cpp": {"code": "struct TreeNode {\n  long long value;\n  TreeNode* left;\n  TreeNode* right;\n  TreeNode(long long v) : value(v), left(nullptr), right(nullptr) {}\n};", "output": ""}
+        }},
+        {"kind": "check", "prompt": "What is the root?", "choices": ["The first/top node of the tree", "The last leaf only", "A sorted array", "A queue operation"], "answer_index": 0, "why": "Traversal usually starts at the root, then moves to children."}
+      ]
+    },
+    {
+      "id": "traversal",
+      "title": "Traversal order",
+      "summary": "Traversal is the order you visit nodes.",
+      "question_ids": ["advanced-tree-preorder", "advanced-tree-inorder", "advanced-tree-level-order", "advanced-tree-height", "advanced-tree-parsons"],
+      "blocks": [
+        {"kind": "text", "body": "Depth-first traversal follows one branch before backing up. Breadth-first traversal visits nodes level by level using a queue."},
+        {"kind": "compare", "caption": "Different traversals answer different questions.", "wrong_label": "Unclear", "wrong": "Visit nodes somehow", "right_label": "Clear order", "right": "Preorder: node, left, right"},
+        {"kind": "check", "prompt": "Which structure helps visit a tree level by level?", "choices": ["Queue", "Single integer", "String builder only", "Modulo"], "answer_index": 0, "why": "A queue keeps older discovered nodes first, which matches level order."}
+      ]
+    }
+  ]
+}

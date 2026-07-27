@@ -39,7 +39,7 @@ LANGUAGE_KEYS = ("python", "java", "javascript", "cpp")
 
 # Question kinds the UI knows how to render. Anything else is a content error.
 VALID_KINDS = {"mcq-output", "mcq-behavior", "typein", "parsons"}
-VALID_TRACKS = {"beginner", "intermediate"}
+VALID_TRACKS = {"beginner", "intermediate", "advanced"}
 
 # ---------------------------------------------------------------------------
 # Raised for bad input (unknown language/category) — the API layer maps these
@@ -104,7 +104,7 @@ def categories_for_language(language: str) -> list[dict[str, Any]]:
     """Shared, core language-specific, and optional lesson-only categories.
 
     Each entry carries id/label/blurb/file plus ``scope`` ("shared" or
-    "language"), ``track`` ("beginner" or "intermediate"), and a live question
+    "language"), ``track`` ("beginner", "intermediate", or "advanced"), and a live question
     count. Learn uses the track metadata to present a smaller first step without
     duplicating or moving quiz and lesson content.
     """

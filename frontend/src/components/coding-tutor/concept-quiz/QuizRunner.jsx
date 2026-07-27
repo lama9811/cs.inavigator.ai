@@ -206,7 +206,7 @@ function AnswerPanel({ question, answer, onAnswer }) {
 // not a chapter. It comes from the SAME file as the full lesson (see backend/lessons.py),
 // so the two can never drift apart and tell them different things. If a reminder isn't
 // enough, "Read the full lesson" takes them to Learn on this exact topic.
-function LearnTab({ apiBase, language, category, categoryLabel, onOpenLesson }) {
+function LearnTab({ apiBase, language, category, categoryLabel, questionId, onOpenLesson }) {
   const [refresher, setRefresher] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -214,7 +214,8 @@ function LearnTab({ apiBase, language, category, categoryLabel, onOpenLesson }) 
     let alive = true;
     setLoading(true);
     setRefresher(null);
-    fetch(`${apiBase}/api/coding/learn/${language}/${category}/refresher`)
+    const query = questionId ? `?question_id=${encodeURIComponent(questionId)}` : "";
+    fetch(`${apiBase}/api/coding/learn/${language}/${category}/refresher${query}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (alive) setRefresher(data?.refresher || null);
@@ -230,7 +231,7 @@ function LearnTab({ apiBase, language, category, categoryLabel, onOpenLesson }) 
     return () => {
       alive = false;
     };
-  }, [apiBase, language, category]);
+  }, [apiBase, language, category, questionId]);
 
   if (loading) return <div className="cq-learn-panel"><p>Loading…</p></div>;
 
@@ -251,6 +252,16 @@ function LearnTab({ apiBase, language, category, categoryLabel, onOpenLesson }) 
     <div className="cq-learn-panel">
       <h4>{refresher.title}</h4>
       <p className="cq-learn-refresher">{withInlineCode(refresher.refresher)}</p>
+      {refresher.notice ? (
+        <p className="cq-learn-refresher">
+          <strong>What to notice:</strong> {withInlineCode(refresher.notice)}
+        </p>
+      ) : null}
+      {refresher.mistake ? (
+        <p className="cq-learn-refresher">
+          <strong>Common mistake:</strong> {withInlineCode(refresher.mistake)}
+        </p>
+      ) : null}
       {refresher.refresher_code ? (
         <pre className="cq-learn-code">
           <code>{refresher.refresher_code}</code>
@@ -600,6 +611,7 @@ export default function QuizRunner({
                 language={language}
                 category={category}
                 categoryLabel={categoryLabel}
+                questionId={question.id}
                 onOpenLesson={onOpenLesson}
               />
             )}

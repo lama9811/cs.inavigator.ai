@@ -1,0 +1,38 @@
+{
+  "_note": "Original advanced lesson. Language-specific code appears through block variants.",
+  "title": "Two Pointers & Sliding Window",
+  "summary": "Use indexes that move with a rule instead of trying every possible pair or slice.",
+  "minutes": 12,
+  "error_classes": ["wrong_answer", "timeout"],
+  "refresher": "Two pointers track two positions. A sliding window tracks a start and end around a current range. Move the pointer that helps the rule become true or stay true.",
+  "refresher_code": "left = 0\nfor right in range(n): update window",
+  "sections": [
+    {
+      "id": "two-pointers",
+      "title": "Two pointers",
+      "summary": "Two indexes let you compare two positions without nested loops.",
+      "question_ids": ["advanced-tp-purpose", "advanced-tp-sorted-sum", "advanced-tp-large-sum", "advanced-tp-common-bug"],
+      "blocks": [
+        {"kind": "text", "body": "Two pointers are useful when the data is sorted or when you need to compare both ends. One pointer might move from the left while the other moves from the right."},
+        {"kind": "compare", "caption": "The pointer move should follow the reason from the problem.", "wrong_label": "No rule", "wrong": "Move both pointers every time", "right_label": "Rule-based", "right": "Move left when the sum is too small; move right when it is too large"},
+        {"kind": "check", "prompt": "What makes two pointers better than checking every pair?", "choices": ["Each move removes choices you no longer need", "It guesses randomly", "It only works on strings", "It removes the need for conditions"], "answer_index": 0, "why": "The pointer rule narrows the search instead of trying every combination."}
+      ]
+    },
+    {
+      "id": "sliding-window",
+      "title": "Sliding window",
+      "summary": "A window is a current slice of the data.",
+      "question_ids": ["advanced-window-meaning", "advanced-window-shrink", "advanced-window-trace", "advanced-window-parsons"],
+      "blocks": [
+        {"kind": "text", "body": "A sliding window grows by moving the right edge. When the window breaks a rule, shrink it by moving the left edge."},
+        {"kind": "code", "caption": "The window grows to include each new value, then shrinks while it is too large.", "variants": {
+          "python": {"code": "left = 0\ncurrent = 0\nfor right, value in enumerate(nums):\n    current += value\n    while current > limit:\n        current -= nums[left]\n        left += 1", "output": ""},
+          "java": {"code": "int left = 0, current = 0;\nfor (int right = 0; right < nums.length; right++) {\n    current += nums[right];\n    while (current > limit) {\n        current -= nums[left];\n        left++;\n    }\n}", "output": ""},
+          "javascript": {"code": "let left = 0, current = 0;\nfor (let right = 0; right < nums.length; right++) {\n  current += nums[right];\n  while (current > limit) {\n    current -= nums[left];\n    left++;\n  }\n}", "output": ""},
+          "cpp": {"code": "long long left = 0, current = 0;\nfor (long long right = 0; right < (long long)nums.size(); right++) {\n  current += nums[right];\n  while (current > limit) {\n    current -= nums[left];\n    left++;\n  }\n}", "output": ""}
+        }},
+        {"kind": "check", "prompt": "When should the left side of a sliding window move?", "choices": ["When the current window breaks the rule", "Before adding any item", "Only at the end of the program", "Never"], "answer_index": 0, "why": "The left pointer shrinks the window until the rule is true again."}
+      ]
+    }
+  ]
+}

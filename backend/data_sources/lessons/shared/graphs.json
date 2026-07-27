@@ -1,0 +1,38 @@
+{
+  "_note": "Original advanced lesson. Language-specific code appears through block variants.",
+  "title": "Graphs",
+  "summary": "A graph stores items as nodes and connections as edges.",
+  "minutes": 14,
+  "error_classes": ["wrong_answer", "runtime", "timeout"],
+  "refresher": "A graph is made of nodes and edges. Use a visited set so traversal does not loop forever when edges lead back to a node you already saw.",
+  "refresher_code": "visited = set(); visit neighbors",
+  "sections": [
+    {
+      "id": "graph-shape",
+      "title": "Nodes, edges, and neighbors",
+      "summary": "A graph can be stored as each node mapped to its neighbors.",
+      "question_ids": ["advanced-graph-node-edge", "advanced-graph-adj-list", "advanced-graph-components"],
+      "blocks": [
+        {"kind": "text", "body": "A graph does not have one required starting shape like a list. Most coding problems give you edges or a neighbor list. Your first job is to know how to ask: from this node, where can I go next?"},
+        {"kind": "code", "caption": "An adjacency list maps each node to the nodes beside it.", "variants": {
+          "python": {"code": "graph = {\n    \"A\": [\"B\", \"C\"],\n    \"B\": [\"A\"],\n    \"C\": [\"A\"]\n}", "output": ""},
+          "java": {"code": "Map<String, List<String>> graph = Map.of(\n    \"A\", List.of(\"B\", \"C\"),\n    \"B\", List.of(\"A\"),\n    \"C\", List.of(\"A\")\n);", "output": ""},
+          "javascript": {"code": "const graph = new Map([\n  [\"A\", [\"B\", \"C\"]],\n  [\"B\", [\"A\"]],\n  [\"C\", [\"A\"]]\n]);", "output": ""},
+          "cpp": {"code": "std::unordered_map<std::string, std::vector<std::string>> graph;\ngraph[\"A\"] = {\"B\", \"C\"};\ngraph[\"B\"] = {\"A\"};\ngraph[\"C\"] = {\"A\"};", "output": ""}
+        }},
+        {"kind": "check", "prompt": "What does an adjacency list store?", "choices": ["Each node's neighbors", "Only the graph size", "Only sorted values", "Only a return type"], "answer_index": 0, "why": "The neighbor list tells traversal where it can move next."}
+      ]
+    },
+    {
+      "id": "visited-set",
+      "title": "Use a visited set",
+      "summary": "Visited prevents repeated work and infinite loops.",
+      "question_ids": ["advanced-graph-visited", "advanced-graph-bfs", "advanced-graph-dfs", "advanced-graph-cycle", "advanced-graph-parsons"],
+      "blocks": [
+        {"kind": "text", "body": "Graphs can have cycles. A cycle means you can follow edges and come back to a node you already visited. Without a visited set, DFS or BFS may repeat forever."},
+        {"kind": "compare", "caption": "Mark a node when you decide to visit it.", "wrong_label": "Can revisit forever", "wrong": "for neighbor in graph[node]: visit(neighbor)", "right_label": "Checks first", "right": "if neighbor not in visited: visit(neighbor)"},
+        {"kind": "check", "prompt": "Why do graph traversals need a visited set?", "choices": ["To avoid visiting the same node again", "To make every graph sorted", "To remove all edges", "To change strings into numbers"], "answer_index": 0, "why": "Visited keeps traversal from repeating nodes, especially in cycles."}
+      ]
+    }
+  ]
+}

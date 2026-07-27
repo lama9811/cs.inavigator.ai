@@ -4,6 +4,9 @@ All notable changes to CS Navigator are documented here.
 
 ## [Unreleased]
 ### Added
+- **Advanced Coding Tutor track.** Learn and Concept Quiz now support a third Advanced track for core data-structure and interview-pattern topics across Python, Java, JavaScript, and C++.
+- **Advanced V1 lessons and quizzes.** Added sectioned advanced lessons plus 8-question concept quiz banks for Stacks & Queues, Hash Maps & Sets, Linked Lists, Recursion Patterns, Binary Search, Two Pointers & Sliding Window, Trees, and Graphs.
+- **Question-specific Learn cards.** The in-question Learn tab can now show a targeted micro-lesson for the current question, fall back to the matching lesson section, and then fall back to the category refresher.
 - **Coding Tutor learning-style preference.** Students can choose whether they want examples first, to try first and then get hints, or to hear the concept before code. The preference is saved per user and used by Coding Tutor recommendations and tutor context.
 - **Section-based lesson flow and completion tracking.** Learn lessons can be split into smaller sections, with previous/next controls, a final Practice CTA, and completion gated on answering the lesson’s check-yourself questions.
 - **Concept quiz progress indicators.** Concept quiz language/category views now show in-progress and completed status so students can return to unfinished work.
@@ -12,6 +15,8 @@ All notable changes to CS Navigator are documented here.
 - **Backend-backed last workspace state.** Coding Tutor now remembers the last practice/interview problem, language, and source per user so another device can reopen the same workspace when localStorage has no draft.
 
 ### Changed
+- Learn track cards and Concept Quiz category accordions now treat Advanced as a first-class track alongside Beginner and Intermediate.
+- Coding Tutor weak-topic routing now sends advanced practice topics such as graphs, trees, stacks, queues, binary search, and sliding window to matching advanced lessons.
 - Coding Tutor Home recommendations now route honestly: try-first learners open Code practice filtered to the focus topic, while example-first/concept-first learners open the matching lesson when available.
 - Coding Tutor light-mode helper surfaces use the navy learning palette instead of decorative orange where the accent was clashing.
 - "Explain error" in the Coding Tutor workspace now starts Socratic-first by asking what the student expected before explaining the error and one next fix.

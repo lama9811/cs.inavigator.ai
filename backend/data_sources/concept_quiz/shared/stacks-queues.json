@@ -1,0 +1,104 @@
+{
+  "_note": "Original advanced concept questions for stacks and queues.",
+  "concept": "stacks-queues",
+  "concept_label": "Stacks & Queues",
+  "questions": [
+    {
+      "id": "advanced-stack-lifo",
+      "concept": "stacks-queues",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Stack removal order",
+      "prompt": "A stack receives A, then B, then C. One item is popped. Which item comes out?",
+      "choices": ["C", "A", "B", "Nothing"],
+      "answer_index": 0,
+      "explanation": "A stack is last-in, first-out. C was added last, so C leaves first.",
+      "variants": {"python": {}, "java": {}, "javascript": {}, "cpp": {}}
+    },
+    {
+      "id": "advanced-queue-fifo",
+      "concept": "stacks-queues",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Queue removal order",
+      "prompt": "A queue receives A, then B, then C. One item is removed. Which item comes out?",
+      "choices": ["A", "C", "B", "Nothing"],
+      "answer_index": 0,
+      "explanation": "A queue is first-in, first-out. A waited the longest, so A leaves first.",
+      "variants": {"python": {}, "java": {}, "javascript": {}, "cpp": {}}
+    },
+    {
+      "id": "advanced-stack-parentheses",
+      "concept": "stacks-queues",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Matching parentheses",
+      "prompt": "Why is a stack useful for checking balanced parentheses?",
+      "choices": ["The newest opening bracket should match the next closing bracket.", "It sorts brackets alphabetically.", "It removes all closing brackets.", "It counts only vowels."],
+      "answer_index": 0,
+      "explanation": "Nested parentheses close in reverse order. That is exactly stack order.",
+      "variants": {"python": {}, "java": {}, "javascript": {}, "cpp": {}}
+    },
+    {
+      "id": "advanced-queue-bfs",
+      "concept": "stacks-queues",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Level order traversal",
+      "prompt": "Which structure helps process nodes level by level?",
+      "choices": ["Queue", "Stack", "One counter only", "Modulo"],
+      "answer_index": 0,
+      "explanation": "A queue keeps earlier discovered nodes ahead of newer ones, which fits level order.",
+      "variants": {"python": {}, "java": {}, "javascript": {}, "cpp": {}}
+    },
+    {
+      "id": "advanced-stack-trace",
+      "concept": "stacks-queues",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Trace stack operations",
+      "code": "push 2\npush 5\npop\npush 7\npop",
+      "prompt": "What values are popped, in order?",
+      "choices": ["5, then 7", "2, then 7", "7, then 5", "5, then 2"],
+      "answer_index": 0,
+      "explanation": "The first pop removes 5. After 7 is pushed, the next pop removes 7.",
+      "variants": {"python": {}, "java": {}, "javascript": {}, "cpp": {}}
+    },
+    {
+      "id": "advanced-queue-trace",
+      "concept": "stacks-queues",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Trace queue operations",
+      "code": "enqueue 2\nenqueue 5\ndequeue\nenqueue 7\ndequeue",
+      "prompt": "What values are removed, in order?",
+      "choices": ["2, then 5", "5, then 7", "7, then 2", "2, then 7"],
+      "answer_index": 0,
+      "explanation": "The queue removes the oldest waiting item each time: first 2, then 5.",
+      "variants": {"python": {}, "java": {}, "javascript": {}, "cpp": {}}
+    },
+    {
+      "id": "advanced-stack-parsons",
+      "concept": "stacks-queues",
+      "difficulty": "medium",
+      "kind": "parsons",
+      "title": "Stack duplicate checker",
+      "prompt": "Arrange the steps to use a stack to reverse a list.",
+      "lines": ["Create an empty stack.", "Push each item from the original list.", "Create an empty result list.", "Pop items until the stack is empty and append each one.", "Return the result list."],
+      "explanation": "Pushing then popping reverses order because the newest item leaves first.",
+      "variants": {"python": {}, "java": {}, "javascript": {}, "cpp": {}}
+    },
+    {
+      "id": "advanced-queue-mistake",
+      "concept": "stacks-queues",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Wrong end bug",
+      "prompt": "A queue implementation adds to the back but also removes from the back. What structure does it behave like?",
+      "choices": ["Stack", "Queue", "Hash map", "Tree"],
+      "answer_index": 0,
+      "explanation": "Adding and removing from the same end creates last-in, first-out behavior, which is a stack.",
+      "variants": {"python": {}, "java": {}, "javascript": {}, "cpp": {}}
+    }
+  ]
+}

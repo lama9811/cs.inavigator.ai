@@ -1,0 +1,38 @@
+{
+  "_note": "Original advanced lesson. Language-specific code appears through block variants.",
+  "title": "Linked Lists",
+  "summary": "A linked list stores values in nodes, and each node points to the next node.",
+  "minutes": 14,
+  "error_classes": ["wrong_answer", "runtime"],
+  "refresher": "A node holds data and a link to the next node. To insert or delete, change links carefully so the list does not lose the rest of itself.",
+  "refresher_code": "node.value + node.next",
+  "sections": [
+    {
+      "id": "node-shape",
+      "title": "The node shape",
+      "summary": "A node is one value plus one link.",
+      "question_ids": ["advanced-node-parts", "advanced-head-meaning", "advanced-traverse-list", "advanced-linked-vs-array", "advanced-cycle-risk"],
+      "blocks": [
+        {"kind": "text", "body": "A linked list is not stored by index like an array. You start at the head node and follow `next` links until the list ends."},
+        {"kind": "code", "caption": "The node class is the building block. Value stores data; next points to the next node.", "variants": {
+          "python": {"code": "class Node:\n    def __init__(self, value, next=None):\n        self.value = value\n        self.next = next", "output": ""},
+          "java": {"code": "class Node {\n    int value;\n    Node next;\n\n    Node(int value) {\n        this.value = value;\n    }\n}", "output": ""},
+          "javascript": {"code": "class Node {\n  constructor(value, next = null) {\n    this.value = value;\n    this.next = next;\n  }\n}", "output": ""},
+          "cpp": {"code": "struct Node {\n  long long value;\n  Node* next;\n\n  Node(long long v) : value(v), next(nullptr) {}\n};", "output": ""}
+        }},
+        {"kind": "check", "prompt": "What does `next` store?", "choices": ["A link to the next node", "The list length", "The previous value only", "A sorted copy"], "answer_index": 0, "why": "`next` tells the program which node comes after the current one."}
+      ]
+    },
+    {
+      "id": "insert-delete",
+      "title": "Changing links",
+      "summary": "Insert and delete by rewiring links in the right order.",
+      "question_ids": ["advanced-insert-after", "advanced-delete-after", "advanced-lost-link"],
+      "blocks": [
+        {"kind": "text", "body": "To insert after a node, point the new node at the old next node first. Then point the current node at the new node. That order keeps the rest of the list reachable."},
+        {"kind": "compare", "caption": "The order matters because losing a link can lose the rest of the list.", "wrong_label": "Loses the old next node", "wrong": "current.next = newNode\nnewNode.next = current.next", "right_label": "Keeps the chain", "right": "newNode.next = current.next\ncurrent.next = newNode"},
+        {"kind": "check", "prompt": "Why save or reuse the old `next` link before overwriting it?", "choices": ["So the rest of the list is not lost", "So the value becomes bigger", "So indexes start at one", "So the node sorts itself"], "answer_index": 0, "why": "If you overwrite the only link to the rest of the list, those nodes become unreachable."}
+      ]
+    }
+  ]
+}

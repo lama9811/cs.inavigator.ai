@@ -41,6 +41,7 @@ from typing import Any, Optional
 
 BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 LESSONS_DIR = os.path.join(BACKEND_DIR, "data_sources", "lessons")
+SHARED_LESSONS_DIR = os.path.join(LESSONS_DIR, "shared")
 
 LANGUAGE_KEYS = ("python", "java", "javascript", "cpp")
 
@@ -94,6 +95,15 @@ def _lesson_path(language: str, category_id: str) -> str:
     return os.path.join(LESSONS_DIR, language, f"{safe}.json")
 
 
+def _shared_lesson_path(category_id: str) -> str:
+    safe = os.path.basename((category_id or "").strip())
+    return os.path.join(SHARED_LESSONS_DIR, f"{safe}.json")
+
+
+def _lesson_path_candidates(language: str, category_id: str) -> list[str]:
+    return [_lesson_path(language, category_id), _shared_lesson_path(category_id)]
+
+
 def _read_json(path: str) -> Any:
     mtime = os.path.getmtime(path)
     cached = _file_cache.get(path)
@@ -108,9 +118,22 @@ def _read_json(path: str) -> Any:
     return data
 
 
-def _normalize_block(raw: Any, *, where: str) -> dict[str, Any]:
+def _apply_language_variant(raw: dict[str, Any], language: str | None) -> dict[str, Any]:
+    variants = raw.get("variants")
+    if not language or not isinstance(variants, dict):
+        return raw
+    variant = variants.get(language)
+    if not isinstance(variant, dict):
+        return raw
+    merged = {**raw, **variant}
+    merged.pop("variants", None)
+    return merged
+
+
+def _normalize_block(raw: Any, *, where: str, language: str | None = None) -> dict[str, Any]:
     if not isinstance(raw, dict):
         raise LessonDataError(f"{where}: a lesson block must be an object.")
+    raw = _apply_language_variant(raw, language)
     kind = str(raw.get("kind", "") or "").strip()
     if kind not in VALID_BLOCKS:
         raise LessonDataError(f"{where}: unknown block kind '{kind}'.")
@@ -193,7 +216,7 @@ def _normalize_block(raw: Any, *, where: str) -> dict[str, Any]:
     return block
 
 
-def _normalize_section(raw: Any, *, where: str) -> dict[str, Any]:
+def _normalize_section(raw: Any, *, where: str, language: str | None = None) -> dict[str, Any]:
     if not isinstance(raw, dict):
         raise LessonDataError(f"{where}: a lesson section must be an object.")
 
@@ -216,10 +239,42 @@ def _normalize_section(raw: Any, *, where: str) -> dict[str, Any]:
             str(q).strip() for q in (raw.get("question_ids") or []) if str(q).strip()
         ],
         "blocks": [
-            _normalize_block(block, where=f"{where}.blocks[{i}]")
+            _normalize_block(block, where=f"{where}.blocks[{i}]", language=language)
             for i, block in enumerate(blocks_raw)
         ],
     }
+
+
+def _normalize_learn_cards(raw: Any, *, where: str) -> dict[str, dict[str, str]]:
+    """Optional question-specific mini-lessons for the in-quiz Learn tab."""
+    if raw in (None, ""):
+        return {}
+    if not isinstance(raw, dict):
+        raise LessonDataError(f"{where}: learn_cards must be an object keyed by question id.")
+
+    cards: dict[str, dict[str, str]] = {}
+    for question_id, card_raw in raw.items():
+        qid = str(question_id or "").strip()
+        if not qid:
+            raise LessonDataError(f"{where}: learn_cards contains an empty question id.")
+        if not isinstance(card_raw, dict):
+            raise LessonDataError(f"{where}.{qid}: learn card must be an object.")
+        title = str(card_raw.get("title", "") or "").strip()
+        body = str(card_raw.get("body", "") or "").strip()
+        notice = str(card_raw.get("notice", "") or "").strip()
+        mistake = str(card_raw.get("mistake", "") or "").strip()
+        if not title or not body:
+            raise LessonDataError(f"{where}.{qid}: learn card needs title and body.")
+        cards[qid] = {
+            "title": title,
+            "refresher": body,
+            "refresher_code": str(card_raw.get("example", "") or ""),
+            "notice": notice,
+            "mistake": mistake,
+            "section_id": str(card_raw.get("section_id", "") or "").strip(),
+            "source": "question",
+        }
+    return cards
 
 
 def _section_from_blocks(
@@ -309,7 +364,7 @@ def _normalize_lesson(raw: dict[str, Any], language: str, category_id: str) -> d
     sections_raw = raw.get("sections")
     if isinstance(sections_raw, list) and sections_raw:
         sections = [
-            _normalize_section(section, where=f"{where}.sections[{i}]")
+            _normalize_section(section, where=f"{where}.sections[{i}]", language=language)
             for i, section in enumerate(sections_raw)
         ]
         section_ids = [section["id"] for section in sections]
@@ -325,7 +380,7 @@ def _normalize_lesson(raw: dict[str, Any], language: str, category_id: str) -> d
         blocks_raw = raw.get("blocks")
         if not isinstance(blocks_raw, list) or not blocks_raw:
             raise LessonDataError(f"{where}: lesson needs a non-empty blocks array.")
-        blocks = [_normalize_block(b, where=f"{where}[{i}]") for i, b in enumerate(blocks_raw)]
+        blocks = [_normalize_block(b, where=f"{where}[{i}]", language=language) for i, b in enumerate(blocks_raw)]
         sections = _auto_sections_from_blocks(
             blocks,
             lesson_title=title,
@@ -348,6 +403,7 @@ def _normalize_lesson(raw: dict[str, Any], language: str, category_id: str) -> d
     refresher = str(raw.get("refresher", "") or "").strip()
     if not refresher:
         raise LessonDataError(f"{where}: lesson needs a 'refresher' for the in-quiz Learn tab.")
+    learn_cards = _normalize_learn_cards(raw.get("learn_cards"), where=f"{where}.learn_cards")
 
     return {
         "language": language,
@@ -359,6 +415,7 @@ def _normalize_lesson(raw: dict[str, Any], language: str, category_id: str) -> d
         "blocks": blocks,
         "refresher": refresher,
         "refresher_code": str(raw.get("refresher_code", "") or ""),
+        "learn_cards": learn_cards,
         # Failure modes this lesson addresses, in the SAME vocabulary the attempt
         # telemetry records (syntax / runtime / wrong_answer / timeout). This is the seam
         # that lets mastery route a student who keeps hitting syntax errors to the lesson
@@ -377,13 +434,13 @@ def get_lesson(language: str, category_id: str) -> Optional[dict[str, Any]]:
     "coming soon" state rather than a 500 — the same rule the quiz loader now follows.
     """
     lang = normalize_language(language)
-    path = _lesson_path(lang, category_id)
-    if not os.path.exists(path):
-        return None
-    return _normalize_lesson(_read_json(path), lang, category_id)
+    for path in _lesson_path_candidates(lang, category_id):
+        if os.path.exists(path):
+            return _normalize_lesson(_read_json(path), lang, category_id)
+    return None
 
 
-def get_refresher(language: str, category_id: str) -> Optional[dict[str, Any]]:
+def get_refresher(language: str, category_id: str, question_id: str | None = None) -> Optional[dict[str, Any]]:
     """The compact recap for the Learn tab inside a quiz question.
 
     Derived from the SAME file as the full lesson, never authored separately — otherwise
@@ -393,12 +450,34 @@ def get_refresher(language: str, category_id: str) -> Optional[dict[str, Any]]:
     lesson = get_lesson(language, category_id)
     if not lesson:
         return None
+    wanted = str(question_id or "").strip()
+    if wanted:
+        card = lesson.get("learn_cards", {}).get(wanted)
+        if card:
+            return {
+                "language": lesson["language"],
+                "category": lesson["category"],
+                **card,
+            }
+        for section in lesson.get("sections", []):
+            if wanted in section.get("question_ids", []):
+                return {
+                    "language": lesson["language"],
+                    "category": lesson["category"],
+                    "title": section["title"],
+                    "refresher": section.get("summary") or lesson["refresher"],
+                    "refresher_code": "",
+                    "section_id": section["id"],
+                    "source": "section",
+                }
     return {
         "language": lesson["language"],
         "category": lesson["category"],
         "title": lesson["title"],
         "refresher": lesson["refresher"],
         "refresher_code": lesson["refresher_code"],
+        "section_id": "",
+        "source": "category",
     }
 
 
@@ -409,4 +488,4 @@ def has_lesson(language: str, category_id: str) -> bool:
         lang = normalize_language(language)
     except LessonError:
         return False
-    return os.path.exists(_lesson_path(lang, category_id))
+    return any(os.path.exists(path) for path in _lesson_path_candidates(lang, category_id))

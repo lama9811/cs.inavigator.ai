@@ -28,10 +28,21 @@ const PASS_THRESHOLD = 0.7;
 const TOPIC_ALIASES = {
   arrays: "lists",
   array: "lists",
-  "hash maps": "dictionaries",
-  "hash map": "dictionaries",
-  maps: "dictionaries",
-  map: "dictionaries",
+  stacks: "stacks-queues",
+  queues: "stacks-queues",
+  "hash maps": "hash-maps-sets",
+  "hash map": "hash-maps-sets",
+  maps: "hash-maps-sets",
+  map: "hash-maps-sets",
+  sets: "hash-maps-sets",
+  "linked lists": "linked-lists",
+  "linked list": "linked-lists",
+  recursion: "recursion-patterns",
+  "binary search": "binary-search",
+  "two pointers": "two-pointers-sliding-window",
+  "sliding window": "two-pointers-sliding-window",
+  trees: "trees",
+  graphs: "graphs",
 };
 
 function categoryForMastery(topic, categories) {
@@ -83,7 +94,14 @@ const TRACKS = [
     label: "Intermediate",
     description: "Multi-step problems and language-specific concepts.",
   },
+  {
+    id: "advanced",
+    label: "Advanced",
+    description: "Data structures and interview-style patterns, explained step by step.",
+  },
 ];
+
+const CLOSED_TRACKS = Object.fromEntries(TRACKS.map((track) => [track.id, false]));
 
 function orderTrackCategories(trackId, categories) {
   if (trackId !== "intermediate") return categories;
@@ -251,8 +269,8 @@ export default function QuizLanguageLanding({
   const [categories, setCategories] = useState([]);
   const [openId, setOpenId] = useState("");
   const [openTracks, setOpenTracks] = useState({
+    ...CLOSED_TRACKS,
     beginner: true,
-    intermediate: false,
   });
   // Per-category question cache: { [categoryId]: question[] }.
   const [questionsByCat, setQuestionsByCat] = useState({});
@@ -272,7 +290,7 @@ export default function QuizLanguageLanding({
         if (!alive) return;
         const cats = (data.categories || []).filter((category) => !category.lesson_only);
         setCategories(cats);
-        setOpenTracks({ beginner: true, intermediate: false });
+        setOpenTracks({ ...CLOSED_TRACKS, beginner: true });
         // Open the first category that actually has questions by default.
         const firstReady = cats.find((c) => c.count > 0);
         setOpenId(firstReady ? firstReady.id : "");
@@ -372,7 +390,7 @@ export default function QuizLanguageLanding({
 
   const showRecommendation = (recommendation) => {
     setPlacementOpen(false);
-    setOpenTracks({ beginner: false, intermediate: false, [recommendation.track]: true });
+    setOpenTracks({ ...CLOSED_TRACKS, [recommendation.track]: true });
     setOpenId(recommendation.category);
     window.setTimeout(() => {
       document.getElementById(`cq-category-${recommendation.category}`)?.scrollIntoView({
@@ -538,8 +556,7 @@ export default function QuizLanguageLanding({
                   aria-controls={"cq-" + track.id + "-categories"}
                   onClick={() =>
                     setOpenTracks((current) => ({
-                      beginner: false,
-                      intermediate: false,
+                      ...CLOSED_TRACKS,
                       [track.id]: !current[track.id],
                     }))
                   }

@@ -1,0 +1,49 @@
+{
+  "_note": "Original advanced lesson. Language-specific code appears through block variants.",
+  "title": "Stacks & Queues",
+  "summary": "Use a stack when the newest item should come out first, and a queue when the oldest item should come out first.",
+  "minutes": 12,
+  "error_classes": ["wrong_answer", "runtime"],
+  "refresher": "A stack is last-in, first-out: push adds, pop removes the newest item. A queue is first-in, first-out: enqueue adds to the back, dequeue removes the oldest item from the front.",
+  "refresher_code": "push/add -> remove the matching end",
+  "learn_cards": {
+    "advanced-stack-lifo": {
+      "title": "Stack order means newest first",
+      "body": "A stack behaves like a pile of trays. The last item you add is the first one you remove.",
+      "example": "push A, push B, pop -> B",
+      "notice": "Do not remove from the front when the question says stack.",
+      "mistake": "Mixing up stack and queue order gives the right operations in the wrong order.",
+      "section_id": "stack-basics"
+    }
+  },
+  "sections": [
+    {
+      "id": "stack-basics",
+      "title": "Stack: newest item first",
+      "summary": "A stack remembers work in reverse order.",
+      "question_ids": ["advanced-stack-lifo", "advanced-stack-parentheses", "advanced-stack-trace", "advanced-stack-parsons", "advanced-queue-mistake"],
+      "blocks": [
+        {"kind": "text", "body": "A stack is useful when the most recent thing matters first. Undo buttons, browser back history, and matching parentheses all use this idea."},
+        {"kind": "code", "caption": "Push adds to the top. Pop removes that same top item.", "variants": {
+          "python": {"code": "stack = []\nstack.append(\"A\")\nstack.append(\"B\")\ntop = stack.pop()\nprint(top)", "output": "B"},
+          "java": {"code": "import java.util.*;\n\nDeque<String> stack = new ArrayDeque<>();\nstack.push(\"A\");\nstack.push(\"B\");\nSystem.out.println(stack.pop());", "output": "B"},
+          "javascript": {"code": "const stack = [];\nstack.push(\"A\");\nstack.push(\"B\");\nconsole.log(stack.pop());", "output": "B"},
+          "cpp": {"code": "#include <iostream>\n#include <vector>\n\nstd::vector<std::string> stack;\nstack.push_back(\"A\");\nstack.push_back(\"B\");\nstd::cout << stack.back() << \"\\n\";\nstack.pop_back();", "output": "B"}
+        }},
+        {"kind": "callout", "tone": "mistake", "title": "Name the end you remove from", "body": "A stack removes from the same end where it adds. If you add at the back, pop from the back too."}
+      ]
+    },
+    {
+      "id": "queue-basics",
+      "title": "Queue: oldest item first",
+      "summary": "A queue keeps arrival order.",
+      "question_ids": ["advanced-queue-fifo", "advanced-queue-bfs", "advanced-queue-trace"],
+      "blocks": [
+        {"kind": "text", "body": "A queue is useful when the first item waiting should be handled first. Lines at a desk, print jobs, and breadth-first search use this idea."},
+        {"kind": "compare", "caption": "Stack and queue differ only in which item leaves next.", "wrong_label": "Queue mistake", "wrong": "Add A, add B, remove B", "right_label": "Queue order", "right": "Add A, add B, remove A"},
+        {"kind": "check", "prompt": "You add A, then B, then C to a stack. What comes out first?", "choices": ["C", "A", "B", "Nothing"], "answer_index": 0, "why": "A stack removes the newest item first, so C comes out first."},
+        {"kind": "check", "prompt": "You add A, then B, then C to a queue. What comes out first?", "choices": ["A", "C", "B", "Nothing"], "answer_index": 0, "why": "A queue removes the oldest item first, so A comes out first."}
+      ]
+    }
+  ]
+}

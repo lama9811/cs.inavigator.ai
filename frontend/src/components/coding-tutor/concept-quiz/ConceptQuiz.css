@@ -558,6 +558,12 @@ body.coding-dark .cq-hero-ring::before {
   border-color: #c4b5fd;
 }
 
+.cq-track-badge.is-advanced {
+  color: #9a3412;
+  background: #ffedd5;
+  border-color: #fdba74;
+}
+
 body.coding-dark .cq-track-badge.is-beginner {
   color: #bbf7d0;
   background: rgba(22, 101, 52, 0.35);
@@ -568,6 +574,12 @@ body.coding-dark .cq-track-badge.is-intermediate {
   color: #ddd6fe;
   background: rgba(91, 33, 182, 0.35);
   border-color: #6d28d9;
+}
+
+body.coding-dark .cq-track-badge.is-advanced {
+  color: #fed7aa;
+  background: rgba(154, 52, 18, 0.35);
+  border-color: #ea580c;
 }
 
 .cq-track-copy {

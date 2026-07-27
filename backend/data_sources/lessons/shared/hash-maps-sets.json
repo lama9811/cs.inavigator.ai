@@ -1,0 +1,38 @@
+{
+  "_note": "Original advanced lesson. Language-specific code appears through block variants.",
+  "title": "Hash Maps & Sets",
+  "summary": "Use sets for membership and maps for key/value information like counts.",
+  "minutes": 12,
+  "error_classes": ["wrong_answer", "runtime"],
+  "refresher": "A set answers “have I seen this?” A hash map answers “what value belongs to this key?” Counts, indexes, and grouped data often use maps.",
+  "refresher_code": "seen.add(value); counts[key] += 1",
+  "sections": [
+    {
+      "id": "sets-membership",
+      "title": "Sets answer membership questions",
+      "summary": "A set keeps one copy of each value.",
+      "question_ids": ["advanced-set-membership", "advanced-set-trace", "advanced-set-vs-map", "advanced-set-common-bug"],
+      "blocks": [
+        {"kind": "text", "body": "Use a set when you only care whether a value has appeared. It is perfect for duplicate checks because lookup is fast and the code stays small."},
+        {"kind": "code", "caption": "The second time a value appears, membership tells you it is a repeat.", "variants": {
+          "python": {"code": "seen = set()\nfor value in [4, 2, 4]:\n    if value in seen:\n        print(value)\n    seen.add(value)", "output": "4"},
+          "java": {"code": "Set<Integer> seen = new HashSet<>();\nfor (int value : List.of(4, 2, 4)) {\n    if (seen.contains(value)) System.out.println(value);\n    seen.add(value);\n}", "output": "4"},
+          "javascript": {"code": "const seen = new Set();\nfor (const value of [4, 2, 4]) {\n  if (seen.has(value)) console.log(value);\n  seen.add(value);\n}", "output": "4"},
+          "cpp": {"code": "#include <unordered_set>\n#include <iostream>\n\nstd::unordered_set<long long> seen;\nfor (long long value : std::vector<long long>{4, 2, 4}) {\n  if (seen.count(value)) std::cout << value << \"\\n\";\n  seen.insert(value);\n}", "output": "4"}
+        }},
+        {"kind": "check", "prompt": "Which structure is best for asking “have I seen this value before?”", "choices": ["Set", "String", "Boolean flag only", "One integer counter"], "answer_index": 0, "why": "A set stores unique values and gives a direct membership check."}
+      ]
+    },
+    {
+      "id": "maps-counts",
+      "title": "Maps connect keys to values",
+      "summary": "A map stores a value under a key.",
+      "question_ids": ["advanced-map-counts", "advanced-map-default", "advanced-map-update-order", "advanced-map-keys-values"],
+      "blocks": [
+        {"kind": "text", "body": "Use a map when a value needs attached information. For example, a character can point to how many times it appears."},
+        {"kind": "compare", "caption": "A set can tell you a letter appeared. A map can tell you how many times.", "wrong_label": "Not enough information", "wrong": "seen contains 'a'", "right_label": "Keeps the count", "right": "counts['a'] == 3"},
+        {"kind": "check", "prompt": "Why use a map for an anagram check?", "choices": ["It can count each character.", "It sorts the string automatically.", "It removes all vowels.", "It prevents loops."], "answer_index": 0, "why": "An anagram check needs matching character counts, not just membership."}
+      ]
+    }
+  ]
+}

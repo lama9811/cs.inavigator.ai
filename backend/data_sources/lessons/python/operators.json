@@ -10,6 +10,24 @@
   ],
   "refresher": "Operators are the symbols that do work on values. `+ - * /` do the math you expect, and `/` always hands back a decimal. `//` divides and throws away the remainder, `%` keeps only the remainder, and `**` raises to a power. Comparisons like `== != < >` ask a question and answer it with True or False. The one to watch is `==` against `=`. A single `=` puts a value into a name. A double `==` asks whether two values match.",
   "refresher_code": "print(7 / 2)\nprint(7 // 2)\nprint(7 % 2)\nprint(7 == 2)\n# 3.5\n# 3\n# 1\n# False",
+  "learn_cards": {
+    "operators-lesson-check-1": {
+      "title": "Arithmetic output, one line at a time",
+      "body": "This question is about arithmetic operators, not syntax in general. Work out each print line separately, then keep the outputs on separate lines.",
+      "example": "print(15 + 6)\n# 21",
+      "notice": "`+` adds numbers when both sides are numbers. `//` keeps the whole-number part. `%` keeps the remainder.",
+      "mistake": "Do not put several print outputs on one line unless the code prints them on one line.",
+      "section_id": "core"
+    },
+    "operators-lesson-check-2": {
+      "title": "Boolean operators choose the branch",
+      "body": "This question is asking whether the condition matches the boundary rules. Read `and` as both sides must be true.",
+      "example": "age >= 13 and age <= 19",
+      "notice": "Use `>=` and `<=` when the endpoints count.",
+      "mistake": "`or` is too loose for a between check because only one side has to be true.",
+      "section_id": "core"
+    }
+  },
   "blocks": [
     {
       "kind": "text",
