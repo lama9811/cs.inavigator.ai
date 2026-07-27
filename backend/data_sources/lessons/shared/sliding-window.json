@@ -248,6 +248,110 @@
           ],
           "answer_index": 0,
           "why": "The saved total must describe the same values that left and right describe."
+        },
+        {
+          "kind": "visual",
+          "title": "See a stale total bug",
+          "concept": "sliding-window",
+          "caption": "Watch the stored total become wrong when left moves but the old value is not subtracted.",
+          "initial_state": {
+            "items": [
+              2,
+              1,
+              4
+            ]
+          },
+          "steps": [
+            {
+              "title": "Window is too large",
+              "action_label": "rule breaks",
+              "body": "The window [2, 1, 4] has total 7, over the limit 5.",
+              "what_changed": "The code must shrink from the left.",
+              "animation": "grow",
+              "state": {
+                "pointers": {
+                  "left": 0,
+                  "right": 2
+                },
+                "window": [
+                  0,
+                  2
+                ],
+                "active": [
+                  0,
+                  1,
+                  2
+                ],
+                "note": "real total = 7"
+              }
+            },
+            {
+              "title": "Buggy move",
+              "action_label": "left only",
+              "body": "If left moves but total stays 7, the code is now lying to itself.",
+              "what_changed": "The real window is [1, 4], but the saved total still describes [2, 1, 4].",
+              "animation": "shrink",
+              "state": {
+                "pointers": {
+                  "left": 1,
+                  "right": 2
+                },
+                "window": [
+                  1,
+                  2
+                ],
+                "active": [
+                  1,
+                  2
+                ],
+                "note": "saved total is stale: 7"
+              }
+            },
+            {
+              "title": "Correct move",
+              "action_label": "subtract then move",
+              "body": "Subtract nums[left], then move left.",
+              "what_changed": "The saved total becomes 5, matching the real window [1, 4].",
+              "animation": "highlight",
+              "state": {
+                "pointers": {
+                  "left": 1,
+                  "right": 2
+                },
+                "window": [
+                  1,
+                  2
+                ],
+                "active": [
+                  1,
+                  2
+                ],
+                "note": "saved total = 5"
+              }
+            },
+            {
+              "title": "Decide from honest state",
+              "action_label": "continue",
+              "body": "Now the next decision uses the actual current window.",
+              "what_changed": "Sliding window only works when the state and pointers describe the same slice.",
+              "animation": "visit",
+              "state": {
+                "pointers": {
+                  "left": 1,
+                  "right": 2
+                },
+                "window": [
+                  1,
+                  2
+                ],
+                "active": [
+                  1,
+                  2
+                ],
+                "note": "window is valid"
+              }
+            }
+          ]
         }
       ]
     }

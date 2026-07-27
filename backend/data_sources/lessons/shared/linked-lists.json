@@ -264,6 +264,182 @@
           "body": "You cannot jump straight to item 10 in a basic linked list. You start at head, read the current node, then move to current.next."
         },
         {
+          "kind": "visual",
+          "title": "Move current one link at a time",
+          "concept": "linked-lists",
+          "caption": "Watch traversal follow next links from head until the list ends.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Start at head",
+              "action_label": "current = head",
+              "body": "current points to the first node, A.",
+              "what_changed": "Traversal starts from the head reference, not from an index.",
+              "animation": "visit",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 80,
+                    "y": 95,
+                    "active": true,
+                    "note": "current"
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 210,
+                    "y": 95
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 340,
+                    "y": 95
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B"
+                  },
+                  {
+                    "from": "B",
+                    "to": "C"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "Move to next",
+              "action_label": "current = current.next",
+              "body": "After reading A, current follows A.next to B.",
+              "what_changed": "The pointer moves. The nodes stay where they are.",
+              "animation": "slide",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 80,
+                    "y": 95
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 210,
+                    "y": 95,
+                    "active": true,
+                    "note": "current"
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 340,
+                    "y": 95
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B",
+                    "active": true
+                  },
+                  {
+                    "from": "B",
+                    "to": "C"
+                  }
+                ]
+              }
+            },
+            {
+              "title": "Move again",
+              "action_label": "follow next",
+              "body": "After B, current follows B.next to C.",
+              "what_changed": "A loop repeats this same movement until next is missing.",
+              "animation": "slide",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 80,
+                    "y": 95
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 210,
+                    "y": 95
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 340,
+                    "y": 95,
+                    "active": true,
+                    "note": "current"
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B"
+                  },
+                  {
+                    "from": "B",
+                    "to": "C",
+                    "active": true
+                  }
+                ]
+              }
+            },
+            {
+              "title": "Stop at null",
+              "action_label": "stop",
+              "body": "C.next is null, so the traversal is done after C.",
+              "what_changed": "The missing link marks the end of the list.",
+              "animation": "highlight",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 80,
+                    "y": 95
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 210,
+                    "y": 95
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 340,
+                    "y": 95,
+                    "active": true,
+                    "note": "next = null"
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B"
+                  },
+                  {
+                    "from": "B",
+                    "to": "C"
+                  }
+                ],
+                "note": "loop stops when current becomes null"
+              }
+            }
+          ]
+        },
+        {
           "kind": "code",
           "caption": "Traversal keeps moving until the current node is missing.",
           "variants": {

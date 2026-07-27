@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FaClock,
   FaArrowRight,
@@ -12,6 +12,9 @@ import {
   FaUndo,
   FaChevronLeft,
   FaChevronRight,
+  FaPlay,
+  FaPause,
+  FaRedo,
 } from "react-icons/fa";
 import { markLessonRead } from "../concept-quiz/conceptQuizProgress";
 import LessonPlayBar from "./LessonPlayBar";
@@ -157,11 +160,17 @@ function VisualNodes({ nodes = [], edges = [] }) {
   );
 }
 
+function visualAnimationClass(step) {
+  const animation = String(step?.animation || "").trim().toLowerCase();
+  if (!animation) return "";
+  return `anim-${animation.replace(/[^a-z0-9-]/g, "-")}`;
+}
+
 function VisualDiagram({ block, step }) {
   const state = { ...(block.initial_state || {}), ...(step.state || {}) };
   const mainItems = state.items || state.array || state.values || state.queue || [];
   return (
-    <div className={`lesson-visual-diagram is-${block.concept}`}>
+    <div className={`lesson-visual-diagram is-${block.concept} ${visualAnimationClass(step)}`}>
       {state.stack ? <VisualStack items={state.stack} active={state.active} /> : null}
       {state.queue ? (
         <div>
@@ -202,19 +211,52 @@ function VisualDiagram({ block, step }) {
 function VisualBlock({ block }) {
   const [open, setOpen] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [replayKey, setReplayKey] = useState(0);
   const steps = block.steps || [];
   const step = steps[stepIndex] || steps[0] || {};
   const canGoBack = stepIndex > 0;
   const canGoNext = stepIndex < steps.length - 1;
+  const close = useCallback(() => {
+    setIsPlaying(false);
+    setOpen(false);
+  }, []);
+  const goToStep = useCallback((nextIndex) => {
+    setStepIndex(Math.max(0, Math.min(steps.length - 1, nextIndex)));
+    setReplayKey((current) => current + 1);
+  }, [steps.length]);
 
   useEffect(() => {
     if (!open) return undefined;
     const handleKeyDown = (event) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") close();
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        setIsPlaying(false);
+        goToStep(stepIndex - 1);
+      }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        setIsPlaying(false);
+        goToStep(stepIndex + 1);
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open]);
+  }, [close, goToStep, open, stepIndex, steps.length]);
+
+  useEffect(() => {
+    if (!open || !isPlaying) return undefined;
+    if (!canGoNext) {
+      setIsPlaying(false);
+      return undefined;
+    }
+    const timer = window.setTimeout(() => {
+      setStepIndex((current) => Math.min(steps.length - 1, current + 1));
+      setReplayKey((current) => current + 1);
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, [canGoNext, isPlaying, open, stepIndex, steps.length]);
 
   return (
     <figure className="lesson-visual-block">
@@ -227,6 +269,8 @@ function VisualBlock({ block }) {
         className="lesson-visual-open"
         onClick={() => {
           setStepIndex(0);
+          setReplayKey(0);
+          setIsPlaying(false);
           setOpen(true);
         }}
       >
@@ -235,7 +279,7 @@ function VisualBlock({ block }) {
       </button>
 
       {open ? (
-        <div className="lesson-visual-backdrop" role="presentation" onMouseDown={() => setOpen(false)}>
+        <div className="lesson-visual-backdrop" role="presentation" onMouseDown={close}>
           <section
             className="lesson-visual-modal"
             role="dialog"
@@ -248,34 +292,88 @@ function VisualBlock({ block }) {
                 <span>Step {stepIndex + 1} of {steps.length}</span>
                 <h3>{block.title}</h3>
               </div>
-              <button type="button" onClick={() => setOpen(false)} autoFocus>
+              <button type="button" onClick={close} autoFocus>
                 Close
               </button>
             </header>
 
-            <VisualDiagram block={block} step={step} />
+            <div className="lesson-visual-progress" aria-label="Visualizer steps">
+              {steps.map((visualStep, index) => (
+                <button
+                  type="button"
+                  key={`${visualStep.title}-${index}`}
+                  className={index === stepIndex ? "is-active" : ""}
+                  aria-label={`Go to step ${index + 1}: ${visualStep.title}`}
+                  aria-current={index === stepIndex ? "step" : undefined}
+                  onClick={() => {
+                    setIsPlaying(false);
+                    goToStep(index);
+                  }}
+                />
+              ))}
+            </div>
+
+            <VisualDiagram key={`${stepIndex}-${replayKey}`} block={block} step={step} />
 
             <div className="lesson-visual-step-copy">
+              {step.action_label ? (
+                <span className="lesson-visual-action">{step.action_label}</span>
+              ) : null}
               <h4>{step.title}</h4>
               <p>{withInlineCode(step.body)}</p>
+              {step.what_changed ? (
+                <p className="lesson-visual-change">
+                  <strong>What changed:</strong> {withInlineCode(step.what_changed)}
+                </p>
+              ) : null}
             </div>
 
             <footer className="lesson-visual-controls">
-              <button type="button" onClick={() => setStepIndex(0)}>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPlaying(false);
+                  goToStep(0);
+                }}
+              >
                 <FaUndo aria-hidden="true" /> Reset
               </button>
               <div>
+                <button type="button" onClick={() => setReplayKey((current) => current + 1)}>
+                  <FaRedo aria-hidden="true" /> Replay
+                </button>
+                <button
+                  type="button"
+                  disabled={steps.length < 2 || (!canGoNext && !isPlaying)}
+                  onClick={() => setIsPlaying((current) => !current)}
+                >
+                  {isPlaying ? (
+                    <>
+                      <FaPause aria-hidden="true" /> Pause
+                    </>
+                  ) : (
+                    <>
+                      <FaPlay aria-hidden="true" /> Play
+                    </>
+                  )}
+                </button>
                 <button
                   type="button"
                   disabled={!canGoBack}
-                  onClick={() => setStepIndex((current) => Math.max(0, current - 1))}
+                  onClick={() => {
+                    setIsPlaying(false);
+                    goToStep(stepIndex - 1);
+                  }}
                 >
                   <FaChevronLeft aria-hidden="true" /> Previous
                 </button>
                 <button
                   type="button"
                   disabled={!canGoNext}
-                  onClick={() => setStepIndex((current) => Math.min(steps.length - 1, current + 1))}
+                  onClick={() => {
+                    setIsPlaying(false);
+                    goToStep(stepIndex + 1);
+                  }}
                 >
                   Next <FaChevronRight aria-hidden="true" />
                 </button>

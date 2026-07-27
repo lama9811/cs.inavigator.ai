@@ -635,6 +635,47 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
   opacity: 0.5;
 }
 
+.lesson-visual-progress {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 16px 0 0;
+}
+
+.lesson-visual-progress::before {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 50%;
+  z-index: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--ct-border, #cbd5e1);
+  transform: translateY(-50%);
+}
+
+.lesson-visual-progress button {
+  position: relative;
+  z-index: 1;
+  width: 13px;
+  min-width: 13px;
+  min-height: 13px;
+  height: 13px;
+  padding: 0;
+  border-color: var(--ct-border-strong, #94a3b8);
+  background: var(--ct-panel, #fff);
+  box-shadow: none;
+}
+
+.lesson-visual-progress button.is-active {
+  border-color: var(--ct-accent, #f97316);
+  background: var(--ct-accent, #f97316);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ct-accent, #f97316) 18%, transparent);
+}
+
 .lesson-visual-diagram {
   margin: 18px 0;
   padding: 22px;
@@ -675,6 +716,11 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
   color: var(--ct-text);
   font-weight: 900;
   box-shadow: 0 8px 18px rgba(8, 35, 67, 0.08);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .lesson-visual-token small {
@@ -745,6 +791,7 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
   stroke: var(--ct-border-strong, #94a3b8);
   stroke-width: 4;
   stroke-linecap: round;
+  transition: stroke 180ms ease, stroke-width 180ms ease;
 }
 
 .lesson-visual-edge.is-active {
@@ -755,6 +802,7 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
   fill: var(--ct-panel, #fff);
   stroke: var(--ct-border-strong, #94a3b8);
   stroke-width: 3;
+  transition: fill 180ms ease, stroke 180ms ease, transform 180ms ease;
 }
 
 .lesson-visual-node.is-active circle {
@@ -780,6 +828,21 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
   background: color-mix(in srgb, var(--ct-accent, #f97316) 8%, transparent);
 }
 
+.lesson-visual-action {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-bottom: 8px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-accent, #f97316) 14%, transparent);
+  color: var(--ct-accent, #f97316);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .lesson-visual-step-copy h4 {
   margin: 0 0 6px;
   color: var(--ct-text);
@@ -791,6 +854,11 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
   line-height: 1.55;
 }
 
+.lesson-visual-change {
+  margin-top: 8px !important;
+  color: var(--ct-muted) !important;
+}
+
 .lesson-visual-controls {
   margin-top: 16px;
 }
@@ -799,6 +867,78 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.lesson-visual-diagram.anim-push .lesson-visual-token.is-active,
+.lesson-visual-diagram.anim-add .lesson-visual-token.is-active,
+.lesson-visual-diagram.anim-enqueue .lesson-visual-token.is-active,
+.lesson-visual-diagram.anim-visit .lesson-visual-node.is-active circle {
+  animation: lessonVisualPop 420ms ease;
+}
+
+.lesson-visual-diagram.anim-pop .lesson-visual-token.is-active,
+.lesson-visual-diagram.anim-remove .lesson-visual-token.is-active,
+.lesson-visual-diagram.anim-dequeue .lesson-visual-token.is-active {
+  animation: lessonVisualLift 420ms ease;
+}
+
+.lesson-visual-diagram.anim-slide .lesson-visual-token.is-active,
+.lesson-visual-diagram.anim-grow .lesson-visual-token.is-window,
+.lesson-visual-diagram.anim-shrink .lesson-visual-token.is-window {
+  animation: lessonVisualGlow 520ms ease;
+}
+
+.lesson-visual-diagram.anim-highlight .lesson-visual-edge.is-active,
+.lesson-visual-diagram.anim-return .lesson-visual-token.is-active {
+  animation: lessonVisualPulse 520ms ease;
+}
+
+@keyframes lessonVisualPop {
+  0% { transform: translateY(10px) scale(0.92); opacity: 0.45; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes lessonVisualLift {
+  0% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-10px) scale(1.05); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes lessonVisualGlow {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ct-accent, #f97316) 0%, transparent); }
+  50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--ct-accent, #f97316) 18%, transparent); }
+  100% { box-shadow: 0 8px 18px rgba(8, 35, 67, 0.08); }
+}
+
+@keyframes lessonVisualPulse {
+  0% { stroke-width: 4; transform: scale(1); }
+  50% { stroke-width: 7; transform: scale(1.04); }
+  100% { stroke-width: 4; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lesson-visual-token,
+  .lesson-visual-edge,
+  .lesson-visual-node circle {
+    transition: none;
+  }
+
+  .lesson-visual-diagram.anim-push .lesson-visual-token.is-active,
+  .lesson-visual-diagram.anim-add .lesson-visual-token.is-active,
+  .lesson-visual-diagram.anim-enqueue .lesson-visual-token.is-active,
+  .lesson-visual-diagram.anim-visit .lesson-visual-node.is-active circle,
+  .lesson-visual-diagram.anim-pop .lesson-visual-token.is-active,
+  .lesson-visual-diagram.anim-remove .lesson-visual-token.is-active,
+  .lesson-visual-diagram.anim-dequeue .lesson-visual-token.is-active,
+  .lesson-visual-diagram.anim-slide .lesson-visual-token.is-active,
+  .lesson-visual-diagram.anim-grow .lesson-visual-token.is-window,
+  .lesson-visual-diagram.anim-shrink .lesson-visual-token.is-window,
+  .lesson-visual-diagram.anim-highlight .lesson-visual-edge.is-active,
+  .lesson-visual-diagram.anim-return .lesson-visual-token.is-active {
+    animation: none;
+  }
 }
 
 /* --- Right vs wrong, side by side. The most effective block for teaching the

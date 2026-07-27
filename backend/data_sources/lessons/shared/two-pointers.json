@@ -245,6 +245,93 @@
           ],
           "answer_index": 0,
           "why": "When left meets right, there is no two-position pair left."
+        },
+        {
+          "kind": "visual",
+          "title": "Check a palindrome inward",
+          "concept": "two-pointers",
+          "caption": "Watch left and right compare matching characters before moving inward.",
+          "initial_state": {
+            "items": [
+              "r",
+              "a",
+              "c",
+              "e",
+              "c",
+              "a",
+              "r"
+            ]
+          },
+          "steps": [
+            {
+              "title": "Compare the ends",
+              "action_label": "compare",
+              "body": "left sees r and right sees r. They match.",
+              "what_changed": "Both ends are done, so both pointers can move inward.",
+              "animation": "highlight",
+              "state": {
+                "pointers": {
+                  "left": 0,
+                  "right": 6
+                },
+                "active": [
+                  0,
+                  6
+                ]
+              }
+            },
+            {
+              "title": "Move inward",
+              "action_label": "left++, right--",
+              "body": "Now compare a and a.",
+              "what_changed": "A palindrome check only needs to keep comparing mirrored positions.",
+              "animation": "slide",
+              "state": {
+                "pointers": {
+                  "left": 1,
+                  "right": 5
+                },
+                "active": [
+                  1,
+                  5
+                ]
+              }
+            },
+            {
+              "title": "Move inward again",
+              "action_label": "left++, right--",
+              "body": "c and c match too.",
+              "what_changed": "The unchecked part keeps getting smaller.",
+              "animation": "slide",
+              "state": {
+                "pointers": {
+                  "left": 2,
+                  "right": 4
+                },
+                "active": [
+                  2,
+                  4
+                ]
+              }
+            },
+            {
+              "title": "Pointers meet",
+              "action_label": "done",
+              "body": "The middle e does not need a partner.",
+              "what_changed": "If no mismatch appeared before the pointers met, the word is a palindrome.",
+              "animation": "visit",
+              "state": {
+                "pointers": {
+                  "left": 3,
+                  "right": 3
+                },
+                "active": [
+                  3
+                ],
+                "note": "palindrome"
+              }
+            }
+          ]
         }
       ]
     }

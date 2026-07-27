@@ -190,6 +190,107 @@
           "body": "If `nums[mid]` is too small, everything at mid and to the left is too small. Move `low` to `mid + 1`. If `nums[mid]` is too large, move `high` to `mid - 1`."
         },
         {
+          "kind": "visual",
+          "title": "Avoid the stuck-mid bug",
+          "concept": "binary-search",
+          "caption": "Watch why `low = mid` can repeat the same range instead of shrinking it.",
+          "initial_state": {
+            "items": [
+              10,
+              20
+            ]
+          },
+          "steps": [
+            {
+              "title": "Two items remain",
+              "action_label": "check mid",
+              "body": "low is 0, high is 1, and mid becomes 0.",
+              "what_changed": "The range is tiny, so a bad update can get stuck fast.",
+              "animation": "highlight",
+              "state": {
+                "pointers": {
+                  "low": 0,
+                  "mid": 0,
+                  "high": 1
+                },
+                "window": [
+                  0,
+                  1
+                ],
+                "active": [
+                  0
+                ],
+                "note": "target is 20"
+              }
+            },
+            {
+              "title": "Wrong update",
+              "action_label": "low = mid",
+              "body": "10 is too small, but setting low to mid keeps low at 0.",
+              "what_changed": "Nothing moved. The next loop checks mid 0 again.",
+              "animation": "highlight",
+              "state": {
+                "pointers": {
+                  "low": 0,
+                  "mid": 0,
+                  "high": 1
+                },
+                "window": [
+                  0,
+                  1
+                ],
+                "active": [
+                  0
+                ],
+                "note": "range did not shrink"
+              }
+            },
+            {
+              "title": "Correct update",
+              "action_label": "low = mid + 1",
+              "body": "Move past mid because mid was already ruled out.",
+              "what_changed": "The remaining range now contains only index 1.",
+              "animation": "slide",
+              "state": {
+                "pointers": {
+                  "low": 1,
+                  "high": 1
+                },
+                "window": [
+                  1,
+                  1
+                ],
+                "active": [
+                  1
+                ],
+                "note": "one candidate left"
+              }
+            },
+            {
+              "title": "One item can still match",
+              "action_label": "check",
+              "body": "`low <= high` lets the final candidate be checked.",
+              "what_changed": "The target is found instead of skipped.",
+              "animation": "visit",
+              "state": {
+                "pointers": {
+                  "low": 1,
+                  "mid": 1,
+                  "high": 1
+                },
+                "window": [
+                  1,
+                  1
+                ],
+                "active": [
+                  1
+                ],
+                "note": "found 20"
+              }
+            }
+          ]
+        },
+        {
           "kind": "compare",
           "caption": "Move past values you already ruled out.",
           "wrong_label": "Can get stuck",

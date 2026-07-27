@@ -376,6 +376,82 @@
           "tone": "mistake",
           "title": "BFS needs queue order",
           "body": "If you use a stack instead, the code may still visit nodes, but it will not be breadth-first."
+        },
+        {
+          "kind": "visual",
+          "title": "Use a queue for BFS order",
+          "concept": "queues",
+          "caption": "Watch BFS process the oldest waiting node before newer neighbors.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Start at A",
+              "action_label": "enqueue",
+              "body": "A is discovered first, so A goes into the queue.",
+              "what_changed": "The queue stores work in discovery order.",
+              "animation": "enqueue",
+              "state": {
+                "queue": [
+                  "A"
+                ],
+                "active": [
+                  0
+                ],
+                "note": "visited: A"
+              }
+            },
+            {
+              "title": "Remove A",
+              "action_label": "dequeue",
+              "body": "A leaves the front. Its neighbors B and C are discovered next.",
+              "what_changed": "B and C join the back, behind any older work.",
+              "animation": "dequeue",
+              "state": {
+                "queue": [
+                  "B",
+                  "C"
+                ],
+                "active": [
+                  0,
+                  1
+                ],
+                "note": "visited: A, B, C"
+              }
+            },
+            {
+              "title": "Remove B",
+              "action_label": "dequeue",
+              "body": "B was waiting longer than C, so B is processed next.",
+              "what_changed": "This is what makes BFS move level by level.",
+              "animation": "dequeue",
+              "state": {
+                "queue": [
+                  "C",
+                  "D"
+                ],
+                "active": [
+                  1
+                ],
+                "note": "D was discovered from B"
+              }
+            },
+            {
+              "title": "Remove C",
+              "action_label": "skip visited",
+              "body": "C also points to D, but D is already waiting or visited.",
+              "what_changed": "Visited prevents duplicate work.",
+              "animation": "highlight",
+              "state": {
+                "queue": [
+                  "D"
+                ],
+                "active": [
+                  0
+                ],
+                "note": "D is only queued once"
+              }
+            }
+          ]
         }
       ]
     }

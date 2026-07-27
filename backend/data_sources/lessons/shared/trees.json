@@ -234,6 +234,857 @@
           "body": "Traversal means visiting every node. The three common depth-first orders use the same three actions: visit the node, traverse left, traverse right. Only the order changes."
         },
         {
+          "kind": "visual",
+          "title": "Preorder: node, left, right",
+          "concept": "trees",
+          "caption": "Watch preorder visit the current node before its children.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Visit A first",
+              "action_label": "node",
+              "body": "Preorder starts with the current node.",
+              "what_changed": "A is recorded before either subtree.",
+              "animation": "visit",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 210,
+                    "y": 38,
+                    "active": true
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 120,
+                    "y": 120,
+                    "active": false
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 300,
+                    "y": 120,
+                    "active": false
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 70,
+                    "y": 200,
+                    "active": false
+                  },
+                  {
+                    "id": "E",
+                    "label": "E",
+                    "x": 165,
+                    "y": 200,
+                    "active": false
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B"
+                  },
+                  {
+                    "from": "A",
+                    "to": "C"
+                  },
+                  {
+                    "from": "B",
+                    "to": "D"
+                  },
+                  {
+                    "from": "B",
+                    "to": "E"
+                  }
+                ],
+                "note": "order: A"
+              }
+            },
+            {
+              "title": "Go left to B",
+              "action_label": "left",
+              "body": "After A, preorder moves into the left subtree.",
+              "what_changed": "B is recorded before B’s children.",
+              "animation": "visit",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 210,
+                    "y": 38,
+                    "active": false
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 120,
+                    "y": 120,
+                    "active": true
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 300,
+                    "y": 120,
+                    "active": false
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 70,
+                    "y": 200,
+                    "active": false
+                  },
+                  {
+                    "id": "E",
+                    "label": "E",
+                    "x": 165,
+                    "y": 200,
+                    "active": false
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B",
+                    "active": true
+                  },
+                  {
+                    "from": "A",
+                    "to": "C",
+                    "active": false
+                  },
+                  {
+                    "from": "B",
+                    "to": "D",
+                    "active": false
+                  },
+                  {
+                    "from": "B",
+                    "to": "E",
+                    "active": false
+                  }
+                ],
+                "note": "order: A, B"
+              }
+            },
+            {
+              "title": "Visit D then E",
+              "action_label": "left subtree",
+              "body": "Preorder keeps using node, left, right inside the subtree.",
+              "what_changed": "D comes before E because D is B’s left child.",
+              "animation": "visit",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 210,
+                    "y": 38,
+                    "active": false
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 120,
+                    "y": 120,
+                    "active": false
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 300,
+                    "y": 120,
+                    "active": false
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 70,
+                    "y": 200,
+                    "active": true
+                  },
+                  {
+                    "id": "E",
+                    "label": "E",
+                    "x": 165,
+                    "y": 200,
+                    "active": true
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B",
+                    "active": false
+                  },
+                  {
+                    "from": "A",
+                    "to": "C",
+                    "active": false
+                  },
+                  {
+                    "from": "B",
+                    "to": "D",
+                    "active": true
+                  },
+                  {
+                    "from": "B",
+                    "to": "E",
+                    "active": true
+                  }
+                ],
+                "note": "order: A, B, D, E"
+              }
+            },
+            {
+              "title": "Finish right side",
+              "action_label": "right",
+              "body": "After the left subtree is done, preorder visits C.",
+              "what_changed": "The final preorder is A, B, D, E, C.",
+              "animation": "visit",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 210,
+                    "y": 38,
+                    "active": false
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 120,
+                    "y": 120,
+                    "active": false
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 300,
+                    "y": 120,
+                    "active": true
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 70,
+                    "y": 200,
+                    "active": false
+                  },
+                  {
+                    "id": "E",
+                    "label": "E",
+                    "x": 165,
+                    "y": 200,
+                    "active": false
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B",
+                    "active": false
+                  },
+                  {
+                    "from": "A",
+                    "to": "C",
+                    "active": true
+                  },
+                  {
+                    "from": "B",
+                    "to": "D",
+                    "active": false
+                  },
+                  {
+                    "from": "B",
+                    "to": "E",
+                    "active": false
+                  }
+                ],
+                "note": "order: A, B, D, E, C"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "visual",
+          "title": "Inorder: left, node, right",
+          "concept": "trees",
+          "caption": "Watch inorder finish the left side before recording the current node.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Go left before A",
+              "action_label": "left first",
+              "body": "Inorder does not record A yet. It first walks left to B.",
+              "what_changed": "The current node waits until its left subtree is finished.",
+              "animation": "highlight",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 210,
+                    "y": 38,
+                    "active": true
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 120,
+                    "y": 120,
+                    "active": true
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 300,
+                    "y": 120,
+                    "active": false
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 70,
+                    "y": 200,
+                    "active": false
+                  },
+                  {
+                    "id": "E",
+                    "label": "E",
+                    "x": 165,
+                    "y": 200,
+                    "active": false
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B",
+                    "active": true
+                  },
+                  {
+                    "from": "A",
+                    "to": "C",
+                    "active": false
+                  },
+                  {
+                    "from": "B",
+                    "to": "D",
+                    "active": false
+                  },
+                  {
+                    "from": "B",
+                    "to": "E",
+                    "active": false
+                  }
+                ],
+                "note": "A waits"
+              }
+            },
+            {
+              "title": "Visit D",
+              "action_label": "left leaf",
+              "body": "D is the leftmost node, so D is recorded first.",
+              "what_changed": "Inorder often starts at the far-left leaf.",
+              "animation": "visit",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 210,
+                    "y": 38,
+                    "active": false
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 120,
+                    "y": 120,
+                    "active": false
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 300,
+                    "y": 120,
+                    "active": false
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 70,
+                    "y": 200,
+                    "active": true
+                  },
+                  {
+                    "id": "E",
+                    "label": "E",
+                    "x": 165,
+                    "y": 200,
+                    "active": false
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B",
+                    "active": false
+                  },
+                  {
+                    "from": "A",
+                    "to": "C",
+                    "active": false
+                  },
+                  {
+                    "from": "B",
+                    "to": "D",
+                    "active": true
+                  },
+                  {
+                    "from": "B",
+                    "to": "E",
+                    "active": false
+                  }
+                ],
+                "note": "order: D"
+              }
+            },
+            {
+              "title": "Visit B then E",
+              "action_label": "node then right",
+              "body": "After B’s left side, record B, then visit B’s right child E.",
+              "what_changed": "Inside each subtree, the pattern is still left, node, right.",
+              "animation": "visit",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 210,
+                    "y": 38,
+                    "active": false
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 120,
+                    "y": 120,
+                    "active": true
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 300,
+                    "y": 120,
+                    "active": false
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 70,
+                    "y": 200,
+                    "active": false
+                  },
+                  {
+                    "id": "E",
+                    "label": "E",
+                    "x": 165,
+                    "y": 200,
+                    "active": true
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B",
+                    "active": false
+                  },
+                  {
+                    "from": "A",
+                    "to": "C",
+                    "active": false
+                  },
+                  {
+                    "from": "B",
+                    "to": "D",
+                    "active": true
+                  },
+                  {
+                    "from": "B",
+                    "to": "E",
+                    "active": true
+                  }
+                ],
+                "note": "order: D, B, E"
+              }
+            },
+            {
+              "title": "Visit A then C",
+              "action_label": "finish",
+              "body": "Now A’s left subtree is done, so record A, then visit C.",
+              "what_changed": "The final inorder is D, B, E, A, C.",
+              "animation": "visit",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 210,
+                    "y": 38,
+                    "active": true
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 120,
+                    "y": 120,
+                    "active": false
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 300,
+                    "y": 120,
+                    "active": true
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 70,
+                    "y": 200,
+                    "active": false
+                  },
+                  {
+                    "id": "E",
+                    "label": "E",
+                    "x": 165,
+                    "y": 200,
+                    "active": false
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B",
+                    "active": false
+                  },
+                  {
+                    "from": "A",
+                    "to": "C",
+                    "active": true
+                  },
+                  {
+                    "from": "B",
+                    "to": "D",
+                    "active": false
+                  },
+                  {
+                    "from": "B",
+                    "to": "E",
+                    "active": false
+                  }
+                ],
+                "note": "order: D, B, E, A, C"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "visual",
+          "title": "Postorder: left, right, node",
+          "concept": "trees",
+          "caption": "Watch postorder finish children before recording the parent node.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Go down first",
+              "action_label": "left",
+              "body": "Postorder does not record A or B yet. It goes to children first.",
+              "what_changed": "Parents wait until their children are done.",
+              "animation": "highlight",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 210,
+                    "y": 38,
+                    "active": true
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 120,
+                    "y": 120,
+                    "active": true
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 300,
+                    "y": 120,
+                    "active": false
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 70,
+                    "y": 200,
+                    "active": true
+                  },
+                  {
+                    "id": "E",
+                    "label": "E",
+                    "x": 165,
+                    "y": 200,
+                    "active": false
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B",
+                    "active": true
+                  },
+                  {
+                    "from": "A",
+                    "to": "C",
+                    "active": true
+                  },
+                  {
+                    "from": "B",
+                    "to": "D",
+                    "active": true
+                  },
+                  {
+                    "from": "B",
+                    "to": "E",
+                    "active": true
+                  }
+                ],
+                "note": "go left"
+              }
+            },
+            {
+              "title": "Record D then E",
+              "action_label": "children",
+              "body": "D and E are leaves, so they can be recorded before B.",
+              "what_changed": "Leaves have no children waiting under them.",
+              "animation": "visit",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 210,
+                    "y": 38,
+                    "active": false
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 120,
+                    "y": 120,
+                    "active": false
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 300,
+                    "y": 120,
+                    "active": false
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 70,
+                    "y": 200,
+                    "active": true
+                  },
+                  {
+                    "id": "E",
+                    "label": "E",
+                    "x": 165,
+                    "y": 200,
+                    "active": true
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B",
+                    "active": false
+                  },
+                  {
+                    "from": "A",
+                    "to": "C",
+                    "active": false
+                  },
+                  {
+                    "from": "B",
+                    "to": "D",
+                    "active": true
+                  },
+                  {
+                    "from": "B",
+                    "to": "E",
+                    "active": true
+                  }
+                ],
+                "note": "order: D, E"
+              }
+            },
+            {
+              "title": "Record B",
+              "action_label": "parent after children",
+              "body": "B’s left and right children are done, so B can be recorded.",
+              "what_changed": "Postorder records the parent after both child paths return.",
+              "animation": "return",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 210,
+                    "y": 38,
+                    "active": false
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 120,
+                    "y": 120,
+                    "active": true
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 300,
+                    "y": 120,
+                    "active": false
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 70,
+                    "y": 200,
+                    "active": false
+                  },
+                  {
+                    "id": "E",
+                    "label": "E",
+                    "x": 165,
+                    "y": 200,
+                    "active": false
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B",
+                    "active": false
+                  },
+                  {
+                    "from": "A",
+                    "to": "C",
+                    "active": false
+                  },
+                  {
+                    "from": "B",
+                    "to": "D",
+                    "active": true
+                  },
+                  {
+                    "from": "B",
+                    "to": "E",
+                    "active": true
+                  }
+                ],
+                "note": "order: D, E, B"
+              }
+            },
+            {
+              "title": "Record C, then A",
+              "action_label": "finish",
+              "body": "C is done, then the root A is recorded last.",
+              "what_changed": "The final postorder is D, E, B, C, A.",
+              "animation": "return",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 210,
+                    "y": 38,
+                    "active": true
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 120,
+                    "y": 120,
+                    "active": false
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 300,
+                    "y": 120,
+                    "active": true
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 70,
+                    "y": 200,
+                    "active": false
+                  },
+                  {
+                    "id": "E",
+                    "label": "E",
+                    "x": 165,
+                    "y": 200,
+                    "active": false
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B",
+                    "active": false
+                  },
+                  {
+                    "from": "A",
+                    "to": "C",
+                    "active": true
+                  },
+                  {
+                    "from": "B",
+                    "to": "D",
+                    "active": false
+                  },
+                  {
+                    "from": "B",
+                    "to": "E",
+                    "active": false
+                  }
+                ],
+                "note": "order: D, E, B, C, A"
+              }
+            }
+          ]
+        },
+        {
           "kind": "list",
           "title": "Depth-first orders",
           "items": [
@@ -347,6 +1198,237 @@
         {
           "kind": "text",
           "body": "Level-order traversal visits the root, then its children, then its grandchildren. A queue keeps that order because nodes that arrive first are processed first."
+        },
+        {
+          "kind": "visual",
+          "title": "Level order uses queue order",
+          "concept": "trees",
+          "caption": "Watch a tree traversal visit one level at a time by using a queue.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Start with root",
+              "action_label": "enqueue root",
+              "body": "The root A is the first node waiting.",
+              "what_changed": "The queue starts with the top level.",
+              "animation": "enqueue",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 210,
+                    "y": 40,
+                    "active": true
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 120,
+                    "y": 125
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 300,
+                    "y": 125
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 120,
+                    "y": 205
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B"
+                  },
+                  {
+                    "from": "A",
+                    "to": "C"
+                  },
+                  {
+                    "from": "B",
+                    "to": "D"
+                  }
+                ],
+                "queue": [
+                  "A"
+                ],
+                "note": "order: "
+              }
+            },
+            {
+              "title": "Visit A",
+              "action_label": "dequeue",
+              "body": "A leaves the queue, then B and C join.",
+              "what_changed": "The next level is waiting from left to right.",
+              "animation": "dequeue",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 210,
+                    "y": 40,
+                    "active": true
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 120,
+                    "y": 125
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 300,
+                    "y": 125
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 120,
+                    "y": 205
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B",
+                    "active": true
+                  },
+                  {
+                    "from": "A",
+                    "to": "C",
+                    "active": true
+                  },
+                  {
+                    "from": "B",
+                    "to": "D"
+                  }
+                ],
+                "queue": [
+                  "B",
+                  "C"
+                ],
+                "note": "order: A"
+              }
+            },
+            {
+              "title": "Visit B",
+              "action_label": "dequeue",
+              "body": "B leaves next because it waited before C. B adds D.",
+              "what_changed": "Children of B wait behind C, so level order is preserved.",
+              "animation": "dequeue",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 210,
+                    "y": 40
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 120,
+                    "y": 125,
+                    "active": true
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 300,
+                    "y": 125
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 120,
+                    "y": 205
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B"
+                  },
+                  {
+                    "from": "A",
+                    "to": "C"
+                  },
+                  {
+                    "from": "B",
+                    "to": "D",
+                    "active": true
+                  }
+                ],
+                "queue": [
+                  "C",
+                  "D"
+                ],
+                "note": "order: A, B"
+              }
+            },
+            {
+              "title": "Visit C, then D",
+              "action_label": "finish level",
+              "body": "C is processed before D because C was already waiting.",
+              "what_changed": "The final order is A, B, C, D.",
+              "animation": "visit",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 210,
+                    "y": 40
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 120,
+                    "y": 125
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 300,
+                    "y": 125,
+                    "active": true
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 120,
+                    "y": 205
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B"
+                  },
+                  {
+                    "from": "A",
+                    "to": "C",
+                    "active": true
+                  },
+                  {
+                    "from": "B",
+                    "to": "D"
+                  }
+                ],
+                "queue": [
+                  "D"
+                ],
+                "note": "order: A, B, C, D"
+              }
+            }
+          ]
         },
         {
           "kind": "code",

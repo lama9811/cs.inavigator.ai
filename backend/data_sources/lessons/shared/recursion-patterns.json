@@ -174,6 +174,88 @@
           "body": "A recursive call is not a guess. It should solve the same kind of problem with less input: one smaller number, the rest of a list, or a child node in a tree."
         },
         {
+          "kind": "visual",
+          "title": "Return values come back up",
+          "concept": "recursion-patterns",
+          "caption": "Watch `sum_list([2, 4, 6])` wait for smaller calls, then add results on the way back.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Ask for the full sum",
+              "action_label": "call",
+              "body": "The first call keeps 2 and asks for the sum of the rest.",
+              "what_changed": "The call stack stores the unfinished work: 2 plus a smaller answer.",
+              "animation": "push",
+              "state": {
+                "call_stack": [
+                  "2 + sum([4, 6])"
+                ],
+                "active_call": 0
+              }
+            },
+            {
+              "title": "Ask again",
+              "action_label": "call",
+              "body": "The next call keeps 4 and asks for the sum of [6].",
+              "what_changed": "Each call is the same job with a smaller list.",
+              "animation": "push",
+              "state": {
+                "call_stack": [
+                  "2 + sum([4, 6])",
+                  "4 + sum([6])"
+                ],
+                "active_call": 1
+              }
+            },
+            {
+              "title": "Hit the empty list",
+              "action_label": "base case",
+              "body": "The empty list returns 0 immediately.",
+              "what_changed": "Now the waiting calls can finally finish.",
+              "animation": "highlight",
+              "state": {
+                "call_stack": [
+                  "2 + sum([4, 6])",
+                  "4 + sum([6])",
+                  "6 + sum([])",
+                  "sum([]) = 0"
+                ],
+                "active_call": 3,
+                "note": "base case returns 0"
+              }
+            },
+            {
+              "title": "Add back up",
+              "action_label": "return",
+              "body": "6 + 0 returns 6, then 4 + 6 returns 10.",
+              "what_changed": "Return values move back to the calls that were waiting for them.",
+              "animation": "return",
+              "state": {
+                "call_stack": [
+                  "2 + 10",
+                  "4 + 6",
+                  "6"
+                ],
+                "active_call": 0,
+                "note": "final result will be 12"
+              }
+            },
+            {
+              "title": "Finish",
+              "action_label": "return",
+              "body": "The first call returns 2 + 10, which is 12.",
+              "what_changed": "The stack is done because every smaller answer returned.",
+              "animation": "return",
+              "state": {
+                "call_stack": [
+                  "sum([2, 4, 6]) = 12"
+                ],
+                "active_call": 0
+              }
+            }
+          ]
+        },
+        {
           "kind": "code",
           "caption": "Sum a list by taking the first item and asking recursion to sum the rest.",
           "variants": {

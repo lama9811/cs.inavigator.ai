@@ -288,6 +288,232 @@
           "body": "Graphs can contain cycles. In a cycle, following neighbors can lead you back to a node you already saw. A visited set prevents that."
         },
         {
+          "kind": "visual",
+          "title": "Visited stops a cycle",
+          "concept": "graphs",
+          "caption": "Watch DFS avoid looping forever in a graph with a cycle.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Visit A",
+              "action_label": "mark visited",
+              "body": "A is marked before exploring neighbors.",
+              "what_changed": "If another node points back to A later, the traversal can skip it.",
+              "animation": "visit",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 90,
+                    "y": 100,
+                    "active": true,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 210,
+                    "y": 45
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 320,
+                    "y": 100
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B"
+                  },
+                  {
+                    "from": "B",
+                    "to": "C"
+                  },
+                  {
+                    "from": "C",
+                    "to": "A"
+                  }
+                ],
+                "table": [
+                  {
+                    "key": "visited",
+                    "value": "{A}",
+                    "active": true
+                  }
+                ]
+              }
+            },
+            {
+              "title": "Visit B",
+              "action_label": "go deeper",
+              "body": "B is unvisited, so mark B and continue.",
+              "what_changed": "The visited set grows before the next recursive call.",
+              "animation": "visit",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 90,
+                    "y": 100,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 210,
+                    "y": 45,
+                    "active": true,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 320,
+                    "y": 100
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B",
+                    "active": true
+                  },
+                  {
+                    "from": "B",
+                    "to": "C"
+                  },
+                  {
+                    "from": "C",
+                    "to": "A"
+                  }
+                ],
+                "table": [
+                  {
+                    "key": "visited",
+                    "value": "{A, B}",
+                    "active": true
+                  }
+                ]
+              }
+            },
+            {
+              "title": "Visit C",
+              "action_label": "go deeper",
+              "body": "C is also new, so mark it.",
+              "what_changed": "Now all three nodes in the cycle are known.",
+              "animation": "visit",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 90,
+                    "y": 100,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 210,
+                    "y": 45,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 320,
+                    "y": 100,
+                    "active": true,
+                    "note": "visited"
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B"
+                  },
+                  {
+                    "from": "B",
+                    "to": "C",
+                    "active": true
+                  },
+                  {
+                    "from": "C",
+                    "to": "A"
+                  }
+                ],
+                "table": [
+                  {
+                    "key": "visited",
+                    "value": "{A, B, C}",
+                    "active": true
+                  }
+                ]
+              }
+            },
+            {
+              "title": "C points back to A",
+              "action_label": "skip",
+              "body": "A is already visited, so DFS does not call A again.",
+              "what_changed": "This skip is what prevents an infinite A -> B -> C -> A loop.",
+              "animation": "highlight",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 90,
+                    "y": 100,
+                    "active": true,
+                    "note": "already visited"
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 210,
+                    "y": 45,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 320,
+                    "y": 100,
+                    "note": "visited"
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B"
+                  },
+                  {
+                    "from": "B",
+                    "to": "C"
+                  },
+                  {
+                    "from": "C",
+                    "to": "A",
+                    "active": true
+                  }
+                ],
+                "table": [
+                  {
+                    "key": "visited",
+                    "value": "{A, B, C}",
+                    "active": true
+                  }
+                ],
+                "note": "skip A"
+              }
+            }
+          ]
+        },
+        {
           "kind": "code",
           "caption": "Depth-first traversal with visited.",
           "variants": {

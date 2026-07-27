@@ -362,6 +362,75 @@
           "tone": "mistake",
           "title": "Two failure cases",
           "body": "A closing parenthesis can appear with no opening waiting. Or openings can be left on the stack at the end. Both mean the symbols are not balanced."
+        },
+        {
+          "kind": "visual",
+          "title": "Match parentheses with a stack",
+          "concept": "stacks",
+          "caption": "Watch opening symbols wait on the stack until the matching closing symbol appears.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Read (",
+              "action_label": "push opening",
+              "body": "An opening parenthesis waits for a future closing parenthesis.",
+              "what_changed": "The stack now remembers the newest unfinished symbol.",
+              "animation": "push",
+              "state": {
+                "stack": [
+                  "("
+                ],
+                "active": [
+                  0
+                ],
+                "note": "waiting for )"
+              }
+            },
+            {
+              "title": "Read [",
+              "action_label": "push opening",
+              "body": "The bracket is inside the parenthesis, so it goes on top.",
+              "what_changed": "The bracket must close before the parenthesis can close.",
+              "animation": "push",
+              "state": {
+                "stack": [
+                  "(",
+                  "["
+                ],
+                "active": [
+                  1
+                ],
+                "note": "top expects ]"
+              }
+            },
+            {
+              "title": "Read ]",
+              "action_label": "pop match",
+              "body": "The closing bracket matches the top opening bracket, so pop it.",
+              "what_changed": "The bracket pair is finished. The parenthesis is back on top.",
+              "animation": "pop",
+              "state": {
+                "stack": [
+                  "("
+                ],
+                "active": [
+                  0
+                ],
+                "note": "] matched ["
+              }
+            },
+            {
+              "title": "Read )",
+              "action_label": "pop match",
+              "body": "The closing parenthesis matches the remaining top item.",
+              "what_changed": "The stack is empty, so every opening symbol was closed in the right order.",
+              "animation": "pop",
+              "state": {
+                "stack": [],
+                "note": "balanced"
+              }
+            }
+          ]
         }
       ]
     }
