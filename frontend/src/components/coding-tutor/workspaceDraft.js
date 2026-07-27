@@ -11,7 +11,7 @@
 // keep each language's buffer independent. Purely localStorage; no backend.
 
 const DRAFT_PREFIX = "csnav.workspaceDraft"; // + :<problemId>:<language>
-const LAST_KEY = "csnav.workspaceLast";      // { problemId, language }
+const LAST_KEY = "csnav.workspaceLast";      // { problemId, language, updatedAt }
 const DRAFT_INDEX_KEY = "csnav.workspaceDraftIndex"; // [key, ...] for pruning
 const MAX_DRAFTS = 60; // plenty for a practice session; prune oldest beyond this
 
@@ -109,7 +109,7 @@ export function clearDraft(problemId, language) {
 export function saveLastWorkspace(problemId, language) {
   if (!problemId || !language) return;
   try {
-    localStorage.setItem(LAST_KEY, JSON.stringify({ problemId, language }));
+    localStorage.setItem(LAST_KEY, JSON.stringify({ problemId, language, updatedAt: new Date().toISOString() }));
   } catch {
     // Non-fatal.
   }

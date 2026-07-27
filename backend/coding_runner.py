@@ -1077,6 +1077,108 @@ def _cpp_literal(value: Any) -> str:
     return f"Value(std::string({json.dumps(str(value))}))"
 
 
+def _cpp_param_prefers_int(code: str, function_name: str, param_name: str, kind: str) -> bool:
+    """Best-effort compatibility check for beginner/AI C++ signatures.
+
+    The official C++ runner contract uses `long long` and `vector<long long>` so
+    integer tests do not overflow easily. Beginners and AI tools often write
+    `int` / `vector<int>` instead. When the visible signature clearly does that,
+    the runner can adapt the hidden test values before calling the student's
+    code instead of showing a linker error.
+    """
+    escaped_name = re.escape(function_name)
+    escaped_param = re.escape(param_name)
+    signature_match = re.search(rf"\b{escaped_name}\s*\(([^)]*)\)", code)
+    signature_text = signature_match.group(1) if signature_match else code
+    if kind == "intlist":
+        return bool(re.search(rf"(?:std::)?vector\s*<\s*int\s*>\s*&?\s*{escaped_param}\b", signature_text))
+    if kind == "grid":
+        return bool(re.search(rf"(?:std::)?vector\s*<\s*(?:std::)?vector\s*<\s*int\s*>\s*>\s*&?\s*{escaped_param}\b", signature_text))
+    if kind == "int":
+        return bool(re.search(rf"\bint\s*&?\s*{escaped_param}\b", signature_text))
+    return False
+
+
+def _cpp_compat_return_expr(return_kind: str) -> str:
+    if return_kind == "int":
+        return "return (long long)__student_result;"
+    if return_kind == "bool":
+        return "return (bool)__student_result;"
+    if return_kind == "string":
+        return "return std::string(__student_result);"
+    if return_kind in {"intlist", "list"}:
+        return "return std::vector<long long>(__student_result.begin(), __student_result.end());"
+    if return_kind == "strlist":
+        return "return std::vector<std::string>(__student_result.begin(), __student_result.end());"
+    if return_kind == "grid":
+        return (
+            "std::vector<std::vector<long long>> __out;\n"
+            "    for (auto& __row : __student_result) __out.push_back(std::vector<long long>(__row.begin(), __row.end()));\n"
+            "    return __out;"
+        )
+    return "return __student_result;"
+
+
+def _cpp_beginner_compat_adapter(code: str, function_name: str, arg_spec, expected_signature: str) -> str:
+    """Return a top-level wrapper for common C++ beginner shapes.
+
+    Official starter:
+        long long fn(vector<long long> nums, long long k)
+
+    Common beginner/AI shapes:
+        class Solution { public: int fn(vector<int>& nums, int k) { ... } };
+        int fn(vector<int> nums, int k) { ... }
+
+    The wrapper lets those run while the UI still teaches the cleaner expected
+    shape. It intentionally only covers obvious safe numeric conversions.
+    """
+    if not arg_spec:
+        return ""
+    has_solution_class = bool(re.search(r"\bclass\s+Solution\b", code))
+    has_function = bool(re.search(rf"\b{re.escape(function_name)}\s*\(", code))
+    uses_beginner_ints = "vector<int" in code or "std::vector<int" in code or bool(
+        re.search(rf"\bint\s+{re.escape(function_name)}\s*\(", code)
+    )
+    if not has_solution_class and not (has_function and uses_beginner_ints):
+        return ""
+    if expected_signature in code:
+        return ""
+
+    args, return_kind = arg_spec
+    locals_src: list[str] = []
+    call_args: list[str] = []
+    for name, kind in args:
+        if kind == "intlist" and _cpp_param_prefers_int(code, function_name, name, kind):
+            local_name = f"__{name}_int"
+            locals_src.append(f"    std::vector<int> {local_name}({name}.begin(), {name}.end());")
+            call_args.append(local_name)
+        elif kind == "grid" and _cpp_param_prefers_int(code, function_name, name, kind):
+            local_name = f"__{name}_int"
+            locals_src.append(f"    std::vector<std::vector<int>> {local_name};")
+            locals_src.append(f"    for (auto& __row : {name}) {local_name}.push_back(std::vector<int>(__row.begin(), __row.end()));")
+            call_args.append(local_name)
+        elif kind == "int" and _cpp_param_prefers_int(code, function_name, name, kind):
+            local_name = f"__{name}_int"
+            locals_src.append(f"    int {local_name} = (int){name};")
+            call_args.append(local_name)
+        else:
+            call_args.append(name)
+
+    local_block = "\n".join(locals_src)
+    call_prefix = "Solution __student;\n    " if has_solution_class else ""
+    call_target = f"__student.{function_name}" if has_solution_class else function_name
+    return_expr = _cpp_compat_return_expr(return_kind)
+    return (
+        "\n// Compatibility wrapper: lets common class Solution / int-based C++ answers run in this learning workspace.\n"
+        f"{expected_signature} {{\n"
+        f"    {call_prefix}"
+        f"{local_block}\n"
+        f"    auto __student_result = {call_target}({', '.join(call_args)});\n"
+        f"    {return_expr}\n"
+        "}\n"
+    )
+
+
 def _finalize_compiled_result(
     payload_lines: list[str],
     *,
@@ -1253,11 +1355,15 @@ public class Runner {{
     except Exception as exc:
         return empty_practice_run_response(f"Java runner setup failed: {exc}")
 
-    return _finalize_compiled_result(
+    result = _finalize_compiled_result(
         run.stdout.splitlines(),
         started=started,
         stderr_text=run.stderr.strip(),
     )
+    for index, item in enumerate(result.get("tests", [])):
+        if index < len(tests) and "args" not in item:
+            item["args"] = tests[index].get("args", [])
+    return result
 
 
 def run_cpp_practice_tests(code: str, function_name: str, tests: list[dict[str, Any]], arg_spec=None) -> dict[str, Any]:
@@ -1291,15 +1397,18 @@ def run_cpp_practice_tests(code: str, function_name: str, tests: list[dict[str, 
     # Value args + wraps the result, so the compare harness stays identical. When
     # there's no spec, fall back to the legacy `Value f(vector<Value>)` contract.
     if arg_spec:
-        from practice_starters import cpp_native_bridge
+        from practice_starters import cpp_native_bridge, cpp_native_signature
+        expected_signature = cpp_native_signature(function_name, arg_spec)
         student_decl = cpp_native_bridge(function_name, arg_spec)
         call_target = f"__call_{function_name}"
     else:
+        expected_signature = f"Value {function_name}(std::vector<Value> args)"
         student_decl = (
             f"// Student provides: Value {function_name}(vector<Value> args)\n"
             f"Value {function_name}(vector<Value> args);"
         )
         call_target = function_name
+    compat_adapter = _cpp_beginner_compat_adapter(code, function_name, arg_spec, expected_signature)
 
     # A tiny tagged-union Value type so student code can accept a vector<Value>.
     harness = f"""
@@ -1345,6 +1454,8 @@ struct Value {{
 
 {code}
 
+{compat_adapter}
+
 static int passed_=0, total_=0;
 static string esc(const string& s){{ string r; for(char c:s){{ if(c=='"'||c=='\\\\') r+='\\\\'; if(c=='\\n'){{ r+="\\\\n"; continue; }} r+=c; }} return r; }}
 
@@ -1383,10 +1494,19 @@ int main(){{
                 env=_hardened_compiled_env({"PATH": os.environ.get("PATH", "")}),
             )
             if compiled.returncode != 0:
+                stderr = compiled.stderr.strip() or "C++ compilation failed."
+                if "undefined reference" in stderr and function_name in stderr:
+                    stderr = (
+                        "The C++ runner could not find the function it needs to test.\n\n"
+                        f"Expected shape:\n{expected_signature} {{\n"
+                        "    // your code here\n"
+                        "}\n\n"
+                        "Check that the function name, parameter types, return type, and top-level placement match the starter."
+                    )
                 return {
                     "status": "error", "passed": 0, "total": 0, "tests": [],
                     "stdout": "",
-                    "stderr": _truncate_text(compiled.stderr.strip() or "C++ compilation failed."),
+                    "stderr": _truncate_text(stderr),
                     "duration_ms": round((time.perf_counter() - started) * 1000, 2),
                 }
 
@@ -1407,11 +1527,15 @@ int main(){{
     except Exception as exc:
         return empty_practice_run_response(f"C++ runner setup failed: {exc}")
 
-    return _finalize_compiled_result(
+    result = _finalize_compiled_result(
         run.stdout.splitlines(),
         started=started,
         stderr_text=run.stderr.strip(),
     )
+    for index, item in enumerate(result.get("tests", [])):
+        if index < len(tests) and "args" not in item:
+            item["args"] = tests[index].get("args", [])
+    return result
 
 
 def run_java_freeform(code: str) -> dict[str, Any]:

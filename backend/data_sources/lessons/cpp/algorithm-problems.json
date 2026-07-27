@@ -8,7 +8,7 @@
     "runtime"
   ],
   "refresher": "First state the input and expected output. Choose any value the algorithm must remember, update it as you visit the data, and return only after all required work is finished.",
-  "refresher_code": "int total=0;\nfor(int n: values) total+=n;\nreturn total;",
+  "refresher_code": "long long total = 0;\nfor (long long n : values) total += n;\nreturn total;",
   "blocks": [
     {
       "kind": "text",
@@ -19,9 +19,15 @@
       "body": "To add a vector, remember a running total. Programmers often call a value like this an accumulator because it collects each update. Start it at zero, add every number, and return the total after the loop."
     },
     {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Use the starter's types while solving",
+      "body": "If the starter uses `long long`, use `long long` for related totals and loop variables too. That keeps your code matched to the runner and avoids overflow when the numbers get large."
+    },
+    {
       "kind": "code",
       "caption": "Total begins at zero, receives every value, and is returned only after the loop is complete.",
-      "code": "#include <iostream>\n#include <vector>\n\nint sum(const std::vector<int>& values) {\n  int total = 0;\n\n  for (int value : values) {\n    total += value;\n  }\n\n  return total;\n}\n\nint main() {\n  std::cout << sum({3, 5, 2}) << \"\\n\";\n}",
+      "code": "#include <iostream>\n#include <vector>\n\nlong long sum(std::vector<long long> values) {\n  long long total = 0;\n\n  for (long long value : values) {\n    total += value;\n  }\n\n  return total;\n}\n\nint main() {\n  std::cout << sum({3, 5, 2}) << \"\\n\";\n}",
       "output": "10"
     },
     {
@@ -73,6 +79,7 @@
       "title": "Algorithm Problems: Part 1 checklist",
       "items": [
         "Write expected output.",
+        "Keep the starter's function signature.",
         "Choose correct initial state.",
         "Visit each needed element.",
         "Return after traversal."

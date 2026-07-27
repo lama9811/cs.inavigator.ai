@@ -8,7 +8,7 @@
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "A C++ function writes its return type before its name and gives every parameter a type. For example, `int square(int n)` accepts an integer and returns an integer. Use `void` when no value is returned.",
+  "refresher": "A C++ function writes its return type before its name and gives every parameter a type. For example, `int square(int n)` accepts an integer and returns an integer. In Coding Tutor practice, keep the starter function line exactly as given, then write your logic inside it.",
   "refresher_code": "int square(int n){\n  return n*n;\n}",
   "blocks": [
     {
@@ -18,6 +18,12 @@
     {
       "kind": "text",
       "body": "Read `int larger(int a, int b)` from left to right: the function returns an `int`, its name is `larger`, and it receives two integer parameters. A call such as `larger(7, 4)` fills those parameters and waits for the returned answer."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Keep the starter shape",
+      "body": "The practice runner calls the exact function from the starter. If the starter says `long long temperatureAboveThreshold(std::vector<long long> readings, long long threshold)`, keep that line. Do not wrap it in a `class Solution`, rename it, or change `long long` to `int`."
     },
     {
       "kind": "callout",
@@ -38,6 +44,14 @@
       "wrong": "int square(int n) {\n  n * n;\n}",
       "right_label": "Clearer version",
       "right": "int square(int n) {\n  return n * n;\n}"
+    },
+    {
+      "kind": "compare",
+      "caption": "For Coding Tutor C++ practice, keep the top-level function the runner expects.",
+      "wrong_label": "Runner cannot find this function",
+      "wrong": "class Solution {\npublic:\n  int temperatureAboveThreshold(std::vector<int>& readings, int threshold) {\n    return 0;\n  }\n};",
+      "right_label": "Matches the starter shape",
+      "right": "long long temperatureAboveThreshold(std::vector<long long> readings, long long threshold) {\n  return 0;\n}"
     },
     {
       "kind": "text",
@@ -64,6 +78,19 @@
     },
     {
       "kind": "check",
+      "prompt": "The starter gives this line: `long long countItems(std::vector<long long> nums)`. What should you do first?",
+      "code": "",
+      "choices": [
+        "Keep that line and write the body inside it.",
+        "Rename the function to solve.",
+        "Change long long to string.",
+        "Wrap it in a new public class."
+      ],
+      "answer_index": 0,
+      "why": "The runner calls the starter function by its exact name and shape, so the safest move is to keep it and fill in the body."
+    },
+    {
+      "kind": "check",
       "prompt": "What is printed?",
       "code": "int twice(int n){return n*2;}\nstd::cout<<twice(3);",
       "choices": [
@@ -80,6 +107,7 @@
       "title": "Functions checklist",
       "items": [
         "Match each parameter type to its input.",
+        "Keep the practice starter function name and types.",
         "Return the promised type on every path.",
         "Give the function one clear purpose.",
         "Use void only when no result is needed."

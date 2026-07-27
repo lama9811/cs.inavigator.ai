@@ -188,8 +188,23 @@ function extractDeclarationNames(code = "", languageName = "Python") {
   return names;
 }
 
+function javaReplacementKeepsRunnerShape(currentCode = "", suggestion = "") {
+  const currentHasSolutionClass = /\bclass\s+Solution\b/.test(currentCode);
+  if (!currentHasSolutionClass) return true;
+
+  const suggestionHasSolutionClass = /\bclass\s+Solution\b/.test(suggestion);
+  const renamedPublicClass = /\bpublic\s+class\s+(?!Solution\b)([A-Za-z_]\w*)\b/.test(suggestion);
+  const hasMainOnlyProgram = /\bpublic\s+static\s+void\s+main\s*\(/.test(suggestion)
+    && !suggestionHasSolutionClass;
+
+  return suggestionHasSolutionClass && !renamedPublicClass && !hasMainOnlyProgram;
+}
+
 function suggestedCodeLooksLikeSafeReplacement(currentCode = "", suggestion = "", languageName = "Python") {
   if (!currentCode.trim()) return true;
+  if (languageName === "Java" && !javaReplacementKeepsRunnerShape(currentCode, suggestion)) {
+    return false;
+  }
   const currentNames = extractDeclarationNames(currentCode, languageName);
   if (!currentNames.size) return suggestion.length >= currentCode.trim().length * 0.8;
   const suggestedNames = extractDeclarationNames(suggestion, languageName);
@@ -392,7 +407,7 @@ const LANGUAGE_FORMATS = {
   Python: { file: "solution.py", style: "Function-focused" },
   Java: { file: "Solution.java", style: "Class method" },
   JavaScript: { file: "solution.js", style: "Function export" },
-  "C++": { file: "solution.cpp", style: "Solution class" },
+  "C++": { file: "solution.cpp", style: "Top-level function" },
 };
 
 function progressKey(questionId, language) {
@@ -684,7 +699,7 @@ function buildHintSteps(problem, solution, attempts, hintGate = null) {
   if (!problem) return [];
   const topic = problem.topic || "the main pattern";
   const gateHints = Array.isArray(hintGate?.hints) ? hintGate.hints : [];
-  const givenHints = gateHints.map(item => item.hint).filter(Boolean);
+  const hintAt = (level) => gateHints.find(item => item.level === level)?.hint || null;
   const guided = solution?.guided_steps || [];
   const shapeSnippet = buildShapeSnippet(solution || {});
   const unlockedCount = Number.isFinite(hintGate?.unlocked_count)
@@ -694,13 +709,13 @@ function buildHintSteps(problem, solution, attempts, hintGate = null) {
     {
       level: 1,
       title: "Question Check",
-      body: givenHints[0] || `Reread the prompt and name what the answer should return. Then try one tiny example by hand before changing code.`,
+      body: hintAt(1) || `Reread the prompt and name what the answer should return. Then try one tiny example by hand before changing code.`,
       locked: unlockedCount < 1,
     },
     {
       level: 2,
       title: "Concept",
-      body: givenHints[1] || guided[0] || `Focus on the ${topic} idea: decide what you need to remember as you scan, compare, or build the answer.`,
+      body: hintAt(2) || guided[0] || `Focus on the ${topic} idea: decide what you need to remember as you scan, compare, or build the answer.`,
       locked: unlockedCount < 2,
     },
     {
@@ -708,13 +723,13 @@ function buildHintSteps(problem, solution, attempts, hintGate = null) {
       title: "Pseudocode / Code Shape",
       body: shapeSnippet
         ? `Use this only as a shape check:\n\n\`\`\`\n${shapeSnippet}\n\`\`\``
-        : givenHints[2] || guided[1] || "Write just the loop or branch that updates your answer, then stop and test it manually.",
+        : hintAt(3) || guided[1] || "Write just the loop or branch that updates your answer, then stop and test it manually.",
       locked: unlockedCount < 3,
     },
     {
       level: 4,
       title: "Small Code Fragment",
-      body: guided[2] || givenHints[2] || "Connect the helper logic to the return value, then test an empty, one-item, and typical input.",
+      body: hintAt(4) || guided[2] || "Connect the helper logic to the return value, then test an empty, one-item, and typical input.",
       locked: unlockedCount < 4,
     },
   ];
@@ -810,6 +825,7 @@ export default function CodingTutor({
   const [progressByLanguage, setProgressByLanguage] = useState({});
   const [activeProblem, setActiveProblem] = useState(null);
   const [activeSolution, setActiveSolution] = useState(null);
+  const activeSolutionRef = useRef(null);
   const [problemLoading, setProblemLoading] = useState(false);
   const [listLoading, setListLoading] = useState(false);
   // Personal "My Snippets" workspace: a fresh, non-graded space separate from the
@@ -837,6 +853,19 @@ export default function CodingTutor({
   // limit also kills a truly stuck process, so this frees the UI immediately.
   const runAbortRef = useRef(null);
   const guideResizeRef = useRef(null);
+  const workspaceGuideWidthRef = useRef(workspaceGuideWidth);
+
+  useEffect(() => {
+    workspaceGuideWidthRef.current = workspaceGuideWidth;
+  }, [workspaceGuideWidth]);
+
+  const persistGuideWidth = useCallback((value) => {
+    try {
+      window.localStorage.setItem(WORKSPACE_GUIDE_W_KEY, String(Math.round(value)));
+    } catch {
+      /* ignore storage errors */
+    }
+  }, []);
 
   const stopRun = useCallback(() => {
     if (runAbortRef.current) {
@@ -869,6 +898,7 @@ export default function CodingTutor({
       WORKSPACE_GUIDE_MAX_W,
       Math.max(WORKSPACE_GUIDE_MIN_W, state.startWidth + delta),
     );
+    workspaceGuideWidthRef.current = next;
     setWorkspaceGuideWidth(next);
   }, []);
 
@@ -876,30 +906,35 @@ export default function CodingTutor({
     if (!guideResizeRef.current) return;
     guideResizeRef.current = null;
     document.body.classList.remove("ct-guide-resizing");
-    setWorkspaceGuideWidth((value) => {
-      try {
-        window.localStorage.setItem(WORKSPACE_GUIDE_W_KEY, String(Math.round(value)));
-      } catch {
-        /* ignore storage errors */
-      }
-      return value;
-    });
-  }, []);
+    persistGuideWidth(workspaceGuideWidthRef.current);
+  }, [persistGuideWidth]);
 
   const onGuideDividerKeyDown = useCallback((event) => {
     const step = event.shiftKey ? 48 : 16;
     if (event.key === "ArrowLeft") {
       event.preventDefault();
-      setWorkspaceGuideWidth((value) => Math.max(WORKSPACE_GUIDE_MIN_W, value - step));
+      const next = Math.max(WORKSPACE_GUIDE_MIN_W, workspaceGuideWidthRef.current - step);
+      workspaceGuideWidthRef.current = next;
+      setWorkspaceGuideWidth(next);
+      persistGuideWidth(next);
     } else if (event.key === "ArrowRight") {
       event.preventDefault();
-      setWorkspaceGuideWidth((value) => Math.min(WORKSPACE_GUIDE_MAX_W, value + step));
+      const next = Math.min(WORKSPACE_GUIDE_MAX_W, workspaceGuideWidthRef.current + step);
+      workspaceGuideWidthRef.current = next;
+      setWorkspaceGuideWidth(next);
+      persistGuideWidth(next);
     }
-  }, []);
+  }, [persistGuideWidth]);
 
   useEffect(() => {
-    return () => document.body.classList.remove("ct-guide-resizing");
-  }, []);
+    window.addEventListener("pointerup", endGuideResize);
+    window.addEventListener("pointercancel", endGuideResize);
+    return () => {
+      window.removeEventListener("pointerup", endGuideResize);
+      window.removeEventListener("pointercancel", endGuideResize);
+      document.body.classList.remove("ct-guide-resizing");
+    };
+  }, [endGuideResize]);
   const [revealedHints, setRevealedHints] = useState(0);
   const [hintGate, setHintGate] = useState(null);
   const [tutorMode, setTutorMode] = useState("Guided Tutor");
@@ -916,6 +951,7 @@ export default function CodingTutor({
   const selectedLanguageKey = PRACTICE_LANGUAGE_API[selectedLanguage] || "python";
   // Mirror the live editor code + language into refs every render so the mock-nav
   // handlers can read the current answer synchronously when switching questions.
+  activeSolutionRef.current = activeSolution;
   codeRef.current = code;
   langKeyRef.current = selectedLanguageKey;
   const activeLanguageProgress = activeProblem ? progressByLanguage[activeProblem.id]?.[selectedLanguageKey] : null;
@@ -974,12 +1010,18 @@ export default function CodingTutor({
   // language can't be swapped mid-round. Outside a mock it's freely switchable.
   const interviewLanguageLocked = Boolean(mockSession && activeProblem?.mock && mockSession.languageCommitted);
   const hintSteps = useMemo(() => buildHintSteps(activeProblem, activeSolution, attempts, hintGate), [activeProblem, activeSolution, attempts, hintGate]);
+  const currentWorkspaceContextKey = [
+    activeProblem?.id || activeProblem?.title || "personal",
+    selectedLanguage || "unknown-language",
+    activeSolution?.function_name || "free-run",
+  ].join("::");
   const latestFeedback = messages.slice().reverse().find((msg) =>
     msg.sender === "bot"
     && msg.text
     && msg.mode === "coding_tutor"
     && msg.surface === "widget"
     && msg.widgetSessionId === currentWidgetSessionId
+    && (!msg.workspaceContextKey || msg.workspaceContextKey === currentWorkspaceContextKey)
   )?.text || "";
   const discussionMessages = useMemo(
     () =>
@@ -1406,6 +1448,8 @@ export default function CodingTutor({
     onContextChange?.({
       activeProblem: useWorkspace ? activeProblem : null,
       selectedLanguage,
+      expectedFunctionName: useWorkspace ? activeSolution?.function_name || "" : "",
+      starterCode: useWorkspace ? activeSolution?.starter_code || "" : "",
       code: useWorkspace ? code : "",
       attempts: useWorkspace ? attempts : 0,
       workspaceTab: activePage === "workspace" && workspaceVisible ? workspaceTab : activePage,
@@ -1425,7 +1469,7 @@ export default function CodingTutor({
       onUndoAICode: typeof activeSnapshots.beforeAiRewrite === "string" ? undoAiCode : null,
       canUndoAICode: typeof activeSnapshots.beforeAiRewrite === "string",
     });
-  }, [activePage, activeProblem, attempts, code, note, onContextChange, selectedLanguage, suggestedCodeBlock, tutorMode, learningStyle, hintGate, workspaceTab, workspaceVisible, runnerSummary, activeSnapshots.beforeAiRewrite, applyAiCode, undoAiCode]);
+  }, [activePage, activeProblem, activeSolution?.function_name, activeSolution?.starter_code, attempts, code, note, onContextChange, selectedLanguage, suggestedCodeBlock, tutorMode, learningStyle, hintGate, workspaceTab, workspaceVisible, runnerSummary, activeSnapshots.beforeAiRewrite, applyAiCode, undoAiCode]);
 
   useEffect(() => {
     onActivePageChange?.(activePage);
@@ -1852,10 +1896,17 @@ export default function CodingTutor({
         return null;
       }
       if (!response.ok) throw new Error(data.detail || `solution ${response.status}`);
-      setActiveSolution((current) => current && problem.id === activeProblem?.id
-        ? { ...current, ...data }
-        : current
-      );
+      const responseQuestionId = data?.question_id || problem.id;
+      const currentQuestionId = activeSolutionRef.current?.question_id;
+      if (currentQuestionId && currentQuestionId !== responseQuestionId) {
+        return null;
+      }
+      setActiveSolution((current) => {
+        if (!current || current.question_id && current.question_id !== responseQuestionId) {
+          return current;
+        }
+        return { ...current, ...data };
+      });
       if (data.hint_state) setHintGate(data.hint_state);
       return data;
     } catch (error) {
@@ -2587,11 +2638,14 @@ export default function CodingTutor({
     autoReopenedRef.current = true;
     (async () => {
       const localLast = readLastWorkspace();
-      const serverLast = localLast?.problemId ? null : await loadWorkspaceState();
-      const last = localLast?.problemId
-        ? { problemId: localLast.problemId, language: localLast.language, source: questionSetForId(localLast.problemId) }
-        : serverLast?.problem_id
-          ? { problemId: serverLast.problem_id, language: serverLast.language, source: serverLast.source }
+      const serverLast = await loadWorkspaceState();
+      const localTime = Date.parse(localLast?.updatedAt || "") || 0;
+      const serverTime = Date.parse(serverLast?.updated_at || "") || 0;
+      const useServer = Boolean(serverLast?.problem_id) && (!localLast?.problemId || serverTime > localTime);
+      const last = useServer
+        ? { problemId: serverLast.problem_id, language: serverLast.language, source: serverLast.source }
+        : localLast?.problemId
+          ? { problemId: localLast.problemId, language: localLast.language, source: questionSetForId(localLast.problemId) }
           : null;
       if (!last?.problemId) {
         autoReopenedRef.current = false;
@@ -2817,11 +2871,6 @@ export default function CodingTutor({
       await runFreeform();
       return;
     }
-    if (!["python", "javascript"].includes(selectedLanguageKey)) {
-      setTestOutput({ status: "error", message: "The V2.1 runner supports Python and JavaScript. Switch to one of those languages, edit your solution, and retry." });
-      setTerminalOpen(true);
-      return;
-    }
     if (!hasStarterCodeChanged(code, activeSolution?.starter_code)) {
       setTestOutput({ status: "ready", message: "Make a change to the starter code before running tests. Loading a starter does not count as progress." });
       setTerminalOpen(true);
@@ -2984,7 +3033,7 @@ export default function CodingTutor({
     setRevealedHints(0);
     setWorkspaceTab("Editor");
     setTerminalOpen(false);
-    setTestOutput({ status: "ready", message: "Workspace cleared. Write your own Python or JavaScript and press Run to test it (not graded)." });
+    setTestOutput({ status: "ready", message: "Workspace cleared. Write your own Python, JavaScript, Java, or C++ and press Run to test it (not graded)." });
     toast.success("Workspace cleared. Reopen a problem from the Practice Library to restore it.");
   };
 
@@ -3025,8 +3074,15 @@ export default function CodingTutor({
 
   const showNextHint = async () => {
     const unlocked = hintSteps.filter(hint => !hint.locked).length;
-    if (revealedHints >= unlocked && hintSteps.some(hint => hint.locked)) {
-      toast.info(hintGate?.reason || "Run another attempt to unlock the next hint.");
+    if (!hintSteps.length || revealedHints >= hintSteps.length) {
+      setWorkspaceTab("Hints");
+      return;
+    }
+    if (revealedHints >= unlocked) {
+      if (hintSteps.some(hint => hint.locked)) {
+        toast.info(hintGate?.reason || "Run another attempt to unlock the next hint.");
+      }
+      setWorkspaceTab("Hints");
       return;
     }
     const nextLevel = Math.min(revealedHints + 1, unlocked);

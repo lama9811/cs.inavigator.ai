@@ -568,6 +568,37 @@ body.ct-guide-resizing * {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
+  background: var(--ed-bg);
+}
+
+.code-editor-active-indent-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  padding: var(--ed-pad-y) 16px;
+  overflow: hidden;
+  pointer-events: none;
+  font-family: var(--ed-font);
+  font-size: var(--ed-size);
+  line-height: var(--ed-lh);
+  tab-size: 4;
+  -moz-tab-size: 4;
+}
+
+.code-editor-active-indent-guide {
+  position: absolute;
+  top: var(--guide-top, 0);
+  height: var(--guide-height, 0);
+  left: calc((var(--guide-level, 0) * 4ch) - 1.55ch);
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(245, 130, 32, 0.15),
+    rgba(245, 130, 32, 0.72),
+    rgba(245, 130, 32, 0.15)
+  );
+  box-shadow: 0 0 10px rgba(245, 130, 32, 0.16);
 }
 
 .code-editor-window .coding-editor,
@@ -599,7 +630,7 @@ body.ct-guide-resizing * {
 .code-editor-window .code-editor-textarea {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 4;
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
@@ -612,7 +643,7 @@ body.ct-guide-resizing * {
 .code-editor-window .code-editor-textarea::selection {
   /* Keep selection text invisible too (the overlay shows the colored code) so
      highlighting doesn't reveal a second, differently-colored copy of the text. */
-  background: rgba(245, 130, 32, 0.32);
+  background: rgba(245, 130, 32, 0.52);
   color: transparent !important;
   -webkit-text-fill-color: transparent !important;
 }
@@ -625,7 +656,7 @@ body.ct-guide-resizing * {
 .code-editor-window .code-editor-highlight {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 2;
   pointer-events: none;
   overflow: hidden;
   margin: 0;
@@ -640,7 +671,7 @@ body.ct-guide-resizing * {
   word-wrap: normal;
   tab-size: 4;
   -moz-tab-size: 4;
-  background: var(--ed-bg) !important;
+  background: transparent !important;
   color: #e6edf3 !important;
 }
 
@@ -696,6 +727,18 @@ body.ct-guide-resizing * {
   font-weight: 700;
   color: #fff;
   background: color-mix(in srgb, var(--ct-accent, #f58220) 88%, #000);
+}
+
+.coding-app ::selection,
+.floating-coding-chat ::selection {
+  background: rgba(245, 130, 32, 0.34);
+  color: #07111f;
+}
+
+body.coding-dark .coding-app ::selection,
+body.coding-dark .floating-coding-chat ::selection {
+  background: rgba(231, 160, 91, 0.55);
+  color: #fffaf1;
 }
 
 @media (max-width: 640px) {

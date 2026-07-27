@@ -7,12 +7,16 @@
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "`std::vector` is C++'s common growable collection. Indexes begin at zero, `.size()` gives the number of elements, and `.push_back(value)` adds one item to the end.",
-  "refresher_code": "#include <vector>\nstd::vector<int> values{2,4};\nvalues.push_back(6);",
+  "refresher": "`std::vector` is C++'s common growable collection. Indexes begin at zero, `.size()` gives the number of elements, and `.push_back(value)` adds one item to the end. `std::vector<long long>` is still a vector; it just stores larger whole numbers.",
+  "refresher_code": "#include <vector>\nstd::vector<long long> values{2,4};\nvalues.push_back(6);",
   "blocks": [
     {
       "kind": "text",
       "body": "A vector keeps several values of the same type in order. Create one with `std::vector<int> scores{80, 90};`. The type inside angle brackets says this vector stores integers."
+    },
+    {
+      "kind": "text",
+      "body": "`std::vector<long long>` follows the same rules as `std::vector<int>`. You still loop through it, index it, and call `.size()` the same way. The only difference is that each item is a larger whole number."
     },
     {
       "kind": "text",
@@ -63,6 +67,19 @@
     },
     {
       "kind": "check",
+      "prompt": "What does `std::vector<long long>` mean?",
+      "code": "",
+      "choices": [
+        "A vector that stores larger whole numbers.",
+        "A vector that stores text.",
+        "A vector that cannot be looped over.",
+        "A vector that starts at index one."
+      ],
+      "answer_index": 0,
+      "why": "The part inside angle brackets tells the element type. `long long` is a larger whole-number type."
+    },
+    {
+      "kind": "check",
       "prompt": "Which operation appends a value?",
       "code": "",
       "choices": [
@@ -81,6 +98,7 @@
         "Include vector.",
         "Begin at zero.",
         "Stay below size.",
+        "Read the type inside angle brackets.",
         "Choose checked access when useful."
       ]
     }

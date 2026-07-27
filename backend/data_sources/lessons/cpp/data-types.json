@@ -7,12 +7,18 @@
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "Use `int` for whole numbers, `double` for decimals, `char` for one character, `bool` for true or false, and `std::string` for text. The type affects which values and calculations are possible.",
+  "refresher": "Use `int` for ordinary whole numbers and `long long` when a whole number may be large. Use `double` for decimals, `char` for one character, `bool` for true or false, and `std::string` for text. The type affects which values and calculations are possible.",
   "refresher_code": "double average = static_cast<double>(total) / count;",
   "blocks": [
     {
       "kind": "text",
-      "body": "A type describes the kind of value a variable can store. Start with five common choices: `int` for whole numbers, `double` for decimals, `char` for one character, `bool` for true or false, and `std::string` for text."
+      "body": "A type describes the kind of value a variable can store. Start with common choices: `int` for ordinary whole numbers, `long long` for larger whole numbers, `double` for decimals, `char` for one character, `bool` for true or false, and `std::string` for text."
+    },
+    {
+      "kind": "callout",
+      "tone": "tip",
+      "title": "Why practice starters may use long long",
+      "body": "`long long` works like `int`, but it can hold much larger whole numbers. Some Coding Tutor C++ starters use it so a correct idea does not fail just because the answer is bigger than an `int` can safely store."
     },
     {
       "kind": "text",
@@ -39,6 +45,14 @@
       "right": "double gpa = 3.75;"
     },
     {
+      "kind": "compare",
+      "caption": "When the starter uses long long, keep the same type in your answer.",
+      "wrong_label": "Can overflow on large totals",
+      "wrong": "int total = 0;\nfor (int n : values) {\n  total += n;\n}",
+      "right_label": "Safer for larger whole numbers",
+      "right": "long long total = 0;\nfor (long long n : values) {\n  total += n;\n}"
+    },
+    {
       "kind": "text",
       "body": "The first declaration changes `3.75` into the whole number `3`. The second keeps the decimal value. C++ may allow a conversion that loses information, so compare the variable's type with the value you actually need."
     },
@@ -63,6 +77,19 @@
     },
     {
       "kind": "check",
+      "prompt": "Why might a C++ starter use `long long` instead of `int`?",
+      "code": "",
+      "choices": [
+        "It can store larger whole numbers.",
+        "It stores decimal values.",
+        "It stores text.",
+        "It makes loops run automatically."
+      ],
+      "answer_index": 0,
+      "why": "`long long` is still a whole-number type, but it has a larger range than `int`."
+    },
+    {
+      "kind": "check",
       "prompt": "What is stored in `n`?",
       "code": "int n = 4.9;",
       "choices": [
@@ -79,6 +106,7 @@
       "title": "Data Types checklist",
       "items": [
         "Match type to meaning.",
+        "Use long long when the starter or problem may use large whole numbers.",
         "Cast before integer division.",
         "Watch narrowing conversions.",
         "Use string for text."

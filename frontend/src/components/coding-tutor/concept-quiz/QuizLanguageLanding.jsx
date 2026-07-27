@@ -403,9 +403,11 @@ export default function QuizLanguageLanding({
         questions.find((question) => categoryProgress[question.id] !== "correct") ||
         questions[0];
 
-      if (nextQuestion?.id) {
-        onOpenQuestion(categoryId, nextQuestion.id);
+      if (!nextQuestion?.id) {
+        setError("No questions are available for the recommended topic yet.");
+        return;
       }
+      onOpenQuestion(categoryId, nextQuestion.id);
     } catch (err) {
       setError(err.message || "Could not open the recommended topic yet.");
     }

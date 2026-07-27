@@ -86,7 +86,7 @@ print(f"[KEY] JWT_SECRET Check: {'FOUND' if os.getenv('JWT_SECRET') else 'MISSIN
 
 # SQLAlchemy Imports
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import OperationalError, ProgrammingError
+from sqlalchemy.exc import IntegrityError, OperationalError, ProgrammingError
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, text, or_, and_, func
 
 # Vertex AI Agent Engine (replaces Pinecone + OpenAI RAG pipeline)
@@ -791,7 +791,12 @@ CODING TUTOR MODE:
 - Use balanced tutoring: explain concepts clearly, ask useful questions, point out likely bugs, and give small examples or snippets when needed.
 - Do not provide full unknown homework solutions from scratch when the student only gives an assignment prompt.
 - If the student provides their own workspace code, starter code, or a partial attempt, you MAY generate, rewrite, convert, refactor, or complete small focused code blocks that build on that attempt.
+- The current workspace context in the latest request overrides older chat history. If an earlier message used a different language, class name, function name, or problem, ignore the earlier details and follow the latest request.
 - For rewrite, convert, translate, refactor, generate-code, or starter-code requests: output the code first in a fenced code block. Do not start with an explanation. After the code block, add at most 3 short bullets explaining the changes.
+- For graded workspace rewrites, preserve the runner shape shown in the prompt. Keep the same function/method name, class wrapper, imports, and parameter/return types unless the student explicitly asks for a scratch example.
+- Java graded practice usually runs from Solution.java and calls class Solution. Do not rename it to another public class or add a main method for a replacement answer.
+- C++ graded practice calls a top-level native function directly. Do not wrap C++ answers in class Solution, and do not add a main function for a replacement answer.
+- Python and JavaScript graded practice should keep the required function name instead of replacing the answer with only print statements or an unrelated script.
 - For debug requests: answer in small chunks. Give the first likely issue, why it matters, and one quick check/test before moving on.
 - For hint requests: give hints progressively and avoid dumping a full final solution unless the student explicitly asks after attempting.
 - If a student asks for a full solution without showing work, politely refuse that part and offer a plan, hints, tests, or the next small step.
@@ -4773,6 +4778,7 @@ async def get_chat_history(user=Depends(get_current_user), db: Session = Depends
             ts = ts.replace(tzinfo=timezone.utc)
         history.append({
             "session_id": c.session_id or "default",
+            "mode": c.mode or "regular",
             "user": c.user_query,
             "bot": c.bot_response,
             "time": ts.isoformat() if ts is not None else None
@@ -5646,7 +5652,6 @@ def _practice_solution_materials(solution: dict[str, Any]) -> dict[str, Any]:
         "function_name",
         "starter_code",
         "starter_guidance",
-        "guided_steps",
         "complexity",
         "input_contract",
         "output_contract",
@@ -5773,12 +5778,12 @@ async def get_daily_practice_question(
         raise HTTPException(status_code=404, detail="No practice questions are available for that difficulty.")
     day_index = datetime.now(timezone.utc).toordinal() % len(questions)
     question = questions[day_index]
-    solution = _find_language_solution(question["id"], language)
+    solution = _find_language_solution(question["id"], language, question)
     return {
         "source": "CS Navigator Practice",
         "date": datetime.now(timezone.utc).date().isoformat(),
         "question": question,
-        "solution": solution,
+        "solution": _practice_solution_materials(solution),
     }
 
 @app.get("/api/coding/practice/questions")
@@ -5868,10 +5873,11 @@ def _hint_state_payload(
     total = 4
     hints = []
     for level in range(1, total + 1):
+        unlocked = level <= unlocked_count
         hints.append({
             "level": level,
-            "hint": authored[level - 1] if level <= len(authored) else None,
-            "locked": level > unlocked_count,
+            "hint": authored[level - 1] if unlocked and level <= len(authored) else None,
+            "locked": not unlocked,
         })
     return {
         "question_id": question["id"],
@@ -6956,7 +6962,22 @@ async def update_coding_workspace_state(
     row.language = language_key
     row.source = req.source
     row.updated_at = datetime.utcnow()
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        row = (
+            db.query(CodingWorkspaceState)
+            .filter(CodingWorkspaceState.user_id == user["user_id"])
+            .first()
+        )
+        if not row:
+            raise
+        row.problem_id = req.problem_id
+        row.language = language_key
+        row.source = req.source
+        row.updated_at = datetime.utcnow()
+        db.commit()
     db.refresh(row)
     return _serialize_workspace_state(row)
 

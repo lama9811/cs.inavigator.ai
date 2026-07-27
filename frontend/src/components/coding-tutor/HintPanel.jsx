@@ -18,6 +18,8 @@ export default function HintPanel({ hints, revealedHints, onShowHint, onShowAllH
         >
           {!totalHints
             ? "No hints available"
+            : !unlockedHints
+            ? "No hints unlocked yet"
             : allAvailableShown
             ? `All available hints shown (${revealedHints} of ${totalHints})`
             : `Show hint ${nextHintNumber} of ${totalHints}`}

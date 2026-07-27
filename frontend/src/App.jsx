@@ -409,9 +409,15 @@ export default function App() {
               data.history.forEach(item => {
                   const sid = item.session_id || "default";
                   const isCodingSession = String(sid).startsWith("coding-");
+                  const savedMode = item.mode || item.chat_mode || item.session_mode;
+                  const sessionMode = isCodingSession
+                    ? "coding_tutor"
+                    : savedMode === "general"
+                      ? "general"
+                      : "regular";
                   const messageMeta = isCodingSession
                     ? { mode: "coding_tutor", surface: "widget", widgetSessionId: sid }
-                    : { mode: "regular", surface: "main" };
+                    : { mode: sessionMode, surface: "main" };
                   if (!grouped[sid]) grouped[sid] = [];
 
                   const ts = new Date(item.time).getTime();
@@ -445,7 +451,7 @@ export default function App() {
                   pinned: false,
                   archived: false,
                   autoTitle: true,
-                  mode: String(sid).startsWith("coding-") ? "coding_tutor" : "regular"
+                  mode: grouped[sid]?.[0]?.mode || "regular"
               }));
 
               // Always land on a fresh blank "New Chat" (welcome screen); keep the
