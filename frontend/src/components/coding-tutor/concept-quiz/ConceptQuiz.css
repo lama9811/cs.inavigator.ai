@@ -1130,14 +1130,14 @@ body.coding-dark .cq-question-kind.group-parsons {
   transform: scaleY(1.6);
 }
 .cq-progress-seg.done {
-  background: var(--ct-accent);
+  background: #2563eb;
 }
 .cq-progress-seg.current {
-  background: var(--ct-accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ct-accent) 35%, transparent);
+  background: #2563eb;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #2563eb 35%, transparent);
 }
 .cq-progress-seg.current:not(.done) {
-  background: color-mix(in srgb, var(--ct-accent) 55%, var(--ct-soft));
+  background: color-mix(in srgb, #2563eb 55%, var(--ct-soft));
 }
 
 /* Split-screen: two full-height panes with a floor-to-ceiling divider between

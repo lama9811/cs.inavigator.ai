@@ -172,6 +172,15 @@ export function markInterviewSolved(questionId, updates = {}) {
   saveInterviewProgress(questionId, { status: "solved", ...updates });
 }
 
+export function clearInterviewSolved(questionId) {
+  if (!questionId) return;
+  const solved = readSolvedSet();
+  if (!solved.has(questionId)) return;
+  solved.delete(questionId);
+  writeSolvedSet(solved);
+  window.dispatchEvent(new Event(CHANGE_EVENT));
+}
+
 // React hook: the set of solved interview problem ids, kept in sync across mounts.
 export function useInterviewSolved() {
   const [solved, setSolved] = useState(readSolvedSet);

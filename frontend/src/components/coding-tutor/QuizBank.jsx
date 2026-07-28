@@ -160,16 +160,16 @@ export default function QuizBank({
   // downstream filter logic reads clearly.
   const effectiveTopics = topicFilters;
 
-  // Deep-link entry: when opened from an interview problem's "Needs: <topic>" link,
-  // pre-select that topic filter (if the library has it) and open the filter panel so
-  // it's obvious why the list is narrowed. Consume the request so it fires once.
+  // Deep-link/recommended-focus entry: pre-select that topic filter if the library
+  // has it. Keep the drawer closed; the active chip already explains why the list
+  // is narrowed, and opening the drawer makes the handoff feel unfinished.
   useEffect(() => {
     if (!initialTopic) return;
     const wanted = initialTopic.toLowerCase();
     const match = [...new Set(sourceQuestions.map(q => (q.topic || "").toLowerCase()))].find(t => t === wanted);
     if (match) {
       setTopicFilters([match]);
-      setFiltersOpen(true);
+      setFiltersOpen(false);
     }
     onConsumeInitialTopic?.();
   }, [initialTopic, sourceQuestions, onConsumeInitialTopic]);

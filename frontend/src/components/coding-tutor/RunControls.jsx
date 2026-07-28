@@ -10,6 +10,7 @@ export default function RunControls({
   activeProblem,
   isRunning = false,
   canMarkSolved = true,
+  isSolved = false,
   isPersonalMode = false,
   onRun,
   onMarkSolved,
@@ -84,8 +85,8 @@ export default function RunControls({
           className="editor-action-btn editor-action-solve"
           onClick={onMarkSolved}
           disabled={!canSolve}
-          title="Mark solved"
-          aria-label="Mark solved"
+          title={isSolved ? "Mark unsolved" : "Mark solved"}
+          aria-label={isSolved ? "Mark unsolved" : "Mark solved"}
         >
           <FaCheck aria-hidden="true" />
         </button>

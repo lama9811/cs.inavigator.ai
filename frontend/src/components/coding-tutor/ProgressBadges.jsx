@@ -219,22 +219,22 @@ function buildBadges(stats) {
     count({ id: "debug-persistence", label: "Rubber Duck", detail: "Learned from 3 test runs that did not pass", icon: FaBug, tone: "pink", category: "Persistence", rarity: "uncommon", current: Math.max(s.totalAttempts - s.solvedCount, 0), goal: 3 }),
     bool({ id: "polyglot", label: "Polyglot", detail: "Solved in two languages", icon: FaBrain, tone: "gold", category: "Languages", rarity: "rare", earned: s.solvedLanguages >= 2 }),
     count({ id: "warmup-master", label: "Easy Does It", detail: "Attempted 5 Easy problems", icon: FaFire, tone: "red", category: "Starter", rarity: "uncommon", current: s.easyAttempted, goal: 5 }),
-    bool({ id: "interview-ready", label: "Interview Ready", detail: "Solved across three topics", icon: FaTrophy, tone: "green", category: "Interview Prep", rarity: "epic", earned: s.solvedCount >= 8 && s.uniqueTopicsSolved >= 3 }),
+    bool({ id: "interview-ready", label: "Interview Ready", detail: "Solved across three topics", icon: FaTrophy, tone: "green", category: "Interview Prep", rarity: "rare", earned: s.solvedCount >= 8 && s.uniqueTopicsSolved >= 3 }),
 
     // ── Added badges: persistence, daily habit, curiosity, breadth ──
     bool({ id: "comeback-kid", label: "Green Build", detail: "Passed after more than one try", icon: FaRedo, tone: "pink", category: "Persistence", rarity: "uncommon", earned: s.comebacks >= 1 }),
     bool({ id: "daily-devotee", label: "Daily Debut", detail: "Practiced in the Learning Library", icon: FaCalendarCheck, tone: "cyan", category: "Consistency", rarity: "common", earned: s.dailyDaysCompleted >= 1 }),
-    count({ id: "daily-triple", label: "Three-Day Rhythm", detail: "Practiced 3 days straight", icon: FaFire, tone: "orange", category: "Consistency", rarity: "rare", current: Math.max(s.displayStreak, s.bestStreak), goal: 3 }),
+    count({ id: "daily-triple", label: "Three-Day Rhythm", detail: "Practiced 3 days straight", icon: FaFire, tone: "orange", category: "Consistency", rarity: "uncommon", current: Math.max(s.displayStreak, s.bestStreak), goal: 3 }),
     count({ id: "topic-explorer", label: "Curious Mind", detail: "Tried problems in 3 topics", icon: FaCompass, tone: "purple", category: "Topics", rarity: "uncommon", current: s.attemptedTopics, goal: 3 }),
     bool({ id: "recursion-ranger", label: "Base Case", detail: "Solved a recursion problem", icon: FaSync, tone: "gold", category: "Topics", rarity: "uncommon", earned: hasSolvedTopic(s.solvedByTopic, "recursion") }),
     bool({ id: "trees-tracker", label: "Tree Solver", detail: "Solved a tree problem", icon: FaSitemap, tone: "green", category: "Topics", rarity: "rare", earned: hasSolvedTopic(s.solvedByTopic, "tree") }),
-    count({ id: "three-languages", label: "Trilingual", detail: "Solved in three languages", icon: FaLanguage, tone: "blue", category: "Languages", rarity: "epic", current: s.solvedLanguages, goal: 3 }),
+    count({ id: "three-languages", label: "Trilingual", detail: "Solved in three languages", icon: FaLanguage, tone: "blue", category: "Languages", rarity: "rare", current: s.solvedLanguages, goal: 3 }),
     count({ id: "half-century", label: "The Long Haul", detail: "Ran tests 50 times", icon: FaMountain, tone: "red", category: "Testing", rarity: "epic", current: s.totalAttempts, goal: 50 }),
 
     // ── Skill-signal badges (reward clean solves + breadth, not just volume) ──
     bool({ id: "first-try", label: "Nailed It", detail: "Solved a problem on the first run", icon: FaStopwatch, tone: "gold", category: "Persistence", rarity: "rare", earned: s.firstTrySolve }),
     bool({ id: "full-house", label: "Full House", detail: "Solved an Easy, Medium, and Hard", icon: FaThLarge, tone: "orange", category: "Mastery", rarity: "rare", earned: s.easySolved >= 1 && s.mediumSolved >= 1 && s.hardSolved >= 1 }),
-    bool({ id: "topic-master", label: "Topic Master", detail: "Cleared every problem in a topic", icon: FaCrown, tone: "purple", category: "Mastery", rarity: "epic", earned: s.clearedAnyTopic }),
+    bool({ id: "topic-master", label: "Topic Master", detail: "Cleared every problem in a topic", icon: FaCrown, tone: "purple", category: "Mastery", rarity: "rare", earned: s.clearedAnyTopic }),
 
     // ── Mock interview badges. "Finished" rewards showing up; the two below reward
     //    how the mock actually went (best problems-passed in one mock). A standard
@@ -254,12 +254,12 @@ function buildBadges(stats) {
     count({ id: "first-quiz", label: "Quiz Started", detail: "Finished your first concept quiz", icon: FaClipboardCheck, tone: "cyan", category: "Concept Quizzes", rarity: "common", current: s.quizCategoriesAttempted, goal: 1 }),
     bool({ id: "quiz-perfect", label: "Flawless", detail: "Scored 100% on a concept quiz", icon: FaBullseye, tone: "gold", category: "Concept Quizzes", rarity: "rare", earned: s.quizPerfectCategories >= 1 }),
     count({ id: "quiz-five-pass", label: "Concept Collector", detail: "Passed 5 concept-quiz topics", icon: FaCheckDouble, tone: "green", category: "Concept Quizzes", rarity: "uncommon", current: s.quizCategoriesPassed, goal: 5 }),
-    count({ id: "quiz-ten-pass", label: "Quiz Champion", detail: "Passed 10 concept-quiz topics", icon: FaTrophy, tone: "purple", category: "Concept Quizzes", rarity: "epic", current: s.quizCategoriesPassed, goal: 10 }),
+    count({ id: "quiz-ten-pass", label: "Quiz Champion", detail: "Passed 10 concept-quiz topics", icon: FaTrophy, tone: "purple", category: "Concept Quizzes", rarity: "rare", current: s.quizCategoriesPassed, goal: 10 }),
     count({ id: "quiz-polyglot", label: "Quiz Polyglot", detail: "Took quizzes in 3 languages", icon: FaLanguage, tone: "blue", category: "Concept Quizzes", rarity: "rare", current: s.quizLanguagesCount, goal: 3 }),
     count({ id: "quiz-fifty-correct", label: "50 Correct", detail: "Answered 50 quiz questions correctly", icon: FaMountain, tone: "red", category: "Concept Quizzes", rarity: "rare", current: s.totalQuizCorrect, goal: 50 }),
 
     // ── Cross-surface: rewards using the whole Learn -> Practice -> Code flow ──
-    bool({ id: "full-loop", label: "Full Circle", detail: "Read a lesson, passed a quiz, solved a problem", icon: FaSync, tone: "gold", category: "Mastery", rarity: "epic", earned: s.lessonsRead >= 1 && s.quizCategoriesPassed >= 1 && s.solvedCount >= 1 }),
+    bool({ id: "full-loop", label: "Full Circle", detail: "Read a lesson, passed a quiz, solved a problem", icon: FaSync, tone: "gold", category: "Mastery", rarity: "rare", earned: s.lessonsRead >= 1 && s.quizCategoriesPassed >= 1 && s.solvedCount >= 1 }),
   ];
 }
 

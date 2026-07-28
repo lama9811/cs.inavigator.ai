@@ -8,8 +8,6 @@ import {
 } from "react-icons/fa";
 import { readQuizDraftAnswers, writeQuizDraftAnswers } from "./conceptQuizProgress";
 
-const AUTO_ADVANCE_MS = 900;
-
 // Sequential concept-quiz runner. Renders one question at a time in a split
 // layout (code/statement left with Question|Learn tabs, answer UI right),
 // tracks answers, and on Submit shows a green/red results screen.
@@ -463,7 +461,7 @@ function buildImmediateReview(question, result, explanation) {
   };
 }
 
-function ImmediateFeedback({ question, answer, onReviewLesson, autoAdvance = false }) {
+function ImmediateFeedback({ question, answer, onReviewLesson }) {
   if (!answer?.checked) return null;
 
   const result = gradeAnswerLocally(question, answer);
@@ -511,10 +509,6 @@ function ImmediateFeedback({ question, answer, onReviewLesson, autoAdvance = fal
         <p className="cq-feedback-next">
           <strong>Next:</strong> {review.nextStep}
         </p>
-      ) : null}
-
-      {result.correct && autoAdvance ? (
-        <p className="cq-feedback-next">Correct - moving to the next question.</p>
       ) : null}
 
       {!result.correct && onReviewLesson ? (
@@ -647,23 +641,13 @@ export default function QuizRunner({
   const [grade, setGrade] = useState(null);
   const [grading, setGrading] = useState(false);
   const [error, setError] = useState("");
-  const autoAdvanceTimerRef = useRef(null);
-
-  const clearAutoAdvance = () => {
-    if (autoAdvanceTimerRef.current) {
-      window.clearTimeout(autoAdvanceTimerRef.current);
-      autoAdvanceTimerRef.current = null;
-    }
-  };
 
   // Load the saved answers when the student switches to a DIFFERENT quiz (the component
   // is reused across categories, so the initial state above only runs once).
   useEffect(() => {
-    clearAutoAdvance();
     setAnswersById(readQuizDraftAnswers(language, category));
     setGrade(null);
     setError("");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language, category]);
 
   useEffect(() => {
@@ -672,18 +656,8 @@ export default function QuizRunner({
 
   // Reset the Learn/Question tab back to Question whenever the question changes.
   useEffect(() => {
-    clearAutoAdvance();
     setTab("question");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
-
-  useEffect(
-    () => () => {
-      clearAutoAdvance();
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
 
   const question = questions[index];
   const total = questions.length;
@@ -724,17 +698,6 @@ export default function QuizRunner({
   const isLast = index === total - 1;
   const allChecked = checkedCount === total;
 
-  const scheduleAutoAdvanceIfCorrect = (nextAnswer) => {
-    clearAutoAdvance();
-    const result = gradeAnswerLocally(question, nextAnswer);
-    if (!result.correct || isLast) return;
-
-    autoAdvanceTimerRef.current = window.setTimeout(() => {
-      autoAdvanceTimerRef.current = null;
-      onNavigateIndex(index + 1);
-    }, AUTO_ADVANCE_MS);
-  };
-
   const setAnswer = (patch) => {
     const shouldCheck =
       question.kind === "mcq-output" || question.kind === "mcq-behavior";
@@ -748,11 +711,6 @@ export default function QuizRunner({
       [question.id]: nextAnswer,
     }));
 
-    if (shouldCheck) {
-      scheduleAutoAdvanceIfCorrect(nextAnswer);
-    } else {
-      clearAutoAdvance();
-    }
   };
 
   const checkAnswer = () => {
@@ -765,7 +723,6 @@ export default function QuizRunner({
       ...prev,
       [question.id]: nextAnswer,
     }));
-    scheduleAutoAdvanceIfCorrect(nextAnswer);
   };
 
   const submit = async () => {
@@ -791,9 +748,6 @@ export default function QuizRunner({
       setGrading(false);
     }
   };
-
-  const checkedResult = isChecked ? gradeAnswerLocally(question, answered) : null;
-  const willAutoAdvance = Boolean(checkedResult?.correct && !isLast);
 
   return (
     <div className="cq-runner cq-runner-full">
@@ -906,7 +860,6 @@ export default function QuizRunner({
               question={question}
               answer={answered}
               onReviewLesson={() => setTab("learn")}
-              autoAdvance={willAutoAdvance}
             />
             {error ? <p className="cq-error">{error}</p> : null}
           </div>

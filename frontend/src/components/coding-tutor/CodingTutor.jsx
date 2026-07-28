@@ -36,7 +36,7 @@ import MockSummary from "./MockSummary";
 import MockConfirm from "./MockConfirm";
 import { gradeMockSummary, scoreFromGraded } from "./interviewGrade";
 import { appendInterviewAttempt, summarizeInterviewHistory } from "./interviewHistory";
-import { fetchInterviewProgress, markInterviewSolved, saveInterviewProgress, useInterviewReviewed, useInterviewSolved } from "./interviewProgress";
+import { clearInterviewSolved, fetchInterviewProgress, markInterviewSolved, saveInterviewProgress, useInterviewReviewed, useInterviewSolved } from "./interviewProgress";
 import {
   saveDraft,
   readDraftEntry,
@@ -1638,6 +1638,7 @@ export default function CodingTutor({
         }
         const nextAllQuestions = allQuestionResults.flatMap(result => result.questions || []);
         const nextLanguageProgress = {};
+        const localProgressToSeed = [];
         for (const result of progressResults) {
           if (result?.response?.ok) {
             const progressData = await result.response.json();
@@ -1659,6 +1660,14 @@ export default function CodingTutor({
                 ...(nextLanguageProgress[question.id] || {}),
                 [language]: local,
               };
+              if (token) {
+                localProgressToSeed.push({
+                  questionId: question.id,
+                  language,
+                  status: local.status === "solved" ? "solved" : "in_progress",
+                  code: typeof local.code === "string" ? local.code : "",
+                });
+              }
             }
           });
         });
@@ -1667,6 +1676,24 @@ export default function CodingTutor({
           setAllQuestions(nextAllQuestions);
           setProgressByLanguage(nextLanguageProgress);
           setProgressByQuestion(aggregateProgressMap(nextLanguageProgress));
+        }
+        if (token && localProgressToSeed.length) {
+          Promise.allSettled(
+            localProgressToSeed.map((item) =>
+              fetch(`${apiBase}/api/coding/practice/questions/${item.questionId}/progress`, {
+                method: "PATCH",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  language: item.language,
+                  status: item.status,
+                  code: item.code,
+                }),
+              })
+            )
+          ).catch(() => {});
         }
       } catch (error) {
         console.error("[coding-practice] load failed", error);
@@ -3016,22 +3043,39 @@ export default function CodingTutor({
   const markSolved = async () => {
     if (isInterviewWorkspaceProblem && activeProblem?.id) {
       saveDraft(activeProblem.id, selectedLanguageKey, code);
-      markInterviewSolved(activeProblem.id);
-      await saveInterviewWorkspaceProgress(activeProblem.id, { status: "solved", code }, selectedLanguageKey);
+      const wasSolved = activeInterviewProgress?.status === "solved" || interviewSolved.has(activeProblem.id);
+      await saveInterviewWorkspaceProgress(
+        activeProblem.id,
+        { status: wasSolved ? "in_progress" : "solved", code },
+        selectedLanguageKey,
+      );
+      if (wasSolved) clearInterviewSolved(activeProblem.id);
+      else markInterviewSolved(activeProblem.id);
       setTerminalOpen(true);
       setTestOutput({
-        status: "success",
-        message: `${activeProblem.title || "Interview problem"} marked solved. Your code is saved to your account.`,
+        status: wasSolved ? "ready" : "success",
+        message: wasSolved
+          ? `${activeProblem.title || "Interview problem"} marked unsolved. Your code is still saved to your account.`
+          : `${activeProblem.title || "Interview problem"} marked solved. Your code is saved to your account.`,
       });
-      toast.success("Interview problem marked solved.");
+      toast.success(wasSolved ? "Interview problem marked unsolved." : "Interview problem marked solved.");
       return;
     }
     if (!activeProblem || !isQuizBankProblem) return;
-    await saveProgress(activeProblem.id, { status: "solved", code });
-    clearDraft(activeProblem.id, selectedLanguageKey);
+    const wasSolved = activeLanguageProgress?.status === "solved";
+    await saveProgress(activeProblem.id, { status: wasSolved ? "in_progress" : "solved", code });
+    if (!wasSolved) clearDraft(activeProblem.id, selectedLanguageKey);
     setTerminalOpen(true);
-    setTestOutput({ status: "passed", message: "Marked solved manually. Your current code was saved with this problem.", passed: 0, total: 0, tests: [] });
-    toast.success("Practice problem marked solved");
+    setTestOutput({
+      status: wasSolved ? "ready" : "passed",
+      message: wasSolved
+        ? "Marked unsolved. Your current code is still saved with this problem."
+        : "Marked solved manually. Your current code was saved with this problem.",
+      passed: 0,
+      total: 0,
+      tests: [],
+    });
+    toast.success(wasSolved ? "Practice problem marked unsolved" : "Practice problem marked solved");
   };
 
   const clearWorkspace = async () => {
@@ -3314,6 +3358,7 @@ export default function CodingTutor({
             complexity: activeSolution?.complexity || "",
           }}
           canMarkSolved={isQuizBankProblem || isInterviewWorkspaceProblem}
+          isSolved={isActiveProblemSolved}
           isPersonalMode={isPersonalMode}
           onCodeChange={setCode}
           onLanguageChange={changeSelectedLanguage}

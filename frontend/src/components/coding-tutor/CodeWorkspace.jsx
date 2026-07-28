@@ -46,6 +46,7 @@ export default function CodeWorkspace({
   testOutput,
   solutionReview,
   canMarkSolved = true,
+  isSolved = false,
   isPersonalMode = false,
   languageLocked = false,
   onCodeChange,
@@ -189,6 +190,7 @@ export default function CodeWorkspace({
               activeProblem={activeProblem}
               isRunning={isRunning}
               canMarkSolved={canMarkSolved}
+              isSolved={isSolved}
               isPersonalMode={isPersonalMode}
               onRun={onRun}
               onMarkSolved={onMarkSolved}
