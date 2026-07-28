@@ -171,7 +171,7 @@ export default function NavBar({ role, authenticated, onToggleSidebar, onBrandCl
             else navigate(isAuthed ? "/chat" : "/");
           }}
           style={{ cursor: 'pointer' }}
-          title={isAuthed ? "Go to your most recent chat" : "Return to Home"}
+          title={isAuthed ? "Start a new chat" : "Return to Home"}
         >
           <img
             src="/msu_logo.webp"

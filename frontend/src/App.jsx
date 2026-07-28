@@ -30,6 +30,7 @@ import { getApiBase } from "./lib/apiBase";
 import { generateChatTitle, shouldAutoRenameSession } from "./lib/chatTitles";
 const API_BASE = getApiBase();
 const ACTIVE_CHAT_SESSION_KEY = "active_chat_session_id";
+const REGULAR_CHAT_RESET_KEY = "csnav_opening_regular_chat";
 
 function makeBlankSession(id) {
   return { id, title: "New Chat", messages: [], pinned: false, archived: false, mode: "regular" };
@@ -479,6 +480,12 @@ export default function App() {
     const config = options && !options.preventDefault ? options : {};
     const mode = config.mode || "regular";
     const id = config.id || (mode === "coding_tutor" ? `coding-${Date.now()}` : Date.now().toString());
+    const targetRoute = config.route || (mode === "coding_tutor" ? "/coding" : "/chat");
+    if (mode === "regular" && targetRoute === "/chat") {
+      sessionStorage.setItem(REGULAR_CHAT_RESET_KEY, "1");
+    } else {
+      sessionStorage.removeItem(REGULAR_CHAT_RESET_KEY);
+    }
     const newChat = {
       id,
       title: config.title || "New Chat",
@@ -498,7 +505,8 @@ export default function App() {
         mode,
       });
     }
-    navigate(config.route || (mode === "coding_tutor" ? "/coding" : "/chat"));
+    if (config.replace) navigate(targetRoute, { replace: true });
+    else navigate(targetRoute);
     return id;
   };
 
@@ -509,30 +517,10 @@ export default function App() {
     navigate(selected?.mode === "coding_tutor" || String(id).startsWith("coding-") ? "/chat/coding" : "/chat");
   };
 
-  // Header/brand click: land on the MOST RECENT regular chat — the one at the TOP
-  // of the sidebar — regardless of whether it has messages yet. Fixes the header
-  // dropping the user into a stale/older chat. If there are no regular chats at
-  // all, open a fresh one. Coding sessions are excluded (the brand is the CS Nav
-  // regular entry point).
-  //
-  // Recency key: prefer the real last-activity time captured at history load;
-  // fall back to the creation epoch embedded in the id for freshly-created
-  // client-side sessions that haven't synced from the DB yet. This is the SAME
-  // key the sidebar sorts by, so "most recent" == top of the sidebar.
-  const sessionRecency = (s) =>
-    (s?.lastActivity || 0) || Number(String(s?.id || "").match(/^\d+/)?.[0]) || 0;
+  // Header/brand click: start a fresh regular chat so the student lands on the
+  // welcome/question screen. Previous chats stay available from the sidebar.
   const handleBrandClick = () => {
-    const regular = sessions.filter(
-      (s) => !s.archived && s.mode !== "coding_tutor" && !String(s.id).startsWith("coding-")
-    );
-    if (regular.length === 0) {
-      handleNew();
-      return;
-    }
-    const mostRecent = regular.reduce((a, b) =>
-      sessionRecency(b) > sessionRecency(a) ? b : a
-    );
-    handleSelect(mostRecent.id);
+    handleNew({ mode: "regular", route: "/chat", replace: true });
   };
 
   const handlePendingChatActionHandled = (id) => {
@@ -1101,3 +1089,4 @@ export default function App() {
     </>
   );
 }
+

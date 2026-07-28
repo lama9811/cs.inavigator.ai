@@ -114,6 +114,7 @@ const GENERAL_THINKING_MESSAGES = [
 import { getApiBase } from "../lib/apiBase";
 const API_BASE = getApiBase();
 const MotionDiv = motion.div;
+const REGULAR_CHAT_RESET_KEY = "csnav_opening_regular_chat";
 
 const getDisplayMessageText = (text) => {
   if (typeof text !== "string") return text;
@@ -277,6 +278,7 @@ export default function Chatbox({
       return;
     }
     if (!isCodingWorkspaceRoute && !isCodingChatRoute) {
+      sessionStorage.removeItem(REGULAR_CHAT_RESET_KEY);
       setChatMode("regular");
       setFloatingCodingChatOpen(false);
       setFloatingCodingChatMaximized(false);
@@ -418,7 +420,14 @@ export default function Chatbox({
 
   const goBackHome = () => {
     setChatMode("regular");
-    navigate("/chat");
+    setFloatingCodingChatOpen(false);
+    setFloatingCodingChatMaximized(false);
+    setCodingTutorContext(null);
+    if (onCreateSession) {
+      onCreateSession({ mode: "regular", route: "/chat", replace: true });
+      return;
+    }
+    navigate("/chat", { replace: true });
   };
 
   const prefillSharedChat = (text) => {
@@ -470,6 +479,7 @@ export default function Chatbox({
   useEffect(() => {
     if (
       !isCodingWorkspaceRoute
+      || sessionStorage.getItem(REGULAR_CHAT_RESET_KEY) === "1"
       || String(sessionId || "").startsWith("coding-")
       || !onCreateSession
       || codingSessionBootstrapRef.current

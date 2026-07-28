@@ -503,8 +503,14 @@ export default function ChatSidebar({
       <div className="sidebar-top">
         <div className="sidebar-top-row">
           <button
+            type="button"
             className="sidebar-action-btn new-chat"
-            onClick={onNew}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onNew?.({ mode: "regular", route: "/chat", replace: true });
+              navigate("/chat", { replace: true });
+            }}
             title="Start a new chat session"
             style={{ flex: 1 }}
           >
