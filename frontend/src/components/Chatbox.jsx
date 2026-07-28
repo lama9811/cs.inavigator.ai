@@ -274,8 +274,15 @@ export default function Chatbox({
   useEffect(() => {
     if (initialChatMode) {
       setChatMode(initialChatMode);
+      return;
     }
-  }, [initialChatMode]);
+    if (!isCodingWorkspaceRoute && !isCodingChatRoute) {
+      setChatMode("regular");
+      setFloatingCodingChatOpen(false);
+      setFloatingCodingChatMaximized(false);
+      setCodingTutorContext(null);
+    }
+  }, [initialChatMode, isCodingWorkspaceRoute, isCodingChatRoute, sessionId]);
 
   useEffect(() => {
     if (isCodingWorkspaceRoute && chatMode !== "coding_tutor") {
