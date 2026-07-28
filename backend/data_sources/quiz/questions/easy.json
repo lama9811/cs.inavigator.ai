@@ -1,29 +1,810 @@
 {
   "difficulty": "easy",
   "questions": [
-    {"id":"easy-01","title":"Count Vowels","difficulty":"easy","topic":"strings","prompt":"Count how many vowels appear in a given string. Treat uppercase and lowercase vowels the same.","examples":[{"input":"Morgan State","output":"4"}],"constraints":["0 <= length <= 1000"],"hints":["Make every letter lowercase first so A and a are treated the same.","Keep the vowels in a small lookup group: a, e, i, o, u.","Walk through the string one character at a time and add 1 only when the character is a vowel."],"visualizer":{"concept":"string-scan","title":"Count Vowels: scan each character","caption":"Watch the loop check one character at a time and update the vowel count.","input":{"text":"Morgan State"}}},
-    {"id":"easy-02","title":"Reverse Words","difficulty":"easy","topic":"strings","prompt":"Given a sentence, return the words in reverse order while keeping each word's letters unchanged.","examples":[{"input":"data structures are useful","output":"useful are structures data"}],"constraints":["Words are separated by spaces."],"hints":["Split the sentence into words.","Reverse the list of words.","Join the reversed words with single spaces."]},
-    {"id":"easy-03","title":"Maximum Score","difficulty":"easy","topic":"arrays","prompt":"Return the largest integer in a list of assignment scores. If the list is empty, return null or the language equivalent.","examples":[{"input":"[72, 88, 91, 84]","output":"91"}],"constraints":["0 <= number of scores <= 1000"],"hints":["Handle the empty list first.","Track the best value seen so far.","Compare each score against the current best."]},
-    {"id":"easy-04","title":"Is Palindrome","difficulty":"easy","topic":"strings","prompt":"Return true if a string reads the same forward and backward after ignoring spaces and case.","examples":[{"input":"Never odd or even","output":"true"}],"constraints":["Input may contain spaces and letters."],"hints":["Normalize case and remove spaces.","Compare characters from both ends.","Stop early if a mismatch appears."]},
-    {"id":"easy-05","title":"Sum Even Numbers","difficulty":"easy","topic":"arrays","prompt":"Given a list of integers, return the sum of only the even numbers.","examples":[{"input":"[1, 2, 3, 4, 5]","output":"6"}],"constraints":["The list may be empty."],"hints":["Start the sum at zero.","Check divisibility by 2.","Add only values that pass the even check."],"visualizer":{"concept":"array-scan","preset":"sum-even","title":"Sum Even Numbers: add only the evens","caption":"Watch each number get checked before the running sum changes.","input":{"items":[1,2,3,4,5]}}},
-    {"id":"easy-06","title":"First Repeated Character","difficulty":"easy","topic":"sets","prompt":"Return the first character that appears more than once while scanning left to right. Return null if none repeat.","examples":[{"input":"advisor","output":"d"}],"constraints":["0 <= length <= 1000"],"hints":["Keep a set of seen characters.","Scan left to right.","The first character already in the set is the answer."]},
-    {"id":"easy-07","title":"Grade Bucket","difficulty":"easy","topic":"conditionals","prompt":"Convert a numeric score into A, B, C, D, or F using standard 90/80/70/60 cutoffs.","examples":[{"input":"84","output":"B"}],"constraints":["0 <= score <= 100"],"hints":["Check highest cutoffs first.","Use if/else branches.","Return once the correct bucket is found."]},
-    {"id":"easy-08","title":"Remove Duplicates Keep Order","difficulty":"easy","topic":"arrays","prompt":"Return a new list with duplicate values removed while preserving the first occurrence order.","examples":[{"input":"[3, 1, 3, 2, 1]","output":"[3, 1, 2]"}],"constraints":["Values are integers."],"hints":["Use a set to remember values already copied.","Keep a result list.","Append only when the value has not been seen."]},
-    {"id":"easy-09","title":"Count Words","difficulty":"easy","topic":"strings","prompt":"Count how many words are in a sentence. Multiple spaces should not create empty words.","examples":[{"input":"  intro   to cs  ","output":"3"}],"constraints":["Words are separated by whitespace."],"hints":["Trim or split on whitespace.","Ignore empty pieces.","Return the number of real words."]},
-    {"id":"easy-10","title":"Smallest Positive","difficulty":"easy","topic":"arrays","prompt":"Return the smallest positive integer in a list. Return null if there is no positive integer.","examples":[{"input":"[-2, 0, 9, 4]","output":"4"}],"constraints":["Positive means greater than zero."],"hints":["Track a best positive value.","Ignore zero and negative values.","Update the best when a smaller positive appears."]},
-    {"id":"easy-11","title":"Running Total","difficulty":"easy","topic":"arrays","prompt":"Return a list where each position contains the sum of all values up to that position.","examples":[{"input":"[2, 4, 1]","output":"[2, 6, 7]"}],"constraints":["Input values are integers."],"hints":["Keep a running sum.","Add each number to the running sum.","Append the running sum to the result."]},
-    {"id":"easy-12","title":"Valid Course Code Shape","difficulty":"easy","topic":"strings","prompt":"Return true if a course code looks like four uppercase letters, optional space, then three digits, such as COSC 220 or MATH241.","examples":[{"input":"COSC 220","output":"true"}],"constraints":["Do not validate against the catalog, only the shape."],"hints":["Ignore one space if it appears between the letters and numbers.","After removing that space, the code should have exactly 7 characters.","Check that the first 4 characters are uppercase letters and the last 3 are digits."]},
-    {"id":"easy-13","title":"Find Index","difficulty":"easy","topic":"arrays","prompt":"Return the index of the first occurrence of a target value in a list, or -1 if it is absent.","examples":[{"input":"[5, 7, 9], target=7","output":"1"}],"constraints":["Use zero-based indexes."],"hints":["Loop over indexes, not only values.","Compare each value with the target.","Return immediately when found."]},
-    {"id":"easy-14","title":"Merge Names","difficulty":"easy","topic":"arrays","prompt":"Given two lists of names, return one list containing all names from the first list followed by all names from the second.","examples":[{"input":"['Ada'], ['Grace', 'Katherine']","output":"['Ada', 'Grace', 'Katherine']"}],"constraints":["Do not sort the names."],"hints":["Create a result list.","Add every item from the first list.","Then add every item from the second list."]},
-    {"id":"easy-15","title":"Temperature Above Threshold","difficulty":"easy","topic":"arrays","prompt":"Count how many temperature readings are strictly greater than a threshold.","examples":[{"input":"[70, 82, 81], threshold=80","output":"2"}],"constraints":["Use strict greater-than."],"hints":["Initialize a counter.","Compare each reading with the threshold.","Increment only for readings above it."],"visualizer":{"concept":"array-scan","title":"Temperature Above Threshold: compare each reading","caption":"Watch each temperature get compared with the threshold before the count changes.","input":{"items":[70,82,81],"threshold":80}}},
-    {"id":"easy-16","title":"Last Digit","difficulty":"easy","topic":"math","prompt":"Given a non-negative integer n, return only its last digit as an integer. For example, 384 should return 4.","examples":[{"input":"384","output":"4"}],"constraints":["0 <= n <= 1000000000"],"hints":["The last digit is the remainder after dividing by 10.","Use n % 10 to get that remainder.","Check n = 0 too; its last digit should still be 0."]},
-    {"id":"easy-17","title":"Truthy Attendance","difficulty":"easy","topic":"arrays","prompt":"Given a list of booleans for attendance, count how many values are true.","examples":[{"input":"[true, false, true]","output":"2"}],"constraints":["Values are booleans."],"hints":["Start a counter at zero.","Check each value directly.","Increment for true values."]},
-    {"id":"easy-18","title":"Initials","difficulty":"easy","topic":"strings","prompt":"Given a full name, return the uppercase initials of each word.","examples":[{"input":"morgan state university","output":"MSU"}],"constraints":["Names may contain extra spaces."],"hints":["Split into words.","Take the first character of each word.","Uppercase the collected initials."]},
-    {"id":"easy-19","title":"Clamp Score","difficulty":"easy","topic":"conditionals","prompt":"Clamp a score so values below 0 become 0 and values above 100 become 100.","examples":[{"input":"118","output":"100"}],"constraints":["Input is an integer."],"hints":["Check the lower bound.","Check the upper bound.","Return the original score when it is inside range."]},
-    {"id":"easy-20","title":"Every Other Item","difficulty":"easy","topic":"arrays","prompt":"Return a new list containing every other item from the input, starting at index 0.","examples":[{"input":"[10, 20, 30, 40, 50]","output":"[10, 30, 50]"}],"constraints":["Use zero-based indexing."],"hints":["Loop indexes by 2.","Start at index 0.","Append the selected values to a result list."]},
-    {"id":"easy-21","title":"Count Digits","difficulty":"easy","topic":"math","prompt":"Return how many digits are in a non-negative integer. For 0, return 1.","examples":[{"input":"5029","output":"4"}],"constraints":["0 <= n <= 1000000000"],"hints":["Start with the special case: 0 has one digit.","For any other number, remove the last digit by dividing by 10 and keeping the whole-number part.","Count each removal until the number becomes 0."]},
-    {"id":"easy-22","title":"Matrix Column Sums","difficulty":"easy","topic":"matrices","prompt":"Given a rectangular matrix of integers, return a list with the sum of each column.","examples":[{"input":"[[1,2,3],[4,5,6]]","output":"[5,7,9]"}],"constraints":["The matrix may be empty.","All non-empty rows have the same length."],"hints":["If the matrix has no rows, return an empty list right away.","Use the first row to know how many column totals you need.","For each row, add row[0] to column total 0, row[1] to column total 1, and so on."]},
-    {"id":"easy-23","title":"Can Vote","difficulty":"easy","topic":"conditionals","prompt":"Return true if an age is at least 18, otherwise return false.","examples":[{"input":"18","output":"true"}],"constraints":["Age is a non-negative integer."],"hints":["The cutoff is inclusive, so age 18 should return true.","Compare the age with 18 using greater-than-or-equal.","Return the result of that comparison instead of writing extra branches."]},
-    {"id":"easy-24","title":"Unique Count","difficulty":"easy","topic":"sets","prompt":"Given a list of integers, return how many different values appear at least once. Repeated values should only count one time.","examples":[{"input":"[4,4,2,7,2]","output":"3"}],"constraints":["The list may be empty."],"hints":["Use a set because it stores one copy of each value.","Add each number from the list into the set.","The answer is the number of items left in the set."]}
+    {
+      "id": "easy-01",
+      "title": "Count Vowels",
+      "difficulty": "easy",
+      "topic": "strings",
+      "prompt": "Count how many vowels appear in a given string. Treat uppercase and lowercase vowels the same.",
+      "examples": [
+        {
+          "input": "Morgan State",
+          "output": "4"
+        }
+      ],
+      "constraints": [
+        "0 <= length <= 1000"
+      ],
+      "hints": [
+        "Make every letter lowercase first so A and a are treated the same.",
+        "Keep the vowels in a small lookup group: a, e, i, o, u.",
+        "Walk through the string one character at a time and add 1 only when the character is a vowel."
+      ],
+      "visualizer": {
+        "concept": "string-scan",
+        "title": "Count Vowels: scan each character",
+        "caption": "Watch the loop check one character at a time and update the vowel count.",
+        "input": {
+          "text": "Morgan State"
+        }
+      }
+    },
+    {
+      "id": "easy-02",
+      "title": "Reverse Words",
+      "difficulty": "easy",
+      "topic": "strings",
+      "prompt": "Given a sentence, return the words in reverse order while keeping each word's letters unchanged.",
+      "examples": [
+        {
+          "input": "data structures are useful",
+          "output": "useful are structures data"
+        }
+      ],
+      "constraints": [
+        "Words are separated by spaces."
+      ],
+      "hints": [
+        "Split the sentence into words.",
+        "Reverse the list of words.",
+        "Join the reversed words with single spaces."
+      ]
+    },
+    {
+      "id": "easy-03",
+      "title": "Maximum Score",
+      "difficulty": "easy",
+      "topic": "arrays",
+      "prompt": "Return the largest integer in a list of assignment scores. If the list is empty, return null or the language equivalent.",
+      "examples": [
+        {
+          "input": "[72, 88, 91, 84]",
+          "output": "91"
+        }
+      ],
+      "constraints": [
+        "0 <= number of scores <= 1000"
+      ],
+      "hints": [
+        "Handle the empty list first.",
+        "Track the best value seen so far.",
+        "Compare each score against the current best."
+      ]
+    },
+    {
+      "id": "easy-04",
+      "title": "Is Palindrome",
+      "difficulty": "easy",
+      "topic": "strings",
+      "prompt": "Return true if a string reads the same forward and backward after ignoring spaces and case.",
+      "examples": [
+        {
+          "input": "Never odd or even",
+          "output": "true"
+        }
+      ],
+      "constraints": [
+        "Input may contain spaces and letters."
+      ],
+      "hints": [
+        "Normalize case and remove spaces.",
+        "Compare characters from both ends.",
+        "Stop early if a mismatch appears."
+      ]
+    },
+    {
+      "id": "easy-05",
+      "title": "Sum Even Numbers",
+      "difficulty": "easy",
+      "topic": "arrays",
+      "prompt": "Given a list of integers, return the sum of only the even numbers.",
+      "examples": [
+        {
+          "input": "[1, 2, 3, 4, 5]",
+          "output": "6"
+        }
+      ],
+      "constraints": [
+        "The list may be empty."
+      ],
+      "hints": [
+        "Start the sum at zero.",
+        "Check divisibility by 2.",
+        "Add only values that pass the even check."
+      ],
+      "visualizer": {
+        "concept": "array-scan",
+        "preset": "sum-even",
+        "title": "Sum Even Numbers: add only the evens",
+        "caption": "Watch each number get checked before the running sum changes.",
+        "input": {
+          "items": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      }
+    },
+    {
+      "id": "easy-06",
+      "title": "First Repeated Character",
+      "difficulty": "easy",
+      "topic": "sets",
+      "prompt": "Return the first character that appears more than once while scanning left to right. Return null if none repeat.",
+      "examples": [
+        {
+          "input": "advisor",
+          "output": "d"
+        }
+      ],
+      "constraints": [
+        "0 <= length <= 1000"
+      ],
+      "hints": [
+        "Keep a set of seen characters.",
+        "Scan left to right.",
+        "The first character already in the set is the answer."
+      ]
+    },
+    {
+      "id": "easy-07",
+      "title": "Grade Bucket",
+      "difficulty": "easy",
+      "topic": "conditionals",
+      "prompt": "Convert a numeric score into A, B, C, D, or F using standard 90/80/70/60 cutoffs.",
+      "examples": [
+        {
+          "input": "84",
+          "output": "B"
+        }
+      ],
+      "constraints": [
+        "0 <= score <= 100"
+      ],
+      "hints": [
+        "Check highest cutoffs first.",
+        "Use if/else branches.",
+        "Return once the correct bucket is found."
+      ]
+    },
+    {
+      "id": "easy-08",
+      "title": "Remove Duplicates Keep Order",
+      "difficulty": "easy",
+      "topic": "arrays",
+      "prompt": "Return a new list with duplicate values removed while preserving the first occurrence order.",
+      "examples": [
+        {
+          "input": "[3, 1, 3, 2, 1]",
+          "output": "[3, 1, 2]"
+        }
+      ],
+      "constraints": [
+        "Values are integers."
+      ],
+      "hints": [
+        "Use a set to remember values already copied.",
+        "Keep a result list.",
+        "Append only when the value has not been seen."
+      ]
+    },
+    {
+      "id": "easy-09",
+      "title": "Count Words",
+      "difficulty": "easy",
+      "topic": "strings",
+      "prompt": "Count how many words are in a sentence. Multiple spaces should not create empty words.",
+      "examples": [
+        {
+          "input": "  intro   to cs  ",
+          "output": "3"
+        }
+      ],
+      "constraints": [
+        "Words are separated by whitespace."
+      ],
+      "hints": [
+        "Trim or split on whitespace.",
+        "Ignore empty pieces.",
+        "Return the number of real words."
+      ]
+    },
+    {
+      "id": "easy-10",
+      "title": "Smallest Positive",
+      "difficulty": "easy",
+      "topic": "arrays",
+      "prompt": "Return the smallest positive integer in a list. Return null if there is no positive integer.",
+      "examples": [
+        {
+          "input": "[-2, 0, 9, 4]",
+          "output": "4"
+        }
+      ],
+      "constraints": [
+        "Positive means greater than zero."
+      ],
+      "hints": [
+        "Track a best positive value.",
+        "Ignore zero and negative values.",
+        "Update the best when a smaller positive appears."
+      ]
+    },
+    {
+      "id": "easy-11",
+      "title": "Running Total",
+      "difficulty": "easy",
+      "topic": "arrays",
+      "prompt": "Return a list where each position contains the sum of all values up to that position.",
+      "examples": [
+        {
+          "input": "[2, 4, 1]",
+          "output": "[2, 6, 7]"
+        }
+      ],
+      "constraints": [
+        "Input values are integers."
+      ],
+      "hints": [
+        "Keep a running sum.",
+        "Add each number to the running sum.",
+        "Append the running sum to the result."
+      ]
+    },
+    {
+      "id": "easy-12",
+      "title": "Valid Course Code Shape",
+      "difficulty": "easy",
+      "topic": "strings",
+      "prompt": "Return true if a course code looks like four uppercase letters, optional space, then three digits, such as COSC 220 or MATH241.",
+      "examples": [
+        {
+          "input": "COSC 220",
+          "output": "true"
+        }
+      ],
+      "constraints": [
+        "Do not validate against the catalog, only the shape."
+      ],
+      "hints": [
+        "Ignore one space if it appears between the letters and numbers.",
+        "After removing that space, the code should have exactly 7 characters.",
+        "Check that the first 4 characters are uppercase letters and the last 3 are digits."
+      ]
+    },
+    {
+      "id": "easy-13",
+      "title": "Find Index",
+      "difficulty": "easy",
+      "topic": "arrays",
+      "prompt": "Return the index of the first occurrence of a target value in a list, or -1 if it is absent.",
+      "examples": [
+        {
+          "input": "[5, 7, 9], target=7",
+          "output": "1"
+        }
+      ],
+      "constraints": [
+        "Use zero-based indexes."
+      ],
+      "hints": [
+        "Loop over indexes, not only values.",
+        "Compare each value with the target.",
+        "Return immediately when found."
+      ]
+    },
+    {
+      "id": "easy-14",
+      "title": "Merge Names",
+      "difficulty": "easy",
+      "topic": "arrays",
+      "prompt": "Given two lists of names, return one list containing all names from the first list followed by all names from the second.",
+      "examples": [
+        {
+          "input": "['Ada'], ['Grace', 'Katherine']",
+          "output": "['Ada', 'Grace', 'Katherine']"
+        }
+      ],
+      "constraints": [
+        "Do not sort the names."
+      ],
+      "hints": [
+        "Create a result list.",
+        "Add every item from the first list.",
+        "Then add every item from the second list."
+      ]
+    },
+    {
+      "id": "easy-15",
+      "title": "Temperature Above Threshold",
+      "difficulty": "easy",
+      "topic": "arrays",
+      "prompt": "Count how many temperature readings are strictly greater than a threshold.",
+      "examples": [
+        {
+          "input": "[70, 82, 81], threshold=80",
+          "output": "2"
+        }
+      ],
+      "constraints": [
+        "Use strict greater-than."
+      ],
+      "hints": [
+        "Initialize a counter.",
+        "Compare each reading with the threshold.",
+        "Increment only for readings above it."
+      ],
+      "visualizer": {
+        "concept": "array-scan",
+        "title": "Temperature Above Threshold: compare each reading",
+        "caption": "Watch each temperature get compared with the threshold before the count changes.",
+        "input": {
+          "items": [
+            70,
+            82,
+            81
+          ],
+          "threshold": 80
+        }
+      }
+    },
+    {
+      "id": "easy-16",
+      "title": "Last Digit",
+      "difficulty": "easy",
+      "topic": "math",
+      "prompt": "Given a non-negative integer n, return only its last digit as an integer. For example, 384 should return 4.",
+      "examples": [
+        {
+          "input": "384",
+          "output": "4"
+        }
+      ],
+      "constraints": [
+        "0 <= n <= 1000000000"
+      ],
+      "hints": [
+        "The last digit is the remainder after dividing by 10.",
+        "Use n % 10 to get that remainder.",
+        "Check n = 0 too; its last digit should still be 0."
+      ]
+    },
+    {
+      "id": "easy-17",
+      "title": "Truthy Attendance",
+      "difficulty": "easy",
+      "topic": "arrays",
+      "prompt": "Given a list of booleans for attendance, count how many values are true.",
+      "examples": [
+        {
+          "input": "[true, false, true]",
+          "output": "2"
+        }
+      ],
+      "constraints": [
+        "Values are booleans."
+      ],
+      "hints": [
+        "Start a counter at zero.",
+        "Check each value directly.",
+        "Increment for true values."
+      ]
+    },
+    {
+      "id": "easy-18",
+      "title": "Initials",
+      "difficulty": "easy",
+      "topic": "strings",
+      "prompt": "Given a full name, return the uppercase initials of each word.",
+      "examples": [
+        {
+          "input": "morgan state university",
+          "output": "MSU"
+        }
+      ],
+      "constraints": [
+        "Names may contain extra spaces."
+      ],
+      "hints": [
+        "Split into words.",
+        "Take the first character of each word.",
+        "Uppercase the collected initials."
+      ]
+    },
+    {
+      "id": "easy-19",
+      "title": "Clamp Score",
+      "difficulty": "easy",
+      "topic": "conditionals",
+      "prompt": "Clamp a score so values below 0 become 0 and values above 100 become 100.",
+      "examples": [
+        {
+          "input": "118",
+          "output": "100"
+        }
+      ],
+      "constraints": [
+        "Input is an integer."
+      ],
+      "hints": [
+        "Check the lower bound.",
+        "Check the upper bound.",
+        "Return the original score when it is inside range."
+      ]
+    },
+    {
+      "id": "easy-20",
+      "title": "Every Other Item",
+      "difficulty": "easy",
+      "topic": "arrays",
+      "prompt": "Return a new list containing every other item from the input, starting at index 0.",
+      "examples": [
+        {
+          "input": "[10, 20, 30, 40, 50]",
+          "output": "[10, 30, 50]"
+        }
+      ],
+      "constraints": [
+        "Use zero-based indexing."
+      ],
+      "hints": [
+        "Loop indexes by 2.",
+        "Start at index 0.",
+        "Append the selected values to a result list."
+      ]
+    },
+    {
+      "id": "easy-21",
+      "title": "Count Digits",
+      "difficulty": "easy",
+      "topic": "math",
+      "prompt": "Return how many digits are in a non-negative integer. For 0, return 1.",
+      "examples": [
+        {
+          "input": "5029",
+          "output": "4"
+        }
+      ],
+      "constraints": [
+        "0 <= n <= 1000000000"
+      ],
+      "hints": [
+        "Start with the special case: 0 has one digit.",
+        "For any other number, remove the last digit by dividing by 10 and keeping the whole-number part.",
+        "Count each removal until the number becomes 0."
+      ]
+    },
+    {
+      "id": "easy-22",
+      "title": "Matrix Column Sums",
+      "difficulty": "easy",
+      "topic": "matrices",
+      "prompt": "Given a rectangular matrix of integers, return a list with the sum of each column.",
+      "examples": [
+        {
+          "input": "[[1,2,3],[4,5,6]]",
+          "output": "[5,7,9]"
+        }
+      ],
+      "constraints": [
+        "The matrix may be empty.",
+        "All non-empty rows have the same length."
+      ],
+      "hints": [
+        "If the matrix has no rows, return an empty list right away.",
+        "Use the first row to know how many column totals you need.",
+        "For each row, add row[0] to column total 0, row[1] to column total 1, and so on."
+      ]
+    },
+    {
+      "id": "easy-23",
+      "title": "Can Vote",
+      "difficulty": "easy",
+      "topic": "conditionals",
+      "prompt": "Return true if an age is at least 18, otherwise return false.",
+      "examples": [
+        {
+          "input": "18",
+          "output": "true"
+        }
+      ],
+      "constraints": [
+        "Age is a non-negative integer."
+      ],
+      "hints": [
+        "The cutoff is inclusive, so age 18 should return true.",
+        "Compare the age with 18 using greater-than-or-equal.",
+        "Return the result of that comparison instead of writing extra branches."
+      ]
+    },
+    {
+      "id": "easy-24",
+      "title": "Unique Count",
+      "difficulty": "easy",
+      "topic": "sets",
+      "prompt": "Given a list of integers, return how many different values appear at least once. Repeated values should only count one time.",
+      "examples": [
+        {
+          "input": "[4,4,2,7,2]",
+          "output": "3"
+        }
+      ],
+      "constraints": [
+        "The list may be empty."
+      ],
+      "hints": [
+        "Use a set because it stores one copy of each value.",
+        "Add each number from the list into the set.",
+        "The answer is the number of items left in the set."
+      ]
+    },
+    {
+      "id": "easy-25",
+      "title": "Parking Ticket Total",
+      "difficulty": "easy",
+      "topic": "conditionals",
+      "prompt": "A campus parking ticket starts with a base fee and grows by the number of days it is late. Given the number of late days and whether the student has a parking permit, return the final ticket total. A permit gives a small discount, but the total should never go below zero.",
+      "examples": [
+        {
+          "input": "daysLate=2, hasPermit=true",
+          "output": "40"
+        }
+      ],
+      "constraints": [
+        "0 <= daysLate <= 30",
+        "Use a 25 dollar base fee, 10 dollars per late day, and a 5 dollar permit discount."
+      ],
+      "hints": [
+        "Start with the base fee of 25.",
+        "Add 10 times the number of late days.",
+        "If the student has a permit, subtract 5, then clamp the result at zero."
+      ]
+    },
+    {
+      "id": "easy-26",
+      "title": "Plant Watering Message",
+      "difficulty": "easy",
+      "topic": "conditionals",
+      "prompt": "A student is tracking a classroom plant. Given the soil moisture reading and whether the window is sunny today, return the care message for the plant.",
+      "examples": [
+        {
+          "input": "moisture=28, isSunny=false",
+          "output": "water today"
+        }
+      ],
+      "constraints": [
+        "Moisture is an integer from 0 to 100.",
+        "Return exactly water today or check tomorrow."
+      ],
+      "hints": [
+        "Very low moisture means the plant needs water.",
+        "Sunny days dry the plant faster, so use a higher moisture cutoff when it is sunny.",
+        "Return one of the two exact messages from the prompt."
+      ]
+    },
+    {
+      "id": "easy-27",
+      "title": "Temperature Comfort Count",
+      "difficulty": "easy",
+      "topic": "arrays",
+      "prompt": "Given hourly room temperature readings and an inclusive comfort range, count how many readings are comfortable.",
+      "examples": [
+        {
+          "input": "[68, 72, 80], low=70, high=78",
+          "output": "1"
+        }
+      ],
+      "constraints": [
+        "The readings list may be empty.",
+        "Comfortable means low <= reading <= high."
+      ],
+      "hints": [
+        "Start a counter at zero.",
+        "Check both the low and high limit for each reading.",
+        "Increment only when the reading is inside the inclusive range."
+      ]
+    },
+    {
+      "id": "easy-28",
+      "title": "Grocery Price Lookup",
+      "difficulty": "easy",
+      "topic": "hash maps",
+      "prompt": "A grocery list stores item names next to their prices. Given parallel lists of item names and prices plus a target item, return the target price or -1 if the item is not listed.",
+      "examples": [
+        {
+          "input": "items=[milk,bread], prices=[4,3], target=bread",
+          "output": "3"
+        }
+      ],
+      "constraints": [
+        "items and prices have the same length.",
+        "Item names are case-sensitive."
+      ],
+      "hints": [
+        "Match each item name with the price at the same index.",
+        "Compare each item name with the target.",
+        "Return -1 only after checking every item."
+      ]
+    },
+    {
+      "id": "easy-29",
+      "title": "Course Credit Total",
+      "difficulty": "easy",
+      "topic": "hash maps",
+      "prompt": "Given course names, their credit values, and a list of selected courses, return the total number of credits for the selected courses. Ignore selected names that are not in the course list.",
+      "examples": [
+        {
+          "input": "courses=[COSC101,MATH113], credits=[3,4], selected=[COSC101]",
+          "output": "3"
+        }
+      ],
+      "constraints": [
+        "courses and credits have the same length.",
+        "A selected course that is missing from courses contributes 0 credits."
+      ],
+      "hints": [
+        "Build a lookup from course name to credit value, or scan the course list for each selection.",
+        "Start the total at zero.",
+        "Add credits only for selected courses that exist in the course list."
+      ]
+    },
+    {
+      "id": "easy-30",
+      "title": "Favorite Course Counts",
+      "difficulty": "easy",
+      "topic": "hash maps",
+      "prompt": "Students voted for their favorite course topic. Given all votes and a list of target topics, return how many votes each target topic received, in target order.",
+      "examples": [
+        {
+          "input": "favorites=[ai,web,ai], targets=[ai,systems]",
+          "output": "[2,0]"
+        }
+      ],
+      "constraints": [
+        "Targets may include topics with zero votes.",
+        "Return counts in the same order as targets."
+      ],
+      "hints": [
+        "Count how often each favorite appears.",
+        "Create one answer for each target topic.",
+        "Use zero when a target topic never appeared."
+      ]
+    },
+    {
+      "id": "easy-31",
+      "title": "Unique Parking Zones",
+      "difficulty": "easy",
+      "topic": "sets",
+      "prompt": "Given a list of parking zone labels seen on campus, return how many different zones appear. Repeated zones should count once.",
+      "examples": [
+        {
+          "input": "[A,A,B,C]",
+          "output": "3"
+        }
+      ],
+      "constraints": [
+        "The zone list may be empty.",
+        "Zone labels are case-sensitive."
+      ],
+      "hints": [
+        "A set keeps one copy of each zone.",
+        "Add every zone label to the set.",
+        "Return the size of the set."
+      ]
+    },
+    {
+      "id": "easy-32",
+      "title": "Shared Study Topics",
+      "difficulty": "easy",
+      "topic": "sets",
+      "prompt": "Two students list the topics they want to review. Return the topics that appear in both lists, keeping the order from the first student and avoiding duplicates.",
+      "examples": [
+        {
+          "input": "first=[loops,sets,loops], second=[sets,arrays]",
+          "output": "[sets]"
+        }
+      ],
+      "constraints": [
+        "Topic names are case-sensitive.",
+        "Do not repeat a shared topic in the result."
+      ],
+      "hints": [
+        "Put the second student's topics in a set for fast lookup.",
+        "Scan the first student's list from left to right.",
+        "Append a topic only if it is shared and not already in the result."
+      ]
+    },
+    {
+      "id": "easy-33",
+      "title": "Pair Names With Scores",
+      "difficulty": "easy",
+      "topic": "tuples",
+      "prompt": "Given parallel lists of student names and scores, return a list of name-score pairs written as name:score strings.",
+      "examples": [
+        {
+          "input": "names=[Ada,Grace], scores=[95,88]",
+          "output": "[Ada:95,Grace:88]"
+        }
+      ],
+      "constraints": [
+        "names and scores have the same length.",
+        "Keep the original order."
+      ],
+      "hints": [
+        "Loop over indexes so each name lines up with its score.",
+        "Convert each score to text before joining it with the name.",
+        "Append each name:score string to the result list."
+      ]
+    },
+    {
+      "id": "easy-34",
+      "title": "Swap Pair Order",
+      "difficulty": "easy",
+      "topic": "tuples",
+      "prompt": "Given a two-item pair represented as a list of strings, return a new pair with the two items swapped. If fewer than two items are provided, return the pair unchanged.",
+      "examples": [
+        {
+          "input": "[lab,lecture]",
+          "output": "[lecture,lab]"
+        }
+      ],
+      "constraints": [
+        "The input list has 0, 1, or 2 strings.",
+        "Do not mutate the original pair."
+      ],
+      "hints": [
+        "Check whether the pair has at least two items.",
+        "If it does, return the second item followed by the first.",
+        "Otherwise return a copy of the original pair."
+      ]
+    },
+    {
+      "id": "easy-35",
+      "title": "Late Assignment Penalty",
+      "difficulty": "easy",
+      "topic": "conditionals",
+      "prompt": "Given an assignment score and the number of days it was submitted late, subtract 5 points per late day and return the final score. The final score cannot be below zero.",
+      "examples": [
+        {
+          "input": "score=86, daysLate=3",
+          "output": "71"
+        }
+      ],
+      "constraints": [
+        "0 <= score <= 100",
+        "0 <= daysLate <= 30"
+      ],
+      "hints": [
+        "Compute the penalty as daysLate times 5.",
+        "Subtract the penalty from the score.",
+        "If the result is below zero, return zero instead."
+      ]
+    },
+    {
+      "id": "easy-36",
+      "title": "Weekly Plant Care Days",
+      "difficulty": "easy",
+      "topic": "arrays",
+      "prompt": "A student records plant moisture readings for a week starting on Monday. Given the readings and a watering threshold, return the day names where the plant should be watered.",
+      "examples": [
+        {
+          "input": "readings=[20,55,30], threshold=35",
+          "output": "[Mon,Wed]"
+        }
+      ],
+      "constraints": [
+        "Readings are in weekday order starting with Monday.",
+        "Only the first seven readings need weekday names."
+      ],
+      "hints": [
+        "Store the weekday names in order.",
+        "Loop over the readings by index.",
+        "When a reading is below the threshold, append the matching weekday name."
+      ]
+    }
   ]
 }

@@ -302,6 +302,98 @@ CPP_SOLUTIONS = {
     for(auto&w:words) if(w.size()>=prefix.size()&&w.compare(0,prefix.size(),prefix)==0) return true;
     return false;
 }""",
+    "courseCreditTotal": """long long courseCreditTotal(vector<string> courses, vector<long long> credits, vector<string> selectedCourses){
+    map<string,long long> lookup; for(size_t i=0;i<courses.size();i++) lookup[courses[i]]=credits[i];
+    long long total=0; for(auto& course:selectedCourses) if(lookup.count(course)) total+=lookup[course];
+    return total;
+}""",
+    "favoriteCourseCounts": """vector<long long> favoriteCourseCounts(vector<string> favorites, vector<string> targets){
+    map<string,long long> counts; for(auto& favorite:favorites) counts[favorite]++;
+    vector<long long> out; for(auto& target:targets) out.push_back(counts[target]);
+    return out;
+}""",
+    "groceryPriceLookup": """long long groceryPriceLookup(vector<string> items, vector<long long> prices, string target){
+    for(size_t i=0;i<items.size();i++) if(items[i]==target) return prices[i];
+    return -1;
+}""",
+    "lateAssignmentPenalty": """long long lateAssignmentPenalty(long long score, long long daysLate){
+    return max(0LL, score - daysLate * 5);
+}""",
+    "pairNamesWithScores": """vector<string> pairNamesWithScores(vector<string> names, vector<long long> scores){
+    vector<string> out; for(size_t i=0;i<names.size();i++) out.push_back(names[i]+":"+to_string(scores[i]));
+    return out;
+}""",
+    "parkingTicketTotal": """long long parkingTicketTotal(long long daysLate, bool hasPermit){
+    long long total = 25 + daysLate * 10; if(hasPermit) total -= 5; return max(0LL, total);
+}""",
+    "plantWateringMessage": """string plantWateringMessage(long long moisture, bool isSunny){
+    return (moisture < 30 || (isSunny && moisture < 45)) ? "water today" : "check tomorrow";
+}""",
+    "sharedStudyTopics": """vector<string> sharedStudyTopics(vector<string> firstTopics, vector<string> secondTopics){
+    set<string> second(secondTopics.begin(), secondTopics.end()), used; vector<string> out;
+    for(auto& topic:firstTopics) if(second.count(topic) && !used.count(topic)){ used.insert(topic); out.push_back(topic); }
+    return out;
+}""",
+    "swapPairOrder": """vector<string> swapPairOrder(vector<string> pairItems){
+    if(pairItems.size() < 2) return pairItems;
+    return {pairItems[1], pairItems[0]};
+}""",
+    "temperatureComfortCount": """long long temperatureComfortCount(vector<long long> readings, long long low, long long high){
+    long long count=0; for(long long reading:readings) if(reading>=low && reading<=high) count++;
+    return count;
+}""",
+    "uniqueParkingZones": """long long uniqueParkingZones(vector<string> zones){
+    set<string> seen(zones.begin(), zones.end()); return seen.size();
+}""",
+    "weeklyPlantCareDays": """vector<string> weeklyPlantCareDays(vector<long long> moistureReadings, long long threshold){
+    vector<string> days={"Mon","Tue","Wed","Thu","Fri","Sat","Sun"}, out;
+    for(size_t i=0;i<moistureReadings.size() && i<days.size();i++) if(moistureReadings[i]<threshold) out.push_back(days[i]);
+    return out;
+}""",
+    "campusStopReachable": """bool campusStopReachable(vector<vector<string>> connections, string start, string target){
+    if(start==target) return true;
+    map<string, vector<string>> graph; for(auto& edge:connections) if(edge.size()>=2) graph[edge[0]].push_back(edge[1]);
+    queue<string> q; set<string> seen; q.push(start); seen.insert(start);
+    while(!q.empty()){ string cur=q.front(); q.pop(); for(auto& next:graph[cur]){ if(next==target) return true; if(!seen.count(next)){ seen.insert(next); q.push(next); } } }
+    return false;
+}""",
+    "clubMembershipGroups": """long long clubMembershipGroups(long long n, vector<vector<long long>> pairs){
+    vector<long long> parent(n); iota(parent.begin(), parent.end(), 0);
+    function<long long(long long)> find=[&](long long x){ while(parent[x]!=x){ parent[x]=parent[parent[x]]; x=parent[x]; } return x; };
+    for(auto& p:pairs) if(p.size()>=2) parent[find(p[0])] = find(p[1]);
+    set<long long> groups; for(long long i=0;i<n;i++) groups.insert(find(i)); return groups.size();
+}""",
+    "minStudyPlanCost": """long long minStudyPlanCost(vector<long long> costs){
+    if(costs.empty()) return 0; if(costs.size()==1) return costs[0];
+    long long prev2=costs[0], prev1=costs[1];
+    for(size_t i=2;i<costs.size();i++){ long long cur=min(prev1, prev2)+costs[i]; prev2=prev1; prev1=cur; }
+    return min(prev1, prev2);
+}""",
+    "prefixMatchCount": """long long prefixMatchCount(vector<string> words, string prefix){
+    long long count=0; for(auto& word:words) if(word.size()>=prefix.size() && word.compare(0, prefix.size(), prefix)==0) count++;
+    return count;
+}""",
+    "redundantFriendshipEdge": """vector<long long> redundantFriendshipEdge(long long n, vector<vector<long long>> pairs){
+    vector<long long> parent(n); iota(parent.begin(), parent.end(), 0);
+    function<long long(long long)> find=[&](long long x){ while(parent[x]!=x){ parent[x]=parent[parent[x]]; x=parent[x]; } return x; };
+    for(auto& p:pairs){ long long a=find(p[0]), b=find(p[1]); if(a==b) return {p[0], p[1]}; parent[a]=b; }
+    return {};
+}""",
+    "runningMedianScores": """vector<long long> runningMedianScores(vector<long long> scores){
+    vector<long long> sorted, out;
+    for(long long score:scores){ sorted.insert(lower_bound(sorted.begin(), sorted.end(), score), score); out.push_back(sorted[(sorted.size()-1)/2]); }
+    return out;
+}""",
+    "topPriorityAssignments": """vector<string> topPriorityAssignments(vector<string> names, vector<long long> priorities, long long k){
+    vector<pair<long long,string>> items; for(size_t i=0;i<names.size();i++) items.push_back({-priorities[i], names[i]});
+    sort(items.begin(), items.end()); vector<string> out; for(long long i=0;i<k && i<(long long)items.size();i++) out.push_back(items[i].second);
+    return out;
+}""",
+    "treeRightSideView": """vector<long long> treeRightSideView(vector<long long> tree){
+    vector<long long> out; size_t index=0, width=1;
+    while(index<tree.size()){ bool any=false; long long last=0; for(size_t i=0;i<width && index<tree.size();i++,index++){ if(tree[index]!=-1){ any=true; last=tree[index]; } } if(any) out.push_back(last); width*=2; }
+    return out;
+}""",
 }
 
 
@@ -441,6 +533,27 @@ JAVA_SOLUTIONS = {
     "shortestPathInCampusGrid": "import java.util.*; class Solution { static int shortestPathInCampusGrid(String[][] grid){ int R=grid.length; if(R==0) return -1; int C=grid[0].length; int sr=0,sc=0; for(int i=0;i<R;i++) for(int j=0;j<C;j++) if(grid[i][j].equals(\"S\")){ sr=i; sc=j; } int[][] dist=new int[R][C]; for(int[] row:dist) Arrays.fill(row,-1); Deque<int[]> q=new ArrayDeque<>(); q.add(new int[]{sr,sc}); dist[sr][sc]=0; int[] dr={1,-1,0,0}, dc={0,0,1,-1}; while(!q.isEmpty()){ int[] cur=q.poll(); int r=cur[0],c=cur[1]; if(grid[r][c].equals(\"T\")) return dist[r][c]; for(int d=0;d<4;d++){ int nr=r+dr[d],nc=c+dc[d]; if(nr<0||nc<0||nr>=R||nc>=C||grid[nr][nc].equals(\"#\")||dist[nr][nc]!=-1) continue; dist[nr][nc]=dist[r][c]+1; q.add(new int[]{nr,nc}); } } return -1; } }",
     # strgrid,string,string -> bool
     "coursePrerequisiteChain": "import java.util.*; class Solution { static Map<String,List<String>> g; static Set<String> seen; static boolean dfs(String c, String prereq){ if(c.equals(prereq)) return true; if(!seen.add(c)) return false; for(String n:g.getOrDefault(c,new ArrayList<>())) if(dfs(n,prereq)) return true; return false; } static boolean coursePrerequisiteChain(String[][] pairs, String course, String prereq){ g=new HashMap<>(); seen=new HashSet<>(); for(String[] p:pairs) g.computeIfAbsent(p[0],k->new ArrayList<>()).add(p[1]); return dfs(course,prereq); } }",
+    # COSC 101-style beginner shapes
+    "parkingTicketTotal": "class Solution { static int parkingTicketTotal(int daysLate, boolean hasPermit){ int total=25+daysLate*10; if(hasPermit) total-=5; return Math.max(0,total); } }",
+    "plantWateringMessage": "class Solution { static String plantWateringMessage(int moisture, boolean isSunny){ return (moisture<30 || (isSunny && moisture<45)) ? \"water today\" : \"check tomorrow\"; } }",
+    "temperatureComfortCount": "class Solution { static int temperatureComfortCount(int[] readings, int low, int high){ int c=0; for(int r:readings) if(r>=low && r<=high) c++; return c; } }",
+    "groceryPriceLookup": "class Solution { static int groceryPriceLookup(String[] items, int[] prices, String target){ for(int i=0;i<items.length;i++) if(items[i].equals(target)) return prices[i]; return -1; } }",
+    "courseCreditTotal": "import java.util.*; class Solution { static int courseCreditTotal(String[] courses, int[] credits, String[] selectedCourses){ Map<String,Integer> m=new HashMap<>(); for(int i=0;i<courses.length;i++) m.put(courses[i], credits[i]); int total=0; for(String c:selectedCourses) total += m.getOrDefault(c, 0); return total; } }",
+    "favoriteCourseCounts": "import java.util.*; class Solution { static int[] favoriteCourseCounts(String[] favorites, String[] targets){ Map<String,Integer> m=new HashMap<>(); for(String f:favorites) m.put(f, m.getOrDefault(f,0)+1); int[] out=new int[targets.length]; for(int i=0;i<targets.length;i++) out[i]=m.getOrDefault(targets[i],0); return out; } }",
+    "uniqueParkingZones": "import java.util.*; class Solution { static int uniqueParkingZones(String[] zones){ return new HashSet<>(Arrays.asList(zones)).size(); } }",
+    "sharedStudyTopics": "import java.util.*; class Solution { static String[] sharedStudyTopics(String[] firstTopics, String[] secondTopics){ Set<String> second=new HashSet<>(Arrays.asList(secondTopics)); Set<String> used=new HashSet<>(); List<String> out=new ArrayList<>(); for(String t:firstTopics) if(second.contains(t) && used.add(t)) out.add(t); return out.toArray(new String[0]); } }",
+    "pairNamesWithScores": "class Solution { static String[] pairNamesWithScores(String[] names, int[] scores){ String[] out=new String[names.length]; for(int i=0;i<names.length;i++) out[i]=names[i]+\":\"+scores[i]; return out; } }",
+    "swapPairOrder": "class Solution { static String[] swapPairOrder(String[] pairItems){ if(pairItems.length<2) return pairItems.clone(); return new String[]{pairItems[1], pairItems[0]}; } }",
+    "lateAssignmentPenalty": "class Solution { static int lateAssignmentPenalty(int score, int daysLate){ return Math.max(0, score - daysLate * 5); } }",
+    "weeklyPlantCareDays": "import java.util.*; class Solution { static String[] weeklyPlantCareDays(int[] moistureReadings, int threshold){ String[] days={\"Mon\",\"Tue\",\"Wed\",\"Thu\",\"Fri\",\"Sat\",\"Sun\"}; List<String> out=new ArrayList<>(); for(int i=0;i<moistureReadings.length && i<days.length;i++) if(moistureReadings[i]<threshold) out.add(days[i]); return out.toArray(new String[0]); } }",
+    "campusStopReachable": "import java.util.*; class Solution { static boolean campusStopReachable(String[][] connections, String start, String target){ if(start.equals(target)) return true; Map<String,List<String>> g=new HashMap<>(); for(String[] e:connections) g.computeIfAbsent(e[0],k->new ArrayList<>()).add(e[1]); Queue<String> q=new ArrayDeque<>(); Set<String> seen=new HashSet<>(); q.add(start); seen.add(start); while(!q.isEmpty()){ String cur=q.poll(); for(String next:g.getOrDefault(cur, Collections.emptyList())){ if(next.equals(target)) return true; if(seen.add(next)) q.add(next); } } return false; } }",
+    "clubMembershipGroups": "import java.util.*; class Solution { static int[] par; static int find(int x){ while(par[x]!=x){ par[x]=par[par[x]]; x=par[x]; } return x; } static int clubMembershipGroups(int n, int[][] pairs){ par=new int[n]; for(int i=0;i<n;i++) par[i]=i; for(int[] p:pairs) par[find(p[0])]=find(p[1]); Set<Integer> s=new HashSet<>(); for(int i=0;i<n;i++) s.add(find(i)); return s.size(); } }",
+    "minStudyPlanCost": "class Solution { static int minStudyPlanCost(int[] costs){ if(costs.length==0) return 0; if(costs.length==1) return costs[0]; int prev2=costs[0], prev1=costs[1]; for(int i=2;i<costs.length;i++){ int cur=Math.min(prev1,prev2)+costs[i]; prev2=prev1; prev1=cur; } return Math.min(prev1,prev2); } }",
+    "prefixMatchCount": "class Solution { static int prefixMatchCount(String[] words, String prefix){ int count=0; for(String word:words) if(word.startsWith(prefix)) count++; return count; } }",
+    "redundantFriendshipEdge": "class Solution { static int[] par; static int find(int x){ while(par[x]!=x){ par[x]=par[par[x]]; x=par[x]; } return x; } static int[] redundantFriendshipEdge(int n, int[][] pairs){ par=new int[n]; for(int i=0;i<n;i++) par[i]=i; for(int[] p:pairs){ int a=find(p[0]), b=find(p[1]); if(a==b) return new int[]{p[0],p[1]}; par[a]=b; } return new int[0]; } }",
+    "runningMedianScores": "import java.util.*; class Solution { static int[] runningMedianScores(int[] scores){ List<Integer> sorted=new ArrayList<>(); int[] out=new int[scores.length]; for(int i=0;i<scores.length;i++){ int pos=Collections.binarySearch(sorted, scores[i]); if(pos<0) pos=-pos-1; sorted.add(pos, scores[i]); out[i]=sorted.get((sorted.size()-1)/2); } return out; } }",
+    "topPriorityAssignments": "import java.util.*; class Solution { static String[] topPriorityAssignments(String[] names, int[] priorities, int k){ List<int[]> idx=new ArrayList<>(); for(int i=0;i<names.length;i++) idx.add(new int[]{i}); idx.sort((a,b) -> priorities[b[0]]!=priorities[a[0]] ? priorities[b[0]]-priorities[a[0]] : names[a[0]].compareTo(names[b[0]])); String[] out=new String[Math.min(k, idx.size())]; for(int i=0;i<out.length;i++) out[i]=names[idx.get(i)[0]]; return out; } }",
+    "treeRightSideView": "import java.util.*; class Solution { static int[] treeRightSideView(int[] tree){ List<Integer> out=new ArrayList<>(); int index=0, width=1; while(index<tree.length){ boolean any=false; int last=0; for(int i=0;i<width && index<tree.length;i++,index++){ if(tree[index]!=-1){ any=true; last=tree[index]; } } if(any) out.add(last); width*=2; } return out.stream().mapToInt(Integer::intValue).toArray(); } }",
 }
 
 

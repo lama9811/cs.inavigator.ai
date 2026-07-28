@@ -462,6 +462,46 @@
   white-space: pre;
 }
 
+.lesson-code-token {
+  color: inherit;
+}
+
+.lesson-code-token.is-keyword {
+  color: #93c5fd;
+  font-weight: 700;
+}
+
+.lesson-code-token.is-string {
+  color: #86efac;
+}
+
+.lesson-code-token.is-comment {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.lesson-code-token.is-number,
+.lesson-code-token.is-literal {
+  color: #fbbf24;
+}
+
+body.coding-dark .lesson-code-token.is-keyword {
+  color: #bfdbfe;
+}
+
+body.coding-dark .lesson-code-token.is-string {
+  color: #bbf7d0;
+}
+
+body.coding-dark .lesson-code-token.is-comment {
+  color: #9ca3af;
+}
+
+body.coding-dark .lesson-code-token.is-number,
+body.coding-dark .lesson-code-token.is-literal {
+  color: #fde68a;
+}
+
 .lesson-output {
   margin-top: 8px;
 }

@@ -1,13 +1,13 @@
 {
   "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
   "title": "Operators",
-  "summary": "Combine values with arithmetic, comparison, and logic.",
+  "summary": "Combine **values** with arithmetic, comparison, and logic.",
   "minutes": 10,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "Arithmetic operators calculate values, comparisons produce booleans, and logical operators join conditions. Prefer `===` so type and value must match.",
+  "refresher": "Arithmetic **operators** calculate values, comparisons produce **booleans**, and logical operators join **conditions**. Prefer `===` so type and value must match.",
   "refresher_code": "const eligible = credits >= 12 && holds === 0;",
   "learn_cards": {
     "operators-lesson-check-1": {
@@ -20,9 +20,9 @@
     },
     "operators-lesson-check-2": {
       "title": "Strict comparison checks type too",
-      "body": "This question is about `===` and `!==`. A string \"7\" is not the same as the number 7.",
+      "body": "This question is about `===` and `!==`. A **string** \"7\" is not the same as the number 7.",
       "example": "\"7\" !== 7\n// true",
-      "notice": "`!==` is true here because the values have different types.",
+      "notice": "`!==` is true here because the **values** have different types.",
       "mistake": "Do not treat quoted numbers as real numbers during strict comparison.",
       "section_id": "core"
     }
@@ -30,11 +30,11 @@
   "blocks": [
     {
       "kind": "text",
-      "body": "Arithmetic operators calculate values, comparisons produce booleans, and logical operators join conditions. Prefer `===` so type and value must match. Combine values with arithmetic, comparison, and logic."
+      "body": "Arithmetic **operators** calculate values, comparisons produce **booleans**, and logical operators join **conditions**. Prefer `===` so type and value must match. Combine values with arithmetic, comparison, and logic."
     },
     {
       "kind": "text",
-      "body": "Operators work in a particular order. Multiplication and division happen before addition and subtraction, then comparisons produce booleans (the values `true` and `false`) that logical operators can combine. JavaScript also chooses behavior from operand types, so plus adds two numbers but joins text when either side is a string."
+      "body": "**Operators** work in a particular order. Multiplication and division happen before addition and subtraction, then comparisons produce **booleans** (the values `true` and `false`) that logical operators can combine. JavaScript also chooses behavior from operand types, so plus adds two numbers but joins text when either side is a **string**."
     },
     {
       "kind": "code",
@@ -52,7 +52,7 @@
     },
     {
       "kind": "text",
-      "body": "Trace an expression in small pieces. For `2 + 4 * 3 === 14`, calculate `4 * 3`, add two, and compare fourteen with fourteen. Each intermediate result has both a value and a type."
+      "body": "Trace an expression in small pieces. For `2 + 4 * 3 === 14`, calculate `4 * 3`, add two, and compare fourteen with fourteen. Each intermediate result has both a **value** and a type."
     },
     {
       "kind": "callout",
@@ -71,11 +71,11 @@
         "8"
       ],
       "answer_index": 0,
-      "why": "Multiplication produces six before that value is subtracted from ten."
+      "why": "Multiplication produces six before that **value** is subtracted from ten."
     },
     {
       "kind": "check",
-      "prompt": "Which condition is true?",
+      "prompt": "Which **condition** is true?",
       "code": "const value = \"7\";",
       "choices": [
         "value === 7",
@@ -84,7 +84,7 @@
         "value === 8"
       ],
       "answer_index": 1,
-      "why": "The variable holds a string, so it is strictly unequal to the number seven."
+      "why": "The **variable** holds a **string**, so it is strictly unequal to the number seven."
     },
     {
       "kind": "list",

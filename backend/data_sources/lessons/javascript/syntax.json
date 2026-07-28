@@ -7,20 +7,20 @@
     "syntax",
     "runtime"
   ],
-  "refresher": "JavaScript needs matching quotes, parentheses, brackets, and braces. Semicolons separate statements, braces group blocks, and `console.log(...)` displays a value.",
+  "refresher": "JavaScript needs matching quotes, parentheses, brackets, and braces. Semicolons separate statements, braces group blocks, and `console.log(...)` displays a **value**.",
   "refresher_code": "const course = \"CS 101\";\nconsole.log(course);",
   "blocks": [
     {
       "kind": "text",
-      "body": "JavaScript needs matching quotes, parentheses, brackets, and braces. Semicolons separate statements, braces group blocks, and `console.log(...)` displays a value. Write statements the JavaScript engine can parse."
+      "body": "JavaScript needs matching quotes, parentheses, brackets, and braces. Semicolons separate statements, braces group blocks, and `console.log(...)` displays a **value**. Write statements the JavaScript engine can parse."
     },
     {
       "kind": "text",
-      "body": "JavaScript first parses the whole file. Parsing means checking whether the symbols form valid instructions. Only after that check can execution begin. This is why one missing quote can stop output from lines that appear earlier: the engine could not finish reading the program as a complete unit."
+      "body": "JavaScript first parses the whole **file**. Parsing means checking whether the symbols form valid instructions. Only after that check can execution begin. This is why one missing quote can stop **output** from lines that appear earlier: the engine could not finish reading the program as a complete unit."
     },
     {
       "kind": "code",
-      "caption": "The string closes correctly, and the template literal inserts the stored campus name.",
+      "caption": "The **string** closes correctly, and the template literal inserts the stored campus name.",
       "code": "const campus = \"Morgan State\";\nconsole.log(`Welcome to ${campus}`);",
       "output": "Welcome to Morgan State"
     },
@@ -34,13 +34,13 @@
     },
     {
       "kind": "text",
-      "body": "Read the corrected line from the inside out: the quotes make a string, the parentheses pass it to `log`, and the semicolon ends the statement. If an error mentions an unexpected token, inspect the symbol just before the reported location too."
+      "body": "Read the corrected line from the inside out: the quotes make a **string**, the parentheses pass it to `log`, and the semicolon ends the statement. If an error mentions an unexpected token, inspect the symbol just before the reported location too."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "Watch this detail",
-      "body": "An unexpected end of input often points to an earlier opening symbol that never received its matching closer."
+      "body": "An unexpected end of **input** often points to an earlier opening symbol that never received its matching closer."
     },
     {
       "kind": "check",

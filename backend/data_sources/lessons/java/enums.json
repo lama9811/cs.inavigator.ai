@@ -1,32 +1,32 @@
 {
   "_note": "ORIGINAL content. Topic coverage follows David Eck's Introduction to Programming Using Java. No prose, examples, or exercises were copied; the source guides curriculum order only.",
   "title": "Enums",
-  "summary": "Represent a small fixed set of named choices.",
+  "summary": "Represent a small fixed **set** of named choices.",
   "minutes": 9,
   "error_classes": [
     "syntax",
     "wrong_answer"
   ],
-  "refresher": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. Enum constants are objects, so an enum may also have fields and methods.",
+  "refresher": "An enum defines the complete **set** of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. Enum constants are **objects**, so an enum may also have fields and **methods**.",
   "refresher_code": "enum Status { NEW, ACTIVE, COMPLETE }\nStatus current = Status.ACTIVE;",
   "blocks": [
     {
       "kind": "text",
-      "body": "Some values come from a short list that should not grow while the program runs. A course status may be planned, active, or complete. Plain strings allow spelling mistakes, but an enum allows only the declared choices."
+      "body": "Some **values** come from a short **list** that should not grow while the program runs. A course status may be planned, active, or complete. Plain **strings** allow spelling mistakes, but an enum allows only the declared choices."
     },
     {
       "kind": "code",
-      "caption": "The variable can hold one Status constant. Java checks the name during compilation.",
+      "caption": "The **variable** can hold one Status constant. Java checks the name during compilation.",
       "code": "enum Status {\n    PLANNED, ACTIVE, COMPLETE\n}\n\nStatus current = Status.ACTIVE;\nSystem.out.println(current);",
       "output": "ACTIVE"
     },
     {
       "kind": "text",
-      "body": "Enum constants are written with the enum type and a dot. They can be compared with `==` because each constant is one fixed object."
+      "body": "Enum constants are written with the enum type and a dot. They can be compared with `==` because each constant is one fixed **object**."
     },
     {
       "kind": "compare",
-      "caption": "Strings can contain an unnoticed spelling difference. The enum version is checked by the compiler and gives the value a clear type.",
+      "caption": "**Strings** can contain an unnoticed spelling difference. The enum version is checked by the compiler and gives the value a clear type.",
       "wrong_label": "String can drift",
       "wrong": "String status = \"acitve\";",
       "right_label": "Fixed choice",
@@ -36,7 +36,7 @@
       "kind": "callout",
       "tone": "warning",
       "title": "Changing text into an enum can fail",
-      "body": "`Status.valueOf(text)` requires an exact constant name. Input such as `\"active\"` does not match `ACTIVE` unless you clean or convert it first."
+      "body": "`Status.valueOf(text)` requires an exact constant name. **Input** such as `\"active\"` does not match `ACTIVE` unless you clean or convert it first."
     },
     {
       "kind": "check",
@@ -49,7 +49,7 @@
         "Level level = new Level();"
       ],
       "answer_index": 0,
-      "why": "An enum variable holds one of its declared constants. The constant is reached through the enum type, so Level.MEDIUM is the valid value."
+      "why": "An enum **variable** holds one of its declared constants. The constant is reached through the enum type, so Level.MEDIUM is the valid **value**."
     },
     {
       "kind": "text",
@@ -66,15 +66,15 @@
         "Nothing"
       ],
       "answer_index": 0,
-      "why": "The value is Level.HIGH, so the HIGH case runs and prints the text 3. The other cases are skipped."
+      "why": "The **value** is Level.HIGH, so the HIGH case runs and prints the text 3. The other cases are skipped."
     },
     {
       "kind": "list",
       "title": "Enum checklist",
       "items": [
-        "Use an enum for a fixed set of choices.",
+        "Use an enum for a fixed **set** of choices.",
         "Name constants clearly and consistently.",
-        "Store the enum value instead of a matching string.",
+        "Store the enum **value** instead of a matching **string**.",
         "Handle outside text before calling `valueOf`.",
         "Use switch when each constant needs different behavior."
       ]

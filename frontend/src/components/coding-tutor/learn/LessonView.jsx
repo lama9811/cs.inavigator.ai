@@ -41,14 +41,54 @@ const CALLOUT_DEFAULT_TITLE = {
 // Deliberately NOT a markdown parser: lesson bodies are plain sentences, and pulling in
 // a renderer would mean sanitizing HTML for content we already control.
 function withInlineCode(text) {
-  const parts = String(text || "").split(/(`[^`]+`)/g);
-  return parts.map((part, i) =>
-    part.startsWith("`") && part.endsWith("`") && part.length > 2 ? (
-      <code key={i}>{part.slice(1, -1)}</code>
-    ) : (
-      part
-    )
-  );
+  const codeParts = String(text || "").split(/(`[^`]+`)/g);
+  return codeParts.flatMap((part, i) => {
+    if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
+      return [<code key={`code-${i}`}>{part.slice(1, -1)}</code>];
+    }
+    return part.split(/(\*\*[^*]+\*\*)/g).map((piece, j) =>
+      piece.startsWith("**") && piece.endsWith("**") && piece.length > 4 ? (
+        <strong key={`strong-${i}-${j}`}>{piece.slice(2, -2)}</strong>
+      ) : (
+        piece
+      )
+    );
+  });
+}
+
+const CODE_TOKEN_RE =
+  /(\/\/.*|#.*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|\b(?:def|class|return|if|else|elif|for|while|switch|case|default|break|continue|public|private|static|void|int|long|double|float|boolean|bool|String|const|let|var|function|new|import|from|include|using|namespace|std|this|self|in|range|print|System|out|println|console|log|true|false|null|None|True|False)\b|\b\d+(?:\.\d+)?\b)/g;
+
+function codeTokenClass(token) {
+  if (/^(\/\/|#|\/\*)/.test(token)) return "is-comment";
+  if (/^["'`]/.test(token)) return "is-string";
+  if (/^(true|false|null|None|True|False)$/.test(token)) return "is-literal";
+  if (/^\d/.test(token)) return "is-number";
+  return "is-keyword";
+}
+
+function highlightedCode(code) {
+  const text = String(code || "");
+  const pieces = [];
+  let lastIndex = 0;
+
+  text.replace(CODE_TOKEN_RE, (match, _token, offset) => {
+    if (offset > lastIndex) pieces.push(text.slice(lastIndex, offset));
+    pieces.push(
+      <span key={`${offset}-${match}`} className={`lesson-code-token ${codeTokenClass(match)}`}>
+        {match}
+      </span>
+    );
+    lastIndex = offset + match.length;
+    return match;
+  });
+
+  if (lastIndex < text.length) pieces.push(text.slice(lastIndex));
+  return pieces;
+}
+
+function CodeText({ children }) {
+  return <code>{highlightedCode(children)}</code>;
 }
 
 function VisualTokenRow({ items = [], active = [], pointers = {}, window = null }) {
@@ -407,7 +447,7 @@ function Block({ block, checkKey, picked, onCheckAnswered }) {
           <figcaption>{withInlineCode(block.caption)}</figcaption>
         ) : null}
         <pre>
-          <code>{block.code}</code>
+          <CodeText>{block.code}</CodeText>
         </pre>
         {block.output ? (
           <div className="lesson-output">
@@ -442,13 +482,13 @@ function Block({ block, checkKey, picked, onCheckAnswered }) {
           <div className="lesson-compare-col is-wrong">
             <span className="lesson-compare-label">{block.wrong_label}</span>
             <pre>
-              <code>{block.wrong}</code>
+              <CodeText>{block.wrong}</CodeText>
             </pre>
           </div>
           <div className="lesson-compare-col is-right">
             <span className="lesson-compare-label">{block.right_label}</span>
             <pre>
-              <code>{block.right}</code>
+              <CodeText>{block.right}</CodeText>
             </pre>
           </div>
         </div>
@@ -515,7 +555,7 @@ function CheckBlock({ block, picked, onPick }) {
 
       {block.code ? (
         <pre className="lesson-check-code">
-          <code>{block.code}</code>
+          <CodeText>{block.code}</CodeText>
         </pre>
       ) : null}
 
@@ -700,7 +740,9 @@ export default function LessonView({
       <header className="lesson-head">
         <span className="lesson-kicker">{languageLabel}</span>
         <h1>{lesson.title}</h1>
-        {lesson.summary ? <p className="lesson-summary">{lesson.summary}</p> : null}
+        {lesson.summary ? (
+          <p className="lesson-summary">{withInlineCode(lesson.summary)}</p>
+        ) : null}
         {lesson.minutes ? (
           <span className="lesson-minutes">
             <FaClock aria-hidden="true" /> {lesson.minutes} min read
@@ -735,7 +777,7 @@ export default function LessonView({
               Part {activeIndex + 1} of {sections.length}
             </span>
             <h2>{activeSection.title}</h2>
-            {activeSection.summary ? <p>{activeSection.summary}</p> : null}
+            {activeSection.summary ? <p>{withInlineCode(activeSection.summary)}</p> : null}
           </div>
         ) : null}
         {(activeSection.blocks || []).map((block, i) => {

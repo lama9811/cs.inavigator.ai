@@ -81,9 +81,9 @@ def test_lesson_prose_is_not_robotic():
     """The voice rules, enforced rather than trusted.
 
     The first Loops draft read as machine-written, and the cause was measurable: em-dashes
-    used as all-purpose punctuation, bold as emphasis-by-force, and shouted caps. Those are
-    exactly the tells a student registers as "a computer wrote this", and this is the one
-    surface meant to feel like a person explaining something.
+    used as all-purpose punctuation and shouted caps. Those are exactly the tells a student
+    registers as "a computer wrote this", and this is the one surface meant to feel like a
+    person explaining something.
 
     Only PROSE is checked. Inline code spans are stripped first: `**` is Python's exponent
     operator and belongs in the Operators lesson, so matching it there would be a false
@@ -93,7 +93,6 @@ def test_lesson_prose_is_not_robotic():
 
     inline_code = re.compile(r"`[^`]*`")
     em_dash = re.compile(r"[—–]")          # em dash, en dash
-    bold = re.compile(r"\*\*")
     shouted = re.compile(r"\b(NEVER|ALWAYS|MUST|BEFORE|ONLY|EVERY|ALL)\b")
 
     offenses = []
@@ -107,12 +106,36 @@ def test_lesson_prose_is_not_robotic():
         where = f"{language}/{category}"
         if em_dash.search(text):
             offenses.append(f"{where}: em-dash in prose")
-        if bold.search(text):
-            offenses.append(f"{where}: bold in prose (a callout block is the emphasis)")
         for word in set(shouted.findall(text)):
             offenses.append(f"{where}: shouted caps '{word}'")
 
     assert not offenses, "Lesson prose must not read as machine-written:\n  " + "\n  ".join(offenses)
+
+
+def test_bold_markup_is_balanced_and_short():
+    """Bold is allowed for key terms, not whole paragraphs."""
+    import re
+
+    inline_code = re.compile(r"`[^`]*`")
+    bold = re.compile(r"\*\*([^*]+)\*\*")
+
+    offenses = []
+    for language, category, lesson in authored_lessons():
+        prose = [lesson["refresher"], lesson["summary"]]
+        for block in lesson["blocks"]:
+            prose += [str(block.get(f, "")) for f in ("body", "caption", "title", "why", "prompt")]
+            prose += [str(i) for i in block.get("items", [])]
+
+        text = inline_code.sub("", "\n".join(prose))
+        where = f"{language}/{category}"
+        if text.count("**") % 2:
+            offenses.append(f"{where}: unbalanced bold marker")
+        for match in bold.finditer(text):
+            words = re.findall(r"[A-Za-z0-9+/#-]+", match.group(1))
+            if not words or len(words) > 4:
+                offenses.append(f"{where}: bold phrase too long: {match.group(0)!r}")
+
+    assert not offenses, "Bold lesson markup should emphasize short key terms:\n  " + "\n  ".join(offenses)
 
 
 def test_lessons_talk_about_python_not_about_the_student():

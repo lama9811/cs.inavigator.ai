@@ -7,28 +7,28 @@
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "A sliding window is the current range from left to right. As the right side grows, update the window state. When the window breaks a rule, move left and update the state again.",
+  "refresher": "A **sliding window** is the current range from left to right. As the right side grows, update the window state. When the window breaks a rule, move left and update the state again.",
   "refresher_code": "left = 0\ntotal = 0\nfor right in range(len(nums)):\n    total += nums[right]",
   "learn_cards": {
     "advanced-window-meaning": {
       "title": "A window is a current slice",
-      "body": "A sliding window is the group between left and right.",
+      "body": "A **sliding window** is the group between left and right.",
       "example": "nums[left:right+1]",
       "notice": "The state must match the current slice.",
-      "mistake": "Moving a pointer without updating the state leaves stale data.",
+      "mistake": "Moving a **pointer** without updating the state **leaves** stale data.",
       "section_id": "meaning"
     },
     "advanced-window-shrink": {
       "title": "Shrink when the rule breaks",
       "body": "Move left only when the current window is no longer valid.",
       "example": "while total > limit: ...",
-      "notice": "The while loop keeps shrinking until the rule is fixed.",
-      "mistake": "Using if when you may need to remove several left values can leave the window invalid.",
+      "notice": "The while **loop** keeps shrinking until the rule is fixed.",
+      "mistake": "Using if when you may need to remove several left **values** can leave the window invalid.",
       "section_id": "grow-shrink"
     },
     "advanced-window-stale-state": {
       "title": "Keep state honest",
-      "body": "If left moves, remove the old left value from your saved total or count.",
+      "body": "If left moves, remove the old left **value** from your saved total or count.",
       "example": "total -= nums[left]",
       "notice": "The stored state should describe the real window.",
       "mistake": "A stale total makes future choices wrong.",
@@ -47,7 +47,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A sliding window is a contiguous part of the input. Contiguous means the values sit next to each other with no gaps. The window usually starts small, grows on the right, and sometimes shrinks on the left."
+          "body": "A **sliding window** is a contiguous part of the **input**. Contiguous means the **values** sit next to each other with no gaps. The window usually starts small, grows on the right, and sometimes shrinks on the left."
         },
         {
           "kind": "visual",
@@ -142,8 +142,8 @@
           "kind": "list",
           "title": "Window vocabulary",
           "items": [
-            "left is the first index in the window.",
-            "right is the newest index added to the window.",
+            "left is the first **index** in the window.",
+            "right is the newest **index** added to the window.",
             "state is the total, count, or table that describes the current window.",
             "best is the answer you have found so far."
           ]
@@ -174,7 +174,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "Most sliding-window code has two movements. The right side moves to include a new value. The left side moves only when the current window breaks a rule."
+          "body": "Most sliding-window code has two movements. The right side moves to include a new **value**. The left side moves only when the current window breaks a rule."
         },
         {
           "kind": "code",
@@ -247,13 +247,13 @@
             "It always makes the answer zero"
           ],
           "answer_index": 0,
-          "why": "The saved total must describe the same values that left and right describe."
+          "why": "The saved total must describe the same **values** that left and right describe."
         },
         {
           "kind": "visual",
           "title": "See a stale total bug",
           "concept": "sliding-window",
-          "caption": "Watch the stored total become wrong when left moves but the old value is not subtracted.",
+          "caption": "Watch the stored total become wrong when left moves but the old **value** is not subtracted.",
           "initial_state": {
             "items": [
               2,
@@ -333,7 +333,7 @@
               "title": "Decide from honest state",
               "action_label": "continue",
               "body": "Now the next decision uses the actual current window.",
-              "what_changed": "Sliding window only works when the state and pointers describe the same slice.",
+              "what_changed": "**Sliding window** only works when the state and pointers describe the same slice.",
               "animation": "visit",
               "state": {
                 "pointers": {

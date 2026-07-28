@@ -7,12 +7,12 @@
     "syntax",
     "runtime"
   ],
-  "refresher": "Syntax is the set of rules your code has to follow before Python will run it. `print(\"Hi\")` needs the parentheses, and the text inside needs matching quotes. A `#` starts a comment, which Python ignores. Lines that end in a colon start a block, and the lines belonging to that block are indented underneath. In Python the indentation is not decoration. It is how you say which lines go together.",
+  "refresher": "Syntax is the **set** of rules your code has to follow before Python will run it. `print(\"Hi\")` needs the parentheses, and the text inside needs matching quotes. A `#` starts a comment, which Python ignores. Lines that end in a colon start a block, and the lines belonging to that block are indented underneath. In Python the indentation is not decoration. It is how you say which lines go together.",
   "refresher_code": "# a comment, ignored by Python\nname = \"Ada\"\nif name == \"Ada\":\n    print(\"Hello, Ada\")",
   "blocks": [
     {
       "kind": "text",
-      "body": "Every language has rules about how you are allowed to arrange things. English wants a subject and a verb. Python wants parentheses in certain places, quotes around text, and lines lined up in a certain way. Those rules are called syntax. Get them right and your program runs. Get one of them wrong and Python stops before it runs a single line. That last part surprises people. A syntax error is not the computer disagreeing with your idea. It is the computer saying it could not read the sentence at all. Your logic might be perfect. Python never got far enough to find out."
+      "body": "Every language has rules about how you are allowed to arrange things. English wants a subject and a verb. Python wants parentheses in certain places, quotes around text, and lines lined up in a certain way. Those rules are called syntax. Get them right and your program runs. Get one of them wrong and Python stops before it runs a single line. That last part surprises people. A **syntax error** is not the computer disagreeing with your idea. It is the computer saying it could not read the sentence at all. Your logic might be perfect. Python never got far enough to find out."
     },
     {
       "kind": "code",
@@ -22,17 +22,17 @@
     },
     {
       "kind": "text",
-      "body": "Each of those three pieces is doing a job. Without the parentheses, Python sees the word `print` and has nothing to print. Without the quotes, it reads `Hello` as the name of a variable and looks for one you never made. The punctuation is not there to look official. It is there to tell Python which parts are instructions and which parts are just text."
+      "body": "Each of those three pieces is doing a job. Without the parentheses, Python sees the word `print` and has nothing to **print**. Without the quotes, it reads `Hello` as the name of a **variable** and looks for one you never made. The punctuation is not there to look official. It is there to tell Python which parts are instructions and which parts are just text."
     },
     {
       "kind": "callout",
       "tone": "tip",
       "title": "Quotes come in pairs",
-      "body": "A string is text with quotes around both ends. Single quotes and double quotes both work, so `'hi'` and `\"hi\"` are the same to Python. What matters is that you close with the same kind you opened with. If you need an apostrophe inside your text, open with double quotes: `\"it's fine\"`."
+      "body": "A **string** is text with quotes around both ends. Single quotes and double quotes both work, so `'hi'` and `\"hi\"` are the same to Python. What matters is that you close with the same kind you opened with. If you need an apostrophe inside your text, open with double quotes: `\"it's fine\"`."
     },
     {
       "kind": "compare",
-      "caption": "Python reads left to right looking for the closing quote, and when the line ends without one it stops right there. The message says the string was never terminated, and the little arrow underneath points at the quote that started it. Read the arrow. It is usually aiming straight at the problem.",
+      "caption": "Python reads left to right looking for the closing quote, and when the line ends without one it stops right there. The message says the **string** was never terminated, and the little arrow underneath points at the quote that started it. Read the arrow. It is usually aiming straight at the problem.",
       "wrong_label": "Syntax error",
       "wrong": "print(\"Hello)\n# the quote after Hello\n# was never closed",
       "right_label": "Works",
@@ -50,7 +50,7 @@
     },
     {
       "kind": "check",
-      "prompt": "What does this program print?",
+      "prompt": "What does this program **print**?",
       "code": "# print(\"first\")\nprint(\"second\")\n# print(\"third\")",
       "choices": [
         "second",
@@ -75,7 +75,7 @@
       "kind": "callout",
       "tone": "mistake",
       "title": "The forgotten colon",
-      "body": "Anything that opens a block needs a colon at the end of the line: `if`, `else`, `for`, `while`, `def`. Leave it off and Python reports a syntax error on that line or the next one. Experienced programmers still do this, because the colon is the easiest character in the language to skip over. When an error points at a line with `if` or `for` on it, check the end of the line first."
+      "body": "Anything that opens a block needs a colon at the end of the line: `if`, `else`, `for`, `while`, `def`. Leave it off and Python reports a **syntax error** on that line or the next one. Experienced programmers still do this, because the colon is the easiest character in the language to skip over. When an error points at a line with `if` or `for` on it, check the end of the line first."
     },
     {
       "kind": "check",
@@ -88,13 +88,13 @@
         "Nothing is wrong, it prints both lines"
       ],
       "answer_index": 0,
-      "why": "The `if` line opens a block, so it has to end with a colon. Without it the file never runs, and neither line prints. If you picked the indentation, that is a very reasonable guess, and plenty of people make it. Indentation is the thing Python is famous for, so it is the first place your eye goes. Here it happens to be fine: `print(\"Hello, Ada\")` is correctly inside the `if`, and `print(\"Goodbye\")` is correctly outside it so it runs either way."
+      "why": "The `if` line opens a block, so it has to end with a colon. Without it the **file** never runs, and neither line prints. If you picked the indentation, that is a very reasonable guess, and plenty of people make it. Indentation is the thing Python is famous for, so it is the first place your eye goes. Here it happens to be fine: `print(\"Hello, Ada\")` is correctly inside the `if`, and `print(\"Goodbye\")` is correctly outside it so it runs either way."
     },
     {
       "kind": "callout",
       "tone": "warning",
       "title": "The error message is trying to help you",
-      "body": "A syntax error tells you the line, and usually draws an arrow at the exact character that confused Python. Beginners often skim past all of it and start rereading the whole file. Read it instead. `expected ':'` means a colon is missing. `'(' was never closed` means a parenthesis is still open. `unterminated string literal` means a quote never got its partner. The message is naming your bug out loud."
+      "body": "A **syntax error** tells you the line, and usually draws an arrow at the exact character that confused Python. Beginners often skim past all of it and start rereading the whole **file**. Read it instead. `expected ':'` means a colon is missing. `'(' was never closed` means a parenthesis is still open. `unterminated string literal` means a quote never got its partner. The message is naming your bug out loud."
     },
     {
       "kind": "list",
@@ -105,7 +105,7 @@
         "Every line that starts a block ends with a colon",
         "Everything inside a block is indented, and indented by the same amount",
         "Four spaces per level is the Python convention, and picking one style and sticking to it matters more than which style you pick",
-        "When you get a syntax error, read the arrow and the message before you change anything"
+        "When you get a **syntax error**, read the arrow and the message before you change anything"
       ]
     }
   ]

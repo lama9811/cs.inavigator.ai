@@ -1,32 +1,32 @@
 {
   "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
   "title": "Strings",
-  "summary": "Read and transform text without changing the original value.",
+  "summary": "Read and transform text without changing the original **value**.",
   "minutes": 10,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "Strings are immutable sequences with zero-based indexes. `.length` counts characters, and template literals insert expressions with `${...}`.",
+  "refresher": "**Strings** are immutable sequences with zero-based indexes. `.length` counts characters, and template literals insert expressions with `${...}`.",
   "refresher_code": "const name = \"Ada\";\nconsole.log(`${name}: ${name.length}`);",
   "blocks": [
     {
       "kind": "text",
-      "body": "Strings are immutable sequences with zero-based indexes. `.length` counts characters, and template literals insert expressions with `${...}`. Read and transform text without changing the original value."
+      "body": "**Strings** are immutable sequences with zero-based indexes. `.length` counts characters, and template literals insert expressions with `${...}`. Read and transform text without changing the original **value**."
     },
     {
       "kind": "text",
-      "body": "A string behaves like a sequence you can read but not edit in place. Indexing retrieves one character, and methods create new string values. The original stays unchanged until you assign a returned value back to a variable. Template literals are useful when a message mixes text with calculated values."
+      "body": "A **string** behaves like a sequence you can read but not edit in place. Indexing retrieves one character, and **methods** create new string values. The original stays unchanged until you assign a returned value back to a **variable**. Template literals are useful when a message mixes text with calculated values."
     },
     {
       "kind": "code",
-      "caption": "Index zero reads the first character, while slice stops before its ending index.",
+      "caption": "**Index** zero reads the first character, while slice stops before its ending index.",
       "code": "const word = \"campus\";\nconsole.log(word[0]);\nconsole.log(word.slice(1, 4));",
       "output": "c\namp"
     },
     {
       "kind": "compare",
-      "caption": "Keep the transformed string returned by the method.",
+      "caption": "Keep the transformed **string** returned by the **method**.",
       "wrong_label": "Common mistake",
       "wrong": "let major = \"cs\";\nmajor.toUpperCase();",
       "right_label": "Clearer version",
@@ -34,13 +34,13 @@
     },
     {
       "kind": "text",
-      "body": "In the corrected version, the method first creates `\"CS\"`. Assignment then stores that new string in `major`. For slicing, say the indexes aloud: start is included, end is excluded, so `slice(1, 4)` reads positions one, two, and three."
+      "body": "In the corrected version, the **method** first creates `\"CS\"`. Assignment then stores that new **string** in `major`. For slicing, say the **indexes** aloud: start is included, end is excluded, so `slice(1, 4)` reads positions one, two, and three."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "Watch this detail",
-      "body": "A string with length five ends at index four. Reading `text[text.length]` goes one place too far."
+      "body": "A **string** with length five ends at **index** four. Reading `text[text.length]` goes one place too far."
     },
     {
       "kind": "check",
@@ -66,16 +66,16 @@
         "a runtime error"
       ],
       "answer_index": 0,
-      "why": "The method returns a new string without changing the value in label."
+      "why": "The **method** returns a new **string** without changing the **value** in label."
     },
     {
       "kind": "list",
       "title": "Strings checklist",
       "items": [
-        "Count from index zero.",
-        "Save transformed strings.",
+        "Count from **index** zero.",
+        "Save transformed **strings**.",
         "Use template interpolation.",
-        "Trim input when appropriate."
+        "Trim **input** when appropriate."
       ]
     }
   ],

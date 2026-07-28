@@ -1,36 +1,103 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Lists / Arrays",
-  "summary": "Keep several values in order with a vector.",
+  "summary": "Keep several **values** in order with a vector.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "`std::vector` is C++'s common growable collection. Indexes begin at zero, `.size()` gives the number of elements, and `.push_back(value)` adds one item to the end. `std::vector<long long>` is still a vector; it just stores larger whole numbers.",
+  "refresher": "`std::vector` is C++'s common growable collection. **Indexes** begin at zero, `.size()` gives the number of elements, and `.push_back(value)` adds one item to the end. `std::vector<long long>` is still a vector; it just stores larger whole numbers.",
   "refresher_code": "#include <vector>\nstd::vector<long long> values{2,4};\nvalues.push_back(6);",
   "blocks": [
     {
       "kind": "text",
-      "body": "A vector keeps several values of the same type in order. Create one with `std::vector<int> scores{80, 90};`. The type inside angle brackets says this vector stores integers."
+      "body": "A vector keeps several **values** of the same type in order. Create one with `std::vector<int> scores{80, 90};`. The type inside angle brackets says this vector stores **integers**."
+    },
+    {
+      "kind": "visual",
+      "title": "Indexes point to positions",
+      "concept": "arrays",
+      "caption": "Step through a list so the index and value stay connected.",
+      "initial_state": {},
+      "steps": [
+        {
+          "title": "Index 0",
+          "body": "The first item is at index 0.",
+          "animation": "highlight",
+          "state": {
+            "items": [
+              "Ada",
+              "Grace",
+              "Katherine"
+            ],
+            "active": [
+              0
+            ],
+            "pointers": {
+              "index": 0
+            },
+            "note": "names[0] is Ada"
+          }
+        },
+        {
+          "title": "Index 1",
+          "body": "The next item is at index 1.",
+          "animation": "slide",
+          "state": {
+            "items": [
+              "Ada",
+              "Grace",
+              "Katherine"
+            ],
+            "active": [
+              1
+            ],
+            "pointers": {
+              "index": 1
+            },
+            "note": "names[1] is Grace"
+          }
+        },
+        {
+          "title": "Append",
+          "body": "Appending adds a new item at the end.",
+          "animation": "add",
+          "state": {
+            "items": [
+              "Ada",
+              "Grace",
+              "Katherine",
+              "Mae"
+            ],
+            "active": [
+              3
+            ],
+            "pointers": {
+              "new": 3
+            },
+            "note": "new last index is 3"
+          }
+        }
+      ]
     },
     {
       "kind": "text",
-      "body": "`std::vector<long long>` follows the same rules as `std::vector<int>`. You still loop through it, index it, and call `.size()` the same way. The only difference is that each item is a larger whole number."
+      "body": "`std::vector<long long>` follows the same rules as `std::vector<int>`. You still **loop** through it, **index** it, and call `.size()` the same way. The only difference is that each item is a larger whole number."
     },
     {
       "kind": "text",
-      "body": "A vector can grow with `push_back`. Its positions begin at zero, just like positions in a string. Brackets read a position when you already know it is valid. `.at(index)` checks the position and reports an error when it is outside the vector."
+      "body": "A vector can grow with `push_back`. Its positions begin at zero, just like positions in a **string**. Brackets read a position when you already know it is valid. `.at(index)` checks the position and reports an error when it is outside the vector."
     },
     {
       "kind": "callout",
       "tone": "tip",
       "title": "A vector is close to a Python list",
-      "body": "A Python list and a C++ vector both store ordered values and start at index zero. A vector normally keeps one element type, so `std::vector<int>` accepts integers rather than a mixture of unrelated values."
+      "body": "A Python **list** and a C++ vector both store ordered values and start at **index** zero. A vector normally keeps one element type, so `std::vector<int>` accepts **integers** rather than a mixture of unrelated values."
     },
     {
       "kind": "code",
-      "caption": "The vector begins with two integers, grows to three, and then prints its second value and its size.",
+      "caption": "The vector begins with two **integers**, grows to three, and then prints its second **value** and its size.",
       "code": "#include <iostream>\n#include <vector>\n\nint main() {\n  std::vector<int> values{4, 8};\n  values.push_back(12);\n\n  std::cout << values[1] << \"\\n\";\n  std::cout << values.size() << \"\\n\";\n}",
       "output": "8\n3"
     },
@@ -44,17 +111,17 @@
     },
     {
       "kind": "text",
-      "body": "Bracket access trusts that the index is valid. `.at()` checks first and produces a clear out-of-range error when the position does not exist. While learning or debugging, that message is often more useful than an unexplained crash or incorrect value."
+      "body": "Bracket access trusts that the **index** is valid. `.at()` checks first and produces a clear out-of-range error when the position does not exist. While learning or debugging, that message is often more useful than an unexplained crash or incorrect **value**."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "The size is not a valid index",
-      "body": "A vector with three elements has indexes zero, one, and two. Index three equals the size and is already past the end. Keep an index below `.size()`."
+      "body": "A vector with three elements has **indexes** zero, one, and two. **Index** three equals the size and is already past the end. Keep an index below `.size()`."
     },
     {
       "kind": "check",
-      "prompt": "Which is the last valid index for size three?",
+      "prompt": "Which is the last valid **index** for size three?",
       "code": "",
       "choices": [
         "2",
@@ -80,7 +147,7 @@
     },
     {
       "kind": "check",
-      "prompt": "Which operation appends a value?",
+      "prompt": "Which operation appends a **value**?",
       "code": "",
       "choices": [
         "values.push_back(9);",

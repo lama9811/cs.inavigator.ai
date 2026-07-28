@@ -778,6 +778,7 @@ export default function CodingTutor({
   // A topic to pre-filter the Practice Library by, set when a student clicks a
   // prerequisite ("Needs: …") link on an interview problem. Consumed + cleared by QuizBank.
   const [pendingQuizTopic, setPendingQuizTopic] = useState(null);
+  const [lastPracticeCodeRoute, setLastPracticeCodeRoute] = useState(PRACTICE_CODE_PATH);
   // NOTE: the Practice Library's [Quiz | Code] mode is NOT state — it is derived from
   // the URL (see conceptQuizTargetFromPath). Holding it in state as well would make the
   // address bar disagree with the screen: /coding/practice would render Quiz while
@@ -1513,6 +1514,17 @@ export default function CodingTutor({
     const target = LEGACY_PAGE_QUERY_TO_PATH[requestedPage];
     if (target) navigate(target, { replace: true });
   }, [location.search, navigate]);
+
+  useEffect(() => {
+    const clean = location.pathname.length > 1 ? location.pathname.replace(/\/+$/, "") : location.pathname;
+    if (clean === PRACTICE_CODE_PATH) {
+      setLastPracticeCodeRoute(`${PRACTICE_CODE_PATH}${location.search}`);
+    }
+  }, [location.pathname, location.search]);
+
+  const openPracticeLibrary = useCallback(() => {
+    navigate(lastPracticeCodeRoute || PRACTICE_CODE_PATH);
+  }, [lastPracticeCodeRoute, navigate]);
 
   // Keep "last non-workspace section" in sync as the URL changes, so toggling the
   // workspace off returns to wherever the student was (Home/Practice/…).
@@ -3249,7 +3261,7 @@ export default function CodingTutor({
       onOpenDailyScratch={() => startDailyChallenge(true)}
       onOpenSnippets={openMySnippets}
       onSelectQuestion={selectQuestion}
-      onOpenQuizBank={() => navigate(PRACTICE_CODE_PATH)}
+      onOpenQuizBank={openPracticeLibrary}
       onOpenTopic={openRecommendedTopic}
       onOpenInterviewPrep={() => goToPage("interview")}
       onPrompt={sendDashboardPrompt}
@@ -3313,7 +3325,7 @@ export default function CodingTutor({
             onNextProblem={() => navigatePracticeProblem(1)}
             onShowHint={showNextHint}
             onShowAllHints={showAllHints}
-            onOpenQuizBank={() => navigate(PRACTICE_CODE_PATH)}
+            onOpenQuizBank={openPracticeLibrary}
             mockMode={Boolean(activeProblem?.mock && mockSession)}
             solutionUnlocked={
               !activeProblem?.mock ||
@@ -3432,10 +3444,10 @@ export default function CodingTutor({
   const openPracticeTopic = (label) => {
     const topic = resolvePracticeTopic(label);
     if (!topic) return;
-    setPendingQuizTopic(topic);
+    setPendingQuizTopic(null);
     // The CODE path, not the bare one — a "go practice this fundamental" link promises
     // code problems on that topic. The bare path is now the Quiz landing.
-    navigate(PRACTICE_CODE_PATH);
+    navigate(`${PRACTICE_CODE_PATH}?topic=${encodeURIComponent(topic)}`);
   };
 
   const openRecommendedTopic = (label, action = null) => {

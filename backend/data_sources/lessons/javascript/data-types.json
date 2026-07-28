@@ -1,22 +1,22 @@
 {
   "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
   "title": "Data Types",
-  "summary": "Recognize value types and convert at clear boundaries.",
+  "summary": "Recognize **value** types and convert at clear boundaries.",
   "minutes": 10,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "JavaScript values include numbers, strings, booleans, undefined, objects, and other types. `typeof` inspects a value, while `Number(...)` converts numeric text.",
+  "refresher": "JavaScript values include numbers, **strings**, **booleans**, undefined, **objects**, and other types. `typeof` inspects a value, while `Number(...)` converts numeric text.",
   "refresher_code": "const raw = \"12\";\nconsole.log(Number(raw) + 1);",
   "blocks": [
     {
       "kind": "text",
-      "body": "JavaScript values include numbers, strings, booleans, undefined, objects, and other types. `typeof` inspects a value, while `Number(...)` converts numeric text. Recognize value types and convert at clear boundaries."
+      "body": "JavaScript values include numbers, **strings**, **booleans**, undefined, **objects**, and other types. `typeof` inspects a value, while `Number(...)` converts numeric text. Recognize value types and convert at clear boundaries."
     },
     {
       "kind": "text",
-      "body": "JavaScript variables do not lock themselves to one type. The value stored at a given moment supplies the type, which is why the same variable can hold a number and later hold text. Flexible storage is convenient, but calculations become easier to trust when conversion happens at the input boundary instead of deep inside an expression."
+      "body": "JavaScript **variables** do not lock themselves to one type. The **value** stored at a given moment supplies the type, which is why the same variable can hold a number and later hold text. Flexible storage is convenient, but calculations become easier to trust when conversion happens at the **input** boundary instead of deep inside an expression."
     },
     {
       "kind": "code",
@@ -34,7 +34,7 @@
     },
     {
       "kind": "text",
-      "body": "For the corrected path, `Number(\"12\")` produces the number twelve, the validation succeeds, and addition produces thirteen. Remember two special cases: `typeof null` reports `\"object\"`, and arrays are identified with `Array.isArray(value)`."
+      "body": "For the corrected path, `Number(\"12\")` produces the number twelve, the validation succeeds, and addition produces thirteen. Remember two special cases: `typeof null` reports `\"object\"`, and **arrays** are identified with `Array.isArray(value)`."
     },
     {
       "kind": "callout",
@@ -44,7 +44,7 @@
     },
     {
       "kind": "check",
-      "prompt": "What does `typeof true` return?",
+      "prompt": "What does `typeof true` **return**?",
       "code": "",
       "choices": [
         "\"boolean\"",
@@ -53,7 +53,7 @@
         "\"object\""
       ],
       "answer_index": 0,
-      "why": "JavaScript names this primitive type boolean and returns that name as text."
+      "why": "JavaScript names this primitive type **boolean** and returns that name as text."
     },
     {
       "kind": "check",
@@ -66,16 +66,16 @@
         "true then false"
       ],
       "answer_index": 0,
-      "why": "Numeric zero is falsy, but a nonempty string is truthy."
+      "why": "Numeric zero is falsy, but a nonempty **string** is truthy."
     },
     {
       "kind": "list",
       "title": "Data Types checklist",
       "items": [
         "Inspect types explicitly.",
-        "Convert input before arithmetic.",
+        "Convert **input** before arithmetic.",
         "Check NaN deliberately.",
-        "Use specialized array checks."
+        "Use specialized **array** checks."
       ]
     }
   ],

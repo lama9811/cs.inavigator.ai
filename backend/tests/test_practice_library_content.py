@@ -10,11 +10,50 @@ import json
 from collections import Counter
 from pathlib import Path
 
+from practice_starters import build_starter_from_spec, get_arg_spec
+
 
 ROOT = Path(__file__).resolve().parents[1]
 QUESTION_DIR = ROOT / "data_sources" / "quiz" / "questions"
 ANSWER_DIR = ROOT / "data_sources" / "quiz" / "answers"
 LANGUAGES = ("python", "javascript", "java", "cpp")
+ADVANCED_V1_TOPICS = {
+    "binary search",
+    "graphs",
+    "hash maps",
+    "queues",
+    "recursion",
+    "sliding window",
+    "stacks",
+    "trees",
+    "two pointers",
+}
+THIN_PRIORITY_TOPICS = {
+    "disjoint sets",
+    "heaps",
+    "math",
+    "matrices",
+    "prefix sums",
+    "queues",
+    "recursion",
+    "trees",
+    "tries",
+    "two pointers",
+}
+COSC_101_EXPANSION_IDS = {
+    "easy-25",
+    "easy-26",
+    "easy-27",
+    "easy-28",
+    "easy-29",
+    "easy-30",
+    "easy-31",
+    "easy-32",
+    "easy-33",
+    "easy-34",
+    "easy-35",
+    "easy-36",
+}
 ALLOWED_NO_TESTS = {
     # Existing Java/C++ bridge gaps documented in ROADMAP. Python/JS do test these.
     "java": {"medium-04", "hard-14", "hard-16"},
@@ -46,15 +85,27 @@ def test_practice_question_ids_titles_and_prompts_are_unique():
     assert [prompt for prompt, count in Counter(prompts).items() if count > 1] == []
 
 
+def test_cosc_101_expansion_questions_are_present():
+    question_ids = {q.get("id") for q in load_questions()}
+
+    assert COSC_101_EXPANSION_IDS <= question_ids
+
+
 def test_practice_questions_have_real_student_facing_shape():
     weak = []
     for q in load_questions():
         if not q.get("id") or not q.get("title") or not q.get("topic"):
             weak.append(f"{q.get('id')}: missing id/title/topic")
+        if q.get("difficulty") not in {"easy", "medium", "hard"}:
+            weak.append(f"{q.get('id')}: invalid difficulty")
         if len(str(q.get("prompt") or "").split()) < 7:
             weak.append(f"{q.get('id')}: prompt too short")
-        if not q.get("examples"):
+        examples = q.get("examples") or []
+        if not examples:
             weak.append(f"{q.get('id')}: no example")
+        for index, example in enumerate(examples, start=1):
+            if "input" not in example or "output" not in example:
+                weak.append(f"{q.get('id')}: malformed example {index}")
         if len(q.get("hints") or []) < 3:
             weak.append(f"{q.get('id')}: fewer than 3 hints")
         if "placeholder" in str(q.get("prompt") or "").lower():
@@ -70,6 +121,15 @@ def test_every_practice_topic_has_at_least_two_code_problems():
     assert thin == {}
 
 
+def test_priority_practice_topics_have_code_problem_coverage():
+    counts = Counter(q.get("topic") for q in load_questions())
+    missing_advanced = sorted(topic for topic in ADVANCED_V1_TOPICS if counts[topic] < 2)
+    missing_thin = sorted(topic for topic in THIN_PRIORITY_TOPICS if counts[topic] < 2)
+
+    assert missing_advanced == []
+    assert missing_thin == []
+
+
 def test_answer_banks_match_questions_for_every_language():
     question_ids = {q["id"] for q in load_questions()}
 
@@ -77,6 +137,20 @@ def test_answer_banks_match_questions_for_every_language():
         answer_ids = [item.get("question_id") for item in load_answer_items(language)]
         assert len(answer_ids) == len(set(answer_ids)), f"{language}: duplicate answer ids"
         assert set(answer_ids) == question_ids, f"{language}: answer bank does not match questions"
+
+
+def test_answer_defaults_include_student_support_metadata():
+    missing = []
+    for language in LANGUAGES:
+        data = json.loads((ANSWER_DIR / f"{language}.json").read_text(encoding="utf-8"))
+        defaults = data.get("defaults") or {}
+        for key in ("starter_code", "guided_steps", "reference_solution", "complexity"):
+            if not defaults.get(key):
+                missing.append(f"{language}: defaults missing {key}")
+        if not isinstance(defaults.get("guided_steps"), list) or len(defaults.get("guided_steps") or []) < 3:
+            missing.append(f"{language}: defaults guided_steps must have at least 3 steps")
+
+    assert missing == []
 
 
 def test_runner_tests_are_present_and_well_shaped():
@@ -104,3 +178,22 @@ def test_runner_tests_are_present_and_well_shaped():
                     problems.append(f"{language}/{qid}: args must be a list in test {index}")
 
         assert problems == []
+
+
+def test_spec_backed_generated_starters_match_function_names():
+    problems = []
+    for language in LANGUAGES:
+        for item in load_answer_items(language):
+            function_name = str(item.get("function_name") or "").strip()
+            if not function_name or not get_arg_spec(function_name):
+                continue
+
+            starter = build_starter_from_spec(language, function_name) or ""
+            if function_name not in starter:
+                problems.append(f"{language}/{item.get('question_id')}: starter omits {function_name}")
+            if language in {"java", "cpp"} and ("Object[] args" in starter or "vector<Value>" in starter):
+                problems.append(f"{language}/{item.get('question_id')}: starter fell back to legacy union shape")
+            if language == "cpp" and "#include <bits/stdc++.h>" in starter:
+                problems.append(f"{language}/{item.get('question_id')}: starter uses bits/stdc++.h")
+
+    assert problems == []

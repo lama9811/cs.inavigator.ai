@@ -1,66 +1,171 @@
 {
-  "_note": "ORIGINAL CS Navigator content added to align Learn with the existing Part 2 quiz category. No source prose, examples, or exercises were copied.",
+  "_note": "ORIGINAL CS Navigator content expanded into sections. No source prose, examples, or exercises were copied.",
   "title": "Algorithm Problems: Part 2",
-  "summary": "Coordinate related state and guard unavailable candidates.",
-  "minutes": 7,
+  "summary": "Coordinate multiple state **variables**, define **edge**-case behavior, and trace updates deliberately.",
+  "minutes": 12,
   "error_classes": [
     "wrong_answer",
     "runtime",
     "timeout"
   ],
-  "refresher": "A multi-step Java algorithm may preserve a best value and index or a total and count. Define what each variable means after a pass, including empty input and ties.",
-  "refresher_code": "int best = 0;\nfor (int i = 1; i < values.length; i++) {\n    if (values[i] > values[best]) best = i;\n}",
-  "blocks": [
+  "refresher": "A multi-step Java algorithm may track a value and its **index**, a count and total, or a current answer and best answer. State what each **variable** means after every pass, then handle empty **input** and ties deliberately.",
+  "refresher_code": "int best = 0;\nfor (int i = 1; i < values.length; i++) {\n    if (values[i] > values[best]) {\n        best = i;\n    }\n}",
+  "sections": [
     {
-      "kind": "text",
-      "body": "A multi-step Java algorithm may preserve a best value and index or a total and count. Define what each variable means after a pass, including empty input and ties. Coordinate related state and guard unavailable candidates."
+      "id": "state-invariant",
+      "title": "Give every variable a job",
+      "summary": "Multi-**variable** algorithms work when each variable has a clear meaning.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Part 2 problems usually fail when **variables** stop agreeing with each other. A variable like `best` is not just an **integer**. It is a promise: after each **loop** pass, it stores the index of the best candidate seen so far."
+        },
+        {
+          "kind": "visual",
+          "title": "Track best-so-far state",
+          "concept": "arrays",
+          "caption": "Watch the best index update only when a better value appears.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Initialize",
+              "body": "Best starts at index 0 because that is the first candidate.",
+              "state": {
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  0
+                ],
+                "pointers": {
+                  "best": 0
+                },
+                "note": "best value = 4"
+              }
+            },
+            {
+              "title": "Compare index 1",
+              "body": "Nine is larger than four, so best moves to index 1.",
+              "animation": "slide",
+              "state": {
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "best": 1,
+                  "i": 1
+                },
+                "note": "best value = 9"
+              }
+            },
+            {
+              "title": "Compare index 2",
+              "body": "Seven is not larger than nine, so best stays put.",
+              "state": {
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  2
+                ],
+                "pointers": {
+                  "best": 1,
+                  "i": 2
+                },
+                "note": "return best index 1"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "code",
+          "caption": "Here `best` stores an **index**, not the largest value. That lets the **method** **return** where the largest value lives instead of only returning the value itself.",
+          "code": "static int largestIndex(int[] values) {\n    if (values.length == 0) {\n        return -1;\n    }\n\n    int best = 0;\n    for (int i = 1; i < values.length; i++) {\n        if (values[i] > values[best]) {\n            best = i;\n        }\n    }\n\n    return best;\n}",
+          "output": "Returns 1 for {4, 9, 7}"
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Say the invariant out loud",
+          "body": "After the **loop** has checked through **index** `i`, `best` should be the index of the largest **value** in that checked section."
+        },
+        {
+          "kind": "check",
+          "prompt": "What does `best` represent in this **method**?",
+          "code": "if (values[i] > values[best]) {\n    best = i;\n}",
+          "choices": [
+            "the index of the best value so far",
+            "the biggest value itself",
+            "the array length",
+            "the number of loop passes"
+          ],
+          "answer_index": 0,
+          "why": "The code compares with `values[best]` and later returns `best`, so `best` is an **index**."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "The first array item initializes the candidate, and the empty guard prevents invalid access.",
-      "code": "static int largestIndex(int[] values) {\n    if (values.length == 0) return -1;\n    int best = 0;\n    for (int i = 1; i < values.length; i++) {\n        if (values[i] > values[best]) best = i;\n    }\n    return best;\n}",
-      "output": "Returns 1 for {4, 9, 7}"
+      "id": "edges-and-ties",
+      "title": "Decide empty input and ties before coding",
+      "summary": "**Edge cases** are part of the algorithm, not cleanup afterward.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A common habit is to write the main **loop** first and then discover that empty **arrays**, one-item arrays, or tied **values** do not fit. Reverse that order. Before the loop, decide what answer makes sense when there is no candidate and what should happen when two candidates are equal."
+        },
+        {
+          "kind": "compare",
+          "wrong_label": "Buggy shape",
+          "wrong": "static int largestIndex(int[] values) {\n    int best = 0;\n    for (int i = 0; i < values.length; i++) {\n        if (values[i] > values[best]) {\n            best = i;\n        }\n    }\n    return best;\n}",
+          "right_label": "Guarded shape",
+          "right": "static int largestIndex(int[] values) {\n    if (values.length == 0) return -1;\n    int best = 0;\n    for (int i = 1; i < values.length; i++) {\n        if (values[i] > values[best]) {\n            best = i;\n        }\n    }\n    return best;\n}",
+          "caption": "The buggy version crashes on an empty **array** before the **loop** can prove anything useful. The guarded version names the no-candidate answer first."
+        },
+        {
+          "kind": "check",
+          "prompt": "With strict `>`, which tied maximum **index** remains?",
+          "code": "int[] values = {8, 3, 8};",
+          "choices": [
+            "the first maximum index",
+            "the last maximum index",
+            "both indexes",
+            "no result"
+          ],
+          "answer_index": 0,
+          "why": "Equal **values** do not pass a strict greater-than check, so the first maximum keeps its spot."
+        }
+      ]
     },
     {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Track the state",
-      "body": "An empty array has no element zero, so define its result before initializing the candidate from array data."
-    },
-    {
-      "kind": "check",
-      "prompt": "Why does `i` start at one?",
-      "code": "",
-      "choices": [
-        "zero already initialized best",
-        "arrays begin at one",
-        "only odd indexes matter",
-        "it skips negatives"
-      ],
-      "answer_index": 0,
-      "why": "Index zero has already supplied the current candidate, leaving later elements to compare."
-    },
-    {
-      "kind": "check",
-      "prompt": "With `>`, which equal maximum stays?",
-      "code": "int[] values = {8, 3, 8};",
-      "choices": [
-        "the first",
-        "the last",
-        "both indexes",
-        "no result"
-      ],
-      "answer_index": 0,
-      "why": "Equality does not replace the stored index when the update condition uses greater-than."
-    },
-    {
-      "kind": "list",
-      "title": "Algorithm Problems: Part 2 checklist",
-      "items": [
-        "Explain each variable.",
-        "Guard zero length.",
-        "Set tie behavior.",
-        "Trace the state table."
+      "id": "trace-table",
+      "title": "Trace the first wrong update",
+      "summary": "A small table can reveal whether the **value**, **index**, or **loop** range is wrong.",
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "When an algorithm feels tangled, **print** the **loop** **index**, the current value, and the tracked state together.",
+          "code": "for (int i = 1; i < values.length; i++) {\n    System.out.println(\"i=\" + i + \" value=\" + values[i] + \" best=\" + best);\n    if (values[i] > values[best]) {\n        best = i;\n    }\n}",
+          "output": "i=1 value=9 best=0\ni=2 value=7 best=1"
+        },
+        {
+          "kind": "list",
+          "title": "Trace questions",
+          "items": [
+            "What does each **variable** mean before the **loop** starts?",
+            "Which **input** is the smallest valid input?",
+            "Does equality replace the current answer?",
+            "Which printed line first disagrees with the promise?"
+          ]
+        }
       ]
     }
   ]

@@ -7,26 +7,81 @@
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "A pointer stores the address of another value. `&value` gets the address. `*pointer` follows the address to reach the value. `nullptr` means the pointer points to nothing, so check before using `*pointer`.",
+  "refresher": "A **pointer** stores the address of another **value**. `&value` gets the address. `*pointer` follows the address to reach the value. `nullptr` means the pointer points to nothing, so check before using `*pointer`.",
   "refresher_code": "int value=7;\nint* p=&value;\nstd::cout << *p;",
   "blocks": [
     {
       "kind": "text",
-      "body": "Every variable lives at some spot in memory. A pointer stores that spot. It does not store a second copy of the value. It stores directions to the original value."
+      "body": "Every **variable** lives at some spot in memory. A **pointer** stores that spot. It does not store a second copy of the **value**. It stores directions to the original value."
+    },
+    {
+      "kind": "visual",
+      "title": "A pointer stores an address-like link",
+      "concept": "pointers",
+      "caption": "See a pointer name refer to an existing value instead of holding a separate copy.",
+      "initial_state": {},
+      "steps": [
+        {
+          "title": "A value exists",
+          "body": "The variable score stores the number 92.",
+          "state": {
+            "table": [
+              {
+                "key": "score",
+                "value": "92",
+                "active": true
+              }
+            ]
+          }
+        },
+        {
+          "title": "Pointer points at it",
+          "body": "The pointer stores a way to reach score.",
+          "animation": "highlight",
+          "state": {
+            "table": [
+              {
+                "key": "score",
+                "value": "92",
+                "active": true
+              },
+              {
+                "key": "ptr",
+                "value": "points to score",
+                "active": true
+              }
+            ]
+          }
+        },
+        {
+          "title": "Dereference",
+          "body": "Dereferencing reads the value through the pointer.",
+          "state": {
+            "table": [
+              {
+                "key": "*ptr",
+                "value": "92",
+                "active": true
+              }
+            ],
+            "note": "same value, reached indirectly"
+          }
+        }
+      ]
     },
     {
       "kind": "text",
-      "body": "In `int* pointer = &score;`, `&score` means \"the address of score.\" Later, `*pointer` means \"go to that address and use the value there.\" The star has two jobs: it helps declare a pointer, and it helps follow one."
+      "body": "In `int* pointer = &score;`, `&score` means \"the address of score.\" Later, `*pointer` means \"go to that address and use the **value** there.\" The star has two jobs: it helps declare a **pointer**, and it helps follow one."
     },
     {
       "kind": "callout",
       "tone": "tip",
       "title": "Python usually hides this layer",
-      "body": "Python keeps this layer mostly hidden. C++ lets you work with addresses directly. That gives you control, but it also means you must check where a pointer points before using it."
+      "body": "Python keeps this layer mostly hidden. C++ lets you work with addresses directly. That gives you control, but it also means you must check where a **pointer** points before using it."
     },
     {
       "kind": "code",
-      "caption": "The pointer stores score's address. Assigning through `*pointer` therefore changes score itself.",
+      "caption": "The **pointer** stores score's address. Assigning through `*pointer` therefore changes score itself.",
       "code": "#include <iostream>\n\nint main() {\n  int score = 70;\n  int* pointer = &score;\n\n  *pointer = 85;\n  std::cout << score << \"\\n\";\n}",
       "output": "85"
     },
@@ -40,13 +95,13 @@
     },
     {
       "kind": "text",
-      "body": "`nullptr` means there is no target. Following it is like walking through a door that is not there. Check first, then use `*pointer` only when the pointer has a real address."
+      "body": "`nullptr` means there is no target. Following it is like walking through a door that is not there. Check first, then use `*pointer` only when the **pointer** has a real address."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "Never follow an unknown address",
-      "body": "Initialize a pointer when you create it. Use `nullptr` when it has no target, then check before using `*pointer`. Dereferencing a null or uninitialized pointer is invalid."
+      "body": "Initialize a **pointer** when you create it. Use `nullptr` when it has no target, then check before using `*pointer`. Dereferencing a null or uninitialized pointer is invalid."
     },
     {
       "kind": "check",
@@ -59,7 +114,7 @@
         "always zero"
       ],
       "answer_index": 0,
-      "why": "The `&` operator gets x's memory address, and the pointer stores that address."
+      "why": "The `&` **operator** gets x's **memory** address, and the **pointer** stores that address."
     },
     {
       "kind": "check",
@@ -72,16 +127,16 @@
         "pointer multiplication"
       ],
       "answer_index": 0,
-      "why": "Dereference follows the stored address and accesses the object located there."
+      "why": "Dereference follows the stored address and accesses the **object** located there."
     },
     {
       "kind": "list",
       "title": "Pointers checklist",
       "items": [
-        "Initialize every pointer.",
+        "Initialize every **pointer**.",
         "Use nullptr when there is no target.",
         "Check before using *pointer.",
-        "Use a reference when \"nothing\" is not allowed."
+        "Use a **reference** when \"nothing\" is not allowed."
       ]
     }
   ],

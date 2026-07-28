@@ -16,12 +16,22 @@ All notable changes to CS Navigator are documented here.
 - **Clearer workspace hint ladder UI.** Hint controls now show the active ladder step, such as "Show hint 1 of 4", and disable once all available hints are shown.
 - **Server-gated Coding Tutor hint state.** Practice and Interview Prep workspace hints now ask the backend how many ladder steps are unlocked from real saved attempts before revealing deeper guidance.
 - **Backend-backed last workspace state.** Coding Tutor now remembers the last practice/interview problem, language, and source per user so another device can reopen the same workspace when localStorage has no draft.
+- **Coding Tutor practice authoring guide.** Added a documented pipeline for adding code-writing Practice Library problems in small validated batches.
+- **COSC 101 Practice Library expansion.** Added twelve beginner-friendly campus/classroom practice problems covering conditionals, scans, maps, sets, tuple-style pairs, and list building across Python, JavaScript, Java, and C++.
+- **Medium/hard Practice Library expansion.** Added eight additional graph, heap, union-find, trie, dynamic-programming, and tree problems with deterministic runner tests for all four supported languages.
 
 ### Changed
 - Passing Coding Tutor solutions now show a line-by-line diff against the reference approach in the terminal review panel.
 - Applying a Coding Tutor code suggestion now uses a preview step with comment, append, replace, and cancel paths instead of a browser confirm.
 - The floating Coding Tutor chat no longer repeats the "Currently helping with" card; attempt count now lives in the workspace code context so AI review has more room.
 - C++ practice starters now use beginner-facing `int` / `std::vector<int>` signatures and explicit standard headers, while the hidden grader keeps its wider numeric bridge.
+- Practice Library validation now checks richer question shape, priority topic coverage, answer metadata defaults, and generated starter/function-name alignment across spec-backed language starters.
+- Practice Library Code now uses routed pagination and URL-backed filters/search/sort so `/coding/practice/code?page=2` and shared filtered links restore the same view.
+- Learn lesson code boxes now highlight common keywords, strings, comments, numbers, and literals so examples are easier to scan.
+- Python and Java Algorithm Problems Part 2 and Debug Part 2 are now split into explicit lesson sections with deeper traces, edge-case handling, and check-yourself stops.
+- Functions lessons across Python, JavaScript, Java, and C++ are now split into smaller sections for function shape, parameters, return behavior, scope, and practice checks.
+- Learn lesson prose now supports short bold key-term emphasis, with lesson content audited so important ideas like parameters, arguments, return values, state, and data structures are easier to scan.
+- Beginner and Intermediate Learn lessons now include visualizer blocks for loops, lists/arrays, functions, maps/dictionaries, sets, classes/objects, debugging state, algorithm tracing, and C++ pointers.
 - Lesson TTS now treats visualizer blocks like diagrams: it reads the caption and invites the student to open the visualizer, instead of reading raw diagram state.
 - Concept quizzes now reveal immediate teaching feedback after each checked answer, showing "Why it works" for correct answers and "What went wrong" plus the correct answer for missed questions, while keeping the final review screen.
 - Advanced concept quiz questions now include small code/state blurbs where useful, so operation questions show something concrete to trace instead of rendering as plain text on an empty panel.

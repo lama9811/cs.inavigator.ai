@@ -2558,6 +2558,110 @@ body.coding-dark .practice-show-more span {
   color: var(--ct-soft, #a6b0c2);
 }
 
+.practice-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 22px;
+  padding: 12px 14px;
+  border: 1px solid var(--ct-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ct-panel) 92%, var(--ct-primary-soft));
+}
+
+.practice-pagination-summary {
+  color: var(--ct-muted, #6b7280);
+  font-size: 0.86rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.practice-pagination-controls,
+.practice-page-slot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.practice-pagination-controls {
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.practice-page-btn {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 28%, var(--ct-border));
+  border-radius: 10px;
+  background: var(--ct-panel);
+  color: var(--ct-primary);
+  font-size: 0.84rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.practice-page-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ct-primary) 10%, var(--ct-panel));
+  border-color: var(--ct-primary);
+}
+
+.practice-page-btn.is-active {
+  background: var(--ct-primary);
+  border-color: var(--ct-primary);
+  color: #fff;
+}
+
+.practice-page-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.practice-page-gap {
+  min-width: 16px;
+  color: var(--ct-muted, #6b7280);
+  text-align: center;
+  font-weight: 700;
+}
+
+body.coding-dark .practice-pagination {
+  background: color-mix(in srgb, var(--ct-panel) 90%, var(--ct-accent) 10%);
+}
+
+body.coding-dark .practice-page-btn {
+  color: var(--ct-accent);
+  border-color: color-mix(in srgb, var(--ct-accent) 35%, var(--ct-border));
+  background: color-mix(in srgb, var(--ct-panel) 92%, var(--ct-accent) 8%);
+}
+
+body.coding-dark .practice-page-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ct-accent) 16%, var(--ct-panel));
+  border-color: var(--ct-accent);
+}
+
+body.coding-dark .practice-page-btn.is-active {
+  background: var(--ct-accent);
+  border-color: var(--ct-accent);
+  color: #101827;
+}
+
+@media (max-width: 720px) {
+  .practice-pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .practice-pagination-controls {
+    flex-wrap: wrap;
+  }
+
+  .practice-pagination-summary {
+    white-space: normal;
+  }
+}
+
 .practice-topic-heading {
   display: flex;
   align-items: center;

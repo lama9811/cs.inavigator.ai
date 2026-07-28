@@ -1,37 +1,37 @@
 {
   "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Linked Lists",
-  "summary": "A linked list is made of nodes. Each node stores data and a link to the next node.",
+  "summary": "A **linked list** is made of **nodes**. Each node stores data and a link to the next node.",
   "minutes": 19,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "A linked list stores values in nodes. Each node has data and a next link. The head points to the first node, and traversal follows next links until there is no next node.",
+  "refresher": "A **linked list** stores **values** in **nodes**. Each node has data and a next link. The head points to the first node, and traversal follows next links until there is no next node.",
   "refresher_code": "node = data + next\nhead -> first node",
   "learn_cards": {
     "advanced-node-parts": {
       "title": "A node has data and a next link",
-      "body": "The data is the value. The next link points to the following node.",
+      "body": "The data is the **value**. The next link points to the following **node**.",
       "example": "A -> B -> C",
-      "notice": "The list order comes from links, not from array positions.",
-      "mistake": "Changing a link too early can lose the rest of the list.",
+      "notice": "The **list** order comes from links, not from **array** positions.",
+      "mistake": "Changing a link too early can lose the rest of the **list**.",
       "section_id": "node-shape"
     },
     "advanced-head-meaning": {
       "title": "Head means first node",
-      "body": "The head reference points to where traversal starts.",
+      "body": "The head **reference** points to where **traversal** starts.",
       "example": "head -> A -> B -> null",
-      "notice": "If head is null, the list is empty.",
-      "mistake": "Do not treat head like a value. It is a reference to a node.",
+      "notice": "If head is null, the **list** is empty.",
+      "mistake": "Do not treat head like a **value**. It is a **reference** to a **node**.",
       "section_id": "node-shape"
     },
     "advanced-insert-after": {
       "title": "Insert without losing the chain",
-      "body": "Point the new node to the old next node before changing the current node's next link.",
+      "body": "Point the new **node** to the old next node before changing the current node's next link.",
       "example": "new.next = current.next; current.next = new",
       "notice": "Save the old link first.",
-      "mistake": "Assigning current.next first can disconnect the rest of the list.",
+      "mistake": "Assigning current.next first can disconnect the rest of the **list**.",
       "section_id": "insert-delete"
     }
   },
@@ -39,7 +39,7 @@
     {
       "id": "node-shape",
       "title": "Node shape",
-      "summary": "Every linked list starts with the node idea.",
+      "summary": "Every **linked list** starts with the **node** idea.",
       "question_ids": [
         "advanced-node-parts",
         "advanced-head-meaning",
@@ -49,13 +49,13 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A linked list does not store items side by side like an array. It stores small objects called nodes. Each node carries one value and a link to the next node."
+          "body": "A **linked list** does not store items side by side like an **array**. It stores small **objects** called nodes. Each node carries one value and a link to the next node."
         },
         {
           "kind": "visual",
           "title": "Do not lose the link",
           "concept": "linked-lists",
-          "caption": "Watch how a new node is inserted between two existing nodes.",
+          "caption": "Watch how a new **node** is inserted between two existing nodes.",
           "initial_state": {},
           "steps": [
             {
@@ -87,7 +87,7 @@
             },
             {
               "title": "Create B",
-              "body": "Make the new node before changing links.",
+              "body": "Make the new **node** before changing links.",
               "state": {
                 "nodes": [
                   {
@@ -120,7 +120,7 @@
             },
             {
               "title": "Point B to C",
-              "body": "B should remember the node that used to come after A.",
+              "body": "B should remember the **node** that used to come after A.",
               "state": {
                 "nodes": [
                   {
@@ -200,7 +200,7 @@
         },
         {
           "kind": "code",
-          "caption": "A minimal node class.",
+          "caption": "A minimal **node** **class**.",
           "variants": {
             "python": {
               "code": "class Node:\n    def __init__(self, value):\n        self.value = value\n        self.next = None",
@@ -224,17 +224,17 @@
           "kind": "list",
           "title": "Read the node",
           "items": [
-            "`value` is the data stored in this node.",
-            "`next` points to the next node.",
-            "`None`, `null`, or `nullptr` means there is no next node.",
-            "The `head` variable points to the first node in the list."
+            "`value` is the data stored in this **node**.",
+            "`next` points to the next **node**.",
+            "`None`, `null`, or `nullptr` means there is no next **node**.",
+            "The `head` **variable** points to the first **node** in the **list**."
           ]
         },
         {
           "kind": "callout",
           "tone": "tip",
           "title": "C++ pointer note",
-          "body": "`Node*` means the variable holds the address of a node. `nullptr` means it points to no node right now."
+          "body": "`Node*` means the **variable** holds the address of a **node**. `nullptr` means it points to no node right now."
         },
         {
           "kind": "check",
@@ -246,14 +246,14 @@
             "A copy of every value"
           ],
           "answer_index": 0,
-          "why": "The head is the starting reference for the list."
+          "why": "The head is the starting **reference** for the **list**."
         }
       ]
     },
     {
       "id": "traverse-list",
       "title": "Walk through a linked list",
-      "summary": "Traversal means following next links one at a time.",
+      "summary": "**Traversal** means following next links one at a time.",
       "question_ids": [
         "advanced-traverse-list",
         "advanced-cycle-risk"
@@ -261,20 +261,20 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "You cannot jump straight to item 10 in a basic linked list. You start at head, read the current node, then move to current.next."
+          "body": "You cannot jump straight to item 10 in a basic **linked list**. You start at head, read the current **node**, then move to current.next."
         },
         {
           "kind": "visual",
           "title": "Move current one link at a time",
           "concept": "linked-lists",
-          "caption": "Watch traversal follow next links from head until the list ends.",
+          "caption": "Watch **traversal** follow next links from head until the **list** ends.",
           "initial_state": {},
           "steps": [
             {
               "title": "Start at head",
               "action_label": "current = head",
-              "body": "current points to the first node, A.",
-              "what_changed": "Traversal starts from the head reference, not from an index.",
+              "body": "current points to the first **node**, A.",
+              "what_changed": "**Traversal** starts from the head **reference**, not from an **index**.",
               "animation": "visit",
               "state": {
                 "nodes": [
@@ -315,7 +315,7 @@
               "title": "Move to next",
               "action_label": "current = current.next",
               "body": "After reading A, current follows A.next to B.",
-              "what_changed": "The pointer moves. The nodes stay where they are.",
+              "what_changed": "The **pointer** moves. The **nodes** stay where they are.",
               "animation": "slide",
               "state": {
                 "nodes": [
@@ -357,7 +357,7 @@
               "title": "Move again",
               "action_label": "follow next",
               "body": "After B, current follows B.next to C.",
-              "what_changed": "A loop repeats this same movement until next is missing.",
+              "what_changed": "A **loop** repeats this same movement until next is missing.",
               "animation": "slide",
               "state": {
                 "nodes": [
@@ -398,8 +398,8 @@
             {
               "title": "Stop at null",
               "action_label": "stop",
-              "body": "C.next is null, so the traversal is done after C.",
-              "what_changed": "The missing link marks the end of the list.",
+              "body": "C.next is null, so the **traversal** is done after C.",
+              "what_changed": "The missing link marks the end of the **list**.",
               "animation": "highlight",
               "state": {
                 "nodes": [
@@ -441,7 +441,7 @@
         },
         {
           "kind": "code",
-          "caption": "Traversal keeps moving until the current node is missing.",
+          "caption": "**Traversal** keeps moving until the current **node** is missing.",
           "variants": {
             "python": {
               "code": "current = head\nwhile current is not None:\n    print(current.value)\n    current = current.next",
@@ -465,11 +465,11 @@
           "kind": "callout",
           "tone": "mistake",
           "title": "Move the pointer",
-          "body": "If you forget `current = current.next`, the loop keeps looking at the same node forever."
+          "body": "If you forget `current = current.next`, the **loop** keeps looking at the same **node** forever."
         },
         {
           "kind": "check",
-          "prompt": "When does a basic traversal stop?",
+          "prompt": "When does a basic **traversal** stop?",
           "choices": [
             "When current becomes null/None/nullptr",
             "After exactly two nodes",
@@ -477,14 +477,14 @@
             "Before reading head"
           ],
           "answer_index": 0,
-          "why": "The end of the list is marked by a missing next node."
+          "why": "The end of the **list** is marked by a missing next **node**."
         }
       ]
     },
     {
       "id": "insert-delete",
       "title": "Insert and delete by changing links",
-      "summary": "Linked-list edits are mostly careful link updates.",
+      "summary": "Linked-**list** edits are mostly careful link updates.",
       "question_ids": [
         "advanced-insert-after",
         "advanced-delete-after",
@@ -493,7 +493,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "To insert after a node, the new node must point to the old next node. Then the current node can point to the new node."
+          "body": "To insert after a **node**, the new node must point to the old next node. Then the current node can point to the new node."
         },
         {
           "kind": "compare",
@@ -506,11 +506,11 @@
         },
         {
           "kind": "text",
-          "body": "To delete the node after `current`, skip over it. Point `current.next` to the node after the deleted node."
+          "body": "To delete the **node** after `current`, skip over it. Point `current.next` to the node after the deleted node."
         },
         {
           "kind": "code",
-          "caption": "Delete the node after current.",
+          "caption": "Delete the **node** after current.",
           "variants": {
             "python": {
               "code": "if current.next is not None:\n    current.next = current.next.next",
@@ -534,14 +534,14 @@
           "kind": "callout",
           "tone": "warning",
           "title": "C++ ownership note",
-          "body": "In real C++, deleting a node may also require freeing memory. The practice runner focuses on pointer shape first, but production code should use safe ownership patterns."
+          "body": "In real C++, deleting a **node** may also require freeing **memory**. The practice runner focuses on **pointer** shape first, but production code should use safe ownership patterns."
         }
       ]
     },
     {
       "id": "trace-links",
       "title": "Trace the arrows",
-      "summary": "Draw arrows before writing pointer code.",
+      "summary": "Draw arrows before writing **pointer** code.",
       "blocks": [
         {
           "kind": "list",
@@ -573,7 +573,7 @@
             "It copies every node"
           ],
           "answer_index": 0,
-          "why": "Once current.next changes, you may no longer have a path to the old next node."
+          "why": "Once current.next changes, you may no longer have a path to the old next **node**."
         }
       ]
     }

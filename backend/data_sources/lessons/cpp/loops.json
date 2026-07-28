@@ -1,23 +1,103 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Loops",
-  "summary": "Repeat work a known number of times or until a condition changes.",
+  "summary": "Repeat work a known number of times or until a **condition** changes.",
   "minutes": 10,
   "error_classes": [
     "wrong_answer",
     "timeout",
     "runtime"
   ],
-  "refresher": "A `for` loop has a starting value, a condition, and an update. A `while` loop repeats while its condition remains true. Make sure the condition eventually becomes false.",
+  "refresher": "A `for` **loop** has a starting **value**, a **condition**, and an update. A `while` loop repeats while its condition remains true. Make sure the condition eventually becomes false.",
   "refresher_code": "for(int i=0;i<3;i++){\n  std::cout << i << \"\\n\";\n}",
   "blocks": [
     {
       "kind": "text",
-      "body": "A loop repeats a block of code. Use a `for` loop when you can describe the start, stopping rule, and update together. Use a `while` loop when repetition depends mainly on a condition."
+      "body": "A **loop** repeats a block of code. Use a `for` loop when you can describe the start, stopping rule, and update together. Use a `while` loop when repetition depends mainly on a **condition**."
+    },
+    {
+      "kind": "visual",
+      "title": "Trace a loop one item at a time",
+      "concept": "arrays",
+      "caption": "Watch the active item move while the running total changes.",
+      "initial_state": {},
+      "steps": [
+        {
+          "title": "Start before the loop",
+          "body": "The total starts at zero before any item is read.",
+          "state": {
+            "items": [
+              "3",
+              "5",
+              "2"
+            ],
+            "pointers": {
+              "i": 0
+            },
+            "note": "total = 0"
+          }
+        },
+        {
+          "title": "First pass",
+          "body": "Read index 0 and add 3 to the total.",
+          "animation": "add",
+          "state": {
+            "items": [
+              "3",
+              "5",
+              "2"
+            ],
+            "active": [
+              0
+            ],
+            "pointers": {
+              "i": 0
+            },
+            "note": "total = 3"
+          }
+        },
+        {
+          "title": "Second pass",
+          "body": "Move to index 1 and add 5.",
+          "animation": "slide",
+          "state": {
+            "items": [
+              "3",
+              "5",
+              "2"
+            ],
+            "active": [
+              1
+            ],
+            "pointers": {
+              "i": 1
+            },
+            "note": "total = 8"
+          }
+        },
+        {
+          "title": "After the last item",
+          "body": "The loop stops after each item has contributed once.",
+          "state": {
+            "items": [
+              "3",
+              "5",
+              "2"
+            ],
+            "active": [
+              2
+            ],
+            "pointers": {
+              "i": 2
+            },
+            "note": "final total = 10"
+          }
+        }
+      ]
     },
     {
       "kind": "text",
-      "body": "Read a `for` loop in four steps: set the counter, test the condition, run the body, then update the counter. For a collection with three items, valid indexes are zero, one, and two, so the counter must stay below the size."
+      "body": "Read a `for` **loop** in four steps: **set** the counter, test the **condition**, run the body, then update the counter. For a collection with three items, valid indexes are zero, one, and two, so the counter must stay below the size."
     },
     {
       "kind": "callout",
@@ -33,7 +113,7 @@
     },
     {
       "kind": "compare",
-      "caption": "Use a strict bound so the count is never used as an index.",
+      "caption": "Use a strict bound so the count is never used as an **index**.",
       "wrong_label": "Common mistake",
       "wrong": "for (int i = 0; i <= values.size(); i++) {\n  use(values[i]);\n}",
       "right_label": "Clearer version",
@@ -41,13 +121,13 @@
     },
     {
       "kind": "text",
-      "body": "For three elements, the valid indexes are zero, one, and two. When `i` becomes three, the corrected condition is false. The version using `<=` allows index three and steps past the vector. If you do not need an index, use `for (int value : values)`."
+      "body": "For three elements, the valid **indexes** are zero, one, and two. When `i` becomes three, the corrected **condition** is false. The version using `<=` allows **index** three and steps past the vector. If you do not need an index, use `for (int value : values)`."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "A loop needs a way to finish",
-      "body": "A `while` loop can run forever when the value in its condition never changes. Point to the exact update that moves the loop toward its stopping condition."
+      "body": "A `while` **loop** can run forever when the **value** in its **condition** never changes. Point to the exact update that moves the loop toward its stopping condition."
     },
     {
       "kind": "check",
@@ -60,7 +140,7 @@
         "none"
       ],
       "answer_index": 0,
-      "why": "The loop includes one through four because its condition includes the upper boundary."
+      "why": "The **loop** includes one through four because its **condition** includes the upper boundary."
     },
     {
       "kind": "check",
@@ -73,7 +153,7 @@
         "a string"
       ],
       "answer_index": 0,
-      "why": "Count stays equal to three, leaving the while condition true forever."
+      "why": "Count stays equal to three, leaving the while **condition** true forever."
     },
     {
       "kind": "list",

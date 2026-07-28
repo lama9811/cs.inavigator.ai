@@ -12,7 +12,7 @@
   "blocks": [
     {
       "kind": "text",
-      "body": "Errors are not all the same. Some are expected, like bad user input. Some are bugs you need to fix. Good error handling tells those apart."
+      "body": "Errors are not all the same. Some are expected, like bad user **input**. Some are bugs you need to fix. Good error handling tells those apart."
     },
     {
       "kind": "text",
@@ -34,13 +34,13 @@
     },
     {
       "kind": "text",
-      "body": "Trace the malformed input: parse begins, detects invalid syntax, creates a SyntaxError, and transfers control to catch. The original Error still matters during development, even when the message shown to a student is simpler."
+      "body": "Trace the malformed **input**: parse begins, detects invalid syntax, creates a SyntaxError, and transfers control to catch. The original Error still matters during development, even when the message shown to a student is simpler."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "Catch narrowly",
-      "body": "Do not wrap a whole application in one broad try block. Keep the protected section close to the operation whose failure you understand, so unrelated programming mistakes are not mislabeled as expected input problems."
+      "body": "Do not wrap a whole application in one broad try block. Keep the protected section close to the operation whose failure you understand, so unrelated programming mistakes are not mislabeled as expected **input** problems."
     },
     {
       "kind": "check",

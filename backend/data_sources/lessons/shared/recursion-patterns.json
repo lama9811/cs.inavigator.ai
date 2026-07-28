@@ -1,29 +1,29 @@
 {
   "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Recursion Patterns",
-  "summary": "Recursion solves a problem by handling a small case and asking the same function to solve a smaller version.",
+  "summary": "**Recursion** solves a problem by handling a small case and asking the same **function** to solve a smaller version.",
   "minutes": 18,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "A recursive function needs a base case and a smaller recursive call. The base case stops the calls. The smaller call moves the problem toward that stop point.",
+  "refresher": "A recursive **function** needs a **base case** and a smaller **recursive call**. The base case stops the calls. The smaller call moves the problem toward that stop point.",
   "refresher_code": "if done: return answer\nreturn work + solve(smaller_input)",
   "learn_cards": {
     "advanced-recursion-base-case": {
       "title": "The base case stops recursion",
-      "body": "A base case is the simple answer the function can return immediately.",
+      "body": "A **base case** is the simple answer the **function** can **return** immediately.",
       "example": "factorial(0) returns 1",
-      "notice": "Without a reachable base case, recursion keeps calling itself.",
-      "mistake": "A base case that never runs is the same as no base case.",
+      "notice": "Without a reachable **base case**, **recursion** keeps calling itself.",
+      "mistake": "A **base case** that never runs is the same as no base case.",
       "section_id": "base-case"
     },
     "advanced-recursion-shrink": {
       "title": "Each call must get smaller",
-      "body": "The recursive call should move closer to the base case.",
+      "body": "The **recursive call** should move closer to the **base case**.",
       "example": "factorial(n - 1), not factorial(n)",
-      "notice": "Same input means same problem forever.",
-      "mistake": "Calling with unchanged input causes infinite recursion.",
+      "notice": "Same **input** means same problem forever.",
+      "mistake": "Calling with unchanged **input** causes infinite **recursion**.",
       "section_id": "smaller-call"
     }
   },
@@ -31,7 +31,7 @@
     {
       "id": "base-case",
       "title": "Base case first",
-      "summary": "The base case is the stop sign.",
+      "summary": "The **base case** is the stop sign.",
       "question_ids": [
         "advanced-recursion-base-case",
         "advanced-recursion-infinite"
@@ -39,13 +39,13 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "Recursion is a function calling itself. That sounds strange at first, but the pattern is simple: stop when the answer is obvious, otherwise solve a smaller version."
+          "body": "**Recursion** is a **function** calling itself. That sounds strange at first, but the pattern is simple: stop when the answer is obvious, otherwise solve a smaller version."
         },
         {
           "kind": "visual",
           "title": "Follow the call stack",
           "concept": "recursion-patterns",
-          "caption": "Watch calls pile up until the base case, then return back down.",
+          "caption": "Watch calls pile up until the **base case**, then **return** back down.",
           "initial_state": {},
           "steps": [
             {
@@ -71,7 +71,7 @@
             },
             {
               "title": "Call fact(1)",
-              "body": "fact(1) is the base case, so it can answer immediately.",
+              "body": "fact(1) is the **base case**, so it can answer immediately.",
               "state": {
                 "call_stack": [
                   "fact(3)",
@@ -133,10 +133,10 @@
           "kind": "list",
           "title": "Read it line by line",
           "items": [
-            "If `n` is 0, return 1 right away.",
+            "If `n` is 0, **return** 1 right away.",
             "Otherwise, multiply `n` by the answer for `n - 1`.",
             "`n - 1` is closer to 0, so the calls eventually stop.",
-            "Each unfinished call waits for the smaller call to return."
+            "Each unfinished call waits for the smaller call to **return**."
           ]
         },
         {
@@ -147,7 +147,7 @@
         },
         {
           "kind": "check",
-          "prompt": "What is the job of the base case?",
+          "prompt": "What is the job of the **base case**?",
           "choices": [
             "Stop the recursion with a direct answer",
             "Make the input bigger",
@@ -155,14 +155,14 @@
             "Skip all returns"
           ],
           "answer_index": 0,
-          "why": "The base case gives the function a place to stop."
+          "why": "The **base case** gives the **function** a place to stop."
         }
       ]
     },
     {
       "id": "smaller-call",
       "title": "Make the problem smaller",
-      "summary": "The recursive call should move toward the base case.",
+      "summary": "The **recursive call** should move toward the **base case**.",
       "question_ids": [
         "advanced-recursion-shrink",
         "advanced-recursion-trace",
@@ -171,7 +171,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A recursive call is not a guess. It should solve the same kind of problem with less input: one smaller number, the rest of a list, or a child node in a tree."
+          "body": "A **recursive call** is not a guess. It should solve the same kind of problem with less **input**: one smaller number, the rest of a **list**, or a child node in a tree."
         },
         {
           "kind": "visual",
@@ -184,7 +184,7 @@
               "title": "Ask for the full sum",
               "action_label": "call",
               "body": "The first call keeps 2 and asks for the sum of the rest.",
-              "what_changed": "The call stack stores the unfinished work: 2 plus a smaller answer.",
+              "what_changed": "The **call stack** stores the unfinished work: 2 plus a smaller answer.",
               "animation": "push",
               "state": {
                 "call_stack": [
@@ -197,7 +197,7 @@
               "title": "Ask again",
               "action_label": "call",
               "body": "The next call keeps 4 and asks for the sum of [6].",
-              "what_changed": "Each call is the same job with a smaller list.",
+              "what_changed": "Each call is the same job with a smaller **list**.",
               "animation": "push",
               "state": {
                 "call_stack": [
@@ -210,7 +210,7 @@
             {
               "title": "Hit the empty list",
               "action_label": "base case",
-              "body": "The empty list returns 0 immediately.",
+              "body": "The empty **list** returns 0 immediately.",
               "what_changed": "Now the waiting calls can finally finish.",
               "animation": "highlight",
               "state": {
@@ -228,7 +228,7 @@
               "title": "Add back up",
               "action_label": "return",
               "body": "6 + 0 returns 6, then 4 + 6 returns 10.",
-              "what_changed": "Return values move back to the calls that were waiting for them.",
+              "what_changed": "**Return** values move back to the calls that were waiting for them.",
               "animation": "return",
               "state": {
                 "call_stack": [
@@ -244,7 +244,7 @@
               "title": "Finish",
               "action_label": "return",
               "body": "The first call returns 2 + 10, which is 12.",
-              "what_changed": "The stack is done because every smaller answer returned.",
+              "what_changed": "The **stack** is done because every smaller answer returned.",
               "animation": "return",
               "state": {
                 "call_stack": [
@@ -257,7 +257,7 @@
         },
         {
           "kind": "code",
-          "caption": "Sum a list by taking the first item and asking recursion to sum the rest.",
+          "caption": "Sum a **list** by taking the first item and asking **recursion** to sum the rest.",
           "variants": {
             "python": {
               "code": "def sum_list(nums):\n    if len(nums) == 0:\n        return 0\n    return nums[0] + sum_list(nums[1:])\n\nprint(sum_list([2, 4, 6]))",
@@ -284,7 +284,7 @@
             "2 + sum of [4, 6]",
             "2 + 4 + sum of [6]",
             "2 + 4 + 6 + sum of []",
-            "The empty list returns 0, then the waiting calls add back up to 12."
+            "The empty **list** returns 0, then the waiting calls add back up to 12."
           ]
         },
         {
@@ -297,25 +297,25 @@
             "Nowhere; they disappear"
           ],
           "answer_index": 0,
-          "why": "The call stack remembers each unfinished function call until its smaller call returns."
+          "why": "The **call stack** remembers each unfinished **function** call until its smaller call returns."
         }
       ]
     },
     {
       "id": "tree-recursion",
       "title": "Recursion fits trees",
-      "summary": "A tree problem often repeats on left and right children.",
+      "summary": "A **tree** problem often repeats on left and right children.",
       "question_ids": [
         "advanced-recursion-tree"
       ],
       "blocks": [
         {
           "kind": "text",
-          "body": "Tree recursion works because each child is the root of a smaller tree. A height function can ask for the height of the left subtree and the right subtree, then combine them."
+          "body": "Tree **recursion** works because each child is the **root** of a smaller tree. A height **function** can ask for the height of the left subtree and the right subtree, then combine them."
         },
         {
           "kind": "code",
-          "caption": "Tree height combines two smaller answers.",
+          "caption": "**Tree** height combines two smaller answers.",
           "variants": {
             "python": {
               "code": "def height(node):\n    if node is None:\n        return 0\n    return 1 + max(height(node.left), height(node.right))",
@@ -339,7 +339,7 @@
           "kind": "callout",
           "tone": "tip",
           "title": "Name what comes back",
-          "body": "A recursive function should have a clear return meaning. Here, `height(node)` means the height of the tree starting at `node`."
+          "body": "A recursive **function** should have a clear **return** meaning. Here, `height(node)` means the height of the **tree** starting at `node`."
         }
       ]
     },
@@ -353,7 +353,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "Recursion is not automatically efficient. Naive Fibonacci is a classic warning because it recalculates the same values many times."
+          "body": "**Recursion** is not automatically efficient. Naive Fibonacci is a classic warning because it recalculates the same **values** many times."
         },
         {
           "kind": "compare",
@@ -362,7 +362,7 @@
           "wrong": "fib(n) = fib(n - 1) + fib(n - 2)\n// repeats many calls",
           "right_label": "Memoized or iterative",
           "right": "store earlier answers or use a loop\n// each answer is computed once",
-          "body": "The idea is not that recursion is bad. The idea is to notice repeated work."
+          "body": "The idea is not that **recursion** is bad. The idea is to notice repeated work."
         },
         {
           "kind": "check",
@@ -374,7 +374,7 @@
             "It cannot return a value"
           ],
           "answer_index": 0,
-          "why": "The same Fibonacci values are recomputed again and again."
+          "why": "The same Fibonacci **values** are recomputed again and again."
         }
       ]
     }

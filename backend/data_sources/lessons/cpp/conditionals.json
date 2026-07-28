@@ -7,12 +7,12 @@
     "wrong_answer",
     "syntax"
   ],
-  "refresher": "C++ checks `if`, then any `else if` branches, and finally `else`. Only the first true branch runs. Put braces around each branch so its beginning and end are easy to see.",
+  "refresher": "C++ checks `if`, then any `else if` **branches**, and finally `else`. Only the first true branch runs. Put braces around each branch so its beginning and end are easy to see.",
   "refresher_code": "if(score>=90){ grade=\"A\"; }\nelse { grade=\"Below A\"; }",
   "blocks": [
     {
       "kind": "text",
-      "body": "A conditional lets the program choose. C++ tests the expression inside `if (...)`. If it is true, that block runs. Otherwise, the program tries the next `else if` or uses the final `else`."
+      "body": "A **conditional** lets the program choose. C++ tests the expression inside `if (...)`. If it is true, that block runs. Otherwise, the program tries the next `else if` or uses the final `else`."
     },
     {
       "kind": "text",
@@ -26,13 +26,13 @@
     },
     {
       "kind": "code",
-      "caption": "A score of 92 satisfies the first condition, so C++ prints A and skips the remaining branches.",
+      "caption": "A score of 92 satisfies the first **condition**, so C++ prints A and skips the remaining **branches**.",
       "code": "#include <iostream>\n\nint main() {\n  int score = 92;\n\n  if (score >= 90) {\n    std::cout << \"A\\n\";\n  } else if (score >= 80) {\n    std::cout << \"B\\n\";\n  } else {\n    std::cout << \"C or below\\n\";\n  }\n}",
       "output": "A"
     },
     {
       "kind": "compare",
-      "caption": "Remove the stray semicolon so the block belongs to the condition.",
+      "caption": "Remove the stray semicolon so the block belongs to the **condition**.",
       "wrong_label": "Common mistake",
       "wrong": "if (score >= 60); {\n  passed = true;\n}",
       "right_label": "Clearer version",
@@ -59,7 +59,7 @@
         "an error"
       ],
       "answer_index": 0,
-      "why": "Zero converts to false in the condition, so the else branch runs."
+      "why": "Zero converts to false in the **condition**, so the else branch runs."
     },
     {
       "kind": "check",

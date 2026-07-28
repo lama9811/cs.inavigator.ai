@@ -1,32 +1,32 @@
 {
   "_note": "ORIGINAL content. Topic coverage was checked against Think C++ and the Google C++ Class outline. No prose, examples, or exercises were copied; the references are curriculum guides only.",
   "title": "File I/O",
-  "summary": "Read and write files through streams.",
+  "summary": "Read and write **files** through streams.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "C++ uses file streams for file work. `std::ifstream` reads from a file. `std::ofstream` writes to a file. Always check that the stream opened before reading or writing.",
+  "refresher": "C++ uses **file** streams for file work. `std::ifstream` reads from a file. `std::ofstream` writes to a file. Always check that the stream opened before reading or writing.",
   "refresher_code": "#include <fstream>\n#include <iostream>\nstd::ifstream input(\"courses.txt\");\nif (!input) {\n  std::cerr << \"Could not open file\\n\";\n}",
   "blocks": [
     {
       "kind": "text",
-      "body": "A file stream is a path between your program and a file. Use an input file stream to read. Use an output file stream to write."
+      "body": "A **file** stream is a path between your program and a file. Use an **input** file stream to read. Use an **output** file stream to write."
     },
     {
       "kind": "text",
-      "body": "Opening a file can fail. The file may be in another folder, the name may be misspelled, or the program may not have permission. Check the stream before you trust it."
+      "body": "Opening a **file** can fail. The file may be in another folder, the name may be misspelled, or the program may not have permission. Check the stream before you trust it."
     },
     {
       "kind": "callout",
       "tone": "tip",
       "title": "Compare this with Python's open",
-      "body": "Python often uses `with open(...) as file`. C++ creates an `ifstream` or `ofstream` object. Both approaches close the file automatically when the surrounding block finishes."
+      "body": "Python often uses `with open(...) as file`. C++ creates an `ifstream` or `ofstream` **object**. Both approaches close the **file** automatically when the surrounding block finishes."
     },
     {
       "kind": "code",
-      "caption": "The program checks that the file opened, then prints each line only after getline succeeds.",
+      "caption": "The program checks that the **file** opened, then prints each line only after getline succeeds.",
       "code": "#include <fstream>\n#include <iostream>\n#include <string>\nint main() {\n  std::ifstream input(\"courses.txt\");\n  if (!input) {\n    std::cerr << \"Could not open courses.txt\\n\";\n    return 1;\n  }\n  std::string line;\n  while (std::getline(input, line)) {\n    std::cout << line << \"\\n\";\n  }\n}",
       "output": "One output line for each line in courses.txt."
     },
@@ -40,17 +40,17 @@
     },
     {
       "kind": "text",
-      "body": "The final real line is processed normally. The next call to `getline` fails because there is nothing left to read, so the condition becomes false and the loop ends before stale data can be used."
+      "body": "The final real line is processed normally. The next call to `getline` fails because there is nothing left to read, so the **condition** becomes false and the **loop** ends before stale data can be used."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "Relative paths start at the working directory",
-      "body": "A path such as `courses.txt` starts from the program's current working directory, which may not be the folder containing the source file. Check the run configuration or use a known path when a file exists but cannot be found."
+      "body": "A path such as `courses.txt` starts from the program's current working directory, which may not be the folder containing the source **file**. Check the run configuration or use a known path when a file exists but cannot be found."
     },
     {
       "kind": "check",
-      "prompt": "Which stream type reads from a file?",
+      "prompt": "Which stream type reads from a **file**?",
       "code": "",
       "choices": [
         "std::ifstream",
@@ -59,7 +59,7 @@
         "std::string"
       ],
       "answer_index": 0,
-      "why": "An ifstream is an input file stream, while an ofstream sends output into a file."
+      "why": "An ifstream is an **input** **file** stream, while an ofstream sends **output** into a file."
     },
     {
       "kind": "check",
@@ -72,7 +72,7 @@
         "It keeps the stream open forever"
       ],
       "answer_index": 0,
-      "why": "The returned stream state becomes false when reading fails, preventing the loop from processing invalid data."
+      "why": "The returned stream state becomes false when reading fails, preventing the **loop** from processing invalid data."
     },
     {
       "kind": "list",
@@ -80,9 +80,9 @@
       "items": [
         "Use ifstream to read.",
         "Use ofstream to write.",
-        "Check that the file opened.",
-        "Read line by line when the file is text.",
-        "Check the working folder when the file is missing."
+        "Check that the **file** opened.",
+        "Read line by line when the **file** is text.",
+        "Check the working folder when the **file** is missing."
       ]
     }
   ]

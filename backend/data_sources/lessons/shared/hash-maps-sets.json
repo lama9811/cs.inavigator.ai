@@ -1,37 +1,37 @@
 {
   "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Hash Maps & Sets",
-  "summary": "Use a set to remember what you have seen. Use a map when each key needs a value, such as a count.",
+  "summary": "Use a **set** to remember what you have seen. Use a **map** when each **key** needs a value, such as a count.",
   "minutes": 17,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "A set answers membership questions: have I seen this value before? A map stores a value for each key, such as a frequency count. Both are useful when repeated scanning would be too slow.",
+  "refresher": "A **set** answers membership questions: have I seen this value before? A **map** stores a value for each **key**, such as a frequency count. Both are useful when repeated scanning would be too slow.",
   "refresher_code": "seen.add(x)\ncounts[x] = counts.get(x, 0) + 1",
   "learn_cards": {
     "advanced-set-membership": {
       "title": "Sets answer seen-before questions",
-      "body": "A set stores unique values and lets you check membership quickly.",
+      "body": "A **set** stores unique **values** and lets you check membership quickly.",
       "example": "if value in seen: return True",
-      "notice": "You care whether the value exists, not how many times.",
-      "mistake": "Using a list works, but each lookup can scan the whole list.",
+      "notice": "You care whether the **value** exists, not how many times.",
+      "mistake": "Using a **list** works, but each lookup can scan the whole list.",
       "section_id": "sets-membership"
     },
     "advanced-map-counts": {
       "title": "Maps attach a value to each key",
-      "body": "A frequency map uses the item as the key and the count as the value.",
+      "body": "A frequency **map** uses the item as the **key** and the count as the **value**.",
       "example": "counts['a'] = 3",
-      "notice": "The key is what you look up. The value is what you store about it.",
-      "mistake": "Increasing a missing key before creating it causes errors in many languages.",
+      "notice": "The **key** is what you look up. The **value** is what you store about it.",
+      "mistake": "Increasing a missing **key** before creating it causes errors in many languages.",
       "section_id": "maps-counts"
     },
     "advanced-map-default": {
       "title": "Start missing counts at zero",
-      "body": "Before you add one, decide what a missing key should mean. For counts, missing usually means zero.",
+      "body": "Before you add one, decide what a missing **key** should mean. For counts, missing usually means zero.",
       "example": "counts[x] = counts.get(x, 0) + 1",
-      "notice": "The default prevents a missing-key crash.",
-      "mistake": "Do not assume every key already exists.",
+      "notice": "The default prevents a missing-**key** crash.",
+      "mistake": "Do not assume every **key** already exists.",
       "section_id": "maps-counts"
     }
   },
@@ -39,7 +39,7 @@
     {
       "id": "sets-membership",
       "title": "Set: remember unique values",
-      "summary": "A set is for fast yes-or-no membership checks.",
+      "summary": "A **set** is for fast yes-or-no membership checks.",
       "question_ids": [
         "advanced-set-membership",
         "advanced-set-trace",
@@ -49,13 +49,13 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "Use a set when the question asks whether a value appeared before, whether duplicates exist, or whether two groups share values. A set does not care about order or counts. It cares about membership."
+          "body": "Use a **set** when the question asks whether a **value** appeared before, whether duplicates exist, or whether two groups share values. A set does not care about order or counts. It cares about membership."
         },
         {
           "kind": "visual",
           "title": "Check membership before adding",
           "concept": "hash-maps-sets",
-          "caption": "Watch a set answer “have I seen this before?” without counting every value.",
+          "caption": "Watch a **set** answer “have I seen this before?” without counting every **value**.",
           "initial_state": {
             "items": [
               4,
@@ -67,8 +67,8 @@
             {
               "title": "Read 4",
               "action_label": "check",
-              "body": "4 is not in the set yet.",
-              "what_changed": "After the check, add 4 so future values can compare against it.",
+              "body": "4 is not in the **set** yet.",
+              "what_changed": "After the check, add 4 so future **values** can compare against it.",
               "animation": "add",
               "state": {
                 "active": [
@@ -88,7 +88,7 @@
               "title": "Read 7",
               "action_label": "check",
               "body": "7 is also missing, so add it.",
-              "what_changed": "The set now remembers both earlier values.",
+              "what_changed": "The **set** now remembers both earlier **values**.",
               "animation": "add",
               "state": {
                 "active": [
@@ -107,8 +107,8 @@
             {
               "title": "Read 4 again",
               "action_label": "duplicate found",
-              "body": "4 is already in the set, so this is the repeat.",
-              "what_changed": "The set gives a yes/no answer without scanning the earlier list by hand.",
+              "body": "4 is already in the **set**, so this is the repeat.",
+              "what_changed": "The **set** gives a yes/no answer without scanning the earlier **list** by hand.",
               "animation": "highlight",
               "state": {
                 "active": [
@@ -152,11 +152,11 @@
           "kind": "callout",
           "tone": "mistake",
           "title": "Check before adding",
-          "body": "If you add first, the current value will always look seen. That makes every value look like a duplicate."
+          "body": "If you add first, the current **value** will always look seen. That makes every value look like a duplicate."
         },
         {
           "kind": "check",
-          "prompt": "Why does the duplicate checker test membership before adding the value?",
+          "prompt": "Why does the duplicate checker test membership before adding the **value**?",
           "choices": [
             "So the current value does not count as its own duplicate",
             "So the set stays sorted",
@@ -164,14 +164,14 @@
             "So duplicates are removed from the input"
           ],
           "answer_index": 0,
-          "why": "The set should only contain earlier values. That is why the check comes first."
+          "why": "The **set** should only contain earlier **values**. That is why the check comes first."
         }
       ]
     },
     {
       "id": "maps-counts",
       "title": "Map: store a value for each key",
-      "summary": "A map is for relationships like item -> count.",
+      "summary": "A **map** is for relationships like item -> count.",
       "question_ids": [
         "advanced-map-counts",
         "advanced-map-default",
@@ -181,13 +181,13 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "Use a map when one piece of data needs another piece attached to it. In a frequency map, the key is the item and the value is how many times it appears."
+          "body": "Use a **map** when one piece of data needs another piece attached to it. In a frequency map, the **key** is the item and the **value** is how many times it appears."
         },
         {
           "kind": "visual",
           "title": "Lookup before insert",
           "concept": "hash-maps-sets",
-          "caption": "Watch a map use a missing-key default before it updates a count.",
+          "caption": "Watch a **map** use a missing-**key** default before it updates a count.",
           "initial_state": {
             "items": [
               "b",
@@ -201,7 +201,7 @@
               "title": "Read b",
               "action_label": "default 0",
               "body": "b is missing, so its old count acts like 0.",
-              "what_changed": "The new count becomes 1 and is stored under key b.",
+              "what_changed": "The new count becomes 1 and is stored under **key** b.",
               "animation": "add",
               "state": {
                 "active": [
@@ -220,7 +220,7 @@
               "title": "Read a",
               "action_label": "default 0",
               "body": "a is missing too, so it starts at 1.",
-              "what_changed": "Each key owns its own count.",
+              "what_changed": "Each **key** owns its own count.",
               "animation": "add",
               "state": {
                 "active": [
@@ -242,8 +242,8 @@
             {
               "title": "Read a again",
               "action_label": "update old value",
-              "body": "a already exists, so read the old value and add one.",
-              "what_changed": "The key stays a. Only the value changes from 1 to 2.",
+              "body": "a already exists, so read the old **value** and add one.",
+              "what_changed": "The **key** stays a. Only the **value** changes from 1 to 2.",
               "animation": "highlight",
               "state": {
                 "active": [
@@ -272,7 +272,7 @@
           "kind": "visual",
           "title": "Track counts with a map",
           "concept": "hash-maps-sets",
-          "caption": "Watch a frequency table change as values are read.",
+          "caption": "Watch a frequency table change as **values** are read.",
           "initial_state": {
             "items": [
               "cat",
@@ -299,7 +299,7 @@
             },
             {
               "title": "Read dog",
-              "body": "dog gets its own key with count 1.",
+              "body": "dog gets its own **key** with count 1.",
               "state": {
                 "active": [
                   1
@@ -319,7 +319,7 @@
             },
             {
               "title": "Read cat again",
-              "body": "cat is already a key, so update its old value.",
+              "body": "cat is already a **key**, so update its old **value**.",
               "state": {
                 "active": [
                   2
@@ -366,20 +366,20 @@
           "title": "Read the update pattern",
           "items": [
             "Look up the old count.",
-            "Use zero if the key is missing.",
+            "Use zero if the **key** is missing.",
             "Add one.",
-            "Store the new count back under the same key."
+            "Store the new count back under the same **key**."
           ]
         },
         {
           "kind": "callout",
           "tone": "tip",
           "title": "C++ note",
-          "body": "`counts[ch] += 1` creates the key with value `0` if it is missing, then adds one. That is convenient for counts."
+          "body": "`counts[ch] += 1` creates the **key** with **value** `0` if it is missing, then adds one. That is convenient for counts."
         },
         {
           "kind": "check",
-          "prompt": "In a frequency map for course codes, what is the key?",
+          "prompt": "In a frequency **map** for course codes, what is the **key**?",
           "choices": [
             "The course code",
             "The total number of courses",
@@ -387,7 +387,7 @@
             "The final answer only"
           ],
           "answer_index": 0,
-          "why": "The key is the thing you look up. The count is the value stored for that key."
+          "why": "The **key** is the thing you look up. The count is the **value** stored for that key."
         }
       ]
     },
@@ -398,20 +398,20 @@
       "blocks": [
         {
           "kind": "compare",
-          "caption": "Sets and maps solve different questions.",
+          "caption": "**Sets** and **maps** solve different questions.",
           "wrong_label": "Wrong tool",
           "wrong": "Use a set when you need counts: seen.add(code)",
           "right_label": "Right tool",
           "right": "Use a map when you need counts: counts[code] += 1",
-          "body": "A set can say a code appeared. A map can say how many times."
+          "body": "A **set** can say a code appeared. A **map** can say how many times."
         },
         {
           "kind": "list",
           "title": "Quick decision rule",
           "items": [
-            "Need yes/no? Use a set.",
-            "Need counts, positions, or labels? Use a map.",
-            "Need order too? Use the language's ordered structure or store a list as well."
+            "Need yes/no? Use a **set**.",
+            "Need counts, positions, or labels? Use a **map**.",
+            "Need order too? Use the language's ordered structure or store a **list** as well."
           ]
         },
         {
@@ -424,24 +424,24 @@
             "Queue"
           ],
           "answer_index": 0,
-          "why": "A set is enough because the question only asks whether the name exists."
+          "why": "A **set** is enough because the question only asks whether the name exists."
         }
       ]
     },
     {
       "id": "practice-handoff",
       "title": "Practice handoff",
-      "summary": "Trace the keys, not the whole input.",
+      "summary": "Trace the **keys**, not the whole **input**.",
       "blocks": [
         {
           "kind": "text",
-          "body": "When a map question feels messy, draw a two-column table: key on the left, value on the right. Update one row per loop step."
+          "body": "When a **map** question feels messy, draw a two-column table: **key** on the left, value on the right. Update one row per **loop** step."
         },
         {
           "kind": "callout",
           "tone": "mistake",
           "title": "Do not mix up keys and values",
-          "body": "If the prompt asks for the most common value, the answer may be a key. The count is only evidence you use to choose it."
+          "body": "If the prompt asks for the most common **value**, the answer may be a **key**. The count is only evidence you use to choose it."
         }
       ]
     }

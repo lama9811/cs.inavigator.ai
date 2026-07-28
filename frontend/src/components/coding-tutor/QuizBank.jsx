@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { FaFire, FaCheckCircle, FaPenFancy, FaChartLine, FaSearch, FaSlidersH } from "react-icons/fa";
 import QuizProblemCard from "./QuizProblemCard";
 
@@ -6,15 +7,15 @@ function titleCase(value = "") {
   return value ? value[0].toUpperCase() + value.slice(1).replace("_", " ") : "";
 }
 
-// How many problem cards to render initially / reveal per "Show more" click.
-// Caps the number of mounted cards so the grid stays fast as the bank grows.
-const PAGE_SIZE = 20;
+// How many problem cards to show per routed library page.
+const PAGE_SIZE = 24;
 
 const PRACTICE_TOPIC_ORDER = [
-  "arrays", "strings", "stacks", "queues", "trees", "graphs", "recursion",
-  "hash maps", "sets", "two pointers", "sliding window", "binary search",
-  "dynamic programming", "prefix sums", "intervals", "heaps", "tries", "matrices",
-  "math", "disjoint sets", "conditionals",
+  "conditionals", "arrays", "math", "tuples",
+  "strings", "sets", "hash maps", "matrices",
+  "recursion", "stacks", "queues", "two pointers", "sliding window", "binary search",
+  "prefix sums", "intervals", "graphs", "trees", "heaps", "tries",
+  "dynamic programming", "disjoint sets",
 ];
 const topicOrderIndex = (topic) => {
   const index = PRACTICE_TOPIC_ORDER.indexOf(String(topic || "").toLowerCase());
@@ -39,8 +40,25 @@ const SORT_OPTIONS = [
   { value: "hard", label: "Hardest first" },
   { value: "unsolved", label: "Unsolved first" },
   { value: "attempted", label: "Attempted first" },
-  { value: "az", label: "A–Z" },
+  { value: "az", label: "A-Z" },
 ];
+const SORT_VALUES = new Set(SORT_OPTIONS.map(option => option.value));
+const DIFFICULTY_VALUES = new Set(DIFFICULTY_OPTIONS.map(option => option.value));
+const STATUS_VALUES = new Set(STATUS_OPTIONS.map(option => option.value));
+
+function splitParam(value, allowed = null) {
+  return String(value || "")
+    .split(",")
+    .map(item => item.trim().toLowerCase())
+    .filter(Boolean)
+    .filter((item, index, arr) => arr.indexOf(item) === index)
+    .filter(item => !allowed || allowed.has(item));
+}
+
+function pageFromParam(value) {
+  const page = Number.parseInt(value || "1", 10);
+  return Number.isFinite(page) && page > 0 ? page : 1;
+}
 
 // Toggle a value in/out of a multi-select array.
 function toggleInArray(arr, value) {
@@ -58,7 +76,7 @@ function statusOf(progress) {
 // Parked: curated per-topic objectives + common mistakes. The "Common mistakes"
 // panel that consumed this was hidden because the copy was identical for every
 // user (not personalized). Kept here as seed copy for the future per-user version
-// — see ROADMAP "Practice Guide: per-user common mistakes". Re-enable insightForTopic()
+// - see ROADMAP "Practice Guide: per-user common mistakes". Re-enable insightForTopic()
 // and the panel render in PracticeLibrary when that work begins.
 // const TOPIC_INSIGHTS = {
 //   strings: {
@@ -137,6 +155,8 @@ export default function QuizBank({
   // loads, and `weakest` is null until some topic has enough attempts to score.
   mastery = null,
 }) {
+  const location = useLocation();
+  const navigate = useNavigate();
   // The full cross-difficulty set is the source for browsing/filtering. The
   // parent loads all difficulties into allQuestions; fall back to the current
   // difficulty's `questions` only if that hasn't arrived yet.
@@ -144,21 +164,49 @@ export default function QuizBank({
 
   // ---- Local filter state (multi-select) ----
   // Difficulty/topic/status are arrays of selected values (empty = no filter).
-  const [search, setSearch] = useState("");
-  const [difficultyFilters, setDifficultyFilters] = useState([]);
-  const [statusFilters, setStatusFilters] = useState([]);
-  const [topicFilters, setTopicFilters] = useState([]);
-  const [sortBy, setSortBy] = useState("topic");
+  const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const search = queryParams.get("q") || "";
+  const difficultyFilters = splitParam(queryParams.get("difficulty"), DIFFICULTY_VALUES);
+  const statusFilters = splitParam(queryParams.get("status"), STATUS_VALUES);
+  const topicFilters = splitParam(queryParams.get("topic"));
+  const requestedSort = queryParams.get("sort") || "topic";
+  const sortBy = SORT_VALUES.has(requestedSort) ? requestedSort : "topic";
+  const requestedPage = pageFromParam(queryParams.get("page"));
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [topicSearch, setTopicSearch] = useState("");
-  // (Topic-progress paging removed — the list is now a collapsed <details> that shows
+  // (Topic-progress paging removed - the list is now a collapsed <details> that shows
   // every topic at once when opened, so an incremental "show 5 more" no longer applies.)
   // How many problem cards are visible; "Show more" reveals PAGE_SIZE at a time.
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-
   // The active topic selection drives filtering. Kept as its own name so the
   // downstream filter logic reads clearly.
   const effectiveTopics = topicFilters;
+
+  const updateQuery = useCallback((updates, { replace = false } = {}) => {
+    const next = new URLSearchParams(location.search);
+    for (const [key, value] of Object.entries(updates)) {
+      if (Array.isArray(value)) {
+        if (value.length) next.set(key, value.join(","));
+        else next.delete(key);
+      } else if (value == null || value === "" || (key === "page" && Number(value) <= 1)) {
+        next.delete(key);
+      } else {
+        next.set(key, String(value));
+      }
+    }
+    const searchText = next.toString();
+    navigate({
+      pathname: location.pathname,
+      search: searchText ? `?${searchText}` : "",
+    }, { replace });
+  }, [location.pathname, location.search, navigate]);
+
+  const updateFilter = useCallback((updates, options = {}) => {
+    updateQuery({ ...updates, page: 1 }, options);
+  }, [updateQuery]);
+
+  const toggleListFilter = useCallback((key, current, value) => {
+    updateFilter({ [key]: toggleInArray(current, value) });
+  }, [updateFilter]);
 
   // Deep-link/recommended-focus entry: pre-select that topic filter if the library
   // has it. Keep the drawer closed; the active chip already explains why the list
@@ -168,11 +216,11 @@ export default function QuizBank({
     const wanted = initialTopic.toLowerCase();
     const match = [...new Set(sourceQuestions.map(q => (q.topic || "").toLowerCase()))].find(t => t === wanted);
     if (match) {
-      setTopicFilters([match]);
+      updateFilter({ topic: [match] }, { replace: true });
       setFiltersOpen(false);
     }
     onConsumeInitialTopic?.();
-  }, [initialTopic, sourceQuestions, onConsumeInitialTopic]);
+  }, [initialTopic, sourceQuestions, onConsumeInitialTopic, updateFilter]);
 
   // Topic options come from the whole set so the list is stable regardless of
   // the other active filters.
@@ -252,11 +300,75 @@ export default function QuizBank({
     }
   }, [matchedQuestions, sortBy, progressByQuestion]);
 
-  // Reset pagination to the first page whenever the filtered result set changes
-  // (new search/topic/difficulty/status) so the user never lands on a hidden page.
+  // Grouping rule: group by topic only in the default "Topic order" sort with no
+  // search/topic filter. Any search, topic filter, or non-topic sort shows a
+  // single flat result list.
+  const groupByTopic = !searchActive && !topicActive && sortBy === "topic";
+
+  const topicPages = useMemo(() => {
+    if (!groupByTopic) return [];
+    const groups = new Map();
+    for (const question of filteredQuestions) {
+      const topic = question.topic || "Other";
+      if (!groups.has(topic)) groups.set(topic, []);
+      groups.get(topic).push(question);
+    }
+    const orderedGroups = [...groups.entries()].sort((a, b) => sortTopics(a[0], b[0]));
+    const pages = [];
+    let page = [];
+    let count = 0;
+    for (const group of orderedGroups) {
+      const groupSize = group[1].length;
+      if (page.length && count + groupSize > PAGE_SIZE) {
+        pages.push(page);
+        page = [];
+        count = 0;
+      }
+      page.push(group);
+      count += groupSize;
+    }
+    if (page.length) pages.push(page);
+    return pages;
+  }, [groupByTopic, filteredQuestions]);
+
+  const totalPages = groupByTopic
+    ? Math.max(1, topicPages.length)
+    : Math.max(1, Math.ceil(filteredQuestions.length / PAGE_SIZE));
+  const currentPage = Math.min(requestedPage, totalPages);
+  const pageGroups = useMemo(
+    () => (groupByTopic ? topicPages[currentPage - 1] || [] : []),
+    [currentPage, groupByTopic, topicPages],
+  );
+  const paginatedQuestions = useMemo(
+    () => {
+      if (groupByTopic) return pageGroups.flatMap(([, group]) => group);
+      const start = filteredQuestions.length ? (currentPage - 1) * PAGE_SIZE : 0;
+      return filteredQuestions.slice(start, start + PAGE_SIZE);
+    },
+    [currentPage, filteredQuestions, groupByTopic, pageGroups],
+  );
+  const pageStart = useMemo(() => {
+    if (!filteredQuestions.length) return 0;
+    if (!groupByTopic) return (currentPage - 1) * PAGE_SIZE;
+    return topicPages
+      .slice(0, currentPage - 1)
+      .reduce((sum, groups) => sum + groups.reduce((inner, [, group]) => inner + group.length, 0), 0);
+  }, [currentPage, filteredQuestions.length, groupByTopic, topicPages]);
+  const pageEnd = Math.min(pageStart + paginatedQuestions.length, filteredQuestions.length);
+
+  const paginationPages = useMemo(() => {
+    const pages = new Set([1, totalPages]);
+    for (let page = currentPage - 2; page <= currentPage + 2; page += 1) {
+      if (page >= 1 && page <= totalPages) pages.add(page);
+    }
+    return [...pages].sort((a, b) => a - b);
+  }, [currentPage, totalPages]);
+
   useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [filteredQuestions]);
+    if (requestedPage > totalPages) {
+      updateQuery({ page: totalPages }, { replace: true });
+    }
+  }, [requestedPage, totalPages, updateQuery]);
 
   // While the filter drawer is open: lock body scroll and close on Escape.
   useEffect(() => {
@@ -271,57 +383,16 @@ export default function QuizBank({
     };
   }, [filtersOpen]);
 
-  // Grouping rule: group by topic only in the default "Topic order" sort with no
-  // search/topic filter. Any search, topic filter, or non-topic sort shows a
-  // single flat result list.
-  const groupByTopic = !searchActive && !topicActive && sortBy === "topic";
-
-  // Build the full (unpaginated) topic groups from the whole filtered set.
-  const allGroups = useMemo(() => {
-    if (!groupByTopic) return [];
-    const groups = new Map();
-    for (const question of filteredQuestions) {
-      const topic = question.topic || "Other";
-      if (!groups.has(topic)) groups.set(topic, []);
-      groups.get(topic).push(question);
-    }
-    return [...groups.entries()].sort((a, b) => sortTopics(a[0], b[0]));
-  }, [groupByTopic, filteredQuestions]);
-
-  // Paginate by WHOLE groups (never split a topic): include complete groups until
-  // we've shown at least `visibleCount` cards. This fixes the bug where slicing
-  // the flat list left a section header with missing/partial cards.
-  const groupedQuestions = useMemo(() => {
-    const shown = [];
-    let count = 0;
-    for (const entry of allGroups) {
-      if (count >= visibleCount) break;
-      shown.push(entry);
-      count += entry[1].length;
-    }
-    return shown;
-  }, [allGroups, visibleCount]);
-
-  // In flat (non-grouped) view we still slice the flat list.
-  const visibleQuestions = useMemo(
-    () => (groupByTopic ? [] : filteredQuestions.slice(0, visibleCount)),
-    [groupByTopic, filteredQuestions, visibleCount],
-  );
-
-  // "More to show" differs by mode: more groups in topic view, more cards in flat.
-  const hasMore = groupByTopic
-    ? groupedQuestions.length < allGroups.length
-    : visibleCount < filteredQuestions.length;
-
   const clearAllFilters = () => {
-    setSearch("");
-    setDifficultyFilters([]);
-    setStatusFilters([]);
-    setTopicFilters([]);
+    updateFilter({ q: "", difficulty: [], status: [], topic: [] });
   };
 
   const toggleTopic = (topic) => {
-    setTopicFilters(prev => toggleInArray(prev, topic));
+    toggleListFilter("topic", effectiveTopics, topic);
+  };
+
+  const goToPage = (page) => {
+    updateQuery({ page });
   };
 
   // Solved / total per topic group, so section headers read "Arrays · 0/11 solved".
@@ -356,7 +427,7 @@ export default function QuizBank({
   // *why* the list is narrowed and can peel off filters individually.
   const STATUS_LABELS = { not_started: "Not Started", in_progress: "In Progress", solved: "Solved" };
   const activeChips = [
-    searchActive && { key: "search", label: `Search: "${search.trim()}"`, clear: () => setSearch("") },
+    searchActive && { key: "search", label: `Search: "${search.trim()}"`, clear: () => updateFilter({ q: "" }) },
     ...effectiveTopics.map(topic => ({
       key: `topic-${topic}`,
       label: titleCase(topic),
@@ -365,23 +436,22 @@ export default function QuizBank({
     ...difficultyFilters.map(value => ({
       key: `difficulty-${value}`,
       label: titleCase(value),
-      clear: () => setDifficultyFilters(prev => prev.filter(v => v !== value)),
+      clear: () => updateFilter({ difficulty: difficultyFilters.filter(v => v !== value) }),
     })),
     ...statusFilters.map(value => ({
       key: `status-${value}`,
       label: STATUS_LABELS[value],
-      clear: () => setStatusFilters(prev => prev.filter(v => v !== value)),
+      clear: () => updateFilter({ status: statusFilters.filter(v => v !== value) }),
     })),
   ].filter(Boolean);
 
   // ---- Practice Guide (driven by what's actually on screen) ----
-  // "Topics in view" = topics of the cards currently rendered (the visible
-  // slice), so the chips match what the student can actually see. As they click
-  // "Show more", more topics surface.
-  // The questions actually rendered, in either mode (flat slice or whole groups).
+  // "Topics in view" = topics of the cards currently rendered on this page, so
+  // the chips match what the student can actually see.
+  // The questions actually rendered, in either mode (flat page or topic groups).
   const onScreenQuestions = useMemo(
-    () => (groupByTopic ? groupedQuestions.flatMap(([, group]) => group) : visibleQuestions),
-    [groupByTopic, groupedQuestions, visibleQuestions],
+    () => (groupByTopic ? pageGroups.flatMap(([, group]) => group) : paginatedQuestions),
+    [groupByTopic, pageGroups, paginatedQuestions],
   );
   const topicsInView = useMemo(
     () => [...new Set(onScreenQuestions.map(q => q.topic).filter(Boolean))],
@@ -398,7 +468,7 @@ export default function QuizBank({
   }), [topicsInView, filteredQuestions, progressByQuestion]);
 
   // Fallback weakest topic: lowest solved/total ratio among the topics in view.
-  // Only used before the server has enough attempts to say anything real — a ratio
+  // Only used before the server has enough attempts to say anything real - a ratio
   // can't tell a first-try solve from a six-attempt grind with three hints open.
   const weakestByRatio = useMemo(() => {
     const anySolved = topicProgress.some(t => t.solved > 0);
@@ -426,7 +496,7 @@ export default function QuizBank({
   }, [mastery]);
 
   // NOTE: the "Common mistakes" panel was parked because its copy was identical for
-  // every student. `masteryWeakest.reason` is the per-student version — every claim
+  // every student. `masteryWeakest.reason` is the per-student version - every claim
   // in it is drawn from a counted field in the attempt log (dominant error class,
   // average attempts-to-solve, average hints used), never invented copy.
 
@@ -447,7 +517,7 @@ export default function QuizBank({
               <input
                 type="search"
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) => updateFilter({ q: event.target.value }, { replace: true })}
                 placeholder="Search problems..."
                 aria-label="Search problems by title or topic"
               />
@@ -467,7 +537,7 @@ export default function QuizBank({
               <select
                 className="coding-select"
                 value={sortBy}
-                onChange={(event) => setSortBy(event.target.value)}
+                onChange={(event) => updateFilter({ sort: event.target.value })}
                 aria-label="Sort problems"
               >
                 {SORT_OPTIONS.map(option => (
@@ -488,7 +558,7 @@ export default function QuizBank({
               <div className="practice-drawer" role="dialog" aria-label="Filter problems" aria-modal="true">
                 <div className="practice-drawer-head">
                   <strong>Filters</strong>
-                  <button type="button" className="practice-drawer-close" aria-label="Close" onClick={() => setFiltersOpen(false)}>×</button>
+                  <button type="button" className="practice-drawer-close" aria-label="Close" onClick={() => setFiltersOpen(false)}>x</button>
                 </div>
 
                 <div className="practice-drawer-body">
@@ -504,7 +574,7 @@ export default function QuizBank({
                             type="button"
                             className={`practice-pill${on ? " is-on" : ""}${count === 0 && !on ? " is-empty" : ""}`}
                             onClick={() => {
-                              setDifficultyFilters(prev => toggleInArray(prev, option.value));
+                              toggleListFilter("difficulty", difficultyFilters, option.value);
                               onDifficultyChange?.(option.value);
                             }}
                           >
@@ -526,7 +596,7 @@ export default function QuizBank({
                             key={option.value}
                             type="button"
                             className={`practice-pill${on ? " is-on" : ""}${count === 0 && !on ? " is-empty" : ""}`}
-                            onClick={() => setStatusFilters(prev => toggleInArray(prev, option.value))}
+                            onClick={() => toggleListFilter("status", statusFilters, option.value)}
                           >
                             {option.label} <span className="practice-pill-count">{count}</span>
                           </button>
@@ -594,7 +664,7 @@ export default function QuizBank({
                   onClick={chip.clear}
                   aria-label={`Remove filter ${chip.label}`}
                 >
-                  {chip.label} <span aria-hidden="true">×</span>
+                  {chip.label} <span aria-hidden="true">x</span>
                 </button>
               ))}
               <button type="button" className="practice-chips-clear" onClick={clearAllFilters}>
@@ -622,7 +692,7 @@ export default function QuizBank({
           ) : groupByTopic ? (
             <>
               <div className="practice-topic-groups">
-                {groupedQuestions.map(([topic, group]) => {
+                {pageGroups.map(([topic, group]) => {
                   const totals = topicTotals.get(topic) || { total: group.length, solved: solvedInGroup(group) };
                   return (
                     <section className="practice-topic-group" key={topic}>
@@ -645,29 +715,6 @@ export default function QuizBank({
                   );
                 })}
               </div>
-              {(hasMore || visibleCount > PAGE_SIZE) && (
-                <div className="practice-show-more-wrap">
-                  {hasMore && (
-                    <button
-                      type="button"
-                      className="practice-show-more"
-                      onClick={() => setVisibleCount(count => count + PAGE_SIZE)}
-                    >
-                      Show more
-                      <span>{onScreenQuestions.length} of {filteredQuestions.length}</span>
-                    </button>
-                  )}
-                  {visibleCount > PAGE_SIZE && (
-                    <button
-                      type="button"
-                      className="practice-show-less"
-                      onClick={() => setVisibleCount(PAGE_SIZE)}
-                    >
-                      Show less
-                    </button>
-                  )}
-                </div>
-              )}
             </>
           ) : (
             <div className="practice-topic-group">
@@ -678,7 +725,7 @@ export default function QuizBank({
                 <span className="practice-topic-count">{solvedInGroup(filteredQuestions)} solved</span>
               </h3>
               <div className="quiz-card-grid">
-                {visibleQuestions.map(question => (
+                {paginatedQuestions.map(question => (
                   <QuizProblemCard
                     key={question.id}
                     question={question}
@@ -688,30 +735,49 @@ export default function QuizBank({
                   />
                 ))}
               </div>
-              {(hasMore || visibleCount > PAGE_SIZE) && (
-                <div className="practice-show-more-wrap">
-                  {hasMore && (
-                    <button
-                      type="button"
-                      className="practice-show-more"
-                      onClick={() => setVisibleCount(count => count + PAGE_SIZE)}
-                    >
-                      Show more
-                      <span>{visibleQuestions.length} of {filteredQuestions.length}</span>
-                    </button>
-                  )}
-                  {visibleCount > PAGE_SIZE && (
-                    <button
-                      type="button"
-                      className="practice-show-less"
-                      onClick={() => setVisibleCount(PAGE_SIZE)}
-                    >
-                      Show less
-                    </button>
-                  )}
-                </div>
-              )}
             </div>
+          )}
+          {!listLoading && filteredQuestions.length > PAGE_SIZE && (
+            <nav className="practice-pagination" aria-label="Practice problem pages">
+              <span className="practice-pagination-summary">
+                Showing {pageStart + 1}-{pageEnd} of {filteredQuestions.length} problems
+              </span>
+              <div className="practice-pagination-controls">
+                <button
+                  type="button"
+                  className="practice-page-btn"
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage <= 1}
+                >
+                  Previous
+                </button>
+                {paginationPages.map((page, index) => {
+                  const previous = paginationPages[index - 1];
+                  const showGap = previous && page - previous > 1;
+                  return (
+                    <span className="practice-page-slot" key={page}>
+                      {showGap && <span className="practice-page-gap" aria-hidden="true">...</span>}
+                      <button
+                        type="button"
+                        className={`practice-page-btn${page === currentPage ? " is-active" : ""}`}
+                        onClick={() => goToPage(page)}
+                        aria-current={page === currentPage ? "page" : undefined}
+                      >
+                        {page}
+                      </button>
+                    </span>
+                  );
+                })}
+                <button
+                  type="button"
+                  className="practice-page-btn"
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage >= totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            </nav>
           )}
         </div>
         <aside className="quiz-insight-panel">
@@ -740,12 +806,15 @@ export default function QuizBank({
                     </span>
                   </p>
                   {/* The "why". Every claim is a counted fact from this student's own
-                      attempt log — no LLM, so nothing can invent a diagnosis. */}
+                      attempt log - no LLM, so nothing can invent a diagnosis. */}
                   <p className="practice-guide-reason">{masteryWeakest.reason}</p>
                   <button
                     type="button"
                     className="practice-guide-focus-cta"
-                    onClick={() => setTopicFilters([masteryWeakest.topic])}
+                    onClick={() => {
+                      updateFilter({ topic: [masteryWeakest.topic] });
+                      setFiltersOpen(false);
+                    }}
                   >
                     Practice {titleCase(masteryWeakest.topic)}
                   </button>
@@ -761,7 +830,7 @@ export default function QuizBank({
 
           {/* Topic progress is COLLAPSED by default. The guide's job is to answer
               "what should I do next", and one clear answer does that better than a
-              23-row table does — this list is reference, not the headline. Collapsing
+              23-row table does - this list is reference, not the headline. Collapsing
               it also keeps the panel a fixed height as the library grows toward 500
               questions across 23+ topics, instead of scrolling ever further off-screen. */}
           {topicProgress.length ? (
@@ -804,3 +873,4 @@ export default function QuizBank({
     </section>
   );
 }
+

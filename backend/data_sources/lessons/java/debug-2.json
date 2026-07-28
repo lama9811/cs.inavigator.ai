@@ -1,66 +1,171 @@
 {
-  "_note": "ORIGINAL CS Navigator content added to align Learn with the existing Part 2 quiz category. No source prose, examples, or exercises were copied.",
+  "_note": "ORIGINAL CS Navigator content expanded into sections. No source prose, examples, or exercises were copied.",
   "title": "Debug: Part 2",
-  "summary": "Trace aliases, numeric edges, mutation, and boundaries.",
-  "minutes": 7,
+  "summary": "Trace aliases, numeric **edges**, mutation, and boundaries.",
+  "minutes": 12,
   "error_classes": [
     "runtime",
     "wrong_answer",
     "timeout"
   ],
-  "refresher": "Harder Java bugs can originate in shared object references, integer arithmetic, or an edge case skipped by normal input. Record state just before and after its first incorrect change.",
+  "refresher": "Harder Java bugs can originate in shared **object** references, **integer** arithmetic, or an **edge case** skipped by normal input. Record state just before and after its first incorrect change.",
   "refresher_code": "System.out.println(value + \" : \" + value.getClass().getSimpleName());",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "Harder Java bugs can originate in shared object references, integer arithmetic, or an edge case skipped by normal input. Record state just before and after its first incorrect change. Trace aliases, numeric edges, mutation, and boundaries."
+      "id": "aliases",
+      "title": "Check whether two variables share one object",
+      "summary": "**Array** and object **variables** can point at the same mutable data.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "In Java, an **array** **variable** stores a reference to an array **object**. Assigning one array variable to another copies the reference, not the elements. If both variables point at one array, changing an element through either variable changes the same array."
+        },
+        {
+          "kind": "visual",
+          "title": "Find the first wrong state",
+          "concept": "debugging",
+          "caption": "Compare the expected state with the actual state before the final answer distracts you.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Before the update",
+              "body": "The total is still correct before this loop pass.",
+              "state": {
+                "table": [
+                  {
+                    "key": "score",
+                    "value": "7",
+                    "active": true
+                  },
+                  {
+                    "key": "total before",
+                    "value": "5"
+                  }
+                ],
+                "note": "state still matches the trace"
+              }
+            },
+            {
+              "title": "Wrong update",
+              "body": "The update changes the wrong variable or uses the wrong operation.",
+              "animation": "highlight",
+              "state": {
+                "table": [
+                  {
+                    "key": "expected total",
+                    "value": "12"
+                  },
+                  {
+                    "key": "actual total",
+                    "value": "57",
+                    "active": true
+                  }
+                ],
+                "note": "first wrong state"
+              }
+            },
+            {
+              "title": "Fix the transition",
+              "body": "Once the first bad transition is known, the fix is smaller.",
+              "state": {
+                "table": [
+                  {
+                    "key": "score",
+                    "value": "7"
+                  },
+                  {
+                    "key": "total after",
+                    "value": "12",
+                    "active": true
+                  }
+                ],
+                "note": "total += score"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "compare",
+          "wrong_label": "Shared array",
+          "wrong": "int[] original = {1, 2};\nint[] copy = original;\ncopy[0] = 9;\nSystem.out.println(original[0]);",
+          "right_label": "Separate array",
+          "right": "int[] original = {1, 2};\nint[] copy = original.clone();\ncopy[0] = 9;\nSystem.out.println(original[0]);",
+          "caption": "The first version prints `9` because both **variables** reach the same **array**. The cloned version prints `1`."
+        },
+        {
+          "kind": "code",
+          "caption": "The equality check here asks whether the two **variables** point at the exact same **array** **object**.",
+          "code": "int[] a = {1};\nint[] b = a;\nint[] c = a.clone();\nSystem.out.println(a == b);\nSystem.out.println(a == c);",
+          "output": "true\nfalse"
+        },
+        {
+          "kind": "check",
+          "prompt": "What does **array** assignment copy?",
+          "code": "int[] b = a;",
+          "choices": [
+            "the reference",
+            "every element into a new array",
+            "only the first value",
+            "the array length"
+          ],
+          "answer_index": 0,
+          "why": "Both **variables** point to one **array** **object** until code explicitly clones or copies the elements."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "Clone creates a separate array, so changing the copy leaves the original first value intact.",
-      "code": "int[] original = {1, 2};\nint[] copy = original.clone();\ncopy[0] = 9;\nSystem.out.println(original[0]);\nSystem.out.println(copy[0]);",
-      "output": "1\n9"
+      "id": "numeric-boundaries",
+      "title": "Inspect numeric and boundary assumptions",
+      "summary": "**Integer division** and empty arrays can make correct-looking code return the wrong answer.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A Java program can compile and still lose information. If both operands are **integers**, division happens as **integer division** before the result is stored. Boundary inputs need the same attention: an empty **array** has no first or last element to inspect."
+        },
+        {
+          "kind": "compare",
+          "wrong_label": "Decimal lost",
+          "wrong": "int total = 7;\nint count = 2;\ndouble average = total / count;",
+          "right_label": "Decimal preserved",
+          "right": "int total = 7;\nint count = 2;\ndouble average = (double) total / count;",
+          "caption": "The cast must happen before division. Otherwise `7 / 2` becomes `3`, and then Java stores `3.0` in the double."
+        },
+        {
+          "kind": "check",
+          "prompt": "Why can an average lose its decimal?",
+          "code": "double average = total / count;",
+          "choices": [
+            "integer division occurs first",
+            "Java rounds every double",
+            "arrays block decimals",
+            "count becomes text"
+          ],
+          "answer_index": 0,
+          "why": "When both operands are **integers**, Java performs **integer division** before assigning the result."
+        }
+      ]
     },
     {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Track the state",
-      "body": "Writing `int[] copy = original` copies only the reference. Both variables then reach the same array and share mutations."
-    },
-    {
-      "kind": "check",
-      "prompt": "What does array assignment copy?",
-      "code": "int[] b = a;",
-      "choices": [
-        "the reference",
-        "every element into a new array",
-        "only the first value",
-        "the array length"
-      ],
-      "answer_index": 0,
-      "why": "Both variables point to one array object until code explicitly clones or copies it."
-    },
-    {
-      "kind": "check",
-      "prompt": "Why can an average lose its decimal?",
-      "code": "int average = total / count;",
-      "choices": [
-        "integer division occurs first",
-        "Java rounds every double",
-        "arrays block decimals",
-        "count becomes text"
-      ],
-      "answer_index": 0,
-      "why": "When both operands are integers, division produces an integer before the result is assigned."
-    },
-    {
-      "kind": "list",
-      "title": "Debug: Part 2 checklist",
-      "items": [
-        "Test empty arrays.",
-        "Track object aliases.",
-        "Inspect numeric operand types.",
-        "Capture the earliest bad state."
+      "id": "first-wrong-state",
+      "title": "Find the first wrong state",
+      "summary": "The best debug **print** shows the state before and after the update.",
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "**Print** enough context to see which loop pass changes the state incorrectly.",
+          "code": "int total = 0;\nfor (int score : scores) {\n    System.out.println(\"before score=\" + score + \" total=\" + total);\n    total += score;\n    System.out.println(\"after score=\" + score + \" total=\" + total);\n}",
+          "output": "before score=5 total=0\nafter score=5 total=5"
+        },
+        {
+          "kind": "list",
+          "title": "Debug: Part 2 checklist",
+          "items": [
+            "Test empty and one-item **arrays**.",
+            "Check whether two **variables** point at one **object**.",
+            "Inspect operand types before division.",
+            "Capture the earliest bad state, not only the final wrong answer."
+          ]
+        }
       ]
     }
   ]

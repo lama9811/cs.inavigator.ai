@@ -7,12 +7,12 @@
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "Every value in Python has a type. `int` is a whole number, `float` is a number with a decimal point, `str` is text in quotes, and `bool` is either True or False. Ask `type(x)` when you are not sure. Python will not mix text and numbers for you, so `\"5\" + 5` is a TypeError. Convert first with `int()`, `float()`, or `str()`. This matters most with `input()`, which always hands you a string, even when the student typed digits.",
+  "refresher": "Every **value** in Python has a type. `int` is a whole number, `float` is a number with a decimal point, `str` is text in quotes, and `bool` is either True or False. Ask `type(x)` when you are not sure. Python will not mix text and numbers for you, so `\"5\" + 5` is a TypeError. Convert first with `int()`, `float()`, or `str()`. This matters most with `input()`, which always hands you a **string**, even when the student typed digits.",
   "refresher_code": "age = input(\"Age? \")\nprint(type(age))\n# <class 'str'>\nage = int(age)\nprint(age + 1)",
   "blocks": [
     {
       "kind": "text",
-      "body": "Every value in Python is a kind of thing. 7 is a number. \"7\" is a piece of text that happens to look like a number. Python treats those two as different, and knowing which one you are holding explains most of the confusing errors you will hit in your first month."
+      "body": "Every **value** in Python is a kind of thing. 7 is a number. \"7\" is a piece of text that happens to look like a number. Python treats those two as different, and knowing which one you are holding explains most of the confusing errors you will hit in your first month."
     },
     {
       "kind": "list",
@@ -21,7 +21,7 @@
         "`int` is a whole number: 7, 0, -30. No decimal point.",
         "`float` is a number with a decimal point: 3.5, 2.0, -0.75.",
         "`str` is text, wrapped in quotes: \"Ada\", \"7\", \"hello world\".",
-        "`bool` is one of exactly two values: True or False. No quotes, capital letter."
+        "`bool` is one of exactly two **values**: True or False. No quotes, capital letter."
       ]
     },
     {
@@ -32,7 +32,7 @@
     },
     {
       "kind": "code",
-      "caption": "When you are not sure what you are holding, ask. `type()` tells you the type of any value. Notice the last two: 7 and \"7\" look almost identical on the screen, and Python considers them completely different things.",
+      "caption": "When you are not sure what you are holding, ask. `type()` tells you the type of any **value**. Notice the last two: 7 and \"7\" look almost identical on the screen, and Python considers them completely different things.",
       "code": "print(type(7))\nprint(type(3.5))\nprint(type(True))\nprint(type(\"7\"))",
       "output": "<class 'int'>\n<class 'float'>\n<class 'bool'>\n<class 'str'>"
     },
@@ -40,15 +40,15 @@
       "kind": "callout",
       "tone": "tip",
       "title": "When something misbehaves, print the type",
-      "body": "If a line is not doing what you expect, add `print(type(x))` just above it. Most beginner bugs are not broken logic. They are a value that turned out to be a string when you were sure it was a number."
+      "body": "If a line is not doing what you expect, add `print(type(x))` just above it. Most beginner bugs are not broken logic. They are a **value** that turned out to be a **string** when you were sure it was a number."
     },
     {
       "kind": "text",
-      "body": "The `+` symbol does two different jobs, and which one you get depends entirely on the types. Between two numbers it adds. Between two strings it glues them together, which is called concatenation."
+      "body": "The `+` symbol does two different jobs, and which one you get depends entirely on the types. Between two numbers it adds. Between two **strings** it glues them together, which is called concatenation."
     },
     {
       "kind": "code",
-      "caption": "Same symbol, two behaviors. Python is not confused here. It is looking at the types and picking the meaning that fits. So what happens if you mix a number and a string? Python refuses, because guessing whether you wanted 10 or \"55\" could quietly corrupt your answer.",
+      "caption": "Same symbol, two behaviors. Python is not confused here. It is looking at the types and picking the meaning that fits. So what happens if you mix a number and a **string**? Python refuses, because guessing whether you wanted 10 or \"55\" could quietly corrupt your answer.",
       "code": "print(5 + 5)\nprint(\"5\" + \"5\")\nprint(\"Ada\" + \" \" + \"Lovelace\")",
       "output": "10\n55\nAda Lovelace"
     },
@@ -68,7 +68,7 @@
     },
     {
       "kind": "check",
-      "prompt": "What does this print?",
+      "prompt": "What does this **print**?",
       "code": "a = \"3\"\nb = \"4\"\nprint(a + b)",
       "choices": [
         "7",
@@ -77,11 +77,11 @@
         "\"3\" \"4\""
       ],
       "answer_index": 1,
-      "why": "Both values are strings, because both are in quotes. Between two strings, `+` glues rather than adds, so you get \"34\". It is tempting to answer 7, since 3 and 4 look like numbers, but the quotes make them text and Python only sees text. There is no error here either, because Python knows exactly what to do with two strings. To get 7, convert first: `int(a) + int(b)`."
+      "why": "Both **values** are **strings**, because both are in quotes. Between two strings, `+` glues rather than adds, so you get \"34\". It is tempting to answer 7, since 3 and 4 look like numbers, but the quotes make them text and Python only sees text. There is no error here either, because Python knows exactly what to do with two strings. To get 7, convert first: `int(a) + int(b)`."
     },
     {
       "kind": "text",
-      "body": "Converting a value from one type to another is called casting. The function is named after the type you want: `int()` for whole numbers, `float()` for decimals, and `str()` for text. Each one hands you back a new value and leaves the original alone."
+      "body": "Converting a **value** from one type to another is called casting. The **function** is named after the type you want: `int()` for whole numbers, `float()` for decimals, and `str()` for text. Each one hands you back a new value and **leaves** the original alone."
     },
     {
       "kind": "code",
@@ -91,7 +91,7 @@
     },
     {
       "kind": "text",
-      "body": "Now the reason this topic matters more than it looks. The `input()` function always gives you a string. It does not matter that the person typed digits and it does not matter that the digits look like a number to you. What comes back is text, every single time."
+      "body": "Now the reason this topic matters more than it looks. The `input()` **function** always gives you a **string**. It does not matter that the person typed digits and it does not matter that the digits look like a number to you. What comes back is text, every single time."
     },
     {
       "kind": "compare",
@@ -109,7 +109,7 @@
     },
     {
       "kind": "check",
-      "prompt": "A student runs this and types 8 when asked. What does the program print?",
+      "prompt": "A student runs this and types 8 when asked. What does the program **print**?",
       "code": "n = input(\"Pick a number: \")\nprint(n * 3)",
       "choices": [
         "24",
@@ -118,7 +118,7 @@
         "8 8 8"
       ],
       "answer_index": 1,
-      "why": "`input()` returns a string, so `n` is \"8\" and not 8. Multiplying a string by a number repeats it, so \"8\" * 3 gives \"888\". Answering 24 is the natural guess, and it is exactly the bug: the program runs, prints something, and never tells you anything is wrong. That silence is what makes this one worth remembering. Write `n = int(input(\"Pick a number: \"))` and you get 24."
+      "why": "`input()` returns a **string**, so `n` is \"8\" and not 8. Multiplying a string by a number repeats it, so \"8\" * 3 gives \"888\". Answering 24 is the natural guess, and it is exactly the bug: the program runs, prints something, and never tells you anything is wrong. That silence is what makes this one worth remembering. Write `n = int(input(\"Pick a number: \"))` and you get 24."
     },
     {
       "kind": "list",
@@ -127,7 +127,7 @@
         "Cast every `input()` you plan to do math with: `int(input(...))` or `float(input(...))`.",
         "Quotes mean text. \"7\" is not 7, no matter how much it looks like it.",
         "When you see a TypeError, read the two type names in the message. They tell you exactly what got mixed.",
-        "When you see a ValueError from `int()`, the string was not a whole number. Check what was actually in it.",
+        "When you see a ValueError from `int()`, the **string** was not a whole number. Check what was actually in it.",
         "When you are unsure, `print(type(x))` costs you five seconds and answers the question."
       ]
     }

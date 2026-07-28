@@ -297,14 +297,19 @@ function LearnTab({ apiBase, language, category, categoryLabel, questionId, onOp
 // `inline code` becomes <code>. Not a markdown parser: refresher text is plain sentences we
 // author ourselves, so pulling in a renderer would mean sanitizing HTML we already control.
 function withInlineCode(text) {
-  const parts = String(text || "").split(/(`[^`]+`)/g);
-  return parts.map((part, i) =>
-    part.startsWith("`") && part.endsWith("`") && part.length > 2 ? (
-      <code key={i}>{part.slice(1, -1)}</code>
-    ) : (
-      part
-    )
-  );
+  const codeParts = String(text || "").split(/(`[^`]+`)/g);
+  return codeParts.flatMap((part, i) => {
+    if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
+      return [<code key={`code-${i}`}>{part.slice(1, -1)}</code>];
+    }
+    return part.split(/(\*\*[^*]+\*\*)/g).map((piece, j) =>
+      piece.startsWith("**") && piece.endsWith("**") && piece.length > 4 ? (
+        <strong key={`strong-${i}-${j}`}>{piece.slice(2, -2)}</strong>
+      ) : (
+        piece
+      )
+    );
+  });
 }
 
 function splitExplanation(text) {

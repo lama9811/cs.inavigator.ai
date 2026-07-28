@@ -1,26 +1,26 @@
 {
   "_note": "Original advanced lesson. Shared across languages with language-specific code variants.",
   "title": "Two Pointers",
-  "summary": "Use two indexes that move for a clear reason.",
+  "summary": "Use two **indexes** that move for a clear reason.",
   "minutes": 18,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "Two pointers track two positions at the same time. The important part is the movement rule: each move should remove choices you no longer need.",
+  "refresher": "**Two pointers** track two positions at the same time. The important part is the movement rule: each move should remove choices you no longer need.",
   "refresher_code": "left = 0\nright = len(nums) - 1\nwhile left < right:\n    total = nums[left] + nums[right]",
   "learn_cards": {
     "advanced-tp-purpose": {
       "title": "Two pointers avoid extra scanning",
-      "body": "Two pointers let you move from both ends or keep two related positions.",
+      "body": "**Two pointers** let you move from both ends or keep two related positions.",
       "example": "left starts at 0, right starts at n - 1",
       "notice": "The movement rule is the whole solution.",
-      "mistake": "Moving both pointers every time can skip valid answers.",
+      "mistake": "Moving both **pointers** every time can skip valid answers.",
       "section_id": "meaning"
     },
     "advanced-tp-sorted-sum": {
       "title": "Too small means move left",
-      "body": "In a sorted list, moving left rightward gives a larger left value.",
+      "body": "In a sorted **list**, moving left rightward gives a larger left **value**.",
       "example": "sum = nums[left] + nums[right]",
       "notice": "Sorted order is what makes this safe.",
       "mistake": "Moving right when the sum is too small usually makes the sum even smaller.",
@@ -28,7 +28,7 @@
     },
     "advanced-tp-large-sum": {
       "title": "Too large means move right",
-      "body": "In a sorted list, moving right leftward gives a smaller right value.",
+      "body": "In a sorted **list**, moving right leftward gives a smaller right **value**.",
       "example": "right -= 1",
       "notice": "You are lowering the larger side of the pair.",
       "mistake": "Moving left when the sum is too large can make the sum larger.",
@@ -36,10 +36,10 @@
     },
     "advanced-tp-common-bug": {
       "title": "Move with a reason",
-      "body": "Every pointer move should come from the comparison you just made.",
+      "body": "Every **pointer** move should come from the comparison you just made.",
       "example": "if total < target: left += 1",
-      "notice": "The condition explains the move.",
-      "mistake": "Pointer changes that are not tied to the condition often skip answers.",
+      "notice": "The **condition** explains the move.",
+      "mistake": "**Pointer** changes that are not tied to the **condition** often skip answers.",
       "section_id": "trace"
     }
   },
@@ -55,7 +55,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A two-pointer solution keeps two indexes and moves them on purpose. The pointers might start at opposite ends, or one might follow behind the other."
+          "body": "A two-**pointer** solution keeps two **indexes** and moves them on purpose. The pointers might start at opposite ends, or one might follow behind the other."
         },
         {
           "kind": "visual",
@@ -89,7 +89,7 @@
             },
             {
               "title": "Sum is too large",
-              "body": "Move right leftward to try a smaller value.",
+              "body": "Move right leftward to try a smaller **value**.",
               "state": {
                 "pointers": {
                   "left": 0,
@@ -104,7 +104,7 @@
             },
             {
               "title": "Sum is too small",
-              "body": "Move left rightward to try a larger value.",
+              "body": "Move left rightward to try a larger **value**.",
               "state": {
                 "pointers": {
                   "left": 1,
@@ -140,13 +140,13 @@
           "items": [
             "What does left mean?",
             "What does right mean?",
-            "What condition tells one pointer to move?",
-            "When do the pointers stop?"
+            "What **condition** tells one **pointer** to move?",
+            "When do the **pointers** stop?"
           ]
         },
         {
           "kind": "check",
-          "prompt": "What makes a two-pointer solution trustworthy?",
+          "prompt": "What makes a two-**pointer** solution trustworthy?",
           "choices": [
             "Each pointer move follows a rule",
             "Both pointers always move together",
@@ -161,7 +161,7 @@
     {
       "id": "sorted-sum",
       "title": "Sorted pair sum",
-      "summary": "Sorted order decides which pointer moves.",
+      "summary": "Sorted order decides which **pointer** moves.",
       "question_ids": [
         "advanced-tp-sorted-sum",
         "advanced-tp-large-sum",
@@ -170,11 +170,11 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "For sorted pair-sum problems, left points to a smaller value and right points to a larger value. If the sum is too small, left moves rightward. If the sum is too large, right moves leftward."
+          "body": "For sorted pair-sum problems, left points to a smaller **value** and right points to a larger value. If the sum is too small, left moves rightward. If the sum is too large, right moves leftward."
         },
         {
           "kind": "code",
-          "caption": "Sorted two-sum moves one pointer based on the sum.",
+          "caption": "Sorted two-sum moves one **pointer** based on the sum.",
           "variants": {
             "python": {
               "code": "def has_pair(nums, target):\n    left = 0\n    right = len(nums) - 1\n    while left < right:\n        total = nums[left] + nums[right]\n        if total == target:\n            return True\n        if total < target:\n            left += 1\n        else:\n            right -= 1\n    return False",
@@ -196,7 +196,7 @@
         },
         {
           "kind": "check",
-          "prompt": "The sum is too large in a sorted list. Which pointer usually moves?",
+          "prompt": "The sum is too large in a sorted **list**. Which **pointer** usually moves?",
           "choices": [
             "right moves left",
             "left moves right",
@@ -204,7 +204,7 @@
             "neither moves"
           ],
           "answer_index": 0,
-          "why": "Moving right leftward chooses a smaller right value."
+          "why": "Moving right leftward chooses a smaller right **value**."
         }
       ]
     },
@@ -222,21 +222,21 @@
           "kind": "list",
           "title": "Trace checklist",
           "items": [
-            "Write left index, right index, and the two values.",
+            "Write left **index**, right index, and the two **values**.",
             "Compute the comparison.",
-            "Write why exactly one pointer moves.",
-            "Stop when the pointers meet or cross."
+            "Write why exactly one **pointer** moves.",
+            "Stop when the **pointers** meet or cross."
           ]
         },
         {
           "kind": "callout",
           "tone": "mistake",
           "title": "Common mistake",
-          "body": "Do not move a pointer just because the loop needs progress. Move it because the comparison proves that side can be discarded."
+          "body": "Do not move a **pointer** just because the **loop** needs progress. Move it because the comparison proves that side can be discarded."
         },
         {
           "kind": "check",
-          "prompt": "Why can `left < right` be the loop condition for pair checks?",
+          "prompt": "Why can `left < right` be the **loop** **condition** for pair checks?",
           "choices": [
             "A pair needs two different positions",
             "It makes every list sorted",
@@ -267,7 +267,7 @@
               "title": "Compare the ends",
               "action_label": "compare",
               "body": "left sees r and right sees r. They match.",
-              "what_changed": "Both ends are done, so both pointers can move inward.",
+              "what_changed": "Both ends are done, so both **pointers** can move inward.",
               "animation": "highlight",
               "state": {
                 "pointers": {
@@ -318,7 +318,7 @@
               "title": "Pointers meet",
               "action_label": "done",
               "body": "The middle e does not need a partner.",
-              "what_changed": "If no mismatch appeared before the pointers met, the word is a palindrome.",
+              "what_changed": "If no mismatch appeared before the **pointers** met, the word is a palindrome.",
               "animation": "visit",
               "state": {
                 "pointers": {

@@ -1,29 +1,29 @@
 {
   "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Trees",
-  "summary": "A tree stores nodes in parent-child relationships. Many tree problems repeat the same work on left and right children.",
+  "summary": "A **tree** stores **nodes** in parent-child relationships. Many tree problems repeat the same work on left and right children.",
   "minutes": 19,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "A binary tree node stores a value plus left and right child links. Traversal means visiting nodes in a chosen order. Most recursive tree functions start with a null check.",
+  "refresher": "A binary tree **node** stores a **value** plus left and right child links. Traversal means visiting nodes in a chosen order. Most recursive tree **functions** start with a null check.",
   "refresher_code": "if node is None: return base_answer\nsolve(node.left)\nsolve(node.right)",
   "learn_cards": {
     "advanced-tree-root": {
       "title": "Root is the starting node",
-      "body": "The root is the top node of the tree. Traversal usually begins there.",
+      "body": "The **root** is the top **node** of the tree. **Traversal** usually begins there.",
       "example": "root -> left child and right child",
-      "notice": "A missing root means the tree is empty.",
-      "mistake": "Do not confuse root with leaf. A root can have children.",
+      "notice": "A missing **root** means the **tree** is empty.",
+      "mistake": "Do not confuse **root** with **leaf**. A root can have children.",
       "section_id": "tree-node"
     },
     "advanced-tree-leaf": {
       "title": "Leaf means no children",
-      "body": "A leaf node has no left or right child.",
+      "body": "A **leaf** **node** has no left or right child.",
       "example": "node.left is null and node.right is null",
-      "notice": "Leaves are where many recursive paths stop.",
-      "mistake": "A node with one child is not a leaf.",
+      "notice": "**Leaves** are where many recursive paths stop.",
+      "mistake": "A **node** with one child is not a **leaf**.",
       "section_id": "tree-node"
     }
   },
@@ -31,7 +31,7 @@
     {
       "id": "tree-node",
       "title": "Tree node shape",
-      "summary": "A binary tree node points left and right.",
+      "summary": "A binary **tree** **node** points left and right.",
       "question_ids": [
         "advanced-tree-root",
         "advanced-tree-leaf",
@@ -40,18 +40,18 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A tree is made of nodes. In a binary tree, each node can have a left child and a right child. The first node is called the root."
+          "body": "A **tree** is made of **nodes**. In a binary tree, each node can have a left child and a right child. The first node is called the **root**."
         },
         {
           "kind": "visual",
           "title": "Trace a tree traversal",
           "concept": "trees",
-          "caption": "Watch preorder visit the node, then left side, then right side.",
+          "caption": "Watch preorder visit the **node**, then left side, then right side.",
           "initial_state": {},
           "steps": [
             {
               "title": "Visit root A",
-              "body": "Preorder starts with the current node.",
+              "body": "Preorder starts with the current **node**.",
               "state": {
                 "nodes": [
                   {
@@ -89,7 +89,7 @@
             },
             {
               "title": "Go left to B",
-              "body": "After the node, preorder visits the left subtree.",
+              "body": "After the **node**, preorder visits the left subtree.",
               "state": {
                 "nodes": [
                   {
@@ -169,7 +169,7 @@
         },
         {
           "kind": "code",
-          "caption": "A basic binary tree node.",
+          "caption": "A basic binary **tree** **node**.",
           "variants": {
             "python": {
               "code": "class TreeNode:\n    def __init__(self, value):\n        self.value = value\n        self.left = None\n        self.right = None",
@@ -193,21 +193,21 @@
           "kind": "list",
           "title": "Tree words",
           "items": [
-            "Root: the first node.",
-            "Child: a node below another node.",
-            "Leaf: a node with no children.",
-            "Subtree: a smaller tree starting at some node."
+            "**Root**: the first **node**.",
+            "Child: a **node** below another node.",
+            "**Leaf**: a **node** with no children.",
+            "Subtree: a smaller **tree** starting at some **node**."
           ]
         },
         {
           "kind": "callout",
           "tone": "mistake",
           "title": "Null checks come early",
-          "body": "Most tree functions start by checking for `None`, `null`, or `nullptr`. Without that check, reading `node.left` on a missing node can crash."
+          "body": "Most **tree** **functions** start by checking for `None`, `null`, or `nullptr`. Without that check, reading `node.left` on a missing **node** can crash."
         },
         {
           "kind": "check",
-          "prompt": "What is a leaf node?",
+          "prompt": "What is a **leaf** **node**?",
           "choices": [
             "A node with no children",
             "The first node only",
@@ -215,14 +215,14 @@
             "A node with exactly two children"
           ],
           "answer_index": 0,
-          "why": "A leaf is an end node. It has no left or right child."
+          "why": "A **leaf** is an end **node**. It has no left or right child."
         }
       ]
     },
     {
       "id": "traversal",
       "title": "Traversal orders",
-      "summary": "Traversal is the order you visit nodes.",
+      "summary": "**Traversal** is the order you visit **nodes**.",
       "question_ids": [
         "advanced-tree-preorder",
         "advanced-tree-inorder",
@@ -231,19 +231,19 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "Traversal means visiting every node. The three common depth-first orders use the same three actions: visit the node, traverse left, traverse right. Only the order changes."
+          "body": "**Traversal** means visiting every **node**. The three common depth-first orders use the same three actions: visit the node, traverse left, traverse right. Only the order changes."
         },
         {
           "kind": "visual",
           "title": "Preorder: node, left, right",
           "concept": "trees",
-          "caption": "Watch preorder visit the current node before its children.",
+          "caption": "Watch preorder visit the current **node** before its children.",
           "initial_state": {},
           "steps": [
             {
               "title": "Visit A first",
               "action_label": "node",
-              "body": "Preorder starts with the current node.",
+              "body": "Preorder starts with the current **node**.",
               "what_changed": "A is recorded before either subtree.",
               "animation": "visit",
               "state": {
@@ -377,7 +377,7 @@
             {
               "title": "Visit D then E",
               "action_label": "left subtree",
-              "body": "Preorder keeps using node, left, right inside the subtree.",
+              "body": "Preorder keeps using **node**, left, right inside the subtree.",
               "what_changed": "D comes before E because D is B’s left child.",
               "animation": "visit",
               "state": {
@@ -518,14 +518,14 @@
           "kind": "visual",
           "title": "Inorder: left, node, right",
           "concept": "trees",
-          "caption": "Watch inorder finish the left side before recording the current node.",
+          "caption": "Watch inorder finish the left side before recording the current **node**.",
           "initial_state": {},
           "steps": [
             {
               "title": "Go left before A",
               "action_label": "left first",
               "body": "Inorder does not record A yet. It first walks left to B.",
-              "what_changed": "The current node waits until its left subtree is finished.",
+              "what_changed": "The current **node** waits until its left subtree is finished.",
               "animation": "highlight",
               "state": {
                 "nodes": [
@@ -593,8 +593,8 @@
             {
               "title": "Visit D",
               "action_label": "left leaf",
-              "body": "D is the leftmost node, so D is recorded first.",
-              "what_changed": "Inorder often starts at the far-left leaf.",
+              "body": "D is the leftmost **node**, so D is recorded first.",
+              "what_changed": "Inorder often starts at the far-left **leaf**.",
               "animation": "visit",
               "state": {
                 "nodes": [
@@ -663,7 +663,7 @@
               "title": "Visit B then E",
               "action_label": "node then right",
               "body": "After B’s left side, record B, then visit B’s right child E.",
-              "what_changed": "Inside each subtree, the pattern is still left, node, right.",
+              "what_changed": "Inside each subtree, the pattern is still left, **node**, right.",
               "animation": "visit",
               "state": {
                 "nodes": [
@@ -803,7 +803,7 @@
           "kind": "visual",
           "title": "Postorder: left, right, node",
           "concept": "trees",
-          "caption": "Watch postorder finish children before recording the parent node.",
+          "caption": "Watch postorder finish children before recording the parent **node**.",
           "initial_state": {},
           "steps": [
             {
@@ -878,8 +878,8 @@
             {
               "title": "Record D then E",
               "action_label": "children",
-              "body": "D and E are leaves, so they can be recorded before B.",
-              "what_changed": "Leaves have no children waiting under them.",
+              "body": "D and E are **leaves**, so they can be recorded before B.",
+              "what_changed": "**Leaves** have no children waiting under them.",
               "animation": "visit",
               "state": {
                 "nodes": [
@@ -948,7 +948,7 @@
               "title": "Record B",
               "action_label": "parent after children",
               "body": "B’s left and right children are done, so B can be recorded.",
-              "what_changed": "Postorder records the parent after both child paths return.",
+              "what_changed": "Postorder records the parent after both child paths **return**.",
               "animation": "return",
               "state": {
                 "nodes": [
@@ -1016,7 +1016,7 @@
             {
               "title": "Record C, then A",
               "action_label": "finish",
-              "body": "C is done, then the root A is recorded last.",
+              "body": "C is done, then the **root** A is recorded last.",
               "what_changed": "The final postorder is D, E, B, C, A.",
               "animation": "return",
               "state": {
@@ -1088,14 +1088,14 @@
           "kind": "list",
           "title": "Depth-first orders",
           "items": [
-            "Preorder: node, left, right.",
-            "Inorder: left, node, right.",
-            "Postorder: left, right, node."
+            "Preorder: **node**, left, right.",
+            "Inorder: left, **node**, right.",
+            "Postorder: left, right, **node**."
           ]
         },
         {
           "kind": "code",
-          "caption": "Preorder traversal visits the node before its children.",
+          "caption": "Preorder **traversal** visits the **node** before its children.",
           "variants": {
             "python": {
               "code": "def preorder(node):\n    if node is None:\n        return\n    print(node.value)\n    preorder(node.left)\n    preorder(node.right)",
@@ -1125,25 +1125,25 @@
             "Visit only leaves"
           ],
           "answer_index": 0,
-          "why": "Preorder starts with the current node before going to children."
+          "why": "Preorder starts with the current **node** before going to children."
         }
       ]
     },
     {
       "id": "combine-answers",
       "title": "Return values from subtrees",
-      "summary": "Many tree functions combine left and right answers.",
+      "summary": "Many **tree** **functions** combine left and right answers.",
       "question_ids": [
         "advanced-tree-height"
       ],
       "blocks": [
         {
           "kind": "text",
-          "body": "Tree recursion often asks the left child for an answer, asks the right child for an answer, then combines those two answers."
+          "body": "**Tree** **recursion** often asks the left child for an answer, asks the right child for an answer, then combines those two answers."
         },
         {
           "kind": "code",
-          "caption": "Count nodes by counting left and right subtrees.",
+          "caption": "Count **nodes** by counting left and right subtrees.",
           "variants": {
             "python": {
               "code": "def count_nodes(node):\n    if node is None:\n        return 0\n    return 1 + count_nodes(node.left) + count_nodes(node.right)",
@@ -1167,15 +1167,15 @@
           "kind": "list",
           "title": "Read the return line",
           "items": [
-            "`1` counts the current node.",
+            "`1` counts the current **node**.",
             "`count(left)` counts everything on the left.",
             "`count(right)` counts everything on the right.",
-            "Adding them gives the full tree count."
+            "Adding them gives the full **tree** count."
           ]
         },
         {
           "kind": "check",
-          "prompt": "A height function gets left height and right height. What should it return?",
+          "prompt": "A height **function** gets left height and right height. What should it **return**?",
           "choices": [
             "1 plus the larger height",
             "The smaller height only",
@@ -1183,34 +1183,34 @@
             "The node value"
           ],
           "answer_index": 0,
-          "why": "Height follows the longest path, so it uses the larger child height plus the current node."
+          "why": "Height follows the longest path, so it uses the larger child height plus the current **node**."
         }
       ]
     },
     {
       "id": "level-order",
       "title": "Level order uses a queue",
-      "summary": "Breadth-first tree traversal visits one level at a time.",
+      "summary": "Breadth-first **tree** **traversal** visits one level at a time.",
       "question_ids": [
         "advanced-tree-level-order"
       ],
       "blocks": [
         {
           "kind": "text",
-          "body": "Level-order traversal visits the root, then its children, then its grandchildren. A queue keeps that order because nodes that arrive first are processed first."
+          "body": "Level-order traversal visits the **root**, then its children, then its grandchildren. A **queue** keeps that order because **nodes** that arrive first are processed first."
         },
         {
           "kind": "visual",
           "title": "Level order uses queue order",
           "concept": "trees",
-          "caption": "Watch a tree traversal visit one level at a time by using a queue.",
+          "caption": "Watch a **tree** **traversal** visit one level at a time by using a **queue**.",
           "initial_state": {},
           "steps": [
             {
               "title": "Start with root",
               "action_label": "enqueue root",
-              "body": "The root A is the first node waiting.",
-              "what_changed": "The queue starts with the top level.",
+              "body": "The **root** A is the first **node** waiting.",
+              "what_changed": "The **queue** starts with the top level.",
               "animation": "enqueue",
               "state": {
                 "nodes": [
@@ -1263,7 +1263,7 @@
             {
               "title": "Visit A",
               "action_label": "dequeue",
-              "body": "A leaves the queue, then B and C join.",
+              "body": "A **leaves** the **queue**, then B and C join.",
               "what_changed": "The next level is waiting from left to right.",
               "animation": "dequeue",
               "state": {
@@ -1320,7 +1320,7 @@
             {
               "title": "Visit B",
               "action_label": "dequeue",
-              "body": "B leaves next because it waited before C. B adds D.",
+              "body": "B **leaves** next because it waited before C. B adds D.",
               "what_changed": "Children of B wait behind C, so level order is preserved.",
               "animation": "dequeue",
               "state": {
@@ -1432,7 +1432,7 @@
         },
         {
           "kind": "code",
-          "caption": "Level-order traversal pattern.",
+          "caption": "Level-order **traversal** pattern.",
           "variants": {
             "python": {
               "code": "from collections import deque\n\ndef level_order(root):\n    if root is None:\n        return\n    queue = deque([root])\n    while queue:\n        node = queue.popleft()\n        print(node.value)\n        if node.left:\n            queue.append(node.left)\n        if node.right:\n            queue.append(node.right)",

@@ -8,16 +8,96 @@
     "timeout",
     "runtime"
   ],
-  "refresher": "A `for` loop places setup, condition, and update together. A `while` loop repeats while its condition stays truthy. Trace the initial state, boundary, and update.",
+  "refresher": "A `for` **loop** places setup, **condition**, and update together. A `while` loop repeats while its condition stays truthy. Trace the initial state, boundary, and update.",
   "refresher_code": "for (let i=0; i<3; i++) {\n  console.log(i);\n}",
   "blocks": [
     {
       "kind": "text",
-      "body": "A `for` loop places setup, condition, and update together. A `while` loop repeats while its condition stays truthy. Trace the initial state, boundary, and update. Repeat work while keeping the stopping rule visible."
+      "body": "A `for` **loop** places setup, **condition**, and update together. A `while` loop repeats while its condition stays truthy. Trace the initial state, boundary, and update. Repeat work while keeping the stopping rule visible."
+    },
+    {
+      "kind": "visual",
+      "title": "Trace a loop one item at a time",
+      "concept": "arrays",
+      "caption": "Watch the active item move while the running total changes.",
+      "initial_state": {},
+      "steps": [
+        {
+          "title": "Start before the loop",
+          "body": "The total starts at zero before any item is read.",
+          "state": {
+            "items": [
+              "3",
+              "5",
+              "2"
+            ],
+            "pointers": {
+              "i": 0
+            },
+            "note": "total = 0"
+          }
+        },
+        {
+          "title": "First pass",
+          "body": "Read index 0 and add 3 to the total.",
+          "animation": "add",
+          "state": {
+            "items": [
+              "3",
+              "5",
+              "2"
+            ],
+            "active": [
+              0
+            ],
+            "pointers": {
+              "i": 0
+            },
+            "note": "total = 3"
+          }
+        },
+        {
+          "title": "Second pass",
+          "body": "Move to index 1 and add 5.",
+          "animation": "slide",
+          "state": {
+            "items": [
+              "3",
+              "5",
+              "2"
+            ],
+            "active": [
+              1
+            ],
+            "pointers": {
+              "i": 1
+            },
+            "note": "total = 8"
+          }
+        },
+        {
+          "title": "After the last item",
+          "body": "The loop stops after each item has contributed once.",
+          "state": {
+            "items": [
+              "3",
+              "5",
+              "2"
+            ],
+            "active": [
+              2
+            ],
+            "pointers": {
+              "i": 2
+            },
+            "note": "final total = 10"
+          }
+        }
+      ]
     },
     {
       "kind": "text",
-      "body": "A loop has four parts to reason about: starting state, condition, body, and update. Write those parts on separate lines when tracing. After each pass, ask what changed and whether that change moves the condition toward false. This method works for both `for` and `while`."
+      "body": "A **loop** has four parts to reason about: starting state, **condition**, body, and update. Write those parts on separate lines when tracing. After each pass, ask what changed and whether that change moves the condition toward false. This **method** works for both `for` and `while`."
     },
     {
       "kind": "code",
@@ -27,7 +107,7 @@
     },
     {
       "kind": "compare",
-      "caption": "A strict upper bound keeps array indexes valid.",
+      "caption": "A strict upper bound keeps **array** **indexes** valid.",
       "wrong_label": "Common mistake",
       "wrong": "for (let i = 0; i <= items.length; i++) {\n  console.log(items[i]);\n}",
       "right_label": "Clearer version",
@@ -35,13 +115,13 @@
     },
     {
       "kind": "text",
-      "body": "For three items, the corrected index values are zero, one, and two. After index two, the update makes `i` equal three, the condition fails, and the loop ends. The wrong version allows index three, which is one position past the array."
+      "body": "For three items, the corrected index values are zero, one, and two. After index two, the update makes `i` equal three, the **condition** fails, and the **loop** ends. The wrong version allows index three, which is one position past the **array**."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "Check the boundary",
-      "body": "When a loop hangs, locate the line that moves its tested state toward an exit; a missing update keeps the condition true."
+      "body": "When a **loop** hangs, locate the line that moves its tested state toward an exit; a missing update keeps the **condition** true."
     },
     {
       "kind": "check",
@@ -54,7 +134,7 @@
         "infinitely many"
       ],
       "answer_index": 0,
-      "why": "The values one through four are included by the less-than-or-equal condition."
+      "why": "The **values** one through four are included by the less-than-or-equal **condition**."
     },
     {
       "kind": "check",
@@ -67,7 +147,7 @@
         "a const declaration"
       ],
       "answer_index": 0,
-      "why": "Count never changes, so the condition remains true and the loop cannot finish."
+      "why": "Count never changes, so the **condition** remains true and the **loop** cannot finish."
     },
     {
       "kind": "list",

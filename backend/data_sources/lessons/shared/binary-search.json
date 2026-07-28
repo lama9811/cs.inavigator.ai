@@ -1,18 +1,18 @@
 {
   "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Binary Search",
-  "summary": "Binary search works when the search space is sorted or has a clear true/false boundary.",
+  "summary": "**Binary search** works when the search space is sorted or has a clear true/false boundary.",
   "minutes": 17,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "Binary search cuts the search space in half each step. It needs sorted data or a monotonic condition. After checking mid, move past mid so the range gets smaller.",
+  "refresher": "**Binary search** cuts the search space in half each step. It needs sorted data or a monotonic condition. After checking mid, move past mid so the range gets smaller.",
   "refresher_code": "while low <= high:\n    mid = (low + high) // 2",
   "learn_cards": {
     "advanced-bs-sorted": {
       "title": "Binary search needs order",
-      "body": "Ordinary binary search only works when smaller values are on one side and larger values are on the other.",
+      "body": "Ordinary **binary search** only works when smaller **values** are on one side and larger values are on the other.",
       "example": "[2, 5, 9, 12]",
       "notice": "The comparison at mid tells you which half can be ignored.",
       "mistake": "On unsorted data, mid tells you almost nothing.",
@@ -20,7 +20,7 @@
     },
     "advanced-bs-mid": {
       "title": "Mid is the test point",
-      "body": "Mid is the index in the middle of the current low-to-high range.",
+      "body": "Mid is the **index** in the middle of the current low-to-high range.",
       "example": "low=0, high=6, mid=3",
       "notice": "Mid changes as the range shrinks.",
       "mistake": "Do not keep checking the same mid forever.",
@@ -30,7 +30,7 @@
       "title": "Move past mid",
       "body": "When mid is not the answer, remove it from the remaining range.",
       "example": "low = mid + 1 or high = mid - 1",
-      "notice": "The range must shrink every loop.",
+      "notice": "The range must shrink every **loop**.",
       "mistake": "`low = mid` can get stuck when low and mid are the same.",
       "section_id": "move-past-mid"
     }
@@ -48,13 +48,13 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "Binary search is not just a faster loop. It is a promise: because the data is ordered, one comparison can rule out half of the remaining positions."
+          "body": "**Binary search** is not just a faster loop. It is a promise: because the data is ordered, one comparison can rule out half of the remaining positions."
         },
         {
           "kind": "visual",
           "title": "Cut the search space",
           "concept": "binary-search",
-          "caption": "Watch low, mid, and high move while searching a sorted list.",
+          "caption": "Watch low, mid, and high move while searching a sorted **list**.",
           "initial_state": {
             "items": [
               2,
@@ -69,7 +69,7 @@
           "steps": [
             {
               "title": "Start with the full range",
-              "body": "low and high cover every possible index.",
+              "body": "low and high cover every possible **index**.",
               "state": {
                 "pointers": {
                   "low": 0,
@@ -138,9 +138,9 @@
           "kind": "list",
           "title": "Closed-range variables",
           "items": [
-            "`low` is the first possible index.",
-            "`high` is the last possible index.",
-            "`mid` is the index you check now.",
+            "`low` is the first possible **index**.",
+            "`high` is the last possible **index**.",
+            "`mid` is the **index** you check now.",
             "`low <= high` keeps a one-item range searchable."
           ]
         },
@@ -170,14 +170,14 @@
           "kind": "callout",
           "tone": "tip",
           "title": "C++ runner note",
-          "body": "Many CS Navigator C++ practice functions use `std::vector<long long>` so large integer tests are safe. The binary search idea is the same as with `int`."
+          "body": "Many CS Navigator C++ practice **functions** use `std::vector<long long>` so large **integer** tests are safe. The **binary search** idea is the same as with `int`."
         }
       ]
     },
     {
       "id": "move-past-mid",
       "title": "Move past mid",
-      "summary": "The range must shrink on every loop.",
+      "summary": "The range must shrink on every **loop**.",
       "question_ids": [
         "advanced-bs-move-right",
         "advanced-bs-move-left",
@@ -227,7 +227,7 @@
               "title": "Wrong update",
               "action_label": "low = mid",
               "body": "10 is too small, but setting low to mid keeps low at 0.",
-              "what_changed": "Nothing moved. The next loop checks mid 0 again.",
+              "what_changed": "Nothing moved. The next **loop** checks mid 0 again.",
               "animation": "highlight",
               "state": {
                 "pointers": {
@@ -249,7 +249,7 @@
               "title": "Correct update",
               "action_label": "low = mid + 1",
               "body": "Move past mid because mid was already ruled out.",
-              "what_changed": "The remaining range now contains only index 1.",
+              "what_changed": "The remaining range now contains only **index** 1.",
               "animation": "slide",
               "state": {
                 "pointers": {
@@ -292,7 +292,7 @@
         },
         {
           "kind": "compare",
-          "caption": "Move past values you already ruled out.",
+          "caption": "Move past **values** you already ruled out.",
           "wrong_label": "Can get stuck",
           "wrong": "if nums[mid] < target:\n    low = mid",
           "right_label": "Shrinks range",
@@ -303,10 +303,10 @@
           "kind": "list",
           "title": "Trace target 9 in [2, 4, 6, 9, 12]",
           "items": [
-            "low=0, high=4, mid=2, value=6.",
+            "low=0, high=4, mid=2, **value**=6.",
             "6 is too small, so low becomes 3.",
-            "low=3, high=4, mid=3, value=9.",
-            "Target found at index 3."
+            "low=3, high=4, mid=3, **value**=9.",
+            "Target found at **index** 3."
           ]
         },
         {
@@ -326,14 +326,14 @@
     {
       "id": "answer-search",
       "title": "Binary search beyond arrays",
-      "summary": "You can binary search an answer range when true/false changes once.",
+      "summary": "You can **binary search** an answer range when true/false changes once.",
       "question_ids": [
         "advanced-bs-monotonic"
       ],
       "blocks": [
         {
           "kind": "text",
-          "body": "Binary search can also work when you are searching for the smallest value that passes a test, or the largest value that still works. The key word is monotonic: once the answer becomes true, it stays true, or once it becomes false, it stays false."
+          "body": "**Binary search** can also work when you are searching for the smallest value that passes a test, or the largest value that still works. The key word is monotonic: once the answer becomes true, it stays true, or once it becomes false, it stays false."
         },
         {
           "kind": "list",
@@ -342,25 +342,25 @@
             "Smallest speed that finishes on time.",
             "First bad version.",
             "Smallest capacity that can ship all packages.",
-            "First index where a condition becomes true."
+            "First **index** where a **condition** becomes true."
           ]
         },
         {
           "kind": "callout",
           "tone": "warning",
           "title": "No boundary, no binary search",
-          "body": "If true and false values are mixed randomly, the mid result cannot tell you which side to discard."
+          "body": "If true and false **values** are mixed randomly, the mid result cannot tell you which side to discard."
         }
       ]
     },
     {
       "id": "practice-handoff",
       "title": "Practice handoff",
-      "summary": "Write the range meaning before the loop.",
+      "summary": "Write the range meaning before the **loop**.",
       "blocks": [
         {
           "kind": "text",
-          "body": "Before coding binary search, write one sentence: `low` and `high` cover the possible answer range. That sentence helps you choose `<=`, `mid + 1`, and `mid - 1` correctly."
+          "body": "Before coding **binary search**, write one sentence: `low` and `high` cover the possible answer range. That sentence helps you choose `<=`, `mid + 1`, and `mid - 1` correctly."
         },
         {
           "kind": "check",

@@ -21,12 +21,12 @@ from __future__ import annotations
 import re
 from typing import Any
 
-# ── Canonical argument spec (source of truth for ALL languages) ──────────────
+# Canonical argument spec (source of truth for ALL languages)
 # fn (camelCase) -> ([(argName, kind), ...], returnKind)
 # kinds: "int" | "double" | "bool" | "string" | "intlist" | "strlist" | "grid" | "strgrid"
 # returnKind: "int" | "bool" | "string" | "intlist" | "strlist" | "grid" | "list"
 #
-# Deliberately EXCLUDED — these fall back to the legacy Value/Object[] union path,
+# Deliberately EXCLUDED - these fall back to the legacy Value/Object[] union path,
 # which a clean native signature cannot express (verified by tests/test_native_bridge):
 #   * Polymorphic (tests mix arg types): findIndex, everyOtherItem, nestedListDepthSum
 #   * No dedicated tests: groupAnagrams, cloneGraph, serializeBinaryTree
@@ -42,6 +42,8 @@ PRACTICE_ARG_SPECS: dict[str, tuple[list[tuple[str, str]], str]] = {
     "binarySearchInsertPosition": ([("nums", "intlist"), ("target", "int")], "int"),
     "canVote": ([("age", "int")], "bool"),
     "clampScore": ([("score", "int")], "int"),
+    "campusStopReachable": ([("connections", "strgrid"), ("start", "string"), ("target", "string")], "bool"),
+    "clubMembershipGroups": ([("n", "int"), ("pairs", "grid")], "int"),
     "compressRuns": ([("text", "string")], "string"),
     "countDigits": ([("n", "int")], "int"),
     "countIslands": ([("grid", "grid")], "int"),
@@ -71,30 +73,48 @@ PRACTICE_ARG_SPECS: dict[str, tuple[list[tuple[str, str]], str]] = {
     "mergeSortedLists": ([("left", "intlist"), ("right", "intlist")], "intlist"),
     "minStackOperations": ([("commands", "strlist")], "intlist"),
     "minimumMeetingRooms": ([("intervals", "grid")], "int"),
+    "minStudyPlanCost": ([("costs", "intlist")], "int"),
     "normalizeEmailList": ([("emails", "strlist")], "strlist"),
     "pairSumSorted": ([("nums", "intlist"), ("target", "int")], "bool"),
+    "pairNamesWithScores": ([("names", "strlist"), ("scores", "intlist")], "strlist"),
+    "parkingTicketTotal": ([("daysLate", "int"), ("hasPermit", "bool")], "int"),
     "prefixSearch": ([("words", "strlist"), ("prefix", "string")], "strlist"),
+    "prefixMatchCount": ([("words", "strlist"), ("prefix", "string")], "int"),
+    "plantWateringMessage": ([("moisture", "int"), ("isSunny", "bool")], "string"),
     "rangeSumQueries": ([("nums", "intlist"), ("queries", "grid")], "intlist"),
+    "redundantFriendshipEdge": ([("n", "int"), ("pairs", "grid")], "intlist"),
     "removeDuplicatesKeepOrder": ([("nums", "intlist")], "intlist"),
     "recursiveDigitSum": ([("n", "int")], "int"),
     "reverseWords": ([("sentence", "string")], "string"),
     "rotateListRight": ([("items", "intlist"), ("k", "int")], "intlist"),
     "runningTotal": ([("nums", "intlist")], "intlist"),
+    "runningMedianScores": ([("scores", "intlist")], "intlist"),
     "shortestPathInCampusGrid": ([("grid", "strgrid")], "int"),
     "subarraySumEqualsK": ([("nums", "intlist"), ("k", "int")], "int"),
     "sumEvenNumbers": ([("nums", "intlist")], "int"),
+    "swapPairOrder": ([("pairItems", "strlist")], "strlist"),
     "temperatureAboveThreshold": ([("readings", "intlist"), ("threshold", "int")], "int"),
+    "temperatureComfortCount": ([("readings", "intlist"), ("low", "int"), ("high", "int")], "int"),
     "topKScores": ([("scores", "intlist"), ("k", "int")], "intlist"),
     "topKFrequent": ([("items", "intlist"), ("k", "int")], "intlist"),
+    "topPriorityAssignments": ([("names", "strlist"), ("priorities", "intlist"), ("k", "int")], "strlist"),
     "treeLevelSums": ([("tree", "intlist")], "intlist"),
+    "treeRightSideView": ([("tree", "intlist")], "intlist"),
     "triePrefixCounts": ([("commands", "strlist")], "intlist"),
     "twoSumIndexes": ([("nums", "intlist"), ("target", "int")], "intlist"),
     "unionFindComponents": ([("n", "int"), ("pairs", "grid")], "int"),
     "uniqueCount": ([("nums", "intlist")], "int"),
     "validCourseCodeShape": ([("code", "string")], "bool"),
     "validStudySchedule": ([("intervals", "grid")], "bool"),
+    "weeklyPlantCareDays": ([("moistureReadings", "intlist"), ("threshold", "int")], "strlist"),
     "wordLadderSteps": ([("start", "string"), ("end", "string"), ("dictionary", "strlist")], "int"),
     "anyWordHasPrefix": ([("words", "strlist"), ("prefix", "string")], "bool"),
+    "groceryPriceLookup": ([("items", "strlist"), ("prices", "intlist"), ("target", "string")], "int"),
+    "courseCreditTotal": ([("courses", "strlist"), ("credits", "intlist"), ("selectedCourses", "strlist")], "int"),
+    "favoriteCourseCounts": ([("favorites", "strlist"), ("targets", "strlist")], "intlist"),
+    "uniqueParkingZones": ([("zones", "strlist")], "int"),
+    "sharedStudyTopics": ([("firstTopics", "strlist"), ("secondTopics", "strlist")], "strlist"),
+    "lateAssignmentPenalty": ([("score", "int"), ("daysLate", "int")], "int"),
 }
 
 
@@ -117,7 +137,7 @@ def _spec_for(function_name: str) -> tuple[list[tuple[str, str]], str] | None:
     return None
 
 
-# ── Per-language type/idiom tables ───────────────────────────────────────────
+# Per-language type/idiom tables
 _PY_TYPES = {
     "int": "int", "double": "float", "bool": "bool", "string": "str",
     "intlist": "list[int]", "strlist": "list[str]", "grid": "list[list[int]]",
@@ -266,7 +286,7 @@ def get_arg_spec(function_name: str) -> tuple[list[tuple[str, str]], str] | None
     return _spec_for(function_name)
 
 
-# ── C++ native bridge ────────────────────────────────────────────────────────
+# C++ native bridge
 # Lets the STUDENT write a clean native-typed function (e.g.
 # `int editDistance(string source, string target)`) while the harness keeps its
 # Value union. The bridge unpacks each Value arg into a native local, calls the
@@ -363,7 +383,7 @@ static Value __call_{function_name}(std::vector<Value> args) {{
 }}"""
 
 
-# ── Java native bridge ───────────────────────────────────────────────────────
+# Java native bridge
 _JAVA_NATIVE_TYPE = {
     "int": "int", "double": "double", "bool": "boolean", "string": "String",
     "intlist": "int[]", "strlist": "String[]", "grid": "int[][]",

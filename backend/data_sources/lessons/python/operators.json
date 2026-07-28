@@ -8,20 +8,20 @@
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "Operators are the symbols that do work on values. `+ - * /` do the math you expect, and `/` always hands back a decimal. `//` divides and throws away the remainder, `%` keeps only the remainder, and `**` raises to a power. Comparisons like `== != < >` ask a question and answer it with True or False. The one to watch is `==` against `=`. A single `=` puts a value into a name. A double `==` asks whether two values match.",
+  "refresher": "**Operators** are the symbols that do work on values. `+ - * /` do the math you expect, and `/` always hands back a decimal. `//` divides and throws away the remainder, `%` keeps only the remainder, and `**` raises to a power. Comparisons like `== != < >` ask a question and answer it with True or False. The one to watch is `==` against `=`. A single `=` puts a **value** into a name. A double `==` asks whether two values match.",
   "refresher_code": "print(7 / 2)\nprint(7 // 2)\nprint(7 % 2)\nprint(7 == 2)\n# 3.5\n# 3\n# 1\n# False",
   "learn_cards": {
     "operators-lesson-check-1": {
       "title": "Arithmetic output, one line at a time",
-      "body": "This question is about arithmetic operators, not syntax in general. Work out each print line separately, then keep the outputs on separate lines.",
+      "body": "This question is about arithmetic **operators**, not syntax in general. Work out each **print** line separately, then keep the outputs on separate lines.",
       "example": "print(15 + 6)\n# 21",
       "notice": "`+` adds numbers when both sides are numbers. `//` keeps the whole-number part. `%` keeps the remainder.",
-      "mistake": "Do not put several print outputs on one line unless the code prints them on one line.",
+      "mistake": "Do not put several **print** outputs on one line unless the code prints them on one line.",
       "section_id": "core"
     },
     "operators-lesson-check-2": {
       "title": "Boolean operators choose the branch",
-      "body": "This question is asking whether the condition matches the boundary rules. Read `and` as both sides must be true.",
+      "body": "This question is asking whether the **condition** matches the boundary rules. Read `and` as both sides must be true.",
       "example": "age >= 13 and age <= 19",
       "notice": "Use `>=` and `<=` when the endpoints count.",
       "mistake": "`or` is too loose for a between check because only one side has to be true.",
@@ -31,7 +31,7 @@
   "blocks": [
     {
       "kind": "text",
-      "body": "An operator is a symbol that does something to values. You already know most of them from math class. Python borrows the same symbols and adds a few of its own. That is how one line of code can compute a total, split a number into parts, or ask whether two things match."
+      "body": "An **operator** is a symbol that does something to **values**. You already know most of them from math **class**. Python borrows the same symbols and adds a few of its own. That is how one line of code can compute a total, split a number into parts, or ask whether two things match."
     },
     {
       "kind": "code",
@@ -41,7 +41,7 @@
     },
     {
       "kind": "text",
-      "body": "That trailing `.0` matters more than it looks. A number with a decimal point is a float, and a whole number without one is an int. They print differently and they compare differently. So a stray `.0` in your output usually means a `/` snuck in where you wanted something else."
+      "body": "That trailing `.0` matters more than it looks. A number with a decimal point is a float, and a whole number without one is an int. They **print** differently and they compare differently. So a stray `.0` in your **output** usually means a `/` snuck in where you wanted something else."
     },
     {
       "kind": "code",
@@ -51,11 +51,11 @@
     },
     {
       "kind": "text",
-      "body": "Modulo is worth a second look, because it is the one operator with no everyday symbol. `a % b` gives you the remainder after dividing. It shows up constantly. `n % 2` is 0 when n is even and 1 when it is odd. That single line is how most programs test for an even number."
+      "body": "Modulo is worth a second look, because it is the one **operator** with no everyday symbol. `a % b` gives you the remainder after dividing. It shows up constantly. `n % 2` is 0 when n is even and 1 when it is odd. That single line is how most programs test for an even number."
     },
     {
       "kind": "code",
-      "caption": "Two everyday uses. Modulo tells you whether a number divides evenly, and `**` raises a number to a power. Note that `^` is not the power operator in Python. It means something else entirely, and it will quietly give you a wrong answer instead of an error.",
+      "caption": "Two everyday uses. Modulo tells you whether a number divides evenly, and `**` raises a number to a power. Note that `^` is not the power **operator** in Python. It means something else entirely, and it will quietly give you a wrong answer instead of an error.",
       "code": "print(9 % 2)\nprint(10 % 2)\nprint(2 ** 5)\nprint(3 ** 2)",
       "output": "1\n0\n32\n9"
     },
@@ -67,7 +67,7 @@
     },
     {
       "kind": "text",
-      "body": "When several operators sit in one line, Python does not simply read left to right. It follows precedence, which is the same order of operations you learned in math. Power first, then multiply and divide, then add and subtract. Parentheses beat all of it."
+      "body": "When several **operators** sit in one line, Python does not simply read left to right. It follows precedence, which is the same order of operations you learned in math. Power first, then multiply and divide, then add and subtract. Parentheses beat all of it."
     },
     {
       "kind": "code",
@@ -77,7 +77,7 @@
     },
     {
       "kind": "check",
-      "prompt": "What does this print?",
+      "prompt": "What does this **print**?",
       "code": "total = 20\nprint(total // 6)\nprint(total % 6)\nprint(total / 6)",
       "choices": [
         "3\n2\n3.3333333333333335",
@@ -90,17 +90,17 @@
     },
     {
       "kind": "text",
-      "body": "The other family of operators asks questions. A comparison takes two values and answers with True or False, and nothing else. That answer is a real value. You can store it in a variable or hand it to an `if` statement."
+      "body": "The other family of **operators** asks questions. A comparison takes two **values** and answers with True or False, and nothing else. That answer is a real value. You can store it in a **variable** or hand it to an `if` statement."
     },
     {
       "kind": "code",
-      "caption": "Each line is a question, and each answer is True or False. `==` asks whether two values are the same, and `!=` asks whether they differ. The exclamation mark is Python's way of saying not.",
+      "caption": "Each line is a question, and each answer is True or False. `==` asks whether two **values** are the same, and `!=` asks whether they differ. The exclamation mark is Python's way of saying not.",
       "code": "score = 75\n\nprint(score == 75)\nprint(score != 75)\nprint(score > 90)\nprint(score < 90)",
       "output": "True\nFalse\nFalse\nTrue"
     },
     {
       "kind": "compare",
-      "caption": "One equals sign puts a value into a name. Two equals signs ask whether two values match. Inside an `if`, the single `=` is not a wrong answer, it is a syntax error, so Python refuses to run the file at all.",
+      "caption": "One equals sign puts a **value** into a name. Two equals signs ask whether two values match. Inside an `if`, the single `=` is not a wrong answer, it is a **syntax error**, so Python refuses to run the **file** at all.",
       "wrong_label": "SyntaxError",
       "wrong": "score = 75\nif score = 100:\n    print(\"Perfect\")\n# a single = assigns,\n# and you cannot\n# assign inside an if",
       "right_label": "Works",
@@ -110,7 +110,7 @@
       "kind": "callout",
       "tone": "mistake",
       "title": "Typing = when you meant ==",
-      "body": "Read the line out loud. If the words are \"set score to 100\", you want one `=`. If the words are \"is score 100\", you want two. Python is on your side here. It will not run a file with `if score = 100` in it, so the mistake shows up straight away instead of hiding in a wrong result."
+      "body": "Read the line out loud. If the words are \"**set** score to 100\", you want one `=`. If the words are \"is score 100\", you want two. Python is on your side here. It will not run a **file** with `if score = 100` in it, so the mistake shows up straight away instead of hiding in a wrong result."
     },
     {
       "kind": "text",
@@ -124,7 +124,7 @@
     },
     {
       "kind": "check",
-      "prompt": "You want to print a message only when the age is between 13 and 19. Which line is right?",
+      "prompt": "You want to **print** a message only when the age is between 13 and 19. Which line is right?",
       "code": "age = 15",
       "choices": [
         "`if age >= 13 and age <= 19:`",
@@ -142,10 +142,10 @@
         "`/` always gives a decimal, so `4 / 2` is 2.0 and not 2",
         "`//` divides and drops the remainder, cutting down rather than rounding",
         "`%` keeps only the remainder, so `n % 2 == 0` tests for an even number",
-        "`**` raises to a power. `^` is not the power operator in Python",
+        "`**` raises to a power. `^` is not the power **operator** in Python",
         "Precedence is the math order: power, then multiply and divide, then add and subtract",
         "Parentheses always win. Add them whenever a formula makes you pause",
-        "`=` puts a value in a name. `==` asks whether two values match",
+        "`=` puts a **value** in a name. `==` asks whether two values match",
         "Comparisons and `and` / `or` / `not` produce True or False, and nothing else"
       ]
     }

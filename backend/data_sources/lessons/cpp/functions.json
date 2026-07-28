@@ -1,118 +1,195 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Functions",
-  "summary": "Name a reusable task, give it inputs, and return a result.",
+  "summary": "Name a reusable task, give it inputs, and **return** a result.",
   "minutes": 10,
   "error_classes": [
     "syntax",
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "A C++ function writes its return type before its name and gives every parameter a type. For example, `int square(int n)` accepts an integer and returns an integer. In Coding Tutor practice, keep the starter function line exactly as given, then write your logic inside it.",
+  "refresher": "A C++ **function** writes its **return type** before its name and gives every **parameter** a type. For example, `int square(int n)` accepts an integer and returns an integer. In Coding Tutor practice, keep the starter function line exactly as given, then write your logic inside it.",
   "refresher_code": "int square(int n){\n  return n*n;\n}",
-  "blocks": [
+  "_beginner_expanded": true,
+  "sections": [
     {
-      "kind": "text",
-      "body": "A function gives a name to a reusable task. Its parameters receive input values, and `return` sends a result back to the caller. In C++, the function also states the type of each input and the type of its result."
+      "id": "function-signature",
+      "title": "Read the function signature",
+      "summary": "Identify the **return type**, **function** name, and typed **parameters**.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A **function** gives a name to a reusable task. Its **parameters** receive **input** values, and `return` sends a result back to the caller. In C++, the function also states the type of each input and the type of its result."
+        },
+        {
+          "kind": "visual",
+          "title": "Follow a function call",
+          "concept": "functions",
+          "caption": "See arguments enter a function, a local variable appear, and return send the answer back.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Call with arguments",
+              "body": "The caller sends 3 and 5 into the function.",
+              "state": {
+                "call_stack": [
+                  "main: result = add(3, 5)"
+                ],
+                "active_call": 0,
+                "note": "waiting for add"
+              }
+            },
+            {
+              "title": "Parameters receive values",
+              "body": "Inside the function, a is 3 and b is 5.",
+              "animation": "add",
+              "state": {
+                "call_stack": [
+                  "main",
+                  "add: a=3, b=5"
+                ],
+                "active_call": 1,
+                "table": [
+                  {
+                    "key": "a",
+                    "value": "3",
+                    "active": true
+                  },
+                  {
+                    "key": "b",
+                    "value": "5",
+                    "active": true
+                  }
+                ]
+              }
+            },
+            {
+              "title": "Return",
+              "body": "Return sends 8 back to the caller, and the function call is finished.",
+              "animation": "return",
+              "state": {
+                "call_stack": [
+                  "main: result = 8"
+                ],
+                "active_call": 0,
+                "note": "result stores 8"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "text",
+          "body": "Read `int larger(int a, int b)` from left to right: the **function** returns an `int`, its name is `larger`, and it receives two **integer** **parameters**. A call such as `larger(7, 4)` fills those parameters and waits for the returned answer."
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Keep the starter shape",
+          "body": "The practice runner calls the exact **function** from the starter. If the starter says `long long temperatureAboveThreshold(std::vector<long long> readings, long long threshold)`, keep that line. Do not wrap it in a `class Solution`, rename it, or change `long long` to `int`."
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "C++ types are the main difference from Python here",
+          "body": "Python writes `def square(n):`. C++ writes `int square(int n)`. Both name the **function** and its **input**, but C++ also states that the input and result are **integers**."
+        },
+        {
+          "kind": "code",
+          "caption": "The **arguments** 7 and 4 fill a and b. The **function** returns 7, and main prints it.",
+          "code": "#include <iostream>\n\nint larger(int a, int b) {\n  if (a > b) {\n    return a;\n  }\n  return b;\n}\n\nint main() {\n  std::cout << larger(7, 4) << \"\\n\";\n}",
+          "output": "7"
+        }
+      ]
     },
     {
-      "kind": "text",
-      "body": "Read `int larger(int a, int b)` from left to right: the function returns an `int`, its name is `larger`, and it receives two integer parameters. A call such as `larger(7, 4)` fills those parameters and waits for the returned answer."
+      "id": "return-values",
+      "title": "Return the promised value",
+      "summary": "Use **return** in non-void **functions** and keep Coding Tutor starter shapes intact.",
+      "blocks": [
+        {
+          "kind": "compare",
+          "caption": "A non-void **function** must use **return** to send its answer back.",
+          "wrong_label": "Common mistake",
+          "wrong": "int square(int n) {\n  n * n;\n}",
+          "right_label": "Clearer version",
+          "right": "int square(int n) {\n  return n * n;\n}"
+        },
+        {
+          "kind": "compare",
+          "caption": "For Coding Tutor C++ practice, keep the top-level **function** the runner expects.",
+          "wrong_label": "Runner cannot find this function",
+          "wrong": "class Solution {\npublic:\n  int temperatureAboveThreshold(std::vector<int>& readings, int threshold) {\n    return 0;\n  }\n};",
+          "right_label": "Matches the starter shape",
+          "right": "long long temperatureAboveThreshold(std::vector<long long> readings, long long threshold) {\n  return 0;\n}"
+        },
+        {
+          "kind": "text",
+          "body": "The first version calculates a **value** but throws it away. The corrected version returns the result to the line that called the **function**. Make sure every possible path in a non-void function returns the promised type."
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Return the promised result",
+          "body": "If a **function** begins with a type such as `int` or `double`, the caller expects a result of that type. Use `return` on every possible path. A `void` function performs work without returning a **value**."
+        }
+      ]
     },
     {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "Keep the starter shape",
-      "body": "The practice runner calls the exact function from the starter. If the starter says `long long temperatureAboveThreshold(std::vector<long long> readings, long long threshold)`, keep that line. Do not wrap it in a `class Solution`, rename it, or change `long long` to `int`."
-    },
-    {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "C++ types are the main difference from Python here",
-      "body": "Python writes `def square(n):`. C++ writes `int square(int n)`. Both name the function and its input, but C++ also states that the input and result are integers."
-    },
-    {
-      "kind": "code",
-      "caption": "The arguments 7 and 4 fill a and b. The function returns 7, and main prints it.",
-      "code": "#include <iostream>\n\nint larger(int a, int b) {\n  if (a > b) {\n    return a;\n  }\n  return b;\n}\n\nint main() {\n  std::cout << larger(7, 4) << \"\\n\";\n}",
-      "output": "7"
-    },
-    {
-      "kind": "compare",
-      "caption": "A non-void function must use return to send its answer back.",
-      "wrong_label": "Common mistake",
-      "wrong": "int square(int n) {\n  n * n;\n}",
-      "right_label": "Clearer version",
-      "right": "int square(int n) {\n  return n * n;\n}"
-    },
-    {
-      "kind": "compare",
-      "caption": "For Coding Tutor C++ practice, keep the top-level function the runner expects.",
-      "wrong_label": "Runner cannot find this function",
-      "wrong": "class Solution {\npublic:\n  int temperatureAboveThreshold(std::vector<int>& readings, int threshold) {\n    return 0;\n  }\n};",
-      "right_label": "Matches the starter shape",
-      "right": "long long temperatureAboveThreshold(std::vector<long long> readings, long long threshold) {\n  return 0;\n}"
-    },
-    {
-      "kind": "text",
-      "body": "The first version calculates a value but throws it away. The corrected version returns the result to the line that called the function. Make sure every possible path in a non-void function returns the promised type."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Return the promised result",
-      "body": "If a function begins with a type such as `int` or `double`, the caller expects a result of that type. Use `return` on every possible path. A `void` function performs work without returning a value."
-    },
-    {
-      "kind": "check",
-      "prompt": "What is the return type here?",
-      "code": "double average(int total,int count);",
-      "choices": [
-        "double",
-        "int",
-        "average",
-        "void"
-      ],
-      "answer_index": 0,
-      "why": "The type written before the function name declares the returned value type."
-    },
-    {
-      "kind": "check",
-      "prompt": "The starter gives this line: `long long countItems(std::vector<long long> nums)`. What should you do first?",
-      "code": "",
-      "choices": [
-        "Keep that line and write the body inside it.",
-        "Rename the function to solve.",
-        "Change long long to string.",
-        "Wrap it in a new public class."
-      ],
-      "answer_index": 0,
-      "why": "The runner calls the starter function by its exact name and shape, so the safest move is to keep it and fill in the body."
-    },
-    {
-      "kind": "check",
-      "prompt": "What is printed?",
-      "code": "int twice(int n){return n*2;}\nstd::cout<<twice(3);",
-      "choices": [
-        "6",
-        "3",
-        "33",
-        "nothing"
-      ],
-      "answer_index": 0,
-      "why": "The argument initializes n, and the returned multiplication result is six."
-    },
-    {
-      "kind": "list",
-      "title": "Functions checklist",
-      "items": [
-        "Match each parameter type to its input.",
-        "Keep the practice starter function name and types.",
-        "Return the promised type on every path.",
-        "Give the function one clear purpose.",
-        "Use void only when no result is needed."
+      "id": "practice-checks",
+      "title": "Practice checks",
+      "summary": "Check **return** types, starter signatures, and simple calls before moving on.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "What is the **return type** here?",
+          "code": "double average(int total,int count);",
+          "choices": [
+            "double",
+            "int",
+            "average",
+            "void"
+          ],
+          "answer_index": 0,
+          "why": "The type written before the **function** name declares the returned **value** type."
+        },
+        {
+          "kind": "check",
+          "prompt": "The starter gives this line: `long long countItems(std::vector<long long> nums)`. What should you do first?",
+          "code": "",
+          "choices": [
+            "Keep that line and write the body inside it.",
+            "Rename the function to solve.",
+            "Change long long to string.",
+            "Wrap it in a new public class."
+          ],
+          "answer_index": 0,
+          "why": "The runner calls the starter **function** by its exact name and shape, so the safest move is to keep it and fill in the body."
+        },
+        {
+          "kind": "check",
+          "prompt": "What is printed?",
+          "code": "int twice(int n){return n*2;}\nstd::cout<<twice(3);",
+          "choices": [
+            "6",
+            "3",
+            "33",
+            "nothing"
+          ],
+          "answer_index": 0,
+          "why": "The **argument** initializes n, and the returned multiplication result is six."
+        },
+        {
+          "kind": "list",
+          "title": "Functions checklist",
+          "items": [
+            "Match each **parameter** type to its **input**.",
+            "Keep the practice starter **function** name and types.",
+            "**Return** the promised type on every path.",
+            "Give the **function** one clear purpose.",
+            "Use void only when no result is needed."
+          ]
+        }
       ]
     }
-  ],
-  "_beginner_expanded": true
+  ]
 }

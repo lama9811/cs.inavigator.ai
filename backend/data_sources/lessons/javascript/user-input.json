@@ -7,20 +7,20 @@
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "Browser `prompt(...)` returns a string or `null` when canceled. Handle cancellation, trim when appropriate, convert numeric text, and validate the result.",
+  "refresher": "Browser `prompt(...)` returns a **string** or `null` when canceled. Handle cancellation, trim when appropriate, convert numeric text, and validate the result.",
   "refresher_code": "const raw = prompt(\"Credits?\");\nif (raw !== null) console.log(Number(raw));",
   "blocks": [
     {
       "kind": "text",
-      "body": "Browser `prompt(...)` returns a string or `null` when canceled. Handle cancellation, trim when appropriate, convert numeric text, and validate the result. Validate external text before calculating with it."
+      "body": "Browser `prompt(...)` returns a **string** or `null` when canceled. Handle cancellation, trim when appropriate, convert numeric text, and validate the result. Validate external text before calculating with it."
     },
     {
       "kind": "text",
-      "body": "Input arrives from outside the assumptions in your code. Treat reading, checking, converting, and using as four separate actions. A canceled prompt is `null`, an empty response is `\"\"`, and invalid numeric text becomes `NaN`. Those cases may need different messages."
+      "body": "**Input** arrives from outside the assumptions in your code. Treat reading, checking, converting, and using as four separate actions. A canceled prompt is `null`, an empty response is `\"\"`, and invalid numeric text becomes `NaN`. Those cases may need different messages."
     },
     {
       "kind": "code",
-      "caption": "The branches separate cancellation from failed number conversion.",
+      "caption": "The **branches** separate cancellation from failed number conversion.",
       "code": "const raw = prompt(\"Credits?\");\nif (raw === null) console.log(\"Canceled\");\nelse {\n  const n = Number(raw);\n  console.log(Number.isNaN(n) ? \"Enter a number\" : n + 1);\n}",
       "output": "Depends on input"
     },
@@ -34,7 +34,7 @@
     },
     {
       "kind": "text",
-      "body": "Follow the corrected path with input `\"12\"`: prompt returns text, the null check passes, Number produces twelve, validation passes, and addition produces thirteen. With Cancel, the conversion and calculation are skipped."
+      "body": "Follow the corrected path with **input** `\"12\"`: prompt returns text, the null check passes, Number produces twelve, validation passes, and addition produces thirteen. With Cancel, the conversion and calculation are skipped."
     },
     {
       "kind": "callout",
@@ -53,7 +53,7 @@
         "an empty array"
       ],
       "answer_index": 0,
-      "why": "The browser returns null for cancellation, which differs from an entered empty string."
+      "why": "The browser returns null for cancellation, which differs from an entered empty **string**."
     },
     {
       "kind": "check",
@@ -74,8 +74,8 @@
       "items": [
         "Handle null first.",
         "Trim only irrelevant spaces.",
-        "Store one converted value.",
-        "Explain invalid input clearly."
+        "Store one converted **value**.",
+        "Explain invalid **input** clearly."
       ]
     }
   ],

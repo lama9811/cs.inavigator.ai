@@ -1,50 +1,50 @@
 {
   "_note": "ORIGINAL content. Topic coverage follows David Eck's Introduction to Programming Using Java. No prose, examples, or exercises were copied; the source guides curriculum order only.",
   "title": "File I/O",
-  "summary": "Read and write text files without losing track of errors.",
+  "summary": "Read and write text **files** without losing track of errors.",
   "minutes": 11,
   "error_classes": [
     "runtime",
     "syntax",
     "wrong_answer"
   ],
-  "refresher": "Java reads files through library classes such as `Files` and `Path`. A path names the file. Reading can fail if the file is missing or blocked, so file code often uses exceptions or declares that an exception may be thrown.",
+  "refresher": "Java reads **files** through library **classes** such as `Files` and `Path`. A path names the file. Reading can fail if the file is missing or blocked, so file code often uses **exceptions** or declares that an exception may be thrown.",
   "refresher_code": "Path path = Path.of(\"notes.txt\");\nFiles.writeString(path, \"Study loops\", StandardCharsets.UTF_8);",
   "blocks": [
     {
       "kind": "text",
-      "body": "A file lets your program keep data after the program ends. Java needs two things before it can read one: where the file is, and what should happen if reading fails."
+      "body": "A **file** lets your program keep data after the program ends. Java needs two things before it can read one: where the file is, and what should happen if reading fails."
     },
     {
       "kind": "code",
-      "caption": "The same Path is used for writing and reading. UTF-8 makes the text encoding an explicit part of the file format.",
+      "caption": "The same Path is used for writing and reading. UTF-8 makes the text encoding an explicit part of the **file** format.",
       "code": "Path path = Path.of(\"courses.txt\");\nFiles.writeString(path, \"CS101\\nMATH120\\n\", StandardCharsets.UTF_8);\nString text = Files.readString(path, StandardCharsets.UTF_8);\nSystem.out.print(text);",
       "output": "CS101\nMATH120",
-      "body": "`Path` names the file. `Files.readString` reads the text from that path. If the file is not there, Java reports the problem instead of pretending the text exists."
+      "body": "`Path` names the **file**. `Files.readString` reads the text from that path. If the file is not there, Java reports the problem instead of pretending the text exists."
     },
     {
       "kind": "text",
-      "body": "These operations report IOException because disks, permissions, and paths can fail outside the program's control. Java requires the method to catch that checked exception or declare that it may pass upward.",
-      "caption": "The path points to the file. readString returns the file contents as one String."
+      "body": "These operations report IOException because disks, permissions, and paths can fail outside the program's control. Java requires the **method** to catch that checked **exception** or declare that it may pass upward.",
+      "caption": "The path points to the **file**. readString returns the file contents as one **String**."
     },
     {
       "kind": "compare",
-      "caption": "The left side replaces existing text. The right side adds content at the end by passing the append option.",
+      "caption": "The left side replaces existing text. The right side adds content at the end by passing the **append** option.",
       "wrong_label": "Replaces",
       "wrong": "Files.writeString(path, \"next\\n\");",
       "right_label": "Appends",
       "right": "Files.writeString(path, \"next\\n\",\n    StandardOpenOption.CREATE,\n    StandardOpenOption.APPEND);",
-      "body": "File paths are a common beginner headache. If Java cannot find the file, check the folder your program is running from, not only the folder where the source file lives."
+      "body": "**File** paths are a common beginner headache. If Java cannot find the file, check the folder your program is running from, not only the folder where the source file lives."
     },
     {
       "kind": "callout",
       "tone": "warning",
       "title": "Default writing replaces contents",
-      "body": "A successful write can still be the wrong action. If old records matter, include the append option or read, update, and rewrite the complete data intentionally."
+      "body": "A successful write can still be the wrong action. If old records matter, include the **append** option or read, update, and rewrite the complete data intentionally."
     },
     {
       "kind": "check",
-      "prompt": "Which type represents a file-system path?",
+      "prompt": "Which type represents a **file**-system path?",
       "code": "Path notes = Path.of(\"notes.txt\");",
       "choices": [
         "Path",
@@ -53,11 +53,11 @@
         "StringBuilder"
       ],
       "answer_index": 0,
-      "why": "`Path` represents a location and can be passed to Files operations. A String contains characters but does not provide the file-system abstraction."
+      "why": "`Path` represents a location and can be passed to **Files** operations. A **String** contains characters but does not provide the file-system abstraction."
     },
     {
       "kind": "text",
-      "body": "For large files, `Files.lines` can process a stream instead of placing the whole file in one String. Use try-with-resources so the stream closes when processing ends."
+      "body": "For large **files**, `Files.lines` can process a stream instead of placing the whole file in one **String**. Use try-with-resources so the stream closes when processing ends."
     },
     {
       "kind": "check",
@@ -70,17 +70,17 @@
         "It converts the file to an array"
       ],
       "answer_index": 0,
-      "why": "The stream holds an open file resource. Try-with-resources calls its close method even when processing throws an exception."
+      "why": "The stream holds an open **file** resource. Try-with-resources calls its close **method** even when processing throws an **exception**."
     },
     {
       "kind": "list",
       "title": "File I/O checklist",
       "items": [
-        "Use Path to name the file.",
-        "Use Files helpers for simple text files.",
-        "Expect missing-file errors.",
+        "Use Path to name the **file**.",
+        "Use **Files** helpers for simple text files.",
+        "Expect missing-**file** errors.",
         "Close resources or use helpers that close them for you.",
-        "Check the working folder when a file cannot be found."
+        "Check the working folder when a **file** cannot be found."
       ]
     }
   ]

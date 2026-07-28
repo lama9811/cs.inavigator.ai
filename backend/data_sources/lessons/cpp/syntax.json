@@ -27,17 +27,17 @@
           "kind": "callout",
           "tone": "tip",
           "title": "If you have seen Python",
-          "body": "Python can run `print(\"Hi\")` by itself. In C++, the print line goes inside `main`, and the program is compiled before it runs."
+          "body": "Python can run `print(\"Hi\")` by itself. In C++, the **print** line goes inside `main`, and the program is compiled before it runs."
         },
         {
           "kind": "code",
-          "caption": "Read this from top to bottom: include the print tool, start `main`, print one line, and finish.",
+          "caption": "Read this from top to bottom: include the **print** tool, start `main`, print one line, and finish.",
           "code": "#include <iostream>\n\nint main() {\n  std::cout << \"Welcome\\n\";\n  return 0;\n}",
           "output": "Welcome"
         },
         {
           "kind": "compare",
-          "caption": "The semicolon finishes the output statement. The braces hold the body of `main`.",
+          "caption": "The semicolon finishes the **output** statement. The braces hold the body of `main`.",
           "wrong_label": "Missing semicolon",
           "wrong": "int main() {\n  std::cout << \"Hello\\n\"\n}",
           "right_label": "Complete statement",
@@ -48,7 +48,7 @@
     {
       "id": "printing-and-values",
       "title": "Printing text, numbers, and stored values",
-      "summary": "`std::cout` sends values to the screen. It can print text, math results, and variables.",
+      "summary": "`std::cout` sends **values** to the screen. It can **print** text, math results, and **variables**.",
       "question_ids": [
         "output-01",
         "output-02",
@@ -59,23 +59,23 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "`std::cout` prints what you send into it with `<<`. Text goes in quotes. Numbers can be used directly. A variable prints the value it holds."
+          "body": "`std::cout` prints what you send into it with `<<`. Text goes in quotes. Numbers can be used directly. A **variable** prints the **value** it holds."
         },
         {
           "kind": "code",
-          "caption": "The first output prints math. The second output prints text and a variable.",
+          "caption": "The first **output** prints math. The second output prints text and a **variable**.",
           "code": "#include <iostream>\n#include <string>\n\nint main() {\n  int score = 15 + 6;\n  std::string name = \"Ada\";\n\n  std::cout << score << \"\\n\";\n  std::cout << \"Hello, \" << name << \"\\n\";\n}",
           "output": "21\nHello, Ada"
         },
         {
           "kind": "text",
-          "body": "C++ does the math before printing. If both sides of `/` are integers, the answer is an integer too. That is why `7 / 2` becomes `3` instead of `3.5`."
+          "body": "C++ does the math before printing. If both sides of `/` are **integers**, the answer is an integer too. That is why `7 / 2` becomes `3` instead of `3.5`."
         },
         {
           "kind": "callout",
           "tone": "tip",
           "title": "New lines",
-          "body": "The characters `\\n` mean move to the next line. They are written inside a string, like `\"A\\nB\"`."
+          "body": "The characters `\\n` mean move to the next line. They are written inside a **string**, like `\"A\\nB\"`."
         }
       ]
     },
@@ -95,11 +95,11 @@
         },
         {
           "kind": "text",
-          "body": "C++ is case-sensitive. That means `cout`, `Cout`, and `COUT` are three different names. The print stream is `std::cout` with a lowercase `c`."
+          "body": "C++ is case-sensitive. That means `cout`, `Cout`, and `COUT` are three different names. The **print** stream is `std::cout` with a lowercase `c`."
         },
         {
           "kind": "compare",
-          "caption": "An `if` condition needs parentheses. The statements that belong to the `if` go inside braces.",
+          "caption": "An `if` **condition** needs parentheses. The statements that belong to the `if` go inside braces.",
           "wrong_label": "Missing parentheses",
           "wrong": "if score >= 70 {\n  std::cout << \"Pass\";\n}",
           "right_label": "Condition in parentheses",
@@ -120,7 +120,7 @@
       "blocks": [
         {
           "kind": "check",
-          "prompt": "Which line is a complete output statement?",
+          "prompt": "Which line is a complete **output** statement?",
           "code": "",
           "choices": [
             "std::cout << \"Hi\";",
@@ -129,7 +129,7 @@
             "std::cout << \"Hi\""
           ],
           "answer_index": 0,
-          "why": "Output uses `<<`, the text is in quotes, and the statement ends with a semicolon."
+          "why": "**Output** uses `<<`, the text is in quotes, and the statement ends with a semicolon."
         },
         {
           "kind": "check",
@@ -142,7 +142,7 @@
             "The braces should be square brackets."
           ],
           "answer_index": 0,
-          "why": "C++ writes the condition as `if (score >= 70)`. The braces then hold the code that runs when the condition is true."
+          "why": "C++ writes the **condition** as `if (score >= 70)`. The braces then hold the code that runs when the condition is true."
         },
         {
           "kind": "list",

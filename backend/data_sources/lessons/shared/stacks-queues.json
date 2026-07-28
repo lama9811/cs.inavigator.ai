@@ -1,29 +1,29 @@
 {
   "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Stacks & Queues",
-  "summary": "Use a stack when the newest item should come out first. Use a queue when the oldest item should come out first.",
+  "summary": "Use a **stack** when the newest item should come out first. Use a **queue** when the oldest item should come out first.",
   "minutes": 18,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "A stack is last-in, first-out: push adds to the top, and pop removes that same top item. A queue is first-in, first-out: enqueue adds to the back, and dequeue removes the oldest item from the front.",
+  "refresher": "A **stack** is last-in, first-out: push adds to the top, and pop removes that same top item. A **queue** is first-in, first-out: enqueue adds to the back, and dequeue removes the oldest item from the front.",
   "refresher_code": "stack: push A, push B, pop -> B\nqueue: add A, add B, remove -> A",
   "learn_cards": {
     "advanced-stack-lifo": {
       "title": "Stack order means newest first",
-      "body": "A stack acts like a pile. The newest item is on top, so it leaves first.",
+      "body": "A **stack** acts like a pile. The newest item is on top, so it **leaves** first.",
       "example": "push A, push B, push C, pop -> C",
-      "notice": "The item that leaves is the one most recently added.",
-      "mistake": "Do not remove from the front if the question says stack.",
+      "notice": "The item that **leaves** is the one most recently added.",
+      "mistake": "Do not remove from the front if the question says **stack**.",
       "section_id": "stack-mental-model"
     },
     "advanced-queue-fifo": {
       "title": "Queue order means oldest first",
-      "body": "A queue acts like a line. The first item waiting is handled first.",
+      "body": "A **queue** acts like a line. The first item waiting is handled first.",
       "example": "add A, add B, add C, remove -> A",
       "notice": "Add at one end, remove from the other.",
-      "mistake": "Removing from the newest end turns the queue into a stack.",
+      "mistake": "Removing from the newest end turns the **queue** into a **stack**.",
       "section_id": "queue-mental-model"
     },
     "advanced-stack-parentheses": {
@@ -36,10 +36,10 @@
     },
     "advanced-queue-bfs": {
       "title": "Queues keep breadth-first search in order",
-      "body": "BFS visits all current neighbors before moving farther away. A queue keeps that arrival order.",
+      "body": "BFS visits all current neighbors before moving farther away. A **queue** keeps that arrival order.",
       "example": "visit start, enqueue its neighbors, then remove the oldest neighbor next",
-      "notice": "Oldest waiting node is processed first.",
-      "mistake": "Using a stack changes the search into depth-first behavior.",
+      "notice": "Oldest waiting **node** is processed first.",
+      "mistake": "Using a **stack** changes the search into depth-first behavior.",
       "section_id": "queue-mental-model"
     }
   },
@@ -47,7 +47,7 @@
     {
       "id": "stack-mental-model",
       "title": "Stack: newest item first",
-      "summary": "A stack stores work so the most recent item leaves first.",
+      "summary": "A **stack** stores work so the most recent item **leaves** first.",
       "question_ids": [
         "advanced-stack-lifo",
         "advanced-stack-parentheses",
@@ -57,21 +57,21 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A stack is useful when the newest unfinished thing matters first. Undo buttons, browser back history, function calls, and matching parentheses all use this idea."
+          "body": "A **stack** is useful when the newest unfinished thing matters first. Undo buttons, browser back history, **function** calls, and matching parentheses all use this idea."
         },
         {
           "kind": "list",
           "title": "Stack words you will see",
           "items": [
             "`push` means add an item to the top.",
-            "`pop` means remove and return the top item.",
+            "`pop` means remove and **return** the top item.",
             "`peek` means look at the top item without removing it.",
             "`is_empty` means ask whether there is anything to remove."
           ]
         },
         {
           "kind": "code",
-          "caption": "The shortest stack uses the end of a list or array as the top.",
+          "caption": "The shortest **stack** uses the end of a **list** or **array** as the top.",
           "variants": {
             "python": {
               "code": "stack = []\nstack.append(\"A\")   # push A\nstack.append(\"B\")   # push B on top of A\ntop = stack.pop()    # remove B\nprint(top)\nprint(stack)",
@@ -95,22 +95,22 @@
           "kind": "callout",
           "tone": "tip",
           "title": "Why append and pop go together",
-          "body": "In Python and JavaScript, `append` or `push` adds to the end of the list. `pop()` removes from that same end. That pair makes the end behave like the top of the stack."
+          "body": "In Python and JavaScript, `append` or `push` adds to the end of the **list**. `pop()` removes from that same end. That pair makes the end behave like the top of the **stack**."
         }
       ]
     },
     {
       "id": "stack-class-api",
       "title": "Build a small Stack class",
-      "summary": "A class can wrap the list so the stack rules are easy to reuse.",
+      "summary": "A **class** can wrap the **list** so the **stack** rules are easy to reuse.",
       "blocks": [
         {
           "kind": "text",
-          "body": "A stack class is not magic. It is a small wrapper around storage. The wrapper gives names to the operations so the rest of your code can say `push`, `pop`, and `peek` instead of reaching into the list directly."
+          "body": "A **stack** **class** is not magic. It is a small wrapper around storage. The wrapper gives names to the operations so the rest of your code can say `push`, `pop`, and `peek` instead of reaching into the **list** directly."
         },
         {
           "kind": "code",
-          "caption": "A beginner-friendly stack implementation with each method doing one job.",
+          "caption": "A beginner-friendly **stack** implementation with each **method** doing one job.",
           "variants": {
             "python": {
               "code": "class Stack:\n    def __init__(self):\n        self.items = []\n\n    def is_empty(self):\n        return len(self.items) == 0\n\n    def push(self, item):\n        self.items.append(item)\n\n    def pop(self):\n        if self.is_empty():\n            return None\n        return self.items.pop()\n\n    def peek(self):\n        if self.is_empty():\n            return None\n        return self.items[-1]\n\n    def size(self):\n        return len(self.items)",
@@ -134,8 +134,8 @@
           "kind": "list",
           "title": "Read the Python version line by line",
           "items": [
-            "`__init__` runs when a new stack is created. It starts with an empty list.",
-            "`self.items` is the list that holds the stack values.",
+            "`__init__` runs when a new **stack** is created. It starts with an empty **list**.",
+            "`self.items` is the **list** that holds the **stack** **values**.",
             "`append(item)` adds to the end. We treat that end as the top.",
             "`pop()` removes and returns the last item.",
             "`items[-1]` looks at the last item without removing it.",
@@ -146,14 +146,14 @@
           "kind": "callout",
           "tone": "warning",
           "title": "Do not hide an empty pop by accident",
-          "body": "Returning `None` or `null` is beginner-friendly, but real programs may throw an error instead. The important habit is checking what should happen when the stack is empty."
+          "body": "Returning `None` or `null` is beginner-friendly, but real programs may throw an error instead. The important habit is checking what should happen when the **stack** is empty."
         }
       ]
     },
     {
       "id": "queue-mental-model",
       "title": "Queue: oldest item first",
-      "summary": "A queue stores work in arrival order.",
+      "summary": "A **queue** stores work in arrival order.",
       "question_ids": [
         "advanced-queue-fifo",
         "advanced-queue-bfs",
@@ -163,7 +163,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A queue is useful when the first thing waiting should be handled first. Lines at a desk, printer jobs, notifications, and breadth-first search use this idea."
+          "body": "A **queue** is useful when the first thing waiting should be handled first. Lines at a desk, printer jobs, notifications, and breadth-first search use this idea."
         },
         {
           "kind": "code",
@@ -189,7 +189,7 @@
         },
         {
           "kind": "compare",
-          "caption": "Stack and queue differ in which item leaves next.",
+          "caption": "**Stack** and queue differ in which item leaves next.",
           "wrong_label": "Stack result",
           "wrong": "Add A, add B, remove B",
           "right_label": "Queue result",
@@ -200,18 +200,18 @@
           "kind": "callout",
           "tone": "tip",
           "title": "Python queue note",
-          "body": "`deque` is a good Python queue because removing from the left is fast. A normal list can do it, but `pop(0)` has to shift the remaining items."
+          "body": "`deque` is a good Python **queue** because removing from the left is fast. A normal **list** can do it, but `pop(0)` has to shift the remaining items."
         }
       ]
     },
     {
       "id": "trace-stack-queue",
       "title": "Trace before you code",
-      "summary": "Most stack and queue bugs are order bugs.",
+      "summary": "Most **stack** and **queue** bugs are order bugs.",
       "blocks": [
         {
           "kind": "text",
-          "body": "Before writing code, draw the structure after each operation. This catches the most common mistake: removing the right value from the wrong end."
+          "body": "Before writing code, draw the structure after each operation. This catches the most common mistake: removing the right **value** from the wrong end."
         },
         {
           "kind": "list",
@@ -220,7 +220,7 @@
             "start: []",
             "push 2 -> [2]",
             "push 5 -> [2, 5]",
-            "pop -> removes 5, stack becomes [2]"
+            "pop -> removes 5, **stack** becomes [2]"
           ]
         },
         {
@@ -230,12 +230,12 @@
             "start: []",
             "add 2 -> [2]",
             "add 5 -> [2, 5]",
-            "remove -> removes 2, queue becomes [5]"
+            "remove -> removes 2, **queue** becomes [5]"
           ]
         },
         {
           "kind": "check",
-          "prompt": "A stack receives 10, then 20, then 30. What does the first pop return?",
+          "prompt": "A **stack** receives 10, then 20, then 30. What does the first pop **return**?",
           "choices": [
             "10",
             "20",
@@ -243,11 +243,11 @@
             "Nothing"
           ],
           "answer_index": 2,
-          "why": "The newest item is 30, so a stack pops 30 first."
+          "why": "The newest item is 30, so a **stack** pops 30 first."
         },
         {
           "kind": "check",
-          "prompt": "A queue receives 10, then 20, then 30. What does the first remove return?",
+          "prompt": "A **queue** receives 10, then 20, then 30. What does the first remove **return**?",
           "choices": [
             "10",
             "20",
@@ -255,7 +255,7 @@
             "Nothing"
           ],
           "answer_index": 0,
-          "why": "The oldest item is 10, so a queue removes 10 first."
+          "why": "The oldest item is 10, so a **queue** removes 10 first."
         }
       ]
     },
@@ -266,13 +266,13 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "If the prompt says newest, undo, reverse, nested, or matching parentheses, think stack first. If it says oldest, waiting line, level order, or BFS, think queue first."
+          "body": "If the prompt says newest, undo, reverse, nested, or matching parentheses, think **stack** first. If it says oldest, waiting line, level order, or BFS, think **queue** first."
         },
         {
           "kind": "callout",
           "tone": "mistake",
           "title": "Do not memorize only the method names",
-          "body": "Method names change by language. The rule stays the same: stack removes newest, queue removes oldest."
+          "body": "**Method** names change by language. The rule stays the same: stack removes newest, queue removes oldest."
         }
       ]
     }

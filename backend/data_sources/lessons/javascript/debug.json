@@ -9,12 +9,12 @@
     "wrong_answer",
     "timeout"
   ],
-  "refresher": "A syntax error blocks parsing, a runtime error interrupts execution, and a logic error finishes with the wrong result. Reproduce the failure and change one cause at a time.",
+  "refresher": "A **syntax error** blocks parsing, a **runtime error** interrupts execution, and a **logic error** finishes with the wrong result. Reproduce the failure and change one cause at a time.",
   "refresher_code": "const items=[\"a\",\"b\"];\nconsole.log(items[items.length-1]);",
   "blocks": [
     {
       "kind": "text",
-      "body": "A syntax error blocks parsing, a runtime error interrupts execution, and a logic error finishes with the wrong result. Reproduce the failure and change one cause at a time. Classify syntax, runtime, logic, and timeout symptoms."
+      "body": "A **syntax error** blocks parsing, a **runtime error** interrupts execution, and a **logic error** finishes with the wrong result. Reproduce the failure and change one cause at a time. Classify syntax, runtime, logic, and timeout symptoms."
     },
     {
       "kind": "text",
@@ -22,13 +22,13 @@
     },
     {
       "kind": "code",
-      "caption": "Subtracting one converts the item count into the final valid index.",
+      "caption": "Subtracting one converts the item count into the final valid **index**.",
       "code": "const rooms=[\"lab\",\"library\"];\nconsole.log(rooms[rooms.length-1]);",
       "output": "library"
     },
     {
       "kind": "compare",
-      "caption": "Use the collection count to compute its final valid index.",
+      "caption": "Use the collection count to compute its final valid **index**.",
       "wrong_label": "Common mistake",
       "wrong": "const last = rooms[rooms.length];",
       "right_label": "Clearer version",
@@ -36,13 +36,13 @@
     },
     {
       "kind": "text",
-      "body": "For two rooms, length is two but the valid indexes are zero and one. The wrong line reads index two and receives undefined. A useful debugging log would show both `rooms.length` and the index immediately before access."
+      "body": "For two rooms, length is two but the valid **indexes** are zero and one. The wrong line reads **index** two and receives undefined. A useful debugging log would show both `rooms.length` and the index immediately before access."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "Trace this carefully",
-      "body": "A stack trace can include library frames; start with the first frame naming your source file and inspect that line."
+      "body": "A **stack** trace can include library frames; start with the first frame naming your source **file** and inspect that line."
     },
     {
       "kind": "check",
@@ -68,7 +68,7 @@
         "console starts at one"
       ],
       "answer_index": 0,
-      "why": "A two-item array has indexes zero and one, making two out of bounds."
+      "why": "A two-item **array** has **indexes** zero and one, making two out of bounds."
     },
     {
       "kind": "list",
@@ -76,7 +76,7 @@
       "items": [
         "Reproduce consistently.",
         "Read your source frame.",
-        "Log nearby values.",
+        "Log nearby **values**.",
         "Retest after one edit."
       ]
     }
