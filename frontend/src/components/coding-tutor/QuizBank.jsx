@@ -89,8 +89,9 @@ function statusOf(progress) {
 // The Home dashboard no longer shows stat tiles; the Progress page keeps the
 // full StatTiles cards (progress is the point there).
 function ProgressStrip({ progressSummary }) {
+  const streakDays = Number(progressSummary.displayStreak) || 0;
   const items = [
-    { key: "streak", Icon: FaFire, value: progressSummary.displayStreak, label: "day streak" },
+    { key: "streak", Icon: FaFire, value: streakDays > 0 ? `${streakDays}-day` : "0", label: streakDays > 0 ? "streak" : "day streak" },
     { key: "solved", Icon: FaCheckCircle, value: progressSummary.solvedCount, label: "solved" },
     { key: "attempted", Icon: FaPenFancy, value: progressSummary.attemptedCount, label: "attempted" },
     { key: "complete", Icon: FaChartLine, value: `${progressSummary.completionPercent}%`, label: "complete" },

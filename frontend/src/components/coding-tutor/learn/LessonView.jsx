@@ -574,6 +574,7 @@ export default function LessonView({
   language,
   category,
   languageLabel,
+  onPracticeActivity,
   onPractice,
   onBack,
 }) {
@@ -669,8 +670,9 @@ export default function LessonView({
     ).length;
     if (answeredCount === checkKeys.length) {
       markLessonRead(language, category);
+      onPracticeActivity?.();
     }
-  }, [category, checkAnswers, checkKeys, language, lesson]);
+  }, [category, checkAnswers, checkKeys, language, lesson, onPracticeActivity]);
 
   if (loading) return <p className="cq-loading">Loading lesson…</p>;
   if (error) return <p className="cq-error">{error}</p>;

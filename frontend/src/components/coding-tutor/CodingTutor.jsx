@@ -442,10 +442,10 @@ function clearLocalProgress(questionId, language) {
   }
 }
 
-// ── Daily-challenge streak (gamification, #8) ─────────────────────────────
-// We record the local date (YYYY-MM-DD) each day the student practices the daily
-// challenge, then count back from today to get a real consecutive-day streak.
-// Per-device only (localStorage) — no backend needed.
+// ── Practice streak (gamification, #8) ────────────────────────────────────
+// We record the local date (YYYY-MM-DD) each day the student practices in the
+// Learning Library, then count back from today to get a real consecutive-day streak.
+// localStorage is the offline cache; /api/coding/user-progress syncs it per user.
 const DAILY_STREAK_KEY = "coding_daily_streak_days";
 
 function localDateKey(date = new Date()) {
@@ -467,8 +467,8 @@ function readDailyStreakDays() {
   }
 }
 
-// Mark today as a daily-challenge completion. Returns the updated day list.
-function recordDailyChallengeDay() {
+// Mark today as a CS Navigator practice day. Returns the updated day list.
+function recordPracticeActivityDay() {
   const today = localDateKey();
   const days = readDailyStreakDays();
   if (!days.includes(today)) days.push(today);
@@ -771,8 +771,8 @@ export default function CodingTutor({
   const [dailyChallenge, setDailyChallenge] = useState(null);
   const [dailyChallengeLoading, setDailyChallengeLoading] = useState(false);
   const [learningStyle, setLearningStyle] = useState(DEFAULT_LEARNING_STYLE);
-  // Recorded local dates (YYYY-MM-DD) the student practiced the daily challenge.
-  // Drives the real "day streak" tile instead of a derived guess.
+  // Recorded local dates (YYYY-MM-DD) the student practiced in the Learning Library.
+  // Drives the real practice streak tile instead of a derived guess.
   const [dailyStreakDays, setDailyStreakDays] = useState(() => readDailyStreakDays());
   const [difficulty, setDifficulty] = useState("easy");
   // A topic to pre-filter the Practice Library by, set when a student clicks a
@@ -821,6 +821,9 @@ export default function CodingTutor({
   // Per-device counters that back the mock + best-streak badges (localStorage).
   const [mockCompleted, setMockCompleted] = useState(() => readMockCompleted());
   const [bestStreak, setBestStreak] = useState(() => readBestStreak());
+  const recordPracticeActivity = useCallback(() => {
+    setDailyStreakDays(recordPracticeActivityDay());
+  }, []);
   // Confirm dialog for mock-mode actions: { title, body, confirmLabel, onConfirm }.
   const [mockConfirm, setMockConfirm] = useState(null);
   const mockSessionActive = Boolean(mockSession); // ticker dep: only (re)start on begin/end
@@ -1127,7 +1130,7 @@ export default function CodingTutor({
   const attemptedCount = progressItems.filter(item => (item.progress?.attempt_count || 0) > 0 || item.progress?.status === "solved").length;
   const totalAttempts = progressItems.reduce((sum, item) => sum + (item.progress?.attempt_count || 0), 0);
   const completionPercent = progressQuestions.length ? Math.round((solvedCount / progressQuestions.length) * 100) : 0;
-  // Real consecutive-day streak from daily-challenge completions.
+  // Real consecutive-day streak from Learning Library practice activity.
   const displayStreak = useMemo(() => computeDailyStreak(dailyStreakDays), [dailyStreakDays]);
   const dailyDoneToday = useMemo(() => isDailyDoneToday(dailyStreakDays), [dailyStreakDays]);
 
@@ -2024,12 +2027,28 @@ export default function CodingTutor({
   };
 
   const startDailyChallenge = (withHints = false) => {
-    // Practicing the daily challenge counts toward the day streak (gamification).
-    setDailyStreakDays(recordDailyChallengeDay());
     const title = dailyChallenge?.title || "Daily coding challenge";
+    const isLeetCode = (dailyChallenge?.source || "").toLowerCase() === "leetcode";
+    const sourceUrl = dailyChallenge?.url || "https://leetcode.com/problemset/";
+    if (isLeetCode && !withHints) {
+      const opened = window.open(sourceUrl, "_blank", "noopener,noreferrer");
+      if (opened) {
+        opened.opener = null;
+        toast.success("Opened the LeetCode problem. Use CS Navigator scratchpad if you want notes or tutor help.");
+      } else {
+        toast.error("Your browser blocked the new tab. Use the View Source link on the daily card.");
+      }
+      return;
+    }
     const prompt = dailyChallenge?.available
-      ? `Solve today's LeetCode daily challenge: ${title}. Open the LeetCode link for the full prompt, then use this workspace for notes and code.`
+      ? `LeetCode daily scratchpad: ${title}. Open the LeetCode source link for the full prompt, examples, and official tests. Use this workspace for notes, experiments, and tutor help.`
       : "Daily challenge is unavailable. Use this workspace for a short practice prompt or open the Practice Library.";
+    const scratchpadStarter = {
+      Python: `# LeetCode daily scratchpad: ${title}\n# Open the Source link for the full prompt and official tests.\n# Use this space for notes, helper functions, or small experiments.\n\n`,
+      JavaScript: `// LeetCode daily scratchpad: ${title}\n// Open the Source link for the full prompt and official tests.\n// Use this space for notes, helper functions, or small experiments.\n\n`,
+      Java: `// LeetCode daily scratchpad: ${title}\n// Open the Source link for the full prompt and official tests.\n// Use this space for notes, helper methods, or small experiments.\n\nclass Solution {\n    // Start notes or helper code here.\n}\n`,
+      "C++": `// LeetCode daily scratchpad: ${title}\n// Open the Source link for the full prompt and official tests.\n// Use this space for notes, helper functions, or small experiments.\n\n#include <bits/stdc++.h>\nusing namespace std;\n\n// Start notes or helper code here.\n`,
+    };
     setActiveProblem({
       id: `daily-${new Date().toISOString().slice(0, 10)}`,
       title,
@@ -2037,14 +2056,18 @@ export default function CodingTutor({
       topic: dailyChallenge?.tags?.[0] || "Daily Challenge",
       prompt,
       examples: [],
-      constraints: dailyChallenge?.url ? [`Source: ${dailyChallenge.url}`] : [],
+      constraints: [
+        "Official prompt, examples, submissions, and judging stay on LeetCode.",
+        "CS Navigator scratchpad runs code freely, but it does not auto-grade this LeetCode problem.",
+        ...(dailyChallenge?.url ? [`Source: ${dailyChallenge.url}`] : []),
+      ],
       source: "leetcode",
     });
     setActiveSolution(null);
     setSelectedLanguage(practiceLanguage);
-    setCode("");
-    setNote(withHints ? `Daily challenge: ${title}. I want hints first.` : `Daily challenge: ${title}`);
-    setTestOutput({ status: "ready", message: "Daily challenge loaded. LeetCode daily problems are source-linked practice only; local auto-grading is for CS Navigator quiz-bank questions." });
+    setCode(scratchpadStarter[practiceLanguage] || scratchpadStarter.Python);
+    setNote(`LeetCode scratchpad: ${title}. I want hints without the full solution.`);
+    setTestOutput({ status: "ready", free_run: true, message: "LeetCode scratchpad loaded. Run executes your code as freeform practice only; official LeetCode judging stays on LeetCode." });
     setTerminalOpen(false);
     setTutorMode(withHints ? "Hinting" : "Guided Tutor");
     setWorkspaceVisible(true);
@@ -2877,8 +2900,7 @@ export default function CodingTutor({
       return;
     }
     if (activeProblem.source === "leetcode") {
-      setTestOutput({ status: "error", message: "Daily LeetCode challenges are not auto-graded in CS Navigator yet. Open the Source link for official tests." });
-      setTerminalOpen(true);
+      await runFreeform();
       return;
     }
     if (!isQuizBankProblem) {
@@ -2927,6 +2949,7 @@ export default function CodingTutor({
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || `runner ${response.status}`);
       setTestOutput(data);
+      recordPracticeActivity();
       // This run just wrote an attempt event, so the mastery score is now stale.
       setMasteryTick(tick => tick + 1);
       setWorkspaceSnapshots(prev => ({
@@ -3154,7 +3177,7 @@ export default function CodingTutor({
   };
 
   const renderDashboard = () => (
-    <CampusLabHome
+      <CampusLabHome
       progressSummary={progressSummary}
       topicPacks={topicPacks}
       questions={allQuestions.length ? allQuestions : questions}
@@ -3165,7 +3188,8 @@ export default function CodingTutor({
       dailyDoneToday={dailyDoneToday}
       displayStreak={displayStreak}
       latestQuizResponse={latestQuizResponse}
-      onStartDaily={() => startDailyChallenge(true)}
+      onStartDaily={() => startDailyChallenge(false)}
+      onOpenDailyScratch={() => startDailyChallenge(true)}
       onOpenSnippets={openMySnippets}
       onSelectQuestion={selectQuestion}
       onOpenQuizBank={() => navigate(PRACTICE_CODE_PATH)}
@@ -3505,6 +3529,7 @@ export default function CodingTutor({
               apiBase={apiBase}
               target={target}
               languageLabels={CONCEPT_QUIZ_LABELS}
+              onPracticeActivity={recordPracticeActivity}
               onNavigateToLanguages={() => navigate(PRACTICE_LEARN_PATH)}
               onNavigateToLanguage={(language) => navigate(learnPathForLanguage(language))}
               onNavigateToTrack={(language, track) =>
@@ -3528,6 +3553,7 @@ export default function CodingTutor({
               target={target}
               languageLabels={CONCEPT_QUIZ_LABELS}
               mastery={mastery}
+              onPracticeActivity={recordPracticeActivity}
               onNavigateToLanguages={() => navigate(PRACTICE_QUIZ_PATH)}
               onNavigateToLanguage={(language) => navigate(quizPathForLanguage(language))}
               onNavigateToQuestion={(language, category, questionId) =>

@@ -1,5 +1,6 @@
 export default function DailyChallengeCard({ dailyChallenge, loading, onStartChallenge, onPracticeWithHints }) {
   const difficulty = dailyChallenge?.difficulty || "Easy";
+  const isLeetCode = (dailyChallenge?.source || "").toLowerCase() === "leetcode";
   const estimatedTime = String(difficulty).toLowerCase() === "hard"
     ? "25 min"
     : String(difficulty).toLowerCase() === "medium"
@@ -26,10 +27,19 @@ export default function DailyChallengeCard({ dailyChallenge, loading, onStartCha
             {dailyChallenge?.tags?.length > 0 && (
               <div className="daily-tags">{dailyChallenge.tags.map(tag => <span key={tag}>{tag}</span>)}</div>
             )}
+            {isLeetCode && (
+              <p className="daily-handoff-note">
+                CS Navigator only receives safe metadata for the daily LeetCode problem. Open LeetCode for the full prompt and official tests, or use the scratchpad here for notes and experiments.
+              </p>
+            )}
             <div className="daily-actions">
-              <button type="button" className="daily-practice-btn" onClick={onStartChallenge}>Start Challenge</button>
-              <button type="button" className="daily-practice-btn secondary" onClick={onPracticeWithHints}>Practice with Hints</button>
-              {dailyChallenge?.url && <a href={dailyChallenge.url} target="_blank" rel="noopener noreferrer" className="daily-link">Open Source</a>}
+              <button type="button" className="daily-practice-btn" onClick={onStartChallenge}>
+                {isLeetCode ? "Open on LeetCode" : "Start Challenge"}
+              </button>
+              <button type="button" className="daily-practice-btn secondary" onClick={onPracticeWithHints}>
+                {isLeetCode ? "Use CS Navigator scratchpad" : "Practice with Hints"}
+              </button>
+              {dailyChallenge?.url && !isLeetCode && <a href={dailyChallenge.url} target="_blank" rel="noopener noreferrer" className="daily-link">Open Source</a>}
             </div>
           </>
         )}

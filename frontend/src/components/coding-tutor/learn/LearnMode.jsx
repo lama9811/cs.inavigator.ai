@@ -257,6 +257,7 @@ export default function LearnMode({
   apiBase,
   target,
   languageLabels,
+  onPracticeActivity,
   onNavigateToLanguages,
   onNavigateToLanguage,
   onNavigateToTrack,
@@ -340,6 +341,7 @@ export default function LearnMode({
         language={target.language}
         category={target.category}
         languageLabel={labelFor(target.language)}
+        onPracticeActivity={onPracticeActivity}
         onPractice={() => startPracticeCategory(target.language, target.category)}
         onBack={() =>
           target.track

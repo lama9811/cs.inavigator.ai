@@ -21,7 +21,7 @@ function buildFocusPlan({ resumeItem, nextUpQuestion, dailyChallenge, dailyDoneT
   }
   if (!dailyDoneToday && dailyChallenge?.available !== false && dailyChallenge?.title) {
     const diff = (dailyChallenge.difficulty || "the").toString().toLowerCase();
-    return `Solve today's ${diff} LeetCode problem, run it, and review your approach.`;
+    return `Open today's ${diff} LeetCode problem, then use CS Navigator if you want a scratchpad or hints.`;
   }
   if (nextUpQuestion?.title) {
     const topic = nextUpQuestion.topic ? `${nextUpQuestion.topic} ` : "";
@@ -167,6 +167,9 @@ function CampusHero({
   // The hero owns the next action: one concrete "Today's Focus" line (was a
   // separate strip below the hero).
   const focusPlan = buildFocusPlan({ resumeItem, nextUpQuestion, dailyChallenge, dailyDoneToday });
+  const streakDays = Number(progressSummary.displayStreak) || 0;
+  const streakValue = streakDays > 0 ? `${streakDays}-day` : "0";
+  const streakLabel = streakDays > 0 ? "streak" : "day streak";
 
   return (
     <section className="campus-lab-hero" aria-label="Coding Tutor start">
@@ -178,8 +181,8 @@ function CampusHero({
         <h2>Welcome back!</h2>
         <div className="campus-hero-stats" aria-label="Your progress at a glance">
           <span className="campus-hero-stat accent">
-            <strong>{progressSummary.displayStreak}</strong>
-            <i>day streak</i>
+            <strong>{streakValue}</strong>
+            <i>{streakLabel}</i>
           </span>
           <span className="campus-hero-stat success">
             <strong>{progressSummary.solvedCount}</strong>
@@ -375,7 +378,7 @@ function CampusTutorActions({ latestQuizResponse, onPrompt, onOpenInterviewPrep,
   );
 }
 
-function CampusDailyMission({ dailyChallenge, loading, dailyDoneToday, displayStreak, onPractice }) {
+function CampusDailyMission({ dailyChallenge, loading, dailyDoneToday, displayStreak, onPractice, onOpenScratch }) {
   const isLeetCode = (dailyChallenge?.source || "").toLowerCase() === "leetcode";
   const problemNumber = dailyChallenge?.frontend_id;
   const tags = Array.isArray(dailyChallenge?.tags) ? dailyChallenge.tags.filter(Boolean) : [];
@@ -417,12 +420,17 @@ function CampusDailyMission({ dailyChallenge, loading, dailyDoneToday, displaySt
           {dailyChallenge?.title || "Daily practice"}
         </h2>
         {dailyChallenge?.available === false && <p>{dailyChallenge.message}</p>}
+        {isLeetCode && dailyChallenge?.available !== false && (
+          <p className="daily-mission-summary">
+            Open the full prompt on LeetCode. Use CS Navigator when you want a scratchpad, notes, or tutor help.
+          </p>
+        )}
         <div className="daily-meta-row">
           <span className={`daily-difficulty ${difficultyClass(dailyChallenge?.difficulty)}`}>{dailyChallenge?.difficulty || "Easy"}</span>
           {isLeetCode && <span className="daily-source-pill">LeetCode</span>}
           {dailyDoneToday
-            ? <span className="daily-streak-pill done">Done today - {displayStreak}-day streak</span>
-            : displayStreak > 0 && <span className="daily-streak-pill">{displayStreak}-day streak - keep it going</span>}
+            ? <span className="daily-streak-pill done">Practiced today - {displayStreak}-day streak</span>
+            : displayStreak > 0 && <span className="daily-streak-pill">{displayStreak}-day streak</span>}
         </div>
       </div>
 
@@ -440,14 +448,24 @@ function CampusDailyMission({ dailyChallenge, loading, dailyDoneToday, displaySt
         )}
         <div className="daily-actions">
           <button type="button" className="daily-practice-btn" onClick={onPractice}>
-            Practice Now
+            {isLeetCode ? "Open on LeetCode" : "Practice Now"}
           </button>
-          {dailyChallenge?.url && (
+          {isLeetCode && (
+            <button type="button" className="daily-practice-btn secondary" onClick={onOpenScratch}>
+              Use CS Navigator scratchpad
+            </button>
+          )}
+          {dailyChallenge?.url && !isLeetCode && (
             <a href={dailyChallenge.url} target="_blank" rel="noopener noreferrer" className="daily-link">
               View Source
             </a>
           )}
         </div>
+        {isLeetCode && (
+          <p className="daily-handoff-note">
+            Full prompt and official judging stay on LeetCode. The scratchpad is for notes, experiments, and tutor help.
+          </p>
+        )}
       </aside>
     </section>
   );
@@ -465,6 +483,7 @@ export default function CampusLabHome({
   displayStreak,
   latestQuizResponse,
   onStartDaily,
+  onOpenDailyScratch,
   onOpenSnippets,
   onSelectQuestion,
   onOpenQuizBank,
@@ -505,6 +524,7 @@ export default function CampusLabHome({
         dailyDoneToday={dailyDoneToday}
         displayStreak={displayStreak}
         onPractice={onStartDaily}
+        onOpenScratch={onOpenDailyScratch}
       />
 
       <CampusLearningQueue

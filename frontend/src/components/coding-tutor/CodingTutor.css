@@ -1253,7 +1253,7 @@ body.coding-dark .mock-confirm { background: #1c2a3f; }
   transform: translateY(-1px);
 }
 
-/* ── Daily streak pill (#8): shows real consecutive-day streak ───────────── */
+/* ── Practice streak pill (#8): shows real consecutive-day activity ───────── */
 .daily-streak-pill {
   padding: 3px 11px;
   border-radius: 999px;
@@ -6823,6 +6823,18 @@ body.coding-dark .campus-hero-focus {
   font-weight: 650;
 }
 
+.daily-handoff-note {
+  margin: 0.5rem 0 0;
+  border: 1px solid color-mix(in srgb, var(--ct-accent) 22%, var(--ct-border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ct-accent) 8%, var(--ct-panel));
+  color: color-mix(in srgb, var(--ct-muted) 72%, var(--ct-primary));
+  padding: 0.75rem 0.85rem;
+  font-size: 0.86rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
 /* Topic tag chips (reuses the DailyChallengeCard .daily-tags pattern). */
 .campus-daily-mission .daily-tags {
   display: flex;
@@ -7033,6 +7045,63 @@ body.coding-dark .campus-language-card p {
 body.coding-dark .campus-code-preview {
   background: #090f1f;
   border-color: color-mix(in srgb, var(--ct-accent) 42%, #1f2a44);
+}
+
+/* Compact LeetCode handoff card: the card should feel like a daily mission,
+   not an oversized empty banner. Placed late so it wins over older daily-card
+   overrides above. */
+.campus-lab-home .campus-daily-mission {
+  grid-template-columns: minmax(0, 1fr) clamp(220px, 23%, 270px);
+  align-items: start;
+  min-height: 0;
+  gap: clamp(16px, 2vw, 24px);
+  padding: clamp(14px, 1.7vw, 20px) clamp(18px, 2.2vw, 24px);
+}
+
+.campus-lab-home .campus-daily-mission .daily-mission-main {
+  align-self: start;
+}
+
+.campus-lab-home .campus-daily-mission .daily-mission-aside {
+  align-self: start;
+  gap: 12px;
+  justify-content: flex-start;
+}
+
+.campus-lab-home .campus-daily-mission .daily-mission-aside .daily-actions {
+  margin-top: 0;
+  gap: 8px;
+}
+
+.campus-lab-home .campus-daily-mission h2 {
+  max-width: 760px;
+  margin-bottom: 0.5rem;
+  font-size: clamp(1.28rem, 2vw, 1.7rem);
+  line-height: 1.16;
+}
+
+.campus-lab-home .campus-daily-mission .daily-mission-summary {
+  max-width: 650px;
+  margin: 0 0 0.75rem;
+  color: color-mix(in srgb, var(--ct-muted) 82%, var(--ct-primary));
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.campus-lab-home .campus-daily-mission .daily-meta-row {
+  margin-top: 0.35rem;
+}
+
+.campus-lab-home .campus-daily-mission .daily-practice-btn,
+.campus-lab-home .campus-daily-mission .daily-link {
+  min-height: 40px;
+  padding-block: 0.62rem;
+}
+
+.campus-lab-home .campus-daily-mission .daily-handoff-note {
+  margin-top: 0.25rem;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.8rem;
 }
 
 /* Phone: hero stats and actions wrap cleanly. */
