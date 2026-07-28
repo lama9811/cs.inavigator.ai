@@ -330,6 +330,19 @@ FILLER_PHRASES = (
     "trace this carefully",
 )
 
+MOJIBAKE_SEQUENCES = (
+    "\u00e2\u20ac\u201d",  # broken em dash
+    "\u00e2\u20ac\u201c",  # broken en dash
+    "\u00e2\u20ac\u00a6",  # broken ellipsis
+    "\u00e2\u20ac\u02dc",  # broken left quote
+    "\u00e2\u20ac\u2122",  # broken right quote
+    "\u00e2\u20ac\u0153",  # broken left double quote
+    "\u00e2\u20ac\ufffd",  # broken right double quote
+    "\u00c2\u00b7",        # broken middle dot
+    "\u00c2\u00a0",        # broken non-breaking space
+    "\ufffd",
+)
+
 
 def test_all_banks_reject_filler_templates_and_exact_duplicate_questions():
     """Quality rules apply to every bank, not only files produced by one authoring pass.
@@ -358,6 +371,16 @@ def test_all_banks_reject_filler_templates_and_exact_duplicate_questions():
                 assert not matched, (
                     f"{language}/{category['id']}/{question['id']} uses filler: {matched}"
                 )
+
+
+def test_authored_quiz_text_has_no_mojibake_sequences():
+    for language, category, question in authored_questions():
+        rendered = json.dumps(question, ensure_ascii=False)
+        matched = [seq for seq in MOJIBAKE_SEQUENCES if seq in rendered]
+        assert not matched, (
+            f"{language}/{category}/{question['id']} has mojibake sequences: "
+            f"{[seq.encode('unicode_escape').decode('ascii') for seq in matched]}"
+        )
 
 
 def test_every_mcq_explanation_adds_more_than_the_correct_choice():

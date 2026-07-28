@@ -471,6 +471,78 @@ body.coding-dark .terminal-panel-body {
   gap: 12px;
 }
 
+.terminal-solution-diff {
+  margin-bottom: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 9px;
+  background: #07162b;
+}
+
+.terminal-solution-diff-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  color: #b7c1cf;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.terminal-solution-diff-head small {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #8fa0b6;
+  font-weight: 600;
+}
+
+.terminal-solution-diff-head strong {
+  color: #e7eef8;
+}
+
+.terminal-solution-diff pre {
+  max-height: 230px;
+  margin: 0 !important;
+  overflow: auto !important;
+  padding: 6px 0 !important;
+  background: transparent !important;
+}
+
+.terminal-solution-diff .diff-line {
+  display: grid;
+  grid-template-columns: 2ch minmax(0, 1fr);
+  gap: 8px;
+  padding: 1px 10px;
+  color: #d7e0ec !important;
+  -webkit-text-fill-color: #d7e0ec !important;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.terminal-solution-diff .diff-line span {
+  color: #8fa0b6;
+  font-weight: 900;
+}
+
+.terminal-solution-diff .diff-line.added {
+  background: rgba(63, 185, 80, 0.14);
+}
+
+.terminal-solution-diff .diff-line.added span {
+  color: #7ee787;
+}
+
+.terminal-solution-diff .diff-line.removed {
+  background: rgba(248, 81, 73, 0.14);
+}
+
+.terminal-solution-diff .diff-line.removed span {
+  color: #ff9a93;
+}
+
 .terminal-solution-columns > div {
   min-width: 0;
 }

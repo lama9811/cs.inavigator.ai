@@ -15,6 +15,8 @@ CODING_TUTOR = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "Codi
 CHATBOX = ROOT / "frontend" / "src" / "components" / "Chatbox.jsx"
 APP = ROOT / "frontend" / "src" / "App.jsx"
 WORKSPACE_DRAFT = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "workspaceDraft.js"
+TERMINAL_PANEL = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "TerminalPanel.jsx"
+TERMINAL_CSS = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "TerminalPanel.css"
 
 
 def read(path: Path) -> str:
@@ -44,6 +46,17 @@ def test_workspace_uses_materials_before_gated_solution():
     assert "/solution?language=" in source
     assert "loadUnlockedReferenceSolution" in source
     assert "solution_unlocked" in source
+
+
+def test_passing_solution_review_shows_a_line_diff():
+    panel_source = read(TERMINAL_PANEL)
+    css_source = read(TERMINAL_CSS)
+
+    assert "buildLineDiff" in panel_source
+    assert "terminal-solution-diff" in panel_source
+    assert 'className={`diff-line ${line.type}`}' in panel_source
+    assert ".terminal-solution-diff .diff-line.added" in css_source
+    assert ".terminal-solution-diff .diff-line.removed" in css_source
 
 
 def test_solution_endpoint_requires_auth_and_locks_before_three_attempts():

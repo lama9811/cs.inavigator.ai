@@ -19,6 +19,52 @@ function formatValue(value) {
   }
 }
 
+function normalizeDiffLines(value = "") {
+  return String(value).replace(/\r\n/g, "\n").replace(/\s+$/g, "").split("\n");
+}
+
+function buildLineDiff(studentCode = "", referenceCode = "") {
+  const student = normalizeDiffLines(studentCode);
+  const reference = normalizeDiffLines(referenceCode);
+  const rows = Array.from({ length: student.length + 1 }, () =>
+    Array(reference.length + 1).fill(0)
+  );
+
+  for (let i = student.length - 1; i >= 0; i -= 1) {
+    for (let j = reference.length - 1; j >= 0; j -= 1) {
+      rows[i][j] = student[i] === reference[j]
+        ? rows[i + 1][j + 1] + 1
+        : Math.max(rows[i + 1][j], rows[i][j + 1]);
+    }
+  }
+
+  const diff = [];
+  let i = 0;
+  let j = 0;
+  while (i < student.length && j < reference.length) {
+    if (student[i] === reference[j]) {
+      diff.push({ type: "same", text: student[i] || " " });
+      i += 1;
+      j += 1;
+    } else if (rows[i + 1][j] >= rows[i][j + 1]) {
+      diff.push({ type: "removed", text: student[i] || " " });
+      i += 1;
+    } else {
+      diff.push({ type: "added", text: reference[j] || " " });
+      j += 1;
+    }
+  }
+  while (i < student.length) {
+    diff.push({ type: "removed", text: student[i] || " " });
+    i += 1;
+  }
+  while (j < reference.length) {
+    diff.push({ type: "added", text: reference[j] || " " });
+    j += 1;
+  }
+  return diff;
+}
+
 function TerminalOutputPane({ output, tests, onExplainError }) {
   const capturedOutput = [output.stdout, output.stderr].filter(Boolean).join("\n");
   const hasRunResults = ["passed", "failed", "error"].includes(output.status) && tests.length > 0;
@@ -109,6 +155,9 @@ function SolutionReview({ review }) {
   if (!review?.studentCode || !review?.reference) return null;
 
   const referenceLooksLikeCode = /\n|\b(def|class|function|return)\b|[{};]/.test(review.reference);
+  const diffLines = referenceLooksLikeCode
+    ? buildLineDiff(review.studentCode, review.reference)
+    : [];
   return (
     <section className="terminal-solution-review">
       <button
@@ -129,6 +178,27 @@ function SolutionReview({ review }) {
             Your code passed the authored tests. The reference is another approach,
             not the only correct answer.
           </p>
+          {diffLines.length ? (
+            <div className="terminal-solution-diff" aria-label="Line-by-line solution diff">
+              <div className="terminal-solution-diff-head">
+                <span>Diff</span>
+                <small>
+                  <strong>-</strong> your line
+                  <strong>+</strong> reference line
+                </small>
+              </div>
+              <pre>
+                {diffLines.map((line, index) => (
+                  <code key={`${line.type}-${index}`} className={`diff-line ${line.type}`}>
+                    <span aria-hidden="true">
+                      {line.type === "added" ? "+" : line.type === "removed" ? "-" : " "}
+                    </span>
+                    {line.text}
+                  </code>
+                ))}
+              </pre>
+            </div>
+          ) : null}
           <div className="terminal-solution-columns">
             <div>
               <span>Your solution</span>

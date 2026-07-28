@@ -443,6 +443,10 @@ body.coding-dark .floating-coding-chat .floating-chat-input-row textarea {
 }
 
 .floating-coding-chat .floating-code-context summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
   cursor: pointer;
   font-weight: 750;
   color: var(--ct-float-text);
@@ -456,11 +460,17 @@ body.coding-dark .floating-coding-chat .floating-chat-input-row textarea {
 }
 
 .floating-coding-chat .floating-code-context summary span {
-  display: inline-block;
-  max-width: calc(100% - 18px);
+  display: block;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+.floating-coding-chat .floating-code-context summary small {
+  color: color-mix(in srgb, var(--ct-float-muted) 88%, var(--ct-float-text));
+  font-size: 0.72rem;
+  font-weight: 800;
   white-space: nowrap;
 }
 

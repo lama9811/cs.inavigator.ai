@@ -196,6 +196,18 @@ def _build_java(function_name: str, spec: tuple[list[tuple[str, str]], str]) -> 
 
 # C++: the student writes a clean, native-typed function (string/int/vector),
 # like a normal file. A hidden harness bridge unpacks the inputs and calls it.
+_CPP_STUDENT_PARAM_TYPE = {
+    "int": "int", "double": "double", "bool": "bool", "string": "const std::string&",
+    "intlist": "const std::vector<int>&", "strlist": "const std::vector<std::string>&",
+    "grid": "const std::vector<std::vector<int>>&",
+    "strgrid": "const std::vector<std::vector<std::string>>&",
+}
+_CPP_STUDENT_RET_TYPE = {
+    "int": "int", "bool": "bool", "string": "std::string",
+    "intlist": "std::vector<int>", "strlist": "std::vector<std::string>",
+    "grid": "std::vector<std::vector<int>>",
+    "list": "std::vector<int>",
+}
 _CPP_DEFAULT_RETURN = {
     "int": "return 0;", "bool": "return false;", "string": 'return "";',
     "intlist": "return {};", "strlist": "return {};", "grid": "return {};",
@@ -203,13 +215,25 @@ _CPP_DEFAULT_RETURN = {
 }
 
 
+def cpp_student_signature(function_name: str, spec) -> str:
+    """Beginner-facing C++ signature used in the visible starter code.
+
+    The hidden bridge still accepts the wider long long contract for grading, but
+    the starter should match what students usually learn first: int plus const
+    references for vector/string inputs.
+    """
+    args, ret = spec
+    params = ", ".join(f"{_CPP_STUDENT_PARAM_TYPE.get(k, 'Value')} {n}" for n, k in args)
+    return f"{_CPP_STUDENT_RET_TYPE.get(ret, 'Value')} {function_name}({params})"
+
+
 def _build_cpp(function_name: str, spec: tuple[list[tuple[str, str]], str]) -> str:
     _, ret = spec
     default_return = _CPP_DEFAULT_RETURN.get(ret, "return {};")
     return (
-        "#include <bits/stdc++.h>\n"
-        "using namespace std;\n\n"
-        f"{cpp_native_signature(function_name, spec)} {{\n"
+        "#include <string>\n"
+        "#include <vector>\n\n"
+        f"{cpp_student_signature(function_name, spec)} {{\n"
         "    // Write your solution here.\n"
         f"    {default_return}\n"
         "}"
@@ -290,8 +314,13 @@ def cpp_native_signature(function_name: str, spec) -> str:
 
 
 def cpp_native_bridge(function_name: str, spec) -> str:
-    """Helper conversions + the forward decl + a `__call(args)` bridge returning a
-    Value, so the existing runTest harness can stay unchanged."""
+    """Helper conversions + a `__call(args)` bridge returning a Value.
+
+    The student code is placed before this bridge in the generated harness. That
+    lets beginner-facing `int` / `vector<int>` solutions define their function
+    first, then an optional compatibility wrapper can add the wider long long
+    signature before this bridge calls it.
+    """
     args, ret = spec
     unpacks = ", ".join(_cpp_unpack_expr(k, f"args[{i}]") for i, (_, k) in enumerate(args))
     # Wrap the native return value back into a Value the harness can compare.
@@ -326,9 +355,6 @@ static std::vector<std::vector<std::string>> __toStrGrid(const Value& v) {{
     for (auto& row : v.a) {{ std::vector<std::string> rr; for (auto& e : row.a) rr.push_back(e.s); r.push_back(rr); }}
     return r;
 }}
-
-// Student's native-typed function:
-{cpp_native_signature(function_name, spec)};
 
 // Bridge the harness calls (unpacks Value args -> native, wraps result -> Value):
 static Value __call_{function_name}(std::vector<Value> args) {{

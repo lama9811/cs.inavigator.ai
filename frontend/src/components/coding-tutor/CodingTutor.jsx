@@ -1286,16 +1286,23 @@ export default function CodingTutor({
     [activeSnapshotKey, workspaceSnapshots]
   );
   const runnerSummary = useMemo(() => summarizeRunForTutor(testOutput), [testOutput]);
-  const applyAiCode = useCallback(() => {
+  const applyAiCodeWithMode = useCallback((mode = "safe") => {
     if (!suggestedCodeBlock || suggestedCodeBlock === code) return;
-    const shouldReplace = suggestedCodeLooksLikeSafeReplacement(code, suggestedCodeBlock, selectedLanguage);
-    const nextCode = shouldReplace
-      ? suggestedCodeBlock
-      : `${code.trimEnd()}${buildCommentedTutorSuggestion(suggestedCodeBlock, selectedLanguage)}`;
-    const confirmMessage = shouldReplace
-      ? "Replace the current workspace code with this tutor suggestion? You can undo this change afterward."
-      : "This looks like a partial example, so it will be added as comments under your code instead of replacing your workspace.";
-    if (code.trim() && !window.confirm(confirmMessage)) return;
+    const trimmedCode = code.trimEnd();
+    const nextCode = (() => {
+      if (mode === "comment") {
+        return `${trimmedCode}${buildCommentedTutorSuggestion(suggestedCodeBlock, selectedLanguage)}`;
+      }
+      if (mode === "append") {
+        return `${trimmedCode}${trimmedCode ? "\n\n" : ""}${suggestedCodeBlock}`;
+      }
+      if (mode === "replace") {
+        return suggestedCodeBlock;
+      }
+      return suggestedCodeLooksLikeSafeReplacement(code, suggestedCodeBlock, selectedLanguage)
+        ? suggestedCodeBlock
+        : `${trimmedCode}${buildCommentedTutorSuggestion(suggestedCodeBlock, selectedLanguage)}`;
+    })();
     setWorkspaceSnapshots(prev => ({
       ...prev,
       [activeSnapshotKey]: {
@@ -1306,7 +1313,13 @@ export default function CodingTutor({
       },
     }));
     setCode(nextCode);
-    toast.success(shouldReplace ? "Tutor code applied. Undo is available in the chat." : "Tutor suggestion added as comments.");
+    const label = {
+      comment: "Tutor suggestion inserted as comments.",
+      append: "Tutor suggestion appended below your code.",
+      replace: "Tutor suggestion replaced the workspace.",
+      safe: "Tutor suggestion applied safely.",
+    }[mode] || "Tutor suggestion applied.";
+    toast.success(`${label} Undo is available in the chat.`);
   }, [activeSnapshotKey, code, selectedLanguage, suggestedCodeBlock]);
 
   const undoAiCode = useCallback(() => {
@@ -1482,11 +1495,11 @@ export default function CodingTutor({
       } : null,
       runnerSummary: useWorkspace ? runnerSummary : "",
       suggestedCodeBlock,
-      onApplyAICode: suggestedCodeBlock ? applyAiCode : null,
+      onApplyAICode: suggestedCodeBlock ? applyAiCodeWithMode : null,
       onUndoAICode: typeof activeSnapshots.beforeAiRewrite === "string" ? undoAiCode : null,
       canUndoAICode: typeof activeSnapshots.beforeAiRewrite === "string",
     });
-  }, [activePage, activeProblem, activeSolution?.function_name, activeSolution?.starter_code, attempts, code, note, onContextChange, selectedLanguage, suggestedCodeBlock, tutorMode, learningStyle, hintGate, workspaceTab, workspaceVisible, runnerSummary, activeSnapshots.beforeAiRewrite, applyAiCode, undoAiCode]);
+  }, [activePage, activeProblem, activeSolution?.function_name, activeSolution?.starter_code, attempts, code, note, onContextChange, selectedLanguage, suggestedCodeBlock, tutorMode, learningStyle, hintGate, workspaceTab, workspaceVisible, runnerSummary, activeSnapshots.beforeAiRewrite, applyAiCodeWithMode, undoAiCode]);
 
   useEffect(() => {
     onActivePageChange?.(activePage);
@@ -3369,7 +3382,7 @@ export default function CodingTutor({
           onRun={runAttempt}
           onMarkSolved={markSolved}
           onCopyCode={() => navigator.clipboard.writeText(code)}
-          onApplyAICode={applyAiCode}
+          onApplyAICode={applyAiCodeWithMode}
           onClearWorkspace={clearWorkspace}
           onShowHint={showNextHint}
           onShowAllHints={showAllHints}

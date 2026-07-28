@@ -3,7 +3,6 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { BsArrowUpCircleFill } from "react-icons/bs";
 import { FaCommentDots, FaCompress, FaExpand, FaExternalLinkAlt, FaMicrophone, FaPaperclip, FaSyncAlt, FaTimes, FaWindowMinimize } from "react-icons/fa";
-import TutorStatusCard from "./TutorStatusCard";
 import WorkspaceCodeContext from "./WorkspaceCodeContext";
 import "./FloatingCodingChat.css";
 
@@ -38,7 +37,7 @@ function getFloatingDimensions(isOpen, isMaximized) {
     const mobile = window.innerWidth <= 760;
     return {
       width: Math.min(460, window.innerWidth - (mobile ? 24 : 40)),
-      height: Math.min(650, window.innerHeight - (mobile ? 24 : 44)),
+      height: Math.min(720, window.innerHeight - (mobile ? 24 : 44)),
     };
   }
   return { width: 176, height: 56 };
@@ -180,7 +179,6 @@ function FloatingChatWindow({
   onMoveToCorner,
 }) {
   const activeProblem = context?.activeProblem || null;
-  const selectedLanguage = context?.selectedLanguage || "Python";
   const attempts = context?.attempts ?? 0;
   const tutorMode = context?.tutorMode || "Guided Tutor";
   const topic = activeProblem?.title ? `Helping with: ${activeProblem.title}` : "Personal Code Help";
@@ -189,6 +187,7 @@ function FloatingChatWindow({
   const visibleMessages = messages.slice(-messageLimit);
   const hiddenMessageCount = Math.max(0, messages.length - visibleMessages.length);
   const [rewriteOpen, setRewriteOpen] = useState(false);
+  const [applyPreviewOpen, setApplyPreviewOpen] = useState(false);
   const windowRef = useRef(null);
   const messagesRef = useRef(null);
   const keepPinnedToLatestRef = useRef(true);
@@ -204,6 +203,10 @@ function FloatingChatWindow({
     setMessageLimit(defaultMessageLimit);
     keepPinnedToLatestRef.current = true;
   }, [defaultMessageLimit, messageSessionId]);
+
+  useEffect(() => {
+    setApplyPreviewOpen(false);
+  }, [suggestedCodeBlock]);
 
   useEffect(() => {
     if (!keepPinnedToLatestRef.current || !messagesRef.current) return;
@@ -271,16 +274,10 @@ function FloatingChatWindow({
         </div>
       </header>
 
-      <TutorStatusCard
-        activeProblem={activeProblem}
-        selectedLanguage={selectedLanguage}
-        attempts={attempts}
-        tutorMode={tutorMode}
-      />
-
       <WorkspaceCodeContext
         code={context?.code || ""}
         activeProblem={activeProblem}
+        attempts={attempts}
       />
 
       {/* Two optional shortcuts at the top. Debug sends immediately; Rewrite opens
@@ -326,14 +323,59 @@ function FloatingChatWindow({
       {(suggestedCodeBlock && onApplyAICode) || (canUndoAICode && onUndoAICode) ? (
         <div className="floating-code-actions">
           {suggestedCodeBlock && onApplyAICode && (
-            <button
-              type="button"
-              className="floating-apply-code-btn"
-              onClick={onApplyAICode}
-              title="Full suggestions replace only when they preserve the wrapper; partial examples are added as comments."
-            >
-              Add tutor suggestion safely
-            </button>
+            <>
+              {!applyPreviewOpen ? (
+                <button
+                  type="button"
+                  className="floating-apply-code-btn"
+                  onClick={() => setApplyPreviewOpen(true)}
+                  aria-expanded={false}
+                  title="Preview the suggested code before changing your workspace."
+                >
+                  Preview tutor suggestion
+                </button>
+              ) : (
+                <div className="floating-apply-preview">
+                  <div className="floating-apply-preview-head">
+                    <strong>Review suggestion</strong>
+                    <button type="button" onClick={() => setApplyPreviewOpen(false)}>
+                      Close
+                    </button>
+                  </div>
+                  <pre><code>{suggestedCodeBlock}</code></pre>
+                  <div className="floating-apply-preview-actions">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onApplyAICode("comment");
+                        setApplyPreviewOpen(false);
+                      }}
+                    >
+                      Insert as comment
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onApplyAICode("append");
+                        setApplyPreviewOpen(false);
+                      }}
+                    >
+                      Append below code
+                    </button>
+                    <button
+                      type="button"
+                      className="danger"
+                      onClick={() => {
+                        onApplyAICode("replace");
+                        setApplyPreviewOpen(false);
+                      }}
+                    >
+                      Replace workspace
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
           {canUndoAICode && onUndoAICode && (
             <button

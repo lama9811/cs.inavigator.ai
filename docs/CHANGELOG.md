@@ -18,6 +18,10 @@ All notable changes to CS Navigator are documented here.
 - **Backend-backed last workspace state.** Coding Tutor now remembers the last practice/interview problem, language, and source per user so another device can reopen the same workspace when localStorage has no draft.
 
 ### Changed
+- Passing Coding Tutor solutions now show a line-by-line diff against the reference approach in the terminal review panel.
+- Applying a Coding Tutor code suggestion now uses a preview step with comment, append, replace, and cancel paths instead of a browser confirm.
+- The floating Coding Tutor chat no longer repeats the "Currently helping with" card; attempt count now lives in the workspace code context so AI review has more room.
+- C++ practice starters now use beginner-facing `int` / `std::vector<int>` signatures and explicit standard headers, while the hidden grader keeps its wider numeric bridge.
 - Lesson TTS now treats visualizer blocks like diagrams: it reads the caption and invites the student to open the visualizer, instead of reading raw diagram state.
 - Concept quizzes now reveal immediate teaching feedback after each checked answer, showing "Why it works" for correct answers and "What went wrong" plus the correct answer for missed questions, while keeping the final review screen.
 - Advanced concept quiz questions now include small code/state blurbs where useful, so operation questions show something concrete to trace instead of rendering as plain text on an empty panel.
@@ -34,6 +38,8 @@ All notable changes to CS Navigator are documented here.
 - Coding Tutor workspace now uses a draggable problem-guide divider and quieter editor-style tabs so the workspace feels like one connected coding surface.
 
 ### Fixed
+- Fixed a mojibake sequence in the Java concept-quiz correct-answer explanation for printing `Hello`, and added a content guard for common broken-UTF-8 sequences.
+- Fixed C++ grader compatibility for beginner `const std::vector<int>&` answers and snake_case function names such as `sum_even_numbers`.
 - Fixed Coding Tutor streaming after removing the old in-chat advising flow.
 - Fixed Interview Prep warmup draft/solved-state persistence issues in the workspace flow.
 - Fixed workspace readability issues where passed-test details and solution-review labels could lose contrast in light/dark mode.

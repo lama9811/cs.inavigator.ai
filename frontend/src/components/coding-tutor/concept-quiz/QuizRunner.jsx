@@ -319,9 +319,17 @@ function splitExplanation(text) {
 }
 
 function formatAnswer(value) {
-  if (Array.isArray(value)) return value.join("\n");
+  const clean = (text) => String(text)
+    .replace(/\u00e2\u20ac\u201d/g, "-")
+    .replace(/\u00e2\u20ac\u201c/g, "-")
+    .replace(/\u00e2\u20ac\u00a6/g, "...")
+    .replace(/\u00e2\u20ac\u02dc|\u00e2\u20ac\u2122/g, "'")
+    .replace(/\u00e2\u20ac\u0153|\u00e2\u20ac\ufffd/g, "\"")
+    .replace(/\u00c2\u00b7/g, " - ")
+    .replace(/\u00c2\u00a0/g, " ");
+  if (Array.isArray(value)) return value.map(clean).join("\n");
   if (value == null || value === "") return "No answer";
-  return String(value);
+  return clean(value);
 }
 
 function isAnswerComplete(answer) {

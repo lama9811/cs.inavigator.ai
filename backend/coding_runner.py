@@ -1091,12 +1091,32 @@ def _cpp_param_prefers_int(code: str, function_name: str, param_name: str, kind:
     signature_match = re.search(rf"\b{escaped_name}\s*\(([^)]*)\)", code)
     signature_text = signature_match.group(1) if signature_match else code
     if kind == "intlist":
-        return bool(re.search(rf"(?:std::)?vector\s*<\s*int\s*>\s*&?\s*{escaped_param}\b", signature_text))
+        return bool(re.search(rf"(?:const\s+)?(?:std::)?vector\s*<\s*int\s*>\s*(?:const\s*)?&?\s*{escaped_param}\b", signature_text))
     if kind == "grid":
-        return bool(re.search(rf"(?:std::)?vector\s*<\s*(?:std::)?vector\s*<\s*int\s*>\s*>\s*&?\s*{escaped_param}\b", signature_text))
+        return bool(re.search(rf"(?:const\s+)?(?:std::)?vector\s*<\s*(?:std::)?vector\s*<\s*int\s*>\s*>\s*(?:const\s*)?&?\s*{escaped_param}\b", signature_text))
     if kind == "int":
         return bool(re.search(rf"\bint\s*&?\s*{escaped_param}\b", signature_text))
     return False
+
+
+def _camel_to_snake_name(name: str) -> str:
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", name or "").lower()
+
+
+def _cpp_detect_student_function_name(code: str, function_name: str) -> str:
+    """Return the function name the student actually defined.
+
+    C++ grading uses camelCase function names, while beginners and AI examples
+    often produce snake_case. If the expected name is missing but the snake_case
+    equivalent is present, adapt to that instead of surfacing a confusing compile
+    error.
+    """
+    if re.search(rf"\b{re.escape(function_name)}\s*\(", code):
+        return function_name
+    snake_name = _camel_to_snake_name(function_name)
+    if snake_name != function_name and re.search(rf"\b{re.escape(snake_name)}\s*\(", code):
+        return snake_name
+    return function_name
 
 
 def _cpp_compat_return_expr(return_kind: str) -> str:
@@ -1134,10 +1154,11 @@ def _cpp_beginner_compat_adapter(code: str, function_name: str, arg_spec, expect
     """
     if not arg_spec:
         return ""
+    student_function_name = _cpp_detect_student_function_name(code, function_name)
     has_solution_class = bool(re.search(r"\bclass\s+Solution\b", code))
-    has_function = bool(re.search(rf"\b{re.escape(function_name)}\s*\(", code))
+    has_function = bool(re.search(rf"\b{re.escape(student_function_name)}\s*\(", code))
     uses_beginner_ints = "vector<int" in code or "std::vector<int" in code or bool(
-        re.search(rf"\bint\s+{re.escape(function_name)}\s*\(", code)
+        re.search(rf"\bint\s+{re.escape(student_function_name)}\s*\(", code)
     )
     if not has_solution_class and not (has_function and uses_beginner_ints):
         return ""
@@ -1148,16 +1169,16 @@ def _cpp_beginner_compat_adapter(code: str, function_name: str, arg_spec, expect
     locals_src: list[str] = []
     call_args: list[str] = []
     for name, kind in args:
-        if kind == "intlist" and _cpp_param_prefers_int(code, function_name, name, kind):
+        if kind == "intlist" and _cpp_param_prefers_int(code, student_function_name, name, kind):
             local_name = f"__{name}_int"
             locals_src.append(f"    std::vector<int> {local_name}({name}.begin(), {name}.end());")
             call_args.append(local_name)
-        elif kind == "grid" and _cpp_param_prefers_int(code, function_name, name, kind):
+        elif kind == "grid" and _cpp_param_prefers_int(code, student_function_name, name, kind):
             local_name = f"__{name}_int"
             locals_src.append(f"    std::vector<std::vector<int>> {local_name};")
             locals_src.append(f"    for (auto& __row : {name}) {local_name}.push_back(std::vector<int>(__row.begin(), __row.end()));")
             call_args.append(local_name)
-        elif kind == "int" and _cpp_param_prefers_int(code, function_name, name, kind):
+        elif kind == "int" and _cpp_param_prefers_int(code, student_function_name, name, kind):
             local_name = f"__{name}_int"
             locals_src.append(f"    int {local_name} = (int){name};")
             call_args.append(local_name)
@@ -1166,7 +1187,7 @@ def _cpp_beginner_compat_adapter(code: str, function_name: str, arg_spec, expect
 
     local_block = "\n".join(locals_src)
     call_prefix = "Solution __student;\n    " if has_solution_class else ""
-    call_target = f"__student.{function_name}" if has_solution_class else function_name
+    call_target = f"__student.{student_function_name}" if has_solution_class else student_function_name
     return_expr = _cpp_compat_return_expr(return_kind)
     return (
         "\n// Compatibility wrapper: lets common class Solution / int-based C++ answers run in this learning workspace.\n"
@@ -1401,6 +1422,8 @@ def run_cpp_practice_tests(code: str, function_name: str, tests: list[dict[str, 
         expected_signature = cpp_native_signature(function_name, arg_spec)
         student_decl = cpp_native_bridge(function_name, arg_spec)
         call_target = f"__call_{function_name}"
+        compat_adapter = _cpp_beginner_compat_adapter(code, function_name, arg_spec, expected_signature)
+        student_section = f"{code}\n\n{compat_adapter}\n\n{student_decl}"
     else:
         expected_signature = f"Value {function_name}(std::vector<Value> args)"
         student_decl = (
@@ -1408,7 +1431,8 @@ def run_cpp_practice_tests(code: str, function_name: str, tests: list[dict[str, 
             f"Value {function_name}(vector<Value> args);"
         )
         call_target = function_name
-    compat_adapter = _cpp_beginner_compat_adapter(code, function_name, arg_spec, expected_signature)
+        compat_adapter = ""
+        student_section = f"{student_decl}\n\n{code}"
 
     # A tiny tagged-union Value type so student code can accept a vector<Value>.
     harness = f"""
@@ -1450,11 +1474,7 @@ struct Value {{
     }}
 }};
 
-{student_decl}
-
-{code}
-
-{compat_adapter}
+{student_section}
 
 static int passed_=0, total_=0;
 static string esc(const string& s){{ string r; for(char c:s){{ if(c=='"'||c=='\\\\') r+='\\\\'; if(c=='\\n'){{ r+="\\\\n"; continue; }} r+=c; }} return r; }}

@@ -1,6 +1,8 @@
 from coding_runner import (
     RUN_MAX_OUTPUT_CHARS,
     RunnerSecurityError,
+    _cpp_beginner_compat_adapter,
+    _cpp_param_prefers_int,
     check_practice_run_rate_limit,
     compiled_runners_enabled,
     run_cpp_practice_tests,
@@ -10,6 +12,7 @@ from coding_runner import (
     validate_cpp_code,
     validate_java_code,
 )
+from practice_starters import cpp_native_signature, get_arg_spec
 from pathlib import Path
 import json
 
@@ -283,6 +286,60 @@ def test_cpp_validator_still_allows_normal_algorithm_code():
         "Value solve(std::vector<Value> a){ int n = a.size(); "
         "std::vector<int> v; for(int i=0;i<n;i++) v.push_back(i); return Value((long long)n); }"
     )
+
+
+def test_cpp_beginner_compat_detects_const_vector_int_params():
+    code = """
+#include <vector>
+
+int sumEvenNumbers(const std::vector<int>& nums) {
+    return 0;
+}
+"""
+
+    assert _cpp_param_prefers_int(code, "sumEvenNumbers", "nums", "intlist") is True
+
+
+def test_cpp_beginner_compat_adds_wider_wrapper_after_student_code():
+    spec = get_arg_spec("sumEvenNumbers")
+    expected_signature = cpp_native_signature("sumEvenNumbers", spec)
+    code = """
+#include <vector>
+
+int sumEvenNumbers(const std::vector<int>& nums) {
+    return 0;
+}
+"""
+
+    adapter = _cpp_beginner_compat_adapter(code, "sumEvenNumbers", spec, expected_signature)
+
+    assert "long long sumEvenNumbers(std::vector<long long> nums)" in adapter
+    assert "std::vector<int> __nums_int(nums.begin(), nums.end());" in adapter
+    assert "auto __student_result = sumEvenNumbers(__nums_int);" in adapter
+
+
+def test_cpp_beginner_compat_accepts_snake_case_function_name():
+    spec = get_arg_spec("sumEvenNumbers")
+    expected_signature = cpp_native_signature("sumEvenNumbers", spec)
+    code = """
+#include <vector>
+
+int sum_even_numbers(const std::vector<int>& nums) {
+    int current_sum = 0;
+    for (int num : nums) {
+        if (num % 2 == 0) {
+            current_sum += num;
+        }
+    }
+    return current_sum;
+}
+"""
+
+    adapter = _cpp_beginner_compat_adapter(code, "sumEvenNumbers", spec, expected_signature)
+
+    assert "long long sumEvenNumbers(std::vector<long long> nums)" in adapter
+    assert "std::vector<int> __nums_int(nums.begin(), nums.end());" in adapter
+    assert "auto __student_result = sum_even_numbers(__nums_int);" in adapter
 
 
 def test_java_validator_blocks_env_classloader_and_native():

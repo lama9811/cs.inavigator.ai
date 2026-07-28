@@ -237,7 +237,7 @@
           "accepted": [
             "System.out.println(\"Hello\");"
           ],
-          "explanation": "Java prints a line with System.out.println(\"Hello\"); \u00e2\u20ac\u201d note the semicolon and double quotes."
+          "explanation": "Java prints a line with System.out.println(\"Hello\"); - note the semicolon and double quotes."
         },
         "javascript": {
           "code": null,

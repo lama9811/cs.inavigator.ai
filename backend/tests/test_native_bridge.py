@@ -21,8 +21,8 @@ from pathlib import Path
 
 import pytest
 
-from coding_runner import run_cpp_practice_tests, run_java_practice_tests
-from practice_starters import get_arg_spec
+from coding_runner import _camel_to_snake_name, _cpp_beginner_compat_adapter, run_cpp_practice_tests, run_java_practice_tests
+from practice_starters import build_starter_from_spec, cpp_native_bridge, cpp_native_signature, get_arg_spec
 
 _HAS_GPP = shutil.which("g++") is not None or shutil.which("clang++") is not None
 _HAS_JAVA = shutil.which("javac") is not None and shutil.which("java") is not None
@@ -331,6 +331,73 @@ def test_cpp_solutions_cover_every_spec_function():
 
 
 # ── Java: one solution per distinct signature shape (marshalling is per-shape) ──
+def test_cpp_beginner_starter_uses_int_vector_for_sum_even_numbers():
+    starter = build_starter_from_spec("cpp", "sumEvenNumbers")
+
+    assert starter is not None
+    assert "#include <vector>" in starter
+    assert "#include <bits/stdc++.h>" not in starter
+    assert "int sumEvenNumbers(const std::vector<int>& nums)" in starter
+    assert "long long" not in starter
+
+
+def test_cpp_native_bridge_does_not_forward_declare_wider_signature():
+    bridge = cpp_native_bridge("sumEvenNumbers", get_arg_spec("sumEvenNumbers"))
+
+    assert "long long sumEvenNumbers(std::vector<long long> nums);" not in bridge
+    assert "__call_sumEvenNumbers" in bridge
+
+
+def test_all_cpp_beginner_vector_starters_get_hidden_grader_adapters():
+    missing = []
+    data = json.loads(_ANSWERS.read_text(encoding="utf-8"))
+
+    for item in data.get("items", []):
+        function_name = item.get("function_name")
+        spec = get_arg_spec(function_name)
+        if not function_name or not spec:
+            continue
+        starter = build_starter_from_spec("cpp", function_name) or ""
+        if "std::vector<int>" not in starter and "std::vector<std::vector<int>>" not in starter:
+            continue
+
+        expected_signature = cpp_native_signature(function_name, spec)
+        adapter = _cpp_beginner_compat_adapter(starter, function_name, spec, expected_signature)
+        if expected_signature not in adapter:
+            missing.append(f"{function_name}: missing adapter for generated starter")
+
+        snake_name = _camel_to_snake_name(function_name)
+        if snake_name != function_name:
+            snake_starter = starter.replace(function_name, snake_name, 1)
+            snake_adapter = _cpp_beginner_compat_adapter(snake_starter, function_name, spec, expected_signature)
+            if expected_signature not in snake_adapter or snake_name not in snake_adapter:
+                missing.append(f"{function_name}: missing adapter for snake_case starter")
+
+    assert missing == []
+
+
+@pytest.mark.skipif(not _HAS_GPP, reason="no C++ compiler on PATH")
+def test_cpp_runner_accepts_beginner_const_vector_int_signature():
+    spec = get_arg_spec("sumEvenNumbers")
+    tests = _TESTS["sumEvenNumbers"]
+    code = """#include <vector>
+
+int sumEvenNumbers(const std::vector<int>& nums) {
+    int current_sum = 0;
+    for (int num : nums) {
+        if (num % 2 == 0) {
+            current_sum += num;
+        }
+    }
+    return current_sum;
+}
+"""
+
+    result = run_cpp_practice_tests(code, "sumEvenNumbers", tests, arg_spec=spec)
+
+    assert result["status"] == "passed", result.get("stderr")
+
+
 JAVA_SOLUTIONS = {
     # string -> int
     "countVowels": "class Solution { static int countVowels(String text){ int c=0; for(char ch:text.toLowerCase().toCharArray()) if(\"aeiou\".indexOf(ch)>=0) c++; return c; } }",
