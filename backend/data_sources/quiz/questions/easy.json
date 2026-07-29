@@ -962,6 +962,108 @@
           "head": 0
         }
       }
+    },
+    {
+      "id": "easy-42",
+      "title": "Edge Pair Matches",
+      "difficulty": "easy",
+      "topic": "two pointers",
+      "prompt": "Count how many outside-in word pairs match as you move from the edges of a list toward the middle.",
+      "examples": [
+        {
+          "input": "words=['lab','quiz','lab']",
+          "output": "1"
+        }
+      ],
+      "constraints": [
+        "Compare words[left] with words[right].",
+        "Move left forward and right backward after each comparison.",
+        "Do not compare the middle item with itself."
+      ],
+      "hints": [
+        "Start one pointer at the first word and one at the last word.",
+        "If the two words match, add 1 to the count.",
+        "Stop when the left pointer is no longer before the right pointer."
+      ],
+      "visualizer": {
+        "concept": "two-pointers",
+        "title": "Edge Pairs: compare both ends",
+        "caption": "Watch two pointers move inward one pair at a time.",
+        "input": {
+          "items": [
+            "lab",
+            "quiz",
+            "lab"
+          ]
+        }
+      }
+    },
+    {
+      "id": "easy-43",
+      "title": "Count Short Study Blocks",
+      "difficulty": "easy",
+      "topic": "sliding window",
+      "prompt": "Count how many two-session study windows fit within a time limit.",
+      "examples": [
+        {
+          "input": "minutes=[20,30,45], limit=60",
+          "output": "1"
+        }
+      ],
+      "constraints": [
+        "A window is exactly two neighboring sessions.",
+        "Count a window when the two values add up to limit or less.",
+        "A list with fewer than two sessions returns 0."
+      ],
+      "hints": [
+        "Start with the sum of minutes[0] and minutes[1].",
+        "Slide one position at a time to check the next pair.",
+        "Increase the count whenever the current pair is short enough."
+      ],
+      "visualizer": {
+        "concept": "sliding-window",
+        "title": "Two-Session Window",
+        "caption": "Watch a fixed-size window slide across adjacent sessions.",
+        "input": {
+          "items": [
+            20,
+            30,
+            45
+          ],
+          "k": 2
+        }
+      }
+    },
+    {
+      "id": "easy-44",
+      "title": "Recursive Factorial Small",
+      "difficulty": "easy",
+      "topic": "recursion",
+      "prompt": "Return n factorial using a recursive idea for a small non-negative number.",
+      "examples": [
+        {
+          "input": "n=4",
+          "output": "24"
+        }
+      ],
+      "constraints": [
+        "0 <= n <= 10.",
+        "0! and 1! both return 1.",
+        "For n greater than 1, multiply n by the factorial of n - 1."
+      ],
+      "hints": [
+        "Write the stopping case before the recursive case.",
+        "The stopping case is n <= 1.",
+        "The recursive case multiplies n by the answer for n - 1."
+      ],
+      "visualizer": {
+        "concept": "recursion",
+        "title": "Factorial: multiply on return",
+        "caption": "Watch calls shrink down to 1, then multiply while returning.",
+        "input": {
+          "n": 4
+        }
+      }
     }
   ]
 }

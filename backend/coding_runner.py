@@ -1473,15 +1473,23 @@ def _cpp_beginner_compat_adapter(code: str, function_name: str, arg_spec, expect
     student_function_name = _cpp_detect_student_function_name(code, function_name)
     has_solution_class = bool(re.search(r"\bclass\s+Solution\b", code))
     has_function = bool(re.search(rf"\b{re.escape(student_function_name)}\s*\(", code))
-    uses_beginner_ints = "vector<int" in code or "std::vector<int" in code or bool(
+    args, return_kind = arg_spec
+    beginner_return = bool(
         re.search(rf"\bint\s+{re.escape(student_function_name)}\s*\(", code)
+        or re.search(rf"(?:std::)?vector\s*<\s*int\s*>\s+{re.escape(student_function_name)}\s*\(", code)
+        or re.search(
+            rf"(?:std::)?vector\s*<\s*(?:std::)?vector\s*<\s*int\s*>\s*>\s+{re.escape(student_function_name)}\s*\(",
+            code,
+        )
+    )
+    uses_beginner_ints = beginner_return or any(
+        _cpp_param_prefers_int(code, student_function_name, name, kind) for name, kind in args
     )
     if not has_solution_class and not (has_function and uses_beginner_ints):
         return ""
     if expected_signature in code:
         return ""
 
-    args, return_kind = arg_spec
     locals_src: list[str] = []
     call_args: list[str] = []
     for name, kind in args:

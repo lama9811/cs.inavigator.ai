@@ -4,6 +4,7 @@ All notable changes to CS Navigator are documented here.
 
 ## [Unreleased]
 ### Added
+- **Practice Library thin-topic depth batch.** Added six all-language practice problems for two pointers, sliding window, and recursion, including beginner on-ramps and medium follow-ups with deterministic runner tests.
 - **Advanced lesson visualizer V2.** Advanced Learn lessons now include multiple focused "Visualize this" walkthroughs per topic, built from reusable SVG/HTML state. The modal adds progress dots, play/pause, replay, reset, previous/next controls, lightweight accessible animations, and deeper tree traversal visuals for preorder, inorder, postorder, and level order.
 - **Separated Advanced Two Pointers and Sliding Window.** The former combined topic is now split into distinct Advanced lessons and concept quiz banks so students can learn pointer-pair movement separately from window grow/shrink state.
 - **Separated Advanced Stacks and Queues.** The former combined Stacks & Queues topic is now split into distinct Advanced lessons and concept quiz banks so students can digest LIFO stacks before moving into FIFO queues, queue variants, and BFS-style processing.

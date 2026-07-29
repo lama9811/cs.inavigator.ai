@@ -4829,6 +4829,60 @@
           "expected": 0
         }
       ]
+    },
+    {
+      "question_id": "easy-42",
+      "function_name": "edgePairMatches",
+      "runner_tests": [
+        {"name": "one outside match", "args": [["lab", "quiz", "lab"]], "expected": 1},
+        {"name": "two outside matches", "args": [["a", "b", "b", "a"]], "expected": 2},
+        {"name": "no outside matches", "args": [["a", "b", "c"]], "expected": 0}
+      ]
+    },
+    {
+      "question_id": "easy-43",
+      "function_name": "countShortStudyBlocks",
+      "runner_tests": [
+        {"name": "one short pair", "args": [[20, 30, 45], 60], "expected": 1},
+        {"name": "two short pairs", "args": [[10, 15, 20], 40], "expected": 2},
+        {"name": "too few sessions", "args": [[50], 60], "expected": 0}
+      ]
+    },
+    {
+      "question_id": "easy-44",
+      "function_name": "recursiveFactorialSmall",
+      "runner_tests": [
+        {"name": "zero factorial", "args": [0], "expected": 1},
+        {"name": "four factorial", "args": [4], "expected": 24},
+        {"name": "six factorial", "args": [6], "expected": 720}
+      ]
+    },
+    {
+      "question_id": "medium-38",
+      "function_name": "reverseOnlyLetters",
+      "runner_tests": [
+        {"name": "mixed punctuation", "args": ["a-bC-dEf-ghIj"], "expected": "j-Ih-gfE-dCba"},
+        {"name": "course code punctuation", "args": ["CS-101!"], "expected": "SC-101!"},
+        {"name": "simple dash", "args": ["ab-cd"], "expected": "dc-ba"}
+      ]
+    },
+    {
+      "question_id": "medium-39",
+      "function_name": "minimumStudyWindow",
+      "runner_tests": [
+        {"name": "two session answer", "args": [[10, 20, 30, 40], 70], "expected": 2},
+        {"name": "exact first window", "args": [[20, 30, 40], 50], "expected": 2},
+        {"name": "no large enough window", "args": [[5, 5], 20], "expected": 0}
+      ]
+    },
+    {
+      "question_id": "medium-40",
+      "function_name": "recursivePower",
+      "runner_tests": [
+        {"name": "positive exponent", "args": [2, 5], "expected": 32},
+        {"name": "zero exponent", "args": [3, 0], "expected": 1},
+        {"name": "larger base", "args": [5, 3], "expected": 125}
+      ]
     }
   ]
 }

@@ -424,6 +424,40 @@ CPP_SOLUTIONS = {
     for(size_t i=0;i<moistureReadings.size() && i<days.size();i++) if(moistureReadings[i]<threshold) out.push_back(days[i]);
     return out;
 }""",
+    "edgePairMatches": """long long edgePairMatches(vector<string> words){
+    long long count=0; int left=0, right=(int)words.size()-1;
+    while(left<right){ if(words[left]==words[right]) count++; left++; right--; }
+    return count;
+}""",
+    "countShortStudyBlocks": """long long countShortStudyBlocks(vector<long long> minutes, long long limit){
+    long long count=0; for(size_t i=1;i<minutes.size();i++) if(minutes[i-1]+minutes[i] <= limit) count++;
+    return count;
+}""",
+    "recursiveFactorialSmall": """long long recursiveFactorialSmall(long long n){
+    if(n<=1) return 1;
+    return n * recursiveFactorialSmall(n-1);
+}""",
+    "reverseOnlyLetters": """string reverseOnlyLetters(string text){
+    int left=0, right=(int)text.size()-1;
+    while(left<right){
+        while(left<right && !isalpha((unsigned char)text[left])) left++;
+        while(left<right && !isalpha((unsigned char)text[right])) right--;
+        if(left<right) swap(text[left++], text[right--]);
+    }
+    return text;
+}""",
+    "minimumStudyWindow": """long long minimumStudyWindow(vector<long long> minutes, long long target){
+    long long best=LLONG_MAX, sum=0; size_t left=0;
+    for(size_t right=0; right<minutes.size(); right++){
+        sum += minutes[right];
+        while(sum >= target){ best = min(best, (long long)(right-left+1)); sum -= minutes[left++]; }
+    }
+    return best==LLONG_MAX ? 0 : best;
+}""",
+    "recursivePower": """long long recursivePower(long long base, long long exponent){
+    if(exponent==0) return 1;
+    return base * recursivePower(base, exponent-1);
+}""",
     "campusStopReachable": """bool campusStopReachable(vector<vector<string>> connections, string start, string target){
     if(start==target) return true;
     map<string, vector<string>> graph; for(auto& edge:connections) if(edge.size()>=2) graph[edge[0]].push_back(edge[1]);
@@ -512,6 +546,19 @@ def test_cpp_native_bridge_does_not_forward_declare_wider_signature():
 
     assert "long long sumEvenNumbers(std::vector<long long> nums);" not in bridge
     assert "__call_sumEvenNumbers" in bridge
+
+
+def test_cpp_beginner_adapter_ignores_local_int_vectors():
+    code = """
+long long editDistance(string source, string target) {
+    vector<vector<int>> dp(source.size() + 1, vector<int>(target.size() + 1, 0));
+    return dp[0][0];
+}
+"""
+    spec = get_arg_spec("editDistance")
+    adapter = _cpp_beginner_compat_adapter(code, "editDistance", spec, cpp_native_signature("editDistance", spec))
+
+    assert adapter == ""
 
 
 def test_all_cpp_beginner_vector_starters_get_hidden_grader_adapters():
@@ -620,6 +667,12 @@ JAVA_SOLUTIONS = {
     "swapPairOrder": "class Solution { static String[] swapPairOrder(String[] pairItems){ if(pairItems.length<2) return pairItems.clone(); return new String[]{pairItems[1], pairItems[0]}; } }",
     "lateAssignmentPenalty": "class Solution { static int lateAssignmentPenalty(int score, int daysLate){ return Math.max(0, score - daysLate * 5); } }",
     "weeklyPlantCareDays": "import java.util.*; class Solution { static String[] weeklyPlantCareDays(int[] moistureReadings, int threshold){ String[] days={\"Mon\",\"Tue\",\"Wed\",\"Thu\",\"Fri\",\"Sat\",\"Sun\"}; List<String> out=new ArrayList<>(); for(int i=0;i<moistureReadings.length && i<days.length;i++) if(moistureReadings[i]<threshold) out.add(days[i]); return out.toArray(new String[0]); } }",
+    "edgePairMatches": "class Solution { static int edgePairMatches(String[] words){ int count=0,left=0,right=words.length-1; while(left<right){ if(words[left].equals(words[right])) count++; left++; right--; } return count; } }",
+    "countShortStudyBlocks": "class Solution { static int countShortStudyBlocks(int[] minutes, int limit){ int count=0; for(int i=1;i<minutes.length;i++) if(minutes[i-1]+minutes[i]<=limit) count++; return count; } }",
+    "recursiveFactorialSmall": "class Solution { static int recursiveFactorialSmall(int n){ if(n<=1) return 1; return n * recursiveFactorialSmall(n-1); } }",
+    "reverseOnlyLetters": "class Solution { static String reverseOnlyLetters(String text){ char[] chars=text.toCharArray(); int left=0,right=chars.length-1; while(left<right){ while(left<right && !Character.isLetter(chars[left])) left++; while(left<right && !Character.isLetter(chars[right])) right--; if(left<right){ char temp=chars[left]; chars[left++]=chars[right]; chars[right--]=temp; } } return new String(chars); } }",
+    "minimumStudyWindow": "class Solution { static int minimumStudyWindow(int[] minutes, int target){ int best=Integer.MAX_VALUE,sum=0,left=0; for(int right=0;right<minutes.length;right++){ sum+=minutes[right]; while(sum>=target){ best=Math.min(best,right-left+1); sum-=minutes[left++]; } } return best==Integer.MAX_VALUE ? 0 : best; } }",
+    "recursivePower": "class Solution { static int recursivePower(int base, int exponent){ if(exponent==0) return 1; return base * recursivePower(base, exponent-1); } }",
     "campusStopReachable": "import java.util.*; class Solution { static boolean campusStopReachable(String[][] connections, String start, String target){ if(start.equals(target)) return true; Map<String,List<String>> g=new HashMap<>(); for(String[] e:connections) g.computeIfAbsent(e[0],k->new ArrayList<>()).add(e[1]); Queue<String> q=new ArrayDeque<>(); Set<String> seen=new HashSet<>(); q.add(start); seen.add(start); while(!q.isEmpty()){ String cur=q.poll(); for(String next:g.getOrDefault(cur, Collections.emptyList())){ if(next.equals(target)) return true; if(seen.add(next)) q.add(next); } } return false; } }",
     "clubMembershipGroups": "import java.util.*; class Solution { static int[] par; static int find(int x){ while(par[x]!=x){ par[x]=par[par[x]]; x=par[x]; } return x; } static int clubMembershipGroups(int n, int[][] pairs){ par=new int[n]; for(int i=0;i<n;i++) par[i]=i; for(int[] p:pairs) par[find(p[0])]=find(p[1]); Set<Integer> s=new HashSet<>(); for(int i=0;i<n;i++) s.add(find(i)); return s.size(); } }",
     "minStudyPlanCost": "class Solution { static int minStudyPlanCost(int[] costs){ if(costs.length==0) return 0; if(costs.length==1) return costs[0]; int prev2=costs[0], prev1=costs[1]; for(int i=2;i<costs.length;i++){ int cur=Math.min(prev1,prev2)+costs[i]; prev2=prev1; prev1=cur; } return Math.min(prev1,prev2); } }",
