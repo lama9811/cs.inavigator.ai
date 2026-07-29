@@ -3197,28 +3197,64 @@
       "function_name": "parkingTicketTotal",
       "runner_tests": [
         {
-          "name": "permit with late days",
+          "name": "weekend is free",
           "args": [
-            2,
-            true
-          ],
-          "expected": 40
-        },
-        {
-          "name": "no permit same day",
-          "args": [
-            0,
+            "Sunday",
+            13,
+            180,
             false
           ],
-          "expected": 25
+          "expected": 0
         },
         {
-          "name": "permit same day",
+          "name": "early weekday is free",
           "args": [
-            0,
-            true
+            "Monday",
+            6,
+            90,
+            false
+          ],
+          "expected": 0
+        },
+        {
+          "name": "wednesday visitor fair is free",
+          "args": [
+            "Wednesday",
+            12,
+            200,
+            false
+          ],
+          "expected": 0
+        },
+        {
+          "name": "busy hour without permit and overtime",
+          "args": [
+            "Tuesday",
+            10,
+            150,
+            false
+          ],
+          "expected": 45
+        },
+        {
+          "name": "friday event grace skips permit fee",
+          "args": [
+            "Friday",
+            16,
+            60,
+            false
           ],
           "expected": 20
+        },
+        {
+          "name": "permit with long parking",
+          "args": [
+            "Thursday",
+            18,
+            130,
+            true
+          ],
+          "expected": 30
         }
       ]
     },

@@ -154,6 +154,7 @@ export default function QuizBank({
   // Server-computed per-topic mastery (GET /api/coding/mastery). Null until it
   // loads, and `weakest` is null until some topic has enough attempts to score.
   mastery = null,
+  adaptivePractice = null,
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -485,6 +486,8 @@ export default function QuizBank({
   // weighted by difficulty, attempts-to-solve, hints used, and recency. Comes with
   // a reason, because a recommendation that won't explain itself gets ignored.
   const masteryWeakest = mastery?.weakest || null;
+  const adaptiveRecommendation = adaptivePractice?.recommendation || null;
+  const adaptiveReady = adaptiveRecommendation?.action === "ladder" && adaptiveRecommendation?.ladder_ready;
 
   // Per-topic mastery scores, keyed for a quick lookup in the topic-progress list.
   const scoreByTopic = useMemo(() => {
@@ -783,6 +786,36 @@ export default function QuizBank({
         <aside className="quiz-insight-panel">
           <div className="practice-guide-title">Practice Guide</div>
 
+          {adaptiveRecommendation?.topic && (
+            <section className="practice-guide-section">
+              <h3>{adaptiveReady ? "Adaptive ladder" : "Recommended review"}</h3>
+              <div className="practice-guide-focus">
+                <p className="practice-guide-weakest is-mastery">
+                  <strong>{titleCase(adaptiveRecommendation.topic)}</strong>
+                  <span className={`practice-mastery-band is-${adaptiveReady ? "steady" : "shaky"}`}>
+                    {adaptiveReady ? titleCase(adaptiveRecommendation.difficulty) : "Review"}
+                  </span>
+                </p>
+                <p className="practice-guide-reason">{adaptiveRecommendation.reason}</p>
+                <button
+                  type="button"
+                  className="practice-guide-focus-cta"
+                  onClick={() => {
+                    updateFilter({
+                      topic: [adaptiveRecommendation.topic],
+                      ...(adaptiveReady && adaptiveRecommendation.difficulty ? { difficulty: [adaptiveRecommendation.difficulty] } : {}),
+                    });
+                    setFiltersOpen(false);
+                  }}
+                >
+                  {adaptiveReady
+                    ? `Open ${titleCase(adaptiveRecommendation.difficulty)} ladder step`
+                    : `Review ${titleCase(adaptiveRecommendation.topic)}`}
+                </button>
+              </div>
+            </section>
+          )}
+
           <section className="practice-guide-section">
             <h3>Topics in view</h3>
             {topicsInView.length ? (
@@ -794,7 +827,7 @@ export default function QuizBank({
             )}
           </section>
 
-          {(masteryWeakest || weakestByRatio) && (
+          {!adaptiveRecommendation?.topic && (masteryWeakest || weakestByRatio) && (
             <section className="practice-guide-section">
               <h3>Focus next</h3>
               {masteryWeakest ? (

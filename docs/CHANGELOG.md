@@ -20,10 +20,11 @@ All notable changes to CS Navigator are documented here.
 - **COSC 101 Practice Library expansion.** Added twelve beginner-friendly campus/classroom practice problems covering conditionals, scans, maps, sets, tuple-style pairs, and list building across Python, JavaScript, Java, and C++.
 - **Medium/hard Practice Library expansion.** Added eight additional graph, heap, union-find, trie, dynamic-programming, and tree problems with deterministic runner tests for all four supported languages.
 - **Practice Library data-structure authoring batch.** Added thirteen more code-writing problems across stacks, queues, binary search, recursion, linked lists, and trees, with all-language runner metadata and starter specs.
-- **Python code execution trace V1.** Added a Python-only "Trace my code" modal that runs the current solution against authored tests and shows capped line-by-line execution with local variables.
-- **Trace test selection.** The Python trace modal can now choose from authored test cases so students can step through the exact input they want to understand.
+- **Python code execution trace V1.** Added a Python-only "Trace my code" modal that steps through the current editor code and shows capped line-by-line execution with local variables.
+- **Adaptive practice scaffolding.** Added readiness-gated adaptive recommendations that only label a topic as ladder-ready when it has enough fully tested easy, medium, and hard practice depth across all supported languages.
 
 ### Changed
+- Parking Ticket Total is now a medium conditional practice problem with day, time, free-parking, long-parking, and permit-surcharge rules across all four supported languages.
 - New Practice Library visualizers now open with problem-specific sample inputs, including array-backed linked lists, countdown recursion, and level-order tree traces.
 - Passing Coding Tutor solutions now show a line-by-line diff against the reference approach in the terminal review panel.
 - Applying a Coding Tutor code suggestion now uses a preview step with comment, append, replace, and cancel paths instead of a browser confirm.
@@ -39,8 +40,8 @@ All notable changes to CS Navigator are documented here.
 - Lesson TTS now treats visualizer blocks like diagrams: it reads the caption and invites the student to open the visualizer, instead of reading raw diagram state.
 - Concept quizzes now reveal immediate teaching feedback after each checked answer, showing "Why it works" for correct answers and "What went wrong" plus the correct answer for missed questions, while keeping the final review screen.
 - Python trace state display now formats lists, dictionaries, sets, strings, and returned values more clearly, highlights changed variables between steps, shows call-stack depth, and scrolls the active code line into view.
-- Failed Python practice test rows can now open the trace modal for that exact failing input.
 - Python trace empty/error states now give clearer next steps when tracing cannot start.
+- Recommended Focus and the Practice Guide now use one adaptive recommendation payload to route students to ladder-ready topic steps or honest review-only practice when a topic is still thin.
 - Advanced concept quiz questions now include small code/state blurbs where useful, so operation questions show something concrete to trace instead of rendering as plain text on an empty panel.
 - Advanced V1 lessons were expanded from short outlines into fuller teaching pages with operation walkthroughs, line-by-line code shape, trace examples, common mistakes, and language-specific examples for Python, Java, JavaScript, and C++.
 - Learn track cards and Concept Quiz category accordions now treat Advanced as a first-class track alongside Beginner and Intermediate.

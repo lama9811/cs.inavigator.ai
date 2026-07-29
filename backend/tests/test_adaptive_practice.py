@@ -1,0 +1,111 @@
+from services import adaptive_practice
+
+
+def _questions():
+    return [
+        {"id": "easy-a", "title": "Easy A", "topic": "arrays", "difficulty": "easy"},
+        {"id": "easy-b", "title": "Easy B", "topic": "arrays", "difficulty": "easy"},
+        {"id": "medium-a", "title": "Medium A", "topic": "arrays", "difficulty": "medium"},
+        {"id": "medium-b", "title": "Medium B", "topic": "arrays", "difficulty": "medium"},
+        {"id": "hard-a", "title": "Hard A", "topic": "arrays", "difficulty": "hard"},
+        {"id": "thin-easy", "title": "Thin Easy", "topic": "heaps", "difficulty": "easy"},
+    ]
+
+
+def _answers(question_ids):
+    return {
+        language: [
+            {"question_id": question_id, "function_name": "solve", "runner_tests": [{"name": "case", "args": [], "expected": 1}]}
+            for question_id in question_ids
+        ]
+        for language in adaptive_practice.LANGUAGES
+    }
+
+
+def test_readiness_requires_depth_and_all_language_tests():
+    readiness = adaptive_practice.build_topic_readiness(_questions(), _answers(["easy-a", "easy-b", "medium-a", "medium-b", "hard-a"]))
+    by_topic = adaptive_practice.readiness_by_topic(readiness)
+
+    assert by_topic["arrays"]["ladder_ready"] is True
+    assert by_topic["arrays"]["tested_counts"] == {"easy": 2, "medium": 2, "hard": 1}
+    assert by_topic["heaps"]["ladder_ready"] is False
+    assert by_topic["heaps"]["blocked_reasons"]
+
+
+def test_recommendation_blocks_thin_topic_from_ladder():
+    readiness = adaptive_practice.build_topic_readiness(_questions(), _answers(["easy-a", "easy-b", "medium-a", "medium-b", "hard-a"]))
+    recommendation = adaptive_practice.build_adaptive_recommendation(
+        questions=_questions(),
+        readiness=readiness,
+        progress_items=[],
+        attempt_events=[],
+        mastery_payload={"weakest": {"topic": "heaps", "reason": "Heaps need another pass."}},
+        language="python",
+    )
+
+    assert recommendation["action"] == "practice_review"
+    assert recommendation["ladder_ready"] is False
+    assert "review-only" in recommendation["reason"]
+
+
+def test_ladder_moves_up_after_low_hint_easy_solve():
+    questions = _questions()
+    readiness = adaptive_practice.build_topic_readiness(questions, _answers(["easy-a", "easy-b", "medium-a", "medium-b", "hard-a"]))
+    recommendation = adaptive_practice.build_adaptive_recommendation(
+        questions=questions,
+        readiness=readiness,
+        progress_items=[{"question_id": "easy-a", "status": "solved", "attempt_count": 1}],
+        attempt_events=[
+            {
+                "question_id": "easy-a",
+                "topic": "arrays",
+                "difficulty": "easy",
+                "language": "python",
+                "outcome": "pass",
+                "hints_used": 0,
+                "created_at": "2026-07-01T00:00:00",
+            }
+        ],
+        mastery_payload={"weakest": {"topic": "arrays", "reason": "Arrays are the focus."}},
+        language="python",
+    )
+
+    assert recommendation["action"] == "ladder"
+    assert recommendation["difficulty"] == "medium"
+    assert recommendation["question_id"] == "medium-a"
+
+
+def test_ladder_drops_after_repeated_medium_failures():
+    questions = _questions()
+    readiness = adaptive_practice.build_topic_readiness(questions, _answers(["easy-a", "easy-b", "medium-a", "medium-b", "hard-a"]))
+    recommendation = adaptive_practice.build_adaptive_recommendation(
+        questions=questions,
+        readiness=readiness,
+        progress_items=[],
+        attempt_events=[
+            {
+                "question_id": "medium-a",
+                "topic": "arrays",
+                "difficulty": "medium",
+                "language": "python",
+                "outcome": "fail",
+                "hints_used": 0,
+                "created_at": "2026-07-01T00:00:00",
+            },
+            {
+                "question_id": "medium-b",
+                "topic": "arrays",
+                "difficulty": "medium",
+                "language": "python",
+                "outcome": "error",
+                "hints_used": 1,
+                "created_at": "2026-07-02T00:00:00",
+            },
+        ],
+        mastery_payload={"weakest": {"topic": "arrays", "reason": "Arrays are the focus."}},
+        language="python",
+    )
+
+    assert recommendation["action"] == "ladder"
+    assert recommendation["difficulty"] == "easy"
+    assert "steps back to easy" in recommendation["reason"]

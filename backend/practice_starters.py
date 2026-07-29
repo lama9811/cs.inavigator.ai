@@ -80,7 +80,7 @@ PRACTICE_ARG_SPECS: dict[str, tuple[list[tuple[str, str]], str]] = {
     "normalizeEmailList": ([("emails", "strlist")], "strlist"),
     "pairSumSorted": ([("nums", "intlist"), ("target", "int")], "bool"),
     "pairNamesWithScores": ([("names", "strlist"), ("scores", "intlist")], "strlist"),
-    "parkingTicketTotal": ([("daysLate", "int"), ("hasPermit", "bool")], "int"),
+    "parkingTicketTotal": ([("day", "string"), ("hour", "int"), ("minutesParked", "int"), ("hasPermit", "bool")], "int"),
     "prefixSearch": ([("words", "strlist"), ("prefix", "string")], "strlist"),
     "prefixMatchCount": ([("words", "strlist"), ("prefix", "string")], "int"),
     "plantWateringMessage": ([("moisture", "int"), ("isSunny", "bool")], "string"),

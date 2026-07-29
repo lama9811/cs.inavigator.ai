@@ -391,8 +391,14 @@ CPP_SOLUTIONS = {
     vector<string> out; for(size_t i=0;i<names.size();i++) out.push_back(names[i]+":"+to_string(scores[i]));
     return out;
 }""",
-    "parkingTicketTotal": """long long parkingTicketTotal(long long daysLate, bool hasPermit){
-    long long total = 25 + daysLate * 10; if(hasPermit) total -= 5; return max(0LL, total);
+    "parkingTicketTotal": """long long parkingTicketTotal(string day, long long hour, long long minutesParked, bool hasPermit){
+    if(day=="Saturday" || day=="Sunday") return 0;
+    if(hour < 7 || hour >= 19) return 0;
+    if(day=="Wednesday" && (hour==12 || hour==13)) return 0;
+    long long total = 20;
+    if(minutesParked > 120) total += 10;
+    if(!hasPermit && hour >= 9 && hour <= 16 && !(day=="Friday" && hour >= 15)) total += 15;
+    return total;
 }""",
     "plantWateringMessage": """string plantWateringMessage(long long moisture, bool isSunny){
     return (moisture < 30 || (isSunny && moisture < 45)) ? "water today" : "check tomorrow";
@@ -602,7 +608,7 @@ JAVA_SOLUTIONS = {
     # strgrid,string,string -> bool
     "coursePrerequisiteChain": "import java.util.*; class Solution { static Map<String,List<String>> g; static Set<String> seen; static boolean dfs(String c, String prereq){ if(c.equals(prereq)) return true; if(!seen.add(c)) return false; for(String n:g.getOrDefault(c,new ArrayList<>())) if(dfs(n,prereq)) return true; return false; } static boolean coursePrerequisiteChain(String[][] pairs, String course, String prereq){ g=new HashMap<>(); seen=new HashSet<>(); for(String[] p:pairs) g.computeIfAbsent(p[0],k->new ArrayList<>()).add(p[1]); return dfs(course,prereq); } }",
     # COSC 101-style beginner shapes
-    "parkingTicketTotal": "class Solution { static int parkingTicketTotal(int daysLate, boolean hasPermit){ int total=25+daysLate*10; if(hasPermit) total-=5; return Math.max(0,total); } }",
+    "parkingTicketTotal": "class Solution { static int parkingTicketTotal(String day, int hour, int minutesParked, boolean hasPermit){ if(day.equals(\"Saturday\") || day.equals(\"Sunday\")) return 0; if(hour<7 || hour>=19) return 0; if(day.equals(\"Wednesday\") && (hour==12 || hour==13)) return 0; int total=20; if(minutesParked>120) total+=10; if(!hasPermit && hour>=9 && hour<=16 && !(day.equals(\"Friday\") && hour>=15)) total+=15; return total; } }",
     "plantWateringMessage": "class Solution { static String plantWateringMessage(int moisture, boolean isSunny){ return (moisture<30 || (isSunny && moisture<45)) ? \"water today\" : \"check tomorrow\"; } }",
     "temperatureComfortCount": "class Solution { static int temperatureComfortCount(int[] readings, int low, int high){ int c=0; for(int r:readings) if(r>=low && r<=high) c++; return c; } }",
     "groceryPriceLookup": "class Solution { static int groceryPriceLookup(String[] items, int[] prices, String target){ for(int i=0;i<items.length;i++) if(items[i].equals(target)) return prices[i]; return -1; } }",

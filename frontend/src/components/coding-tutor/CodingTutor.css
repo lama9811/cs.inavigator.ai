@@ -6946,6 +6946,26 @@ body.coding-dark .campus-hero-focus {
   color: var(--ct-success);
 }
 
+.campus-focus-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border: 1px solid color-mix(in srgb, var(--ct-warning, #f59e0b) 36%, var(--ct-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-warning, #f59e0b) 10%, var(--ct-panel));
+  color: color-mix(in srgb, var(--ct-warning, #f59e0b) 70%, var(--ct-ink));
+  padding: 0.22rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.campus-focus-badge.is-ready {
+  border-color: color-mix(in srgb, #2563eb 42%, var(--ct-border));
+  background: color-mix(in srgb, #dbeafe 62%, var(--ct-panel));
+  color: #1d4ed8;
+}
+
 /* T3-b: the LeetCode daily card is the page's focal point. Accent presence comes
    from the top rail + warm wash, NOT a heavy all-around orange outline (which read
    like a warning box). The surrounding border is soft; the top rail carries the

@@ -30,14 +30,6 @@ function readStoredTerminalHeight() {
   return TERMINAL_DEFAULT_H;
 }
 
-function stringifyTraceValue(value) {
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return String(value);
-  }
-}
-
 function parseTraceDisplayValue(value) {
   const raw = String(value ?? "");
   try {
@@ -91,16 +83,11 @@ function TraceValue({ value }) {
 
 function CodeTraceModal({
   traceResult,
-  traceTests = [],
-  traceTestIndex = 0,
-  onTraceTestIndexChange,
   isTracing,
   onTraceCode,
   onClose,
 }) {
   const trace = useMemo(() => (Array.isArray(traceResult?.trace) ? traceResult.trace : []), [traceResult]);
-  const test = traceResult?.test || {};
-  const selectedTest = traceTests.find((item) => item.index === traceTestIndex) || traceTests[traceTestIndex] || null;
   const [stepIndex, setStepIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const lineRefs = useRef(new Map());
@@ -182,57 +169,19 @@ function CodeTraceModal({
             <div>
               <span className="workspace-visualizer-kicker">Python execution trace</span>
               <h3>Trace my code</h3>
-              <p>Runs your Python function on an authored test and records the lines it executes.</p>
+              <p>Steps through the Python code currently in your editor and shows what changes as it runs.</p>
             </div>
             <button type="button" className="workspace-visual-close" onClick={onClose} autoFocus>
               Close
             </button>
           </header>
 
-          <div className="code-trace-summary">
-            {traceResult ? (
-              <>
-                <span className={`status-pill ${traceResult.status === "passed" ? "passed" : traceResult.status === "failed" ? "failed" : ""}`}>
-                  {traceResult.status || "ready"}
-                </span>
-                <span>Test: {test.name || "first authored test"}</span>
-                <span>Args: {stringifyTraceValue(test.args ?? [])}</span>
-                <span>Expected: {stringifyTraceValue(test.expected)}</span>
-                {"actual" in test ? <span>Actual: {stringifyTraceValue(test.actual)}</span> : null}
-              </>
-            ) : selectedTest ? (
-              <>
-                <span>Selected: {selectedTest.name || `Test ${traceTestIndex + 1}`}</span>
-                <span>Args: {stringifyTraceValue(selectedTest.args ?? [])}</span>
-                <span>Expected: {stringifyTraceValue(selectedTest.expected)}</span>
-              </>
-            ) : (
-              <span>Generate a Python trace to see line-by-line execution.</span>
-            )}
-          </div>
-
           {traceResult?.stderr ? <p className="workspace-visualizer-error">{traceResult.stderr}</p> : null}
           {traceResult?.truncated ? <p className="workspace-visualizer-lock">Trace capped at the first 80 executed steps.</p> : null}
 
           <div className="code-trace-actions">
-            {traceTests.length > 1 ? (
-              <label className="code-trace-test-picker">
-                <span>Trace test</span>
-                <select
-                  value={traceTestIndex}
-                  onChange={(event) => onTraceTestIndexChange?.(Number(event.target.value))}
-                  disabled={isTracing}
-                >
-                  {traceTests.map((item, index) => (
-                    <option key={`${item.index ?? index}-${item.name || "test"}`} value={item.index ?? index}>
-                      {item.name || `Test ${index + 1}`}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
             <button type="button" onClick={onTraceCode} disabled={isTracing}>
-              {isTracing ? "Tracing..." : trace.length ? "Run selected test again" : "Trace selected test"}
+              {isTracing ? "Tracing..." : trace.length ? "Trace again" : "Start trace"}
             </button>
           </div>
 
@@ -397,15 +346,11 @@ export default function CodeWorkspace({
   onExplainFailedTests,
   onExplainError,
   onExplainOneTest,
-  onTraceOneTest,
   onStopRun,
   onRequestReview,
   onTraceCode,
   isTracingCode = false,
   traceResult = null,
-  traceTests = [],
-  traceTestIndex = 0,
-  onTraceTestIndexChange,
   visualizerOpen = false,
   traceModalOpen = false,
   onCloseVisualizer,
@@ -640,7 +585,6 @@ export default function CodeWorkspace({
                 onExplainFailedTests={onExplainFailedTests}
                 onExplainError={onExplainError}
                 onExplainOneTest={onExplainOneTest}
-                onTraceOneTest={canTracePython ? onTraceOneTest : null}
                 onRequestReview={onRequestReview}
                 solutionReview={solutionReview}
               />
@@ -654,9 +598,6 @@ export default function CodeWorkspace({
       {traceModalOpen ? (
         <CodeTraceModal
           traceResult={traceResult}
-          traceTests={traceTests}
-          traceTestIndex={traceTestIndex}
-          onTraceTestIndexChange={onTraceTestIndexChange}
           isTracing={isTracingCode}
           onTraceCode={onTraceCode}
           onClose={onCloseTraceModal}

@@ -543,28 +543,6 @@
       ]
     },
     {
-      "id": "easy-25",
-      "title": "Parking Ticket Total",
-      "difficulty": "easy",
-      "topic": "conditionals",
-      "prompt": "A campus parking ticket starts with a base fee and grows by the number of days it is late. Given the number of late days and whether the student has a parking permit, return the final ticket total. A permit gives a small discount, but the total should never go below zero.",
-      "examples": [
-        {
-          "input": "daysLate=2, hasPermit=true",
-          "output": "40"
-        }
-      ],
-      "constraints": [
-        "0 <= daysLate <= 30",
-        "Use a 25 dollar base fee, 10 dollars per late day, and a 5 dollar permit discount."
-      ],
-      "hints": [
-        "Start with the base fee of 25.",
-        "Add 10 times the number of late days.",
-        "If the student has a permit, subtract 5, then clamp the result at zero."
-      ]
-    },
-    {
       "id": "easy-26",
       "title": "Plant Watering Message",
       "difficulty": "easy",

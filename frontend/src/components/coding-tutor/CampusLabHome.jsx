@@ -255,6 +255,7 @@ function CampusLearningQueue({
   nextUpQuestion,
   focus,
   mastery,
+  adaptivePractice,
   onSelect,
   onOpenSnippets,
   onOpenQuizBank,
@@ -272,17 +273,29 @@ function CampusLearningQueue({
     focus,
   });
   const firstPathQuestion = todayPath.find(step => step.question)?.question || null;
-  const focusTopic = focus?.hasProgress ? focus.next?.topic : focus?.first?.topic;
-  const focusTitle = focus?.hasProgress
+  const adaptiveRecommendation = adaptivePractice?.recommendation || null;
+  const adaptiveTopic = adaptiveRecommendation?.topic || "";
+  const adaptiveDifficulty = adaptiveRecommendation?.difficulty || "";
+  const adaptiveReady = adaptiveRecommendation?.action === "ladder" && adaptiveRecommendation?.ladder_ready;
+  const focusTopic = adaptiveTopic || (focus?.hasProgress ? focus.next?.topic : focus?.first?.topic);
+  const focusTitle = adaptiveReady
+    ? `${titleCase(adaptiveTopic)} adaptive ladder`
+    : adaptiveRecommendation?.action === "practice_review"
+      ? `Review ${titleCase(adaptiveTopic)}`
+      : focus?.hasProgress
     ? `Practice ${titleCase(focus.next.topic)}`
     : focus
       ? `Start with ${titleCase(focus.first.topic)}`
       : "Choose a topic";
-  const focusBlurb = focusTopic
-    ? `${focusReason(focus)} ${learningStyleHint(learningStyle)}`
+  const focusBlurb = adaptiveRecommendation?.reason
+    ? adaptiveRecommendation.reason
+    : focusTopic
+      ? `${focusReason(focus)} ${learningStyleHint(learningStyle)}`
     : "Pick one topic and solve the first problem you see.";
-  const focusAction = focusActionKind(learningStyle);
-  const focusButton = focusAction === "practice" ? "Open practice" : "Open lesson";
+  const focusAction = adaptiveReady ? "practice" : focusActionKind(learningStyle);
+  const focusButton = adaptiveReady
+    ? `Open ${titleCase(adaptiveDifficulty)} step`
+    : focusAction === "practice" ? "Open practice" : "Open lesson";
   return (
     <section className="campus-learning-queue" aria-label="Your coding path">
       <div className="campus-section-heading">
@@ -337,9 +350,14 @@ function CampusLearningQueue({
           <span>Recommended Focus</span>
           <strong>{focusTitle}</strong>
           <p>{focusBlurb}</p>
+          {adaptiveRecommendation ? (
+            <small className={adaptiveReady ? "campus-focus-badge is-ready" : "campus-focus-badge"}>
+              {adaptiveReady ? "Ladder-ready" : "Review-only for now"}
+            </small>
+          ) : null}
           <button
             type="button"
-            onClick={() => (focusTopic ? onOpenTopic?.(focusTopic, focusAction) : onOpenQuizBank())}
+            onClick={() => (focusTopic ? onOpenTopic?.(focusTopic, focusAction, { difficulty: adaptiveReady ? adaptiveDifficulty : null }) : onOpenQuizBank())}
           >
             {focusTopic ? `${focusButton}: ${titleCase(focusTopic)}` : "Browse Practice Library"}
           </button>
@@ -492,6 +510,7 @@ export default function CampusLabHome({
   onPrompt,
   onSaveQuiz,
   mastery,
+  adaptivePractice,
   learningStyle = "try_then_hint",
 }) {
   const queueQuestions = questions || [];
@@ -534,6 +553,7 @@ export default function CampusLabHome({
         nextUpQuestion={nextUpQuestion}
         focus={focus}
         mastery={mastery}
+        adaptivePractice={adaptivePractice}
         onSelect={onSelectQuestion}
         onOpenSnippets={onOpenSnippets}
         onOpenQuizBank={onOpenQuizBank}

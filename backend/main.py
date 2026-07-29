@@ -6553,7 +6553,7 @@ async def search_coding_study_resources(
         "source": "curated_cs_navigator_resources",
     }
 
-from services import attempt_telemetry, mastery
+from services import adaptive_practice, attempt_telemetry, mastery
 
 @app.post("/api/coding/practice/run")
 async def run_practice_solution(
@@ -6862,6 +6862,99 @@ async def get_coding_mastery(
             {**weakest, "reason": mastery.explain(weakest)} if weakest else None
         ),
         "min_attempts_for_score": mastery.MIN_ATTEMPTS_FOR_SCORE,
+    }
+
+def _practice_answer_items_by_language() -> dict[str, list[dict[str, Any]]]:
+    items_by_language: dict[str, list[dict[str, Any]]] = {}
+    for language in adaptive_practice.LANGUAGES:
+        path = os.path.join(QUIZ_ANSWERS_DIR, f"{language}.json")
+        try:
+            data = _read_quiz_json(path)
+        except HTTPException:
+            data = {}
+        if isinstance(data, dict):
+            items_by_language[language] = data.get("items", [])
+        elif isinstance(data, list):
+            items_by_language[language] = data
+        else:
+            items_by_language[language] = []
+    return items_by_language
+
+def _serialize_attempt_event(row: CodingAttemptEvent) -> dict[str, Any]:
+    return {
+        "question_id": row.question_id,
+        "topic": row.topic,
+        "difficulty": row.difficulty,
+        "language": row.language,
+        "outcome": row.outcome,
+        "error_class": row.error_class,
+        "hints_used": row.hints_used or 0,
+        "created_at": row.created_at.isoformat() if row.created_at else None,
+    }
+
+@app.get("/api/coding/adaptive/recommendations")
+async def get_adaptive_practice_recommendations(
+    language: str = Query("python"),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Readiness-gated adaptive practice recommendation.
+
+    This is scaffolding for the ladder, not a blanket adaptive mode. Topics only get
+    a true ladder recommendation when the authored bank has enough fully tested
+    easy/medium/hard depth across all supported languages.
+    """
+    language_key, _ = _normalize_practice_language(language)
+    questions = _all_practice_questions()
+    readiness = adaptive_practice.build_topic_readiness(
+        questions,
+        _practice_answer_items_by_language(),
+    )
+    topics = mastery.compute_topic_mastery(db, user["user_id"])
+    weakest = mastery.weakest_topic(topics)
+    mastery_payload = {
+        "topics": topics,
+        "weakest": ({**weakest, "reason": mastery.explain(weakest)} if weakest else None),
+        "min_attempts_for_score": mastery.MIN_ATTEMPTS_FOR_SCORE,
+    }
+    progress_rows = (
+        db.query(CodingPracticeProgress)
+        .filter(
+            CodingPracticeProgress.user_id == user["user_id"],
+            CodingPracticeProgress.language == language_key,
+        )
+        .all()
+    )
+    attempt_rows = (
+        db.query(CodingAttemptEvent)
+        .filter(
+            CodingAttemptEvent.user_id == user["user_id"],
+            CodingAttemptEvent.source == "practice",
+            CodingAttemptEvent.topic.isnot(None),
+        )
+        .order_by(CodingAttemptEvent.created_at.asc())
+        .all()
+    )
+    recommendation = adaptive_practice.build_adaptive_recommendation(
+        questions=questions,
+        readiness=readiness,
+        progress_items=[_serialize_practice_progress(row) for row in progress_rows],
+        attempt_events=[_serialize_attempt_event(row) for row in attempt_rows],
+        mastery_payload=mastery_payload,
+        language=language_key,
+    )
+    ready_count = sum(1 for item in readiness if item.get("ladder_ready"))
+    return {
+        "language": language_key,
+        "recommendation": recommendation,
+        "readiness": readiness,
+        "ready_topic_count": ready_count,
+        "total_topic_count": len(readiness),
+        "policy": {
+            "full_adaptive_enabled": False,
+            "ladder_requires_readiness": True,
+            "thresholds": adaptive_practice.READINESS_THRESHOLDS,
+        },
     }
 
 @app.get("/api/coding/practice/questions/{question_id}/progress")

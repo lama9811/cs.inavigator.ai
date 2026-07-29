@@ -770,7 +770,6 @@ export default function CodingTutor({
   const [visualizerModalOpen, setVisualizerModalOpen] = useState(false);
   const [traceModalOpen, setTraceModalOpen] = useState(false);
   const [traceResult, setTraceResult] = useState(null);
-  const [traceTestIndex, setTraceTestIndex] = useState(0);
   const [isTracingCode, setIsTracingCode] = useState(false);
   const [dailyChallenge, setDailyChallenge] = useState(null);
   const [dailyChallengeLoading, setDailyChallengeLoading] = useState(false);
@@ -1082,7 +1081,6 @@ export default function CodingTutor({
     setVisualizerModalOpen(false);
     setTraceModalOpen(false);
     setTraceResult(null);
-    setTraceTestIndex(0);
   }, [activeProblem?.id, selectedLanguageKey]);
 
   useEffect(() => {
@@ -1164,6 +1162,7 @@ export default function CodingTutor({
   // just improved on.
   const [mastery, setMastery] = useState(null);
   const [masteryTick, setMasteryTick] = useState(0);
+  const [adaptivePractice, setAdaptivePractice] = useState(null);
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return undefined;
@@ -1183,6 +1182,27 @@ export default function CodingTutor({
     })();
     return () => { cancelled = true; };
   }, [apiBase, masteryTick]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return undefined;
+    let cancelled = false;
+    const languageKey = PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
+    (async () => {
+      try {
+        const res = await fetch(`${apiBase}/api/coding/adaptive/recommendations?language=${encodeURIComponent(languageKey)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (!cancelled) setAdaptivePractice(data);
+      } catch {
+        // Adaptive recommendations are guidance only. Keep the existing dashboard
+        // and Practice Guide fallbacks if the endpoint is unavailable.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [apiBase, masteryTick, practiceLanguage]);
 
   const codingSyncReadyRef = useRef(false);
   useEffect(() => {
@@ -3072,7 +3092,10 @@ export default function CodingTutor({
     }
   };
 
-  const tracePythonCode = async (requestedTestIndex = traceTestIndex) => {
+  const tracePythonCode = async (requestedTestIndex = 0) => {
+    const normalizedTestIndex = Number.isInteger(requestedTestIndex) && requestedTestIndex >= 0
+      ? requestedTestIndex
+      : 0;
     if (!activeProblem || !isQuizBankProblem) {
       toast.info("Open a Practice Library problem before tracing code.");
       return;
@@ -3099,7 +3122,6 @@ export default function CodingTutor({
 
     setWorkspaceVisible(true);
     setTraceModalOpen(true);
-    setTraceTestIndex(requestedTestIndex);
     setIsTracingCode(true);
     setTraceResult(prev => prev || { status: "running", trace: [], message: "Tracing your Python code..." });
     try {
@@ -3113,7 +3135,7 @@ export default function CodingTutor({
           question_id: activeProblem.id,
           language: selectedLanguageKey,
           code,
-          trace_test_index: requestedTestIndex,
+          trace_test_index: normalizedTestIndex,
           hints_used: revealedHints,
           seconds_since_open: secondsSinceOpen(),
         }),
@@ -3127,10 +3149,6 @@ export default function CodingTutor({
     } finally {
       setIsTracingCode(false);
     }
-  };
-
-  const traceOneFailedTest = (_test, index) => {
-    tracePythonCode(index);
   };
 
   const markSolved = async () => {
@@ -3335,6 +3353,7 @@ export default function CodingTutor({
       onPrompt={sendDashboardPrompt}
       onSaveQuiz={saveLatestQuizAsPdf}
       mastery={mastery}
+      adaptivePractice={adaptivePractice}
       learningStyle={learningStyle}
     />
   );
@@ -3469,18 +3488,11 @@ export default function CodingTutor({
           onExplainFailedTests={explainFailedTests}
           onExplainError={explainError}
           onExplainOneTest={explainOneTest}
-          onTraceOneTest={traceOneFailedTest}
           onStopRun={stopRun}
           onRequestReview={activeProblem?.source === "interview" ? null : requestReview}
           onTraceCode={tracePythonCode}
           isTracingCode={isTracingCode}
           traceResult={traceResult}
-          traceTests={activeSolution?.trace_tests || []}
-          traceTestIndex={traceTestIndex}
-          onTraceTestIndexChange={(nextIndex) => {
-            setTraceTestIndex(nextIndex);
-            setTraceResult(null);
-          }}
           visualizerOpen={visualizerModalOpen}
           traceModalOpen={traceModalOpen}
           onCloseVisualizer={() => setVisualizerModalOpen(false)}
@@ -3521,16 +3533,18 @@ export default function CodingTutor({
   // Open the Practice Library pre-filtered to a topic (used by interview-problem
   // "Needs: …" prerequisite links so a student can go practice the fundamental first).
   // Resolves the label to a real library topic; ignores it if the library has none.
-  const openPracticeTopic = (label) => {
+  const openPracticeTopic = (label, options = {}) => {
     const topic = resolvePracticeTopic(label);
     if (!topic) return;
     setPendingQuizTopic(null);
+    const params = new URLSearchParams({ topic, page: "1" });
+    if (options.difficulty) params.set("difficulty", options.difficulty);
     // The CODE path, not the bare one — a "go practice this fundamental" link promises
     // code problems on that topic. The bare path is now the Quiz landing.
-    navigate(`${PRACTICE_CODE_PATH}?topic=${encodeURIComponent(topic)}`);
+    navigate(`${PRACTICE_CODE_PATH}?${params.toString()}`);
   };
 
-  const openRecommendedTopic = (label, action = null) => {
+  const openRecommendedTopic = (label, action = null, options = {}) => {
     const topic = resolvePracticeTopic(label);
     if (!topic) return;
     const languageKey = PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
@@ -3540,7 +3554,7 @@ export default function CodingTutor({
       navigate(learnPathForLesson(languageKey, lessonCategory));
       return;
     }
-    openPracticeTopic(topic);
+    openPracticeTopic(topic, options);
   };
 
   const renderInterviewPrep = () => (
@@ -3725,6 +3739,7 @@ export default function CodingTutor({
               languageOptions={CODE_LANGUAGES}
               progressSummary={progressSummary}
               mastery={mastery}
+              adaptivePractice={adaptivePractice}
               onDifficultyChange={setDifficulty}
               onLanguageChange={setPracticeLanguage}
               onSelectProblem={selectQuestion}
