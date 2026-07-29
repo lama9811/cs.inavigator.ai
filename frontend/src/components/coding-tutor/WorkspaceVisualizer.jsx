@@ -388,6 +388,86 @@ function hashTrace(meta) {
 }
 
 function linkedListTrace(meta) {
+  const values = Array.isArray(meta?.input?.values) ? meta.input.values : null;
+  const nextIndexes = Array.isArray(meta?.input?.nextIndexes) ? meta.input.nextIndexes : null;
+  const head = Number.isInteger(meta?.input?.head) ? meta.input.head : 0;
+  if (values && nextIndexes) {
+    const ordered = [];
+    const seen = new Set();
+    let current = head;
+    while (current !== -1 && !seen.has(current) && ordered.length < values.length + 1) {
+      ordered.push(current);
+      seen.add(current);
+      current = nextIndexes[current];
+    }
+    const hasCycle = current !== -1 && seen.has(current);
+    const displayOrder = ordered.length ? ordered : values.map((_, index) => index);
+    const nodes = displayOrder.map((nodeIndex, index) => ({
+      id: `N${nodeIndex}`,
+      label: String(values[nodeIndex]),
+      x: 60 + index * Math.min(105, 330 / Math.max(1, displayOrder.length - 1)),
+      y: 110,
+    }));
+    const nodeIds = new Set(nodes.map((node) => node.id));
+    const edges = displayOrder
+      .map((nodeIndex) => ({ from: `N${nodeIndex}`, to: `N${nextIndexes[nodeIndex]}` }))
+      .filter((edge) => nodeIds.has(edge.to));
+    const steps = [
+      makeStep({
+        title: "Start at the head",
+        body: head === -1 ? "The head is -1, so this linked list is empty." : `The head points to the node holding ${values[head]}.`,
+        changed: head === -1 ? "result = []" : `current = index ${head}`,
+        why: "Array-backed linked lists still follow next links one node at a time.",
+        state: { nodes: nodes.map((node) => ({ ...node, active: node.id === `N${head}` })), edges, note: `head = ${head}` },
+        code: "current = head",
+        action: "start",
+      }),
+    ];
+    const result = [];
+    ordered.forEach((nodeIndex, stepIndex) => {
+      result.push(values[nodeIndex]);
+      const next = nextIndexes[nodeIndex];
+      const isMiddle = meta?.preset === "linked-list-middle" && stepIndex === Math.floor(ordered.length / 2);
+      steps.push(makeStep({
+        title: `Read value ${values[nodeIndex]}`,
+        body: `Append ${values[nodeIndex]} and follow nextIndexes[${nodeIndex}] to ${next}.`,
+        changed: `values seen = [${result.join(", ")}]`,
+        why: isMiddle ? "For the middle problem, length // 2 picks the second middle value." : "The next index decides which node comes after this one.",
+        state: {
+          nodes: nodes.map((node) => ({ ...node, active: node.id === `N${nodeIndex}` })),
+          edges: edges.map((edge) => ({ ...edge, active: edge.from === `N${nodeIndex}` })),
+          note: isMiddle ? `middle value = ${values[nodeIndex]}` : `next = ${next}`,
+        },
+        code: "result.append(values[current])\ncurrent = nextIndexes[current]",
+        action: isMiddle ? "middle" : "follow",
+        animation: "visit",
+      }));
+    });
+    if (hasCycle) {
+      steps.push(makeStep({
+        title: "A node repeats",
+        body: `The traversal reaches index ${current} again, so this list has a cycle.`,
+        changed: "cycle = true",
+        why: "A visited set catches loops before they run forever.",
+        state: { nodes: nodes.map((node) => ({ ...node, active: node.id === `N${current}` })), edges, note: `repeated index ${current}` },
+        code: "if current in seen:\n    return True",
+        action: "cycle",
+      }));
+    }
+    if (meta?.preset === "linked-list-reverse") {
+      steps.push(makeStep({
+        title: "Reverse the collected values",
+        body: "The traversal collected values in forward order. Reverse that list for the final answer.",
+        changed: `answer = [${[...result].reverse().join(", ")}]`,
+        why: "Collecting first keeps the pointer-walking part simple.",
+        state: { nodes, edges, note: `reverse [${result.join(", ")}]` },
+        code: "return result[::-1]",
+        action: "reverse",
+        animation: "return",
+      }));
+    }
+    return { title: meta?.title || "Linked list: follow next links", concept: "linked-list", caption: meta?.caption || "Trace each next index from the head to the end.", steps };
+  }
   const steps = [
     makeStep({
       title: "Start with linked nodes",
@@ -446,6 +526,34 @@ function linkedListTrace(meta) {
 
 function recursionTrace(meta) {
   const n = Number.isFinite(Number(meta?.input?.n)) ? Number(meta.input.n) : 3;
+  if (meta?.preset === "countdown") {
+    const callStack = [];
+    const steps = [];
+    for (let value = n; value >= -1 && steps.length < 8; value -= 1) {
+      if (value >= 0) callStack.push(`countdown(${value})`);
+      steps.push(makeStep({
+        title: value >= 0 ? `Call countdown(${value})` : "Stop below zero",
+        body: value >= 0 ? `Add ${value}, then ask for the smaller countdown.` : "The base case returns an empty list once n is below zero.",
+        changed: value >= 0 ? `pending calls = ${callStack.length}` : "base case = []",
+        why: value >= 0 ? "Each recursive call moves one step closer to the stopping rule." : "The base case prevents the recursion from continuing forever.",
+        state: { call_stack: [...callStack], active_call: Math.max(0, callStack.length - 1), note: value >= 0 ? `n = ${value}` : "n < 0" },
+        code: value >= 0 ? "return [n] + countdown(n - 1)" : "if n < 0:\n    return []",
+        action: value >= 0 ? "call" : "base case",
+        animation: value >= 0 ? "add" : "return",
+      }));
+    }
+    steps.push(makeStep({
+      title: "Return the built list",
+      body: "As calls finish, each number stays in front of the smaller countdown.",
+      changed: `answer = [${Array.from({ length: Math.max(0, n + 1) }, (_, index) => n - index).join(", ")}]`,
+      why: "The return path combines the pieces from largest to smallest.",
+      state: { call_stack: [`countdown(${n}) -> answer`], active_call: 0, note: "answers come back up" },
+      code: "return [n] + rest",
+      action: "return",
+      animation: "return",
+    }));
+    return { title: meta?.title || "Countdown recursion: stop, then return", concept: "recursion", caption: meta?.caption || "Watch each call move toward the base case.", steps };
+  }
   const steps = [
     makeStep({
       title: `Call sumDigits(${n})`,
@@ -575,6 +683,106 @@ function slidingWindowTrace(meta, inputText) {
 
 function treeTrace(meta) {
   const order = meta?.input?.order || "level-order";
+  const tree = Array.isArray(meta?.input?.tree) ? meta.input.tree : null;
+  if (tree) {
+    const nodes = tree.map((value, index) => {
+      if (value === -1) return null;
+      const level = Math.floor(Math.log2(index + 1));
+      const first = 2 ** level - 1;
+      const position = index - first;
+      const slots = 2 ** level;
+      return {
+        id: `N${index}`,
+        label: String(value),
+        x: ((position + 1) * 420) / (slots + 1),
+        y: 42 + level * 58,
+      };
+    }).filter(Boolean);
+    const nodeIds = new Set(nodes.map((node) => node.id));
+    const edges = tree.flatMap((value, index) => {
+      if (value === -1) return [];
+      return [2 * index + 1, 2 * index + 2]
+        .filter((child) => child < tree.length && tree[child] !== -1)
+        .map((child) => ({ from: `N${index}`, to: `N${child}` }));
+    }).filter((edge) => nodeIds.has(edge.from) && nodeIds.has(edge.to));
+    if (meta?.preset === "tree-lca") {
+      const targetIndexes = [meta.input.a, meta.input.b].map((value) => tree.findIndex((item) => item === value));
+      const ancestorPath = (index) => {
+        const path = [];
+        let current = index;
+        while (current >= 0) {
+          path.push(current);
+          if (current === 0) break;
+          current = Math.floor((current - 1) / 2);
+        }
+        return path;
+      };
+      const firstPath = ancestorPath(targetIndexes[0]);
+      const secondPath = ancestorPath(targetIndexes[1]);
+      const firstSet = new Set(firstPath);
+      const lca = secondPath.find((index) => firstSet.has(index));
+      const steps = [
+        makeStep({
+          title: "Find both target nodes",
+          body: `${meta.input.a} and ${meta.input.b} both appear in the level-order tree.`,
+          changed: `indexes = ${targetIndexes.join(" and ")}`,
+          why: "In an array-backed tree, parent links come from indexes.",
+          state: { nodes: nodes.map((node) => ({ ...node, active: targetIndexes.includes(Number(node.id.slice(1))) })), edges, note: `a = ${meta.input.a}, b = ${meta.input.b}` },
+          code: "parent = (index - 1) // 2",
+          action: "locate",
+        }),
+        makeStep({
+          title: `Climb from ${meta.input.a}`,
+          body: "Record every ancestor on the first target's path to the root.",
+          changed: `path = [${firstPath.map((index) => tree[index]).join(", ")}]`,
+          why: "The first shared ancestor with the second path is the answer.",
+          state: { nodes: nodes.map((node) => ({ ...node, active: firstPath.includes(Number(node.id.slice(1))) })), edges, note: "saved ancestor path" },
+          code: "while index > 0:\n    seen.add(index)\n    index = parent(index)",
+          action: "climb",
+        }),
+        makeStep({
+          title: `Climb from ${meta.input.b}`,
+          body: `The first shared node is ${tree[lca]}.`,
+          changed: `lowest common ancestor = ${tree[lca]}`,
+          why: "Lowest means the shared ancestor closest to both target nodes.",
+          state: { nodes: nodes.map((node) => ({ ...node, active: Number(node.id.slice(1)) === lca })), edges, note: `return ${tree[lca]}` },
+          code: "if index in seen:\n    return tree[index]",
+          action: "meet",
+          animation: "visit",
+        }),
+      ];
+      return { title: meta?.title || "Tree LCA: climb parent links", concept: "tree", caption: meta?.caption || "Watch two tree nodes climb to their shared ancestor.", steps };
+    }
+    if (meta?.preset === "tree-path-sum") {
+      const target = Number(meta.input.target);
+      const paths = [];
+      const dfs = (index, path = []) => {
+        if (index >= tree.length || tree[index] === -1) return;
+        const nextPath = [...path, index];
+        const left = 2 * index + 1;
+        const right = 2 * index + 2;
+        const isLeaf = (left >= tree.length || tree[left] === -1) && (right >= tree.length || tree[right] === -1);
+        if (isLeaf) paths.push(nextPath);
+        dfs(left, nextPath);
+        dfs(right, nextPath);
+      };
+      dfs(0);
+      const steps = paths.slice(0, 5).map((path, index) => {
+        const sum = path.reduce((total, nodeIndex) => total + tree[nodeIndex], 0);
+        return makeStep({
+          title: `Check path ${index + 1}`,
+          body: `${path.map((nodeIndex) => tree[nodeIndex]).join(" + ")} = ${sum}.`,
+          changed: sum === target ? "count increases" : "count stays put",
+          why: "Only root-to-leaf paths count for this problem.",
+          state: { nodes: nodes.map((node) => ({ ...node, active: path.includes(Number(node.id.slice(1))) })), edges, note: `target = ${target}, sum = ${sum}` },
+          code: "dfs(child, running_sum + node.value)",
+          action: sum === target ? "match" : "check",
+          animation: "visit",
+        });
+      });
+      return { title: meta?.title || "Tree path sum: carry a running sum", concept: "tree", caption: meta?.caption || "Watch each root-to-leaf path compare its sum with the target.", steps };
+    }
+  }
   const nodes = [
     { id: "A", label: "3", x: 210, y: 45 },
     { id: "B", label: "9", x: 120, y: 115 },
@@ -855,7 +1063,7 @@ function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose 
     <section className={`workspace-visualizer ${mode === "modal" ? "is-modal" : "is-panel"}`}>
       <header className="workspace-visualizer-head">
         <div>
-          <span className="workspace-visualizer-kicker">Python Tutor-style trace</span>
+          <span className="workspace-visualizer-kicker">Visualize this idea</span>
           <h3>{trace.title}</h3>
           <p>{trace.caption}</p>
         </div>

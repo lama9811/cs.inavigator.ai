@@ -129,8 +129,23 @@ CPP_SOLUTIONS = {
         op=c; cur=0; } }
     long long sum=0; for(auto x:nums) sum+=x; return sum;
 }""",
+    "firstBadVersion": """long long firstBadVersion(vector<long long> versions){
+    int lo=0, hi=(int)versions.size()-1, ans=-1;
+    while(lo<=hi){ int mid=lo+(hi-lo)/2; if(versions[mid]==1){ ans=mid; hi=mid-1; } else lo=mid+1; }
+    return ans;
+}""",
     "firstMissingPositiveSmall": """long long firstMissingPositiveSmall(vector<long long> nums){
     set<long long> s(nums.begin(),nums.end()); long long i=1; while(s.count(i)) i++; return i;
+}""",
+    "firstScoreAtLeast": """long long firstScoreAtLeast(vector<long long> scores, long long target){
+    int lo=0, hi=(int)scores.size()-1, ans=-1;
+    while(lo<=hi){ int mid=lo+(hi-lo)/2; if(scores[mid]>=target){ ans=mid; hi=mid-1; } else lo=mid+1; }
+    return ans;
+}""",
+    "followLinkedListValues": """vector<long long> followLinkedListValues(vector<long long> values, vector<long long> nextIndexes, long long head){
+    vector<long long> out; long long cur=head;
+    while(cur!=-1){ out.push_back(values[cur]); cur=nextIndexes[cur]; }
+    return out;
 }""",
     "gradeBucket": """string gradeBucket(long long score){
     if(score>=90) return "A"; if(score>=80) return "B"; if(score>=70) return "C"; if(score>=60) return "D"; return "F";
@@ -147,6 +162,16 @@ CPP_SOLUTIONS = {
     string s; for(char c:text) if(isalnum(c)) s+=tolower(c); string r(s.rbegin(),s.rend()); return s==r;
 }""",
     "lastDigit": """long long lastDigit(long long number){ return llabs(number)%10; }""",
+    "linkedListHasCycle": """bool linkedListHasCycle(vector<long long> nextIndexes, long long head){
+    set<long long> seen; long long cur=head;
+    while(cur!=-1){ if(seen.count(cur)) return true; seen.insert(cur); cur=nextIndexes[cur]; }
+    return false;
+}""",
+    "linkedListMiddleValue": """long long linkedListMiddleValue(vector<long long> values, vector<long long> nextIndexes, long long head){
+    if(head==-1) return -1; vector<long long> order; long long cur=head;
+    while(cur!=-1){ order.push_back(values[cur]); cur=nextIndexes[cur]; }
+    return order[order.size()/2];
+}""",
     "longestIncreasingSubsequenceLength": """long long longestIncreasingSubsequenceLength(vector<long long> nums){
     vector<long long> tails; for(long long x:nums){ auto it=lower_bound(tails.begin(),tails.end(),x); if(it==tails.end()) tails.push_back(x); else *it=x; } return tails.size();
 }""",
@@ -154,6 +179,13 @@ CPP_SOLUTIONS = {
     map<char,int> last; int start=0; long long best=0;
     for(int i=0;i<(int)text.size();i++){ if(last.count(text[i])&&last[text[i]]>=start) start=last[text[i]]+1; last[text[i]]=i; best=max(best,(long long)(i-start+1)); }
     return best;
+}""",
+    "lowestCommonAncestorValue": """long long lowestCommonAncestorValue(vector<long long> tree, long long a, long long b){
+    map<long long,long long> pos; for(int i=0;i<(int)tree.size();i++) if(tree[i]!=-1) pos[tree[i]]=i;
+    long long ia=pos[a], ib=pos[b]; set<long long> seen;
+    while(ia>=0){ seen.insert(ia); if(ia==0) break; ia=(ia-1)/2; }
+    while(!seen.count(ib)){ ib=(ib-1)/2; }
+    return tree[ib];
 }""",
     "matrixRowSums": """vector<long long> matrixRowSums(vector<vector<long long>> matrix){
     vector<long long> r; for(auto&row:matrix){ long long s=0; for(auto v:row) s+=v; r.push_back(s); } return r;
@@ -167,6 +199,9 @@ CPP_SOLUTIONS = {
     int R=matrix.size(); if(!R) return 0; int C=matrix[0].size(); vector<vector<int>> dp(R+1,vector<int>(C+1,0)); int best=0;
     for(int i=1;i<=R;i++) for(int j=1;j<=C;j++) if(matrix[i-1][j-1]==1){ dp[i][j]=1+min({dp[i-1][j],dp[i][j-1],dp[i-1][j-1]}); best=max(best,dp[i][j]); }
     return (long long)best*best;
+}""",
+    "maxPlateStackHeight": """long long maxPlateStackHeight(vector<string> commands){
+    long long cur=0, best=0; for(auto&cmd:commands){ if(cmd=="push") cur++; else if(cmd=="pop" && cur>0) cur--; best=max(best,cur); } return best;
 }""",
     "maximumSubarrayWithOneDeletion": """long long maximumSubarrayWithOneDeletion(vector<long long> nums){
     int n=nums.size(); vector<long long> nod(n), od(n); nod[0]=nums[0]; od[0]=nums[0]; long long best=nums[0];
@@ -217,6 +252,11 @@ CPP_SOLUTIONS = {
     for(auto&q:queries) out.push_back(pref[q[1]+1]-pref[q[0]]);
     return out;
 }""",
+    "recentQueueCounts": """vector<long long> recentQueueCounts(vector<long long> times, long long window){
+    queue<long long> q; vector<long long> out;
+    for(long long t:times){ q.push(t); while(!q.empty() && t-q.front()>window) q.pop(); out.push_back(q.size()); }
+    return out;
+}""",
     "removeDuplicatesKeepOrder": """vector<long long> removeDuplicatesKeepOrder(vector<long long> nums){
     vector<long long> r; set<long long> seen; for(long long x:nums) if(!seen.count(x)){ seen.insert(x); r.push_back(x); } return r;
 }""",
@@ -226,6 +266,11 @@ CPP_SOLUTIONS = {
     "reverseWords": """string reverseWords(string sentence){
     istringstream is(sentence); vector<string> w; string t; while(is>>t) w.push_back(t); reverse(w.begin(),w.end());
     string r; for(size_t i=0;i<w.size();i++){ if(i) r+=" "; r+=w[i]; } return r;
+}""",
+    "reverseLinkedListValues": """vector<long long> reverseLinkedListValues(vector<long long> values, vector<long long> nextIndexes, long long head){
+    vector<long long> out; long long cur=head;
+    while(cur!=-1){ out.push_back(values[cur]); cur=nextIndexes[cur]; }
+    reverse(out.begin(), out.end()); return out;
 }""",
     "rotateListRight": """vector<long long> rotateListRight(vector<long long> items, long long k){
     int n=items.size(); if(!n) return items; k%=n; vector<long long> r; for(int i=0;i<n;i++) r.push_back(items[(i-k+n)%n]); return r;
@@ -242,10 +287,18 @@ CPP_SOLUTIONS = {
         for(int d=0;d<4;d++){ int nr=r+dr[d],nc=c+dc[d]; if(nr<0||nc<0||nr>=R||nc>=C||grid[nr][nc]=="#"||dist[nr][nc]!=-1) continue; dist[nr][nc]=dist[r][c]+1; q.push(make_pair(nr,nc)); } }
     return -1;
 }""",
+    "serveFirstStudents": """vector<string> serveFirstStudents(vector<string> names, long long serveCount){
+    vector<string> out; for(int i=0;i<(int)names.size() && i<serveCount;i++) out.push_back(names[i]); return out;
+}""",
     "subarraySumEqualsK": """long long subarraySumEqualsK(vector<long long> nums, long long k){
     map<long long,long long> cnt; cnt[0]=1; long long sum=0, res=0; for(long long x:nums){ sum+=x; res+=cnt[sum-k]; cnt[sum]++; } return res;
 }""",
     "sumEvenNumbers": """long long sumEvenNumbers(vector<long long> nums){ long long s=0; for(long long x:nums) if(x%2==0) s+=x; return s; }""",
+    "dailyTemperatureWaits": """vector<long long> dailyTemperatureWaits(vector<long long> temperatures){
+    vector<long long> ans(temperatures.size(),0), st;
+    for(int i=0;i<(int)temperatures.size();i++){ while(!st.empty() && temperatures[i]>temperatures[st.back()]){ int j=st.back(); st.pop_back(); ans[j]=i-j; } st.push_back(i); }
+    return ans;
+}""",
     "temperatureAboveThreshold": """long long temperatureAboveThreshold(vector<long long> readings, long long threshold){
     long long c=0; for(long long x:readings) if(x>threshold) c++; return c;
 }""",
@@ -259,6 +312,18 @@ CPP_SOLUTIONS = {
 }""",
     "treeLevelSums": """vector<long long> treeLevelSums(vector<long long> tree){
     vector<long long> out; for(size_t idx=0, width=1; idx<tree.size(); idx+=width, width*=2){ long long sum=0; for(size_t i=idx;i<tree.size()&&i<idx+width;i++) if(tree[i]!=-1) sum+=tree[i]; out.push_back(sum); } return out;
+}""",
+    "treePathSumCount": """long long treePathSumCount(vector<long long> tree, long long target){
+    if(tree.empty()) return 0; long long count=0;
+    function<void(int,long long)> dfs=[&](int i,long long sum){
+        if(i>=(int)tree.size() || tree[i]==-1) return;
+        sum += tree[i]; int l=2*i+1, r=2*i+2;
+        bool leftReal = l<(int)tree.size() && tree[l]!=-1;
+        bool rightReal = r<(int)tree.size() && tree[r]!=-1;
+        if(!leftReal && !rightReal){ if(sum==target) count++; return; }
+        dfs(l,sum); dfs(r,sum);
+    };
+    dfs(0,0); return count;
 }""",
     "triePrefixCounts": """vector<long long> triePrefixCounts(vector<string> commands){
     vector<string> words; vector<long long> out;
@@ -301,6 +366,9 @@ CPP_SOLUTIONS = {
     "anyWordHasPrefix": """bool anyWordHasPrefix(vector<string> words, string prefix){
     for(auto&w:words) if(w.size()>=prefix.size()&&w.compare(0,prefix.size(),prefix)==0) return true;
     return false;
+}""",
+    "countdownList": """vector<long long> countdownList(long long n){
+    vector<long long> out; for(long long x=n; x>=0; x--) out.push_back(x); return out;
 }""",
     "courseCreditTotal": """long long courseCreditTotal(vector<string> courses, vector<long long> credits, vector<string> selectedCourses){
     map<string,long long> lookup; for(size_t i=0;i<courses.size();i++) lookup[courses[i]]=credits[i];

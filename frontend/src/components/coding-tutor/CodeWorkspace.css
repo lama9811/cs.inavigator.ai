@@ -389,6 +389,23 @@ body.ct-guide-resizing * {
   min-width: 0;
 }
 
+.code-trace-button {
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, var(--ct-primary, #082343) 18%, var(--ed-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ed-bg) 78%, #fff);
+  color: var(--ed-text);
+  padding: 0.42rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.code-trace-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .code-editor-filename {
   font-family: var(--ed-font);
   font-size: 0.8rem;

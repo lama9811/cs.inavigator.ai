@@ -4259,6 +4259,647 @@
           ]
         }
       ]
+    },
+    {
+      "question_id": "easy-37",
+      "function_name": "maxPlateStackHeight",
+      "runner_tests": [
+        {
+          "name": "provided shape",
+          "args": [
+            [
+              "push",
+              "push",
+              "pop",
+              "push"
+            ]
+          ],
+          "expected": 2
+        },
+        {
+          "name": "empty pops ignored",
+          "args": [
+            [
+              "pop",
+              "push",
+              "pop"
+            ]
+          ],
+          "expected": 1
+        },
+        {
+          "name": "tallest in middle",
+          "args": [
+            [
+              "push",
+              "push",
+              "push",
+              "pop",
+              "pop"
+            ]
+          ],
+          "expected": 3
+        }
+      ]
+    },
+    {
+      "question_id": "easy-38",
+      "function_name": "serveFirstStudents",
+      "runner_tests": [
+        {
+          "name": "provided shape",
+          "args": [
+            [
+              "Ana",
+              "Bo",
+              "Cy"
+            ],
+            2
+          ],
+          "expected": [
+            "Ana",
+            "Bo"
+          ]
+        },
+        {
+          "name": "serve more than available",
+          "args": [
+            [
+              "Ada"
+            ],
+            3
+          ],
+          "expected": [
+            "Ada"
+          ]
+        },
+        {
+          "name": "serve none",
+          "args": [
+            [
+              "Ada",
+              "Bo"
+            ],
+            0
+          ],
+          "expected": []
+        }
+      ]
+    },
+    {
+      "question_id": "easy-39",
+      "function_name": "firstScoreAtLeast",
+      "runner_tests": [
+        {
+          "name": "provided shape",
+          "args": [
+            [
+              60,
+              70,
+              70,
+              85
+            ],
+            70
+          ],
+          "expected": 1
+        },
+        {
+          "name": "all lower",
+          "args": [
+            [
+              50,
+              60
+            ],
+            80
+          ],
+          "expected": -1
+        },
+        {
+          "name": "first item qualifies",
+          "args": [
+            [
+              90,
+              95
+            ],
+            80
+          ],
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "question_id": "easy-40",
+      "function_name": "countdownList",
+      "runner_tests": [
+        {
+          "name": "provided shape",
+          "args": [
+            3
+          ],
+          "expected": [
+            3,
+            2,
+            1,
+            0
+          ]
+        },
+        {
+          "name": "zero",
+          "args": [
+            0
+          ],
+          "expected": [
+            0
+          ]
+        },
+        {
+          "name": "negative",
+          "args": [
+            -2
+          ],
+          "expected": []
+        }
+      ]
+    },
+    {
+      "question_id": "easy-41",
+      "function_name": "followLinkedListValues",
+      "runner_tests": [
+        {
+          "name": "provided shape",
+          "args": [
+            [
+              10,
+              20,
+              30
+            ],
+            [
+              1,
+              2,
+              -1
+            ],
+            0
+          ],
+          "expected": [
+            10,
+            20,
+            30
+          ]
+        },
+        {
+          "name": "starts in middle",
+          "args": [
+            [
+              5,
+              6,
+              7
+            ],
+            [
+              -1,
+              2,
+              0
+            ],
+            1
+          ],
+          "expected": [
+            6,
+            7,
+            5
+          ]
+        },
+        {
+          "name": "empty head",
+          "args": [
+            [
+              1
+            ],
+            [
+              -1
+            ],
+            -1
+          ],
+          "expected": []
+        }
+      ]
+    },
+    {
+      "question_id": "medium-32",
+      "function_name": "linkedListMiddleValue",
+      "runner_tests": [
+        {
+          "name": "provided even length",
+          "args": [
+            [
+              5,
+              6,
+              7,
+              8
+            ],
+            [
+              1,
+              2,
+              3,
+              -1
+            ],
+            0
+          ],
+          "expected": 7
+        },
+        {
+          "name": "odd length",
+          "args": [
+            [
+              1,
+              2,
+              3
+            ],
+            [
+              1,
+              2,
+              -1
+            ],
+            0
+          ],
+          "expected": 2
+        },
+        {
+          "name": "empty",
+          "args": [
+            [
+              1
+            ],
+            [
+              -1
+            ],
+            -1
+          ],
+          "expected": -1
+        }
+      ]
+    },
+    {
+      "question_id": "medium-33",
+      "function_name": "linkedListHasCycle",
+      "runner_tests": [
+        {
+          "name": "provided cycle",
+          "args": [
+            [
+              1,
+              2,
+              1
+            ],
+            0
+          ],
+          "expected": true
+        },
+        {
+          "name": "ends cleanly",
+          "args": [
+            [
+              1,
+              2,
+              -1
+            ],
+            0
+          ],
+          "expected": false
+        },
+        {
+          "name": "self cycle",
+          "args": [
+            [
+              0
+            ],
+            0
+          ],
+          "expected": true
+        }
+      ]
+    },
+    {
+      "question_id": "medium-34",
+      "function_name": "dailyTemperatureWaits",
+      "runner_tests": [
+        {
+          "name": "provided shape",
+          "args": [
+            [
+              70,
+              72,
+              71,
+              75
+            ]
+          ],
+          "expected": [
+            1,
+            2,
+            1,
+            0
+          ]
+        },
+        {
+          "name": "descending",
+          "args": [
+            [
+              80,
+              79,
+              78
+            ]
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "name": "classic shape",
+          "args": [
+            [
+              73,
+              74,
+              75,
+              71,
+              69,
+              72,
+              76,
+              73
+            ]
+          ],
+          "expected": [
+            1,
+            1,
+            4,
+            2,
+            1,
+            1,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "question_id": "medium-35",
+      "function_name": "recentQueueCounts",
+      "runner_tests": [
+        {
+          "name": "provided shape",
+          "args": [
+            [
+              1,
+              2,
+              8,
+              12
+            ],
+            5
+          ],
+          "expected": [
+            1,
+            2,
+            1,
+            2
+          ]
+        },
+        {
+          "name": "same time events",
+          "args": [
+            [
+              5,
+              5,
+              5
+            ],
+            0
+          ],
+          "expected": [
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "name": "window keeps boundary",
+          "args": [
+            [
+              1,
+              6,
+              7
+            ],
+            5
+          ],
+          "expected": [
+            1,
+            2,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "question_id": "medium-36",
+      "function_name": "firstBadVersion",
+      "runner_tests": [
+        {
+          "name": "provided shape",
+          "args": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ],
+          "expected": 2
+        },
+        {
+          "name": "all bad",
+          "args": [
+            [
+              1,
+              1
+            ]
+          ],
+          "expected": 0
+        },
+        {
+          "name": "none bad",
+          "args": [
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "expected": -1
+        }
+      ]
+    },
+    {
+      "question_id": "medium-37",
+      "function_name": "reverseLinkedListValues",
+      "runner_tests": [
+        {
+          "name": "provided shape",
+          "args": [
+            [
+              4,
+              5,
+              6
+            ],
+            [
+              1,
+              2,
+              -1
+            ],
+            0
+          ],
+          "expected": [
+            6,
+            5,
+            4
+          ]
+        },
+        {
+          "name": "starts in middle",
+          "args": [
+            [
+              1,
+              2,
+              3
+            ],
+            [
+              -1,
+              2,
+              0
+            ],
+            1
+          ],
+          "expected": [
+            1,
+            3,
+            2
+          ]
+        },
+        {
+          "name": "empty",
+          "args": [
+            [
+              1
+            ],
+            [
+              -1
+            ],
+            -1
+          ],
+          "expected": []
+        }
+      ]
+    },
+    {
+      "question_id": "hard-29",
+      "function_name": "lowestCommonAncestorValue",
+      "runner_tests": [
+        {
+          "name": "provided shape",
+          "args": [
+            [
+              3,
+              5,
+              1,
+              6,
+              2,
+              0,
+              8
+            ],
+            6,
+            2
+          ],
+          "expected": 5
+        },
+        {
+          "name": "different sides",
+          "args": [
+            [
+              3,
+              5,
+              1,
+              6,
+              2,
+              0,
+              8
+            ],
+            6,
+            8
+          ],
+          "expected": 3
+        },
+        {
+          "name": "ancestor is target",
+          "args": [
+            [
+              3,
+              5,
+              1,
+              6,
+              2,
+              0,
+              8
+            ],
+            5,
+            2
+          ],
+          "expected": 5
+        }
+      ]
+    },
+    {
+      "question_id": "hard-30",
+      "function_name": "treePathSumCount",
+      "runner_tests": [
+        {
+          "name": "provided shape",
+          "args": [
+            [
+              5,
+              4,
+              8,
+              11,
+              -1,
+              13,
+              4,
+              7,
+              2
+            ],
+            22
+          ],
+          "expected": 1
+        },
+        {
+          "name": "two paths",
+          "args": [
+            [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            7
+          ],
+          "expected": 1
+        },
+        {
+          "name": "empty tree",
+          "args": [
+            [],
+            0
+          ],
+          "expected": 0
+        }
+      ]
     }
   ]
 }

@@ -19,8 +19,11 @@ All notable changes to CS Navigator are documented here.
 - **Coding Tutor practice authoring guide.** Added a documented pipeline for adding code-writing Practice Library problems in small validated batches.
 - **COSC 101 Practice Library expansion.** Added twelve beginner-friendly campus/classroom practice problems covering conditionals, scans, maps, sets, tuple-style pairs, and list building across Python, JavaScript, Java, and C++.
 - **Medium/hard Practice Library expansion.** Added eight additional graph, heap, union-find, trie, dynamic-programming, and tree problems with deterministic runner tests for all four supported languages.
+- **Practice Library data-structure authoring batch.** Added thirteen more code-writing problems across stacks, queues, binary search, recursion, linked lists, and trees, with all-language runner metadata and starter specs.
+- **Python code execution trace V1.** Added a Python-only "Trace my code" modal that runs the current solution against the first authored test and shows capped line-by-line execution with local variables.
 
 ### Changed
+- New Practice Library visualizers now open with problem-specific sample inputs, including array-backed linked lists, countdown recursion, and level-order tree traces.
 - Passing Coding Tutor solutions now show a line-by-line diff against the reference approach in the terminal review panel.
 - Applying a Coding Tutor code suggestion now uses a preview step with comment, append, replace, and cancel paths instead of a browser confirm.
 - The floating Coding Tutor chat no longer repeats the "Currently helping with" card; attempt count now lives in the workspace code context so AI review has more room.

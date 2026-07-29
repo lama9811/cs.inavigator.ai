@@ -9,6 +9,7 @@ from coding_runner import (
     run_java_practice_tests,
     run_javascript_practice_tests,
     run_python_practice_tests,
+    run_python_practice_trace,
     validate_cpp_code,
     validate_java_code,
 )
@@ -63,6 +64,37 @@ count_vowels("hello")
 
     assert result["status"] == "passed"
     assert result["stdout"].strip() == "2"
+
+
+def test_python_trace_captures_function_lines_and_locals():
+    code = """
+def count_vowels(text: str) -> int:
+    total = 0
+    for char in text.lower():
+        if char in "aeiou":
+            total += 1
+    return total
+"""
+
+    result = run_python_practice_trace(code, "count_vowels", COUNT_VOWELS_TESTS[0])
+
+    assert result["status"] == "passed"
+    assert result["test"]["passed"] is True
+    assert result["trace"]
+    assert any("total" in step["locals"] for step in result["trace"])
+    assert any("for char in text.lower()" in step["line"] for step in result["trace"])
+    assert any(step.get("return_value") == "2" for step in result["trace"])
+
+
+def test_python_trace_uses_same_security_validation():
+    result = run_python_practice_trace(
+        "import os\ndef count_vowels(text):\n    return 0",
+        "count_vowels",
+        COUNT_VOWELS_TESTS[0],
+    )
+
+    assert result["status"] == "error"
+    assert "security check blocked" in result["stderr"].lower()
 
 
 def test_javascript_runner_passes_correct_solution():

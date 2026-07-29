@@ -758,6 +758,310 @@ print(json.dumps({
     }
 
 
+def run_python_practice_trace(code: str, function_name: str, test: dict[str, Any]) -> dict[str, Any]:
+    """Return a capped line trace for one Python practice test.
+
+    This is intentionally Python-only V1. It reuses the same validation and isolated
+    subprocess boundary as the grader, but it traces only the student's function call
+    for one authored test case and writes no progress.
+    """
+    try:
+        validate_python_code(code)
+    except RunnerSecurityError as exc:
+        return _security_error_response(exc)
+
+    runner_source = """
+import ast
+import builtins
+import contextlib
+import io
+import json
+import linecache
+import sys
+import time
+import types
+
+payload = json.loads(sys.stdin.read() or "{}")
+test = payload.get("test") or {}
+function_name = payload.get("function_name")
+started = time.perf_counter()
+MAX_OUTPUT_CHARS = 12000
+MAX_TRACE_STEPS = 80
+MAX_LOCAL_CHARS = 120
+ALLOWED_IMPORTS = {
+    "bisect", "collections", "functools", "heapq", "itertools", "math",
+    "operator", "re", "statistics", "string", "typing",
+}
+SAFE_MODULE_CACHE = {}
+
+class CappedTextIO(io.TextIOBase):
+    def __init__(self, limit):
+        self.limit = limit
+        self.parts = []
+        self.length = 0
+        self.truncated = False
+
+    def write(self, value):
+        text = str(value)
+        remaining = self.limit - self.length
+        if remaining > 0:
+            chunk = text[:remaining]
+            self.parts.append(chunk)
+            self.length += len(chunk)
+        if len(text) > max(remaining, 0):
+            self.truncated = True
+        return len(text)
+
+    def getvalue(self):
+        text = "".join(self.parts)
+        if self.truncated:
+            text += "\\n... output truncated by CS Navigator ..."
+        return text
+
+stdout_buffer = CappedTextIO(MAX_OUTPUT_CHARS)
+
+def safe_import(name, globals=None, locals=None, fromlist=(), level=0):
+    root = str(name).split(".", 1)[0]
+    if root not in ALLOWED_IMPORTS:
+        raise ImportError(f"Importing '{root}' is not available in the practice runner.")
+    if root not in SAFE_MODULE_CACHE:
+        source_module = builtins.__import__(root)
+        safe_exports = {
+            export_name: getattr(source_module, export_name)
+            for export_name in dir(source_module)
+            if not export_name.startswith("_")
+            and not isinstance(getattr(source_module, export_name), types.ModuleType)
+            and export_name not in {"attrgetter", "methodcaller"}
+        }
+        SAFE_MODULE_CACHE[root] = types.SimpleNamespace(**safe_exports)
+    return SAFE_MODULE_CACHE[root]
+
+SAFE_BUILTINS = {
+    "__build_class__": builtins.__build_class__,
+    "__import__": safe_import,
+    "abs": abs, "all": all, "any": any, "bin": bin, "bool": bool, "callable": callable,
+    "chr": chr, "complex": complex, "dict": dict, "divmod": divmod,
+    "enumerate": enumerate, "filter": filter, "float": float, "format": format,
+    "frozenset": frozenset, "hash": hash, "hex": hex, "int": int, "isinstance": isinstance,
+    "issubclass": issubclass, "iter": iter, "len": len, "list": list, "map": map,
+    "max": max, "min": min, "next": next, "object": object, "oct": oct,
+    "ord": ord, "pow": pow, "print": print, "range": range, "repr": repr,
+    "reversed": reversed, "round": round, "set": set, "slice": slice,
+    "sorted": sorted, "str": str, "sum": sum, "super": super, "tuple": tuple,
+    "zip": zip,
+    "ArithmeticError": ArithmeticError, "AssertionError": AssertionError,
+    "Exception": Exception, "IndexError": IndexError, "KeyError": KeyError,
+    "LookupError": LookupError, "RuntimeError": RuntimeError, "StopIteration": StopIteration,
+    "TypeError": TypeError, "ValueError": ValueError, "ZeroDivisionError": ZeroDivisionError,
+}
+
+def safe_display(value):
+    try:
+        raw = json.dumps(value, default=repr)
+    except Exception:
+        raw = repr(value)
+    if len(raw) > MAX_LOCAL_CHARS:
+        raw = raw[:MAX_LOCAL_CHARS] + "... truncated"
+    return raw
+
+def snapshot_locals(frame):
+    out = {}
+    for key, value in frame.f_locals.items():
+        if key.startswith("__") or key in {"self"}:
+            continue
+        out[key] = safe_display(value)
+        if len(out) >= 10:
+            out["..."] = "locals truncated"
+            break
+    return out
+
+def execute_student_module(path):
+    with open(path, "r", encoding="utf-8") as handle:
+        source = handle.read()
+    tree = ast.parse(source, filename=path)
+    module = types.ModuleType("student_solution")
+    module.__file__ = path
+    module.__name__ = "student_solution"
+    module.__dict__["__builtins__"] = SAFE_BUILTINS
+    sys.modules[module.__name__] = module
+
+    final_expr = tree.body[-1] if tree.body and isinstance(tree.body[-1], ast.Expr) else None
+    if final_expr and isinstance(final_expr.value, ast.Constant) and isinstance(final_expr.value.value, str):
+        final_expr = None
+    setup_body = tree.body[:-1] if final_expr else tree.body
+    setup_tree = ast.Module(body=setup_body, type_ignores=tree.type_ignores)
+    ast.fix_missing_locations(setup_tree)
+    exec(compile(setup_tree, path, "exec"), module.__dict__)
+    return module
+
+def values_equal(actual, expected, order_insensitive=False):
+    def canon(value):
+        if isinstance(value, list):
+            items = [canon(item) for item in value]
+            if order_insensitive:
+                return sorted(items, key=lambda item: json.dumps(item, sort_keys=True, default=str))
+            return items
+        if isinstance(value, dict):
+            return {key: canon(value[key]) for key in sorted(value)}
+        return value
+    return canon(actual) == canon(expected)
+
+try:
+    with contextlib.redirect_stdout(stdout_buffer):
+        module = execute_student_module("solution.py")
+    if hasattr(module, function_name):
+        target = getattr(module, function_name)
+        resolved_name = function_name
+    elif hasattr(module, "solve"):
+        target = getattr(module, "solve")
+        resolved_name = "solve"
+    else:
+        student_functions = [
+            value for name, value in vars(module).items()
+            if callable(value) and getattr(value, "__module__", "") == module.__name__ and not name.startswith("_")
+        ]
+        if len(student_functions) == 1:
+            target = student_functions[0]
+            resolved_name = target.__name__
+        else:
+            raise AttributeError(f"module 'student_solution' has no function named '{function_name}'")
+except Exception as exc:
+    print(json.dumps({
+        "status": "error",
+        "error": f"Could not load {function_name}: {exc}",
+        "trace": [],
+        "stdout": stdout_buffer.getvalue(),
+        "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+    }))
+    raise SystemExit(0)
+
+source_lines = linecache.getlines("solution.py")
+trace = []
+
+def tracer(frame, event, arg):
+    if len(trace) >= MAX_TRACE_STEPS:
+        return None
+    if frame.f_code.co_filename != "solution.py":
+        return tracer
+    if frame.f_code.co_name == "<module>":
+        return tracer
+    if event not in {"line", "return", "exception"}:
+        return tracer
+    line_no = frame.f_lineno
+    entry = {
+        "event": event,
+        "function": frame.f_code.co_name,
+        "line_no": line_no,
+        "line": source_lines[line_no - 1].rstrip() if 0 < line_no <= len(source_lines) else "",
+        "locals": snapshot_locals(frame),
+        "stdout": stdout_buffer.getvalue(),
+    }
+    if event == "return":
+        entry["return_value"] = safe_display(arg)
+    elif event == "exception":
+        exc_type, exc, _tb = arg
+        entry["exception"] = f"{exc_type.__name__}: {exc}"
+    trace.append(entry)
+    return tracer
+
+args = test.get("args", [])
+expected = test.get("expected")
+actual = None
+error = ""
+try:
+    with contextlib.redirect_stdout(stdout_buffer):
+        sys.settrace(tracer)
+        actual = target(*args)
+        sys.settrace(None)
+except Exception as exc:
+    sys.settrace(None)
+    error = str(exc)
+
+passed = False if error else values_equal(actual, expected, bool(test.get("order_insensitive")))
+print(json.dumps({
+    "status": "error" if error else "passed" if passed else "failed",
+    "function_name": resolved_name,
+    "test": {
+        "name": test.get("name") or "Trace test",
+        "args": args,
+        "expected": expected,
+        "actual": actual,
+        "passed": passed,
+        "error": error,
+    },
+    "trace": trace,
+    "stdout": stdout_buffer.getvalue(),
+    "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+    "truncated": len(trace) >= MAX_TRACE_STEPS,
+}))
+"""
+    started = time.perf_counter()
+    try:
+        with tempfile.TemporaryDirectory(prefix="csnav_trace_") as temp_dir:
+            solution_path = os.path.join(temp_dir, "solution.py")
+            runner_path = os.path.join(temp_dir, "trace_runner.py")
+            with open(solution_path, "w", encoding="utf-8") as handle:
+                handle.write(code)
+            with open(runner_path, "w", encoding="utf-8") as handle:
+                handle.write(runner_source)
+
+            completed = _run_isolated_process(
+                [sys.executable, "-I", "-S", runner_path],
+                cwd=temp_dir,
+                input_text=json.dumps({"function_name": function_name, "test": test}),
+                env={"PYTHONIOENCODING": "utf-8"},
+            )
+    except subprocess.TimeoutExpired:
+        return {
+            "status": "error",
+            "trace": [],
+            "stdout": "",
+            "stderr": f"The trace timed out after {RUN_TIMEOUT_SECONDS} seconds. Check for infinite loops or very slow logic.",
+            "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+        }
+    except Exception as exc:
+        return {
+            "status": "error",
+            "trace": [],
+            "stdout": "",
+            "stderr": f"Trace setup failed: {exc}",
+            "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+        }
+
+    stdout_text = completed.stdout.strip()
+    stderr_text = _truncate_text(completed.stderr.strip())
+    if completed.returncode != 0 and not stdout_text:
+        return {
+            "status": "error",
+            "trace": [],
+            "stdout": "",
+            "stderr": stderr_text or "Python returned an error before tracing could run.",
+            "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+        }
+
+    try:
+        payload = json.loads(stdout_text.splitlines()[-1])
+    except Exception:
+        return {
+            "status": "error",
+            "trace": [],
+            "stdout": _truncate_text(stdout_text),
+            "stderr": stderr_text or "Trace output could not be parsed.",
+            "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+        }
+
+    return {
+        "status": payload.get("status", "error"),
+        "function_name": payload.get("function_name", function_name),
+        "test": payload.get("test", {}),
+        "trace": payload.get("trace", []),
+        "stdout": _truncate_text(payload.get("stdout", "")),
+        "stderr": _truncate_text(payload.get("error") or stderr_text),
+        "duration_ms": payload.get("duration_ms", round((time.perf_counter() - started) * 1000, 2)),
+        "truncated": bool(payload.get("truncated")),
+    }
+
+
 def run_javascript_practice_tests(code: str, function_name: str, tests: list[dict[str, Any]]) -> dict[str, Any]:
     try:
         validate_javascript_code(code)

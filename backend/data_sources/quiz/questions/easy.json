@@ -805,6 +805,185 @@
         "Loop over the readings by index.",
         "When a reading is below the threshold, append the matching weekday name."
       ]
+    },
+    {
+      "id": "easy-37",
+      "title": "Max Plate Stack Height",
+      "difficulty": "easy",
+      "topic": "stacks",
+      "prompt": "A dining hall records stack commands: push adds one plate and pop removes one plate if any are present. Return the highest stack height reached.",
+      "examples": [
+        {
+          "input": "['push','push','pop','push']",
+          "output": "2"
+        }
+      ],
+      "constraints": [
+        "Commands are push or pop.",
+        "Pop on an empty stack leaves it empty."
+      ],
+      "hints": [
+        "Track the current stack height.",
+        "Increase it for push and decrease it for pop only when positive.",
+        "Keep the largest height seen after each command."
+      ],
+      "visualizer": {
+        "concept": "stack",
+        "title": "Plate Stack: push and pop height",
+        "caption": "Watch the stack grow and shrink while the maximum height is remembered.",
+        "preset": "plate-stack-height",
+        "input": {
+          "operations": [
+            "push plate",
+            "push plate",
+            "pop",
+            "push plate"
+          ]
+        }
+      }
+    },
+    {
+      "id": "easy-38",
+      "title": "Serve First Students",
+      "difficulty": "easy",
+      "topic": "queues",
+      "prompt": "Students line up for tutoring help. Given the queue of names and a number to serve, return the names served from the front of the queue.",
+      "examples": [
+        {
+          "input": "names=['Ana','Bo','Cy'], serveCount=2",
+          "output": "['Ana','Bo']"
+        }
+      ],
+      "constraints": [
+        "serveCount may be larger than the queue length.",
+        "Keep the original queue order for served students."
+      ],
+      "hints": [
+        "A queue serves the oldest waiting student first.",
+        "Take names from the front until serveCount is reached or the queue is empty.",
+        "Append each served name to the result list."
+      ],
+      "visualizer": {
+        "concept": "queue",
+        "title": "Tutoring Queue: serve from the front",
+        "caption": "Watch students leave in the same order they joined.",
+        "input": {
+          "operations": [
+            "join Ana",
+            "join Bo",
+            "join Cy",
+            "serve",
+            "serve"
+          ]
+        }
+      }
+    },
+    {
+      "id": "easy-39",
+      "title": "First Score At Least",
+      "difficulty": "easy",
+      "topic": "binary search",
+      "prompt": "Given sorted quiz scores and a target score, return the first index whose score is at least the target. Return -1 if every score is lower.",
+      "examples": [
+        {
+          "input": "scores=[60,70,70,85], target=70",
+          "output": "1"
+        }
+      ],
+      "constraints": [
+        "Scores are sorted ascending.",
+        "Duplicate scores may appear."
+      ],
+      "hints": [
+        "You are looking for the first score that is not too small.",
+        "A linear scan is fine for the beginner version.",
+        "Return as soon as you find a score greater than or equal to the target."
+      ],
+      "visualizer": {
+        "concept": "binary-search",
+        "title": "First At Least: find the boundary",
+        "caption": "Watch the boundary between too-small scores and acceptable scores.",
+        "input": {
+          "items": [
+            60,
+            70,
+            70,
+            85
+          ],
+          "target": 70
+        }
+      }
+    },
+    {
+      "id": "easy-40",
+      "title": "Countdown List",
+      "difficulty": "easy",
+      "topic": "recursion",
+      "prompt": "Return a countdown list from n down to 0. If n is negative, return an empty list.",
+      "examples": [
+        {
+          "input": "n=3",
+          "output": "[3,2,1,0]"
+        }
+      ],
+      "constraints": [
+        "-100 <= n <= 100"
+      ],
+      "hints": [
+        "A recursive version stops when n is below zero.",
+        "Add the current number first.",
+        "Then continue with n - 1 until reaching zero."
+      ],
+      "visualizer": {
+        "concept": "recursion",
+        "title": "Countdown: smaller call each time",
+        "caption": "Watch each call ask for the rest of the countdown.",
+        "preset": "countdown",
+        "input": {
+          "n": 3
+        }
+      }
+    },
+    {
+      "id": "easy-41",
+      "title": "Follow Linked List Values",
+      "difficulty": "easy",
+      "topic": "linked lists",
+      "prompt": "A linked list is represented by values, nextIndexes, and a head index. Follow next indexes from head and return the values in order. A next index of -1 means the end.",
+      "examples": [
+        {
+          "input": "values=[10,20,30], nextIndexes=[1,2,-1], head=0",
+          "output": "[10,20,30]"
+        }
+      ],
+      "constraints": [
+        "Indexes are valid or -1.",
+        "The list has no cycle in this beginner version."
+      ],
+      "hints": [
+        "Start at the head index.",
+        "Append the value at the current index.",
+        "Move to nextIndexes[current] until it becomes -1."
+      ],
+      "visualizer": {
+        "concept": "linked-list",
+        "title": "Follow next links",
+        "caption": "Watch the current index move from node to node.",
+        "preset": "linked-list-traverse",
+        "input": {
+          "values": [
+            10,
+            20,
+            30
+          ],
+          "nextIndexes": [
+            1,
+            2,
+            -1
+          ],
+          "head": 0
+        }
+      }
     }
   ]
 }

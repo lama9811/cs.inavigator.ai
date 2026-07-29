@@ -31,6 +31,7 @@ from coding_runner import (
     run_javascript_practice_tests,
     run_python_freeform,
     run_python_practice_tests,
+    run_python_practice_trace,
     set_cached_practice_run,
 )
 from practice_starters import build_starter_from_spec, get_arg_spec
@@ -6608,6 +6609,48 @@ async def run_practice_solution(
         "progress_saved": progress_saved,
         "progress": serialized_progress,
         "message": "All local tests passed." if status_value == "passed" else "Review the failed tests and try again.",
+    }
+
+@app.post("/api/coding/practice/trace")
+async def trace_practice_solution(
+    req: PracticeRunRequest,
+    user: dict = Depends(get_current_user),
+):
+    retry_after = check_practice_run_rate_limit(str(user["user_id"]))
+    if retry_after is not None:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many code runs. Wait briefly before trying again.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
+    language_key, _ = _normalize_practice_language(req.language)
+    if language_key != "python":
+        return {
+            "status": "error",
+            "trace": [],
+            "stdout": "",
+            "stderr": "Code tracing is available for Python first. JavaScript, Java, and C++ can still use Visualize this idea.",
+            "duration_ms": 0,
+        }
+
+    question = _find_practice_question(req.question_id)
+    solution = _find_language_solution(question["id"], language_key, question)
+    function_name = str(solution.get("function_name") or "solve")
+    tests = solution.get("runner_tests") or []
+    if not tests:
+        return {
+            "status": "error",
+            "trace": [],
+            "stdout": "",
+            "stderr": "No authored test is available to trace for this question yet.",
+            "duration_ms": 0,
+        }
+
+    run_result = run_python_practice_trace(req.code, function_name, tests[0])
+    return {
+        **run_result,
+        "message": "Trace generated from the first authored test case.",
     }
 
 @app.post("/api/coding/interview/grade")

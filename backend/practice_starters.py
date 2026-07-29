@@ -56,6 +56,9 @@ PRACTICE_ARG_SPECS: dict[str, tuple[list[tuple[str, str]], str]] = {
     "earliestConnectedTime": ([("n", "int"), ("events", "grid")], "int"),
     "expressionEvaluator": ([("expression", "string")], "int"),
     "firstMissingPositiveSmall": ([("nums", "intlist")], "int"),
+    "firstBadVersion": ([("versions", "intlist")], "int"),
+    "firstScoreAtLeast": ([("scores", "intlist"), ("target", "int")], "int"),
+    "followLinkedListValues": ([("values", "intlist"), ("nextIndexes", "intlist"), ("head", "int")], "intlist"),
     "gradeBucket": ([("score", "int")], "string"),
     "helpDeskQueue": ([("commands", "strlist")], "strlist"),
     "initials": ([("fullName", "string")], "string"),
@@ -115,6 +118,16 @@ PRACTICE_ARG_SPECS: dict[str, tuple[list[tuple[str, str]], str]] = {
     "uniqueParkingZones": ([("zones", "strlist")], "int"),
     "sharedStudyTopics": ([("firstTopics", "strlist"), ("secondTopics", "strlist")], "strlist"),
     "lateAssignmentPenalty": ([("score", "int"), ("daysLate", "int")], "int"),
+    "linkedListHasCycle": ([("nextIndexes", "intlist"), ("head", "int")], "bool"),
+    "linkedListMiddleValue": ([("values", "intlist"), ("nextIndexes", "intlist"), ("head", "int")], "int"),
+    "lowestCommonAncestorValue": ([("tree", "intlist"), ("a", "int"), ("b", "int")], "int"),
+    "maxPlateStackHeight": ([("commands", "strlist")], "int"),
+    "recentQueueCounts": ([("times", "intlist"), ("window", "int")], "intlist"),
+    "reverseLinkedListValues": ([("values", "intlist"), ("nextIndexes", "intlist"), ("head", "int")], "intlist"),
+    "serveFirstStudents": ([("names", "strlist"), ("serveCount", "int")], "strlist"),
+    "treePathSumCount": ([("tree", "intlist"), ("target", "int")], "int"),
+    "dailyTemperatureWaits": ([("temperatures", "intlist")], "intlist"),
+    "countdownList": ([("n", "int")], "intlist"),
 }
 
 

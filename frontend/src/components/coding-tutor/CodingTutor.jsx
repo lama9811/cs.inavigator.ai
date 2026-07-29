@@ -768,6 +768,9 @@ export default function CodingTutor({
   const [workspaceVisible, setWorkspaceVisible] = useState(true);
   const [workspaceTab, setWorkspaceTab] = useState("Editor");
   const [visualizerModalOpen, setVisualizerModalOpen] = useState(false);
+  const [traceModalOpen, setTraceModalOpen] = useState(false);
+  const [traceResult, setTraceResult] = useState(null);
+  const [isTracingCode, setIsTracingCode] = useState(false);
   const [dailyChallenge, setDailyChallenge] = useState(null);
   const [dailyChallengeLoading, setDailyChallengeLoading] = useState(false);
   const [learningStyle, setLearningStyle] = useState(DEFAULT_LEARNING_STYLE);
@@ -1076,7 +1079,9 @@ export default function CodingTutor({
 
   useEffect(() => {
     setVisualizerModalOpen(false);
-  }, [activeProblem?.id]);
+    setTraceModalOpen(false);
+    setTraceResult(null);
+  }, [activeProblem?.id, selectedLanguageKey]);
 
   useEffect(() => {
     if (!activeProblem?.id) {
@@ -3065,6 +3070,61 @@ export default function CodingTutor({
     }
   };
 
+  const tracePythonCode = async () => {
+    if (!activeProblem || !isQuizBankProblem) {
+      toast.info("Open a Practice Library problem before tracing code.");
+      return;
+    }
+    if (selectedLanguageKey !== "python") {
+      toast.info("Execution tracing is available for Python first.");
+      return;
+    }
+    if (!code.trim()) {
+      toast.info("Write some Python code before tracing it.");
+      return;
+    }
+    const mismatchMessage = detectLanguageMismatch(code, selectedLanguageKey);
+    if (mismatchMessage) {
+      setTraceResult({ status: "error", trace: [], stderr: mismatchMessage });
+      setTraceModalOpen(true);
+      return;
+    }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.info("Please sign in before tracing code.");
+      return;
+    }
+
+    setWorkspaceVisible(true);
+    setTraceModalOpen(true);
+    setIsTracingCode(true);
+    setTraceResult(prev => prev || { status: "running", trace: [], message: "Tracing your Python code..." });
+    try {
+      const response = await fetch(`${apiBase}/api/coding/practice/trace`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          question_id: activeProblem.id,
+          language: selectedLanguageKey,
+          code,
+          hints_used: revealedHints,
+          seconds_since_open: secondsSinceOpen(),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || `trace ${response.status}`);
+      setTraceResult(data);
+    } catch (error) {
+      console.error("[coding-trace] failed", error);
+      setTraceResult({ status: "error", trace: [], stderr: String(error.message || error), message: "Trace could not complete." });
+    } finally {
+      setIsTracingCode(false);
+    }
+  };
+
   const markSolved = async () => {
     if (isInterviewWorkspaceProblem && activeProblem?.id) {
       saveDraft(activeProblem.id, selectedLanguageKey, code);
@@ -3403,8 +3463,13 @@ export default function CodingTutor({
           onExplainOneTest={explainOneTest}
           onStopRun={stopRun}
           onRequestReview={activeProblem?.source === "interview" ? null : requestReview}
+          onTraceCode={tracePythonCode}
+          isTracingCode={isTracingCode}
+          traceResult={traceResult}
           visualizerOpen={visualizerModalOpen}
+          traceModalOpen={traceModalOpen}
           onCloseVisualizer={() => setVisualizerModalOpen(false)}
+          onCloseTraceModal={() => setTraceModalOpen(false)}
           onSaveSnippet={handleSaveSnippet}
           onUploadFile={() => personalFileInputRef.current?.click()}
           codeRenderer={codeRenderer}
