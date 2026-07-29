@@ -543,6 +543,36 @@ CPP_SOLUTIONS = {
     while(index<tree.size()){ bool any=false; long long last=0; for(size_t i=0;i<width && index<tree.size();i++,index++){ if(tree[index]!=-1){ any=true; last=tree[index]; } } if(any) out.push_back(last); width*=2; }
     return out;
 }""",
+    "countSetBits": """long long countSetBits(long long n){
+    long long count=0; while(n>0){ count += n & 1LL; n >>= 1; } return count;
+}""",
+    "isPowerOfTwo": """bool isPowerOfTwo(long long n){
+    return n > 0 && (n & (n - 1)) == 0;
+}""",
+    "prefixBalanceIndex": """long long prefixBalanceIndex(vector<long long> nums){
+    long long total=0; for(long long value:nums) total += value; long long left=0;
+    for(long long i=0;i<(long long)nums.size();i++){ if(left == total - left - nums[i]) return i; left += nums[i]; }
+    return -1;
+}""",
+    "matrixDiagonalSum": """long long matrixDiagonalSum(vector<vector<long long>> matrix){
+    long long n=matrix.size(), sum=0; for(long long i=0;i<n;i++){ sum += matrix[i][i]; long long other=n-1-i; if(other!=i) sum += matrix[i][other]; } return sum;
+}""",
+    "differentBitCount": """long long differentBitCount(long long a, long long b){
+    long long x=a^b, count=0; while(x>0){ count += x & 1LL; x >>= 1; } return count;
+}""",
+    "matrixBorderSum": """long long matrixBorderSum(vector<vector<long long>> matrix){
+    if(matrix.empty() || matrix[0].empty()) return 0; long long rows=matrix.size(), cols=matrix[0].size(), sum=0;
+    for(long long r=0;r<rows;r++) for(long long c=0;c<cols;c++) if(r==0 || c==0 || r==rows-1 || c==cols-1) sum += matrix[r][c];
+    return sum;
+}""",
+    "longestSubarraySumK": """long long longestSubarraySumK(vector<long long> nums, long long k){
+    map<long long,long long> first; first[0] = -1; long long sum=0,best=0;
+    for(long long i=0;i<(long long)nums.size();i++){ sum += nums[i]; if(first.count(sum-k)) best=max(best, i-first[sum-k]); if(!first.count(sum)) first[sum]=i; }
+    return best;
+}""",
+    "maximumPairXor": """long long maximumPairXor(vector<long long> nums){
+    long long best=0; for(size_t i=0;i<nums.size();i++) for(size_t j=i+1;j<nums.size();j++) best=max(best, nums[i]^nums[j]); return best;
+}""",
 }
 
 
@@ -763,6 +793,14 @@ JAVA_SOLUTIONS = {
     "runningMedianScores": "import java.util.*; class Solution { static int[] runningMedianScores(int[] scores){ List<Integer> sorted=new ArrayList<>(); int[] out=new int[scores.length]; for(int i=0;i<scores.length;i++){ int pos=Collections.binarySearch(sorted, scores[i]); if(pos<0) pos=-pos-1; sorted.add(pos, scores[i]); out[i]=sorted.get((sorted.size()-1)/2); } return out; } }",
     "topPriorityAssignments": "import java.util.*; class Solution { static String[] topPriorityAssignments(String[] names, int[] priorities, int k){ List<int[]> idx=new ArrayList<>(); for(int i=0;i<names.length;i++) idx.add(new int[]{i}); idx.sort((a,b) -> priorities[b[0]]!=priorities[a[0]] ? priorities[b[0]]-priorities[a[0]] : names[a[0]].compareTo(names[b[0]])); String[] out=new String[Math.min(k, idx.size())]; for(int i=0;i<out.length;i++) out[i]=names[idx.get(i)[0]]; return out; } }",
     "treeRightSideView": "import java.util.*; class Solution { static int[] treeRightSideView(int[] tree){ List<Integer> out=new ArrayList<>(); int index=0, width=1; while(index<tree.length){ boolean any=false; int last=0; for(int i=0;i<width && index<tree.length;i++,index++){ if(tree[index]!=-1){ any=true; last=tree[index]; } } if(any) out.add(last); width*=2; } return out.stream().mapToInt(Integer::intValue).toArray(); } }",
+    "countSetBits": "class Solution { static int countSetBits(int n){ int count=0; while(n>0){ count += n & 1; n >>= 1; } return count; } }",
+    "isPowerOfTwo": "class Solution { static boolean isPowerOfTwo(int n){ return n > 0 && (n & (n - 1)) == 0; } }",
+    "prefixBalanceIndex": "class Solution { static int prefixBalanceIndex(int[] nums){ int total=0; for(int value:nums) total+=value; int left=0; for(int i=0;i<nums.length;i++){ if(left == total - left - nums[i]) return i; left += nums[i]; } return -1; } }",
+    "matrixDiagonalSum": "class Solution { static int matrixDiagonalSum(int[][] matrix){ int n=matrix.length,sum=0; for(int i=0;i<n;i++){ sum += matrix[i][i]; int other=n-1-i; if(other!=i) sum += matrix[i][other]; } return sum; } }",
+    "differentBitCount": "class Solution { static int differentBitCount(int a, int b){ int x=a^b,count=0; while(x>0){ count += x & 1; x >>= 1; } return count; } }",
+    "matrixBorderSum": "class Solution { static int matrixBorderSum(int[][] matrix){ if(matrix.length==0 || matrix[0].length==0) return 0; int rows=matrix.length, cols=matrix[0].length, sum=0; for(int r=0;r<rows;r++) for(int c=0;c<cols;c++) if(r==0 || c==0 || r==rows-1 || c==cols-1) sum += matrix[r][c]; return sum; } }",
+    "longestSubarraySumK": "import java.util.*; class Solution { static int longestSubarraySumK(int[] nums, int k){ Map<Integer,Integer> first=new HashMap<>(); first.put(0,-1); int sum=0,best=0; for(int i=0;i<nums.length;i++){ sum += nums[i]; if(first.containsKey(sum-k)) best=Math.max(best, i-first.get(sum-k)); first.putIfAbsent(sum,i); } return best; } }",
+    "maximumPairXor": "class Solution { static int maximumPairXor(int[] nums){ int best=0; for(int i=0;i<nums.length;i++) for(int j=i+1;j<nums.length;j++) best=Math.max(best, nums[i]^nums[j]); return best; } }",
 }
 
 
