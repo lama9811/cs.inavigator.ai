@@ -109,3 +109,101 @@ def test_ladder_drops_after_repeated_medium_failures():
     assert recommendation["action"] == "ladder"
     assert recommendation["difficulty"] == "easy"
     assert "steps back to easy" in recommendation["reason"]
+
+
+def test_error_review_signal_routes_repeated_syntax_errors_to_syntax_lesson():
+    signal = adaptive_practice.build_error_review_signal(
+        attempt_events=[
+            {
+                "question_id": "easy-a",
+                "topic": "arrays",
+                "difficulty": "easy",
+                "language": "python",
+                "outcome": "error",
+                "error_class": "syntax",
+                "created_at": "2026-07-01T00:00:00",
+            },
+            {
+                "question_id": "easy-b",
+                "topic": "arrays",
+                "difficulty": "easy",
+                "language": "python",
+                "outcome": "error",
+                "error_class": "syntax",
+                "created_at": "2026-07-02T00:00:00",
+            },
+        ],
+        language="python",
+    )
+
+    assert signal["action"] == "lesson_review"
+    assert signal["error_class"] == "syntax"
+    assert signal["lesson_category"] == "syntax"
+    assert signal["topic"] == "arrays"
+
+
+def test_error_review_signal_uses_recent_dominant_failure_class():
+    signal = adaptive_practice.build_error_review_signal(
+        attempt_events=[
+            {
+                "question_id": "medium-a",
+                "topic": "arrays",
+                "difficulty": "medium",
+                "language": "python",
+                "outcome": "fail",
+                "error_class": "wrong_answer",
+                "created_at": "2026-07-01T00:00:00",
+            },
+            {
+                "question_id": "medium-b",
+                "topic": "strings",
+                "difficulty": "medium",
+                "language": "python",
+                "outcome": "fail",
+                "error_class": "runtime",
+                "created_at": "2026-07-02T00:00:00",
+            },
+            {
+                "question_id": "medium-b",
+                "topic": "strings",
+                "difficulty": "medium",
+                "language": "python",
+                "outcome": "fail",
+                "error_class": "runtime",
+                "created_at": "2026-07-03T00:00:00",
+            },
+        ],
+        language="python",
+    )
+
+    assert signal["error_class"] == "runtime"
+    assert signal["lesson_category"] == "debug"
+    assert signal["topic"] == "strings"
+
+
+def test_error_review_signal_stays_quiet_without_repeated_pattern():
+    signal = adaptive_practice.build_error_review_signal(
+        attempt_events=[
+            {
+                "question_id": "easy-a",
+                "topic": "arrays",
+                "difficulty": "easy",
+                "language": "python",
+                "outcome": "error",
+                "error_class": "syntax",
+                "created_at": "2026-07-01T00:00:00",
+            },
+            {
+                "question_id": "easy-b",
+                "topic": "arrays",
+                "difficulty": "easy",
+                "language": "javascript",
+                "outcome": "error",
+                "error_class": "syntax",
+                "created_at": "2026-07-02T00:00:00",
+            },
+        ],
+        language="python",
+    )
+
+    assert signal is None

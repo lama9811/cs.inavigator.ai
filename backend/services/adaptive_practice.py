@@ -8,7 +8,7 @@ or a normal review/practice step.
 
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import datetime
 from typing import Any, Iterable, Optional
 
@@ -19,6 +19,31 @@ READINESS_THRESHOLDS = {"easy": 2, "medium": 2, "hard": 1}
 LOW_HINT_MAX = 0
 LOW_ATTEMPTS_TO_SOLVE_MAX = 2
 FAILURE_DROP_COUNT = 2
+ERROR_REVIEW_WINDOW = 8
+ERROR_REVIEW_MIN_COUNT = 2
+
+ERROR_REVIEW_ROUTES = {
+    "syntax": {
+        "title": "Review code shape",
+        "lesson_category": "syntax",
+        "reason": "Recent runs are stopping before the tests can start. Review syntax, matching brackets, and function shape before the next solve.",
+    },
+    "runtime": {
+        "title": "Review debugging state",
+        "lesson_category": "debug",
+        "reason": "Recent runs are crashing while tests execute. Review how values change line by line, then check empty inputs and indexes.",
+    },
+    "wrong_answer": {
+        "title": "Review trace strategy",
+        "lesson_category": "debug-2",
+        "reason": "Recent tests run but return the wrong value. Trace the expected state by hand and compare it with what your code stores.",
+    },
+    "timeout": {
+        "title": "Review loop progress",
+        "lesson_category": "loops",
+        "reason": "Recent runs are timing out. Review loop stopping conditions and whether each pass makes real progress.",
+    },
+}
 
 
 def _norm(value: Any) -> str:
@@ -166,6 +191,68 @@ def _events_for_topic(events: Iterable[dict[str, Any]], topic: str, language: st
         ],
         key=lambda event: _parse_dt(event.get("created_at")),
     )
+
+
+def _events_for_language(events: Iterable[dict[str, Any]], language: str) -> list[dict[str, Any]]:
+    wanted_language = _norm(language)
+    return sorted(
+        [
+            event for event in events or []
+            if not wanted_language or _norm(event.get("language")) == wanted_language
+        ],
+        key=lambda event: _parse_dt(event.get("created_at")),
+    )
+
+
+def build_error_review_signal(
+    *,
+    attempt_events: Iterable[dict[str, Any]],
+    language: str,
+) -> Optional[dict[str, Any]]:
+    """Return a small, evidence-backed lesson nudge from recent failure classes.
+
+    This is intentionally narrower than the adaptive ladder. It only surfaces when a
+    repeated recent failure pattern exists, so the UI can say "review this pattern"
+    without pretending one bad run is a diagnosis.
+    """
+    recent_failures = [
+        event for event in _events_for_language(attempt_events, language)
+        if _norm(event.get("error_class")) in ERROR_REVIEW_ROUTES
+        and event.get("outcome") != "pass"
+    ][-ERROR_REVIEW_WINDOW:]
+    if not recent_failures:
+        return None
+
+    counts = Counter(_norm(event.get("error_class")) for event in recent_failures)
+    latest_index = {
+        _norm(event.get("error_class")): index
+        for index, event in enumerate(recent_failures)
+    }
+    error_class, count = max(
+        counts.items(),
+        key=lambda item: (item[1], latest_index.get(item[0], -1)),
+    )
+    if count < ERROR_REVIEW_MIN_COUNT:
+        return None
+
+    matching = [event for event in recent_failures if _norm(event.get("error_class")) == error_class]
+    topic_counts = Counter(_norm(event.get("topic")) for event in matching if _norm(event.get("topic")))
+    topic = topic_counts.most_common(1)[0][0] if topic_counts else ""
+    latest = matching[-1]
+    route = ERROR_REVIEW_ROUTES[error_class]
+
+    return {
+        "action": "lesson_review",
+        "error_class": error_class,
+        "count": count,
+        "recent_window": len(recent_failures),
+        "topic": topic,
+        "difficulty": _norm(latest.get("difficulty")),
+        "question_id": latest.get("question_id"),
+        "title": route["title"],
+        "lesson_category": route["lesson_category"],
+        "reason": route["reason"],
+    }
 
 
 def _low_hint_solves(events: list[dict[str, Any]]) -> dict[str, set[str]]:

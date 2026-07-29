@@ -107,6 +107,8 @@ const PRACTICE_TOPIC_TO_LESSON = {
   arrays: "lists",
   strings: "strings",
   conditionals: "conditionals",
+  math: "operators",
+  tuples: { python: "tuples", default: "data-types" },
   recursion: "recursion-patterns",
   sets: "hash-maps-sets",
   "hash maps": "hash-maps-sets",
@@ -116,12 +118,22 @@ const PRACTICE_TOPIC_TO_LESSON = {
   "binary search": "binary-search",
   "two pointers": "two-pointers",
   "sliding window": "sliding-window",
+  "dynamic programming": "recursion-patterns",
+  "prefix sums": "algorithm-problems-2",
+  intervals: "algorithm-problems-2",
+  heaps: "algorithm-problems-2",
+  tries: "trees",
+  matrices: "lists",
+  "disjoint sets": "graphs",
   trees: "trees",
   graphs: "graphs",
 };
 function lessonCategoryForPracticeTopic(topic, languageKey) {
   const normalized = String(topic || "").toLowerCase();
-  return PRACTICE_TOPIC_TO_LESSON[normalized] || null;
+  const mapped = PRACTICE_TOPIC_TO_LESSON[normalized];
+  if (!mapped) return null;
+  if (typeof mapped === "string") return mapped;
+  return mapped[languageKey] || mapped.default || null;
 }
 // Resolve a prerequisite label to a real Practice Library topic, or null if the library
 // has nothing for it (so the UI can grey it out instead of dead-linking).
@@ -3364,6 +3376,7 @@ export default function CodingTutor({
       onSelectQuestion={selectQuestion}
       onOpenQuizBank={openPracticeLibrary}
       onOpenTopic={openRecommendedTopic}
+      onOpenLessonReview={openAdaptiveReviewLesson}
       onOpenInterviewPrep={() => goToPage("interview")}
       onPrompt={sendDashboardPrompt}
       onSaveQuiz={saveLatestQuizAsPdf}
@@ -3573,6 +3586,16 @@ export default function CodingTutor({
     openPracticeTopic(topic, options);
   };
 
+  const openAdaptiveReviewLesson = (signal) => {
+    const languageKey = PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
+    const category = signal?.lesson_category || lessonCategoryForPracticeTopic(signal?.topic, languageKey);
+    if (category) {
+      navigate(learnPathForLesson(languageKey, category));
+      return;
+    }
+    if (signal?.topic) openRecommendedTopic(signal.topic, "lesson");
+  };
+
   const renderInterviewPrep = () => (
     <InterviewPrep
       questions={interviewQuestions}
@@ -3756,6 +3779,7 @@ export default function CodingTutor({
               progressSummary={progressSummary}
               mastery={mastery}
               adaptivePractice={adaptivePractice}
+              onOpenLessonReview={openAdaptiveReviewLesson}
               onDifficultyChange={setDifficulty}
               onLanguageChange={setPracticeLanguage}
               onSelectProblem={selectQuestion}

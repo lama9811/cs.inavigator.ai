@@ -26,6 +26,7 @@ All notable changes to CS Navigator are documented here.
 - **Practice Library data-structure authoring batch.** Added thirteen more code-writing problems across stacks, queues, binary search, recursion, linked lists, and trees, with all-language runner metadata and starter specs.
 - **Python code execution trace V1.** Added a Python-only "Trace my code" modal that steps through the current editor code and shows capped line-by-line execution with local variables.
 - **Adaptive practice scaffolding.** Added readiness-gated adaptive recommendations that only label a topic as ladder-ready when it has enough fully tested easy, medium, and hard practice depth across all supported languages.
+- **Adaptive review routing.** Coding Tutor adaptive recommendations now include a conservative review signal when recent practice attempts show repeated syntax, runtime, wrong-answer, or timeout patterns.
 
 ### Changed
 - Passing solution reviews now include plain-language tutor notes that explain what the diff is showing before students compare their code to the reference approach.
@@ -48,6 +49,7 @@ All notable changes to CS Navigator are documented here.
 - Python trace state display now formats lists, dictionaries, sets, strings, and returned values more clearly, highlights changed variables between steps, shows call-stack depth, and scrolls the active code line into view.
 - Python trace empty/error states now give clearer next steps when tracing cannot start.
 - Recommended Focus and the Practice Guide now use one adaptive recommendation payload to route students to ladder-ready topic steps or honest review-only practice when a topic is still thin.
+- Recommended Focus and the Practice Guide now separate topic practice from error-pattern review, so students can open a targeted review lesson without confusing it with the next practice problem.
 - Advanced concept quiz questions now include small code/state blurbs where useful, so operation questions show something concrete to trace instead of rendering as plain text on an empty panel.
 - Advanced V1 lessons were expanded from short outlines into fuller teaching pages with operation walkthroughs, line-by-line code shape, trace examples, common mistakes, and language-specific examples for Python, Java, JavaScript, and C++.
 - Learn track cards and Concept Quiz category accordions now treat Advanced as a first-class track alongside Beginner and Intermediate.

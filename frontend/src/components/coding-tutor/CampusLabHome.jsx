@@ -260,6 +260,7 @@ function CampusLearningQueue({
   onOpenSnippets,
   onOpenQuizBank,
   onOpenTopic,
+  onOpenLessonReview,
   learningStyle,
 }) {
   // The hero owns "what to do right now" (resume / recommended). This section is a
@@ -274,6 +275,7 @@ function CampusLearningQueue({
   });
   const firstPathQuestion = todayPath.find(step => step.question)?.question || null;
   const adaptiveRecommendation = adaptivePractice?.recommendation || null;
+  const reviewSignal = adaptivePractice?.review_signal || null;
   const adaptiveTopic = adaptiveRecommendation?.topic || "";
   const adaptiveDifficulty = adaptiveRecommendation?.difficulty || "";
   const adaptiveReady = adaptiveRecommendation?.action === "ladder" && adaptiveRecommendation?.ladder_ready;
@@ -295,7 +297,7 @@ function CampusLearningQueue({
   const focusAction = adaptiveReady ? "practice" : focusActionKind(learningStyle);
   const focusButton = adaptiveReady
     ? `Open ${titleCase(adaptiveDifficulty)} step`
-    : focusAction === "practice" ? "Open practice" : "Open lesson";
+    : focusAction === "practice" ? "Open practice" : "Open topic lesson";
   return (
     <section className="campus-learning-queue" aria-label="Your coding path">
       <div className="campus-section-heading">
@@ -354,6 +356,20 @@ function CampusLearningQueue({
             <small className={adaptiveReady ? "campus-focus-badge is-ready" : "campus-focus-badge"}>
               {adaptiveReady ? "Ladder-ready" : "Review-only for now"}
             </small>
+          ) : null}
+          {reviewSignal ? (
+            <div className="campus-review-signal">
+              <small>Review pattern</small>
+              <strong>{reviewSignal.title || "Review recent errors"}</strong>
+              <p>{reviewSignal.reason}</p>
+              <button
+                type="button"
+                className="campus-review-signal-btn"
+                onClick={() => onOpenLessonReview?.(reviewSignal)}
+              >
+                Open review lesson
+              </button>
+            </div>
           ) : null}
           <button
             type="button"
@@ -506,6 +522,7 @@ export default function CampusLabHome({
   onSelectQuestion,
   onOpenQuizBank,
   onOpenTopic,
+  onOpenLessonReview,
   onOpenInterviewPrep,
   onPrompt,
   onSaveQuiz,
@@ -558,6 +575,7 @@ export default function CampusLabHome({
         onOpenSnippets={onOpenSnippets}
         onOpenQuizBank={onOpenQuizBank}
         onOpenTopic={onOpenTopic}
+        onOpenLessonReview={onOpenLessonReview}
         learningStyle={learningStyle}
       />
 

@@ -155,6 +155,7 @@ export default function QuizBank({
   // loads, and `weakest` is null until some topic has enough attempts to score.
   mastery = null,
   adaptivePractice = null,
+  onOpenLessonReview = null,
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -487,6 +488,7 @@ export default function QuizBank({
   // a reason, because a recommendation that won't explain itself gets ignored.
   const masteryWeakest = mastery?.weakest || null;
   const adaptiveRecommendation = adaptivePractice?.recommendation || null;
+  const adaptiveReviewSignal = adaptivePractice?.review_signal || null;
   const adaptiveReady = adaptiveRecommendation?.action === "ladder" && adaptiveRecommendation?.ladder_ready;
 
   // Per-topic mastery scores, keyed for a quick lookup in the topic-progress list.
@@ -786,9 +788,31 @@ export default function QuizBank({
         <aside className="quiz-insight-panel">
           <div className="practice-guide-title">Practice Guide</div>
 
+          {adaptiveReviewSignal && (
+            <section className="practice-guide-section">
+              <h3>Recommended review</h3>
+              <div className="practice-guide-focus is-review">
+                <p className="practice-guide-weakest is-mastery">
+                  <strong>{adaptiveReviewSignal.title || "Review recent errors"}</strong>
+                  <span className="practice-mastery-band is-shaky">
+                    {titleCase(adaptiveReviewSignal.error_class || "Review")}
+                  </span>
+                </p>
+                <p className="practice-guide-reason">{adaptiveReviewSignal.reason}</p>
+                <button
+                  type="button"
+                  className="practice-guide-focus-cta"
+                  onClick={() => onOpenLessonReview?.(adaptiveReviewSignal)}
+                >
+                  Open review lesson
+                </button>
+              </div>
+            </section>
+          )}
+
           {adaptiveRecommendation?.topic && (
             <section className="practice-guide-section">
-              <h3>{adaptiveReady ? "Adaptive ladder" : "Recommended review"}</h3>
+              <h3>{adaptiveReady ? "Adaptive ladder" : "Recommended practice"}</h3>
               <div className="practice-guide-focus">
                 <p className="practice-guide-weakest is-mastery">
                   <strong>{titleCase(adaptiveRecommendation.topic)}</strong>

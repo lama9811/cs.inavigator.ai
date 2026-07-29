@@ -6966,6 +6966,56 @@ body.coding-dark .campus-hero-focus {
   color: #1d4ed8;
 }
 
+.campus-review-signal {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 16%, var(--ct-border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ct-primary) 6%, var(--ct-panel));
+}
+
+.campus-review-signal small {
+  color: var(--ct-primary);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.campus-review-signal strong {
+  color: var(--ct-ink);
+  font-size: 0.92rem;
+}
+
+.campus-review-signal p {
+  margin: 0;
+  color: var(--ct-muted);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.campus-queue-item .campus-review-signal-btn {
+  justify-self: start;
+  width: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ct-primary);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.campus-queue-item .campus-review-signal-btn:hover,
+.campus-queue-item .campus-review-signal-btn:focus-visible {
+  color: color-mix(in srgb, var(--ct-primary) 82%, var(--ct-ink)) !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
 /* T3-b: the LeetCode daily card is the page's focal point. Accent presence comes
    from the top rail + warm wash, NOT a heavy all-around orange outline (which read
    like a warning box). The surrounding border is soft; the top rail carries the

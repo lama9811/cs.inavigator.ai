@@ -6935,18 +6935,24 @@ async def get_adaptive_practice_recommendations(
         .order_by(CodingAttemptEvent.created_at.asc())
         .all()
     )
+    serialized_attempts = [_serialize_attempt_event(row) for row in attempt_rows]
     recommendation = adaptive_practice.build_adaptive_recommendation(
         questions=questions,
         readiness=readiness,
         progress_items=[_serialize_practice_progress(row) for row in progress_rows],
-        attempt_events=[_serialize_attempt_event(row) for row in attempt_rows],
+        attempt_events=serialized_attempts,
         mastery_payload=mastery_payload,
+        language=language_key,
+    )
+    review_signal = adaptive_practice.build_error_review_signal(
+        attempt_events=serialized_attempts,
         language=language_key,
     )
     ready_count = sum(1 for item in readiness if item.get("ladder_ready"))
     return {
         "language": language_key,
         "recommendation": recommendation,
+        "review_signal": review_signal,
         "readiness": readiness,
         "ready_topic_count": ready_count,
         "total_topic_count": len(readiness),
