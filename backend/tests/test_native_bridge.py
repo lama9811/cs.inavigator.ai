@@ -573,6 +573,47 @@ CPP_SOLUTIONS = {
     "maximumPairXor": """long long maximumPairXor(vector<long long> nums){
     long long best=0; for(size_t i=0;i<nums.size();i++) for(size_t j=i+1;j<nums.size();j++) best=max(best, nums[i]^nums[j]); return best;
 }""",
+    "gradePointsNeeded": """long long gradePointsNeeded(long long currentPoints, long long targetPoints){
+    return max(0LL, targetPoints - currentPoints);
+}""",
+    "roundUpLabGroups": """long long roundUpLabGroups(long long students, long long groupSize){
+    if(students==0) return 0; return (students + groupSize - 1) / groupSize;
+}""",
+    "studentScorePair": """string studentScorePair(vector<string> names, vector<long long> scores, long long index){
+    return names[index] + ":" + to_string(scores[index]);
+}""",
+    "firstLastPair": """vector<string> firstLastPair(vector<string> items){
+    return {items.front(), items.back()};
+}""",
+    "longestCommonPrefix": """string longestCommonPrefix(vector<string> words){
+    if(words.empty()) return "";
+    string prefix=words[0];
+    for(auto& word:words){ while(word.rfind(prefix,0)!=0){ prefix.pop_back(); if(prefix.empty()) return ""; } }
+    return prefix;
+}""",
+    "countOverlappingIntervals": """long long countOverlappingIntervals(vector<vector<long long>> intervals, long long time){
+    long long count=0; for(auto& iv:intervals) if(iv[0] <= time && time < iv[1]) count++; return count;
+}""",
+    "lowestPriorityAssignment": """string lowestPriorityAssignment(vector<string> names, vector<long long> priorities){
+    string best=names[0]; long long bestPriority=priorities[0];
+    for(size_t i=1;i<names.size();i++) if(priorities[i] < bestPriority || (priorities[i] == bestPriority && names[i] < best)){ bestPriority=priorities[i]; best=names[i]; }
+    return best;
+}""",
+    "sameClubGroup": """bool sameClubGroup(long long n, vector<vector<long long>> pairs, long long a, long long b){
+    vector<long long> parent(n); iota(parent.begin(), parent.end(), 0);
+    function<long long(long long)> find=[&](long long x){ while(parent[x]!=x){ parent[x]=parent[parent[x]]; x=parent[x]; } return x; };
+    for(auto& p:pairs) parent[find(p[0])] = find(p[1]);
+    return find(a) == find(b);
+}""",
+    "studyPlanWays": """long long studyPlanWays(long long days){
+    long long a=1,b=1; for(long long i=2;i<=days;i++){ long long c=a+b; a=b; b=c; } return days==0 ? 1 : b;
+}""",
+    "totalBusyMinutes": """long long totalBusyMinutes(vector<vector<long long>> intervals){
+    if(intervals.empty()) return 0; sort(intervals.begin(), intervals.end());
+    long long total=0, start=intervals[0][0], end=intervals[0][1];
+    for(size_t i=1;i<intervals.size();i++){ if(intervals[i][0] <= end) end=max(end, intervals[i][1]); else { total += end - start; start=intervals[i][0]; end=intervals[i][1]; } }
+    return total + end - start;
+}""",
 }
 
 
@@ -801,6 +842,16 @@ JAVA_SOLUTIONS = {
     "matrixBorderSum": "class Solution { static int matrixBorderSum(int[][] matrix){ if(matrix.length==0 || matrix[0].length==0) return 0; int rows=matrix.length, cols=matrix[0].length, sum=0; for(int r=0;r<rows;r++) for(int c=0;c<cols;c++) if(r==0 || c==0 || r==rows-1 || c==cols-1) sum += matrix[r][c]; return sum; } }",
     "longestSubarraySumK": "import java.util.*; class Solution { static int longestSubarraySumK(int[] nums, int k){ Map<Integer,Integer> first=new HashMap<>(); first.put(0,-1); int sum=0,best=0; for(int i=0;i<nums.length;i++){ sum += nums[i]; if(first.containsKey(sum-k)) best=Math.max(best, i-first.get(sum-k)); first.putIfAbsent(sum,i); } return best; } }",
     "maximumPairXor": "class Solution { static int maximumPairXor(int[] nums){ int best=0; for(int i=0;i<nums.length;i++) for(int j=i+1;j<nums.length;j++) best=Math.max(best, nums[i]^nums[j]); return best; } }",
+    "gradePointsNeeded": "class Solution { static int gradePointsNeeded(int currentPoints, int targetPoints){ return Math.max(0, targetPoints - currentPoints); } }",
+    "roundUpLabGroups": "class Solution { static int roundUpLabGroups(int students, int groupSize){ if(students==0) return 0; return (students + groupSize - 1) / groupSize; } }",
+    "studentScorePair": "class Solution { static String studentScorePair(String[] names, int[] scores, int index){ return names[index] + \":\" + scores[index]; } }",
+    "firstLastPair": "class Solution { static String[] firstLastPair(String[] items){ return new String[]{items[0], items[items.length-1]}; } }",
+    "longestCommonPrefix": "class Solution { static String longestCommonPrefix(String[] words){ if(words.length==0) return \"\"; String prefix=words[0]; for(String word:words){ while(!word.startsWith(prefix)){ prefix=prefix.substring(0,prefix.length()-1); if(prefix.isEmpty()) return \"\"; } } return prefix; } }",
+    "countOverlappingIntervals": "class Solution { static int countOverlappingIntervals(int[][] intervals, int time){ int count=0; for(int[] iv:intervals) if(iv[0] <= time && time < iv[1]) count++; return count; } }",
+    "lowestPriorityAssignment": "class Solution { static String lowestPriorityAssignment(String[] names, int[] priorities){ String best=names[0]; int bestPriority=priorities[0]; for(int i=1;i<names.length;i++) if(priorities[i] < bestPriority || (priorities[i] == bestPriority && names[i].compareTo(best) < 0)){ bestPriority=priorities[i]; best=names[i]; } return best; } }",
+    "sameClubGroup": "class Solution { static int[] par; static int find(int x){ while(par[x]!=x){ par[x]=par[par[x]]; x=par[x]; } return x; } static boolean sameClubGroup(int n, int[][] pairs, int a, int b){ par=new int[n]; for(int i=0;i<n;i++) par[i]=i; for(int[] p:pairs) par[find(p[0])]=find(p[1]); return find(a)==find(b); } }",
+    "studyPlanWays": "class Solution { static int studyPlanWays(int days){ int a=1,b=1; for(int i=2;i<=days;i++){ int c=a+b; a=b; b=c; } return days==0 ? 1 : b; } }",
+    "totalBusyMinutes": "import java.util.*; class Solution { static int totalBusyMinutes(int[][] intervals){ if(intervals.length==0) return 0; Arrays.sort(intervals, Comparator.comparingInt(a -> a[0])); int total=0,start=intervals[0][0],end=intervals[0][1]; for(int i=1;i<intervals.length;i++){ if(intervals[i][0] <= end) end=Math.max(end, intervals[i][1]); else { total += end - start; start=intervals[i][0]; end=intervals[i][1]; } } return total + end - start; } }",
 }
 
 

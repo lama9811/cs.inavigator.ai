@@ -150,7 +150,17 @@ PRACTICE_ARG_SPECS: dict[str, tuple[list[tuple[str, str]], str]] = {
     "dailyTemperatureWaits": ([("temperatures", "intlist")], "intlist"),
     "differentBitCount": ([("a", "int"), ("b", "int")], "int"),
     "countdownList": ([("n", "int")], "intlist"),
+    "countOverlappingIntervals": ([("intervals", "grid"), ("time", "int")], "int"),
     "prefixBalanceIndex": ([("nums", "intlist")], "int"),
+    "firstLastPair": ([("items", "strlist")], "strlist"),
+    "gradePointsNeeded": ([("currentPoints", "int"), ("targetPoints", "int")], "int"),
+    "longestCommonPrefix": ([("words", "strlist")], "string"),
+    "lowestPriorityAssignment": ([("names", "strlist"), ("priorities", "intlist")], "string"),
+    "roundUpLabGroups": ([("students", "int"), ("groupSize", "int")], "int"),
+    "sameClubGroup": ([("n", "int"), ("pairs", "grid"), ("a", "int"), ("b", "int")], "bool"),
+    "studentScorePair": ([("names", "strlist"), ("scores", "intlist"), ("index", "int")], "string"),
+    "studyPlanWays": ([("days", "int")], "int"),
+    "totalBusyMinutes": ([("intervals", "grid")], "int"),
 }
 
 
