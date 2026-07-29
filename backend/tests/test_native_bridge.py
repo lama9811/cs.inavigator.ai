@@ -458,6 +458,47 @@ CPP_SOLUTIONS = {
     if(exponent==0) return 1;
     return base * recursivePower(base, exponent-1);
 }""",
+    "stackTopAfterPlates": """string stackTopAfterPlates(vector<string> commands){
+    vector<string> st;
+    for(auto& cmd:commands){ if(cmd.rfind("push ",0)==0) st.push_back(cmd.substr(5)); else if(cmd=="pop" && !st.empty()) st.pop_back(); }
+    return st.empty() ? "none" : st.back();
+}""",
+    "queueFrontAfterServes": """string queueFrontAfterServes(vector<string> names, long long serveCount){
+    return serveCount >= (long long)names.size() ? "none" : names[serveCount];
+}""",
+    "firstOneIndex": """long long firstOneIndex(vector<long long> flags){
+    long long left=0, right=(long long)flags.size()-1, ans=-1;
+    while(left<=right){ long long mid=left+(right-left)/2; if(flags[mid]==1){ ans=mid; right=mid-1; } else left=mid+1; }
+    return ans;
+}""",
+    "treeNodeCount": """long long treeNodeCount(vector<long long> tree){
+    long long count=0; for(long long value:tree) if(value!=-1) count++; return count;
+}""",
+    "treeHeightLevels": """long long treeHeightLevels(vector<long long> tree){
+    long long height=0;
+    for(size_t i=0;i<tree.size();i++){
+        if(tree[i]==-1) continue;
+        long long level=0;
+        size_t pos=i+1;
+        while(pos>0){ level++; pos/=2; }
+        height=max(height, level);
+    }
+    return height;
+}""",
+    "linkedListLength": """long long linkedListLength(vector<long long> nextIndexes, long long head){
+    long long count=0, cur=head; while(cur!=-1){ count++; cur=nextIndexes[cur]; } return count;
+}""",
+    "treeLeafCount": """long long treeLeafCount(vector<long long> tree){
+    long long count=0; for(size_t i=0;i<tree.size();i++){ if(tree[i]==-1) continue; size_t l=2*i+1, r=2*i+2; bool left=l<tree.size() && tree[l]!=-1, right=r<tree.size() && tree[r]!=-1; if(!left && !right) count++; } return count;
+}""",
+    "treeContainsValue": """bool treeContainsValue(vector<long long> tree, long long target){
+    for(long long value:tree) if(value!=-1 && value==target) return true; return false;
+}""",
+    "linkedListMergeIndex": """long long linkedListMergeIndex(vector<long long> nextIndexes, long long headA, long long headB){
+    set<long long> seen; for(long long cur=headA; cur!=-1; cur=nextIndexes[cur]) seen.insert(cur);
+    for(long long cur=headB; cur!=-1; cur=nextIndexes[cur]) if(seen.count(cur)) return cur;
+    return -1;
+}""",
     "campusStopReachable": """bool campusStopReachable(vector<vector<string>> connections, string start, string target){
     if(start==target) return true;
     map<string, vector<string>> graph; for(auto& edge:connections) if(edge.size()>=2) graph[edge[0]].push_back(edge[1]);
@@ -611,6 +652,38 @@ int sumEvenNumbers(const std::vector<int>& nums) {
     assert result["status"] == "passed", result.get("stderr")
 
 
+@pytest.mark.skipif(not _HAS_GPP, reason="no C++ compiler on PATH")
+def test_cpp_tree_height_accepts_beginner_const_vector_int_signature():
+    spec = get_arg_spec("treeHeightLevels")
+    tests = _TESTS["treeHeightLevels"]
+    code = """#include <string>
+#include <vector>
+#include <cmath>
+#include <set>
+
+int treeHeightLevels(const std::vector<int>& tree) {
+    if (tree.empty()) {
+        return 0;
+    }
+
+    std::set<int> active_levels;
+    for (int i = 0; i < tree.size(); ++i) {
+        int node_value = tree[i];
+        if (node_value != -1) {
+            int current_level = static_cast<int>(std::floor(std::log2(i + 1)));
+            active_levels.insert(current_level);
+        }
+    }
+
+    return active_levels.size();
+}
+"""
+
+    result = run_cpp_practice_tests(code, "treeHeightLevels", tests, arg_spec=spec)
+
+    assert result["status"] == "passed", result
+
+
 JAVA_SOLUTIONS = {
     # string -> int
     "countVowels": "class Solution { static int countVowels(String text){ int c=0; for(char ch:text.toLowerCase().toCharArray()) if(\"aeiou\".indexOf(ch)>=0) c++; return c; } }",
@@ -673,6 +746,15 @@ JAVA_SOLUTIONS = {
     "reverseOnlyLetters": "class Solution { static String reverseOnlyLetters(String text){ char[] chars=text.toCharArray(); int left=0,right=chars.length-1; while(left<right){ while(left<right && !Character.isLetter(chars[left])) left++; while(left<right && !Character.isLetter(chars[right])) right--; if(left<right){ char temp=chars[left]; chars[left++]=chars[right]; chars[right--]=temp; } } return new String(chars); } }",
     "minimumStudyWindow": "class Solution { static int minimumStudyWindow(int[] minutes, int target){ int best=Integer.MAX_VALUE,sum=0,left=0; for(int right=0;right<minutes.length;right++){ sum+=minutes[right]; while(sum>=target){ best=Math.min(best,right-left+1); sum-=minutes[left++]; } } return best==Integer.MAX_VALUE ? 0 : best; } }",
     "recursivePower": "class Solution { static int recursivePower(int base, int exponent){ if(exponent==0) return 1; return base * recursivePower(base, exponent-1); } }",
+    "stackTopAfterPlates": "import java.util.*; class Solution { static String stackTopAfterPlates(String[] commands){ List<String> st=new ArrayList<>(); for(String cmd:commands){ if(cmd.startsWith(\"push \")) st.add(cmd.substring(5)); else if(cmd.equals(\"pop\") && !st.isEmpty()) st.remove(st.size()-1); } return st.isEmpty()?\"none\":st.get(st.size()-1); } }",
+    "queueFrontAfterServes": "class Solution { static String queueFrontAfterServes(String[] names, int serveCount){ return serveCount>=names.length ? \"none\" : names[serveCount]; } }",
+    "firstOneIndex": "class Solution { static int firstOneIndex(int[] flags){ int left=0,right=flags.length-1,ans=-1; while(left<=right){ int mid=left+(right-left)/2; if(flags[mid]==1){ ans=mid; right=mid-1; } else left=mid+1; } return ans; } }",
+    "treeNodeCount": "class Solution { static int treeNodeCount(int[] tree){ int count=0; for(int value:tree) if(value!=-1) count++; return count; } }",
+    "treeHeightLevels": "class Solution { static int treeHeightLevels(int[] tree){ int height=0; for(int i=0;i<tree.length;i++){ if(tree[i]==-1) continue; int level=0,pos=i+1; while(pos>0){ level++; pos/=2; } height=Math.max(height,level); } return height; } }",
+    "linkedListLength": "class Solution { static int linkedListLength(int[] nextIndexes, int head){ int count=0,cur=head; while(cur!=-1){ count++; cur=nextIndexes[cur]; } return count; } }",
+    "treeLeafCount": "class Solution { static int treeLeafCount(int[] tree){ int count=0; for(int i=0;i<tree.length;i++){ if(tree[i]==-1) continue; int l=2*i+1,r=2*i+2; boolean left=l<tree.length && tree[l]!=-1, right=r<tree.length && tree[r]!=-1; if(!left && !right) count++; } return count; } }",
+    "treeContainsValue": "class Solution { static boolean treeContainsValue(int[] tree, int target){ for(int value:tree) if(value!=-1 && value==target) return true; return false; } }",
+    "linkedListMergeIndex": "import java.util.*; class Solution { static int linkedListMergeIndex(int[] nextIndexes, int headA, int headB){ Set<Integer> seen=new HashSet<>(); for(int cur=headA; cur!=-1; cur=nextIndexes[cur]) seen.add(cur); for(int cur=headB; cur!=-1; cur=nextIndexes[cur]) if(seen.contains(cur)) return cur; return -1; } }",
     "campusStopReachable": "import java.util.*; class Solution { static boolean campusStopReachable(String[][] connections, String start, String target){ if(start.equals(target)) return true; Map<String,List<String>> g=new HashMap<>(); for(String[] e:connections) g.computeIfAbsent(e[0],k->new ArrayList<>()).add(e[1]); Queue<String> q=new ArrayDeque<>(); Set<String> seen=new HashSet<>(); q.add(start); seen.add(start); while(!q.isEmpty()){ String cur=q.poll(); for(String next:g.getOrDefault(cur, Collections.emptyList())){ if(next.equals(target)) return true; if(seen.add(next)) q.add(next); } } return false; } }",
     "clubMembershipGroups": "import java.util.*; class Solution { static int[] par; static int find(int x){ while(par[x]!=x){ par[x]=par[par[x]]; x=par[x]; } return x; } static int clubMembershipGroups(int n, int[][] pairs){ par=new int[n]; for(int i=0;i<n;i++) par[i]=i; for(int[] p:pairs) par[find(p[0])]=find(p[1]); Set<Integer> s=new HashSet<>(); for(int i=0;i<n;i++) s.add(find(i)); return s.size(); } }",
     "minStudyPlanCost": "class Solution { static int minStudyPlanCost(int[] costs){ if(costs.length==0) return 0; if(costs.length==1) return costs[0]; int prev2=costs[0], prev1=costs[1]; for(int i=2;i<costs.length;i++){ int cur=Math.min(prev1,prev2)+costs[i]; prev2=prev1; prev1=cur; } return Math.min(prev1,prev2); } }",

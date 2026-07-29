@@ -849,6 +849,7 @@ export default function CodingTutor({
   // A pending navigation action held while the "unsaved changes" prompt is shown.
   const [unsavedPrompt, setUnsavedPrompt] = useState(null);
   const [code, setCode] = useState("");
+  const [editorSelection, setEditorSelection] = useState({ start: 0, end: 0, text: "" });
   // Live mirrors of the editor code + language key, so the mock-nav setMockSession
   // updaters (which run before React commits fresh state) can snapshot the CURRENT
   // answer without a stale closure. Kept in sync by the effect below.
@@ -1315,9 +1316,21 @@ export default function CodingTutor({
   );
   const runnerSummary = useMemo(() => summarizeRunForTutor(testOutput), [testOutput]);
   const applyAiCodeWithMode = useCallback((mode = "safe") => {
-    if (!suggestedCodeBlock || suggestedCodeBlock === code) return;
+    if (!suggestedCodeBlock || (mode !== "selection" && suggestedCodeBlock === code)) return;
     const trimmedCode = code.trimEnd();
+    const hasSelection =
+      Number.isInteger(editorSelection.start) &&
+      Number.isInteger(editorSelection.end) &&
+      editorSelection.end > editorSelection.start &&
+      editorSelection.end <= code.length;
+    if (mode === "selection" && !hasSelection) {
+      toast.info("Select code in the workspace first, then use Replace selection.");
+      return;
+    }
     const nextCode = (() => {
+      if (mode === "selection") {
+        return `${code.slice(0, editorSelection.start)}${suggestedCodeBlock}${code.slice(editorSelection.end)}`;
+      }
       if (mode === "comment") {
         return `${trimmedCode}${buildCommentedTutorSuggestion(suggestedCodeBlock, selectedLanguage)}`;
       }
@@ -1346,9 +1359,10 @@ export default function CodingTutor({
       append: "Tutor suggestion appended below your code.",
       replace: "Tutor suggestion replaced the workspace.",
       safe: "Tutor suggestion applied safely.",
+      selection: "Tutor suggestion replaced the selected code.",
     }[mode] || "Tutor suggestion applied.";
     toast.success(`${label} Undo is available in the chat.`);
-  }, [activeSnapshotKey, code, selectedLanguage, suggestedCodeBlock]);
+  }, [activeSnapshotKey, code, editorSelection, selectedLanguage, suggestedCodeBlock]);
 
   const undoAiCode = useCallback(() => {
     const previousCode = activeSnapshots.beforeAiRewrite;
@@ -1523,11 +1537,12 @@ export default function CodingTutor({
       } : null,
       runnerSummary: useWorkspace ? runnerSummary : "",
       suggestedCodeBlock,
+      hasEditorSelection: Boolean(editorSelection.text),
       onApplyAICode: suggestedCodeBlock ? applyAiCodeWithMode : null,
       onUndoAICode: typeof activeSnapshots.beforeAiRewrite === "string" ? undoAiCode : null,
       canUndoAICode: typeof activeSnapshots.beforeAiRewrite === "string",
     });
-  }, [activePage, activeProblem, activeSolution?.function_name, activeSolution?.starter_code, attempts, code, note, onContextChange, selectedLanguage, suggestedCodeBlock, tutorMode, learningStyle, hintGate, workspaceTab, workspaceVisible, runnerSummary, activeSnapshots.beforeAiRewrite, applyAiCodeWithMode, undoAiCode]);
+  }, [activePage, activeProblem, activeSolution?.function_name, activeSolution?.starter_code, attempts, code, note, onContextChange, selectedLanguage, suggestedCodeBlock, tutorMode, learningStyle, hintGate, workspaceTab, workspaceVisible, runnerSummary, activeSnapshots.beforeAiRewrite, applyAiCodeWithMode, undoAiCode, editorSelection.text]);
 
   useEffect(() => {
     onActivePageChange?.(activePage);
@@ -3473,6 +3488,7 @@ export default function CodingTutor({
           isSolved={isActiveProblemSolved}
           isPersonalMode={isPersonalMode}
           onCodeChange={setCode}
+          onSelectionChange={setEditorSelection}
           onLanguageChange={changeSelectedLanguage}
           languageLocked={interviewLanguageLocked}
           onTabChange={setWorkspaceTab}

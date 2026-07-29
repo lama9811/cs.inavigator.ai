@@ -75,7 +75,7 @@ function getActiveBlockGuide(lines, activeIndex) {
   };
 }
 
-export default function CodeEditor({ code, onCodeChange, onCursorChange, language }) {
+export default function CodeEditor({ code, onCodeChange, onCursorChange, onSelectionChange, language }) {
   const textareaRef = useRef(null);
   const gutterRef = useRef(null);
   const highlightRef = useRef(null);
@@ -130,7 +130,12 @@ export default function CodeEditor({ code, onCodeChange, onCursorChange, languag
     const col = upto.length - upto.lastIndexOf("\n");
     setActiveLine(line);
     onCursorChange?.({ line, col, chars: el.value.length });
-  }, [onCursorChange]);
+    onSelectionChange?.({
+      start: el.selectionStart,
+      end: el.selectionEnd,
+      text: el.value.slice(el.selectionStart, el.selectionEnd),
+    });
+  }, [onCursorChange, onSelectionChange]);
 
   useEffect(() => {
     reportCaret();

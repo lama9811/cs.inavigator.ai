@@ -4883,6 +4883,15 @@
         {"name": "zero exponent", "args": [3, 0], "expected": 1},
         {"name": "larger base", "args": [5, 3], "expected": 125}
       ]
-    }
+    },
+    {"question_id":"easy-45","function_name":"stackTopAfterPlates","runner_tests":[{"name":"pop reveals previous top","args":[["push tray","push cup","pop"]],"expected":"tray"},{"name":"empty stack","args":[["peek"]],"expected":"none"},{"name":"peek keeps top","args":[["push A","push B","peek"]],"expected":"B"}]},
+    {"question_id":"easy-46","function_name":"queueFrontAfterServes","runner_tests":[{"name":"serve two students","args":[["Ana","Bo","Cy"],2],"expected":"Cy"},{"name":"serve none","args":[["Ana","Bo"],0],"expected":"Ana"},{"name":"serve everyone","args":[["Ana","Bo"],3],"expected":"none"}]},
+    {"question_id":"easy-47","function_name":"firstOneIndex","runner_tests":[{"name":"middle boundary","args":[[0,0,1,1]],"expected":2},{"name":"starts with one","args":[[1,1]],"expected":0},{"name":"no ones","args":[[0,0,0]],"expected":-1}]},
+    {"question_id":"easy-48","function_name":"treeNodeCount","runner_tests":[{"name":"missing child markers","args":[[1,2,3,-1,4]],"expected":4},{"name":"empty tree","args":[[]],"expected":0},{"name":"only missing marker","args":[[-1]],"expected":0}]},
+    {"question_id":"easy-49","function_name":"treeHeightLevels","runner_tests":[{"name":"three nonempty levels","args":[[1,2,3,-1,4]],"expected":3},{"name":"empty tree","args":[[]],"expected":0},{"name":"sparse third level","args":[[1,-1,2,-1,-1,3]],"expected":3}]},
+    {"question_id":"easy-50","function_name":"linkedListLength","runner_tests":[{"name":"three nodes","args":[[1,2,-1],0],"expected":3},{"name":"empty head","args":[[-1],-1],"expected":0},{"name":"nonlinear order","args":[[2,-1,1],0],"expected":3}]},
+    {"question_id":"medium-41","function_name":"treeLeafCount","runner_tests":[{"name":"two leaves","args":[[1,2,3,-1,4]],"expected":2},{"name":"single node","args":[[1]],"expected":1},{"name":"empty tree","args":[[]],"expected":0}]},
+    {"question_id":"medium-42","function_name":"treeContainsValue","runner_tests":[{"name":"target exists","args":[[5,3,8,-1,4],4],"expected":true},{"name":"target missing","args":[[5,3,8,-1,4],7],"expected":false},{"name":"missing marker is not value","args":[[-1],-1],"expected":false}]},
+    {"question_id":"hard-31","function_name":"linkedListMergeIndex","runner_tests":[{"name":"merge at shared node","args":[[2,2,3,-1],0,1],"expected":2},{"name":"no merge","args":[[1,-1,3,-1],0,2],"expected":-1},{"name":"merge after one step","args":[[2,3,3,-1],0,1],"expected":3}]}
   ]
 }

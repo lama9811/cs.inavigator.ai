@@ -181,6 +181,7 @@ function FloatingChatWindow({
   const activeProblem = context?.activeProblem || null;
   const attempts = context?.attempts ?? 0;
   const tutorMode = context?.tutorMode || "Guided Tutor";
+  const hasEditorSelection = Boolean(context?.hasEditorSelection);
   const topic = activeProblem?.title ? `Helping with: ${activeProblem.title}` : "Personal Code Help";
   const defaultMessageLimit = isMaximized ? 24 : 10;
   const [messageLimit, setMessageLimit] = useState(defaultMessageLimit);
@@ -362,6 +363,17 @@ function FloatingChatWindow({
                     >
                       Append below code
                     </button>
+                    {hasEditorSelection && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onApplyAICode("selection");
+                          setApplyPreviewOpen(false);
+                        }}
+                      >
+                        Replace selection
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="danger"

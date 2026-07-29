@@ -303,7 +303,7 @@ function CodeTraceModal({
               <p>
                 {hasTraceError
                   ? "Check that your code defines the expected function name and has no syntax errors, then try again."
-                  : "Choose a test case, run the trace, then step forward and backward through your code."}
+                  : "Press Trace my code, then step forward and backward through your code."}
               </p>
             </div>
           )}
@@ -333,6 +333,7 @@ export default function CodeWorkspace({
   isPersonalMode = false,
   languageLocked = false,
   onCodeChange,
+  onSelectionChange,
   onLanguageChange,
   onTabChange,
   onToggleTerminal,
@@ -496,7 +497,7 @@ export default function CodeWorkspace({
               className="code-trace-button"
               onClick={onTraceCode}
               disabled={!canTracePython || isTracingCode}
-              title={canTracePython ? "Trace this Python solution with an authored test" : "Code tracing is available for Python practice problems first"}
+              title={canTracePython ? "Trace this Python solution step by step" : "Code tracing is available for Python practice problems first"}
             >
               {isTracingCode ? "Tracing..." : "Trace my code"}
             </button>
@@ -511,7 +512,13 @@ export default function CodeWorkspace({
             </select>
           </div>
         </div>
-        <CodeEditor code={code} onCodeChange={onCodeChange} onCursorChange={setCaret} language={selectedLanguage} />
+        <CodeEditor
+          code={code}
+          onCodeChange={onCodeChange}
+          onCursorChange={setCaret}
+          onSelectionChange={onSelectionChange}
+          language={selectedLanguage}
+        />
         <div className="code-editor-statusbar" aria-hidden="true">
           <span className="status-left">
             <span className="status-pill">{selectedLanguage}</span>
