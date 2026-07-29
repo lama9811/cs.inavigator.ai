@@ -20,7 +20,8 @@ All notable changes to CS Navigator are documented here.
 - **COSC 101 Practice Library expansion.** Added twelve beginner-friendly campus/classroom practice problems covering conditionals, scans, maps, sets, tuple-style pairs, and list building across Python, JavaScript, Java, and C++.
 - **Medium/hard Practice Library expansion.** Added eight additional graph, heap, union-find, trie, dynamic-programming, and tree problems with deterministic runner tests for all four supported languages.
 - **Practice Library data-structure authoring batch.** Added thirteen more code-writing problems across stacks, queues, binary search, recursion, linked lists, and trees, with all-language runner metadata and starter specs.
-- **Python code execution trace V1.** Added a Python-only "Trace my code" modal that runs the current solution against the first authored test and shows capped line-by-line execution with local variables.
+- **Python code execution trace V1.** Added a Python-only "Trace my code" modal that runs the current solution against authored tests and shows capped line-by-line execution with local variables.
+- **Trace test selection.** The Python trace modal can now choose from authored test cases so students can step through the exact input they want to understand.
 
 ### Changed
 - New Practice Library visualizers now open with problem-specific sample inputs, including array-backed linked lists, countdown recursion, and level-order tree traces.

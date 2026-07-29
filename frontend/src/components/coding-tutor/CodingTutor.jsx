@@ -770,6 +770,7 @@ export default function CodingTutor({
   const [visualizerModalOpen, setVisualizerModalOpen] = useState(false);
   const [traceModalOpen, setTraceModalOpen] = useState(false);
   const [traceResult, setTraceResult] = useState(null);
+  const [traceTestIndex, setTraceTestIndex] = useState(0);
   const [isTracingCode, setIsTracingCode] = useState(false);
   const [dailyChallenge, setDailyChallenge] = useState(null);
   const [dailyChallengeLoading, setDailyChallengeLoading] = useState(false);
@@ -1081,6 +1082,7 @@ export default function CodingTutor({
     setVisualizerModalOpen(false);
     setTraceModalOpen(false);
     setTraceResult(null);
+    setTraceTestIndex(0);
   }, [activeProblem?.id, selectedLanguageKey]);
 
   useEffect(() => {
@@ -3110,6 +3112,7 @@ export default function CodingTutor({
           question_id: activeProblem.id,
           language: selectedLanguageKey,
           code,
+          trace_test_index: traceTestIndex,
           hints_used: revealedHints,
           seconds_since_open: secondsSinceOpen(),
         }),
@@ -3466,6 +3469,12 @@ export default function CodingTutor({
           onTraceCode={tracePythonCode}
           isTracingCode={isTracingCode}
           traceResult={traceResult}
+          traceTests={activeSolution?.trace_tests || []}
+          traceTestIndex={traceTestIndex}
+          onTraceTestIndexChange={(nextIndex) => {
+            setTraceTestIndex(nextIndex);
+            setTraceResult(null);
+          }}
           visualizerOpen={visualizerModalOpen}
           traceModalOpen={traceModalOpen}
           onCloseVisualizer={() => setVisualizerModalOpen(false)}

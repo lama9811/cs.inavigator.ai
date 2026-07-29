@@ -995,6 +995,7 @@ class PracticeRunRequest(BaseModel):
     question_id: str
     language: str = "python"
     code: str
+    trace_test_index: int = 0
     # Effort signals for attempt telemetry. Optional and client-reported, so an older
     # client that omits them still runs — the row is just written without them.
     hints_used: int = 0
@@ -1007,6 +1008,15 @@ class PracticeRunRequest(BaseModel):
             raise ValueError("code is required")
         if len(value) > 20000:
             raise ValueError("code is too large for this lightweight runner")
+        return value
+
+    @field_validator("trace_test_index")
+    @classmethod
+    def validate_trace_test_index(cls, value):
+        if value < 0:
+            raise ValueError("trace_test_index must be zero or greater")
+        if value > 50:
+            raise ValueError("trace_test_index is out of range")
         return value
 
 class PracticeFreeRunRequest(BaseModel):
@@ -5640,12 +5650,25 @@ def _find_language_solution(question_id: str, language: str, question: Optional[
             return solution
     raise HTTPException(status_code=404, detail="Practice solution not found for that question and language.")
 
+def _practice_trace_test_payloads(solution: dict[str, Any]) -> list[dict[str, Any]]:
+    payloads: list[dict[str, Any]] = []
+    for index, test in enumerate(solution.get("runner_tests") or []):
+        if not isinstance(test, dict):
+            continue
+        payloads.append({
+            "index": index,
+            "name": test.get("name") or f"Test {index + 1}",
+            "args": test.get("args", []),
+            "expected": test.get("expected"),
+        })
+    return payloads
+
 def _practice_solution_materials(solution: dict[str, Any]) -> dict[str, Any]:
     """Return the safe client payload needed to seed the workspace.
 
-    Reference solutions and runner tests stay server-side until the student has
-    earned solution review access. The runner endpoint still loads the full
-    solution internally when grading.
+    Reference solutions stay server-side until the student has earned solution
+    review access. Authored test inputs are exposed so the execution trace can
+    let students choose the exact run they want to step through.
     """
     allowed = {
         "language",
@@ -5657,7 +5680,10 @@ def _practice_solution_materials(solution: dict[str, Any]) -> dict[str, Any]:
         "input_contract",
         "output_contract",
     }
-    return {key: value for key, value in solution.items() if key in allowed}
+    return {
+        **{key: value for key, value in solution.items() if key in allowed},
+        "trace_tests": _practice_trace_test_payloads(solution),
+    }
 
 def _practice_solution_review_payload(solution: dict[str, Any]) -> dict[str, Any]:
     return {
@@ -6647,10 +6673,12 @@ async def trace_practice_solution(
             "duration_ms": 0,
         }
 
-    run_result = run_python_practice_trace(req.code, function_name, tests[0])
+    test_index = min(req.trace_test_index, len(tests) - 1)
+    run_result = run_python_practice_trace(req.code, function_name, tests[test_index])
     return {
         **run_result,
-        "message": "Trace generated from the first authored test case.",
+        "trace_test_index": test_index,
+        "message": f"Trace generated from authored test {test_index + 1}.",
     }
 
 @app.post("/api/coding/interview/grade")

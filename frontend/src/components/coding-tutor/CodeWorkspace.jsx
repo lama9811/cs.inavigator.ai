@@ -30,9 +30,26 @@ function readStoredTerminalHeight() {
   return TERMINAL_DEFAULT_H;
 }
 
-function CodeTraceModal({ traceResult, isTracing, onTraceCode, onClose }) {
+function stringifyTraceValue(value) {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function CodeTraceModal({
+  traceResult,
+  traceTests = [],
+  traceTestIndex = 0,
+  onTraceTestIndexChange,
+  isTracing,
+  onTraceCode,
+  onClose,
+}) {
   const trace = useMemo(() => (Array.isArray(traceResult?.trace) ? traceResult.trace : []), [traceResult]);
   const test = traceResult?.test || {};
+  const selectedTest = traceTests.find((item) => item.index === traceTestIndex) || traceTests[traceTestIndex] || null;
   const [stepIndex, setStepIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const activeStep = trace[stepIndex] || null;
@@ -104,7 +121,7 @@ function CodeTraceModal({ traceResult, isTracing, onTraceCode, onClose }) {
             <div>
               <span className="workspace-visualizer-kicker">Python execution trace</span>
               <h3>Trace my code</h3>
-              <p>Runs your Python function on the first authored test and records the lines it executes.</p>
+              <p>Runs your Python function on an authored test and records the lines it executes.</p>
             </div>
             <button type="button" className="workspace-visual-close" onClick={onClose} autoFocus>
               Close
@@ -118,9 +135,15 @@ function CodeTraceModal({ traceResult, isTracing, onTraceCode, onClose }) {
                   {traceResult.status || "ready"}
                 </span>
                 <span>Test: {test.name || "first authored test"}</span>
-                <span>Args: {JSON.stringify(test.args ?? [])}</span>
-                <span>Expected: {JSON.stringify(test.expected)}</span>
-                {"actual" in test ? <span>Actual: {JSON.stringify(test.actual)}</span> : null}
+                <span>Args: {stringifyTraceValue(test.args ?? [])}</span>
+                <span>Expected: {stringifyTraceValue(test.expected)}</span>
+                {"actual" in test ? <span>Actual: {stringifyTraceValue(test.actual)}</span> : null}
+              </>
+            ) : selectedTest ? (
+              <>
+                <span>Selected: {selectedTest.name || `Test ${traceTestIndex + 1}`}</span>
+                <span>Args: {stringifyTraceValue(selectedTest.args ?? [])}</span>
+                <span>Expected: {stringifyTraceValue(selectedTest.expected)}</span>
               </>
             ) : (
               <span>Generate a Python trace to see line-by-line execution.</span>
@@ -131,8 +154,24 @@ function CodeTraceModal({ traceResult, isTracing, onTraceCode, onClose }) {
           {traceResult?.truncated ? <p className="workspace-visualizer-lock">Trace capped at the first 80 executed steps.</p> : null}
 
           <div className="code-trace-actions">
+            {traceTests.length > 1 ? (
+              <label className="code-trace-test-picker">
+                <span>Trace test</span>
+                <select
+                  value={traceTestIndex}
+                  onChange={(event) => onTraceTestIndexChange?.(Number(event.target.value))}
+                  disabled={isTracing}
+                >
+                  {traceTests.map((item, index) => (
+                    <option key={`${item.index ?? index}-${item.name || "test"}`} value={item.index ?? index}>
+                      {item.name || `Test ${index + 1}`}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
             <button type="button" onClick={onTraceCode} disabled={isTracing}>
-              {isTracing ? "Tracing..." : trace.length ? "Run trace again" : "Trace Python code"}
+              {isTracing ? "Tracing..." : trace.length ? "Run selected test again" : "Trace selected test"}
             </button>
           </div>
 
@@ -268,6 +307,9 @@ export default function CodeWorkspace({
   onTraceCode,
   isTracingCode = false,
   traceResult = null,
+  traceTests = [],
+  traceTestIndex = 0,
+  onTraceTestIndexChange,
   visualizerOpen = false,
   traceModalOpen = false,
   onCloseVisualizer,
@@ -413,7 +455,7 @@ export default function CodeWorkspace({
               className="code-trace-button"
               onClick={onTraceCode}
               disabled={!canTracePython || isTracingCode}
-              title={canTracePython ? "Trace this Python solution with the first authored test" : "Code tracing is available for Python practice problems first"}
+              title={canTracePython ? "Trace this Python solution with an authored test" : "Code tracing is available for Python practice problems first"}
             >
               {isTracingCode ? "Tracing..." : "Trace my code"}
             </button>
@@ -515,6 +557,9 @@ export default function CodeWorkspace({
       {traceModalOpen ? (
         <CodeTraceModal
           traceResult={traceResult}
+          traceTests={traceTests}
+          traceTestIndex={traceTestIndex}
+          onTraceTestIndexChange={onTraceTestIndexChange}
           isTracing={isTracingCode}
           onTraceCode={onTraceCode}
           onClose={onCloseTraceModal}
