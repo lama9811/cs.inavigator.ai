@@ -38,6 +38,9 @@ All notable changes to CS Navigator are documented here.
 - Beginner and Intermediate Learn lessons now include visualizer blocks for loops, lists/arrays, functions, maps/dictionaries, sets, classes/objects, debugging state, algorithm tracing, and C++ pointers.
 - Lesson TTS now treats visualizer blocks like diagrams: it reads the caption and invites the student to open the visualizer, instead of reading raw diagram state.
 - Concept quizzes now reveal immediate teaching feedback after each checked answer, showing "Why it works" for correct answers and "What went wrong" plus the correct answer for missed questions, while keeping the final review screen.
+- Python trace state display now formats lists, dictionaries, sets, strings, and returned values more clearly, highlights changed variables between steps, shows call-stack depth, and scrolls the active code line into view.
+- Failed Python practice test rows can now open the trace modal for that exact failing input.
+- Python trace empty/error states now give clearer next steps when tracing cannot start.
 - Advanced concept quiz questions now include small code/state blurbs where useful, so operation questions show something concrete to trace instead of rendering as plain text on an empty panel.
 - Advanced V1 lessons were expanded from short outlines into fuller teaching pages with operation walkthroughs, line-by-line code shape, trace examples, common mistakes, and language-specific examples for Python, Java, JavaScript, and C++.
 - Learn track cards and Concept Quiz category accordions now treat Advanced as a first-class track alongside Beginner and Intermediate.

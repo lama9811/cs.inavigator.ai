@@ -875,6 +875,15 @@ def snapshot_locals(frame):
             break
     return out
 
+def call_stack_for_frame(frame):
+    stack = []
+    current = frame
+    while current is not None:
+        if current.f_code.co_filename == "solution.py" and current.f_code.co_name != "<module>":
+            stack.append(current.f_code.co_name)
+        current = current.f_back
+    return list(reversed(stack))
+
 def execute_student_module(path):
     with open(path, "r", encoding="utf-8") as handle:
         source = handle.read()
@@ -948,9 +957,12 @@ def tracer(frame, event, arg):
     if event not in {"line", "return", "exception"}:
         return tracer
     line_no = frame.f_lineno
+    call_stack = call_stack_for_frame(frame)
     entry = {
         "event": event,
         "function": frame.f_code.co_name,
+        "call_depth": len(call_stack),
+        "call_stack": call_stack,
         "line_no": line_no,
         "line": source_lines[line_no - 1].rstrip() if 0 < line_no <= len(source_lines) else "",
         "locals": snapshot_locals(frame),

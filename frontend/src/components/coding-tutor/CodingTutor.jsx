@@ -3072,7 +3072,7 @@ export default function CodingTutor({
     }
   };
 
-  const tracePythonCode = async () => {
+  const tracePythonCode = async (requestedTestIndex = traceTestIndex) => {
     if (!activeProblem || !isQuizBankProblem) {
       toast.info("Open a Practice Library problem before tracing code.");
       return;
@@ -3099,6 +3099,7 @@ export default function CodingTutor({
 
     setWorkspaceVisible(true);
     setTraceModalOpen(true);
+    setTraceTestIndex(requestedTestIndex);
     setIsTracingCode(true);
     setTraceResult(prev => prev || { status: "running", trace: [], message: "Tracing your Python code..." });
     try {
@@ -3112,7 +3113,7 @@ export default function CodingTutor({
           question_id: activeProblem.id,
           language: selectedLanguageKey,
           code,
-          trace_test_index: traceTestIndex,
+          trace_test_index: requestedTestIndex,
           hints_used: revealedHints,
           seconds_since_open: secondsSinceOpen(),
         }),
@@ -3126,6 +3127,10 @@ export default function CodingTutor({
     } finally {
       setIsTracingCode(false);
     }
+  };
+
+  const traceOneFailedTest = (_test, index) => {
+    tracePythonCode(index);
   };
 
   const markSolved = async () => {
@@ -3464,6 +3469,7 @@ export default function CodingTutor({
           onExplainFailedTests={explainFailedTests}
           onExplainError={explainError}
           onExplainOneTest={explainOneTest}
+          onTraceOneTest={traceOneFailedTest}
           onStopRun={stopRun}
           onRequestReview={activeProblem?.source === "interview" ? null : requestReview}
           onTraceCode={tracePythonCode}

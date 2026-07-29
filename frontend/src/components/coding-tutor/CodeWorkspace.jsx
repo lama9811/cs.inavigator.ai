@@ -38,6 +38,57 @@ function stringifyTraceValue(value) {
   }
 }
 
+function parseTraceDisplayValue(value) {
+  const raw = String(value ?? "");
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return raw;
+  }
+}
+
+function formatTraceDisplayValue(value) {
+  const parsed = parseTraceDisplayValue(value);
+  if (Array.isArray(parsed)) {
+    return {
+      type: "list",
+      inline: `[${parsed.length} item${parsed.length === 1 ? "" : "s"}]`,
+      detail: JSON.stringify(parsed, null, 2),
+    };
+  }
+  if (parsed && typeof parsed === "object") {
+    const keys = Object.keys(parsed);
+    return {
+      type: "dict",
+      inline: `{${keys.length} key${keys.length === 1 ? "" : "s"}}`,
+      detail: JSON.stringify(parsed, null, 2),
+    };
+  }
+  if (typeof parsed === "string") {
+    const looksLikeSet = parsed.startsWith("{") && parsed.endsWith("}") && !parsed.includes(":");
+    return {
+      type: looksLikeSet ? "set" : "str",
+      inline: looksLikeSet ? parsed : `"${parsed}"`,
+      detail: null,
+    };
+  }
+  return {
+    type: typeof parsed,
+    inline: String(parsed),
+    detail: null,
+  };
+}
+
+function TraceValue({ value }) {
+  const formatted = formatTraceDisplayValue(value);
+  return (
+    <>
+      <code className={`code-trace-value code-trace-value-${formatted.type}`}>{formatted.inline}</code>
+      {formatted.detail ? <pre>{formatted.detail}</pre> : null}
+    </>
+  );
+}
+
 function CodeTraceModal({
   traceResult,
   traceTests = [],
@@ -52,7 +103,11 @@ function CodeTraceModal({
   const selectedTest = traceTests.find((item) => item.index === traceTestIndex) || traceTests[traceTestIndex] || null;
   const [stepIndex, setStepIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const lineRefs = useRef(new Map());
   const activeStep = trace[stepIndex] || null;
+  const previousStep = stepIndex > 0 ? trace[stepIndex - 1] : null;
+  const activeCallStack = Array.isArray(activeStep?.call_stack) ? activeStep.call_stack : [];
+  const hasTraceError = traceResult?.status === "error" || Boolean(traceResult?.stderr);
   const canGoBack = stepIndex > 0;
   const canGoNext = stepIndex < trace.length - 1;
   const codeLines = useMemo(() => {
@@ -67,7 +122,7 @@ function CodeTraceModal({
   const activeExplanation = useMemo(() => {
     if (!activeStep) return "Run a trace to step through your Python code.";
     if (activeStep.event === "return") {
-      return `The function is returning ${activeStep.return_value ?? "a value"}.`;
+      return `The function is returning ${formatTraceDisplayValue(activeStep.return_value).inline}.`;
     }
     if (activeStep.event === "exception") {
       return activeStep.exception ? `Python raised ${activeStep.exception}.` : "Python raised an exception on this step.";
@@ -84,6 +139,12 @@ function CodeTraceModal({
     setStepIndex(0);
     setIsPlaying(false);
   }, [traceResult]);
+
+  useEffect(() => {
+    if (!activeStep?.line_no) return;
+    const lineElement = lineRefs.current.get(activeStep.line_no);
+    lineElement?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+  }, [activeStep?.line_no, stepIndex]);
 
   useEffect(() => {
     if (!isPlaying) return undefined;
@@ -199,10 +260,18 @@ function CodeTraceModal({
                     <span>Step {stepIndex + 1} of {trace.length}</span>
                     <strong>{activeStep?.function}</strong>
                     <code>line {activeStep?.line_no}</code>
+                    {activeStep?.call_depth ? <code>depth {activeStep.call_depth}</code> : null}
                   </div>
                   <pre>
                     {codeLines.map(([lineNo, line]) => (
-                      <span key={lineNo} className={lineNo === activeStep?.line_no ? "is-active" : ""}>
+                      <span
+                        key={lineNo}
+                        ref={(node) => {
+                          if (node) lineRefs.current.set(lineNo, node);
+                          else lineRefs.current.delete(lineNo);
+                        }}
+                        className={lineNo === activeStep?.line_no ? "is-active" : ""}
+                      >
                         <em>{lineNo}</em>
                         <code>{line || " "}</code>
                       </span>
@@ -215,12 +284,24 @@ function CodeTraceModal({
                     <span>What is happening</span>
                     <h4>{activeExplanation}</h4>
                   </div>
+                  {activeCallStack.length ? (
+                    <div className="code-trace-call-stack">
+                      <span>Call stack</span>
+                      <ol>
+                        {activeCallStack.map((name, index) => (
+                          <li key={`${name}-${index}`} className={index === activeCallStack.length - 1 ? "is-current" : ""}>
+                            {name}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  ) : null}
                   {activeStep?.line ? <p><strong>Current line:</strong> <code>{activeStep.line.trim()}</code></p> : null}
                   {activeStep?.exception ? <p><strong>Exception:</strong> {activeStep.exception}</p> : null}
                   {activeStep?.return_value != null ? (
                     <div className="code-trace-result-box">
                       <span>Returned value</span>
-                      <strong>{activeStep.return_value}</strong>
+                      <strong><TraceValue value={activeStep.return_value} /></strong>
                     </div>
                   ) : null}
                   {activeStep?.stdout ? (
@@ -232,12 +313,19 @@ function CodeTraceModal({
                   <h5>Values right now</h5>
                   {activeStep?.locals && Object.keys(activeStep.locals).length ? (
                     <dl>
-                      {Object.entries(activeStep.locals).map(([name, value]) => (
-                        <div key={name}>
-                          <dt>{name}</dt>
-                          <dd>{String(value)}</dd>
-                        </div>
-                      ))}
+                      {Object.entries(activeStep.locals).map(([name, value]) => {
+                        const previousValue = previousStep?.locals?.[name];
+                        const changed = !previousStep || previousValue !== value;
+                        return (
+                          <div key={name} className={changed ? "is-changed" : ""}>
+                            <dt>{name}</dt>
+                            <dd>
+                              <TraceValue value={value} />
+                              {changed ? <span className="code-trace-change-label">{previousStep ? "changed" : "new"}</span> : null}
+                            </dd>
+                          </div>
+                        );
+                      })}
                     </dl>
                   ) : (
                     <p>No local variables captured yet.</p>
@@ -261,7 +349,14 @@ function CodeTraceModal({
               </footer>
             </>
           ) : (
-            !traceResult?.stderr ? <p className="workspace-visualizer-lock">No trace generated yet.</p> : null
+            <div className={`code-trace-empty-state ${hasTraceError ? "is-error" : ""}`}>
+              <strong>{hasTraceError ? "Trace could not start" : "No trace generated yet"}</strong>
+              <p>
+                {hasTraceError
+                  ? "Check that your code defines the expected function name and has no syntax errors, then try again."
+                  : "Choose a test case, run the trace, then step forward and backward through your code."}
+              </p>
+            </div>
           )}
         </section>
       </div>
@@ -302,6 +397,7 @@ export default function CodeWorkspace({
   onExplainFailedTests,
   onExplainError,
   onExplainOneTest,
+  onTraceOneTest,
   onStopRun,
   onRequestReview,
   onTraceCode,
@@ -544,6 +640,7 @@ export default function CodeWorkspace({
                 onExplainFailedTests={onExplainFailedTests}
                 onExplainError={onExplainError}
                 onExplainOneTest={onExplainOneTest}
+                onTraceOneTest={canTracePython ? onTraceOneTest : null}
                 onRequestReview={onRequestReview}
                 solutionReview={solutionReview}
               />

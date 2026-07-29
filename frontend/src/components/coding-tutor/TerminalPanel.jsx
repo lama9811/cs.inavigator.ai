@@ -108,7 +108,7 @@ function TerminalOutputPane({ output, tests, onExplainError }) {
 
 // A single test case in the explorer. Failing cases start open; passing cases
 // start collapsed so the student focuses on what went wrong first.
-function TestCaseRow({ test, index, onAsk }) {
+function TestCaseRow({ test, index, onAsk, onTrace }) {
   const [open, setOpen] = useState(!test.passed);
   // On a re-run a case can flip pass<->fail. Re-derive the default open state
   // (failing = open, passing = collapsed) when that happens, so a case that now
@@ -142,6 +142,11 @@ function TestCaseRow({ test, index, onAsk }) {
           {!test.passed && onAsk && (
             <button type="button" className="terminal-ask-case-btn" onClick={() => onAsk(test, index)}>
               Ask the tutor about this case
+            </button>
+          )}
+          {!test.passed && onTrace && (
+            <button type="button" className="terminal-ask-case-btn" onClick={() => onTrace(test, index)}>
+              Trace this case
             </button>
           )}
         </div>
@@ -220,7 +225,7 @@ function SolutionReview({ review }) {
   );
 }
 
-function TerminalTestsPane({ output, tests, onExplainFailedTests, onRequestReview, onExplainOneTest, solutionReview }) {
+function TerminalTestsPane({ output, tests, onExplainFailedTests, onRequestReview, onExplainOneTest, onTraceOneTest, solutionReview }) {
   const hasSummary = typeof output.passed === "number" && typeof output.total === "number";
   const hasFailedTests = tests.some(test => !test.passed);
 
@@ -281,6 +286,7 @@ function TerminalTestsPane({ output, tests, onExplainFailedTests, onRequestRevie
                 test={test}
                 index={index}
                 onAsk={onExplainOneTest}
+                onTrace={onTraceOneTest}
               />
             ))}
         </div>
@@ -303,6 +309,7 @@ export default function TerminalPanel({
   onExplainFailedTests,
   onExplainError,
   onExplainOneTest,
+  onTraceOneTest,
   onRequestReview,
   solutionReview,
 }) {
@@ -344,6 +351,7 @@ export default function TerminalPanel({
           onExplainFailedTests={onExplainFailedTests}
           onRequestReview={onRequestReview}
           onExplainOneTest={onExplainOneTest}
+          onTraceOneTest={onTraceOneTest}
           solutionReview={solutionReview}
         />
       </div>

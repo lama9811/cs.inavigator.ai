@@ -84,6 +84,8 @@ def count_vowels(text: str) -> int:
     assert any("total" in step["locals"] for step in result["trace"])
     assert any("for char in text.lower()" in step["line"] for step in result["trace"])
     assert any(step.get("return_value") == "2" for step in result["trace"])
+    assert all(step.get("call_depth", 0) >= 1 for step in result["trace"])
+    assert any(step.get("call_stack") == ["count_vowels"] for step in result["trace"])
 
 
 def test_python_trace_uses_same_security_validation():
