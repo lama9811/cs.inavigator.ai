@@ -80,14 +80,14 @@
       "language": "javascript",
       "title": "Error Handling concept check 1",
       "code": null,
-      "prompt": "What does the lesson mean by \"Catch narrowly\"?",
+      "prompt": "What is a safer way to use try/catch in JavaScript?",
       "choices": [
-        "catch only",
         "Do not wrap a whole application in one broad try block. Keep the protected section close to the operation whose failure you understand, so unrelated programming mistakes are not mislabeled as expected input problems.",
-        "throw",
-        "return"
+        "Catch every error and hide the message.",
+        "Wrap code that cannot fail in a broad try block.",
+        "Handle an error where no recovery is possible."
       ],
-      "answer_index": 1,
+      "answer_index": 0,
       "explanation": "Use `try` around an operation that can fail and `catch` to respond to the resulting Error. Inspect the error, give the user a useful response, and avoid empty catch blocks that hide the cause. That reasoning supports the answer: Do not wrap a whole application in one broad try block. Keep the protected section close to the operation whose failure you understand, so unrelated programming mistakes are not mislabeled as expected input problems."
     },
     {
@@ -100,12 +100,12 @@
       "code": null,
       "prompt": "Which choice describes a reliable Error Handling practice?",
       "choices": [
-        "Catch requires a return value",
-        "It retries forever",
+        "Replace a useful error with a vague one.",
         "Protect only operations you expect can fail.",
-        "It converts the error to text"
+        "Continue as if required data loaded successfully.",
+        "Show the same message for every failure."
       ],
-      "answer_index": 2,
+      "answer_index": 1,
       "explanation": "Use `try` around an operation that can fail and `catch` to respond to the resulting Error. Inspect the error, give the user a useful response, and avoid empty catch blocks that hide the cause. That reasoning supports the answer: Protect only operations you expect can fail."
     },
     {
@@ -118,12 +118,12 @@
       "code": null,
       "prompt": "Which recommendation belongs in a review of Error Handling code?",
       "choices": [
-        "try { riskyWork(); } catch (error) {}",
-        "return",
-        "Catch requires a return value",
-        "Read the Error name and message."
+        "Ignore the error name and message.",
+        "Catch programming mistakes and pretend they are user mistakes.",
+        "Read the Error name and message.",
+        "Put unrelated operations in one protected block."
       ],
-      "answer_index": 3,
+      "answer_index": 2,
       "explanation": "Use `try` around an operation that can fail and `catch` to respond to the resulting Error. Inspect the error, give the user a useful response, and avoid empty catch blocks that hide the cause. That reasoning supports the answer: Read the Error name and message."
     },
     {
@@ -136,12 +136,12 @@
       "code": null,
       "prompt": "Which guideline helps prevent a common Error Handling mistake?",
       "choices": [
-        "Give users a specific recovery path.",
-        "It retries forever",
-        "It converts the error to text",
-        "try { riskyWork(); } catch (error) {}"
+        "Retry without changing the failed condition.",
+        "Swallow an error before logging useful context.",
+        "Mix validation errors with network errors.",
+        "Give users a specific recovery path."
       ],
-      "answer_index": 0,
+      "answer_index": 3,
       "explanation": "Use `try` around an operation that can fail and `catch` to respond to the resulting Error. Inspect the error, give the user a useful response, and avoid empty catch blocks that hide the cause. That reasoning supports the answer: Give users a specific recovery path."
     },
     {
@@ -154,12 +154,12 @@
       "code": null,
       "prompt": "A classmate is checking their understanding of Error Handling. Which advice is correct?",
       "choices": [
-        "catch only",
         "Rethrow errors the current layer cannot handle.",
-        "throw",
-        "It retries forever"
+        "Throw strings instead of error objects.",
+        "Forget to rethrow when the current layer cannot handle the problem.",
+        "Use a fallback value that breaks later code."
       ],
-      "answer_index": 1,
+      "answer_index": 0,
       "explanation": "Use `try` around an operation that can fail and `catch` to respond to the resulting Error. Inspect the error, give the user a useful response, and avoid empty catch blocks that hide the cause. That reasoning supports the answer: Rethrow errors the current layer cannot handle."
     },
     {
@@ -172,12 +172,12 @@
       "code": null,
       "prompt": "What is the main idea behind Error Handling?",
       "choices": [
-        "It converts the error to text",
-        "try { riskyWork(); } catch (error) {}",
+        "Report failure after already using invalid data.",
         "Handle expected failures while keeping real programming mistakes visible.",
-        "catch only"
+        "Hide stack traces during development.",
+        "Let promise rejections go unhandled."
       ],
-      "answer_index": 2,
+      "answer_index": 1,
       "explanation": "Use `try` around an operation that can fail and `catch` to respond to the resulting Error. Inspect the error, give the user a useful response, and avoid empty catch blocks that hide the cause. That reasoning supports the answer: Handle expected failures while keeping real programming mistakes visible."
     }
   ]

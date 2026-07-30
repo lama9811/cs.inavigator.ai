@@ -285,6 +285,20 @@ const RARITY_LABEL = {
   epic: "Epic",
 };
 
+const BEGINNER_MILESTONE_IDS = new Set([
+  "first-lesson",
+  "first-run",
+  "first-solve",
+  "easy-starter",
+  "three-runs",
+  "first-quiz",
+  "steady-streak",
+  "daily-triple",
+  "comeback-kid",
+  "strings-spark",
+  "arrays-ace",
+]);
+
 // Group badges by category (in CATEGORY_ORDER), earned-first within each group.
 function groupByCategory(badges) {
   const buckets = new Map();
@@ -406,6 +420,9 @@ export default function ProgressBadges({ questions = [], progressByQuestion = {}
   const inProgressBadges = badges.filter(badge => getBadgeState(badge) === "in-progress");
   const notStartedBadges = badges.filter(badge => getBadgeState(badge) === "not-started");
   const activeBadges = [...earnedBadges, ...inProgressBadges];
+  const upcomingBeginnerBadges = notStartedBadges
+    .filter(badge => BEGINNER_MILESTONE_IDS.has(badge.id))
+    .slice(0, 6);
 
   const visibleBadges = activeFilter === "earned"
     ? earnedBadges
@@ -421,7 +438,7 @@ export default function ProgressBadges({ questions = [], progressByQuestion = {}
   const filters = [
     { id: "in-progress", label: "In progress", count: inProgressBadges.length },
     { id: "earned", label: "Earned", count: earnedBadges.length },
-    { id: "all", label: "All", count: badges.length },
+    { id: "all", label: "Active", count: activeBadges.length },
   ];
 
   return (
@@ -430,7 +447,7 @@ export default function ProgressBadges({ questions = [], progressByQuestion = {}
         <div>
           <span className="coding-kicker">Your progress</span>
           <h2 id="milestones-title">Milestones</h2>
-          <p>See what you have earned and what to work toward next.</p>
+          <p>Start with real milestones: first lesson, first run, first fix, first solve, and a steady streak.</p>
         </div>
         <span>{earnedBadges.length}/{badges.length} earned</span>
       </div>
@@ -468,7 +485,7 @@ export default function ProgressBadges({ questions = [], progressByQuestion = {}
       <div className="progress-badge-toolbar">
         <div>
           <h2>Achievement badges</h2>
-          <p>Focus on active goals, or review what you have earned.</p>
+          <p>Focus on active goals. Bigger trophies appear later, after the app has real evidence.</p>
         </div>
         <div className="progress-badge-filters" role="group" aria-label="Filter milestone badges">
           {filters.map(filter => (
@@ -502,14 +519,14 @@ export default function ProgressBadges({ questions = [], progressByQuestion = {}
         </div>
       )}
 
-      {(activeFilter === "all" || activeFilter === "in-progress") && notStartedBadges.length > 0 && (
+      {(activeFilter === "all" || activeFilter === "in-progress") && upcomingBeginnerBadges.length > 0 && (
         <details className="progress-badge-locked">
           <summary>
-            <span>Not started</span>
-            <small>{notStartedBadges.length} milestones</small>
+            <span>Coming up</span>
+            <small>{upcomingBeginnerBadges.length} beginner milestones</small>
           </summary>
           <div className="progress-badge-locked-content">
-            <BadgeGroups badges={notStartedBadges} />
+            <BadgeGroups badges={upcomingBeginnerBadges} />
           </div>
         </details>
       )}

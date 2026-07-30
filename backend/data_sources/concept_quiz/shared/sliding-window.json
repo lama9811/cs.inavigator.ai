@@ -9,7 +9,7 @@
       "kind": "mcq-behavior",
       "title": "Window meaning",
       "prompt": "What does a sliding window represent?",
-      "explanation": "The window is the current slice of data being tracked.",
+      "explanation": "The window is the current slice of data being tracked. As left and right move, the algorithm updates only the values entering or leaving that slice.",
       "variants": {
         "python": {},
         "java": {},
@@ -55,7 +55,7 @@
       "kind": "mcq-output",
       "title": "Trace a window",
       "prompt": "What should happen before keeping 4 in a sum-limited window?",
-      "explanation": "The window must shrink from the left when the running sum is too large.",
+      "explanation": "The window must shrink from the left when the running sum is too large. Each left move removes an old value so the current window can satisfy the limit again.",
       "variants": {
         "python": {},
         "java": {},

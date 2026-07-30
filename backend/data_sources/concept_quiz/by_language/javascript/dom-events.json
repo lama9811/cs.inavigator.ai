@@ -80,14 +80,14 @@
       "language": "javascript",
       "title": "DOM & Events concept check 1",
       "code": null,
-      "prompt": "What does the lesson mean by \"Use textContent for plain text\"?",
+      "prompt": "When should JavaScript code prefer `textContent` over `innerHTML`?",
       "choices": [
-        "An empty string",
         "`innerHTML` asks the browser to parse markup. Use `textContent` for ordinary user-facing text, especially when a value came from input, so text is displayed rather than treated as page structure.",
-        "false only",
-        "A new element"
+        "Use `innerHTML` for untrusted plain text.",
+        "Assume a selector always finds an element.",
+        "Put a long unrelated workflow inside one event listener."
       ],
-      "answer_index": 1,
+      "answer_index": 0,
       "explanation": "The DOM represents the page as objects. Select an element, verify it exists, then register an event listener. That reasoning supports the answer: `innerHTML` asks the browser to parse markup. Use `textContent` for ordinary user-facing text, especially when a value came from input, so text is displayed rather than treated as page structure."
     },
     {
@@ -100,12 +100,12 @@
       "code": null,
       "prompt": "Which choice describes a reliable DOM & Events practice?",
       "choices": [
-        "As soon as it is registered",
-        "Before the page loads every time",
+        "Attach listeners before the relevant element exists.",
         "Select the intended element precisely.",
-        "Only when the function returns text"
+        "Update the page without checking which event fired.",
+        "Use the same id on several elements."
       ],
-      "answer_index": 2,
+      "answer_index": 1,
       "explanation": "The DOM represents the page as objects. Select an element, verify it exists, then register an event listener. That reasoning supports the answer: Select the intended element precisely."
     },
     {
@@ -118,12 +118,12 @@
       "code": null,
       "prompt": "Which recommendation belongs in a review of DOM & Events code?",
       "choices": [
-        "document.querySelector(\"#missing\").textContent = \"Ready\";",
-        "A new element",
-        "As soon as it is registered",
-        "Check a selector result before use."
+        "Read input values once and never update them.",
+        "Ignore event default behavior when it matters.",
+        "Check a selector result before use.",
+        "Change classes by rewriting the whole class string blindly."
       ],
-      "answer_index": 3,
+      "answer_index": 2,
       "explanation": "The DOM represents the page as objects. Select an element, verify it exists, then register an event listener. That reasoning supports the answer: Check a selector result before use."
     },
     {
@@ -136,12 +136,12 @@
       "code": null,
       "prompt": "Which guideline helps prevent a common DOM & Events mistake?",
       "choices": [
-        "Keep listeners short and focused.",
-        "Before the page loads every time",
-        "Only when the function returns text",
-        "document.querySelector(\"#missing\").textContent = \"Ready\";"
+        "Store application state only in visible text.",
+        "Create elements without attaching them to the page.",
+        "Use DOM code for logic that could be tested separately.",
+        "Keep listeners short and focused."
       ],
-      "answer_index": 0,
+      "answer_index": 3,
       "explanation": "The DOM represents the page as objects. Select an element, verify it exists, then register an event listener. That reasoning supports the answer: Keep listeners short and focused."
     },
     {
@@ -154,12 +154,12 @@
       "code": null,
       "prompt": "A classmate is checking their understanding of DOM & Events. Which advice is correct?",
       "choices": [
-        "An empty string",
         "Display untrusted text with textContent.",
-        "false only",
-        "Before the page loads every time"
+        "Assume every click target is the element with the listener.",
+        "Forget to remove listeners created for temporary UI.",
+        "Use text parsing to recover data already stored in state."
       ],
-      "answer_index": 1,
+      "answer_index": 0,
       "explanation": "The DOM represents the page as objects. Select an element, verify it exists, then register an event listener. That reasoning supports the answer: Display untrusted text with textContent."
     },
     {
@@ -172,12 +172,12 @@
       "code": null,
       "prompt": "What is the main idea behind DOM & Events?",
       "choices": [
-        "Only when the function returns text",
-        "document.querySelector(\"#missing\").textContent = \"Ready\";",
+        "Trust user-provided HTML as safe markup.",
         "Connect JavaScript behavior to page elements and user actions.",
-        "An empty string"
+        "Run the same listener setup repeatedly.",
+        "Hide failures when an element lookup returns null."
       ],
-      "answer_index": 2,
+      "answer_index": 1,
       "explanation": "The DOM represents the page as objects. Select an element, verify it exists, then register an event listener. That reasoning supports the answer: Connect JavaScript behavior to page elements and user actions."
     }
   ]

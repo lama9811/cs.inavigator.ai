@@ -80,15 +80,15 @@
       "language": "cpp",
       "title": "File I/O concept check 1",
       "code": null,
-      "prompt": "What does the lesson mean by \"Relative paths start at the working directory\"?",
+      "prompt": "A C++ program opens `courses.txt` without a folder path. Which statement is true?",
       "choices": [
-        "std::ofstream",
-        "A path such as `courses.txt` is resolved from the program?s current working directory, which may differ from the source-code folder. Print or configure the working directory when a file exists but the program cannot find it.",
-        "std::cout",
-        "std::string"
+        "A path such as `courses.txt` is resolved from the program's current working directory, which may differ from the source-code folder. Print or configure the working directory when a file exists but the program cannot find it.",
+        "Overwrite existing records when the task calls for appending.",
+        "Assume every file path starts in the source-code folder.",
+        "Read data before checking for an I/O failure."
       ],
-      "answer_index": 1,
-      "explanation": "Use `std::ifstream` for input files and `std::ofstream` for output files. Check that the stream opened successfully before reading or writing. That reasoning supports the answer: A path such as `courses.txt` is resolved from the program?s current working directory, which may differ from the source-code folder. Print or configure the working directory when a file exists but the program cannot find it."
+      "answer_index": 0,
+      "explanation": "Use `std::ifstream` for input files and `std::ofstream` for output files. Check that the stream opened successfully before reading or writing. That reasoning supports the answer: A path such as `courses.txt` is resolved from the program's current working directory, which may differ from the source-code folder. Print or configure the working directory when a file exists but the program cannot find it."
     },
     {
       "id": "cpp-file-io-authored-02",
@@ -100,12 +100,12 @@
       "code": null,
       "prompt": "Which choice describes a reliable File I/O practice?",
       "choices": [
-        "It reads the entire file at once",
-        "It sorts the lines",
+        "Ignore character encoding for shared text files.",
         "Check that opening succeeded.",
-        "It keeps the stream open forever"
+        "Leave closeable resources unmanaged.",
+        "Catch an IOException where no useful response is possible."
       ],
-      "answer_index": 2,
+      "answer_index": 1,
       "explanation": "Use `std::ifstream` for input files and `std::ofstream` for output files. Check that the stream opened successfully before reading or writing. That reasoning supports the answer: Check that opening succeeded."
     },
     {
@@ -118,12 +118,12 @@
       "code": null,
       "prompt": "Which recommendation belongs in a review of File I/O code?",
       "choices": [
-        "while (!input.eof()) {\n  std::getline(input, line);\n  use(line);\n}",
-        "std::string",
-        "It reads the entire file at once",
-        "Process data only after a successful read."
+        "Use one giant string for a large file.",
+        "Build paths with fragile string concatenation.",
+        "Process data only after a successful read.",
+        "Treat a missing file as an empty valid file every time."
       ],
-      "answer_index": 3,
+      "answer_index": 2,
       "explanation": "Use `std::ifstream` for input files and `std::ofstream` for output files. Check that the stream opened successfully before reading or writing. That reasoning supports the answer: Process data only after a successful read."
     },
     {
@@ -136,12 +136,12 @@
       "code": null,
       "prompt": "Which guideline helps prevent a common File I/O mistake?",
       "choices": [
-        "Know the working directory for relative paths.",
-        "It sorts the lines",
-        "It keeps the stream open forever",
-        "while (!input.eof()) {\n  std::getline(input, line);\n  use(line);\n}"
+        "Write output before validating the destination.",
+        "Ignore partial read or parse failures.",
+        "Use platform-specific separators in portable code.",
+        "Know the working directory for relative paths."
       ],
-      "answer_index": 0,
+      "answer_index": 3,
       "explanation": "Use `std::ifstream` for input files and `std::ofstream` for output files. Check that the stream opened successfully before reading or writing. That reasoning supports the answer: Know the working directory for relative paths."
     },
     {
@@ -154,12 +154,12 @@
       "code": null,
       "prompt": "A classmate is checking their understanding of File I/O. Which advice is correct?",
       "choices": [
-        "std::ofstream",
         "Let stream objects close files through their destructors.",
-        "std::cout",
-        "It sorts the lines"
+        "Hide the original file error behind a vague message.",
+        "Read all lines when streaming would keep memory smaller.",
+        "Assume the default charset is always the intended one."
       ],
-      "answer_index": 1,
+      "answer_index": 0,
       "explanation": "Use `std::ifstream` for input files and `std::ofstream` for output files. Check that the stream opened successfully before reading or writing. That reasoning supports the answer: Let stream objects close files through their destructors."
     },
     {
@@ -172,12 +172,12 @@
       "code": null,
       "prompt": "What is the main idea behind File I/O?",
       "choices": [
-        "It keeps the stream open forever",
-        "while (!input.eof()) {\n  std::getline(input, line);\n  use(line);\n}",
+        "Mix persistence code with unrelated calculations.",
         "Read and write files through streams with clear failure checks.",
-        "std::ofstream"
+        "Open the same file twice for conflicting operations.",
+        "Forget that write modes can replace existing data."
       ],
-      "answer_index": 2,
+      "answer_index": 1,
       "explanation": "Use `std::ifstream` for input files and `std::ofstream` for output files. Check that the stream opened successfully before reading or writing. That reasoning supports the answer: Read and write files through streams with clear failure checks."
     }
   ]

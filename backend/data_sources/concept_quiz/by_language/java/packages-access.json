@@ -84,14 +84,14 @@
       "language": "java",
       "title": "Packages & Access Modifiers concept check 1",
       "code": null,
-      "prompt": "What does the lesson mean by \"Folders and package names must agree\"?",
+      "prompt": "What should match a Java package declaration during normal builds?",
       "choices": [
-        "public",
         "If a file declares `package school.records`, keep it under the matching `school/records` path for normal builds. A mismatch often leads to class loading or import errors.",
-        "package",
-        "import"
+        "Put a package declaration that does not match the folder path.",
+        "Make every field public for convenience.",
+        "Expose large public methods that do several unrelated jobs."
       ],
-      "answer_index": 1,
+      "answer_index": 0,
       "explanation": "A package groups related classes and gives them a shared name. Put the package statement first in the file. That reasoning supports the answer: If a file declares `package school.records`, keep it under the matching `school/records` path for normal builds. A mismatch often leads to class loading or import errors."
     },
     {
@@ -104,12 +104,12 @@
       "code": null,
       "prompt": "Which choice describes a reliable Packages & Access Modifiers practice?",
       "choices": [
-        "package java.util.ArrayList;",
-        "include java.util.ArrayList;",
+        "Repeat full package names everywhere instead of importing.",
         "Group classes that solve related problems.",
-        "using java.util.ArrayList;"
+        "Use default access when outside packages must call the member.",
+        "Hide a class that callers are supposed to construct."
       ],
-      "answer_index": 2,
+      "answer_index": 1,
       "explanation": "A package groups related classes and gives them a shared name. Put the package statement first in the file. That reasoning supports the answer: Group classes that solve related problems."
     },
     {
@@ -122,12 +122,12 @@
       "code": null,
       "prompt": "Which recommendation belongs in a review of Packages & Access Modifiers code?",
       "choices": [
-        "public int credits;",
-        "import",
-        "package java.util.ArrayList;",
-        "Match package names to the directory structure."
+        "Mix unrelated classes in one package.",
+        "Put the package statement after imports.",
+        "Match package names to the directory structure.",
+        "Use private access for methods other classes must call."
       ],
-      "answer_index": 3,
+      "answer_index": 2,
       "explanation": "A package groups related classes and gives them a shared name. Put the package statement first in the file. That reasoning supports the answer: Match package names to the directory structure."
     },
     {
@@ -140,12 +140,12 @@
       "code": null,
       "prompt": "Which guideline helps prevent a common Packages & Access Modifiers mistake?",
       "choices": [
-        "Keep fields private unless outside access is truly required.",
-        "include java.util.ArrayList;",
-        "using java.util.ArrayList;",
-        "public int credits;"
+        "Let package structure drift from the project structure.",
+        "Treat access modifiers as comments rather than compiler rules.",
+        "Expose implementation details as the public API.",
+        "Keep fields private unless outside access is truly required."
       ],
-      "answer_index": 0,
+      "answer_index": 3,
       "explanation": "A package groups related classes and gives them a shared name. Put the package statement first in the file. That reasoning supports the answer: Keep fields private unless outside access is truly required."
     },
     {
@@ -158,12 +158,12 @@
       "code": null,
       "prompt": "A classmate is checking their understanding of Packages & Access Modifiers. Which advice is correct?",
       "choices": [
-        "public",
         "Expose small public methods with clear jobs.",
-        "package",
-        "include java.util.ArrayList;"
+        "Use one package for the entire application forever.",
+        "Import a class from the wrong package with the same name.",
+        "Make helper methods public only for tests without a reason."
       ],
-      "answer_index": 1,
+      "answer_index": 0,
       "explanation": "A package groups related classes and gives them a shared name. Put the package statement first in the file. That reasoning supports the answer: Expose small public methods with clear jobs."
     },
     {
@@ -176,12 +176,12 @@
       "code": null,
       "prompt": "Which choice shows sound reasoning about Packages & Access Modifiers?",
       "choices": [
-        "using java.util.ArrayList;",
-        "public int credits;",
+        "Forget that default access means package-private.",
         "Import classes instead of repeating long names throughout a file.",
-        "public"
+        "Use package names that start with capital letters.",
+        "Change public method names without considering callers."
       ],
-      "answer_index": 2,
+      "answer_index": 1,
       "explanation": "A package groups related classes and gives them a shared name. Put the package statement first in the file. That reasoning supports the answer: Import classes instead of repeating long names throughout a file."
     }
   ]

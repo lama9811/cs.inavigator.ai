@@ -14,7 +14,6 @@ import {
 import { fetchQuizCategories, fetchQuizProgress, fetchQuizQuestions } from "./conceptQuizApi";
 import { LANGUAGE_VISUALS } from "./languageVisuals";
 import { readCategoryProgress, readQuizDraftAnswers } from "./conceptQuizProgress";
-import PlacementCheck from "./PlacementCheck";
 
 // Language landing page: a progress hero plus an ACCORDION of categories. Each
 // category row expands inline to reveal its question table (name | type | status).
@@ -279,7 +278,6 @@ export default function QuizLanguageLanding({
   const [loadingCats, setLoadingCats] = useState(true);
   const [error, setError] = useState("");
   const [serverProgress, setServerProgress] = useState({ categories: [], mistakes: [] });
-  const [placementOpen, setPlacementOpen] = useState(false);
 
   // Load the available shared and language-specific categories.
   useEffect(() => {
@@ -390,12 +388,25 @@ export default function QuizLanguageLanding({
   const cacheQuestions = (categoryId, list) =>
     setQuestionsByCat((prev) => ({ ...prev, [categoryId]: list }));
 
+  const categoryForStartingPath = (recommendation) => {
+    if (recommendation?.category) return recommendation.category;
+    if (recommendation?.action === "syntax-quiz") return "syntax";
+    if (recommendation?.action === "variables-quiz") return "variables";
+    if (recommendation?.action === "control-flow-quiz") return "conditionals";
+    if (recommendation?.action === "functions-quiz") return "functions";
+    if (recommendation?.action === "data-structures-quiz") return "lists";
+    if (recommendation?.action === "debugging-quiz") return "debug";
+    return null;
+  };
+
   const showRecommendation = (recommendation) => {
-    setPlacementOpen(false);
-    setOpenTracks({ ...CLOSED_TRACKS, [recommendation.track]: true });
-    setOpenId(recommendation.category);
+    const category = categoryForStartingPath(recommendation);
+    if (!category) return;
+    const track = recommendation.track || readyCategories.find((item) => item.id === category)?.track || "beginner";
+    setOpenTracks({ ...CLOSED_TRACKS, [track]: true });
+    setOpenId(category);
     window.setTimeout(() => {
-      document.getElementById(`cq-category-${recommendation.category}`)?.scrollIntoView({
+      document.getElementById(`cq-category-${category}`)?.scrollIntoView({
         behavior: "smooth",
         block: "center",
       });
@@ -406,7 +417,7 @@ export default function QuizLanguageLanding({
     showRecommendation(recommendation);
     setError("");
 
-    const categoryId = recommendation?.category;
+    const categoryId = categoryForStartingPath(recommendation);
     if (!categoryId) return;
 
     try {
@@ -478,14 +489,11 @@ export default function QuizLanguageLanding({
           <p>{recommendationReason}</p>
         </div>
         <div className="cq-guidance-actions">
-          <button type="button" className="cq-btn cq-btn-ghost" onClick={() => setPlacementOpen(true)}>
-            Find my starting point
-          </button>
           {nextCategory ? (
             <button
               type="button"
               className="cq-btn cq-btn-primary"
-              onClick={() => showRecommendation({ track: nextCategory.track, category: nextCategory.id })}
+              onClick={() => startRecommendedTopic({ track: nextCategory.track, category: nextCategory.id })}
             >
               Open this topic
             </button>
@@ -519,15 +527,6 @@ export default function QuizLanguageLanding({
             ))}
           </div>
         </section>
-      ) : null}
-
-      {placementOpen ? (
-        <PlacementCheck
-          apiBase={apiBase}
-          language={language}
-          onClose={() => setPlacementOpen(false)}
-          onUseRecommendation={startRecommendedTopic}
-        />
       ) : null}
 
       {error ? <p className="cq-error">{error}</p> : null}

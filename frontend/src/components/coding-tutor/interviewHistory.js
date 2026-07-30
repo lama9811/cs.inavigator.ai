@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
+import { currentUserStorageScope, scopedStorageKey } from "./storageScope";
 
 // Past mock-interview attempts, stored locally (no backend sync). Each finished mock
 // appends one record so students can revisit what they did and how they scored. Local
 // -first mirrors interviewProgress.js: same event-sync pattern, same graceful failure
 // when storage is blocked (private mode). Capped so the list can't grow unbounded.
 
-const HISTORY_KEY = "csnav.interviewHistory";
+const HISTORY_BASE_KEY = "csnav.interviewHistory";
+const historyKey = () => scopedStorageKey(HISTORY_BASE_KEY);
 const MAX_ATTEMPTS = 20;
 
 function readHistory() {
   try {
-    const raw = localStorage.getItem(HISTORY_KEY);
+    const raw = localStorage.getItem(historyKey());
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
@@ -21,7 +23,7 @@ function readHistory() {
 
 function writeHistory(list) {
   try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, MAX_ATTEMPTS)));
+    localStorage.setItem(historyKey(), JSON.stringify(list.slice(0, MAX_ATTEMPTS)));
   } catch {
     // Storage full / blocked: history just won't persist. Non-fatal.
   }
@@ -76,17 +78,19 @@ export function summarizeInterviewHistory() {
 // React hook: the list of past attempts, kept in sync across mounts via a custom event
 // (the native "storage" event only fires across tabs, not within one).
 export function useInterviewHistory() {
+  const storageScope = currentUserStorageScope();
   const [history, setHistory] = useState(readHistory);
 
   useEffect(() => {
     const sync = () => setHistory(readHistory());
+    sync();
     window.addEventListener("interview-history-change", sync);
     window.addEventListener("storage", sync);
     return () => {
       window.removeEventListener("interview-history-change", sync);
       window.removeEventListener("storage", sync);
     };
-  }, []);
+  }, [storageScope]);
 
   const clear = useCallback(() => clearInterviewHistory(), []);
   return { history, clear };

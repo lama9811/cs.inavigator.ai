@@ -37,6 +37,7 @@ import MockConfirm from "./MockConfirm";
 import { gradeMockSummary, scoreFromGraded } from "./interviewGrade";
 import { appendInterviewAttempt, summarizeInterviewHistory } from "./interviewHistory";
 import { clearInterviewSolved, fetchInterviewProgress, markInterviewSolved, saveInterviewProgress, useInterviewReviewed, useInterviewSolved } from "./interviewProgress";
+import { currentUserStorageScope, scopedStorageKey } from "./storageScope";
 import {
   saveDraft,
   readDraftEntry,
@@ -402,7 +403,7 @@ function practiceTargetFromPath(pathname) {
 const PRACTICE_LEARN_PATH = "/coding/practice";
 const PRACTICE_QUIZ_PATH = "/coding/practice/quiz";
 const PRACTICE_CODE_PATH = "/coding/practice/code";
-const LAST_PRACTICE_ROUTES_KEY = "csnav.lastPracticeRoutes";
+const LAST_PRACTICE_ROUTES_BASE_KEY = "csnav.lastPracticeRoutes";
 const learnPathForLanguage = (language) =>
   `/coding/practice/learn/${encodeURIComponent(language)}`;
 const learnPathForTrack = (language, track) =>
@@ -427,7 +428,7 @@ const DEFAULT_PRACTICE_ROUTES = {
 
 function readStoredPracticeRoutes() {
   try {
-    const parsed = JSON.parse(localStorage.getItem(LAST_PRACTICE_ROUTES_KEY) || "{}");
+    const parsed = JSON.parse(localStorage.getItem(scopedStorageKey(LAST_PRACTICE_ROUTES_BASE_KEY)) || "{}");
     const next = { ...DEFAULT_PRACTICE_ROUTES };
     for (const key of Object.keys(next)) {
       if (typeof parsed[key] === "string" && parsed[key].startsWith("/coding/practice")) {
@@ -448,7 +449,7 @@ const LANGUAGE_FORMATS = {
 };
 
 function progressKey(questionId, language) {
-  return `coding_practice_progress:${questionId}:${language}`;
+  return scopedStorageKey(`coding_practice_progress:${questionId}:${language}`);
 }
 
 function readLocalProgress(questionId, language) {
@@ -481,7 +482,8 @@ function clearLocalProgress(questionId, language) {
 // We record the local date (YYYY-MM-DD) each day the student practices in the
 // Learning Library, then count back from today to get a real consecutive-day streak.
 // localStorage is the offline cache; /api/coding/user-progress syncs it per user.
-const DAILY_STREAK_KEY = "coding_daily_streak_days";
+const DAILY_STREAK_BASE_KEY = "coding_daily_streak_days";
+const dailyStreakKey = () => scopedStorageKey(DAILY_STREAK_BASE_KEY);
 
 function localDateKey(date = new Date()) {
   // Local calendar date, not UTC, so "today" matches the student's clock.
@@ -493,7 +495,7 @@ function localDateKey(date = new Date()) {
 
 function readDailyStreakDays() {
   try {
-    const raw = localStorage.getItem(DAILY_STREAK_KEY);
+    const raw = localStorage.getItem(dailyStreakKey());
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
   } catch (error) {
@@ -510,7 +512,7 @@ function recordPracticeActivityDay() {
   // Keep the list bounded — a year of dates is plenty for a streak count.
   const trimmed = days.sort().slice(-370);
   try {
-    localStorage.setItem(DAILY_STREAK_KEY, JSON.stringify(trimmed));
+    localStorage.setItem(dailyStreakKey(), JSON.stringify(trimmed));
   } catch (error) {
     console.warn("[coding-streak] write failed", error);
   }
@@ -541,11 +543,12 @@ function isDailyDoneToday(days = readDailyStreakDays()) {
 // ── Mock-interview completion counter (per-device, for the mock badges) ────────
 // A finished mock interview increments this. Read by ProgressBadges via
 // progressSummary to award Mock Rookie (1) / Mock Veteran (5).
-const MOCK_DONE_KEY = "coding_mock_completed";
+const MOCK_DONE_BASE_KEY = "coding_mock_completed";
+const mockDoneKey = () => scopedStorageKey(MOCK_DONE_BASE_KEY);
 
 function readMockCompleted() {
   try {
-    const raw = Number(localStorage.getItem(MOCK_DONE_KEY));
+    const raw = Number(localStorage.getItem(mockDoneKey()));
     return Number.isFinite(raw) && raw > 0 ? raw : 0;
   } catch (error) {
     console.warn("[coding-mock] read failed", error);
@@ -556,7 +559,7 @@ function readMockCompleted() {
 function recordMockCompleted() {
   const next = readMockCompleted() + 1;
   try {
-    localStorage.setItem(MOCK_DONE_KEY, String(next));
+    localStorage.setItem(mockDoneKey(), String(next));
   } catch (error) {
     console.warn("[coding-mock] write failed", error);
   }
@@ -566,11 +569,12 @@ function recordMockCompleted() {
 // ── Best streak ever (so Steady Streak is a trophy you don't un-earn) ─────────
 // The current streak resets to 0 when a day is missed; this remembers the highest
 // streak reached so the "3-day streak" badge stays earned forever.
-const BEST_STREAK_KEY = "coding_best_streak";
+const BEST_STREAK_BASE_KEY = "coding_best_streak";
+const bestStreakKey = () => scopedStorageKey(BEST_STREAK_BASE_KEY);
 
 function readBestStreak() {
   try {
-    const raw = Number(localStorage.getItem(BEST_STREAK_KEY));
+    const raw = Number(localStorage.getItem(bestStreakKey()));
     return Number.isFinite(raw) && raw > 0 ? raw : 0;
   } catch (error) {
     console.warn("[coding-streak] best read failed", error);
@@ -582,7 +586,7 @@ function readBestStreak() {
 function recordBestStreak(currentStreak = 0) {
   const best = Math.max(readBestStreak(), Number(currentStreak) || 0);
   try {
-    localStorage.setItem(BEST_STREAK_KEY, String(best));
+    localStorage.setItem(bestStreakKey(), String(best));
   } catch (error) {
     console.warn("[coding-streak] best write failed", error);
   }
@@ -785,6 +789,7 @@ export default function CodingTutor({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const storageScope = currentUserStorageScope();
   // Dark mode is scoped to the Coding Tutor only (the rest of the app stays
   // light). We drive it with `body.coding-dark` instead of the global
   // `body.dark`, so it survives main removing the app-wide dark toggle. Persist
@@ -1197,6 +1202,20 @@ export default function CodingTutor({
   const [mastery, setMastery] = useState(null);
   const [masteryTick, setMasteryTick] = useState(0);
   const [adaptivePractice, setAdaptivePractice] = useState(null);
+  const codingSyncReadyRef = useRef(false);
+
+  useEffect(() => {
+    codingSyncReadyRef.current = false;
+    setDailyStreakDays(readDailyStreakDays());
+    setMockCompleted(readMockCompleted());
+    setBestStreak(readBestStreak());
+    setLastPracticeRoutes(readStoredPracticeRoutes());
+    setProgressByQuestion({});
+    setProgressByLanguage({});
+    setMastery(null);
+    setAdaptivePractice(null);
+  }, [storageScope]);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return undefined;
@@ -1215,7 +1234,7 @@ export default function CodingTutor({
       }
     })();
     return () => { cancelled = true; };
-  }, [apiBase, masteryTick]);
+  }, [apiBase, masteryTick, storageScope]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -1236,9 +1255,8 @@ export default function CodingTutor({
       }
     })();
     return () => { cancelled = true; };
-  }, [apiBase, masteryTick, practiceLanguage]);
+  }, [apiBase, masteryTick, practiceLanguage, storageScope]);
 
-  const codingSyncReadyRef = useRef(false);
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return undefined;
@@ -1252,31 +1270,19 @@ export default function CodingTutor({
         const server = await res.json();
         if (cancelled) return;
         // Merge server → local (max for counters, union for days).
-        const localDays = readDailyStreakDays();
-        const mergedDays = [...new Set([...localDays, ...(server.daily_days || [])])].sort();
-        const mergedMock = Math.max(readMockCompleted(), server.mock_completed || 0);
-        const mergedBest = Math.max(readBestStreak(), server.best_streak || 0);
+        const serverDays = Array.isArray(server.daily_days) ? server.daily_days : [];
+        const mergedDays = [...new Set(serverDays)].sort().slice(-370);
+        const mergedMock = Math.max(0, Number(server.mock_completed) || 0);
+        const mergedBest = Math.max(0, Number(server.best_streak) || 0);
         // Write merged values back to the localStorage cache + state.
         try {
-          localStorage.setItem(MOCK_DONE_KEY, String(mergedMock));
-          localStorage.setItem(BEST_STREAK_KEY, String(mergedBest));
-          localStorage.setItem(DAILY_STREAK_KEY, JSON.stringify(mergedDays.slice(-370)));
+          localStorage.setItem(mockDoneKey(), String(mergedMock));
+          localStorage.setItem(bestStreakKey(), String(mergedBest));
+          localStorage.setItem(dailyStreakKey(), JSON.stringify(mergedDays.slice(-370)));
         } catch { /* cache write best-effort */ }
         setMockCompleted(mergedMock);
         setBestStreak(mergedBest);
-        setDailyStreakDays(mergedDays.slice(-370));
-        // If local had more than the server (existing single-device user), push up.
-        const serverBehind =
-          mergedMock > (server.mock_completed || 0) ||
-          mergedBest > (server.best_streak || 0) ||
-          mergedDays.length > (server.daily_days || []).length;
-        if (serverBehind) {
-          fetch(`${apiBase}/api/coding/user-progress`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ mock_completed: mergedMock, best_streak: mergedBest, daily_days: mergedDays }),
-          }).catch(() => {});
-        }
+        setDailyStreakDays(mergedDays);
       } catch {
         // Offline / backend down → keep using localStorage. No UI error.
       } finally {
@@ -1284,7 +1290,7 @@ export default function CodingTutor({
       }
     })();
     return () => { cancelled = true; };
-  }, [apiBase]);
+  }, [apiBase, storageScope]);
 
   // Debounced PUT when any aggregate signal changes (after the initial sync).
   useEffect(() => {
@@ -1303,7 +1309,7 @@ export default function CodingTutor({
       }).catch(() => {});
     }, 800);
     return () => clearTimeout(handle);
-  }, [apiBase, mockCompleted, bestStreak, displayStreak, dailyStreakDays]);
+  }, [apiBase, mockCompleted, bestStreak, displayStreak, dailyStreakDays, storageScope]);
 
   const progressSummary = {
     solvedCount, attemptedCount, totalAttempts, completionPercent, displayStreak,
@@ -1599,7 +1605,7 @@ export default function CodingTutor({
         if (previous.current === route && previous[target.mode] === route) return previous;
         const next = { ...previous, current: route, [target.mode]: route };
         try {
-          localStorage.setItem(LAST_PRACTICE_ROUTES_KEY, JSON.stringify(next));
+          localStorage.setItem(scopedStorageKey(LAST_PRACTICE_ROUTES_BASE_KEY), JSON.stringify(next));
         } catch {
           /* localStorage can be blocked; route memory still works for this session */
         }
@@ -1821,7 +1827,7 @@ export default function CodingTutor({
     };
     fetchPractice();
     return () => { cancelled = true; };
-  }, [apiBase, difficulty]);
+  }, [apiBase, difficulty, storageScope]);
 
   const mergeInterviewProgressItems = (items = []) => {
     if (!Array.isArray(items) || !items.length) return;
@@ -3394,6 +3400,95 @@ export default function CodingTutor({
     goToPage("workspace");
   };
 
+  const openStartingCheckPath = (profile) => {
+    const language = profile?.language || "python";
+    if (profile?.action === "syntax-quiz") {
+      navigate(`${quizPathForLanguage(language)}#syntax`);
+      return;
+    }
+    if (profile?.action === "learn") {
+      navigate(learnPathForTrack("python", "beginner"));
+      return;
+    }
+    if (profile?.action === "variables-quiz") {
+      navigate(`${quizPathForLanguage(language)}#variables`);
+      return;
+    }
+    if (profile?.action === "control-flow-quiz") {
+      navigate(`${quizPathForLanguage(language)}#conditionals`);
+      return;
+    }
+    if (profile?.action === "functions-quiz") {
+      navigate(`${quizPathForLanguage(language)}#functions`);
+      return;
+    }
+    if (profile?.action === "debugging-quiz") {
+      navigate(`${quizPathForLanguage(language)}#debug`);
+      return;
+    }
+    if (profile?.action === "data-structures-quiz") {
+      navigate(`${quizPathForLanguage(language)}#lists`);
+      return;
+    }
+    if (profile?.action === "data-structures") {
+      const params = new URLSearchParams({
+        difficulty: "easy",
+        topic: "arrays,hash maps,sets,stacks,queues",
+        page: "1",
+        sort: "topic",
+      });
+      navigate(`${PRACTICE_CODE_PATH}?${params.toString()}`);
+      return;
+    }
+    if (profile?.action === "ready-skip") {
+      const params = new URLSearchParams({
+        difficulty: "easy,medium",
+        topic: "arrays,strings,conditionals,loops,hash maps,sets",
+        page: "1",
+        sort: "topic",
+      });
+      navigate(`${PRACTICE_CODE_PATH}?${params.toString()}`);
+      return;
+    }
+    if (profile?.action === "code-ready") {
+      const params = new URLSearchParams({
+        difficulty: "easy,medium",
+        topic: "arrays,strings,conditionals,loops,hash maps,sets",
+        page: "1",
+        sort: "topic",
+      });
+      navigate(`${PRACTICE_CODE_PATH}?${params.toString()}`);
+      return;
+    }
+    if (profile?.action === "advanced-ready") {
+      const params = new URLSearchParams({
+        difficulty: "medium",
+        topic: "arrays,strings,hash maps,recursion,queues,binary search,sliding window",
+        page: "1",
+        sort: "topic",
+      });
+      navigate(`${PRACTICE_CODE_PATH}?${params.toString()}`);
+      return;
+    }
+    if (profile?.action === "starter-practice") {
+      const params = new URLSearchParams({
+        difficulty: "easy",
+        topic: "conditionals,arrays,strings",
+        page: "1",
+        sort: "topic",
+      });
+      navigate(`${PRACTICE_CODE_PATH}?${params.toString()}`);
+      return;
+    }
+    const params = new URLSearchParams({
+      difficulty: "easy",
+      topic: "conditionals,arrays,strings,math,tuples,sets,hash maps",
+      page: "1",
+      sort: "topic",
+    });
+    navigate(`${PRACTICE_CODE_PATH}?${params.toString()}`);
+  };
+
   const renderDashboard = () => (
       <CampusLabHome
       progressSummary={progressSummary}
@@ -3409,6 +3504,17 @@ export default function CodingTutor({
       onStartDaily={() => startDailyChallenge(false)}
       onOpenDailyScratch={() => startDailyChallenge(true)}
       onOpenSnippets={openMySnippets}
+      onOpenLearnStart={() => navigate(learnPathForTrack("python", "beginner"))}
+      onOpenBeginnerWarmup={() => {
+        const params = new URLSearchParams({
+          difficulty: "easy",
+          topic: "conditionals,arrays,strings,math,tuples,sets,hash maps",
+          page: "1",
+          sort: "topic",
+        });
+        navigate(`${PRACTICE_CODE_PATH}?${params.toString()}`);
+      }}
+      onOpenStartingPath={openStartingCheckPath}
       onSelectQuestion={selectQuestion}
       onOpenQuizBank={openPracticeLibrary}
       onOpenTopic={openRecommendedTopic}
@@ -3646,13 +3752,17 @@ export default function CodingTutor({
 
   const renderInterviewHistory = () => (
     <section className="coding-page-panel interview-prep-page">
-      <div className="interview-prep-hero">
-        <span className="coding-kicker">Interview Prep</span>
-        <h2>Past Interviews</h2>
-        <p>Review the mock interviews you've completed — the questions you got, your saved code, and how you scored.</p>
-        <button type="button" className="iv-history-back" onClick={() => goToPage("interview")}>
-          ← Back to Interview Prep
-        </button>
+      <div className="interview-prep-hero iv-history-hero">
+        <div className="interview-prep-hero-copy">
+          <span className="coding-kicker">Interview Prep</span>
+          <h2>Past Interviews</h2>
+          <p>Review completed mock interviews, scores, solved status, and saved code attempts.</p>
+        </div>
+        <div className="interview-prep-hero-aside">
+          <button type="button" className="iv-history-back" onClick={() => goToPage("interview")}>
+            ← Back to Interview Prep
+          </button>
+        </div>
       </div>
       <PastInterviews showEmpty />
     </section>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getApiBase } from "../../lib/apiBase";
+import { currentUserStorageScope, scopedStorageKey } from "./storageScope";
 
 // Interview-prep problems are reference problems (has_tests=false), so there is no
 // autograder to record "solved". Progress here is a lightweight, student-driven
@@ -7,13 +8,14 @@ import { getApiBase } from "../../lib/apiBase";
 // single source of truth for the progress strip, topic progress, and "strongest
 // topic" callouts on the Interview Prep page.
 
-const REVIEWED_KEY = "csnav.interviewReviewed";
+const REVIEWED_BASE_KEY = "csnav.interviewReviewed";
+const reviewedKey = () => scopedStorageKey(REVIEWED_BASE_KEY);
 const API_BASE = getApiBase();
 const CHANGE_EVENT = "interview-reviewed-change";
 
 function readReviewedSet() {
   try {
-    const raw = localStorage.getItem(REVIEWED_KEY);
+    const raw = localStorage.getItem(reviewedKey());
     if (!raw) return new Set();
     const parsed = JSON.parse(raw);
     return new Set(Array.isArray(parsed) ? parsed : []);
@@ -24,7 +26,7 @@ function readReviewedSet() {
 
 function writeReviewedSet(set) {
   try {
-    localStorage.setItem(REVIEWED_KEY, JSON.stringify([...set]));
+    localStorage.setItem(reviewedKey(), JSON.stringify([...set]));
   } catch {
     // Storage full / blocked (private mode): progress just won't persist. Non-fatal.
   }
@@ -87,10 +89,12 @@ export async function saveInterviewProgress(questionId, updates = {}) {
 // event keeps multiple mounts (e.g. the page and a future mini-widget) in sync,
 // since the native "storage" event only fires across tabs, not within one.
 export function useInterviewReviewed() {
+  const storageScope = currentUserStorageScope();
   const [reviewed, setReviewed] = useState(readReviewedSet);
 
   useEffect(() => {
     const sync = () => setReviewed(readReviewedSet());
+    sync();
     fetchInterviewProgress();
     window.addEventListener(CHANGE_EVENT, sync);
     window.addEventListener("storage", sync);
@@ -98,7 +102,7 @@ export function useInterviewReviewed() {
       window.removeEventListener(CHANGE_EVENT, sync);
       window.removeEventListener("storage", sync);
     };
-  }, []);
+  }, [storageScope]);
 
   const setReviewedFor = useCallback((questionId, isReviewed) => {
     if (!questionId) return;
@@ -136,11 +140,12 @@ export function markInterviewReviewed(questionId, updates = {}) {
 // Separate from "reviewed": solved means the student actually got the problem right —
 // either they hit Mark Solved during a mock, or their code passed the auto-grader.
 // Backs the "solved" count on the Interview Prep topic cards. localStorage-only.
-const SOLVED_KEY = "csnav.interviewSolved";
+const SOLVED_BASE_KEY = "csnav.interviewSolved";
+const solvedKey = () => scopedStorageKey(SOLVED_BASE_KEY);
 
 function readSolvedSet() {
   try {
-    const raw = localStorage.getItem(SOLVED_KEY);
+    const raw = localStorage.getItem(solvedKey());
     if (!raw) return new Set();
     const parsed = JSON.parse(raw);
     return new Set(Array.isArray(parsed) ? parsed : []);
@@ -151,7 +156,7 @@ function readSolvedSet() {
 
 function writeSolvedSet(set) {
   try {
-    localStorage.setItem(SOLVED_KEY, JSON.stringify([...set]));
+    localStorage.setItem(solvedKey(), JSON.stringify([...set]));
   } catch {
     // Storage full / blocked: solved state just won't persist. Non-fatal.
   }
@@ -183,9 +188,11 @@ export function clearInterviewSolved(questionId) {
 
 // React hook: the set of solved interview problem ids, kept in sync across mounts.
 export function useInterviewSolved() {
+  const storageScope = currentUserStorageScope();
   const [solved, setSolved] = useState(readSolvedSet);
   useEffect(() => {
     const sync = () => setSolved(readSolvedSet());
+    sync();
     fetchInterviewProgress();
     window.addEventListener(CHANGE_EVENT, sync);
     window.addEventListener("storage", sync);
@@ -193,6 +200,6 @@ export function useInterviewSolved() {
       window.removeEventListener(CHANGE_EVENT, sync);
       window.removeEventListener("storage", sync);
     };
-  }, []);
+  }, [storageScope]);
   return solved;
 }

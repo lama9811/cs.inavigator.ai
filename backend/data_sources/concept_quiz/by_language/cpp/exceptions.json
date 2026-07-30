@@ -80,14 +80,14 @@
       "language": "cpp",
       "title": "Exceptions concept check 1",
       "code": null,
-      "prompt": "What does the lesson mean by \"Exceptions are not ordinary branch logic\"?",
+      "prompt": "When should C++ code use an exception instead of a regular branch?",
       "choices": [
-        "By raw pointer",
         "Use an if statement for expected choices such as an empty search result. Reserve exceptions for a function that cannot complete its promised operation, especially when several callers need the failure information.",
-        "By mutable global value",
-        "Only with catch-all"
+        "Catch every exception and continue without evidence.",
+        "Use exceptions for ordinary choices an if statement can handle.",
+        "Replace the original error with a vague one and drop the cause."
       ],
-      "answer_index": 1,
+      "answer_index": 0,
       "explanation": "Throw an exception when a function cannot fulfill its contract and the caller may recover at a higher level. Catch exceptions by const reference, handle only cases you understand, and preserve useful error details. That reasoning supports the answer: Use an if statement for expected choices such as an empty search result. Reserve exceptions for a function that cannot complete its promised operation, especially when several callers need the failure information."
     },
     {
@@ -100,12 +100,12 @@
       "code": null,
       "prompt": "Which choice describes a reliable Exceptions practice?",
       "choices": [
-        "They are always leaked",
-        "They become global",
+        "Wrap a whole program in one broad protected block.",
         "Throw a descriptive exception type.",
-        "Their constructors run again"
+        "Catch errors at a layer that cannot recover.",
+        "Hide unexpected programming mistakes."
       ],
-      "answer_index": 2,
+      "answer_index": 1,
       "explanation": "Throw an exception when a function cannot fulfill its contract and the caller may recover at a higher level. Catch exceptions by const reference, handle only cases you understand, and preserve useful error details. That reasoning supports the answer: Throw a descriptive exception type."
     },
     {
@@ -118,12 +118,12 @@
       "code": null,
       "prompt": "Which recommendation belongs in a review of Exceptions code?",
       "choices": [
-        "try { work(); }\ncatch (...) { }",
-        "Only with catch-all",
-        "They are always leaked",
-        "Catch only where recovery or context is possible."
+        "Raise an exception after the function already returned successfully.",
+        "Use an exception to skip normal loop logic.",
+        "Catch only where recovery or context is possible.",
+        "Report failure without enough context to debug it."
       ],
-      "answer_index": 3,
+      "answer_index": 2,
       "explanation": "Throw an exception when a function cannot fulfill its contract and the caller may recover at a higher level. Catch exceptions by const reference, handle only cases you understand, and preserve useful error details. That reasoning supports the answer: Catch only where recovery or context is possible."
     },
     {
@@ -136,12 +136,12 @@
       "code": null,
       "prompt": "Which guideline helps prevent a common Exceptions mistake?",
       "choices": [
-        "Catch standard exceptions by const reference.",
-        "They become global",
-        "Their constructors run again",
-        "try { work(); }\ncatch (...) { }"
+        "Ignore cleanup around code that can fail.",
+        "Catch a base exception type when a specific one is known.",
+        "Turn every invalid input into the same generic message.",
+        "Catch standard exceptions by const reference."
       ],
-      "answer_index": 0,
+      "answer_index": 3,
       "explanation": "Throw an exception when a function cannot fulfill its contract and the caller may recover at a higher level. Catch exceptions by const reference, handle only cases you understand, and preserve useful error details. That reasoning supports the answer: Catch standard exceptions by const reference."
     },
     {
@@ -154,12 +154,12 @@
       "code": null,
       "prompt": "A classmate is checking their understanding of Exceptions. Which advice is correct?",
       "choices": [
-        "By raw pointer",
         "Do not silence unknown failures.",
-        "By mutable global value",
-        "They become global"
+        "Keep running after required work did not happen.",
+        "Handle errors by returning unrelated default data.",
+        "Assume the absence of a crash proves the operation succeeded."
       ],
-      "answer_index": 1,
+      "answer_index": 0,
       "explanation": "Throw an exception when a function cannot fulfill its contract and the caller may recover at a higher level. Catch exceptions by const reference, handle only cases you understand, and preserve useful error details. That reasoning supports the answer: Do not silence unknown failures."
     },
     {
@@ -172,12 +172,12 @@
       "code": null,
       "prompt": "What is the main idea behind Exceptions?",
       "choices": [
-        "Their constructors run again",
-        "try { work(); }\ncatch (...) { }",
+        "Use try/catch around code that cannot throw.",
         "Report failures across function calls without losing cleanup.",
-        "By raw pointer"
+        "Make callers guess whether a failure happened.",
+        "Discard stack-trace information during wrapping."
       ],
-      "answer_index": 2,
+      "answer_index": 1,
       "explanation": "Throw an exception when a function cannot fulfill its contract and the caller may recover at a higher level. Catch exceptions by const reference, handle only cases you understand, and preserve useful error details. That reasoning supports the answer: Report failures across function calls without losing cleanup."
     }
   ]

@@ -80,14 +80,14 @@
       "language": "python",
       "title": "Sets concept check 1",
       "code": null,
-      "prompt": "What does the lesson mean by \"Curly braces have one empty exception\"?",
+      "prompt": "Which empty collection does `{}` create in Python?",
       "choices": [
-        "{1, 2, 3, 4}",
         "`{\"Python\"}` is a set, but `{}` is an empty dictionary. Write `set()` when you need an empty set, then add values to it.",
-        "{1, 4}",
-        "[2, 3]"
+        "Use `{}` when an empty set is needed.",
+        "Expect a set to keep duplicate values.",
+        "Depend on item positions in a set."
       ],
-      "answer_index": 1,
+      "answer_index": 0,
       "explanation": "A set is an unordered collection of unique values. Add with `add`, remove safely with `discard`, and use union, intersection, or difference to compare groups. That reasoning supports the answer: `{\"Python\"}` is a set, but `{}` is an empty dictionary. Write `set()` when you need an empty set, then add values to it."
     },
     {
@@ -100,12 +100,12 @@
       "code": null,
       "prompt": "Which choice describes a reliable Sets practice?",
       "choices": [
-        "ada | ben",
-        "ada & ben",
+        "Use a list for repeated membership checks when uniqueness matters.",
         "Use a set when duplicates have no meaning.",
-        "ben - ada"
+        "Assume set intersection keeps every item from both collections.",
+        "Use a set when counts of repeated values are required."
       ],
-      "answer_index": 2,
+      "answer_index": 1,
       "explanation": "A set is an unordered collection of unique values. Add with `add`, remove safely with `discard`, and use union, intersection, or difference to compare groups. That reasoning supports the answer: Use a set when duplicates have no meaning."
     },
     {
@@ -118,12 +118,12 @@
       "code": null,
       "prompt": "Which recommendation belongs in a review of Sets code?",
       "choices": [
-        "clubs = {\"Robotics\"}\nclubs.remove(\"Chess\")",
-        "[2, 3]",
-        "ada | ben",
-        "Do not depend on item positions."
+        "Treat union as if it means only shared items.",
+        "Expect set output order to match input order.",
+        "Do not depend on item positions.",
+        "Add a list directly to a set."
       ],
-      "answer_index": 3,
+      "answer_index": 2,
       "explanation": "A set is an unordered collection of unique values. Add with `add`, remove safely with `discard`, and use union, intersection, or difference to compare groups. That reasoning supports the answer: Do not depend on item positions."
     },
     {
@@ -136,12 +136,12 @@
       "code": null,
       "prompt": "Which guideline helps prevent a common Sets mistake?",
       "choices": [
-        "Prefer `discard` when a missing value is acceptable.",
-        "ada & ben",
-        "ben - ada",
-        "clubs = {\"Robotics\"}\nclubs.remove(\"Chess\")"
+        "Use a set when each item needs an attached score.",
+        "Remove an item without handling the case where it is absent.",
+        "Use difference when the question asks for shared values.",
+        "Prefer `discard` when a missing value is acceptable."
       ],
-      "answer_index": 0,
+      "answer_index": 3,
       "explanation": "A set is an unordered collection of unique values. Add with `add`, remove safely with `discard`, and use union, intersection, or difference to compare groups. That reasoning supports the answer: Prefer `discard` when a missing value is acceptable."
     },
     {
@@ -154,12 +154,12 @@
       "code": null,
       "prompt": "A classmate is checking their understanding of Sets. Which advice is correct?",
       "choices": [
-        "{1, 2, 3, 4}",
         "Use `&`, `|`, and `-` to compare groups.",
-        "{1, 4}",
-        "ada & ben"
+        "Convert to a set before preserving duplicates.",
+        "Check membership by scanning every item manually.",
+        "Assume two sets with the same items are different if printed differently."
       ],
-      "answer_index": 1,
+      "answer_index": 0,
       "explanation": "A set is an unordered collection of unique values. Add with `add`, remove safely with `discard`, and use union, intersection, or difference to compare groups. That reasoning supports the answer: Use `&`, `|`, and `-` to compare groups."
     },
     {
@@ -172,12 +172,12 @@
       "code": null,
       "prompt": "Which choice shows sound reasoning about Sets?",
       "choices": [
-        "ben - ada",
-        "clubs = {\"Robotics\"}\nclubs.remove(\"Chess\")",
+        "Use a set to store unhashable mutable values.",
         "Create an empty set with `set()`.",
-        "{1, 2, 3, 4}"
+        "Forget that membership tests are the main strength.",
+        "Sort a set in place."
       ],
-      "answer_index": 2,
+      "answer_index": 1,
       "explanation": "A set is an unordered collection of unique values. Add with `add`, remove safely with `discard`, and use union, intersection, or difference to compare groups. That reasoning supports the answer: Create an empty set with `set()`."
     }
   ]

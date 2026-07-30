@@ -1,71 +1,72 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { fetchPlacementQuiz, gradePlacementQuiz } from "./conceptQuizApi";
+import {
+  buildPlacementQuestionSet,
+  buildPlacementRecommendation,
+} from "../startingPath";
 
-export default function PlacementCheck({ apiBase, language, onClose, onUseRecommendation }) {
-  const dialogRef = useRef(null);
-  const [questions, setQuestions] = useState([]);
+export default function PlacementCheck({ onClose, onUseRecommendation }) {
+  const advanceTimerRef = useRef(null);
+  const [questions] = useState(() => buildPlacementQuestionSet());
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    let alive = true;
-    setLoading(true);
-    fetchPlacementQuiz(apiBase, language)
-      .then((data) => {
-        if (alive) setQuestions(data.questions || []);
-      })
-      .catch((err) => {
-        if (alive) setError(err.message || "Could not load the placement check.");
-      })
-      .finally(() => {
-        if (alive) setLoading(false);
-      });
-    return () => {
-      alive = false;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose?.();
     };
-  }, [apiBase, language]);
-
-  // Native <dialog> gives us focus-move-on-open, a focus trap, Escape-to-close,
-  // and focus restore on close for free. showModal() records the previously
-  // focused element and returns focus there when the dialog closes.
-  useEffect(() => {
-    const node = dialogRef.current;
-    if (!node) return undefined;
-    if (!node.open) node.showModal();
-    const handleCancel = (event) => {
-      event.preventDefault(); // don't let Escape close without running onClose
-      onClose?.();
-    };
-    node.addEventListener("cancel", handleCancel);
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      node.removeEventListener("cancel", handleCancel);
-      if (node.open) node.close();
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [onClose]);
 
+  useEffect(() => {
+    return () => {
+      if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current);
+    };
+  }, []);
+
   const answeredCount = useMemo(
-    () => questions.filter((question) => answers[question.id]?.choice_index != null).length,
+    () => questions.filter((question) => answers[question.id]?.display_index != null).length,
     [questions, answers]
   );
   const question = questions[index];
 
+  const selectChoice = (choice, choiceIndex) => {
+    if (!question || result) return;
+    if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current);
+    setAnswers((current) => ({
+      ...current,
+      [question.id]: {
+        choice_index: choice.originalIndex ?? choiceIndex,
+        display_index: choiceIndex,
+        unsure: Boolean(choice.unsure),
+      },
+    }));
+    if (index < questions.length - 1) {
+      advanceTimerRef.current = window.setTimeout(() => {
+        setIndex((value) => Math.min(value + 1, questions.length - 1));
+      }, 280);
+    }
+  };
+
   const submit = async () => {
     if (answeredCount !== questions.length) {
-      setError("Answer all five questions before checking your starting point.");
+      setError("Answer each question before checking your starting point.");
       return;
     }
     setSubmitting(true);
     setError("");
     try {
-      const payload = questions.map((item) => ({
-        question_id: item.id,
-        ...answers[item.id],
-      }));
-      setResult(await gradePlacementQuiz(apiBase, language, payload));
+      setResult({
+        recommendation: buildPlacementRecommendation({
+          questions,
+          answers,
+        }),
+      });
     } catch (err) {
       setError(err.message || "Could not grade the placement check.");
     } finally {
@@ -74,27 +75,28 @@ export default function PlacementCheck({ apiBase, language, onClose, onUseRecomm
   };
 
   return (
-    <dialog
-      ref={dialogRef}
+    <div className="cq-placement-backdrop" role="presentation">
+    <section
       className="cq-placement-dialog"
+      role="dialog"
+      aria-modal="true"
       aria-labelledby="cq-placement-title"
-      onClose={onClose}
     >
       <div className="cq-placement-dialog-inner">
         <header className="cq-placement-header">
           <div>
-            <span className="cq-hero-eyebrow">Five quick questions</span>
+            <span className="cq-hero-eyebrow">Quick starting check</span>
             <h3 id="cq-placement-title">Find your starting point</h3>
+            <p>Pick what feels closest. If you are unsure, that is useful too.</p>
           </div>
           <button type="button" className="cq-placement-close" onClick={onClose} aria-label="Close placement check">
             X
           </button>
         </header>
 
-        {loading ? <p className="cq-loading">Loading placement check...</p> : null}
         {error ? <p className="cq-error">{error}</p> : null}
 
-        {!loading && !result && question ? (
+        {!result && question ? (
           <>
             <div className="cq-placement-progress">
               <span>Question {index + 1} of {questions.length}</span>
@@ -114,21 +116,20 @@ export default function PlacementCheck({ apiBase, language, onClose, onUseRecomm
               {question.code ? <pre className="cq-code"><code>{question.code}</code></pre> : null}
               <div className="cq-choices" role="radiogroup">
                 {(question.choices || []).map((choice, choiceIndex) => {
-                  const selected = answers[question.id]?.choice_index === choiceIndex;
+                  const selected = answers[question.id]?.display_index === choiceIndex;
                   return (
                     <button
                       type="button"
                       role="radio"
                       aria-checked={selected}
                       className={`cq-choice ${selected ? "selected" : ""}`}
-                      key={`${question.id}-${choiceIndex}`}
-                      onClick={() => setAnswers((current) => ({
-                        ...current,
-                        [question.id]: { choice_index: choiceIndex },
-                      }))}
+                      key={`${question.id}-${choice.originalIndex}-${choiceIndex}`}
+                      onClick={() => selectChoice(choice, choiceIndex)}
                     >
                       <span className="cq-choice-marker">{String.fromCharCode(65 + choiceIndex)}</span>
-                      <span className="cq-choice-text">{choice}</span>
+                      <span className="cq-choice-text">
+                        {choice.code ? <code>{choice.code}</code> : choice.label}
+                      </span>
                     </button>
                   );
                 })}
@@ -142,7 +143,7 @@ export default function PlacementCheck({ apiBase, language, onClose, onUseRecomm
                 <button
                   type="button"
                   className="cq-btn cq-btn-primary"
-                  disabled={answers[question.id]?.choice_index == null}
+                  disabled={answers[question.id]?.display_index == null}
                   onClick={() => setIndex((value) => value + 1)}
                 >
                   Next
@@ -158,9 +159,9 @@ export default function PlacementCheck({ apiBase, language, onClose, onUseRecomm
 
         {result ? (
           <div className="cq-placement-result">
-            <span className="cq-placement-score">{result.correct}/{result.total}</span>
-            <h4>Start with the {result.recommendation.track} track</h4>
-            <p>{result.recommendation.reason}</p>
+            <span className="cq-placement-score">Ready</span>
+            <h4>{result.recommendation.title || "Try this next"}</h4>
+            <p>{result.recommendation.reason || result.recommendation.blurb}</p>
             <div className="cq-placement-actions">
               <button type="button" className="cq-btn cq-btn-ghost" onClick={onClose}>Close</button>
               <button
@@ -168,12 +169,13 @@ export default function PlacementCheck({ apiBase, language, onClose, onUseRecomm
                 className="cq-btn cq-btn-primary"
                 onClick={() => onUseRecommendation(result.recommendation)}
               >
-                Start recommended topic
+                {result.recommendation.actionLabel || "Start here"}
               </button>
             </div>
           </div>
         ) : null}
       </div>
-    </dialog>
+    </section>
+    </div>
   );
 }

@@ -151,19 +151,25 @@
   color: var(--ct-info, #2563eb);
 }
 
+.workspace-visualizer-sketch-toggle {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 0.75rem;
+  margin-left: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--ct-primary, #082343) 20%, var(--ct-border, #d7e1ef));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-soft, #eef6ff) 52%, var(--ct-panel, #fff));
+  color: var(--ct-primary, #082343);
+  padding: 0.55rem 0.8rem;
+  font-weight: 850;
+}
+
 .workspace-visualizer-error {
   margin-bottom: 1rem;
   border: 1px solid color-mix(in srgb, #ef4444 42%, var(--ct-border, #d7e1ef));
   background: color-mix(in srgb, #ef4444 10%, var(--ct-panel, #fff));
   color: #991b1b;
   font-weight: 800;
-}
-
-.workspace-visualizer-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(210px, 0.55fr);
-  gap: 1rem;
-  align-items: stretch;
 }
 
 .workspace-visualizer-code,
@@ -176,8 +182,9 @@
 }
 
 .workspace-visualizer-code {
-  order: 2;
+  margin-top: 0.85rem;
   padding: 1rem;
+  box-shadow: none;
 }
 
 .workspace-visualizer-code span {
@@ -191,7 +198,7 @@
 }
 
 .workspace-visualizer-code pre {
-  min-height: 120px;
+  max-height: 220px;
   margin: 0;
   border-radius: 16px;
   background: #101827;
@@ -203,10 +210,15 @@
   font-size: 0.95rem;
 }
 
+.workspace-visualizer-stage {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
 .workspace-visual-diagram {
-  order: 1;
-  min-height: 310px;
-  padding: 1.2rem;
+  min-height: clamp(360px, 48vh, 560px);
+  padding: clamp(1rem, 2.4vw, 2rem);
   display: grid;
   place-items: center;
   position: relative;
@@ -216,6 +228,15 @@
     linear-gradient(180deg, color-mix(in srgb, var(--ct-border, #d7e1ef) 28%, transparent) 1px, transparent 1px),
     color-mix(in srgb, var(--ct-panel, #fff) 94%, var(--ct-soft, #eef6ff));
   background-size: 46px 46px;
+}
+
+.workspace-visual-diagram::before {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border: 1px dashed color-mix(in srgb, var(--ct-info, #2563eb) 18%, transparent);
+  border-radius: 18px;
+  pointer-events: none;
 }
 
 .workspace-visual-track {
@@ -290,7 +311,7 @@
   padding: 0.45rem;
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
   position: relative;
-  transition: transform 220ms ease, border-color 220ms ease, background-color 220ms ease, box-shadow 220ms ease, opacity 220ms ease;
+  transition: transform 360ms cubic-bezier(0.2, 0.8, 0.2, 1), border-color 220ms ease, background-color 220ms ease, box-shadow 220ms ease, opacity 220ms ease;
 }
 
 .workspace-visual-token::after {
@@ -419,6 +440,38 @@
   right: 1rem;
   bottom: 0.7rem;
   margin: 0;
+}
+
+.workspace-visual-state-tray {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 0.55rem;
+}
+
+.workspace-visual-state-tray div {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--ct-info, #2563eb) 26%, var(--ct-border, #d7e1ef));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ct-info, #2563eb) 7%, var(--ct-panel, #fff));
+  padding: 0.62rem 0.72rem;
+}
+
+.workspace-visual-state-tray span {
+  display: block;
+  color: var(--ct-muted, #5d6b82);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.workspace-visual-state-tray strong {
+  display: block;
+  margin-top: 0.22rem;
+  color: var(--ct-primary, #082343);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
 }
 
 .workspace-visual-labels {
@@ -553,7 +606,7 @@
   stroke: var(--ct-accent, #f97316);
   stroke-width: 6;
   stroke-dasharray: 12 8;
-  animation: workspaceVisualDash 800ms linear infinite;
+  animation: workspaceVisualDash 800ms linear 1;
 }
 
 .workspace-visual-svg circle {
@@ -574,20 +627,29 @@
   gap: 0.45rem;
   align-items: center;
   justify-content: center;
-  margin: 1rem 0;
+  margin: 0;
 }
 
 .workspace-visualizer-progress button {
-  width: 34px;
-  height: 8px;
-  border: 0;
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 1px solid color-mix(in srgb, var(--ct-border, #d7e1ef) 76%, var(--ct-primary, #082343));
   border-radius: 999px;
-  background: color-mix(in srgb, var(--ct-border, #d7e1ef) 80%, var(--ct-panel, #fff));
+  background: var(--ct-panel, #fff);
+  color: var(--ct-muted, #5d6b82);
   padding: 0;
+  font-weight: 900;
 }
 
 .workspace-visualizer-progress button.is-active {
   background: var(--ct-accent, #f97316);
+  border-color: var(--ct-accent, #f97316);
+  color: #fff;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--ct-accent, #f97316) 18%, transparent);
+}
+
+.workspace-visualizer-progress button span {
+  font-size: 0.78rem;
 }
 
 .workspace-visualizer-step {
@@ -616,6 +678,17 @@
   margin: 0.35rem 0;
   color: var(--ct-muted, #5d6b82);
   line-height: 1.55;
+}
+
+.workspace-visualizer-nav {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  border: 1px solid color-mix(in srgb, var(--ct-border, #d7e1ef) 72%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--ct-panel, #fff) 90%, var(--ct-soft, #eef6ff));
+  padding: 0.8rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
 }
 
 .workspace-visualizer-controls {
@@ -668,7 +741,7 @@
 
 .workspace-visual-svg .is-active circle {
   fill: color-mix(in srgb, var(--ct-accent, #f97316) 10%, var(--ct-panel, #fff));
-  animation: workspaceNodePulse 800ms ease-in-out infinite alternate;
+  animation: workspaceNodePulse 520ms ease-out 1;
 }
 
 .workspace-tree-cursor circle {
@@ -676,12 +749,10 @@
   stroke: #fff;
   stroke-width: 3;
   filter: drop-shadow(0 8px 12px rgba(249, 115, 22, 0.28));
-  animation: workspaceTreeCursor 720ms ease-in-out infinite alternate;
 }
 
 .workspace-tree-cursor path {
   fill: var(--ct-accent, #f97316);
-  animation: workspaceTreeCursor 720ms ease-in-out infinite alternate;
 }
 
 .workspace-visual-diagram.is-queue .workspace-visual-track::before {
@@ -1227,17 +1298,11 @@ body.coding-dark .code-trace-empty-state.is-error strong {
 }
 
 @media (max-width: 900px) {
-  .workspace-visualizer-config,
-  .workspace-visualizer-grid {
+  .workspace-visualizer-config {
     grid-template-columns: 1fr;
   }
 
-  .workspace-visualizer-code {
-    order: 2;
-  }
-
   .workspace-visual-diagram {
-    order: 1;
     min-height: 280px;
   }
 }

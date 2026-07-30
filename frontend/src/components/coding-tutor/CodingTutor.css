@@ -2096,10 +2096,72 @@ body.coding-dark .recent-status.solved { color: #5bd178; }
   padding: 9px 12px;
 }
 
+.practice-starter-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, #16a34a 26%, var(--ct-border));
+  border-radius: 12px;
+  background: color-mix(in srgb, #16a34a 7%, var(--ct-panel));
+}
+
+.practice-starter-strip > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.practice-starter-strip strong {
+  color: var(--ct-text);
+  font-size: 0.9rem;
+}
+
+.practice-starter-strip span {
+  color: var(--ct-muted, #6b7280);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.practice-starter-strip button {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, #16a34a 44%, var(--ct-border));
+  border-radius: 10px;
+  background: var(--ct-panel);
+  color: #15803d;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.practice-starter-strip button.is-active {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #fff;
+}
+
 body.coding-dark .practice-filters-btn,
-body.coding-dark .practice-sort .coding-select {
+body.coding-dark .practice-sort .coding-select,
+body.coding-dark .practice-starter-strip button {
   background: color-mix(in srgb, #ffffff 5%, var(--ct-panel));
   border-color: color-mix(in srgb, #ffffff 16%, var(--ct-border));
+}
+
+body.coding-dark .practice-starter-strip {
+  background: color-mix(in srgb, #22c55e 8%, var(--ct-panel));
+}
+
+body.coding-dark .practice-starter-strip button {
+  color: #86efac;
+}
+
+body.coding-dark .practice-starter-strip button.is-active {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: #102015;
 }
 
 /* ── Filter drawer: slide-over panel over a dimmed page ────────────────────── */
@@ -2648,6 +2710,15 @@ body.coding-dark .practice-page-btn.is-active {
 }
 
 @media (max-width: 720px) {
+  .practice-starter-strip {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .practice-starter-strip button {
+    width: 100%;
+  }
+
   .practice-pagination {
     align-items: stretch;
     flex-direction: column;
@@ -6934,6 +7005,17 @@ body.coding-dark .campus-hero-focus {
   border-color: color-mix(in srgb, var(--ct-accent) 34%, var(--ct-border));
 }
 
+.campus-queue-item.warmup {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #16a34a 10%, transparent), transparent 58%),
+    color-mix(in srgb, var(--ct-panel) 78%, var(--ct-paper));
+  border-color: color-mix(in srgb, #16a34a 34%, var(--ct-border));
+}
+
+.campus-queue-item.warmup > span {
+  color: #15803d;
+}
+
 /* Recommended Focus = a quiet guidance card, distinct from the other two. */
 .campus-queue-item.focus {
   background:
@@ -6944,6 +7026,282 @@ body.coding-dark .campus-hero-focus {
 
 .campus-queue-item.focus > span {
   color: var(--ct-success);
+}
+
+.starting-check-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 24%, var(--ct-border));
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--ct-primary) 7%, var(--ct-panel)), var(--ct-panel)),
+    var(--ct-panel);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--ct-primary) 9%, transparent);
+}
+
+.starting-check-card.is-complete {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, #16a34a 8%, var(--ct-panel)), var(--ct-panel)),
+    var(--ct-panel);
+}
+
+.starting-check-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 32px);
+  background: rgba(15, 23, 42, 0.46);
+  backdrop-filter: blur(8px);
+}
+
+.starting-check-modal {
+  display: grid;
+  gap: 16px;
+  width: min(760px, 100%);
+  max-height: min(760px, calc(100vh - 32px));
+  overflow: auto;
+  padding: clamp(18px, 3vw, 26px);
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 24%, var(--ct-border));
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--ct-primary) 11%, transparent), transparent 42%),
+    var(--ct-panel);
+  box-shadow: 0 26px 80px rgba(15, 23, 42, 0.28);
+}
+
+.starting-check-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.starting-check-modal-head h3 {
+  margin: 5px 0 6px;
+  color: var(--ct-text);
+  font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+  line-height: 1.1;
+}
+
+.starting-check-modal-head p {
+  margin: 0;
+  max-width: 56ch;
+  color: var(--ct-muted);
+  line-height: 1.5;
+}
+
+.starting-check-progress {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-border) 68%, var(--ct-panel));
+}
+
+.starting-check-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--ct-primary), var(--ct-accent));
+  transition: width 0.2s ease;
+}
+
+.starting-check-card h3 {
+  margin: 4px 0 6px;
+  color: var(--ct-text);
+  font-size: clamp(1.1rem, 1.8vw, 1.35rem);
+  line-height: 1.2;
+}
+
+.starting-check-card p {
+  margin: 0;
+  max-width: 72ch;
+  color: var(--ct-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.starting-check-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.starting-check-topics li {
+  padding: 4px 9px;
+  border: 1px solid color-mix(in srgb, #16a34a 28%, var(--ct-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, #16a34a 8%, var(--ct-panel));
+  color: color-mix(in srgb, #166534 84%, var(--ct-text));
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.starting-check-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.starting-check-link {
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 20%, var(--ct-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-primary) 5%, var(--ct-panel));
+  color: var(--ct-primary);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.starting-check-link:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.starting-check-panel {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 12px;
+  padding-top: 2px;
+}
+
+.starting-check-question {
+  min-width: 0;
+  margin: 0;
+  padding: clamp(14px, 2.2vw, 18px);
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 16%, var(--ct-border));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--ct-primary) 4%, var(--ct-panel));
+}
+
+.starting-check-question legend {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 4px;
+  color: var(--ct-text);
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.starting-check-question legend span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--ct-primary);
+  color: #fff;
+  font-size: 0.78rem;
+}
+
+.starting-check-code {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 18%, var(--ct-border));
+  border-radius: 12px;
+  background: #0b1220;
+  color: #e5efff;
+  font-family: var(--font-mono, ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.starting-check-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.starting-check-options button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+  min-height: 56px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 20%, var(--ct-border));
+  border-radius: 14px;
+  background: var(--ct-panel);
+  color: var(--ct-text);
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+}
+
+.starting-check-options button > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-primary) 10%, var(--ct-panel));
+  color: var(--ct-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.starting-check-options button code {
+  font-family: var(--font-mono, ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace);
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.starting-check-options button.selected {
+  background: color-mix(in srgb, var(--ct-primary) 92%, #000);
+  border-color: var(--ct-primary);
+  color: #fff;
+  font-weight: 650;
+}
+
+.starting-check-options button.selected > span {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.starting-check-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 2px;
+}
+
+.starting-check-footer > span {
+  color: var(--ct-muted);
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+
+.starting-check-footer > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.starting-check-footer .campus-primary-action:disabled {
+  opacity: 0.55;
+  cursor: default;
+  transform: none;
 }
 
 .campus-focus-badge {
@@ -7455,6 +7813,35 @@ body.coding-dark .campus-code-preview {
     gap: 16px;
   }
 
+  .starting-check-modal-backdrop {
+    align-items: stretch;
+    padding: 10px;
+  }
+
+  .starting-check-modal {
+    max-height: calc(100vh - 20px);
+    align-self: center;
+    border-radius: 18px;
+  }
+
+  .starting-check-modal-head,
+  .starting-check-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .starting-check-options {
+    grid-template-columns: 1fr;
+  }
+
+  .starting-check-footer > div {
+    justify-content: stretch;
+  }
+
+  .starting-check-footer button {
+    flex: 1 1 120px;
+  }
+
   .campus-lab-hero,
   .campus-progress-strip,
   .campus-learning-queue,
@@ -7696,4 +8083,117 @@ body.coding-dark .coding-nav-more-menu {
   .coding-app .campus-section-nav .coding-nav-more > summary .coding-nav-label {
     display: none;
   }
+}
+
+/* ============================================================================
+   Button hover normalization
+   ----------------------------------------------------------------------------
+   Older broad rules turned many secondary/navigation buttons into orange glowing
+   pills. Keep primary actions bold, but make back links and secondary actions
+   calmer, roomier, and consistent.
+   ============================================================================ */
+.coding-app .learn-back-link,
+.coding-app .practice-back-btn,
+.coding-app .cq-back-link {
+  min-height: 34px;
+  padding: 6px 8px !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  color: color-mix(in srgb, var(--ct-text) 66%, transparent) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.coding-app .learn-back-link:hover:not(:disabled),
+.coding-app .practice-back-btn:hover:not(:disabled),
+.coding-app .cq-back-link:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ct-primary) 7%, transparent) !important;
+  background-color: color-mix(in srgb, var(--ct-primary) 7%, transparent) !important;
+  border-color: transparent !important;
+  color: var(--ct-text) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.coding-app .learn-back-link:hover:not(:disabled) svg,
+.coding-app .practice-back-btn:hover:not(:disabled) svg {
+  transform: translateX(-3px);
+}
+
+.coding-app .cq-btn-ghost,
+.coding-app .campus-secondary-action,
+.coding-app .campus-queue-item:not(.featured) button,
+.coding-app .campus-language-card button,
+.coding-app .campus-daily-mission .daily-link,
+.coding-app .starting-check-link {
+  min-height: 40px;
+  padding: 9px 15px;
+  border-color: color-mix(in srgb, var(--ct-primary) 24%, var(--ct-border)) !important;
+  background: color-mix(in srgb, var(--ct-primary) 5%, var(--ct-panel)) !important;
+  color: var(--ct-primary) !important;
+  box-shadow: none !important;
+}
+
+.coding-app .cq-btn-ghost:hover:not(:disabled),
+.coding-app .campus-secondary-action:hover:not(:disabled),
+.coding-app .campus-queue-item:not(.featured) button:hover:not(:disabled),
+.coding-app .campus-language-card button:hover:not(:disabled),
+.coding-app .campus-daily-mission .daily-link:hover:not(:disabled),
+.coding-app .starting-check-link:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ct-primary) 38%, var(--ct-border)) !important;
+  background: color-mix(in srgb, var(--ct-primary) 10%, var(--ct-panel)) !important;
+  color: var(--ct-primary) !important;
+  box-shadow: 0 6px 14px color-mix(in srgb, var(--ct-primary) 10%, transparent) !important;
+  transform: none !important;
+}
+
+.coding-app .cq-btn-primary:hover:not(:disabled),
+.coding-app .campus-primary-action:hover:not(:disabled),
+.coding-app .campus-recommendation-card button:hover:not(:disabled),
+.coding-app .campus-queue-item.featured button:hover:not(:disabled),
+.coding-app .campus-daily-mission .daily-practice-btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ct-primary) 86%, #2f6fd6) !important;
+  background: linear-gradient(135deg, #2f6fd6, var(--ct-primary)) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--ct-primary) 22%, transparent) !important;
+  transform: translateY(-1px);
+}
+
+body.coding-dark .coding-app .learn-back-link,
+body.coding-dark .coding-app .practice-back-btn,
+body.coding-dark .coding-app .cq-back-link {
+  color: color-mix(in srgb, #dbe6f7 72%, transparent) !important;
+}
+
+body.coding-dark .coding-app .learn-back-link:hover:not(:disabled),
+body.coding-dark .coding-app .practice-back-btn:hover:not(:disabled),
+body.coding-dark .coding-app .cq-back-link:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.12) !important;
+  background-color: rgba(59, 130, 246, 0.12) !important;
+  color: #f8fbff !important;
+}
+
+body.coding-dark .coding-app .cq-btn-ghost,
+body.coding-dark .coding-app .campus-secondary-action,
+body.coding-dark .coding-app .campus-queue-item:not(.featured) button,
+body.coding-dark .coding-app .campus-language-card button,
+body.coding-dark .coding-app .campus-daily-mission .daily-link,
+body.coding-dark .coding-app .starting-check-link {
+  background: rgba(59, 130, 246, 0.10) !important;
+  border-color: rgba(147, 197, 253, 0.34) !important;
+  color: #dbeafe !important;
+}
+
+body.coding-dark .coding-app .cq-btn-ghost:hover:not(:disabled),
+body.coding-dark .coding-app .campus-secondary-action:hover:not(:disabled),
+body.coding-dark .coding-app .campus-queue-item:not(.featured) button:hover:not(:disabled),
+body.coding-dark .coding-app .campus-language-card button:hover:not(:disabled),
+body.coding-dark .coding-app .campus-daily-mission .daily-link:hover:not(:disabled),
+body.coding-dark .coding-app .starting-check-link:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.18) !important;
+  border-color: rgba(147, 197, 253, 0.52) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 18px rgba(59, 130, 246, 0.16) !important;
 }

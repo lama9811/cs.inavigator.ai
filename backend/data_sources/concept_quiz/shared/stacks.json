@@ -154,7 +154,7 @@
         "Describe only the color of the UI"
       ],
       "answer_index": 0,
-      "explanation": "An abstract data type focuses on behavior such as push, pop, peek, and is_empty.",
+      "explanation": "An abstract data type focuses on the promised behavior, such as push, pop, peek, and is_empty. The same stack idea can be implemented with different underlying storage.",
       "variants": {
         "python": {},
         "java": {},

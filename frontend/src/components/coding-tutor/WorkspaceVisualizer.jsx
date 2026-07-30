@@ -214,10 +214,11 @@ function makeStep({
   why,
   state,
   code,
+  cue,
   action = "",
   animation = "highlight",
 }) {
-  return { title, body, changed, why, state, code, action, animation };
+  return { title, body, changed, why, state, code, cue, action, animation };
 }
 
 function arrayScanTrace(meta, inputText) {
@@ -985,6 +986,7 @@ function authoredTrace(meta) {
     title: meta?.title || "Problem visualizer",
     concept,
     caption: meta?.caption || "Step through the movement pattern for this problem.",
+    patternSketch: meta?.patternSketch || meta?.pattern_sketch || "",
     steps: rawSteps.map((step) => makeStep({
       title: step.title || "Trace the next move",
       body: step.body || "Watch the active state before moving forward.",
@@ -992,6 +994,7 @@ function authoredTrace(meta) {
       why: step.why || "",
       state: step.state || {},
       code: step.code || "",
+      cue: step.cue || "",
       action: step.action || "",
       animation: step.animation || "highlight",
     })),
@@ -1207,6 +1210,56 @@ function VisualDiagram({ trace, step, replayKey }) {
   );
 }
 
+function formatStateValue(value) {
+  if (Array.isArray(value)) return `[${value.map(formatStateValue).join(", ")}]`;
+  if (value && typeof value === "object") return JSON.stringify(value);
+  if (value === null) return "null";
+  if (value === undefined || value === "") return "";
+  return String(value);
+}
+
+function stateEntries(state = {}) {
+  const ignored = new Set([
+    "items",
+    "values",
+    "active",
+    "pointers",
+    "window",
+    "stack",
+    "queue",
+    "table",
+    "grid",
+    "activeCells",
+    "intervals",
+    "nodes",
+    "edges",
+    "call_stack",
+    "active_call",
+  ]);
+  const entries = [];
+  Object.entries(state.pointers || {}).forEach(([key, value]) => entries.push([key, value]));
+  if (Array.isArray(state.window)) entries.push(["window", `${state.window[0]}-${state.window[1]}`]);
+  Object.entries(state).forEach(([key, value]) => {
+    if (!ignored.has(key) && value !== undefined && value !== "") entries.push([key, value]);
+  });
+  return entries.slice(0, 8);
+}
+
+function VisualStateTray({ step }) {
+  const entries = stateEntries(step?.state || {});
+  if (!entries.length) return null;
+  return (
+    <div className="workspace-visual-state-tray" aria-label="Current visualizer state">
+      {entries.map(([label, value]) => (
+        <div key={label}>
+          <span>{label.replace(/_/g, " ")}</span>
+          <strong>{formatStateValue(value)}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose }) {
   const baseMeta = useMemo(
     () => initialVisualizer || activeProblem?.visualizer || inferVisualizerFromProblem(activeProblem) || { concept: "array-scan" },
@@ -1227,6 +1280,7 @@ function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose 
   const [isPlaying, setIsPlaying] = useState(false);
   const [replayKey, setReplayKey] = useState(0);
   const [reasoningOpen, setReasoningOpen] = useState(false);
+  const [sketchOpen, setSketchOpen] = useState(false);
 
   const meta = useMemo(() => ({ ...baseMeta, concept }), [baseMeta, concept]);
   const traceResult = useMemo(() => {
@@ -1243,6 +1297,7 @@ function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose 
       setStepIndex(0);
       setIsPlaying(false);
       setReasoningOpen(false);
+      setSketchOpen(false);
       setReplayKey((current) => current + 1);
     }
   }, [traceResult.trace]);
@@ -1293,7 +1348,7 @@ function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose 
     <section className={`workspace-visualizer ${mode === "modal" ? "is-modal" : "is-panel"}`}>
       <header className="workspace-visualizer-head">
         <div>
-          <span className="workspace-visualizer-kicker">Visualize the concept</span>
+          <span className="workspace-visualizer-kicker">Visualize This Idea</span>
           <h3>{trace.title}</h3>
           <p>{trace.caption}</p>
         </div>
@@ -1321,42 +1376,53 @@ function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose 
             />
           </label>
         ) : (
-          <p className="workspace-visualizer-lock">This guided preset teaches the pattern, not the full problem answer.</p>
+          <p className="workspace-visualizer-lock">This walks through the problem idea with example data. Trace My Code is separate and uses your Python code.</p>
         )}
-      </div>
-
-      <div className="workspace-visualizer-guidance" aria-label="How to use this visualizer">
-        <p><strong>Watch for:</strong> {guidance.focus}</p>
-        {activeProblem?.title ? (
-          <p><strong>Problem tie-in:</strong> use this movement pattern for <strong>{activeProblem.title}</strong>, but choose your own condition, update, and return value from the prompt.</p>
-        ) : null}
-        <p><strong>Keep separate:</strong> this uses small sample data to explain the move; your solution still needs to handle the full prompt and tests.</p>
       </div>
 
       {traceResult.error ? <p className="workspace-visualizer-error">{traceResult.error}</p> : null}
 
-      <div className="workspace-visualizer-grid">
-        <div className="workspace-visualizer-code">
-          <span>Pattern sketch</span>
-          <pre>{step.code || "Step through the visual idea."}</pre>
-        </div>
+      <div className="workspace-visualizer-stage">
         <VisualDiagram trace={trace} step={step} replayKey={replayKey} />
+        <VisualStateTray step={step} />
       </div>
 
-      <div className="workspace-visualizer-progress" aria-label="Visualizer steps">
-        {steps.map((visualStep, index) => (
-          <button
-            type="button"
-            key={`${visualStep.title}-${index}`}
-            className={index === stepIndex ? "is-active" : ""}
-            aria-label={`Go to step ${index + 1}: ${visualStep.title}`}
-            aria-current={index === stepIndex ? "step" : undefined}
-            onClick={() => {
-              setIsPlaying(false);
-              goToStep(index);
-            }}
-          />
-        ))}
+      <div className="workspace-visualizer-nav">
+        <div className="workspace-visualizer-progress" aria-label="Visualizer steps">
+          {steps.map((visualStep, index) => (
+            <button
+              type="button"
+              key={`${visualStep.title}-${index}`}
+              className={index === stepIndex ? "is-active" : ""}
+              aria-label={`Go to step ${index + 1}: ${visualStep.title}`}
+              aria-current={index === stepIndex ? "step" : undefined}
+              onClick={() => {
+                setIsPlaying(false);
+                goToStep(index);
+              }}
+            >
+              <span>{index + 1}</span>
+            </button>
+          ))}
+        </div>
+
+        <footer className="workspace-visualizer-controls" aria-label="Visualizer playback controls">
+          <button type="button" onClick={() => { setIsPlaying(false); goToStep(0); }}>
+            <FaUndo aria-hidden="true" /> Reset
+          </button>
+          <button type="button" onClick={() => setReplayKey((current) => current + 1)}>
+            <FaRedo aria-hidden="true" /> Replay
+          </button>
+          <button type="button" disabled={!canGoBack} onClick={() => { setIsPlaying(false); goToStep(stepIndex - 1); }}>
+            <FaArrowLeft aria-hidden="true" /> Previous
+          </button>
+          <button type="button" disabled={steps.length < 2 || (!canGoNext && !isPlaying)} onClick={() => setIsPlaying((current) => !current)}>
+            {isPlaying ? <><FaPause aria-hidden="true" /> Pause</> : <><FaPlay aria-hidden="true" /> Play</>}
+          </button>
+          <button type="button" disabled={!canGoNext} onClick={() => { setIsPlaying(false); goToStep(stepIndex + 1); }}>
+            Next <FaArrowRight aria-hidden="true" />
+          </button>
+        </footer>
       </div>
 
       <article className="workspace-visualizer-step">
@@ -1374,25 +1440,16 @@ function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose 
             Reveal this step
           </button>
         )}
+        <button type="button" className="workspace-visualizer-sketch-toggle" onClick={() => setSketchOpen((current) => !current)}>
+          {sketchOpen ? "Hide pattern sketch" : "Show pattern sketch"}
+        </button>
+        {sketchOpen ? (
+          <div className="workspace-visualizer-code">
+            <span>Pattern sketch</span>
+            <pre>{step.code || trace.patternSketch || "Step through the visual idea."}</pre>
+          </div>
+        ) : null}
       </article>
-
-      <footer className="workspace-visualizer-controls">
-        <button type="button" onClick={() => { setIsPlaying(false); goToStep(0); }}>
-          <FaUndo aria-hidden="true" /> Reset
-        </button>
-        <button type="button" onClick={() => setReplayKey((current) => current + 1)}>
-          <FaRedo aria-hidden="true" /> Replay
-        </button>
-        <button type="button" disabled={!canGoBack} onClick={() => { setIsPlaying(false); goToStep(stepIndex - 1); }}>
-          <FaArrowLeft aria-hidden="true" /> Previous
-        </button>
-        <button type="button" disabled={steps.length < 2 || (!canGoNext && !isPlaying)} onClick={() => setIsPlaying((current) => !current)}>
-          {isPlaying ? <><FaPause aria-hidden="true" /> Pause</> : <><FaPlay aria-hidden="true" /> Play</>}
-        </button>
-        <button type="button" disabled={!canGoNext} onClick={() => { setIsPlaying(false); goToStep(stepIndex + 1); }}>
-          Next <FaArrowRight aria-hidden="true" />
-        </button>
-      </footer>
     </section>
   );
 }
@@ -1418,9 +1475,14 @@ export function WorkspaceVisualizerModal({ activeProblem, onClose }) {
 
 export function VisualizeButton({ onClick }) {
   return (
-    <button type="button" className="problem-visualize-button" onClick={onClick}>
+    <button
+      type="button"
+      className="problem-visualize-button"
+      onClick={onClick}
+      title="Visualize the problem idea with example data. This is different from Trace My Code."
+    >
       <FaProjectDiagram aria-hidden="true" />
-      Visualize this idea
+      Visualize This Idea
     </button>
   );
 }

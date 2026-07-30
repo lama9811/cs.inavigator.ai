@@ -243,29 +243,29 @@
           "kind": "mcq-behavior",
           "title": "User Input concept check 1",
           "code": null,
-          "prompt": "What does the lesson mean by \"Everything input() gives you is a string\"?",
+          "prompt": "What type of value does Python `input()` return?",
           "choices": [
-            "10",
-            "This is the one fact to carry out of this lesson. It does not matter what the person types.",
-            "\"10\"",
-            "An error, because you cannot add input"
+            "`input()` returns text, even when the typed characters look like a number.",
+            "Use raw input in arithmetic before converting it.",
+            "Assume the user always types the exact kind of value requested.",
+            "Ignore cancellation or empty input."
           ],
-          "answer_index": 1,
-          "explanation": "`input()` pauses your program, waits for the person to type something, and hands back what they typed. Whatever comes back is a string, even when it looks like a number. That reasoning supports the answer: This is the one fact to carry out of this lesson. It does not matter what the person types."
+          "answer_index": 0,
+          "explanation": "`input()` pauses your program, waits for the person to type something, and hands back what they typed. Whatever comes back is a string, even when it looks like a number. That reasoning supports the answer: `input()` returns text, even when the typed characters look like a number."
         },
         "java": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "User Input concept check 1",
           "code": null,
-          "prompt": "What does the lesson mean by \"Forgetting the import\"?",
+          "prompt": "What happens in Java if code uses Scanner without importing it?",
           "choices": [
-            "Comment: [Great work]",
             "Leave out `import java.util.Scanner;` and the compiler stops with \"cannot find symbol\" pointing at the word `Scanner`. It is not saying Scanner does not exist.",
-            "Comment: [90]",
-            "It crashes with an InputMismatchException"
+            "Use raw input in arithmetic before converting it.",
+            "Assume the user always types the exact kind of value requested.",
+            "Ignore cancellation or empty input."
           ],
-          "answer_index": 1,
+          "answer_index": 0,
           "explanation": "To read what someone types, you need a Scanner. Put `import java.util.Scanner;` at the top of the file, then build one with `Scanner sc = new Scanner(System.in);`. That reasoning supports the answer: Leave out `import java.util.Scanner;` and the compiler stops with \"cannot find symbol\" pointing at the word `Scanner`. It is not saying Scanner does not exist."
         },
         "javascript": {
@@ -273,14 +273,14 @@
           "kind": "mcq-behavior",
           "title": "User Input concept check 1",
           "code": null,
-          "prompt": "What does the lesson mean by \"Check the boundary\"?",
+          "prompt": "Which boundary detail prevents this kind of off-by-one or conversion bug?",
           "choices": [
-            "0",
             "Typing 12 into a prompt produces `\"12\"`; adding one without conversion joins text into `\"121\"`.",
-            "false",
-            "an empty array"
+            "Use raw input in arithmetic before converting it.",
+            "Assume the user always types the exact kind of value requested.",
+            "Ignore cancellation or empty input."
           ],
-          "answer_index": 1,
+          "answer_index": 0,
           "explanation": "Browser `prompt(...)` returns a string or `null` when canceled. Handle cancellation, trim when appropriate, convert numeric text, and validate the result. That reasoning supports the answer: Typing 12 into a prompt produces `\"12\"`; adding one without conversion joins text into `\"121\"`."
         },
         "cpp": {
@@ -288,14 +288,14 @@
           "kind": "mcq-behavior",
           "title": "User Input concept check 1",
           "code": null,
-          "prompt": "What does the lesson mean by \"Follow the data\"?",
+          "prompt": "Which statement correctly follows the data through this operation?",
           "choices": [
-            "the value becomes a string",
             "After `operator>>` reads a number, a newline can remain in the stream and make a following `getline` appear to skip input.",
-            "main restarts",
-            "cout closes"
+            "Use raw input in arithmetic before converting it.",
+            "Assume the user always types the exact kind of value requested.",
+            "Ignore cancellation or empty input."
           ],
-          "answer_index": 1,
+          "answer_index": 0,
           "explanation": "`std::cin >> value` extracts formatted input into a typed variable. Check the stream before using the value, because text entered for a number makes extraction fail. That reasoning supports the answer: After `operator>>` reads a number, a newline can remain in the stream and make a following `getline` appear to skip input."
         }
       }
@@ -312,14 +312,14 @@
           "kind": "mcq-behavior",
           "title": "User Input concept check 2",
           "code": null,
-          "prompt": "What does the lesson mean by \"ValueError means the text was not a number\"?",
+          "prompt": "What does a Python `ValueError` from `int(...)` usually mean?",
           "choices": [
-            "It prints 12",
-            "It prints \"twelve\"",
+            "Read a full line right after a token read without handling the leftover newline.",
             "Ask for a number and the person types \"seven\", and `int()` has nothing to work with. Your program stops with a ValueError.",
-            "It prints 0, because the text was not a number"
+            "Convert input after doing the calculation.",
+            "Validate only the first test input and trust the rest."
           ],
-          "answer_index": 2,
+          "answer_index": 1,
           "explanation": "`input()` pauses your program, waits for the person to type something, and hands back what they typed. Whatever comes back is a string, even when it looks like a number. That reasoning supports the answer: Ask for a number and the person types \"seven\", and `int()` has nothing to work with. Your program stops with a ValueError."
         },
         "java": {
@@ -327,14 +327,14 @@
           "kind": "mcq-behavior",
           "title": "User Input concept check 2",
           "code": null,
-          "prompt": "What does the lesson mean by \"The wrong method is caught before the program runs\"?",
+          "prompt": "Why does Java reject assigning `nextLine()` directly to an int variable?",
           "choices": [
-            "Enter two numbers: Sum: 5",
-            "Enter two numbers: Sum: 2 3",
-            "Write `int age = sc.nextLine();` and the program never starts. The compiler rejects it with \"incompatible types: String cannot be converted to int\", because `nextLine()` hands back a String and you asked to store it in an `int`.",
-            "It crashes, because two numbers on one line need two Enters"
+            "Read a full line right after a token read without handling the leftover newline.",
+            "Use `nextInt()` for numeric input. `nextLine()` gives text, so assigning it directly to an `int` is a type error.",
+            "Convert input after doing the calculation.",
+            "Validate only the first test input and trust the rest."
           ],
-          "answer_index": 2,
+          "answer_index": 1,
           "explanation": "To read what someone types, you need a Scanner. Put `import java.util.Scanner;` at the top of the file, then build one with `Scanner sc = new Scanner(System.in);`. That reasoning supports the answer: Write `int age = sc.nextLine();` and the program never starts. The compiler rejects it with \"incompatible types: String cannot be converted to int\", because `nextLine()` hands back a String and you asked to store it in an `int`."
         },
         "javascript": {
@@ -344,12 +344,12 @@
           "code": null,
           "prompt": "Which choice describes a reliable User Input practice?",
           "choices": [
-            "const age = raw + 0;",
-            "const age = Boolean(raw);",
+            "Read a full line right after a token read without handling the leftover newline.",
             "Handle null first.",
-            "const age = raw.trim;"
+            "Convert input after doing the calculation.",
+            "Validate only the first test input and trust the rest."
           ],
-          "answer_index": 2,
+          "answer_index": 1,
           "explanation": "Browser `prompt(...)` returns a string or `null` when canceled. Handle cancellation, trim when appropriate, convert numeric text, and validate the result. That reasoning supports the answer: Handle null first."
         },
         "cpp": {
@@ -359,12 +359,12 @@
           "code": null,
           "prompt": "Which choice describes a reliable User Input practice?",
           "choices": [
-            "std::cin >> text;",
-            "std::cout << text;",
+            "Read a full line right after a token read without handling the leftover newline.",
             "Declare a matching type.",
-            "read(text);"
+            "Convert input after doing the calculation.",
+            "Validate only the first test input and trust the rest."
           ],
-          "answer_index": 2,
+          "answer_index": 1,
           "explanation": "`std::cin >> value` extracts formatted input into a typed variable. Check the stream before using the value, because text entered for a number makes extraction fail. That reasoning supports the answer: Declare a matching type."
         }
       }
@@ -383,12 +383,12 @@
           "code": null,
           "prompt": "Which recommendation belongs in a review of User Input code?",
           "choices": [
-            "a = input(\"First: \")\nb = input(\"Second: \")\nprint(a + b)\n# a is \"1\", b is \"2\"\n# \"1\" + \"2\" glues\n# them into \"12\"",
-            "An error, because you cannot add input",
-            "It prints 12",
-            "Ask yourself one question every time: do I need this as text, or as a number?"
+            "Treat every typed value as a number automatically.",
+            "Keep asking for input inside helper logic that should be reusable.",
+            "Ask yourself one question every time: do I need this as text, or as a number?",
+            "Print an error without giving the user a clear recovery path."
           ],
-          "answer_index": 3,
+          "answer_index": 2,
           "explanation": "`input()` pauses your program, waits for the person to type something, and hands back what they typed. Whatever comes back is a string, even when it looks like a number. That reasoning supports the answer: Ask yourself one question every time: do I need this as text, or as a number?"
         },
         "java": {
@@ -396,14 +396,14 @@
           "kind": "mcq-behavior",
           "title": "User Input concept check 3",
           "code": null,
-          "prompt": "What does the lesson mean by \"A crash on input is not a crash in your code\"?",
+          "prompt": "What does Java `InputMismatchException` usually mean during input?",
           "choices": [
-            "System.out.print(\"Age: \");\nint age = sc.nextInt();\n\nSystem.out.print(\"Name: \");\nString name = sc.nextLine();\n\nSystem.out.println(\"[\" + name + \"]\");\n// Age: Name: []",
-            "It crashes with an InputMismatchException",
-            "Enter two numbers: Sum: 5",
-            "An InputMismatchException means the program asked for a number and got something else. Check the obvious cause first: are you reading the values in the same order the user is typing them?"
+            "Treat every typed value as a number automatically.",
+            "Keep asking for input inside helper logic that should be reusable.",
+            "An InputMismatchException means the program asked for a number and got something else. Check the obvious cause first: are you reading the values in the same order the user is typing them?",
+            "Print an error without giving the user a clear recovery path."
           ],
-          "answer_index": 3,
+          "answer_index": 2,
           "explanation": "To read what someone types, you need a Scanner. Put `import java.util.Scanner;` at the top of the file, then build one with `Scanner sc = new Scanner(System.in);`. That reasoning supports the answer: An InputMismatchException means the program asked for a number and got something else. Check the obvious cause first: are you reading the values in the same order the user is typing them?"
         },
         "javascript": {
@@ -413,12 +413,12 @@
           "code": null,
           "prompt": "Which recommendation belongs in a review of User Input code?",
           "choices": [
-            "const credits = Number(prompt(\"Credits?\"));\nconsole.log(credits + 1);",
-            "an empty array",
-            "const age = raw + 0;",
-            "Trim only irrelevant spaces."
+            "Treat every typed value as a number automatically.",
+            "Keep asking for input inside helper logic that should be reusable.",
+            "Trim only irrelevant spaces.",
+            "Print an error without giving the user a clear recovery path."
           ],
-          "answer_index": 3,
+          "answer_index": 2,
           "explanation": "Browser `prompt(...)` returns a string or `null` when canceled. Handle cancellation, trim when appropriate, convert numeric text, and validate the result. That reasoning supports the answer: Trim only irrelevant spaces."
         },
         "cpp": {
@@ -428,12 +428,12 @@
           "code": null,
           "prompt": "Which recommendation belongs in a review of User Input code?",
           "choices": [
-            "std::cin >> age;\nstd::getline(std::cin, name);",
-            "cout closes",
-            "std::cin >> text;",
-            "Test extraction success."
+            "Treat every typed value as a number automatically.",
+            "Keep asking for input inside helper logic that should be reusable.",
+            "Test extraction success.",
+            "Print an error without giving the user a clear recovery path."
           ],
-          "answer_index": 3,
+          "answer_index": 2,
           "explanation": "`std::cin >> value` extracts formatted input into a typed variable. Check the stream before using the value, because text entered for a number makes extraction fail. That reasoning supports the answer: Test extraction success."
         }
       }
@@ -452,12 +452,12 @@
           "code": null,
           "prompt": "Which guideline helps prevent a common User Input mistake?",
           "choices": [
-            "Names, answers, and anything you only print: leave it as a string, no conversion needed.",
-            "It prints \"twelve\"",
-            "It prints 0, because the text was not a number",
-            "a = input(\"First: \")\nb = input(\"Second: \")\nprint(a + b)\n# a is \"1\", b is \"2\"\n# \"1\" + \"2\" glues\n# them into \"12\""
+            "Store converted and unconverted versions under the same confusing name.",
+            "Use a prompt that hides what type of answer is expected.",
+            "Assume extra spaces are meaningful in every answer.",
+            "Names, answers, and anything you only print: leave it as a string, no conversion needed."
           ],
-          "answer_index": 0,
+          "answer_index": 3,
           "explanation": "`input()` pauses your program, waits for the person to type something, and hands back what they typed. Whatever comes back is a string, even when it looks like a number. That reasoning supports the answer: Names, answers, and anything you only print: leave it as a string, no conversion needed."
         },
         "java": {
@@ -467,12 +467,12 @@
           "code": null,
           "prompt": "Which guideline helps prevent a common User Input mistake?",
           "choices": [
-            "`nextInt()` reads one whole number and gives you an `int`.",
-            "Enter two numbers: Sum: 2 3",
-            "It crashes, because two numbers on one line need two Enters",
-            "System.out.print(\"Age: \");\nint age = sc.nextInt();\n\nSystem.out.print(\"Name: \");\nString name = sc.nextLine();\n\nSystem.out.println(\"[\" + name + \"]\");\n// Age: Name: []"
+            "Store converted and unconverted versions under the same confusing name.",
+            "Use a prompt that hides what type of answer is expected.",
+            "Assume extra spaces are meaningful in every answer.",
+            "`nextInt()` reads one whole number and gives you an `int`."
           ],
-          "answer_index": 0,
+          "answer_index": 3,
           "explanation": "To read what someone types, you need a Scanner. Put `import java.util.Scanner;` at the top of the file, then build one with `Scanner sc = new Scanner(System.in);`. That reasoning supports the answer: `nextInt()` reads one whole number and gives you an `int`."
         },
         "javascript": {
@@ -482,12 +482,12 @@
           "code": null,
           "prompt": "Which guideline helps prevent a common User Input mistake?",
           "choices": [
-            "Store one converted value.",
-            "const age = Boolean(raw);",
-            "const age = raw.trim;",
-            "const credits = Number(prompt(\"Credits?\"));\nconsole.log(credits + 1);"
+            "Store converted and unconverted versions under the same confusing name.",
+            "Use a prompt that hides what type of answer is expected.",
+            "Assume extra spaces are meaningful in every answer.",
+            "Store one converted value."
           ],
-          "answer_index": 0,
+          "answer_index": 3,
           "explanation": "Browser `prompt(...)` returns a string or `null` when canceled. Handle cancellation, trim when appropriate, convert numeric text, and validate the result. That reasoning supports the answer: Store one converted value."
         },
         "cpp": {
@@ -497,12 +497,12 @@
           "code": null,
           "prompt": "Which guideline helps prevent a common User Input mistake?",
           "choices": [
-            "Plan transitions to getline.",
-            "std::cout << text;",
-            "read(text);",
-            "std::cin >> age;\nstd::getline(std::cin, name);"
+            "Store converted and unconverted versions under the same confusing name.",
+            "Use a prompt that hides what type of answer is expected.",
+            "Assume extra spaces are meaningful in every answer.",
+            "Plan transitions to getline."
           ],
-          "answer_index": 0,
+          "answer_index": 3,
           "explanation": "`std::cin >> value` extracts formatted input into a typed variable. Check the stream before using the value, because text entered for a number makes extraction fail. That reasoning supports the answer: Plan transitions to getline."
         }
       }
@@ -521,12 +521,12 @@
           "code": null,
           "prompt": "A classmate is checking their understanding of User Input. Which advice is correct?",
           "choices": [
-            "10",
             "Anything you will add, subtract, or compare as a quantity: wrap it in `int()` or `float()`.",
-            "\"10\"",
-            "It prints \"twelve\""
+            "Read values in a different order than the prompt asks for them.",
+            "Continue after failed extraction as if the variable has a fresh value.",
+            "Use one input method for every situation without checking what it reads."
           ],
-          "answer_index": 1,
+          "answer_index": 0,
           "explanation": "`input()` pauses your program, waits for the person to type something, and hands back what they typed. Whatever comes back is a string, even when it looks like a number. That reasoning supports the answer: Anything you will add, subtract, or compare as a quantity: wrap it in `int()` or `float()`."
         },
         "java": {
@@ -536,12 +536,12 @@
           "code": null,
           "prompt": "A classmate is checking their understanding of User Input. Which advice is correct?",
           "choices": [
-            "Comment: [Great work]",
             "`nextDouble()` reads one decimal number and gives you a `double`.",
-            "Comment: [90]",
-            "Enter two numbers: Sum: 2 3"
+            "Read values in a different order than the prompt asks for them.",
+            "Continue after failed extraction as if the variable has a fresh value.",
+            "Use one input method for every situation without checking what it reads."
           ],
-          "answer_index": 1,
+          "answer_index": 0,
           "explanation": "To read what someone types, you need a Scanner. Put `import java.util.Scanner;` at the top of the file, then build one with `Scanner sc = new Scanner(System.in);`. That reasoning supports the answer: `nextDouble()` reads one decimal number and gives you a `double`."
         },
         "javascript": {
@@ -551,12 +551,12 @@
           "code": null,
           "prompt": "A classmate is checking their understanding of User Input. Which advice is correct?",
           "choices": [
-            "0",
             "Explain invalid input clearly.",
-            "false",
-            "const age = Boolean(raw);"
+            "Read values in a different order than the prompt asks for them.",
+            "Continue after failed extraction as if the variable has a fresh value.",
+            "Use one input method for every situation without checking what it reads."
           ],
-          "answer_index": 1,
+          "answer_index": 0,
           "explanation": "Browser `prompt(...)` returns a string or `null` when canceled. Handle cancellation, trim when appropriate, convert numeric text, and validate the result. That reasoning supports the answer: Explain invalid input clearly."
         },
         "cpp": {
@@ -566,12 +566,12 @@
           "code": null,
           "prompt": "A classmate is checking their understanding of User Input. Which advice is correct?",
           "choices": [
-            "the value becomes a string",
             "Reject unusable input clearly.",
-            "main restarts",
-            "std::cout << text;"
+            "Read values in a different order than the prompt asks for them.",
+            "Continue after failed extraction as if the variable has a fresh value.",
+            "Use one input method for every situation without checking what it reads."
           ],
-          "answer_index": 1,
+          "answer_index": 0,
           "explanation": "`std::cin >> value` extracts formatted input into a typed variable. Check the stream before using the value, because text entered for a number makes extraction fail. That reasoning supports the answer: Reject unusable input clearly."
         }
       }
@@ -590,12 +590,12 @@
           "code": null,
           "prompt": "Which choice shows sound reasoning about User Input?",
           "choices": [
-            "It prints 0, because the text was not a number",
-            "a = input(\"First: \")\nb = input(\"Second: \")\nprint(a + b)\n# a is \"1\", b is \"2\"\n# \"1\" + \"2\" glues\n# them into \"12\"",
+            "Compare numeric text alphabetically when numeric order is needed.",
             "End the prompt text with a space, as in `input(\"Age: \")`, so what the person types is not jammed against your question.",
-            "10"
+            "Accept invalid input silently.",
+            "Mix validation, conversion, and output so the failure is hard to locate."
           ],
-          "answer_index": 2,
+          "answer_index": 1,
           "explanation": "`input()` pauses your program, waits for the person to type something, and hands back what they typed. Whatever comes back is a string, even when it looks like a number. That reasoning supports the answer: End the prompt text with a space, as in `input(\"Age: \")`, so what the person types is not jammed against your question."
         },
         "java": {
@@ -605,12 +605,12 @@
           "code": null,
           "prompt": "Which choice shows sound reasoning about User Input?",
           "choices": [
-            "It crashes, because two numbers on one line need two Enters",
-            "System.out.print(\"Age: \");\nint age = sc.nextInt();\n\nSystem.out.print(\"Name: \");\nString name = sc.nextLine();\n\nSystem.out.println(\"[\" + name + \"]\");\n// Age: Name: []",
+            "Compare numeric text alphabetically when numeric order is needed.",
             "`nextLine()` reads everything up to the end of the line and gives you a `String`.",
-            "Comment: [Great work]"
+            "Accept invalid input silently.",
+            "Mix validation, conversion, and output so the failure is hard to locate."
           ],
-          "answer_index": 2,
+          "answer_index": 1,
           "explanation": "To read what someone types, you need a Scanner. Put `import java.util.Scanner;` at the top of the file, then build one with `Scanner sc = new Scanner(System.in);`. That reasoning supports the answer: `nextLine()` reads everything up to the end of the line and gives you a `String`."
         },
         "javascript": {
@@ -620,12 +620,12 @@
           "code": null,
           "prompt": "What is the main idea behind User Input?",
           "choices": [
-            "const age = raw.trim;",
-            "const credits = Number(prompt(\"Credits?\"));\nconsole.log(credits + 1);",
+            "Compare numeric text alphabetically when numeric order is needed.",
             "Validate external text before calculating with it.",
-            "0"
+            "Accept invalid input silently.",
+            "Mix validation, conversion, and output so the failure is hard to locate."
           ],
-          "answer_index": 2,
+          "answer_index": 1,
           "explanation": "Browser `prompt(...)` returns a string or `null` when canceled. Handle cancellation, trim when appropriate, convert numeric text, and validate the result. That reasoning supports the answer: Validate external text before calculating with it."
         },
         "cpp": {
@@ -635,12 +635,12 @@
           "code": null,
           "prompt": "What is the main idea behind User Input?",
           "choices": [
-            "read(text);",
-            "std::cin >> age;\nstd::getline(std::cin, name);",
+            "Compare numeric text alphabetically when numeric order is needed.",
             "Read stream data and handle failed extraction.",
-            "the value becomes a string"
+            "Accept invalid input silently.",
+            "Mix validation, conversion, and output so the failure is hard to locate."
           ],
-          "answer_index": 2,
+          "answer_index": 1,
           "explanation": "`std::cin >> value` extracts formatted input into a typed variable. Check the stream before using the value, because text entered for a number makes extraction fail. That reasoning supports the answer: Read stream data and handle failed extraction."
         }
       }

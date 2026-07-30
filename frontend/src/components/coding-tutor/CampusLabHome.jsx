@@ -1,4 +1,13 @@
+import { useEffect, useRef, useState } from "react";
 import { FaBook, FaChartLine, FaLaptopCode, FaPlay, FaRegCompass } from "react-icons/fa";
+import { currentUserStorageScope } from "./storageScope";
+import {
+  buildStartingCheckResult,
+  buildStartingQuestionSet,
+  clearStartingCheck,
+  readStartingCheck,
+  writeStartingCheck,
+} from "./startingPath";
 
 function findResumeItem(questions, progressByQuestion) {
   return Object.entries(progressByQuestion || {})
@@ -157,7 +166,8 @@ function CampusHero({
   dailyChallenge,
   dailyDoneToday,
   onResume,
-  onOpenSnippets,
+  onOpenLearnStart,
+  onOpenBeginnerWarmup,
   onSelectQuestion,
 }) {
   // State-first hero: lead with the student's status and ONE primary action —
@@ -204,14 +214,14 @@ function CampusHero({
               {isResume ? `Resume: ${primaryQuestion.title}` : `Start: ${primaryQuestion.title}`}
             </button>
           ) : (
-            <button type="button" className="campus-primary-action" onClick={onOpenSnippets}>
-              <FaLaptopCode aria-hidden="true" />
-              Open My Workspace
+            <button type="button" className="campus-primary-action" onClick={onOpenLearnStart}>
+              <FaBook aria-hidden="true" />
+              Start Python Beginner
             </button>
           )}
-          <button type="button" className="campus-secondary-action" onClick={onOpenSnippets}>
-            <FaLaptopCode aria-hidden="true" />
-            My Workspace
+          <button type="button" className="campus-secondary-action" onClick={onOpenBeginnerWarmup}>
+            <FaRegCompass aria-hidden="true" />
+            Before Class Warmup
           </button>
         </div>
         <div className="campus-hero-focus" role="note">
@@ -256,11 +266,13 @@ function CampusLearningQueue({
   focus,
   mastery,
   adaptivePractice,
+  startingCheck,
   onSelect,
-  onOpenSnippets,
   onOpenQuizBank,
+  onOpenBeginnerWarmup,
   onOpenTopic,
   onOpenLessonReview,
+  onOpenStartingPath,
   learningStyle,
 }) {
   // The hero owns "what to do right now" (resume / recommended). This section is a
@@ -274,13 +286,18 @@ function CampusLearningQueue({
     focus,
   });
   const firstPathQuestion = todayPath.find(step => step.question)?.question || null;
-  const adaptiveRecommendation = adaptivePractice?.recommendation || null;
+  const hasRealProgress = Object.values(progressByQuestion || {}).some(progress =>
+    progress?.status === "solved" || (progress?.attempt_count || 0) > 0
+  );
+  const adaptiveRecommendation = hasRealProgress ? adaptivePractice?.recommendation || null : null;
   const reviewSignal = adaptivePractice?.review_signal || null;
   const adaptiveTopic = adaptiveRecommendation?.topic || "";
   const adaptiveDifficulty = adaptiveRecommendation?.difficulty || "";
   const adaptiveReady = adaptiveRecommendation?.action === "ladder" && adaptiveRecommendation?.ladder_ready;
   const focusTopic = adaptiveTopic || (focus?.hasProgress ? focus.next?.topic : focus?.first?.topic);
-  const focusTitle = adaptiveReady
+  const needsStartingCheck = !hasRealProgress && !startingCheck;
+  const placementProfile = !hasRealProgress ? startingCheck : null;
+  const focusTitle = needsStartingCheck ? "Find your starting point" : placementProfile?.title || (adaptiveReady
     ? `${titleCase(adaptiveTopic)} adaptive ladder`
     : adaptiveRecommendation?.action === "practice_review"
       ? `Review ${titleCase(adaptiveTopic)}`
@@ -288,24 +305,38 @@ function CampusLearningQueue({
     ? `Practice ${titleCase(focus.next.topic)}`
     : focus
       ? `Start with ${titleCase(focus.first.topic)}`
-      : "Choose a topic";
-  const focusBlurb = adaptiveRecommendation?.reason
+      : "Choose a topic");
+  const focusBlurb = needsStartingCheck
+    ? "Take the quick check above so this card can recommend a calm first step instead of guessing."
+    : placementProfile?.blurb || (adaptiveRecommendation?.reason
     ? adaptiveRecommendation.reason
     : focusTopic
       ? `${focusReason(focus)} ${learningStyleHint(learningStyle)}`
-    : "Pick one topic and solve the first problem you see.";
+    : "Pick one topic and solve the first problem you see.");
   const focusAction = adaptiveReady ? "practice" : focusActionKind(learningStyle);
   const focusButton = adaptiveReady
     ? `Open ${titleCase(adaptiveDifficulty)} step`
     : focusAction === "practice" ? "Open practice" : "Open topic lesson";
+  const focusClick = () => {
+    if (needsStartingCheck) {
+      onOpenStartingPath?.({ action: "syntax-quiz" });
+      return;
+    }
+    if (placementProfile) {
+      onOpenStartingPath?.(placementProfile);
+      return;
+    }
+    if (focusTopic) onOpenTopic?.(focusTopic, focusAction, { difficulty: adaptiveReady ? adaptiveDifficulty : null });
+    else onOpenQuizBank();
+  };
   return (
     <section className="campus-learning-queue" aria-label="Your coding path">
       <div className="campus-section-heading">
-        <span className="coding-kicker">Your Coding Path</span>
+        <span className="coding-kicker">Do This Next</span>
       </div>
       <div className="campus-queue-grid three-up">
         <article className="campus-queue-item featured">
-          <span>Today&apos;s Path</span>
+          <span>One Small Step</span>
           <strong>{todayPath[0]?.question?.title || "Start with one problem"}</strong>
           <ol className="campus-path-list">
             {todayPath.map((step, index) => (
@@ -342,16 +373,19 @@ function CampusLearningQueue({
             {firstPathQuestion ? "Start first step" : "Browse Practice Library"}
           </button>
         </article>
-        <article className="campus-queue-item personal">
-          <span>Personal Code Lab</span>
-          <strong>My Snippets</strong>
-          <p>Write, run, save, and review your own code.</p>
-          <button type="button" onClick={onOpenSnippets}>Open Workspace</button>
+        <article className="campus-queue-item warmup">
+          <span>5-10 Minutes</span>
+          <strong>Before Class Warmup</strong>
+          <p>Open a small set of beginner-friendly problems: conditionals, arrays, strings, math, tuples, sets, and maps.</p>
+          <button type="button" onClick={onOpenBeginnerWarmup}>Start warmup</button>
         </article>
         <article className="campus-queue-item focus">
-          <span>Recommended Focus</span>
+          <span>Recommended Next</span>
           <strong>{focusTitle}</strong>
           <p>{focusBlurb}</p>
+          {placementProfile ? (
+            <small className="campus-focus-badge is-ready">{placementProfile.label}</small>
+          ) : null}
           {adaptiveRecommendation ? (
             <small className={adaptiveReady ? "campus-focus-badge is-ready" : "campus-focus-badge"}>
               {adaptiveReady ? "Ladder-ready" : "Review-only for now"}
@@ -373,9 +407,11 @@ function CampusLearningQueue({
           ) : null}
           <button
             type="button"
-            onClick={() => (focusTopic ? onOpenTopic?.(focusTopic, focusAction, { difficulty: adaptiveReady ? adaptiveDifficulty : null }) : onOpenQuizBank())}
+            onClick={focusClick}
           >
-            {focusTopic ? `${focusButton}: ${titleCase(focusTopic)}` : "Browse Practice Library"}
+            {needsStartingCheck
+              ? "Start Syntax quiz"
+              : placementProfile?.actionLabel || (focusTopic ? `${focusButton}: ${titleCase(focusTopic)}` : "Browse Practice Library")}
           </button>
         </article>
       </div>
@@ -383,7 +419,143 @@ function CampusLearningQueue({
   );
 }
 
-function CampusTutorActions({ latestQuizResponse, onPrompt, onOpenInterviewPrep, onSaveQuiz }) {
+function StartingCheckCard({ result, onComplete, onSkip, onReset }) {
+  const [answers, setAnswers] = useState({});
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [questionSet, setQuestionSet] = useState(() => buildStartingQuestionSet());
+  const advanceTimerRef = useRef(null);
+  const answeredCount = Object.keys(answers).length;
+  const complete = answeredCount === questionSet.length;
+  const currentQuestion = questionSet[currentIndex];
+  const currentAnswered = answers[currentQuestion?.id] !== undefined;
+  const isLastQuestion = currentIndex === questionSet.length - 1;
+
+  useEffect(() => {
+    if (!result) {
+      setAnswers({});
+      setCurrentIndex(0);
+      setQuestionSet(buildStartingQuestionSet());
+    }
+  }, [result]);
+
+  const choose = (questionId, optionIndex) => {
+    if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current);
+    setAnswers(prev => ({ ...prev, [questionId]: optionIndex }));
+    if (!isLastQuestion) {
+      advanceTimerRef.current = window.setTimeout(() => {
+        setCurrentIndex(index => Math.min(questionSet.length - 1, index + 1));
+      }, 280);
+    }
+  };
+
+  useEffect(() => () => {
+    if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current);
+  }, []);
+
+  const submit = () => {
+    if (!complete) return;
+    onComplete(buildStartingCheckResult(answers, questionSet));
+  };
+
+  if (result) {
+    return (
+      <section className="starting-check-card is-complete" aria-label="Coding starting point">
+        <div>
+          <span className="coding-kicker">Starting Point</span>
+          <h3>{result.label}</h3>
+          <p>{result.blurb}</p>
+          {Array.isArray(result.topics) && result.topics.length > 0 ? (
+            <ul className="starting-check-topics" aria-label="Topics you will see next">
+              {result.topics.map(topic => <li key={topic}>{topic}</li>)}
+            </ul>
+          ) : null}
+        </div>
+        <button type="button" className="starting-check-link" onClick={onReset}>
+          Retake check
+        </button>
+      </section>
+    );
+  }
+
+  return (
+    <div className="starting-check-modal-backdrop" role="presentation">
+      <section className="starting-check-modal" role="dialog" aria-modal="true" aria-label="Find your Coding Tutor starting point">
+        <div className="starting-check-modal-head">
+          <div>
+            <span className="coding-kicker">Before You Start</span>
+            <h3>Find your starting point</h3>
+            <p>Answer a few quick questions so Coding Tutor can unlock a calmer first path.</p>
+          </div>
+          <button type="button" className="starting-check-link" onClick={onSkip}>
+            Skip for now
+          </button>
+        </div>
+
+        <div className="starting-check-progress" aria-label={`Question ${currentIndex + 1} of ${questionSet.length}`}>
+          <span style={{ width: `${((currentIndex + 1) / questionSet.length) * 100}%` }} />
+        </div>
+
+        <div className="starting-check-panel">
+          <fieldset className="starting-check-question" key={currentQuestion.id}>
+            <legend>
+              <span>{currentIndex + 1}</span>
+              {currentQuestion.prompt}
+            </legend>
+            {currentQuestion.code ? (
+              <pre className="starting-check-code"><code>{currentQuestion.code}</code></pre>
+            ) : null}
+            <div className="starting-check-options">
+              {currentQuestion.options.map((option, optionIndex) => (
+                <button
+                  type="button"
+                  key={option.label || option.code}
+                  className={answers[currentQuestion.id] === optionIndex ? "selected" : ""}
+                  onClick={() => choose(currentQuestion.id, optionIndex)}
+                >
+                  <span>{String.fromCharCode(65 + optionIndex)}</span>
+                  {option.code ? <code>{option.code}</code> : option.label}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+          <div className="starting-check-footer">
+            <span>
+              {isLastQuestion && complete
+                ? "Ready to unlock your starting path."
+                : `${answeredCount}/${questionSet.length} answered`}
+            </span>
+            <div>
+              <button
+                type="button"
+                className="starting-check-link"
+                disabled={currentIndex === 0}
+                onClick={() => setCurrentIndex(index => Math.max(0, index - 1))}
+              >
+                Back
+              </button>
+              {isLastQuestion ? (
+                <button type="button" className="campus-primary-action" disabled={!complete} onClick={submit}>
+                  Use this starting point
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="campus-primary-action"
+                  disabled={!currentAnswered}
+                  onClick={() => setCurrentIndex(index => Math.min(questionSet.length - 1, index + 1))}
+                >
+                  Next
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function CampusTutorActions({ latestQuizResponse, onPrompt, onOpenInterviewPrep, onOpenSnippets, onSaveQuiz }) {
   return (
     <section className="campus-tutor-actions" aria-label="Ask the tutor">
       <div className="campus-section-heading">
@@ -400,7 +572,11 @@ function CampusTutorActions({ latestQuizResponse, onPrompt, onOpenInterviewPrep,
         </button>
         <button type="button" onClick={onOpenInterviewPrep}>
           <FaChartLine aria-hidden="true" />
-          <span>Start a mock interview</span>
+          <span>Explore interview prep</span>
+        </button>
+        <button type="button" onClick={onOpenSnippets}>
+          <FaLaptopCode aria-hidden="true" />
+          <span>Open personal code lab</span>
         </button>
       </div>
       {latestQuizResponse && (
@@ -519,6 +695,9 @@ export default function CampusLabHome({
   onStartDaily,
   onOpenDailyScratch,
   onOpenSnippets,
+  onOpenLearnStart,
+  onOpenBeginnerWarmup,
+  onOpenStartingPath,
   onSelectQuestion,
   onOpenQuizBank,
   onOpenTopic,
@@ -533,6 +712,36 @@ export default function CampusLabHome({
   const queueQuestions = questions || [];
   const resumeItem = findResumeItem(queueQuestions, progressByQuestion);
   const focus = pickFocusTopics(topicPacks);
+  const storageScope = currentUserStorageScope();
+  const [startingCheckResult, setStartingCheckResult] = useState(() => readStartingCheck());
+  const hasCodingHistory =
+    (Number(progressSummary?.solvedCount) || 0) > 0 ||
+    (Number(progressSummary?.attemptedCount) || 0) > 0 ||
+    Object.values(progressByQuestion || {}).some(progress =>
+      progress?.status === "solved" || (progress?.attempt_count || 0) > 0
+    );
+  const startingCheck = startingCheckResult?.skipped ? null : startingCheckResult;
+  const shouldShowStartingCheck = !hasCodingHistory && !startingCheckResult?.skipped;
+
+  useEffect(() => {
+    setStartingCheckResult(readStartingCheck());
+  }, [storageScope]);
+
+  const completeStartingCheck = (result) => {
+    writeStartingCheck(result);
+    setStartingCheckResult(result);
+  };
+
+  const skipStartingCheck = () => {
+    const result = { skipped: true, completedAt: new Date().toISOString() };
+    writeStartingCheck(result);
+    setStartingCheckResult(result);
+  };
+
+  const resetStartingCheck = () => {
+    clearStartingCheck();
+    setStartingCheckResult(null);
+  };
 
   // One landing for everyone. The hero already handles the brand-new case
   // gracefully (0 streak / 0 solved, recommended starter, start-here focus copy),
@@ -547,7 +756,8 @@ export default function CampusLabHome({
         dailyChallenge={dailyChallenge}
         dailyDoneToday={dailyDoneToday}
         onResume={onSelectQuestion}
-        onOpenSnippets={onOpenSnippets}
+        onOpenLearnStart={onOpenLearnStart}
+        onOpenBeginnerWarmup={onOpenBeginnerWarmup}
         onSelectQuestion={onSelectQuestion}
       />
 
@@ -563,6 +773,22 @@ export default function CampusLabHome({
         onOpenScratch={onOpenDailyScratch}
       />
 
+      {shouldShowStartingCheck ? (
+        <StartingCheckCard
+          result={startingCheck}
+          onComplete={completeStartingCheck}
+          onSkip={skipStartingCheck}
+          onReset={resetStartingCheck}
+        />
+      ) : startingCheck ? (
+        <StartingCheckCard
+          result={startingCheck}
+          onComplete={completeStartingCheck}
+          onSkip={skipStartingCheck}
+          onReset={resetStartingCheck}
+        />
+      ) : null}
+
       <CampusLearningQueue
         questions={queueQuestions}
         progressByQuestion={progressByQuestion}
@@ -571,11 +797,13 @@ export default function CampusLabHome({
         focus={focus}
         mastery={mastery}
         adaptivePractice={adaptivePractice}
+        startingCheck={startingCheck}
         onSelect={onSelectQuestion}
-        onOpenSnippets={onOpenSnippets}
         onOpenQuizBank={onOpenQuizBank}
+        onOpenBeginnerWarmup={onOpenBeginnerWarmup}
         onOpenTopic={onOpenTopic}
         onOpenLessonReview={onOpenLessonReview}
+        onOpenStartingPath={onOpenStartingPath}
         learningStyle={learningStyle}
       />
 
@@ -583,6 +811,7 @@ export default function CampusLabHome({
         latestQuizResponse={latestQuizResponse}
         onPrompt={onPrompt}
         onOpenInterviewPrep={onOpenInterviewPrep}
+        onOpenSnippets={onOpenSnippets}
         onSaveQuiz={onSaveQuiz}
       />
     </section>

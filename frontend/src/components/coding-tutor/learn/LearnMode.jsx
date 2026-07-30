@@ -44,16 +44,26 @@ function trackDefinition(trackId) {
   return TRACKS.find((track) => track.id === trackId) || null;
 }
 
-function LanguageCards({ languages, onPick }) {
+function LanguageCards({ languages, onPick, onStartPythonBeginner }) {
   return (
     <div className="cq-language-cards">
       <div className="cq-cards-intro">
         <h2>Learn</h2>
         <p>
-          Short lessons that teach the idea before you're tested on it. Pick a
-          language, then choose the pace that fits where you are.
+          Short lessons that teach the idea before you're tested on it. Start with
+          Python Beginner if you want the gentlest path.
         </p>
       </div>
+      <button type="button" className="cq-start-here-card" onClick={onStartPythonBeginner}>
+        <span className="cq-language-card-flag">Start Here</span>
+        <strong>Python Beginner</strong>
+        <span>
+          Follow the lessons in order, then practice the same ideas with small coding problems.
+        </span>
+        <span className="cq-language-card-cta">
+          Start the first track <FaArrowRight aria-hidden="true" />
+        </span>
+      </button>
       <div className="cq-cards-grid">
         {languages.map((lang) => {
           const accent = LANGUAGE_VISUALS[lang.id] || {};
@@ -384,5 +394,11 @@ export default function LearnMode({
     );
   }
 
-  return <LanguageCards languages={languages} onPick={onNavigateToLanguage} />;
+  return (
+    <LanguageCards
+      languages={languages}
+      onPick={onNavigateToLanguage}
+      onStartPythonBeginner={() => onNavigateToTrack("python", "beginner")}
+    />
+  );
 }

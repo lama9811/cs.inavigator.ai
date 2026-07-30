@@ -64,6 +64,26 @@ VISUALIZER_CONCEPTS = {
     "two-pointers",
     "union-find",
 }
+VISUALIZER_QUALITY_TOPICS = {
+    "binary search",
+    "graphs",
+    "hash maps",
+    "linked lists",
+    "queues",
+    "recursion",
+    "sets",
+    "sliding window",
+    "stacks",
+    "trees",
+    "two pointers",
+}
+GENERIC_VISUALIZER_PHRASES = {
+    "make the key move",
+    "apply the prompt rule",
+    "set up the needed state",
+    "repeat until the prompt stopping rule",
+    "one pointer, cell, memory slot, or frontier item changes",
+}
 COSC_101_EXPANSION_IDS = {
     "easy-25",
     "easy-26",
@@ -192,6 +212,47 @@ def test_every_practice_question_has_problem_specific_visualizer():
         for index, step in enumerate(steps, start=1):
             if not step.get("title") or not step.get("body") or not isinstance(step.get("state"), dict):
                 problems.append(f"{qid}: malformed visualizer step {index}")
+
+    assert problems == []
+
+
+def test_priority_visualizers_have_richer_step_metadata():
+    problems = []
+    for q in load_questions():
+        if q.get("topic") not in VISUALIZER_QUALITY_TOPICS:
+            continue
+        qid = q.get("id")
+        visualizer = q.get("visualizer") or {}
+        combined_text = " ".join(
+            [
+                str(visualizer.get("title") or ""),
+                str(visualizer.get("caption") or ""),
+                str(visualizer.get("focus") or ""),
+                *(str(step.get(key) or "") for step in visualizer.get("steps") or [] for key in ("title", "body", "changed", "why", "code")),
+            ]
+        ).lower()
+        if not str(visualizer.get("patternSketch") or visualizer.get("pattern_sketch") or "").strip():
+            problems.append(f"{qid}: missing answer-safe pattern sketch")
+        example = (q.get("examples") or [{}])[0]
+        example_input = str(example.get("input") or "").strip()
+        example_output = str(example.get("output") or "").strip()
+        sample_state = visualizer.get("input") or {}
+        visual_sample = str(sample_state.get("sample") or "").strip().rstrip(".")
+        visual_sample_prefix = visual_sample[:-3] if visual_sample.endswith("...") else visual_sample
+        if example_input and visual_sample_prefix and not example_input.startswith(visual_sample_prefix):
+            problems.append(f"{qid}: visualizer sample does not use the authored example input")
+        if example_output and example_output not in str(sample_state.get("goal") or ""):
+            problems.append(f"{qid}: visualizer goal does not show the authored example output")
+        for phrase in GENERIC_VISUALIZER_PHRASES:
+            if phrase in combined_text:
+                problems.append(f"{qid}: generic visualizer phrase {phrase!r}")
+        for index, step in enumerate(visualizer.get("steps") or [], start=1):
+            if not str(step.get("cue") or "").strip():
+                problems.append(f"{qid}: visualizer step {index} missing prediction cue")
+            state = step.get("state") or {}
+            visible_state_keys = set(state) - {"items", "values", "active", "nodes", "edges", "grid", "activeCells"}
+            if not visible_state_keys:
+                problems.append(f"{qid}: visualizer step {index} missing visible state fields")
 
     assert problems == []
 

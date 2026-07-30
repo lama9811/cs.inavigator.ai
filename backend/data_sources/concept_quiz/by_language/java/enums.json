@@ -80,14 +80,14 @@
       "language": "java",
       "title": "Enums concept check 1",
       "code": null,
-      "prompt": "What does the lesson mean by \"Changing text into an enum can fail\"?",
+      "prompt": "What can go wrong when text is converted into a Java enum value?",
       "choices": [
-        "Level level = \"MEDIUM\";",
         "`Status.valueOf(text)` requires an exact constant name. Input such as `\"active\"` does not match `ACTIVE` unless you clean or convert it first.",
-        "Level level = 2;",
-        "Level level = new Level();"
+        "Represent a fixed set of choices as arbitrary strings.",
+        "Assume `valueOf` accepts any capitalization.",
+        "Add new enum meanings only in scattered if statements."
       ],
-      "answer_index": 1,
+      "answer_index": 0,
       "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: `Status.valueOf(text)` requires an exact constant name. Input such as `\"active\"` does not match `ACTIVE` unless you clean or convert it first."
     },
     {
@@ -100,12 +100,12 @@
       "code": null,
       "prompt": "Which choice describes a reliable Enums practice?",
       "choices": [
-        "HIGH",
-        "2",
+        "Store an enum as text when type checking would help.",
         "Use an enum for a fixed set of choices.",
-        "Nothing"
+        "Compare user input directly to enum constants without cleaning it.",
+        "Use an enum for values that users can invent freely."
       ],
-      "answer_index": 2,
+      "answer_index": 1,
       "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: Use an enum for a fixed set of choices."
     },
     {
@@ -118,12 +118,12 @@
       "code": null,
       "prompt": "Which recommendation belongs in a review of Enums code?",
       "choices": [
-        "String status = \"acitve\";",
-        "Level level = new Level();",
-        "HIGH",
-        "Name constants clearly and consistently."
+        "Duplicate the same allowed choices in several files.",
+        "Depend on ordinal numbers for permanent saved meaning.",
+        "Name constants clearly and consistently.",
+        "Use a boolean when there are more than two named states."
       ],
-      "answer_index": 3,
+      "answer_index": 2,
       "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: Name constants clearly and consistently."
     },
     {
@@ -136,12 +136,12 @@
       "code": null,
       "prompt": "Which guideline helps prevent a common Enums mistake?",
       "choices": [
-        "Store the enum value instead of a matching string.",
-        "2",
-        "Nothing",
-        "String status = \"acitve\";"
+        "Forget to handle a new enum constant in branch logic.",
+        "Treat enum names as display text for every user.",
+        "Parse text without handling invalid input.",
+        "Store the enum value instead of a matching string."
       ],
-      "answer_index": 0,
+      "answer_index": 3,
       "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: Store the enum value instead of a matching string."
     },
     {
@@ -154,12 +154,12 @@
       "code": null,
       "prompt": "A classmate is checking their understanding of Enums. Which advice is correct?",
       "choices": [
-        "Level level = \"MEDIUM\";",
         "Handle outside text before calling `valueOf`.",
-        "Level level = 2;",
-        "2"
+        "Use magic numbers instead of named constants.",
+        "Let each caller invent its own spelling for a state.",
+        "Switch on strings when enum constants exist."
       ],
-      "answer_index": 1,
+      "answer_index": 0,
       "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: Handle outside text before calling `valueOf`."
     },
     {
@@ -172,12 +172,12 @@
       "code": null,
       "prompt": "Which choice shows sound reasoning about Enums?",
       "choices": [
-        "Nothing",
-        "String status = \"acitve\";",
+        "Put unrelated states into the same enum.",
         "Use switch when each constant needs different behavior.",
-        "Level level = \"MEDIUM\";"
+        "Assume enum constants are lowercase strings.",
+        "Use an enum to store changing numeric data."
       ],
-      "answer_index": 2,
+      "answer_index": 1,
       "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: Use switch when each constant needs different behavior."
     }
   ]

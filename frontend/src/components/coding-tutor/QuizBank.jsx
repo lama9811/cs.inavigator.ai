@@ -45,6 +45,7 @@ const SORT_OPTIONS = [
 const SORT_VALUES = new Set(SORT_OPTIONS.map(option => option.value));
 const DIFFICULTY_VALUES = new Set(DIFFICULTY_OPTIONS.map(option => option.value));
 const STATUS_VALUES = new Set(STATUS_OPTIONS.map(option => option.value));
+const BEGINNER_STARTER_TOPICS = ["conditionals", "arrays", "strings", "math", "tuples", "sets", "hash maps"];
 
 function splitParam(value, allowed = null) {
   return String(value || "")
@@ -490,6 +491,88 @@ export default function QuizBank({
   const adaptiveRecommendation = adaptivePractice?.recommendation || null;
   const adaptiveReviewSignal = adaptivePractice?.review_signal || null;
   const adaptiveReady = adaptiveRecommendation?.action === "ladder" && adaptiveRecommendation?.ladder_ready;
+  const beginnerStarterActive =
+    difficultyFilters.length === 1 &&
+    difficultyFilters[0] === "easy" &&
+    BEGINNER_STARTER_TOPICS.every(topic => effectiveTopics.includes(topic));
+  const starterCount = sourceQuestions.filter((question) => {
+    const topic = String(question.topic || "").toLowerCase();
+    const difficulty = String(question.difficulty || "").toLowerCase();
+    return difficulty === "easy" && BEGINNER_STARTER_TOPICS.includes(topic);
+  }).length;
+  const applyBeginnerStarter = () => {
+    updateFilter({
+      difficulty: ["easy"],
+      topic: BEGINNER_STARTER_TOPICS,
+      status: [],
+      sort: "topic",
+    });
+    setFiltersOpen(false);
+  };
+
+  const guideRecommendation = adaptiveReviewSignal
+    ? {
+      label: "Recommended next",
+      title: adaptiveReviewSignal.title || "Review recent errors",
+      band: titleCase(adaptiveReviewSignal.error_class || "Review"),
+      bandClass: "shaky",
+      reason: adaptiveReviewSignal.reason,
+      cta: "Open review lesson",
+      onClick: () => onOpenLessonReview?.(adaptiveReviewSignal),
+    }
+    : adaptiveRecommendation?.topic
+      ? {
+        label: "Recommended next",
+        title: titleCase(adaptiveRecommendation.topic),
+        band: adaptiveReady ? titleCase(adaptiveRecommendation.difficulty) : "Review",
+        bandClass: adaptiveReady ? "steady" : "shaky",
+        reason: adaptiveRecommendation.reason,
+        cta: adaptiveReady
+          ? `Open ${titleCase(adaptiveRecommendation.difficulty)} ladder step`
+          : `Review ${titleCase(adaptiveRecommendation.topic)}`,
+        onClick: () => {
+          updateFilter({
+            topic: [adaptiveRecommendation.topic],
+            ...(adaptiveReady && adaptiveRecommendation.difficulty ? { difficulty: [adaptiveRecommendation.difficulty] } : {}),
+          });
+          setFiltersOpen(false);
+        },
+      }
+      : masteryWeakest
+        ? {
+          label: "Recommended next",
+          title: titleCase(masteryWeakest.topic),
+          band: Math.round(masteryWeakest.score),
+          bandClass: masteryWeakest.band,
+          reason: masteryWeakest.reason,
+          cta: `Practice ${titleCase(masteryWeakest.topic)}`,
+          onClick: () => {
+            updateFilter({ topic: [masteryWeakest.topic] });
+            setFiltersOpen(false);
+          },
+        }
+        : weakestByRatio
+          ? {
+            label: "Recommended next",
+            title: titleCase(weakestByRatio.topic),
+            band: `${weakestByRatio.solved}/${weakestByRatio.total}`,
+            bandClass: "shaky",
+            reason: `${titleCase(weakestByRatio.topic)} has the lowest solved count in this view. Try one more problem there.`,
+            cta: `Practice ${titleCase(weakestByRatio.topic)}`,
+            onClick: () => {
+              updateFilter({ topic: [weakestByRatio.topic] });
+              setFiltersOpen(false);
+            },
+          }
+          : {
+            label: "Recommended next",
+            title: "Beginner starter set",
+            band: "Easy",
+            bandClass: "steady",
+            reason: "A short COSC 101/102-friendly set is ready when you want a low-pressure warmup.",
+            cta: "Open beginner starter set",
+            onClick: applyBeginnerStarter,
+          };
 
   // Per-topic mastery scores, keyed for a quick lookup in the topic-progress list.
   const scoreByTopic = useMemo(() => {
@@ -550,6 +633,19 @@ export default function QuizBank({
                 ))}
               </select>
             </label>
+          </div>
+          <div className="practice-starter-strip" aria-label="Beginner practice shortcut">
+            <div>
+              <strong>New here?</strong>
+              <span>Use a small Easy starter set before opening the full library.</span>
+            </div>
+            <button
+              type="button"
+              className={beginnerStarterActive ? "is-active" : ""}
+              onClick={applyBeginnerStarter}
+            >
+              {beginnerStarterActive ? "Starter set active" : `Beginner starter set (${starterCount})`}
+            </button>
           </div>
 
           {filtersOpen && (
@@ -788,53 +884,23 @@ export default function QuizBank({
         <aside className="quiz-insight-panel">
           <div className="practice-guide-title">Practice Guide</div>
 
-          {adaptiveReviewSignal && (
+          {guideRecommendation && (
             <section className="practice-guide-section">
-              <h3>Recommended review</h3>
-              <div className="practice-guide-focus is-review">
-                <p className="practice-guide-weakest is-mastery">
-                  <strong>{adaptiveReviewSignal.title || "Review recent errors"}</strong>
-                  <span className="practice-mastery-band is-shaky">
-                    {titleCase(adaptiveReviewSignal.error_class || "Review")}
-                  </span>
-                </p>
-                <p className="practice-guide-reason">{adaptiveReviewSignal.reason}</p>
-                <button
-                  type="button"
-                  className="practice-guide-focus-cta"
-                  onClick={() => onOpenLessonReview?.(adaptiveReviewSignal)}
-                >
-                  Open review lesson
-                </button>
-              </div>
-            </section>
-          )}
-
-          {adaptiveRecommendation?.topic && (
-            <section className="practice-guide-section">
-              <h3>{adaptiveReady ? "Adaptive ladder" : "Recommended practice"}</h3>
+              <h3>{guideRecommendation.label}</h3>
               <div className="practice-guide-focus">
                 <p className="practice-guide-weakest is-mastery">
-                  <strong>{titleCase(adaptiveRecommendation.topic)}</strong>
-                  <span className={`practice-mastery-band is-${adaptiveReady ? "steady" : "shaky"}`}>
-                    {adaptiveReady ? titleCase(adaptiveRecommendation.difficulty) : "Review"}
+                  <strong>{guideRecommendation.title}</strong>
+                  <span className={`practice-mastery-band is-${guideRecommendation.bandClass}`}>
+                    {guideRecommendation.band}
                   </span>
                 </p>
-                <p className="practice-guide-reason">{adaptiveRecommendation.reason}</p>
+                <p className="practice-guide-reason">{guideRecommendation.reason}</p>
                 <button
                   type="button"
                   className="practice-guide-focus-cta"
-                  onClick={() => {
-                    updateFilter({
-                      topic: [adaptiveRecommendation.topic],
-                      ...(adaptiveReady && adaptiveRecommendation.difficulty ? { difficulty: [adaptiveRecommendation.difficulty] } : {}),
-                    });
-                    setFiltersOpen(false);
-                  }}
+                  onClick={guideRecommendation.onClick}
                 >
-                  {adaptiveReady
-                    ? `Open ${titleCase(adaptiveRecommendation.difficulty)} ladder step`
-                    : `Review ${titleCase(adaptiveRecommendation.topic)}`}
+                  {guideRecommendation.cta}
                 </button>
               </div>
             </section>
@@ -850,40 +916,6 @@ export default function QuizBank({
               <p>No topics match the current filters.</p>
             )}
           </section>
-
-          {!adaptiveRecommendation?.topic && (masteryWeakest || weakestByRatio) && (
-            <section className="practice-guide-section">
-              <h3>Focus next</h3>
-              {masteryWeakest ? (
-                <div className="practice-guide-focus">
-                  <p className="practice-guide-weakest is-mastery">
-                    <strong>{titleCase(masteryWeakest.topic)}</strong>
-                    <span className={`practice-mastery-band is-${masteryWeakest.band}`}>
-                      {Math.round(masteryWeakest.score)}
-                    </span>
-                  </p>
-                  {/* The "why". Every claim is a counted fact from this student's own
-                      attempt log - no LLM, so nothing can invent a diagnosis. */}
-                  <p className="practice-guide-reason">{masteryWeakest.reason}</p>
-                  <button
-                    type="button"
-                    className="practice-guide-focus-cta"
-                    onClick={() => {
-                      updateFilter({ topic: [masteryWeakest.topic] });
-                      setFiltersOpen(false);
-                    }}
-                  >
-                    Practice {titleCase(masteryWeakest.topic)}
-                  </button>
-                </div>
-              ) : (
-                <p className="practice-guide-weakest">
-                  <strong>{titleCase(weakestByRatio.topic)}</strong> is your weakest topic in view
-                  ({weakestByRatio.solved}/{weakestByRatio.total} solved). Try another one next.
-                </p>
-              )}
-            </section>
-          )}
 
           {/* Topic progress is COLLAPSED by default. The guide's job is to answer
               "what should I do next", and one clear answer does that better than a

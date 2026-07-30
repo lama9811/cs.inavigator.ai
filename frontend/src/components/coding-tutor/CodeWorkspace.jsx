@@ -167,8 +167,8 @@ function CodeTraceModal({
         <section className="workspace-visualizer is-modal code-trace-modal">
           <header className="workspace-visualizer-head">
             <div>
-              <span className="workspace-visualizer-kicker">Python execution trace</span>
-              <h3>Trace my code</h3>
+              <span className="workspace-visualizer-kicker">Trace My Code</span>
+              <h3>Python execution trace</h3>
               <p>Steps through the Python code currently in your editor and shows what changes as it runs.</p>
             </div>
             <button type="button" className="workspace-visual-close" onClick={onClose} autoFocus>
@@ -497,9 +497,9 @@ export default function CodeWorkspace({
               className="code-trace-button"
               onClick={onTraceCode}
               disabled={!canTracePython || isTracingCode}
-              title={canTracePython ? "Trace this Python solution step by step" : "Code tracing is available for Python practice problems first"}
+              title={canTracePython ? "Trace your actual Python code step by step" : "Code tracing is available for Python practice problems first"}
             >
-              {isTracingCode ? "Tracing..." : "Trace my code"}
+              {isTracingCode ? "Tracing..." : "Trace My Code"}
             </button>
             <select
               className="code-editor-lang-select"

@@ -205,13 +205,29 @@ function AnswerPanel({ question, answer, onAnswer, locked = false }) {
             <span className="cq-choice-marker">
               {String.fromCharCode(65 + index)}
             </span>
-            <span className="cq-choice-text">{choice}</span>
+            <span className="cq-choice-text">{withChoiceEmphasis(choice)}</span>
           </button>
         );
       })}
       </div>
     </div>
   );
+}
+
+// Options should read like answer choices, not little code dumps. The quiz data
+// uses backticks to mark key phrases/snippets, but in the button UI those marks
+// add visual noise. Render them as emphasis instead.
+function withChoiceEmphasis(text) {
+  return String(text || "").split(/(`[^`]+`)/g).map((part, index) => {
+    if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
+      return (
+        <strong className="cq-choice-emphasis" key={`choice-emphasis-${index}`}>
+          {part.slice(1, -1)}
+        </strong>
+      );
+    }
+    return part;
+  });
 }
 
 // The refresher, shown beside the question the student is answering.

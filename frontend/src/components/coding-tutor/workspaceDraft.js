@@ -10,18 +10,23 @@
 // problem + language, so unrun code survives an unmount and language switches
 // keep each language's buffer independent. Purely localStorage; no backend.
 
+import { scopedStorageKey } from "./storageScope";
+
 const DRAFT_PREFIX = "csnav.workspaceDraft"; // + :<problemId>:<language>
-const LAST_KEY = "csnav.workspaceLast";      // { problemId, language, updatedAt }
-const DRAFT_INDEX_KEY = "csnav.workspaceDraftIndex"; // [key, ...] for pruning
+const LAST_BASE_KEY = "csnav.workspaceLast";      // { problemId, language, updatedAt }
+const DRAFT_INDEX_BASE_KEY = "csnav.workspaceDraftIndex"; // [key, ...] for pruning
 const MAX_DRAFTS = 60; // plenty for a practice session; prune oldest beyond this
 
 function draftKey(problemId, language) {
-  return `${DRAFT_PREFIX}:${problemId}:${language}`;
+  return scopedStorageKey(`${DRAFT_PREFIX}:${problemId}:${language}`);
 }
+
+const lastKey = () => scopedStorageKey(LAST_BASE_KEY);
+const draftIndexKey = () => scopedStorageKey(DRAFT_INDEX_BASE_KEY);
 
 function readIndex() {
   try {
-    const raw = localStorage.getItem(DRAFT_INDEX_KEY);
+    const raw = localStorage.getItem(draftIndexKey());
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed : [];
   } catch {
@@ -31,7 +36,7 @@ function readIndex() {
 
 function writeIndex(list) {
   try {
-    localStorage.setItem(DRAFT_INDEX_KEY, JSON.stringify(list));
+    localStorage.setItem(draftIndexKey(), JSON.stringify(list));
   } catch {
     // Storage full/blocked: index just won't persist. Non-fatal.
   }
@@ -109,7 +114,7 @@ export function clearDraft(problemId, language) {
 export function saveLastWorkspace(problemId, language) {
   if (!problemId || !language) return;
   try {
-    localStorage.setItem(LAST_KEY, JSON.stringify({ problemId, language, updatedAt: new Date().toISOString() }));
+    localStorage.setItem(lastKey(), JSON.stringify({ problemId, language, updatedAt: new Date().toISOString() }));
   } catch {
     // Non-fatal.
   }
@@ -117,7 +122,7 @@ export function saveLastWorkspace(problemId, language) {
 
 export function readLastWorkspace() {
   try {
-    const raw = localStorage.getItem(LAST_KEY);
+    const raw = localStorage.getItem(lastKey());
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (parsed?.problemId && parsed?.language) return parsed;
@@ -129,7 +134,7 @@ export function readLastWorkspace() {
 
 export function clearLastWorkspace() {
   try {
-    localStorage.removeItem(LAST_KEY);
+    localStorage.removeItem(lastKey());
   } catch {
     // Non-fatal.
   }

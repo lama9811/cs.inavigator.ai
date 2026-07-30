@@ -140,12 +140,12 @@
       "code": null,
       "prompt": "Which warning about Pointers should a student remember?",
       "choices": [
-        "a copy of x",
         "An uninitialized or null pointer does not identify a valid object. Dereferencing it has undefined behavior and can crash the program.",
-        "the type of x",
-        "always zero"
+        "Dereference a pointer before checking whether it has a valid target.",
+        "Use an uninitialized pointer.",
+        "Treat an address as if it were the stored value."
       ],
-      "answer_index": 1,
+      "answer_index": 0,
       "explanation": "A pointer holds an address. `&value` obtains an address, `*pointer` dereferences it, and `nullptr` represents no object. That reasoning supports the answer: An uninitialized or null pointer does not identify a valid object. Dereferencing it has undefined behavior and can crash the program."
     },
     {
@@ -158,12 +158,12 @@
       "code": null,
       "prompt": "Which choice describes a reliable Pointers practice?",
       "choices": [
-        "a new pointer",
-        "the address of p",
+        "Use `nullptr` and then immediately dereference it.",
         "Initialize every pointer.",
-        "pointer multiplication"
+        "Forget that `&value` gets an address.",
+        "Forget that `*pointer` follows the address."
       ],
-      "answer_index": 2,
+      "answer_index": 1,
       "explanation": "A pointer holds an address. `&value` obtains an address, `*pointer` dereferences it, and `nullptr` represents no object. That reasoning supports the answer: Initialize every pointer."
     },
     {
@@ -176,12 +176,12 @@
       "code": null,
       "prompt": "Which recommendation belongs in a review of Pointers code?",
       "choices": [
-        "int* score = nullptr;\nstd::cout << *score;",
-        "always zero",
-        "a new pointer",
-        "Use nullptr for no target."
+        "Return a pointer to a local variable.",
+        "Share raw ownership without deciding who deletes.",
+        "Use nullptr for no target.",
+        "Use pointer arithmetic when an index would be clearer."
       ],
-      "answer_index": 3,
+      "answer_index": 2,
       "explanation": "A pointer holds an address. `&value` obtains an address, `*pointer` dereferences it, and `nullptr` represents no object. That reasoning supports the answer: Use nullptr for no target."
     }
   ]
