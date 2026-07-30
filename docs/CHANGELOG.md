@@ -4,6 +4,7 @@ All notable changes to CS Navigator are documented here.
 
 ## [Unreleased]
 ### Added
+- **Question-specific beginner Learn cards.** Operators, Strings, User Input, Lists/Arrays, and Conditionals now include in-question micro-lessons tied to each cleaned quiz question.
 - **Per-question Practice Library visualizers.** Every code-writing practice problem now has explicit problem-specific visualizer metadata, with guided sample steps, broader visual concepts, animated state movement, and tests preventing generic topic-only fallback.
 - **Practice Library thin-topic readiness batch.** Added nine all-language stack, queue, binary-search, tree, and linked-list problems with deterministic runner tests and native bridge coverage.
 - **Advanced V2 Practice Library depth batch.** Added eight all-language bit-manipulation, prefix-sum, and matrix problems with deterministic runner tests and native bridge coverage.
@@ -31,6 +32,7 @@ All notable changes to CS Navigator are documented here.
 - **Adaptive review routing.** Coding Tutor adaptive recommendations now include a conservative review signal when recent practice attempts show repeated syntax, runtime, wrong-answer, or timeout patterns.
 
 ### Changed
+- Concept Quiz multiple-choice answers now shuffle per browser attempt while preserving original answer identities for grading, draft restore, immediate feedback, and result summaries.
 - Concept quiz banks now reject old generic prompt templates across all languages and topics; Operators, Strings, User Input, Lists/Arrays, Conditionals, and language-specific intermediate banks were cleaned of lesson-referencing stems, repeated review prompts, mojibake, and explanation boilerplate.
 - Coding Tutor Home now shows the Starting Point check before the LeetCode daily card so new students get placed before seeing outside challenge work.
 - Concept quiz answer choices now remove noisy backtick styling and emphasize only operator symbols inside code snippets, with slightly larger answer text for readability.

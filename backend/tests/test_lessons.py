@@ -22,6 +22,13 @@ import lessons
 
 
 ALL_LANGUAGES = ("python", "java", "javascript", "cpp")
+QUESTION_SPECIFIC_LEARN_CARD_CATEGORIES = (
+    "operators",
+    "strings",
+    "user-input",
+    "lists",
+    "conditionals",
+)
 
 
 def authored_lessons():
@@ -211,6 +218,11 @@ def test_no_stock_phrase_is_reused_across_lessons():
     from collections import defaultdict
 
     STOPWORDS_OK = 2  # a phrase may legitimately recur in at most this many lessons
+    equivalent_topics = {
+        "dictionaries": "maps-and-objects",
+        "maps": "maps-and-objects",
+        "objects": "maps-and-objects",
+    }
 
     seen = defaultdict(set)
     for language, category, lesson in authored_lessons():
@@ -227,7 +239,10 @@ def test_no_stock_phrase_is_reused_across_lessons():
         # coincidence of common English.
         for i in range(len(words) - 6):
             shingle = " ".join(words[i:i + 7])
-            seen[shingle].add(f"{language}/{category}")
+            # Shared/equivalent lessons intentionally render once per language or
+            # language idiom. Count the concept, not every language copy, so this guard
+            # still catches copy-paste across unrelated lessons.
+            seen[shingle].add(equivalent_topics.get(category, category))
 
     overused = {
         phrase: sorted(where)
@@ -282,6 +297,52 @@ def test_refresher_derives_from_the_lesson():
         assert refresher is not None
         assert refresher["refresher"] == lesson["refresher"]
         assert refresher["title"] == lesson["title"]
+
+
+def test_learn_cards_reference_real_quiz_questions():
+    """Question-specific Learn cards must stay tied to real quiz question ids."""
+    for language, category, lesson in authored_lessons():
+        cards = lesson.get("learn_cards") or {}
+        if not cards:
+            continue
+        question_ids = {
+            question["id"]
+            for question in concept_quiz.questions_for_category(language, category)["questions"]
+        }
+        unknown = sorted(set(cards) - question_ids)
+        assert not unknown, (
+            f"{language}/{category}: learn_cards reference unknown quiz ids {unknown}"
+        )
+        for question_id, card in cards.items():
+            where = f"{language}/{category}/{question_id}"
+            assert card["title"], f"{where}: learn card title missing"
+            assert card["refresher"], f"{where}: learn card body missing"
+            assert card["notice"], f"{where}: learn card notice missing"
+            assert card["mistake"], f"{where}: learn card mistake missing"
+            assert card["source"] == "question"
+
+
+def test_cleaned_beginner_banks_have_question_specific_learn_cards():
+    """The cleaned beginner banks should no longer fall back to broad topic refreshers."""
+    for language in ALL_LANGUAGES:
+        for category in QUESTION_SPECIFIC_LEARN_CARD_CATEGORIES:
+            lesson = lessons.get_lesson(language, category)
+            assert lesson is not None, f"{language}/{category}: missing lesson"
+            question_ids = {
+                question["id"]
+                for question in concept_quiz.questions_for_category(language, category)["questions"]
+            }
+            card_ids = set(lesson.get("learn_cards") or {})
+            missing = sorted(question_ids - card_ids)
+            assert not missing, f"{language}/{category}: missing learn cards for {missing}"
+
+            for question_id in question_ids:
+                refresher = lessons.get_refresher(language, category, question_id)
+                assert refresher is not None
+                assert refresher["source"] == "question"
+                assert refresher["section_id"], (
+                    f"{language}/{category}/{question_id}: section id missing"
+                )
 
 
 def test_every_block_kind_is_valid():

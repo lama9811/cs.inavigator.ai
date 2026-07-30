@@ -136,5 +136,87 @@
         "Seeing an IndexError means you asked for a character past the end. Count the characters, subtract one, and check your **index** against that."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "strings-lesson-check-1": {
+      "title": "Length is not the last index",
+      "body": "String positions start at 0, so the count is one past the final valid index.",
+      "example": "word = \"Bears\"\nlast_index = len(word) - 1",
+      "notice": "A five-character string uses positions 0, 1, 2, 3, and 4.",
+      "mistake": "Do not use the length itself as an index unless you mean one past the end.",
+      "section_id": "check"
+    },
+    "strings-lesson-check-2": {
+      "title": "Follow each string operation",
+      "body": "When several string methods appear together, trace the returned value from left to right before choosing the output.",
+      "example": "text.strip().split()",
+      "notice": "Some methods return strings, and some return collections of smaller pieces.",
+      "mistake": "Do not keep measuring the original text after a method has returned a different value.",
+      "section_id": "check"
+    },
+    "strings-summary-01": {
+      "title": "Strings are text values",
+      "body": "A **string** stores text. You can measure it, read characters by position, take pieces from it, and build new text from it.",
+      "example": "name = \"Ada\"\nname[0]",
+      "notice": "Most string operations return a value; they do not rewrite the original text in place.",
+      "mistake": "Do not treat the character count as the final valid position.",
+      "section_id": "check"
+    },
+    "strings-supplement-01": {
+      "title": "Strings do not change in place",
+      "body": "Many beginner bugs come from trying to edit one character inside a string. Instead, build a new string with the change you want.",
+      "example": "fixed = \"b\" + word[1:]",
+      "notice": "Immutable means the original text value is not edited directly.",
+      "mistake": "Do not assign into a string index like it is a list slot.",
+      "section_id": "check"
+    },
+    "strings-authored-01": {
+      "title": "Convert before joining text and numbers",
+      "body": "Joining text with a number needs an explicit conversion or a formatted string. That makes the intended output clear.",
+      "example": "message = f\"Score: {score}\"",
+      "notice": "The plus operator can mean different things depending on the values around it.",
+      "mistake": "Do not expect the language to always guess whether plus means addition or text joining.",
+      "section_id": "check"
+    },
+    "strings-authored-02": {
+      "title": "Index errors come from bounds",
+      "body": "If code asks for a string position that does not exist, the bug is usually a zero-based counting mistake.",
+      "example": "last = text[len(text) - 1]",
+      "notice": "Check both the string length and the position being requested.",
+      "mistake": "Do not read the final character before checking that the string is nonempty.",
+      "section_id": "check"
+    },
+    "strings-authored-03": {
+      "title": "Use the method result",
+      "body": "A string method call often gives back transformed text. Store, return, print, or compare that returned value.",
+      "example": "clean = answer.strip().lower()",
+      "notice": "Calling the method alone may do nothing visible.",
+      "mistake": "Do not assume a string method changed the variable automatically.",
+      "section_id": "check"
+    },
+    "strings-authored-04": {
+      "title": "Reach the final character safely",
+      "body": "To read the last character, use the language's last-index pattern and first make sure the string has at least one character.",
+      "example": "last = text[-1]",
+      "notice": "Last-index shortcuts are convenient, but empty strings still have no last character.",
+      "mistake": "Do not use the count as the final index.",
+      "section_id": "check"
+    },
+    "strings-authored-05": {
+      "title": "Slices stop before the end",
+      "body": "A slice or substring range usually includes the start and stops before the ending position.",
+      "example": "word[1:4]",
+      "notice": "The stop value acts like a boundary, not a character to include.",
+      "mistake": "Do not count the stop position as part of the returned text.",
+      "section_id": "check"
+    },
+    "strings-authored-06": {
+      "title": "Normalize typed text before comparing",
+      "body": "When people type answers, spaces and capitalization can vary. Clean the text before comparing when exact formatting is not the point.",
+      "example": "answer.strip().lower()",
+      "notice": "Normalize both the value and the comparison target in the same way.",
+      "mistake": "Do not clean only one side of a comparison and leave the other side inconsistent.",
+      "section_id": "check"
+    }
+  }
 }

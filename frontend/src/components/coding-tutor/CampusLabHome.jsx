@@ -440,12 +440,28 @@ function StartingCheckCard({ result, onComplete, onSkip, onReset }) {
 
   const choose = (questionId, optionIndex) => {
     if (advanceTimerRef.current) window.clearTimeout(advanceTimerRef.current);
-    setAnswers(prev => ({ ...prev, [questionId]: optionIndex }));
+    const option = currentQuestion?.options?.[optionIndex];
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: {
+        choice_index: option?.originalIndex ?? optionIndex,
+        display_index: optionIndex,
+        unsure: Boolean(option?.unsure),
+      },
+    }));
     if (!isLastQuestion) {
       advanceTimerRef.current = window.setTimeout(() => {
         setCurrentIndex(index => Math.min(questionSet.length - 1, index + 1));
       }, 280);
     }
+  };
+
+  const isOptionSelected = (questionId, optionIndex) => {
+    const answer = answers[questionId];
+    if (answer && typeof answer === "object") {
+      return answer.display_index === optionIndex;
+    }
+    return answer === optionIndex;
   };
 
   useEffect(() => () => {
@@ -509,7 +525,7 @@ function StartingCheckCard({ result, onComplete, onSkip, onReset }) {
                 <button
                   type="button"
                   key={option.label || option.code}
-                  className={answers[currentQuestion.id] === optionIndex ? "selected" : ""}
+                  className={isOptionSelected(currentQuestion.id, optionIndex) ? "selected" : ""}
                   onClick={() => choose(currentQuestion.id, optionIndex)}
                 >
                   <span>{String.fromCharCode(65 + optionIndex)}</span>

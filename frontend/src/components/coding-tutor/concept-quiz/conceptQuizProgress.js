@@ -15,6 +15,7 @@ import { currentUserStorageScope, scopedStorageKey } from "../storageScope";
 const PREFIX = "concept_quiz_progress";
 const QUIZ_DRAFT_PREFIX = "cq_answers";
 const QUIZ_RESULT_PREFIX = "cq_last_result";
+const QUIZ_CHOICE_SEED_PREFIX = "cq_choice_seed";
 const scopedKey = (base) => scopedStorageKey(base);
 
 function key(language, category) {
@@ -79,6 +80,40 @@ export function quizDraftKey(language, category) {
 
 export function quizResultKey(language, category) {
   return scopedKey(`${QUIZ_RESULT_PREFIX}:${language}:${category}`);
+}
+
+export function quizChoiceSeedKey(language, category) {
+  return scopedKey(`${QUIZ_CHOICE_SEED_PREFIX}:${language}:${category}`);
+}
+
+function makeQuizChoiceSeed(language, category) {
+  const random =
+    globalThis.crypto?.getRandomValues
+      ? Array.from(globalThis.crypto.getRandomValues(new Uint32Array(2))).join("-")
+      : `${Date.now()}-${Math.random()}`;
+  return `${language}:${category}:${random}`;
+}
+
+export function getOrCreateQuizChoiceSeed(language, category) {
+  try {
+    const seedKey = quizChoiceSeedKey(language, category);
+    const existing = sessionStorage.getItem(seedKey);
+    if (existing) return existing;
+    const next = makeQuizChoiceSeed(language, category);
+    sessionStorage.setItem(seedKey, next);
+    return next;
+  } catch {
+    return makeQuizChoiceSeed(language, category);
+  }
+}
+
+export function resetQuizChoiceSeed(language, category) {
+  try {
+    sessionStorage.removeItem(quizChoiceSeedKey(language, category));
+  } catch {
+    // Non-fatal; a fresh in-memory seed still changes this attempt.
+  }
+  return getOrCreateQuizChoiceSeed(language, category);
 }
 
 export function readQuizDraftAnswers(language, category) {

@@ -8,8 +8,10 @@ import {
 } from "react-icons/fa";
 import {
   clearQuizLastResult,
+  getOrCreateQuizChoiceSeed,
   readQuizDraftAnswers,
   readQuizLastResult,
+  resetQuizChoiceSeed,
   writeQuizDraftAnswers,
   writeQuizLastResult,
 } from "./conceptQuizProgress";
@@ -47,6 +49,16 @@ function seededShuffle(list, seed) {
     [arr[0], arr[1]] = [arr[1], arr[0]];
   }
   return arr.map((item) => item.value);
+}
+
+function isMcqQuestion(question) {
+  return question?.kind === "mcq-output" || question?.kind === "mcq-behavior";
+}
+
+function choiceOrderFor(question, seed) {
+  if (!isMcqQuestion(question)) return [];
+  const indexes = question.choices.map((_, index) => index);
+  return seededShuffle(indexes, `${seed}:${question.id}`);
 }
 
 function ParsonsBoard({ question, value, onChange, disabled = false }) {
@@ -128,7 +140,7 @@ function ParsonsBoard({ question, value, onChange, disabled = false }) {
   );
 }
 
-function AnswerPanel({ question, answer, onAnswer, locked = false }) {
+function AnswerPanel({ question, answer, onAnswer, choiceOrder = [], locked = false }) {
   if (question.kind === "typein") {
     return (
       <div className="cq-answer cq-answer-typein">
@@ -166,29 +178,35 @@ function AnswerPanel({ question, answer, onAnswer, locked = false }) {
   }
 
   // MCQ (mcq-output / mcq-behavior)
+  const displayOrder = choiceOrder.length
+    ? choiceOrder
+    : question.choices.map((_, index) => index);
   return (
     <div className="cq-answer cq-answer-mcq">
       <p className="cq-answer-heading">Select one of the following options:</p>
       <div className="cq-choices" role="radiogroup">
-      {question.choices.map((choice, index) => {
-        const selected = answer?.choice_index === index;
-        return (
-          <button
-            type="button"
-            key={index}
-            role="radio"
-            aria-checked={selected}
-            className={`cq-choice ${selected ? "selected" : ""}`}
-            disabled={locked}
-            onClick={() => onAnswer({ choice_index: index })}
-          >
-            <span className="cq-choice-marker">
-              {String.fromCharCode(65 + index)}
-            </span>
-            <span className="cq-choice-text">{withChoiceEmphasis(choice)}</span>
-          </button>
-        );
-      })}
+        {displayOrder.map((originalIndex, displayIndex) => {
+          const choice = question.choices[originalIndex];
+          const selected = answer?.choice_index === originalIndex;
+          return (
+            <button
+              type="button"
+              key={originalIndex}
+              role="radio"
+              aria-checked={selected}
+              className={`cq-choice ${selected ? "selected" : ""}`}
+              disabled={locked}
+              onClick={() =>
+                onAnswer({ choice_index: originalIndex, display_index: displayIndex })
+              }
+            >
+              <span className="cq-choice-marker">
+                {String.fromCharCode(65 + displayIndex)}
+              </span>
+              <span className="cq-choice-text">{withChoiceEmphasis(choice)}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -703,6 +721,9 @@ export default function QuizRunner({
     readQuizDraftAnswers(language, category)
   );
   const [grade, setGrade] = useState(() => readQuizLastResult(language, category));
+  const [choiceSeed, setChoiceSeed] = useState(() =>
+    getOrCreateQuizChoiceSeed(language, category)
+  );
   const [grading, setGrading] = useState(false);
   const [error, setError] = useState("");
 
@@ -711,6 +732,7 @@ export default function QuizRunner({
   useEffect(() => {
     setAnswersById(readQuizDraftAnswers(language, category));
     setGrade(readQuizLastResult(language, category));
+    setChoiceSeed(getOrCreateQuizChoiceSeed(language, category));
     setError("");
   }, [language, category]);
 
@@ -728,6 +750,15 @@ export default function QuizRunner({
   const answered = question ? answersById[question.id] : undefined;
   const isAnswered = isAnswerComplete(answered);
   const isChecked = Boolean(answered?.checked);
+  const choiceOrders = useMemo(() => {
+    const byQuestion = {};
+    questions.forEach((item) => {
+      if (isMcqQuestion(item)) {
+        byQuestion[item.id] = choiceOrderFor(item, choiceSeed);
+      }
+    });
+    return byQuestion;
+  }, [questions, choiceSeed]);
 
   const answeredCount = useMemo(
     () => questions.filter((q) => isAnswerComplete(answersById[q.id])).length,
@@ -749,6 +780,7 @@ export default function QuizRunner({
           setAnswersById({});
           setGrade(null);
           clearQuizLastResult(language, category);
+          setChoiceSeed(resetQuizChoiceSeed(language, category));
           setError("");
           onNavigateIndex(0);
         }}
@@ -795,7 +827,11 @@ export default function QuizRunner({
     setError("");
     try {
       const answers = questions.map((q) => {
-        const { checked: _checked, ...answer } = answersById[q.id] || {};
+        const {
+          checked: _checked,
+          display_index: _displayIndex,
+          ...answer
+        } = answersById[q.id] || {};
         return {
           question_id: q.id,
           ...answer,
@@ -920,6 +956,7 @@ export default function QuizRunner({
               question={question}
               answer={answered}
               onAnswer={setAnswer}
+              choiceOrder={choiceOrders[question.id]}
               locked={isChecked}
             />
             <ImmediateFeedback

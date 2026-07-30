@@ -120,5 +120,87 @@
         "When nesting gets more than two levels deep, ask whether an `and` would say the same thing more simply."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "if-else-01": {
+      "title": "If and else choose one path",
+      "body": "An if/else pair chooses between two alternatives. If the condition is true, the if body runs; otherwise the else body runs.",
+      "example": "if condition:\n    do_this\nelse:\n    do_that",
+      "notice": "Only one branch in the pair should run.",
+      "mistake": "Do not expect the else branch to run after a true if branch.",
+      "section_id": "check"
+    },
+    "chain-first-true-01": {
+      "title": "A chain stops at the first true branch",
+      "body": "In an if/else-if chain, the program checks from top to bottom and runs the first branch whose condition is true.",
+      "example": "if high:\n    ...\nelif medium:\n    ...",
+      "notice": "Later branches are skipped once an earlier branch wins.",
+      "mistake": "Do not choose a later true branch when an earlier true branch already matched.",
+      "section_id": "check"
+    },
+    "separate-ifs-01": {
+      "title": "Separate if statements are independent",
+      "body": "Two separate if statements each ask their own question. Both can run if both conditions are true.",
+      "example": "if first:\n    ...\nif second:\n    ...",
+      "notice": "Separate if statements are not alternatives unless they are connected with else-if or else.",
+      "mistake": "Do not treat separate ifs like a single chain.",
+      "section_id": "check"
+    },
+    "assign-vs-compare-01": {
+      "title": "Conditions compare, assignments store",
+      "body": "A condition should produce true or false. Use comparison when asking whether a value matches something.",
+      "example": "score == 100",
+      "notice": "Assignment and comparison are different jobs.",
+      "mistake": "Do not use assignment syntax when the condition should be a yes/no test.",
+      "section_id": "check"
+    },
+    "and-or-01": {
+      "title": "And means both; or means either",
+      "body": "Use and when every rule must be true. Use or when one matching rule is enough.",
+      "example": "age >= 13 and age <= 19",
+      "notice": "Try a value outside the range to test whether the condition is too loose.",
+      "mistake": "Do not use or for a between rule unless either side really should pass.",
+      "section_id": "check"
+    },
+    "body-scope-01": {
+      "title": "Only the branch body is controlled",
+      "body": "A conditional controls the statements inside its body. Code after the branch runs normally unless another condition stops it.",
+      "example": "if ready:\n    print(\"inside\")\nprint(\"after\")",
+      "notice": "Indentation or braces decide what belongs to the branch.",
+      "mistake": "Do not assume every line nearby is controlled by the if.",
+      "section_id": "check"
+    },
+    "chain-order-01": {
+      "title": "Order matters in condition chains",
+      "body": "Put the most specific or highest-priority condition before a broader one when only one branch should run.",
+      "example": "if score >= 90:\n    grade = \"A\"",
+      "notice": "A broad condition can catch a value before a later, more specific condition gets a chance.",
+      "mistake": "Do not place a general true condition above the branch you actually wanted.",
+      "section_id": "check"
+    },
+    "not-operator-01": {
+      "title": "Not flips a condition",
+      "body": "The not operator changes true to false and false to true. It is useful when the branch should run for the opposite case.",
+      "example": "if not finished:",
+      "notice": "Read the condition slowly with the word not included.",
+      "mistake": "Do not ignore not when predicting which branch runs.",
+      "section_id": "check"
+    },
+    "nested-if-01": {
+      "title": "Nested conditions need the outer branch first",
+      "body": "An inner if is checked only after the outer if lets the program enter that block.",
+      "example": "if logged_in:\n    if is_admin:\n        ...",
+      "notice": "Trace the outer condition before deciding whether the inner one matters.",
+      "mistake": "Do not jump to the inner branch when the outer condition is false.",
+      "section_id": "check"
+    },
+    "boundary-01": {
+      "title": "Boundaries decide edge cases",
+      "body": "When a rule mentions values at the edge, check whether the comparison includes or excludes that exact value.",
+      "example": "score >= 70",
+      "notice": "`>=` and `<=` include the boundary. `>` and `<` exclude it.",
+      "mistake": "Do not test only middle values; edge values reveal boundary mistakes.",
+      "section_id": "check"
+    }
+  }
 }

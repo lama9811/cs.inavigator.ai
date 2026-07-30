@@ -98,15 +98,28 @@ export function shuffleList(list) {
   return copy;
 }
 
+function withOriginalIndexes(options = []) {
+  return options.map((option, originalIndex) => ({
+    ...option,
+    originalIndex,
+  }));
+}
+
 export function buildStartingQuestionSet() {
   return STARTING_POINT_QUESTIONS.map(question => ({
     ...question,
     options: question.kind === "graded"
       ? [
-          ...shuffleList(question.options),
-          { label: "I don't know yet.", level: "absolute_beginner", correct: false, unsure: true },
+          ...shuffleList(withOriginalIndexes(question.options)),
+          {
+            label: "I don't know yet.",
+            level: "absolute_beginner",
+            correct: false,
+            unsure: true,
+            originalIndex: question.options.length,
+          },
         ]
-      : shuffleList(question.options),
+      : shuffleList(withOriginalIndexes(question.options)),
   }));
 }
 

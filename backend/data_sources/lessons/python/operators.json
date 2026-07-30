@@ -12,20 +12,84 @@
   "refresher_code": "print(7 / 2)\nprint(7 // 2)\nprint(7 % 2)\nprint(7 == 2)\n# 3.5\n# 3\n# 1\n# False",
   "learn_cards": {
     "operators-lesson-check-1": {
-      "title": "Arithmetic output, one line at a time",
-      "body": "This question is about arithmetic **operators**, not syntax in general. Work out each **print** line separately, then keep the outputs on separate lines.",
-      "example": "print(15 + 6)\n# 21",
-      "notice": "`+` adds numbers when both sides are numbers. `//` keeps the whole-number part. `%` keeps the remainder.",
-      "mistake": "Do not put several **print** outputs on one line unless the code prints them on one line.",
-      "section_id": "core"
+      "title": "Trace arithmetic one line at a time",
+      "body": "This question is about following each **operator** in order. Work out one printed line, write that result down, then move to the next line.",
+      "example": "total = 20\nwhole = total // 6\nleft = total % 6",
+      "notice": "`//` keeps the whole-number part, `%` keeps the remainder, and `/` keeps the decimal result.",
+      "mistake": "Do not round floor division. It drops the leftover part instead of rounding up.",
+      "section_id": "check"
     },
     "operators-lesson-check-2": {
-      "title": "Boolean operators choose the branch",
-      "body": "This question is asking whether the **condition** matches the boundary rules. Read `and` as both sides must be true.",
+      "title": "Between means both boundaries count",
+      "body": "A between check asks two questions: high enough and low enough. If both ends count, the comparison needs inclusive operators.",
       "example": "age >= 13 and age <= 19",
-      "notice": "Use `>=` and `<=` when the endpoints count.",
-      "mistake": "`or` is too loose for a between check because only one side has to be true.",
-      "section_id": "core"
+      "notice": "`and` means both comparisons must be true at the same time.",
+      "mistake": "`or` is usually too loose for a between rule because one true side is enough to enter.",
+      "section_id": "check"
+    },
+    "operators-summary-01": {
+      "title": "Operators do different jobs",
+      "body": "**Operators** calculate values, compare values, assign values, and combine true-or-false conditions. First decide which job the line is doing.",
+      "example": "total + fee\nscore == 100",
+      "notice": "Arithmetic makes a value. Comparison makes true or false. Assignment stores a value.",
+      "mistake": "Do not treat every symbol as math. Some operators ask questions or store values.",
+      "section_id": "check"
+    },
+    "operators-supplement-01": {
+      "title": "Assignment is not comparison",
+      "body": "A condition should ask whether something is true. Assignment changes a value; comparison asks whether two values match.",
+      "example": "score == 100",
+      "notice": "Use the comparison operator when an if statement is asking a yes/no question.",
+      "mistake": "A single equals sign is a common typo when the code meant to compare.",
+      "section_id": "check"
+    },
+    "operators-authored-01": {
+      "title": "Zero cannot be the divisor",
+      "body": "Division, floor division, and remainder all need a nonzero divisor. If the divisor can come from input or another calculation, check it before dividing.",
+      "example": "if count != 0:\n    average = total / count",
+      "notice": "The dangerous value is the number after the division or remainder operator.",
+      "mistake": "Do not assume a calculated count is safe just because the formula looks reasonable.",
+      "section_id": "check"
+    },
+    "operators-authored-02": {
+      "title": "Choose storing or comparing",
+      "body": "Before reading a conditional expression, ask whether the code is storing a new value or comparing existing values.",
+      "example": "score = 75\nscore == 100",
+      "notice": "Assignment changes state. Comparison produces a true-or-false answer.",
+      "mistake": "Mixing these up can either stop the program or quietly send it down the wrong branch.",
+      "section_id": "check"
+    },
+    "operators-authored-03": {
+      "title": "Pick the division that matches the problem",
+      "body": "Division operators answer different questions. Use decimal division for averages, whole-number division for complete groups, and remainder for what is left.",
+      "example": "groups = students // seats\nleft = students % seats",
+      "notice": "The same two numbers can produce different useful answers depending on the operator.",
+      "mistake": "Do not use whole-number division when the assignment expects a decimal average.",
+      "section_id": "check"
+    },
+    "operators-authored-04": {
+      "title": "Floor division drops the leftover",
+      "body": "Whole-number division keeps the number of complete groups and ignores the leftover part.",
+      "example": "7 // 2  # complete groups\n7 % 2   # leftover",
+      "notice": "The leftover is not lost forever if the code also asks for the remainder.",
+      "mistake": "Do not round up. Complete groups only count when they are fully filled.",
+      "section_id": "check"
+    },
+    "operators-authored-05": {
+      "title": "Remainder checks divisibility",
+      "body": "The remainder operator is useful when a rule depends on whether something divides evenly.",
+      "example": "number % 2 == 0",
+      "notice": "Even numbers leave remainder 0 when divided by 2.",
+      "mistake": "Do not compare the original number to 0 when the question is about the leftover.",
+      "section_id": "check"
+    },
+    "operators-authored-06": {
+      "title": "Power has its own operator",
+      "body": "When a question asks about raising a number to a power, look for the language's exponent operator or function, not a symbol that only looks mathematical.",
+      "example": "2 ** 3",
+      "notice": "A familiar-looking symbol can mean something different in code.",
+      "mistake": "Do not assume `^` means exponent just because it is used that way in some calculators or notes.",
+      "section_id": "check"
     }
   },
   "blocks": [
