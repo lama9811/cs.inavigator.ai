@@ -154,7 +154,7 @@
             "It prints nothing, because x is 3"
           ],
           "answer_index": 0,
-          "explanation": "A single `=` assigns a value; a double `==` asks whether two values match. Inside a condition you are always asking, so Python rejects the file before running a single line. Read the line out loud: if the words are \"is x five\", you want two."
+          "explanation": "A single `=` assigns a value; a double `==` asks whether two values match. Python does not allow assignment in this condition, so it rejects the file before running any line. Use `x == 5` when the condition should compare."
         },
         "java": {
           "code": "int x = 3;\nif (x = 5) {\n    System.out.println(\"five\");\n}",

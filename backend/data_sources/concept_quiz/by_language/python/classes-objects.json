@@ -88,7 +88,7 @@
         "Use a class when no related data or behavior is being grouped."
       ],
       "answer_index": 0,
-      "explanation": "A class describes the data and actions that its objects share. Create an object by calling the class, store its data on `self`, and use methods for work that belongs to that object. That reasoning supports the answer: Creating a second Student does not copy or replace the first one. Each call to the class creates a separate object with separate instance attributes."
+      "explanation": "Creating a second Student does not copy or replace the first one. Each call to the class creates a separate object with separate instance attributes. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
     },
     {
       "id": "python-classes-objects-authored-02",
@@ -106,7 +106,7 @@
         "Forget that each object has its own instance data."
       ],
       "answer_index": 1,
-      "explanation": "A class describes the data and actions that its objects share. Create an object by calling the class, store its data on `self`, and use methods for work that belongs to that object. That reasoning supports the answer: Use a class when data and behavior belong together."
+      "explanation": "Use a class when data and behavior belong together. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
     },
     {
       "id": "python-classes-objects-authored-03",
@@ -116,7 +116,7 @@
       "language": "python",
       "title": "Classes & Objects concept check 3",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Classes & Objects code?",
+      "prompt": "Which Classes & Objects code review note is accurate?",
       "choices": [
         "Name methods after vague actions such as `doStuff`.",
         "Use local variables when persistent object state is needed.",
@@ -124,7 +124,7 @@
         "Call an instance method before creating an object."
       ],
       "answer_index": 2,
-      "explanation": "A class describes the data and actions that its objects share. Create an object by calling the class, store its data on `self`, and use methods for work that belongs to that object. That reasoning supports the answer: Set starting attributes inside `__init__`."
+      "explanation": "Set starting attributes inside `__init__`. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
     },
     {
       "id": "python-classes-objects-authored-04",
@@ -134,7 +134,7 @@
       "language": "python",
       "title": "Classes & Objects concept check 4",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Classes & Objects mistake?",
+      "prompt": "Which Classes & Objects habit prevents a common mistake?",
       "choices": [
         "Treat the class blueprint as the same thing as one object.",
         "Leave an object in a half-initialized state.",
@@ -142,7 +142,7 @@
         "Write `self.attribute` for data stored on an object."
       ],
       "answer_index": 3,
-      "explanation": "A class describes the data and actions that its objects share. Create an object by calling the class, store its data on `self`, and use methods for work that belongs to that object. That reasoning supports the answer: Write `self.attribute` for data stored on an object."
+      "explanation": "Write `self.attribute` for data stored on an object. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
     },
     {
       "id": "python-classes-objects-authored-05",
@@ -152,7 +152,7 @@
       "language": "python",
       "title": "Classes & Objects concept check 5",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Classes & Objects. Which advice is correct?",
+      "prompt": "Which Classes & Objects advice is accurate?",
       "choices": [
         "Remember that each class call creates a new object.",
         "Use static/shared data for per-object information.",
@@ -160,7 +160,7 @@
         "Mix user input directly into every object method."
       ],
       "answer_index": 0,
-      "explanation": "A class describes the data and actions that its objects share. Create an object by calling the class, store its data on `self`, and use methods for work that belongs to that object. That reasoning supports the answer: Remember that each class call creates a new object."
+      "explanation": "Remember that each class call creates a new object. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
     },
     {
       "id": "python-classes-objects-authored-06",
@@ -170,7 +170,7 @@
       "language": "python",
       "title": "Classes & Objects concept check 6",
       "code": null,
-      "prompt": "Which choice shows sound reasoning about Classes & Objects?",
+      "prompt": "Which Classes & Objects reasoning is accurate?",
       "choices": [
         "Return internal mutable data without control.",
         "Keep a method focused on one clear action.",
@@ -178,7 +178,7 @@
         "Hide important setup in unrelated methods."
       ],
       "answer_index": 1,
-      "explanation": "A class describes the data and actions that its objects share. Create an object by calling the class, store its data on `self`, and use methods for work that belongs to that object. That reasoning supports the answer: Keep a method focused on one clear action."
+      "explanation": "Keep a method focused on one clear action. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
     }
   ]
 }

@@ -479,6 +479,18 @@ MOJIBAKE_SEQUENCES = (
     "\ufffd",
 )
 
+AUDITED_LEGACY_BAD_PHRASES = (
+    "that reasoning supports the answer",
+    "which recommendation belongs",
+    "which guideline helps",
+    "which choice shows sound reasoning",
+    "a classmate is checking",
+    "what does the lesson mean",
+    "which statement best describes",
+    "what is the main idea behind",
+    "read the line out loud",
+)
+
 
 def test_all_banks_reject_filler_templates_and_exact_duplicate_questions():
     """Quality rules apply to every bank, not only files produced by one authoring pass.
@@ -507,6 +519,20 @@ def test_all_banks_reject_filler_templates_and_exact_duplicate_questions():
                 assert not matched, (
                     f"{language}/{category['id']}/{question['id']} uses filler: {matched}"
                 )
+
+
+def test_all_banks_do_not_use_generic_prompt_templates():
+    for language, category, question in authored_questions():
+        rendered = json.dumps(question, ensure_ascii=False).lower()
+        matched = [
+            phrase
+            for phrase in AUDITED_LEGACY_BAD_PHRASES
+            if phrase in rendered
+        ]
+        assert not matched, (
+            f"{language}/{category}/{question['id']} still uses generic audit "
+            f"phrases: {matched}"
+        )
 
 
 def test_authored_quiz_text_has_no_mojibake_sequences():

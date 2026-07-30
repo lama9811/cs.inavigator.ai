@@ -88,7 +88,7 @@
         "Copy a unique owner as if two owners are allowed."
       ],
       "answer_index": 0,
-      "explanation": "Prefer objects with automatic storage and standard containers. When one owner needs dynamic lifetime, use `std::unique_ptr` with `std::make_unique`. That reasoning supports the answer: `std::shared_ptr` uses a reference count and is appropriate when ownership is genuinely shared. Using it everywhere can hide unclear lifetime design and can leak cycles, so begin with values, containers, or unique ownership."
+      "explanation": "`std::shared_ptr` uses a reference count and is appropriate when ownership is genuinely shared. Using it everywhere can hide unclear lifetime design and can leak cycles, so begin with values, containers, or unique ownership. This matters because ownership code depends on knowing which object owns memory and when that memory is released."
     },
     {
       "id": "cpp-memory-ownership-authored-02",
@@ -106,7 +106,7 @@
         "Store a pointer without deciding who owns the object."
       ],
       "answer_index": 1,
-      "explanation": "Prefer objects with automatic storage and standard containers. When one owner needs dynamic lifetime, use `std::unique_ptr` with `std::make_unique`. That reasoning supports the answer: Prefer values and standard containers first."
+      "explanation": "Prefer values and standard containers first. This matters because ownership code depends on knowing which object owns memory and when that memory is released."
     },
     {
       "id": "cpp-memory-ownership-authored-03",
@@ -116,7 +116,7 @@
       "language": "cpp",
       "title": "Memory Ownership concept check 3",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Memory Ownership code?",
+      "prompt": "Which Memory Ownership code review note is accurate?",
       "choices": [
         "Create a reference cycle with shared ownership.",
         "Use a dangling pointer after the owner is gone.",
@@ -124,7 +124,7 @@
         "Return a reference to a local object."
       ],
       "answer_index": 2,
-      "explanation": "Prefer objects with automatic storage and standard containers. When one owner needs dynamic lifetime, use `std::unique_ptr` with `std::make_unique`. That reasoning supports the answer: Use make_unique for one dynamic owner."
+      "explanation": "Use make_unique for one dynamic owner. This matters because ownership code depends on knowing which object owns memory and when that memory is released."
     },
     {
       "id": "cpp-memory-ownership-authored-04",
@@ -134,7 +134,7 @@
       "language": "cpp",
       "title": "Memory Ownership concept check 4",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Memory Ownership mistake?",
+      "prompt": "Which Memory Ownership habit prevents a common mistake?",
       "choices": [
         "Choose dynamic allocation before trying stack values.",
         "Share mutable ownership where borrowing would be clearer.",
@@ -142,7 +142,7 @@
         "Move unique ownership deliberately."
       ],
       "answer_index": 3,
-      "explanation": "Prefer objects with automatic storage and standard containers. When one owner needs dynamic lifetime, use `std::unique_ptr` with `std::make_unique`. That reasoning supports the answer: Move unique ownership deliberately."
+      "explanation": "Move unique ownership deliberately. This matters because ownership code depends on knowing which object owns memory and when that memory is released."
     },
     {
       "id": "cpp-memory-ownership-authored-05",
@@ -152,7 +152,7 @@
       "language": "cpp",
       "title": "Memory Ownership concept check 5",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Memory Ownership. Which advice is correct?",
+      "prompt": "Which Memory Ownership advice is accurate?",
       "choices": [
         "Use shared ownership only when the model requires it.",
         "Use `shared_ptr` to avoid designing lifetime.",
@@ -160,7 +160,7 @@
         "Mix raw and smart ownership for the same object."
       ],
       "answer_index": 0,
-      "explanation": "Prefer objects with automatic storage and standard containers. When one owner needs dynamic lifetime, use `std::unique_ptr` with `std::make_unique`. That reasoning supports the answer: Use shared ownership only when the model requires it."
+      "explanation": "Use shared ownership only when the model requires it. This matters because ownership code depends on knowing which object owns memory and when that memory is released."
     },
     {
       "id": "cpp-memory-ownership-authored-06",
@@ -170,7 +170,7 @@
       "language": "cpp",
       "title": "Memory Ownership concept check 6",
       "code": null,
-      "prompt": "What is the main idea behind Memory Ownership?",
+      "prompt": "Which statement is accurate about Memory Ownership?",
       "choices": [
         "Forget that containers manage their own elements.",
         "Use automatic lifetime and smart pointers to make resource responsibility clear.",
@@ -178,7 +178,7 @@
         "Pass ownership when the function only needs to read."
       ],
       "answer_index": 1,
-      "explanation": "Prefer objects with automatic storage and standard containers. When one owner needs dynamic lifetime, use `std::unique_ptr` with `std::make_unique`. That reasoning supports the answer: Use automatic lifetime and smart pointers to make resource responsibility clear."
+      "explanation": "Use automatic lifetime and smart pointers to make resource responsibility clear. This matters because ownership code depends on knowing which object owns memory and when that memory is released."
     }
   ]
 }

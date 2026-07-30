@@ -88,7 +88,7 @@
         "Add new enum meanings only in scattered if statements."
       ],
       "answer_index": 0,
-      "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: `Status.valueOf(text)` requires an exact constant name. Input such as `\"active\"` does not match `ACTIVE` unless you clean or convert it first."
+      "explanation": "`Status.valueOf(text)` requires an exact constant name. Input such as `\"active\"` does not match `ACTIVE` unless you clean or convert it first. This matters because enum code works best when values come from a fixed named set instead of loose strings that can drift."
     },
     {
       "id": "java-enums-authored-02",
@@ -106,7 +106,7 @@
         "Use an enum for values that users can invent freely."
       ],
       "answer_index": 1,
-      "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: Use an enum for a fixed set of choices."
+      "explanation": "Use an enum for a fixed set of choices. This matters because enum code works best when values come from a fixed named set instead of loose strings that can drift."
     },
     {
       "id": "java-enums-authored-03",
@@ -116,7 +116,7 @@
       "language": "java",
       "title": "Enums concept check 3",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Enums code?",
+      "prompt": "Which Enums code review note is accurate?",
       "choices": [
         "Duplicate the same allowed choices in several files.",
         "Depend on ordinal numbers for permanent saved meaning.",
@@ -124,7 +124,7 @@
         "Use a boolean when there are more than two named states."
       ],
       "answer_index": 2,
-      "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: Name constants clearly and consistently."
+      "explanation": "Name constants clearly and consistently. This matters because enum code works best when values come from a fixed named set instead of loose strings that can drift."
     },
     {
       "id": "java-enums-authored-04",
@@ -134,7 +134,7 @@
       "language": "java",
       "title": "Enums concept check 4",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Enums mistake?",
+      "prompt": "Which Enums habit prevents a common mistake?",
       "choices": [
         "Forget to handle a new enum constant in branch logic.",
         "Treat enum names as display text for every user.",
@@ -142,7 +142,7 @@
         "Store the enum value instead of a matching string."
       ],
       "answer_index": 3,
-      "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: Store the enum value instead of a matching string."
+      "explanation": "Store the enum value instead of a matching string. This matters because enum code works best when values come from a fixed named set instead of loose strings that can drift."
     },
     {
       "id": "java-enums-authored-05",
@@ -152,7 +152,7 @@
       "language": "java",
       "title": "Enums concept check 5",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Enums. Which advice is correct?",
+      "prompt": "Which Enums advice is accurate?",
       "choices": [
         "Handle outside text before calling `valueOf`.",
         "Use magic numbers instead of named constants.",
@@ -160,7 +160,7 @@
         "Switch on strings when enum constants exist."
       ],
       "answer_index": 0,
-      "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: Handle outside text before calling `valueOf`."
+      "explanation": "Handle outside text before calling `valueOf`. This matters because enum code works best when values come from a fixed named set instead of loose strings that can drift."
     },
     {
       "id": "java-enums-authored-06",
@@ -170,7 +170,7 @@
       "language": "java",
       "title": "Enums concept check 6",
       "code": null,
-      "prompt": "Which choice shows sound reasoning about Enums?",
+      "prompt": "Which Enums reasoning is accurate?",
       "choices": [
         "Put unrelated states into the same enum.",
         "Use switch when each constant needs different behavior.",
@@ -178,7 +178,7 @@
         "Use an enum to store changing numeric data."
       ],
       "answer_index": 1,
-      "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: Use switch when each constant needs different behavior."
+      "explanation": "Use switch when each constant needs different behavior. This matters because enum code works best when values come from a fixed named set instead of loose strings that can drift."
     }
   ]
 }

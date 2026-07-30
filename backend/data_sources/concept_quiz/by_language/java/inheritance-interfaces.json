@@ -88,7 +88,7 @@
         "Put fields in an interface to share object state."
       ],
       "answer_index": 0,
-      "explanation": "A class `extends` one superclass and may `implement` several interfaces. Override methods to provide subtype behavior, use the interface type for flexible variables, and prefer composition when classes only need to reuse a helper rather than form a true is-a relationship. That reasoning supports the answer: Use `extends` only when every child truly is a usable version of the parent. If one class merely needs another object's help, keep that helper in a field and use composition."
+      "explanation": "Use `extends` only when every child truly is a usable version of the parent. If one class merely needs another object's help, keep that helper in a field and use composition. This matters because inheritance and interfaces should describe a real relationship or capability, not just a shortcut for reuse."
     },
     {
       "id": "java-inheritance-interfaces-authored-02",
@@ -106,7 +106,7 @@
         "Use a superclass to force unrelated classes together."
       ],
       "answer_index": 1,
-      "explanation": "A class `extends` one superclass and may `implement` several interfaces. Override methods to provide subtype behavior, use the interface type for flexible variables, and prefer composition when classes only need to reuse a helper rather than form a true is-a relationship. That reasoning supports the answer: Use an interface to state a capability."
+      "explanation": "Use an interface to state a capability. This matters because inheritance and interfaces should describe a real relationship or capability, not just a shortcut for reuse."
     },
     {
       "id": "java-inheritance-interfaces-authored-03",
@@ -116,7 +116,7 @@
       "language": "java",
       "title": "Inheritance & Interfaces concept check 3",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Inheritance & Interfaces code?",
+      "prompt": "Which Inheritance & Interfaces code review note is accurate?",
       "choices": [
         "Forget that a class can implement more than one interface.",
         "Make callers know every subclass type.",
@@ -124,7 +124,7 @@
         "Use inheritance where composition would be simpler."
       ],
       "answer_index": 2,
-      "explanation": "A class `extends` one superclass and may `implement` several interfaces. Override methods to provide subtype behavior, use the interface type for flexible variables, and prefer composition when classes only need to reuse a helper rather than form a true is-a relationship. That reasoning supports the answer: Type variables by the contract when callers need flexibility."
+      "explanation": "Type variables by the contract when callers need flexibility. This matters because inheritance and interfaces should describe a real relationship or capability, not just a shortcut for reuse."
     },
     {
       "id": "java-inheritance-interfaces-authored-04",
@@ -134,7 +134,7 @@
       "language": "java",
       "title": "Inheritance & Interfaces concept check 4",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Inheritance & Interfaces mistake?",
+      "prompt": "Which Inheritance & Interfaces habit prevents a common mistake?",
       "choices": [
         "Leave abstract behavior undocumented.",
         "Treat an interface as if it stores per-object data.",
@@ -142,7 +142,7 @@
         "Use `@Override` for compiler checking."
       ],
       "answer_index": 3,
-      "explanation": "A class `extends` one superclass and may `implement` several interfaces. Override methods to provide subtype behavior, use the interface type for flexible variables, and prefer composition when classes only need to reuse a helper rather than form a true is-a relationship. That reasoning supports the answer: Use `@Override` for compiler checking."
+      "explanation": "Use `@Override` for compiler checking. This matters because inheritance and interfaces should describe a real relationship or capability, not just a shortcut for reuse."
     },
     {
       "id": "java-inheritance-interfaces-authored-05",
@@ -152,7 +152,7 @@
       "language": "java",
       "title": "Inheritance & Interfaces concept check 5",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Inheritance & Interfaces. Which advice is correct?",
+      "prompt": "Which Inheritance & Interfaces advice is accurate?",
       "choices": [
         "Reserve `extends` for a true is-a relationship.",
         "Use casting instead of designing the right contract.",
@@ -160,7 +160,7 @@
         "Expose parent internals just so a child can work."
       ],
       "answer_index": 0,
-      "explanation": "A class `extends` one superclass and may `implement` several interfaces. Override methods to provide subtype behavior, use the interface type for flexible variables, and prefer composition when classes only need to reuse a helper rather than form a true is-a relationship. That reasoning supports the answer: Reserve `extends` for a true is-a relationship."
+      "explanation": "Reserve `extends` for a true is-a relationship. This matters because inheritance and interfaces should describe a real relationship or capability, not just a shortcut for reuse."
     },
     {
       "id": "java-inheritance-interfaces-authored-06",
@@ -170,7 +170,7 @@
       "language": "java",
       "title": "Inheritance & Interfaces concept check 6",
       "code": null,
-      "prompt": "Which choice shows sound reasoning about Inheritance & Interfaces?",
+      "prompt": "Which Inheritance & Interfaces reasoning is accurate?",
       "choices": [
         "Make a deep hierarchy for one small variation.",
         "Prefer composition for simple code reuse.",
@@ -178,7 +178,7 @@
         "Use `extends` when the relationship is only uses-a."
       ],
       "answer_index": 1,
-      "explanation": "A class `extends` one superclass and may `implement` several interfaces. Override methods to provide subtype behavior, use the interface type for flexible variables, and prefer composition when classes only need to reuse a helper rather than form a true is-a relationship. That reasoning supports the answer: Prefer composition for simple code reuse."
+      "explanation": "Prefer composition for simple code reuse. This matters because inheritance and interfaces should describe a real relationship or capability, not just a shortcut for reuse."
     }
   ]
 }

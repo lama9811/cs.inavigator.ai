@@ -88,7 +88,7 @@
         "Read from a file before checking that opening succeeded."
       ],
       "answer_index": 0,
-      "explanation": "Open files with a `with` statement so Python closes them automatically. Use mode `\"r\"` to read, `\"w\"` to replace a file, and `\"a\"` to add at the end. That reasoning supports the answer: Check the mode before running file code. Opening an existing file with `\"w\"` clears it immediately."
+      "explanation": "Check the mode before running file code. Opening an existing file with `\"w\"` clears it immediately. This matters because file code must be clear about mode, encoding, missing paths, and whether data is replaced or appended."
     },
     {
       "id": "python-file-handling-authored-02",
@@ -106,7 +106,7 @@
         "Load a huge file all at once when line-by-line processing would work."
       ],
       "answer_index": 1,
-      "explanation": "Open files with a `with` statement so Python closes them automatically. Use mode `\"r\"` to read, `\"w\"` to replace a file, and `\"a\"` to add at the end. That reasoning supports the answer: Use `with open(...)` to guarantee closing."
+      "explanation": "Use `with open(...)` to guarantee closing. This matters because file code must be clear about mode, encoding, missing paths, and whether data is replaced or appended."
     },
     {
       "id": "python-file-handling-authored-03",
@@ -116,7 +116,7 @@
       "language": "python",
       "title": "File Handling concept check 3",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of File Handling code?",
+      "prompt": "Which File Handling code review note is accurate?",
       "choices": [
         "Swallow file errors without telling the caller what failed.",
         "Write partial output without planning what happens on failure.",
@@ -124,7 +124,7 @@
         "Use the same mode for reading and overwriting."
       ],
       "answer_index": 2,
-      "explanation": "Open files with a `with` statement so Python closes them automatically. Use mode `\"r\"` to read, `\"w\"` to replace a file, and `\"a\"` to add at the end. That reasoning supports the answer: Specify UTF-8 for text you control."
+      "explanation": "Specify UTF-8 for text you control. This matters because file code must be clear about mode, encoding, missing paths, and whether data is replaced or appended."
     },
     {
       "id": "python-file-handling-authored-04",
@@ -134,7 +134,7 @@
       "language": "python",
       "title": "File Handling concept check 4",
       "code": null,
-      "prompt": "Which guideline helps prevent a common File Handling mistake?",
+      "prompt": "Which File Handling habit prevents a common mistake?",
       "choices": [
         "Assume every environment has the same working directory.",
         "Build paths by string concatenation instead of path tools.",
@@ -142,7 +142,7 @@
         "Confirm whether the mode reads, replaces, or appends."
       ],
       "answer_index": 3,
-      "explanation": "Open files with a `with` statement so Python closes them automatically. Use mode `\"r\"` to read, `\"w\"` to replace a file, and `\"a\"` to add at the end. That reasoning supports the answer: Confirm whether the mode reads, replaces, or appends."
+      "explanation": "Confirm whether the mode reads, replaces, or appends. This matters because file code must be clear about mode, encoding, missing paths, and whether data is replaced or appended."
     },
     {
       "id": "python-file-handling-authored-05",
@@ -152,7 +152,7 @@
       "language": "python",
       "title": "File Handling concept check 5",
       "code": null,
-      "prompt": "A classmate is checking their understanding of File Handling. Which advice is correct?",
+      "prompt": "Which File Handling advice is accurate?",
       "choices": [
         "Expect missing paths and permission errors.",
         "Parse each line before checking whether it is complete.",
@@ -160,7 +160,7 @@
         "Treat binary data as ordinary text."
       ],
       "answer_index": 0,
-      "explanation": "Open files with a `with` statement so Python closes them automatically. Use mode `\"r\"` to read, `\"w\"` to replace a file, and `\"a\"` to add at the end. That reasoning supports the answer: Expect missing paths and permission errors."
+      "explanation": "Expect missing paths and permission errors. This matters because file code must be clear about mode, encoding, missing paths, and whether data is replaced or appended."
     },
     {
       "id": "python-file-handling-authored-06",
@@ -170,7 +170,7 @@
       "language": "python",
       "title": "File Handling concept check 6",
       "code": null,
-      "prompt": "Which choice shows sound reasoning about File Handling?",
+      "prompt": "Which File Handling reasoning is accurate?",
       "choices": [
         "Forget to close or scope the file handle.",
         "Process large files one line at a time.",
@@ -178,7 +178,7 @@
         "Mix file reading with unrelated UI logic."
       ],
       "answer_index": 1,
-      "explanation": "Open files with a `with` statement so Python closes them automatically. Use mode `\"r\"` to read, `\"w\"` to replace a file, and `\"a\"` to add at the end. That reasoning supports the answer: Process large files one line at a time."
+      "explanation": "Process large files one line at a time. This matters because file code must be clear about mode, encoding, missing paths, and whether data is replaced or appended."
     }
   ]
 }

@@ -126,51 +126,51 @@
       "variants": {
         "python": {
           "code": null,
-          "prompt": "Which statement best describes User Input?",
+          "prompt": "What does Python input() give your program?",
           "choices": [
-            "Ask the person running your program a question, and use their answer.",
-            "It is used only to print a message.",
-            "It automatically fixes every program error.",
-            "It removes the need for variables and tests."
+            "Text from the person running the program, which you convert before doing numeric math.",
+            "A number whenever the typed characters look numeric.",
+            "A value whose type automatically changes to match the next operator.",
+            "A guaranteed valid answer that never needs checking."
           ],
           "answer_index": 0,
-          "explanation": "`input()` pauses your program, waits for the person to type something, and hands back what they typed. Whatever comes back is a string, even when it looks like a number. So `input()` for 5 gives you the text `\"5\"`, not the number 5. To do math with it, convert it first: `int(input())` for a whole number, `float(input())` for a decimal. If the person types letters instead of digits, `int()` cannot convert them and your program stops with a ValueError."
+          "explanation": "Python input() always returns a string. If the person types 5, your program receives the text \"5\". Convert with int() or float() before arithmetic, and be ready for ValueError when the text cannot be converted."
         },
         "java": {
           "code": null,
-          "prompt": "Which statement best describes User Input?",
+          "prompt": "What should Java input code plan for when using Scanner?",
           "choices": [
-            "Read what the user types, and survive the two ways it goes wrong.",
-            "It is used only to print a message.",
-            "It automatically fixes every program error.",
-            "It removes the need for variables and tests."
+            "Read the type you asked for, then handle mismatches and leftover newlines.",
+            "Assume every Scanner method reads a whole line.",
+            "Use nextLine() directly into int variables.",
+            "Skip imports because Scanner is always available automatically."
           ],
           "answer_index": 0,
-          "explanation": "To read what someone types, you need a Scanner. Put `import java.util.Scanner;` at the top of the file, then build one with `Scanner sc = new Scanner(System.in);`. Ask it for the type you want: `nextInt()` for a whole number, `nextDouble()` for a decimal, `nextLine()` for a whole line of text. The catch is that `nextInt()` and `nextDouble()` read the number and stop, leaving the rest of the line unread. A `nextLine()` straight after one of them picks up that leftover and hands you an empty string."
+          "explanation": "Scanner reads different shapes of input with different methods: nextInt(), nextDouble(), and nextLine() do not behave the same way. Numeric reads can fail on the wrong text, and token reads can leave a newline for the next line read."
         },
         "javascript": {
           "code": null,
-          "prompt": "Which statement best describes User Input?",
+          "prompt": "What should browser prompt input be treated as?",
           "choices": [
-            "Validate external text before calculating with it.",
-            "It is used only to print a message.",
-            "It automatically fixes every program error.",
-            "It removes the need for variables and tests."
+            "External text that may be null, empty, or non-numeric until you validate it.",
+            "A number as soon as the typed text contains digits.",
+            "A safe value that never needs a Cancel check.",
+            "A string that automatically trims and converts itself."
           ],
           "answer_index": 0,
-          "explanation": "Browser `prompt(...)` returns a string or `null` when canceled. Handle cancellation, trim when appropriate, convert numeric text, and validate the result."
+          "explanation": "Browser prompt(...) returns a string when the user types and null when the user cancels. Convert numeric text deliberately with Number(...), check for NaN, and trim only when spaces are not meaningful."
         },
         "cpp": {
           "code": null,
-          "prompt": "Which statement best describes User Input?",
+          "prompt": "What should C++ stream input code check before using a value?",
           "choices": [
-            "Read stream data and handle failed extraction.",
-            "It is used only to print a message.",
-            "It automatically fixes every program error.",
-            "It removes the need for variables and tests."
+            "Whether extraction succeeded, especially when reading numbers from user text.",
+            "Whether cout printed the prompt in uppercase.",
+            "Whether every value was typed on a separate line.",
+            "Whether getline can replace all typed variables."
           ],
           "answer_index": 0,
-          "explanation": "`std::cin >> value` extracts formatted input into a typed variable. Check the stream before using the value, because text entered for a number makes extraction fail."
+          "explanation": "std::cin >> value tries to extract text into the variable's type. If the user types letters for an int, the stream enters a failed state. Check that state before trusting the value, and manage leftover newlines before switching to getline()."
         }
       }
     },
@@ -251,7 +251,7 @@
             "Ignore cancellation or empty input."
           ],
           "answer_index": 0,
-          "explanation": "`input()` pauses your program, waits for the person to type something, and hands back what they typed. Whatever comes back is a string, even when it looks like a number. That reasoning supports the answer: `input()` returns text, even when the typed characters look like a number."
+          "explanation": "Python input() returns a string every time. The typed characters may look like a number, but they are still text until you convert them. That is why \"4\" + \"6\" joins into \"46\" instead of adding to 10."
         },
         "java": {
           "difficulty": "medium",
@@ -266,14 +266,14 @@
             "Ignore cancellation or empty input."
           ],
           "answer_index": 0,
-          "explanation": "To read what someone types, you need a Scanner. Put `import java.util.Scanner;` at the top of the file, then build one with `Scanner sc = new Scanner(System.in);`. That reasoning supports the answer: Leave out `import java.util.Scanner;` and the compiler stops with \"cannot find symbol\" pointing at the word `Scanner`. It is not saying Scanner does not exist."
+          "explanation": "Scanner is in java.util, so Java needs the import before it recognizes the class name. Without import java.util.Scanner;, the compiler stops at Scanner with a cannot find symbol error. The fix is the import, not a different prompt."
         },
         "javascript": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "User Input concept check 1",
           "code": null,
-          "prompt": "Which boundary detail prevents this kind of off-by-one or conversion bug?",
+          "prompt": "What happens if JavaScript prompt text is used in addition before conversion?",
           "choices": [
             "Typing 12 into a prompt produces `\"12\"`; adding one without conversion joins text into `\"121\"`.",
             "Use raw input in arithmetic before converting it.",
@@ -281,14 +281,14 @@
             "Ignore cancellation or empty input."
           ],
           "answer_index": 0,
-          "explanation": "Browser `prompt(...)` returns a string or `null` when canceled. Handle cancellation, trim when appropriate, convert numeric text, and validate the result. That reasoning supports the answer: Typing 12 into a prompt produces `\"12\"`; adding one without conversion joins text into `\"121\"`."
+          "explanation": "prompt(...) returns text. If raw is \"12\", raw + 1 joins text and produces \"121\". Convert first with Number(raw), then check Number.isNaN(...) before doing math."
         },
         "cpp": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "User Input concept check 1",
           "code": null,
-          "prompt": "Which statement correctly follows the data through this operation?",
+          "prompt": "Why can getline appear to skip input after operator>> reads a number?",
           "choices": [
             "After `operator>>` reads a number, a newline can remain in the stream and make a following `getline` appear to skip input.",
             "Use raw input in arithmetic before converting it.",
@@ -296,7 +296,7 @@
             "Ignore cancellation or empty input."
           ],
           "answer_index": 0,
-          "explanation": "`std::cin >> value` extracts formatted input into a typed variable. Check the stream before using the value, because text entered for a number makes extraction fail. That reasoning supports the answer: After `operator>>` reads a number, a newline can remain in the stream and make a following `getline` appear to skip input."
+          "explanation": "operator>> reads the number and stops before the newline. A following getline sees that leftover newline immediately and returns an empty line. Ignore the leftover newline before switching from token input to line input."
         }
       }
     },
@@ -314,13 +314,13 @@
           "code": null,
           "prompt": "What does a Python `ValueError` from `int(...)` usually mean?",
           "choices": [
-            "Read a full line right after a token read without handling the leftover newline.",
-            "Ask for a number and the person types \"seven\", and `int()` has nothing to work with. Your program stops with a ValueError.",
-            "Convert input after doing the calculation.",
-            "Validate only the first test input and trust the rest."
+            "A leftover newline was read as a full input value.",
+            "`int()` received text such as \"seven\" that cannot become a whole number.",
+            "The program converted input after doing the calculation.",
+            "Only the first test input was validated."
           ],
           "answer_index": 1,
-          "explanation": "`input()` pauses your program, waits for the person to type something, and hands back what they typed. Whatever comes back is a string, even when it looks like a number. That reasoning supports the answer: Ask for a number and the person types \"seven\", and `int()` has nothing to work with. Your program stops with a ValueError."
+          "explanation": "input() always returns text. int(...) can convert text like \"7\", but not words like \"seven\" or an empty answer, so Python raises ValueError when the text is not a valid whole number."
         },
         "java": {
           "difficulty": "medium",
@@ -335,14 +335,14 @@
             "Validate only the first test input and trust the rest."
           ],
           "answer_index": 1,
-          "explanation": "To read what someone types, you need a Scanner. Put `import java.util.Scanner;` at the top of the file, then build one with `Scanner sc = new Scanner(System.in);`. That reasoning supports the answer: Write `int age = sc.nextLine();` and the program never starts. The compiler rejects it with \"incompatible types: String cannot be converted to int\", because `nextLine()` hands back a String and you asked to store it in an `int`."
+          "explanation": "nextLine() returns a String. Assigning that directly to an int is a compile-time type error, so use a numeric Scanner method or convert the text before storing it in a numeric variable."
         },
         "javascript": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "User Input concept check 2",
           "code": null,
-          "prompt": "Which choice describes a reliable User Input practice?",
+          "prompt": "What should JavaScript code check before using prompt input?",
           "choices": [
             "Read a full line right after a token read without handling the leftover newline.",
             "Handle null first.",
@@ -350,14 +350,14 @@
             "Validate only the first test input and trust the rest."
           ],
           "answer_index": 1,
-          "explanation": "Browser `prompt(...)` returns a string or `null` when canceled. Handle cancellation, trim when appropriate, convert numeric text, and validate the result. That reasoning supports the answer: Handle null first."
+          "explanation": "Check raw !== null before treating prompt input as text, because Cancel returns null. After numeric conversion, check Number.isNaN(value) before calculating so invalid text does not become a confusing NaN result."
         },
         "cpp": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "User Input concept check 2",
           "code": null,
-          "prompt": "Which choice describes a reliable User Input practice?",
+          "prompt": "Why should a C++ variable type match the kind of input you expect?",
           "choices": [
             "Read a full line right after a token read without handling the leftover newline.",
             "Declare a matching type.",
@@ -365,7 +365,7 @@
             "Validate only the first test input and trust the rest."
           ],
           "answer_index": 1,
-          "explanation": "`std::cin >> value` extracts formatted input into a typed variable. Check the stream before using the value, because text entered for a number makes extraction fail. That reasoning supports the answer: Declare a matching type."
+          "explanation": "The variable type controls what operator>> tries to read. If you ask for an int and the user types letters, extraction fails and the value should not be trusted. Pick a matching type and check the stream."
         }
       }
     },
@@ -381,7 +381,7 @@
           "kind": "mcq-behavior",
           "title": "User Input concept check 3",
           "code": null,
-          "prompt": "Which recommendation belongs in a review of User Input code?",
+          "prompt": "Before using a typed value, what question should Python code ask?",
           "choices": [
             "Treat every typed value as a number automatically.",
             "Keep asking for input inside helper logic that should be reusable.",
@@ -389,7 +389,7 @@
             "Print an error without giving the user a clear recovery path."
           ],
           "answer_index": 2,
-          "explanation": "`input()` pauses your program, waits for the person to type something, and hands back what they typed. Whatever comes back is a string, even when it looks like a number. That reasoning supports the answer: Ask yourself one question every time: do I need this as text, or as a number?"
+          "explanation": "Decide whether the typed value is meant to stay text or become a number. Names and short answers can remain strings. Counts, prices, ages, and scores need conversion before arithmetic or numeric comparisons."
         },
         "java": {
           "difficulty": "medium",
@@ -400,18 +400,18 @@
           "choices": [
             "Treat every typed value as a number automatically.",
             "Keep asking for input inside helper logic that should be reusable.",
-            "An InputMismatchException means the program asked for a number and got something else. Check the obvious cause first: are you reading the values in the same order the user is typing them?",
+            "Scanner expected one type of input but received a different kind of token.",
             "Print an error without giving the user a clear recovery path."
           ],
           "answer_index": 2,
-          "explanation": "To read what someone types, you need a Scanner. Put `import java.util.Scanner;` at the top of the file, then build one with `Scanner sc = new Scanner(System.in);`. That reasoning supports the answer: An InputMismatchException means the program asked for a number and got something else. Check the obvious cause first: are you reading the values in the same order the user is typing them?"
+          "explanation": "InputMismatchException usually means Scanner tried to read one type, such as an int, but the next typed token did not match. Check the prompt order and the Scanner method before blaming later logic."
         },
         "javascript": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "User Input concept check 3",
           "code": null,
-          "prompt": "Which recommendation belongs in a review of User Input code?",
+          "prompt": "When should JavaScript prompt input be trimmed?",
           "choices": [
             "Treat every typed value as a number automatically.",
             "Keep asking for input inside helper logic that should be reusable.",
@@ -419,14 +419,14 @@
             "Print an error without giving the user a clear recovery path."
           ],
           "answer_index": 2,
-          "explanation": "Browser `prompt(...)` returns a string or `null` when canceled. Handle cancellation, trim when appropriate, convert numeric text, and validate the result. That reasoning supports the answer: Trim only irrelevant spaces."
+          "explanation": "Trim spaces that are not part of the answer, such as accidental spaces around a name or yes/no response. Keep spaces when they are meaningful data. Trimming is a choice, not an automatic fix for every input."
         },
         "cpp": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "User Input concept check 3",
           "code": null,
-          "prompt": "Which recommendation belongs in a review of User Input code?",
+          "prompt": "What should C++ code do after trying to read a number with cin?",
           "choices": [
             "Treat every typed value as a number automatically.",
             "Keep asking for input inside helper logic that should be reusable.",
@@ -434,7 +434,7 @@
             "Print an error without giving the user a clear recovery path."
           ],
           "answer_index": 2,
-          "explanation": "`std::cin >> value` extracts formatted input into a typed variable. Check the stream before using the value, because text entered for a number makes extraction fail. That reasoning supports the answer: Test extraction success."
+          "explanation": "Test whether extraction succeeded before using the variable. If cin failed, handle the bad input instead of continuing with an old or uninitialized value."
         }
       }
     },
@@ -450,7 +450,7 @@
           "kind": "mcq-behavior",
           "title": "User Input concept check 4",
           "code": null,
-          "prompt": "Which guideline helps prevent a common User Input mistake?",
+          "prompt": "Which typed answers should stay as strings in Python?",
           "choices": [
             "Store converted and unconverted versions under the same confusing name.",
             "Use a prompt that hides what type of answer is expected.",
@@ -458,14 +458,14 @@
             "Names, answers, and anything you only print: leave it as a string, no conversion needed."
           ],
           "answer_index": 3,
-          "explanation": "`input()` pauses your program, waits for the person to type something, and hands back what they typed. Whatever comes back is a string, even when it looks like a number. That reasoning supports the answer: Names, answers, and anything you only print: leave it as a string, no conversion needed."
+          "explanation": "Leave input as a string when the program only needs to display it, store it as text, or compare it as a word. Convert only when the next step needs numeric meaning, such as addition or ordering."
         },
         "java": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "User Input concept check 4",
           "code": null,
-          "prompt": "Which guideline helps prevent a common User Input mistake?",
+          "prompt": "What does Scanner.nextInt() read?",
           "choices": [
             "Store converted and unconverted versions under the same confusing name.",
             "Use a prompt that hides what type of answer is expected.",
@@ -473,14 +473,14 @@
             "`nextInt()` reads one whole number and gives you an `int`."
           ],
           "answer_index": 3,
-          "explanation": "To read what someone types, you need a Scanner. Put `import java.util.Scanner;` at the top of the file, then build one with `Scanner sc = new Scanner(System.in);`. That reasoning supports the answer: `nextInt()` reads one whole number and gives you an `int`."
+          "explanation": "nextInt() reads one whole-number token and returns an int. It does not read the rest of the line, so a following nextLine() may need a throwaway read to clear the newline."
         },
         "javascript": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "User Input concept check 4",
           "code": null,
-          "prompt": "Which guideline helps prevent a common User Input mistake?",
+          "prompt": "Why store a converted prompt value instead of converting repeatedly?",
           "choices": [
             "Store converted and unconverted versions under the same confusing name.",
             "Use a prompt that hides what type of answer is expected.",
@@ -488,14 +488,14 @@
             "Store one converted value."
           ],
           "answer_index": 3,
-          "explanation": "Browser `prompt(...)` returns a string or `null` when canceled. Handle cancellation, trim when appropriate, convert numeric text, and validate the result. That reasoning supports the answer: Store one converted value."
+          "explanation": "Store the converted value after validation so later code uses one clear numeric value. Keeping raw text and converted numbers under confusing names makes bugs harder to spot."
         },
         "cpp": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "User Input concept check 4",
           "code": null,
-          "prompt": "Which guideline helps prevent a common User Input mistake?",
+          "prompt": "What should C++ code plan before switching from >> to getline?",
           "choices": [
             "Store converted and unconverted versions under the same confusing name.",
             "Use a prompt that hides what type of answer is expected.",
@@ -503,7 +503,7 @@
             "Plan transitions to getline."
           ],
           "answer_index": 3,
-          "explanation": "`std::cin >> value` extracts formatted input into a typed variable. Check the stream before using the value, because text entered for a number makes extraction fail. That reasoning supports the answer: Plan transitions to getline."
+          "explanation": "Formatted extraction with >> can leave the newline behind. If the next read is getline(), ignore that leftover delimiter first so getline reads the user's actual line."
         }
       }
     },
@@ -519,7 +519,7 @@
           "kind": "mcq-behavior",
           "title": "User Input concept check 5",
           "code": null,
-          "prompt": "A classmate is checking their understanding of User Input. Which advice is correct?",
+          "prompt": "When should Python input be wrapped in int() or float()?",
           "choices": [
             "Anything you will add, subtract, or compare as a quantity: wrap it in `int()` or `float()`.",
             "Read values in a different order than the prompt asks for them.",
@@ -527,14 +527,14 @@
             "Use one input method for every situation without checking what it reads."
           ],
           "answer_index": 0,
-          "explanation": "`input()` pauses your program, waits for the person to type something, and hands back what they typed. Whatever comes back is a string, even when it looks like a number. That reasoning supports the answer: Anything you will add, subtract, or compare as a quantity: wrap it in `int()` or `float()`."
+          "explanation": "Use int() or float() when the typed value must behave like a quantity. Addition, subtraction, numeric comparisons, and averages need numbers, not the original input string."
         },
         "java": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "User Input concept check 5",
           "code": null,
-          "prompt": "A classmate is checking their understanding of User Input. Which advice is correct?",
+          "prompt": "What does Scanner.nextDouble() read?",
           "choices": [
             "`nextDouble()` reads one decimal number and gives you a `double`.",
             "Read values in a different order than the prompt asks for them.",
@@ -542,14 +542,14 @@
             "Use one input method for every situation without checking what it reads."
           ],
           "answer_index": 0,
-          "explanation": "To read what someone types, you need a Scanner. Put `import java.util.Scanner;` at the top of the file, then build one with `Scanner sc = new Scanner(System.in);`. That reasoning supports the answer: `nextDouble()` reads one decimal number and gives you a `double`."
+          "explanation": "nextDouble() reads one decimal-number token and returns a double. It can fail if the next input is not numeric, and like other token reads it does not consume the whole line."
         },
         "javascript": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "User Input concept check 5",
           "code": null,
-          "prompt": "A classmate is checking their understanding of User Input. Which advice is correct?",
+          "prompt": "What should a program tell the user when prompt input is invalid?",
           "choices": [
             "Explain invalid input clearly.",
             "Read values in a different order than the prompt asks for them.",
@@ -557,14 +557,14 @@
             "Use one input method for every situation without checking what it reads."
           ],
           "answer_index": 0,
-          "explanation": "Browser `prompt(...)` returns a string or `null` when canceled. Handle cancellation, trim when appropriate, convert numeric text, and validate the result. That reasoning supports the answer: Explain invalid input clearly."
+          "explanation": "Give a clear message that says what was wrong and what kind of value is expected. Silent failure leaves the user thinking the program accepted their input when it did not."
         },
         "cpp": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "User Input concept check 5",
           "code": null,
-          "prompt": "A classmate is checking their understanding of User Input. Which advice is correct?",
+          "prompt": "How should C++ code respond to unusable typed input?",
           "choices": [
             "Reject unusable input clearly.",
             "Read values in a different order than the prompt asks for them.",
@@ -572,7 +572,7 @@
             "Use one input method for every situation without checking what it reads."
           ],
           "answer_index": 0,
-          "explanation": "`std::cin >> value` extracts formatted input into a typed variable. Check the stream before using the value, because text entered for a number makes extraction fail. That reasoning supports the answer: Reject unusable input clearly."
+          "explanation": "Reject unusable input clearly instead of calculating with a failed stream. The program can print a helpful message, clear/reset input state when appropriate, and ask again if that fits the assignment."
         }
       }
     },
@@ -588,7 +588,7 @@
           "kind": "mcq-behavior",
           "title": "User Input concept check 6",
           "code": null,
-          "prompt": "Which choice shows sound reasoning about User Input?",
+          "prompt": "Why add a space at the end of a Python input prompt label?",
           "choices": [
             "Compare numeric text alphabetically when numeric order is needed.",
             "End the prompt text with a space, as in `input(\"Age: \")`, so what the person types is not jammed against your question.",
@@ -596,14 +596,14 @@
             "Mix validation, conversion, and output so the failure is hard to locate."
           ],
           "answer_index": 1,
-          "explanation": "`input()` pauses your program, waits for the person to type something, and hands back what they typed. Whatever comes back is a string, even when it looks like a number. That reasoning supports the answer: End the prompt text with a space, as in `input(\"Age: \")`, so what the person types is not jammed against your question."
+          "explanation": "A prompt like input(\"Age: \") leaves a small gap before the user's typing. Without the space, the typed value appears jammed against the question, which makes beginner programs harder to read."
         },
         "java": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "User Input concept check 6",
           "code": null,
-          "prompt": "Which choice shows sound reasoning about User Input?",
+          "prompt": "What does Scanner.nextLine() read?",
           "choices": [
             "Compare numeric text alphabetically when numeric order is needed.",
             "`nextLine()` reads everything up to the end of the line and gives you a `String`.",
@@ -611,14 +611,14 @@
             "Mix validation, conversion, and output so the failure is hard to locate."
           ],
           "answer_index": 1,
-          "explanation": "To read what someone types, you need a Scanner. Put `import java.util.Scanner;` at the top of the file, then build one with `Scanner sc = new Scanner(System.in);`. That reasoning supports the answer: `nextLine()` reads everything up to the end of the line and gives you a `String`."
+          "explanation": "nextLine() reads everything up to the end of the current line and returns a String. That makes it right for names, comments, and phrases with spaces, but you must watch for leftover newlines after numeric reads."
         },
         "javascript": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "User Input concept check 6",
           "code": null,
-          "prompt": "What is the main idea behind User Input?",
+          "prompt": "Why validate browser prompt input before calculating?",
           "choices": [
             "Compare numeric text alphabetically when numeric order is needed.",
             "Validate external text before calculating with it.",
@@ -626,14 +626,14 @@
             "Mix validation, conversion, and output so the failure is hard to locate."
           ],
           "answer_index": 1,
-          "explanation": "Browser `prompt(...)` returns a string or `null` when canceled. Handle cancellation, trim when appropriate, convert numeric text, and validate the result. That reasoning supports the answer: Validate external text before calculating with it."
+          "explanation": "A prompt result is outside your control: it may be canceled, blank, or not numeric. Validate it before arithmetic so the program can explain the problem instead of producing NaN or a confusing result."
         },
         "cpp": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "User Input concept check 6",
           "code": null,
-          "prompt": "What is the main idea behind User Input?",
+          "prompt": "Why check a C++ input stream after reading?",
           "choices": [
             "Compare numeric text alphabetically when numeric order is needed.",
             "Read stream data and handle failed extraction.",
@@ -641,7 +641,7 @@
             "Mix validation, conversion, and output so the failure is hard to locate."
           ],
           "answer_index": 1,
-          "explanation": "`std::cin >> value` extracts formatted input into a typed variable. Check the stream before using the value, because text entered for a number makes extraction fail. That reasoning supports the answer: Read stream data and handle failed extraction."
+          "explanation": "operator>> can fail when the typed value does not match the variable type. Check the stream before using the variable so failed input does not turn into a misleading calculation."
         }
       }
     }

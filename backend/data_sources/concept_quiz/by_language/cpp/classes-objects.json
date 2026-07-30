@@ -88,7 +88,7 @@
         "Use a class when no related data or behavior is being grouped."
       ],
       "answer_index": 0,
-      "explanation": "A class defines a new type. Private data members protect an object's state, public methods provide controlled operations, and a constructor establishes a valid starting state. That reasoning supports the answer: A constructor body runs after data members have already been initialized. Prefer the member initializer list for their starting values, especially for const members and objects that have no default constructor."
+      "explanation": "A constructor body runs after data members have already been initialized. Prefer the member initializer list for their starting values, especially for const members and objects that have no default constructor. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
     },
     {
       "id": "cpp-classes-objects-authored-02",
@@ -106,7 +106,7 @@
         "Forget that each object has its own instance data."
       ],
       "answer_index": 1,
-      "explanation": "A class defines a new type. Private data members protect an object's state, public methods provide controlled operations, and a constructor establishes a valid starting state. That reasoning supports the answer: Give the class one clear responsibility."
+      "explanation": "Give the class one clear responsibility. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
     },
     {
       "id": "cpp-classes-objects-authored-03",
@@ -116,7 +116,7 @@
       "language": "cpp",
       "title": "Classes & Objects concept check 3",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Classes & Objects code?",
+      "prompt": "Which Classes & Objects code review note is accurate?",
       "choices": [
         "Name methods after vague actions such as `doStuff`.",
         "Use local variables when persistent object state is needed.",
@@ -124,7 +124,7 @@
         "Call an instance method before creating an object."
       ],
       "answer_index": 2,
-      "explanation": "A class defines a new type. Private data members protect an object's state, public methods provide controlled operations, and a constructor establishes a valid starting state. That reasoning supports the answer: Initialize every member in the constructor."
+      "explanation": "Initialize every member in the constructor. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
     },
     {
       "id": "cpp-classes-objects-authored-04",
@@ -134,7 +134,7 @@
       "language": "cpp",
       "title": "Classes & Objects concept check 4",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Classes & Objects mistake?",
+      "prompt": "Which Classes & Objects habit prevents a common mistake?",
       "choices": [
         "Treat the class blueprint as the same thing as one object.",
         "Leave an object in a half-initialized state.",
@@ -142,7 +142,7 @@
         "Keep invariants behind private data."
       ],
       "answer_index": 3,
-      "explanation": "A class defines a new type. Private data members protect an object's state, public methods provide controlled operations, and a constructor establishes a valid starting state. That reasoning supports the answer: Keep invariants behind private data."
+      "explanation": "Keep invariants behind private data. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
     },
     {
       "id": "cpp-classes-objects-authored-05",
@@ -152,7 +152,7 @@
       "language": "cpp",
       "title": "Classes & Objects concept check 5",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Classes & Objects. Which advice is correct?",
+      "prompt": "Which Classes & Objects advice is accurate?",
       "choices": [
         "Mark read-only methods const.",
         "Use static/shared data for per-object information.",
@@ -160,7 +160,7 @@
         "Mix user input directly into every object method."
       ],
       "answer_index": 0,
-      "explanation": "A class defines a new type. Private data members protect an object's state, public methods provide controlled operations, and a constructor establishes a valid starting state. That reasoning supports the answer: Mark read-only methods const."
+      "explanation": "Mark read-only methods const. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
     },
     {
       "id": "cpp-classes-objects-authored-06",
@@ -170,7 +170,7 @@
       "language": "cpp",
       "title": "Classes & Objects concept check 6",
       "code": null,
-      "prompt": "What is the main idea behind Classes & Objects?",
+      "prompt": "Which statement is accurate about Classes & Objects?",
       "choices": [
         "Return internal mutable data without control.",
         "Design types that keep related state and behavior together.",
@@ -178,7 +178,7 @@
         "Hide important setup in unrelated methods."
       ],
       "answer_index": 1,
-      "explanation": "A class defines a new type. Private data members protect an object's state, public methods provide controlled operations, and a constructor establishes a valid starting state. That reasoning supports the answer: Design types that keep related state and behavior together."
+      "explanation": "Design types that keep related state and behavior together. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
     }
   ]
 }

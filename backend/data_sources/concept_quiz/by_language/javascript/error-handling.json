@@ -88,7 +88,7 @@
         "Handle an error where no recovery is possible."
       ],
       "answer_index": 0,
-      "explanation": "Use `try` around an operation that can fail and `catch` to respond to the resulting Error. Inspect the error, give the user a useful response, and avoid empty catch blocks that hide the cause. That reasoning supports the answer: Do not wrap a whole application in one broad try block. Keep the protected section close to the operation whose failure you understand, so unrelated programming mistakes are not mislabeled as expected input problems."
+      "explanation": "Do not wrap a whole application in one broad try block. Keep the protected section close to the operation whose failure you understand, so unrelated programming mistakes are not mislabeled as expected input problems. This matters because error handling should protect the small operation that may fail and leave a clear recovery path."
     },
     {
       "id": "javascript-error-handling-authored-02",
@@ -106,7 +106,7 @@
         "Show the same message for every failure."
       ],
       "answer_index": 1,
-      "explanation": "Use `try` around an operation that can fail and `catch` to respond to the resulting Error. Inspect the error, give the user a useful response, and avoid empty catch blocks that hide the cause. That reasoning supports the answer: Protect only operations you expect can fail."
+      "explanation": "Protect only operations you expect can fail. This matters because error handling should protect the small operation that may fail and leave a clear recovery path."
     },
     {
       "id": "javascript-error-handling-authored-03",
@@ -116,7 +116,7 @@
       "language": "javascript",
       "title": "Error Handling concept check 3",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Error Handling code?",
+      "prompt": "Which Error Handling code review note is accurate?",
       "choices": [
         "Ignore the error name and message.",
         "Catch programming mistakes and pretend they are user mistakes.",
@@ -124,7 +124,7 @@
         "Put unrelated operations in one protected block."
       ],
       "answer_index": 2,
-      "explanation": "Use `try` around an operation that can fail and `catch` to respond to the resulting Error. Inspect the error, give the user a useful response, and avoid empty catch blocks that hide the cause. That reasoning supports the answer: Read the Error name and message."
+      "explanation": "Read the Error name and message. This matters because error handling should protect the small operation that may fail and leave a clear recovery path."
     },
     {
       "id": "javascript-error-handling-authored-04",
@@ -134,7 +134,7 @@
       "language": "javascript",
       "title": "Error Handling concept check 4",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Error Handling mistake?",
+      "prompt": "Which Error Handling habit prevents a common mistake?",
       "choices": [
         "Retry without changing the failed condition.",
         "Swallow an error before logging useful context.",
@@ -142,7 +142,7 @@
         "Give users a specific recovery path."
       ],
       "answer_index": 3,
-      "explanation": "Use `try` around an operation that can fail and `catch` to respond to the resulting Error. Inspect the error, give the user a useful response, and avoid empty catch blocks that hide the cause. That reasoning supports the answer: Give users a specific recovery path."
+      "explanation": "Give users a specific recovery path. This matters because error handling should protect the small operation that may fail and leave a clear recovery path."
     },
     {
       "id": "javascript-error-handling-authored-05",
@@ -152,7 +152,7 @@
       "language": "javascript",
       "title": "Error Handling concept check 5",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Error Handling. Which advice is correct?",
+      "prompt": "Which Error Handling advice is accurate?",
       "choices": [
         "Rethrow errors the current layer cannot handle.",
         "Throw strings instead of error objects.",
@@ -160,7 +160,7 @@
         "Use a fallback value that breaks later code."
       ],
       "answer_index": 0,
-      "explanation": "Use `try` around an operation that can fail and `catch` to respond to the resulting Error. Inspect the error, give the user a useful response, and avoid empty catch blocks that hide the cause. That reasoning supports the answer: Rethrow errors the current layer cannot handle."
+      "explanation": "Rethrow errors the current layer cannot handle. This matters because error handling should protect the small operation that may fail and leave a clear recovery path."
     },
     {
       "id": "javascript-error-handling-authored-06",
@@ -170,7 +170,7 @@
       "language": "javascript",
       "title": "Error Handling concept check 6",
       "code": null,
-      "prompt": "What is the main idea behind Error Handling?",
+      "prompt": "Which statement is accurate about Error Handling?",
       "choices": [
         "Report failure after already using invalid data.",
         "Handle expected failures while keeping real programming mistakes visible.",
@@ -178,7 +178,7 @@
         "Let promise rejections go unhandled."
       ],
       "answer_index": 1,
-      "explanation": "Use `try` around an operation that can fail and `catch` to respond to the resulting Error. Inspect the error, give the user a useful response, and avoid empty catch blocks that hide the cause. That reasoning supports the answer: Handle expected failures while keeping real programming mistakes visible."
+      "explanation": "Handle expected failures while keeping real programming mistakes visible. This matters because error handling should protect the small operation that may fail and leave a clear recovery path."
     }
   ]
 }

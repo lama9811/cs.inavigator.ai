@@ -126,48 +126,48 @@
       "variants": {
         "python": {
           "code": null,
-          "prompt": "Which statement best describes Operators?",
+          "prompt": "What jobs do Python operators do in beginner programs?",
           "choices": [
-            "Do math, and ask true-or-false questions about the answer.",
-            "It is used only to print a message.",
-            "It automatically fixes every program error.",
-            "It removes the need for variables and tests."
+            "They calculate values, compare values, and combine true-or-false conditions.",
+            "They only display messages on the screen.",
+            "They automatically fix type and syntax errors.",
+            "They replace the need for variables and if statements."
           ],
           "answer_index": 0,
           "explanation": "Operators are the symbols that do work on values. `+ - * /` do the math you expect, and `/` always hands back a decimal. `//` divides and throws away the remainder, `%` keeps only the remainder, and `**` raises to a power. Comparisons like `== != < >` ask a question and answer it with True or False. The one to watch is `==` against `=`. A single `=` puts a value into a name. A double `==` asks whether two values match."
         },
         "java": {
           "code": null,
-          "prompt": "Which statement best describes Operators?",
+          "prompt": "What jobs do Java operators do in beginner programs?",
           "choices": [
-            "The symbols that do the work: arithmetic, comparison, and logic.",
-            "It is used only to print a message.",
-            "It automatically fixes every program error.",
-            "It removes the need for variables and tests."
+            "They do arithmetic, compare values, assign values, and combine boolean conditions.",
+            "They only display messages on the screen.",
+            "They automatically fix type and syntax errors.",
+            "They replace the need for variables and if statements."
           ],
           "answer_index": 0,
           "explanation": "Operators are the symbols that combine values. `+ - * /` do arithmetic and `%` gives the remainder. Division is the one to watch: if both sides are `int`, Java divides as integers and throws the fraction away, so `7 / 2` is 3. Make one side a `double` to get 3.5. Comparisons like `==` and `<` produce a `boolean`, and `&&`, `||`, and `!` combine those booleans. Assignment is `=`. Comparison is `==`. They are different operators."
         },
         "javascript": {
           "code": null,
-          "prompt": "Which statement best describes Operators?",
+          "prompt": "What jobs do JavaScript operators do in beginner programs?",
           "choices": [
-            "Combine values with arithmetic, comparison, and logic.",
-            "It is used only to print a message.",
-            "It automatically fixes every program error.",
-            "It removes the need for variables and tests."
+            "They calculate values, compare values, and combine true-or-false conditions.",
+            "They only display messages on the screen.",
+            "They automatically fix type and syntax errors.",
+            "They replace the need for variables and if statements."
           ],
           "answer_index": 0,
           "explanation": "Arithmetic operators calculate values, comparisons produce booleans, and logical operators join conditions. Prefer `===` so type and value must match."
         },
         "cpp": {
           "code": null,
-          "prompt": "Which statement best describes Operators?",
+          "prompt": "What jobs do C++ operators do in beginner programs?",
           "choices": [
-            "Calculate values and combine boolean conditions.",
-            "It is used only to print a message.",
-            "It automatically fixes every program error.",
-            "It removes the need for variables and tests."
+            "They calculate values, compare values, assign values, and combine boolean conditions.",
+            "They only display messages on the screen.",
+            "They automatically fix type and syntax errors.",
+            "They replace the need for variables and if statements."
           ],
           "answer_index": 0,
           "explanation": "C++ arithmetic follows precedence rules, comparisons produce booleans, and `&&`, `||`, and `!` combine logic. Integer division discards the fractional part."
@@ -618,7 +618,7 @@
           "kind": "mcq-behavior",
           "title": "Operators concept check 6",
           "code": null,
-          "prompt": "What is the main idea behind Operators?",
+          "prompt": "What do JavaScript operators do in a condition or calculation?",
           "choices": [
             "Store many values under one name in order.",
             "Combine values with arithmetic, comparison, and logic.",
@@ -633,7 +633,7 @@
           "kind": "mcq-behavior",
           "title": "Operators concept check 6",
           "code": null,
-          "prompt": "What is the main idea behind Operators?",
+          "prompt": "What do C++ operators do in a condition or calculation?",
           "choices": [
             "Store ordered items that can grow and shrink.",
             "Calculate values and combine boolean conditions.",

@@ -88,7 +88,7 @@
         "Replace the original error with a vague one and drop the cause."
       ],
       "answer_index": 0,
-      "explanation": "Put an operation that may fail inside `try`, catch a specific exception with `except`, and place cleanup in `finally` when both outcomes need it. Avoid a bare `except`, because it can hide mistakes unrelated to the expected problem. That reasoning supports the answer: An empty `except` lets the program continue without completing its work or explaining why. Handle the expected case, log useful context, or allow the exception to reach a layer that can respond."
+      "explanation": "An empty `except` lets the program continue without completing its work or explaining why. Handle the expected case, log useful context, or allow the exception to reach a layer that can respond. This matters because exception code should handle failures at a layer that can respond without hiding unrelated programming mistakes."
     },
     {
       "id": "python-exceptions-authored-02",
@@ -106,7 +106,7 @@
         "Hide unexpected programming mistakes."
       ],
       "answer_index": 1,
-      "explanation": "Put an operation that may fail inside `try`, catch a specific exception with `except`, and place cleanup in `finally` when both outcomes need it. Avoid a bare `except`, because it can hide mistakes unrelated to the expected problem. That reasoning supports the answer: Protect the smallest operation that can fail."
+      "explanation": "Protect the smallest operation that can fail. This matters because exception code should handle failures at a layer that can respond without hiding unrelated programming mistakes."
     },
     {
       "id": "python-exceptions-authored-03",
@@ -116,7 +116,7 @@
       "language": "python",
       "title": "Exceptions concept check 3",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Exceptions code?",
+      "prompt": "Which Exceptions code review note is accurate?",
       "choices": [
         "Raise an exception after the function already returned successfully.",
         "Use an exception to skip normal loop logic.",
@@ -124,7 +124,7 @@
         "Report failure without enough context to debug it."
       ],
       "answer_index": 2,
-      "explanation": "Put an operation that may fail inside `try`, catch a specific exception with `except`, and place cleanup in `finally` when both outcomes need it. Avoid a bare `except`, because it can hide mistakes unrelated to the expected problem. That reasoning supports the answer: Catch the most specific useful exception."
+      "explanation": "Catch the most specific useful exception. This matters because exception code should handle failures at a layer that can respond without hiding unrelated programming mistakes."
     },
     {
       "id": "python-exceptions-authored-04",
@@ -134,7 +134,7 @@
       "language": "python",
       "title": "Exceptions concept check 4",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Exceptions mistake?",
+      "prompt": "Which Exceptions habit prevents a common mistake?",
       "choices": [
         "Ignore cleanup around code that can fail.",
         "Catch a base exception type when a specific one is known.",
@@ -142,7 +142,7 @@
         "Give the caller or user a recovery path."
       ],
       "answer_index": 3,
-      "explanation": "Put an operation that may fail inside `try`, catch a specific exception with `except`, and place cleanup in `finally` when both outcomes need it. Avoid a bare `except`, because it can hide mistakes unrelated to the expected problem. That reasoning supports the answer: Give the caller or user a recovery path."
+      "explanation": "Give the caller or user a recovery path. This matters because exception code should handle failures at a layer that can respond without hiding unrelated programming mistakes."
     },
     {
       "id": "python-exceptions-authored-05",
@@ -152,7 +152,7 @@
       "language": "python",
       "title": "Exceptions concept check 5",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Exceptions. Which advice is correct?",
+      "prompt": "Which Exceptions advice is accurate?",
       "choices": [
         "Keep unexpected programming errors visible.",
         "Keep running after required work did not happen.",
@@ -160,7 +160,7 @@
         "Assume the absence of a crash proves the operation succeeded."
       ],
       "answer_index": 0,
-      "explanation": "Put an operation that may fail inside `try`, catch a specific exception with `except`, and place cleanup in `finally` when both outcomes need it. Avoid a bare `except`, because it can hide mistakes unrelated to the expected problem. That reasoning supports the answer: Keep unexpected programming errors visible."
+      "explanation": "Keep unexpected programming errors visible. This matters because exception code should handle failures at a layer that can respond without hiding unrelated programming mistakes."
     },
     {
       "id": "python-exceptions-authored-06",
@@ -170,7 +170,7 @@
       "language": "python",
       "title": "Exceptions concept check 6",
       "code": null,
-      "prompt": "Which choice shows sound reasoning about Exceptions?",
+      "prompt": "Which Exceptions reasoning is accurate?",
       "choices": [
         "Use try/catch around code that cannot throw.",
         "Use `finally` only for cleanup shared by both outcomes.",
@@ -178,7 +178,7 @@
         "Discard stack-trace information during wrapping."
       ],
       "answer_index": 1,
-      "explanation": "Put an operation that may fail inside `try`, catch a specific exception with `except`, and place cleanup in `finally` when both outcomes need it. Avoid a bare `except`, because it can hide mistakes unrelated to the expected problem. That reasoning supports the answer: Use `finally` only for cleanup shared by both outcomes."
+      "explanation": "Use `finally` only for cleanup shared by both outcomes. This matters because exception code should handle failures at a layer that can respond without hiding unrelated programming mistakes."
     }
   ]
 }

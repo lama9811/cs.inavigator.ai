@@ -146,7 +146,7 @@
         "Treat an address as if it were the stored value."
       ],
       "answer_index": 0,
-      "explanation": "A pointer holds an address. `&value` obtains an address, `*pointer` dereferences it, and `nullptr` represents no object. That reasoning supports the answer: An uninitialized or null pointer does not identify a valid object. Dereferencing it has undefined behavior and can crash the program."
+      "explanation": "An uninitialized or null pointer does not identify a valid object. Dereferencing it has undefined behavior and can crash the program. This matters because pointer code depends on whether a value is an address, a real object, or a null pointer that must not be dereferenced."
     },
     {
       "id": "cpp-pointers-authored-02",
@@ -164,7 +164,7 @@
         "Forget that `*pointer` follows the address."
       ],
       "answer_index": 1,
-      "explanation": "A pointer holds an address. `&value` obtains an address, `*pointer` dereferences it, and `nullptr` represents no object. That reasoning supports the answer: Initialize every pointer."
+      "explanation": "Initialize every pointer. This matters because pointer code depends on whether a value is an address, a real object, or a null pointer that must not be dereferenced."
     },
     {
       "id": "cpp-pointers-authored-03",
@@ -174,7 +174,7 @@
       "language": "cpp",
       "title": "Pointers concept check 3",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Pointers code?",
+      "prompt": "Which Pointers code review note is accurate?",
       "choices": [
         "Return a pointer to a local variable.",
         "Share raw ownership without deciding who deletes.",
@@ -182,7 +182,7 @@
         "Use pointer arithmetic when an index would be clearer."
       ],
       "answer_index": 2,
-      "explanation": "A pointer holds an address. `&value` obtains an address, `*pointer` dereferences it, and `nullptr` represents no object. That reasoning supports the answer: Use nullptr for no target."
+      "explanation": "Use nullptr for no target. This matters because pointer code depends on whether a value is an address, a real object, or a null pointer that must not be dereferenced."
     }
   ]
 }

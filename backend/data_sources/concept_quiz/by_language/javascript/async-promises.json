@@ -88,7 +88,7 @@
         "Forget to handle rejection or failed status."
       ],
       "answer_index": 0,
-      "explanation": "A Promise represents a future result that can be pending, fulfilled, or rejected. An `async` function returns a Promise, and `await` pauses that function until a Promise settles without freezing the entire browser. That reasoning supports the answer: A response with status 404 or 500 still fulfills the fetch Promise. Check `response.ok` and throw or return an error result before parsing data you expected from a successful request."
+      "explanation": "A response with status 404 or 500 still fulfills the fetch Promise. Check `response.ok` and throw or return an error result before parsing data you expected from a successful request. This matters because async code depends on timing: a promise represents work that may finish later, and await pauses only the current async function."
     },
     {
       "id": "javascript-async-promises-authored-02",
@@ -106,7 +106,7 @@
         "Catch an error and return data shaped like success."
       ],
       "answer_index": 1,
-      "explanation": "A Promise represents a future result that can be pending, fulfilled, or rejected. An `async` function returns a Promise, and `await` pauses that function until a Promise settles without freezing the entire browser. That reasoning supports the answer: Await the operation that produces the needed value."
+      "explanation": "Await the operation that produces the needed value. This matters because async code depends on timing: a promise represents work that may finish later, and await pauses only the current async function."
     },
     {
       "id": "javascript-async-promises-authored-03",
@@ -116,7 +116,7 @@
       "language": "javascript",
       "title": "Async & Promises concept check 3",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Async & Promises code?",
+      "prompt": "Which Async & Promises code review note is accurate?",
       "choices": [
         "Ignore loading and error states in the UI.",
         "Parse JSON before checking whether the response was successful.",
@@ -124,7 +124,7 @@
         "Mix callback, Promise, and async styles in one small flow."
       ],
       "answer_index": 2,
-      "explanation": "A Promise represents a future result that can be pending, fulfilled, or rejected. An `async` function returns a Promise, and `await` pauses that function until a Promise settles without freezing the entire browser. That reasoning supports the answer: Check HTTP response status explicitly."
+      "explanation": "Check HTTP response status explicitly. This matters because async code depends on timing: a promise represents work that may finish later, and await pauses only the current async function."
     },
     {
       "id": "javascript-async-promises-authored-04",
@@ -134,7 +134,7 @@
       "language": "javascript",
       "title": "Async & Promises concept check 4",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Async & Promises mistake?",
+      "prompt": "Which Async & Promises habit prevents a common mistake?",
       "choices": [
         "Start async work but never return or await it.",
         "Assume `await` freezes the whole browser.",
@@ -142,7 +142,7 @@
         "Catch failures where recovery is possible."
       ],
       "answer_index": 3,
-      "explanation": "A Promise represents a future result that can be pending, fulfilled, or rejected. An `async` function returns a Promise, and `await` pauses that function until a Promise settles without freezing the entire browser. That reasoning supports the answer: Catch failures where recovery is possible."
+      "explanation": "Catch failures where recovery is possible. This matters because async code depends on timing: a promise represents work that may finish later, and await pauses only the current async function."
     },
     {
       "id": "javascript-async-promises-authored-05",
@@ -152,7 +152,7 @@
       "language": "javascript",
       "title": "Async & Promises concept check 5",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Async & Promises. Which advice is correct?",
+      "prompt": "Which Async & Promises advice is accurate?",
       "choices": [
         "Keep independent requests concurrent when appropriate.",
         "Use `Promise.all` when one optional request may fail independently.",
@@ -160,7 +160,7 @@
         "Create race conditions by updating stale state."
       ],
       "answer_index": 0,
-      "explanation": "A Promise represents a future result that can be pending, fulfilled, or rejected. An `async` function returns a Promise, and `await` pauses that function until a Promise settles without freezing the entire browser. That reasoning supports the answer: Keep independent requests concurrent when appropriate."
+      "explanation": "Keep independent requests concurrent when appropriate. This matters because async code depends on timing: a promise represents work that may finish later, and await pauses only the current async function."
     },
     {
       "id": "javascript-async-promises-authored-06",
@@ -170,7 +170,7 @@
       "language": "javascript",
       "title": "Async & Promises concept check 6",
       "code": null,
-      "prompt": "What is the main idea behind Async & Promises?",
+      "prompt": "Which statement is accurate about Async & Promises?",
       "choices": [
         "Retry requests forever without a limit.",
         "Work with values that become available after the current code finishes.",
@@ -178,7 +178,7 @@
         "Treat pending data as if it already exists."
       ],
       "answer_index": 1,
-      "explanation": "A Promise represents a future result that can be pending, fulfilled, or rejected. An `async` function returns a Promise, and `await` pauses that function until a Promise settles without freezing the entire browser. That reasoning supports the answer: Work with values that become available after the current code finishes."
+      "explanation": "Work with values that become available after the current code finishes. This matters because async code depends on timing: a promise represents work that may finish later, and await pauses only the current async function."
     }
   ]
 }

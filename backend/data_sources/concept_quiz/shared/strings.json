@@ -126,51 +126,51 @@
       "variants": {
         "python": {
           "code": null,
-          "prompt": "Which statement best describes how Python strings work?",
+          "prompt": "What can you safely do with a Python string value?",
           "choices": [
-            "Text you can measure, cut apart, and reshape.",
-            "It is used only to print a message.",
-            "It automatically fixes every program error.",
-            "It removes the need for variables and tests."
+            "Measure it, read indexes, take slices, and build a new transformed string.",
+            "Change one character in place with an index assignment.",
+            "Use it only for print messages.",
+            "Treat the character count as the final valid index."
           ],
           "answer_index": 0,
-          "explanation": "A string is text in quotes: `\"Ada\"` or `'Ada'`. `len(s)` tells you how many characters it holds. You reach a single character with `s[i]`, and counting starts at 0, so the last character of a string of length 5 is `s[4]`. `s[-1]` is a shortcut for that last one. `s[1:4]` is a slice: it takes characters 1, 2, and 3, stopping before 4. A string cannot be changed in place, so build a new one instead."
+          "explanation": "Python strings are text values you can inspect and transform. Indexes start at 0, len(text) counts characters, slices stop before the second number, and methods such as upper() return a new string instead of changing the original."
         },
         "java": {
           "code": null,
-          "prompt": "Which statement best describes how Java strings work?",
+          "prompt": "What is the safest way to think about Java String values?",
           "choices": [
-            "Text is an object in Java, and comparing two of them has one right way.",
-            "It is used only to print a message.",
-            "It automatically fixes every program error.",
-            "It removes the need for variables and tests."
+            "A String is an object; use methods for length, indexing, transforming, and comparing text.",
+            "A String is a number that Java converts whenever needed.",
+            "Use == whenever two pieces of text should match.",
+            "String methods change the original text in place."
           ],
           "answer_index": 0,
-          "explanation": "A `String` holds text in double quotes: `\"Ada\"`. It is an object, not a primitive, so it carries methods you call with a dot: `s.length()`, `s.charAt(0)`, `s.substring(1, 4)`, `s.toUpperCase()`, `s.trim()`, `s.split(\",\")`. Indexes start at 0, so the last character is at `s.length() - 1`. Strings are immutable, so every method returns a new String and changes nothing. Compare two Strings with `a.equals(b)`. Using `==` compares whether they are the same object in memory, which is not the question you meant to ask."
+          "explanation": "Java String values are objects with methods such as length(), charAt(), substring(), trim(), and toUpperCase(). Strings are immutable, so methods return new values. For text equality, use equals() or equalsIgnoreCase(), not ==."
         },
         "javascript": {
           "code": null,
-          "prompt": "Which statement best describes how JavaScript strings work?",
+          "prompt": "What should you remember about JavaScript string methods?",
           "choices": [
-            "Read and transform text without changing the original value.",
-            "It is used only to print a message.",
-            "It automatically fixes every program error.",
-            "It removes the need for variables and tests."
+            "They read or return new text; the original string is not changed in place.",
+            "They always convert text into numbers before returning.",
+            "They make indexes start at 1.",
+            "They remove the need to check empty strings."
           ],
           "answer_index": 0,
-          "explanation": "Strings are immutable sequences with zero-based indexes. `.length` counts characters, and template literals insert expressions with `${...}`."
+          "explanation": "JavaScript strings are immutable. A method such as trim() or toUpperCase() returns a new string, so you must store or use that return value. Indexes start at 0, and length is a count, not the final valid index."
         },
         "cpp": {
           "code": null,
-          "prompt": "Which statement best describes how C++ strings work?",
+          "prompt": "What should you remember when working with std::string?",
           "choices": [
-            "Create, index, compare, and combine text.",
-            "It is used only to print a message.",
-            "It automatically fixes every program error.",
-            "It removes the need for variables and tests."
+            "Use size(), zero-based indexes, comparisons, and concatenation while staying inside valid bounds.",
+            "Use size() as the index of the last character.",
+            "Assume indexing an empty string is safe.",
+            "Include no headers because string is built into every file."
           ],
           "answer_index": 0,
-          "explanation": "`std::string` stores text, `.size()` reports its character count, and indexing starts at zero. Strings support comparison and concatenation with compatible operands."
+          "explanation": "std::string stores text, size() counts characters, and indexing starts at 0. The last valid index of a nonempty string is size() - 1. Include the string header when needed, and check emptiness before reading the last character."
         }
       }
     },
@@ -245,13 +245,13 @@
           "code": null,
           "prompt": "What happens when Python code tries to join text and a number with `+`?",
           "choices": [
-            "`\"Score: \" + 10` raises a TypeError, because plus means one thing for text and something else for numbers, and Python refuses to guess which you meant. Two ways out.",
-            "Use the character count itself as the last valid index.",
-            "Assume a string method changes the original text in place.",
-            "Compare text by checking whether two variables are the same object."
+            "It raises a TypeError. Convert the number with str(...) or use an f-string before joining it with text.",
+            "It prints Score: 10 because Python converts numbers during + automatically.",
+            "It prints only Score: and quietly ignores the number.",
+            "It raises IndexError because 10 is treated as a string position."
           ],
           "answer_index": 0,
-          "explanation": "A string is text in quotes: `\"Ada\"` or `'Ada'`. `len(s)` tells you how many characters it holds. That reasoning supports the answer: `\"Score: \" + 10` raises a TypeError, because plus means one thing for text and something else for numbers, and Python refuses to guess which you meant. Two ways out."
+          "explanation": "Python uses + for string joining only when both sides are strings. \"Score: \" + 10 mixes text and an integer, so Python raises TypeError instead of guessing. Convert the number first or write an f-string when you want text output."
         },
         "java": {
           "difficulty": "medium",
@@ -260,43 +260,43 @@
           "code": null,
           "prompt": "When does Java catch an assignment such as putting text into an int variable?",
           "choices": [
-            "Java checks the types of everything while it compiles, which is before a single line of your program has run. So `int n = \"hello\";` never gets the chance to misbehave.",
-            "Use the character count itself as the last valid index.",
-            "Assume a string method changes the original text in place.",
-            "Compare text by checking whether two variables are the same object."
+            "Java checks types while compiling, so int n = \"hello\" is rejected before the program can run.",
+            "Java stores the length of the text because the variable is an int.",
+            "Java stores 0 because text cannot be converted.",
+            "Java accepts it and waits until printing to decide the type."
           ],
           "answer_index": 0,
-          "explanation": "A `String` holds text in double quotes: `\"Ada\"`. It is an object, not a primitive, so it carries methods you call with a dot: `s.length()`, `s.charAt(0)`, `s.substring(1, 4)`, `s.toUpperCase()`, `s.trim()`, `s.split(\",\")`. That reasoning supports the answer: Java checks the types of everything while it compiles, which is before a single line of your program has run. So `int n = \"hello\";` never gets the chance to misbehave."
+          "explanation": "Java catches this before runtime because int and String are different types. The assignment int n = \"hello\" cannot compile; Java does not silently choose a number for the text."
         },
         "javascript": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "Strings concept check 1",
           "code": null,
-          "prompt": "Which detail is most important in this code pattern?",
+          "prompt": "A string has length 5. Which index reads one place too far?",
           "choices": [
-            "A string with length five ends at index four. Reading `text[text.length]` goes one place too far.",
-            "Use the character count itself as the last valid index.",
-            "Assume a string method changes the original text in place.",
-            "Compare text by checking whether two variables are the same object."
+            "text[text.length] reads past the end because the last character is at text.length - 1.",
+            "text[0] reads past the end because JavaScript indexes start at 1.",
+            "text[2] reads past the end because middle indexes are invalid.",
+            "text[text.length - 1] reads past the end because subtracting one is unsafe."
           ],
           "answer_index": 0,
-          "explanation": "Strings are immutable sequences with zero-based indexes. `.length` counts characters, and template literals insert expressions with `${...}`. That reasoning supports the answer: A string with length five ends at index four. Reading `text[text.length]` goes one place too far."
+          "explanation": "length is a count, not the final index. A five-character string has valid indexes 0 through 4, so text[text.length] asks for index 5. Use text.length - 1 for the final character after checking that the string is not empty."
         },
         "cpp": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "Strings concept check 1",
           "code": null,
-          "prompt": "Which C++ detail is most important in this code pattern?",
+          "prompt": "For a nonempty std::string, which index reaches the final character safely?",
           "choices": [
-            "For a nonempty string, the final character is at `text.size() - 1`; using `text[text.size()]` steps past the valid range.",
-            "Use the character count itself as the last valid index.",
-            "Assume a string method changes the original text in place.",
-            "Compare text by checking whether two variables are the same object."
+            "text.size() - 1 reaches the final character; text[text.size()] steps past the valid range.",
+            "text.size() reaches the final character because size() is the count.",
+            "0 reaches the final character in every string.",
+            "text.size() + 1 is safer because it leaves room for a terminator."
           ],
           "answer_index": 0,
-          "explanation": "`std::string` stores text, `.size()` reports its character count, and indexing starts at zero. Strings support comparison and concatenation with compatible operands. That reasoning supports the answer: For a nonempty string, the final character is at `text.size() - 1`; using `text[text.size()]` steps past the valid range."
+          "explanation": "std::string indexes are zero-based. If size() is 5, the valid indexes are 0 through 4. Reading text[text.size()] goes out of range, so check that the string is nonempty and use size() - 1 for the last character."
         }
       }
     },
@@ -314,13 +314,13 @@
           "code": null,
           "prompt": "Why does Python raise an index error for some string positions?",
           "choices": [
-            "Skip trimming input because spaces never affect text comparison.",
-            "`\"Bears\"` has five characters, so the valid indexes are 0, 1, 2, 3, and 4. Asking for `word[5]` asks for a sixth character that was never there, and Python stops the program rather than invent one.",
-            "Use numeric addition rules for every `+` involving text.",
-            "Treat an empty string as if it has one blank character."
+            "Spaces never affect text comparison, so trimming is unnecessary.",
+            "`word[5]` asks for a sixth character in a five-character word.",
+            "`+` always follows numeric addition rules, even with text.",
+            "An empty string still has one blank character to index."
           ],
           "answer_index": 1,
-          "explanation": "A string is text in quotes: `\"Ada\"` or `'Ada'`. `len(s)` tells you how many characters it holds. That reasoning supports the answer: `\"Bears\"` has five characters, so the valid indexes are 0, 1, 2, 3, and 4. Asking for `word[5]` asks for a sixth character that was never there, and Python stops the program rather than invent one."
+          "explanation": "Python string indexes start at 0. A five-character word has valid positions 0 through 4, so word[5] is outside the string and raises IndexError."
         },
         "java": {
           "difficulty": "medium",
@@ -329,20 +329,20 @@
           "code": null,
           "prompt": "Why does Java throw `StringIndexOutOfBoundsException` for some string positions?",
           "choices": [
-            "Skip trimming input because spaces never affect text comparison.",
-            "\"Bears\" has five characters, so the legal indexes are 0, 1, 2, 3, and 4. There is no index 5.",
-            "Use numeric addition rules for every `+` involving text.",
-            "Treat an empty string as if it has one blank character."
+            "Spaces never affect text comparison, so trimming is unnecessary.",
+            "A five-character String has indexes 0 through 4, not index 5.",
+            "`+` always follows numeric addition rules, even with text.",
+            "An empty String still has one blank character to index."
           ],
           "answer_index": 1,
-          "explanation": "A `String` holds text in double quotes: `\"Ada\"`. It is an object, not a primitive, so it carries methods you call with a dot: `s.length()`, `s.charAt(0)`, `s.substring(1, 4)`, `s.toUpperCase()`, `s.trim()`, `s.split(\",\")`. That reasoning supports the answer: \"Bears\" has five characters, so the legal indexes are 0, 1, 2, 3, and 4. There is no index 5."
+          "explanation": "Java String positions are zero-based. If a String has length 5, charAt(4) is the last character and charAt(5) is outside the valid range."
         },
         "javascript": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "Strings concept check 2",
           "code": null,
-          "prompt": "Which choice describes a reliable Strings practice?",
+          "prompt": "Which habit helps you avoid string index mistakes in JavaScript?",
           "choices": [
             "Skip trimming input because spaces never affect text comparison.",
             "Count from index zero.",
@@ -350,14 +350,14 @@
             "Treat an empty string as if it has one blank character."
           ],
           "answer_index": 1,
-          "explanation": "Strings are immutable sequences with zero-based indexes. `.length` counts characters, and template literals insert expressions with `${...}`. That reasoning supports the answer: Count from index zero."
+          "explanation": "Start counting string positions at 0. A string with five characters ends at index 4, not index 5. This matters whenever you use bracket indexing or calculate the last valid position from length."
         },
         "cpp": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "Strings concept check 2",
           "code": null,
-          "prompt": "Which choice describes a reliable Strings practice?",
+          "prompt": "What do you need before using std::string in a C++ file?",
           "choices": [
             "Skip trimming input because spaces never affect text comparison.",
             "Include the string header.",
@@ -365,7 +365,7 @@
             "Treat an empty string as if it has one blank character."
           ],
           "answer_index": 1,
-          "explanation": "`std::string` stores text, `.size()` reports its character count, and indexing starts at zero. Strings support comparison and concatenation with compatible operands. That reasoning supports the answer: Include the string header."
+          "explanation": "std::string lives in the standard string header. Including <string> makes the type available, and then you can use size(), indexes, comparison, and concatenation with the expected string behavior."
         }
       }
     },
@@ -384,12 +384,12 @@
           "prompt": "What happens when Python code calls a string method but does not store or print the result?",
           "choices": [
             "Assume slicing includes the stop position.",
-            "Index before checking whether the string has enough characters.",
-            "`name.upper()` on its own does nothing you can see. It builds a new uppercase string and then throws it away, because you never said where to put it.",
-            "Use a character index without remembering that counting starts at zero."
+            "Index before checking that the string is long enough.",
+            "`name.upper()` returns uppercase text, but the program discards it.",
+            "Use indexes as if counting starts at one."
           ],
           "answer_index": 2,
-          "explanation": "A string is text in quotes: `\"Ada\"` or `'Ada'`. `len(s)` tells you how many characters it holds. That reasoning supports the answer: `name.upper()` on its own does nothing you can see. It builds a new uppercase string and then throws it away, because you never said where to put it."
+          "explanation": "String methods return a value. If name.upper() is used alone, Python makes the uppercase string and immediately discards it because nothing stores, returns, or prints the result."
         },
         "java": {
           "difficulty": "medium",
@@ -398,20 +398,20 @@
           "code": null,
           "prompt": "Why can Java string comparison with `==` be misleading?",
           "choices": [
-            "Assume slicing includes the stop position.",
-            "Index before checking whether the string has enough characters.",
-            "`==` checks whether two String variables point to the same object, not whether their text matches.",
-            "Use a character index without remembering that counting starts at zero."
+            "Assume substring includes the stop position.",
+            "Index before checking that the String is long enough.",
+            "`==` asks whether both variables point to the same object.",
+            "Use indexes as if counting starts at one."
           ],
           "answer_index": 2,
-          "explanation": "A `String` holds text in double quotes: `\"Ada\"`. It is an object, not a primitive, so it carries methods you call with a dot: `s.length()`, `s.charAt(0)`, `s.substring(1, 4)`, `s.toUpperCase()`, `s.trim()`, `s.split(\",\")`. That reasoning supports the answer: This is the bug that costs Java beginners the most time, and the reason is that `==` sometimes appears to work. Compare two strings you typed directly into your code and Java may reuse one object for both, so `==` returns true and you walk away believing it."
+          "explanation": "For String text equality, use equals(). The == operator checks whether two references point to the same object, which can look right in tiny examples and fail when the same text comes from input or another calculation."
         },
         "javascript": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "Strings concept check 3",
           "code": null,
-          "prompt": "Which recommendation belongs in a review of Strings code?",
+          "prompt": "What should you do with the result of a JavaScript string transformation?",
           "choices": [
             "Assume slicing includes the stop position.",
             "Index before checking whether the string has enough characters.",
@@ -419,14 +419,14 @@
             "Use a character index without remembering that counting starts at zero."
           ],
           "answer_index": 2,
-          "explanation": "Strings are immutable sequences with zero-based indexes. `.length` counts characters, and template literals insert expressions with `${...}`. That reasoning supports the answer: Save transformed strings."
+          "explanation": "String transformations return new values. If you call label.trim() or label.toUpperCase() without assigning, returning, or printing the result, the transformed text is discarded and label still holds the old string."
         },
         "cpp": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "Strings concept check 3",
           "code": null,
-          "prompt": "Which recommendation belongs in a review of Strings code?",
+          "prompt": "What index habit prevents many C++ string bugs?",
           "choices": [
             "Assume slicing includes the stop position.",
             "Index before checking whether the string has enough characters.",
@@ -434,7 +434,7 @@
             "Use a character index without remembering that counting starts at zero."
           ],
           "answer_index": 2,
-          "explanation": "`std::string` stores text, `.size()` reports its character count, and indexing starts at zero. Strings support comparison and concatenation with compatible operands. That reasoning supports the answer: Count indexes from zero."
+          "explanation": "Count indexes from 0, not from 1. For std::string text = \"code\", c is index 0 and e is index 3. Mixing up count and index is how text[text.size()] slips into code."
         }
       }
     },
@@ -450,15 +450,15 @@
           "kind": "mcq-behavior",
           "title": "Strings concept check 4",
           "code": null,
-          "prompt": "Which guideline helps prevent a common Strings mistake?",
+          "prompt": "How do you reach the last character of a nonempty Python string?",
           "choices": [
-            "Call a method and ignore its returned string.",
-            "Change capitalization on one side of a comparison only.",
-            "Assume every language uses the same text-comparison operator.",
-            "Index of the last character is `len(s) - 1`, or just use `s[-1]`"
+            "Use len(s), because the count is the last valid index.",
+            "Use s[0], because Python stores the last character first.",
+            "Assign into the last index before reading it.",
+            "Use len(s) - 1, or use the shortcut s[-1]."
           ],
           "answer_index": 3,
-          "explanation": "A string is text in quotes: `\"Ada\"` or `'Ada'`. `len(s)` tells you how many characters it holds. That reasoning supports the answer: Index of the last character is `len(s) - 1`, or just use `s[-1]`"
+          "explanation": "len(s) is the number of characters, so the final zero-based index is one less than that count. Python also supports negative indexes, where s[-1] means the last character."
         },
         "java": {
           "difficulty": "medium",
@@ -467,20 +467,20 @@
           "code": null,
           "prompt": "Why is a Java String method call by itself often a bug?",
           "choices": [
-            "Call a method and ignore its returned string.",
+            "Call a method and ignore its returned String.",
             "Change capitalization on one side of a comparison only.",
             "Assume every language uses the same text-comparison operator.",
-            "`name.trim();` sitting alone as a statement compiles fine and does nothing you can observe. It trims a copy and throws the copy away."
+            "Store or use the returned String after trimming."
           ],
           "answer_index": 3,
-          "explanation": "A `String` holds text in double quotes: `\"Ada\"`. It is an object, not a primitive, so it carries methods you call with a dot: `s.length()`, `s.charAt(0)`, `s.substring(1, 4)`, `s.toUpperCase()`, `s.trim()`, `s.split(\",\")`. That reasoning supports the answer: `name.trim();` sitting alone as a statement compiles fine and does nothing you can observe. It trims a copy and throws the copy away."
+          "explanation": "Java Strings are immutable. name.trim() creates a trimmed String, but name still points to the original text unless you store the returned value or pass it directly into the next step."
         },
         "javascript": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "Strings concept check 4",
           "code": null,
-          "prompt": "Which guideline helps prevent a common Strings mistake?",
+          "prompt": "When building a message with a JavaScript variable, what keeps the text readable?",
           "choices": [
             "Call a method and ignore its returned string.",
             "Change capitalization on one side of a comparison only.",
@@ -488,14 +488,14 @@
             "Use template interpolation."
           ],
           "answer_index": 3,
-          "explanation": "Strings are immutable sequences with zero-based indexes. `.length` counts characters, and template literals insert expressions with `${...}`. That reasoning supports the answer: Use template interpolation."
+          "explanation": "Template literals make inserted values clear: `Hello, ${name}` shows where the expression goes and avoids long chains of plus signs. It does not change the original string; it builds a new one."
         },
         "cpp": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "Strings concept check 4",
           "code": null,
-          "prompt": "Which guideline helps prevent a common Strings mistake?",
+          "prompt": "What is the difference between a string's count and its final index?",
           "choices": [
             "Call a method and ignore its returned string.",
             "Change capitalization on one side of a comparison only.",
@@ -503,7 +503,7 @@
             "Distinguish count from final index."
           ],
           "answer_index": 3,
-          "explanation": "`std::string` stores text, `.size()` reports its character count, and indexing starts at zero. Strings support comparison and concatenation with compatible operands. That reasoning supports the answer: Distinguish count from final index."
+          "explanation": "size() returns how many characters exist. The final valid index is one less than that count because indexes begin at 0. Keep those two ideas separate before indexing into a string."
         }
       }
     },
@@ -519,22 +519,22 @@
           "kind": "mcq-behavior",
           "title": "Strings concept check 5",
           "code": null,
-          "prompt": "A classmate is checking their understanding of Strings. Which advice is correct?",
+          "prompt": "In a Python slice such as word[1:4], where does the slice stop?",
           "choices": [
-            "A slice stops before its second number, exactly like `range()` does",
-            "Split text before checking whether the separator is present.",
-            "Store numbers as text when later code needs arithmetic.",
-            "Use the first character check when the rule depends on the whole string."
+            "It stops before the second number, so word[1:4] uses indexes 1, 2, and 3.",
+            "It includes index 4 because both ends are always included.",
+            "It starts counting at 1 only inside slices.",
+            "It changes the original string by removing the sliced part."
           ],
           "answer_index": 0,
-          "explanation": "A string is text in quotes: `\"Ada\"` or `'Ada'`. `len(s)` tells you how many characters it holds. That reasoning supports the answer: A slice stops before its second number, exactly like `range()` does"
+          "explanation": "Python slices include the start position and stop before the stop position. That matches range(): word[1:4] takes indexes 1, 2, and 3. The original string is unchanged."
         },
         "java": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "Strings concept check 5",
           "code": null,
-          "prompt": "A classmate is checking their understanding of Strings. Which advice is correct?",
+          "prompt": "How should Java code compare whether two String values contain the same text?",
           "choices": [
             "Compare text with `a.equals(b)`. Reach for `==` on Strings and you are asking about memory, not about text.",
             "Split text before checking whether the separator is present.",
@@ -542,14 +542,14 @@
             "Use the first character check when the rule depends on the whole string."
           ],
           "answer_index": 0,
-          "explanation": "A `String` holds text in double quotes: `\"Ada\"`. It is an object, not a primitive, so it carries methods you call with a dot: `s.length()`, `s.charAt(0)`, `s.substring(1, 4)`, `s.toUpperCase()`, `s.trim()`, `s.split(\",\")`. That reasoning supports the answer: Compare text with `a.equals(b)`. Reach for `==` on Strings and you are asking about memory, not about text."
+          "explanation": "Use a.equals(b) when capitalization must match. The == operator asks whether two references point to the same object, which is a different question from whether their characters match."
         },
         "javascript": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "Strings concept check 5",
           "code": null,
-          "prompt": "A classmate is checking their understanding of Strings. Which advice is correct?",
+          "prompt": "When should JavaScript code trim a string before comparing it?",
           "choices": [
             "Trim input when appropriate.",
             "Split text before checking whether the separator is present.",
@@ -557,14 +557,14 @@
             "Use the first character check when the rule depends on the whole string."
           ],
           "answer_index": 0,
-          "explanation": "Strings are immutable sequences with zero-based indexes. `.length` counts characters, and template literals insert expressions with `${...}`. That reasoning supports the answer: Trim input when appropriate."
+          "explanation": "Trim input when extra spaces are not meaningful to the answer. For example, a typed value of \" yes \" should usually be trimmed before comparing it to \"yes\". Do not trim when spaces are part of the exact data."
         },
         "cpp": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "Strings concept check 5",
           "code": null,
-          "prompt": "A classmate is checking their understanding of Strings. Which advice is correct?",
+          "prompt": "What should C++ code check before reading the last character of a string?",
           "choices": [
             "Check emptiness before using the last character.",
             "Split text before checking whether the separator is present.",
@@ -572,7 +572,7 @@
             "Use the first character check when the rule depends on the whole string."
           ],
           "answer_index": 0,
-          "explanation": "`std::string` stores text, `.size()` reports its character count, and indexing starts at zero. Strings support comparison and concatenation with compatible operands. That reasoning supports the answer: Check emptiness before using the last character."
+          "explanation": "Check that the string is not empty before using back() or size() - 1. An empty string has no last character, so reading one is out-of-bounds behavior."
         }
       }
     },
@@ -588,7 +588,7 @@
           "kind": "mcq-behavior",
           "title": "Strings concept check 6",
           "code": null,
-          "prompt": "Which choice shows sound reasoning about Strings?",
+          "prompt": "How can Python code compare a typed yes/no answer without being fooled by spaces or capitalization?",
           "choices": [
             "Concatenate values before deciding whether numeric addition was intended.",
             "Strip anything a user typed before you compare it: `answer.strip().lower() == \"yes\"`",
@@ -596,14 +596,14 @@
             "Ignore punctuation and spacing even when exact text matters."
           ],
           "answer_index": 1,
-          "explanation": "A string is text in quotes: `\"Ada\"` or `'Ada'`. `len(s)` tells you how many characters it holds. That reasoning supports the answer: Strip anything a user typed before you compare it: `answer.strip().lower() == \"yes\"`"
+          "explanation": "A common safe comparison is answer.strip().lower() == \"yes\". strip() removes extra outer spaces, lower() normalizes capitalization, and the comparison then checks the cleaned text."
         },
         "java": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "Strings concept check 6",
           "code": null,
-          "prompt": "Which choice shows sound reasoning about Strings?",
+          "prompt": "How can Java compare two String values while ignoring capitalization?",
           "choices": [
             "Concatenate values before deciding whether numeric addition was intended.",
             "To ignore capitalization, use `a.equalsIgnoreCase(b)` instead of uppercasing both sides.",
@@ -611,14 +611,14 @@
             "Ignore punctuation and spacing even when exact text matters."
           ],
           "answer_index": 1,
-          "explanation": "A `String` holds text in double quotes: `\"Ada\"`. It is an object, not a primitive, so it carries methods you call with a dot: `s.length()`, `s.charAt(0)`, `s.substring(1, 4)`, `s.toUpperCase()`, `s.trim()`, `s.split(\",\")`. That reasoning supports the answer: To ignore capitalization, use `a.equalsIgnoreCase(b)` instead of uppercasing both sides."
+          "explanation": "Use equalsIgnoreCase() when capitalization should not matter. It compares the text directly and avoids both the == reference trap and manual one-sided capitalization mistakes."
         },
         "javascript": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "Strings concept check 6",
           "code": null,
-          "prompt": "What is the main idea behind Strings?",
+          "prompt": "What should JavaScript code remember after transforming a string?",
           "choices": [
             "Concatenate values before deciding whether numeric addition was intended.",
             "Read and transform text without changing the original value.",
@@ -626,14 +626,14 @@
             "Ignore punctuation and spacing even when exact text matters."
           ],
           "answer_index": 1,
-          "explanation": "Strings are immutable sequences with zero-based indexes. `.length` counts characters, and template literals insert expressions with `${...}`. That reasoning supports the answer: Read and transform text without changing the original value."
+          "explanation": "Methods such as trim(), slice(), and toUpperCase() return new text. Use that returned value; the original string variable is unchanged unless you assign the new value back."
         },
         "cpp": {
           "difficulty": "medium",
           "kind": "mcq-behavior",
           "title": "Strings concept check 6",
           "code": null,
-          "prompt": "What is the main idea behind Strings?",
+          "prompt": "What should C++ code remember before indexing std::string?",
           "choices": [
             "Concatenate values before deciding whether numeric addition was intended.",
             "Create, index, compare, and combine text.",
@@ -641,7 +641,7 @@
             "Ignore punctuation and spacing even when exact text matters."
           ],
           "answer_index": 1,
-          "explanation": "`std::string` stores text, `.size()` reports its character count, and indexing starts at zero. Strings support comparison and concatenation with compatible operands. That reasoning supports the answer: Create, index, compare, and combine text."
+          "explanation": "std::string supports indexing, comparison, and concatenation, but indexes must stay inside the string. size() gives the count; for a nonempty string, the last valid index is size() - 1."
         }
       }
     }
