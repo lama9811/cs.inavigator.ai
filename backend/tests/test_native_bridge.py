@@ -142,6 +142,11 @@ CPP_SOLUTIONS = {
     while(lo<=hi){ int mid=lo+(hi-lo)/2; if(scores[mid]>=target){ ans=mid; hi=mid-1; } else lo=mid+1; }
     return ans;
 }""",
+    "firstPassingScoreValue": """long long firstPassingScoreValue(vector<long long> scores, long long passingScore){
+    int lo=0, hi=(int)scores.size()-1, ans=-1;
+    while(lo<=hi){ int mid=lo+(hi-lo)/2; if(scores[mid]>=passingScore){ ans=scores[mid]; hi=mid-1; } else lo=mid+1; }
+    return ans;
+}""",
     "followLinkedListValues": """vector<long long> followLinkedListValues(vector<long long> values, vector<long long> nextIndexes, long long head){
     vector<long long> out; long long cur=head;
     while(cur!=-1){ out.push_back(values[cur]); cur=nextIndexes[cur]; }
@@ -155,13 +160,28 @@ CPP_SOLUTIONS = {
     for(auto&cmd:commands){ if(cmd.rfind("join ",0)==0) q.push(cmd.substr(5)); else { if(q.empty()) out.push_back("none"); else { out.push_back(q.front()); q.pop(); } } }
     return out;
 }""",
+    "helpSessionFinishOrder": """vector<string> helpSessionFinishOrder(vector<string> names, vector<long long> tickets){
+    queue<long long> q; vector<string> out; for(long long i=0;i<(long long)names.size();i++) q.push(i);
+    while(!q.empty()){ long long i=q.front(); q.pop(); tickets[i]--; if(tickets[i]==0) out.push_back(names[i]); else q.push(i); }
+    return out;
+}""",
     "initials": """string initials(string fullName){
     istringstream is(fullName); string w, r; while(is>>w) if(!w.empty()) r+=toupper(w[0]); return r;
+}""",
+    "isRosterSymmetric": """bool isRosterSymmetric(vector<string> names){
+    int left=0, right=(int)names.size()-1;
+    while(left<right){ if(names[left]!=names[right]) return false; left++; right--; }
+    return true;
 }""",
     "isPalindrome": """bool isPalindrome(string text){
     string s; for(char c:text) if(isalnum(c)) s+=tolower(c); string r(s.rbegin(),s.rend()); return s==r;
 }""",
     "lastDigit": """long long lastDigit(long long number){ return llabs(number)%10; }""",
+    "lastScoreAtMost": """long long lastScoreAtMost(vector<long long> scores, long long target){
+    int lo=0, hi=(int)scores.size()-1, ans=-1;
+    while(lo<=hi){ int mid=lo+(hi-lo)/2; if(scores[mid]<=target){ ans=mid; lo=mid+1; } else hi=mid-1; }
+    return ans;
+}""",
     "linkedListHasCycle": """bool linkedListHasCycle(vector<long long> nextIndexes, long long head){
     set<long long> seen; long long cur=head;
     while(cur!=-1){ if(seen.count(cur)) return true; seen.insert(cur); cur=nextIndexes[cur]; }
@@ -174,6 +194,11 @@ CPP_SOLUTIONS = {
 }""",
     "longestIncreasingSubsequenceLength": """long long longestIncreasingSubsequenceLength(vector<long long> nums){
     vector<long long> tails; for(long long x:nums){ auto it=lower_bound(tails.begin(),tails.end(),x); if(it==tails.end()) tails.push_back(x); else *it=x; } return tails.size();
+}""",
+    "longestStudyStretchUnderLimit": """long long longestStudyStretchUnderLimit(vector<long long> minutes, long long limit){
+    long long sum=0, best=0; size_t left=0;
+    for(size_t right=0; right<minutes.size(); right++){ sum+=minutes[right]; while(left<=right && sum>limit){ sum-=minutes[left++]; } best=max(best,(long long)(right-left+1)); }
+    return best;
 }""",
     "longestUniqueWindow": """long long longestUniqueWindow(string text){
     map<char,int> last; int start=0; long long best=0;
@@ -244,6 +269,12 @@ CPP_SOLUTIONS = {
     "pairSumSorted": """bool pairSumSorted(vector<long long> nums, long long target){
     int l=0, r=(int)nums.size()-1; while(l<r){ long long s=nums[l]+nums[r]; if(s==target) return true; if(s<target) l++; else r--; } return false;
 }""",
+    "closestPairSumSorted": """vector<long long> closestPairSumSorted(vector<long long> nums, long long target){
+    if(nums.size()<2) return {};
+    int left=0, right=(int)nums.size()-1; long long bestDiff=LLONG_MAX; vector<long long> best;
+    while(left<right){ long long sum=nums[left]+nums[right]; long long diff=llabs(sum-target); if(diff<bestDiff){ bestDiff=diff; best={nums[left],nums[right]}; } if(sum<target) left++; else right--; }
+    return best;
+}""",
     "prefixSearch": """vector<string> prefixSearch(vector<string> words, string prefix){
     vector<string> r; for(auto&w:words) if(w.size()>=prefix.size()&&w.compare(0,prefix.size(),prefix)==0) r.push_back(w); return r;
 }""",
@@ -262,6 +293,15 @@ CPP_SOLUTIONS = {
 }""",
     "recursiveDigitSum": """long long recursiveDigitSum(long long n){
     if(n<10) return n; return n%10 + recursiveDigitSum(n/10);
+}""",
+    "recursiveListCount": """long long recursiveListCount(vector<long long> nums){
+    if(nums.empty()) return 0;
+    nums.erase(nums.begin());
+    return 1 + recursiveListCount(nums);
+}""",
+    "recursiveReverseText": """string recursiveReverseText(string text){
+    if(text.size()<=1) return text;
+    return recursiveReverseText(text.substr(1)) + text[0];
 }""",
     "reverseWords": """string reverseWords(string sentence){
     istringstream is(sentence); vector<string> w; string t; while(is>>t) w.push_back(t); reverse(w.begin(),w.end());
@@ -416,6 +456,12 @@ CPP_SOLUTIONS = {
     long long count=0; for(long long reading:readings) if(reading>=low && reading<=high) count++;
     return count;
 }""",
+    "threeDayStudyTotals": """vector<long long> threeDayStudyTotals(vector<long long> minutes){
+    if(minutes.size()<3) return {};
+    vector<long long> out; long long sum=minutes[0]+minutes[1]+minutes[2]; out.push_back(sum);
+    for(size_t i=3;i<minutes.size();i++){ sum += minutes[i] - minutes[i-3]; out.push_back(sum); }
+    return out;
+}""",
     "uniqueParkingZones": """long long uniqueParkingZones(vector<string> zones){
     set<string> seen(zones.begin(), zones.end()); return seen.size();
 }""",
@@ -432,6 +478,12 @@ CPP_SOLUTIONS = {
     "countShortStudyBlocks": """long long countShortStudyBlocks(vector<long long> minutes, long long limit){
     long long count=0; for(size_t i=1;i<minutes.size();i++) if(minutes[i-1]+minutes[i] <= limit) count++;
     return count;
+}""",
+    "diningLineAfterCommands": """vector<string> diningLineAfterCommands(vector<string> commands){
+    queue<string> q;
+    for(auto& cmd:commands){ if(cmd.rfind("join ",0)==0) q.push(cmd.substr(5)); else if(cmd=="serve" && !q.empty()) q.pop(); }
+    vector<string> out; while(!q.empty()){ out.push_back(q.front()); q.pop(); }
+    return out;
 }""",
     "recursiveFactorialSmall": """long long recursiveFactorialSmall(long long n){
     if(n<=1) return 1;
