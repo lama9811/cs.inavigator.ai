@@ -31,6 +31,10 @@ All notable changes to CS Navigator are documented here.
 - **Adaptive review routing.** Coding Tutor adaptive recommendations now include a conservative review signal when recent practice attempts show repeated syntax, runtime, wrong-answer, or timeout patterns.
 
 ### Changed
+- Coding Tutor Home now shows the Starting Point check before the LeetCode daily card so new students get placed before seeing outside challenge work.
+- Concept quiz answer choices now remove noisy backtick styling and emphasize only operator symbols inside code snippets, with slightly larger answer text for readability.
+- Concept quiz result summaries now show clearer stats, collapse correct-answer explanations by default, and keep missed-question review expanded.
+- Regular Coding Workspace restore is now Practice Library only; Interview Prep, daily scratchpad, and personal snippet editors no longer become the default Workspace state.
 - Passing solution reviews now include plain-language tutor notes that explain what the diff is showing before students compare their code to the reference approach.
 - Tutor suggestion preview can now replace only the selected workspace code when a student highlights a block first.
 - Parking Ticket Total is now a medium conditional practice problem with day, time, free-parking, long-parking, and permit-surcharge rules across all four supported languages.
@@ -66,6 +70,8 @@ All notable changes to CS Navigator are documented here.
 - Coding Tutor workspace now uses a draggable problem-guide divider and quieter editor-style tabs so the workspace feels like one connected coding surface.
 
 ### Fixed
+- Completed concept quiz summaries now persist across a Workspace detour during the current browser session instead of resetting back into the quiz.
+- Operators concept quiz prompts and explanations were cleaned so the shared bank avoids lesson-referencing stems, repeated generic review prompts, and answer-restating blurbs.
 - Fixed a mojibake sequence in the Java concept-quiz correct-answer explanation for printing `Hello`, and added a content guard for common broken-UTF-8 sequences.
 - Fixed C++ grader compatibility for beginner `const std::vector<int>&` answers and snake_case function names such as `sum_even_numbers`.
 - Fixed Coding Tutor streaming after removing the old in-chat advising flow.

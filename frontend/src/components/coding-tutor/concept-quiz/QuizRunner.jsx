@@ -6,7 +6,13 @@ import {
   FaCheckCircle,
   FaTimesCircle,
 } from "react-icons/fa";
-import { readQuizDraftAnswers, writeQuizDraftAnswers } from "./conceptQuizProgress";
+import {
+  clearQuizLastResult,
+  readQuizDraftAnswers,
+  readQuizLastResult,
+  writeQuizDraftAnswers,
+  writeQuizLastResult,
+} from "./conceptQuizProgress";
 
 // Sequential concept-quiz runner. Renders one question at a time in a split
 // layout (code/statement left with Question|Learn tabs, answer UI right),
@@ -20,32 +26,6 @@ import { readQuizDraftAnswers, writeQuizDraftAnswers } from "./conceptQuizProgre
 // Grading is done server-side via `onGrade` (the /grade endpoint) so answers
 // aren't trusted from the client. The parent supplies questions, current index
 // (from the URL), and navigation callbacks so the Back button steps through.
-
-// In-progress answers, saved per quiz for the session. The runner unmounts whenever the
-// student leaves (to read a lesson, to look at Code), and without this every answer they
-// had given was destroyed, so a half-finished quiz simply could not be resumed.
-//
-// sessionStorage on purpose: it survives a detour, but an abandoned quiz shouldn't still
-// be sitting there next week. Storage failures are swallowed; a student in private mode
-// loses resume, not the quiz.
-function readAnswers(key) {
-  try {
-    const raw = sessionStorage.getItem(key);
-    const parsed = raw ? JSON.parse(raw) : null;
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-function writeAnswers(key, answers) {
-  try {
-    if (!answers || !Object.keys(answers).length) sessionStorage.removeItem(key);
-    else sessionStorage.setItem(key, JSON.stringify(answers));
-  } catch {
-    // Storage unavailable/full; the quiz still works, it just won't resume.
-  }
-}
 
 // Deterministic shuffle seeded by the question id, so the scrambled Parsons
 // order is stable across re-renders (no Math.random re-scrambling on keypress)
@@ -214,16 +194,57 @@ function AnswerPanel({ question, answer, onAnswer, locked = false }) {
   );
 }
 
+const OPERATOR_TOKEN_RE = /(===|!==|==|!=|>=|<=|\+=|-=|\*=|\/=|%=|\+\+|--|&&|\|\||\/\/|\*\*|\b(?:and|or|not)\b|[+\-*/%=<>!^])/g;
+const OPERATOR_TOKENS = new Set([
+  "===",
+  "!==",
+  "==",
+  "!=",
+  ">=",
+  "<=",
+  "+=",
+  "-=",
+  "*=",
+  "/=",
+  "%=",
+  "++",
+  "--",
+  "&&",
+  "||",
+  "//",
+  "**",
+  "+",
+  "-",
+  "*",
+  "/",
+  "%",
+  "=",
+  "<",
+  ">",
+  "!",
+  "^",
+  "and",
+  "or",
+  "not",
+]);
+
 // Options should read like answer choices, not little code dumps. The quiz data
-// uses backticks to mark key phrases/snippets, but in the button UI those marks
-// add visual noise. Render them as emphasis instead.
+// uses backticks to mark snippets, but bolding the whole snippet can give away the
+// answer. Strip the marks and emphasize only the operator symbols inside.
 function withChoiceEmphasis(text) {
   return String(text || "").split(/(`[^`]+`)/g).map((part, index) => {
     if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
-      return (
-        <strong className="cq-choice-emphasis" key={`choice-emphasis-${index}`}>
-          {part.slice(1, -1)}
-        </strong>
+      return part.slice(1, -1).split(OPERATOR_TOKEN_RE).map((piece, pieceIndex) =>
+        OPERATOR_TOKENS.has(piece.toLowerCase()) ? (
+          <strong
+            className="cq-choice-emphasis"
+            key={`choice-emphasis-${index}-${pieceIndex}`}
+          >
+            {piece}
+          </strong>
+        ) : (
+          piece
+        )
       );
     }
     return part;
@@ -425,8 +446,7 @@ function gradeAnswerLocally(question, answer) {
 function buildImmediateReview(question, result, explanation) {
   if (result.correct) {
     return {
-      summary:
-        explanation.summary || "This answer follows the rule being tested.",
+      summary: explanation.summary || "This answer follows the rule being tested.",
       points: [],
       nextStep: "",
     };
@@ -524,12 +544,12 @@ function ImmediateFeedback({ question, answer, onReviewLesson }) {
         </div>
       ) : null}
 
-      <p>{review.summary}</p>
+      <p>{withChoiceEmphasis(review.summary)}</p>
 
       {!result.correct && review.points.length ? (
         <ul className="cq-feedback-points">
           {review.points.map((point, pointIndex) => (
-            <li key={pointIndex}>{point}</li>
+            <li key={pointIndex}>{withChoiceEmphasis(point)}</li>
           ))}
         </ul>
       ) : null}
@@ -559,6 +579,7 @@ function ResultsScreen({ grade, questions, onRetry, onBackToCategory }) {
   }, [grade]);
 
   const pct = Math.round((grade.score || 0) * 100);
+  const missed = Math.max(0, (grade.total || 0) - (grade.correct || 0));
   return (
     <div className="cq-results">
       <div className="cq-results-header">
@@ -569,11 +590,17 @@ function ResultsScreen({ grade, questions, onRetry, onBackToCategory }) {
           </span>
         </div>
         <div className="cq-results-copy">
-          <h3>{pct >= 70 ? "Nice work!" : "Keep going"}</h3>
+          <h3>{missed === 0 ? "Clean sweep!" : pct >= 70 ? "Nice work!" : "Keep going"}</h3>
           <p>
-            You got {grade.correct} of {grade.total} correct. Review the ones you
-            missed below.
+            {missed === 0
+              ? `You got all ${grade.total} correct. Open any row below if you want to review the reasoning.`
+              : `You got ${grade.correct} of ${grade.total} correct. The missed questions are expanded for review.`}
           </p>
+        </div>
+        <div className="cq-results-stats" aria-label="Quiz result summary">
+          <span><strong>{grade.correct}</strong><small>correct</small></span>
+          <span><strong>{missed}</strong><small>missed</small></span>
+          <span><strong>{grade.total}</strong><small>total</small></span>
         </div>
       </div>
 
@@ -609,14 +636,22 @@ function ResultsScreen({ grade, questions, onRetry, onBackToCategory }) {
                 ) : null}
                 {r.explanation ? (() => {
                   const explanation = splitExplanation(r.explanation);
-                  return (
+                  return ok ? (
+                    <details className="cq-result-more cq-result-correct-more">
+                      <summary>Why it works</summary>
+                      <p>{withChoiceEmphasis(explanation.summary)}</p>
+                      {explanation.detail ? (
+                        <p>{withChoiceEmphasis(explanation.detail)}</p>
+                      ) : null}
+                    </details>
+                  ) : (
                     <div className="cq-result-explanation">
                       <strong>{ok ? "Why it works" : "What happened"}</strong>
-                      <p>{explanation.summary}</p>
+                      <p>{withChoiceEmphasis(explanation.summary)}</p>
                       {explanation.detail ? (
                         <details className="cq-result-more">
                           <summary>More detail</summary>
-                          <p>{explanation.detail}</p>
+                          <p>{withChoiceEmphasis(explanation.detail)}</p>
                         </details>
                       ) : null}
                     </div>
@@ -667,7 +702,7 @@ export default function QuizRunner({
   const [answersById, setAnswersById] = useState(() =>
     readQuizDraftAnswers(language, category)
   );
-  const [grade, setGrade] = useState(null);
+  const [grade, setGrade] = useState(() => readQuizLastResult(language, category));
   const [grading, setGrading] = useState(false);
   const [error, setError] = useState("");
 
@@ -675,7 +710,7 @@ export default function QuizRunner({
   // is reused across categories, so the initial state above only runs once).
   useEffect(() => {
     setAnswersById(readQuizDraftAnswers(language, category));
-    setGrade(null);
+    setGrade(readQuizLastResult(language, category));
     setError("");
   }, [language, category]);
 
@@ -713,6 +748,7 @@ export default function QuizRunner({
         onRetry={() => {
           setAnswersById({});
           setGrade(null);
+          clearQuizLastResult(language, category);
           setError("");
           onNavigateIndex(0);
         }}
@@ -769,6 +805,7 @@ export default function QuizRunner({
       // Persist the graded result (status dots + best score on the landing).
       onSaveResult?.(result);
       writeQuizDraftAnswers(language, category, {});
+      writeQuizLastResult(language, category, result);
       setAnswersById({});
       setGrade(result);
     } catch (err) {

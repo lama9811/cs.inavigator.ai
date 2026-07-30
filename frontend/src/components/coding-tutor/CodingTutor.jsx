@@ -1011,6 +1011,7 @@ export default function CodingTutor({
   const saveWorkspaceState = useCallback(async (problemId, languageKey, source = "practice") => {
     const token = localStorage.getItem("token");
     if (!token) return;
+    if (source !== "practice") return;
     const normalizedSource = source === "interview" ? "interview" : "practice";
     const normalizedLanguage = languageKey || "python";
     const signature = `${problemId || ""}:${normalizedLanguage}:${normalizedSource}`;
@@ -2820,13 +2821,17 @@ export default function CodingTutor({
     (async () => {
       const localLast = readLastWorkspace();
       const serverLast = await loadWorkspaceState();
+      const practiceServerLast =
+        serverLast?.source === "practice" && !String(serverLast.problem_id || "").startsWith("iv-")
+          ? serverLast
+          : null;
       const localTime = Date.parse(localLast?.updatedAt || "") || 0;
-      const serverTime = Date.parse(serverLast?.updated_at || "") || 0;
-      const useServer = Boolean(serverLast?.problem_id) && (!localLast?.problemId || serverTime > localTime);
+      const serverTime = Date.parse(practiceServerLast?.updated_at || "") || 0;
+      const useServer = Boolean(practiceServerLast?.problem_id) && (!localLast?.problemId || serverTime > localTime);
       const last = useServer
-        ? { problemId: serverLast.problem_id, language: serverLast.language, source: serverLast.source }
+        ? { problemId: practiceServerLast.problem_id, language: practiceServerLast.language, source: "practice" }
         : localLast?.problemId
-          ? { problemId: localLast.problemId, language: localLast.language, source: questionSetForId(localLast.problemId) }
+          ? { problemId: localLast.problemId, language: localLast.language, source: "practice" }
           : null;
       if (!last?.problemId) {
         autoReopenedRef.current = false;
@@ -3369,17 +3374,19 @@ export default function CodingTutor({
       if (pageId === "workspace") {
         setWorkspaceVisible(true);
         // The nav "Workspace" tab is the CODING (Quiz Bank) workspace. If we were in
-        // the personal "My Snippets" workspace, leave it so this shows the quiz
-        // empty state with "Open Quiz Bank" — the personal workspace is reached only
-        // from the Home button.
-        if (activeProblem?.source === "personal") {
+        // a personal, interview, or daily scratchpad editor, leave it so this shows
+        // the Practice workspace/empty state. Those flows can still use the editor
+        // while active, but they should not become the default Workspace tab.
+        if (activeProblem?.source && activeProblem.source !== "practice" && !activeProblem.mock) {
           setActiveProblem(null);
           setActiveSolution(null);
           setActiveSnippetId(null);
           setCode("");
           setPersonalSavedCode("");
+          setNote("");
           setTestOutput({ status: "ready", message: "" });
           setTerminalOpen(false);
+          setWorkspaceTab("Editor");
         }
       }
       if (pageId === "quiz") {

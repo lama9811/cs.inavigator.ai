@@ -14,6 +14,7 @@ import { currentUserStorageScope, scopedStorageKey } from "../storageScope";
 
 const PREFIX = "concept_quiz_progress";
 const QUIZ_DRAFT_PREFIX = "cq_answers";
+const QUIZ_RESULT_PREFIX = "cq_last_result";
 const scopedKey = (base) => scopedStorageKey(base);
 
 function key(language, category) {
@@ -76,6 +77,10 @@ export function quizDraftKey(language, category) {
   return scopedKey(`${QUIZ_DRAFT_PREFIX}:${language}:${category}`);
 }
 
+export function quizResultKey(language, category) {
+  return scopedKey(`${QUIZ_RESULT_PREFIX}:${language}:${category}`);
+}
+
 export function readQuizDraftAnswers(language, category) {
   try {
     const raw = sessionStorage.getItem(quizDraftKey(language, category));
@@ -94,6 +99,30 @@ export function writeQuizDraftAnswers(language, category, answers) {
   } catch {
     // Storage unavailable/full — the quiz still works, it just won't resume.
   }
+}
+
+export function readQuizLastResult(language, category) {
+  try {
+    const raw = sessionStorage.getItem(quizResultKey(language, category));
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeQuizLastResult(language, category, grade) {
+  try {
+    const resultKey = quizResultKey(language, category);
+    if (!grade) sessionStorage.removeItem(resultKey);
+    else sessionStorage.setItem(resultKey, JSON.stringify(grade));
+  } catch {
+    // Storage unavailable/full; the current results screen still works.
+  }
+}
+
+export function clearQuizLastResult(language, category) {
+  writeQuizLastResult(language, category, null);
 }
 
 // ── Lesson-read tracking ────────────────────────────────────────────────────

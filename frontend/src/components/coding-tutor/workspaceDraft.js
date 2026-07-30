@@ -109,12 +109,20 @@ export function clearDraft(problemId, language) {
   }
 }
 
-// Remember the last problem + language the student had open, so the workspace
-// can auto-reopen it after an unmount (navigating to chat and back).
+// Remember the last Practice Library problem + language the student had open, so
+// the workspace can auto-reopen it after an unmount (navigating to chat and back).
+// Interview prep uses the editor too, but it should not become the default
+// Workspace tab later.
 export function saveLastWorkspace(problemId, language) {
   if (!problemId || !language) return;
+  if (String(problemId).startsWith("iv-")) return;
   try {
-    localStorage.setItem(lastKey(), JSON.stringify({ problemId, language, updatedAt: new Date().toISOString() }));
+    localStorage.setItem(lastKey(), JSON.stringify({
+      problemId,
+      language,
+      source: "practice",
+      updatedAt: new Date().toISOString(),
+    }));
   } catch {
     // Non-fatal.
   }
@@ -125,7 +133,11 @@ export function readLastWorkspace() {
     const raw = localStorage.getItem(lastKey());
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (parsed?.problemId && parsed?.language) return parsed;
+    if (parsed?.problemId && parsed?.language) {
+      if (parsed.source && parsed.source !== "practice") return null;
+      if (String(parsed.problemId).startsWith("iv-")) return null;
+      return { ...parsed, source: "practice" };
+    }
     return null;
   } catch {
     return null;

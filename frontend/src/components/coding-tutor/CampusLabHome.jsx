@@ -761,18 +761,6 @@ export default function CampusLabHome({
         onSelectQuestion={onSelectQuestion}
       />
 
-      {/* The hero already shows streak / solved / % complete and the "Today's
-          focus" line, so the standalone progress/plan strips were redundant and
-          removed. The LeetCode daily challenge is the focal point under the hero. */}
-      <CampusDailyMission
-        dailyChallenge={dailyChallenge}
-        loading={dailyChallengeLoading}
-        dailyDoneToday={dailyDoneToday}
-        displayStreak={displayStreak}
-        onPractice={onStartDaily}
-        onOpenScratch={onOpenDailyScratch}
-      />
-
       {shouldShowStartingCheck ? (
         <StartingCheckCard
           result={startingCheck}
@@ -788,6 +776,19 @@ export default function CampusLabHome({
           onReset={resetStartingCheck}
         />
       ) : null}
+
+      {/* The hero already shows streak / solved / % complete and the "Today's
+          focus" line, so the standalone progress/plan strips were redundant and
+          removed. Starting Point now comes before the LeetCode daily card so new
+          students get placed before they see outside challenge work. */}
+      <CampusDailyMission
+        dailyChallenge={dailyChallenge}
+        loading={dailyChallengeLoading}
+        dailyDoneToday={dailyDoneToday}
+        displayStreak={displayStreak}
+        onPractice={onStartDaily}
+        onOpenScratch={onOpenDailyScratch}
+      />
 
       <CampusLearningQueue
         questions={queueQuestions}
