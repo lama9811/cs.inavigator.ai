@@ -24,6 +24,16 @@ const VISUALIZERS = [
   { id: "sliding-window", label: "Sliding window" },
   { id: "tree", label: "Tree traversal" },
   { id: "graph", label: "Graph traversal" },
+  { id: "decision-flow", label: "Decision flow" },
+  { id: "arithmetic", label: "Arithmetic state" },
+  { id: "matrix", label: "Matrix grid" },
+  { id: "prefix-sum", label: "Prefix sum" },
+  { id: "intervals", label: "Intervals" },
+  { id: "heap", label: "Heap" },
+  { id: "trie", label: "Trie" },
+  { id: "union-find", label: "Union find" },
+  { id: "dynamic-programming", label: "Dynamic programming" },
+  { id: "bit-manipulation", label: "Bit manipulation" },
 ];
 
 const EDITABLE_CONCEPTS = new Set([
@@ -36,6 +46,101 @@ const EDITABLE_CONCEPTS = new Set([
 
 const DEFAULT_ARRAY_TEXT = "70, 82, 81";
 const DEFAULT_STRING_TEXT = "Morgan State";
+
+const CONCEPT_GUIDANCE = {
+  "array-scan": {
+    focus: "Watch the loop visit one item, test one rule, then update one small piece of memory.",
+    cue: "What should happen when the current item does not match the rule?",
+  },
+  "string-scan": {
+    focus: "Watch each character get normalized or compared before the answer variable changes.",
+    cue: "What character is being inspected right now, and should it change the state?",
+  },
+  stack: {
+    focus: "Watch the top of the stack. Push, pop, and peek all touch that same end.",
+    cue: "Which item is newest, and is this operation allowed to remove it?",
+  },
+  queue: {
+    focus: "Watch the front and back of the line. New items join one end; served items leave the other.",
+    cue: "Who has been waiting the longest at this step?",
+  },
+  "hash-map-set": {
+    focus: "Watch what gets stored as a key and when a lookup happens before an update.",
+    cue: "Do you need to check the table before changing it?",
+  },
+  "linked-list": {
+    focus: "Watch the current node and the next link so the chain is never lost.",
+    cue: "Which link do you need to save before moving or reconnecting nodes?",
+  },
+  recursion: {
+    focus: "Watch the base case, the smaller call, and what gets combined as calls return.",
+    cue: "Is this call closer to the stopping rule than the previous call?",
+  },
+  "binary-search": {
+    focus: "Watch left, mid, and right. Sorted order tells you which half can be ignored.",
+    cue: "After this comparison, which side is impossible?",
+  },
+  "two-pointers": {
+    focus: "Watch both pointer positions and the rule that decides which pointer moves.",
+    cue: "Which pointer can move without skipping a possible match?",
+  },
+  "sliding-window": {
+    focus: "Watch what enters, what leaves, and which running value is updated instead of recalculating.",
+    cue: "What changed since the previous window?",
+  },
+  tree: {
+    focus: "Watch the current node, the child or parent link, and the order the traversal follows.",
+    cue: "What information must travel with the traversal to the next node?",
+  },
+  graph: {
+    focus: "Watch the queue or stack plus the visited set so nodes are explored once.",
+    cue: "Has this neighbor already been visited?",
+  },
+  "decision-flow": {
+    focus: "Watch the condition that chooses which branch runs, then track only the branch that matches.",
+    cue: "Which condition is true for this sample?",
+  },
+  arithmetic: {
+    focus: "Watch each value enter the formula and how the running result changes.",
+    cue: "Which number changes the result at this step?",
+  },
+  matrix: {
+    focus: "Watch row and column positions so the grid is read in the intended order.",
+    cue: "Which cell is active, and does it belong in the running result?",
+  },
+  "prefix-sum": {
+    focus: "Watch the running total get stored so later range checks can reuse earlier work.",
+    cue: "What total has been seen before this step?",
+  },
+  intervals: {
+    focus: "Watch starts and ends on the timeline to decide whether ranges overlap or merge.",
+    cue: "Do these two ranges touch, overlap, or stay separate?",
+  },
+  heap: {
+    focus: "Watch the priority item rise to the front while the rest stays organized by priority.",
+    cue: "Which value has priority after this update?",
+  },
+  trie: {
+    focus: "Watch characters become a path of shared prefixes.",
+    cue: "Does this character continue an existing path or start a new branch?",
+  },
+  "union-find": {
+    focus: "Watch items point to group leaders, then see groups merge when a connection appears.",
+    cue: "Do these two items already share the same leader?",
+  },
+  "dynamic-programming": {
+    focus: "Watch smaller answers fill a table before the larger answer uses them.",
+    cue: "Which earlier answer does this cell depend on?",
+  },
+  "bit-manipulation": {
+    focus: "Watch the binary representation and the bit that changes or gets counted.",
+    cue: "Which bit is being inspected right now?",
+  },
+};
+
+function guidanceForConcept(concept) {
+  return CONCEPT_GUIDANCE[normalizeConcept(concept)] || CONCEPT_GUIDANCE["array-scan"];
+}
 
 function normalizeConcept(value) {
   const raw = String(value || "").trim().toLowerCase();
@@ -52,6 +157,16 @@ function normalizeConcept(value) {
   if (["sliding-window", "sliding window"].includes(raw) || normalized === "sliding-window") return "sliding-window";
   if (["trees", "tree"].includes(normalized)) return "tree";
   if (["graphs", "graph"].includes(normalized)) return "graph";
+  if (["conditionals", "conditional", "decision-flow", "decision flow"].includes(raw) || normalized === "decision-flow") return "decision-flow";
+  if (["math", "arithmetic"].includes(normalized)) return "arithmetic";
+  if (["matrices", "matrix", "grid"].includes(normalized)) return "matrix";
+  if (["prefix-sums", "prefix-sum", "prefix sums", "prefix sum"].includes(raw) || normalized === "prefix-sum") return "prefix-sum";
+  if (["intervals", "interval"].includes(normalized)) return "intervals";
+  if (["heaps", "heap"].includes(normalized)) return "heap";
+  if (["tries", "trie"].includes(normalized)) return "trie";
+  if (["disjoint-sets", "disjoint sets", "union-find", "union find"].includes(raw) || normalized === "union-find") return "union-find";
+  if (["dynamic-programming", "dynamic programming", "dp"].includes(raw) || normalized === "dynamic-programming") return "dynamic-programming";
+  if (["bit-manipulation", "bit manipulation", "bits"].includes(raw) || normalized === "bit-manipulation") return "bit-manipulation";
   return normalized || "array-scan";
 }
 
@@ -727,7 +842,11 @@ function treeTrace(meta) {
           body: `${meta.input.a} and ${meta.input.b} both appear in the level-order tree.`,
           changed: `indexes = ${targetIndexes.join(" and ")}`,
           why: "In an array-backed tree, parent links come from indexes.",
-          state: { nodes: nodes.map((node) => ({ ...node, active: targetIndexes.includes(Number(node.id.slice(1))) })), edges, note: `a = ${meta.input.a}, b = ${meta.input.b}` },
+          state: {
+            nodes: nodes.map((node) => ({ ...node, active: targetIndexes.includes(Number(node.id.slice(1))) })),
+            edges: edges.map((edge) => ({ ...edge, active: targetIndexes.some((targetIndex) => edge.to === `N${targetIndex}`) })),
+            note: `a = ${meta.input.a}, b = ${meta.input.b}`,
+          },
           code: "parent = (index - 1) // 2",
           action: "locate",
         }),
@@ -736,7 +855,11 @@ function treeTrace(meta) {
           body: "Record every ancestor on the first target's path to the root.",
           changed: `path = [${firstPath.map((index) => tree[index]).join(", ")}]`,
           why: "The first shared ancestor with the second path is the answer.",
-          state: { nodes: nodes.map((node) => ({ ...node, active: firstPath.includes(Number(node.id.slice(1))) })), edges, note: "saved ancestor path" },
+          state: {
+            nodes: nodes.map((node) => ({ ...node, active: firstPath.includes(Number(node.id.slice(1))) })),
+            edges: edges.map((edge) => ({ ...edge, active: firstPath.includes(Number(edge.from.slice(1))) && firstPath.includes(Number(edge.to.slice(1))) })),
+            note: "saved ancestor path",
+          },
           code: "while index > 0:\n    seen.add(index)\n    index = parent(index)",
           action: "climb",
         }),
@@ -745,7 +868,11 @@ function treeTrace(meta) {
           body: `The first shared node is ${tree[lca]}.`,
           changed: `lowest common ancestor = ${tree[lca]}`,
           why: "Lowest means the shared ancestor closest to both target nodes.",
-          state: { nodes: nodes.map((node) => ({ ...node, active: Number(node.id.slice(1)) === lca })), edges, note: `return ${tree[lca]}` },
+          state: {
+            nodes: nodes.map((node) => ({ ...node, active: Number(node.id.slice(1)) === lca })),
+            edges: edges.map((edge) => ({ ...edge, active: secondPath.includes(Number(edge.from.slice(1))) && secondPath.includes(Number(edge.to.slice(1))) })),
+            note: `return ${tree[lca]}`,
+          },
           code: "if index in seen:\n    return tree[index]",
           action: "meet",
           animation: "visit",
@@ -774,7 +901,11 @@ function treeTrace(meta) {
           body: `${path.map((nodeIndex) => tree[nodeIndex]).join(" + ")} = ${sum}.`,
           changed: sum === target ? "count increases" : "count stays put",
           why: "Only root-to-leaf paths count for this problem.",
-          state: { nodes: nodes.map((node) => ({ ...node, active: path.includes(Number(node.id.slice(1))) })), edges, note: `target = ${target}, sum = ${sum}` },
+          state: {
+            nodes: nodes.map((node) => ({ ...node, active: path.includes(Number(node.id.slice(1))) })),
+            edges: edges.map((edge) => ({ ...edge, active: path.includes(Number(edge.from.slice(1))) && path.includes(Number(edge.to.slice(1))) })),
+            note: `target = ${target}, sum = ${sum}`,
+          },
           code: "dfs(child, running_sum + node.value)",
           action: sum === target ? "match" : "check",
           animation: "visit",
@@ -800,7 +931,7 @@ function treeTrace(meta) {
       body: `Add ${seen.at(-1)} to the ${order} result.`,
       changed: `result = [${seen.join(", ")}]`,
       why: "Traversal means visiting each node in a specific order.",
-      state: { nodes: nodes.map((node) => ({ ...node, active: node.id === id })), edges, note: `${order}: ${seen.join(", ")}` },
+      state: { nodes: nodes.map((node) => ({ ...node, active: node.id === id })), edges: edges.map((edge) => ({ ...edge, active: edge.to === id || edge.from === id })), note: `${order}: ${seen.join(", ")}` },
       code: `${order}(node)`,
       action: "visit",
       animation: "visit",
@@ -846,7 +977,30 @@ function graphTrace(meta) {
   return { title: meta?.title || "Graph: BFS and visited set", concept: "graph", caption: meta?.caption || "Watch the search visit nodes without repeating them.", steps };
 }
 
+function authoredTrace(meta) {
+  const concept = normalizeConcept(meta?.concept);
+  const rawSteps = Array.isArray(meta?.steps) ? meta.steps : [];
+  if (!rawSteps.length) return null;
+  return {
+    title: meta?.title || "Problem visualizer",
+    concept,
+    caption: meta?.caption || "Step through the movement pattern for this problem.",
+    steps: rawSteps.map((step) => makeStep({
+      title: step.title || "Trace the next move",
+      body: step.body || "Watch the active state before moving forward.",
+      changed: step.changed || "",
+      why: step.why || "",
+      state: step.state || {},
+      code: step.code || "",
+      action: step.action || "",
+      animation: step.animation || "highlight",
+    })),
+  };
+}
+
 function buildTrace(meta, inputText) {
+  const authored = authoredTrace(meta);
+  if (authored) return authored;
   const concept = normalizeConcept(meta?.concept);
   switch (concept) {
     case "string-scan":
@@ -882,18 +1036,38 @@ function VisualTokenRow({ items = [], active = [], pointers = {}, window = null 
   const pointerEntries = Object.entries(pointers || {});
   const windowStart = Array.isArray(window) ? window[0] : null;
   const windowEnd = Array.isArray(window) ? window[1] : null;
+  const hasWindow = Number.isInteger(windowStart) && Number.isInteger(windowEnd);
+  const cellWidth = 72;
+  const gap = 12;
+  const frameLeft = hasWindow ? windowStart * (cellWidth + gap) - 7 : 0;
+  const frameWidth = hasWindow ? (windowEnd - windowStart + 1) * cellWidth + (windowEnd - windowStart) * gap + 14 : 0;
   return (
-    <div className="workspace-visual-row" aria-label="Trace values">
-      {items.map((item, index) => {
-        const labels = pointerEntries.filter(([, value]) => value === index).map(([label]) => label);
-        const inWindow = Number.isInteger(windowStart) && Number.isInteger(windowEnd) && index >= windowStart && index <= windowEnd;
-        return (
-          <div key={`${item}-${index}`} className={`workspace-visual-token ${activeSet.has(index) ? "is-active" : ""} ${inWindow ? "is-window" : ""}`}>
-            <strong>{item}</strong>
-            <span>{labels.length ? labels.join(" / ") : index}</span>
-          </div>
-        );
-      })}
+    <div className="workspace-visual-track" aria-label="Trace values">
+      {hasWindow ? (
+        <div
+          className="workspace-window-frame"
+          style={{ "--window-left": `${frameLeft}px`, "--window-width": `${frameWidth}px` }}
+          aria-hidden="true"
+        >
+          <span>window</span>
+        </div>
+      ) : null}
+      <div className="workspace-visual-row">
+        {items.map((item, index) => {
+          const labels = pointerEntries.filter(([, value]) => value === index).map(([label]) => label);
+          const inWindow = hasWindow && index >= windowStart && index <= windowEnd;
+          return (
+            <div
+              key={`${item}-${index}`}
+              className={`workspace-visual-token ${activeSet.has(index) ? "is-active" : ""} ${inWindow ? "is-window" : ""} ${labels.length ? "has-pointer" : ""}`}
+            >
+              {labels.length ? <span className="workspace-pointer-arrow">{labels.join(" / ")}</span> : null}
+              <strong>{item}</strong>
+              <span>{index}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -929,9 +1103,53 @@ function VisualTable({ rows = [] }) {
   );
 }
 
+function VisualGrid({ rows = [], active = [] }) {
+  const activeSet = new Set((active || []).map((cell) => Array.isArray(cell) ? cell.join(",") : String(cell)));
+  return (
+    <div className="workspace-visual-grid-cells" aria-label="Grid state">
+      {rows.map((row, rowIndex) => (
+        <div className="workspace-visual-grid-row" key={`row-${rowIndex}`}>
+          {row.map((value, colIndex) => {
+            const activeKey = `${rowIndex},${colIndex}`;
+            return (
+              <span key={`${rowIndex}-${colIndex}`} className={activeSet.has(activeKey) ? "is-active" : ""}>
+                {value}
+              </span>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function VisualTimeline({ intervals = [], active = [] }) {
+  const activeSet = new Set(active || []);
+  return (
+    <div className="workspace-visual-timeline" aria-label="Interval timeline">
+      {intervals.map((interval, index) => {
+        const start = Number(interval.start ?? interval[0] ?? 0);
+        const end = Number(interval.end ?? interval[1] ?? start + 1);
+        const left = Math.max(0, Math.min(88, start * 8));
+        const width = Math.max(10, Math.min(88 - left, (end - start) * 8));
+        return (
+          <div
+            key={`${start}-${end}-${index}`}
+            className={`workspace-visual-interval ${activeSet.has(index) ? "is-active" : ""}`}
+            style={{ "--interval-left": `${left}%`, "--interval-width": `${width}%`, "--interval-row": index }}
+          >
+            <span>{interval.label || `${start}-${end}`}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function VisualNodes({ nodes = [], edges = [] }) {
   if (!nodes.length) return null;
   const byId = Object.fromEntries(nodes.map((node) => [node.id, node]));
+  const activeNode = nodes.find((node) => node.active);
   return (
     <svg className="workspace-visual-svg" viewBox="0 0 420 230" role="img" aria-label="Node trace">
       {edges.map((edge, index) => {
@@ -948,6 +1166,12 @@ function VisualNodes({ nodes = [], edges = [] }) {
           <text x={node.x} y={node.y + 5} textAnchor="middle">{node.label || node.id}</text>
         </g>
       ))}
+      {activeNode ? (
+        <g className="workspace-tree-cursor" aria-hidden="true">
+          <circle cx={activeNode.x} cy={activeNode.y - 34} r="8" />
+          <path d={`M ${activeNode.x} ${activeNode.y - 25} L ${activeNode.x - 6} ${activeNode.y - 15} L ${activeNode.x + 6} ${activeNode.y - 15} Z`} />
+        </g>
+      ) : null}
     </svg>
   );
 }
@@ -966,6 +1190,8 @@ function VisualDiagram({ trace, step, replayKey }) {
       ) : null}
       {items.length ? <VisualTokenRow items={items} active={state.active} pointers={state.pointers} window={state.window} /> : null}
       {state.table ? <VisualTable rows={state.table} /> : null}
+      {state.grid ? <VisualGrid rows={state.grid} active={state.activeCells} /> : null}
+      {state.intervals ? <VisualTimeline intervals={state.intervals} active={state.active} /> : null}
       {state.nodes ? <VisualNodes nodes={state.nodes} edges={state.edges || []} /> : null}
       {state.call_stack ? (
         <div className="workspace-visual-call-stack">
@@ -1000,6 +1226,7 @@ function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose 
   const [stepIndex, setStepIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [replayKey, setReplayKey] = useState(0);
+  const [reasoningOpen, setReasoningOpen] = useState(false);
 
   const meta = useMemo(() => ({ ...baseMeta, concept }), [baseMeta, concept]);
   const traceResult = useMemo(() => {
@@ -1015,6 +1242,7 @@ function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose 
       setLastGoodTrace(traceResult.trace);
       setStepIndex(0);
       setIsPlaying(false);
+      setReasoningOpen(false);
       setReplayKey((current) => current + 1);
     }
   }, [traceResult.trace]);
@@ -1022,11 +1250,13 @@ function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose 
   const trace = traceResult.trace || lastGoodTrace || buildTrace({ concept: "array-scan" }, DEFAULT_ARRAY_TEXT);
   const steps = trace.steps || [];
   const step = steps[stepIndex] || steps[0] || {};
+  const guidance = guidanceForConcept(trace.concept);
   const canGoBack = stepIndex > 0;
   const canGoNext = stepIndex < steps.length - 1;
 
   const goToStep = useCallback((nextIndex) => {
     setStepIndex(Math.max(0, Math.min(steps.length - 1, nextIndex)));
+    setReasoningOpen(false);
     setReplayKey((current) => current + 1);
   }, [steps.length]);
 
@@ -1063,7 +1293,7 @@ function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose 
     <section className={`workspace-visualizer ${mode === "modal" ? "is-modal" : "is-panel"}`}>
       <header className="workspace-visualizer-head">
         <div>
-          <span className="workspace-visualizer-kicker">Visualize this idea</span>
+          <span className="workspace-visualizer-kicker">Visualize the concept</span>
           <h3>{trace.title}</h3>
           <p>{trace.caption}</p>
         </div>
@@ -1091,16 +1321,24 @@ function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose 
             />
           </label>
         ) : (
-          <p className="workspace-visualizer-lock">This concept uses a guided preset in V1.</p>
+          <p className="workspace-visualizer-lock">This guided preset teaches the pattern, not the full problem answer.</p>
         )}
+      </div>
+
+      <div className="workspace-visualizer-guidance" aria-label="How to use this visualizer">
+        <p><strong>Watch for:</strong> {guidance.focus}</p>
+        {activeProblem?.title ? (
+          <p><strong>Problem tie-in:</strong> use this movement pattern for <strong>{activeProblem.title}</strong>, but choose your own condition, update, and return value from the prompt.</p>
+        ) : null}
+        <p><strong>Keep separate:</strong> this uses small sample data to explain the move; your solution still needs to handle the full prompt and tests.</p>
       </div>
 
       {traceResult.error ? <p className="workspace-visualizer-error">{traceResult.error}</p> : null}
 
       <div className="workspace-visualizer-grid">
         <div className="workspace-visualizer-code">
-          <span>Trace line</span>
-          <pre>{step.code || "Step through the visual trace."}</pre>
+          <span>Pattern sketch</span>
+          <pre>{step.code || "Step through the visual idea."}</pre>
         </div>
         <VisualDiagram trace={trace} step={step} replayKey={replayKey} />
       </div>
@@ -1125,8 +1363,17 @@ function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose 
         {step.action ? <span>{step.action}</span> : null}
         <h4>{step.title}</h4>
         <p>{step.body}</p>
-        {step.changed ? <p><strong>What changed:</strong> {step.changed}</p> : null}
-        {step.why ? <p><strong>Why it matters:</strong> {step.why}</p> : null}
+        <p className="workspace-visualizer-question"><strong>Ask yourself:</strong> {step.cue || guidance.cue}</p>
+        {reasoningOpen ? (
+          <div className="workspace-visualizer-reasoning">
+            {step.changed ? <p><strong>What changed:</strong> {step.changed}</p> : null}
+            {step.why ? <p><strong>Why it matters:</strong> {step.why}</p> : null}
+          </div>
+        ) : (
+          <button type="button" className="workspace-visualizer-reveal" onClick={() => setReasoningOpen(true)}>
+            Reveal this step
+          </button>
+        )}
       </article>
 
       <footer className="workspace-visualizer-controls">

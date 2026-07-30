@@ -402,6 +402,7 @@ function practiceTargetFromPath(pathname) {
 const PRACTICE_LEARN_PATH = "/coding/practice";
 const PRACTICE_QUIZ_PATH = "/coding/practice/quiz";
 const PRACTICE_CODE_PATH = "/coding/practice/code";
+const LAST_PRACTICE_ROUTES_KEY = "csnav.lastPracticeRoutes";
 const learnPathForLanguage = (language) =>
   `/coding/practice/learn/${encodeURIComponent(language)}`;
 const learnPathForTrack = (language, track) =>
@@ -416,6 +417,28 @@ const quizPathForQuestion = (language, category, questionId) =>
   `/coding/practice/quiz/${encodeURIComponent(language)}/${encodeURIComponent(
     category
   )}/${encodeURIComponent(questionId)}`;
+
+const DEFAULT_PRACTICE_ROUTES = {
+  current: PRACTICE_LEARN_PATH,
+  learn: PRACTICE_LEARN_PATH,
+  quiz: PRACTICE_QUIZ_PATH,
+  code: PRACTICE_CODE_PATH,
+};
+
+function readStoredPracticeRoutes() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(LAST_PRACTICE_ROUTES_KEY) || "{}");
+    const next = { ...DEFAULT_PRACTICE_ROUTES };
+    for (const key of Object.keys(next)) {
+      if (typeof parsed[key] === "string" && parsed[key].startsWith("/coding/practice")) {
+        next[key] = parsed[key];
+      }
+    }
+    return next;
+  } catch {
+    return DEFAULT_PRACTICE_ROUTES;
+  }
+}
 
 const LANGUAGE_FORMATS = {
   Python: { file: "solution.py", style: "Function-focused" },
@@ -793,7 +816,7 @@ export default function CodingTutor({
   // A topic to pre-filter the Practice Library by, set when a student clicks a
   // prerequisite ("Needs: …") link on an interview problem. Consumed + cleared by QuizBank.
   const [pendingQuizTopic, setPendingQuizTopic] = useState(null);
-  const [lastPracticeCodeRoute, setLastPracticeCodeRoute] = useState(PRACTICE_CODE_PATH);
+  const [lastPracticeRoutes, setLastPracticeRoutes] = useState(readStoredPracticeRoutes);
   // NOTE: the Practice Library's [Quiz | Code] mode is NOT state — it is derived from
   // the URL (see conceptQuizTargetFromPath). Holding it in state as well would make the
   // address bar disagree with the screen: /coding/practice would render Quiz while
@@ -807,11 +830,9 @@ export default function CodingTutor({
   // no mastery signal. Accepted — teaching the beginner beats instrumenting them. See
   // ROADMAP §1.5, backing quiz progress with a real table, which closes that gap.)
 
-  // (Removed: a "last quiz location" ref that made the Practice tab restore wherever the
-  // student was last. A top-level tab should go to its front page — the language cards —
-  // not silently teleport you into a half-finished quiz, with no way left to ask for the
-  // language list. Back/Forward still returns them to the exact question, because every
-  // view has a real URL.)
+  // The mini-sidebar Learning Library button restores the last library route. That
+  // keeps Code filters/page, a Learn lesson, or a Practice quiz landing in place after
+  // a detour into Workspace, while the in-page Back buttons still expose broader lists.
   const [practiceLanguage, setPracticeLanguage] = useState("Python");
   const [selectedLanguage, setSelectedLanguage] = useState("Python");
   const [questions, setQuestions] = useState([]);
@@ -1571,14 +1592,25 @@ export default function CodingTutor({
 
   useEffect(() => {
     const clean = location.pathname.length > 1 ? location.pathname.replace(/\/+$/, "") : location.pathname;
-    if (clean === PRACTICE_CODE_PATH) {
-      setLastPracticeCodeRoute(`${PRACTICE_CODE_PATH}${location.search}`);
+    if (clean === "/coding/practice" || clean.startsWith("/coding/practice/")) {
+      const target = practiceTargetFromPath(location.pathname);
+      const route = `${location.pathname}${location.search}${location.hash || ""}`;
+      setLastPracticeRoutes((previous) => {
+        if (previous.current === route && previous[target.mode] === route) return previous;
+        const next = { ...previous, current: route, [target.mode]: route };
+        try {
+          localStorage.setItem(LAST_PRACTICE_ROUTES_KEY, JSON.stringify(next));
+        } catch {
+          /* localStorage can be blocked; route memory still works for this session */
+        }
+        return next;
+      });
     }
-  }, [location.pathname, location.search]);
+  }, [location.hash, location.pathname, location.search]);
 
   const openPracticeLibrary = useCallback(() => {
-    navigate(lastPracticeCodeRoute || PRACTICE_CODE_PATH);
-  }, [lastPracticeCodeRoute, navigate]);
+    navigate(lastPracticeRoutes.current || PRACTICE_LEARN_PATH);
+  }, [lastPracticeRoutes, navigate]);
 
   // Keep "last non-workspace section" in sync as the URL changes, so toggling the
   // workspace off returns to wherever the student was (Home/Practice/…).
@@ -3344,6 +3376,10 @@ export default function CodingTutor({
           setTerminalOpen(false);
         }
       }
+      if (pageId === "quiz") {
+        openPracticeLibrary();
+        return;
+      }
       goToPage(pageId);
     });
   };
@@ -3681,22 +3717,17 @@ export default function CodingTutor({
         { id: "code", label: "Code", hint: "Apply it" },
       ];
 
-      // A mode button always goes to that mode's FRONT PAGE — the four language cards —
-      // never to wherever the student happened to be last. A top-level tab that silently
-      // teleports you into a half-finished quiz is unpredictable, and there's no way to
-      // ask it for the language list once it starts doing that.
-      //
-      // Nothing is lost: every view has a real URL, so Back/Forward returns the student
-      // to the exact question they were on, and quiz answers are held by the runner for
-      // the session.
+      // Mode buttons restore the last route within each mode, including Code filters
+      // and pages. Each mode still has in-page Back controls for broader lists.
       const MODE_HOME = {
-        learn: PRACTICE_LEARN_PATH,
-        quiz: PRACTICE_QUIZ_PATH,
-        code: PRACTICE_CODE_PATH,
+        learn: lastPracticeRoutes.learn || PRACTICE_LEARN_PATH,
+        quiz: lastPracticeRoutes.quiz || PRACTICE_QUIZ_PATH,
+        code: lastPracticeRoutes.code || PRACTICE_CODE_PATH,
       };
       const goToMode = (id) => {
         const to = MODE_HOME[id];
-        if (to && to !== location.pathname) navigate(to);
+        const currentRoute = `${location.pathname}${location.search}${location.hash || ""}`;
+        if (to && to !== currentRoute) navigate(to);
       };
 
       return (

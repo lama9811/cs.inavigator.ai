@@ -40,6 +40,30 @@ THIN_PRIORITY_TOPICS = {
     "tries",
     "two pointers",
 }
+VISUALIZER_CONCEPTS = {
+    "array-scan",
+    "arithmetic",
+    "binary-search",
+    "bit-manipulation",
+    "decision-flow",
+    "dynamic-programming",
+    "graph",
+    "hash-map-set",
+    "heap",
+    "intervals",
+    "linked-list",
+    "matrix",
+    "prefix-sum",
+    "queue",
+    "recursion",
+    "sliding-window",
+    "stack",
+    "string-scan",
+    "tree",
+    "trie",
+    "two-pointers",
+    "union-find",
+}
 COSC_101_EXPANSION_IDS = {
     "easy-25",
     "easy-26",
@@ -137,6 +161,39 @@ def test_answer_banks_match_questions_for_every_language():
         answer_ids = [item.get("question_id") for item in load_answer_items(language)]
         assert len(answer_ids) == len(set(answer_ids)), f"{language}: duplicate answer ids"
         assert set(answer_ids) == question_ids, f"{language}: answer bank does not match questions"
+
+
+def test_every_practice_question_has_problem_specific_visualizer():
+    problems = []
+    seen_presets = set()
+    for q in load_questions():
+        qid = q.get("id")
+        title = str(q.get("title") or "").strip()
+        visualizer = q.get("visualizer") or {}
+        concept = visualizer.get("concept")
+        preset = str(visualizer.get("preset") or "").strip()
+        steps = visualizer.get("steps") or []
+
+        if concept not in VISUALIZER_CONCEPTS:
+            problems.append(f"{qid}: unsupported visualizer concept {concept!r}")
+        if title.lower() not in str(visualizer.get("title") or "").lower():
+            problems.append(f"{qid}: visualizer title does not name the problem")
+        if len(str(visualizer.get("caption") or "").split()) < 7:
+            problems.append(f"{qid}: visualizer caption too thin")
+        if not isinstance(visualizer.get("input"), dict) or not visualizer.get("input"):
+            problems.append(f"{qid}: visualizer missing sample input")
+        if not preset:
+            problems.append(f"{qid}: visualizer missing per-question preset")
+        elif preset in seen_presets:
+            problems.append(f"{qid}: duplicate visualizer preset {preset}")
+        seen_presets.add(preset)
+        if not isinstance(steps, list) or len(steps) < 3:
+            problems.append(f"{qid}: visualizer needs at least 3 guided steps")
+        for index, step in enumerate(steps, start=1):
+            if not step.get("title") or not step.get("body") or not isinstance(step.get("state"), dict):
+                problems.append(f"{qid}: malformed visualizer step {index}")
+
+    assert problems == []
 
 
 def test_answer_defaults_include_student_support_metadata():

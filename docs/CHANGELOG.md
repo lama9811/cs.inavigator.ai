@@ -4,6 +4,7 @@ All notable changes to CS Navigator are documented here.
 
 ## [Unreleased]
 ### Added
+- **Per-question Practice Library visualizers.** Every code-writing practice problem now has explicit problem-specific visualizer metadata, with guided sample steps, broader visual concepts, animated state movement, and tests preventing generic topic-only fallback.
 - **Practice Library thin-topic readiness batch.** Added nine all-language stack, queue, binary-search, tree, and linked-list problems with deterministic runner tests and native bridge coverage.
 - **Advanced V2 Practice Library depth batch.** Added eight all-language bit-manipulation, prefix-sum, and matrix problems with deterministic runner tests and native bridge coverage.
 - **Practice Library topic-balancing batch.** Added ten all-language problems for thin math, tuple/pair, trie, interval, heap, disjoint-set, and dynamic-programming topics with deterministic runner tests.
