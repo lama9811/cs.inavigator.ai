@@ -187,5 +187,79 @@
         "If your answer is only ever the last item, your setup line is probably inside the **loop**."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "algo-01": {
+      "title": "Accumulator line order",
+      "body": "This Parsons problem is the classic running-total shape. Find the line that creates the total, the line that repeats over each value, the indented update, and the final output line.",
+      "notice": "The total has to exist before the loop can add to it.",
+      "mistake": "Do not put the output or setup line where it would run once per item unless the prompt asks for every step.",
+      "section_id": "examples",
+      "example": "setup -> loop -> update -> output",
+      "source": "question"
+    },
+    "algo-02": {
+      "title": "Counting-loop bounds",
+      "body": "This is still an accumulator, but the values come from a counting loop instead of an existing collection. Trace which numbers the loop will produce before placing the update line.",
+      "notice": "The loop should generate exactly 1, 2, and 3.",
+      "mistake": "Do not let the boundary include one extra value or skip the first value.",
+      "section_id": "examples",
+      "example": "1 + 2 + 3",
+      "source": "question"
+    },
+    "algo-03": {
+      "title": "Best-so-far tracker",
+      "body": "A largest-value algorithm starts with a real candidate, scans each value, and replaces the saved best only when the current value is better.",
+      "notice": "The comparison and replacement belong inside the loop, with the replacement nested inside the condition.",
+      "mistake": "Do not start from an arbitrary value if the collection already gives you a safe first candidate.",
+      "section_id": "examples",
+      "example": "best starts as the first item",
+      "source": "question"
+    },
+    "parsons-count-matches-01": {
+      "title": "Counter with a condition",
+      "body": "This problem counts matching values, so the counter changes only when the rule is true. The loop visits every value; the condition decides which visits count.",
+      "notice": "The count update belongs inside the if block, not just inside the loop.",
+      "mistake": "Do not increment for every item when the prompt asks for only matching items.",
+      "section_id": "check",
+      "example": "if value matches: count grows",
+      "source": "question"
+    },
+    "algo-p1-05": {
+      "title": "Even-value counter",
+      "body": "This is a counter pattern with an even-number test. Arrange the setup, scan, test, counted update, and final output as separate jobs.",
+      "notice": "The modulo test decides whether the counter changes.",
+      "mistake": "Do not add the even number itself when the prompt asks how many even values there are.",
+      "section_id": "check",
+      "example": "count += 1, not count += n",
+      "source": "question"
+    },
+    "algo-p1-06": {
+      "title": "Smallest-so-far tracker",
+      "body": "Finding the smallest mirrors finding the largest. Start with a real value, compare each new value, and replace the saved answer only when a smaller value appears.",
+      "notice": "The final output waits until every value has had a chance to challenge the current smallest.",
+      "mistake": "Do not reset the smallest value inside the loop.",
+      "section_id": "examples",
+      "example": "current smallest changes only on a smaller value",
+      "source": "question"
+    },
+    "algo-p1-07": {
+      "title": "Search flag",
+      "body": "A search flag starts as false, scans the collection, and changes to true if the target appears. The report happens after the scan is complete.",
+      "notice": "The flag update belongs inside the condition that recognizes the target.",
+      "mistake": "Do not print the flag before the loop has checked all values.",
+      "section_id": "check",
+      "example": "found starts false",
+      "source": "question"
+    },
+    "algo-p1-08": {
+      "title": "Countdown progress",
+      "body": "A countdown loop needs an initial value, a condition that stays true while counting, an output step, and a progress step that moves toward stopping.",
+      "notice": "The value must change inside the loop so the condition eventually becomes false.",
+      "mistake": "Do not leave the decrement outside the loop body.",
+      "section_id": "check",
+      "example": "3, then 2, then 1",
+      "source": "question"
+    }
+  }
 }

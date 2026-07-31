@@ -35,6 +35,8 @@ QUESTION_SPECIFIC_LEARN_CARD_CATEGORIES = (
     "functions",
     "debug",
     "debug-2",
+    "algorithm-problems",
+    "algorithm-problems-2",
 )
 
 
