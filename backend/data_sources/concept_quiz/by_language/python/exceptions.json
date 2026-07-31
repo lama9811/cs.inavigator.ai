@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Exceptions concept check 1",
+      "title": "Empty except risk",
       "code": null,
-      "prompt": "What is risky about an empty Python `except` block?",
+      "prompt": "What is risky about writing an empty `except` block?",
       "choices": [
-        "An empty `except` lets the program continue without completing its work or explaining why. Handle the expected case, log useful context, or allow the exception to reach a layer that can respond.",
-        "Catch every exception and continue without evidence.",
-        "Use exceptions for ordinary choices an if statement can handle.",
-        "Replace the original error with a vague one and drop the cause."
+        "It can hide the failure and let the program continue with bad or incomplete work.",
+        "It catches only syntax errors, so runtime errors still show.",
+        "It automatically fixes the failed operation before continuing.",
+        "It makes Python retry the same line until it succeeds."
       ],
       "answer_index": 0,
-      "explanation": "An empty `except` lets the program continue without completing its work or explaining why. Handle the expected case, log useful context, or allow the exception to reach a layer that can respond. This matters because exception code should handle failures at a layer that can respond without hiding unrelated programming mistakes."
+      "explanation": "An empty handler gives no clue about what failed and no recovery action. The program may continue as if the work succeeded when it did not. A useful handler catches an expected problem and responds with a message, fallback, retry, or re-raise."
     },
     {
       "id": "python-exceptions-authored-02",
@@ -96,17 +96,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Exceptions concept check 2",
+      "title": "Small try blocks",
       "code": null,
-      "prompt": "Which choice describes a reliable Exceptions practice?",
+      "prompt": "Only the `int(text)` conversion is expected to fail. How should the `try` block be shaped?",
       "choices": [
-        "Wrap a whole program in one broad protected block.",
-        "Protect the smallest operation that can fail.",
-        "Catch errors at a layer that cannot recover.",
-        "Hide unexpected programming mistakes."
+        "Wrap the entire program so every bug becomes the same message.",
+        "Wrap the smallest operation that can raise the expected error.",
+        "Put unrelated print statements inside the handler.",
+        "Avoid `try` completely and let user input crash every time."
       ],
       "answer_index": 1,
-      "explanation": "Protect the smallest operation that can fail. This matters because exception code should handle failures at a layer that can respond without hiding unrelated programming mistakes."
+      "explanation": "A smaller `try` block makes it clear which operation is being protected. If too much code is inside, the handler may catch an unrelated bug and diagnose it incorrectly. That makes debugging harder and can hide real mistakes."
     },
     {
       "id": "python-exceptions-authored-03",
@@ -114,17 +114,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Exceptions concept check 3",
+      "title": "Specific exception type",
       "code": null,
-      "prompt": "Which Exceptions code review note is accurate?",
+      "prompt": "A menu reads a number with `int(choice)`. Which exception should the handler usually catch?",
       "choices": [
-        "Raise an exception after the function already returned successfully.",
-        "Use an exception to skip normal loop logic.",
-        "Catch the most specific useful exception.",
-        "Report failure without enough context to debug it."
+        "`Exception`, because broad handlers are always clearer.",
+        "`SyntaxError`, because the user typed text.",
+        "`ValueError`, because conversion fails when the text is not a valid integer.",
+        "`TypeError`, because all input starts as a string."
       ],
       "answer_index": 2,
-      "explanation": "Catch the most specific useful exception. This matters because exception code should handle failures at a layer that can respond without hiding unrelated programming mistakes."
+      "explanation": "`int(\"abc\")` raises ValueError because the value cannot be interpreted as an integer. Catching that specific error documents the expected failure. A broad `Exception` handler can swallow unrelated problems that the program should not pretend to handle."
     },
     {
       "id": "python-exceptions-authored-04",
@@ -132,17 +132,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Exceptions concept check 4",
+      "title": "Recovery path",
       "code": null,
-      "prompt": "Which Exceptions habit prevents a common mistake?",
+      "prompt": "After catching invalid user input, what should the program do next?",
       "choices": [
-        "Ignore cleanup around code that can fail.",
-        "Catch a base exception type when a specific one is known.",
-        "Turn every invalid input into the same generic message.",
-        "Give the caller or user a recovery path."
+        "Continue as if the invalid value had been accepted.",
+        "Hide the error and skip every later calculation.",
+        "Print a traceback to the user and end immediately every time.",
+        "Give a clear message, ask again, or use a safe fallback."
       ],
       "answer_index": 3,
-      "explanation": "Give the caller or user a recovery path. This matters because exception code should handle failures at a layer that can respond without hiding unrelated programming mistakes."
+      "explanation": "Catching an exception is only useful if the code has a plan for what happens next. For user input, that plan is often a friendly message and another chance to enter a value. Without a recovery path, the handler only hides the problem."
     },
     {
       "id": "python-exceptions-authored-05",
@@ -150,17 +150,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Exceptions concept check 5",
+      "title": "Do not hide bugs",
       "code": null,
-      "prompt": "Which Exceptions advice is accurate?",
+      "prompt": "Why should code avoid catching every possible exception around a large block?",
       "choices": [
-        "Keep unexpected programming errors visible.",
-        "Keep running after required work did not happen.",
-        "Handle errors by returning unrelated default data.",
-        "Assume the absence of a crash proves the operation succeeded."
+        "It can hide programming mistakes that should be fixed, not treated as expected input problems.",
+        "Python refuses to run any code with a broad handler.",
+        "A broad handler only catches file errors, not math or type errors.",
+        "Broad handlers make every failing line retry automatically."
       ],
       "answer_index": 0,
-      "explanation": "Keep unexpected programming errors visible. This matters because exception code should handle failures at a layer that can respond without hiding unrelated programming mistakes."
+      "explanation": "Some failures are expected situations, like a missing file or invalid input. Others are bugs, like a misspelled variable or wrong data shape. Catching everything makes those cases look the same and can keep broken logic alive."
     },
     {
       "id": "python-exceptions-authored-06",
@@ -168,17 +168,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Exceptions concept check 6",
+      "title": "Finally for cleanup",
       "code": null,
-      "prompt": "Which Exceptions reasoning is accurate?",
+      "prompt": "When is a `finally` block useful?",
       "choices": [
-        "Use try/catch around code that cannot throw.",
-        "Use `finally` only for cleanup shared by both outcomes.",
-        "Make callers guess whether a failure happened.",
-        "Discard stack-trace information during wrapping."
+        "When code should run only if no exception occurred.",
+        "When cleanup should happen whether the `try` block succeeds or fails.",
+        "When the handler needs to choose which exception type to catch.",
+        "When Python should ignore all errors from the `try` block."
       ],
       "answer_index": 1,
-      "explanation": "Use `finally` only for cleanup shared by both outcomes. This matters because exception code should handle failures at a layer that can respond without hiding unrelated programming mistakes."
+      "explanation": "`finally` runs after the `try` and any matching `except`, no matter which path happened. That makes it a good place for cleanup that must happen either way. It is not a substitute for choosing a specific handler or writing a recovery plan."
     }
   ]
 }

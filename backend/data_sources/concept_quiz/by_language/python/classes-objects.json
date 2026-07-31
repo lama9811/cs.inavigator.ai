@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Classes & Objects concept check 1",
+      "title": "Separate objects",
       "code": null,
-      "prompt": "After creating two Python objects from the same class, which statement is true?",
+      "prompt": "After creating `ada = Student(\"Ada\")` and `ben = Student(\"Ben\")`, which statement is true?",
       "choices": [
-        "Creating a second Student does not copy or replace the first one. Each call to the class creates a separate object with separate instance attributes.",
-        "Store all object state in one shared global variable.",
-        "Skip constructors and fill fields only when remembered later.",
-        "Use a class when no related data or behavior is being grouped."
+        "Each object has its own instance data.",
+        "The second object overwrites the first one.",
+        "Both names always point to the exact same object.",
+        "Changing `ben.name` must also change `ada.name`."
       ],
       "answer_index": 0,
-      "explanation": "Creating a second Student does not copy or replace the first one. Each call to the class creates a separate object with separate instance attributes. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
+      "explanation": "Each call to a class creates a separate object unless you explicitly reuse the same object. Instance attributes belong to that particular object, so changing one student's name does not automatically change another student's name."
     },
     {
       "id": "python-classes-objects-authored-02",
@@ -96,17 +96,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Classes & Objects concept check 2",
+      "title": "When a class helps",
       "code": null,
-      "prompt": "Which choice describes a reliable Classes & Objects practice?",
+      "prompt": "A program tracks each plant's name and also has watering behavior for that plant. What design fits?",
       "choices": [
-        "Let outside code change every field directly.",
-        "Use a class when data and behavior belong together.",
-        "Put unrelated responsibilities into one large class.",
-        "Forget that each object has its own instance data."
+        "Keep every plant detail in unrelated global variables.",
+        "Use a class because the data and behavior belong together.",
+        "Use one tuple for every plant and never write helper behavior.",
+        "Use a set because plants should have no named fields."
       ],
       "answer_index": 1,
-      "explanation": "Use a class when data and behavior belong together. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
+      "explanation": "Classes are useful when several pieces of state travel with behavior that uses that state. A `Plant` object can hold a name and watering schedule while methods work with those attributes. That is clearer than scattering related values across unrelated variables."
     },
     {
       "id": "python-classes-objects-authored-03",
@@ -114,17 +114,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Classes & Objects concept check 3",
+      "title": "Constructor setup",
       "code": null,
-      "prompt": "Which Classes & Objects code review note is accurate?",
+      "prompt": "Where should a Python class usually set the starting instance attributes?",
       "choices": [
-        "Name methods after vague actions such as `doStuff`.",
-        "Use local variables when persistent object state is needed.",
-        "Set starting attributes inside `__init__`.",
-        "Call an instance method before creating an object."
+        "Inside every method that might later need the attribute.",
+        "Only after the object is printed for the first time.",
+        "Inside `__init__`, using `self` to store values on the object.",
+        "Inside a comment above the class definition."
       ],
       "answer_index": 2,
-      "explanation": "Set starting attributes inside `__init__`. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
+      "explanation": "`__init__` runs when a new object is created, so it is the natural place to set required starting attributes. Storing them on `self` makes them available to later methods on the same object. Local variables inside `__init__` disappear after the method finishes."
     },
     {
       "id": "python-classes-objects-authored-04",
@@ -132,17 +132,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Classes & Objects concept check 4",
+      "title": "Using self attributes",
       "code": null,
-      "prompt": "Which Classes & Objects habit prevents a common mistake?",
+      "prompt": "Inside an instance method, how should code refer to a value stored on that object?",
       "choices": [
-        "Treat the class blueprint as the same thing as one object.",
-        "Leave an object in a half-initialized state.",
-        "Make every method change object state even when it should only read.",
-        "Write `self.attribute` for data stored on an object."
+        "Use a bare variable name and assume Python finds the object.",
+        "Use the class name for every object's personal data.",
+        "Use a global variable with the same name.",
+        "Use `self.attribute` so Python knows which object's data to read."
       ],
       "answer_index": 3,
-      "explanation": "Write `self.attribute` for data stored on an object. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
+      "explanation": "`self` is the current object receiving the method call. Writing `self.attribute` tells Python to read or update that object's stored data. A bare name is only a local or outer variable; it is not automatically the object's attribute."
     },
     {
       "id": "python-classes-objects-authored-05",
@@ -150,17 +150,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Classes & Objects concept check 5",
+      "title": "Creating new objects",
       "code": null,
-      "prompt": "Which Classes & Objects advice is accurate?",
+      "prompt": "What happens each time code calls a class such as `Student(\"Mia\")`?",
       "choices": [
-        "Remember that each class call creates a new object.",
-        "Use static/shared data for per-object information.",
-        "Ignore invariants that should stay true after each method call.",
-        "Mix user input directly into every object method."
+        "Python creates a new object and runs `__init__` for that object.",
+        "Python edits the most recently created object instead.",
+        "Python creates only a dictionary and skips methods.",
+        "Python reuses one shared object for every student."
       ],
       "answer_index": 0,
-      "explanation": "Remember that each class call creates a new object. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
+      "explanation": "Calling a class constructs a new instance. Python runs `__init__` to initialize that instance's attributes, then returns the object. This is why two calls to the same class can produce two independent students."
     },
     {
       "id": "python-classes-objects-authored-06",
@@ -168,17 +168,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Classes & Objects concept check 6",
+      "title": "Focused methods",
       "code": null,
-      "prompt": "Which Classes & Objects reasoning is accurate?",
+      "prompt": "What makes an instance method easier to test and reuse?",
       "choices": [
-        "Return internal mutable data without control.",
-        "Keep a method focused on one clear action.",
-        "Use inheritance where a helper field would be clearer.",
-        "Hide important setup in unrelated methods."
+        "It changes many unrelated attributes in one call.",
+        "It focuses on one clear action for the object.",
+        "It reads user input, writes files, and updates every object at once.",
+        "It avoids `self` even though it needs object data."
       ],
       "answer_index": 1,
-      "explanation": "Keep a method focused on one clear action. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
+      "explanation": "A focused method has a small, understandable responsibility, such as `water()` or `calculate_grade()`. That makes it easier to predict what should change after the call. Large mixed-purpose methods are harder to test because one call has too many side effects."
     }
   ]
 }

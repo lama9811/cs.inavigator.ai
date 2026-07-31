@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Classes & Objects concept check 1",
+      "title": "Member initializer list",
       "code": null,
-      "prompt": "When a C++ constructor sets up object fields, which statement is safest?",
+      "prompt": "Why does C++ often prefer a member initializer list for constructor setup?",
       "choices": [
-        "A constructor body runs after data members have already been initialized. Prefer the member initializer list for their starting values, especially for const members and objects that have no default constructor.",
+        "It initializes members before the constructor body runs, which matters for const members and members without default constructors.",
         "Store all object state in one shared global variable.",
         "Skip constructors and fill fields only when remembered later.",
         "Use a class when no related data or behavior is being grouped."
       ],
       "answer_index": 0,
-      "explanation": "A constructor body runs after data members have already been initialized. Prefer the member initializer list for their starting values, especially for const members and objects that have no default constructor. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
+      "explanation": "Data members are initialized before the constructor body starts. A member initializer list lets the class give each member its starting value at the right moment, instead of default-initializing first and assigning later."
     },
     {
       "id": "cpp-classes-objects-authored-02",
@@ -96,9 +96,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Classes & Objects concept check 2",
+      "title": "One responsibility",
       "code": null,
-      "prompt": "Which choice describes a reliable Classes & Objects practice?",
+      "prompt": "What makes a C++ class easier to understand?",
       "choices": [
         "Let outside code change every field directly.",
         "Give the class one clear responsibility.",
@@ -106,7 +106,7 @@
         "Forget that each object has its own instance data."
       ],
       "answer_index": 1,
-      "explanation": "Give the class one clear responsibility. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
+      "explanation": "A class with one clear responsibility keeps related state and behavior together without becoming a catch-all. That makes invariants easier to protect and methods easier to name."
     },
     {
       "id": "cpp-classes-objects-authored-03",
@@ -114,9 +114,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Classes & Objects concept check 3",
+      "title": "Initialize every member",
       "code": null,
-      "prompt": "Which Classes & Objects code review note is accurate?",
+      "prompt": "What should a constructor do for the object's data members?",
       "choices": [
         "Name methods after vague actions such as `doStuff`.",
         "Use local variables when persistent object state is needed.",
@@ -124,7 +124,7 @@
         "Call an instance method before creating an object."
       ],
       "answer_index": 2,
-      "explanation": "Initialize every member in the constructor. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
+      "explanation": "Every member should start in a known valid state. Uninitialized members can carry unpredictable values, and later methods may accidentally trust those values as real state."
     },
     {
       "id": "cpp-classes-objects-authored-04",
@@ -132,9 +132,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Classes & Objects concept check 4",
+      "title": "Protect invariants",
       "code": null,
-      "prompt": "Which Classes & Objects habit prevents a common mistake?",
+      "prompt": "Why keep important object state behind private data?",
       "choices": [
         "Treat the class blueprint as the same thing as one object.",
         "Leave an object in a half-initialized state.",
@@ -142,7 +142,7 @@
         "Keep invariants behind private data."
       ],
       "answer_index": 3,
-      "explanation": "Keep invariants behind private data. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
+      "explanation": "Private data lets the class control how its state changes. Public methods can enforce rules, such as keeping a balance nonnegative or a size consistent with stored values."
     },
     {
       "id": "cpp-classes-objects-authored-05",
@@ -150,9 +150,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Classes & Objects concept check 5",
+      "title": "Const methods",
       "code": null,
-      "prompt": "Which Classes & Objects advice is accurate?",
+      "prompt": "When should a C++ member function be marked `const`?",
       "choices": [
         "Mark read-only methods const.",
         "Use static/shared data for per-object information.",
@@ -160,7 +160,7 @@
         "Mix user input directly into every object method."
       ],
       "answer_index": 0,
-      "explanation": "Mark read-only methods const. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
+      "explanation": "Mark a member function `const` when it promises not to change the observable state of the object. That promise helps callers use const objects safely and helps the compiler catch accidental mutation."
     },
     {
       "id": "cpp-classes-objects-authored-06",
@@ -168,9 +168,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Classes & Objects concept check 6",
+      "title": "Type design",
       "code": null,
-      "prompt": "Which statement is accurate about Classes & Objects?",
+      "prompt": "What should a well-designed C++ type keep together?",
       "choices": [
         "Return internal mutable data without control.",
         "Design types that keep related state and behavior together.",
@@ -178,7 +178,7 @@
         "Hide important setup in unrelated methods."
       ],
       "answer_index": 1,
-      "explanation": "Design types that keep related state and behavior together. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
+      "explanation": "A type should group the state and behavior that belong to one concept. That makes the object's rules live near the data they protect instead of spreading related logic across unrelated functions."
     }
   ]
 }

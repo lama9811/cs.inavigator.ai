@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "File I/O concept check 1",
+      "title": "Relative path location",
       "code": null,
-      "prompt": "A C++ program opens `courses.txt` without a folder path. Which statement is true?",
+      "prompt": "A C++ program opens `courses.txt` and cannot find it. What path detail should the student check?",
       "choices": [
-        "A path such as `courses.txt` is resolved from the program's current working directory, which may differ from the source-code folder. Print or configure the working directory when a file exists but the program cannot find it.",
+        "Relative paths are resolved from the program's current working directory.",
         "Overwrite existing records when the task calls for appending.",
         "Assume every file path starts in the source-code folder.",
         "Read data before checking for an I/O failure."
       ],
       "answer_index": 0,
-      "explanation": "A path such as `courses.txt` is resolved from the program's current working directory, which may differ from the source-code folder. Print or configure the working directory when a file exists but the program cannot find it. This matters because file code must be clear about paths, encodings, exceptions, and whether a write replaces or appends."
+      "explanation": "A relative path is not automatically based on the source file's folder. It is resolved from the process working directory, which can differ between an IDE, terminal, test runner, and deployed program."
     },
     {
       "id": "cpp-file-io-authored-02",
@@ -96,9 +96,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "File I/O concept check 2",
+      "title": "Open succeeded",
       "code": null,
-      "prompt": "Which choice describes a reliable File I/O practice?",
+      "prompt": "What should code check before reading from an input file stream?",
       "choices": [
         "Ignore character encoding for shared text files.",
         "Check that opening succeeded.",
@@ -106,7 +106,7 @@
         "Catch an IOException where no useful response is possible."
       ],
       "answer_index": 1,
-      "explanation": "Check that opening succeeded. This matters because file code must be clear about paths, encodings, exceptions, and whether a write replaces or appends."
+      "explanation": "Opening a stream can fail because the path is wrong, permissions block access, or the file is missing. Checking the stream before reading prevents the program from processing data that was never loaded."
     },
     {
       "id": "cpp-file-io-authored-03",
@@ -114,9 +114,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "File I/O concept check 3",
+      "title": "Successful reads",
       "code": null,
-      "prompt": "Which File I/O code review note is accurate?",
+      "prompt": "When should parsed file data be trusted?",
       "choices": [
         "Use one giant string for a large file.",
         "Build paths with fragile string concatenation.",
@@ -124,7 +124,7 @@
         "Treat a missing file as an empty valid file every time."
       ],
       "answer_index": 2,
-      "explanation": "Process data only after a successful read. This matters because file code must be clear about paths, encodings, exceptions, and whether a write replaces or appends."
+      "explanation": "Trust data only after the read or parse operation reports success. File code can reach end-of-file, encounter malformed input, or fail mid-read, so later calculations need to know the data is valid."
     },
     {
       "id": "cpp-file-io-authored-04",
@@ -132,9 +132,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "File I/O concept check 4",
+      "title": "Working directory",
       "code": null,
-      "prompt": "Which File I/O habit prevents a common mistake?",
+      "prompt": "Why should students know the working directory for relative file paths?",
       "choices": [
         "Write output before validating the destination.",
         "Ignore partial read or parse failures.",
@@ -142,7 +142,7 @@
         "Know the working directory for relative paths."
       ],
       "answer_index": 3,
-      "explanation": "Know the working directory for relative paths. This matters because file code must be clear about paths, encodings, exceptions, and whether a write replaces or appends."
+      "explanation": "The working directory determines where relative paths are looked up. If the student assumes the source-code folder but the program runs elsewhere, the file may appear to be missing even when it exists."
     },
     {
       "id": "cpp-file-io-authored-05",
@@ -150,9 +150,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "File I/O concept check 5",
+      "title": "RAII stream cleanup",
       "code": null,
-      "prompt": "Which File I/O advice is accurate?",
+      "prompt": "How do C++ stream objects usually close files?",
       "choices": [
         "Let stream objects close files through their destructors.",
         "Hide the original file error behind a vague message.",
@@ -160,7 +160,7 @@
         "Assume the default charset is always the intended one."
       ],
       "answer_index": 0,
-      "explanation": "Let stream objects close files through their destructors. This matters because file code must be clear about paths, encodings, exceptions, and whether a write replaces or appends."
+      "explanation": "File stream objects close their files when they are destroyed. This RAII behavior means ordinary local streams clean themselves up at the end of scope, even when early returns or exceptions happen."
     },
     {
       "id": "cpp-file-io-authored-06",
@@ -168,9 +168,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "File I/O concept check 6",
+      "title": "Stream checks",
       "code": null,
-      "prompt": "Which statement is accurate about File I/O?",
+      "prompt": "What makes C++ file reading and writing trustworthy?",
       "choices": [
         "Mix persistence code with unrelated calculations.",
         "Read and write files through streams with clear failure checks.",
@@ -178,7 +178,7 @@
         "Forget that write modes can replace existing data."
       ],
       "answer_index": 1,
-      "explanation": "Read and write files through streams with clear failure checks. This matters because file code must be clear about paths, encodings, exceptions, and whether a write replaces or appends."
+      "explanation": "Use streams with clear checks around opening, reading, parsing, and writing. That keeps the code from treating missing files, failed reads, or replaced output as if everything succeeded."
     }
   ]
 }

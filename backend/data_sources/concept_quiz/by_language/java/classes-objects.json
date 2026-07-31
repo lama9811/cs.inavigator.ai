@@ -78,9 +78,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Classes & Objects concept check 1",
+      "title": "Java class wrapper",
       "code": null,
-      "prompt": "Which statement about a basic Java program and classes is true?",
+      "prompt": "Why do small Java programs usually start inside `public class Something { ... }`?",
       "choices": [
         "Every Java program you have written so far sat inside `public class Something { ... }`.",
         "Store all object state in one shared global variable.",
@@ -88,7 +88,7 @@
         "Use a class when no related data or behavior is being grouped."
       ],
       "answer_index": 0,
-      "explanation": "Every Java program you have written so far sat inside `public class Something { ... }`. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
+      "explanation": "Java organizes methods and fields inside classes. Even a first `main` program needs a class wrapper because the class is the unit Java compiles and names. That wrapper is not the same as one object, but it is the doorway into object-oriented Java."
     },
     {
       "id": "java-classes-objects-authored-02",
@@ -96,9 +96,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Classes & Objects concept check 2",
+      "title": "Using this in constructors",
       "code": null,
-      "prompt": "Inside a Java constructor, when does `this.name` help?",
+      "prompt": "A constructor receives `name` and the class also has a field named `name`. Why write `this.name = name`?",
       "choices": [
         "Let outside code change every field directly.",
         "In that constructor, the parameter is called `name` and the field is also called `name`. Java resolves the plain name `name` to the parameter, because the closer one wins.",
@@ -106,7 +106,7 @@
         "Forget that each object has its own instance data."
       ],
       "answer_index": 1,
-      "explanation": "In that constructor, the parameter is called `name` and the field is also called `name`. Java resolves the plain name `name` to the parameter, because the closer one wins. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
+      "explanation": "`this.name` points to the field on the current object, while the plain name `name` refers to the constructor parameter nearby. Without `this`, the assignment can accidentally talk only to the parameter and leave the object field unchanged."
     },
     {
       "id": "java-classes-objects-authored-03",
@@ -114,17 +114,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Classes & Objects concept check 3",
+      "title": "Null object variable",
       "code": null,
-      "prompt": "Code tries to use a Java object variable that is still null. What is the likely problem?",
+      "prompt": "Code calls a method on an object variable that is still `null`. What is the real issue?",
       "choices": [
         "Name methods after vague actions such as `doStuff`.",
         "Use local variables when persistent object state is needed.",
-        "This is the error Java beginners hit most. It does not mean the object is broken.",
+        "The variable does not refer to a created object yet.",
         "Call an instance method before creating an object."
       ],
       "answer_index": 2,
-      "explanation": "This is the error Java beginners hit most. It does not mean the object is broken. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
+      "explanation": "`null` means the variable is not pointing at an object. The method call fails because there is no instance to receive it. The fix is to create or receive a real object before using its fields or methods."
     },
     {
       "id": "java-classes-objects-authored-04",
@@ -132,9 +132,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Classes & Objects concept check 4",
+      "title": "Class naming",
       "code": null,
-      "prompt": "Which Classes & Objects habit prevents a common mistake?",
+      "prompt": "Which class name best communicates the thing being modeled?",
       "choices": [
         "Treat the class blueprint as the same thing as one object.",
         "Leave an object in a half-initialized state.",
@@ -142,7 +142,7 @@
         "Name the class for the thing it represents, capitalized: `Student`, not `doStudentStuff`."
       ],
       "answer_index": 3,
-      "explanation": "Name the class for the thing it represents, capitalized: `Student`, not `doStudentStuff`. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
+      "explanation": "A class name should sound like the kind of thing the object represents, such as `Student` or `ParkingTicket`. Verb-like names such as `doStudentStuff` blur the difference between a type and an action."
     },
     {
       "id": "java-classes-objects-authored-05",
@@ -150,9 +150,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Classes & Objects concept check 5",
+      "title": "Fields versus methods",
       "code": null,
-      "prompt": "Which Classes & Objects advice is accurate?",
+      "prompt": "When planning a Java class, how should a student separate fields and methods?",
       "choices": [
         "Fields are what it knows. Methods are what it can do. Sort your ideas into those two piles first.",
         "Use static/shared data for per-object information.",
@@ -160,7 +160,7 @@
         "Mix user input directly into every object method."
       ],
       "answer_index": 0,
-      "explanation": "Fields are what it knows. Methods are what it can do. Sort your ideas into those two piles first. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
+      "explanation": "Fields store what each object knows, while methods describe what the object can do. Sorting ideas this way helps keep state in one place and behavior close to the data it uses."
     },
     {
       "id": "java-classes-objects-authored-06",
@@ -168,9 +168,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Classes & Objects concept check 6",
+      "title": "Constructor completeness",
       "code": null,
-      "prompt": "Which Classes & Objects reasoning is accurate?",
+      "prompt": "When an object needs several required fields, why write a constructor early?",
       "choices": [
         "Return internal mutable data without control.",
         "Write a constructor as soon as an object needs more than one field, so an object can never exist half filled in.",
@@ -178,7 +178,7 @@
         "Hide important setup in unrelated methods."
       ],
       "answer_index": 1,
-      "explanation": "Write a constructor as soon as an object needs more than one field, so an object can never exist half filled in. This matters because object code depends on where state lives, which constructor sets it up, and which object a method is working on."
+      "explanation": "A constructor lets the class require the information needed to make a valid object. That reduces half-filled instances where some later method assumes a field exists but setup was forgotten."
     }
   ]
 }

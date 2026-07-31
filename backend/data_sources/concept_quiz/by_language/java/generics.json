@@ -78,9 +78,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Generics concept check 1",
+      "title": "Wrapper types in generics",
       "code": null,
-      "prompt": "Which types belong inside Java collection angle brackets?",
+      "prompt": "Why does Java use `Integer` instead of `int` inside `List<Integer>`?",
       "choices": [
         "Write `Integer` instead of `int` and `Double` instead of `double`. Java automatically wraps and unwraps these values in most collection code.",
         "Use raw collection types and hope casts are correct.",
@@ -88,7 +88,7 @@
         "Store mixed unrelated types in one typed collection."
       ],
       "answer_index": 0,
-      "explanation": "Write `Integer` instead of `int` and `Double` instead of `double`. Java automatically wraps and unwraps these values in most collection code. This matters because generic code lets the compiler check collection element types before values move through the program."
+      "explanation": "Generics require reference types, so primitive values use wrapper types such as `Integer` and `Double`. Autoboxing makes most collection use feel natural, but the type written in angle brackets still has to be the wrapper."
     },
     {
       "id": "java-generics-authored-02",
@@ -96,9 +96,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Generics concept check 2",
+      "title": "Typed collections",
       "code": null,
-      "prompt": "Which choice describes a reliable Generics practice?",
+      "prompt": "Why should a Java collection usually declare its element type?",
       "choices": [
         "Use a type parameter when only one concrete type is allowed.",
         "Give every collection an element type.",
@@ -106,7 +106,7 @@
         "Cast every value instead of declaring the element type."
       ],
       "answer_index": 1,
-      "explanation": "Give every collection an element type. This matters because generic code lets the compiler check collection element types before values move through the program."
+      "explanation": "A type such as `List<String>` lets the compiler reject the wrong kind of value before the program runs. Raw collections push those mistakes later, where they show up as casts or runtime errors."
     },
     {
       "id": "java-generics-authored-03",
@@ -114,9 +114,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Generics concept check 3",
+      "title": "Primitive wrapper review",
       "code": null,
-      "prompt": "Which Generics code review note is accurate?",
+      "prompt": "A student wants a list of whole numbers. Which generic element type should they use?",
       "choices": [
         "Use `Object` everywhere and give up type checking.",
         "Forget that `Integer` is the wrapper for `int`.",
@@ -124,7 +124,7 @@
         "Make the generic type name carry business meaning."
       ],
       "answer_index": 2,
-      "explanation": "Use wrapper types for primitive values. This matters because generic code lets the compiler check collection element types before values move through the program."
+      "explanation": "`Integer` is the wrapper type for `int`, so it belongs inside generic angle brackets. The collection can still hold whole-number values, and Java handles much of the wrapping and unwrapping automatically."
     },
     {
       "id": "java-generics-authored-04",
@@ -132,9 +132,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Generics concept check 4",
+      "title": "Avoid raw types",
       "code": null,
-      "prompt": "Which Generics habit prevents a common mistake?",
+      "prompt": "What is the risk of using a raw `ArrayList` instead of `ArrayList<String>`?",
       "choices": [
         "Return a raw list from a typed method.",
         "Mix key and value type order in a map.",
@@ -142,7 +142,7 @@
         "Avoid raw collection types."
       ],
       "answer_index": 3,
-      "explanation": "Avoid raw collection types. This matters because generic code lets the compiler check collection element types before values move through the program."
+      "explanation": "A raw collection does not tell the compiler what element type is expected. That makes it easier to add the wrong kind of object and discover the problem only when code reads the value back."
     },
     {
       "id": "java-generics-authored-05",
@@ -150,9 +150,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Generics concept check 5",
+      "title": "Diamond operator",
       "code": null,
-      "prompt": "Which Generics advice is accurate?",
+      "prompt": "What does the diamond `<>` help with in a line such as `List<String> names = new ArrayList<>();`?",
       "choices": [
         "Let the diamond `<>` copy the type from the declaration.",
         "Use a generic class when a method parameter is enough.",
@@ -160,7 +160,7 @@
         "Use one collection for values with different roles."
       ],
       "answer_index": 0,
-      "explanation": "Let the diamond `<>` copy the type from the declaration. This matters because generic code lets the compiler check collection element types before values move through the program."
+      "explanation": "The diamond lets Java infer the constructor's generic type from the declaration on the left. That keeps the type checked without repeating `String` twice in ordinary collection creation."
     },
     {
       "id": "java-generics-authored-06",
@@ -168,9 +168,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Generics concept check 6",
+      "title": "Type parameter purpose",
       "code": null,
-      "prompt": "Which Generics reasoning is accurate?",
+      "prompt": "When does a method or class need a generic type parameter such as `T`?",
       "choices": [
         "Forget to type both sides of a relationship.",
         "Use a type parameter when one design works for several types.",
@@ -178,7 +178,7 @@
         "Use generics to avoid naming the actual model."
       ],
       "answer_index": 1,
-      "explanation": "Use a type parameter when one design works for several types. This matters because generic code lets the compiler check collection element types before values move through the program."
+      "explanation": "A type parameter is useful when one design works for several specific types while preserving type safety. It is not a data variable; it is a placeholder for a type the compiler tracks."
     }
   ]
 }

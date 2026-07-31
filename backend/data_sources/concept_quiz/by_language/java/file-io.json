@@ -78,9 +78,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "File I/O concept check 1",
+      "title": "Replacing records",
       "code": null,
-      "prompt": "What should you check before writing to a file that may already contain records?",
+      "prompt": "Before writing student records to an existing file, what should the program decide?",
       "choices": [
         "A successful write can still be the wrong action. If old records matter, include the append option or read, update, and rewrite the complete data intentionally.",
         "Overwrite existing records when the task calls for appending.",
@@ -88,7 +88,7 @@
         "Read data before checking for an I/O failure."
       ],
       "answer_index": 0,
-      "explanation": "A successful write can still be the wrong action. If old records matter, include the append option or read, update, and rewrite the complete data intentionally. This matters because file code must be clear about paths, encodings, exceptions, and whether a write replaces or appends."
+      "explanation": "A write can succeed and still destroy needed data if the code meant to append or update carefully. File code should make the replacement-versus-append decision explicit before it touches the existing file."
     },
     {
       "id": "java-file-io-authored-02",
@@ -96,9 +96,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "File I/O concept check 2",
+      "title": "Path objects",
       "code": null,
-      "prompt": "Which choice describes a reliable File I/O practice?",
+      "prompt": "Why use `Path` for file locations instead of hand-built strings?",
       "choices": [
         "Ignore character encoding for shared text files.",
         "Represent locations with Path.",
@@ -106,7 +106,7 @@
         "Catch an IOException where no useful response is possible."
       ],
       "answer_index": 1,
-      "explanation": "Represent locations with Path. This matters because file code must be clear about paths, encodings, exceptions, and whether a write replaces or appends."
+      "explanation": "`Path` represents a filesystem location without forcing the program to stitch separators by hand. That makes code easier to read and less fragile across operating systems and project layouts."
     },
     {
       "id": "java-file-io-authored-03",
@@ -114,9 +114,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "File I/O concept check 3",
+      "title": "Portable text encoding",
       "code": null,
-      "prompt": "Which File I/O code review note is accurate?",
+      "prompt": "A Java program writes names that may be opened on different computers. What should it specify?",
       "choices": [
         "Use one giant string for a large file.",
         "Build paths with fragile string concatenation.",
@@ -124,7 +124,7 @@
         "Treat a missing file as an empty valid file every time."
       ],
       "answer_index": 2,
-      "explanation": "Select UTF-8 for portable text. This matters because file code must be clear about paths, encodings, exceptions, and whether a write replaces or appends."
+      "explanation": "Choosing UTF-8 makes text encoding predictable instead of depending on a machine default. That matters most when files move between computers or include characters outside plain ASCII."
     },
     {
       "id": "java-file-io-authored-04",
@@ -132,9 +132,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "File I/O concept check 4",
+      "title": "Append or replace",
       "code": null,
-      "prompt": "Which File I/O habit prevents a common mistake?",
+      "prompt": "A report should add today's line without erasing yesterday's lines. What decision matters most?",
       "choices": [
         "Write output before validating the destination.",
         "Ignore partial read or parse failures.",
@@ -142,7 +142,7 @@
         "Decide whether a write replaces or appends."
       ],
       "answer_index": 3,
-      "explanation": "Decide whether a write replaces or appends. This matters because file code must be clear about paths, encodings, exceptions, and whether a write replaces or appends."
+      "explanation": "The write mode must match the job. Appending preserves earlier content and adds to it; replacement rewrites the file. Naming that choice in code prevents quiet data loss."
     },
     {
       "id": "java-file-io-authored-05",
@@ -150,9 +150,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "File I/O concept check 5",
+      "title": "Handling IOException",
       "code": null,
-      "prompt": "Which File I/O advice is accurate?",
+      "prompt": "Where should a Java program handle an `IOException`?",
       "choices": [
         "Handle IOException at a layer that can respond.",
         "Hide the original file error behind a vague message.",
@@ -160,7 +160,7 @@
         "Assume the default charset is always the intended one."
       ],
       "answer_index": 0,
-      "explanation": "Handle IOException at a layer that can respond. This matters because file code must be clear about paths, encodings, exceptions, and whether a write replaces or appends."
+      "explanation": "Handle an I/O failure where the code can do something useful, such as retry, choose another path, or show a clear message. Catching it too low often hides context; ignoring it leaves callers guessing."
     },
     {
       "id": "java-file-io-authored-06",
@@ -168,9 +168,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "File I/O concept check 6",
+      "title": "Streaming large files",
       "code": null,
-      "prompt": "Which File I/O reasoning is accurate?",
+      "prompt": "How should code read a large file without loading the whole thing into memory?",
       "choices": [
         "Mix persistence code with unrelated calculations.",
         "Stream large files and close the stream automatically.",
@@ -178,7 +178,7 @@
         "Forget that write modes can replace existing data."
       ],
       "answer_index": 1,
-      "explanation": "Stream large files and close the stream automatically. This matters because file code must be clear about paths, encodings, exceptions, and whether a write replaces or appends."
+      "explanation": "Streaming processes one piece at a time and pairs well with try-with-resources or APIs that close automatically. It keeps memory use steady and still lets the program count, filter, or transform lines."
     }
   ]
 }

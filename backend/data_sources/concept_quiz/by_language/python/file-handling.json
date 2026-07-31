@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "File Handling concept check 1",
+      "title": "Write mode warning",
       "code": null,
-      "prompt": "What should you check before opening an existing file for writing in Python?",
+      "prompt": "Before opening an existing notes file with mode `\"w\"`, what should a student check?",
       "choices": [
-        "Check the mode before running file code. Opening an existing file with `\"w\"` clears it immediately.",
-        "Open an existing file for writing before checking whether old data matters.",
-        "Assume a relative path starts beside the source file.",
-        "Read from a file before checking that opening succeeded."
+        "Whether replacing the file contents is actually intended.",
+        "Whether `\"w\"` means read without changing anything.",
+        "Whether Python will append automatically if the file exists.",
+        "Whether `strip()` can restore the deleted text afterward."
       ],
       "answer_index": 0,
-      "explanation": "Check the mode before running file code. Opening an existing file with `\"w\"` clears it immediately. This matters because file code must be clear about mode, encoding, missing paths, and whether data is replaced or appended."
+      "explanation": "Mode `\"w\"` creates a new file or clears an existing one before writing. That is correct for replacement, but dangerous when the goal is to add new text. Use append mode for adding and read mode for inspection."
     },
     {
       "id": "python-file-handling-authored-02",
@@ -96,17 +96,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "File Handling concept check 2",
+      "title": "Closing files safely",
       "code": null,
-      "prompt": "Which choice describes a reliable File Handling practice?",
+      "prompt": "A function reads a short text file and then returns a result. Which pattern protects the file handle?",
       "choices": [
-        "Keep a file open longer than the work requires.",
-        "Use `with open(...)` to guarantee closing.",
-        "Ignore encoding for text that may move between machines.",
-        "Load a huge file all at once when line-by-line processing would work."
+        "Open the file and rely on the program ending soon.",
+        "Use `with open(...)` so Python closes the file after the block.",
+        "Close the file before reading from it.",
+        "Read outside the block after the handle has closed."
       ],
       "answer_index": 1,
-      "explanation": "Use `with open(...)` to guarantee closing. This matters because file code must be clear about mode, encoding, missing paths, and whether data is replaced or appended."
+      "explanation": "`with open(...)` gives the code a clear window where the file is open. When that block ends, Python closes the file even if an error happens inside. Reading after the block is too late because the handle has already been closed."
     },
     {
       "id": "python-file-handling-authored-03",
@@ -114,17 +114,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "File Handling concept check 3",
+      "title": "Text encoding",
       "code": null,
-      "prompt": "Which File Handling code review note is accurate?",
+      "prompt": "A program writes course names that may include accents or special characters. What should the file code specify?",
       "choices": [
-        "Swallow file errors without telling the caller what failed.",
-        "Write partial output without planning what happens on failure.",
-        "Specify UTF-8 for text you control.",
-        "Use the same mode for reading and overwriting."
+        "No encoding, because every computer chooses the same default.",
+        "Binary mode, because all text must be stored as raw bytes.",
+        "`encoding=\"utf-8\"` for text the program controls.",
+        "`strip()` before opening so symbols are removed."
       ],
       "answer_index": 2,
-      "explanation": "Specify UTF-8 for text you control. This matters because file code must be clear about mode, encoding, missing paths, and whether data is replaced or appended."
+      "explanation": "Specifying UTF-8 makes text behavior predictable across machines. Without it, Python may use a system default that differs between computers. Encoding is chosen when opening the file; it is not fixed by string cleanup later."
     },
     {
       "id": "python-file-handling-authored-04",
@@ -132,17 +132,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "File Handling concept check 4",
+      "title": "Choosing a file mode",
       "code": null,
-      "prompt": "Which File Handling habit prevents a common mistake?",
+      "prompt": "A program should add a new journal line without deleting old lines. Which mode fits?",
       "choices": [
-        "Assume every environment has the same working directory.",
-        "Build paths by string concatenation instead of path tools.",
-        "Overwrite a file while trying to append one new record.",
-        "Confirm whether the mode reads, replaces, or appends."
+        "`\"r\"`, because reading automatically writes at the end.",
+        "`\"w\"`, because writing always preserves previous text.",
+        "`\"x\"`, because exclusive creation updates existing files.",
+        "`\"a\"`, because append writes after the existing contents."
       ],
       "answer_index": 3,
-      "explanation": "Confirm whether the mode reads, replaces, or appends. This matters because file code must be clear about mode, encoding, missing paths, and whether data is replaced or appended."
+      "explanation": "Append mode is designed for adding to the end of a file. Read mode does not write, and write mode replaces existing contents. Choosing the mode is one of the most important file-safety decisions."
     },
     {
       "id": "python-file-handling-authored-05",
@@ -150,17 +150,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "File Handling concept check 5",
+      "title": "Missing file paths",
       "code": null,
-      "prompt": "Which File Handling advice is accurate?",
+      "prompt": "What should code expect when opening a file path supplied by a user?",
       "choices": [
-        "Expect missing paths and permission errors.",
-        "Parse each line before checking whether it is complete.",
-        "Ignore newline handling when comparing saved text.",
-        "Treat binary data as ordinary text."
+        "The path may be missing or blocked by permissions, so errors should be handled thoughtfully.",
+        "Python will create every missing folder automatically.",
+        "A wrong path returns an empty string instead of raising an error.",
+        "Permissions matter only when writing, never when reading."
       ],
       "answer_index": 0,
-      "explanation": "Expect missing paths and permission errors. This matters because file code must be clear about mode, encoding, missing paths, and whether data is replaced or appended."
+      "explanation": "User-supplied paths can point to files that do not exist, folders that do not exist, or locations the program cannot access. Good file code decides whether to show a friendly message, ask again, or let the error reach a caller that can respond."
     },
     {
       "id": "python-file-handling-authored-06",
@@ -168,17 +168,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "File Handling concept check 6",
+      "title": "Large file reading",
       "code": null,
-      "prompt": "Which File Handling reasoning is accurate?",
+      "prompt": "A log file may be too large to comfortably load all at once. What reading strategy is safer?",
       "choices": [
-        "Forget to close or scope the file handle.",
-        "Process large files one line at a time.",
-        "Use user-provided paths without validation.",
-        "Mix file reading with unrelated UI logic."
+        "Call `read()` several times and hope memory is enough.",
+        "Process the file one line at a time inside the `with` block.",
+        "Convert the file object to a tuple before scanning it.",
+        "Open the file in write mode so old lines disappear."
       ],
       "answer_index": 1,
-      "explanation": "Process large files one line at a time. This matters because file code must be clear about mode, encoding, missing paths, and whether data is replaced or appended."
+      "explanation": "Line-by-line reading lets the program handle one small piece at a time. That avoids holding the whole file in memory and keeps the file open only while it is being processed. It also pairs naturally with loops that count, filter, or search lines."
     }
   ]
 }

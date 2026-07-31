@@ -491,6 +491,55 @@ AUDITED_LEGACY_BAD_PHRASES = (
     "read the line out loud",
 )
 
+AUDITED_INTERMEDIATE_CATEGORIES_BY_LANGUAGE = {
+    "python": {
+        "tuples",
+        "dictionaries",
+        "sets",
+        "file-handling",
+        "exceptions",
+        "classes-objects",
+        "modules-imports",
+        "comprehensions",
+        "testing",
+    },
+    "java": {
+        "classes-objects",
+        "maps",
+        "file-io",
+        "exceptions",
+        "inheritance-interfaces",
+        "generics",
+        "enums",
+        "packages-access",
+        "lambdas-streams",
+    },
+    "javascript": {
+        "objects",
+        "error-handling",
+        "modules",
+        "dom-events",
+        "async-promises",
+    },
+    "cpp": {
+        "pointers",
+        "classes-objects",
+        "file-io",
+        "exceptions",
+        "memory-ownership",
+    },
+}
+
+INTERMEDIATE_AUDIT_BAD_PHRASES = (
+    "this matters because",
+    "which choice describes a reliable",
+    "code review note is accurate",
+    "habit prevents a common mistake",
+    "advice is accurate",
+    "reasoning is accurate",
+    "concept check",
+)
+
 
 def test_all_banks_reject_filler_templates_and_exact_duplicate_questions():
     """Quality rules apply to every bank, not only files produced by one authoring pass.
@@ -533,6 +582,33 @@ def test_all_banks_do_not_use_generic_prompt_templates():
             f"{language}/{category}/{question['id']} still uses generic audit "
             f"phrases: {matched}"
         )
+
+
+def test_audited_intermediate_banks_do_not_use_boilerplate():
+    for language, categories in AUDITED_INTERMEDIATE_CATEGORIES_BY_LANGUAGE.items():
+        for category in categories:
+            for question in cq.questions_for_category(language, category)["questions"]:
+                rendered = json.dumps(question, ensure_ascii=False).lower()
+                matched = [
+                    phrase
+                    for phrase in INTERMEDIATE_AUDIT_BAD_PHRASES
+                    if phrase in rendered
+                ]
+                assert not matched, (
+                    f"{language}/{category}/{question['id']} still uses "
+                    f"Intermediate audit boilerplate: {matched}"
+                )
+
+
+def test_audited_intermediate_banks_are_all_intermediate_track():
+    for language, categories in AUDITED_INTERMEDIATE_CATEGORIES_BY_LANGUAGE.items():
+        manifest_by_id = {
+            category["id"]: category
+            for category in cq.categories_for_language(language)
+        }
+        for category in categories:
+            assert manifest_by_id[category]["track"] == "intermediate"
+            assert cq.questions_for_category(language, category)["questions"]
 
 
 def test_authored_quiz_text_has_no_mojibake_sequences():

@@ -82,9 +82,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Packages & Access Modifiers concept check 1",
+      "title": "Package path match",
       "code": null,
-      "prompt": "What should match a Java package declaration during normal builds?",
+      "prompt": "What should match `package school.records;` during a normal Java build?",
       "choices": [
         "If a file declares `package school.records`, keep it under the matching `school/records` path for normal builds. A mismatch often leads to class loading or import errors.",
         "Put a package declaration that does not match the folder path.",
@@ -92,7 +92,7 @@
         "Expose large public methods that do several unrelated jobs."
       ],
       "answer_index": 0,
-      "explanation": "If a file declares `package school.records`, keep it under the matching `school/records` path for normal builds. A mismatch often leads to class loading or import errors. This matters because package and access code controls which classes can see each other and which details stay private."
+      "explanation": "The source path should mirror the package name, usually `school/records`. When the declaration and folder structure drift apart, imports and class loading become harder for both tools and humans to reason about."
     },
     {
       "id": "java-packages-access-authored-02",
@@ -100,9 +100,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Packages & Access Modifiers concept check 2",
+      "title": "Package grouping",
       "code": null,
-      "prompt": "Which choice describes a reliable Packages & Access Modifiers practice?",
+      "prompt": "How should classes be grouped into packages?",
       "choices": [
         "Repeat full package names everywhere instead of importing.",
         "Group classes that solve related problems.",
@@ -110,7 +110,7 @@
         "Hide a class that callers are supposed to construct."
       ],
       "answer_index": 1,
-      "explanation": "Group classes that solve related problems. This matters because package and access code controls which classes can see each other and which details stay private."
+      "explanation": "A package should gather classes that solve related problems. That keeps imports meaningful and helps students find where a type belongs instead of dropping every class into one crowded folder."
     },
     {
       "id": "java-packages-access-authored-03",
@@ -118,9 +118,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Packages & Access Modifiers concept check 3",
+      "title": "Package declaration placement",
       "code": null,
-      "prompt": "Which Packages & Access Modifiers code review note is accurate?",
+      "prompt": "What should a review check when a Java file declares a package?",
       "choices": [
         "Mix unrelated classes in one package.",
         "Put the package statement after imports.",
@@ -128,7 +128,7 @@
         "Use private access for methods other classes must call."
       ],
       "answer_index": 2,
-      "explanation": "Match package names to the directory structure. This matters because package and access code controls which classes can see each other and which details stay private."
+      "explanation": "The package declaration belongs at the top of the file and should match the directory layout used by the project. A mismatch often causes confusing import or compile behavior before the logic is even tested."
     },
     {
       "id": "java-packages-access-authored-04",
@@ -136,9 +136,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Packages & Access Modifiers concept check 4",
+      "title": "Private fields",
       "code": null,
-      "prompt": "Which Packages & Access Modifiers habit prevents a common mistake?",
+      "prompt": "Why keep fields private unless outside code truly needs direct access?",
       "choices": [
         "Let package structure drift from the project structure.",
         "Treat access modifiers as comments rather than compiler rules.",
@@ -146,7 +146,7 @@
         "Keep fields private unless outside access is truly required."
       ],
       "answer_index": 3,
-      "explanation": "Keep fields private unless outside access is truly required. This matters because package and access code controls which classes can see each other and which details stay private."
+      "explanation": "Private fields let the class protect its own rules. Public methods can validate changes, preserve invariants, and expose only the operations callers are meant to use."
     },
     {
       "id": "java-packages-access-authored-05",
@@ -154,9 +154,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Packages & Access Modifiers concept check 5",
+      "title": "Small public API",
       "code": null,
-      "prompt": "Which Packages & Access Modifiers advice is accurate?",
+      "prompt": "What makes a public method easier for other classes to depend on?",
       "choices": [
         "Expose small public methods with clear jobs.",
         "Use one package for the entire application forever.",
@@ -164,7 +164,7 @@
         "Make helper methods public only for tests without a reason."
       ],
       "answer_index": 0,
-      "explanation": "Expose small public methods with clear jobs. This matters because package and access code controls which classes can see each other and which details stay private."
+      "explanation": "A public method should have a clear, stable job because outside callers may rely on it. Small public methods are easier to document and safer to keep compatible than broad methods with many hidden responsibilities."
     },
     {
       "id": "java-packages-access-authored-06",
@@ -172,9 +172,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Packages & Access Modifiers concept check 6",
+      "title": "Imports versus long names",
       "code": null,
-      "prompt": "Which Packages & Access Modifiers reasoning is accurate?",
+      "prompt": "Why import a class instead of repeating its full package name throughout a file?",
       "choices": [
         "Forget that default access means package-private.",
         "Import classes instead of repeating long names throughout a file.",
@@ -182,7 +182,7 @@
         "Change public method names without considering callers."
       ],
       "answer_index": 1,
-      "explanation": "Import classes instead of repeating long names throughout a file. This matters because package and access code controls which classes can see each other and which details stay private."
+      "explanation": "Imports keep code readable while still making dependencies explicit at the top of the file. Repeating long fully qualified names clutters the logic and makes simple statements harder to scan."
     }
   ]
 }

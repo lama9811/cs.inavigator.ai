@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Comprehensions concept check 1",
+      "title": "When a loop is clearer",
       "code": null,
-      "prompt": "When should Python code use a normal loop instead of a comprehension?",
+      "prompt": "When should a normal loop replace a comprehension?",
       "choices": [
-        "A comprehension is a good fit when you can say its rule in one breath. Choose a normal loop when you need several conditions, temporary names, logging, or error handling.",
-        "Use a comprehension when several steps need names and comments.",
-        "Choose a comprehension only to cause side effects.",
-        "Hide multiple unrelated conditions in one dense expression."
+        "When the rule needs several steps, logging, or error handling.",
+        "Whenever the result is a new list.",
+        "Only when the input collection is empty.",
+        "Whenever the expression uses a variable name."
       ],
       "answer_index": 0,
-      "explanation": "A comprehension is a good fit when you can say its rule in one breath. Choose a normal loop when you need several conditions, temporary names, logging, or error handling. This matters because comprehension code should express one small transformation or filter; crowded rules are easier to debug as a normal loop."
+      "explanation": "Comprehensions are best for compact transformations and filters. If the code needs several temporary values, multiple branches, logging, or exception handling, a normal loop is easier to read and debug. Clarity wins over squeezing everything onto one line."
     },
     {
       "id": "python-comprehensions-authored-02",
@@ -96,17 +96,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Comprehensions concept check 2",
+      "title": "Creating a new collection",
       "code": null,
-      "prompt": "Which choice describes a reliable Comprehensions practice?",
+      "prompt": "What job does a list comprehension usually do?",
       "choices": [
-        "Use brackets when a dictionary result is needed.",
-        "Use a comprehension to create a new collection.",
-        "Forget the filter comes after the loop part.",
-        "Reuse the same variable name in a confusing outer scope."
+        "Mutate the original list one item at a time.",
+        "Build a new list from an expression and optional filter.",
+        "Print each item without keeping any result.",
+        "Catch exceptions from every loop automatically."
       ],
       "answer_index": 1,
-      "explanation": "Use a comprehension to create a new collection. This matters because comprehension code should express one small transformation or filter; crowded rules are easier to debug as a normal loop."
+      "explanation": "A list comprehension returns a new list. It does not edit the old list unless the expression itself mutates objects, which is usually a smell. If the goal is side effects such as printing or saving files, a plain loop communicates that better."
     },
     {
       "id": "python-comprehensions-authored-03",
@@ -114,17 +114,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Comprehensions concept check 3",
+      "title": "Simple expression and filter",
       "code": null,
-      "prompt": "Which Comprehensions code review note is accurate?",
+      "prompt": "A comprehension has an expression, a loop, and an optional filter. What keeps it readable?",
       "choices": [
-        "Build a list just to immediately throw it away.",
-        "Use a comprehension when a normal loop would be easier to debug.",
-        "Keep the expression and filter simple.",
-        "Assume every comprehension is faster and clearer."
+        "Use nested conditions even when the line becomes hard to scan.",
+        "Hide several assignments inside the expression.",
+        "Keep the transformation and filter short enough to understand at a glance.",
+        "Use a comprehension even when there is no result to collect."
       ],
       "answer_index": 2,
-      "explanation": "Keep the expression and filter simple. This matters because comprehension code should express one small transformation or filter; crowded rules are easier to debug as a normal loop."
+      "explanation": "Readers should be able to see what each input item becomes and which items are kept. Once the expression or filter needs a lot of explanation, a normal loop gives those steps room. A readable comprehension should feel like a compact sentence, not a puzzle."
     },
     {
       "id": "python-comprehensions-authored-04",
@@ -132,17 +132,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Comprehensions concept check 4",
+      "title": "Avoid side effects",
       "code": null,
-      "prompt": "Which Comprehensions habit prevents a common mistake?",
+      "prompt": "Why is `[print(name) for name in names]` usually a poor use of a comprehension?",
       "choices": [
-        "Put printing inside the comprehension rule.",
-        "Use braces without deciding between set and dictionary output.",
-        "Nest comprehensions before checking whether one level is readable.",
-        "Do not use one only to cause side effects."
+        "Printing is impossible inside Python loops.",
+        "It changes `names` into a tuple.",
+        "It always prints in reverse order.",
+        "It creates a throwaway list just to cause a side effect."
       ],
       "answer_index": 3,
-      "explanation": "Do not use one only to cause side effects. This matters because comprehension code should express one small transformation or filter; crowded rules are easier to debug as a normal loop."
+      "explanation": "The point of a list comprehension is the list it returns. If the returned list is ignored and the only goal is printing, a normal `for` loop is clearer and avoids building a useless list of return values from `print`."
     },
     {
       "id": "python-comprehensions-authored-05",
@@ -150,17 +150,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Comprehensions concept check 5",
+      "title": "Choosing brackets",
       "code": null,
-      "prompt": "Which Comprehensions advice is accurate?",
+      "prompt": "Which comprehension shape creates a dictionary from words to lengths?",
       "choices": [
-        "Choose brackets for a list and braces for a set or dictionary.",
-        "Change existing data when the goal is to build a new collection.",
-        "Ignore the order of expression, loop, and condition.",
-        "Use a comprehension for exception-heavy parsing."
+        "`{word: len(word) for word in words}`",
+        "`[word: len(word) for word in words]`",
+        "`(word, len(word) for word in words)`",
+        "`{len(word) for word in words: word}`"
       ],
       "answer_index": 0,
-      "explanation": "Choose brackets for a list and braces for a set or dictionary. This matters because comprehension code should express one small transformation or filter; crowded rules are easier to debug as a normal loop."
+      "explanation": "A dictionary comprehension uses braces with `key: value` before the loop. A list comprehension uses brackets and one expression, while a set comprehension uses braces with one expression. The colon is the clue that the result maps keys to values."
     },
     {
       "id": "python-comprehensions-authored-06",
@@ -168,17 +168,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Comprehensions concept check 6",
+      "title": "Readability limit",
       "code": null,
-      "prompt": "Which Comprehensions reasoning is accurate?",
+      "prompt": "A comprehension is so packed that classmates keep misreading it. What is the best next step?",
       "choices": [
-        "Forget that the left side describes the produced value.",
-        "Switch to a normal loop when the rule becomes hard to read.",
-        "Use one when the result is never used.",
-        "Trade readability for fewer lines."
+        "Add more conditions so the pattern is fully compressed.",
+        "Rewrite it as a normal loop with named intermediate steps.",
+        "Remove spaces to make the line shorter.",
+        "Keep it because shorter code is always better."
       ],
       "answer_index": 1,
-      "explanation": "Switch to a normal loop when the rule becomes hard to read. This matters because comprehension code should express one small transformation or filter; crowded rules are easier to debug as a normal loop."
+      "explanation": "Comprehensions are not a contest to make the shortest line. A normal loop can name intermediate values and split decisions across lines, which helps readers and debuggers. Use the form that makes the rule easiest to trust."
     }
   ]
 }

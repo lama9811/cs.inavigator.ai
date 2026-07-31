@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Sets concept check 1",
+      "title": "Empty set syntax",
       "code": null,
       "prompt": "Which empty collection does `{}` create in Python?",
       "choices": [
-        "`{\"Python\"}` is a set, but `{}` is an empty dictionary. Write `set()` when you need an empty set, then add values to it.",
-        "Use `{}` when an empty set is needed.",
-        "Expect a set to keep duplicate values.",
-        "Depend on item positions in a set."
+        "An empty dictionary, not an empty set.",
+        "An empty set with no values yet.",
+        "An empty tuple with no positions.",
+        "An empty list that removes duplicates automatically."
       ],
       "answer_index": 0,
-      "explanation": "`{\"Python\"}` is a set, but `{}` is an empty dictionary. Write `set()` when you need an empty set, then add values to it. This matters because set code tracks uniqueness and membership, so the chosen operation changes what duplicates or overlaps remain."
+      "explanation": "`{}` is reserved for an empty dictionary. To make an empty set, use `set()`. Non-empty set literals such as `{1, 2, 3}` look similar to dictionary braces, so the empty case is the one students usually have to memorize."
     },
     {
       "id": "python-sets-authored-02",
@@ -96,17 +96,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Sets concept check 2",
+      "title": "Ignoring duplicates",
       "code": null,
-      "prompt": "Which choice describes a reliable Sets practice?",
+      "prompt": "A club sign-in sheet only needs each student name once. Which collection matches that rule?",
       "choices": [
-        "Use a list for repeated membership checks when uniqueness matters.",
-        "Use a set when duplicates have no meaning.",
-        "Assume set intersection keeps every item from both collections.",
-        "Use a set when counts of repeated values are required."
+        "A list, because duplicate names should be kept exactly as entered.",
+        "A set, because duplicate names have no extra meaning.",
+        "A tuple, because the sign-in list should never change.",
+        "A dictionary with every name stored as the same value."
       ],
       "answer_index": 1,
-      "explanation": "Use a set when duplicates have no meaning. This matters because set code tracks uniqueness and membership, so the chosen operation changes what duplicates or overlaps remain."
+      "explanation": "Sets keep membership, not repeated copies. Adding the same name twice still leaves one name in the set. That is perfect for questions like \"who attended at least once?\" but not for questions that need counts or order."
     },
     {
       "id": "python-sets-authored-03",
@@ -114,17 +114,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Sets concept check 3",
+      "title": "Set order",
       "code": null,
-      "prompt": "Which Sets code review note is accurate?",
+      "prompt": "Why should code avoid asking for \"the first item\" in a set?",
       "choices": [
-        "Treat union as if it means only shared items.",
-        "Expect set output order to match input order.",
-        "Do not depend on item positions.",
-        "Add a list directly to a set."
+        "Sets can only store numbers, so text has no position.",
+        "Sets keep every duplicate, so first depends on count.",
+        "Sets do not promise a meaningful item order.",
+        "Sets cannot be looped over at all."
       ],
       "answer_index": 2,
-      "explanation": "Do not depend on item positions. This matters because set code tracks uniqueness and membership, so the chosen operation changes what duplicates or overlaps remain."
+      "explanation": "A set is about membership. You can loop through it, but the order is not the point and should not control program logic. If position matters, use a list; if uniqueness matters, use a set."
     },
     {
       "id": "python-sets-authored-04",
@@ -132,17 +132,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Sets concept check 4",
+      "title": "Removing optional values",
       "code": null,
-      "prompt": "Which Sets habit prevents a common mistake?",
+      "prompt": "A program should remove `\"Chess\"` from a set if it is present, but do nothing if it is absent. Which method fits?",
       "choices": [
-        "Use a set when each item needs an attached score.",
-        "Remove an item without handling the case where it is absent.",
-        "Use difference when the question asks for shared values.",
-        "Prefer `discard` when a missing value is acceptable."
+        "Use `remove`, because it ignores missing values.",
+        "Use indexing, because sets support numeric positions.",
+        "Use `clear`, because it removes only one chosen value.",
+        "Use `discard`, because missing values are allowed."
       ],
       "answer_index": 3,
-      "explanation": "Prefer `discard` when a missing value is acceptable. This matters because set code tracks uniqueness and membership, so the chosen operation changes what duplicates or overlaps remain."
+      "explanation": "`discard` removes the value when it exists and does not raise an error when it is missing. `remove` is stricter and raises a KeyError for a missing value. Choose based on whether missing data is normal or a bug."
     },
     {
       "id": "python-sets-authored-05",
@@ -150,17 +150,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Sets concept check 5",
+      "title": "Comparing groups",
       "code": null,
-      "prompt": "Which Sets advice is accurate?",
+      "prompt": "Two study groups need to find topics they both selected. Which set operation expresses that overlap?",
       "choices": [
-        "Use `&`, `|`, and `-` to compare groups.",
-        "Convert to a set before preserving duplicates.",
-        "Check membership by scanning every item manually.",
-        "Assume two sets with the same items are different if printed differently."
+        "Intersection with `&`, because it keeps values found in both sets.",
+        "Union with `|`, because it keeps only values that match.",
+        "Difference with `-`, because it combines both groups.",
+        "Indexing with `[0]`, because the first shared value is enough."
       ],
       "answer_index": 0,
-      "explanation": "Use `&`, `|`, and `-` to compare groups. This matters because set code tracks uniqueness and membership, so the chosen operation changes what duplicates or overlaps remain."
+      "explanation": "Intersection keeps only the items that appear in both sets. Union keeps everything from either set, and difference removes one group's items from another. Naming the relationship first makes the operator easier to choose."
     },
     {
       "id": "python-sets-authored-06",
@@ -168,17 +168,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Sets concept check 6",
+      "title": "Starting an empty set",
       "code": null,
-      "prompt": "Which Sets reasoning is accurate?",
+      "prompt": "A loop will collect unique parking zones as it scans tickets. How should the empty collection start?",
       "choices": [
-        "Use a set to store unhashable mutable values.",
-        "Create an empty set with `set()`.",
-        "Forget that membership tests are the main strength.",
-        "Sort a set in place."
+        "Use `{}` and add zones later.",
+        "Use `set()` and add zones later.",
+        "Use `()` and assign into indexes later.",
+        "Use `[]` because lists automatically remove duplicates."
       ],
       "answer_index": 1,
-      "explanation": "Create an empty set with `set()`. This matters because set code tracks uniqueness and membership, so the chosen operation changes what duplicates or overlaps remain."
+      "explanation": "Start with `set()` when the goal is unique membership. `{}` would create a dictionary, and a list would keep duplicates unless extra checks are added. The empty-start syntax matters because the later `.add(...)` calls depend on having a real set."
     }
   ]
 }

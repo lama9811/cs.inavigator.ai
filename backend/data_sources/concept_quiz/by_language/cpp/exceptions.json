@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Exceptions concept check 1",
+      "title": "Exception-worthy failure",
       "code": null,
-      "prompt": "When should C++ code use an exception instead of a regular branch?",
+      "prompt": "When should C++ code use an exception instead of a normal branch?",
       "choices": [
-        "Use an if statement for expected choices such as an empty search result. Reserve exceptions for a function that cannot complete its promised operation, especially when several callers need the failure information.",
+        "Use exceptions when a function cannot complete its promised operation.",
         "Catch every exception and continue without evidence.",
         "Use exceptions for ordinary choices an if statement can handle.",
         "Replace the original error with a vague one and drop the cause."
       ],
       "answer_index": 0,
-      "explanation": "Use an if statement for expected choices such as an empty search result. Reserve exceptions for a function that cannot complete its promised operation, especially when several callers need the failure information. This matters because exception code should handle failures at a layer that can respond without hiding unrelated programming mistakes."
+      "explanation": "Ordinary outcomes, such as an empty search result, often belong in normal `if` logic. Exceptions fit failures that prevent a function from doing what it promised, especially when callers need to decide how to recover."
     },
     {
       "id": "cpp-exceptions-authored-02",
@@ -96,9 +96,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Exceptions concept check 2",
+      "title": "Descriptive exception",
       "code": null,
-      "prompt": "Which choice describes a reliable Exceptions practice?",
+      "prompt": "What should thrown C++ exceptions communicate?",
       "choices": [
         "Wrap a whole program in one broad protected block.",
         "Throw a descriptive exception type.",
@@ -106,7 +106,7 @@
         "Hide unexpected programming mistakes."
       ],
       "answer_index": 1,
-      "explanation": "Throw a descriptive exception type. This matters because exception code should handle failures at a layer that can respond without hiding unrelated programming mistakes."
+      "explanation": "An exception should describe the failure clearly enough for a caller or log to understand what went wrong. Vague failures make debugging harder and push context out of the place that knows it."
     },
     {
       "id": "cpp-exceptions-authored-03",
@@ -114,9 +114,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Exceptions concept check 3",
+      "title": "Catch with purpose",
       "code": null,
-      "prompt": "Which Exceptions code review note is accurate?",
+      "prompt": "Where should C++ code catch an exception?",
       "choices": [
         "Raise an exception after the function already returned successfully.",
         "Use an exception to skip normal loop logic.",
@@ -124,7 +124,7 @@
         "Report failure without enough context to debug it."
       ],
       "answer_index": 2,
-      "explanation": "Catch only where recovery or context is possible. This matters because exception code should handle failures at a layer that can respond without hiding unrelated programming mistakes."
+      "explanation": "Catch an exception where the code can recover, add useful context, or translate the failure for a caller. Catching too early often leaves the program with no real response."
     },
     {
       "id": "cpp-exceptions-authored-04",
@@ -132,9 +132,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Exceptions concept check 4",
+      "title": "Catch by const reference",
       "code": null,
-      "prompt": "Which Exceptions habit prevents a common mistake?",
+      "prompt": "How should standard C++ exceptions usually be caught?",
       "choices": [
         "Ignore cleanup around code that can fail.",
         "Catch a base exception type when a specific one is known.",
@@ -142,7 +142,7 @@
         "Catch standard exceptions by const reference."
       ],
       "answer_index": 3,
-      "explanation": "Catch standard exceptions by const reference. This matters because exception code should handle failures at a layer that can respond without hiding unrelated programming mistakes."
+      "explanation": "Catching by `const` reference avoids copying and preserves the real exception type for polymorphic exceptions. Catching by value can slice derived exception details away."
     },
     {
       "id": "cpp-exceptions-authored-05",
@@ -150,9 +150,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Exceptions concept check 5",
+      "title": "Do not silence failures",
       "code": null,
-      "prompt": "Which Exceptions advice is accurate?",
+      "prompt": "Why should a C++ catch block avoid silently ignoring unknown failures?",
       "choices": [
         "Do not silence unknown failures.",
         "Keep running after required work did not happen.",
@@ -160,7 +160,7 @@
         "Assume the absence of a crash proves the operation succeeded."
       ],
       "answer_index": 0,
-      "explanation": "Do not silence unknown failures. This matters because exception code should handle failures at a layer that can respond without hiding unrelated programming mistakes."
+      "explanation": "A silent catch makes required work look successful when it was not. If the layer cannot recover, it should report, add context, or rethrow so the failure is not lost."
     },
     {
       "id": "cpp-exceptions-authored-06",
@@ -168,9 +168,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Exceptions concept check 6",
+      "title": "Failure across calls",
       "code": null,
-      "prompt": "Which statement is accurate about Exceptions?",
+      "prompt": "What job do exceptions serve across several function calls?",
       "choices": [
         "Use try/catch around code that cannot throw.",
         "Report failures across function calls without losing cleanup.",
@@ -178,7 +178,7 @@
         "Discard stack-trace information during wrapping."
       ],
       "answer_index": 1,
-      "explanation": "Report failures across function calls without losing cleanup. This matters because exception code should handle failures at a layer that can respond without hiding unrelated programming mistakes."
+      "explanation": "Exceptions can carry failure information to a caller that has enough context to respond. RAII cleanup still runs as the stack unwinds, so resources can be released without manual cleanup at every level."
     }
   ]
 }

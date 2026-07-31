@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Objects concept check 1",
+      "title": "Missing properties",
       "code": null,
-      "prompt": "Which warning about Objects should a student remember?",
+      "prompt": "What happens when JavaScript reads an object property that does not exist?",
       "choices": [
-        "Reading a missing property returns undefined; an error may occur later when code tries to use that absent value.",
-        "Read a missing property and assume it contains a useful value.",
-        "Use dot notation when the key comes from a variable.",
-        "Use bracket notation with an unquoted fixed key by accident."
+        "It returns `undefined`, which can cause trouble later if the code treats it like a real value.",
+        "It creates the missing property automatically.",
+        "It searches every other object for the property.",
+        "It throws immediately for every missing property read."
       ],
       "answer_index": 0,
-      "explanation": "Reading a missing property returns undefined; an error may occur later when code tries to use that absent value. This matters because object code depends on named properties, computed keys, and whether variables share the same object."
+      "explanation": "A missing property read usually gives `undefined`. The danger often appears on the next line, when code tries to call a method or read a nested property from that missing value. Optional fields should be checked before use."
     },
     {
       "id": "javascript-objects-authored-02",
@@ -96,9 +96,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Objects concept check 2",
+      "title": "Dot notation",
       "code": null,
-      "prompt": "Which choice describes a reliable Objects practice?",
+      "prompt": "When is dot notation the clearest way to read an object property?",
       "choices": [
         "Mutate a shared object when an independent copy is needed.",
         "Use dots for fixed keys.",
@@ -106,7 +106,7 @@
         "Assume assigning an object creates a deep copy."
       ],
       "answer_index": 1,
-      "explanation": "Use dots for fixed keys. This matters because object code depends on named properties, computed keys, and whether variables share the same object."
+      "explanation": "Dot notation is clear when the property name is fixed in the code, such as `student.name`. It tells the reader exactly which property is being used. Brackets are better when the key comes from a variable or expression."
     },
     {
       "id": "javascript-objects-authored-03",
@@ -114,9 +114,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Objects concept check 3",
+      "title": "Computed keys",
       "code": null,
-      "prompt": "Which Objects code review note is accurate?",
+      "prompt": "A property name is stored in a variable called `field`. Which access style matches that situation?",
       "choices": [
         "Ignore optional properties before using nested values.",
         "Use arrays when named properties would be clearer.",
@@ -124,7 +124,7 @@
         "Overwrite a property instead of updating the intended one."
       ],
       "answer_index": 2,
-      "explanation": "Use brackets for computed keys. This matters because object code depends on named properties, computed keys, and whether variables share the same object."
+      "explanation": "Bracket notation evaluates the expression inside the brackets, so `student[field]` uses the key stored in `field`. Dot notation would look for a literal property named `field`, which is a different question."
     },
     {
       "id": "javascript-objects-authored-04",
@@ -132,9 +132,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Objects concept check 4",
+      "title": "Optional properties",
       "code": null,
-      "prompt": "Which Objects habit prevents a common mistake?",
+      "prompt": "A profile object may or may not include `middleName`. What should the code do before using it?",
       "choices": [
         "Compare objects by their printed JSON text.",
         "Depend on property order for program meaning.",
@@ -142,7 +142,7 @@
         "Check optional properties."
       ],
       "answer_index": 3,
-      "explanation": "Check optional properties. This matters because object code depends on named properties, computed keys, and whether variables share the same object."
+      "explanation": "Optional properties need an existence check, fallback, or optional chaining before later code relies on them. That keeps normal missing data from turning into confusing `undefined` behavior somewhere else."
     },
     {
       "id": "javascript-objects-authored-05",
@@ -150,9 +150,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Objects concept check 5",
+      "title": "Independent mutation",
       "code": null,
-      "prompt": "Which Objects advice is accurate?",
+      "prompt": "Two variables should be able to change independently. What should happen before mutating one object?",
       "choices": [
         "Copy before independent mutation.",
         "Copy only the top level when nested data also needs independence.",
@@ -160,7 +160,7 @@
         "Put methods and data together without a clear relationship."
       ],
       "answer_index": 0,
-      "explanation": "Copy before independent mutation. This matters because object code depends on named properties, computed keys, and whether variables share the same object."
+      "explanation": "Object assignment copies the reference, not a separate object. If two variables need independent state, make the appropriate copy before mutation. Nested objects may need deeper copying depending on what will change."
     },
     {
       "id": "javascript-objects-authored-06",
@@ -168,9 +168,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Objects concept check 6",
+      "title": "Named properties",
       "code": null,
-      "prompt": "Which statement is accurate about Objects?",
+      "prompt": "Why group related values into an object?",
       "choices": [
         "Use one object to represent several different shapes at once.",
         "Group related values under named properties.",
@@ -178,7 +178,7 @@
         "Treat undefined as the same as every valid value."
       ],
       "answer_index": 1,
-      "explanation": "Group related values under named properties. This matters because object code depends on named properties, computed keys, and whether variables share the same object."
+      "explanation": "An object gives related values names, which makes code easier to read than relying on positions alone. It is a good fit when the data describes one thing with several properties."
     }
   ]
 }

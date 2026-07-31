@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Error Handling concept check 1",
+      "title": "Small try blocks",
       "code": null,
-      "prompt": "What is a safer way to use try/catch in JavaScript?",
+      "prompt": "What is a safer way to shape a JavaScript `try` block?",
       "choices": [
-        "Do not wrap a whole application in one broad try block. Keep the protected section close to the operation whose failure you understand, so unrelated programming mistakes are not mislabeled as expected input problems.",
+        "Keep it close to the operation whose failure the code understands.",
         "Catch every error and hide the message.",
         "Wrap code that cannot fail in a broad try block.",
         "Handle an error where no recovery is possible."
       ],
       "answer_index": 0,
-      "explanation": "Do not wrap a whole application in one broad try block. Keep the protected section close to the operation whose failure you understand, so unrelated programming mistakes are not mislabeled as expected input problems. This matters because error handling should protect the small operation that may fail and leave a clear recovery path."
+      "explanation": "A smaller `try` block makes it clear which operation is expected to fail. Wrapping a whole app can turn programmer mistakes into vague expected-failure messages, which makes the real bug harder to find."
     },
     {
       "id": "javascript-error-handling-authored-02",
@@ -96,9 +96,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Error Handling concept check 2",
+      "title": "Expected failures",
       "code": null,
-      "prompt": "Which choice describes a reliable Error Handling practice?",
+      "prompt": "Which operation deserves protection with error handling?",
       "choices": [
         "Replace a useful error with a vague one.",
         "Protect only operations you expect can fail.",
@@ -106,7 +106,7 @@
         "Show the same message for every failure."
       ],
       "answer_index": 1,
-      "explanation": "Protect only operations you expect can fail. This matters because error handling should protect the small operation that may fail and leave a clear recovery path."
+      "explanation": "Protect operations that can reasonably fail, such as parsing input, loading data, or calling a service. A `try/catch` should communicate the expected failure path, not cover random code just in case."
     },
     {
       "id": "javascript-error-handling-authored-03",
@@ -114,9 +114,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Error Handling concept check 3",
+      "title": "Reading error details",
       "code": null,
-      "prompt": "Which Error Handling code review note is accurate?",
+      "prompt": "What should a useful JavaScript error handler inspect?",
       "choices": [
         "Ignore the error name and message.",
         "Catch programming mistakes and pretend they are user mistakes.",
@@ -124,7 +124,7 @@
         "Put unrelated operations in one protected block."
       ],
       "answer_index": 2,
-      "explanation": "Read the Error name and message. This matters because error handling should protect the small operation that may fail and leave a clear recovery path."
+      "explanation": "The error name and message usually say what kind of failure happened and where to begin debugging. Ignoring those details leads to generic responses that do not help users or developers."
     },
     {
       "id": "javascript-error-handling-authored-04",
@@ -132,9 +132,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Error Handling concept check 4",
+      "title": "Recovery path",
       "code": null,
-      "prompt": "Which Error Handling habit prevents a common mistake?",
+      "prompt": "After catching a failed save or load, what should the UI offer?",
       "choices": [
         "Retry without changing the failed condition.",
         "Swallow an error before logging useful context.",
@@ -142,7 +142,7 @@
         "Give users a specific recovery path."
       ],
       "answer_index": 3,
-      "explanation": "Give users a specific recovery path. This matters because error handling should protect the small operation that may fail and leave a clear recovery path."
+      "explanation": "A handler should guide the next step: retry, choose another input, show a clear message, or use a safe fallback. Catching the error without a recovery path only hides the failure."
     },
     {
       "id": "javascript-error-handling-authored-05",
@@ -150,9 +150,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Error Handling concept check 5",
+      "title": "Rethrowing errors",
       "code": null,
-      "prompt": "Which Error Handling advice is accurate?",
+      "prompt": "What should a layer do when it catches an error it cannot actually handle?",
       "choices": [
         "Rethrow errors the current layer cannot handle.",
         "Throw strings instead of error objects.",
@@ -160,7 +160,7 @@
         "Use a fallback value that breaks later code."
       ],
       "answer_index": 0,
-      "explanation": "Rethrow errors the current layer cannot handle. This matters because error handling should protect the small operation that may fail and leave a clear recovery path."
+      "explanation": "Rethrow the error, possibly with added context, so a higher layer can respond. Returning fake success data or swallowing the error makes later code trust work that did not happen."
     },
     {
       "id": "javascript-error-handling-authored-06",
@@ -168,9 +168,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Error Handling concept check 6",
+      "title": "Expected versus real bugs",
       "code": null,
-      "prompt": "Which statement is accurate about Error Handling?",
+      "prompt": "What balance should JavaScript error handling aim for?",
       "choices": [
         "Report failure after already using invalid data.",
         "Handle expected failures while keeping real programming mistakes visible.",
@@ -178,7 +178,7 @@
         "Let promise rejections go unhandled."
       ],
       "answer_index": 1,
-      "explanation": "Handle expected failures while keeping real programming mistakes visible. This matters because error handling should protect the small operation that may fail and leave a clear recovery path."
+      "explanation": "Good handlers deal with expected failures while keeping programming mistakes visible during development. That way user-facing problems get a path forward, and real bugs still get fixed instead of hidden."
     }
   ]
 }

@@ -78,9 +78,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Maps concept check 1",
+      "title": "Null value versus missing key",
       "code": null,
-      "prompt": "Why is `get` alone not always enough to prove a Java map key is missing?",
+      "prompt": "Why can `map.get(key) == null` be ambiguous in Java?",
       "choices": [
         "A map is allowed to store null as a value. If that distinction matters, use `containsKey` to ask whether the key exists rather than guessing from `get`.",
         "Use `get` alone when null is a valid stored value.",
@@ -88,7 +88,7 @@
         "Use a list scan when a key lookup would answer directly."
       ],
       "answer_index": 0,
-      "explanation": "A map is allowed to store null as a value. If that distinction matters, use `containsKey` to ask whether the key exists rather than guessing from `get`. This matters because map code is organized around keys, so lookup, containsKey, put, and entrySet each answer a different question."
+      "explanation": "`get` returns `null` both when the key is absent and when the key exists with a stored null value. If that difference matters, `containsKey` answers the membership question directly before the value is interpreted."
     },
     {
       "id": "java-maps-authored-02",
@@ -96,9 +96,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Maps concept check 2",
+      "title": "Map interface type",
       "code": null,
-      "prompt": "Which choice describes a reliable Maps practice?",
+      "prompt": "A method only needs lookup behavior, not a specific map implementation. How should the variable usually be typed?",
       "choices": [
         "Store unrelated meanings under the same key.",
         "Program to `Map` and construct a suitable implementation.",
@@ -106,7 +106,7 @@
         "Overwrite an existing value when accumulation was intended."
       ],
       "answer_index": 1,
-      "explanation": "Program to `Map` and construct a suitable implementation. This matters because map code is organized around keys, so lookup, containsKey, put, and entrySet each answer a different question."
+      "explanation": "Typing the variable as `Map<K, V>` keeps callers and methods focused on the contract: key-value lookup. The chosen implementation, such as `HashMap`, can still be created where performance or ordering needs are known."
     },
     {
       "id": "java-maps-authored-03",
@@ -114,9 +114,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Maps concept check 3",
+      "title": "Stable map keys",
       "code": null,
-      "prompt": "Which Maps code review note is accurate?",
+      "prompt": "What kind of object makes a safer Java map key?",
       "choices": [
         "Use mutable data as a key.",
         "Ignore generic key and value types.",
@@ -124,7 +124,7 @@
         "Treat map iteration order as the contract."
       ],
       "answer_index": 2,
-      "explanation": "Choose immutable, stable keys when possible. This matters because map code is organized around keys, so lookup, containsKey, put, and entrySet each answer a different question."
+      "explanation": "A key should keep the same equality and hash behavior while it is in the map. Mutable keys can become hard to find after their fields change, so immutable or stable keys are safer."
     },
     {
       "id": "java-maps-authored-04",
@@ -132,9 +132,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Maps concept check 4",
+      "title": "Put replaces values",
       "code": null,
-      "prompt": "Which Maps habit prevents a common mistake?",
+      "prompt": "What happens when `put` is called with a key already in the map?",
       "choices": [
         "Use a map when no lookup key exists.",
         "Forget to initialize a count before incrementing.",
@@ -142,7 +142,7 @@
         "Remember that `put` replaces an equal key."
       ],
       "answer_index": 3,
-      "explanation": "Remember that `put` replaces an equal key. This matters because map code is organized around keys, so lookup, containsKey, put, and entrySet each answer a different question."
+      "explanation": "`put` stores one value for an equal key. If the key is already present, the old value is replaced rather than duplicated. Counting code must read the old count first, then put the updated count back."
     },
     {
       "id": "java-maps-authored-05",
@@ -150,9 +150,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Maps concept check 5",
+      "title": "Meaningful fallback",
       "code": null,
-      "prompt": "Which Maps advice is accurate?",
+      "prompt": "A count map should treat missing names as zero. Which lookup style fits that rule?",
       "choices": [
         "Use `getOrDefault` for a meaningful fallback.",
         "Use values as keys when duplicate values are possible.",
@@ -160,7 +160,7 @@
         "Nest maps without checking each level."
       ],
       "answer_index": 0,
-      "explanation": "Use `getOrDefault` for a meaningful fallback. This matters because map code is organized around keys, so lookup, containsKey, put, and entrySet each answer a different question."
+      "explanation": "`getOrDefault(name, 0)` states the missing-key policy right where the value is read. That is clearer than assuming every map returns a useful default or catching a problem after the count is already wrong."
     },
     {
       "id": "java-maps-authored-06",
@@ -168,9 +168,9 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Maps concept check 6",
+      "title": "Processing key-value pairs",
       "code": null,
-      "prompt": "Which Maps reasoning is accurate?",
+      "prompt": "A loop needs both each student id and its score. Which map view should it use?",
       "choices": [
         "Store null when a clearer missing-value policy is needed.",
         "Use `entrySet` when processing keys and values together.",
@@ -178,7 +178,7 @@
         "Let callers mutate internal map state freely."
       ],
       "answer_index": 1,
-      "explanation": "Use `entrySet` when processing keys and values together. This matters because map code is organized around keys, so lookup, containsKey, put, and entrySet each answer a different question."
+      "explanation": "`entrySet` gives each key and value together, which avoids a second lookup for every key. It is the right shape when the loop needs the relationship, not just the keys or just the values."
     }
   ]
 }
