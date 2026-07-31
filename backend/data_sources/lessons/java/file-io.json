@@ -83,5 +83,97 @@
         "Check the working folder when a **file** cannot be found."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "java-file-io-check-1": {
+      "title": "Choose the matching file i/o decision rule",
+      "notice": "Look for path handling, append versus overwrite, checked exceptions, and stream lifetime.",
+      "mistake": "Do not read a huge file all at once when processing line by line would be safer.",
+      "section_id": "examples",
+      "example": "Path path = Path.of(\"notes.txt\");",
+      "source": "question",
+      "body": "This question tests which type represents a file-system path? File I/O code should name the path, choose read/write behavior, and close resources reliably."
+    },
+    "java-file-io-check-2": {
+      "title": "Resource closes automatically",
+      "notice": "try-with-resources closes streams even when an exception interrupts the block.",
+      "mistake": "Do not read a huge file all at once when processing line by line would be safer.",
+      "section_id": "examples",
+      "example": "Path path = Path.of(\"notes.txt\");",
+      "source": "question",
+      "body": "This question tests why use try-with-resources around files.lines(path)? File I/O code should name the path, choose read/write behavior, and close resources reliably."
+    },
+    "java-file-io-output-01": {
+      "title": "Trace file i/o decision output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "Path path = Path.of(\"notes.txt\");",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. File I/O code should name the path, choose read/write behavior, and close resources reliably."
+    },
+    "java-file-io-supplement-01": {
+      "title": "Append keeps old content",
+      "notice": "Append mode adds to the end instead of starting the file over.",
+      "mistake": "Do not read a huge file all at once when processing line by line would be safer.",
+      "section_id": "check",
+      "example": "Path path = Path.of(\"notes.txt\");",
+      "source": "question",
+      "body": "This question tests what do the create and append options change about files.wr... File I/O code should name the path, choose read/write behavior, and close resources reliably."
+    },
+    "java-file-io-authored-01": {
+      "title": "File I/O decision",
+      "notice": "Look for path handling, append versus overwrite, checked exceptions, and stream lifetime.",
+      "mistake": "Do not read a huge file all at once when processing line by line would be safer.",
+      "section_id": "idea",
+      "example": "Path path = Path.of(\"notes.txt\");",
+      "source": "question",
+      "body": "This question tests before writing student records to an existing file, what sh... File I/O code should name the path, choose read/write behavior, and close resources reliably."
+    },
+    "java-file-io-authored-02": {
+      "title": "Explain the file i/o decision reason",
+      "notice": "Look for path handling, append versus overwrite, checked exceptions, and stream lifetime.",
+      "mistake": "Do not read a huge file all at once when processing line by line would be safer.",
+      "section_id": "idea",
+      "example": "Path path = Path.of(\"notes.txt\");",
+      "source": "question",
+      "body": "This question tests why use path for file locations instead of hand-built strings? File I/O code should name the path, choose read/write behavior, and close resources reliably."
+    },
+    "java-file-io-authored-03": {
+      "title": "File I/O decision",
+      "notice": "Look for path handling, append versus overwrite, checked exceptions, and stream lifetime.",
+      "mistake": "Do not read a huge file all at once when processing line by line would be safer.",
+      "section_id": "check",
+      "example": "Path path = Path.of(\"notes.txt\");",
+      "source": "question",
+      "body": "This question tests a java program writes names that may be opened on different... File I/O code should name the path, choose read/write behavior, and close resources reliably."
+    },
+    "java-file-io-authored-04": {
+      "title": "File I/O decision",
+      "notice": "Look for path handling, append versus overwrite, checked exceptions, and stream lifetime.",
+      "mistake": "Do not read a huge file all at once when processing line by line would be safer.",
+      "section_id": "check",
+      "example": "Path path = Path.of(\"notes.txt\");",
+      "source": "question",
+      "body": "This question tests a report should add today's line without erasing yesterday'... File I/O code should name the path, choose read/write behavior, and close resources reliably."
+    },
+    "java-file-io-authored-05": {
+      "title": "Checked file failure",
+      "notice": "Java file work can fail outside the program, so IOException must be handled or declared.",
+      "mistake": "Do not read a huge file all at once when processing line by line would be safer.",
+      "section_id": "check",
+      "example": "Path path = Path.of(\"notes.txt\");",
+      "source": "question",
+      "body": "This question tests where should a java program handle an ioexception? File I/O code should name the path, choose read/write behavior, and close resources reliably."
+    },
+    "java-file-io-authored-06": {
+      "title": "File I/O decision",
+      "notice": "Look for path handling, append versus overwrite, checked exceptions, and stream lifetime.",
+      "mistake": "Do not read a huge file all at once when processing line by line would be safer.",
+      "section_id": "check",
+      "example": "Path path = Path.of(\"notes.txt\");",
+      "source": "question",
+      "body": "This question tests how should code read a large file without loading the whole... File I/O code should name the path, choose read/write behavior, and close resources reliably."
+    }
+  }
 }

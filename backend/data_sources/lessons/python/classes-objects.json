@@ -143,5 +143,97 @@
         "Keep a **method** focused on one clear action."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "python-classes-objects-check-1": {
+      "title": "Trace the object state and behavior result",
+      "notice": "Follow the code in order and update the stored state before deciding what appears.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "examples",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests what does this print? A class defines the data and behavior each object will carry."
+    },
+    "python-classes-objects-check-2": {
+      "title": "Instance methods receive self",
+      "notice": "Python passes the object into an instance method as the first parameter.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "examples",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests what must be the first parameter of this instance method? A class defines the data and behavior each object will carry."
+    },
+    "python-classes-objects-output-01": {
+      "title": "Trace object state and behavior output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. A class defines the data and behavior each object will carry."
+    },
+    "python-classes-objects-supplement-01": {
+      "title": "Store state on self",
+      "notice": "self.name writes to the object. name by itself is only the local parameter.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "check",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests in __init__, what is the difference between self.name = nam... A class defines the data and behavior each object will carry."
+    },
+    "python-classes-objects-authored-01": {
+      "title": "Choose the matching object state and behavior rule",
+      "notice": "Separate class design from one object instance, and track where each object stores its own state.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "idea",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests after creating ada = student(\"ada\") and ben = student(\"ben\"... A class defines the data and behavior each object will carry."
+    },
+    "python-classes-objects-authored-02": {
+      "title": "Object state and behavior",
+      "notice": "Separate class design from one object instance, and track where each object stores its own state.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "idea",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests a program tracks each plant's name and also has watering be... A class defines the data and behavior each object will carry."
+    },
+    "python-classes-objects-authored-03": {
+      "title": "Object state and behavior",
+      "notice": "Separate class design from one object instance, and track where each object stores its own state.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "check",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests where should a python class usually set the starting instan... A class defines the data and behavior each object will carry."
+    },
+    "python-classes-objects-authored-04": {
+      "title": "Object state and behavior",
+      "notice": "Separate class design from one object instance, and track where each object stores its own state.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "check",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests inside an instance method, how should code refer to a value... A class defines the data and behavior each object will carry."
+    },
+    "python-classes-objects-authored-05": {
+      "title": "Predict the object state and behavior behavior",
+      "notice": "Separate class design from one object instance, and track where each object stores its own state.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "check",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests what happens each time code calls a class such as student(\"... A class defines the data and behavior each object will carry."
+    },
+    "python-classes-objects-authored-06": {
+      "title": "Object state and behavior",
+      "notice": "Separate class design from one object instance, and track where each object stores its own state.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "check",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests what makes an instance method easier to test and reuse? A class defines the data and behavior each object will carry."
+    }
+  }
 }

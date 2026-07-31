@@ -132,5 +132,97 @@
         "Create an empty **set** with `set()`."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "python-sets-check-1": {
+      "title": "Set membership",
+      "notice": "Focus on uniqueness, unordered storage, and whether the operation is union, intersection, or difference.",
+      "mistake": "Do not rely on first or last position in a set because set order is not the rule being promised.",
+      "section_id": "examples",
+      "example": "common = group_a & group_b",
+      "source": "question",
+      "body": "This question tests what is the value of common? A set keeps unique values and supports membership and group operations."
+    },
+    "python-sets-check-2": {
+      "title": "Choose the matching set membership rule",
+      "notice": "Focus on uniqueness, unordered storage, and whether the operation is union, intersection, or difference.",
+      "mistake": "Do not rely on first or last position in a set because set order is not the rule being promised.",
+      "section_id": "examples",
+      "example": "common = group_a & group_b",
+      "source": "question",
+      "body": "This question tests which expression finds courses completed by ada but not ben? A set keeps unique values and supports membership and group operations."
+    },
+    "python-sets-output-01": {
+      "title": "Trace set membership output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "common = group_a & group_b",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. A set keeps unique values and supports membership and group operations."
+    },
+    "python-sets-supplement-01": {
+      "title": "Discard missing safely",
+      "notice": "discard removes a value if present and does nothing if it is absent.",
+      "mistake": "Do not rely on first or last position in a set because set order is not the rule being promised.",
+      "section_id": "check",
+      "example": "common = group_a & group_b",
+      "source": "question",
+      "body": "This question tests how does clubs.discard(\"chess\") behave when \"chess\" is not... A set keeps unique values and supports membership and group operations."
+    },
+    "python-sets-authored-01": {
+      "title": "Choose the matching set membership rule",
+      "notice": "Focus on uniqueness, unordered storage, and whether the operation is union, intersection, or difference.",
+      "mistake": "Do not rely on first or last position in a set because set order is not the rule being promised.",
+      "section_id": "idea",
+      "example": "common = group_a & group_b",
+      "source": "question",
+      "body": "This question tests which empty collection does {} create in python? A set keeps unique values and supports membership and group operations."
+    },
+    "python-sets-authored-02": {
+      "title": "Choose the matching set membership rule",
+      "notice": "Focus on uniqueness, unordered storage, and whether the operation is union, intersection, or difference.",
+      "mistake": "Do not rely on first or last position in a set because set order is not the rule being promised.",
+      "section_id": "idea",
+      "example": "common = group_a & group_b",
+      "source": "question",
+      "body": "This question tests a club sign-in sheet only needs each student name once. whi... A set keeps unique values and supports membership and group operations."
+    },
+    "python-sets-authored-03": {
+      "title": "Explain the set membership reason",
+      "notice": "Focus on uniqueness, unordered storage, and whether the operation is union, intersection, or difference.",
+      "mistake": "Do not rely on first or last position in a set because set order is not the rule being promised.",
+      "section_id": "check",
+      "example": "common = group_a & group_b",
+      "source": "question",
+      "body": "This question tests why should code avoid asking for \"the first item\" in a set? A set keeps unique values and supports membership and group operations."
+    },
+    "python-sets-authored-04": {
+      "title": "Choose the matching set membership rule",
+      "notice": "Focus on uniqueness, unordered storage, and whether the operation is union, intersection, or difference.",
+      "mistake": "Do not rely on first or last position in a set because set order is not the rule being promised.",
+      "section_id": "check",
+      "example": "common = group_a & group_b",
+      "source": "question",
+      "body": "This question tests a program should remove \"chess\" from a set if it is present... A set keeps unique values and supports membership and group operations."
+    },
+    "python-sets-authored-05": {
+      "title": "Intersection means overlap",
+      "notice": "Set intersection keeps only values that appear in both groups.",
+      "mistake": "Do not rely on first or last position in a set because set order is not the rule being promised.",
+      "section_id": "check",
+      "example": "common = group_a & group_b",
+      "source": "question",
+      "body": "This question tests two study groups need to find topics they both selected. wh... A set keeps unique values and supports membership and group operations."
+    },
+    "python-sets-authored-06": {
+      "title": "Set membership",
+      "notice": "Focus on uniqueness, unordered storage, and whether the operation is union, intersection, or difference.",
+      "mistake": "Do not rely on first or last position in a set because set order is not the rule being promised.",
+      "section_id": "check",
+      "example": "common = group_a & group_b",
+      "source": "question",
+      "body": "This question tests a loop will collect unique parking zones as it scans ticket... A set keeps unique values and supports membership and group operations."
+    }
+  }
 }

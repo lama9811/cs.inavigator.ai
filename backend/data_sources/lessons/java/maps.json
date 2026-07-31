@@ -152,5 +152,97 @@
         "Pick clear **key** and **value** types."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "java-maps-check-1": {
+      "title": "Trace the map lookup result",
+      "notice": "Follow the code in order and update the stored state before deciding what appears.",
+      "mistake": "Do not assume get returning null always means the key is absent unless null cannot be a stored value.",
+      "section_id": "examples",
+      "example": "Map<String, Integer> grades = new HashMap<>();",
+      "source": "question",
+      "body": "This question tests what prints after these statements? A Java Map connects keys to values while keeping the key and value types explicit."
+    },
+    "java-maps-check-2": {
+      "title": "Choose the matching map lookup rule",
+      "notice": "Decide whether the question is about missing keys, replacing values, or looping through entries.",
+      "mistake": "Do not assume get returning null always means the key is absent unless null cannot be a stored value.",
+      "section_id": "examples",
+      "example": "Map<String, Integer> grades = new HashMap<>();",
+      "source": "question",
+      "body": "This question tests which view gives both keys and values for a loop? A Java Map connects keys to values while keeping the key and value types explicit."
+    },
+    "java-maps-output-01": {
+      "title": "Trace map lookup output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "Map<String, Integer> grades = new HashMap<>();",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. A Java Map connects keys to values while keeping the key and value types explicit."
+    },
+    "java-maps-supplement-01": {
+      "title": "Missing map key default",
+      "notice": "getOrDefault returns the fallback when the key is missing.",
+      "mistake": "Do not assume get returning null always means the key is absent unless null cannot be a stored value.",
+      "section_id": "check",
+      "example": "Map<String, Integer> grades = new HashMap<>();",
+      "source": "question",
+      "body": "This question tests how does grades.getordefault(\"eng101\", 0) behave when the k... A Java Map connects keys to values while keeping the key and value types explicit."
+    },
+    "java-maps-authored-01": {
+      "title": "Explain the map lookup reason",
+      "notice": "Decide whether the question is about missing keys, replacing values, or looping through entries.",
+      "mistake": "Do not assume get returning null always means the key is absent unless null cannot be a stored value.",
+      "section_id": "idea",
+      "example": "Map<String, Integer> grades = new HashMap<>();",
+      "source": "question",
+      "body": "This question tests why can map.get(key) == null be ambiguous in java? A Java Map connects keys to values while keeping the key and value types explicit."
+    },
+    "java-maps-authored-02": {
+      "title": "Map lookup",
+      "notice": "Decide whether the question is about missing keys, replacing values, or looping through entries.",
+      "mistake": "Do not assume get returning null always means the key is absent unless null cannot be a stored value.",
+      "section_id": "idea",
+      "example": "Map<String, Integer> grades = new HashMap<>();",
+      "source": "question",
+      "body": "This question tests a method only needs lookup behavior, not a specific map imp... A Java Map connects keys to values while keeping the key and value types explicit."
+    },
+    "java-maps-authored-03": {
+      "title": "Map lookup",
+      "notice": "Decide whether the question is about missing keys, replacing values, or looping through entries.",
+      "mistake": "Do not assume get returning null always means the key is absent unless null cannot be a stored value.",
+      "section_id": "check",
+      "example": "Map<String, Integer> grades = new HashMap<>();",
+      "source": "question",
+      "body": "This question tests what kind of object makes a safer java map key? A Java Map connects keys to values while keeping the key and value types explicit."
+    },
+    "java-maps-authored-04": {
+      "title": "Predict the map lookup behavior",
+      "notice": "Decide whether the question is about missing keys, replacing values, or looping through entries.",
+      "mistake": "Do not assume get returning null always means the key is absent unless null cannot be a stored value.",
+      "section_id": "check",
+      "example": "Map<String, Integer> grades = new HashMap<>();",
+      "source": "question",
+      "body": "This question tests what happens when put is called with a key already in the map? A Java Map connects keys to values while keeping the key and value types explicit."
+    },
+    "java-maps-authored-05": {
+      "title": "Choose the matching map lookup rule",
+      "notice": "Decide whether the question is about missing keys, replacing values, or looping through entries.",
+      "mistake": "Do not assume get returning null always means the key is absent unless null cannot be a stored value.",
+      "section_id": "check",
+      "example": "Map<String, Integer> grades = new HashMap<>();",
+      "source": "question",
+      "body": "This question tests a count map should treat missing names as zero. which looku... A Java Map connects keys to values while keeping the key and value types explicit."
+    },
+    "java-maps-authored-06": {
+      "title": "Choose the matching map lookup rule",
+      "notice": "Decide whether the question is about missing keys, replacing values, or looping through entries.",
+      "mistake": "Do not assume get returning null always means the key is absent unless null cannot be a stored value.",
+      "section_id": "check",
+      "example": "Map<String, Integer> grades = new HashMap<>();",
+      "source": "question",
+      "body": "This question tests a loop needs both each student id and its score. which map... A Java Map connects keys to values while keeping the key and value types explicit."
+    }
+  }
 }

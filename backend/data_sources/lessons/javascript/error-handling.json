@@ -78,5 +78,97 @@
         "Do not hide bugs by catching everything silently."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "javascript-error-handling-check-1": {
+      "title": "Choose the matching javascript error handling rule",
+      "notice": "Look at what can fail, what the catch block does, and whether the program can continue honestly.",
+      "mistake": "Do not leave an empty catch block that hides the failure from both the user and the developer.",
+      "section_id": "check",
+      "example": "try { save(); } catch (error) { showMessage(error.message); }",
+      "source": "question",
+      "body": "This question tests which block runs whether try succeeds or fails? JavaScript error handling should catch expected failures and leave enough information to recover or report clearly."
+    },
+    "javascript-error-handling-check-2": {
+      "title": "Empty catch hides failures",
+      "notice": "An empty catch makes the program look fine while the real failure disappears.",
+      "mistake": "Do not leave an empty catch block that hides the failure from both the user and the developer.",
+      "section_id": "examples",
+      "example": "try { save(); } catch (error) { showMessage(error.message); }",
+      "source": "question",
+      "body": "This question tests what is wrong with an empty catch block? JavaScript error handling should catch expected failures and leave enough information to recover or report clearly."
+    },
+    "javascript-error-handling-output-01": {
+      "title": "Trace javascript error handling output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "try { save(); } catch (error) { showMessage(error.message); }",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. JavaScript error handling should catch expected failures and leave enough information to recover or report clearly."
+    },
+    "javascript-error-handling-supplement-01": {
+      "title": "JavaScript error handling",
+      "notice": "Look at what can fail, what the catch block does, and whether the program can continue honestly.",
+      "mistake": "Do not leave an empty catch block that hides the failure from both the user and the developer.",
+      "section_id": "check",
+      "example": "try { save(); } catch (error) { showMessage(error.message); }",
+      "source": "question",
+      "body": "This question tests what is the problem with try { riskywork(); } catch (error)... JavaScript error handling should catch expected failures and leave enough information to recover or report clearly."
+    },
+    "javascript-error-handling-authored-01": {
+      "title": "JavaScript error handling",
+      "notice": "Look at what can fail, what the catch block does, and whether the program can continue honestly.",
+      "mistake": "Do not leave an empty catch block that hides the failure from both the user and the developer.",
+      "section_id": "idea",
+      "example": "try { save(); } catch (error) { showMessage(error.message); }",
+      "source": "question",
+      "body": "This question tests what is a safer way to shape a javascript try block? JavaScript error handling should catch expected failures and leave enough information to recover or report clearly."
+    },
+    "javascript-error-handling-authored-02": {
+      "title": "Choose the matching javascript error handling rule",
+      "notice": "Look at what can fail, what the catch block does, and whether the program can continue honestly.",
+      "mistake": "Do not leave an empty catch block that hides the failure from both the user and the developer.",
+      "section_id": "idea",
+      "example": "try { save(); } catch (error) { showMessage(error.message); }",
+      "source": "question",
+      "body": "This question tests which operation deserves protection with error handling? JavaScript error handling should catch expected failures and leave enough information to recover or report clearly."
+    },
+    "javascript-error-handling-authored-03": {
+      "title": "JavaScript error handling",
+      "notice": "Look at what can fail, what the catch block does, and whether the program can continue honestly.",
+      "mistake": "Do not leave an empty catch block that hides the failure from both the user and the developer.",
+      "section_id": "check",
+      "example": "try { save(); } catch (error) { showMessage(error.message); }",
+      "source": "question",
+      "body": "This question tests what should a useful javascript error handler inspect? JavaScript error handling should catch expected failures and leave enough information to recover or report clearly."
+    },
+    "javascript-error-handling-authored-04": {
+      "title": "JavaScript error handling",
+      "notice": "Look at what can fail, what the catch block does, and whether the program can continue honestly.",
+      "mistake": "Do not leave an empty catch block that hides the failure from both the user and the developer.",
+      "section_id": "check",
+      "example": "try { save(); } catch (error) { showMessage(error.message); }",
+      "source": "question",
+      "body": "This question tests after catching a failed save or load, what should the ui of... JavaScript error handling should catch expected failures and leave enough information to recover or report clearly."
+    },
+    "javascript-error-handling-authored-05": {
+      "title": "JavaScript error handling",
+      "notice": "Look at what can fail, what the catch block does, and whether the program can continue honestly.",
+      "mistake": "Do not leave an empty catch block that hides the failure from both the user and the developer.",
+      "section_id": "check",
+      "example": "try { save(); } catch (error) { showMessage(error.message); }",
+      "source": "question",
+      "body": "This question tests what should a layer do when it catches an error it cannot a... JavaScript error handling should catch expected failures and leave enough information to recover or report clearly."
+    },
+    "javascript-error-handling-authored-06": {
+      "title": "JavaScript error handling",
+      "notice": "Look at what can fail, what the catch block does, and whether the program can continue honestly.",
+      "mistake": "Do not leave an empty catch block that hides the failure from both the user and the developer.",
+      "section_id": "check",
+      "example": "try { save(); } catch (error) { showMessage(error.message); }",
+      "source": "question",
+      "body": "This question tests what balance should javascript error handling aim for? JavaScript error handling should catch expected failures and leave enough information to recover or report clearly."
+    }
+  }
 }

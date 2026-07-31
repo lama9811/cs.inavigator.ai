@@ -78,5 +78,97 @@
         "Keep page-changing code small and clear."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "javascript-dom-events-check-1": {
+      "title": "Selector can miss",
+      "notice": "querySelector returns null when no element matches, so code should guard before using it.",
+      "mistake": "Do not use innerHTML for plain user text when textContent is the safer match.",
+      "section_id": "check",
+      "example": "button.addEventListener(\"click\", handleClick);",
+      "source": "question",
+      "body": "This question tests what can queryselector return when no element matches? DOM code finds page elements and event code responds when the user does something."
+    },
+    "javascript-dom-events-check-2": {
+      "title": "Listener waits for the event",
+      "notice": "A click listener runs later, when the click happens.",
+      "mistake": "Do not use innerHTML for plain user text when textContent is the safer match.",
+      "section_id": "check",
+      "example": "button.addEventListener(\"click\", handleClick);",
+      "source": "question",
+      "body": "This question tests when does a click listener run? DOM code finds page elements and event code responds when the user does something."
+    },
+    "javascript-dom-events-output-01": {
+      "title": "Trace dom and event boundary output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "button.addEventListener(\"click\", handleClick);",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. DOM code finds page elements and event code responds when the user does something."
+    },
+    "javascript-dom-events-supplement-01": {
+      "title": "Text content treats input as text",
+      "notice": "textContent displays text without interpreting it as HTML.",
+      "mistake": "Do not use innerHTML for plain user text when textContent is the safer match.",
+      "section_id": "check",
+      "example": "button.addEventListener(\"click\", handleClick);",
+      "source": "question",
+      "body": "This question tests why guard with if (target) before setting target.textcontent? DOM code finds page elements and event code responds when the user does something."
+    },
+    "javascript-dom-events-authored-01": {
+      "title": "Text content treats input as text",
+      "notice": "textContent displays text without interpreting it as HTML.",
+      "mistake": "Do not use innerHTML for plain user text when textContent is the safer match.",
+      "section_id": "idea",
+      "example": "button.addEventListener(\"click\", handleClick);",
+      "source": "question",
+      "body": "This question tests when should code prefer textcontent over innerhtml? DOM code finds page elements and event code responds when the user does something."
+    },
+    "javascript-dom-events-authored-02": {
+      "title": "DOM and event boundary",
+      "notice": "Check whether a selector might return null and whether user-provided text is being displayed safely.",
+      "mistake": "Do not use innerHTML for plain user text when textContent is the safer match.",
+      "section_id": "idea",
+      "example": "button.addEventListener(\"click\", handleClick);",
+      "source": "question",
+      "body": "This question tests what makes a dom selector safer to use? DOM code finds page elements and event code responds when the user does something."
+    },
+    "javascript-dom-events-authored-03": {
+      "title": "DOM and event boundary",
+      "notice": "Check whether a selector might return null and whether user-provided text is being displayed safely.",
+      "mistake": "Do not use innerHTML for plain user text when textContent is the safer match.",
+      "section_id": "check",
+      "example": "button.addEventListener(\"click\", handleClick);",
+      "source": "question",
+      "body": "This question tests what should code do after calling a selector that might fin... DOM code finds page elements and event code responds when the user does something."
+    },
+    "javascript-dom-events-authored-04": {
+      "title": "DOM and event boundary",
+      "notice": "Check whether a selector might return null and whether user-provided text is being displayed safely.",
+      "mistake": "Do not use innerHTML for plain user text when textContent is the safer match.",
+      "section_id": "check",
+      "example": "button.addEventListener(\"click\", handleClick);",
+      "source": "question",
+      "body": "This question tests what keeps an event listener easy to test and debug? DOM code finds page elements and event code responds when the user does something."
+    },
+    "javascript-dom-events-authored-05": {
+      "title": "DOM and event boundary",
+      "notice": "Check whether a selector might return null and whether user-provided text is being displayed safely.",
+      "mistake": "Do not use innerHTML for plain user text when textContent is the safer match.",
+      "section_id": "check",
+      "example": "button.addEventListener(\"click\", handleClick);",
+      "source": "question",
+      "body": "This question tests how should a page display text that came from a form field? DOM code finds page elements and event code responds when the user does something."
+    },
+    "javascript-dom-events-authored-06": {
+      "title": "DOM and event boundary",
+      "notice": "Check whether a selector might return null and whether user-provided text is being displayed safely.",
+      "mistake": "Do not use innerHTML for plain user text when textContent is the safer match.",
+      "section_id": "check",
+      "example": "button.addEventListener(\"click\", handleClick);",
+      "source": "question",
+      "body": "This question tests what job does dom/event code perform in a browser app? DOM code finds page elements and event code responds when the user does something."
+    }
+  }
 }

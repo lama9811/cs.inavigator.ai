@@ -179,5 +179,97 @@
         "Use new to create an **object**."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "java-classes-objects-check-1": {
+      "title": "Trace the object state and behavior result",
+      "notice": "Follow the code in order and update the stored state before deciding what appears.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "examples",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests what does this print? A class defines the data and behavior each object will carry."
+    },
+    "java-classes-objects-check-2": {
+      "title": "Trace the object state and behavior result",
+      "notice": "Follow the code in order and update the stored state before deciding what appears.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "examples",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests the student class declares string name; and double gpa; and... A class defines the data and behavior each object will carry."
+    },
+    "java-classes-objects-output-01": {
+      "title": "Trace object state and behavior output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. A class defines the data and behavior each object will carry."
+    },
+    "java-classes-objects-supplement-01": {
+      "title": "Trace the object state and behavior result",
+      "notice": "Follow the code in order and update the stored state before deciding what appears.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "examples",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests what does this code print? A class defines the data and behavior each object will carry."
+    },
+    "java-classes-objects-authored-01": {
+      "title": "Explain the object state and behavior reason",
+      "notice": "Separate class design from one object instance, and track where each object stores its own state.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "idea",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests why do small java programs usually start inside public clas... A class defines the data and behavior each object will carry."
+    },
+    "java-classes-objects-authored-02": {
+      "title": "Field versus parameter",
+      "notice": "this.name is the object field; name is the constructor parameter.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "idea",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests a constructor receives name and the class also has a field... A class defines the data and behavior each object will carry."
+    },
+    "java-classes-objects-authored-03": {
+      "title": "Null object call",
+      "notice": "Calling a method through null fails because there is no object to receive the call.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "check",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests code calls a method on an object variable that is still nul... A class defines the data and behavior each object will carry."
+    },
+    "java-classes-objects-authored-04": {
+      "title": "Choose the matching object state and behavior rule",
+      "notice": "Separate class design from one object instance, and track where each object stores its own state.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "check",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests which class name best communicates the thing being modeled? A class defines the data and behavior each object will carry."
+    },
+    "java-classes-objects-authored-05": {
+      "title": "Object state and behavior",
+      "notice": "Separate class design from one object instance, and track where each object stores its own state.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "check",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests when planning a java class, how should a student separate f... A class defines the data and behavior each object will carry."
+    },
+    "java-classes-objects-authored-06": {
+      "title": "Explain the object state and behavior reason",
+      "notice": "Separate class design from one object instance, and track where each object stores its own state.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "check",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests when an object needs several required fields, why write a c... A class defines the data and behavior each object will carry."
+    }
+  }
 }

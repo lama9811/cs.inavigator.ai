@@ -148,5 +148,97 @@
         "Remember that assigning the same **key** updates rather than duplicates it."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "python-dictionaries-check-1": {
+      "title": "Trace the dictionary lookup result",
+      "notice": "Follow the code in order and update the stored state before deciding what appears.",
+      "mistake": "Do not confuse a value stored in the dictionary with a key that can be looked up directly.",
+      "section_id": "examples",
+      "example": "student[\"credits\"]",
+      "source": "question",
+      "body": "This question tests what does this print? A dictionary connects a unique key to the value stored for that key."
+    },
+    "python-dictionaries-check-2": {
+      "title": "Trace the dictionary lookup result",
+      "notice": "Follow the code in order and update the stored state before deciding what appears.",
+      "mistake": "Do not confuse a value stored in the dictionary with a key that can be looked up directly.",
+      "section_id": "examples",
+      "example": "student[\"credits\"]",
+      "source": "question",
+      "body": "This question tests which loop prints both each course name and its grade? A dictionary connects a unique key to the value stored for that key."
+    },
+    "python-dictionaries-output-01": {
+      "title": "Trace dictionary lookup output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "student[\"credits\"]",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. A dictionary connects a unique key to the value stored for that key."
+    },
+    "python-dictionaries-supplement-01": {
+      "title": "Safe missing-key lookup",
+      "notice": "get returns the fallback only when the key is absent.",
+      "mistake": "Do not confuse a value stored in the dictionary with a key that can be looked up directly.",
+      "section_id": "check",
+      "example": "student[\"credits\"]",
+      "source": "question",
+      "body": "This question tests what does scores.get(\"exam\", 0) return when \"exam\" is not a... A dictionary connects a unique key to the value stored for that key."
+    },
+    "python-dictionaries-authored-01": {
+      "title": "Membership checks keys",
+      "notice": "Dictionary membership checks keys unless the code explicitly asks about values.",
+      "mistake": "Do not confuse a value stored in the dictionary with a key that can be looked up directly.",
+      "section_id": "idea",
+      "example": "student[\"credits\"]",
+      "source": "question",
+      "body": "This question tests given student = {\"name\": \"ada\", \"credits\": 15}, what does \"... A dictionary connects a unique key to the value stored for that key."
+    },
+    "python-dictionaries-authored-02": {
+      "title": "Dictionary lookup",
+      "notice": "Ask whether the code is testing a key, reading a value, or updating an existing pair.",
+      "mistake": "Do not confuse a value stored in the dictionary with a key that can be looked up directly.",
+      "section_id": "idea",
+      "example": "student[\"credits\"]",
+      "source": "question",
+      "body": "This question tests a gradebook stores one score per course code. what makes a... A dictionary connects a unique key to the value stored for that key."
+    },
+    "python-dictionaries-authored-03": {
+      "title": "Required key lookup",
+      "notice": "Bracket lookup is best when a missing key should be treated as an error.",
+      "mistake": "Do not confuse a value stored in the dictionary with a key that can be looked up directly.",
+      "section_id": "check",
+      "example": "student[\"credits\"]",
+      "source": "question",
+      "body": "This question tests when is student[\"email\"] the right lookup style? A dictionary connects a unique key to the value stored for that key."
+    },
+    "python-dictionaries-authored-04": {
+      "title": "Choose the matching dictionary lookup rule",
+      "notice": "Ask whether the code is testing a key, reading a value, or updating an existing pair.",
+      "mistake": "Do not confuse a value stored in the dictionary with a key that can be looked up directly.",
+      "section_id": "check",
+      "example": "student[\"credits\"]",
+      "source": "question",
+      "body": "This question tests a campus profile may or may not have a \"nickname\" field. wh... A dictionary connects a unique key to the value stored for that key."
+    },
+    "python-dictionaries-authored-05": {
+      "title": "Choose the matching dictionary lookup rule",
+      "notice": "Ask whether the code is testing a key, reading a value, or updating an existing pair.",
+      "mistake": "Do not confuse a value stored in the dictionary with a key that can be looked up directly.",
+      "section_id": "check",
+      "example": "student[\"credits\"]",
+      "source": "question",
+      "body": "This question tests a loop needs both each course code and its credit count. wh... A dictionary connects a unique key to the value stored for that key."
+    },
+    "python-dictionaries-authored-06": {
+      "title": "Predict the dictionary lookup behavior",
+      "notice": "Ask whether the code is testing a key, reading a value, or updating an existing pair.",
+      "mistake": "Do not confuse a value stored in the dictionary with a key that can be looked up directly.",
+      "section_id": "check",
+      "example": "student[\"credits\"]",
+      "source": "question",
+      "body": "This question tests what happens when code assigns a new value to a key that al... A dictionary connects a unique key to the value stored for that key."
+    }
+  }
 }

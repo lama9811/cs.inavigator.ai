@@ -78,5 +78,97 @@
         "Do not make unrelated requests wait on each other unless they have to."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "javascript-async-promises-check-1": {
+      "title": "Async functions return promises",
+      "notice": "Even when an async function returns a plain value, callers receive it through a Promise.",
+      "mistake": "Do not read properties from a Promise as if the response data had already arrived.",
+      "section_id": "check",
+      "example": "const user = await loadUser();",
+      "source": "question",
+      "body": "This question tests what does an async function always return? A Promise represents work that will finish later, and await pauses until that result is ready or fails."
+    },
+    "javascript-async-promises-check-2": {
+      "title": "Await turns rejection into an error path",
+      "notice": "A rejected awaited Promise jumps to the nearest matching catch path.",
+      "mistake": "Do not read properties from a Promise as if the response data had already arrived.",
+      "section_id": "check",
+      "example": "const user = await loadUser();",
+      "source": "question",
+      "body": "This question tests what happens when an awaited promise rejects? A Promise represents work that will finish later, and await pauses until that result is ready or fails."
+    },
+    "javascript-async-promises-output-01": {
+      "title": "Trace async timing output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "const user = await loadUser();",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. A Promise represents work that will finish later, and await pauses until that result is ready or fails."
+    },
+    "javascript-async-promises-supplement-01": {
+      "title": "Fetch result arrives later",
+      "notice": "fetch starts async work; await the response before reading data from it.",
+      "mistake": "Do not read properties from a Promise as if the response data had already arrived.",
+      "section_id": "check",
+      "example": "const user = await loadUser();",
+      "source": "question",
+      "body": "This question tests in const user = fetch(\"/api/user\"); console.log(user.name);... A Promise represents work that will finish later, and await pauses until that result is ready or fails."
+    },
+    "javascript-async-promises-authored-01": {
+      "title": "Fetch result arrives later",
+      "notice": "fetch starts async work; await the response before reading data from it.",
+      "mistake": "Do not read properties from a Promise as if the response data had already arrived.",
+      "section_id": "idea",
+      "example": "const user = await loadUser();",
+      "source": "question",
+      "body": "This question tests after fetch returns a response, what status check should co... A Promise represents work that will finish later, and await pauses until that result is ready or fails."
+    },
+    "javascript-async-promises-authored-02": {
+      "title": "Async timing",
+      "notice": "Ask whether the code has the actual value yet or only the Promise for a future value.",
+      "mistake": "Do not read properties from a Promise as if the response data had already arrived.",
+      "section_id": "idea",
+      "example": "const user = await loadUser();",
+      "source": "question",
+      "body": "This question tests when should code use await? A Promise represents work that will finish later, and await pauses until that result is ready or fails."
+    },
+    "javascript-async-promises-authored-03": {
+      "title": "Explain the async timing reason",
+      "notice": "Ask whether the code has the actual value yet or only the Promise for a future value.",
+      "mistake": "Do not read properties from a Promise as if the response data had already arrived.",
+      "section_id": "check",
+      "example": "const user = await loadUser();",
+      "source": "question",
+      "body": "This question tests why check http response status before parsing json? A Promise represents work that will finish later, and await pauses until that result is ready or fails."
+    },
+    "javascript-async-promises-authored-04": {
+      "title": "Async timing",
+      "notice": "Ask whether the code has the actual value yet or only the Promise for a future value.",
+      "mistake": "Do not read properties from a Promise as if the response data had already arrived.",
+      "section_id": "check",
+      "example": "const user = await loadUser();",
+      "source": "question",
+      "body": "This question tests where should async failures be caught? A Promise represents work that will finish later, and await pauses until that result is ready or fails."
+    },
+    "javascript-async-promises-authored-05": {
+      "title": "Async timing",
+      "notice": "Ask whether the code has the actual value yet or only the Promise for a future value.",
+      "mistake": "Do not read properties from a Promise as if the response data had already arrived.",
+      "section_id": "check",
+      "example": "const user = await loadUser();",
+      "source": "question",
+      "body": "This question tests when can independent async requests run concurrently? A Promise represents work that will finish later, and await pauses until that result is ready or fails."
+    },
+    "javascript-async-promises-authored-06": {
+      "title": "Async timing",
+      "notice": "Ask whether the code has the actual value yet or only the Promise for a future value.",
+      "mistake": "Do not read properties from a Promise as if the response data had already arrived.",
+      "section_id": "check",
+      "example": "const user = await loadUser();",
+      "source": "question",
+      "body": "This question tests what does a promise represent? A Promise represents work that will finish later, and await pauses until that result is ready or fails."
+    }
+  }
 }

@@ -80,5 +80,97 @@
         "Put demos and command-line **input** behind a main guard."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "python-modules-imports-check-1": {
+      "title": "Choose the matching import boundary rule",
+      "notice": "Check whether the question is about import style, top-level code, or the main guard.",
+      "mistake": "Do not use star imports when clear module names would prevent collisions and confusion.",
+      "section_id": "check",
+      "example": "import math\nmath.sqrt(16)",
+      "source": "question",
+      "body": "This question tests which line makes the random module available under its own... A module should expose reusable names while avoiding surprise work when another file imports it."
+    },
+    "python-modules-imports-check-2": {
+      "title": "Trace the import boundary result",
+      "notice": "Follow the code in order and update the stored state before deciding what appears.",
+      "mistake": "Do not use star imports when clear module names would prevent collisions and confusion.",
+      "section_id": "examples",
+      "example": "import math\nmath.sqrt(16)",
+      "source": "question",
+      "body": "This question tests when does this print? A module should expose reusable names while avoiding surprise work when another file imports it."
+    },
+    "python-modules-imports-output-01": {
+      "title": "Trace import boundary output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "import math\nmath.sqrt(16)",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. A module should expose reusable names while avoiding surprise work when another file imports it."
+    },
+    "python-modules-imports-supplement-01": {
+      "title": "Avoid star imports",
+      "notice": "Star imports hide where names came from and can overwrite names by accident.",
+      "mistake": "Do not use star imports when clear module names would prevent collisions and confusion.",
+      "section_id": "check",
+      "example": "import math\nmath.sqrt(16)",
+      "source": "question",
+      "body": "This question tests why prefer import math; math.sqrt(16) over from math import *? A module should expose reusable names while avoiding surprise work when another file imports it."
+    },
+    "python-modules-imports-authored-01": {
+      "title": "Predict the import boundary behavior",
+      "notice": "Check whether the question is about import style, top-level code, or the main guard.",
+      "mistake": "Do not use star imports when clear module names would prevent collisions and confusion.",
+      "section_id": "idea",
+      "example": "import math\nmath.sqrt(16)",
+      "source": "question",
+      "body": "This question tests what happens to top-level statements in a python file when... A module should expose reusable names while avoiding surprise work when another file imports it."
+    },
+    "python-modules-imports-authored-02": {
+      "title": "Import boundary",
+      "notice": "Check whether the question is about import style, top-level code, or the main guard.",
+      "mistake": "Do not use star imports when clear module names would prevent collisions and confusion.",
+      "section_id": "idea",
+      "example": "import math\nmath.sqrt(16)",
+      "source": "question",
+      "body": "This question tests a file named grade_utils.py is growing. what should guide w... A module should expose reusable names while avoiding surprise work when another file imports it."
+    },
+    "python-modules-imports-authored-03": {
+      "title": "Avoid star imports",
+      "notice": "Star imports hide where names came from and can overwrite names by accident.",
+      "mistake": "Do not use star imports when clear module names would prevent collisions and confusion.",
+      "section_id": "check",
+      "example": "import math\nmath.sqrt(16)",
+      "source": "question",
+      "body": "This question tests why can import math followed by math.sqrt(16) be clearer th... A module should expose reusable names while avoiding surprise work when another file imports it."
+    },
+    "python-modules-imports-authored-04": {
+      "title": "Import boundary",
+      "notice": "Check whether the question is about import style, top-level code, or the main guard.",
+      "mistake": "Do not use star imports when clear module names would prevent collisions and confusion.",
+      "section_id": "check",
+      "example": "import math\nmath.sqrt(16)",
+      "source": "question",
+      "body": "This question tests what is a common problem with from module import *? A module should expose reusable names while avoiding surprise work when another file imports it."
+    },
+    "python-modules-imports-authored-05": {
+      "title": "Import boundary",
+      "notice": "Check whether the question is about import style, top-level code, or the main guard.",
+      "mistake": "Do not use star imports when clear module names would prevent collisions and confusion.",
+      "section_id": "check",
+      "example": "import math\nmath.sqrt(16)",
+      "source": "question",
+      "body": "This question tests what kind of work is safest to leave at the top level of an... A module should expose reusable names while avoiding surprise work when another file imports it."
+    },
+    "python-modules-imports-authored-06": {
+      "title": "Main guard protects imports",
+      "notice": "The main guard keeps demo code from running just because another file imported the module.",
+      "mistake": "Do not use star imports when clear module names would prevent collisions and confusion.",
+      "section_id": "check",
+      "example": "import math\nmath.sqrt(16)",
+      "source": "question",
+      "body": "This question tests why use if __name__ == \"__main__\": around demo code? A module should expose reusable names while avoiding surprise work when another file imports it."
+    }
+  }
 }

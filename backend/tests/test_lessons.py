@@ -22,7 +22,7 @@ import lessons
 
 
 ALL_LANGUAGES = ("python", "java", "javascript", "cpp")
-QUESTION_SPECIFIC_LEARN_CARD_CATEGORIES = (
+SHARED_QUESTION_SPECIFIC_LEARN_CARD_CATEGORIES = (
     "syntax",
     "operators",
     "variables",
@@ -38,6 +38,45 @@ QUESTION_SPECIFIC_LEARN_CARD_CATEGORIES = (
     "algorithm-problems",
     "algorithm-problems-2",
 )
+
+LANGUAGE_SPECIFIC_LEARN_CARD_CATEGORIES = {
+    "python": (
+        "tuples",
+        "dictionaries",
+        "sets",
+        "file-handling",
+        "exceptions",
+        "classes-objects",
+        "modules-imports",
+        "comprehensions",
+        "testing",
+    ),
+    "java": (
+        "classes-objects",
+        "maps",
+        "file-io",
+        "exceptions",
+        "inheritance-interfaces",
+        "generics",
+        "enums",
+        "packages-access",
+        "lambdas-streams",
+    ),
+    "javascript": (
+        "objects",
+        "error-handling",
+        "modules",
+        "dom-events",
+        "async-promises",
+    ),
+    "cpp": (
+        "pointers",
+        "classes-objects",
+        "file-io",
+        "exceptions",
+        "memory-ownership",
+    ),
+}
 
 
 def authored_lessons():
@@ -332,9 +371,13 @@ def test_learn_cards_reference_real_quiz_questions():
 
 
 def test_cleaned_beginner_banks_have_question_specific_learn_cards():
-    """The cleaned beginner banks should no longer fall back to broad topic refreshers."""
+    """Cleaned banks should no longer fall back to broad topic refreshers."""
     for language in ALL_LANGUAGES:
-        for category in QUESTION_SPECIFIC_LEARN_CARD_CATEGORIES:
+        required_categories = (
+            *SHARED_QUESTION_SPECIFIC_LEARN_CARD_CATEGORIES,
+            *LANGUAGE_SPECIFIC_LEARN_CARD_CATEGORIES[language],
+        )
+        for category in required_categories:
             lesson = lessons.get_lesson(language, category)
             assert lesson is not None, f"{language}/{category}: missing lesson"
             question_ids = {

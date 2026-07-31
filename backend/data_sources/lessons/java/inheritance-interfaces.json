@@ -80,5 +80,97 @@
         "Prefer composition for simple code reuse."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "java-inheritance-interfaces-check-1": {
+      "title": "Choose the matching inheritance or interface rule",
+      "notice": "Ask whether the design needs shared implementation, a promised capability, or simple composition.",
+      "mistake": "Do not extend a class just to reuse one helper when a field or helper object would be clearer.",
+      "section_id": "examples",
+      "example": "class Invoice implements Payable",
+      "source": "question",
+      "body": "This question tests which declaration lets a class promise the methods in payable? Inheritance models an is-a relationship; an interface promises a behavior a class can provide."
+    },
+    "java-inheritance-interfaces-check-2": {
+      "title": "Override check",
+      "notice": "Override asks the compiler to verify that the method really replaces a parent or interface method.",
+      "mistake": "Do not extend a class just to reuse one helper when a field or helper object would be clearer.",
+      "section_id": "examples",
+      "example": "class Invoice implements Payable",
+      "source": "question",
+      "body": "This question tests why add @override above a method? Inheritance models an is-a relationship; an interface promises a behavior a class can provide."
+    },
+    "java-inheritance-interfaces-output-01": {
+      "title": "Trace inheritance or interface output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "class Invoice implements Payable",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. Inheritance models an is-a relationship; an interface promises a behavior a class can provide."
+    },
+    "java-inheritance-interfaces-supplement-01": {
+      "title": "Explain the inheritance or interface reason",
+      "notice": "Ask whether the design needs shared implementation, a promised capability, or simple composition.",
+      "mistake": "Do not extend a class just to reuse one helper when a field or helper object would be clearer.",
+      "section_id": "check",
+      "example": "class Invoice implements Payable",
+      "source": "question",
+      "body": "This question tests why declare the parameter as the interface payable rather t... Inheritance models an is-a relationship; an interface promises a behavior a class can provide."
+    },
+    "java-inheritance-interfaces-authored-01": {
+      "title": "Inheritance or interface",
+      "notice": "Ask whether the design needs shared implementation, a promised capability, or simple composition.",
+      "mistake": "Do not extend a class just to reuse one helper when a field or helper object would be clearer.",
+      "section_id": "idea",
+      "example": "class Invoice implements Payable",
+      "source": "question",
+      "body": "This question tests when is extends the right relationship between two java cla... Inheritance models an is-a relationship; an interface promises a behavior a class can provide."
+    },
+    "java-inheritance-interfaces-authored-02": {
+      "title": "Inheritance or interface",
+      "notice": "Ask whether the design needs shared implementation, a promised capability, or simple composition.",
+      "mistake": "Do not extend a class just to reuse one helper when a field or helper object would be clearer.",
+      "section_id": "idea",
+      "example": "class Invoice implements Payable",
+      "source": "question",
+      "body": "This question tests when should a java design use an interface? Inheritance models an is-a relationship; an interface promises a behavior a class can provide."
+    },
+    "java-inheritance-interfaces-authored-03": {
+      "title": "Explain the inheritance or interface reason",
+      "notice": "Ask whether the design needs shared implementation, a promised capability, or simple composition.",
+      "mistake": "Do not extend a class just to reuse one helper when a field or helper object would be clearer.",
+      "section_id": "check",
+      "example": "class Invoice implements Payable",
+      "source": "question",
+      "body": "This question tests why type a variable as an interface when callers only need... Inheritance models an is-a relationship; an interface promises a behavior a class can provide."
+    },
+    "java-inheritance-interfaces-authored-04": {
+      "title": "Override check",
+      "notice": "Override asks the compiler to verify that the method really replaces a parent or interface method.",
+      "mistake": "Do not extend a class just to reuse one helper when a field or helper object would be clearer.",
+      "section_id": "check",
+      "example": "class Invoice implements Payable",
+      "source": "question",
+      "body": "This question tests why add @override when a child class replaces a parent or i... Inheritance models an is-a relationship; an interface promises a behavior a class can provide."
+    },
+    "java-inheritance-interfaces-authored-05": {
+      "title": "Explain the inheritance or interface reason",
+      "notice": "Ask whether the design needs shared implementation, a promised capability, or simple composition.",
+      "mistake": "Do not extend a class just to reuse one helper when a field or helper object would be clearer.",
+      "section_id": "check",
+      "example": "class Invoice implements Payable",
+      "source": "question",
+      "body": "This question tests a class only wants to reuse a helper method from another cl... Inheritance models an is-a relationship; an interface promises a behavior a class can provide."
+    },
+    "java-inheritance-interfaces-authored-06": {
+      "title": "Inheritance or interface",
+      "notice": "Ask whether the design needs shared implementation, a promised capability, or simple composition.",
+      "mistake": "Do not extend a class just to reuse one helper when a field or helper object would be clearer.",
+      "section_id": "check",
+      "example": "class Invoice implements Payable",
+      "source": "question",
+      "body": "This question tests when is composition a better choice than a deeper inheritan... Inheritance models an is-a relationship; an interface promises a behavior a class can provide."
+    }
+  }
 }

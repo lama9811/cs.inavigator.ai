@@ -79,5 +79,97 @@
         "Switch to a normal **loop** when the rule becomes hard to read."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "python-comprehensions-check-1": {
+      "title": "Comprehension shape",
+      "notice": "Read the expression first, then the loop source, then the optional condition.",
+      "mistake": "Do not use a comprehension only for side effects such as printing.",
+      "section_id": "examples",
+      "example": "[n * n for n in numbers if n % 2 == 0]",
+      "source": "question",
+      "body": "This question tests what does this create? A comprehension builds a new collection from an expression, a loop, and sometimes a filter."
+    },
+    "python-comprehensions-check-2": {
+      "title": "Choose the matching comprehension shape rule",
+      "notice": "Read the expression first, then the loop source, then the optional condition.",
+      "mistake": "Do not use a comprehension only for side effects such as printing.",
+      "section_id": "examples",
+      "example": "[n * n for n in numbers if n % 2 == 0]",
+      "source": "question",
+      "body": "This question tests which expression creates a dictionary that maps each word t... A comprehension builds a new collection from an expression, a loop, and sometimes a filter."
+    },
+    "python-comprehensions-output-01": {
+      "title": "Trace comprehension shape output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "[n * n for n in numbers if n % 2 == 0]",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. A comprehension builds a new collection from an expression, a loop, and sometimes a filter."
+    },
+    "python-comprehensions-supplement-01": {
+      "title": "Comprehension shape",
+      "notice": "Read the expression first, then the loop source, then the optional condition.",
+      "mistake": "Do not use a comprehension only for side effects such as printing.",
+      "section_id": "check",
+      "example": "[n * n for n in numbers if n % 2 == 0]",
+      "source": "question",
+      "body": "This question tests what does [n * n for n in numbers if n % 2 == 0] produce fo... A comprehension builds a new collection from an expression, a loop, and sometimes a filter."
+    },
+    "python-comprehensions-authored-01": {
+      "title": "Use a loop for multi-step work",
+      "notice": "A normal loop is clearer when the body needs several actions or side effects.",
+      "mistake": "Do not use a comprehension only for side effects such as printing.",
+      "section_id": "idea",
+      "example": "[n * n for n in numbers if n % 2 == 0]",
+      "source": "question",
+      "body": "This question tests when should a normal loop replace a comprehension? A comprehension builds a new collection from an expression, a loop, and sometimes a filter."
+    },
+    "python-comprehensions-authored-02": {
+      "title": "Comprehension shape",
+      "notice": "Read the expression first, then the loop source, then the optional condition.",
+      "mistake": "Do not use a comprehension only for side effects such as printing.",
+      "section_id": "idea",
+      "example": "[n * n for n in numbers if n % 2 == 0]",
+      "source": "question",
+      "body": "This question tests what job does a list comprehension usually do? A comprehension builds a new collection from an expression, a loop, and sometimes a filter."
+    },
+    "python-comprehensions-authored-03": {
+      "title": "Filter keeps matching items",
+      "notice": "filter keeps values that pass a condition and drops the rest.",
+      "mistake": "Do not use a comprehension only for side effects such as printing.",
+      "section_id": "check",
+      "example": "[n * n for n in numbers if n % 2 == 0]",
+      "source": "question",
+      "body": "This question tests a comprehension has an expression, a loop, and an optional... A comprehension builds a new collection from an expression, a loop, and sometimes a filter."
+    },
+    "python-comprehensions-authored-04": {
+      "title": "Comprehensions build values",
+      "notice": "A comprehension should create a collection, not serve only as a print loop.",
+      "mistake": "Do not use a comprehension only for side effects such as printing.",
+      "section_id": "examples",
+      "example": "[n * n for n in numbers if n % 2 == 0]",
+      "source": "question",
+      "body": "This question tests why is [print(name) for name in names] usually a poor use o... A comprehension builds a new collection from an expression, a loop, and sometimes a filter."
+    },
+    "python-comprehensions-authored-05": {
+      "title": "Choose the matching comprehension shape rule",
+      "notice": "Read the expression first, then the loop source, then the optional condition.",
+      "mistake": "Do not use a comprehension only for side effects such as printing.",
+      "section_id": "check",
+      "example": "[n * n for n in numbers if n % 2 == 0]",
+      "source": "question",
+      "body": "This question tests which comprehension shape creates a dictionary from words t... A comprehension builds a new collection from an expression, a loop, and sometimes a filter."
+    },
+    "python-comprehensions-authored-06": {
+      "title": "Comprehension shape",
+      "notice": "Read the expression first, then the loop source, then the optional condition.",
+      "mistake": "Do not use a comprehension only for side effects such as printing.",
+      "section_id": "check",
+      "example": "[n * n for n in numbers if n % 2 == 0]",
+      "source": "question",
+      "body": "This question tests a comprehension is so packed that classmates keep misreadin... A comprehension builds a new collection from an expression, a loop, and sometimes a filter."
+    }
+  }
 }

@@ -83,5 +83,97 @@
         "Read generics as labels on containers."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "java-generics-check-1": {
+      "title": "Choose the matching generic type safety rule",
+      "notice": "Track the element type inside angle brackets and whether the code needs a reusable type parameter.",
+      "mistake": "Do not use raw collections when the expected element type is known.",
+      "section_id": "check",
+      "example": "List<String> names = new ArrayList<>();",
+      "source": "question",
+      "body": "This question tests which declaration creates a list that accepts integer values? Generics let Java collections and helpers say what type of value they accept and return."
+    },
+    "java-generics-check-2": {
+      "title": "Generic type safety",
+      "notice": "Track the element type inside angle brackets and whether the code needs a reusable type parameter.",
+      "mistake": "Do not use raw collections when the expected element type is known.",
+      "section_id": "examples",
+      "example": "List<String> names = new ArrayList<>();",
+      "source": "question",
+      "body": "This question tests what does t mean in class box<t>? Generics let Java collections and helpers say what type of value they accept and return."
+    },
+    "java-generics-output-01": {
+      "title": "Trace generic type safety output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "List<String> names = new ArrayList<>();",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. Generics let Java collections and helpers say what type of value they accept and return."
+    },
+    "java-generics-supplement-01": {
+      "title": "Element type catches mistakes",
+      "notice": "A typed list rejects values of the wrong kind before they spread through the program.",
+      "mistake": "Do not use raw collections when the expected element type is known.",
+      "section_id": "check",
+      "example": "List<String> names = new ArrayList<>();",
+      "source": "question",
+      "body": "This question tests why does list<string> names catch a wrong-type mistake that... Generics let Java collections and helpers say what type of value they accept and return."
+    },
+    "java-generics-authored-01": {
+      "title": "Wrapper type in generics",
+      "notice": "Java generics use reference types, so int becomes Integer inside a List.",
+      "mistake": "Do not use raw collections when the expected element type is known.",
+      "section_id": "idea",
+      "example": "List<String> names = new ArrayList<>();",
+      "source": "question",
+      "body": "This question tests why does java use integer instead of int inside list<integer>? Generics let Java collections and helpers say what type of value they accept and return."
+    },
+    "java-generics-authored-02": {
+      "title": "Explain the generic type safety reason",
+      "notice": "Track the element type inside angle brackets and whether the code needs a reusable type parameter.",
+      "mistake": "Do not use raw collections when the expected element type is known.",
+      "section_id": "idea",
+      "example": "List<String> names = new ArrayList<>();",
+      "source": "question",
+      "body": "This question tests why should a java collection usually declare its element type? Generics let Java collections and helpers say what type of value they accept and return."
+    },
+    "java-generics-authored-03": {
+      "title": "Choose the matching generic type safety rule",
+      "notice": "Track the element type inside angle brackets and whether the code needs a reusable type parameter.",
+      "mistake": "Do not use raw collections when the expected element type is known.",
+      "section_id": "check",
+      "example": "List<String> names = new ArrayList<>();",
+      "source": "question",
+      "body": "This question tests a student wants a list of whole numbers. which generic elem... Generics let Java collections and helpers say what type of value they accept and return."
+    },
+    "java-generics-authored-04": {
+      "title": "Element type catches mistakes",
+      "notice": "A typed list rejects values of the wrong kind before they spread through the program.",
+      "mistake": "Do not use raw collections when the expected element type is known.",
+      "section_id": "check",
+      "example": "List<String> names = new ArrayList<>();",
+      "source": "question",
+      "body": "This question tests what is the risk of using a raw arraylist instead of arrayl... Generics let Java collections and helpers say what type of value they accept and return."
+    },
+    "java-generics-authored-05": {
+      "title": "Element type catches mistakes",
+      "notice": "A typed list rejects values of the wrong kind before they spread through the program.",
+      "mistake": "Do not use raw collections when the expected element type is known.",
+      "section_id": "check",
+      "example": "List<String> names = new ArrayList<>();",
+      "source": "question",
+      "body": "This question tests what does the diamond <> help with in a line such as list<s... Generics let Java collections and helpers say what type of value they accept and return."
+    },
+    "java-generics-authored-06": {
+      "title": "Generic type safety",
+      "notice": "Track the element type inside angle brackets and whether the code needs a reusable type parameter.",
+      "mistake": "Do not use raw collections when the expected element type is known.",
+      "section_id": "check",
+      "example": "List<String> names = new ArrayList<>();",
+      "source": "question",
+      "body": "This question tests when does a method or class need a generic type parameter s... Generics let Java collections and helpers say what type of value they accept and return."
+    }
+  }
 }

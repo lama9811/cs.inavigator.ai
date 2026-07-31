@@ -140,5 +140,97 @@
       ]
     }
   ],
-  "_beginner_expanded": true
+  "_beginner_expanded": true,
+  "learn_cards": {
+    "cpp-pointers-01": {
+      "title": "Pointer state",
+      "notice": "Track whether the symbol is declaring a pointer, taking an address, or dereferencing one.",
+      "mistake": "Do not dereference a pointer until you know it points to a real object.",
+      "section_id": "check",
+      "example": "int* p = &score;",
+      "source": "question",
+      "body": "This question tests what does p hold after this code? A pointer stores an address, and dereferencing reads or changes the object at that address."
+    },
+    "cpp-pointers-02": {
+      "title": "Trace the pointer state result",
+      "notice": "Follow the code in order and update the stored state before deciding what appears.",
+      "mistake": "Do not dereference a pointer until you know it points to a real object.",
+      "section_id": "examples",
+      "example": "int* p = &score;",
+      "source": "question",
+      "body": "This question tests what does this output? A pointer stores an address, and dereferencing reads or changes the object at that address."
+    },
+    "cpp-pointers-03": {
+      "title": "Trace the pointer state result",
+      "notice": "Follow the code in order and update the stored state before deciding what appears.",
+      "mistake": "Do not dereference a pointer until you know it points to a real object.",
+      "section_id": "examples",
+      "example": "int* p = &score;",
+      "source": "question",
+      "body": "This question tests what does this output? A pointer stores an address, and dereferencing reads or changes the object at that address."
+    },
+    "cpp-pointers-04": {
+      "title": "Pointer declaration versus dereference",
+      "notice": "In a declaration, * says p is a pointer; in an expression, * dereferences.",
+      "mistake": "Do not dereference a pointer until you know it points to a real object.",
+      "section_id": "check",
+      "example": "int* p = &score;",
+      "source": "question",
+      "body": "This question tests in int* p = &x;, what does the * mean here? A pointer stores an address, and dereferencing reads or changes the object at that address."
+    },
+    "cpp-pointers-05": {
+      "title": "Trace the pointer state result",
+      "notice": "Follow the code in order and update the stored state before deciding what appears.",
+      "mistake": "Do not dereference a pointer until you know it points to a real object.",
+      "section_id": "examples",
+      "example": "int* p = &score;",
+      "source": "question",
+      "body": "This question tests what does this output? A pointer stores an address, and dereferencing reads or changes the object at that address."
+    },
+    "cpp-pointers-06": {
+      "title": "Pointer state",
+      "notice": "Track whether the symbol is declaring a pointer, taking an address, or dereferencing one.",
+      "mistake": "Do not dereference a pointer until you know it points to a real object.",
+      "section_id": "check",
+      "example": "int* p = &score;",
+      "source": "question",
+      "body": "This question tests what is wrong with this code? A pointer stores an address, and dereferencing reads or changes the object at that address."
+    },
+    "cpp-pointers-supplement-01": {
+      "title": "Null pointer guard",
+      "notice": "A nullptr means no target, so dereferencing must wait until the pointer is valid.",
+      "mistake": "Do not dereference a pointer until you know it points to a real object.",
+      "section_id": "check",
+      "example": "int* p = &score;",
+      "source": "question",
+      "body": "This question tests a pointer score is nullptr. what does if (score != nullptr)... A pointer stores an address, and dereferencing reads or changes the object at that address."
+    },
+    "cpp-pointers-authored-01": {
+      "title": "Explain the pointer state reason",
+      "notice": "Track whether the symbol is declaring a pointer, taking an address, or dereferencing one.",
+      "mistake": "Do not dereference a pointer until you know it points to a real object.",
+      "section_id": "idea",
+      "example": "int* p = &score;",
+      "source": "question",
+      "body": "This question tests why must code check a pointer before dereferencing it? A pointer stores an address, and dereferencing reads or changes the object at that address."
+    },
+    "cpp-pointers-authored-02": {
+      "title": "Pointer state",
+      "notice": "Track whether the symbol is declaring a pointer, taking an address, or dereferencing one.",
+      "mistake": "Do not dereference a pointer until you know it points to a real object.",
+      "section_id": "idea",
+      "example": "int* p = &score;",
+      "source": "question",
+      "body": "This question tests what habit makes pointer state easier to reason about? A pointer stores an address, and dereferencing reads or changes the object at that address."
+    },
+    "cpp-pointers-authored-03": {
+      "title": "Pointer state",
+      "notice": "Track whether the symbol is declaring a pointer, taking an address, or dereferencing one.",
+      "mistake": "Do not dereference a pointer until you know it points to a real object.",
+      "section_id": "check",
+      "example": "int* p = &score;",
+      "source": "question",
+      "body": "This question tests what should c++ code use when a pointer intentionally has n... A pointer stores an address, and dereferencing reads or changes the object at that address."
+    }
+  }
 }

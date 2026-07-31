@@ -79,5 +79,97 @@
         "Group related helpers in the same **module**."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "javascript-modules-check-1": {
+      "title": "Named imports need braces",
+      "notice": "A named export must be imported with its exported name.",
+      "mistake": "Do not assume an import failed because of spelling only; the path and export style both matter.",
+      "section_id": "check",
+      "example": "import { add } from \"./math.js\";",
+      "source": "question",
+      "body": "This question tests which syntax imports a named export called add? A module exports useful names, and importing code must match the export style and path."
+    },
+    "javascript-modules-check-2": {
+      "title": "Module import/export match",
+      "notice": "Check named versus default exports, relative paths, and whether top-level work should run on import.",
+      "mistake": "Do not assume an import failed because of spelling only; the path and export style both matter.",
+      "section_id": "check",
+      "example": "import { add } from \"./math.js\";",
+      "source": "question",
+      "body": "This question tests how often is a module normally evaluated when imported by s... A module exports useful names, and importing code must match the export style and path."
+    },
+    "javascript-modules-output-01": {
+      "title": "Trace module import/export match output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "import { add } from \"./math.js\";",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. A module exports useful names, and importing code must match the export style and path."
+    },
+    "javascript-modules-supplement-01": {
+      "title": "Choose the matching module import/export match rule",
+      "notice": "Check named versus default exports, relative paths, and whether top-level work should run on import.",
+      "mistake": "Do not assume an import failed because of spelling only; the path and export style both matter.",
+      "section_id": "check",
+      "example": "import { add } from \"./math.js\";",
+      "source": "question",
+      "body": "This question tests math.js has export function double(...). which import match... A module exports useful names, and importing code must match the export style and path."
+    },
+    "javascript-modules-authored-01": {
+      "title": "Explain the module import/export match reason",
+      "notice": "Check named versus default exports, relative paths, and whether top-level work should run on import.",
+      "mistake": "Do not assume an import failed because of spelling only; the path and export style both matter.",
+      "section_id": "idea",
+      "example": "import { add } from \"./math.js\";",
+      "source": "question",
+      "body": "This question tests why can an import fail even when the exported name is spell... A module exports useful names, and importing code must match the export style and path."
+    },
+    "javascript-modules-authored-02": {
+      "title": "Module import/export match",
+      "notice": "Check named versus default exports, relative paths, and whether top-level work should run on import.",
+      "mistake": "Do not assume an import failed because of spelling only; the path and export style both matter.",
+      "section_id": "idea",
+      "example": "import { add } from \"./math.js\";",
+      "source": "question",
+      "body": "This question tests what makes a javascript module easier to reuse? A module exports useful names, and importing code must match the export style and path."
+    },
+    "javascript-modules-authored-03": {
+      "title": "Module import/export match",
+      "notice": "Check named versus default exports, relative paths, and whether top-level work should run on import.",
+      "mistake": "Do not assume an import failed because of spelling only; the path and export style both matter.",
+      "section_id": "check",
+      "example": "import { add } from \"./math.js\";",
+      "source": "question",
+      "body": "This question tests what should a module export? A module exports useful names, and importing code must match the export style and path."
+    },
+    "javascript-modules-authored-04": {
+      "title": "Import style must match export style",
+      "notice": "Default and named exports are different contracts.",
+      "mistake": "Do not assume an import failed because of spelling only; the path and export style both matter.",
+      "section_id": "check",
+      "example": "import { add } from \"./math.js\";",
+      "source": "question",
+      "body": "This question tests why must named and default import styles match the export? A module exports useful names, and importing code must match the export style and path."
+    },
+    "javascript-modules-authored-05": {
+      "title": "Module import/export match",
+      "notice": "Check named versus default exports, relative paths, and whether top-level work should run on import.",
+      "mistake": "Do not assume an import failed because of spelling only; the path and export style both matter.",
+      "section_id": "check",
+      "example": "import { add } from \"./math.js\";",
+      "source": "question",
+      "body": "This question tests what should students check when a relative import cannot be... A module exports useful names, and importing code must match the export style and path."
+    },
+    "javascript-modules-authored-06": {
+      "title": "Explain the module import/export match reason",
+      "notice": "Check named versus default exports, relative paths, and whether top-level work should run on import.",
+      "mistake": "Do not assume an import failed because of spelling only; the path and export style both matter.",
+      "section_id": "check",
+      "example": "import { add } from \"./math.js\";",
+      "source": "question",
+      "body": "This question tests why split a program into modules with explicit exports and... A module exports useful names, and importing code must match the export style and path."
+    }
+  }
 }

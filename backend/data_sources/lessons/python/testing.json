@@ -79,5 +79,97 @@
         "Run the tests again after every meaningful change."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "python-testing-check-1": {
+      "title": "Boundary cases catch edges",
+      "notice": "Boundary tests check the smallest, largest, empty, or otherwise fragile inputs.",
+      "mistake": "Do not make the test compute the answer with the same logic the function is supposed to prove.",
+      "section_id": "examples",
+      "example": "assert total([2, 3, 5]) == 10",
+      "source": "question",
+      "body": "This question tests which input is the best boundary case for a function that f... A useful test has a clear input, an expected result, and a reason that case matters."
+    },
+    "python-testing-check-2": {
+      "title": "Assert failure stops the test",
+      "notice": "A false assert raises an AssertionError so the failing assumption is visible.",
+      "mistake": "Do not make the test compute the answer with the same logic the function is supposed to prove.",
+      "section_id": "examples",
+      "example": "assert total([2, 3, 5]) == 10",
+      "source": "question",
+      "body": "This question tests what happens when an assert expression is false? A useful test has a clear input, an expected result, and a reason that case matters."
+    },
+    "python-testing-output-01": {
+      "title": "Trace test case reasoning output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "assert total([2, 3, 5]) == 10",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. A useful test has a clear input, an expected result, and a reason that case matters."
+    },
+    "python-testing-supplement-01": {
+      "title": "Explain the test case reasoning reason",
+      "notice": "Look for normal cases, boundary cases, and failure messages that point to the broken rule.",
+      "mistake": "Do not make the test compute the answer with the same logic the function is supposed to prove.",
+      "section_id": "check",
+      "example": "assert total([2, 3, 5]) == 10",
+      "source": "question",
+      "body": "This question tests why is assert total([2, 3, 5]) == 10 a better test than ass... A useful test has a clear input, an expected result, and a reason that case matters."
+    },
+    "python-testing-authored-01": {
+      "title": "Explain the test case reasoning reason",
+      "notice": "Look for normal cases, boundary cases, and failure messages that point to the broken rule.",
+      "mistake": "Do not make the test compute the answer with the same logic the function is supposed to prove.",
+      "section_id": "idea",
+      "example": "assert total([2, 3, 5]) == 10",
+      "source": "question",
+      "body": "This question tests why can a function still be buggy after one test passes? A useful test has a clear input, an expected result, and a reason that case matters."
+    },
+    "python-testing-authored-02": {
+      "title": "Test case reasoning",
+      "notice": "Look for normal cases, boundary cases, and failure messages that point to the broken rule.",
+      "mistake": "Do not make the test compute the answer with the same logic the function is supposed to prove.",
+      "section_id": "idea",
+      "example": "assert total([2, 3, 5]) == 10",
+      "source": "question",
+      "body": "This question tests what makes a test failure easier to understand? A useful test has a clear input, an expected result, and a reason that case matters."
+    },
+    "python-testing-authored-03": {
+      "title": "Test case reasoning",
+      "notice": "Look for normal cases, boundary cases, and failure messages that point to the broken rule.",
+      "mistake": "Do not make the test compute the answer with the same logic the function is supposed to prove.",
+      "section_id": "check",
+      "example": "assert total([2, 3, 5]) == 10",
+      "source": "question",
+      "body": "This question tests a test checks total([2, 3, 5]). what expected value should... A useful test has a clear input, an expected result, and a reason that case matters."
+    },
+    "python-testing-authored-04": {
+      "title": "Choose the matching test case reasoning rule",
+      "notice": "Look for normal cases, boundary cases, and failure messages that point to the broken rule.",
+      "mistake": "Do not make the test compute the answer with the same logic the function is supposed to prove.",
+      "section_id": "check",
+      "example": "assert total([2, 3, 5]) == 10",
+      "source": "question",
+      "body": "This question tests a function finds the largest number in a list. which test s... A useful test has a clear input, an expected result, and a reason that case matters."
+    },
+    "python-testing-authored-05": {
+      "title": "Choose the matching test case reasoning rule",
+      "notice": "Look for normal cases, boundary cases, and failure messages that point to the broken rule.",
+      "mistake": "Do not make the test compute the answer with the same logic the function is supposed to prove.",
+      "section_id": "check",
+      "example": "assert total([2, 3, 5]) == 10",
+      "source": "question",
+      "body": "This question tests which test name best communicates its purpose? A useful test has a clear input, an expected result, and a reason that case matters."
+    },
+    "python-testing-authored-06": {
+      "title": "Test case reasoning",
+      "notice": "Look for normal cases, boundary cases, and failure messages that point to the broken rule.",
+      "mistake": "Do not make the test compute the answer with the same logic the function is supposed to prove.",
+      "section_id": "check",
+      "example": "assert total([2, 3, 5]) == 10",
+      "source": "question",
+      "body": "This question tests after changing a helper function used in several places, wh... A useful test has a clear input, an expected result, and a reason that case matters."
+    }
+  }
 }

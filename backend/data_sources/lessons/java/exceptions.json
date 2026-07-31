@@ -83,5 +83,97 @@
         "Preserve useful error details while debugging."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "java-exceptions-check-1": {
+      "title": "Choose the matching exception handling shape rule",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "examples",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests which exception comes from integer.parseint(\"3.5\")? Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "java-exceptions-check-2": {
+      "title": "Checked file failure",
+      "notice": "Java file work can fail outside the program, so IOException must be handled or declared.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "examples",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests what must a method do with a checked ioexception? Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "java-exceptions-output-01": {
+      "title": "Trace exception handling shape output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "java-exceptions-supplement-01": {
+      "title": "Explain the exception handling shape reason",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "check",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests why catch numberformatexception here instead of the broad e... Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "java-exceptions-authored-01": {
+      "title": "Exception handling shape",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "idea",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests when java code wraps one exception in another, what informa... Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "java-exceptions-authored-02": {
+      "title": "Choose the matching exception handling shape rule",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "idea",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests which exception type should a handler catch? Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "java-exceptions-authored-03": {
+      "title": "Explain the exception handling shape reason",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "check",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests why keep a java try block small? Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "java-exceptions-authored-04": {
+      "title": "Explain the exception handling shape reason",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "check",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests why should students distinguish checked exceptions from run... Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "java-exceptions-authored-05": {
+      "title": "Exception handling shape",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "check",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests a method catches a low-level file error and throws a higher... Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "java-exceptions-authored-06": {
+      "title": "Resource closes automatically",
+      "notice": "try-with-resources closes streams even when an exception interrupts the block.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "check",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests why use try-with-resources for closeable java objects? Exception handling should protect expected failures without hiding unrelated bugs."
+    }
+  }
 }

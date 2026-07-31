@@ -85,5 +85,97 @@
         "Check the working folder when the **file** is missing."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "cpp-file-io-check-1": {
+      "title": "Choose the matching file i/o decision rule",
+      "notice": "Look for path handling, append versus overwrite, checked exceptions, and stream lifetime.",
+      "mistake": "Do not read a huge file all at once when processing line by line would be safer.",
+      "section_id": "check",
+      "example": "Path path = Path.of(\"notes.txt\");",
+      "source": "question",
+      "body": "This question tests which stream type reads from a file? File I/O code should name the path, choose read/write behavior, and close resources reliably."
+    },
+    "cpp-file-io-check-2": {
+      "title": "Read lines by success",
+      "notice": "Loop on getline itself so the loop stops exactly when reading fails.",
+      "mistake": "Do not read a huge file all at once when processing line by line would be safer.",
+      "section_id": "check",
+      "example": "Path path = Path.of(\"notes.txt\");",
+      "source": "question",
+      "body": "This question tests why use while (getline(stream, line))? File I/O code should name the path, choose read/write behavior, and close resources reliably."
+    },
+    "cpp-file-io-output-01": {
+      "title": "Trace file i/o decision output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "Path path = Path.of(\"notes.txt\");",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. File I/O code should name the path, choose read/write behavior, and close resources reliably."
+    },
+    "cpp-file-io-supplement-01": {
+      "title": "Read lines by success",
+      "notice": "Loop on getline itself so the loop stops exactly when reading fails.",
+      "mistake": "Do not read a huge file all at once when processing line by line would be safer.",
+      "section_id": "check",
+      "example": "Path path = Path.of(\"notes.txt\");",
+      "source": "question",
+      "body": "This question tests why is while (std::getline(input, line)) preferred over loo... File I/O code should name the path, choose read/write behavior, and close resources reliably."
+    },
+    "cpp-file-io-authored-01": {
+      "title": "File I/O decision",
+      "notice": "Look for path handling, append versus overwrite, checked exceptions, and stream lifetime.",
+      "mistake": "Do not read a huge file all at once when processing line by line would be safer.",
+      "section_id": "idea",
+      "example": "Path path = Path.of(\"notes.txt\");",
+      "source": "question",
+      "body": "This question tests a c++ program opens courses.txt and cannot find it. what pa... File I/O code should name the path, choose read/write behavior, and close resources reliably."
+    },
+    "cpp-file-io-authored-02": {
+      "title": "File I/O decision",
+      "notice": "Look for path handling, append versus overwrite, checked exceptions, and stream lifetime.",
+      "mistake": "Do not read a huge file all at once when processing line by line would be safer.",
+      "section_id": "idea",
+      "example": "Path path = Path.of(\"notes.txt\");",
+      "source": "question",
+      "body": "This question tests what should code check before reading from an input file st... File I/O code should name the path, choose read/write behavior, and close resources reliably."
+    },
+    "cpp-file-io-authored-03": {
+      "title": "File I/O decision",
+      "notice": "Look for path handling, append versus overwrite, checked exceptions, and stream lifetime.",
+      "mistake": "Do not read a huge file all at once when processing line by line would be safer.",
+      "section_id": "check",
+      "example": "Path path = Path.of(\"notes.txt\");",
+      "source": "question",
+      "body": "This question tests when should parsed file data be trusted? File I/O code should name the path, choose read/write behavior, and close resources reliably."
+    },
+    "cpp-file-io-authored-04": {
+      "title": "Explain the file i/o decision reason",
+      "notice": "Look for path handling, append versus overwrite, checked exceptions, and stream lifetime.",
+      "mistake": "Do not read a huge file all at once when processing line by line would be safer.",
+      "section_id": "check",
+      "example": "Path path = Path.of(\"notes.txt\");",
+      "source": "question",
+      "body": "This question tests why should students know the working directory for relative... File I/O code should name the path, choose read/write behavior, and close resources reliably."
+    },
+    "cpp-file-io-authored-05": {
+      "title": "File I/O decision",
+      "notice": "Look for path handling, append versus overwrite, checked exceptions, and stream lifetime.",
+      "mistake": "Do not read a huge file all at once when processing line by line would be safer.",
+      "section_id": "check",
+      "example": "Path path = Path.of(\"notes.txt\");",
+      "source": "question",
+      "body": "This question tests how do c++ stream objects usually close files? File I/O code should name the path, choose read/write behavior, and close resources reliably."
+    },
+    "cpp-file-io-authored-06": {
+      "title": "File I/O decision",
+      "notice": "Look for path handling, append versus overwrite, checked exceptions, and stream lifetime.",
+      "mistake": "Do not read a huge file all at once when processing line by line would be safer.",
+      "section_id": "check",
+      "example": "Path path = Path.of(\"notes.txt\");",
+      "source": "question",
+      "body": "This question tests what makes c++ file reading and writing trustworthy? File I/O code should name the path, choose read/write behavior, and close resources reliably."
+    }
+  }
 }

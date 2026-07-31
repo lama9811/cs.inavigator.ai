@@ -110,5 +110,97 @@
         "When you are unsure, start with a **list**. Switch to a **tuple** once you know the **values** are settled."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "python-tuples-check-1": {
+      "title": "Predict the tuple reasoning behavior",
+      "notice": "Check whether the question needs immutability, unpacking, or a list that can change.",
+      "mistake": "Do not choose a tuple just because values are next to each other; choose it when fixed position and fixed contents help.",
+      "section_id": "examples",
+      "example": "point = (3, 5)",
+      "source": "question",
+      "body": "This question tests what happens when this runs? A tuple groups ordered values and keeps that group fixed after creation."
+    },
+    "python-tuples-check-2": {
+      "title": "Trace the tuple reasoning result",
+      "notice": "Follow the code in order and update the stored state before deciding what appears.",
+      "mistake": "Do not choose a tuple just because values are next to each other; choose it when fixed position and fixed contents help.",
+      "section_id": "examples",
+      "example": "point = (3, 5)",
+      "source": "question",
+      "body": "This question tests what does this print? A tuple groups ordered values and keeps that group fixed after creation."
+    },
+    "python-tuples-output-01": {
+      "title": "Trace tuple reasoning output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "point = (3, 5)",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. A tuple groups ordered values and keeps that group fixed after creation."
+    },
+    "python-tuples-supplement-01": {
+      "title": "Predict the tuple reasoning behavior",
+      "notice": "Check whether the question needs immutability, unpacking, or a list that can change.",
+      "mistake": "Do not choose a tuple just because values are next to each other; choose it when fixed position and fixed contents help.",
+      "section_id": "check",
+      "example": "point = (3, 5)",
+      "source": "question",
+      "body": "This question tests what happens when you run point = (3, 5) then point[0] = 10? A tuple groups ordered values and keeps that group fixed after creation."
+    },
+    "python-tuples-authored-01": {
+      "title": "Tuple reasoning",
+      "notice": "Check whether the question needs immutability, unpacking, or a list that can change.",
+      "mistake": "Do not choose a tuple just because values are next to each other; choose it when fixed position and fixed contents help.",
+      "section_id": "idea",
+      "example": "point = (3, 5)",
+      "source": "question",
+      "body": "This question tests a student writes point[0] = 10 after making point = (3, 5).... A tuple groups ordered values and keeps that group fixed after creation."
+    },
+    "python-tuples-authored-02": {
+      "title": "One-item tuple comma",
+      "notice": "The comma, not the parentheses alone, is what makes a one-item tuple.",
+      "mistake": "Do not choose a tuple just because values are next to each other; choose it when fixed position and fixed contents help.",
+      "section_id": "idea",
+      "example": "point = (3, 5)",
+      "source": "question",
+      "body": "This question tests which line actually creates a one-item tuple? A tuple groups ordered values and keeps that group fixed after creation."
+    },
+    "python-tuples-authored-03": {
+      "title": "Choose the matching tuple reasoning rule",
+      "notice": "Check whether the question needs immutability, unpacking, or a list that can change.",
+      "mistake": "Do not choose a tuple just because values are next to each other; choose it when fixed position and fixed contents help.",
+      "section_id": "check",
+      "example": "point = (3, 5)",
+      "source": "question",
+      "body": "This question tests a coordinate like (row, column) will not change after it is... A tuple groups ordered values and keeps that group fixed after creation."
+    },
+    "python-tuples-authored-04": {
+      "title": "Mutable collection choice",
+      "notice": "Adding and removing while a program runs points to a list, not a tuple.",
+      "mistake": "Do not choose a tuple just because values are next to each other; choose it when fixed position and fixed contents help.",
+      "section_id": "check",
+      "example": "point = (3, 5)",
+      "source": "question",
+      "body": "This question tests a program needs to add and remove names while it runs. what... A tuple groups ordered values and keeps that group fixed after creation."
+    },
+    "python-tuples-authored-05": {
+      "title": "Return paired results",
+      "notice": "Returning two related values as a tuple keeps their order meaningful.",
+      "mistake": "Do not choose a tuple just because values are next to each other; choose it when fixed position and fixed contents help.",
+      "section_id": "check",
+      "example": "point = (3, 5)",
+      "source": "question",
+      "body": "This question tests a function needs to return both a minimum score and a maxim... A tuple groups ordered values and keeps that group fixed after creation."
+    },
+    "python-tuples-authored-06": {
+      "title": "Choose the matching tuple reasoning rule",
+      "notice": "Check whether the question needs immutability, unpacking, or a list that can change.",
+      "mistake": "Do not choose a tuple just because values are next to each other; choose it when fixed position and fixed contents help.",
+      "section_id": "check",
+      "example": "point = (3, 5)",
+      "source": "question",
+      "body": "This question tests a helper should read a sequence of settings but should not... A tuple groups ordered values and keeps that group fixed after creation."
+    }
+  }
 }

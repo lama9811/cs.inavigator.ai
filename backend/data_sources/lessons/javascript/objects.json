@@ -148,5 +148,97 @@
       ]
     }
   ],
-  "_beginner_expanded": true
+  "_beginner_expanded": true,
+  "learn_cards": {
+    "javascript-objects-check-1": {
+      "title": "Choose the matching object property access rule",
+      "notice": "Decide whether the property name is written literally or stored in a variable.",
+      "mistake": "Do not use dot notation when the key must come from another variable.",
+      "section_id": "examples",
+      "example": "student[field]",
+      "source": "question",
+      "body": "This question tests which uses the value in key? A JavaScript object groups related values under property names."
+    },
+    "javascript-objects-check-2": {
+      "title": "Object property access",
+      "notice": "Decide whether the property name is written literally or stored in a variable.",
+      "mistake": "Do not use dot notation when the key must come from another variable.",
+      "section_id": "examples",
+      "example": "student[field]",
+      "source": "question",
+      "body": "This question tests what becomes of first.score? A JavaScript object groups related values under property names."
+    },
+    "javascript-objects-output-01": {
+      "title": "Trace object property access output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "student[field]",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. A JavaScript object groups related values under property names."
+    },
+    "javascript-objects-supplement-01": {
+      "title": "Bracket access uses variable keys",
+      "notice": "Bracket access uses the value stored in key; dot access uses the literal property name.",
+      "mistake": "Do not use dot notation when the key must come from another variable.",
+      "section_id": "check",
+      "example": "student[field]",
+      "source": "question",
+      "body": "This question tests given const key = \"credits\";, why use student[key] instead... A JavaScript object groups related values under property names."
+    },
+    "javascript-objects-authored-01": {
+      "title": "Missing property is undefined",
+      "notice": "Reading a missing JavaScript property gives undefined rather than a new default object.",
+      "mistake": "Do not use dot notation when the key must come from another variable.",
+      "section_id": "idea",
+      "example": "student[field]",
+      "source": "question",
+      "body": "This question tests what happens when javascript reads an object property that... A JavaScript object groups related values under property names."
+    },
+    "javascript-objects-authored-02": {
+      "title": "Object property access",
+      "notice": "Decide whether the property name is written literally or stored in a variable.",
+      "mistake": "Do not use dot notation when the key must come from another variable.",
+      "section_id": "idea",
+      "example": "student[field]",
+      "source": "question",
+      "body": "This question tests when is dot notation the clearest way to read an object pro... A JavaScript object groups related values under property names."
+    },
+    "javascript-objects-authored-03": {
+      "title": "Choose the matching object property access rule",
+      "notice": "Decide whether the property name is written literally or stored in a variable.",
+      "mistake": "Do not use dot notation when the key must come from another variable.",
+      "section_id": "check",
+      "example": "student[field]",
+      "source": "question",
+      "body": "This question tests a property name is stored in a variable called field. which... A JavaScript object groups related values under property names."
+    },
+    "javascript-objects-authored-04": {
+      "title": "Object property access",
+      "notice": "Decide whether the property name is written literally or stored in a variable.",
+      "mistake": "Do not use dot notation when the key must come from another variable.",
+      "section_id": "check",
+      "example": "student[field]",
+      "source": "question",
+      "body": "This question tests a profile object may or may not include middlename. what sh... A JavaScript object groups related values under property names."
+    },
+    "javascript-objects-authored-05": {
+      "title": "Object property access",
+      "notice": "Decide whether the property name is written literally or stored in a variable.",
+      "mistake": "Do not use dot notation when the key must come from another variable.",
+      "section_id": "check",
+      "example": "student[field]",
+      "source": "question",
+      "body": "This question tests two variables should be able to change independently. what... A JavaScript object groups related values under property names."
+    },
+    "javascript-objects-authored-06": {
+      "title": "Explain the object property access reason",
+      "notice": "Decide whether the property name is written literally or stored in a variable.",
+      "mistake": "Do not use dot notation when the key must come from another variable.",
+      "section_id": "check",
+      "example": "student[field]",
+      "source": "question",
+      "body": "This question tests why group related values into an object? A JavaScript object groups related values under property names."
+    }
+  }
 }
