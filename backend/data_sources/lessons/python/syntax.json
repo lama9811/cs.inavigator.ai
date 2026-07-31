@@ -108,5 +108,87 @@
         "When you get a **syntax error**, read the arrow and the message before you change anything"
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "output-01": {
+      "title": "Numbers add before they print",
+      "body": "This checks whether the values are numbers or text. Number values use `+` for arithmetic before output happens.",
+      "notice": "Evaluate the expression first, then decide what the output instruction shows.",
+      "mistake": "Do not join digits like text unless quotes make them strings.",
+      "section_id": "check",
+      "example": "print(15 + 6)"
+    },
+    "output-02": {
+      "title": "A variable name stands in for its value",
+      "body": "The output line uses the stored value, not the variable name as literal text.",
+      "notice": "Read the assignment first so the later output line has the value in place.",
+      "mistake": "Do not choose an answer that prints the name itself when the code uses the variable.",
+      "section_id": "check",
+      "example": "score = 25"
+    },
+    "output-03": {
+      "title": "Text plus text joins",
+      "body": "When both sides are strings, `+` makes one longer string instead of doing arithmetic.",
+      "notice": "Quotes are the clue that the values are text.",
+      "mistake": "Do not add quoted digits as numbers unless the code converts them first.",
+      "section_id": "check",
+      "example": "print(\"CS\" + \"101\")"
+    },
+    "output-04": {
+      "title": "Integer division keeps a whole result",
+      "body": "This question tests the division rule for whole-number output in the selected language.",
+      "notice": "Check whether the code asks for decimal division or a whole-number result.",
+      "mistake": "Do not round up. Whole-number division keeps the complete groups.",
+      "section_id": "check",
+      "example": "print(7 // 2)"
+    },
+    "output-05": {
+      "title": "Printing needs the exact output call",
+      "body": "Type-in output questions care about the statement shape and the exact text being shown.",
+      "notice": "Match the print/output function and include quotes around text.",
+      "mistake": "Do not type only the word being printed when the question asks for a statement.",
+      "section_id": "check",
+      "example": "print(\"Hello\")"
+    },
+    "syntax-delimiter-01": {
+      "title": "Open delimiters need partners",
+      "body": "Brackets, parentheses, and quotes create a shape the parser must be able to close.",
+      "notice": "When code stops before running, scan for the opening symbol that never got closed.",
+      "mistake": "Do not debug the logic until the code can be parsed.",
+      "section_id": "check",
+      "example": "[8, 10, 9]"
+    },
+    "syntax-comment-01": {
+      "title": "Comments are skipped",
+      "body": "A comment can look like code, but the language ignores it when the program runs.",
+      "notice": "Only non-commented output statements affect what appears.",
+      "mistake": "Do not count a commented-out line as a printed line.",
+      "section_id": "check",
+      "example": "# comment"
+    },
+    "syntax-case-01": {
+      "title": "Names are case-sensitive",
+      "body": "Capitalization can create a different name. Built-in words and user names must match exactly.",
+      "notice": "If a familiar name fails, compare every letter including case.",
+      "mistake": "Do not assume `Print` and `print` are the same spelling to the language.",
+      "section_id": "check",
+      "example": "print(\"Hello\")"
+    },
+    "syntax-line-break-01": {
+      "title": "Escapes can create invisible characters",
+      "body": "Some characters inside strings describe formatting, such as moving output to the next line.",
+      "notice": "Read escape sequences as one special character, not as ordinary letters.",
+      "mistake": "Do not include the backslash text literally when the code asks for output.",
+      "section_id": "check",
+      "example": "\"A\\nB\""
+    },
+    "syntax-block-01": {
+      "title": "Block headers need block syntax",
+      "body": "A decision or loop header must clearly mark that a controlled body is coming next.",
+      "notice": "Check the small symbol at the end of the header and the shape of the body below it.",
+      "mistake": "Do not focus only on the condition and miss the punctuation that opens the block.",
+      "section_id": "check",
+      "example": "if ready:\n    print(\"go\")"
+    }
+  }
 }

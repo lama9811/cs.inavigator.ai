@@ -191,5 +191,87 @@
         }
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "call-01": {
+      "title": "Definition is not execution",
+      "body": "A function or method body waits until code calls it.",
+      "notice": "Find the actual call before expecting the body to run.",
+      "mistake": "Do not count a function body just because it appears above the output line.",
+      "section_id": "function-signature",
+      "example": "doubleIt(5)"
+    },
+    "print-not-return-01": {
+      "title": "Printing is not returning",
+      "body": "Printing shows a value to the person. Returning hands a value back to the program.",
+      "notice": "Check whether the function has a return value or only output side effects.",
+      "mistake": "Do not store the result of a no-return function and expect a useful value instead of nothing from void.",
+      "section_id": "return-values",
+      "example": "int doubleIt(int n) {\n    return n * 2;\n}"
+    },
+    "return-value-01": {
+      "title": "Returned values replace the call",
+      "body": "A function call with a return value can be used inside a larger expression.",
+      "notice": "Evaluate each call, replace it with its returned value, then finish the expression.",
+      "mistake": "Do not ignore the returned value when the next line uses it.",
+      "section_id": "return-values",
+      "example": "doubleIt(5)"
+    },
+    "return-stops-01": {
+      "title": "Return exits immediately",
+      "body": "Once a return statement runs, the rest of that function call is over.",
+      "notice": "After an early return, skip later lines in the same function call.",
+      "mistake": "Do not keep executing a function after it has already returned.",
+      "section_id": "return-values",
+      "example": "return value"
+    },
+    "missing-return-01": {
+      "title": "Every path needs a return plan",
+      "body": "If one branch returns but another branch reaches the end, the function may hand back no useful value.",
+      "notice": "Trace the path for the specific input, not only the branch that looks intended.",
+      "mistake": "Do not assume a skipped branch magically returns the other argument.",
+      "section_id": "return-values",
+      "example": "if condition: return value"
+    },
+    "arg-order-01": {
+      "title": "Arguments fill parameters by position",
+      "body": "The first argument goes into the first parameter, the second into the second, and so on unless named arguments are used.",
+      "notice": "Write the parameter values before evaluating the body.",
+      "mistake": "Do not swap argument meaning because the names would sound nicer the other way.",
+      "section_id": "function-signature",
+      "example": "subtract(a, b)"
+    },
+    "local-scope-01": {
+      "title": "Local variables stay inside",
+      "body": "A value created inside a function or method is not automatically available outside it.",
+      "notice": "Use return values to move information out of a function.",
+      "mistake": "Do not print an inside-only name after the function has finished.",
+      "section_id": "practice-checks",
+      "example": "int doubleIt(int n) {\n    return n * 2;\n}"
+    },
+    "reuse-01": {
+      "title": "Each call runs fresh",
+      "body": "Calling the same function more than once applies the same rule to new arguments.",
+      "notice": "Evaluate each call separately, then combine the returned values.",
+      "mistake": "Do not reuse the previous call's local parameter values.",
+      "section_id": "function-signature",
+      "example": "doubleIt(5)"
+    },
+    "function-in-condition-01": {
+      "title": "Boolean functions can drive decisions",
+      "body": "A function that returns true or false can be used directly as a condition.",
+      "notice": "Evaluate the returned boolean before choosing the branch.",
+      "mistake": "Do not print the boolean if the code uses it to choose an if or else path.",
+      "section_id": "return-values",
+      "example": "is_even(7)"
+    },
+    "param-copy-01": {
+      "title": "Changing a parameter may not change the caller",
+      "body": "A parameter is the function's local name for the value it received.",
+      "notice": "If the function returns an updated value, the caller must store that return to keep it.",
+      "mistake": "Do not assume a local parameter assignment rewrites the original variable.",
+      "section_id": "function-signature",
+      "example": "x = bump(x)"
+    }
+  }
 }

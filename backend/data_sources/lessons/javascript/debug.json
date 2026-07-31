@@ -81,5 +81,71 @@
       ]
     }
   ],
-  "_beginner_expanded": true
+  "_beginner_expanded": true,
+  "learn_cards": {
+    "debug-01": {
+      "title": "Assignment can erase a count",
+      "body": "A counter should move from old value to new value. Setting it to a constant each pass loses the running count.",
+      "notice": "Look for whether the variable accumulates or gets overwritten.",
+      "mistake": "Do not call a loop correct just because it visits every item.",
+      "section_id": "check",
+      "example": "total += 1"
+    },
+    "debug-02": {
+      "title": "Compare when asking a question",
+      "body": "A condition should test a value, not assign a value by accident.",
+      "notice": "Check equality syntax anywhere an `if` is asking yes or no.",
+      "mistake": "Do not use assignment syntax when the branch needs a comparison.",
+      "section_id": "check",
+      "example": "x == 10"
+    },
+    "debug-03": {
+      "title": "Start index controls skipped items",
+      "body": "An index loop that starts at 1 skips the item at index 0.",
+      "notice": "For scan-all code, verify the first and last indexes visited.",
+      "mistake": "Do not assume `len` is wrong when the start boundary is the real issue.",
+      "section_id": "check",
+      "example": "0, 1, 2"
+    },
+    "debug-04": {
+      "title": "Syntax errors often come from one missing closer",
+      "body": "A line can fail before logic runs because a parenthesis, bracket, quote, or semicolon is missing.",
+      "notice": "Match each opener with its closer before changing the algorithm.",
+      "mistake": "Do not debug variable values when the parser cannot read the line.",
+      "section_id": "check",
+      "example": "( ... )"
+    },
+    "debug-05": {
+      "title": "An expression must be stored to matter",
+      "body": "Calculating `total + n` alone does not update total. The result must be assigned or returned.",
+      "notice": "Find the line where state should change and check whether it actually writes the new value.",
+      "mistake": "Do not mistake a calculation for an update.",
+      "section_id": "check",
+      "example": "total = total + n"
+    },
+    "debug-06": {
+      "title": "Indexes stop before length",
+      "body": "The last valid index is one less than the collection length.",
+      "notice": "For out-of-range errors, compare the requested index with the valid index list.",
+      "mistake": "Do not use the length itself as a valid index.",
+      "section_id": "check",
+      "example": "length 3 -> indexes 0, 1, 2"
+    },
+    "debug-07": {
+      "title": "Return can end a search too early",
+      "body": "A return inside a loop stops the whole function, not just the current pass.",
+      "notice": "For search loops, put the failure return after the loop has checked every item.",
+      "mistake": "Do not return false after the first non-match unless only the first item matters.",
+      "section_id": "check",
+      "example": "return after loop"
+    },
+    "debug-p1-08": {
+      "title": "One extra index is still out of range",
+      "body": "Looping through length plus one allows an index equal to the length, which is outside the collection.",
+      "notice": "Check the final loop value before checking the collection access.",
+      "mistake": "Do not include the length as an index in zero-based collections.",
+      "section_id": "check",
+      "example": "i < length"
+    }
+  }
 }

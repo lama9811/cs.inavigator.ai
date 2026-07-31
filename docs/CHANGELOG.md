@@ -5,6 +5,7 @@ All notable changes to CS Navigator are documented here.
 ## [Unreleased]
 ### Added
 - **Question-specific beginner Learn cards.** Operators, Strings, User Input, Lists/Arrays, and Conditionals now include in-question micro-lessons tied to each cleaned quiz question.
+- **Core beginner/debug Learn-card batch.** Syntax, Variables, Data Types, Loops, Functions, Debug Part 1, and Debug Part 2 now include question-specific Learn cards across Python, Java, JavaScript, and C++.
 - **Per-question Practice Library visualizers.** Every code-writing practice problem now has explicit problem-specific visualizer metadata, with guided sample steps, broader visual concepts, animated state movement, and tests preventing generic topic-only fallback.
 - **Practice Library thin-topic readiness batch.** Added nine all-language stack, queue, binary-search, tree, and linked-list problems with deterministic runner tests and native bridge coverage.
 - **Advanced V2 Practice Library depth batch.** Added eight all-language bit-manipulation, prefix-sum, and matrix problems with deterministic runner tests and native bridge coverage.

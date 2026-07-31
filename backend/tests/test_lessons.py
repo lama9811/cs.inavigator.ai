@@ -23,11 +23,18 @@ import lessons
 
 ALL_LANGUAGES = ("python", "java", "javascript", "cpp")
 QUESTION_SPECIFIC_LEARN_CARD_CATEGORIES = (
+    "syntax",
     "operators",
+    "variables",
+    "data-types",
     "strings",
     "user-input",
     "lists",
     "conditionals",
+    "loops",
+    "functions",
+    "debug",
+    "debug-2",
 )
 
 

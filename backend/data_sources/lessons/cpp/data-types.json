@@ -113,5 +113,87 @@
       ]
     }
   ],
-  "_beginner_expanded": true
+  "_beginner_expanded": true,
+  "learn_cards": {
+    "concat-vs-add-01": {
+      "title": "Quotes turn digits into text",
+      "body": "Quoted digits are strings. With strings, `+` joins text instead of adding quantities.",
+      "notice": "Use quotes as your type clue before evaluating the expression.",
+      "mistake": "Do not calculate quoted values as numbers without conversion.",
+      "section_id": "check",
+      "example": "cout << first + second;"
+    },
+    "mixed-add-01": {
+      "title": "Mixed types need an explicit plan",
+      "body": "Combining text and numbers depends on conversion rules. A clear program converts or formats the number before joining text.",
+      "notice": "Identify both operand types before deciding what `+` means.",
+      "mistake": "Do not expect the language to always guess how to combine unlike types.",
+      "section_id": "check",
+      "example": "str(age) or String.valueOf(age)"
+    },
+    "int-div-01": {
+      "title": "Division result type matters",
+      "body": "A division expression can produce a decimal or a whole-number result depending on the operator and operand types.",
+      "notice": "Look for the operator or function that chooses decimal versus whole-number behavior.",
+      "mistake": "Do not assume every division keeps the fractional part.",
+      "section_id": "check",
+      "example": "cout << 7 / 2;"
+    },
+    "cast-01": {
+      "title": "Conversion changes what operations do",
+      "body": "Converting text that looks numeric into a number lets arithmetic happen afterward.",
+      "notice": "Check the type after conversion, then evaluate the expression.",
+      "mistake": "Do not keep treating converted text like a string.",
+      "section_id": "check",
+      "example": "number = int(\"12\")"
+    },
+    "bool-01": {
+      "title": "Comparisons produce booleans",
+      "body": "A comparison answers a yes-or-no question. The result is a boolean value, not one of the compared numbers.",
+      "notice": "Conditionals use these boolean results to choose a branch.",
+      "mistake": "Do not expect a comparison to print the larger value.",
+      "section_id": "check",
+      "example": "5 > 3"
+    },
+    "typein-float-01": {
+      "title": "Decimals have their own type",
+      "body": "A value with a decimal point is usually stored as a floating-point value even when the fraction is zero.",
+      "notice": "The written shape of a literal often tells you its type.",
+      "mistake": "Do not call `3.0` an integer just because it equals three mathematically.",
+      "section_id": "check",
+      "example": "3.0"
+    },
+    "boolean-conversion-01": {
+      "title": "Some values convert to true or false",
+      "body": "Languages have rules for what counts as truthy or falsey when a value is used as a condition.",
+      "notice": "Zero, empty text, and null-like values are common cases to check carefully.",
+      "mistake": "Do not assume every stored value behaves as true.",
+      "section_id": "check",
+      "example": "bool(value)"
+    },
+    "decimal-to-int-01": {
+      "title": "Integer conversion is not rounding",
+      "body": "Converting a decimal to an integer often removes the fractional part rather than choosing the nearest whole number.",
+      "notice": "Ask whether the operation truncates, floors, rounds, or rejects the value.",
+      "mistake": "Do not round in your head unless the code calls for rounding.",
+      "section_id": "check",
+      "example": "int(8.9)"
+    },
+    "strict-equality-01": {
+      "title": "Same-looking values can have different types",
+      "body": "A number and a string can look alike on screen while still being different values to the program.",
+      "notice": "Check both the visible value and its type before judging equality.",
+      "mistake": "Do not assume the language converts text for every equality check.",
+      "section_id": "check",
+      "example": "5 and \"5\""
+    },
+    "floating-precision-01": {
+      "title": "Decimal floats are approximations",
+      "body": "Many decimal fractions cannot be stored exactly in binary floating-point, so tiny comparison surprises are normal.",
+      "notice": "For decimal calculations, compare with tolerance or use a decimal type when exact cents matter.",
+      "mistake": "Do not use exact equality for every floating-point calculation.",
+      "section_id": "check",
+      "example": "0.1 + 0.2"
+    }
+  }
 }
