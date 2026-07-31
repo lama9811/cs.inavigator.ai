@@ -38,25 +38,25 @@
           "code": null,
           "prompt": "What is `10 - 2 * 3`?",
           "choices": [
-            "4",
-            "24",
-            "18",
-            "8"
+            "4, because multiplication happens before subtraction.",
+            "24, as if subtraction happened before multiplication.",
+            "18, as if the expression grouped the last two values first.",
+            "8, as if multiplication was ignored."
           ],
           "answer_index": 0,
-          "explanation": "Multiplication produces six before that value is subtracted from ten."
+          "explanation": "The multiplication runs first: 2 * 3 is 6, then 10 - 6 is 4. The tempting wrong answers come from reading left to right without applying operator precedence."
         },
         "cpp": {
           "code": null,
           "prompt": "What is `10 - 2 * 3`?",
           "choices": [
-            "4",
-            "24",
-            "18",
-            "8"
+            "4, because multiplication happens before subtraction.",
+            "24, as if subtraction happened before multiplication.",
+            "18, as if the expression grouped the last two values first.",
+            "8, as if multiplication was ignored."
           ],
           "answer_index": 0,
-          "explanation": "Multiplication happens first, leaving ten minus six."
+          "explanation": "The multiplication runs first: 2 * 3 is 6, then 10 - 6 is 4. The tempting wrong answers come from reading left to right without applying operator precedence."
         }
       }
     },
@@ -107,13 +107,13 @@
           "code": null,
           "prompt": "What is `9 % 4`?",
           "choices": [
-            "1",
-            "2.25",
-            "4",
-            "0"
+            "1, because 9 leaves one after two groups of 4.",
+            "2.25, as if % meant normal division.",
+            "4, as if the divisor were returned.",
+            "0, as if 9 divided evenly by 4."
           ],
           "answer_index": 0,
-          "explanation": "The remainder after two groups of four is one."
+          "explanation": "The % operator returns the remainder. Two groups of 4 use 8, leaving 1, so 9 % 4 is 1."
         }
       }
     },

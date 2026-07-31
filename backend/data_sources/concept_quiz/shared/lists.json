@@ -50,13 +50,13 @@
           "code": null,
           "prompt": "Which is the last valid index for size three?",
           "choices": [
-            "2",
-            "3",
-            "1",
-            "4"
+            "Index 2, because size three means positions 0, 1, and 2.",
+            "Index 3, as if the count were also a valid position.",
+            "Index 1, as if counting started at one and stopped early.",
+            "Index 4, as if vectors reserve one extra readable slot."
           ],
           "answer_index": 0,
-          "explanation": "Zero-based positions are zero, one, and two, so the count itself is outside the vector."
+          "explanation": "A vector with size 3 has valid indexes 0, 1, and 2. The count itself, values.size(), is already one past the end."
         }
       }
     },

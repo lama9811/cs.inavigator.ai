@@ -50,13 +50,13 @@
           "code": null,
           "prompt": "What is `std::string(\"Ada\").size()`?",
           "choices": [
-            "3",
-            "2",
-            "4",
-            "0"
+            "3, because Ada has three characters.",
+            "2, as if the last index were the size.",
+            "4, as if a hidden terminator counted as part of the string size.",
+            "0, as if the temporary string were empty."
           ],
           "answer_index": 0,
-          "explanation": "The string contains three characters, so its size is three."
+          "explanation": "std::string(\"Ada\") stores three visible characters. size() returns the character count, not the last index and not a null terminator."
         }
       }
     },
@@ -107,13 +107,13 @@
           "code": null,
           "prompt": "What does `substr(1,2)` return from `\"code\"`?",
           "choices": [
-            "\"od\"",
-            "\"ode\"",
-            "\"co\"",
-            "\"d\""
+            "It returns \"od\", starting at index 1 and taking 2 characters.",
+            "It returns \"ode\", as if the second number were the stop index.",
+            "It returns \"co\", as if the start index were 0.",
+            "It returns \"d\", as if the count skipped the first selected character."
           ],
           "answer_index": 0,
-          "explanation": "The call starts at index one and takes two characters, producing od."
+          "explanation": "substr(1, 2) starts at index 1, the o in code, and takes 2 characters. That produces \"od\". The second argument is a count, not an ending index."
         }
       }
     },

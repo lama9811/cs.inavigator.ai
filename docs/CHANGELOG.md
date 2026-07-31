@@ -35,7 +35,7 @@ All notable changes to CS Navigator are documented here.
 
 ### Changed
 - Concept Quiz multiple-choice answers now shuffle per browser attempt while preserving original answer identities for grading, draft restore, immediate feedback, and result summaries.
-- Concept quiz banks now reject old generic prompt templates across all languages and topics; Operators, Strings, User Input, Lists/Arrays, Conditionals, and language-specific intermediate banks were cleaned of lesson-referencing stems, repeated review prompts, mojibake, and explanation boilerplate.
+- Concept quiz banks now reject old generic prompt templates across all languages and topics; shared legacy Beginner/Intermediate banks and language-specific Intermediate banks were cleaned of lesson-referencing stems, repeated review prompts, weak distractors, giveaway-shaped choices, mojibake, and explanation boilerplate.
 - Coding Tutor Home now shows the Starting Point check before the LeetCode daily card so new students get placed before seeing outside challenge work.
 - Concept quiz answer choices now remove noisy backtick styling and emphasize only operator symbols inside code snippets, with slightly larger answer text for readability.
 - Concept quiz result summaries now show clearer stats, collapse correct-answer explanations by default, and keep missed-question review expanded.

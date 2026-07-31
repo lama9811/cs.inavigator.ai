@@ -530,6 +530,23 @@ AUDITED_INTERMEDIATE_CATEGORIES_BY_LANGUAGE = {
     },
 }
 
+AUDITED_SHARED_LEGACY_CATEGORIES = (
+    "syntax",
+    "operators",
+    "variables",
+    "data-types",
+    "strings",
+    "user-input",
+    "conditionals",
+    "loops",
+    "lists",
+    "functions",
+    "algorithm-problems",
+    "algorithm-problems-2",
+    "debug",
+    "debug-2",
+)
+
 INTERMEDIATE_AUDIT_BAD_PHRASES = (
     "this matters because",
     "which choice describes a reliable",
@@ -539,6 +556,35 @@ INTERMEDIATE_AUDIT_BAD_PHRASES = (
     "reasoning is accurate",
     "concept check",
 )
+
+SHARED_LEGACY_AUDIT_BAD_PHRASES = (
+    "this matters because",
+    "that reasoning supports the answer",
+    "which recommendation belongs",
+    "which guideline helps",
+    "which choice shows sound reasoning",
+    "a classmate is checking",
+    "what does the lesson mean",
+    "according to the lesson",
+    "as explained in the lesson",
+    "read the line out loud",
+    "assume the user always types",
+    "ignore cancellation or empty input",
+    "use one input method for every situation",
+    "continue after failed extraction as if",
+    "validate only the first test input",
+    "read values in a different order than the prompt asks",
+    "accept invalid input silently",
+    "mix validation, conversion, and output",
+)
+
+
+def _visible_question_text(question):
+    return " ".join([
+        str(question.get("prompt") or ""),
+        str(question.get("explanation") or ""),
+        " ".join(str(choice) for choice in question.get("choices") or []),
+    ]).lower()
 
 
 def test_all_banks_reject_filler_templates_and_exact_duplicate_questions():
@@ -597,6 +643,53 @@ def test_audited_intermediate_banks_do_not_use_boilerplate():
                 assert not matched, (
                     f"{language}/{category}/{question['id']} still uses "
                     f"Intermediate audit boilerplate: {matched}"
+                )
+
+
+def test_audited_shared_legacy_banks_do_not_use_visible_boilerplate():
+    for category in AUDITED_SHARED_LEGACY_CATEGORIES:
+        for language in ALL_LANGUAGES:
+            for question in cq.questions_for_category(language, category)["questions"]:
+                visible = _visible_question_text(question)
+                matched = [
+                    phrase
+                    for phrase in SHARED_LEGACY_AUDIT_BAD_PHRASES
+                    if phrase in visible
+                ]
+                assert not matched, (
+                    f"{language}/{category}/{question['id']} still uses shared "
+                    f"legacy audit boilerplate: {matched}"
+                )
+
+
+def test_audited_shared_legacy_concept_choices_are_same_kind():
+    for category in AUDITED_SHARED_LEGACY_CATEGORIES:
+        for language in ALL_LANGUAGES:
+            for question in cq.questions_for_category(language, category)["questions"]:
+                if question["kind"] != "mcq-behavior":
+                    continue
+                if question.get("code") is not None:
+                    continue
+                choices = [str(choice).strip() for choice in question.get("choices") or []]
+                if not choices:
+                    continue
+                for choice in choices:
+                    assert not re.fullmatch(r"[0-9.\s]+", choice), (
+                        f"{language}/{category}/{question['id']}: numeric-only "
+                        f"choice in no-code concept check"
+                    )
+                    assert len(choice) >= 8, (
+                        f"{language}/{category}/{question['id']}: concept choice "
+                        f"is too thin: {choice!r}"
+                    )
+                    assert choice.count("\n") < 2, (
+                        f"{language}/{category}/{question['id']}: code/output "
+                        f"block used as concept distractor"
+                    )
+                lengths = [len(choice) for choice in choices]
+                assert max(lengths) <= min(lengths) * 5, (
+                    f"{language}/{category}/{question['id']}: one concept choice "
+                    f"dwarfs the others"
                 )
 
 
