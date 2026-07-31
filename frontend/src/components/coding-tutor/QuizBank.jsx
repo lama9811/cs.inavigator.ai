@@ -488,6 +488,7 @@ export default function QuizBank({
   // weighted by difficulty, attempts-to-solve, hints used, and recency. Comes with
   // a reason, because a recommendation that won't explain itself gets ignored.
   const masteryWeakest = mastery?.weakest || null;
+  const mistakePatterns = Array.isArray(mastery?.mistake_patterns) ? mastery.mistake_patterns : [];
   const adaptiveRecommendation = adaptivePractice?.recommendation || null;
   const adaptiveReviewSignal = adaptivePractice?.review_signal || null;
   const adaptiveReady = adaptiveRecommendation?.action === "ladder" && adaptiveRecommendation?.ladder_ready;
@@ -905,6 +906,28 @@ export default function QuizBank({
               </div>
             </section>
           )}
+
+          <section className="practice-guide-section">
+            <h3>Your recent patterns</h3>
+            {mistakePatterns.length ? (
+              <ul className="practice-guide-patterns">
+                {mistakePatterns.map(pattern => (
+                  <li key={`${pattern.topic}-${pattern.error_class}`}>
+                    <div className="practice-guide-pattern-head">
+                      <strong>{pattern.title || `${titleCase(pattern.topic)} pattern`}</strong>
+                      <span>{pattern.count}x</span>
+                    </div>
+                    <p>{pattern.summary}</p>
+                    <small>{pattern.next_step}</small>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="practice-guide-unlocked-note">
+                Run a few tests and this will unlock patterns from your own attempts.
+              </p>
+            )}
+          </section>
 
           <section className="practice-guide-section">
             <h3>Topics in view</h3>

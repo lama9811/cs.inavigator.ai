@@ -32,6 +32,7 @@ All notable changes to CS Navigator are documented here.
 - **Python code execution trace V1.** Added a Python-only "Trace my code" modal that steps through the current editor code and shows capped line-by-line execution with local variables.
 - **Adaptive practice scaffolding.** Added readiness-gated adaptive recommendations that only label a topic as ladder-ready when it has enough fully tested easy, medium, and hard practice depth across all supported languages.
 - **Adaptive review routing.** Coding Tutor adaptive recommendations now include a conservative review signal when recent practice attempts show repeated syntax, runtime, wrong-answer, or timeout patterns.
+- **Practice Guide real mistake patterns.** Practice Guide now shows recent mistake patterns only from the student's own saved practice attempts, and Progress has a quiet Learning Habits tracker for preference selection, hint usage, tutor suggestion application, and failed-then-fixed work.
 
 ### Changed
 - Concept Quiz multiple-choice answers now shuffle per browser attempt while preserving original answer identities for grading, draft restore, immediate feedback, and result summaries.

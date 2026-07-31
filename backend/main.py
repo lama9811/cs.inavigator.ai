@@ -150,7 +150,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, CodingAttemptEvent, CodingHintEvent, CodingWorkspaceState, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, CodingAttemptEvent, CodingHintEvent, CodingTutorActionEvent, CodingWorkspaceState, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -977,6 +977,32 @@ class CodingHintRequest(BaseModel):
         if value < 1 or value > 4:
             raise ValueError("Hint level must be between 1 and 4.")
         return value
+
+VALID_TUTOR_ACTION_TYPES = {"tutor_suggestion_applied"}
+
+class CodingTutorActionRequest(BaseModel):
+    action_type: str
+    source: str = "practice"
+    question_id: Optional[str] = None
+    language: str = "python"
+    metadata: Optional[dict[str, Any]] = None
+
+    @field_validator("action_type")
+    @classmethod
+    def validate_action_type(cls, value):
+        normalized = (value or "").strip().lower()
+        if normalized not in VALID_TUTOR_ACTION_TYPES:
+            valid = ", ".join(sorted(VALID_TUTOR_ACTION_TYPES))
+            raise ValueError(f"action_type must be one of: {valid}")
+        return normalized
+
+    @field_validator("source")
+    @classmethod
+    def validate_action_source(cls, value):
+        normalized = (value or "practice").strip().lower()
+        if normalized not in {"practice", "interview"}:
+            raise ValueError("source must be practice or interview")
+        return normalized
 
 class CodingWorkspaceStateUpdate(BaseModel):
     problem_id: Optional[str] = None
@@ -6861,8 +6887,46 @@ async def get_coding_mastery(
         "weakest": (
             {**weakest, "reason": mastery.explain(weakest)} if weakest else None
         ),
+        "mistake_patterns": mastery.summarize_mistake_patterns(db, user["user_id"]),
         "min_attempts_for_score": mastery.MIN_ATTEMPTS_FOR_SCORE,
     }
+
+@app.get("/api/coding/milestones")
+async def get_coding_milestone_signals(
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Trustworthy milestone signals, derived from existing logs.
+
+    This does not award new badges yet. It lets the Progress page show which learning
+    habits are actually being tracked before those habits become achievements.
+    """
+    return mastery.build_milestone_signals(db, user["user_id"])
+
+@app.post("/api/coding/tutor-actions")
+async def record_coding_tutor_action(
+    req: CodingTutorActionRequest,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    metadata = req.metadata if isinstance(req.metadata, dict) else {}
+    # Keep this small and code-free. The only current metadata is the apply mode.
+    safe_metadata = {
+        str(key)[:40]: str(value)[:120]
+        for key, value in metadata.items()
+        if key in {"mode", "surface"}
+    }
+    language_key, _ = _normalize_practice_language(req.language)
+    db.add(CodingTutorActionEvent(
+        user_id=user["user_id"],
+        action_type=req.action_type,
+        source=req.source,
+        question_id=(req.question_id or None),
+        language=language_key,
+        metadata_json=json.dumps(safe_metadata) if safe_metadata else None,
+    ))
+    db.commit()
+    return {"recorded": True, "milestones": mastery.build_milestone_signals(db, user["user_id"])}
 
 def _practice_answer_items_by_language() -> dict[str, list[dict[str, Any]]]:
     items_by_language: dict[str, list[dict[str, Any]]] = {}

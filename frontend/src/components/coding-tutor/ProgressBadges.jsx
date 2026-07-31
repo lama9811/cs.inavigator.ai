@@ -378,6 +378,43 @@ function BadgeCard({ badge }) {
   );
 }
 
+function LearningHabits({ milestoneSignals }) {
+  const signals = Array.isArray(milestoneSignals?.signals) ? milestoneSignals.signals : [];
+  const completed = Number(milestoneSignals?.completed) || 0;
+  const total = Number(milestoneSignals?.total) || signals.length || 4;
+
+  return (
+    <section className="progress-habits" aria-labelledby="learning-habits-title">
+      <div className="progress-habits-head">
+        <div>
+          <span className="progress-badge-nudge-tag">Tracked habits</span>
+          <h3 id="learning-habits-title">Learning habits</h3>
+          <p>Small proof that you are trying, asking for help, and coming back to fix things.</p>
+        </div>
+        <strong>{completed}/{total}</strong>
+      </div>
+      {signals.length ? (
+        <ul className="progress-habits-list">
+          {signals.map(signal => (
+            <li key={signal.id} className={signal.complete ? "is-complete" : ""}>
+              <span className="progress-habit-icon" aria-hidden="true">
+                {signal.complete ? <FaCheckCircle /> : <FaSeedling />}
+              </span>
+              <div>
+                <strong>{signal.label}</strong>
+                <p>{signal.detail}</p>
+              </div>
+              {Number(signal.count) > 0 && <small>{signal.count}</small>}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="progress-habits-empty">Run code, reveal hints, or apply a tutor suggestion to start filling this in.</p>
+      )}
+    </section>
+  );
+}
+
 function BadgeGroups({ badges }) {
   const groups = groupByCategory(badges);
   return groups.map((group) => {
@@ -412,7 +449,7 @@ function getNextAction(category) {
   return actions[category] || "Keep practicing to reach this milestone.";
 }
 
-export default function ProgressBadges({ questions = [], progressByQuestion = {}, progressByLanguage = {}, progressSummary = {}, learnQuizStats = {}, interviewStats = {}, midSlot = null }) {
+export default function ProgressBadges({ questions = [], progressByQuestion = {}, progressByLanguage = {}, progressSummary = {}, learnQuizStats = {}, interviewStats = {}, milestoneSignals = null, midSlot = null }) {
   const [activeFilter, setActiveFilter] = useState("in-progress");
   const stats = computeStats({ questions, progressByQuestion, progressByLanguage, progressSummary, learnQuizStats, interviewStats });
   const badges = buildBadges(stats);
@@ -481,6 +518,8 @@ export default function ProgressBadges({ questions = [], progressByQuestion = {}
       </div>
 
       {midSlot}
+
+      <LearningHabits milestoneSignals={milestoneSignals} />
 
       <div className="progress-badge-toolbar">
         <div>

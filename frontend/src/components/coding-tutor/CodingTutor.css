@@ -3561,6 +3561,59 @@ body.coding-dark .practice-guide-title {
   color: var(--ct-muted, #6b7280);
 }
 
+.practice-guide-patterns {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.practice-guide-patterns li {
+  display: grid;
+  gap: 5px;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 18%, var(--ct-border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ct-primary) 5%, var(--ct-panel));
+}
+
+.practice-guide-pattern-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.practice-guide-pattern-head strong {
+  min-width: 0;
+  color: var(--ct-text);
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
+.practice-guide-pattern-head span {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-primary) 12%, var(--ct-panel-soft));
+  color: var(--ct-primary);
+  font-size: 0.68rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.practice-guide-patterns small,
+.practice-guide-unlocked-note {
+  color: var(--ct-muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.practice-guide-patterns small {
+  display: block;
+}
+
 /* Collapsed "All topics" list. Closed by default: the guide's headline is ONE next
    action, and a 23-row table competing with it buries the thing the student should
    actually do. Fixed max-height so the panel doesn't grow without bound as the

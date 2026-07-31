@@ -451,6 +451,32 @@ class CodingHintEvent(Base):
     user = relationship("User", backref="coding_hint_events")
 
 
+class CodingTutorActionEvent(Base):
+    """Append-only log for tutor-assisted actions that are not code runs or hint reveals.
+
+    Attempt events and hint events already cover most learning signals. This table is
+    deliberately small and only records product actions such as safely applying a tutor
+    suggestion, so milestone logic can stay honest without storing the student's code.
+    """
+    __tablename__ = "coding_tutor_action_events"
+    __table_args__ = (
+        Index("ix_coding_tutor_action_user_type", "user_id", "action_type"),
+        Index("ix_coding_tutor_action_question_created", "question_id", "created_at"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    action_type = Column(String(60), nullable=False, index=True)
+    source = Column(String(20), nullable=False, default="practice")
+    question_id = Column(String(80), nullable=True, index=True)
+    language = Column(String(30), nullable=False, default="python")
+    # JSON-encoded small metadata, such as the apply mode. Never source code.
+    metadata_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+
+    user = relationship("User", backref="coding_tutor_action_events")
+
+
 class CodingWorkspaceState(Base):
     """Last Coding Tutor workspace opened by a user.
 

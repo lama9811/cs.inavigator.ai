@@ -39,7 +39,12 @@ from typing import Any, Optional
 
 from sqlalchemy.orm import Session
 
-from models import CodingAttemptEvent
+from models import (
+    CodingAttemptEvent,
+    CodingHintEvent,
+    CodingTutorActionEvent,
+    CodingTutorPreference,
+)
 
 # Below this many attempts we report the topic as unscored. Two attempts can't
 # distinguish "knows it" from "got lucky".
@@ -493,3 +498,180 @@ def serialize_failed_tests(raw: Optional[str]) -> list[str]:
         return [str(v) for v in value] if isinstance(value, list) else []
     except (ValueError, TypeError):
         return []
+
+
+def summarize_mistake_patterns(
+    db: Session,
+    user_id: int,
+    *,
+    limit: int = 3,
+    now: Optional[datetime] = None,
+    lookback_days: int = 60,
+) -> list[dict[str, Any]]:
+    """Return recent, counted practice failure patterns for the Practice Guide.
+
+    This is the real replacement for the old curated "common mistakes" panel. It only
+    speaks when the student's own attempt log has failures to count.
+    """
+    now = now or datetime.now(timezone.utc)
+    since = now - timedelta(days=lookback_days)
+    rows = (
+        db.query(CodingAttemptEvent)
+        .filter(
+            CodingAttemptEvent.user_id == user_id,
+            CodingAttemptEvent.source == "practice",
+            CodingAttemptEvent.topic.isnot(None),
+            CodingAttemptEvent.error_class.isnot(None),
+            CodingAttemptEvent.outcome != "pass",
+            CodingAttemptEvent.created_at >= since,
+        )
+        .order_by(CodingAttemptEvent.created_at.desc())
+        .limit(200)
+        .all()
+    )
+
+    buckets: dict[tuple[str, str], dict[str, Any]] = {}
+    for row in rows:
+        topic = (row.topic or "").strip()
+        error_class = (row.error_class or "").strip()
+        if not topic or not error_class:
+            continue
+        key = (topic, error_class)
+        bucket = buckets.setdefault(key, {
+            "topic": topic,
+            "error_class": error_class,
+            "count": 0,
+            "last_seen_at": row.created_at,
+            "question_ids": set(),
+        })
+        bucket["count"] += 1
+        if row.question_id:
+            bucket["question_ids"].add(row.question_id)
+        if row.created_at and (
+            bucket["last_seen_at"] is None or row.created_at > bucket["last_seen_at"]
+        ):
+            bucket["last_seen_at"] = row.created_at
+
+    patterns = []
+    for bucket in buckets.values():
+        topic = bucket["topic"]
+        error_class = bucket["error_class"]
+        copy = _ERROR_COPY.get(error_class, {})
+        count = bucket["count"]
+        question_count = len(bucket["question_ids"])
+        what = copy.get("what", "didn't pass")
+        next_step = copy.get("next", "Trace one small example before changing code.")
+        summary = (
+            f"{count} recent {titleize(topic)} run{'s' if count != 1 else ''} {what}."
+        )
+        if question_count > 1:
+            summary += f" This showed up across {question_count} problems."
+        patterns.append({
+            "topic": topic,
+            "error_class": error_class,
+            "title": f"{titleize(topic)}: {error_class.replace('_', ' ')}",
+            "count": count,
+            "question_count": question_count,
+            "summary": summary,
+            "next_step": next_step,
+            "last_seen_at": (
+                bucket["last_seen_at"].isoformat() if bucket["last_seen_at"] else None
+            ),
+        })
+
+    patterns.sort(key=lambda p: (p["count"], p["last_seen_at"] or ""), reverse=True)
+    return patterns[: max(0, limit)]
+
+
+def _preference_was_selected(row: Optional[CodingTutorPreference]) -> bool:
+    if not row:
+        return False
+    if row.learning_style and row.learning_style != "try_then_hint":
+        return True
+    if row.created_at and row.updated_at:
+        return row.updated_at > row.created_at
+    return False
+
+
+def _count_failed_then_fixed(rows: list[CodingAttemptEvent]) -> int:
+    seen_failed: set[tuple[str, str]] = set()
+    fixed: set[tuple[str, str]] = set()
+    for row in rows:
+        if not row.question_id:
+            continue
+        key = (row.question_id, row.language or "python")
+        if row.outcome == "pass":
+            if key in seen_failed:
+                fixed.add(key)
+        elif row.outcome in {"fail", "error", "timeout"}:
+            seen_failed.add(key)
+    return len(fixed)
+
+
+def build_milestone_signals(db: Session, user_id: int) -> dict[str, Any]:
+    """Compact, cross-device signals for Progress habits without awarding badges yet."""
+    preference = (
+        db.query(CodingTutorPreference)
+        .filter(CodingTutorPreference.user_id == user_id)
+        .first()
+    )
+    hint_count = (
+        db.query(CodingHintEvent)
+        .filter(CodingHintEvent.user_id == user_id)
+        .count()
+    )
+    tutor_apply_count = (
+        db.query(CodingTutorActionEvent)
+        .filter(
+            CodingTutorActionEvent.user_id == user_id,
+            CodingTutorActionEvent.action_type == "tutor_suggestion_applied",
+        )
+        .count()
+    )
+    attempts = (
+        db.query(CodingAttemptEvent)
+        .filter(
+            CodingAttemptEvent.user_id == user_id,
+            CodingAttemptEvent.source == "practice",
+        )
+        .order_by(CodingAttemptEvent.created_at.asc())
+        .all()
+    )
+    fixed_count = _count_failed_then_fixed(attempts)
+
+    signals = [
+        {
+            "id": "learning-style-selected",
+            "label": "Learning style chosen",
+            "complete": _preference_was_selected(preference),
+            "detail": "Pick how you like help to arrive.",
+            "count": 1 if _preference_was_selected(preference) else 0,
+        },
+        {
+            "id": "hint-ladder-used",
+            "label": "Hint ladder used",
+            "complete": hint_count > 0,
+            "detail": "Reveal a hint after you have tried a problem.",
+            "count": hint_count,
+        },
+        {
+            "id": "tutor-suggestion-applied",
+            "label": "Tutor suggestion applied safely",
+            "complete": tutor_apply_count > 0,
+            "detail": "Preview a tutor suggestion and apply it to the workspace.",
+            "count": tutor_apply_count,
+        },
+        {
+            "id": "failed-attempt-fixed",
+            "label": "Failed attempt fixed later",
+            "complete": fixed_count > 0,
+            "detail": "Turn a failed run into a passing solution.",
+            "count": fixed_count,
+        },
+    ]
+    completed = sum(1 for signal in signals if signal["complete"])
+    return {
+        "signals": signals,
+        "completed": completed,
+        "total": len(signals),
+    }

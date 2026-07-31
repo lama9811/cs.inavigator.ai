@@ -19,7 +19,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from db import Base
-from models import CodingAttemptEvent, User
+from models import CodingAttemptEvent, CodingHintEvent, CodingTutorActionEvent, CodingTutorPreference, User
 from services import mastery
 
 
@@ -221,6 +221,65 @@ def test_other_users_events_are_not_counted(session):
         add(session, topic="Arrays", outcome="pass", user_id=2)
 
     assert mastery.compute_topic_mastery(session, 1, now=NOW) == []
+
+
+def test_mistake_patterns_are_counted_from_real_failures(session):
+    add(session, topic="Arrays", question_id="a1", outcome="fail", error_class="wrong_answer")
+    add(session, topic="Arrays", question_id="a2", outcome="fail", error_class="wrong_answer")
+    add(session, topic="Loops", question_id="l1", outcome="fail", error_class="syntax")
+    add(session, topic="Arrays", question_id="a3", outcome="pass")
+
+    patterns = mastery.summarize_mistake_patterns(session, 1, now=NOW)
+
+    assert patterns[0]["topic"] == "Arrays"
+    assert patterns[0]["error_class"] == "wrong_answer"
+    assert patterns[0]["count"] == 2
+    assert "2 recent Arrays runs ran fine but returned the wrong answer" in patterns[0]["summary"]
+    assert "Trace one failing example by hand" in patterns[0]["next_step"]
+
+
+def test_mistake_patterns_do_not_emit_generic_copy_without_failures(session):
+    add(session, topic="Arrays", question_id="a1", outcome="pass")
+
+    assert mastery.summarize_mistake_patterns(session, 1, now=NOW) == []
+
+
+def test_milestone_signals_are_derived_from_existing_logs(session):
+    session.add(CodingTutorPreference(
+        user_id=1,
+        learning_style="concept_then_code",
+        created_at=NOW - timedelta(days=1),
+        updated_at=NOW,
+    ))
+    session.add(CodingHintEvent(
+        user_id=1,
+        source="practice",
+        question_id="a1",
+        language="python",
+        level=1,
+        created_at=NOW,
+    ))
+    session.add(CodingTutorActionEvent(
+        user_id=1,
+        action_type="tutor_suggestion_applied",
+        source="practice",
+        question_id="a1",
+        language="python",
+        metadata_json='{"mode":"safe"}',
+        created_at=NOW,
+    ))
+    session.commit()
+    add(session, topic="Arrays", question_id="a1", outcome="fail", error_class="wrong_answer")
+    add(session, topic="Arrays", question_id="a1", outcome="pass")
+
+    payload = mastery.build_milestone_signals(session, 1)
+    by_id = {item["id"]: item for item in payload["signals"]}
+
+    assert payload["completed"] == 4
+    assert by_id["learning-style-selected"]["complete"] is True
+    assert by_id["hint-ladder-used"]["count"] == 1
+    assert by_id["tutor-suggestion-applied"]["complete"] is True
+    assert by_id["failed-attempt-fixed"]["count"] == 1
 
 
 def test_topics_sort_weakest_first(session):

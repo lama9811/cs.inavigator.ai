@@ -1203,6 +1203,8 @@ export default function CodingTutor({
   const [mastery, setMastery] = useState(null);
   const [masteryTick, setMasteryTick] = useState(0);
   const [adaptivePractice, setAdaptivePractice] = useState(null);
+  const [milestoneSignals, setMilestoneSignals] = useState(null);
+  const [engagementTick, setEngagementTick] = useState(0);
   const codingSyncReadyRef = useRef(false);
 
   useEffect(() => {
@@ -1215,6 +1217,7 @@ export default function CodingTutor({
     setProgressByLanguage({});
     setMastery(null);
     setAdaptivePractice(null);
+    setMilestoneSignals(null);
   }, [storageScope]);
 
   useEffect(() => {
@@ -1257,6 +1260,25 @@ export default function CodingTutor({
     })();
     return () => { cancelled = true; };
   }, [apiBase, masteryTick, practiceLanguage, storageScope]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${apiBase}/api/coding/milestones`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (!cancelled) setMilestoneSignals(data);
+      } catch {
+        // Progress habits are informational. Badges and core practice still work.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [apiBase, engagementTick, masteryTick, storageScope]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -1355,6 +1377,30 @@ export default function CodingTutor({
     [activeSnapshotKey, workspaceSnapshots]
   );
   const runnerSummary = useMemo(() => summarizeRunForTutor(testOutput), [testOutput]);
+  const recordTutorAction = useCallback((actionType, metadata = {}) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    const source = activeProblem?.source === "interview" ? "interview" : "practice";
+    fetch(`${apiBase}/api/coding/tutor-actions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        action_type: actionType,
+        source,
+        question_id: activeProblem?.id || null,
+        language: selectedLanguageKey,
+        metadata,
+      }),
+    })
+      .then(response => {
+        if (response.ok) setEngagementTick(tick => tick + 1);
+      })
+      .catch(() => {});
+  }, [activeProblem?.id, activeProblem?.source, apiBase, selectedLanguageKey]);
+
   const applyAiCodeWithMode = useCallback((mode = "safe") => {
     if (!suggestedCodeBlock || (mode !== "selection" && suggestedCodeBlock === code)) return;
     const trimmedCode = code.trimEnd();
@@ -1402,7 +1448,8 @@ export default function CodingTutor({
       selection: "Tutor suggestion replaced the selected code.",
     }[mode] || "Tutor suggestion applied.";
     toast.success(`${label} Undo is available in the chat.`);
-  }, [activeSnapshotKey, code, editorSelection, selectedLanguage, suggestedCodeBlock]);
+    recordTutorAction("tutor_suggestion_applied", { mode, surface: "workspace" });
+  }, [activeSnapshotKey, code, editorSelection, recordTutorAction, selectedLanguage, suggestedCodeBlock]);
 
   const undoAiCode = useCallback(() => {
     const previousCode = activeSnapshots.beforeAiRewrite;
@@ -3327,6 +3374,7 @@ export default function CodingTutor({
       }
       if (!response.ok) throw new Error(data.detail || `hint ${response.status}`);
       setHintGate(data);
+      setEngagementTick(tick => tick + 1);
       return true;
     } catch (error) {
       console.warn("[coding-hints] could not record hint reveal; using local fallback", error);
@@ -3703,6 +3751,7 @@ export default function CodingTutor({
           warmupsReviewed: interviewReviewed.size,
           warmupsSolved: interviewSolved.size,
         }}
+        milestoneSignals={milestoneSignals}
         midSlot={<StatTiles progressSummary={progressSummary} />}
       />
     </section>
