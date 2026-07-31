@@ -18,6 +18,7 @@ import {
 } from "react-icons/fa";
 import { markLessonRead } from "../concept-quiz/conceptQuizProgress";
 import LessonPlayBar from "./LessonPlayBar";
+import useFocusTrap from "../useFocusTrap";
 
 // One lesson. Renders the authored block types (see backend/lessons.py) and ends with
 // the handoff that gives Learn its purpose: "Practice this."
@@ -261,6 +262,7 @@ function VisualBlock({ block }) {
     setIsPlaying(false);
     setOpen(false);
   }, []);
+  const modalRef = useFocusTrap(open, { onEscape: close });
   const goToStep = useCallback((nextIndex) => {
     setStepIndex(Math.max(0, Math.min(steps.length - 1, nextIndex)));
     setReplayKey((current) => current + 1);
@@ -269,7 +271,6 @@ function VisualBlock({ block }) {
   useEffect(() => {
     if (!open) return undefined;
     const handleKeyDown = (event) => {
-      if (event.key === "Escape") close();
       if (event.key === "ArrowLeft") {
         event.preventDefault();
         setIsPlaying(false);
@@ -283,7 +284,7 @@ function VisualBlock({ block }) {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [close, goToStep, open, stepIndex, steps.length]);
+  }, [goToStep, open, stepIndex, steps.length]);
 
   useEffect(() => {
     if (!open || !isPlaying) return undefined;
@@ -321,18 +322,20 @@ function VisualBlock({ block }) {
       {open ? (
         <div className="lesson-visual-backdrop" role="presentation" onMouseDown={close}>
           <section
+            ref={modalRef}
             className="lesson-visual-modal"
             role="dialog"
             aria-modal="true"
-            aria-label={block.title}
+            aria-labelledby="lesson-visual-title"
             onMouseDown={(event) => event.stopPropagation()}
+            tabIndex={-1}
           >
             <header className="lesson-visual-modal-head">
               <div>
                 <span>Step {stepIndex + 1} of {steps.length}</span>
-                <h3>{block.title}</h3>
+                <h3 id="lesson-visual-title">{block.title}</h3>
               </div>
-              <button type="button" onClick={close} autoFocus>
+              <button type="button" onClick={close} data-autofocus>
                 Close
               </button>
             </header>

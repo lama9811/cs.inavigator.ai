@@ -33,6 +33,7 @@ All notable changes to CS Navigator are documented here.
 - **Adaptive practice scaffolding.** Added readiness-gated adaptive recommendations that only label a topic as ladder-ready when it has enough fully tested easy, medium, and hard practice depth across all supported languages.
 - **Adaptive review routing.** Coding Tutor adaptive recommendations now include a conservative review signal when recent practice attempts show repeated syntax, runtime, wrong-answer, or timeout patterns.
 - **Practice Guide real mistake patterns.** Practice Guide now shows recent mistake patterns only from the student's own saved practice attempts, and Progress has a quiet Learning Habits tracker for preference selection, hint usage, tutor suggestion application, and failed-then-fixed work.
+- **Coding Tutor accessibility polish V1.** Main Coding Tutor modals and drawers now trap focus, close with Escape, restore focus to the opener, and use dialog labels; Learn language cards are native buttons, key tab groups support arrow-key navigation, and the floating tutor exposes clearer keyboard movement and suggestion-preview labels.
 
 ### Changed
 - Concept Quiz multiple-choice answers now shuffle per browser attempt while preserving original answer identities for grading, draft restore, immediate feedback, and result summaries.

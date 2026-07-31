@@ -34,6 +34,7 @@ import PastInterviews from "./PastInterviews";
 import MockInterviewBar from "./MockInterviewBar";
 import MockSummary from "./MockSummary";
 import MockConfirm from "./MockConfirm";
+import { handleHorizontalRovingKeyDown } from "./keyboardNavigation";
 import { gradeMockSummary, scoreFromGraded } from "./interviewGrade";
 import { appendInterviewAttempt, summarizeInterviewHistory } from "./interviewHistory";
 import { clearInterviewSolved, fetchInterviewProgress, markInterviewSolved, saveInterviewProgress, useInterviewReviewed, useInterviewSolved } from "./interviewProgress";
@@ -3902,13 +3903,14 @@ export default function CodingTutor({
             {/* Learn -> Practice -> Code, left to right, and Learn is the default. A
                 student who hasn't met functions yet needs the idea before the editor:
                 a quiz can only tell them they're wrong, and a blank editor is a wall. */}
-            <div className="practice-mode-toggle" role="tablist" aria-label="Practice mode">
+            <div className="practice-mode-toggle" role="tablist" aria-label="Practice mode" onKeyDown={handleHorizontalRovingKeyDown}>
               {MODES.map((m) => (
                 <button
                   key={m.id}
                   type="button"
                   role="tab"
                   aria-selected={mode === m.id}
+                  tabIndex={mode === m.id ? 0 : -1}
                   title={m.hint}
                   className={`practice-mode-btn ${mode === m.id ? "active" : ""}`}
                   onClick={() => goToMode(m.id)}

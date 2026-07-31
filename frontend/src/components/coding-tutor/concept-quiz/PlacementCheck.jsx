@@ -3,6 +3,7 @@ import {
   buildPlacementQuestionSet,
   buildPlacementRecommendation,
 } from "../startingPath";
+import useFocusTrap from "../useFocusTrap";
 
 export default function PlacementCheck({ onClose, onUseRecommendation }) {
   const advanceTimerRef = useRef(null);
@@ -12,16 +13,7 @@ export default function PlacementCheck({ onClose, onUseRecommendation }) {
   const [result, setResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") onClose?.();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [onClose]);
+  const dialogRef = useFocusTrap(true, { onEscape: onClose });
 
   useEffect(() => {
     return () => {
@@ -77,19 +69,22 @@ export default function PlacementCheck({ onClose, onUseRecommendation }) {
   return (
     <div className="cq-placement-backdrop" role="presentation">
     <section
+      ref={dialogRef}
       className="cq-placement-dialog"
       role="dialog"
       aria-modal="true"
       aria-labelledby="cq-placement-title"
+      aria-describedby="cq-placement-description"
+      tabIndex={-1}
     >
       <div className="cq-placement-dialog-inner">
         <header className="cq-placement-header">
           <div>
             <span className="cq-hero-eyebrow">Quick starting check</span>
             <h3 id="cq-placement-title">Find your starting point</h3>
-            <p>Pick what feels closest. If you are unsure, that is useful too.</p>
+            <p id="cq-placement-description">Pick what feels closest. If you are unsure, that is useful too.</p>
           </div>
-          <button type="button" className="cq-placement-close" onClick={onClose} aria-label="Close placement check">
+          <button type="button" className="cq-placement-close" onClick={onClose} aria-label="Close placement check" data-autofocus>
             X
           </button>
         </header>

@@ -15,6 +15,7 @@ import {
   writeQuizDraftAnswers,
   writeQuizLastResult,
 } from "./conceptQuizProgress";
+import { handleHorizontalRovingKeyDown } from "../keyboardNavigation";
 
 // Sequential concept-quiz runner. Renders one question at a time in a split
 // layout (code/statement left with Question|Learn tabs, answer UI right),
@@ -857,11 +858,12 @@ export default function QuizRunner({
           the LEFT half, segmented progress + % on the RIGHT half. */}
       <header className="cq-runner-top">
         <div className="cq-runner-top-left">
-          <div className="cq-tabs" role="tablist">
+          <div className="cq-tabs" role="tablist" aria-label="Concept quiz panels" onKeyDown={handleHorizontalRovingKeyDown}>
             <button
               type="button"
               role="tab"
               aria-selected={tab === "question"}
+              tabIndex={tab === "question" ? 0 : -1}
               className={`cq-tab ${tab === "question" ? "active" : ""}`}
               onClick={() => setTab("question")}
             >
@@ -872,6 +874,7 @@ export default function QuizRunner({
               type="button"
               role="tab"
               aria-selected={tab === "learn"}
+              tabIndex={tab === "learn" ? 0 : -1}
               className={`cq-tab ${tab === "learn" ? "active" : ""}`}
               onClick={() => setTab("learn")}
             >

@@ -8,6 +8,7 @@ import {
   readStartingCheck,
   writeStartingCheck,
 } from "./startingPath";
+import useFocusTrap from "./useFocusTrap";
 
 function findResumeItem(questions, progressByQuestion) {
   return Object.entries(progressByQuestion || {})
@@ -429,6 +430,7 @@ function StartingCheckCard({ result, onComplete, onSkip, onReset }) {
   const currentQuestion = questionSet[currentIndex];
   const currentAnswered = answers[currentQuestion?.id] !== undefined;
   const isLastQuestion = currentIndex === questionSet.length - 1;
+  const modalRef = useFocusTrap(!result, { onEscape: onSkip });
 
   useEffect(() => {
     if (!result) {
@@ -495,14 +497,22 @@ function StartingCheckCard({ result, onComplete, onSkip, onReset }) {
 
   return (
     <div className="starting-check-modal-backdrop" role="presentation">
-      <section className="starting-check-modal" role="dialog" aria-modal="true" aria-label="Find your Coding Tutor starting point">
+      <section
+        ref={modalRef}
+        className="starting-check-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="starting-check-title"
+        aria-describedby="starting-check-description"
+        tabIndex={-1}
+      >
         <div className="starting-check-modal-head">
           <div>
             <span className="coding-kicker">Before You Start</span>
-            <h3>Find your starting point</h3>
-            <p>Answer a few quick questions so Coding Tutor can unlock a calmer first path.</p>
+            <h3 id="starting-check-title">Find your starting point</h3>
+            <p id="starting-check-description">Answer a few quick questions so Coding Tutor can unlock a calmer first path.</p>
           </div>
-          <button type="button" className="starting-check-link" onClick={onSkip}>
+          <button type="button" className="starting-check-link" onClick={onSkip} data-autofocus>
             Skip for now
           </button>
         </div>

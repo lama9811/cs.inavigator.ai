@@ -104,6 +104,59 @@
   box-sizing: border-box;
 }
 
+.coding-app :where(
+  button,
+  a[href],
+  input,
+  select,
+  textarea,
+  summary,
+  [role="button"],
+  [role="tab"],
+  [tabindex]:not([tabindex="-1"])
+):focus-visible,
+.floating-coding-chat :where(
+  button,
+  a[href],
+  input,
+  select,
+  textarea,
+  summary,
+  [role="button"],
+  [role="tab"],
+  [tabindex]:not([tabindex="-1"])
+):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ct-accent, #f58220) 72%, #ffffff);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--ct-accent, #f58220) 18%, transparent);
+}
+
+body.coding-dark .coding-app :where(
+  button,
+  a[href],
+  input,
+  select,
+  textarea,
+  summary,
+  [role="button"],
+  [role="tab"],
+  [tabindex]:not([tabindex="-1"])
+):focus-visible,
+body.coding-dark .floating-coding-chat :where(
+  button,
+  a[href],
+  input,
+  select,
+  textarea,
+  summary,
+  [role="button"],
+  [role="tab"],
+  [tabindex]:not([tabindex="-1"])
+):focus-visible {
+  outline-color: color-mix(in srgb, #fbbf24 76%, #ffffff);
+  box-shadow: 0 0 0 5px rgba(251, 191, 36, 0.22);
+}
+
 .coding-app h2,
 .coding-app h3,
 .coding-app strong,

@@ -6,6 +6,8 @@ import HintPanel from "./HintPanel";
 import RunControls from "./RunControls";
 import TerminalPanel from "./TerminalPanel";
 import { WorkspaceVisualizerModal, WorkspaceVisualizerPanel } from "./WorkspaceVisualizer";
+import { handleHorizontalRovingKeyDown } from "./keyboardNavigation";
+import useFocusTrap from "./useFocusTrap";
 import "./CodeWorkspace.css";
 import "./TerminalPanel.css";
 
@@ -116,6 +118,7 @@ function CodeTraceModal({
     }
     return `Python is about to run line ${activeStep.line_no}. Watch the variables below before and after this line.`;
   }, [activeStep]);
+  const modalRef = useFocusTrap(true, { onEscape: onClose });
 
   const goToStep = useCallback((nextIndex) => {
     if (!trace.length) return;
@@ -145,7 +148,6 @@ function CodeTraceModal({
 
   useEffect(() => {
     const onKeyDown = (event) => {
-      if (event.key === "Escape") onClose?.();
       if (event.key === "ArrowLeft") {
         event.preventDefault();
         setIsPlaying(false);
@@ -159,19 +161,27 @@ function CodeTraceModal({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [goToStep, onClose, stepIndex]);
+  }, [goToStep, stepIndex]);
 
   return (
     <div className="workspace-visualizer-backdrop" role="presentation" onMouseDown={onClose}>
-      <div role="dialog" aria-modal="true" aria-label="Trace my code" onMouseDown={(event) => event.stopPropagation()}>
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="code-trace-title"
+        aria-describedby="code-trace-description"
+        tabIndex={-1}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
         <section className="workspace-visualizer is-modal code-trace-modal">
           <header className="workspace-visualizer-head">
             <div>
               <span className="workspace-visualizer-kicker">Trace My Code</span>
-              <h3>Python execution trace</h3>
-              <p>Steps through the Python code currently in your editor and shows what changes as it runs.</p>
+              <h3 id="code-trace-title">Python execution trace</h3>
+              <p id="code-trace-description">Steps through the Python code currently in your editor and shows what changes as it runs.</p>
             </div>
-            <button type="button" className="workspace-visual-close" onClick={onClose} autoFocus>
+            <button type="button" className="workspace-visual-close" onClick={onClose} data-autofocus>
               Close
             </button>
           </header>
@@ -541,9 +551,17 @@ export default function CodeWorkspace({
       <div className="coding-pane-header">
         <div><span className="coding-kicker">Workspace</span><h2>{activeProblem?.title || "Code Editor"}</h2></div>
       </div>
-      <div className="workspace-tabs">
+      <div className="workspace-tabs" role="tablist" aria-label="Workspace panels" onKeyDown={handleHorizontalRovingKeyDown}>
         {WORKSPACE_TABS.map(tab => (
-          <button key={tab} type="button" className={workspaceTab === tab ? "active" : ""} onClick={() => onTabChange(tab)}>
+          <button
+            key={tab}
+            type="button"
+            role="tab"
+            aria-selected={workspaceTab === tab}
+            tabIndex={workspaceTab === tab ? 0 : -1}
+            className={workspaceTab === tab ? "active" : ""}
+            onClick={() => onTabChange(tab)}
+          >
             {tab}
           </button>
         ))}

@@ -70,19 +70,12 @@ function LanguageCards({ languages, onPick, onStartPythonBeginner }) {
           const Icon = accent.Icon;
           const recommended = lang.id === "python";
           return (
-            <div
+            <button
+              type="button"
               key={lang.id}
               className={`cq-language-card ${recommended ? "recommended" : ""}`}
               style={{ "--cq-card-tint": accent.tint || "var(--ct-primary)" }}
-              role="button"
-              tabIndex={0}
               onClick={() => onPick(lang.id)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  onPick(lang.id);
-                }
-              }}
             >
               {recommended ? (
                 <span className="cq-language-card-flag">Start here</span>
@@ -101,7 +94,7 @@ function LanguageCards({ languages, onPick, onStartPythonBeginner }) {
               <span className="cq-language-card-cta">
                 Choose a track <FaArrowRight aria-hidden="true" />
               </span>
-            </div>
+            </button>
           );
         })}
       </div>

@@ -248,6 +248,7 @@ function FloatingChatWindow({
         onKeyDown={handleHeaderKeyDown}
         tabIndex={0}
         aria-label="Move coding tutor window between corners with the arrow keys."
+        aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown"
       >
         <div className="floating-chat-heading">
           <span className="coding-kicker">Coding Tutor Chat</span>
@@ -331,15 +332,16 @@ function FloatingChatWindow({
                   className="floating-apply-code-btn"
                   onClick={() => setApplyPreviewOpen(true)}
                   aria-expanded={false}
+                  aria-controls="floating-apply-preview"
                   title="Preview the suggested code before changing your workspace."
                 >
                   Preview tutor suggestion
                 </button>
               ) : (
-                <div className="floating-apply-preview">
+                <div className="floating-apply-preview" id="floating-apply-preview" aria-live="polite">
                   <div className="floating-apply-preview-head">
                     <strong>Review suggestion</strong>
-                    <button type="button" onClick={() => setApplyPreviewOpen(false)}>
+                    <button type="button" onClick={() => setApplyPreviewOpen(false)} aria-label="Close tutor suggestion preview">
                       Close
                     </button>
                   </div>

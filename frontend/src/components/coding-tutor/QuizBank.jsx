@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FaFire, FaCheckCircle, FaPenFancy, FaChartLine, FaSearch, FaSlidersH } from "react-icons/fa";
 import QuizProblemCard from "./QuizProblemCard";
+import useFocusTrap from "./useFocusTrap";
 
 function titleCase(value = "") {
   return value ? value[0].toUpperCase() + value.slice(1).replace("_", " ") : "";
@@ -177,6 +178,8 @@ export default function QuizBank({
   const requestedPage = pageFromParam(queryParams.get("page"));
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [topicSearch, setTopicSearch] = useState("");
+  const closeFilters = useCallback(() => setFiltersOpen(false), []);
+  const drawerRef = useFocusTrap(filtersOpen, { onEscape: closeFilters });
   // (Topic-progress paging removed - the list is now a collapsed <details> that shows
   // every topic at once when opened, so an incremental "show 5 more" no longer applies.)
   // How many problem cards are visible; "Show more" reveals PAGE_SIZE at a time.
@@ -372,19 +375,6 @@ export default function QuizBank({
       updateQuery({ page: totalPages }, { replace: true });
     }
   }, [requestedPage, totalPages, updateQuery]);
-
-  // While the filter drawer is open: lock body scroll and close on Escape.
-  useEffect(() => {
-    if (!filtersOpen) return undefined;
-    const onKey = (event) => { if (event.key === "Escape") setFiltersOpen(false); };
-    document.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [filtersOpen]);
 
   const clearAllFilters = () => {
     updateFilter({ q: "", difficulty: [], status: [], topic: [] });
@@ -655,12 +645,19 @@ export default function QuizBank({
                 type="button"
                 className="practice-drawer-overlay"
                 aria-label="Close filters"
-                onClick={() => setFiltersOpen(false)}
+                onClick={closeFilters}
               />
-              <div className="practice-drawer" role="dialog" aria-label="Filter problems" aria-modal="true">
+              <div
+                ref={drawerRef}
+                className="practice-drawer"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="practice-filter-title"
+                tabIndex={-1}
+              >
                 <div className="practice-drawer-head">
-                  <strong>Filters</strong>
-                  <button type="button" className="practice-drawer-close" aria-label="Close" onClick={() => setFiltersOpen(false)}>x</button>
+                  <strong id="practice-filter-title">Filters</strong>
+                  <button type="button" className="practice-drawer-close" aria-label="Close filters" onClick={closeFilters} data-autofocus>x</button>
                 </div>
 
                 <div className="practice-drawer-body">
@@ -746,7 +743,7 @@ export default function QuizBank({
                   <button type="button" className="practice-panel-clear" onClick={clearAllFilters} disabled={!anyFilterActive}>
                     Clear all
                   </button>
-                  <button type="button" className="practice-drawer-show" onClick={() => setFiltersOpen(false)}>
+                  <button type="button" className="practice-drawer-show" onClick={closeFilters}>
                     Show {filteredQuestions.length} {filteredQuestions.length === 1 ? "result" : "results"}
                   </button>
                 </div>

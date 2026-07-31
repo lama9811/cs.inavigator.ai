@@ -9,6 +9,7 @@ import {
   FaTimes,
   FaUndo,
 } from "react-icons/fa";
+import useFocusTrap from "./useFocusTrap";
 import "./WorkspaceVisualizer.css";
 
 const VISUALIZERS = [
@@ -1328,7 +1329,6 @@ function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose 
   useEffect(() => {
     if (mode !== "modal") return undefined;
     const onKeyDown = (event) => {
-      if (event.key === "Escape") onClose?.();
       if (event.key === "ArrowLeft") {
         event.preventDefault();
         setIsPlaying(false);
@@ -1342,18 +1342,18 @@ function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose 
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [goToStep, mode, onClose, stepIndex]);
+  }, [goToStep, mode, stepIndex]);
 
   return (
     <section className={`workspace-visualizer ${mode === "modal" ? "is-modal" : "is-panel"}`}>
       <header className="workspace-visualizer-head">
         <div>
           <span className="workspace-visualizer-kicker">Visualize This Idea</span>
-          <h3>{trace.title}</h3>
-          <p>{trace.caption}</p>
+          <h3 id={mode === "modal" ? "workspace-visualizer-title" : undefined}>{trace.title}</h3>
+          <p id={mode === "modal" ? "workspace-visualizer-description" : undefined}>{trace.caption}</p>
         </div>
         {mode === "modal" ? (
-          <button type="button" className="workspace-visual-close" onClick={onClose} autoFocus>
+          <button type="button" className="workspace-visual-close" onClick={onClose} data-autofocus>
             <FaTimes aria-hidden="true" /> Close
           </button>
         ) : null}
@@ -1463,10 +1463,19 @@ export function WorkspaceVisualizerPanel({ activeProblem }) {
 }
 
 export function WorkspaceVisualizerModal({ activeProblem, onClose }) {
+  const modalRef = useFocusTrap(Boolean(activeProblem), { onEscape: onClose });
   if (!activeProblem) return null;
   return (
     <div className="workspace-visualizer-backdrop" role="presentation" onMouseDown={onClose}>
-      <div role="dialog" aria-modal="true" aria-label="Workspace visualizer" onMouseDown={(event) => event.stopPropagation()}>
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="workspace-visualizer-title"
+        aria-describedby="workspace-visualizer-description"
+        tabIndex={-1}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
         <TraceShell activeProblem={activeProblem} mode="modal" onClose={onClose} />
       </div>
     </div>
