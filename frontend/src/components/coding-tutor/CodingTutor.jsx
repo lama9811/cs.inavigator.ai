@@ -4176,24 +4176,28 @@ export default function CodingTutor({
     .filter(Boolean)
     .join(" ");
 
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+
   const handleMoreMenuKeyDown = (event) => {
-    const details = event.currentTarget;
-    const menuItems = Array.from(details.querySelectorAll(".coding-nav-more-menu > button"))
-      .filter((node) => !node.disabled && node.getClientRects().length > 0);
+    const menu = event.currentTarget;
+    const moreButton = menu.querySelector("[data-coding-nav-more-button='true']");
 
     if (event.key === "Escape") {
       event.preventDefault();
       event.stopPropagation();
-      details.removeAttribute("open");
-      details.querySelector("summary")?.focus();
+      setMoreMenuOpen(false);
+      moreButton?.focus();
       return;
     }
 
-    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key) || !menuItems.length) return;
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
 
     event.preventDefault();
     event.stopPropagation();
-    details.setAttribute("open", "");
+    setMoreMenuOpen(true);
+    const menuItems = Array.from(menu.querySelectorAll(".coding-nav-more-menu > button"))
+      .filter((node) => !node.disabled);
+    if (!menuItems.length) return;
 
     const activeIndex = menuItems.indexOf(document.activeElement);
     const nextIndex = (() => {
@@ -4228,6 +4232,7 @@ export default function CodingTutor({
           <button
             key={page.id}
             type="button"
+            data-coding-navitem="true"
             className={isActive ? "active" : ""}
             onClick={() => openPage(page.id)}
             title={page.label}
@@ -4238,32 +4243,40 @@ export default function CodingTutor({
           </button>
           );
         })}
-        <details
-          className="coding-nav-more"
+        <div
+          className={`coding-nav-more${moreMenuOpen ? " open" : ""}`}
           onBlur={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget)) {
-              event.currentTarget.removeAttribute("open");
+              setMoreMenuOpen(false);
             }
           }}
           onKeyDown={handleMoreMenuKeyDown}
         >
-          <summary
+          <button
+            type="button"
+            data-coding-navitem="true"
+            data-coding-nav-more-button="true"
             className={
               activePage === "progress" || (activePage === "workspace" && isPersonalMode)
                 ? "active"
                 : ""
             }
             aria-label="More Coding Tutor tools"
+            aria-haspopup="menu"
+            aria-expanded={moreMenuOpen}
+            aria-controls="coding-nav-more-menu"
+            onClick={() => setMoreMenuOpen((open) => !open)}
           >
             <span className="coding-nav-icon" aria-hidden="true"><FaEllipsisH /></span>
             <span className="coding-nav-label">More</span>
-          </summary>
-          <div className="coding-nav-more-menu">
+          </button>
+          <div className="coding-nav-more-menu" id="coding-nav-more-menu" role="menu">
             <button
               type="button"
+              role="menuitem"
               className={activePage === "progress" ? "active" : ""}
-              onClick={(event) => {
-                event.currentTarget.closest("details")?.removeAttribute("open");
+              onClick={() => {
+                setMoreMenuOpen(false);
                 openPage("progress");
               }}
             >
@@ -4272,9 +4285,10 @@ export default function CodingTutor({
             </button>
             <button
               type="button"
+              role="menuitem"
               className={activePage === "workspace" && isPersonalMode ? "active" : ""}
-              onClick={(event) => {
-                event.currentTarget.closest("details")?.removeAttribute("open");
+              onClick={() => {
+                setMoreMenuOpen(false);
                 guardPersonalNav(() => {
                   savePendingProblemProgress();
                   openMySnippets();
@@ -4290,8 +4304,9 @@ export default function CodingTutor({
               return (
                 <button
                   type="button"
-                  onClick={(event) => {
-                    event.currentTarget.closest("details")?.removeAttribute("open");
+                  role="menuitem"
+                  onClick={() => {
+                    setMoreMenuOpen(false);
                     toggleWorkspace();
                   }}
                 >
@@ -4303,11 +4318,12 @@ export default function CodingTutor({
               );
             })()}
           </div>
-        </details>
+        </div>
         {/* Theme toggle sits last as a compact icon-only circle — a setting, not a
             destination. */}
         <button
           type="button"
+          data-coding-navitem="true"
           className="coding-nav-theme-toggle"
           onClick={() => setCodingDark(prev => !prev)}
           title={codingDark ? "Switch to light mode" : "Switch to dark mode"}
