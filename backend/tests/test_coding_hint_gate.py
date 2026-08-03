@@ -196,7 +196,8 @@ def test_universal_visualizer_covers_major_topic_families():
     assert "ReactFlow" in structure_source
     assert "MarkerType.ArrowClosed" in structure_source
     assert "AnimatePresence" in structure_source
-    assert "Timeline scrubber" in visualizer_source
+    assert "Previous" in visualizer_source
+    assert "Next" in visualizer_source
     assert "function StackVisualizer" in structure_source
     assert "function QueueVisualizer" in structure_source
     assert "function TreeVisualizer" in structure_source

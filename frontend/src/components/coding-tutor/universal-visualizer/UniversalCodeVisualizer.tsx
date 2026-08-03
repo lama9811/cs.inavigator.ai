@@ -1,5 +1,5 @@
-import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
+import { FaPause, FaPlay, FaRedoAlt, FaStepBackward, FaStepForward } from "react-icons/fa";
 import { generateStepsForConcept } from "./generators";
 import {
   ArrayVisualizer,
@@ -92,7 +92,8 @@ function conceptLabel(concept: ConceptType): string {
 }
 
 function StateStrip({ step }: { step: Step }) {
-  const entries = Object.entries(step.state || {});
+  const hiddenKeys = new Set(["sample", "prompt_rule"]);
+  const entries = Object.entries(step.state || {}).filter(([key]) => !hiddenKeys.has(key));
   if (!entries.length) return null;
   return (
     <div className="ucv-state-strip" aria-label="Current state">
@@ -113,19 +114,18 @@ function WorkflowRail({ step }: { step: Step }) {
     <div className="ucv-workflow" aria-label="Visualizer workflow">
       {items.map((item, index) => {
         const state = item.state || (item.id === step.activeWorkflowId ? "active" : "default");
+        const connectorState = index < items.length - 1
+          ? items[index + 1]?.state || (items[index + 1]?.id === step.activeWorkflowId ? "active" : state)
+          : state;
         return (
-          <div key={item.id} className={`ucv-workflow-item ucv-workflow-item--${state}`}>
-            {index > 0 ? <span className="ucv-workflow-connector" aria-hidden="true" /> : null}
-            <motion.span
-              className="ucv-workflow-dot"
-              layout
-              animate={{ scale: state === "active" ? 1.14 : 1 }}
-              transition={{ type: "spring", stiffness: 260, damping: 24 }}
-              aria-hidden="true"
-            >
-              {index + 1}
-            </motion.span>
-            <span className="ucv-workflow-label">{item.label}</span>
+          <div key={item.id} className="ucv-workflow-step">
+            <div className={`ucv-workflow-node ucv-workflow-node--${state}`}>
+              <span className="ucv-workflow-dot" aria-hidden="true">{index + 1}</span>
+              <span className="ucv-workflow-label">{item.label}</span>
+            </div>
+            {index < items.length - 1 ? (
+              <span className={`ucv-workflow-line ucv-workflow-line--${connectorState}`} aria-hidden="true" />
+            ) : null}
           </div>
         );
       })}
@@ -254,31 +254,56 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
       </div>
 
       <footer className="ucv-controls" aria-label="Visualizer controls">
-        <button type="button" onClick={() => setStepIndex(0)}>Reset</button>
-        <button type="button" onClick={() => setPlaying((current) => !current)}>
-          {playing ? "Pause" : "Play"}
-        </button>
-        <input
-          type="range"
-          min="0"
-          max={steps.length - 1}
-          value={stepIndex}
-          onChange={(event) => {
-            setPlaying(false);
-            setStepIndex(Number(event.target.value));
-          }}
-          aria-label="Timeline scrubber"
-        />
-        <span>{stepIndex + 1} / {steps.length}</span>
-        <label>
-          Speed
-          <select value={speed} onChange={(event) => setSpeed(Number(event.target.value))}>
-            <option value={0.5}>0.5x</option>
-            <option value={1}>1x</option>
-            <option value={1.5}>1.5x</option>
-            <option value={2}>2x</option>
-          </select>
-        </label>
+        <div className="ucv-playbar" role="group" aria-label="Step playback">
+          <button type="button" className="ucv-control-button" onClick={() => setStepIndex(0)}>
+            <FaRedoAlt aria-hidden="true" />
+            <span>Reset</span>
+          </button>
+          <button
+            type="button"
+            className="ucv-control-button"
+            onClick={() => {
+              setPlaying(false);
+              setStepIndex((current) => Math.max(0, current - 1));
+            }}
+            disabled={stepIndex <= 0}
+          >
+            <FaStepBackward aria-hidden="true" />
+            <span>Previous</span>
+          </button>
+          <button
+            type="button"
+            className="ucv-control-button ucv-control-button--play"
+            onClick={() => setPlaying((current) => !current)}
+          >
+            {playing ? <FaPause aria-hidden="true" /> : <FaPlay aria-hidden="true" />}
+            <span>{playing ? "Pause" : "Play"}</span>
+          </button>
+          <button
+            type="button"
+            className="ucv-control-button"
+            onClick={() => {
+              setPlaying(false);
+              setStepIndex((current) => Math.min(steps.length - 1, current + 1));
+            }}
+            disabled={stepIndex >= steps.length - 1}
+          >
+            <span>Next</span>
+            <FaStepForward aria-hidden="true" />
+          </button>
+          <span className="ucv-step-count" aria-label={`Step ${stepIndex + 1} of ${steps.length}`}>
+            {stepIndex + 1} / {steps.length}
+          </span>
+          <label className="ucv-speed-control">
+            Speed
+            <select value={speed} onChange={(event) => setSpeed(Number(event.target.value))}>
+              <option value={0.5}>0.5x</option>
+              <option value={1}>1x</option>
+              <option value={1.5}>1.5x</option>
+              <option value={2}>2x</option>
+            </select>
+          </label>
+        </div>
       </footer>
     </section>
   );

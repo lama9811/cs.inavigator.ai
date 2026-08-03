@@ -92,6 +92,241 @@ function visibleState(state: Record<string, unknown> = {}): Record<string, strin
   return Object.fromEntries(entries) as Record<string, string | number | boolean>;
 }
 
+function shortText(value: unknown, fallback = "the example"): string {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  if (!text) return fallback;
+  return text.length > 72 ? `${text.slice(0, 69)}...` : text;
+}
+
+function exampleText(context: GeneratorContext, state: Record<string, unknown> = {}): string {
+  return shortText(context.exampleInput || state.sample, "the public example");
+}
+
+function expectedText(context: GeneratorContext, state: Record<string, unknown> = {}): string {
+  const goal = String(state.goal || "").replace(/^return shape:\s*/i, "").trim();
+  return shortText(context.exampleOutput || goal, "the requested result");
+}
+
+function promptRuleText(context: GeneratorContext, state: Record<string, unknown> = {}): string {
+  return shortText(state.prompt_rule || context.constraints?.[0] || context.prompt, "the prompt rule");
+}
+
+function visualPseudocodeForStep(
+  concept: string,
+  context: GeneratorContext,
+  state: Record<string, unknown> = {},
+): string[] {
+  const sample = exampleText(context, state);
+  const expected = expectedText(context, state);
+  const rule = promptRuleText(context, state);
+  const sharedFinish = `show the public example result: ${expected}`;
+  const topic = `${concept} ${context.topic || ""}`.toLowerCase();
+
+  if (concept === "conditional") {
+    return [
+      `read the example input: ${sample}`,
+      `ask this rule: ${rule}`,
+      "follow the branch that matches",
+      sharedFinish,
+    ];
+  }
+  if (concept === "stack") {
+    return [
+      `read the next command from ${sample}`,
+      "if it says push, place the item on top",
+      "if it says pop, remove only the top item",
+      sharedFinish,
+    ];
+  }
+  if (concept === "queue") {
+    return [
+      `read the next command from ${sample}`,
+      "join adds to the back of the line",
+      "serve removes from the front of the line",
+      sharedFinish,
+    ];
+  }
+  if (concept === "linked-list") {
+    return [
+      "start at the head node",
+      "read the current node value",
+      "follow the next arrow",
+      "stop when the next arrow is null",
+    ];
+  }
+  if (concept === "hash-map") {
+    return [
+      `look up the key from ${sample}`,
+      "jump to the matching bucket",
+      "compare keys inside that bucket",
+      sharedFinish,
+    ];
+  }
+  if (concept === "set" || topic.includes("set")) {
+    return [
+      `read one item from ${sample}`,
+      "check whether set memory has it already",
+      "keep the item only when the rule allows",
+      sharedFinish,
+    ];
+  }
+  if (concept === "tuple" || topic.includes("tuple")) {
+    return [
+      `line up the matching positions from ${sample}`,
+      "take one value from each list",
+      "build one paired result",
+      sharedFinish,
+    ];
+  }
+  if (concept === "binary-search") {
+    return [
+      "mark left, middle, and right",
+      "compare the middle value to the target",
+      "cross out the half that cannot work",
+      sharedFinish,
+    ];
+  }
+  if (concept === "two-pointers") {
+    return [
+      "place one pointer on each needed side",
+      "compare the two highlighted values",
+      "move only the pointer the rule allows",
+      sharedFinish,
+    ];
+  }
+  if (concept === "sliding-window") {
+    return [
+      "put the window around nearby items",
+      "add the item entering the window",
+      "remove the item leaving the window",
+      sharedFinish,
+    ];
+  }
+  if (concept === "recursion") {
+    return [
+      "check whether this call is the small stopping case",
+      "make the next call with less work",
+      "wait for the smaller answer to come back",
+      "combine only the piece this call owns",
+    ];
+  }
+  if (concept === "binary-tree") {
+    return [
+      "start at the root",
+      "look at the current node",
+      "follow the left or right child link",
+      sharedFinish,
+    ];
+  }
+  if (concept === "graph") {
+    return [
+      "start from the first node",
+      "add neighbors to the frontier",
+      "visit each node only once",
+      sharedFinish,
+    ];
+  }
+  if (concept === "heap") {
+    return [
+      "add the item to the next open tree spot",
+      "compare it with its parent",
+      "move it upward only if priority requires it",
+      sharedFinish,
+    ];
+  }
+  if (concept === "trie") {
+    return [
+      "start at the root",
+      "follow one character at a time",
+      "branch when the next letter differs",
+      "mark where a full word ends",
+    ];
+  }
+  if (concept === "union-find") {
+    return [
+      "start with each item in its own group",
+      "find the leader for each item",
+      "connect two leaders when groups merge",
+      sharedFinish,
+    ];
+  }
+  if (concept === "dynamic-programming") {
+    return [
+      "name what one saved cell means",
+      "fill the small starting cases",
+      "reuse earlier saved answers",
+      sharedFinish,
+    ];
+  }
+  if (concept === "matrix") {
+    return [
+      "choose the current row",
+      "choose the current column",
+      "read the highlighted cell",
+      sharedFinish,
+    ];
+  }
+  if (concept === "prefix-sum") {
+    return [
+      "read the original values in order",
+      "add the next value to the running total",
+      "save that total for later ranges",
+      sharedFinish,
+    ];
+  }
+  if (concept === "intervals") {
+    return [
+      "place each interval on the number line",
+      "compare the next start with the saved end",
+      "merge only when the bars overlap",
+      sharedFinish,
+    ];
+  }
+  if (concept === "bit-manipulation") {
+    return [
+      "write the example as bits",
+      "inspect one bit at a time",
+      "update the count or mask when the bit matters",
+      sharedFinish,
+    ];
+  }
+  if (concept === "math") {
+    return [
+      `read the example values: ${sample}`,
+      "change one formula piece at a time",
+      `respect this rule: ${rule}`,
+      sharedFinish,
+    ];
+  }
+  return [
+    `load the public example: ${sample}`,
+    `use this prompt rule: ${rule}`,
+    "change one highlighted state value",
+    sharedFinish,
+  ];
+}
+
+function workflowFromLabels(labels: string[], activeIndex: number): WorkflowStep[] {
+  const safeLabels = labels.length ? labels : ["Start", "Trace", "Check", "Finish"];
+  const boundedActive = Math.min(Math.max(activeIndex, 0), safeLabels.length - 1);
+  return safeLabels.map((label, index) => ({
+    id: `workflow-${index}`,
+    label: shortText(label, "Step"),
+    state: index < boundedActive ? "visited" : index === boundedActive ? "active" : "default",
+  }));
+}
+
+function authoredWorkflowLabels(rawSteps: Array<Record<string, unknown>>, concept: string): string[] {
+  const fallback = WORKFLOW_LABELS[concept as ConceptType] || WORKFLOW_LABELS.array;
+  return rawSteps.map((raw, index) => {
+    const action = shortText(raw.action, "");
+    if (action) return action.replace(/[-_]/g, " ");
+    const title = shortText(raw.title, "");
+    if (title && !/load the example|make one|predict|connect the visual|keep the answer/i.test(title)) return title;
+    return fallback[Math.min(index, fallback.length - 1)] || `Step ${index + 1}`;
+  });
+}
+
 function parseToken(token: string): string | number {
   const cleaned = token.trim().replace(/^['"]|['"]$/g, "");
   const numeric = Number(cleaned);
@@ -467,6 +702,87 @@ function relevantRule(context: GeneratorContext): string {
   return constraints.find((item) => !/integer|length|same|range|empty/i.test(item)) || "the condition from the prompt";
 }
 
+function cleanedResult(value: unknown): string {
+  return String(value || "")
+    .replace(/^return\s+/i, "")
+    .replace(/^return shape:\s*/i, "")
+    .replace(/[.;]\s*$/g, "")
+    .replace(/^["']|["']$/g, "")
+    .trim();
+}
+
+function conditionalRules(context: GeneratorContext): Array<{ rule: string; result: string }> {
+  const title = String(context.title || "").toLowerCase();
+  if (title.includes("grade bucket")) {
+    return [
+      { rule: "score >= 90", result: "A" },
+      { rule: "score >= 80", result: "B" },
+      { rule: "score >= 70", result: "C" },
+      { rule: "score >= 60", result: "D" },
+      { rule: "otherwise", result: "F" },
+    ];
+  }
+
+  const rules = (context.constraints || [])
+    .map((constraint) => {
+      const cleaned = constraint.replace(/\s+/g, " ").trim();
+      const ifMatch = cleaned.match(/^if\s+(.+?),?\s+return\s+(.+)$/i);
+      if (ifMatch) return { rule: ifMatch[1].trim(), result: cleanedResult(ifMatch[2]) };
+      const returnMatch = cleaned.match(/^return\s+(.+?)\s+(?:if|when)\s+(.+)$/i);
+      if (returnMatch) return { rule: returnMatch[2].trim(), result: cleanedResult(returnMatch[1]) };
+      return null;
+    })
+    .filter(Boolean) as Array<{ rule: string; result: string }>;
+
+  if (rules.length) return rules.slice(0, 6);
+  return [{ rule: relevantRule(context), result: expectedText(context) }];
+}
+
+function expandConditionalSteps(
+  rawSteps: Array<Record<string, unknown>>,
+  baseState: Record<string, unknown>,
+  context: GeneratorContext,
+): Array<Record<string, unknown>> {
+  const rules = conditionalRules(context);
+  if (rules.length <= 1) return rawSteps;
+  const expected = cleanedResult(context.exampleOutput || baseState.goal);
+  const chosenIndex = Math.max(0, rules.findIndex((rule) => cleanedResult(rule.result).toLowerCase() === expected.toLowerCase()));
+  const input = exampleText(context, baseState);
+  return [
+    {
+      title: `Read the ${context.title || "conditional"} example`,
+      body: `Start with the public example input: ${input}. The visual will test one branch at a time.`,
+      action: "input",
+      state: { ...baseState, condition_phase: "input" },
+    },
+    ...rules.map((rule, ruleIndex) => {
+      const taken = ruleIndex === chosenIndex;
+      return {
+        title: `Check branch ${ruleIndex + 1}`,
+        body: taken
+          ? `Ask whether ${rule.rule}. This branch matches the example, so the other branches fade back.`
+          : `Ask whether ${rule.rule}. This branch does not match the example, so keep moving to the next rule.`,
+        action: taken ? "matched branch" : "skip branch",
+        state: {
+          ...baseState,
+          condition_phase: "branch",
+          rule: rule.rule,
+          branch_result: rule.result,
+          branch_taken: taken,
+          branch_number: ruleIndex + 1,
+          branches: rules.length,
+        },
+      };
+    }),
+    {
+      title: "Return the chosen branch",
+      body: `Only the matching branch supplies the public example result: ${expected || "the requested result"}.`,
+      action: "result",
+      state: { ...baseState, condition_phase: "end", rule: rules[chosenIndex]?.rule, branch_result: expected, branch_taken: true },
+    },
+  ];
+}
+
 function conditionInputLabel(context: GeneratorContext, state: Record<string, unknown>): string {
   const assignments = parseScalarAssignments(context.exampleInput);
   const pairs = Object.entries(assignments);
@@ -477,26 +793,28 @@ function conditionInputLabel(context: GeneratorContext, state: Record<string, un
 
 function authoredConditionalVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
   const input = conditionInputLabel(context, state);
-  const output = context.exampleOutput || String(state.goal || "result").replace(/^return shape:\s*/i, "");
-  const rule = relevantRule(context);
-  const phase = index <= 0 ? "input" : index === 1 ? "condition" : index === 2 ? "true" : "end";
+  const output = cleanedResult(state.branch_result || context.exampleOutput || state.goal || "result");
+  const rule = String(state.rule || relevantRule(context));
+  const phase = String(state.condition_phase || (index <= 0 ? "input" : index === 1 ? "condition" : index === 2 ? "branch" : "end"));
+  const branchTaken = state.branch_taken !== false;
+  const branchLabel = branchTaken ? "true" : "false";
   const nodes: Node[] = [
     { id: "start", x: 68, y: 260, value: "Start", type: "logic-node", label: "", state: index >= 0 ? "visited" : "default", meta: { role: "terminator" } },
     { id: "input", x: 190, y: 260, value: input, type: "logic-node", label: "input", state: phase === "input" ? "active" : "visited", meta: { role: "flow-step" } },
-    { id: "condition", x: 360, y: 260, value: rule, type: "logic-node", label: "condition", state: phase === "condition" ? "active" : "visited", meta: { role: "diamond" } },
-    { id: "true", x: 570, y: 168, value: output ? `return ${output}` : "steps", type: "logic-node", label: "true", state: phase === "true" || phase === "end" ? "active" : "default", meta: { role: "flow-step" } },
-    { id: "false", x: 570, y: 352, value: "try next rule", type: "logic-node", label: "false", state: "inactive", meta: { role: "flow-step" } },
+    { id: "condition", x: 360, y: 260, value: rule, type: "logic-node", label: "condition", state: phase === "condition" || phase === "branch" ? "active" : "visited", meta: { role: "diamond" } },
+    { id: "true", x: 570, y: 168, value: output ? `return ${output}` : "steps", type: "logic-node", label: "true", state: phase === "end" || (phase === "branch" && branchTaken) ? "active" : "default", meta: { role: "flow-step" } },
+    { id: "false", x: 570, y: 352, value: branchTaken ? "skip other branches" : "try next rule", type: "logic-node", label: "false", state: phase === "branch" && !branchTaken ? "active" : "inactive", meta: { role: "flow-step" } },
     { id: "end", x: 790, y: 260, value: "End", type: "logic-node", label: "", state: phase === "end" ? "active" : "default", meta: { role: "terminator" } },
   ];
   const edges: Edge[] = [
     { id: "start-input", from: "start", to: "input", type: "branch", state: "active" },
     { id: "input-condition", from: "input", to: "condition", type: "branch", state: index >= 1 ? "active" : "default" },
-    { id: "condition-true", from: "condition", to: "true", type: "branch", label: "True", state: index >= 2 ? "active" : "default" },
-    { id: "condition-false", from: "condition", to: "false", type: "branch", label: "False", state: "inactive" },
-    { id: "true-end", from: "true", to: "end", type: "branch", state: index >= 3 ? "active" : "default" },
-    { id: "false-end", from: "false", to: "end", type: "branch", state: "inactive" },
+    { id: "condition-true", from: "condition", to: "true", type: "branch", label: "True", state: phase === "end" || (phase === "branch" && branchTaken) ? "active" : "default" },
+    { id: "condition-false", from: "condition", to: "false", type: "branch", label: "False", state: phase === "branch" && !branchTaken ? "active" : "inactive" },
+    { id: "true-end", from: "true", to: "end", type: "branch", state: phase === "end" ? "active" : "default" },
+    { id: "false-end", from: "false", to: "end", type: "branch", state: phase === "branch" && !branchTaken ? "active" : "inactive" },
   ];
-  return { nodes, edges, highlights: phase === "true" ? ["true"] : [phase] };
+  return { nodes, edges, highlights: phase === "branch" ? ["condition", branchTaken ? "true" : "false"] : [phase] };
 }
 
 function authoredStackQueueVisual(concept: string, state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
@@ -838,31 +1156,31 @@ function bodyForAuthoredStep(rawBody: unknown, context: GeneratorContext, index:
 }
 
 function generateAuthoredVisualizerSteps(concept: string, context: GeneratorContext = {}): Step[] | null {
-  const authoredSteps = context.visualizer?.steps;
-  if (!context.useAuthored || !Array.isArray(authoredSteps) || !authoredSteps.length) return null;
+  const rawAuthoredSteps = context.visualizer?.steps;
+  if (!context.useAuthored || !Array.isArray(rawAuthoredSteps) || !rawAuthoredSteps.length) return null;
+  const authoredSteps = concept === "conditional"
+    ? expandConditionalSteps(rawAuthoredSteps, (context.visualizer?.input || {}) as Record<string, unknown>, context)
+    : rawAuthoredSteps;
   const baseState = (context.visualizer?.input || {}) as Record<string, unknown>;
+  const workflowLabels = authoredWorkflowLabels(authoredSteps, concept);
   return authoredSteps.map((raw, index) => {
     const rawState = {
       ...baseState,
       ...((raw.state && typeof raw.state === "object") ? raw.state as Record<string, unknown> : {}),
     };
     const visual = visualForAuthoredStep(concept, rawState, context, index);
-    const fallbackCode = splitCodeLines((context.visualizer as { patternSketch?: string } | undefined)?.patternSketch, [
-      "read the example input",
-      "make one state change",
-      "predict the next state",
-      "return only what the prompt asks",
-    ]);
-    const code = splitCodeLines(raw.code, fallbackCode);
+    const code = visualPseudocodeForStep(concept, context, rawState);
+    const activeLine = Math.min(index + 1, code.length);
     return step({
       concept: concept as Step["concept"],
       title: titleForAuthoredStep(raw.title, context, index),
       description: bodyForAuthoredStep(raw.body, context, index),
       nodes: visual.nodes,
       edges: visual.edges,
-      highlights: { nodeIds: visual.highlights, edgeIds: visual.edges.filter((edge) => edge.state === "active").map((edge) => edge.id || `${edge.from}-${edge.to}`), lineNumbers: [Math.min(index + 1, code.length)] },
+      highlights: { nodeIds: visual.highlights, edgeIds: visual.edges.filter((edge) => edge.state === "active").map((edge) => edge.id || `${edge.from}-${edge.to}`), lineNumbers: [activeLine] },
       code,
-      activeLine: Math.min(index + 1, code.length),
+      activeLine,
+      workflow: workflowFromLabels(workflowLabels, index),
       state: {
         example: context.exampleInput || String(rawState.sample || ""),
         expected: context.exampleOutput || "",
