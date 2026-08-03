@@ -7053,6 +7053,45 @@ _POPULAR_Q_FEATURE_SESSION_PREFIXES = (
 _popular_q_cache = {"ts": 0.0, "questions": None}
 _POPULAR_Q_TTL = 300
 
+# The curated fallback chips. Module-level so tests can assert against it — a chip
+# naming a course that does not exist ("COSC 450 Operating Systems", fixed 2026-08-03)
+# sends the student into a KB miss on the very first screen, and the agent correctly
+# refuses to invent it. Every course code here must exist in classes.json.
+_POPULAR_Q_CURATED_POOL = [
+    # Course & curriculum
+    "What courses should I take next semester if I'm interested in AI/ML?",
+    "Can you recommend a study plan for the cybersecurity track?",
+    "What are the prerequisites for COSC 354 Operating Systems?",
+    "What electives count toward the CS degree?",
+    "What math courses are required for the CS major?",
+    "What is the recommended course sequence for freshmen CS students?",
+    "Which courses cover data structures and algorithms?",
+    # Department & faculty
+    "Who are the professors in the CS department and what do they teach?",
+    "Who is the chair of the Computer Science department?",
+    "What research areas do CS faculty specialize in?",
+    "How do I find a faculty mentor for my capstone project?",
+    # Career & opportunities
+    "What internship and co-op opportunities are available for CS majors?",
+    "What career paths can I pursue with a CS degree from Morgan State?",
+    "How can I prepare for technical interviews?",
+    "What companies recruit CS students from Morgan State?",
+    # Academic advising & graduation
+    "How do I apply for graduation and what requirements do I need?",
+    "How many credits do I need to graduate with a CS degree?",
+    "What is the difference between a B.S. and B.A. in Computer Science?",
+    "What is the minimum GPA required to stay in the CS program?",
+    # Research & extracurricular
+    "What research labs and projects can I join in the CS department?",
+    "Are there any CS student organizations or clubs at Morgan State?",
+    "How can I get involved in undergraduate research?",
+    "What programming competitions can Morgan State students participate in?",
+    # Frequently asked
+    "How do I contact my academic advisor?",
+    "Where is the Computer Science department located?",
+    "How do I register for CS courses?",
+]
+
 
 @app.get("/api/popular-questions")
 async def get_popular_questions(db: Session = Depends(get_db)):
@@ -7073,40 +7112,7 @@ async def get_popular_questions(db: Session = Depends(get_db)):
     """
     import time
 
-    QUESTION_POOL = [
-        # Course & curriculum
-        "What courses should I take next semester if I'm interested in AI/ML?",
-        "Can you recommend a study plan for the cybersecurity track?",
-        "What are the prerequisites for COSC 450 Operating Systems?",
-        "What electives count toward the CS degree?",
-        "What math courses are required for the CS major?",
-        "What is the recommended course sequence for freshmen CS students?",
-        "Which courses cover data structures and algorithms?",
-        # Department & faculty
-        "Who are the professors in the CS department and what do they teach?",
-        "Who is the chair of the Computer Science department?",
-        "What research areas do CS faculty specialize in?",
-        "How do I find a faculty mentor for my capstone project?",
-        # Career & opportunities
-        "What internship and co-op opportunities are available for CS majors?",
-        "What career paths can I pursue with a CS degree from Morgan State?",
-        "How can I prepare for technical interviews?",
-        "What companies recruit CS students from Morgan State?",
-        # Academic advising & graduation
-        "How do I apply for graduation and what requirements do I need?",
-        "How many credits do I need to graduate with a CS degree?",
-        "What is the difference between a B.S. and B.A. in Computer Science?",
-        "What is the minimum GPA required to stay in the CS program?",
-        # Research & extracurricular
-        "What research labs and projects can I join in the CS department?",
-        "Are there any CS student organizations or clubs at Morgan State?",
-        "How can I get involved in undergraduate research?",
-        "What programming competitions can Morgan State students participate in?",
-        # Frequently asked
-        "How do I contact my academic advisor?",
-        "Where is the Computer Science department located?",
-        "How do I register for CS courses?",
-    ]
+    QUESTION_POOL = _POPULAR_Q_CURATED_POOL
 
     # Serve from cache if fresh.
     now = time.time()
