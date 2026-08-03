@@ -10,6 +10,7 @@ import {
   FaUndo,
 } from "react-icons/fa";
 import useFocusTrap from "./useFocusTrap";
+import UniversalCodeVisualizer from "./universal-visualizer/UniversalCodeVisualizer";
 import "./WorkspaceVisualizer.css";
 
 const VISUALIZERS = [
@@ -171,17 +172,8 @@ function normalizeConcept(value) {
   return normalized || "array-scan";
 }
 
-function inferVisualizerFromProblem(problem) {
-  if (!problem) return null;
-  const topic = normalizeConcept(problem.topic);
-  if (VISUALIZERS.some((item) => item.id === topic)) {
-    return {
-      concept: topic,
-      title: `${problem.title}: visual trace`,
-      caption: "Step through the idea behind this problem before changing code.",
-    };
-  }
-  return null;
+function hasAuthoredVisualizer(problem) {
+  return Boolean(problem?.visualizer?.concept && problem.visualizer.title && problem.visualizer.caption);
 }
 
 function parseNumberList(text) {
@@ -641,6 +633,83 @@ function linkedListTrace(meta) {
   return { title: meta?.title || "Linked list: do not lose the chain", concept: "linked-list", caption: meta?.caption || "Trace the links before and after an insert.", steps };
 }
 
+function firstSentence(text = "", fallback = "") {
+  const value = String(text || "").trim();
+  if (!value) return fallback;
+  const [sentence] = value.split(/(?<=[.!?])\s+/);
+  return (sentence || value).slice(0, 120);
+}
+
+function decisionFlowTrace(meta) {
+  const example = Array.isArray(meta?.examples) ? meta.examples[0] : null;
+  const inputLabel = String(example?.input || meta?.input?.sample || "sample input");
+  const outputLabel = String(example?.output || meta?.input?.goal || "the matching result");
+  const constraint = Array.isArray(meta?.constraints) && meta.constraints.length
+    ? String(meta.constraints[0])
+    : firstSentence(meta?.prompt, "Use the rule from the prompt.");
+  const promptRule = firstSentence(constraint, "Use the rule from the prompt.");
+  const baseState = {
+    input: inputLabel,
+    condition: promptRule,
+    yes: `match -> ${outputLabel}`,
+    no: "try next rule",
+    result: outputLabel,
+  };
+  const steps = [
+    makeStep({
+      title: "Start with one sample input",
+      body: `Use ${inputLabel} and decide which prompt rule handles it.`,
+      changed: "input is ready",
+      why: "A conditional problem is about choosing one path, not running every path.",
+      state: { ...baseState, activeDecision: "input" },
+      code: "look at the input",
+      cue: "What value or fact will the rule check?",
+      action: "input",
+      animation: "add",
+    }),
+    makeStep({
+      title: "Ask the yes/no question",
+      body: `Check this rule: ${promptRule}`,
+      changed: "the condition decides the path",
+      why: "The condition is the fork in the road. Only one branch should run for this sample.",
+      state: { ...baseState, activeDecision: "condition" },
+      code: "ask whether the rule matches",
+      cue: "For this sample, should the answer go down the yes path or the no path?",
+      action: "check",
+      animation: "highlight",
+    }),
+    makeStep({
+      title: "Follow the matching branch",
+      body: `For this walkthrough, the matching branch leads toward ${outputLabel}.`,
+      changed: `chosen result = ${outputLabel}`,
+      why: "Once a branch matches, the later branches should not overwrite its result.",
+      state: { ...baseState, activeDecision: "yes" },
+      code: "if it matches, use this branch",
+      cue: "What should happen if the rule does not match on a different input?",
+      action: "branch",
+      animation: "slide",
+    }),
+    makeStep({
+      title: "Return that branch's result",
+      body: `The function returns ${outputLabel} for this sample.`,
+      changed: `return ${outputLabel}`,
+      why: "The returned value should match the branch, not every possible condition.",
+      state: { ...baseState, activeDecision: "result" },
+      code: "return the matching answer",
+      cue: "Which boundary inputs should you test next?",
+      action: "return",
+      animation: "visit",
+    }),
+  ];
+  return {
+    title: meta?.title || "Decision flow: choose one branch",
+    concept: "decision-flow",
+    caption: meta?.caption || "Watch one input move through a yes/no decision and return the matching result.",
+    patternSketch: "look at input\nask one yes/no question\nfollow only the matching branch\nreturn that branch's result",
+    steps,
+  };
+}
+
 function recursionTrace(meta) {
   const n = Number.isFinite(Number(meta?.input?.n)) ? Number(meta.input.n) : 3;
   if (meta?.preset === "countdown") {
@@ -981,6 +1050,7 @@ function graphTrace(meta) {
 
 function authoredTrace(meta) {
   const concept = normalizeConcept(meta?.concept);
+  if (concept === "decision-flow") return decisionFlowTrace(meta);
   const rawSteps = Array.isArray(meta?.steps) ? meta.steps : [];
   if (!rawSteps.length) return null;
   return {
@@ -1180,11 +1250,43 @@ function VisualNodes({ nodes = [], edges = [] }) {
   );
 }
 
+function VisualDecisionFlow({ state = {} }) {
+  const active = state.activeDecision || "condition";
+  const isActive = (name) => active === name;
+  return (
+    <div className={`workspace-decision-flow is-${active}`} aria-label="Decision flow state">
+      <div className={`decision-node decision-input ${isActive("input") ? "is-active" : ""}`}>
+        <span>Input</span>
+        <strong>{state.input || "sample"}</strong>
+      </div>
+      <div className={`decision-node decision-condition ${isActive("condition") ? "is-active" : ""}`}>
+        <span>Question</span>
+        <strong>{state.condition || "Does the rule match?"}</strong>
+      </div>
+      <div className="decision-branches" aria-label="Possible branches">
+        <div className={`decision-path decision-yes ${isActive("yes") || isActive("result") ? "is-active" : ""}`}>
+          <span>Yes</span>
+          <strong>{state.yes || "use this branch"}</strong>
+        </div>
+        <div className={`decision-path decision-no ${isActive("no") ? "is-active" : ""}`}>
+          <span>No</span>
+          <strong>{state.no || "try the next rule"}</strong>
+        </div>
+      </div>
+      <div className={`decision-node decision-result ${isActive("result") ? "is-active" : ""}`}>
+        <span>Result</span>
+        <strong>{state.result || "return value"}</strong>
+      </div>
+    </div>
+  );
+}
+
 function VisualDiagram({ trace, step, replayKey }) {
   const state = step?.state || {};
   const items = state.items || state.values || [];
   return (
     <div key={`${step?.title}-${replayKey}`} className={`workspace-visual-diagram is-${trace.concept} anim-${step?.animation || "highlight"}`}>
+      {trace.concept === "decision-flow" ? <VisualDecisionFlow state={state} /> : null}
       {state.stack ? <VisualStack items={state.stack} active={state.active} /> : null}
       {state.queue ? (
         <div>
@@ -1192,7 +1294,7 @@ function VisualDiagram({ trace, step, replayKey }) {
           <div className="workspace-visual-labels"><span>front</span><span>back</span></div>
         </div>
       ) : null}
-      {items.length ? <VisualTokenRow items={items} active={state.active} pointers={state.pointers} window={state.window} /> : null}
+      {trace.concept !== "decision-flow" && items.length ? <VisualTokenRow items={items} active={state.active} pointers={state.pointers} window={state.window} /> : null}
       {state.table ? <VisualTable rows={state.table} /> : null}
       {state.grid ? <VisualGrid rows={state.grid} active={state.activeCells} /> : null}
       {state.intervals ? <VisualTimeline intervals={state.intervals} active={state.active} /> : null}
@@ -1236,6 +1338,12 @@ function stateEntries(state = {}) {
     "edges",
     "call_stack",
     "active_call",
+    "activeDecision",
+    "input",
+    "condition",
+    "yes",
+    "no",
+    "result",
   ]);
   const entries = [];
   Object.entries(state.pointers || {}).forEach(([key, value]) => entries.push([key, value]));
@@ -1263,7 +1371,13 @@ function VisualStateTray({ step }) {
 
 function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose }) {
   const baseMeta = useMemo(
-    () => initialVisualizer || activeProblem?.visualizer || inferVisualizerFromProblem(activeProblem) || { concept: "array-scan" },
+    () => ({
+      ...(initialVisualizer || activeProblem?.visualizer || { concept: "array-scan", title: "Visualizer unavailable", caption: "This problem does not have an authored visualizer yet." }),
+      problemTitle: activeProblem?.title,
+      prompt: activeProblem?.prompt,
+      examples: activeProblem?.examples,
+      constraints: activeProblem?.constraints,
+    }),
     [activeProblem, initialVisualizer],
   );
   const [concept, setConcept] = useState(() => normalizeConcept(baseMeta.concept));
@@ -1343,6 +1457,10 @@ function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [goToStep, mode, stepIndex]);
+
+  if (hasAuthoredVisualizer(activeProblem)) {
+    return <UniversalCodeVisualizer activeProblem={activeProblem} mode={mode} onClose={onClose} />;
+  }
 
   return (
     <section className={`workspace-visualizer ${mode === "modal" ? "is-modal" : "is-panel"}`}>
@@ -1455,6 +1573,7 @@ function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose 
 }
 
 export function WorkspaceVisualizerPanel({ activeProblem }) {
+  if (!hasAuthoredVisualizer(activeProblem)) return null;
   return (
     <div className="workspace-visualizer-panel">
       <TraceShell activeProblem={activeProblem} mode="panel" />
@@ -1464,7 +1583,7 @@ export function WorkspaceVisualizerPanel({ activeProblem }) {
 
 export function WorkspaceVisualizerModal({ activeProblem, onClose }) {
   const modalRef = useFocusTrap(Boolean(activeProblem), { onEscape: onClose });
-  if (!activeProblem) return null;
+  if (!activeProblem || !hasAuthoredVisualizer(activeProblem)) return null;
   return (
     <div className="workspace-visualizer-backdrop" role="presentation" onMouseDown={onClose}>
       <div

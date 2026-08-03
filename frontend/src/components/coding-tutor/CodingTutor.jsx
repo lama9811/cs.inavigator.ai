@@ -594,158 +594,484 @@ function recordBestStreak(currentStreak = 0) {
   return best;
 }
 
-function normalizeSnippet(text = "") {
-  return String(text).split("\n").filter(line => line.trim()).slice(0, 5).join("\n");
-}
-
-function buildShapeSnippet(solution = {}) {
-  const referenceLines = String(solution.reference_solution || "")
-    .split("\n")
-    .filter(line => {
-      const trimmed = line.trim();
-      return (
-        trimmed &&
-        /[=()[\]{}:]|return|for |while |if |else|push|append|add|set|map|queue|stack/.test(trimmed) &&
-        !/^\s*(import|from\s+.+\s+import|def\s+|class\s+)/.test(line) &&
-        !/^use the prompt/i.test(trimmed)
-      );
-    });
-  if (referenceLines.length) return referenceLines.slice(0, 4).join("\n");
-  const guided = solution.guided_steps || [];
-  const codeLikeStep = guided.find(step => /[=()[\]{}:]|return|for |while |if /.test(String(step)));
-  return normalizeSnippet(codeLikeStep || solution.starter_code || "");
-}
-
-function buildPseudocodeSnippet(problem = {}, solution = {}) {
+function pseudocodeFamily(problem = {}) {
   const topic = String(problem.topic || "").toLowerCase();
   const prompt = String(problem.prompt || "").toLowerCase();
-  const functionName = solution.function_name || "answer";
+  const title = String(problem.title || "").toLowerCase();
 
-  if (topic.includes("binary search")) {
-    return [
-      "left = first index",
-      "right = last index",
-      "while left has not passed right:",
-      "    choose the middle index",
-      "    use the comparison to keep only one side",
-      "return the value or fallback requested by the prompt",
-    ].join("\n");
-  }
-  if (topic.includes("two pointers")) {
-    return [
-      "left = start of input",
-      "right = end of input",
-      "while left is before right:",
-      "    compare or combine the two pointed values",
-      "    move the pointer that the prompt rule allows",
-      "return the requested result",
-    ].join("\n");
-  }
-  if (topic.includes("sliding window")) {
-    return [
-      "left = 0",
-      "current = empty running state",
-      "for each right position:",
-      "    add the new item to current",
-      "    shrink from the left while the window breaks the rule",
-      "    update the best answer for this window",
-      "return best",
-    ].join("\n");
-  }
-  if (topic.includes("recursion")) {
-    return [
-      `define ${functionName}(input):`,
-      "    if this is the smallest case:",
-      "        return the direct answer",
-      "    solve a smaller version of the input",
-      "    combine that smaller answer with the current step",
-    ].join("\n");
-  }
-  if (topic.includes("stack")) {
-    return [
-      "stack = empty list",
-      "for each item:",
-      "    if the item opens or waits:",
-      "        push it onto the stack",
-      "    otherwise compare it with the top item",
-      "return the state requested by the prompt",
-    ].join("\n");
-  }
-  if (topic.includes("queue")) {
-    return [
-      "queue = empty line",
-      "for each command or item:",
-      "    add new arrivals to the back",
-      "    remove served items from the front",
-      "return the remaining line or processed result",
-    ].join("\n");
-  }
-  if (topic.includes("hash") || topic.includes("map") || topic.includes("dictionary")) {
-    return [
-      "memory = empty map",
-      "for each item:",
-      "    build the lookup key",
-      "    read or update memory for that key",
-      "    update the answer when the prompt condition is met",
-      "return the answer",
-    ].join("\n");
-  }
-  if (topic.includes("set")) {
-    return [
-      "seen = empty set",
-      "for each item:",
-      "    check whether the item belongs in the set",
-      "    add, skip, or compare based on the prompt rule",
-      "return the requested count, list, or boolean",
-    ].join("\n");
-  }
-  if (topic.includes("tree")) {
-    return [
-      "start from the root",
-      "visit the current node if it exists",
-      "send the needed state to the left and right children",
-      "combine child results using the prompt rule",
-      "return the combined tree answer",
-    ].join("\n");
-  }
-  if (topic.includes("graph")) {
-    return [
-      "frontier = starting nodes",
-      "visited = empty set",
-      "while frontier is not empty:",
-      "    take the next node",
-      "    skip it if already visited",
-      "    add its valid neighbors",
-      "return the requested reachability, count, or path result",
-    ].join("\n");
-  }
-  if (topic.includes("linked")) {
-    return [
-      "current = head",
-      "while current is not past the end:",
-      "    read the current value",
-      "    update the saved answer or links",
-      "    move current to the next item",
-      "return the requested result",
-    ].join("\n");
-  }
-  if (topic.includes("string") || prompt.includes("string")) {
-    return [
-      "answer = starting value",
-      "for each character or word:",
-      "    check the prompt condition",
-      "    update answer when it matches",
-      "return answer",
-    ].join("\n");
-  }
+  if (topic.includes("binary search")) return "binary-search";
+  if (topic.includes("two pointers")) return "two-pointers";
+  if (topic.includes("sliding window")) return "sliding-window";
+  if (topic.includes("recursion")) return "recursion";
+  if (topic.includes("stack")) return "stack";
+  if (topic.includes("queue")) return "queue";
+  if (topic.includes("hash") || topic.includes("map") || topic.includes("dictionary")) return "map";
+  if (topic.includes("set")) return "set";
+  if (topic.includes("tree")) return "tree";
+  if (topic.includes("graph")) return "graph";
+  if (topic.includes("linked")) return "linked-list";
+  if (topic.includes("heap")) return "heap";
+  if (topic.includes("trie")) return "trie";
+  if (topic.includes("disjoint")) return "union-find";
+  if (topic.includes("dynamic")) return "dynamic-programming";
+  if (topic.includes("interval")) return "intervals";
+  if (topic.includes("prefix")) return "prefix-sum";
+  if (topic.includes("matrix")) return "matrix";
+  if (topic.includes("bit")) return "bit-manipulation";
+  if (topic.includes("math") || prompt.includes("formula") || prompt.includes("total") || title.includes("total")) return "math";
+  if (topic.includes("conditional") || prompt.includes("if ") || prompt.includes("when ")) return "conditionals";
+  if (topic.includes("string") || prompt.includes("string") || prompt.includes("text")) return "string";
+  if (topic.includes("array") || topic.includes("list") || prompt.includes("list") || prompt.includes("array")) return "array";
+  return "scan";
+}
 
-  return [
-    "answer = starting value",
-    "for each item or step in the input:",
-    "    check the condition from the prompt",
-    "    update the saved answer",
-    "return answer",
-  ].join("\n");
+const PSEUDOCODE_TEMPLATES = {
+  array: {
+    short: [
+      "Start with an empty or zero answer",
+      "For each item in the list",
+      "Check the rule from the prompt",
+      "Update the answer only when the rule matches",
+      "Return the final answer",
+    ],
+    detailed: [
+      "Choose the starting answer value",
+      "Walk through the list one item at a time",
+      "For each item, decide whether it should count, be copied, or change the running value",
+      "Leave the answer unchanged when the item does not match the prompt rule",
+      "After the last item, return exactly the value the prompt asks for",
+    ],
+    edges: ["empty list", "one item", "no matching items", "all items match"],
+  },
+  string: {
+    short: [
+      "Start with the text and the answer state",
+      "For each character or word",
+      "Normalize only if the prompt says to",
+      "Compare or update the answer",
+      "Return the requested text, count, or boolean",
+    ],
+    detailed: [
+      "Identify whether the prompt cares about characters, words, or the full string",
+      "Walk through the text in order",
+      "Apply the exact matching rule before changing the saved answer",
+      "Preserve or change capitalization only when the prompt says to",
+      "Return the final value in the requested form",
+    ],
+    edges: ["empty text", "mixed capitalization", "spaces or punctuation", "no match found"],
+  },
+  conditionals: {
+    short: [
+      "Look at the input",
+      "Check one rule from the prompt",
+      "If the rule matches, use that answer",
+      "If it does not match, try the next rule",
+      "Return the answer for the matching rule",
+    ],
+    detailed: [
+      "Pick the first rule from the prompt",
+      "Ask: does this input match that rule?",
+      "If yes, use that branch and stop checking",
+      "If no, move to the next rule",
+      "If no rule matches, use the otherwise/default answer",
+    ],
+    edges: ["exact cutoff value", "just below the cutoff", "just above the cutoff", "default branch"],
+  },
+  math: {
+    short: [
+      "Name each input number",
+      "Apply the formula in the prompt",
+      "Update the running total if needed",
+      "Round only if the prompt says to",
+      "Return the final number",
+    ],
+    detailed: [
+      "Write down the formula using words first",
+      "Substitute the sample values into the formula",
+      "Keep separate totals for separate fees, penalties, or counts",
+      "Apply rounding, caps, or minimums only after the prompt says they happen",
+      "Return the computed number in the requested type",
+    ],
+    edges: ["zero values", "exact boundary", "large values", "rounding or cap rule"],
+  },
+  map: {
+    short: [
+      "Start with an empty lookup table",
+      "For each item",
+      "Build or read the key",
+      "Update the stored value for that key",
+      "Return the requested lookup, count, or grouping",
+    ],
+    detailed: [
+      "Decide what the key should be before looping",
+      "For each item, look up the current key",
+      "Use a default value when the key has not appeared yet",
+      "Store the updated value back under the same key",
+      "Return only the table value, count, or groups requested by the prompt",
+    ],
+    edges: ["missing key", "repeated key", "empty input", "ties or same counts"],
+  },
+  set: {
+    short: [
+      "Start with an empty set or two sets",
+      "For each item",
+      "Check whether the item is already present",
+      "Add, skip, or compare based on the prompt",
+      "Return the requested count, list, or boolean",
+    ],
+    detailed: [
+      "Decide which values should be unique",
+      "Add each eligible value to the set",
+      "For shared values, compare membership between the two collections",
+      "Avoid adding the same value more than once",
+      "Return the result in the shape requested by the prompt",
+    ],
+    edges: ["duplicates", "no overlap", "all overlap", "empty collection"],
+  },
+  stack: {
+    short: [
+      "Start with an empty stack",
+      "For each symbol or command",
+      "Push items that must wait",
+      "Inspect or remove the newest item when needed",
+      "Return the final stack state or decision",
+    ],
+    detailed: [
+      "Decide what kind of item belongs on the stack",
+      "When something opens or arrives, place it on top",
+      "When something closes or is served last-first, compare it with the top",
+      "If the top does not match the rule, return the failure value",
+      "After all input is processed, check whether the remaining stack matches the prompt",
+    ],
+    edges: ["empty stack", "closing before opening", "leftover items", "nested items"],
+  },
+  queue: {
+    short: [
+      "Start with the initial line",
+      "Process each command in order",
+      "Add arrivals to the back",
+      "Remove served items from the front",
+      "Return the requested line, front item, or order",
+    ],
+    detailed: [
+      "Write down what the front of the line means",
+      "Handle each command one at a time",
+      "Add new people or jobs after everyone already waiting",
+      "Serve or remove from the front only when the line is not empty",
+      "Return the final queue state or service result requested by the prompt",
+    ],
+    edges: ["empty line", "more serves than arrivals", "one command", "repeated names"],
+  },
+  "two-pointers": {
+    short: [
+      "Place one pointer at each required position",
+      "Compare the two pointed values",
+      "Use the prompt rule to choose a move",
+      "Update the answer when a match is found",
+      "Return the final result",
+    ],
+    detailed: [
+      "Decide whether the pointers start at opposite ends or in two different lists",
+      "Compare the current values before moving either pointer",
+      "If the pair is too small, too large, or mismatched, move only the pointer the rule allows",
+      "Record a match without reusing an item unless the prompt allows it",
+      "Stop when the pointers cross or one list runs out",
+    ],
+    edges: ["no pair found", "duplicate values", "one empty list", "pointers meet"],
+  },
+  "sliding-window": {
+    short: [
+      "Start a left edge and an empty running state",
+      "Move the right edge to include one new item",
+      "Shrink from the left while the window breaks the rule",
+      "Update the best answer for the current window",
+      "Return the best value",
+    ],
+    detailed: [
+      "Decide what value the window must track, such as sum, count, or seen items",
+      "Expand the right edge by adding the new item to that state",
+      "While the current window violates the prompt limit, remove items from the left",
+      "After the window is valid, compare it with the best answer so far",
+      "Continue until every right edge has been tried",
+    ],
+    edges: ["window of size one", "whole input is valid", "limit is exceeded immediately", "empty input"],
+  },
+  "binary-search": {
+    short: [
+      "Set the left and right search boundaries",
+      "Choose the middle position",
+      "Compare the middle value with the target rule",
+      "Discard the impossible half",
+      "Return the found position or fallback value",
+    ],
+    detailed: [
+      "Confirm the input is sorted or that the answer space has an order",
+      "Pick the middle value between the current boundaries",
+      "If the middle satisfies the target rule, save it when the prompt asks for a boundary",
+      "Move left or right so the impossible half is removed",
+      "When the boundaries cross, return the saved result or the prompt's not-found value",
+    ],
+    edges: ["target at first position", "target at last position", "target missing", "duplicate targets"],
+  },
+  recursion: {
+    short: [
+      "Handle the smallest input directly",
+      "Make the input smaller",
+      "Ask the same question about the smaller input",
+      "Combine the smaller answer with the current step",
+      "Return the combined result",
+    ],
+    detailed: [
+      "Write the base case first so the calls can stop",
+      "Choose the one piece of input handled by the current call",
+      "Pass a smaller input into the same idea",
+      "When the smaller call returns, combine its value with the current piece",
+      "Check that every recursive call gets closer to the base case",
+    ],
+    edges: ["empty input", "one item", "already at base case", "deep enough to repeat"],
+  },
+  "linked-list": {
+    short: [
+      "Start at the head of the chain",
+      "Keep track of the current node",
+      "Read or save the next link before moving",
+      "Update the answer or links",
+      "Return the requested value or new head",
+    ],
+    detailed: [
+      "Identify which pointer represents the current node",
+      "Before changing links, save any next node you still need",
+      "Move one link at a time so the chain is not lost",
+      "Update counters, saved values, or previous links as the prompt requires",
+      "Stop when the current node reaches the end or the prompt condition is met",
+    ],
+    edges: ["empty chain", "one node", "cycle or repeated index", "middle or tail node"],
+  },
+  tree: {
+    short: [
+      "Start at the root",
+      "If there is no node, return the empty-case value",
+      "Visit the current node",
+      "Send needed state to child nodes",
+      "Combine child results using the prompt rule",
+    ],
+    detailed: [
+      "Choose the traversal order that matches the prompt",
+      "Handle missing children before reading their values",
+      "Carry any needed state such as depth, path sum, or best value",
+      "Combine left and right child answers carefully",
+      "Return the value for the whole tree from the root call",
+    ],
+    edges: ["empty tree", "single node", "missing child", "unbalanced tree"],
+  },
+  graph: {
+    short: [
+      "Start with the given node or cell",
+      "Keep a frontier of places to visit",
+      "Keep a visited set",
+      "Add valid unvisited neighbors",
+      "Return the reachability, count, or path result",
+    ],
+    detailed: [
+      "Choose whether the frontier behaves like a line or a stack",
+      "Remove one item from the frontier at a time",
+      "Skip it if it has already been visited",
+      "Mark it visited before adding its neighbors",
+      "Only add neighbors that are inside the rules of the prompt",
+    ],
+    edges: ["start equals target", "no path", "cycle", "blocked neighbor"],
+  },
+  heap: {
+    short: [
+      "Keep the priority items in priority order",
+      "Add each new candidate",
+      "Remove extra or lower-priority items",
+      "Read the top priority item when needed",
+      "Return the requested priority result",
+    ],
+    detailed: [
+      "Decide whether smaller or larger values should come out first",
+      "After each new item arrives, place it into the priority structure",
+      "If the structure is too large, remove the item that should not stay",
+      "Use the current top item as the best available candidate",
+      "Return the final top item, list, or running results requested",
+    ],
+    edges: ["fewer items than requested", "ties", "negative values", "stream updates"],
+  },
+  trie: {
+    short: [
+      "Start at the root of the prefix tree",
+      "For each character in the word",
+      "Follow or create the matching child",
+      "Mark the end or count at the final node",
+      "Return the prefix or word result",
+    ],
+    detailed: [
+      "Treat each character as one step down the tree",
+      "Create a child only when the path does not already exist",
+      "Store counts or word markers at the node the prompt needs",
+      "For prefix checks, stop when a needed child is missing",
+      "Return the count, boolean, or matching words requested",
+    ],
+    edges: ["empty prefix", "shared prefix", "word equals prefix", "missing character"],
+  },
+  "union-find": {
+    short: [
+      "Start with each item in its own group",
+      "For each connection",
+      "Find each item's current group leader",
+      "Merge groups when leaders differ",
+      "Return the requested group result",
+    ],
+    detailed: [
+      "Give every item an initial parent or group label",
+      "For each pair, find the current leader for both items",
+      "If the leaders match, the pair is already connected",
+      "If the leaders differ, merge one group into the other",
+      "After all pairs, count or compare final group leaders as requested",
+    ],
+    edges: ["already connected pair", "self connection", "isolated item", "multiple groups"],
+  },
+  "dynamic-programming": {
+    short: [
+      "Define what one saved state means",
+      "Fill the smallest states first",
+      "Use earlier states to compute the next state",
+      "Save each result before moving on",
+      "Return the state the prompt asks for",
+    ],
+    detailed: [
+      "Write down exactly what one table entry represents",
+      "Set the base cases before the loop or recursion continues",
+      "For each larger case, look only at smaller cases that are already known",
+      "Choose the best, count, or combined value according to the prompt",
+      "Return the final table entry, not the whole table unless asked",
+    ],
+    edges: ["zero length", "one item", "tie between choices", "impossible state"],
+  },
+  intervals: {
+    short: [
+      "Sort or scan intervals in the needed order",
+      "Compare the current start with the saved end",
+      "Merge, count, or separate based on overlap",
+      "Update the saved interval state",
+      "Return the requested interval result",
+    ],
+    detailed: [
+      "Decide what counts as overlapping from the prompt",
+      "Keep the current active interval or room state",
+      "When the next interval overlaps, combine or count it",
+      "When it does not overlap, finalize the saved interval and start a new one",
+      "Return the final count or list after the last interval is handled",
+    ],
+    edges: ["touching endpoints", "nested interval", "no overlap", "empty interval list"],
+  },
+  "prefix-sum": {
+    short: [
+      "Start a running total",
+      "For each item",
+      "Add it to the running total",
+      "Use a saved earlier total when answering a range",
+      "Return the requested sum or count",
+    ],
+    detailed: [
+      "Build or update the running total before answering later questions",
+      "Store the total seen before each position when ranges are needed",
+      "For a range, subtract the total before the range from the total at the end",
+      "For target sums, look for an earlier total that would make the difference work",
+      "Return the count, index, or sum requested by the prompt",
+    ],
+    edges: ["range starts at first item", "negative values", "zero target", "repeated totals"],
+  },
+  matrix: {
+    short: [
+      "Choose the row and column order",
+      "Visit each needed cell",
+      "Check whether the cell belongs in the result",
+      "Update the running state",
+      "Return the final grid result",
+    ],
+    detailed: [
+      "Track row and column positions separately",
+      "Move through the grid in the order the prompt describes",
+      "Before using a neighbor, check that it is inside the grid",
+      "Update sums, counts, or best values only for valid cells",
+      "Return the requested number, list, or grid after all needed cells are handled",
+    ],
+    edges: ["one row", "one column", "corner cell", "empty grid"],
+  },
+  "bit-manipulation": {
+    short: [
+      "Look at one bit or bit operation at a time",
+      "Use the prompt rule to decide what the bit means",
+      "Update the count or answer state",
+      "Move to the next bit or value",
+      "Return the requested bit result",
+    ],
+    detailed: [
+      "Identify whether the prompt asks about one number, two numbers, or a list",
+      "Use the bit rule to expose the relevant bit or difference",
+      "Update the running count, mask, or boolean decision",
+      "Repeat until every needed bit or value has been checked",
+      "Return the result in the prompt's requested form",
+    ],
+    edges: ["zero", "one set bit", "negative not allowed unless stated", "same numbers"],
+  },
+  scan: {
+    short: [
+      "Choose the starting answer",
+      "Process one input item at a time",
+      "Apply the prompt rule",
+      "Update only the state needed for the answer",
+      "Return the requested result",
+    ],
+    detailed: [
+      "Name the value you are trying to return",
+      "Pick the small piece of state that must be remembered while scanning",
+      "For each input item, decide whether it changes that state",
+      "After the loop or process ends, check any final condition",
+      "Return the final state in the shape requested by the prompt",
+    ],
+    edges: ["empty input", "one item", "no match", "all items match"],
+  },
+};
+
+function templateForProblem(problem = {}) {
+  const family = pseudocodeFamily(problem);
+  return PSEUDOCODE_TEMPLATES[family] || PSEUDOCODE_TEMPLATES.scan;
+}
+
+function buildPseudocodeSnippet(problem = {}) {
+  return templateForProblem(problem).short.join("\n");
+}
+
+function buildDetailedPseudocodeSnippet(problem = {}) {
+  return templateForProblem(problem).detailed.join("\n");
+}
+
+function buildEdgeCaseChecklist(problem = {}) {
+  return templateForProblem(problem).edges;
+}
+
+function safeDeepHintText(text = "", solution = {}) {
+  const value = String(text || "").trim();
+  if (!value) return "";
+  const lower = value.toLowerCase();
+  const functionName = String(solution?.function_name || "").toLowerCase();
+  const unsafePatterns = [
+    /ask\s+(the\s+)?ai/,
+    /prompt\s+(the\s+)?(ai|tutor)/,
+    /chatgpt/,
+    /reference solution/,
+    /full solution/,
+    /starter (function|workspace|code|signature)/,
+    /^\s*(def|function|class|public|static|int|long|boolean|string|void|#include)\b/m,
+    /[{};]/,
+    /=>/,
+  ];
+  if (unsafePatterns.some(pattern => pattern.test(lower))) return "";
+  if (functionName && lower.includes(functionName)) return "";
+  return value;
 }
 
 function normalizeCodeForCompare(value = "") {
@@ -883,8 +1209,15 @@ function buildHintSteps(problem, solution, attempts, hintGate = null) {
   const gateHints = Array.isArray(hintGate?.hints) ? hintGate.hints : [];
   const hintAt = (level) => gateHints.find(item => item.level === level)?.hint || null;
   const guided = solution?.guided_steps || [];
-  const pseudocodeSnippet = buildPseudocodeSnippet(problem, solution || {});
-  const shapeSnippet = buildShapeSnippet(solution || {});
+  const pseudocodeSnippet = buildPseudocodeSnippet(problem);
+  const detailedPseudocodeSnippet = buildDetailedPseudocodeSnippet(problem);
+  const edgeChecks = buildEdgeCaseChecklist(problem);
+  const level3Lead = safeDeepHintText(hintAt(3), solution)
+    || safeDeepHintText(guided[1], solution)
+    || "Sketch the moves before writing full code.";
+  const level4Lead = safeDeepHintText(hintAt(4), solution)
+    || safeDeepHintText(guided[2], solution)
+    || "Use this final plan to check your logic before asking for the reference.";
   const unlockedCount = Number.isFinite(hintGate?.unlocked_count)
     ? hintGate.unlocked_count
     : attempts >= 2 ? 4 : 3;
@@ -903,19 +1236,23 @@ function buildHintSteps(problem, solution, attempts, hintGate = null) {
     },
     {
       level: 3,
-      title: "Pseudocode / Code Shape",
+      title: "Pseudocode Outline",
       body: [
-        hintAt(3) || guided[1] || "Use the prompt rules to sketch the control flow before writing full code.",
+        level3Lead,
         `\nPseudocode shape:\n\n\`\`\`\n${pseudocodeSnippet}\n\`\`\``,
       ].filter(Boolean).join("\n"),
       locked: unlockedCount < 3,
     },
     {
       level: 4,
-      title: "Small Code Fragment",
-      body: hintAt(4) || guided[2] || (shapeSnippet
-        ? `Use this only as a final shape check:\n\n\`\`\`\n${shapeSnippet}\n\`\`\``
-        : "Connect the helper logic to the return value, then test an empty, one-item, and typical input."),
+      title: "Detailed Pseudocode Check",
+      body: [
+        level4Lead,
+        `\nDetailed pseudocode:\n\n\`\`\`\n${detailedPseudocodeSnippet}\n\`\`\``,
+        edgeChecks.length
+          ? `\nBefore running again, test:\n${edgeChecks.map(item => `- ${item}`).join("\n")}`
+          : "",
+      ].filter(Boolean).join("\n"),
       locked: unlockedCount < 4,
     },
   ];

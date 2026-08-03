@@ -15,6 +15,10 @@ CODING_TUTOR = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "Codi
 CHATBOX = ROOT / "frontend" / "src" / "components" / "Chatbox.jsx"
 APP = ROOT / "frontend" / "src" / "App.jsx"
 WORKSPACE_DRAFT = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "workspaceDraft.js"
+WORKSPACE_VISUALIZER = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "WorkspaceVisualizer.jsx"
+UNIVERSAL_VISUALIZER = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "universal-visualizer" / "UniversalCodeVisualizer.tsx"
+UNIVERSAL_GENERATORS = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "universal-visualizer" / "generators.ts"
+UNIVERSAL_TYPES = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "universal-visualizer" / "types.ts"
 TERMINAL_PANEL = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "TerminalPanel.jsx"
 TERMINAL_CSS = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "TerminalPanel.css"
 
@@ -84,14 +88,157 @@ def test_hint_requests_are_recorded_server_side_and_sent_to_chat_context():
 
 def test_third_hint_uses_pseudocode_not_reference_solution_prompt():
     tutor_source = read(CODING_TUTOR)
-    pseudocode_function = tutor_source.split("function buildPseudocodeSnippet", 1)[1].split("function normalizeCodeForCompare", 1)[0]
+    pseudocode_function = tutor_source.split("function buildPseudocodeSnippet", 1)[1].split("function buildDetailedPseudocodeSnippet", 1)[0]
     hint_ladder = tutor_source.split("function buildHintSteps", 1)[1]
     third_hint = hint_ladder.split("level: 3", 1)[1].split("level: 4", 1)[0]
+    fourth_hint = hint_ladder.split("level: 4", 1)[1].split("]", 1)[0]
 
     assert "Pseudocode shape:" in third_hint
-    assert "buildPseudocodeSnippet(problem, solution || {})" in hint_ladder
+    assert "Detailed pseudocode:" in fourth_hint
+    assert "Before running again, test:" in fourth_hint
+    assert "buildPseudocodeSnippet(problem)" in hint_ladder
+    assert "buildDetailedPseudocodeSnippet(problem)" in hint_ladder
     assert "reference_solution" not in pseudocode_function
+    assert "starter_code" not in pseudocode_function
+    assert "functionName" not in pseudocode_function
+    assert "buildShapeSnippet" not in tutor_source
     assert "shapeSnippet" not in third_hint
+    assert "shapeSnippet" not in fourth_hint
+    assert "Small Code Fragment" not in fourth_hint
+
+
+def test_deep_hints_sanitize_ai_prompts_and_starter_shapes():
+    tutor_source = read(CODING_TUTOR)
+    sanitizer = tutor_source.split("function safeDeepHintText", 1)[1].split("function normalizeCodeForCompare", 1)[0]
+
+    assert "ask\\s+(the\\s+)?ai" in sanitizer
+    assert "prompt\\s+(the\\s+)?(ai|tutor)" in sanitizer
+    assert "starter (function|workspace|code|signature)" in sanitizer
+    assert "functionName && lower.includes(functionName)" in sanitizer
+    assert "safeDeepHintText(hintAt(3), solution)" in tutor_source
+    assert "safeDeepHintText(hintAt(4), solution)" in tutor_source
+
+
+def test_pseudocode_templates_cover_major_practice_families():
+    tutor_source = read(CODING_TUTOR)
+    templates = tutor_source.split("const PSEUDOCODE_TEMPLATES = {", 1)[1].split("function templateForProblem", 1)[0]
+    families = [
+        "array",
+        "string",
+        "conditionals",
+        "math",
+        "map",
+        "set",
+        "stack",
+        "queue",
+        "two-pointers",
+        "sliding-window",
+        "binary-search",
+        "recursion",
+        "linked-list",
+        "tree",
+        "graph",
+        "heap",
+        "trie",
+        "union-find",
+        "dynamic-programming",
+        "intervals",
+        "prefix-sum",
+        "matrix",
+        "bit-manipulation",
+    ]
+
+    for family in families:
+        assert f"{family}:" in templates or f'"{family}":' in templates
+    assert "short:" in templates
+    assert "detailed:" in templates
+    assert "edges:" in templates
+    assert "Ask: does this input match that rule?" in templates
+    assert "List each condition from the prompt in priority order" not in templates
+
+
+def test_workspace_visualizer_does_not_infer_topic_fallbacks():
+    visualizer_source = read(WORKSPACE_VISUALIZER)
+    utils_source = read(ROOT / "frontend" / "src" / "components" / "coding-tutor" / "workspaceVisualizerUtils.js")
+
+    assert "function inferVisualizerFromProblem" not in visualizer_source
+    assert "inferVisualizerFromProblem(activeProblem)" not in visualizer_source
+    assert "hasAuthoredVisualizer(activeProblem)" in visualizer_source
+    assert "problem?.visualizer?.concept" in utils_source
+
+
+def test_decision_flow_visualizer_uses_real_branch_diagram():
+    visualizer_source = read(WORKSPACE_VISUALIZER)
+    visualizer_css = read(ROOT / "frontend" / "src" / "components" / "coding-tutor" / "WorkspaceVisualizer.css")
+
+    assert "function decisionFlowTrace" in visualizer_source
+    assert "function VisualDecisionFlow" in visualizer_source
+    assert 'concept === "decision-flow") return decisionFlowTrace(meta)' in visualizer_source
+    assert "activeDecision" in visualizer_source
+    assert "decision-branches" in visualizer_source
+    assert ".decision-condition" in visualizer_css
+    assert ".decision-yes" in visualizer_css
+    assert ".decision-no" in visualizer_css
+
+
+def test_universal_visualizer_covers_major_topic_families():
+    visualizer_source = read(UNIVERSAL_VISUALIZER)
+    generator_source = read(UNIVERSAL_GENERATORS)
+    type_source = read(UNIVERSAL_TYPES)
+
+    assert "interface Node" in type_source
+    assert "interface Edge" in type_source
+    assert "interface Step" in type_source
+    assert "interface ConceptConfig" in type_source
+    assert "motion.div" in visualizer_source
+    assert "motion.path" in visualizer_source
+    assert "AnimatePresence" in visualizer_source
+    assert "Timeline scrubber" in visualizer_source
+    assert "UniversalCodeVisualizer" in read(WORKSPACE_VISUALIZER)
+
+    families = [
+        "generateArraySwapSteps",
+        "generateHashMapCollisionSteps",
+        "generateTreeInsertSteps",
+        "generateGraphTraversalSteps",
+        "generateConditionalSteps",
+        "generateStackSteps",
+        "generateQueueSteps",
+        "generateLinkedListSteps",
+        "generateBinarySearchSteps",
+        "generateTwoPointerSteps",
+        "generateSlidingWindowSteps",
+        "generateRecursionSteps",
+        "generateMatrixSteps",
+        "generatePrefixSumSteps",
+        "generateIntervalsSteps",
+        "generateHeapSteps",
+        "generateTrieSteps",
+        "generateUnionFindSteps",
+        "generateDynamicProgrammingSteps",
+        "generateBitSteps",
+        "generateMathSteps",
+    ]
+
+    for family in families:
+        assert f"function {family}" in generator_source
+
+
+def test_universal_visualizer_prefers_question_examples_and_authored_steps():
+    visualizer_source = read(UNIVERSAL_VISUALIZER)
+    generator_source = read(UNIVERSAL_GENERATORS)
+
+    assert "visualizer: problem?.visualizer" in visualizer_source
+    assert "const useAuthored = concept === initialConcept" in visualizer_source
+    assert "generateAuthoredVisualizerSteps(concept, context)" in generator_source
+    assert "parseFirstList(context.exampleInput)" in generator_source
+    assert "parseAllNamedLists(context.exampleInput)" in generator_source
+    assert "context.exampleOutput" in generator_source
+    assert "titleForAuthoredStep" in generator_source
+    assert "bodyForAuthoredStep" in generator_source
+    assert "layoutConditional" not in generator_source.split("function authoredConditionalVisual", 1)[1].split("function authoredStackQueueVisual", 1)[0]
+    assert 'meta: { role: "diamond" }' in generator_source
+    assert "ucv-edge-label" in visualizer_source
 
 
 def test_workspace_state_syncs_last_problem_and_prefers_newer_drafts():

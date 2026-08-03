@@ -224,6 +224,24 @@ def test_answer_banks_match_questions_for_every_language():
         assert set(answer_ids) == question_ids, f"{language}: answer bank does not match questions"
 
 
+def test_visualizers_are_shared_question_metadata_for_all_languages():
+    questions = {q["id"]: q for q in load_questions()}
+    problems = []
+    for qid, question in questions.items():
+        visualizer = question.get("visualizer") or {}
+        if not visualizer.get("concept") or not visualizer.get("title") or not visualizer.get("caption"):
+            problems.append(f"{qid}: missing shared visualizer metadata")
+            continue
+        for language in LANGUAGES:
+            answer = next((item for item in load_answer_items(language) if item.get("question_id") == qid), None)
+            if not answer:
+                problems.append(f"{language}/{qid}: missing answer metadata for shared visualizer")
+            if answer and answer.get("visualizer"):
+                problems.append(f"{language}/{qid}: visualizer should stay on shared question metadata")
+
+    assert problems == []
+
+
 def test_every_practice_question_has_problem_specific_visualizer():
     problems = []
     seen_presets = set()
@@ -260,8 +278,6 @@ def test_every_practice_question_has_problem_specific_visualizer():
 def test_priority_visualizers_have_richer_step_metadata():
     problems = []
     for q in load_questions():
-        if q.get("topic") not in VISUALIZER_QUALITY_TOPICS:
-            continue
         qid = q.get("id")
         visualizer = q.get("visualizer") or {}
         combined_text = " ".join(
