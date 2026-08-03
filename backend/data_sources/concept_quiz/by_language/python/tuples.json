@@ -82,7 +82,7 @@
       "code": null,
       "prompt": "A student writes `point[0] = 10` after making `point = (3, 5)`. What should they understand?",
       "choices": [
-        "A tuple position cannot be rewritten; make a new tuple or use a list if edits are needed.",
+        "Tuple positions cannot be rewritten. Make a new tuple or use a list.",
         "The assignment changes only a temporary copy of the tuple.",
         "The code is fine as long as the tuple has at least two values.",
         "The problem is the zero index, because tuple positions start at one."
@@ -120,7 +120,7 @@
       "choices": [
         "A list, because fixed pairs should always be editable.",
         "A dictionary, because every pair must use text keys.",
-        "A tuple, because the positions have fixed meanings and the values should stay together.",
+        "Use a tuple when positions have fixed meanings and should stay together.",
         "A set, because row and column order should be ignored."
       ],
       "answer_index": 2,

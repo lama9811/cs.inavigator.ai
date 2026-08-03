@@ -173,7 +173,7 @@
       "prompt": "Why use `if __name__ == \"__main__\":` around demo code?",
       "choices": [
         "It makes imports impossible from other files.",
-        "It lets the demo run when the file is executed directly, but not when the file is imported.",
+        "Demo code runs when the file is executed, but not when it is imported.",
         "It makes every function private.",
         "It changes the file extension from `.py` to a package."
       ],

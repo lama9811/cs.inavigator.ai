@@ -3,6 +3,7 @@ import { VisualizeButton } from "./WorkspaceVisualizer";
 export default function ProblemPanel({
   problem,
   solution,
+  selectedLanguage = "Python",
   problemLoading,
   isSolved = false,
   solvedLanguages = [],
@@ -18,6 +19,17 @@ export default function ProblemPanel({
   onViewSolutionMock,
   onOpenVisualizer,
 }) {
+  const formatExampleOutput = (output) => {
+    const text = String(output ?? "");
+    const lowered = text.toLowerCase();
+    if (lowered === "true" || lowered === "false") {
+      return selectedLanguage === "Python"
+        ? lowered === "true" ? "True" : "False"
+        : lowered;
+    }
+    return text;
+  };
+
   return (
     <aside className={`coding-problem-panel ${mockMode ? "is-mock" : ""}`}>
       {problemLoading ? <div className="coding-problem-empty">Loading problem...</div> : problem ? (
@@ -78,7 +90,7 @@ export default function ProblemPanel({
                 {problem.examples.map((example, index) => (
                   <div className="problem-example" key={index}>
                     <code>Input: {example.input}</code>
-                    <code>Output: {example.output}</code>
+                    <code>Output: {formatExampleOutput(example.output)}</code>
                   </div>
                 ))}
               </details>
@@ -88,7 +100,7 @@ export default function ProblemPanel({
                 {problem.examples.map((example, index) => (
                   <div className="problem-example" key={index}>
                     <code>Input: {example.input}</code>
-                    <code>Output: {example.output}</code>
+                    <code>Output: {formatExampleOutput(example.output)}</code>
                   </div>
                 ))}
               </section>

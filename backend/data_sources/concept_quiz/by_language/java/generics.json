@@ -82,7 +82,7 @@
       "code": null,
       "prompt": "Why does Java use `Integer` instead of `int` inside `List<Integer>`?",
       "choices": [
-        "Write `Integer` instead of `int` and `Double` instead of `double`. Java automatically wraps and unwraps these values in most collection code.",
+        "Collections use wrapper types like `Integer` and `Double`, not primitives like `int`.",
         "Use raw collection types and hope casts are correct.",
         "Put primitive types directly inside generic angle brackets.",
         "Store mixed unrelated types in one typed collection."

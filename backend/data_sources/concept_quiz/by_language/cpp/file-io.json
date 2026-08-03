@@ -64,7 +64,7 @@
       "code": "while (std::getline(input, line)) {\n  use(line);\n}",
       "prompt": "Why is `while (std::getline(input, line))` preferred over looping on `!input.eof()`?",
       "choices": [
-        "getline's result is false as soon as a read fails, so the last line is not processed twice",
+        "`getline` becomes false as soon as a read fails, so the last line is not reused.",
         "getline reads the whole file at once, which is faster",
         "eof() is not a real function on input streams",
         "getline automatically skips blank lines"

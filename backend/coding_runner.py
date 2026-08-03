@@ -642,13 +642,22 @@ except Exception as exc:
     }))
     raise SystemExit(0)
 
-def _oi_canon(value):
-    # Recursively sort lists so order-insensitive tests (e.g. Group Anagrams)
-    # compare by content, not order.
+def _canon(value, order_insensitive=False, case_insensitive=False):
+    # Recursively normalize values for comparison. Order-insensitive tests
+    # compare by content, and authored message-style tests may opt into
+    # case-insensitive string matching.
+    if isinstance(value, str):
+        lowered = value.casefold()
+        if case_insensitive or lowered in {"none", "null"}:
+            return lowered
+        return value
     if isinstance(value, list):
-        return sorted((_oi_canon(v) for v in value), key=lambda x: json.dumps(x, sort_keys=True, default=str))
+        items = [_canon(v, order_insensitive, case_insensitive) for v in value]
+        if order_insensitive:
+            return sorted(items, key=lambda x: json.dumps(x, sort_keys=True, default=str))
+        return items
     if isinstance(value, dict):
-        return {k: _oi_canon(v) for k, v in value.items()}
+        return {k: _canon(v, order_insensitive, case_insensitive) for k, v in value.items()}
     return value
 
 for index, test in enumerate(tests, start=1):
@@ -656,13 +665,11 @@ for index, test in enumerate(tests, start=1):
     args = test.get("args", [])
     expected = test.get("expected")
     order_insensitive = bool(test.get("order_insensitive"))
+    case_insensitive = bool(test.get("case_insensitive"))
     try:
         with contextlib.redirect_stdout(stdout_buffer):
             actual = target(*args)
-        if order_insensitive:
-            passed = _oi_canon(actual) == _oi_canon(expected)
-        else:
-            passed = actual == expected
+        passed = _canon(actual, order_insensitive, case_insensitive) == _canon(expected, order_insensitive, case_insensitive)
         results.append({
             "name": name,
             "passed": passed,
@@ -1116,9 +1123,14 @@ function displayValue(value) {
   return raw.length <= MAX_VALUE_CHARS ? value : `${raw.slice(0, MAX_VALUE_CHARS)}... value truncated ...`;
 }
 
-function canonicalValue(value, orderInsensitive = false) {
+function canonicalValue(value, orderInsensitive = false, caseInsensitive = false) {
+  if (typeof value === "string") {
+    const lowered = value.toLocaleLowerCase();
+    if (caseInsensitive || lowered === "none" || lowered === "null") return lowered;
+    return value;
+  }
   if (Array.isArray(value)) {
-    const items = value.map((item) => canonicalValue(item, orderInsensitive));
+    const items = value.map((item) => canonicalValue(item, orderInsensitive, caseInsensitive));
     if (orderInsensitive) {
       return items.sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
     }
@@ -1128,15 +1140,15 @@ function canonicalValue(value, orderInsensitive = false) {
     return Object.fromEntries(
       Object.keys(value)
         .sort()
-        .map((key) => [key, canonicalValue(value[key], orderInsensitive)])
+        .map((key) => [key, canonicalValue(value[key], orderInsensitive, caseInsensitive)])
     );
   }
   return value;
 }
 
-function valuesEqual(actual, expected, orderInsensitive = false) {
-  return JSON.stringify(canonicalValue(actual, orderInsensitive)) ===
-    JSON.stringify(canonicalValue(expected, orderInsensitive));
+function valuesEqual(actual, expected, orderInsensitive = false, caseInsensitive = false) {
+  return JSON.stringify(canonicalValue(actual, orderInsensitive, caseInsensitive)) ===
+    JSON.stringify(canonicalValue(expected, orderInsensitive, caseInsensitive));
 }
 
 const sandbox = {
@@ -1232,9 +1244,10 @@ try {
     const args = test.args || [];
     const expected = test.expected;
     const orderInsensitive = Boolean(test.order_insensitive);
+    const caseInsensitive = Boolean(test.case_insensitive);
     try {
       const actual = target(...args);
-      const passed = valuesEqual(actual, expected, orderInsensitive);
+      const passed = valuesEqual(actual, expected, orderInsensitive, caseInsensitive);
       return { name, passed, args, expected, actual: displayValue(actual) };
     } catch (error) {
       return { name, passed: false, args, expected, actual: null, error: String(error.message || error) };
@@ -1582,10 +1595,11 @@ def run_java_practice_tests(code: str, function_name: str, tests: list[dict[str,
         name = test.get("name") or f"Test {index}"
         args = test.get("args", []) or []
         expected = test.get("expected")
+        case_insensitive = bool(test.get("case_insensitive"))
         arg_list = ", ".join(_java_literal(a) for a in args)
         invocations.append(
             f'        runTest({json.dumps(name)}, new Object[]{{{arg_list}}}, '
-            f'{_java_literal(expected)});'
+            f'{_java_literal(expected)}, {str(case_insensitive).lower()});'
         )
     invocations_src = "\n".join(invocations)
 
@@ -1623,20 +1637,33 @@ public class Runner {{
         if (o instanceof Object[]) return Arrays.deepToString((Object[]) o);
         return o.toString();
     }}
-    static boolean eq(Object a, Object b) {{
+    static String comparableString(Object o, boolean caseInsensitive) {{
+        String s = o.toString();
+        String lowered = s.toLowerCase(Locale.ROOT);
+        if (caseInsensitive || lowered.equals("none") || lowered.equals("null")) return lowered;
+        return s;
+    }}
+    static boolean eq(Object a, Object b, boolean caseInsensitive) {{
         if (a == null || b == null) return a == b;
         if (a instanceof Object[] && b instanceof Object[])
-            return Arrays.deepEquals((Object[]) a, (Object[]) b);
+            return eqArray((Object[]) a, (Object[]) b, caseInsensitive);
         if (a instanceof Number && b instanceof Number)
             return ((Number) a).doubleValue() == ((Number) b).doubleValue();
-        return a.toString().equals(b.toString());
+        return comparableString(a, caseInsensitive).equals(comparableString(b, caseInsensitive));
+    }}
+    static boolean eqArray(Object[] a, Object[] b, boolean caseInsensitive) {{
+        if (a.length != b.length) return false;
+        for (int i = 0; i < a.length; i++) {{
+            if (!eq(a[i], b[i], caseInsensitive)) return false;
+        }}
+        return true;
     }}
 
-    static void runTest(String name, Object[] args, Object expected) {{
+    static void runTest(String name, Object[] args, Object expected, boolean caseInsensitive) {{
         total++;
         try {{
             Object actual = {call_expr};
-            boolean ok = eq(actual, expected);
+            boolean ok = eq(actual, expected, caseInsensitive);
             if (ok) passed++;
             System.out.println("{{\\"name\\":\\"" + esc(name) + "\\",\\"passed\\":" + ok
                 + ",\\"expected\\":\\"" + esc(show(expected)) + "\\",\\"actual\\":\\"" + esc(show(actual)) + "\\"}}");
@@ -1731,9 +1758,10 @@ def run_cpp_practice_tests(code: str, function_name: str, tests: list[dict[str, 
         name = test.get("name") or f"Test {index}"
         args = test.get("args", []) or []
         expected = test.get("expected")
+        case_insensitive = bool(test.get("case_insensitive"))
         arg_list = ", ".join(_cpp_literal(a) for a in args)
         invocations.append(
-            f'    runTest({json.dumps(name)}, {{{arg_list}}}, {_cpp_literal(expected)});'
+            f'    runTest({json.dumps(name)}, {{{arg_list}}}, {_cpp_literal(expected)}, {str(case_insensitive).lower()});'
         )
     invocations_src = "\n".join(invocations)
 
@@ -1783,7 +1811,16 @@ struct Value {{
         }}
         return "";
     }}
-    bool eq(const Value& o) const {{
+    static string lowerCopy(string value) {{
+        transform(value.begin(), value.end(), value.begin(), [](unsigned char c){{ return (char)tolower(c); }});
+        return value;
+    }}
+    static string comparableString(const string& value, bool caseInsensitive) {{
+        string lowered = lowerCopy(value);
+        if (caseInsensitive || lowered == "none" || lowered == "null") return lowered;
+        return value;
+    }}
+    bool eq(const Value& o, bool caseInsensitive=false) const {{
         if ((kind==INT||kind==DBL) && (o.kind==INT||o.kind==DBL)) {{
             double x = kind==INT? (double)i : d, y = o.kind==INT? (double)o.i : o.d; return x==y;
         }}
@@ -1791,8 +1828,8 @@ struct Value {{
         switch (kind) {{
             case NUL: return true;
             case BOOL: return b==o.b;
-            case STR: return s==o.s;
-            case ARR: {{ if(a.size()!=o.a.size()) return false; for(size_t k=0;k<a.size();k++) if(!a[k].eq(o.a[k])) return false; return true; }}
+            case STR: return comparableString(s, caseInsensitive)==comparableString(o.s, caseInsensitive);
+            case ARR: {{ if(a.size()!=o.a.size()) return false; for(size_t k=0;k<a.size();k++) if(!a[k].eq(o.a[k], caseInsensitive)) return false; return true; }}
             default: return show()==o.show();
         }}
     }}
@@ -1803,11 +1840,11 @@ struct Value {{
 static int passed_=0, total_=0;
 static string esc(const string& s){{ string r; for(char c:s){{ if(c=='"'||c=='\\\\') r+='\\\\'; if(c=='\\n'){{ r+="\\\\n"; continue; }} r+=c; }} return r; }}
 
-static void runTest(const string& name, vector<Value> args, Value expected){{
+static void runTest(const string& name, vector<Value> args, Value expected, bool caseInsensitive){{
     total_++;
     try {{
         Value actual = {call_target}(args);
-        bool ok = actual.eq(expected);
+        bool ok = actual.eq(expected, caseInsensitive);
         if (ok) passed_++;
         cout << "{{\\"name\\":\\"" << esc(name) << "\\",\\"passed\\":" << (ok?"true":"false")
              << ",\\"expected\\":\\"" << esc(expected.show()) << "\\",\\"actual\\":\\"" << esc(actual.show()) << "\\"}}" << "\\n";

@@ -137,6 +137,12 @@ def test_cosc_101_expansion_questions_are_present():
 
 def test_practice_questions_have_real_student_facing_shape():
     weak = []
+    internal_phrases = (
+        "for v1",
+        "this version",
+        "acceptable for discussion",
+        "conceptually",
+    )
     for q in load_questions():
         if not q.get("id") or not q.get("title") or not q.get("topic"):
             weak.append(f"{q.get('id')}: missing id/title/topic")
@@ -154,8 +160,43 @@ def test_practice_questions_have_real_student_facing_shape():
             weak.append(f"{q.get('id')}: fewer than 3 hints")
         if "placeholder" in str(q.get("prompt") or "").lower():
             weak.append(f"{q.get('id')}: placeholder text")
+        constraints = q.get("constraints") or []
+        if not constraints:
+            weak.append(f"{q.get('id')}: missing constraints")
+        for constraint in constraints:
+            lower_constraint = str(constraint or "").lower()
+            for phrase in internal_phrases:
+                if phrase in lower_constraint:
+                    weak.append(f"{q.get('id')}: internal constraint wording {phrase!r}")
 
     assert weak == []
+
+
+def test_practice_constraints_cover_known_edge_rules():
+    questions = {q.get("id"): q for q in load_questions()}
+    required_fragments = {
+        "easy-26": ("below 30", "sunny", "below 45"),
+        "easy-36": ("strictly below threshold", "equal to threshold"),
+        "medium-28": ("start and target are the same",),
+        "hard-05": ("least recently used", "null when the key is missing"),
+        "hard-06": ("even", "average", "one of the two lists may be empty"),
+        "hard-07": ("including start and end", "return 0", "return 1"),
+        "hard-16": ("#", "empty tree", "commas"),
+    }
+    missing = []
+    for qid, fragments in required_fragments.items():
+        q = questions[qid]
+        text = " ".join(
+            [
+                str(q.get("prompt") or ""),
+                *(str(constraint) for constraint in q.get("constraints") or []),
+            ]
+        ).lower()
+        for fragment in fragments:
+            if fragment.lower() not in text:
+                missing.append(f"{qid}: missing {fragment!r}")
+
+    assert missing == []
 
 
 def test_every_practice_topic_has_at_least_two_code_problems():
@@ -296,6 +337,37 @@ def test_runner_tests_are_present_and_well_shaped():
                     problems.append(f"{language}/{qid}: args must be a list in test {index}")
 
         assert problems == []
+
+
+def test_message_style_runner_tests_are_case_insensitive():
+    message_ids = {"easy-07", "easy-26", "easy-36"}
+    missing = []
+    for language in LANGUAGES:
+        for item in load_answer_items(language):
+            if item.get("question_id") not in message_ids:
+                continue
+            for index, test in enumerate(item.get("runner_tests") or [], start=1):
+                if test.get("case_insensitive") is not True:
+                    missing.append(f"{language}/{item.get('question_id')} test {index}")
+
+    assert missing == []
+
+
+def test_boolean_return_questions_tell_students_to_return_booleans():
+    bool_ids = set()
+    for item in load_answer_items("python"):
+        if any(isinstance(test.get("expected"), bool) for test in item.get("runner_tests") or []):
+            bool_ids.add(item.get("question_id"))
+
+    questions = {q.get("id"): q for q in load_questions()}
+    missing = []
+    for qid in sorted(bool_ids):
+        q = questions[qid]
+        text = " ".join([str(q.get("prompt") or ""), *(q.get("constraints") or [])]).lower()
+        if "real boolean value" not in text or "not the words" not in text:
+            missing.append(qid)
+
+    assert missing == []
 
 
 def test_spec_backed_generated_starters_match_function_names():

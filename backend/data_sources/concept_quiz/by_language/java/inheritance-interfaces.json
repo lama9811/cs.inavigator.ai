@@ -82,7 +82,7 @@
       "code": null,
       "prompt": "When is `extends` the right relationship between two Java classes?",
       "choices": [
-        "Use `extends` only when every child truly is a usable version of the parent. If one class merely needs another object's help, keep that helper in a field and use composition.",
+        "Use `extends` for a true is-a relationship. For helper objects, use composition.",
         "Use inheritance only to borrow a helper method.",
         "Extend a class when the child is not really a kind of parent.",
         "Put fields in an interface to share object state."

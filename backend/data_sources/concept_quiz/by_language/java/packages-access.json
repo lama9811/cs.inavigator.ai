@@ -86,7 +86,7 @@
       "code": null,
       "prompt": "What should match `package school.records;` during a normal Java build?",
       "choices": [
-        "If a file declares `package school.records`, keep it under the matching `school/records` path for normal builds. A mismatch often leads to class loading or import errors.",
+        "Keep the file under `school/records`. The declared package and folder path should match in normal builds.",
         "Put a package declaration that does not match the folder path.",
         "Make every field public for convenience.",
         "Expose large public methods that do several unrelated jobs."

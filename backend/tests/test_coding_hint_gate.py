@@ -82,6 +82,18 @@ def test_hint_requests_are_recorded_server_side_and_sent_to_chat_context():
     assert "Hint ladder state:" in chatbox_source
 
 
+def test_third_hint_uses_pseudocode_not_reference_solution_prompt():
+    tutor_source = read(CODING_TUTOR)
+    pseudocode_function = tutor_source.split("function buildPseudocodeSnippet", 1)[1].split("function normalizeCodeForCompare", 1)[0]
+    hint_ladder = tutor_source.split("function buildHintSteps", 1)[1]
+    third_hint = hint_ladder.split("level: 3", 1)[1].split("level: 4", 1)[0]
+
+    assert "Pseudocode shape:" in third_hint
+    assert "buildPseudocodeSnippet(problem, solution || {})" in hint_ladder
+    assert "reference_solution" not in pseudocode_function
+    assert "shapeSnippet" not in third_hint
+
+
 def test_workspace_state_syncs_last_problem_and_prefers_newer_drafts():
     main_source = read(MAIN_API)
     tutor_source = read(CODING_TUTOR)
@@ -91,10 +103,16 @@ def test_workspace_state_syncs_last_problem_and_prefers_newer_drafts():
     assert "CodingWorkspaceState" in main_source
     assert "saveWorkspaceState(problem.id, language, \"practice\")" in tutor_source
     assert "saveWorkspaceState(question.id, openedLanguageKey, \"interview\")" in tutor_source
+    assert 'saveLastWorkspace(question.id, openedLanguageKey, "interview")' in tutor_source
+    assert 'if (!opts.mock) {' in tutor_source
+    assert 'if (activeProblem?.mock) {' in tutor_source
+    assert 'setActiveProblem(null);' in tutor_source
     assert "loadWorkspaceState" in tutor_source
     assert "chooseWorkspaceCode" in tutor_source
     assert "Date.parse(serverProgress?.updated_at || \"\")" in tutor_source
     assert "export function readDraftEntry" in draft_source
+    assert 'source === "interview" ? "interview" : "practice"' in draft_source
+    assert 'startsWith("iv-") return null' not in draft_source
 
 
 def test_coding_chat_history_preserves_widget_metadata():

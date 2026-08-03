@@ -232,8 +232,20 @@ body.coding-dark .coding-app .workspace-tabs .terminal-tab.active {
 .coding-app.coding-workspace-active .coding-workbench-main {
   flex: 1 1 auto;
   display: grid;
-  grid-template-columns: minmax(240px, var(--workspace-guide-width, 340px)) 12px minmax(0, 1fr);
+  grid-template-columns: minmax(240px, var(--workspace-guide-width, 340px)) 12px minmax(0, 1fr) !important;
   gap: 0;
+}
+
+.coding-app.coding-workspace-active .coding-problem-panel {
+  grid-column: 1;
+}
+
+.coding-app.coding-workspace-active .workspace-guide-divider {
+  grid-column: 2;
+}
+
+.coding-app.coding-workspace-active .coding-editor-center {
+  grid-column: 3;
 }
 
 .workspace-guide-divider {
@@ -326,14 +338,29 @@ body.ct-guide-resizing * {
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 726px) {
   .coding-app.coding-workspace-active .coding-workbench-main {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) !important;
     gap: 10px;
+    overflow: auto !important;
   }
 
   .workspace-guide-divider {
     display: none;
+  }
+
+  .coding-app.coding-workspace-active .coding-problem-panel,
+  .coding-app.coding-workspace-active .coding-editor-center {
+    grid-column: 1;
+    max-height: none;
+  }
+}
+
+@media (max-width: 726px) {
+  .coding-app.coding-workspace-active {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
 }
 

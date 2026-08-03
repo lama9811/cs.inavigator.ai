@@ -109,18 +109,18 @@ export function clearDraft(problemId, language) {
   }
 }
 
-// Remember the last Practice Library problem + language the student had open, so
-// the workspace can auto-reopen it after an unmount (navigating to chat and back).
-// Interview prep uses the editor too, but it should not become the default
-// Workspace tab later.
-export function saveLastWorkspace(problemId, language) {
+// Remember the last Practice Library or individual Interview Prep problem +
+// language the student had open, so the workspace can auto-reopen it after an
+// unmount (navigating to chat and back). Timed mock interview questions do not
+// call this helper; those are exam attempts and live only in mock history.
+export function saveLastWorkspace(problemId, language, source = "practice") {
   if (!problemId || !language) return;
-  if (String(problemId).startsWith("iv-")) return;
+  const normalizedSource = source === "interview" ? "interview" : "practice";
   try {
     localStorage.setItem(lastKey(), JSON.stringify({
       problemId,
       language,
-      source: "practice",
+      source: normalizedSource,
       updatedAt: new Date().toISOString(),
     }));
   } catch {
@@ -134,9 +134,8 @@ export function readLastWorkspace() {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (parsed?.problemId && parsed?.language) {
-      if (parsed.source && parsed.source !== "practice") return null;
-      if (String(parsed.problemId).startsWith("iv-")) return null;
-      return { ...parsed, source: "practice" };
+      const source = parsed.source === "interview" ? "interview" : "practice";
+      return { ...parsed, source };
     }
     return null;
   } catch {

@@ -82,7 +82,7 @@
       "code": null,
       "prompt": "Why can `Status.valueOf(text)` fail for user input such as `\"active\"`?",
       "choices": [
-        "`Status.valueOf(text)` requires an exact constant name. Input such as `\"active\"` does not match `ACTIVE` unless you clean or convert it first.",
+        "`valueOf` needs the exact constant name, so clean or convert user input first.",
         "Represent a fixed set of choices as arbitrary strings.",
         "Assume `valueOf` accepts any capitalization.",
         "Add new enum meanings only in scattered if statements."

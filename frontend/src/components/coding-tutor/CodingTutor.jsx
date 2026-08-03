@@ -601,11 +601,151 @@ function normalizeSnippet(text = "") {
 function buildShapeSnippet(solution = {}) {
   const referenceLines = String(solution.reference_solution || "")
     .split("\n")
-    .filter(line => line.trim() && !/^\s*(import|from\s+.+\s+import|def\s+|class\s+)/.test(line));
+    .filter(line => {
+      const trimmed = line.trim();
+      return (
+        trimmed &&
+        /[=()[\]{}:]|return|for |while |if |else|push|append|add|set|map|queue|stack/.test(trimmed) &&
+        !/^\s*(import|from\s+.+\s+import|def\s+|class\s+)/.test(line) &&
+        !/^use the prompt/i.test(trimmed)
+      );
+    });
   if (referenceLines.length) return referenceLines.slice(0, 4).join("\n");
   const guided = solution.guided_steps || [];
   const codeLikeStep = guided.find(step => /[=()[\]{}:]|return|for |while |if /.test(String(step)));
   return normalizeSnippet(codeLikeStep || solution.starter_code || "");
+}
+
+function buildPseudocodeSnippet(problem = {}, solution = {}) {
+  const topic = String(problem.topic || "").toLowerCase();
+  const prompt = String(problem.prompt || "").toLowerCase();
+  const functionName = solution.function_name || "answer";
+
+  if (topic.includes("binary search")) {
+    return [
+      "left = first index",
+      "right = last index",
+      "while left has not passed right:",
+      "    choose the middle index",
+      "    use the comparison to keep only one side",
+      "return the value or fallback requested by the prompt",
+    ].join("\n");
+  }
+  if (topic.includes("two pointers")) {
+    return [
+      "left = start of input",
+      "right = end of input",
+      "while left is before right:",
+      "    compare or combine the two pointed values",
+      "    move the pointer that the prompt rule allows",
+      "return the requested result",
+    ].join("\n");
+  }
+  if (topic.includes("sliding window")) {
+    return [
+      "left = 0",
+      "current = empty running state",
+      "for each right position:",
+      "    add the new item to current",
+      "    shrink from the left while the window breaks the rule",
+      "    update the best answer for this window",
+      "return best",
+    ].join("\n");
+  }
+  if (topic.includes("recursion")) {
+    return [
+      `define ${functionName}(input):`,
+      "    if this is the smallest case:",
+      "        return the direct answer",
+      "    solve a smaller version of the input",
+      "    combine that smaller answer with the current step",
+    ].join("\n");
+  }
+  if (topic.includes("stack")) {
+    return [
+      "stack = empty list",
+      "for each item:",
+      "    if the item opens or waits:",
+      "        push it onto the stack",
+      "    otherwise compare it with the top item",
+      "return the state requested by the prompt",
+    ].join("\n");
+  }
+  if (topic.includes("queue")) {
+    return [
+      "queue = empty line",
+      "for each command or item:",
+      "    add new arrivals to the back",
+      "    remove served items from the front",
+      "return the remaining line or processed result",
+    ].join("\n");
+  }
+  if (topic.includes("hash") || topic.includes("map") || topic.includes("dictionary")) {
+    return [
+      "memory = empty map",
+      "for each item:",
+      "    build the lookup key",
+      "    read or update memory for that key",
+      "    update the answer when the prompt condition is met",
+      "return the answer",
+    ].join("\n");
+  }
+  if (topic.includes("set")) {
+    return [
+      "seen = empty set",
+      "for each item:",
+      "    check whether the item belongs in the set",
+      "    add, skip, or compare based on the prompt rule",
+      "return the requested count, list, or boolean",
+    ].join("\n");
+  }
+  if (topic.includes("tree")) {
+    return [
+      "start from the root",
+      "visit the current node if it exists",
+      "send the needed state to the left and right children",
+      "combine child results using the prompt rule",
+      "return the combined tree answer",
+    ].join("\n");
+  }
+  if (topic.includes("graph")) {
+    return [
+      "frontier = starting nodes",
+      "visited = empty set",
+      "while frontier is not empty:",
+      "    take the next node",
+      "    skip it if already visited",
+      "    add its valid neighbors",
+      "return the requested reachability, count, or path result",
+    ].join("\n");
+  }
+  if (topic.includes("linked")) {
+    return [
+      "current = head",
+      "while current is not past the end:",
+      "    read the current value",
+      "    update the saved answer or links",
+      "    move current to the next item",
+      "return the requested result",
+    ].join("\n");
+  }
+  if (topic.includes("string") || prompt.includes("string")) {
+    return [
+      "answer = starting value",
+      "for each character or word:",
+      "    check the prompt condition",
+      "    update answer when it matches",
+      "return answer",
+    ].join("\n");
+  }
+
+  return [
+    "answer = starting value",
+    "for each item or step in the input:",
+    "    check the condition from the prompt",
+    "    update the saved answer",
+    "return answer",
+  ].join("\n");
 }
 
 function normalizeCodeForCompare(value = "") {
@@ -743,6 +883,7 @@ function buildHintSteps(problem, solution, attempts, hintGate = null) {
   const gateHints = Array.isArray(hintGate?.hints) ? hintGate.hints : [];
   const hintAt = (level) => gateHints.find(item => item.level === level)?.hint || null;
   const guided = solution?.guided_steps || [];
+  const pseudocodeSnippet = buildPseudocodeSnippet(problem, solution || {});
   const shapeSnippet = buildShapeSnippet(solution || {});
   const unlockedCount = Number.isFinite(hintGate?.unlocked_count)
     ? hintGate.unlocked_count
@@ -763,15 +904,18 @@ function buildHintSteps(problem, solution, attempts, hintGate = null) {
     {
       level: 3,
       title: "Pseudocode / Code Shape",
-      body: shapeSnippet
-        ? `Use this only as a shape check:\n\n\`\`\`\n${shapeSnippet}\n\`\`\``
-        : hintAt(3) || guided[1] || "Write just the loop or branch that updates your answer, then stop and test it manually.",
+      body: [
+        hintAt(3) || guided[1] || "Use the prompt rules to sketch the control flow before writing full code.",
+        `\nPseudocode shape:\n\n\`\`\`\n${pseudocodeSnippet}\n\`\`\``,
+      ].filter(Boolean).join("\n"),
       locked: unlockedCount < 3,
     },
     {
       level: 4,
       title: "Small Code Fragment",
-      body: hintAt(4) || guided[2] || "Connect the helper logic to the return value, then test an empty, one-item, and typical input.",
+      body: hintAt(4) || guided[2] || (shapeSnippet
+        ? `Use this only as a final shape check:\n\n\`\`\`\n${shapeSnippet}\n\`\`\``
+        : "Connect the helper logic to the return value, then test an empty, one-item, and typical input."),
       locked: unlockedCount < 4,
     },
   ];
@@ -1012,7 +1156,6 @@ export default function CodingTutor({
   const saveWorkspaceState = useCallback(async (problemId, languageKey, source = "practice") => {
     const token = localStorage.getItem("token");
     if (!token) return;
-    if (source !== "practice") return;
     const normalizedSource = source === "interview" ? "interview" : "practice";
     const normalizedLanguage = languageKey || "python";
     const signature = `${problemId || ""}:${normalizedLanguage}:${normalizedSource}`;
@@ -2193,10 +2336,11 @@ export default function CodingTutor({
         serverProgress,
         starterCode: interviewStarterStub(activeProblem, nextLanguageName),
       }));
-      saveLastWorkspace(activeProblem.id, nextLanguageKey);
-      saveWorkspaceState(activeProblem.id, nextLanguageKey, "interview");
       if (activeProblem?.mock) {
         setMockSession((prev) => (prev ? { ...prev, language: nextLanguageName } : prev));
+      } else {
+        saveLastWorkspace(activeProblem.id, nextLanguageKey, "interview");
+        saveWorkspaceState(activeProblem.id, nextLanguageKey, "interview");
       }
       return;
     }
@@ -2316,8 +2460,10 @@ export default function CodingTutor({
         starterCode: interviewStarterStub(question, languageName),
       }));
     }
-    saveLastWorkspace(question.id, openedLanguageKey);
-    if (!opts.mock) saveWorkspaceState(question.id, openedLanguageKey, "interview");
+    if (!opts.mock) {
+      saveLastWorkspace(question.id, openedLanguageKey, "interview");
+      saveWorkspaceState(question.id, openedLanguageKey, "interview");
+    }
     setNote(`Interview prep: ${question.title}`);
     setTestOutput({
       status: "ready",
@@ -2628,7 +2774,16 @@ export default function CodingTutor({
     setMockSummary(summary);
     // Count this finished mock toward the Mock Rookie / Veteran badges.
     setMockCompleted(recordMockCompleted());
-    setActiveProblem((prev) => (prev?.mock ? { ...prev, mock: false } : prev));
+    if (activeProblem?.mock) {
+      setActiveProblem(null);
+      setActiveSolution(null);
+      setCode("");
+      setNote("");
+      setTestOutput({ status: "ready", message: "" });
+      setTerminalOpen(false);
+      setWorkspaceTab("Editor");
+      setRevealedHints(0);
+    }
     // Leave the workspace and land on Interview Prep underneath the results modal, so
     // closing the modal drops the student straight onto the interview page (and the new
     // Past Interviews entry) instead of a stale mock workspace. The summary overlay is
@@ -2869,17 +3024,17 @@ export default function CodingTutor({
     (async () => {
       const localLast = readLastWorkspace();
       const serverLast = await loadWorkspaceState();
-      const practiceServerLast =
-        serverLast?.source === "practice" && !String(serverLast.problem_id || "").startsWith("iv-")
+      const persistedServerLast =
+        (serverLast?.source === "practice" || serverLast?.source === "interview")
           ? serverLast
           : null;
       const localTime = Date.parse(localLast?.updatedAt || "") || 0;
-      const serverTime = Date.parse(practiceServerLast?.updated_at || "") || 0;
-      const useServer = Boolean(practiceServerLast?.problem_id) && (!localLast?.problemId || serverTime > localTime);
+      const serverTime = Date.parse(persistedServerLast?.updated_at || "") || 0;
+      const useServer = Boolean(persistedServerLast?.problem_id) && (!localLast?.problemId || serverTime > localTime);
       const last = useServer
-        ? { problemId: practiceServerLast.problem_id, language: practiceServerLast.language, source: "practice" }
+        ? { problemId: persistedServerLast.problem_id, language: persistedServerLast.language, source: persistedServerLast.source || "practice" }
         : localLast?.problemId
-          ? { problemId: localLast.problemId, language: localLast.language, source: "practice" }
+          ? { problemId: localLast.problemId, language: localLast.language, source: localLast.source || "practice" }
           : null;
       if (!last?.problemId) {
         autoReopenedRef.current = false;
@@ -3422,11 +3577,10 @@ export default function CodingTutor({
       savePendingProblemProgress();
       if (pageId === "workspace") {
         setWorkspaceVisible(true);
-        // The nav "Workspace" tab is the CODING (Quiz Bank) workspace. If we were in
-        // a personal, interview, or daily scratchpad editor, leave it so this shows
-        // the Practice workspace/empty state. Those flows can still use the editor
-        // while active, but they should not become the default Workspace tab.
-        if (activeProblem?.source && activeProblem.source !== "practice" && !activeProblem.mock) {
+        // Personal snippets and LeetCode scratchpads are temporary editors, not the
+        // default Workspace. Practice Library and individual Interview Prep
+        // problems should remain open when students navigate away and back.
+        if (activeProblem?.source && !["practice", "interview"].includes(activeProblem.source) && !activeProblem.mock) {
           setActiveProblem(null);
           setActiveSolution(null);
           setActiveSnippetId(null);
@@ -3627,6 +3781,7 @@ export default function CodingTutor({
           <ProblemPanel
             problem={activeProblem}
             solution={activeSolution}
+            selectedLanguage={selectedLanguage}
             attempts={attempts}
             problemLoading={problemLoading || isRestoringProblem}
             isSolved={isActiveProblemSolved}
@@ -4021,10 +4176,45 @@ export default function CodingTutor({
     .filter(Boolean)
     .join(" ");
 
+  const handleMoreMenuKeyDown = (event) => {
+    const details = event.currentTarget;
+    const menuItems = Array.from(details.querySelectorAll(".coding-nav-more-menu > button"))
+      .filter((node) => !node.disabled && node.getClientRects().length > 0);
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      details.removeAttribute("open");
+      details.querySelector("summary")?.focus();
+      return;
+    }
+
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key) || !menuItems.length) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    details.setAttribute("open", "");
+
+    const activeIndex = menuItems.indexOf(document.activeElement);
+    const nextIndex = (() => {
+      if (event.key === "Home") return 0;
+      if (event.key === "End") return menuItems.length - 1;
+      if (activeIndex < 0) return event.key === "ArrowUp" ? menuItems.length - 1 : 0;
+      if (event.key === "ArrowUp") return (activeIndex - 1 + menuItems.length) % menuItems.length;
+      return (activeIndex + 1) % menuItems.length;
+    })();
+
+    window.requestAnimationFrame(() => menuItems[nextIndex]?.focus());
+  };
+
   return (
     <div className={appClasses}>
       <div className="coding-nav-row">
-        <nav className="coding-section-nav campus-section-nav" aria-label="Coding tutor sections">
+        <nav
+          className="coding-section-nav campus-section-nav"
+          aria-label="Coding tutor sections"
+          onKeyDown={handleHorizontalRovingKeyDown}
+        >
         {CODING_PAGES.filter((page) => page.id !== "progress").map(page => {
           const Icon = page.icon;
           // The Workspace icon and the separate "My Snippets" button below both
@@ -4055,12 +4245,7 @@ export default function CodingTutor({
               event.currentTarget.removeAttribute("open");
             }
           }}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              event.currentTarget.removeAttribute("open");
-              event.currentTarget.querySelector("summary")?.focus();
-            }
-          }}
+          onKeyDown={handleMoreMenuKeyDown}
         >
           <summary
             className={

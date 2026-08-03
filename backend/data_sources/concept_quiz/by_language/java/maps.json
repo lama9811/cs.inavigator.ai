@@ -82,7 +82,7 @@
       "code": null,
       "prompt": "Why can `map.get(key) == null` be ambiguous in Java?",
       "choices": [
-        "A map is allowed to store null as a value. If that distinction matters, use `containsKey` to ask whether the key exists rather than guessing from `get`.",
+        "`get` can mean missing key or stored null. Use `containsKey` to tell the difference.",
         "Use `get` alone when null is a valid stored value.",
         "Skip `containsKey` when absence and null must be separated.",
         "Use a list scan when a key lookup would answer directly."

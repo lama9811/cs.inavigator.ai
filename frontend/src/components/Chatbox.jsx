@@ -212,6 +212,7 @@ export default function Chatbox({
   const [codingTutorContext, setCodingTutorContext] = useState(null);
   const [floatingCodingChatOpen, setFloatingCodingChatOpen] = useState(false);
   const [floatingCodingChatMaximized, setFloatingCodingChatMaximized] = useState(false);
+  const [floatingCodingChatFocusSignal, setFloatingCodingChatFocusSignal] = useState(0);
   const [codingWidgetSessionId, setCodingWidgetSessionId] = useState(() =>
     String(sessionId || "").startsWith("coding-") ? sessionId : `coding-${Date.now()}`
   );
@@ -261,6 +262,24 @@ export default function Chatbox({
     && chatMode === "coding_tutor"
     && (activeCodingPage === "workspace" || isLearnTracksRoute || isLearnLessonRoute)
     && !mockInterviewActive;
+
+  useEffect(() => {
+    const onKeyboardShortcut = (event) => {
+      const wantsFloatingTutor =
+        (event.ctrlKey || event.metaKey) &&
+        event.altKey &&
+        String(event.key || "").toLowerCase() === "c";
+      if (!wantsFloatingTutor || !showFloatingCodingChat) return;
+
+      event.preventDefault();
+      setFloatingCodingChatOpen(true);
+      setFloatingCodingChatMaximized(false);
+      setFloatingCodingChatFocusSignal((value) => value + 1);
+    };
+
+    window.addEventListener("keydown", onKeyboardShortcut);
+    return () => window.removeEventListener("keydown", onKeyboardShortcut);
+  }, [showFloatingCodingChat]);
 
   // Listen for mock-interview start/end from CodingTutor (separate component) so
   // we can hide the floating tutor during a mock. Sync the initial value from the
@@ -1792,6 +1811,7 @@ export default function Chatbox({
         <FloatingCodingChat
           isOpen={floatingCodingChatOpen}
           isMaximized={floatingCodingChatMaximized}
+          focusSignal={floatingCodingChatFocusSignal}
           messages={messages.filter(m => m.surface === "widget" && m.widgetSessionId === codingWidgetSessionId)}
           input={input}
           isLoading={isLoading}

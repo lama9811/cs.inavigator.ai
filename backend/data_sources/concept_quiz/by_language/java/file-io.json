@@ -82,7 +82,7 @@
       "code": null,
       "prompt": "Before writing student records to an existing file, what should the program decide?",
       "choices": [
-        "A successful write can still be the wrong action. If old records matter, include the append option or read, update, and rewrite the complete data intentionally.",
+        "Decide whether to replace, append, or rewrite updated data before opening the file.",
         "Overwrite existing records when the task calls for appending.",
         "Assume every file path starts in the source-code folder.",
         "Read data before checking for an I/O failure."

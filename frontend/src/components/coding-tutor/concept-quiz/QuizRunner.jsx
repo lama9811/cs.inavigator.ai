@@ -255,12 +255,12 @@ function withChoiceEmphasis(text) {
     if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
       return part.slice(1, -1).split(OPERATOR_TOKEN_RE).map((piece, pieceIndex) =>
         OPERATOR_TOKENS.has(piece.toLowerCase()) ? (
-          <strong
+          <code
             className="cq-choice-emphasis"
             key={`choice-emphasis-${index}-${pieceIndex}`}
           >
             {piece}
-          </strong>
+          </code>
         ) : (
           piece
         )

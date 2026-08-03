@@ -119,7 +119,8 @@ function FloatingChatButton({ onOpen, onDragStart, shouldSuppressOpen }) {
         onOpen();
       }}
       aria-label="Open coding tutor chat"
-      title="Open or drag the Coding Tutor"
+      aria-keyshortcuts="Control+Alt+C"
+      title="Open or drag the Coding Tutor. Shortcut: Ctrl+Alt+C"
     >
       <FaCommentDots aria-hidden="true" />
       <span>Coding Tutor</span>
@@ -531,7 +532,8 @@ function FloatingChatWindow({
   );
 }
 
-export default function FloatingCodingChat({ isOpen, isMaximized, onOpen, ...windowProps }) {
+export default function FloatingCodingChat({ isOpen, isMaximized, onOpen, focusSignal = 0, ...windowProps }) {
+  const rootRef = useRef(null);
   // The widget rests on one of four corners. `corner` is the source of truth; a raw
   // drag position is used only WHILE dragging, then discarded when it snaps back to a
   // corner. Defaulting to bottom-right preserves the old launcher spot.
@@ -552,6 +554,16 @@ export default function FloatingCodingChat({ isOpen, isMaximized, onOpen, ...win
     ? dragPosition
     : cornerToPosition(corner, isOpen, isMaximized);
   const safePosition = clampPosition(positionBase, isOpen, isMaximized);
+
+  useEffect(() => {
+    if (!focusSignal) return;
+    window.requestAnimationFrame(() => {
+      const selector = isOpen
+        ? ".floating-chat-header, .floating-chat-window textarea, .floating-chat-window button"
+        : ".floating-chat-button";
+      rootRef.current?.querySelector(selector)?.focus?.();
+    });
+  }, [focusSignal, isOpen]);
 
   // Re-clamp on window resize so a corner position stays valid at the new size.
   useEffect(() => {
@@ -651,6 +663,7 @@ export default function FloatingCodingChat({ isOpen, isMaximized, onOpen, ...win
   // CSS anchor the launcher without inline right/bottom fighting left/top.
   return (
     <div
+      ref={rootRef}
       className={`floating-coding-chat ${isOpen ? "open" : "closed"} corner-${corner} ${isDragging ? "dragging" : ""} ${isMaximized ? "maximized" : ""}`}
       style={{ left: `${safePosition.x}px`, top: `${safePosition.y}px` }}
     >

@@ -82,7 +82,7 @@
       "code": null,
       "prompt": "Why does C++ often prefer a member initializer list for constructor setup?",
       "choices": [
-        "It initializes members before the constructor body runs, which matters for const members and members without default constructors.",
+        "It initializes members before the constructor body, which matters for `const` and non-default members.",
         "Store all object state in one shared global variable.",
         "Skip constructors and fill fields only when remembered later.",
         "Use a class when no related data or behavior is being grouped."

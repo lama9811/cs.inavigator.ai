@@ -101,7 +101,7 @@
       "prompt": "A constructor receives `name` and the class also has a field named `name`. Why write `this.name = name`?",
       "choices": [
         "Let outside code change every field directly.",
-        "In that constructor, the parameter is called `name` and the field is also called `name`. Java resolves the plain name `name` to the parameter, because the closer one wins.",
+        "Plain `name` means the parameter here; `this.name` points to the field.",
         "Put unrelated responsibilities into one large class.",
         "Forget that each object has its own instance data."
       ],
@@ -154,7 +154,7 @@
       "code": null,
       "prompt": "When planning a Java class, how should a student separate fields and methods?",
       "choices": [
-        "Fields are what it knows. Methods are what it can do. Sort your ideas into those two piles first.",
+        "Fields are what it knows. Methods are what it can do.",
         "Use static/shared data for per-object information.",
         "Ignore invariants that should stay true after each method call.",
         "Mix user input directly into every object method."
@@ -173,7 +173,7 @@
       "prompt": "When an object needs several required fields, why write a constructor early?",
       "choices": [
         "Return internal mutable data without control.",
-        "Write a constructor as soon as an object needs more than one field, so an object can never exist half filled in.",
+        "A constructor prevents required fields from being left empty when the object is created.",
         "Use inheritance where a helper field would be clearer.",
         "Hide important setup in unrelated methods."
       ],

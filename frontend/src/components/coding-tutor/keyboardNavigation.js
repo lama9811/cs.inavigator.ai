@@ -5,7 +5,7 @@ export function handleHorizontalRovingKeyDown(event) {
   const scopedTabs = Array.from(event.currentTarget.querySelectorAll("[role='tab']"));
   const candidates = scopedTabs.length
     ? scopedTabs
-    : Array.from(event.currentTarget.querySelectorAll("button"));
+    : Array.from(event.currentTarget.querySelectorAll("button, summary, [role='button']"));
   const buttons = candidates.filter((node) => !node.disabled && node.getClientRects().length > 0);
   if (!buttons.length) return;
 
