@@ -2,7 +2,7 @@
   "_note": "Original advanced lesson. Shared across languages with language-specific code variants.",
   "title": "Sliding Window",
   "summary": "Track one contiguous range as it grows and shrinks.",
-  "minutes": 18,
+  "minutes": 22,
   "error_classes": [
     "wrong_answer",
     "runtime"
@@ -163,6 +163,132 @@
       ]
     },
     {
+      "id": "fixed-size-window",
+      "title": "Fixed-size windows",
+      "summary": "Some prompts tell you the window length upfront.",
+      "question_ids": [
+        "advanced-window-fixed-size"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A fixed-size window keeps the same length after it is full. Add the new right value, remove the old left value, then compare or save the current result."
+        },
+        {
+          "kind": "visual",
+          "title": "Slide a two-item window",
+          "concept": "sliding-window",
+          "caption": "The window length stays at two, so one value enters and one value leaves.",
+          "initial_state": {
+            "items": [
+              20,
+              30,
+              45,
+              10
+            ]
+          },
+          "steps": [
+            {
+              "title": "First full window",
+              "body": "Use 20 and 30 as the first two values.",
+              "state": {
+                "items": [
+                  20,
+                  30,
+                  45,
+                  10
+                ],
+                "window": [
+                  0,
+                  1
+                ],
+                "active": [
+                  0,
+                  1
+                ],
+                "note": "sum = 50"
+              }
+            },
+            {
+              "title": "Slide right",
+              "body": "45 enters from the right.",
+              "animation": "slide",
+              "state": {
+                "items": [
+                  20,
+                  30,
+                  45,
+                  10
+                ],
+                "window": [
+                  1,
+                  2
+                ],
+                "active": [
+                  2
+                ],
+                "note": "add 45"
+              }
+            },
+            {
+              "title": "Remove left",
+              "body": "20 leaves because the window must stay length two.",
+              "animation": "shrink",
+              "state": {
+                "items": [
+                  20,
+                  30,
+                  45,
+                  10
+                ],
+                "window": [
+                  1,
+                  2
+                ],
+                "active": [
+                  0
+                ],
+                "note": "subtract 20"
+              }
+            },
+            {
+              "title": "Save the new state",
+              "body": "The current window is 30 and 45.",
+              "state": {
+                "items": [
+                  20,
+                  30,
+                  45,
+                  10
+                ],
+                "window": [
+                  1,
+                  2
+                ],
+                "active": [
+                  1,
+                  2
+                ],
+                "note": "sum = 75"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "In a fixed-size window, what usually happens when a new right value enters?",
+          "choices": [
+            "The old left value leaves",
+            "The window keeps growing forever",
+            "The array gets sorted",
+            "The best answer resets"
+          ],
+          "answer_index": 0,
+          "why": "The size stays fixed, so adding on the right means removing the value that just fell off the left."
+        }
+      ]
+    },
+    {
       "id": "grow-shrink",
       "title": "Grow right, shrink left",
       "summary": "Update state every time the window changes.",
@@ -209,6 +335,35 @@
           ],
           "answer_index": 0,
           "why": "Shrinking from the left fixes the broken rule."
+        }
+      ]
+    },
+    {
+      "id": "valid-window-rule",
+      "title": "Variable windows keep a rule true",
+      "summary": "Grow while useful, shrink when the rule breaks.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A variable-size window changes length. The right side tries to include more data. The left side moves until the saved state follows the prompt rule again."
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Name the rule",
+          "body": "Write the rule in plain words before coding: sum at most a limit, no repeated value, at most two absences, or a minimum total."
+        },
+        {
+          "kind": "check",
+          "prompt": "Why might a variable-size window use a while loop to shrink?",
+          "choices": [
+            "One removal may not fix the rule",
+            "The right index is always wrong",
+            "The array must be empty",
+            "The result must be sorted"
+          ],
+          "answer_index": 0,
+          "why": "If the window is still invalid after one removal, the left side needs to keep moving."
         }
       ]
     },

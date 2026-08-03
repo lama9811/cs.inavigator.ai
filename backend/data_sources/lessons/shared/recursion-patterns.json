@@ -2,7 +2,7 @@
   "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Recursion Patterns",
   "summary": "**Recursion** solves a problem by handling a small case and asking the same **function** to solve a smaller version.",
-  "minutes": 18,
+  "minutes": 21,
   "error_classes": [
     "wrong_answer",
     "runtime"
@@ -298,6 +298,90 @@
           ],
           "answer_index": 0,
           "why": "The **call stack** remembers each unfinished **function** call until its smaller call returns."
+        }
+      ]
+    },
+    {
+      "id": "unwind-and-combine",
+      "title": "Unwind and combine answers",
+      "summary": "Recursive calls return small answers that the waiting calls combine.",
+      "question_ids": [
+        "advanced-recursion-trace",
+        "advanced-recursion-order"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A recursive function has a forward trip and a return trip. The forward trip makes smaller calls. The return trip unwinds those calls and combines the returned values."
+        },
+        {
+          "kind": "visual",
+          "title": "Watch recursive calls unwind",
+          "concept": "recursion",
+          "caption": "The smallest call returns first, then each waiting call finishes.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Call with 3",
+              "body": "The function is not at the base case yet, so it asks for the answer to a smaller input.",
+              "state": {
+                "call_stack": [
+                  "sum(3)"
+                ],
+                "active_call": 0,
+                "note": "needs sum(2)"
+              }
+            },
+            {
+              "title": "Call with 2",
+              "body": "The second call waits for `sum(1)`.",
+              "state": {
+                "call_stack": [
+                  "sum(3)",
+                  "sum(2)"
+                ],
+                "active_call": 1,
+                "note": "needs sum(1)"
+              }
+            },
+            {
+              "title": "Base case returns",
+              "body": "`sum(1)` can answer directly.",
+              "state": {
+                "call_stack": [
+                  "sum(3)",
+                  "sum(2)",
+                  "sum(1) -> 1"
+                ],
+                "active_call": 2,
+                "note": "base answer = 1"
+              }
+            },
+            {
+              "title": "Unwind answers",
+              "body": "Each waiting call combines its number with the returned smaller answer.",
+              "state": {
+                "call_stack": [
+                  "sum(3) -> 6",
+                  "sum(2) -> 3"
+                ],
+                "active_call": 0,
+                "note": "final answer = 6"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "What happens after the base case returns?",
+          "choices": [
+            "waiting calls finish in reverse order",
+            "all calls restart from the beginning",
+            "the input gets sorted",
+            "the stack becomes a queue"
+          ],
+          "answer_index": 0,
+          "why": "The most recent waiting call resumes first, then earlier calls finish one by one."
         }
       ]
     },

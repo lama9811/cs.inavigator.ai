@@ -2,7 +2,7 @@
   "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Trees",
   "summary": "A **tree** stores **nodes** in parent-child relationships. Many tree problems repeat the same work on left and right children.",
-  "minutes": 19,
+  "minutes": 22,
   "error_classes": [
     "wrong_answer",
     "runtime"
@@ -216,6 +216,119 @@
           ],
           "answer_index": 0,
           "why": "A **leaf** is an end **node**. It has no left or right child."
+        }
+      ]
+    },
+    {
+      "id": "array-tree-shape",
+      "title": "Read array-backed tree examples",
+      "summary": "Some practice prompts store tree levels in an array with placeholders for missing nodes.",
+      "question_ids": [
+        "advanced-tree-null",
+        "advanced-tree-height"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A level-order tree array lists nodes from top to bottom and left to right. A placeholder such as `-1` means that position has no real node."
+        },
+        {
+          "kind": "visual",
+          "title": "Turn a level array into a tree",
+          "concept": "trees",
+          "caption": "The array positions become parent and child slots.",
+          "initial_state": {
+            "items": [
+              1,
+              2,
+              3,
+              -1,
+              4
+            ]
+          },
+          "steps": [
+            {
+              "title": "Root",
+              "body": "Index 0 is the root.",
+              "state": {
+                "tree": [
+                  1,
+                  2,
+                  3,
+                  -1,
+                  4
+                ],
+                "active": [
+                  0
+                ],
+                "note": "root = 1"
+              }
+            },
+            {
+              "title": "Children of root",
+              "body": "Indexes 1 and 2 are the left and right children.",
+              "state": {
+                "tree": [
+                  1,
+                  2,
+                  3,
+                  -1,
+                  4
+                ],
+                "active": [
+                  1,
+                  2
+                ],
+                "note": "children: 2 and 3"
+              }
+            },
+            {
+              "title": "Missing child",
+              "body": "`-1` means the left child slot is empty.",
+              "state": {
+                "tree": [
+                  1,
+                  2,
+                  3,
+                  -1,
+                  4
+                ],
+                "active": [
+                  3
+                ],
+                "note": "no node here"
+              }
+            },
+            {
+              "title": "Real lower node",
+              "body": "Index 4 is a real node below 2.",
+              "state": {
+                "tree": [
+                  1,
+                  2,
+                  3,
+                  -1,
+                  4
+                ],
+                "active": [
+                  4
+                ],
+                "note": "count or height includes 4"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "In a tree array, what does a placeholder such as `-1` usually mean?",
+          "choices": [
+            "that position has no real node",
+            "the root value is negative",
+            "the tree is sorted",
+            "the traversal must stop immediately"
+          ],
+          "answer_index": 0,
+          "why": "The placeholder keeps the level positions aligned while marking an empty child slot."
         }
       ]
     },

@@ -2,7 +2,7 @@
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Functions",
   "summary": "Name a reusable task, give it inputs, and **return** a result.",
-  "minutes": 10,
+  "minutes": 14,
   "error_classes": [
     "syntax",
     "runtime",
@@ -102,6 +102,42 @@
       ]
     },
     {
+      "id": "arguments-and-types",
+      "title": "Match arguments to typed parameters",
+      "summary": "A call fills **parameters** by position, and C++ checks the declared types.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "When a C++ **function** is called, the first **argument** fills the first **parameter**, the second fills the second, and so on. The names inside the function do not have to match the caller names, but the types and order still matter."
+        },
+        {
+          "kind": "code",
+          "caption": "The call sends `7` into `score` and `3` into `bonus`. The returned result is a number, not printed text.",
+          "code": "int addBonus(int score, int bonus) {\n  return score + bonus;\n}\n\nint total = addBonus(7, 3);",
+          "output": "total stores 10"
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Read the comma list slowly",
+          "body": "For `int addBonus(int score, int bonus)`, both inputs are integers. If the runner sends a vector or a string, the signature must say so."
+        },
+        {
+          "kind": "check",
+          "prompt": "In `int addBonus(int score, int bonus)`, what does the second argument fill?",
+          "code": "addBonus(7, 3)",
+          "choices": [
+            "bonus",
+            "score",
+            "int",
+            "addBonus"
+          ],
+          "answer_index": 0,
+          "why": "Arguments fill parameters by position, so `3` fills the second parameter, `bonus`."
+        }
+      ]
+    },
+    {
       "id": "return-values",
       "title": "Return the promised value",
       "summary": "Use **return** in non-void **functions** and keep Coding Tutor starter shapes intact.",
@@ -131,6 +167,38 @@
           "tone": "mistake",
           "title": "Return the promised result",
           "body": "If a **function** begins with a type such as `int` or `double`, the caller expects a result of that type. Use `return` on every possible path. A `void` function performs work without returning a **value**."
+        }
+      ]
+    },
+    {
+      "id": "branch-return-paths",
+      "title": "Check every branch that can return",
+      "summary": "A non-void **function** should have a result for each possible path.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Conditionals inside a **function** create multiple paths. Trace one input for each path and ask what value reaches `return`."
+        },
+        {
+          "kind": "compare",
+          "caption": "This bug appears when one branch returns but the other path falls through.",
+          "wrong_label": "Missing path",
+          "wrong": "int sign(int n) {\n  if (n > 0) {\n    return 1;\n  }\n}",
+          "right_label": "Each path returns",
+          "right": "int sign(int n) {\n  if (n > 0) {\n    return 1;\n  }\n  return 0;\n}"
+        },
+        {
+          "kind": "check",
+          "prompt": "Why is the corrected version safer?",
+          "code": "if (n > 0) { return 1; }\nreturn 0;",
+          "choices": [
+            "Each path gives back an int",
+            "It prints more text",
+            "It changes n automatically",
+            "It removes the function call"
+          ],
+          "answer_index": 0,
+          "why": "The function promises an integer result, and now both the positive and non-positive paths return one."
         }
       ]
     },

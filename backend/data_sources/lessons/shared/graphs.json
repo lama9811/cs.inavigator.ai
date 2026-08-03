@@ -2,7 +2,7 @@
   "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Graphs",
   "summary": "A **graph** stores relationships between **nodes**. Traversal needs a visited **set** so cycles do not trap the program.",
-  "minutes": 19,
+  "minutes": 22,
   "error_classes": [
     "wrong_answer",
     "runtime"
@@ -599,6 +599,41 @@
             "Need recursive shape? DFS often reads naturally.",
             "Always include **visited** unless the **graph** is guaranteed acyclic."
           ]
+        }
+      ]
+    },
+    {
+      "id": "frontier-choice",
+      "title": "Choose the frontier structure",
+      "summary": "BFS and DFS differ mostly in which waiting node gets processed next.",
+      "question_ids": [
+        "advanced-graph-bfs",
+        "advanced-graph-dfs"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A graph traversal has two sets of information: what has already been visited and what is waiting next. BFS uses a queue for the waiting nodes. DFS uses a stack or recursive calls."
+        },
+        {
+          "kind": "compare",
+          "caption": "Both traversals can visit every reachable node, but the waiting structure changes the order.",
+          "wrong_label": "Mixed rule",
+          "wrong": "add neighbors to a queue\nremove newest next",
+          "right_label": "Consistent rule",
+          "right": "BFS: remove oldest next\nDFS: remove newest next"
+        },
+        {
+          "kind": "check",
+          "prompt": "Which structure makes BFS process older discovered nodes first?",
+          "choices": [
+            "queue",
+            "stack",
+            "hash map",
+            "sorted array"
+          ],
+          "answer_index": 0,
+          "why": "A queue removes the oldest waiting node first, which keeps BFS level by level."
         }
       ]
     },

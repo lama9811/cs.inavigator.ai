@@ -2,7 +2,7 @@
   "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
   "title": "Functions",
   "summary": "Package reusable behavior with inputs and returned results.",
-  "minutes": 10,
+  "minutes": 14,
   "error_classes": [
     "wrong_answer",
     "runtime",
@@ -90,6 +90,36 @@
       ]
     },
     {
+      "id": "scope-and-reuse",
+      "title": "Each call gets its own local names",
+      "summary": "**Parameters** and temporary variables belong to one function call.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A function call creates a small local workspace. The **parameters** hold this call's arguments, and temporary variables made inside the function do not become global names."
+        },
+        {
+          "kind": "code",
+          "caption": "The two calls reuse the same parameter name, but each call receives a different value.",
+          "code": "function tag(course) {\n  const label = \"Course: \" + course;\n  return label;\n}\n\nconsole.log(tag(\"CS101\"));\nconsole.log(tag(\"CS102\"));",
+          "output": "Course: CS101\nCourse: CS102"
+        },
+        {
+          "kind": "check",
+          "prompt": "Why can both calls use the name `course` safely?",
+          "code": "tag(\"CS101\")\ntag(\"CS102\")",
+          "choices": [
+            "Each call gets its own parameter value",
+            "The second call deletes the function",
+            "Parameters are shared across all calls",
+            "The name must match the printed text"
+          ],
+          "answer_index": 0,
+          "why": "The parameter name is local to the function call, so each call fills it with the argument passed that time."
+        }
+      ]
+    },
+    {
       "id": "return-vs-console",
       "title": "Return vs console.log",
       "summary": "**Return** values when later code needs the result.",
@@ -124,6 +154,44 @@
           ],
           "answer_index": 0,
           "why": "The **function** prints five but reaches its end without returning a **value**."
+        }
+      ]
+    },
+    {
+      "id": "return-paths-and-booleans",
+      "title": "Return paths and boolean helpers",
+      "summary": "A helper can **return** true or false so another decision can use it.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Many beginner functions answer a yes-or-no question. That answer should usually be returned, so an `if` statement or another function can use it."
+        },
+        {
+          "kind": "code",
+          "caption": "The helper returns a boolean. The caller decides what to print.",
+          "code": "function isPassing(score) {\n  return score >= 70;\n}\n\nif (isPassing(82)) {\n  console.log(\"ready\");\n}",
+          "output": "ready"
+        },
+        {
+          "kind": "compare",
+          "caption": "Printing inside the helper makes it harder to reuse in another condition.",
+          "wrong_label": "Displays only",
+          "wrong": "function isPassing(score) {\n  console.log(score >= 70);\n}",
+          "right_label": "Returns a boolean",
+          "right": "function isPassing(score) {\n  return score >= 70;\n}"
+        },
+        {
+          "kind": "check",
+          "prompt": "What should a yes-or-no helper return?",
+          "code": "function isPassing(score) { ... }",
+          "choices": [
+            "a boolean value",
+            "the function name",
+            "a new console",
+            "the parameter list"
+          ],
+          "answer_index": 0,
+          "why": "A boolean result lets later code choose a branch from the helper answer."
         }
       ]
     },
@@ -204,7 +272,7 @@
       "body": "The first argument goes into the first parameter, the second into the second, and so on unless named arguments are used.",
       "notice": "Write the parameter values before evaluating the body.",
       "mistake": "Do not swap argument meaning because the names would sound nicer the other way.",
-      "section_id": "parameters-and-arguments",
+      "section_id": "parameters-and-calls",
       "example": "subtract(a, b)"
     },
     "local-scope-01": {
@@ -212,7 +280,7 @@
       "body": "A value created inside a function or method is not automatically available outside it.",
       "notice": "Use return values to move information out of a function.",
       "mistake": "Do not print an inside-only name after the function has finished.",
-      "section_id": "arrow-functions-and-checklist",
+      "section_id": "scope-and-reuse",
       "example": "function double(n) {\n  return n * 2;\n}"
     },
     "reuse-01": {
@@ -220,7 +288,7 @@
       "body": "Calling the same function more than once applies the same rule to new arguments.",
       "notice": "Evaluate each call separately, then combine the returned values.",
       "mistake": "Do not reuse the previous call's local parameter values.",
-      "section_id": "what-a-function-is",
+      "section_id": "scope-and-reuse",
       "example": "double(5)"
     },
     "function-in-condition-01": {
@@ -228,7 +296,7 @@
       "body": "A function that returns true or false can be used directly as a condition.",
       "notice": "Evaluate the returned boolean before choosing the branch.",
       "mistake": "Do not print the boolean if the code uses it to choose an if or else path.",
-      "section_id": "return-vs-print",
+      "section_id": "return-paths-and-booleans",
       "example": "is_even(7)"
     },
     "param-copy-01": {
@@ -236,7 +304,7 @@
       "body": "A parameter is the function's local name for the value it received.",
       "notice": "If the function returns an updated value, the caller must store that return to keep it.",
       "mistake": "Do not assume a local parameter assignment rewrites the original variable.",
-      "section_id": "parameters-and-arguments",
+      "section_id": "scope-and-reuse",
       "example": "x = bump(x)"
     }
   }

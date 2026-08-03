@@ -2,7 +2,7 @@
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Syntax",
   "summary": "See how a small C++ program is put together and run.",
-  "minutes": 10,
+  "minutes": 12,
   "error_classes": [
     "syntax",
     "runtime"
@@ -42,6 +42,49 @@
           "wrong": "int main() {\n  std::cout << \"Hello\\n\"\n}",
           "right_label": "Complete statement",
           "right": "int main() {\n  std::cout << \"Hello\\n\";\n}"
+        }
+      ]
+    },
+    {
+      "id": "compiler-reading-clues",
+      "title": "Use compiler clues without panic",
+      "summary": "Syntax errors usually point near a missing symbol, name, or block boundary.",
+      "question_ids": [
+        "syntax-delimiter-01",
+        "syntax-block-01",
+        "syntax-case-01"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "C++ syntax errors often come from a small missing mark: a semicolon, a quote, a parenthesis, or a brace. Read the first compiler message, then inspect the line it names and the line just above it."
+        },
+        {
+          "kind": "compare",
+          "caption": "The compiler reports the line where it got confused. The missing symbol may be slightly earlier.",
+          "wrong_label": "Missing semicolon",
+          "wrong": "int score = 90\nstd::cout << score << \"\\n\";",
+          "right_label": "Statement ended",
+          "right": "int score = 90;\nstd::cout << score << \"\\n\";"
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Case matters",
+          "body": "`cout`, `Cout`, and `COUT` are different names. If the spelling looks right, check capitalization next."
+        },
+        {
+          "kind": "check",
+          "prompt": "A compiler points at a line after `int score = 90`. What should you check first?",
+          "code": "int score = 90\nstd::cout << score;",
+          "choices": [
+            "whether the previous statement needs a semicolon",
+            "whether score should be a string",
+            "whether cout changes the number",
+            "whether the program needs two main functions"
+          ],
+          "answer_index": 0,
+          "why": "A missing semicolon can make the next line look broken because the previous statement never ended."
         }
       ]
     },

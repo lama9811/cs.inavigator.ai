@@ -44,7 +44,7 @@ function trackDefinition(trackId) {
   return TRACKS.find((track) => track.id === trackId) || null;
 }
 
-function LanguageCards({ languages, onPick, onStartPythonBeginner }) {
+function LanguageCards({ languages, onPick }) {
   return (
     <div className="cq-language-cards">
       <div className="cq-cards-intro">
@@ -54,16 +54,6 @@ function LanguageCards({ languages, onPick, onStartPythonBeginner }) {
           Python Beginner if you want the gentlest path.
         </p>
       </div>
-      <button type="button" className="cq-start-here-card" onClick={onStartPythonBeginner}>
-        <span className="cq-language-card-flag">Start Here</span>
-        <strong>Python Beginner</strong>
-        <span>
-          Follow the lessons in order, then practice the same ideas with small coding problems.
-        </span>
-        <span className="cq-language-card-cta">
-          Start the first track <FaArrowRight aria-hidden="true" />
-        </span>
-      </button>
       <div className="cq-cards-grid">
         {languages.map((lang) => {
           const accent = LANGUAGE_VISUALS[lang.id] || {};
@@ -391,7 +381,6 @@ export default function LearnMode({
     <LanguageCards
       languages={languages}
       onPick={onNavigateToLanguage}
-      onStartPythonBeginner={() => onNavigateToTrack("python", "beginner")}
     />
   );
 }

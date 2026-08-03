@@ -2,7 +2,7 @@
   "_note": "Original advanced lesson. Shared across languages with language-specific code variants.",
   "title": "Two Pointers",
   "summary": "Use two **indexes** that move for a clear reason.",
-  "minutes": 18,
+  "minutes": 22,
   "error_classes": [
     "wrong_answer",
     "runtime"
@@ -159,6 +159,37 @@
       ]
     },
     {
+      "id": "opposite-ends",
+      "title": "Opposite-end pointers",
+      "summary": "Use both ends when sorted order or mirrored positions matter.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Opposite-end pointers start far apart and move inward. This shape fits sorted pair searches, palindrome checks, and problems where the outside values decide what can be ignored."
+        },
+        {
+          "kind": "compare",
+          "caption": "The movement should match the evidence from the comparison.",
+          "wrong_label": "Guessing",
+          "wrong": "sum is too large\nmove left anyway",
+          "right_label": "Using sorted order",
+          "right": "sum is too large\nmove right leftward"
+        },
+        {
+          "kind": "check",
+          "prompt": "In a sorted pair-sum search, why move right when the sum is too large?",
+          "choices": [
+            "A smaller right value can lower the sum",
+            "It makes the list unsorted",
+            "It checks the same pair again",
+            "It guarantees no pair exists"
+          ],
+          "answer_index": 0,
+          "why": "Sorted order makes the value at the new right position less than or equal to the old right value."
+        }
+      ]
+    },
+    {
       "id": "sorted-sum",
       "title": "Sorted pair sum",
       "summary": "Sorted order decides which **pointer** moves.",
@@ -205,6 +236,51 @@
           ],
           "answer_index": 0,
           "why": "Moving right leftward chooses a smaller right **value**."
+        }
+      ]
+    },
+    {
+      "id": "same-direction",
+      "title": "Same-direction pointers",
+      "summary": "Sometimes one pointer reads while another writes or remembers a boundary.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Not every two-pointer problem starts at both ends. Some use a read pointer to scan each item and a write pointer to place kept values, remove duplicates, or compact a list."
+        },
+        {
+          "kind": "code",
+          "caption": "This pattern keeps values that should remain while `read` scans across the input.",
+          "variants": {
+            "python": {
+              "code": "write = 0\nfor read in range(len(nums)):\n    if keep(nums[read]):\n        nums[write] = nums[read]\n        write += 1",
+              "output": ""
+            },
+            "java": {
+              "code": "int write = 0;\nfor (int read = 0; read < nums.length; read++) {\n    if (keep(nums[read])) {\n        nums[write] = nums[read];\n        write++;\n    }\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "let write = 0;\nfor (let read = 0; read < nums.length; read++) {\n  if (keep(nums[read])) {\n    nums[write] = nums[read];\n    write++;\n  }\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "int write = 0;\nfor (int read = 0; read < (int)nums.size(); read++) {\n    if (keep(nums[read])) {\n        nums[write] = nums[read];\n        write++;\n    }\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "check",
+          "prompt": "What is the job of the write pointer in a compacting pattern?",
+          "choices": [
+            "Mark the next kept position",
+            "Sort the entire input",
+            "Jump to the last item first",
+            "Delete the loop condition"
+          ],
+          "answer_index": 0,
+          "why": "The write pointer marks where the next kept value should be placed."
         }
       ]
     },

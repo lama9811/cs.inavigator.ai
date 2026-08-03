@@ -36,6 +36,8 @@ All notable changes to CS Navigator are documented here.
 - **Coding Tutor accessibility polish V1.** Main Coding Tutor modals and drawers now trap focus, close with Escape, restore focus to the opener, and use dialog labels; Learn language cards are native buttons, key tab groups support arrow-key navigation, and the floating tutor exposes clearer keyboard movement and suggestion-preview labels.
 
 ### Changed
+- Expanded the thin explicit Learn lessons so the previously 3-section and 4-section Coding Tutor lessons now have five focused sections with additional examples, checks, visual traces, and mistake guidance.
+- Coding Tutor Home now shows the Starting Point quiz as a card first instead of auto-opening the modal on reload, and the Learn page uses only one clear Python Beginner "Start Here" signal.
 - Concept Quiz multiple-choice answers now shuffle per browser attempt while preserving original answer identities for grading, draft restore, immediate feedback, and result summaries.
 - Concept quiz banks now reject old generic prompt templates across all languages and topics; shared legacy Beginner/Intermediate banks and language-specific Intermediate banks were cleaned of lesson-referencing stems, repeated review prompts, weak distractors, giveaway-shaped choices, mojibake, and explanation boilerplate.
 - Coding Tutor Home now shows the Starting Point check before the LeetCode daily card so new students get placed before seeing outside challenge work.

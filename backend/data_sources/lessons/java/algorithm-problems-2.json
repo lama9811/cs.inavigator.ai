@@ -2,7 +2,7 @@
   "_note": "ORIGINAL CS Navigator content expanded into sections. No source prose, examples, or exercises were copied.",
   "title": "Algorithm Problems: Part 2",
   "summary": "Coordinate multiple state **variables**, define **edge**-case behavior, and trace updates deliberately.",
-  "minutes": 12,
+  "minutes": 16,
   "error_classes": [
     "wrong_answer",
     "runtime",
@@ -146,6 +146,37 @@
       ]
     },
     {
+      "id": "nested-state",
+      "title": "Separate row state from whole-answer state",
+      "summary": "Nested loops often need one variable for the current group and another for the answer so far.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "In Java matrix or table problems, a variable declared inside the outer loop restarts for each row. A variable declared before the outer loop can keep the best result across all rows."
+        },
+        {
+          "kind": "compare",
+          "caption": "Reset row-local state at the row boundary, not after the whole grid.",
+          "wrong_label": "Leaky row state",
+          "wrong": "int rowTotal = 0;\nfor (int[] row : grid) {\n    for (int value : row) {\n        rowTotal += value;\n    }\n}",
+          "right_label": "Fresh row state",
+          "right": "for (int[] row : grid) {\n    int rowTotal = 0;\n    for (int value : row) {\n        rowTotal += value;\n    }\n}"
+        },
+        {
+          "kind": "check",
+          "prompt": "Where should `int rowTotal = 0;` go when each row needs its own total?",
+          "choices": [
+            "Inside the outer loop before the inner loop",
+            "After all loops finish",
+            "Inside the inner loop after each value",
+            "Inside the return statement"
+          ],
+          "answer_index": 0,
+          "why": "Declaring the row total inside the outer loop creates a fresh total for each row."
+        }
+      ]
+    },
+    {
       "id": "trace-table",
       "title": "Trace the first wrong update",
       "summary": "A small table can reveal whether the **value**, **index**, or **loop** range is wrong.",
@@ -165,6 +196,40 @@
             "Does equality replace the current answer?",
             "Which printed line first disagrees with the promise?"
           ]
+        }
+      ]
+    },
+    {
+      "id": "parsons-ordering",
+      "title": "Order setup, loop body, and return",
+      "summary": "Parsons problems test where each line belongs in the method shape.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A Java algorithm usually prepares variables, enters a loop, updates state inside the loop, and returns after the loop. Braces make that placement visible."
+        },
+        {
+          "kind": "list",
+          "title": "Line-order checks",
+          "items": [
+            "Variable setup happens before the repeated work.",
+            "State updates happen inside the loop that sees the data.",
+            "A nested update belongs inside the inner loop.",
+            "The final return happens after the loop has finished."
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "Which line usually belongs before a loop that counts matches?",
+          "code": "",
+          "choices": [
+            "int count = 0;",
+            "return count;",
+            "count++;",
+            "System.out.println(value);"
+          ],
+          "answer_index": 0,
+          "why": "The counter needs a starting value before the loop can add matches to it."
         }
       ]
     }

@@ -2,7 +2,7 @@
   "_note": "ORIGINAL CS Navigator content expanded into sections. No source prose, examples, or exercises were copied.",
   "title": "Algorithm Problems: Part 2",
   "summary": "Coordinate multiple state **variables**, define **edge**-case behavior, and trace updates deliberately.",
-  "minutes": 12,
+  "minutes": 16,
   "error_classes": [
     "wrong_answer",
     "runtime",
@@ -159,6 +159,37 @@
       ]
     },
     {
+      "id": "nested-state",
+      "title": "Separate row state from whole-answer state",
+      "summary": "Nested loops often track one value for the current group and another for the final answer.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "In matrix and grouped-data problems, some state belongs to one row, one word, or one group. Other state survives across the whole input. Put those variables in different places."
+        },
+        {
+          "kind": "compare",
+          "caption": "A row total should restart for each row, but the best answer should survive after each row ends.",
+          "wrong_label": "Leaky row state",
+          "wrong": "row_total = 0\nfor row in grid:\n    for value in row:\n        row_total += value",
+          "right_label": "Fresh row state",
+          "right": "for row in grid:\n    row_total = 0\n    for value in row:\n        row_total += value"
+        },
+        {
+          "kind": "check",
+          "prompt": "Where should `row_total = 0` go when each row needs its own total?",
+          "choices": [
+            "Inside the outer loop before the inner loop",
+            "After all loops finish",
+            "Inside the inner loop after each value",
+            "Nowhere, totals reset themselves"
+          ],
+          "answer_index": 0,
+          "why": "Each row needs a fresh total before its values are scanned."
+        }
+      ]
+    },
+    {
       "id": "trace-table",
       "title": "Trace the first wrong transition",
       "summary": "A tiny table finds the bug faster than rereading the whole program.",
@@ -182,6 +213,40 @@
             "Choose a tie rule deliberately.",
             "Trace the first wrong state transition, not just the final **output**."
           ]
+        }
+      ]
+    },
+    {
+      "id": "parsons-ordering",
+      "title": "Order the setup before the repeated work",
+      "summary": "Parsons problems test whether setup, loop body, and final return are in the right places.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "When ordering algorithm lines, sort them by job: guard impossible input, create state, repeat the update, then return the finished answer."
+        },
+        {
+          "kind": "list",
+          "title": "Line-order questions",
+          "items": [
+            "Does this line prepare state before the loop?",
+            "Does this line run once per item?",
+            "Does this line belong inside a nested loop?",
+            "Does this line return after the repeated work is complete?"
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "Which line usually belongs before a loop that counts matches?",
+          "code": "",
+          "choices": [
+            "count = 0",
+            "return count",
+            "count += 1",
+            "print every value"
+          ],
+          "answer_index": 0,
+          "why": "The counter needs a starting value before the loop begins adding to it."
         }
       ]
     }

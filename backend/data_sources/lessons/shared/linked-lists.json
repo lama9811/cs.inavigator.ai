@@ -2,7 +2,7 @@
   "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Linked Lists",
   "summary": "A **linked list** is made of **nodes**. Each node stores data and a link to the next node.",
-  "minutes": 19,
+  "minutes": 22,
   "error_classes": [
     "wrong_answer",
     "runtime"
@@ -478,6 +478,61 @@
           ],
           "answer_index": 0,
           "why": "The end of the **list** is marked by a missing next **node**."
+        }
+      ]
+    },
+    {
+      "id": "runner-safe-list-shapes",
+      "title": "Practice with array-backed links",
+      "summary": "Coding Tutor linked-list practice uses arrays to model nodes safely across languages.",
+      "question_ids": [
+        "advanced-traverse-list",
+        "advanced-cycle-risk"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Some practice problems represent a linked list with two arrays: one for values and one for next indexes. That keeps Python, JavaScript, Java, and C++ runners consistent while still teaching head, current, next, and null."
+        },
+        {
+          "kind": "code",
+          "caption": "`nextIndexes[i]` tells you which node comes after index `i`. A value such as `-1` means the list ends.",
+          "variants": {
+            "python": {
+              "code": "values = [10, 20, 30]\nnext_indexes = [1, 2, -1]\ncurrent = 0\nwhile current != -1:\n    print(values[current])\n    current = next_indexes[current]",
+              "output": "10\n20\n30"
+            },
+            "java": {
+              "code": "int[] values = {10, 20, 30};\nint[] nextIndexes = {1, 2, -1};\nint current = 0;\nwhile (current != -1) {\n    System.out.println(values[current]);\n    current = nextIndexes[current];\n}",
+              "output": "10\n20\n30"
+            },
+            "javascript": {
+              "code": "const values = [10, 20, 30];\nconst nextIndexes = [1, 2, -1];\nlet current = 0;\nwhile (current !== -1) {\n  console.log(values[current]);\n  current = nextIndexes[current];\n}",
+              "output": "10\n20\n30"
+            },
+            "cpp": {
+              "code": "std::vector<int> values = {10, 20, 30};\nstd::vector<int> nextIndexes = {1, 2, -1};\nint current = 0;\nwhile (current != -1) {\n    std::cout << values[current] << \"\\n\";\n    current = nextIndexes[current];\n}",
+              "output": "10\n20\n30"
+            }
+          }
+        },
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "Follow next, not index order",
+          "body": "A linked list can store node data in any array position. The next pointer decides the order, not the physical index."
+        },
+        {
+          "kind": "check",
+          "prompt": "In an array-backed linked list, what does `-1` usually mean?",
+          "choices": [
+            "there is no next node",
+            "the next node is index one",
+            "the value should be negative",
+            "the list must be sorted"
+          ],
+          "answer_index": 0,
+          "why": "The sentinel value marks the end, like null in a node-based linked list."
         }
       ]
     },

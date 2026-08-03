@@ -2,7 +2,7 @@
   "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Binary Search",
   "summary": "**Binary search** works when the search space is sorted or has a clear true/false boundary.",
-  "minutes": 17,
+  "minutes": 20,
   "error_classes": [
     "wrong_answer",
     "runtime"
@@ -320,6 +320,135 @@
           ],
           "answer_index": 0,
           "why": "The left side is too small, including mid, so low moves right past mid."
+        }
+      ]
+    },
+    {
+      "id": "first-last-boundaries",
+      "title": "Find first or last matching position",
+      "summary": "Some searches keep going after a match to find a boundary.",
+      "question_ids": [
+        "advanced-bs-monotonic"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Binary search does not always stop at the first match. If the prompt asks for the first passing item or the last valid item, save the match and keep searching the side that might contain a better boundary."
+        },
+        {
+          "kind": "visual",
+          "title": "Save a match and keep narrowing",
+          "concept": "binary-search",
+          "caption": "The match is a candidate, but the search keeps looking left for an earlier match.",
+          "initial_state": {
+            "items": [
+              60,
+              70,
+              70,
+              85
+            ]
+          },
+          "steps": [
+            {
+              "title": "Check mid",
+              "body": "Mid lands on 70, so this index is a possible answer.",
+              "state": {
+                "items": [
+                  60,
+                  70,
+                  70,
+                  85
+                ],
+                "pointers": {
+                  "left": 0,
+                  "mid": 1,
+                  "right": 3
+                },
+                "active": [
+                  1
+                ],
+                "note": "candidate = 1"
+              }
+            },
+            {
+              "title": "Search left side",
+              "body": "For first occurrence, move right before the candidate.",
+              "state": {
+                "items": [
+                  60,
+                  70,
+                  70,
+                  85
+                ],
+                "pointers": {
+                  "left": 0,
+                  "mid": 0,
+                  "right": 0
+                },
+                "active": [
+                  0
+                ],
+                "eliminated": [
+                  2,
+                  3
+                ],
+                "note": "candidate still 1"
+              }
+            },
+            {
+              "title": "No earlier match",
+              "body": "The left side does not match the target.",
+              "state": {
+                "items": [
+                  60,
+                  70,
+                  70,
+                  85
+                ],
+                "pointers": {
+                  "left": 1,
+                  "right": 0
+                },
+                "active": [
+                  1
+                ],
+                "eliminated": [
+                  0,
+                  2,
+                  3
+                ],
+                "note": "return candidate 1"
+              }
+            },
+            {
+              "title": "Return saved candidate",
+              "body": "The saved index is the first match found by the narrowed search.",
+              "state": {
+                "items": [
+                  60,
+                  70,
+                  70,
+                  85
+                ],
+                "active": [
+                  1
+                ],
+                "note": "answer = 1"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "If you need the first matching index and mid matches, what should you do?",
+          "choices": [
+            "save mid and keep searching left",
+            "throw away the match",
+            "search only to the right",
+            "sort the array again"
+          ],
+          "answer_index": 0,
+          "why": "The current mid is a valid candidate, but an earlier match may still exist on the left."
         }
       ]
     },

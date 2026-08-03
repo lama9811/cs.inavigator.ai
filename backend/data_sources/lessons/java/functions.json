@@ -2,7 +2,7 @@
   "_note": "ORIGINAL content. Topic sequence follows the standard free Java text (Eck, 'Introduction to Programming Using Java', ch.4 on subroutines); a topic sequence is not copyrightable, but prose is. No sentence, example, or exercise is copied or closely paraphrased from it. Eck is CC BY-NC-SA, a copyleft NonCommercial license, and copying his words would bind CS Navigator's content to those terms permanently. Every word here was written for this lesson. All code blocks were compiled and run with javac/java 21; every 'output' field is real program output, and every compile error quoted is the real javac message. Prose is also deliberately written to share no sentences with python/functions.json: the two lessons teach the same topic, and the reuse test hashes Python and Java together.",
   "title": "Functions",
   "summary": "Put a repeatable piece of work into a **method**.",
-  "minutes": 8,
+  "minutes": 12,
   "error_classes": [
     "syntax",
     "wrong_answer",
@@ -106,6 +106,46 @@
           "code": "public static void greet(String name) {\n    System.out.println(\"Hello, \" + name + \"!\");\n}\n\n// inside main:\ngreet(\"Ada\");\ngreet(\"Grace\");",
           "output": "Hello, Ada!\nHello, Grace!",
           "body": "You will see `static` a lot in beginner Java because `main` is static. For now, read a static **method** as one you can call from main without building an **object** first."
+        }
+      ]
+    },
+    {
+      "id": "arguments-and-types",
+      "title": "Match arguments to typed parameters",
+      "summary": "A method call fills typed **parameters** by position.",
+      "question_ids": [
+        "arg-order-01",
+        "param-copy-01"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Java checks method calls against the method signature. The caller supplies arguments, and Java matches them to parameters from left to right."
+        },
+        {
+          "kind": "code",
+          "caption": "The call sends `7` into `score` and `3` into `bonus`. The names in the call do not have to match the parameter names.",
+          "code": "static int addBonus(int score, int bonus) {\n    return score + bonus;\n}\n\nint total = addBonus(7, 3);",
+          "output": "total stores 10"
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Types are part of the promise",
+          "body": "If a method says `int score`, the call must provide a value Java can use as an integer. The method body can trust that shape once the code compiles."
+        },
+        {
+          "kind": "check",
+          "prompt": "In `addBonus(7, 3)`, what does `3` fill?",
+          "code": "static int addBonus(int score, int bonus)",
+          "choices": [
+            "bonus",
+            "score",
+            "int",
+            "static"
+          ],
+          "answer_index": 0,
+          "why": "Arguments match parameters by position, so the second argument fills the second parameter."
         }
       ]
     },
@@ -268,7 +308,7 @@
       "body": "The first argument goes into the first parameter, the second into the second, and so on unless named arguments are used.",
       "notice": "Write the parameter values before evaluating the body.",
       "mistake": "Do not swap argument meaning because the names would sound nicer the other way.",
-      "section_id": "parameters-and-arguments",
+      "section_id": "arguments-and-types",
       "example": "subtract(a, b)"
     },
     "local-scope-01": {
@@ -300,7 +340,7 @@
       "body": "A parameter is the function's local name for the value it received.",
       "notice": "If the function returns an updated value, the caller must store that return to keep it.",
       "mistake": "Do not assume a local parameter assignment rewrites the original variable.",
-      "section_id": "parameters-and-arguments",
+      "section_id": "arguments-and-types",
       "example": "x = bump(x)"
     }
   }

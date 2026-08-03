@@ -2,7 +2,7 @@
   "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Hash Maps & Sets",
   "summary": "Use a **set** to remember what you have seen. Use a **map** when each **key** needs a value, such as a count.",
-  "minutes": 17,
+  "minutes": 20,
   "error_classes": [
     "wrong_answer",
     "runtime"
@@ -388,6 +388,139 @@
           ],
           "answer_index": 0,
           "why": "The **key** is the thing you look up. The count is the **value** stored for that key."
+        }
+      ]
+    },
+    {
+      "id": "collisions-and-defaults",
+      "title": "Handle missing keys and collisions calmly",
+      "summary": "Map code needs a missing-key rule before it can update a saved value.",
+      "question_ids": [
+        "advanced-map-default",
+        "advanced-map-update-order"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A map lookup has two questions. Does the key already exist? If it does, use or update the saved value. If it does not, choose a default before doing arithmetic or appending."
+        },
+        {
+          "kind": "visual",
+          "title": "Lookup, default, update",
+          "concept": "hash-map",
+          "caption": "Watch a key land in a bucket, then either reuse an entry or create one.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Read key",
+              "body": "The key is the value used for lookup.",
+              "state": {
+                "buckets": [
+                  {
+                    "label": "0",
+                    "items": []
+                  },
+                  {
+                    "label": "1",
+                    "items": []
+                  },
+                  {
+                    "label": "2",
+                    "items": []
+                  }
+                ],
+                "target": "lab",
+                "note": "key = lab"
+              }
+            },
+            {
+              "title": "Choose bucket",
+              "body": "The hash function decides which bucket to inspect.",
+              "state": {
+                "buckets": [
+                  {
+                    "label": "0",
+                    "items": []
+                  },
+                  {
+                    "label": "1",
+                    "items": [
+                      "lab: 1"
+                    ]
+                  },
+                  {
+                    "label": "2",
+                    "items": []
+                  }
+                ],
+                "activeBucket": 1,
+                "note": "bucket 1"
+              }
+            },
+            {
+              "title": "Key appears again",
+              "body": "Use the existing entry instead of making a duplicate key.",
+              "state": {
+                "buckets": [
+                  {
+                    "label": "0",
+                    "items": []
+                  },
+                  {
+                    "label": "1",
+                    "items": [
+                      "lab: 1"
+                    ]
+                  },
+                  {
+                    "label": "2",
+                    "items": []
+                  }
+                ],
+                "activeBucket": 1,
+                "active": [
+                  "lab"
+                ],
+                "note": "old count = 1"
+              }
+            },
+            {
+              "title": "Update saved value",
+              "body": "The value for that key changes from 1 to 2.",
+              "state": {
+                "buckets": [
+                  {
+                    "label": "0",
+                    "items": []
+                  },
+                  {
+                    "label": "1",
+                    "items": [
+                      "lab: 2"
+                    ]
+                  },
+                  {
+                    "label": "2",
+                    "items": []
+                  }
+                ],
+                "activeBucket": 1,
+                "note": "lab count = 2"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "Why choose a default before adding to a missing count?",
+          "choices": [
+            "There is no old number to add to yet",
+            "The key must be deleted first",
+            "All counts must start at one hundred",
+            "The map becomes a set automatically"
+          ],
+          "answer_index": 0,
+          "why": "A missing key has no saved count, so the code needs a starting value such as zero before incrementing."
         }
       ]
     },
