@@ -1,4 +1,6 @@
+import json
 import os
+import re
 
 os.environ.setdefault("JWT_SECRET", "test-only-jwt-secret-not-for-production")
 
@@ -13,9 +15,44 @@ from main import (
     _is_cs_department_question,
     _dedupe_near_duplicates,
     _POPULAR_Q_CODING_MARKERS,
+    _POPULAR_Q_CURATED_POOL,
     _POPULAR_Q_FEATURE_SESSION_PREFIXES,
     _POPULAR_Q_MIN_LEN,
 )
+
+
+class TestCuratedPoolCourseCodesAreReal:
+    """The pool shipped "What are the prerequisites for COSC 450 Operating Systems?"
+    for a course that has never existed — the real one is COSC 354. A student clicking
+    that chip got a KB miss, and the CS Nav grounding fence (correctly) refused to
+    invent the course rather than answering. Nothing else in the pipeline can catch a
+    fabricated course code, because the chip text bypasses every content filter.
+    """
+
+    def test_every_course_code_in_the_pool_exists_in_the_catalog(self):
+        catalog_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "data_sources",
+            "classes.json",
+        )
+        with open(catalog_path) as fh:
+            catalog = json.load(fh)
+        known = {c["course_code"] for c in catalog["courses"]}
+
+        cited = set()
+        for question in _POPULAR_Q_CURATED_POOL:
+            for match in re.findall(r"\b[A-Z]{4}\s*\d{3}\b", question):
+                cited.add(re.sub(r"\s+", " ", match))
+
+        unknown = sorted(code for code in cited if code not in known)
+        assert unknown == [], f"curated chips cite courses not in classes.json: {unknown}"
+
+    def test_the_operating_systems_chip_uses_the_real_code(self):
+        os_chips = [q for q in _POPULAR_Q_CURATED_POOL if "Operating Systems" in q]
+        assert os_chips, "expected an Operating Systems chip in the curated pool"
+        for chip in os_chips:
+            assert "COSC 354" in chip
+            assert "COSC 450" not in chip
 
 
 class TestPersonLookupsAreRejected:
@@ -56,7 +93,7 @@ class TestOffTopicIsRejected:
 
 class TestCsDepartmentQuestionsAreKept:
     def test_keeps_course_and_curriculum_questions(self):
-        assert _is_cs_department_question("What are the prerequisites for COSC 450 Operating Systems?") is True
+        assert _is_cs_department_question("What are the prerequisites for COSC 354 Operating Systems?") is True
         assert _is_cs_department_question("How many credits do I need to graduate with a CS degree?") is True
         assert _is_cs_department_question("How do I register for CS courses?") is True
         assert _is_cs_department_question("Name one AI course at Morgan State.") is True
@@ -74,7 +111,7 @@ class TestDedupe:
 
     def test_keeps_genuinely_different_questions(self):
         out = _dedupe_near_duplicates([
-            "What are the prerequisites for COSC 450?",
+            "What are the prerequisites for COSC 354?",
             "How do I register for CS courses?",
         ])
         assert len(out) == 2
