@@ -1,15 +1,19 @@
 from coding_runner import (
     RUN_MAX_OUTPUT_CHARS,
     RunnerSecurityError,
+    _cpp_beginner_compat_adapter,
+    _cpp_param_prefers_int,
     check_practice_run_rate_limit,
     compiled_runners_enabled,
     run_cpp_practice_tests,
     run_java_practice_tests,
     run_javascript_practice_tests,
     run_python_practice_tests,
+    run_python_practice_trace,
     validate_cpp_code,
     validate_java_code,
 )
+from practice_starters import cpp_native_signature, get_arg_spec
 from pathlib import Path
 import json
 
@@ -48,6 +52,30 @@ def count_vowels(text: str) -> int:
     assert any(not item["passed"] for item in result["tests"])
 
 
+def test_python_runner_accepts_case_insensitive_message_tests():
+    code = """
+def plant_watering_message(moisture: int, is_sunny: bool) -> str:
+    return "Water Today"
+"""
+    tests = [{"name": "message case", "args": [28, False], "expected": "water today", "case_insensitive": True}]
+
+    result = run_python_practice_tests(code, "plant_watering_message", tests)
+
+    assert result["status"] == "passed"
+
+
+def test_python_runner_accepts_none_sentinel_case_inside_lists():
+    code = """
+def help_desk_queue(commands):
+    return ["None", "Kim"]
+"""
+    tests = [{"name": "sentinel case", "args": [["serve", "join Kim", "serve"]], "expected": ["none", "Kim"]}]
+
+    result = run_python_practice_tests(code, "help_desk_queue", tests)
+
+    assert result["status"] == "passed"
+
+
 def test_python_runner_outputs_final_function_call():
     code = """
 def count_vowels(text: str) -> int:
@@ -62,6 +90,39 @@ count_vowels("hello")
     assert result["stdout"].strip() == "2"
 
 
+def test_python_trace_captures_function_lines_and_locals():
+    code = """
+def count_vowels(text: str) -> int:
+    total = 0
+    for char in text.lower():
+        if char in "aeiou":
+            total += 1
+    return total
+"""
+
+    result = run_python_practice_trace(code, "count_vowels", COUNT_VOWELS_TESTS[0])
+
+    assert result["status"] == "passed"
+    assert result["test"]["passed"] is True
+    assert result["trace"]
+    assert any("total" in step["locals"] for step in result["trace"])
+    assert any("for char in text.lower()" in step["line"] for step in result["trace"])
+    assert any(step.get("return_value") == "2" for step in result["trace"])
+    assert all(step.get("call_depth", 0) >= 1 for step in result["trace"])
+    assert any(step.get("call_stack") == ["count_vowels"] for step in result["trace"])
+
+
+def test_python_trace_uses_same_security_validation():
+    result = run_python_practice_trace(
+        "import os\ndef count_vowels(text):\n    return 0",
+        "count_vowels",
+        COUNT_VOWELS_TESTS[0],
+    )
+
+    assert result["status"] == "error"
+    assert "security check blocked" in result["stderr"].lower()
+
+
 def test_javascript_runner_passes_correct_solution():
     code = """
 function countVowels(text) {
@@ -74,6 +135,32 @@ function countVowels(text) {
     assert result["status"] == "passed"
     assert result["passed"] == 2
     assert result["total"] == 2
+
+
+def test_javascript_runner_accepts_case_insensitive_message_tests():
+    code = """
+function plantWateringMessage(moisture, isSunny) {
+  return "Water Today";
+}
+"""
+    tests = [{"name": "message case", "args": [28, False], "expected": "water today", "case_insensitive": True}]
+
+    result = run_javascript_practice_tests(code, "plantWateringMessage", tests)
+
+    assert result["status"] == "passed"
+
+
+def test_javascript_runner_accepts_none_sentinel_case_inside_lists():
+    code = """
+function helpDeskQueue(commands) {
+  return ["None", "Kim"];
+}
+"""
+    tests = [{ "name": "sentinel case", "args": [["serve", "join Kim", "serve"]], "expected": ["none", "Kim"] }]
+
+    result = run_javascript_practice_tests(code, "helpDeskQueue", tests)
+
+    assert result["status"] == "passed"
 
 
 def test_javascript_runner_outputs_final_function_call():
@@ -285,6 +372,60 @@ def test_cpp_validator_still_allows_normal_algorithm_code():
     )
 
 
+def test_cpp_beginner_compat_detects_const_vector_int_params():
+    code = """
+#include <vector>
+
+int sumEvenNumbers(const std::vector<int>& nums) {
+    return 0;
+}
+"""
+
+    assert _cpp_param_prefers_int(code, "sumEvenNumbers", "nums", "intlist") is True
+
+
+def test_cpp_beginner_compat_adds_wider_wrapper_after_student_code():
+    spec = get_arg_spec("sumEvenNumbers")
+    expected_signature = cpp_native_signature("sumEvenNumbers", spec)
+    code = """
+#include <vector>
+
+int sumEvenNumbers(const std::vector<int>& nums) {
+    return 0;
+}
+"""
+
+    adapter = _cpp_beginner_compat_adapter(code, "sumEvenNumbers", spec, expected_signature)
+
+    assert "long long sumEvenNumbers(std::vector<long long> nums)" in adapter
+    assert "std::vector<int> __nums_int(nums.begin(), nums.end());" in adapter
+    assert "auto __student_result = sumEvenNumbers(__nums_int);" in adapter
+
+
+def test_cpp_beginner_compat_accepts_snake_case_function_name():
+    spec = get_arg_spec("sumEvenNumbers")
+    expected_signature = cpp_native_signature("sumEvenNumbers", spec)
+    code = """
+#include <vector>
+
+int sum_even_numbers(const std::vector<int>& nums) {
+    int current_sum = 0;
+    for (int num : nums) {
+        if (num % 2 == 0) {
+            current_sum += num;
+        }
+    }
+    return current_sum;
+}
+"""
+
+    adapter = _cpp_beginner_compat_adapter(code, "sumEvenNumbers", spec, expected_signature)
+
+    assert "long long sumEvenNumbers(std::vector<long long> nums)" in adapter
+    assert "std::vector<int> __nums_int(nums.begin(), nums.end());" in adapter
+    assert "auto __student_result = sum_even_numbers(__nums_int);" in adapter
+
+
 def test_java_validator_blocks_env_classloader_and_native():
     blocked = [
         "class Solution { static Object f(Object[] a){ return System.getenv(\"X\"); } }",
@@ -325,6 +466,43 @@ def test_compiled_runners_gate_disables_java_and_cpp(monkeypatch):
 def test_compiled_runners_gate_on_by_default(monkeypatch):
     monkeypatch.delenv("ALLOW_COMPILED_RUNNERS", raising=False)
     assert compiled_runners_enabled() is True
+
+
+def test_java_runner_accepts_case_insensitive_message_tests():
+    if not compiled_runners_enabled():
+        pytest.skip("compiled runners disabled")
+    code = """
+class Solution {
+  static String plantWateringMessage(int moisture, boolean isSunny) {
+    return "Water Today";
+  }
+}
+"""
+    tests = [{"name": "message case", "args": [28, False], "expected": "water today", "case_insensitive": True}]
+
+    result = run_java_practice_tests(code, "plantWateringMessage", tests, arg_spec=get_arg_spec("plantWateringMessage"))
+
+    assert result["status"] == "passed"
+
+
+def test_cpp_runner_accepts_case_insensitive_message_tests():
+    if not compiled_runners_enabled():
+        pytest.skip("compiled runners disabled")
+    code = """
+#include <string>
+using namespace std;
+
+string plantWateringMessage(long long moisture, bool isSunny) {
+    return "Water Today";
+}
+"""
+    tests = [{"name": "message case", "args": [28, False], "expected": "water today", "case_insensitive": True}]
+
+    result = run_cpp_practice_tests(code, "plantWateringMessage", tests, arg_spec=get_arg_spec("plantWateringMessage"))
+    if result["status"] == "error" and "compiler" in result.get("stderr", "").lower():
+        pytest.skip(result["stderr"])
+
+    assert result["status"] == "passed"
 
 
 def test_runner_rate_limit_returns_retry_after():

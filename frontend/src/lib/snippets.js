@@ -13,6 +13,30 @@ const STORAGE_KEY = "csnav.snippets";
 const MAX_SNIPPETS = 50;
 const API_BASE = getApiBase();
 
+function parseJwtPayload(token) {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return {};
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+    return JSON.parse(window.atob(padded));
+  } catch {
+    return {};
+  }
+}
+
+function storageKey() {
+  try {
+    const token = window.localStorage.getItem("token");
+    if (!token) return `${STORAGE_KEY}:anonymous`;
+    const payload = parseJwtPayload(token);
+    const id = payload.user_id || payload.sub || payload.email;
+    return `${STORAGE_KEY}:user:${String(id || "anonymous").toLowerCase()}`;
+  } catch {
+    return `${STORAGE_KEY}:anonymous`;
+  }
+}
+
 function authHeaders() {
   const token = (() => {
     try { return window.localStorage.getItem("token"); } catch { return null; }
@@ -31,7 +55,7 @@ function safeParse(raw) {
 
 function readCache() {
   try {
-    return safeParse(window.localStorage.getItem(STORAGE_KEY) || "[]")
+    return safeParse(window.localStorage.getItem(storageKey()) || "[]")
       .filter(s => s && typeof s.id === "string");
   } catch {
     return [];
@@ -40,7 +64,7 @@ function readCache() {
 
 function writeCache(items) {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, MAX_SNIPPETS)));
+    window.localStorage.setItem(storageKey(), JSON.stringify(items.slice(0, MAX_SNIPPETS)));
   } catch {
     /* storage full / unavailable — non-fatal */
   }

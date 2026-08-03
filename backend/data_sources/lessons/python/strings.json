@@ -7,12 +7,12 @@
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "A string is text in quotes: `\"Ada\"` or `'Ada'`. `len(s)` tells you how many characters it holds. You reach a single character with `s[i]`, and counting starts at 0, so the last character of a string of length 5 is `s[4]`. `s[-1]` is a shortcut for that last one. `s[1:4]` is a slice: it takes characters 1, 2, and 3, stopping before 4. A string cannot be changed in place, so build a new one instead.",
+  "refresher": "A **string** is text in quotes: `\"Ada\"` or `'Ada'`. `len(s)` tells you how many characters it holds. You reach a single character with `s[i]`, and counting starts at 0, so the last character of a string of length 5 is `s[4]`. `s[-1]` is a shortcut for that last one. `s[1:4]` is a slice: it takes characters 1, 2, and 3, stopping before 4. A string cannot be changed in place, so build a new one instead.",
   "refresher_code": "s = \"Morgan\"\nprint(len(s))\nprint(s[0])\nprint(s[-1])\nprint(s[0:3])\n# 6\n# M\n# n\n# Mor",
   "blocks": [
     {
       "kind": "text",
-      "body": "A string is text. A name, a message, a line typed by a user. You write one by putting it in quotes, and Python then treats it as a single value you can store in a variable, print, or take apart."
+      "body": "A **string** is text. A name, a message, a line typed by a user. You write one by putting it in quotes, and Python then treats it as a single value you can store in a **variable**, **print**, or take apart."
     },
     {
       "kind": "code",
@@ -22,7 +22,7 @@
     },
     {
       "kind": "text",
-      "body": "Two strings can be joined with a plus sign. This is called concatenation. It does exactly what it looks like: it sticks the second string onto the end of the first and hands you a new string."
+      "body": "Two **strings** can be joined with a plus sign. This is called concatenation. It does exactly what it looks like: it sticks the second string onto the end of the first and hands you a new string."
     },
     {
       "kind": "code",
@@ -34,21 +34,21 @@
       "kind": "callout",
       "tone": "mistake",
       "title": "You cannot add a number to a string",
-      "body": "`\"Score: \" + 10` raises a TypeError, because plus means one thing for text and something else for numbers, and Python refuses to guess which you meant. Two ways out. Convert the number with `str(10)`, or use an f-string, which is easier to read and is what most people reach for."
+      "body": "`\"Score: \" + 10` raises a TypeError, because plus means one thing for text and something else for numbers, and Python refuses to guess which you meant. Two ways out. Convert the number with `str(10)`, or use an f-**string**, which is easier to read and is what most people reach for."
     },
     {
       "kind": "code",
-      "caption": "An f-string is a string with an `f` in front. Anything inside the curly braces is worked out first, then dropped into the text. Values of any type are welcome, so no `str()` call is needed.",
+      "caption": "An f-**string** is a string with an `f` in front. Anything inside the curly braces is worked out first, then dropped into the text. **Values** of any type are welcome, so no `str()` call is needed.",
       "code": "name = \"Ada\"\nscore = 10\nprint(f\"{name} scored {score} points\")\nprint(f\"Next year: {score + 5}\")",
       "output": "Ada scored 10 points\nNext year: 15"
     },
     {
       "kind": "text",
-      "body": "Once you have a string, the first question is usually how long it is, and the second is how to get at one piece of it. `len(s)` answers the first. Square brackets answer the second, and this is where the counting gets interesting."
+      "body": "Once you have a **string**, the first question is usually how long it is, and the second is how to get at one piece of it. `len(s)` answers the first. Square brackets answer the second, and this is where the counting gets interesting."
     },
     {
       "kind": "code",
-      "caption": "Counting starts at 0, so the first character sits at index 0 and the last sits at `len(s) - 1`. A five character string has no index 5.",
+      "caption": "Counting starts at 0, so the first character sits at **index** 0 and the last sits at `len(s) - 1`. A five character **string** has no index 5.",
       "code": "word = \"Bears\"\nprint(len(word))\nprint(word[0])\nprint(word[4])",
       "output": "5\nB\ns"
     },
@@ -56,11 +56,11 @@
       "kind": "callout",
       "tone": "mistake",
       "title": "IndexError: string index out of range",
-      "body": "`\"Bears\"` has five characters, so the valid indexes are 0, 1, 2, 3, and 4. Asking for `word[5]` asks for a sixth character that was never there, and Python stops the program rather than invent one. When you see this error, count the characters, then subtract one. That is the highest index you are allowed."
+      "body": "`\"Bears\"` has five characters, so the valid **indexes** are 0, 1, 2, 3, and 4. Asking for `word[5]` asks for a sixth character that was never there, and Python stops the program rather than invent one. When you see this error, count the characters, then subtract one. That is the highest **index** you are allowed."
     },
     {
       "kind": "check",
-      "prompt": "What does this print?",
+      "prompt": "What does this **print**?",
       "code": "word = \"Bears\"\nprint(word[len(word)])",
       "choices": [
         "It raises an IndexError",
@@ -69,27 +69,27 @@
         "It prints nothing"
       ],
       "answer_index": 0,
-      "why": "`len(word)` is 5, so this asks for `word[5]`. The valid indexes are 0 through 4, so there is no character at 5 and Python raises an IndexError. Picking \"s\" is the tempting answer, because `s` really is the last character. It just lives at index 4, not 5. To get the last character safely, write `word[len(word) - 1]`, or use the shortcut on the next screen."
+      "why": "`len(word)` is 5, so this asks for `word[5]`. The valid **indexes** are 0 through 4, so there is no character at 5 and Python raises an IndexError. Picking \"s\" is the tempting answer, because `s` really is the last character. It just lives at **index** 4, not 5. To get the last character safely, write `word[len(word) - 1]`, or use the shortcut on the next screen."
     },
     {
       "kind": "text",
-      "body": "The shortcut is a negative index. `s[-1]` is the last character, `s[-2]` is the one before it, and so on. It saves you the length arithmetic every time, and it reads better."
+      "body": "The shortcut is a negative **index**. `s[-1]` is the last character, `s[-2]` is the one before it, and so on. It saves you the length arithmetic every time, and it reads better."
     },
     {
       "kind": "code",
-      "caption": "Negative indexes count backwards from the end. There is no `-0`, so the countdown starts at -1. The last line shows the same character reached from both directions.",
+      "caption": "Negative **indexes** count backwards from the end. There is no `-0`, so the countdown starts at -1. The last line shows the same character reached from both directions.",
       "code": "word = \"Bears\"\nprint(word[-1])\nprint(word[-2])\nprint(word[0], word[-5])",
       "output": "s\nr\nB B"
     },
     {
       "kind": "code",
-      "caption": "To take more than one character, use a slice: two indexes with a colon between them. It stops just before the second number, the same rule `range()` follows. Leave a side blank to mean \"go all the way\", so `[:3]` starts at the beginning and `[3:]` runs to the end.",
+      "caption": "To take more than one character, use a slice: two **indexes** with a colon between them. It stops just before the second number, the same rule `range()` follows. Leave a side blank to mean \"go all the way\", so `[:3]` starts at the beginning and `[3:]` runs to the end.",
       "code": "word = \"Morgan\"\nprint(word[0:3])\nprint(word[3:6])\nprint(word[:3])\nprint(word[3:])",
       "output": "Mor\ngan\nMor\ngan"
     },
     {
       "kind": "code",
-      "caption": "Strings carry methods, which are actions you call on the string with a dot. `.strip()` cuts whitespace off both ends, which is what you want on anything a person typed. Notice the last line: `raw` still has its spaces, because each method returned a new string and nobody stored it.",
+      "caption": "**Strings** carry **methods**, which are actions you call on the string with a dot. `.strip()` cuts whitespace off both ends, which is what you want on anything a person typed. Notice the last line: `raw` still has its spaces, because each method returned a new string and nobody stored it.",
       "code": "raw = \"  Ada Lovelace \\n\"\nclean = raw.strip()\nprint(clean.upper())\nprint(clean.lower())\nprint(clean.split())\nprint(repr(raw))",
       "output": "ADA LOVELACE\nada lovelace\n['Ada', 'Lovelace']\n'  Ada Lovelace \\n'"
     },
@@ -97,15 +97,15 @@
       "kind": "callout",
       "tone": "tip",
       "title": "Catch the result or lose it",
-      "body": "`name.upper()` on its own does nothing you can see. It builds a new uppercase string and then throws it away, because you never said where to put it. Write `name = name.upper()` if you want to keep it. Every string method works this way, so it is one habit that covers all of them."
+      "body": "`name.upper()` on its own does nothing you can see. It builds a new uppercase **string** and then throws it away, because you never said where to put it. Write `name = name.upper()` if you want to keep it. Every string **method** works this way, so it is one habit that covers all of them."
     },
     {
       "kind": "text",
-      "body": "That habit has a reason behind it. A string in Python is immutable, which means once it exists, its characters cannot be changed. You can build a different string, but you cannot edit this one."
+      "body": "That habit has a reason behind it. A **string** in Python is immutable, which means once it exists, its characters cannot be changed. You can build a different string, but you cannot edit this one."
     },
     {
       "kind": "compare",
-      "caption": "Assigning into a string raises a TypeError. Nothing you do to a string edits it in place, so the fix is always the same: build the string you want and put it back in the name.",
+      "caption": "Assigning into a **string** raises a TypeError. Nothing you do to a string edits it in place, so the fix is always the same: build the string you want and put it back in the name.",
       "wrong_label": "TypeError",
       "wrong": "s = \"cat\"\ns[0] = \"b\"\n# strings do not\n# support item\n# assignment",
       "right_label": "Works",
@@ -113,7 +113,7 @@
     },
     {
       "kind": "check",
-      "prompt": "What does this print?",
+      "prompt": "What does this **print**?",
       "code": "s = \"  hello world  \"\nparts = s.strip().split()\nprint(len(parts), parts[-1].upper())",
       "choices": [
         "2 WORLD",
@@ -122,19 +122,101 @@
         "3 WORLD"
       ],
       "answer_index": 0,
-      "why": "Take it one step at a time. `.strip()` trims the spaces on both ends, leaving `\"hello world\"`. `.split()` then breaks that at the space and gives you the list `['hello', 'world']`, which has 2 items, so `len(parts)` is 2. `parts[-1]` is the last item, `'world'`, and `.upper()` turns it into `'WORLD'`. If you picked 16, you measured the length of the string instead of the list: `len()` counts characters in a string but items in a list."
+      "why": "Take it one step at a time. `.strip()` trims the spaces on both ends, leaving `\"hello world\"`. `.split()` then breaks that at the space and gives you the **list** `['hello', 'world']`, which has 2 items, so `len(parts)` is 2. `parts[-1]` is the last item, `'world'`, and `.upper()` turns it into `'WORLD'`. If you picked 16, you measured the length of the **string** instead of the list: `len()` counts characters in a string but items in a list."
     },
     {
       "kind": "list",
       "title": "Habits that save you debugging time",
       "items": [
-        "Index of the last character is `len(s) - 1`, or just use `s[-1]`",
+        "**Index** of the last character is `len(s) - 1`, or just use `s[-1]`",
         "A slice stops before its second number, exactly like `range()` does",
         "Strip anything a user typed before you compare it: `answer.strip().lower() == \"yes\"`",
-        "String methods return a new string, so store the result or it is gone",
-        "Use an f-string whenever you mix text with a number, and skip `str()` entirely",
-        "Seeing an IndexError means you asked for a character past the end. Count the characters, subtract one, and check your index against that."
+        "**String** **methods** **return** a new string, so store the result or it is gone",
+        "Use an f-**string** whenever you mix text with a number, and skip `str()` entirely",
+        "Seeing an IndexError means you asked for a character past the end. Count the characters, subtract one, and check your **index** against that."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "strings-lesson-check-1": {
+      "title": "Length is not the last index",
+      "body": "String positions start at 0, so the count is one past the final valid index.",
+      "example": "word = \"Bears\"\nlast_index = len(word) - 1",
+      "notice": "A five-character string uses positions 0, 1, 2, 3, and 4.",
+      "mistake": "Do not use the length itself as an index unless you mean one past the end.",
+      "section_id": "check"
+    },
+    "strings-lesson-check-2": {
+      "title": "Follow each string operation",
+      "body": "When several string methods appear together, trace the returned value from left to right before choosing the output.",
+      "example": "text.strip().split()",
+      "notice": "Some methods return strings, and some return collections of smaller pieces.",
+      "mistake": "Do not keep measuring the original text after a method has returned a different value.",
+      "section_id": "check"
+    },
+    "strings-summary-01": {
+      "title": "Strings are text values",
+      "body": "A **string** stores text. You can measure it, read characters by position, take pieces from it, and build new text from it.",
+      "example": "name = \"Ada\"\nname[0]",
+      "notice": "Most string operations return a value; they do not rewrite the original text in place.",
+      "mistake": "Do not treat the character count as the final valid position.",
+      "section_id": "check"
+    },
+    "strings-supplement-01": {
+      "title": "Strings do not change in place",
+      "body": "Many beginner bugs come from trying to edit one character inside a string. Instead, build a new string with the change you want.",
+      "example": "fixed = \"b\" + word[1:]",
+      "notice": "Immutable means the original text value is not edited directly.",
+      "mistake": "Do not assign into a string index like it is a list slot.",
+      "section_id": "check"
+    },
+    "strings-authored-01": {
+      "title": "Convert before joining text and numbers",
+      "body": "Joining text with a number needs an explicit conversion or a formatted string. That makes the intended output clear.",
+      "example": "message = f\"Score: {score}\"",
+      "notice": "The plus operator can mean different things depending on the values around it.",
+      "mistake": "Do not expect the language to always guess whether plus means addition or text joining.",
+      "section_id": "check"
+    },
+    "strings-authored-02": {
+      "title": "Index errors come from bounds",
+      "body": "If code asks for a string position that does not exist, the bug is usually a zero-based counting mistake.",
+      "example": "last = text[len(text) - 1]",
+      "notice": "Check both the string length and the position being requested.",
+      "mistake": "Do not read the final character before checking that the string is nonempty.",
+      "section_id": "check"
+    },
+    "strings-authored-03": {
+      "title": "Use the method result",
+      "body": "A string method call often gives back transformed text. Store, return, print, or compare that returned value.",
+      "example": "clean = answer.strip().lower()",
+      "notice": "Calling the method alone may do nothing visible.",
+      "mistake": "Do not assume a string method changed the variable automatically.",
+      "section_id": "check"
+    },
+    "strings-authored-04": {
+      "title": "Reach the final character safely",
+      "body": "To read the last character, use the language's last-index pattern and first make sure the string has at least one character.",
+      "example": "last = text[-1]",
+      "notice": "Last-index shortcuts are convenient, but empty strings still have no last character.",
+      "mistake": "Do not use the count as the final index.",
+      "section_id": "check"
+    },
+    "strings-authored-05": {
+      "title": "Slices stop before the end",
+      "body": "A slice or substring range usually includes the start and stops before the ending position.",
+      "example": "word[1:4]",
+      "notice": "The stop value acts like a boundary, not a character to include.",
+      "mistake": "Do not count the stop position as part of the returned text.",
+      "section_id": "check"
+    },
+    "strings-authored-06": {
+      "title": "Normalize typed text before comparing",
+      "body": "When people type answers, spaces and capitalization can vary. Clean the text before comparing when exact formatting is not the point.",
+      "example": "answer.strip().lower()",
+      "notice": "Normalize both the value and the comparison target in the same way.",
+      "mistake": "Do not clean only one side of a comparison and leave the other side inconsistent.",
+      "section_id": "check"
+    }
+  }
 }

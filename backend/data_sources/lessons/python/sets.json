@@ -1,32 +1,85 @@
 {
   "_note": "ORIGINAL content. Topic coverage follows the curriculum in Runestone Foundations of Python Programming, Think Python, and OpenStax Introduction to Python Programming. No prose, examples, or exercises were copied; the sources guide topic selection only.",
   "title": "Sets",
-  "summary": "Keep one copy of each value and compare groups directly.",
+  "summary": "Keep one copy of each **value** and compare groups directly.",
   "minutes": 9,
   "error_classes": [
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "A set is an unordered collection of unique values. Add with `add`, remove safely with `discard`, and use union, intersection, or difference to compare groups. Empty sets use `set()`, because `{}` creates a dictionary.",
+  "refresher": "A **set** is an unordered collection of unique **values**. Add with `add`, remove safely with `discard`, and use union, intersection, or difference to compare groups. Empty sets use `set()`, because `{}` creates a **dictionary**.",
   "refresher_code": "skills = {\"Python\", \"Git\"}\nskills.add(\"Python\")\nprint(len(skills))\n# 2",
   "blocks": [
     {
       "kind": "text",
-      "body": "A set is useful when the question is about membership, not position. It can track the courses a student has completed or the tags attached to an article. Duplicate input collapses into one stored value."
+      "body": "A **set** is useful when the question is about membership, not position. It can track the courses a student has completed or the tags attached to an article. Duplicate **input** collapses into one stored **value**."
+    },
+    {
+      "kind": "visual",
+      "title": "Keep one copy of each value",
+      "concept": "sets",
+      "caption": "See how a set ignores duplicates while membership stays fast to check.",
+      "initial_state": {},
+      "steps": [
+        {
+          "title": "Add A",
+          "body": "A is new, so it joins the set.",
+          "animation": "add",
+          "state": {
+            "items": [
+              "A"
+            ],
+            "active": [
+              0
+            ],
+            "note": "seen = {A}"
+          }
+        },
+        {
+          "title": "Add B",
+          "body": "B is also new.",
+          "animation": "add",
+          "state": {
+            "items": [
+              "A",
+              "B"
+            ],
+            "active": [
+              1
+            ],
+            "note": "seen = {A, B}"
+          }
+        },
+        {
+          "title": "Try A again",
+          "body": "A is already present, so the set still has one A.",
+          "animation": "highlight",
+          "state": {
+            "items": [
+              "A",
+              "B"
+            ],
+            "active": [
+              0
+            ],
+            "note": "duplicate ignored"
+          }
+        }
+      ]
     },
     {
       "kind": "code",
-      "caption": "Repeated values disappear when the list becomes a set. The result has three unique course codes even though the source list has four items.",
+      "caption": "Repeated **values** disappear when the **list** becomes a **set**. The result has three unique course codes even though the source list has four items.",
       "code": "courses = [\"CS101\", \"MATH120\", \"CS101\", \"ENG101\"]\nunique_courses = set(courses)\nprint(len(unique_courses))\nprint(\"CS101\" in unique_courses)",
       "output": "3\nTrue"
     },
     {
       "kind": "text",
-      "body": "Sets do not promise an index order, so `skills[0]` is not valid. If order matters, keep a list. If fast membership and uniqueness matter, a set is usually the clearer tool."
+      "body": "**Sets** do not promise an index order, so `skills[0]` is not valid. If order matters, keep a **list**. If fast membership and uniqueness matter, a set is usually the clearer tool."
     },
     {
       "kind": "compare",
-      "caption": "`remove` raises KeyError when the value is absent. `discard` leaves the set unchanged, which is convenient when absence is acceptable.",
+      "caption": "`remove` raises KeyError when the **value** is absent. `discard` **leaves** the **set** unchanged, which is convenient when absence is acceptable.",
       "wrong_label": "May fail",
       "wrong": "clubs = {\"Robotics\"}\nclubs.remove(\"Chess\")",
       "right_label": "Safe absence",
@@ -36,11 +89,11 @@
       "kind": "callout",
       "tone": "warning",
       "title": "Curly braces have one empty exception",
-      "body": "`{\"Python\"}` is a set, but `{}` is an empty dictionary. Write `set()` when you need an empty set, then add values to it."
+      "body": "`{\"Python\"}` is a **set**, but `{}` is an empty **dictionary**. Write `set()` when you need an empty set, then add **values** to it."
     },
     {
       "kind": "check",
-      "prompt": "What is the value of `common`?",
+      "prompt": "What is the **value** of `common`?",
       "code": "a = {1, 2, 3}\nb = {2, 3, 4}\ncommon = a & b",
       "choices": [
         "{2, 3}",
@@ -49,11 +102,11 @@
         "[2, 3]"
       ],
       "answer_index": 0,
-      "why": "The `&` operator computes intersection, keeping only values present in both sets. The result remains a set, not a list."
+      "why": "The `&` **operator** computes intersection, keeping only values present in both **sets**. The result remains a set, not a **list**."
     },
     {
       "kind": "text",
-      "body": "Union combines both groups, intersection keeps the overlap, and difference keeps values found only on the left. Those operations often replace nested loops with a statement that matches the question directly."
+      "body": "Union combines both groups, intersection keeps the overlap, and difference keeps **values** found only on the left. Those operations often replace nested **loops** with a statement that matches the question directly."
     },
     {
       "kind": "check",
@@ -66,18 +119,110 @@
         "ben - ada"
       ],
       "answer_index": 0,
-      "why": "Set difference keeps members from the left set that are absent from the right. Here the result is `{\"MATH120\"}`."
+      "why": "**Set** difference keeps members from the left set that are absent from the right. Here the result is `{\"MATH120\"}`."
     },
     {
       "kind": "list",
       "title": "Set checklist",
       "items": [
-        "Use a set when duplicates have no meaning.",
+        "Use a **set** when duplicates have no meaning.",
         "Do not depend on item positions.",
-        "Prefer `discard` when a missing value is acceptable.",
+        "Prefer `discard` when a missing **value** is acceptable.",
         "Use `&`, `|`, and `-` to compare groups.",
-        "Create an empty set with `set()`."
+        "Create an empty **set** with `set()`."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "python-sets-check-1": {
+      "title": "Set membership",
+      "notice": "Focus on uniqueness, unordered storage, and whether the operation is union, intersection, or difference.",
+      "mistake": "Do not rely on first or last position in a set because set order is not the rule being promised.",
+      "section_id": "examples",
+      "example": "common = group_a & group_b",
+      "source": "question",
+      "body": "This question tests what is the value of common? A set keeps unique values and supports membership and group operations."
+    },
+    "python-sets-check-2": {
+      "title": "Choose the matching set membership rule",
+      "notice": "Focus on uniqueness, unordered storage, and whether the operation is union, intersection, or difference.",
+      "mistake": "Do not rely on first or last position in a set because set order is not the rule being promised.",
+      "section_id": "examples",
+      "example": "common = group_a & group_b",
+      "source": "question",
+      "body": "This question tests which expression finds courses completed by ada but not ben? A set keeps unique values and supports membership and group operations."
+    },
+    "python-sets-output-01": {
+      "title": "Trace set membership output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "common = group_a & group_b",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. A set keeps unique values and supports membership and group operations."
+    },
+    "python-sets-supplement-01": {
+      "title": "Discard missing safely",
+      "notice": "discard removes a value if present and does nothing if it is absent.",
+      "mistake": "Do not rely on first or last position in a set because set order is not the rule being promised.",
+      "section_id": "check",
+      "example": "common = group_a & group_b",
+      "source": "question",
+      "body": "This question tests how does clubs.discard(\"chess\") behave when \"chess\" is not... A set keeps unique values and supports membership and group operations."
+    },
+    "python-sets-authored-01": {
+      "title": "Choose the matching set membership rule",
+      "notice": "Focus on uniqueness, unordered storage, and whether the operation is union, intersection, or difference.",
+      "mistake": "Do not rely on first or last position in a set because set order is not the rule being promised.",
+      "section_id": "idea",
+      "example": "common = group_a & group_b",
+      "source": "question",
+      "body": "This question tests which empty collection does {} create in python? A set keeps unique values and supports membership and group operations."
+    },
+    "python-sets-authored-02": {
+      "title": "Choose the matching set membership rule",
+      "notice": "Focus on uniqueness, unordered storage, and whether the operation is union, intersection, or difference.",
+      "mistake": "Do not rely on first or last position in a set because set order is not the rule being promised.",
+      "section_id": "idea",
+      "example": "common = group_a & group_b",
+      "source": "question",
+      "body": "This question tests a club sign-in sheet only needs each student name once. whi... A set keeps unique values and supports membership and group operations."
+    },
+    "python-sets-authored-03": {
+      "title": "Explain the set membership reason",
+      "notice": "Focus on uniqueness, unordered storage, and whether the operation is union, intersection, or difference.",
+      "mistake": "Do not rely on first or last position in a set because set order is not the rule being promised.",
+      "section_id": "check",
+      "example": "common = group_a & group_b",
+      "source": "question",
+      "body": "This question tests why should code avoid asking for \"the first item\" in a set? A set keeps unique values and supports membership and group operations."
+    },
+    "python-sets-authored-04": {
+      "title": "Choose the matching set membership rule",
+      "notice": "Focus on uniqueness, unordered storage, and whether the operation is union, intersection, or difference.",
+      "mistake": "Do not rely on first or last position in a set because set order is not the rule being promised.",
+      "section_id": "check",
+      "example": "common = group_a & group_b",
+      "source": "question",
+      "body": "This question tests a program should remove \"chess\" from a set if it is present... A set keeps unique values and supports membership and group operations."
+    },
+    "python-sets-authored-05": {
+      "title": "Intersection means overlap",
+      "notice": "Set intersection keeps only values that appear in both groups.",
+      "mistake": "Do not rely on first or last position in a set because set order is not the rule being promised.",
+      "section_id": "check",
+      "example": "common = group_a & group_b",
+      "source": "question",
+      "body": "This question tests two study groups need to find topics they both selected. wh... A set keeps unique values and supports membership and group operations."
+    },
+    "python-sets-authored-06": {
+      "title": "Set membership",
+      "notice": "Focus on uniqueness, unordered storage, and whether the operation is union, intersection, or difference.",
+      "mistake": "Do not rely on first or last position in a set because set order is not the rule being promised.",
+      "section_id": "check",
+      "example": "common = group_a & group_b",
+      "source": "question",
+      "body": "This question tests a loop will collect unique parking zones as it scans ticket... A set keeps unique values and supports membership and group operations."
+    }
+  }
 }

@@ -7,20 +7,20 @@
     "syntax",
     "runtime"
   ],
-  "refresher": "JavaScript needs matching quotes, parentheses, brackets, and braces. Semicolons separate statements, braces group blocks, and `console.log(...)` displays a value.",
+  "refresher": "JavaScript needs matching quotes, parentheses, brackets, and braces. Semicolons separate statements, braces group blocks, and `console.log(...)` displays a **value**.",
   "refresher_code": "const course = \"CS 101\";\nconsole.log(course);",
   "blocks": [
     {
       "kind": "text",
-      "body": "JavaScript needs matching quotes, parentheses, brackets, and braces. Semicolons separate statements, braces group blocks, and `console.log(...)` displays a value. Write statements the JavaScript engine can parse."
+      "body": "JavaScript needs matching quotes, parentheses, brackets, and braces. Semicolons separate statements, braces group blocks, and `console.log(...)` displays a **value**. Write statements the JavaScript engine can parse."
     },
     {
       "kind": "text",
-      "body": "JavaScript first parses the whole file. Parsing means checking whether the symbols form valid instructions. Only after that check can execution begin. This is why one missing quote can stop output from lines that appear earlier: the engine could not finish reading the program as a complete unit."
+      "body": "JavaScript first parses the whole **file**. Parsing means checking whether the symbols form valid instructions. Only after that check can execution begin. This is why one missing quote can stop **output** from lines that appear earlier: the engine could not finish reading the program as a complete unit."
     },
     {
       "kind": "code",
-      "caption": "The string closes correctly, and the template literal inserts the stored campus name.",
+      "caption": "The **string** closes correctly, and the template literal inserts the stored campus name.",
       "code": "const campus = \"Morgan State\";\nconsole.log(`Welcome to ${campus}`);",
       "output": "Welcome to Morgan State"
     },
@@ -34,13 +34,13 @@
     },
     {
       "kind": "text",
-      "body": "Read the corrected line from the inside out: the quotes make a string, the parentheses pass it to `log`, and the semicolon ends the statement. If an error mentions an unexpected token, inspect the symbol just before the reported location too."
+      "body": "Read the corrected line from the inside out: the quotes make a **string**, the parentheses pass it to `log`, and the semicolon ends the statement. If an error mentions an unexpected token, inspect the symbol just before the reported location too."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "Watch this detail",
-      "body": "An unexpected end of input often points to an earlier opening symbol that never received its matching closer."
+      "body": "An unexpected end of **input** often points to an earlier opening symbol that never received its matching closer."
     },
     {
       "kind": "check",
@@ -79,5 +79,87 @@
       ]
     }
   ],
-  "_beginner_expanded": true
+  "_beginner_expanded": true,
+  "learn_cards": {
+    "output-01": {
+      "title": "Numbers add before they print",
+      "body": "This checks whether the values are numbers or text. Number values use `+` for arithmetic before output happens.",
+      "notice": "Evaluate the expression first, then decide what the output instruction shows.",
+      "mistake": "Do not join digits like text unless quotes make them strings.",
+      "section_id": "check",
+      "example": "console.log(15 + 6);"
+    },
+    "output-02": {
+      "title": "A variable name stands in for its value",
+      "body": "The output line uses the stored value, not the variable name as literal text.",
+      "notice": "Read the assignment first so the later output line has the value in place.",
+      "mistake": "Do not choose an answer that prints the name itself when the code uses the variable.",
+      "section_id": "check",
+      "example": "let score = 25;"
+    },
+    "output-03": {
+      "title": "Text plus text joins",
+      "body": "When both sides are strings, `+` makes one longer string instead of doing arithmetic.",
+      "notice": "Quotes are the clue that the values are text.",
+      "mistake": "Do not add quoted digits as numbers unless the code converts them first.",
+      "section_id": "check",
+      "example": "console.log(\"CS\" + \"101\");"
+    },
+    "output-04": {
+      "title": "Integer division keeps a whole result",
+      "body": "This question tests the division rule for whole-number output in the selected language.",
+      "notice": "Check whether the code asks for decimal division or a whole-number result.",
+      "mistake": "Do not round up. Whole-number division keeps the complete groups.",
+      "section_id": "check",
+      "example": "console.log(Math.floor(7 / 2));"
+    },
+    "output-05": {
+      "title": "Printing needs the exact output call",
+      "body": "Type-in output questions care about the statement shape and the exact text being shown.",
+      "notice": "Match the print/output function and include quotes around text.",
+      "mistake": "Do not type only the word being printed when the question asks for a statement.",
+      "section_id": "check",
+      "example": "console.log(\"Hello\");"
+    },
+    "syntax-delimiter-01": {
+      "title": "Open delimiters need partners",
+      "body": "Brackets, parentheses, and quotes create a shape the parser must be able to close.",
+      "notice": "When code stops before running, scan for the opening symbol that never got closed.",
+      "mistake": "Do not debug the logic until the code can be parsed.",
+      "section_id": "check",
+      "example": "[8, 10, 9]"
+    },
+    "syntax-comment-01": {
+      "title": "Comments are skipped",
+      "body": "A comment can look like code, but the language ignores it when the program runs.",
+      "notice": "Only non-commented output statements affect what appears.",
+      "mistake": "Do not count a commented-out line as a printed line.",
+      "section_id": "check",
+      "example": "// comment"
+    },
+    "syntax-case-01": {
+      "title": "Names are case-sensitive",
+      "body": "Capitalization can create a different name. Built-in words and user names must match exactly.",
+      "notice": "If a familiar name fails, compare every letter including case.",
+      "mistake": "Do not assume `Print` and `print` are the same spelling to the language.",
+      "section_id": "check",
+      "example": "console.log(\"Hello\");"
+    },
+    "syntax-line-break-01": {
+      "title": "Escapes can create invisible characters",
+      "body": "Some characters inside strings describe formatting, such as moving output to the next line.",
+      "notice": "Read escape sequences as one special character, not as ordinary letters.",
+      "mistake": "Do not include the backslash text literally when the code asks for output.",
+      "section_id": "check",
+      "example": "\"A\\nB\""
+    },
+    "syntax-block-01": {
+      "title": "Block headers need block syntax",
+      "body": "A decision or loop header must clearly mark that a controlled body is coming next.",
+      "notice": "Check the small symbol at the end of the header and the shape of the body below it.",
+      "mistake": "Do not focus only on the condition and miss the punctuation that opens the block.",
+      "section_id": "check",
+      "example": "if (ready) {\n  console.log(\"go\");\n}"
+    }
+  }
 }

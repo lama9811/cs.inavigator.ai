@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import CodeEditor from "./CodeEditor";
 import HintPanel from "./HintPanel";
 import RunControls from "./RunControls";
 import TerminalPanel from "./TerminalPanel";
+import { WorkspaceVisualizerModal, WorkspaceVisualizerPanel } from "./WorkspaceVisualizer";
+import { handleHorizontalRovingKeyDown } from "./keyboardNavigation";
+import useFocusTrap from "./useFocusTrap";
 import "./CodeWorkspace.css";
 import "./TerminalPanel.css";
 
-const WORKSPACE_TABS = ["Editor", "Hints", "Discussion"];
+const WORKSPACE_TABS = ["Editor", "Hints", "Discussion", "Visualize"];
 
 // Docked-terminal height bounds (px). The drag handle clamps within this range.
 const TERMINAL_MIN_H = 140;
@@ -29,6 +32,297 @@ function readStoredTerminalHeight() {
   return TERMINAL_DEFAULT_H;
 }
 
+function parseTraceDisplayValue(value) {
+  const raw = String(value ?? "");
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return raw;
+  }
+}
+
+function formatTraceDisplayValue(value) {
+  const parsed = parseTraceDisplayValue(value);
+  if (Array.isArray(parsed)) {
+    return {
+      type: "list",
+      inline: `[${parsed.length} item${parsed.length === 1 ? "" : "s"}]`,
+      detail: JSON.stringify(parsed, null, 2),
+    };
+  }
+  if (parsed && typeof parsed === "object") {
+    const keys = Object.keys(parsed);
+    return {
+      type: "dict",
+      inline: `{${keys.length} key${keys.length === 1 ? "" : "s"}}`,
+      detail: JSON.stringify(parsed, null, 2),
+    };
+  }
+  if (typeof parsed === "string") {
+    const looksLikeSet = parsed.startsWith("{") && parsed.endsWith("}") && !parsed.includes(":");
+    return {
+      type: looksLikeSet ? "set" : "str",
+      inline: looksLikeSet ? parsed : `"${parsed}"`,
+      detail: null,
+    };
+  }
+  return {
+    type: typeof parsed,
+    inline: String(parsed),
+    detail: null,
+  };
+}
+
+function TraceValue({ value }) {
+  const formatted = formatTraceDisplayValue(value);
+  return (
+    <>
+      <code className={`code-trace-value code-trace-value-${formatted.type}`}>{formatted.inline}</code>
+      {formatted.detail ? <pre>{formatted.detail}</pre> : null}
+    </>
+  );
+}
+
+function CodeTraceModal({
+  traceResult,
+  isTracing,
+  onTraceCode,
+  onClose,
+}) {
+  const trace = useMemo(() => (Array.isArray(traceResult?.trace) ? traceResult.trace : []), [traceResult]);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const lineRefs = useRef(new Map());
+  const activeStep = trace[stepIndex] || null;
+  const previousStep = stepIndex > 0 ? trace[stepIndex - 1] : null;
+  const activeCallStack = Array.isArray(activeStep?.call_stack) ? activeStep.call_stack : [];
+  const hasTraceError = traceResult?.status === "error" || Boolean(traceResult?.stderr);
+  const canGoBack = stepIndex > 0;
+  const canGoNext = stepIndex < trace.length - 1;
+  const codeLines = useMemo(() => {
+    const byLine = new Map();
+    trace.forEach((step) => {
+      if (step.line_no && step.line && !byLine.has(step.line_no)) {
+        byLine.set(step.line_no, step.line);
+      }
+    });
+    return [...byLine.entries()].sort((left, right) => left[0] - right[0]);
+  }, [trace]);
+  const activeExplanation = useMemo(() => {
+    if (!activeStep) return "Run a trace to step through your Python code.";
+    if (activeStep.event === "return") {
+      return `The function is returning ${formatTraceDisplayValue(activeStep.return_value).inline}.`;
+    }
+    if (activeStep.event === "exception") {
+      return activeStep.exception ? `Python raised ${activeStep.exception}.` : "Python raised an exception on this step.";
+    }
+    return `Python is about to run line ${activeStep.line_no}. Watch the variables below before and after this line.`;
+  }, [activeStep]);
+  const modalRef = useFocusTrap(true, { onEscape: onClose });
+
+  const goToStep = useCallback((nextIndex) => {
+    if (!trace.length) return;
+    setStepIndex(Math.max(0, Math.min(trace.length - 1, nextIndex)));
+  }, [trace.length]);
+
+  useEffect(() => {
+    setStepIndex(0);
+    setIsPlaying(false);
+  }, [traceResult]);
+
+  useEffect(() => {
+    if (!activeStep?.line_no) return;
+    const lineElement = lineRefs.current.get(activeStep.line_no);
+    lineElement?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+  }, [activeStep?.line_no, stepIndex]);
+
+  useEffect(() => {
+    if (!isPlaying) return undefined;
+    if (!canGoNext) {
+      setIsPlaying(false);
+      return undefined;
+    }
+    const timer = window.setTimeout(() => goToStep(stepIndex + 1), 900);
+    return () => window.clearTimeout(timer);
+  }, [canGoNext, goToStep, isPlaying, stepIndex]);
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        setIsPlaying(false);
+        goToStep(stepIndex - 1);
+      }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        setIsPlaying(false);
+        goToStep(stepIndex + 1);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [goToStep, stepIndex]);
+
+  return (
+    <div className="workspace-visualizer-backdrop" role="presentation" onMouseDown={onClose}>
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="code-trace-title"
+        aria-describedby="code-trace-description"
+        tabIndex={-1}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <section className="workspace-visualizer is-modal code-trace-modal">
+          <header className="workspace-visualizer-head">
+            <div>
+              <span className="workspace-visualizer-kicker">Trace My Code</span>
+              <h3 id="code-trace-title">Python execution trace</h3>
+              <p id="code-trace-description">Steps through the Python code currently in your editor and shows what changes as it runs.</p>
+            </div>
+            <button type="button" className="workspace-visual-close" onClick={onClose} data-autofocus>
+              Close
+            </button>
+          </header>
+
+          {traceResult?.stderr ? <p className="workspace-visualizer-error">{traceResult.stderr}</p> : null}
+          {traceResult?.truncated ? <p className="workspace-visualizer-lock">Trace capped at the first 80 executed steps.</p> : null}
+
+          <div className="code-trace-actions">
+            <button type="button" onClick={onTraceCode} disabled={isTracing}>
+              {isTracing ? "Tracing..." : trace.length ? "Trace again" : "Start trace"}
+            </button>
+          </div>
+
+          {trace.length ? (
+            <>
+              <div className="code-trace-progress" aria-label="Trace steps">
+                {trace.map((step, index) => (
+                  <button
+                    type="button"
+                    key={`${step.line_no}-${index}`}
+                    className={index === stepIndex ? "is-active" : ""}
+                    aria-label={`Go to step ${index + 1}, line ${step.line_no}`}
+                    aria-current={index === stepIndex ? "step" : undefined}
+                    onClick={() => {
+                      setIsPlaying(false);
+                      goToStep(index);
+                    }}
+                  />
+                ))}
+              </div>
+
+              <div className="code-trace-stage">
+                <section className="code-trace-code-window" aria-label="Executed code">
+                  <div>
+                    <span>Step {stepIndex + 1} of {trace.length}</span>
+                    <strong>{activeStep?.function}</strong>
+                    <code>line {activeStep?.line_no}</code>
+                    {activeStep?.call_depth ? <code>depth {activeStep.call_depth}</code> : null}
+                  </div>
+                  <pre>
+                    {codeLines.map(([lineNo, line]) => (
+                      <span
+                        key={lineNo}
+                        ref={(node) => {
+                          if (node) lineRefs.current.set(lineNo, node);
+                          else lineRefs.current.delete(lineNo);
+                        }}
+                        className={lineNo === activeStep?.line_no ? "is-active" : ""}
+                      >
+                        <em>{lineNo}</em>
+                        <code>{line || " "}</code>
+                      </span>
+                    ))}
+                  </pre>
+                </section>
+
+                <aside className="code-trace-state-panel" aria-label="Current trace state">
+                  <div>
+                    <span>What is happening</span>
+                    <h4>{activeExplanation}</h4>
+                  </div>
+                  {activeCallStack.length ? (
+                    <div className="code-trace-call-stack">
+                      <span>Call stack</span>
+                      <ol>
+                        {activeCallStack.map((name, index) => (
+                          <li key={`${name}-${index}`} className={index === activeCallStack.length - 1 ? "is-current" : ""}>
+                            {name}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  ) : null}
+                  {activeStep?.line ? <p><strong>Current line:</strong> <code>{activeStep.line.trim()}</code></p> : null}
+                  {activeStep?.exception ? <p><strong>Exception:</strong> {activeStep.exception}</p> : null}
+                  {activeStep?.return_value != null ? (
+                    <div className="code-trace-result-box">
+                      <span>Returned value</span>
+                      <strong><TraceValue value={activeStep.return_value} /></strong>
+                    </div>
+                  ) : null}
+                  {activeStep?.stdout ? (
+                    <div className="code-trace-output-box">
+                      <span>Printed output so far</span>
+                      <pre>{activeStep.stdout}</pre>
+                    </div>
+                  ) : null}
+                  <h5>Values right now</h5>
+                  {activeStep?.locals && Object.keys(activeStep.locals).length ? (
+                    <dl>
+                      {Object.entries(activeStep.locals).map(([name, value]) => {
+                        const previousValue = previousStep?.locals?.[name];
+                        const changed = !previousStep || previousValue !== value;
+                        return (
+                          <div key={name} className={changed ? "is-changed" : ""}>
+                            <dt>{name}</dt>
+                            <dd>
+                              <TraceValue value={value} />
+                              {changed ? <span className="code-trace-change-label">{previousStep ? "changed" : "new"}</span> : null}
+                            </dd>
+                          </div>
+                        );
+                      })}
+                    </dl>
+                  ) : (
+                    <p>No local variables captured yet.</p>
+                  )}
+                </aside>
+              </div>
+
+              <footer className="code-trace-controls">
+                <button type="button" onClick={() => { setIsPlaying(false); goToStep(0); }}>
+                  Reset
+                </button>
+                <button type="button" disabled={!canGoBack} onClick={() => { setIsPlaying(false); goToStep(stepIndex - 1); }}>
+                  Previous
+                </button>
+                <button type="button" disabled={!canGoNext && !isPlaying} onClick={() => setIsPlaying((current) => !current)}>
+                  {isPlaying ? "Pause" : "Play"}
+                </button>
+                <button type="button" disabled={!canGoNext} onClick={() => { setIsPlaying(false); goToStep(stepIndex + 1); }}>
+                  Next
+                </button>
+              </footer>
+            </>
+          ) : (
+            <div className={`code-trace-empty-state ${hasTraceError ? "is-error" : ""}`}>
+              <strong>{hasTraceError ? "Trace could not start" : "No trace generated yet"}</strong>
+              <p>
+                {hasTraceError
+                  ? "Check that your code defines the expected function name and has no syntax errors, then try again."
+                  : "Press Trace my code, then step forward and backward through your code."}
+              </p>
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
 export default function CodeWorkspace({
   activeProblem,
   code,
@@ -40,13 +334,16 @@ export default function CodeWorkspace({
   revealedHints,
   isRunning,
   latestFeedback,
+  discussionMessages = [],
   terminalOpen,
   testOutput,
   solutionReview,
   canMarkSolved = true,
+  isSolved = false,
   isPersonalMode = false,
   languageLocked = false,
   onCodeChange,
+  onSelectionChange,
   onLanguageChange,
   onTabChange,
   onToggleTerminal,
@@ -62,6 +359,13 @@ export default function CodeWorkspace({
   onExplainOneTest,
   onStopRun,
   onRequestReview,
+  onTraceCode,
+  isTracingCode = false,
+  traceResult = null,
+  visualizerOpen = false,
+  traceModalOpen = false,
+  onCloseVisualizer,
+  onCloseTraceModal,
   onSaveSnippet,
   onUploadFile,
   codeRenderer,
@@ -70,6 +374,10 @@ export default function CodeWorkspace({
   const [terminalHeight, setTerminalHeight] = useState(readStoredTerminalHeight);
   const stackRef = useRef(null);
   const dragState = useRef(null);
+  const canTracePython = useMemo(
+    () => selectedLanguage === "Python" && Boolean(activeProblem && activeProblem.source !== "personal"),
+    [activeProblem, selectedLanguage],
+  );
 
   // Drag-to-resize the docked terminal. We resize from the divider: dragging up
   // grows the terminal, dragging down shrinks it. Height is clamped + persisted.
@@ -144,13 +452,34 @@ export default function CodeWorkspace({
     if (workspaceTab === "Discussion") {
       return (
         <div className="workspace-discussion-panel">
-          {latestFeedback ? (
+          {discussionMessages.length ? (
+            <div className="workspace-discussion-thread" role="log" aria-label="Coding tutor discussion">
+              {discussionMessages.map((message) => (
+                <article
+                  key={message.id || `${message.sender}-${message.time}-${message.text?.slice(0, 20)}`}
+                  className={`workspace-discussion-message ${message.sender === "user" ? "user" : "bot"}`}
+                >
+                  <span className="workspace-discussion-speaker">
+                    {message.sender === "user" ? "You" : "Coding Tutor"}
+                  </span>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ code: codeRenderer }}>
+                    {message.text || (message.isStreaming ? "Thinking..." : "")}
+                  </ReactMarkdown>
+                </article>
+              ))}
+            </div>
+          ) : latestFeedback ? (
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ code: codeRenderer }}>
               {latestFeedback}
             </ReactMarkdown>
-          ) : <p>Tutor replies will appear here after you ask for review, debugging, or edge cases.</p>}
+          ) : (
+            <p>Tutor replies will appear here after you ask for review, debugging, or edge cases.</p>
+          )}
         </div>
       );
+    }
+    if (workspaceTab === "Visualize") {
+      return <WorkspaceVisualizerPanel activeProblem={activeProblem} />;
     }
     // The editor "window": a title bar (filename + language selector, like
     // LeetCode's code panel) and a bottom status bar.
@@ -164,6 +493,7 @@ export default function CodeWorkspace({
               activeProblem={activeProblem}
               isRunning={isRunning}
               canMarkSolved={canMarkSolved}
+              isSolved={isSolved}
               isPersonalMode={isPersonalMode}
               onRun={onRun}
               onMarkSolved={onMarkSolved}
@@ -172,6 +502,15 @@ export default function CodeWorkspace({
               onSaveSnippet={onSaveSnippet}
               onUploadFile={onUploadFile}
             />
+            <button
+              type="button"
+              className="code-trace-button"
+              onClick={onTraceCode}
+              disabled={!canTracePython || isTracingCode}
+              title={canTracePython ? "Trace your actual Python code step by step" : "Code tracing is available for Python practice problems first"}
+            >
+              {isTracingCode ? "Tracing..." : "Trace My Code"}
+            </button>
             <select
               className="code-editor-lang-select"
               value={selectedLanguage}
@@ -183,7 +522,13 @@ export default function CodeWorkspace({
             </select>
           </div>
         </div>
-        <CodeEditor code={code} onCodeChange={onCodeChange} onCursorChange={setCaret} language={selectedLanguage} />
+        <CodeEditor
+          code={code}
+          onCodeChange={onCodeChange}
+          onCursorChange={setCaret}
+          onSelectionChange={onSelectionChange}
+          language={selectedLanguage}
+        />
         <div className="code-editor-statusbar" aria-hidden="true">
           <span className="status-left">
             <span className="status-pill">{selectedLanguage}</span>
@@ -206,9 +551,17 @@ export default function CodeWorkspace({
       <div className="coding-pane-header">
         <div><span className="coding-kicker">Workspace</span><h2>{activeProblem?.title || "Code Editor"}</h2></div>
       </div>
-      <div className="workspace-tabs">
+      <div className="workspace-tabs" role="tablist" aria-label="Workspace panels" onKeyDown={handleHorizontalRovingKeyDown}>
         {WORKSPACE_TABS.map(tab => (
-          <button key={tab} type="button" className={workspaceTab === tab ? "active" : ""} onClick={() => onTabChange(tab)}>
+          <button
+            key={tab}
+            type="button"
+            role="tab"
+            aria-selected={workspaceTab === tab}
+            tabIndex={workspaceTab === tab ? 0 : -1}
+            className={workspaceTab === tab ? "active" : ""}
+            onClick={() => onTabChange(tab)}
+          >
             {tab}
           </button>
         ))}
@@ -264,6 +617,17 @@ export default function CodeWorkspace({
           </>
         )}
       </div>
+      {visualizerOpen ? (
+        <WorkspaceVisualizerModal activeProblem={activeProblem} onClose={onCloseVisualizer} />
+      ) : null}
+      {traceModalOpen ? (
+        <CodeTraceModal
+          traceResult={traceResult}
+          isTracing={isTracingCode}
+          onTraceCode={onTraceCode}
+          onClose={onCloseTraceModal}
+        />
+      ) : null}
     </main>
   );
 }

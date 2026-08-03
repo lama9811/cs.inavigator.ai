@@ -8,7 +8,7 @@
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "A lambda is a short function value, such as `name -> name.length()`. A stream processes collection data through steps like `filter`, `map`, and `sorted`, then finishes with an operation such as `toList`, `count`, or `forEach`. Stream steps do not change the original collection unless your code changes its objects.",
+  "refresher": "A lambda is a short **function** **value**, such as `name -> name.length()`. A stream processes collection data through steps like `filter`, `map`, and `sorted`, then finishes with an operation such as `toList`, `count`, or `forEach`. Stream steps do not change the original collection unless your code changes its **objects**.",
   "refresher_code": "List<String> shortNames = names.stream()\n    .filter(name -> name.length() < 5)\n    .toList();",
   "blocks": [
     {
@@ -17,13 +17,13 @@
     },
     {
       "kind": "code",
-      "caption": "The filter keeps passing scores. The map adds five points to each remaining score. `toList` starts the work and gathers the results.",
+      "caption": "The filter keeps passing scores. The **map** adds five points to each remaining score. `toList` starts the work and gathers the results.",
       "code": "List<Integer> scores = List.of(72, 48, 90);\nList<Integer> adjusted = scores.stream()\n    .filter(score -> score >= 60)\n    .map(score -> score + 5)\n    .toList();\nSystem.out.println(adjusted);",
       "output": "[77, 95]"
     },
     {
       "kind": "text",
-      "body": "The expression before the arrow names each input. The expression after it produces a result. Braces are needed when the lambda body has more than one statement."
+      "body": "The expression before the arrow names each **input**. The expression after it produces a result. Braces are needed when the lambda body has more than one statement."
     },
     {
       "kind": "compare",
@@ -37,11 +37,11 @@
       "kind": "callout",
       "tone": "tip",
       "title": "A loop may be clearer",
-      "body": "Use a regular loop when the work needs several changing variables, early exits, detailed error handling, or many side effects. Streams fit best when data moves through a short set of clear steps."
+      "body": "Use a regular **loop** when the work needs several changing **variables**, early exits, detailed error handling, or many side effects. Streams fit best when data moves through a short **set** of clear steps."
     },
     {
       "kind": "check",
-      "prompt": "Which stream operation keeps only items that pass a condition?",
+      "prompt": "Which stream operation keeps only items that pass a **condition**?",
       "code": "names.stream().____(name -> name.length() > 3)",
       "choices": [
         "filter",
@@ -50,11 +50,11 @@
         "toList"
       ],
       "answer_index": 0,
-      "why": "Filter receives a condition and keeps values for which that condition is true. Map changes values instead of deciding whether to keep them."
+      "why": "Filter receives a **condition** and keeps **values** for which that condition is true. **Map** changes values instead of deciding whether to keep them."
     },
     {
       "kind": "text",
-      "body": "Map changes every selected value into another value. The output type may differ from the input type, such as changing each String into an Integer length."
+      "body": "**Map** changes every selected value into another value. The output type may differ from the input type, such as changing each **String** into an **Integer** length."
     },
     {
       "kind": "check",
@@ -67,7 +67,7 @@
         "8"
       ],
       "answer_index": 0,
-      "why": "Map replaces each String with the Integer returned by `length()`. Ada has three characters and Grace has five."
+      "why": "**Map** replaces each **String** with the **Integer** returned by `length()`. Ada has three characters and Grace has five."
     },
     {
       "kind": "list",
@@ -75,10 +75,102 @@
       "items": [
         "Use a lambda for one small action.",
         "Read a stream from top to bottom as data steps.",
-        "Use filter to keep and map to change.",
+        "Use filter to keep and **map** to change.",
         "Finish with a terminal operation.",
-        "Choose a loop when the stream would hide the real work."
+        "Choose a **loop** when the stream would hide the real work."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "java-lambdas-streams-check-1": {
+      "title": "Choose the matching stream pipeline reasoning rule",
+      "notice": "Separate filter, map, and terminal operations before deciding what the pipeline produces.",
+      "mistake": "Do not keep a stream pipeline if a regular loop would make the changing state easier to see.",
+      "section_id": "examples",
+      "example": "scores.stream().filter(score -> score >= 60).count()",
+      "source": "question",
+      "body": "This question tests which stream operation keeps only items that pass a condition? A stream pipeline describes steps over collection data and only runs when a terminal operation asks for a result."
+    },
+    "java-lambdas-streams-check-2": {
+      "title": "Stream pipeline reasoning",
+      "notice": "Separate filter, map, and terminal operations before deciding what the pipeline produces.",
+      "mistake": "Do not keep a stream pipeline if a regular loop would make the changing state easier to see.",
+      "section_id": "examples",
+      "example": "scores.stream().filter(score -> score >= 60).count()",
+      "source": "question",
+      "body": "This question tests what does this stream produce? A stream pipeline describes steps over collection data and only runs when a terminal operation asks for a result."
+    },
+    "java-lambdas-streams-output-01": {
+      "title": "Trace stream pipeline reasoning output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "scores.stream().filter(score -> score >= 60).count()",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. A stream pipeline describes steps over collection data and only runs when a terminal operation asks for a result."
+    },
+    "java-lambdas-streams-supplement-01": {
+      "title": "Filter keeps matching items",
+      "notice": "filter keeps values that pass a condition and drops the rest.",
+      "mistake": "Do not keep a stream pipeline if a regular loop would make the changing state easier to see.",
+      "section_id": "check",
+      "example": "scores.stream().filter(score -> score >= 60).count()",
+      "source": "question",
+      "body": "This question tests what is wrong with scores.stream().filter(score -> score >=... A stream pipeline describes steps over collection data and only runs when a terminal operation asks for a result."
+    },
+    "java-lambdas-streams-authored-01": {
+      "title": "Stream pipeline reasoning",
+      "notice": "Separate filter, map, and terminal operations before deciding what the pipeline produces.",
+      "mistake": "Do not keep a stream pipeline if a regular loop would make the changing state easier to see.",
+      "section_id": "idea",
+      "example": "scores.stream().filter(score -> score >= 60).count()",
+      "source": "question",
+      "body": "This question tests when might a regular loop be clearer than a java stream pip... A stream pipeline describes steps over collection data and only runs when a terminal operation asks for a result."
+    },
+    "java-lambdas-streams-authored-02": {
+      "title": "Stream pipeline reasoning",
+      "notice": "Separate filter, map, and terminal operations before deciding what the pipeline produces.",
+      "mistake": "Do not keep a stream pipeline if a regular loop would make the changing state easier to see.",
+      "section_id": "idea",
+      "example": "scores.stream().filter(score -> score >= 60).count()",
+      "source": "question",
+      "body": "This question tests what makes a lambda comfortable to read? A stream pipeline describes steps over collection data and only runs when a terminal operation asks for a result."
+    },
+    "java-lambdas-streams-authored-03": {
+      "title": "Stream pipeline reasoning",
+      "notice": "Separate filter, map, and terminal operations before deciding what the pipeline produces.",
+      "mistake": "Do not keep a stream pipeline if a regular loop would make the changing state easier to see.",
+      "section_id": "check",
+      "example": "scores.stream().filter(score -> score >= 60).count()",
+      "source": "question",
+      "body": "This question tests how should a student mentally read a stream pipeline? A stream pipeline describes steps over collection data and only runs when a terminal operation asks for a result."
+    },
+    "java-lambdas-streams-authored-04": {
+      "title": "Filter keeps matching items",
+      "notice": "filter keeps values that pass a condition and drops the rest.",
+      "mistake": "Do not keep a stream pipeline if a regular loop would make the changing state easier to see.",
+      "section_id": "check",
+      "example": "scores.stream().filter(score -> score >= 60).count()",
+      "source": "question",
+      "body": "This question tests how do filter and map divide their jobs? A stream pipeline describes steps over collection data and only runs when a terminal operation asks for a result."
+    },
+    "java-lambdas-streams-authored-05": {
+      "title": "Terminal operation runs stream",
+      "notice": "Without a terminal operation, the stream pipeline has not produced a final result.",
+      "mistake": "Do not keep a stream pipeline if a regular loop would make the changing state easier to see.",
+      "section_id": "check",
+      "example": "scores.stream().filter(score -> score >= 60).count()",
+      "source": "question",
+      "body": "This question tests why does a stream pipeline need a terminal operation? A stream pipeline describes steps over collection data and only runs when a terminal operation asks for a result."
+    },
+    "java-lambdas-streams-authored-06": {
+      "title": "Stream pipeline reasoning",
+      "notice": "Separate filter, map, and terminal operations before deciding what the pipeline produces.",
+      "mistake": "Do not keep a stream pipeline if a regular loop would make the changing state easier to see.",
+      "section_id": "check",
+      "example": "scores.stream().filter(score -> score >= 60).count()",
+      "source": "question",
+      "body": "This question tests what should happen when a stream hides the real work? A stream pipeline describes steps over collection data and only runs when a terminal operation asks for a result."
+    }
+  }
 }

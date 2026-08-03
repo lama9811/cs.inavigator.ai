@@ -642,13 +642,22 @@ except Exception as exc:
     }))
     raise SystemExit(0)
 
-def _oi_canon(value):
-    # Recursively sort lists so order-insensitive tests (e.g. Group Anagrams)
-    # compare by content, not order.
+def _canon(value, order_insensitive=False, case_insensitive=False):
+    # Recursively normalize values for comparison. Order-insensitive tests
+    # compare by content, and authored message-style tests may opt into
+    # case-insensitive string matching.
+    if isinstance(value, str):
+        lowered = value.casefold()
+        if case_insensitive or lowered in {"none", "null"}:
+            return lowered
+        return value
     if isinstance(value, list):
-        return sorted((_oi_canon(v) for v in value), key=lambda x: json.dumps(x, sort_keys=True, default=str))
+        items = [_canon(v, order_insensitive, case_insensitive) for v in value]
+        if order_insensitive:
+            return sorted(items, key=lambda x: json.dumps(x, sort_keys=True, default=str))
+        return items
     if isinstance(value, dict):
-        return {k: _oi_canon(v) for k, v in value.items()}
+        return {k: _canon(v, order_insensitive, case_insensitive) for k, v in value.items()}
     return value
 
 for index, test in enumerate(tests, start=1):
@@ -656,13 +665,11 @@ for index, test in enumerate(tests, start=1):
     args = test.get("args", [])
     expected = test.get("expected")
     order_insensitive = bool(test.get("order_insensitive"))
+    case_insensitive = bool(test.get("case_insensitive"))
     try:
         with contextlib.redirect_stdout(stdout_buffer):
             actual = target(*args)
-        if order_insensitive:
-            passed = _oi_canon(actual) == _oi_canon(expected)
-        else:
-            passed = actual == expected
+        passed = _canon(actual, order_insensitive, case_insensitive) == _canon(expected, order_insensitive, case_insensitive)
         results.append({
             "name": name,
             "passed": passed,
@@ -758,6 +765,322 @@ print(json.dumps({
     }
 
 
+def run_python_practice_trace(code: str, function_name: str, test: dict[str, Any]) -> dict[str, Any]:
+    """Return a capped line trace for one Python practice test.
+
+    This is intentionally Python-only V1. It reuses the same validation and isolated
+    subprocess boundary as the grader, but it traces only the student's function call
+    for one authored test case and writes no progress.
+    """
+    try:
+        validate_python_code(code)
+    except RunnerSecurityError as exc:
+        return _security_error_response(exc)
+
+    runner_source = """
+import ast
+import builtins
+import contextlib
+import io
+import json
+import linecache
+import sys
+import time
+import types
+
+payload = json.loads(sys.stdin.read() or "{}")
+test = payload.get("test") or {}
+function_name = payload.get("function_name")
+started = time.perf_counter()
+MAX_OUTPUT_CHARS = 12000
+MAX_TRACE_STEPS = 80
+MAX_LOCAL_CHARS = 120
+ALLOWED_IMPORTS = {
+    "bisect", "collections", "functools", "heapq", "itertools", "math",
+    "operator", "re", "statistics", "string", "typing",
+}
+SAFE_MODULE_CACHE = {}
+
+class CappedTextIO(io.TextIOBase):
+    def __init__(self, limit):
+        self.limit = limit
+        self.parts = []
+        self.length = 0
+        self.truncated = False
+
+    def write(self, value):
+        text = str(value)
+        remaining = self.limit - self.length
+        if remaining > 0:
+            chunk = text[:remaining]
+            self.parts.append(chunk)
+            self.length += len(chunk)
+        if len(text) > max(remaining, 0):
+            self.truncated = True
+        return len(text)
+
+    def getvalue(self):
+        text = "".join(self.parts)
+        if self.truncated:
+            text += "\\n... output truncated by CS Navigator ..."
+        return text
+
+stdout_buffer = CappedTextIO(MAX_OUTPUT_CHARS)
+
+def safe_import(name, globals=None, locals=None, fromlist=(), level=0):
+    root = str(name).split(".", 1)[0]
+    if root not in ALLOWED_IMPORTS:
+        raise ImportError(f"Importing '{root}' is not available in the practice runner.")
+    if root not in SAFE_MODULE_CACHE:
+        source_module = builtins.__import__(root)
+        safe_exports = {
+            export_name: getattr(source_module, export_name)
+            for export_name in dir(source_module)
+            if not export_name.startswith("_")
+            and not isinstance(getattr(source_module, export_name), types.ModuleType)
+            and export_name not in {"attrgetter", "methodcaller"}
+        }
+        SAFE_MODULE_CACHE[root] = types.SimpleNamespace(**safe_exports)
+    return SAFE_MODULE_CACHE[root]
+
+SAFE_BUILTINS = {
+    "__build_class__": builtins.__build_class__,
+    "__import__": safe_import,
+    "abs": abs, "all": all, "any": any, "bin": bin, "bool": bool, "callable": callable,
+    "chr": chr, "complex": complex, "dict": dict, "divmod": divmod,
+    "enumerate": enumerate, "filter": filter, "float": float, "format": format,
+    "frozenset": frozenset, "hash": hash, "hex": hex, "int": int, "isinstance": isinstance,
+    "issubclass": issubclass, "iter": iter, "len": len, "list": list, "map": map,
+    "max": max, "min": min, "next": next, "object": object, "oct": oct,
+    "ord": ord, "pow": pow, "print": print, "range": range, "repr": repr,
+    "reversed": reversed, "round": round, "set": set, "slice": slice,
+    "sorted": sorted, "str": str, "sum": sum, "super": super, "tuple": tuple,
+    "zip": zip,
+    "ArithmeticError": ArithmeticError, "AssertionError": AssertionError,
+    "Exception": Exception, "IndexError": IndexError, "KeyError": KeyError,
+    "LookupError": LookupError, "RuntimeError": RuntimeError, "StopIteration": StopIteration,
+    "TypeError": TypeError, "ValueError": ValueError, "ZeroDivisionError": ZeroDivisionError,
+}
+
+def safe_display(value):
+    try:
+        raw = json.dumps(value, default=repr)
+    except Exception:
+        raw = repr(value)
+    if len(raw) > MAX_LOCAL_CHARS:
+        raw = raw[:MAX_LOCAL_CHARS] + "... truncated"
+    return raw
+
+def snapshot_locals(frame):
+    out = {}
+    for key, value in frame.f_locals.items():
+        if key.startswith("__") or key in {"self"}:
+            continue
+        out[key] = safe_display(value)
+        if len(out) >= 10:
+            out["..."] = "locals truncated"
+            break
+    return out
+
+def call_stack_for_frame(frame):
+    stack = []
+    current = frame
+    while current is not None:
+        if current.f_code.co_filename == "solution.py" and current.f_code.co_name != "<module>":
+            stack.append(current.f_code.co_name)
+        current = current.f_back
+    return list(reversed(stack))
+
+def execute_student_module(path):
+    with open(path, "r", encoding="utf-8") as handle:
+        source = handle.read()
+    tree = ast.parse(source, filename=path)
+    module = types.ModuleType("student_solution")
+    module.__file__ = path
+    module.__name__ = "student_solution"
+    module.__dict__["__builtins__"] = SAFE_BUILTINS
+    sys.modules[module.__name__] = module
+
+    final_expr = tree.body[-1] if tree.body and isinstance(tree.body[-1], ast.Expr) else None
+    if final_expr and isinstance(final_expr.value, ast.Constant) and isinstance(final_expr.value.value, str):
+        final_expr = None
+    setup_body = tree.body[:-1] if final_expr else tree.body
+    setup_tree = ast.Module(body=setup_body, type_ignores=tree.type_ignores)
+    ast.fix_missing_locations(setup_tree)
+    exec(compile(setup_tree, path, "exec"), module.__dict__)
+    return module
+
+def values_equal(actual, expected, order_insensitive=False):
+    def canon(value):
+        if isinstance(value, list):
+            items = [canon(item) for item in value]
+            if order_insensitive:
+                return sorted(items, key=lambda item: json.dumps(item, sort_keys=True, default=str))
+            return items
+        if isinstance(value, dict):
+            return {key: canon(value[key]) for key in sorted(value)}
+        return value
+    return canon(actual) == canon(expected)
+
+try:
+    with contextlib.redirect_stdout(stdout_buffer):
+        module = execute_student_module("solution.py")
+    if hasattr(module, function_name):
+        target = getattr(module, function_name)
+        resolved_name = function_name
+    elif hasattr(module, "solve"):
+        target = getattr(module, "solve")
+        resolved_name = "solve"
+    else:
+        student_functions = [
+            value for name, value in vars(module).items()
+            if callable(value) and getattr(value, "__module__", "") == module.__name__ and not name.startswith("_")
+        ]
+        if len(student_functions) == 1:
+            target = student_functions[0]
+            resolved_name = target.__name__
+        else:
+            raise AttributeError(f"module 'student_solution' has no function named '{function_name}'")
+except Exception as exc:
+    print(json.dumps({
+        "status": "error",
+        "error": f"Could not load {function_name}: {exc}",
+        "trace": [],
+        "stdout": stdout_buffer.getvalue(),
+        "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+    }))
+    raise SystemExit(0)
+
+source_lines = linecache.getlines("solution.py")
+trace = []
+
+def tracer(frame, event, arg):
+    if len(trace) >= MAX_TRACE_STEPS:
+        return None
+    if frame.f_code.co_filename != "solution.py":
+        return tracer
+    if frame.f_code.co_name == "<module>":
+        return tracer
+    if event not in {"line", "return", "exception"}:
+        return tracer
+    line_no = frame.f_lineno
+    call_stack = call_stack_for_frame(frame)
+    entry = {
+        "event": event,
+        "function": frame.f_code.co_name,
+        "call_depth": len(call_stack),
+        "call_stack": call_stack,
+        "line_no": line_no,
+        "line": source_lines[line_no - 1].rstrip() if 0 < line_no <= len(source_lines) else "",
+        "locals": snapshot_locals(frame),
+        "stdout": stdout_buffer.getvalue(),
+    }
+    if event == "return":
+        entry["return_value"] = safe_display(arg)
+    elif event == "exception":
+        exc_type, exc, _tb = arg
+        entry["exception"] = f"{exc_type.__name__}: {exc}"
+    trace.append(entry)
+    return tracer
+
+args = test.get("args", [])
+expected = test.get("expected")
+actual = None
+error = ""
+try:
+    with contextlib.redirect_stdout(stdout_buffer):
+        sys.settrace(tracer)
+        actual = target(*args)
+        sys.settrace(None)
+except Exception as exc:
+    sys.settrace(None)
+    error = str(exc)
+
+passed = False if error else values_equal(actual, expected, bool(test.get("order_insensitive")))
+print(json.dumps({
+    "status": "error" if error else "passed" if passed else "failed",
+    "function_name": resolved_name,
+    "test": {
+        "name": test.get("name") or "Trace test",
+        "args": args,
+        "expected": expected,
+        "actual": actual,
+        "passed": passed,
+        "error": error,
+    },
+    "trace": trace,
+    "stdout": stdout_buffer.getvalue(),
+    "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+    "truncated": len(trace) >= MAX_TRACE_STEPS,
+}))
+"""
+    started = time.perf_counter()
+    try:
+        with tempfile.TemporaryDirectory(prefix="csnav_trace_") as temp_dir:
+            solution_path = os.path.join(temp_dir, "solution.py")
+            runner_path = os.path.join(temp_dir, "trace_runner.py")
+            with open(solution_path, "w", encoding="utf-8") as handle:
+                handle.write(code)
+            with open(runner_path, "w", encoding="utf-8") as handle:
+                handle.write(runner_source)
+
+            completed = _run_isolated_process(
+                [sys.executable, "-I", "-S", runner_path],
+                cwd=temp_dir,
+                input_text=json.dumps({"function_name": function_name, "test": test}),
+                env={"PYTHONIOENCODING": "utf-8"},
+            )
+    except subprocess.TimeoutExpired:
+        return {
+            "status": "error",
+            "trace": [],
+            "stdout": "",
+            "stderr": f"The trace timed out after {RUN_TIMEOUT_SECONDS} seconds. Check for infinite loops or very slow logic.",
+            "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+        }
+    except Exception as exc:
+        return {
+            "status": "error",
+            "trace": [],
+            "stdout": "",
+            "stderr": f"Trace setup failed: {exc}",
+            "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+        }
+
+    stdout_text = completed.stdout.strip()
+    stderr_text = _truncate_text(completed.stderr.strip())
+    if completed.returncode != 0 and not stdout_text:
+        return {
+            "status": "error",
+            "trace": [],
+            "stdout": "",
+            "stderr": stderr_text or "Python returned an error before tracing could run.",
+            "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+        }
+
+    try:
+        payload = json.loads(stdout_text.splitlines()[-1])
+    except Exception:
+        return {
+            "status": "error",
+            "trace": [],
+            "stdout": _truncate_text(stdout_text),
+            "stderr": stderr_text or "Trace output could not be parsed.",
+            "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+        }
+
+    return {
+        "status": payload.get("status", "error"),
+        "function_name": payload.get("function_name", function_name),
+        "test": payload.get("test", {}),
+        "trace": payload.get("trace", []),
+        "stdout": _truncate_text(payload.get("stdout", "")),
+        "stderr": _truncate_text(payload.get("error") or stderr_text),
+        "duration_ms": payload.get("duration_ms", round((time.perf_counter() - started) * 1000, 2)),
+        "truncated": bool(payload.get("truncated")),
+    }
+
+
 def run_javascript_practice_tests(code: str, function_name: str, tests: list[dict[str, Any]]) -> dict[str, Any]:
     try:
         validate_javascript_code(code)
@@ -800,9 +1123,14 @@ function displayValue(value) {
   return raw.length <= MAX_VALUE_CHARS ? value : `${raw.slice(0, MAX_VALUE_CHARS)}... value truncated ...`;
 }
 
-function canonicalValue(value, orderInsensitive = false) {
+function canonicalValue(value, orderInsensitive = false, caseInsensitive = false) {
+  if (typeof value === "string") {
+    const lowered = value.toLocaleLowerCase();
+    if (caseInsensitive || lowered === "none" || lowered === "null") return lowered;
+    return value;
+  }
   if (Array.isArray(value)) {
-    const items = value.map((item) => canonicalValue(item, orderInsensitive));
+    const items = value.map((item) => canonicalValue(item, orderInsensitive, caseInsensitive));
     if (orderInsensitive) {
       return items.sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
     }
@@ -812,15 +1140,15 @@ function canonicalValue(value, orderInsensitive = false) {
     return Object.fromEntries(
       Object.keys(value)
         .sort()
-        .map((key) => [key, canonicalValue(value[key], orderInsensitive)])
+        .map((key) => [key, canonicalValue(value[key], orderInsensitive, caseInsensitive)])
     );
   }
   return value;
 }
 
-function valuesEqual(actual, expected, orderInsensitive = false) {
-  return JSON.stringify(canonicalValue(actual, orderInsensitive)) ===
-    JSON.stringify(canonicalValue(expected, orderInsensitive));
+function valuesEqual(actual, expected, orderInsensitive = false, caseInsensitive = false) {
+  return JSON.stringify(canonicalValue(actual, orderInsensitive, caseInsensitive)) ===
+    JSON.stringify(canonicalValue(expected, orderInsensitive, caseInsensitive));
 }
 
 const sandbox = {
@@ -916,9 +1244,10 @@ try {
     const args = test.args || [];
     const expected = test.expected;
     const orderInsensitive = Boolean(test.order_insensitive);
+    const caseInsensitive = Boolean(test.case_insensitive);
     try {
       const actual = target(...args);
-      const passed = valuesEqual(actual, expected, orderInsensitive);
+      const passed = valuesEqual(actual, expected, orderInsensitive, caseInsensitive);
       return { name, passed, args, expected, actual: displayValue(actual) };
     } catch (error) {
       return { name, passed: false, args, expected, actual: null, error: String(error.message || error) };
@@ -1077,6 +1406,137 @@ def _cpp_literal(value: Any) -> str:
     return f"Value(std::string({json.dumps(str(value))}))"
 
 
+def _cpp_param_prefers_int(code: str, function_name: str, param_name: str, kind: str) -> bool:
+    """Best-effort compatibility check for beginner/AI C++ signatures.
+
+    The official C++ runner contract uses `long long` and `vector<long long>` so
+    integer tests do not overflow easily. Beginners and AI tools often write
+    `int` / `vector<int>` instead. When the visible signature clearly does that,
+    the runner can adapt the hidden test values before calling the student's
+    code instead of showing a linker error.
+    """
+    escaped_name = re.escape(function_name)
+    escaped_param = re.escape(param_name)
+    signature_match = re.search(rf"\b{escaped_name}\s*\(([^)]*)\)", code)
+    signature_text = signature_match.group(1) if signature_match else code
+    if kind == "intlist":
+        return bool(re.search(rf"(?:const\s+)?(?:std::)?vector\s*<\s*int\s*>\s*(?:const\s*)?&?\s*{escaped_param}\b", signature_text))
+    if kind == "grid":
+        return bool(re.search(rf"(?:const\s+)?(?:std::)?vector\s*<\s*(?:std::)?vector\s*<\s*int\s*>\s*>\s*(?:const\s*)?&?\s*{escaped_param}\b", signature_text))
+    if kind == "int":
+        return bool(re.search(rf"\bint\s*&?\s*{escaped_param}\b", signature_text))
+    return False
+
+
+def _camel_to_snake_name(name: str) -> str:
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", name or "").lower()
+
+
+def _cpp_detect_student_function_name(code: str, function_name: str) -> str:
+    """Return the function name the student actually defined.
+
+    C++ grading uses camelCase function names, while beginners and AI examples
+    often produce snake_case. If the expected name is missing but the snake_case
+    equivalent is present, adapt to that instead of surfacing a confusing compile
+    error.
+    """
+    if re.search(rf"\b{re.escape(function_name)}\s*\(", code):
+        return function_name
+    snake_name = _camel_to_snake_name(function_name)
+    if snake_name != function_name and re.search(rf"\b{re.escape(snake_name)}\s*\(", code):
+        return snake_name
+    return function_name
+
+
+def _cpp_compat_return_expr(return_kind: str) -> str:
+    if return_kind == "int":
+        return "return (long long)__student_result;"
+    if return_kind == "bool":
+        return "return (bool)__student_result;"
+    if return_kind == "string":
+        return "return std::string(__student_result);"
+    if return_kind in {"intlist", "list"}:
+        return "return std::vector<long long>(__student_result.begin(), __student_result.end());"
+    if return_kind == "strlist":
+        return "return std::vector<std::string>(__student_result.begin(), __student_result.end());"
+    if return_kind == "grid":
+        return (
+            "std::vector<std::vector<long long>> __out;\n"
+            "    for (auto& __row : __student_result) __out.push_back(std::vector<long long>(__row.begin(), __row.end()));\n"
+            "    return __out;"
+        )
+    return "return __student_result;"
+
+
+def _cpp_beginner_compat_adapter(code: str, function_name: str, arg_spec, expected_signature: str) -> str:
+    """Return a top-level wrapper for common C++ beginner shapes.
+
+    Official starter:
+        long long fn(vector<long long> nums, long long k)
+
+    Common beginner/AI shapes:
+        class Solution { public: int fn(vector<int>& nums, int k) { ... } };
+        int fn(vector<int> nums, int k) { ... }
+
+    The wrapper lets those run while the UI still teaches the cleaner expected
+    shape. It intentionally only covers obvious safe numeric conversions.
+    """
+    if not arg_spec:
+        return ""
+    student_function_name = _cpp_detect_student_function_name(code, function_name)
+    has_solution_class = bool(re.search(r"\bclass\s+Solution\b", code))
+    has_function = bool(re.search(rf"\b{re.escape(student_function_name)}\s*\(", code))
+    args, return_kind = arg_spec
+    beginner_return = bool(
+        re.search(rf"\bint\s+{re.escape(student_function_name)}\s*\(", code)
+        or re.search(rf"(?:std::)?vector\s*<\s*int\s*>\s+{re.escape(student_function_name)}\s*\(", code)
+        or re.search(
+            rf"(?:std::)?vector\s*<\s*(?:std::)?vector\s*<\s*int\s*>\s*>\s+{re.escape(student_function_name)}\s*\(",
+            code,
+        )
+    )
+    uses_beginner_ints = beginner_return or any(
+        _cpp_param_prefers_int(code, student_function_name, name, kind) for name, kind in args
+    )
+    if not has_solution_class and not (has_function and uses_beginner_ints):
+        return ""
+    if expected_signature in code:
+        return ""
+
+    locals_src: list[str] = []
+    call_args: list[str] = []
+    for name, kind in args:
+        if kind == "intlist" and _cpp_param_prefers_int(code, student_function_name, name, kind):
+            local_name = f"__{name}_int"
+            locals_src.append(f"    std::vector<int> {local_name}({name}.begin(), {name}.end());")
+            call_args.append(local_name)
+        elif kind == "grid" and _cpp_param_prefers_int(code, student_function_name, name, kind):
+            local_name = f"__{name}_int"
+            locals_src.append(f"    std::vector<std::vector<int>> {local_name};")
+            locals_src.append(f"    for (auto& __row : {name}) {local_name}.push_back(std::vector<int>(__row.begin(), __row.end()));")
+            call_args.append(local_name)
+        elif kind == "int" and _cpp_param_prefers_int(code, student_function_name, name, kind):
+            local_name = f"__{name}_int"
+            locals_src.append(f"    int {local_name} = (int){name};")
+            call_args.append(local_name)
+        else:
+            call_args.append(name)
+
+    local_block = "\n".join(locals_src)
+    call_prefix = "Solution __student;\n    " if has_solution_class else ""
+    call_target = f"__student.{student_function_name}" if has_solution_class else student_function_name
+    return_expr = _cpp_compat_return_expr(return_kind)
+    return (
+        "\n// Compatibility wrapper: lets common class Solution / int-based C++ answers run in this learning workspace.\n"
+        f"{expected_signature} {{\n"
+        f"    {call_prefix}"
+        f"{local_block}\n"
+        f"    auto __student_result = {call_target}({', '.join(call_args)});\n"
+        f"    {return_expr}\n"
+        "}\n"
+    )
+
+
 def _finalize_compiled_result(
     payload_lines: list[str],
     *,
@@ -1135,10 +1595,11 @@ def run_java_practice_tests(code: str, function_name: str, tests: list[dict[str,
         name = test.get("name") or f"Test {index}"
         args = test.get("args", []) or []
         expected = test.get("expected")
+        case_insensitive = bool(test.get("case_insensitive"))
         arg_list = ", ".join(_java_literal(a) for a in args)
         invocations.append(
             f'        runTest({json.dumps(name)}, new Object[]{{{arg_list}}}, '
-            f'{_java_literal(expected)});'
+            f'{_java_literal(expected)}, {str(case_insensitive).lower()});'
         )
     invocations_src = "\n".join(invocations)
 
@@ -1176,20 +1637,33 @@ public class Runner {{
         if (o instanceof Object[]) return Arrays.deepToString((Object[]) o);
         return o.toString();
     }}
-    static boolean eq(Object a, Object b) {{
+    static String comparableString(Object o, boolean caseInsensitive) {{
+        String s = o.toString();
+        String lowered = s.toLowerCase(Locale.ROOT);
+        if (caseInsensitive || lowered.equals("none") || lowered.equals("null")) return lowered;
+        return s;
+    }}
+    static boolean eq(Object a, Object b, boolean caseInsensitive) {{
         if (a == null || b == null) return a == b;
         if (a instanceof Object[] && b instanceof Object[])
-            return Arrays.deepEquals((Object[]) a, (Object[]) b);
+            return eqArray((Object[]) a, (Object[]) b, caseInsensitive);
         if (a instanceof Number && b instanceof Number)
             return ((Number) a).doubleValue() == ((Number) b).doubleValue();
-        return a.toString().equals(b.toString());
+        return comparableString(a, caseInsensitive).equals(comparableString(b, caseInsensitive));
+    }}
+    static boolean eqArray(Object[] a, Object[] b, boolean caseInsensitive) {{
+        if (a.length != b.length) return false;
+        for (int i = 0; i < a.length; i++) {{
+            if (!eq(a[i], b[i], caseInsensitive)) return false;
+        }}
+        return true;
     }}
 
-    static void runTest(String name, Object[] args, Object expected) {{
+    static void runTest(String name, Object[] args, Object expected, boolean caseInsensitive) {{
         total++;
         try {{
             Object actual = {call_expr};
-            boolean ok = eq(actual, expected);
+            boolean ok = eq(actual, expected, caseInsensitive);
             if (ok) passed++;
             System.out.println("{{\\"name\\":\\"" + esc(name) + "\\",\\"passed\\":" + ok
                 + ",\\"expected\\":\\"" + esc(show(expected)) + "\\",\\"actual\\":\\"" + esc(show(actual)) + "\\"}}");
@@ -1253,11 +1727,15 @@ public class Runner {{
     except Exception as exc:
         return empty_practice_run_response(f"Java runner setup failed: {exc}")
 
-    return _finalize_compiled_result(
+    result = _finalize_compiled_result(
         run.stdout.splitlines(),
         started=started,
         stderr_text=run.stderr.strip(),
     )
+    for index, item in enumerate(result.get("tests", [])):
+        if index < len(tests) and "args" not in item:
+            item["args"] = tests[index].get("args", [])
+    return result
 
 
 def run_cpp_practice_tests(code: str, function_name: str, tests: list[dict[str, Any]], arg_spec=None) -> dict[str, Any]:
@@ -1280,9 +1758,10 @@ def run_cpp_practice_tests(code: str, function_name: str, tests: list[dict[str, 
         name = test.get("name") or f"Test {index}"
         args = test.get("args", []) or []
         expected = test.get("expected")
+        case_insensitive = bool(test.get("case_insensitive"))
         arg_list = ", ".join(_cpp_literal(a) for a in args)
         invocations.append(
-            f'    runTest({json.dumps(name)}, {{{arg_list}}}, {_cpp_literal(expected)});'
+            f'    runTest({json.dumps(name)}, {{{arg_list}}}, {_cpp_literal(expected)}, {str(case_insensitive).lower()});'
         )
     invocations_src = "\n".join(invocations)
 
@@ -1291,15 +1770,21 @@ def run_cpp_practice_tests(code: str, function_name: str, tests: list[dict[str, 
     # Value args + wraps the result, so the compare harness stays identical. When
     # there's no spec, fall back to the legacy `Value f(vector<Value>)` contract.
     if arg_spec:
-        from practice_starters import cpp_native_bridge
+        from practice_starters import cpp_native_bridge, cpp_native_signature
+        expected_signature = cpp_native_signature(function_name, arg_spec)
         student_decl = cpp_native_bridge(function_name, arg_spec)
         call_target = f"__call_{function_name}"
+        compat_adapter = _cpp_beginner_compat_adapter(code, function_name, arg_spec, expected_signature)
+        student_section = f"{code}\n\n{compat_adapter}\n\n{student_decl}"
     else:
+        expected_signature = f"Value {function_name}(std::vector<Value> args)"
         student_decl = (
             f"// Student provides: Value {function_name}(vector<Value> args)\n"
             f"Value {function_name}(vector<Value> args);"
         )
         call_target = function_name
+        compat_adapter = ""
+        student_section = f"{student_decl}\n\n{code}"
 
     # A tiny tagged-union Value type so student code can accept a vector<Value>.
     harness = f"""
@@ -1326,7 +1811,16 @@ struct Value {{
         }}
         return "";
     }}
-    bool eq(const Value& o) const {{
+    static string lowerCopy(string value) {{
+        transform(value.begin(), value.end(), value.begin(), [](unsigned char c){{ return (char)tolower(c); }});
+        return value;
+    }}
+    static string comparableString(const string& value, bool caseInsensitive) {{
+        string lowered = lowerCopy(value);
+        if (caseInsensitive || lowered == "none" || lowered == "null") return lowered;
+        return value;
+    }}
+    bool eq(const Value& o, bool caseInsensitive=false) const {{
         if ((kind==INT||kind==DBL) && (o.kind==INT||o.kind==DBL)) {{
             double x = kind==INT? (double)i : d, y = o.kind==INT? (double)o.i : o.d; return x==y;
         }}
@@ -1334,25 +1828,23 @@ struct Value {{
         switch (kind) {{
             case NUL: return true;
             case BOOL: return b==o.b;
-            case STR: return s==o.s;
-            case ARR: {{ if(a.size()!=o.a.size()) return false; for(size_t k=0;k<a.size();k++) if(!a[k].eq(o.a[k])) return false; return true; }}
+            case STR: return comparableString(s, caseInsensitive)==comparableString(o.s, caseInsensitive);
+            case ARR: {{ if(a.size()!=o.a.size()) return false; for(size_t k=0;k<a.size();k++) if(!a[k].eq(o.a[k], caseInsensitive)) return false; return true; }}
             default: return show()==o.show();
         }}
     }}
 }};
 
-{student_decl}
-
-{code}
+{student_section}
 
 static int passed_=0, total_=0;
 static string esc(const string& s){{ string r; for(char c:s){{ if(c=='"'||c=='\\\\') r+='\\\\'; if(c=='\\n'){{ r+="\\\\n"; continue; }} r+=c; }} return r; }}
 
-static void runTest(const string& name, vector<Value> args, Value expected){{
+static void runTest(const string& name, vector<Value> args, Value expected, bool caseInsensitive){{
     total_++;
     try {{
         Value actual = {call_target}(args);
-        bool ok = actual.eq(expected);
+        bool ok = actual.eq(expected, caseInsensitive);
         if (ok) passed_++;
         cout << "{{\\"name\\":\\"" << esc(name) << "\\",\\"passed\\":" << (ok?"true":"false")
              << ",\\"expected\\":\\"" << esc(expected.show()) << "\\",\\"actual\\":\\"" << esc(actual.show()) << "\\"}}" << "\\n";
@@ -1383,10 +1875,19 @@ int main(){{
                 env=_hardened_compiled_env({"PATH": os.environ.get("PATH", "")}),
             )
             if compiled.returncode != 0:
+                stderr = compiled.stderr.strip() or "C++ compilation failed."
+                if "undefined reference" in stderr and function_name in stderr:
+                    stderr = (
+                        "The C++ runner could not find the function it needs to test.\n\n"
+                        f"Expected shape:\n{expected_signature} {{\n"
+                        "    // your code here\n"
+                        "}\n\n"
+                        "Check that the function name, parameter types, return type, and top-level placement match the starter."
+                    )
                 return {
                     "status": "error", "passed": 0, "total": 0, "tests": [],
                     "stdout": "",
-                    "stderr": _truncate_text(compiled.stderr.strip() or "C++ compilation failed."),
+                    "stderr": _truncate_text(stderr),
                     "duration_ms": round((time.perf_counter() - started) * 1000, 2),
                 }
 
@@ -1407,11 +1908,15 @@ int main(){{
     except Exception as exc:
         return empty_practice_run_response(f"C++ runner setup failed: {exc}")
 
-    return _finalize_compiled_result(
+    result = _finalize_compiled_result(
         run.stdout.splitlines(),
         started=started,
         stderr_text=run.stderr.strip(),
     )
+    for index, item in enumerate(result.get("tests", [])):
+        if index < len(tests) and "args" not in item:
+            item["args"] = tests[index].get("args", [])
+    return result
 
 
 def run_java_freeform(code: str) -> dict[str, Any]:

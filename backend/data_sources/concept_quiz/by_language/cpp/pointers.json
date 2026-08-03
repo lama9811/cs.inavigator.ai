@@ -136,17 +136,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Pointers concept check 1",
+      "title": "Invalid pointer target",
       "code": null,
-      "prompt": "Which warning about Pointers should a student remember?",
+      "prompt": "Why must code check a pointer before dereferencing it?",
       "choices": [
-        "a copy of x",
-        "An uninitialized or null pointer does not identify a valid object. Dereferencing it has undefined behavior and can crash the program.",
-        "the type of x",
-        "always zero"
+        "A null or uninitialized pointer does not identify a valid object.",
+        "Dereference a pointer before checking whether it has a valid target.",
+        "Use an uninitialized pointer.",
+        "Treat an address as if it were the stored value."
       ],
-      "answer_index": 1,
-      "explanation": "A pointer holds an address. `&value` obtains an address, `*pointer` dereferences it, and `nullptr` represents no object. That reasoning supports the answer: An uninitialized or null pointer does not identify a valid object. Dereferencing it has undefined behavior and can crash the program."
+      "answer_index": 0,
+      "explanation": "Dereferencing follows the address stored in the pointer. If that address is null or uninitialized, there is no valid object to read or write, so the behavior is undefined and may crash."
     },
     {
       "id": "cpp-pointers-authored-02",
@@ -154,17 +154,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Pointers concept check 2",
+      "title": "Pointer initialization",
       "code": null,
-      "prompt": "Which choice describes a reliable Pointers practice?",
+      "prompt": "What habit makes pointer state easier to reason about?",
       "choices": [
-        "a new pointer",
-        "the address of p",
+        "Use `nullptr` and then immediately dereference it.",
         "Initialize every pointer.",
-        "pointer multiplication"
+        "Forget that `&value` gets an address.",
+        "Forget that `*pointer` follows the address."
       ],
-      "answer_index": 2,
-      "explanation": "A pointer holds an address. `&value` obtains an address, `*pointer` dereferences it, and `nullptr` represents no object. That reasoning supports the answer: Initialize every pointer."
+      "answer_index": 1,
+      "explanation": "Initialize a pointer when it is declared, either with the address of a real object or with `nullptr`. That makes the later check meaningful and avoids using whatever random address happened to be in memory."
     },
     {
       "id": "cpp-pointers-authored-03",
@@ -172,17 +172,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Pointers concept check 3",
+      "title": "No target marker",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Pointers code?",
+      "prompt": "What should C++ code use when a pointer intentionally has no target?",
       "choices": [
-        "int* score = nullptr;\nstd::cout << *score;",
-        "always zero",
-        "a new pointer",
-        "Use nullptr for no target."
+        "Return a pointer to a local variable.",
+        "Share raw ownership without deciding who deletes.",
+        "Use nullptr for no target.",
+        "Use pointer arithmetic when an index would be clearer."
       ],
-      "answer_index": 3,
-      "explanation": "A pointer holds an address. `&value` obtains an address, `*pointer` dereferences it, and `nullptr` represents no object. That reasoning supports the answer: Use nullptr for no target."
+      "answer_index": 2,
+      "explanation": "`nullptr` clearly says the pointer is empty on purpose. That is safer and more readable than leaving the pointer uninitialized, and it gives code a value it can check before dereferencing."
     }
   ]
 }

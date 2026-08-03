@@ -1087,3 +1087,422 @@ body.coding-dark .coding-app .iv-ladder-cta.secondary {
     text-align: left;
   }
 }
+
+/* Past Interviews clarity pass: make history review scan like a summary, not a
+   nested code dump. */
+.iv-history-hero {
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.iv-history-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 28%, var(--ct-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-primary) 7%, transparent);
+  color: var(--ct-primary);
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.iv-history-back:hover {
+  color: var(--ct-primary);
+  border-color: color-mix(in srgb, var(--ct-primary) 50%, var(--ct-border));
+  background: color-mix(in srgb, var(--ct-primary) 12%, transparent);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--ct-primary) 12%, transparent);
+}
+
+.past-interviews {
+  gap: 16px;
+  padding: clamp(18px, 2.5vw, 24px);
+  border-radius: 18px;
+  background:
+    radial-gradient(100% 130% at 100% 0%, color-mix(in srgb, var(--ct-primary) 8%, transparent), transparent 55%),
+    var(--ct-solid-raised, var(--ct-panel-raised, #fff));
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.07);
+}
+
+.pi-head {
+  align-items: flex-start;
+}
+
+.pi-head > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.pi-head h3 {
+  font-family: "Sora", var(--font-display, "Public Sans"), sans-serif;
+  font-size: 1.08rem;
+  font-weight: 800;
+}
+
+.pi-head h3 svg {
+  color: var(--ct-primary);
+}
+
+.pi-head p {
+  margin: 0;
+  color: var(--ct-muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.pi-clear {
+  align-self: flex-start;
+  background: var(--ct-panel);
+}
+
+.pi-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pi-stat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px 13px;
+  border: 1px solid var(--ct-border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ct-panel) 86%, transparent);
+}
+
+.pi-stat svg {
+  flex: 0 0 auto;
+  color: var(--ct-primary);
+  font-size: 1rem;
+}
+
+.pi-stat span {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.pi-stat strong {
+  color: var(--ct-text);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.pi-stat small {
+  color: var(--ct-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.pi-list {
+  gap: 12px;
+}
+
+.pi-card {
+  border-radius: 16px;
+  background: var(--ct-panel);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+}
+
+.pi-card.open {
+  border-color: color-mix(in srgb, var(--ct-primary) 36%, var(--ct-border));
+}
+
+.pi-card-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  padding: 14px 16px;
+  color: var(--ct-text);
+}
+
+.pi-card-head:hover {
+  background: color-mix(in srgb, var(--ct-primary) 7%, transparent);
+}
+
+.pi-card-score-ring {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--ct-primary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 30%, var(--ct-border));
+}
+
+.pi-card-score-ring.strong {
+  background: color-mix(in srgb, #22c55e 14%, transparent);
+  border-color: color-mix(in srgb, #22c55e 42%, var(--ct-border));
+}
+
+.pi-card-score-ring.okay {
+  background: color-mix(in srgb, #f59e0b 16%, transparent);
+  border-color: color-mix(in srgb, #f59e0b 42%, var(--ct-border));
+}
+
+.pi-card-score-ring.needs-work {
+  background: color-mix(in srgb, var(--ct-primary) 10%, transparent);
+}
+
+.pi-card-score-ring strong {
+  color: var(--ct-text);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.pi-card-score-ring small {
+  color: var(--ct-muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.pi-card-main {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.pi-card-date {
+  font-size: 0.94rem;
+  font-weight: 800;
+}
+
+.pi-card-meta {
+  font-size: 0.82rem;
+}
+
+.pi-card-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pi-card-topics span,
+.pi-problem-topic {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: var(--ct-primary);
+  background: color-mix(in srgb, var(--ct-primary) 9%, transparent);
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+.pi-card-chevron {
+  align-self: center;
+  justify-self: end;
+}
+
+.pi-problem-list {
+  padding: 0 16px 16px;
+  gap: 10px;
+}
+
+.pi-problem {
+  display: grid;
+  gap: 10px;
+  padding: 13px 14px;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--ct-panel) 90%, var(--ct-bg));
+}
+
+.pi-problem-top,
+.pi-problem-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pi-problem-title {
+  flex: 1 1 auto;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.pi-problem-outcome {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-muted) 12%, transparent);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.pi-problem-outcome svg {
+  font-size: 0.72rem;
+}
+
+.pi-problem-outcome.solved {
+  color: #15803d;
+  background: color-mix(in srgb, #22c55e 16%, transparent);
+}
+
+.pi-problem-outcome.attempted {
+  color: #b45309;
+  background: color-mix(in srgb, #f59e0b 18%, transparent);
+}
+
+.pi-problem-outcome.skipped,
+.pi-problem-outcome.unattempted {
+  color: var(--ct-muted);
+}
+
+.pi-grade {
+  min-height: 24px;
+}
+
+.pi-no-code {
+  margin: 0;
+  color: var(--ct-muted);
+  font-size: 0.8rem;
+}
+
+.pi-code-details {
+  min-width: 0;
+}
+
+.pi-code-details summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  cursor: pointer;
+  color: var(--ct-primary);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.pi-code-details[open] summary {
+  margin-bottom: 8px;
+}
+
+.pi-problem-code {
+  margin: 0;
+  max-height: 220px;
+  background: var(--ct-editor-bg, #0f172a);
+  color: var(--ct-editor-text, #e2e8f0);
+  border-radius: 10px;
+}
+
+.pi-solution-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  color: var(--ct-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.pi-solution-link:hover {
+  color: var(--ct-accent);
+}
+
+.pi-empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 34px 16px;
+  text-align: center;
+}
+
+.pi-empty svg {
+  color: var(--ct-primary);
+  font-size: 1.4rem;
+}
+
+.pi-empty strong {
+  color: var(--ct-text);
+  font-size: 1rem;
+}
+
+.pi-empty span {
+  max-width: 52ch;
+  color: var(--ct-muted);
+  line-height: 1.5;
+}
+
+body.coding-dark .past-interviews {
+  background:
+    radial-gradient(100% 130% at 100% 0%, rgba(59, 130, 246, 0.1), transparent 55%),
+    #16233a;
+}
+
+body.coding-dark .pi-stat,
+body.coding-dark .pi-card,
+body.coding-dark .pi-problem {
+  background: #1c2a3f;
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
+body.coding-dark .pi-card-head:hover {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+body.coding-dark .pi-card-topics span,
+body.coding-dark .pi-problem-topic {
+  color: #bcd2f5;
+  background: rgba(59, 130, 246, 0.16);
+}
+
+body.coding-dark .pi-problem-outcome.solved {
+  color: #5ee69a;
+}
+
+body.coding-dark .pi-problem-outcome.attempted {
+  color: #f1b551;
+}
+
+body.coding-dark .iv-history-back {
+  color: #dbeafe;
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.42);
+}
+
+@media (max-width: 760px) {
+  .pi-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pi-card-head {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .pi-card-chevron {
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
+}
+
+@media (max-width: 520px) {
+  .pi-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .pi-head {
+    flex-direction: column;
+  }
+
+  .pi-clear {
+    align-self: flex-start;
+  }
+}

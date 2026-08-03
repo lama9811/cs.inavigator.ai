@@ -1,67 +1,238 @@
 {
-  "_note": "ORIGINAL CS Navigator content added to align Learn with the existing Part 2 quiz category. No source prose, examples, or exercises were copied.",
+  "_note": "ORIGINAL CS Navigator content expanded into sections. No source prose, examples, or exercises were copied.",
   "title": "Debug: Part 2",
   "summary": "Trace mutation, aliases, boundaries, and multi-step state.",
-  "minutes": 7,
+  "minutes": 12,
   "error_classes": [
     "runtime",
     "wrong_answer",
     "timeout"
   ],
-  "refresher": "Deeper Python bugs often begin before the failing line. Track object identity when data is shared, inspect types beside values, and test empty, one-item, and boundary inputs.",
+  "refresher": "Deeper Python bugs often begin before the failing line. Track **object** identity when data is shared, inspect types beside **values**, and test empty, one-item, and boundary inputs.",
   "refresher_code": "print(value, type(value).__name__)\nprint(items.copy())",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "Deeper Python bugs often begin before the failing line. Track object identity when data is shared, inspect types beside values, and test empty, one-item, and boundary inputs. Trace mutation, aliases, boundaries, and multi-step state."
+      "id": "aliases",
+      "title": "Check whether two names share one object",
+      "summary": "Mutation bugs often come from two **variables** pointing at the same **list**.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "In Python, assignment gives another name to the same object. That is harmless for numbers and **strings** because they do not mutate in place. **Lists** and **dictionaries** are different: if two names point at one list, changing the list through either name changes the same object."
+        },
+        {
+          "kind": "visual",
+          "title": "Find the first wrong state",
+          "concept": "debugging",
+          "caption": "Compare the expected state with the actual state before the final answer distracts you.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Before the update",
+              "body": "The total is still correct before this loop pass.",
+              "state": {
+                "table": [
+                  {
+                    "key": "score",
+                    "value": "7",
+                    "active": true
+                  },
+                  {
+                    "key": "total before",
+                    "value": "5"
+                  }
+                ],
+                "note": "state still matches the trace"
+              }
+            },
+            {
+              "title": "Wrong update",
+              "body": "The update changes the wrong variable or uses the wrong operation.",
+              "animation": "highlight",
+              "state": {
+                "table": [
+                  {
+                    "key": "expected total",
+                    "value": "12"
+                  },
+                  {
+                    "key": "actual total",
+                    "value": "57",
+                    "active": true
+                  }
+                ],
+                "note": "first wrong state"
+              }
+            },
+            {
+              "title": "Fix the transition",
+              "body": "Once the first bad transition is known, the fix is smaller.",
+              "state": {
+                "table": [
+                  {
+                    "key": "score",
+                    "value": "7"
+                  },
+                  {
+                    "key": "total after",
+                    "value": "12",
+                    "active": true
+                  }
+                ],
+                "note": "total += score"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "compare",
+          "wrong_label": "Shared list",
+          "wrong": "original = [1, 2]\ncopy = original\ncopy.append(3)\nprint(original)",
+          "right_label": "Separate outer list",
+          "right": "original = [1, 2]\ncopy = original.copy()\ncopy.append(3)\nprint(original)",
+          "caption": "The first version prints `[1, 2, 3]` because both names reach the same **list**. The second version **leaves** `original` as `[1, 2]`."
+        },
+        {
+          "kind": "code",
+          "caption": "Printing `id` is useful when you need to confirm whether two **variables** name the same **object**.",
+          "code": "a = [1]\nb = a\nc = a.copy()\nprint(id(a) == id(b))\nprint(id(a) == id(c))",
+          "output": "True\nFalse"
+        },
+        {
+          "kind": "check",
+          "prompt": "What does `b = a` do when `a` is a **list**?",
+          "code": "a = [1]\nb = a",
+          "choices": [
+            "copies the reference",
+            "creates an independent list",
+            "freezes both lists",
+            "converts the list to a tuple"
+          ],
+          "answer_index": 0,
+          "why": "Both names refer to one **list** **object**, so later list mutations are visible through both names."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "The shallow list copy gives the two variables independent outer lists for this simple data.",
-      "code": "original = [1, 2]\ncopy = original.copy()\ncopy.append(3)\nprint(len(original))\nprint(len(copy))",
-      "output": "2\n3"
+      "id": "boundaries",
+      "title": "Test the smallest inputs on purpose",
+      "summary": "Empty and one-item inputs expose assumptions hidden by normal examples.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A bug can hide when every example has several items. Before trusting a **loop**, try the smallest inputs: an empty **list**, a one-item list, and a list where the answer appears at the first or last position."
+        },
+        {
+          "kind": "compare",
+          "wrong_label": "Assumes an item exists",
+          "wrong": "def last_item(items):\n    return items[-1]",
+          "right_label": "Names the empty case",
+          "right": "def last_item(items):\n    if not items:\n        return None\n    return items[-1]",
+          "caption": "Negative indexing is still indexing. `items[-1]` works only when the **list** has at least one element."
+        },
+        {
+          "kind": "check",
+          "prompt": "What should be tested before `items[-1]`?",
+          "code": "return items[-1]",
+          "choices": [
+            "whether the list is empty",
+            "whether the list is sorted",
+            "whether the list has strings",
+            "whether its variable name is `items`"
+          ],
+          "answer_index": 0,
+          "why": "An empty **list** has no last element, so the code needs a branch before using `items[-1]`."
+        }
+      ]
     },
     {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Track the state",
-      "body": "Assignment alone creates another reference to the same list. A mutation through either name then appears through both."
-    },
-    {
-      "kind": "check",
-      "prompt": "What does `b = a` do for a list?",
-      "code": "a = [1]\nb = a",
-      "choices": [
-        "copies the reference",
-        "creates an independent list",
-        "freezes both lists",
-        "converts to a tuple"
-      ],
-      "answer_index": 0,
-      "why": "Both names refer to one list object, so later mutations are shared."
-    },
-    {
-      "kind": "check",
-      "prompt": "What should be tested before `items[-1]`?",
-      "code": "",
-      "choices": [
-        "whether the list is empty",
-        "whether it is sorted",
-        "whether it has strings",
-        "whether its name is items"
-      ],
-      "answer_index": 0,
-      "why": "Negative-one indexing still requires at least one element, so an empty list raises IndexError."
-    },
-    {
-      "kind": "list",
-      "title": "Debug: Part 2 checklist",
-      "items": [
-        "Test the smallest inputs.",
-        "Track shared references.",
-        "Log values with types.",
-        "Find the first wrong transition."
+      "id": "first-wrong-state",
+      "title": "Find the first wrong state",
+      "summary": "Debugging gets easier when you stop at the first bad transition.",
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "**Print** the value before and after the update so you can see exactly which pass changes the state incorrectly.",
+          "code": "total = 0\nfor score in scores:\n    print(\"before\", score, total)\n    total += score\n    print(\"after\", score, total)",
+          "output": "before 5 0\nafter 5 5\nbefore 7 5\nafter 7 12"
+        },
+        {
+          "kind": "list",
+          "title": "Debug: Part 2 checklist",
+          "items": [
+            "Test the smallest inputs first.",
+            "Check whether two names share one **object**.",
+            "Log **values** with their types when arithmetic or comparisons look odd.",
+            "Find the first line where the state changes incorrectly."
+          ]
+        }
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "debug-p2-01": {
+      "title": "Empty input changes the math",
+      "body": "A formula that works for normal data can fail when the collection has no items.",
+      "notice": "Check the divisor or first access before running the normal-case calculation.",
+      "mistake": "Do not divide by a count before checking whether the count is zero.",
+      "section_id": "check",
+      "example": "if count == 0"
+    },
+    "debug-p2-02": {
+      "title": "Reset per-row state inside the outer loop",
+      "body": "State for one row should restart before scanning that row.",
+      "notice": "Ask whether the variable belongs to the whole grid or only the current row.",
+      "mistake": "Do not let a previous row leak into the next row's total.",
+      "section_id": "check",
+      "example": "row_total = 0"
+    },
+    "debug-p2-03": {
+      "title": "Binary search moves toward the possible half",
+      "body": "When the middle value is too small, the target must be to the right in sorted data.",
+      "notice": "Move the lower bound past mid when mid is too small.",
+      "mistake": "Do not move a boundary backward into the half you already ruled out.",
+      "section_id": "check",
+      "example": "low = mid + 1"
+    },
+    "debug-p2-04": {
+      "title": "Removal shifts later items",
+      "body": "Removing the current item moves the next item into the same index.",
+      "notice": "After removal, either recheck the current index, move backward, or build a filtered result.",
+      "mistake": "Do not increment blindly after a removal if adjacent items may also need removal.",
+      "section_id": "check",
+      "example": "remove then recheck"
+    },
+    "debug-p2-05": {
+      "title": "Initial best must come from possible data",
+      "body": "A starting best value that is not in the input can beat every real value by accident.",
+      "notice": "For maximum or minimum, initialize from the first item when possible.",
+      "mistake": "Do not use zero as a default when all real values might be below zero.",
+      "section_id": "check",
+      "example": "best = first value"
+    },
+    "debug-p2-06": {
+      "title": "Second place may need distinctness",
+      "body": "Tracking largest and second largest requires a rule for duplicates.",
+      "notice": "Decide whether equal-to-largest values are allowed before updating second.",
+      "mistake": "Do not let the same value occupy both largest and second when the prompt asks for distinct values.",
+      "section_id": "check",
+      "example": "if n != largest"
+    },
+    "debug-p2-07": {
+      "title": "Do not count the first value twice",
+      "body": "Preloading a running total and then looping over every item can add the first item again.",
+      "notice": "Choose either start at zero and loop all items, or start at first and loop the rest.",
+      "mistake": "Do not combine both patterns unless the prompt needs double counting.",
+      "section_id": "check",
+      "example": "total = 0"
+    },
+    "debug-p2-08": {
+      "title": "Mirror checks need opposite sides",
+      "body": "A palindrome-style comparison pairs the left position with the matching right position.",
+      "notice": "Compute the right index from the length and the left index.",
+      "mistake": "Do not compare neighboring characters when the prompt asks for mirrored characters.",
+      "section_id": "check",
+      "example": "right = length - i - 1"
+    }
+  }
 }

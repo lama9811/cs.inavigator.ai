@@ -1,32 +1,103 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Lists / Arrays",
-  "summary": "Keep several values in order with a vector.",
+  "summary": "Keep several **values** in order with a vector.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "`std::vector` is C++'s common growable collection. Indexes begin at zero, `.size()` gives the number of elements, and `.push_back(value)` adds one item to the end.",
-  "refresher_code": "#include <vector>\nstd::vector<int> values{2,4};\nvalues.push_back(6);",
+  "refresher": "`std::vector` is C++'s common growable collection. **Indexes** begin at zero, `.size()` gives the number of elements, and `.push_back(value)` adds one item to the end. `std::vector<long long>` is still a vector; it just stores larger whole numbers.",
+  "refresher_code": "#include <vector>\nstd::vector<long long> values{2,4};\nvalues.push_back(6);",
   "blocks": [
     {
       "kind": "text",
-      "body": "A vector keeps several values of the same type in order. Create one with `std::vector<int> scores{80, 90};`. The type inside angle brackets says this vector stores integers."
+      "body": "A vector keeps several **values** of the same type in order. Create one with `std::vector<int> scores{80, 90};`. The type inside angle brackets says this vector stores **integers**."
+    },
+    {
+      "kind": "visual",
+      "title": "Indexes point to positions",
+      "concept": "arrays",
+      "caption": "Step through a list so the index and value stay connected.",
+      "initial_state": {},
+      "steps": [
+        {
+          "title": "Index 0",
+          "body": "The first item is at index 0.",
+          "animation": "highlight",
+          "state": {
+            "items": [
+              "Ada",
+              "Grace",
+              "Katherine"
+            ],
+            "active": [
+              0
+            ],
+            "pointers": {
+              "index": 0
+            },
+            "note": "names[0] is Ada"
+          }
+        },
+        {
+          "title": "Index 1",
+          "body": "The next item is at index 1.",
+          "animation": "slide",
+          "state": {
+            "items": [
+              "Ada",
+              "Grace",
+              "Katherine"
+            ],
+            "active": [
+              1
+            ],
+            "pointers": {
+              "index": 1
+            },
+            "note": "names[1] is Grace"
+          }
+        },
+        {
+          "title": "Append",
+          "body": "Appending adds a new item at the end.",
+          "animation": "add",
+          "state": {
+            "items": [
+              "Ada",
+              "Grace",
+              "Katherine",
+              "Mae"
+            ],
+            "active": [
+              3
+            ],
+            "pointers": {
+              "new": 3
+            },
+            "note": "new last index is 3"
+          }
+        }
+      ]
     },
     {
       "kind": "text",
-      "body": "A vector can grow with `push_back`. Its positions begin at zero, just like positions in a string. Brackets read a position when you already know it is valid. `.at(index)` checks the position and reports an error when it is outside the vector."
+      "body": "`std::vector<long long>` follows the same rules as `std::vector<int>`. You still **loop** through it, **index** it, and call `.size()` the same way. The only difference is that each item is a larger whole number."
+    },
+    {
+      "kind": "text",
+      "body": "A vector can grow with `push_back`. Its positions begin at zero, just like positions in a **string**. Brackets read a position when you already know it is valid. `.at(index)` checks the position and reports an error when it is outside the vector."
     },
     {
       "kind": "callout",
       "tone": "tip",
       "title": "A vector is close to a Python list",
-      "body": "A Python list and a C++ vector both store ordered values and start at index zero. A vector normally keeps one element type, so `std::vector<int>` accepts integers rather than a mixture of unrelated values."
+      "body": "A Python **list** and a C++ vector both store ordered values and start at **index** zero. A vector normally keeps one element type, so `std::vector<int>` accepts **integers** rather than a mixture of unrelated values."
     },
     {
       "kind": "code",
-      "caption": "The vector begins with two integers, grows to three, and then prints its second value and its size.",
+      "caption": "The vector begins with two **integers**, grows to three, and then prints its second **value** and its size.",
       "code": "#include <iostream>\n#include <vector>\n\nint main() {\n  std::vector<int> values{4, 8};\n  values.push_back(12);\n\n  std::cout << values[1] << \"\\n\";\n  std::cout << values.size() << \"\\n\";\n}",
       "output": "8\n3"
     },
@@ -40,17 +111,17 @@
     },
     {
       "kind": "text",
-      "body": "Bracket access trusts that the index is valid. `.at()` checks first and produces a clear out-of-range error when the position does not exist. While learning or debugging, that message is often more useful than an unexplained crash or incorrect value."
+      "body": "Bracket access trusts that the **index** is valid. `.at()` checks first and produces a clear out-of-range error when the position does not exist. While learning or debugging, that message is often more useful than an unexplained crash or incorrect **value**."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "The size is not a valid index",
-      "body": "A vector with three elements has indexes zero, one, and two. Index three equals the size and is already past the end. Keep an index below `.size()`."
+      "body": "A vector with three elements has **indexes** zero, one, and two. **Index** three equals the size and is already past the end. Keep an index below `.size()`."
     },
     {
       "kind": "check",
-      "prompt": "Which is the last valid index for size three?",
+      "prompt": "Which is the last valid **index** for size three?",
       "code": "",
       "choices": [
         "2",
@@ -63,7 +134,20 @@
     },
     {
       "kind": "check",
-      "prompt": "Which operation appends a value?",
+      "prompt": "What does `std::vector<long long>` mean?",
+      "code": "",
+      "choices": [
+        "A vector that stores larger whole numbers.",
+        "A vector that stores text.",
+        "A vector that cannot be looped over.",
+        "A vector that starts at index one."
+      ],
+      "answer_index": 0,
+      "why": "The part inside angle brackets tells the element type. `long long` is a larger whole-number type."
+    },
+    {
+      "kind": "check",
+      "prompt": "Which operation appends a **value**?",
       "code": "",
       "choices": [
         "values.push_back(9);",
@@ -81,9 +165,92 @@
         "Include vector.",
         "Begin at zero.",
         "Stay below size.",
+        "Read the type inside angle brackets.",
         "Choose checked access when useful."
       ]
     }
   ],
-  "_beginner_expanded": true
+  "_beginner_expanded": true,
+  "learn_cards": {
+    "lists-lesson-check-1": {
+      "title": "Length is one past the last index",
+      "body": "Ordered collections start at index 0, so a collection's length is not a valid final index.",
+      "example": "last_index = len(items) - 1",
+      "notice": "A three-item collection has indexes 0, 1, and 2.",
+      "mistake": "Do not ask for index equal to the length unless you expect an out-of-range failure.",
+      "section_id": "check"
+    },
+    "lists-lesson-check-2": {
+      "title": "Changing a list during a loop can skip items",
+      "body": "When removal shifts items left, the loop can move past an item that still needs to be checked.",
+      "example": "kept = []\nfor item in items:\n    if keep(item): kept.append(item)",
+      "notice": "Building a new result is often clearer than removing from the list being walked.",
+      "mistake": "Do not assume the loop rechecks the position after an item slides into it.",
+      "section_id": "check"
+    },
+    "lists-summary-01": {
+      "title": "Lists and arrays keep order",
+      "body": "A list or array stores multiple values under one name and preserves their positions.",
+      "example": "scores[0]",
+      "notice": "Position matters. The same values in a different order may mean a different result.",
+      "mistake": "Do not choose a list when named lookup or uniqueness is the real problem.",
+      "section_id": "check"
+    },
+    "lists-supplement-01": {
+      "title": "Removal changes later positions",
+      "body": "After an item is removed, every item after it moves to a new index. Any loop using positions must account for that shift.",
+      "example": "items = [1, 2, 2, 3]",
+      "notice": "The collection is not the same size after removal.",
+      "mistake": "Do not combine removal and forward indexing without thinking through the shift.",
+      "section_id": "check"
+    },
+    "lists-authored-01": {
+      "title": "Count positions from zero",
+      "body": "For a collection with four items, the positions are 0, 1, 2, and 3.",
+      "example": "items[0]\nitems[3]",
+      "notice": "The length tells you how many items exist, not where the last one lives.",
+      "mistake": "Do not use index 4 for a four-item collection.",
+      "section_id": "check"
+    },
+    "lists-authored-02": {
+      "title": "Remove by value or by position",
+      "body": "Some operations remove a matching value, and others remove the item at a position. Decide which one the problem needs.",
+      "example": "remove value\npop index",
+      "notice": "The same number can be a value in the collection or an index into the collection.",
+      "mistake": "Do not call an index-removal operation when the assignment asks for a matching value.",
+      "section_id": "check"
+    },
+    "lists-authored-03": {
+      "title": "Debug missing neighbors first",
+      "body": "If neighboring items disappear or survive unexpectedly, check for an off-by-one boundary or a collection changed during the loop.",
+      "example": "for item in items:",
+      "notice": "Skipped neighbors are a strong clue that the loop and mutation are interfering.",
+      "mistake": "Do not rewrite the whole solution before checking the loop boundary and mutation point.",
+      "section_id": "check"
+    },
+    "lists-authored-04": {
+      "title": "Read the last item intentionally",
+      "body": "Use the language's last-item pattern for a nonempty collection, and check emptiness when the collection might have no items.",
+      "example": "items[len(items) - 1]",
+      "notice": "The safe formula depends on the collection having at least one item.",
+      "mistake": "Do not read a final item from an empty collection.",
+      "section_id": "check"
+    },
+    "lists-authored-05": {
+      "title": "Loop over values when indexes do not matter",
+      "body": "If the loop only needs each item, a value loop avoids index math and boundary mistakes.",
+      "example": "for item in items:",
+      "notice": "Use indexes when position matters; otherwise keep the loop simpler.",
+      "mistake": "Do not create index variables just because every loop you have seen used one.",
+      "section_id": "check"
+    },
+    "lists-authored-06": {
+      "title": "Filter by building a new collection",
+      "body": "When keeping some items and dropping others, a new result collection is often safer than removing while looping.",
+      "example": "kept.append(item)",
+      "notice": "The original collection can stay stable while the result is built.",
+      "mistake": "Do not mutate the same collection the loop is using for its next step.",
+      "section_id": "check"
+    }
+  }
 }

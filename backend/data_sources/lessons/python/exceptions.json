@@ -7,12 +7,12 @@
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "Put an operation that may fail inside `try`, catch a specific exception with `except`, and place cleanup in `finally` when both outcomes need it. Avoid a bare `except`, because it can hide mistakes unrelated to the expected problem.",
+  "refresher": "Put an operation that may fail inside `try`, catch a specific **exception** with `except`, and place cleanup in `finally` when both outcomes need it. Avoid a bare `except`, because it can hide mistakes unrelated to the expected problem.",
   "refresher_code": "try:\n    credits = int(raw)\nexcept ValueError:\n    print(\"Enter a whole number\")",
   "blocks": [
     {
       "kind": "text",
-      "body": "An exception is Python reporting that it cannot finish an operation. Some exceptions come from expected input, such as letters where a number is required. Others expose a coding mistake. Good handling separates those cases."
+      "body": "An **exception** is Python reporting that it cannot finish an operation. Some exceptions come from expected **input**, such as letters where a number is required. Others expose a coding mistake. Good handling separates those cases."
     },
     {
       "kind": "code",
@@ -22,11 +22,11 @@
     },
     {
       "kind": "text",
-      "body": "When a statement raises, Python skips the rest of the try block and searches for a matching except clause. Code after the whole structure continues unless the handler raises another exception or exits."
+      "body": "When a statement raises, Python skips the rest of the try block and searches for a matching except clause. Code after the whole structure continues unless the handler raises another **exception** or exits."
     },
     {
       "kind": "compare",
-      "caption": "A broad handler can make an unrelated NameError look like bad input. Catching ValueError keeps other bugs honest and visible.",
+      "caption": "A broad handler can make an unrelated NameError look like bad **input**. Catching ValueError keeps other bugs honest and visible.",
       "wrong_label": "Too broad",
       "wrong": "try:\n    total = int(raw) + missing\nexcept Exception:\n    print(\"Bad input\")",
       "right_label": "Specific",
@@ -36,11 +36,11 @@
       "kind": "callout",
       "tone": "mistake",
       "title": "Do not silence evidence",
-      "body": "An empty `except` lets the program continue without completing its work or explaining why. Handle the expected case, log useful context, or allow the exception to reach a layer that can respond."
+      "body": "An empty `except` lets the program continue without completing its work or explaining why. Handle the expected case, log useful context, or allow the **exception** to reach a layer that can respond."
     },
     {
       "kind": "check",
-      "prompt": "Which exception does `int(\"3.5\")` raise?",
+      "prompt": "Which **exception** does `int(\"3.5\")` raise?",
       "code": "int(\"3.5\")",
       "choices": [
         "ValueError",
@@ -49,15 +49,15 @@
         "FileNotFoundError"
       ],
       "answer_index": 0,
-      "why": "The argument is a string, which is an accepted input type, but its contents do not represent a whole integer. That makes the value invalid."
+      "why": "The **argument** is a **string**, which is an accepted input type, but its contents do not represent a whole **integer**. That makes the value invalid."
     },
     {
       "kind": "text",
-      "body": "An `else` block runs only when try succeeds. A `finally` block runs after success or failure, so it belongs to cleanup that must happen on either path. Context managers often handle file cleanup more neatly."
+      "body": "An `else` block runs only when try succeeds. A `finally` block runs after success or failure, so it belongs to cleanup that must happen on either path. Context managers often handle **file** cleanup more neatly."
     },
     {
       "kind": "check",
-      "prompt": "Which block runs after try whether an exception occurred or not?",
+      "prompt": "Which block runs after try whether an **exception** occurred or not?",
       "code": "",
       "choices": [
         "finally",
@@ -73,11 +73,103 @@
       "title": "Exception checklist",
       "items": [
         "Protect the smallest operation that can fail.",
-        "Catch the most specific useful exception.",
+        "Catch the most specific useful **exception**.",
         "Give the caller or user a recovery path.",
         "Keep unexpected programming errors visible.",
         "Use `finally` only for cleanup shared by both outcomes."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "python-exceptions-check-1": {
+      "title": "Choose the matching exception handling shape rule",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "examples",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests which exception does int(\"3.5\") raise? Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "python-exceptions-check-2": {
+      "title": "Choose the matching exception handling shape rule",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "check",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests which block runs after try whether an exception occurred or... Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "python-exceptions-output-01": {
+      "title": "Trace exception handling shape output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "python-exceptions-supplement-01": {
+      "title": "Catch the expected conversion failure",
+      "notice": "Invalid number text is a ValueError in Python, so the handler can stay specific.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "check",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests why catch valueerror here rather than the broad exception? Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "python-exceptions-authored-01": {
+      "title": "Exception handling shape",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "idea",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests what is risky about writing an empty except block? Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "python-exceptions-authored-02": {
+      "title": "Exception handling shape",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "idea",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests only the int(text) conversion is expected to fail. how shou... Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "python-exceptions-authored-03": {
+      "title": "Choose the matching exception handling shape rule",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "check",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests a menu reads a number with int(choice). which exception sho... Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "python-exceptions-authored-04": {
+      "title": "Exception handling shape",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "check",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests after catching invalid user input, what should the program... Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "python-exceptions-authored-05": {
+      "title": "Explain the exception handling shape reason",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "check",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests why should code avoid catching every possible exception aro... Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "python-exceptions-authored-06": {
+      "title": "Finally always runs",
+      "notice": "finally is for cleanup work that should happen after success or failure.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "check",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests when is a finally block useful? Exception handling should protect expected failures without hiding unrelated bugs."
+    }
+  }
 }

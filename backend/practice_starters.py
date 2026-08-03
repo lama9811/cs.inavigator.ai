@@ -21,12 +21,12 @@ from __future__ import annotations
 import re
 from typing import Any
 
-# ── Canonical argument spec (source of truth for ALL languages) ──────────────
+# Canonical argument spec (source of truth for ALL languages)
 # fn (camelCase) -> ([(argName, kind), ...], returnKind)
 # kinds: "int" | "double" | "bool" | "string" | "intlist" | "strlist" | "grid" | "strgrid"
 # returnKind: "int" | "bool" | "string" | "intlist" | "strlist" | "grid" | "list"
 #
-# Deliberately EXCLUDED — these fall back to the legacy Value/Object[] union path,
+# Deliberately EXCLUDED - these fall back to the legacy Value/Object[] union path,
 # which a clean native signature cannot express (verified by tests/test_native_bridge):
 #   * Polymorphic (tests mix arg types): findIndex, everyOtherItem, nestedListDepthSum
 #   * No dedicated tests: groupAnagrams, cloneGraph, serializeBinaryTree
@@ -42,28 +42,44 @@ PRACTICE_ARG_SPECS: dict[str, tuple[list[tuple[str, str]], str]] = {
     "binarySearchInsertPosition": ([("nums", "intlist"), ("target", "int")], "int"),
     "canVote": ([("age", "int")], "bool"),
     "clampScore": ([("score", "int")], "int"),
+    "campusStopReachable": ([("connections", "strgrid"), ("start", "string"), ("target", "string")], "bool"),
+    "clubMembershipGroups": ([("n", "int"), ("pairs", "grid")], "int"),
     "compressRuns": ([("text", "string")], "string"),
     "countDigits": ([("n", "int")], "int"),
     "countIslands": ([("grid", "grid")], "int"),
+    "countSetBits": ([("n", "int")], "int"),
     "countVowels": ([("text", "string")], "int"),
     "countWords": ([("sentence", "string")], "int"),
     "coursePlanTopologicalOrder": ([("courses", "strlist"), ("prereqs", "strgrid")], "strlist"),
     "coursePrerequisiteChain": ([("pairs", "strgrid"), ("course", "string"), ("prereq", "string")], "bool"),
     "decodeWays": ([("digits", "string")], "int"),
+    "edgePairMatches": ([("words", "strlist")], "int"),
     "editDistance": ([("source", "string"), ("target", "string")], "int"),
     "earliestConnectedTime": ([("n", "int"), ("events", "grid")], "int"),
     "expressionEvaluator": ([("expression", "string")], "int"),
     "firstMissingPositiveSmall": ([("nums", "intlist")], "int"),
+    "firstBadVersion": ([("versions", "intlist")], "int"),
+    "firstScoreAtLeast": ([("scores", "intlist"), ("target", "int")], "int"),
+    "followLinkedListValues": ([("values", "intlist"), ("nextIndexes", "intlist"), ("head", "int")], "intlist"),
     "gradeBucket": ([("score", "int")], "string"),
     "helpDeskQueue": ([("commands", "strlist")], "strlist"),
+    "helpSessionFinishOrder": ([("names", "strlist"), ("tickets", "intlist")], "strlist"),
     "initials": ([("fullName", "string")], "string"),
+    "isRosterSymmetric": ([("names", "strlist")], "bool"),
     "isPalindrome": ([("text", "string")], "bool"),
+    "isPowerOfTwo": ([("n", "int")], "bool"),
     "lastDigit": ([("number", "int")], "int"),
+    "lastScoreAtMost": ([("scores", "intlist"), ("target", "int")], "int"),
     "longestIncreasingSubsequenceLength": ([("nums", "intlist")], "int"),
+    "longestStudyStretchUnderLimit": ([("minutes", "intlist"), ("limit", "int")], "int"),
     "longestUniqueWindow": ([("text", "string")], "int"),
+    "longestSubarraySumK": ([("nums", "intlist"), ("k", "int")], "int"),
     "matrixRowSums": ([("matrix", "grid")], "intlist"),
     "matrixColumnSums": ([("matrix", "grid")], "intlist"),
+    "matrixBorderSum": ([("matrix", "grid")], "int"),
+    "matrixDiagonalSum": ([("matrix", "grid")], "int"),
     "maximalSquare": ([("matrix", "grid")], "int"),
+    "maximumPairXor": ([("nums", "intlist")], "int"),
     "maximumSubarrayWithOneDeletion": ([("nums", "intlist")], "int"),
     "maximumWindowSum": ([("nums", "intlist"), ("k", "int")], "int"),
     "mergeNames": ([("firstNames", "strlist"), ("secondNames", "strlist")], "strlist"),
@@ -71,30 +87,90 @@ PRACTICE_ARG_SPECS: dict[str, tuple[list[tuple[str, str]], str]] = {
     "mergeSortedLists": ([("left", "intlist"), ("right", "intlist")], "intlist"),
     "minStackOperations": ([("commands", "strlist")], "intlist"),
     "minimumMeetingRooms": ([("intervals", "grid")], "int"),
+    "minimumStudyWindow": ([("minutes", "intlist"), ("target", "int")], "int"),
+    "minStudyPlanCost": ([("costs", "intlist")], "int"),
     "normalizeEmailList": ([("emails", "strlist")], "strlist"),
     "pairSumSorted": ([("nums", "intlist"), ("target", "int")], "bool"),
+    "pairNamesWithScores": ([("names", "strlist"), ("scores", "intlist")], "strlist"),
+    "parkingTicketTotal": ([("day", "string"), ("hour", "int"), ("minutesParked", "int"), ("hasPermit", "bool")], "int"),
     "prefixSearch": ([("words", "strlist"), ("prefix", "string")], "strlist"),
+    "prefixMatchCount": ([("words", "strlist"), ("prefix", "string")], "int"),
+    "plantWateringMessage": ([("moisture", "int"), ("isSunny", "bool")], "string"),
     "rangeSumQueries": ([("nums", "intlist"), ("queries", "grid")], "intlist"),
+    "redundantFriendshipEdge": ([("n", "int"), ("pairs", "grid")], "intlist"),
     "removeDuplicatesKeepOrder": ([("nums", "intlist")], "intlist"),
     "recursiveDigitSum": ([("n", "int")], "int"),
+    "recursiveFactorialSmall": ([("n", "int")], "int"),
+    "recursiveListCount": ([("nums", "intlist")], "int"),
+    "recursivePower": ([("base", "int"), ("exponent", "int")], "int"),
+    "recursiveReverseText": ([("text", "string")], "string"),
+    "reverseOnlyLetters": ([("text", "string")], "string"),
     "reverseWords": ([("sentence", "string")], "string"),
     "rotateListRight": ([("items", "intlist"), ("k", "int")], "intlist"),
     "runningTotal": ([("nums", "intlist")], "intlist"),
+    "runningMedianScores": ([("scores", "intlist")], "intlist"),
     "shortestPathInCampusGrid": ([("grid", "strgrid")], "int"),
     "subarraySumEqualsK": ([("nums", "intlist"), ("k", "int")], "int"),
     "sumEvenNumbers": ([("nums", "intlist")], "int"),
+    "swapPairOrder": ([("pairItems", "strlist")], "strlist"),
     "temperatureAboveThreshold": ([("readings", "intlist"), ("threshold", "int")], "int"),
+    "temperatureComfortCount": ([("readings", "intlist"), ("low", "int"), ("high", "int")], "int"),
+    "threeDayStudyTotals": ([("minutes", "intlist")], "intlist"),
     "topKScores": ([("scores", "intlist"), ("k", "int")], "intlist"),
     "topKFrequent": ([("items", "intlist"), ("k", "int")], "intlist"),
+    "topPriorityAssignments": ([("names", "strlist"), ("priorities", "intlist"), ("k", "int")], "strlist"),
     "treeLevelSums": ([("tree", "intlist")], "intlist"),
+    "treeRightSideView": ([("tree", "intlist")], "intlist"),
     "triePrefixCounts": ([("commands", "strlist")], "intlist"),
     "twoSumIndexes": ([("nums", "intlist"), ("target", "int")], "intlist"),
     "unionFindComponents": ([("n", "int"), ("pairs", "grid")], "int"),
     "uniqueCount": ([("nums", "intlist")], "int"),
     "validCourseCodeShape": ([("code", "string")], "bool"),
     "validStudySchedule": ([("intervals", "grid")], "bool"),
+    "weeklyPlantCareDays": ([("moistureReadings", "intlist"), ("threshold", "int")], "strlist"),
     "wordLadderSteps": ([("start", "string"), ("end", "string"), ("dictionary", "strlist")], "int"),
     "anyWordHasPrefix": ([("words", "strlist"), ("prefix", "string")], "bool"),
+    "groceryPriceLookup": ([("items", "strlist"), ("prices", "intlist"), ("target", "string")], "int"),
+    "courseCreditTotal": ([("courses", "strlist"), ("credits", "intlist"), ("selectedCourses", "strlist")], "int"),
+    "countShortStudyBlocks": ([("minutes", "intlist"), ("limit", "int")], "int"),
+    "closestPairSumSorted": ([("nums", "intlist"), ("target", "int")], "intlist"),
+    "diningLineAfterCommands": ([("commands", "strlist")], "strlist"),
+    "favoriteCourseCounts": ([("favorites", "strlist"), ("targets", "strlist")], "intlist"),
+    "firstOneIndex": ([("flags", "intlist")], "int"),
+    "firstPassingScoreValue": ([("scores", "intlist"), ("passingScore", "int")], "int"),
+    "uniqueParkingZones": ([("zones", "strlist")], "int"),
+    "sharedStudyTopics": ([("firstTopics", "strlist"), ("secondTopics", "strlist")], "strlist"),
+    "lateAssignmentPenalty": ([("score", "int"), ("daysLate", "int")], "int"),
+    "linkedListHasCycle": ([("nextIndexes", "intlist"), ("head", "int")], "bool"),
+    "linkedListMiddleValue": ([("values", "intlist"), ("nextIndexes", "intlist"), ("head", "int")], "int"),
+    "lowestCommonAncestorValue": ([("tree", "intlist"), ("a", "int"), ("b", "int")], "int"),
+    "linkedListLength": ([("nextIndexes", "intlist"), ("head", "int")], "int"),
+    "linkedListMergeIndex": ([("nextIndexes", "intlist"), ("headA", "int"), ("headB", "int")], "int"),
+    "maxPlateStackHeight": ([("commands", "strlist")], "int"),
+    "recentQueueCounts": ([("times", "intlist"), ("window", "int")], "intlist"),
+    "reverseLinkedListValues": ([("values", "intlist"), ("nextIndexes", "intlist"), ("head", "int")], "intlist"),
+    "serveFirstStudents": ([("names", "strlist"), ("serveCount", "int")], "strlist"),
+    "queueFrontAfterServes": ([("names", "strlist"), ("serveCount", "int")], "string"),
+    "stackTopAfterPlates": ([("commands", "strlist")], "string"),
+    "treeContainsValue": ([("tree", "intlist"), ("target", "int")], "bool"),
+    "treeHeightLevels": ([("tree", "intlist")], "int"),
+    "treeLeafCount": ([("tree", "intlist")], "int"),
+    "treePathSumCount": ([("tree", "intlist"), ("target", "int")], "int"),
+    "treeNodeCount": ([("tree", "intlist")], "int"),
+    "dailyTemperatureWaits": ([("temperatures", "intlist")], "intlist"),
+    "differentBitCount": ([("a", "int"), ("b", "int")], "int"),
+    "countdownList": ([("n", "int")], "intlist"),
+    "countOverlappingIntervals": ([("intervals", "grid"), ("time", "int")], "int"),
+    "prefixBalanceIndex": ([("nums", "intlist")], "int"),
+    "firstLastPair": ([("items", "strlist")], "strlist"),
+    "gradePointsNeeded": ([("currentPoints", "int"), ("targetPoints", "int")], "int"),
+    "longestCommonPrefix": ([("words", "strlist")], "string"),
+    "lowestPriorityAssignment": ([("names", "strlist"), ("priorities", "intlist")], "string"),
+    "roundUpLabGroups": ([("students", "int"), ("groupSize", "int")], "int"),
+    "sameClubGroup": ([("n", "int"), ("pairs", "grid"), ("a", "int"), ("b", "int")], "bool"),
+    "studentScorePair": ([("names", "strlist"), ("scores", "intlist"), ("index", "int")], "string"),
+    "studyPlanWays": ([("days", "int")], "int"),
+    "totalBusyMinutes": ([("intervals", "grid")], "int"),
 }
 
 
@@ -117,7 +193,7 @@ def _spec_for(function_name: str) -> tuple[list[tuple[str, str]], str] | None:
     return None
 
 
-# ── Per-language type/idiom tables ───────────────────────────────────────────
+# Per-language type/idiom tables
 _PY_TYPES = {
     "int": "int", "double": "float", "bool": "bool", "string": "str",
     "intlist": "list[int]", "strlist": "list[str]", "grid": "list[list[int]]",
@@ -196,6 +272,18 @@ def _build_java(function_name: str, spec: tuple[list[tuple[str, str]], str]) -> 
 
 # C++: the student writes a clean, native-typed function (string/int/vector),
 # like a normal file. A hidden harness bridge unpacks the inputs and calls it.
+_CPP_STUDENT_PARAM_TYPE = {
+    "int": "int", "double": "double", "bool": "bool", "string": "const std::string&",
+    "intlist": "const std::vector<int>&", "strlist": "const std::vector<std::string>&",
+    "grid": "const std::vector<std::vector<int>>&",
+    "strgrid": "const std::vector<std::vector<std::string>>&",
+}
+_CPP_STUDENT_RET_TYPE = {
+    "int": "int", "bool": "bool", "string": "std::string",
+    "intlist": "std::vector<int>", "strlist": "std::vector<std::string>",
+    "grid": "std::vector<std::vector<int>>",
+    "list": "std::vector<int>",
+}
 _CPP_DEFAULT_RETURN = {
     "int": "return 0;", "bool": "return false;", "string": 'return "";',
     "intlist": "return {};", "strlist": "return {};", "grid": "return {};",
@@ -203,13 +291,25 @@ _CPP_DEFAULT_RETURN = {
 }
 
 
+def cpp_student_signature(function_name: str, spec) -> str:
+    """Beginner-facing C++ signature used in the visible starter code.
+
+    The hidden bridge still accepts the wider long long contract for grading, but
+    the starter should match what students usually learn first: int plus const
+    references for vector/string inputs.
+    """
+    args, ret = spec
+    params = ", ".join(f"{_CPP_STUDENT_PARAM_TYPE.get(k, 'Value')} {n}" for n, k in args)
+    return f"{_CPP_STUDENT_RET_TYPE.get(ret, 'Value')} {function_name}({params})"
+
+
 def _build_cpp(function_name: str, spec: tuple[list[tuple[str, str]], str]) -> str:
     _, ret = spec
     default_return = _CPP_DEFAULT_RETURN.get(ret, "return {};")
     return (
-        "#include <bits/stdc++.h>\n"
-        "using namespace std;\n\n"
-        f"{cpp_native_signature(function_name, spec)} {{\n"
+        "#include <string>\n"
+        "#include <vector>\n\n"
+        f"{cpp_student_signature(function_name, spec)} {{\n"
         "    // Write your solution here.\n"
         f"    {default_return}\n"
         "}"
@@ -242,7 +342,7 @@ def get_arg_spec(function_name: str) -> tuple[list[tuple[str, str]], str] | None
     return _spec_for(function_name)
 
 
-# ── C++ native bridge ────────────────────────────────────────────────────────
+# C++ native bridge
 # Lets the STUDENT write a clean native-typed function (e.g.
 # `int editDistance(string source, string target)`) while the harness keeps its
 # Value union. The bridge unpacks each Value arg into a native local, calls the
@@ -290,8 +390,13 @@ def cpp_native_signature(function_name: str, spec) -> str:
 
 
 def cpp_native_bridge(function_name: str, spec) -> str:
-    """Helper conversions + the forward decl + a `__call(args)` bridge returning a
-    Value, so the existing runTest harness can stay unchanged."""
+    """Helper conversions + a `__call(args)` bridge returning a Value.
+
+    The student code is placed before this bridge in the generated harness. That
+    lets beginner-facing `int` / `vector<int>` solutions define their function
+    first, then an optional compatibility wrapper can add the wider long long
+    signature before this bridge calls it.
+    """
     args, ret = spec
     unpacks = ", ".join(_cpp_unpack_expr(k, f"args[{i}]") for i, (_, k) in enumerate(args))
     # Wrap the native return value back into a Value the harness can compare.
@@ -327,9 +432,6 @@ static std::vector<std::vector<std::string>> __toStrGrid(const Value& v) {{
     return r;
 }}
 
-// Student's native-typed function:
-{cpp_native_signature(function_name, spec)};
-
 // Bridge the harness calls (unpacks Value args -> native, wraps result -> Value):
 static Value __call_{function_name}(std::vector<Value> args) {{
     auto __r = {function_name}({unpacks});
@@ -337,7 +439,7 @@ static Value __call_{function_name}(std::vector<Value> args) {{
 }}"""
 
 
-# ── Java native bridge ───────────────────────────────────────────────────────
+# Java native bridge
 _JAVA_NATIVE_TYPE = {
     "int": "int", "double": "double", "bool": "boolean", "string": "String",
     "intlist": "int[]", "strlist": "String[]", "grid": "int[][]",

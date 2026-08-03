@@ -6,8 +6,9 @@
 import { FaFire, FaCheckCircle, FaPenFancy, FaChartLine } from "react-icons/fa";
 
 export default function StatTiles({ progressSummary }) {
+  const streakDays = Number(progressSummary.displayStreak) || 0;
   const tiles = [
-    { key: "streak", Icon: FaFire, value: progressSummary.displayStreak, label: "Day streak" },
+    { key: "streak", Icon: FaFire, value: streakDays > 0 ? `${streakDays}-day` : "0", label: streakDays > 0 ? "Streak" : "Day streak" },
     { key: "solved", Icon: FaCheckCircle, value: progressSummary.solvedCount, label: "Solved" },
     { key: "attempted", Icon: FaPenFancy, value: progressSummary.attemptedCount, label: "Attempted" },
     { key: "complete", Icon: FaChartLine, value: `${progressSummary.completionPercent}%`, label: "Problems complete" },

@@ -1,45 +1,34 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FaRegQuestionCircle, FaBookOpen, FaArrowRight } from "react-icons/fa";
-import { readQuizDraftAnswers, writeQuizDraftAnswers } from "./conceptQuizProgress";
+import {
+  FaRegQuestionCircle,
+  FaBookOpen,
+  FaArrowRight,
+  FaCheckCircle,
+  FaTimesCircle,
+} from "react-icons/fa";
+import {
+  clearQuizLastResult,
+  getOrCreateQuizChoiceSeed,
+  readQuizDraftAnswers,
+  readQuizLastResult,
+  resetQuizChoiceSeed,
+  writeQuizDraftAnswers,
+  writeQuizLastResult,
+} from "./conceptQuizProgress";
+import { handleHorizontalRovingKeyDown } from "../keyboardNavigation";
 
 // Sequential concept-quiz runner. Renders one question at a time in a split
 // layout (code/statement left with Question|Learn tabs, answer UI right),
 // tracks answers, and on Submit shows a green/red results screen.
 //
 // Question kinds:
-//   mcq-output / mcq-behavior → pick one of `choices` (grade vs answer_index)
-//   typein                    → type text (grade vs `accepted`, case-sensitive)
-//   parsons                   → drag the shuffled `lines` into the correct order
+//   mcq-output / mcq-behavior -> pick one of `choices` (grade vs answer_index)
+//   typein                    -> type text (grade vs `accepted`, case-sensitive)
+//   parsons                   -> drag the shuffled `lines` into the correct order
 //
 // Grading is done server-side via `onGrade` (the /grade endpoint) so answers
 // aren't trusted from the client. The parent supplies questions, current index
 // (from the URL), and navigation callbacks so the Back button steps through.
-
-// In-progress answers, saved per quiz for the session. The runner unmounts whenever the
-// student leaves (to read a lesson, to look at Code), and without this every answer they
-// had given was destroyed — a half-finished quiz simply could not be resumed.
-//
-// sessionStorage on purpose: it survives a detour, but an abandoned quiz shouldn't still
-// be sitting there next week. Storage failures are swallowed — a student in private mode
-// loses resume, not the quiz.
-function readAnswers(key) {
-  try {
-    const raw = sessionStorage.getItem(key);
-    const parsed = raw ? JSON.parse(raw) : null;
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-function writeAnswers(key, answers) {
-  try {
-    if (!answers || !Object.keys(answers).length) sessionStorage.removeItem(key);
-    else sessionStorage.setItem(key, JSON.stringify(answers));
-  } catch {
-    // Storage unavailable/full — the quiz still works, it just won't resume.
-  }
-}
 
 // Deterministic shuffle seeded by the question id, so the scrambled Parsons
 // order is stable across re-renders (no Math.random re-scrambling on keypress)
@@ -63,7 +52,17 @@ function seededShuffle(list, seed) {
   return arr.map((item) => item.value);
 }
 
-function ParsonsBoard({ question, value, onChange }) {
+function isMcqQuestion(question) {
+  return question?.kind === "mcq-output" || question?.kind === "mcq-behavior";
+}
+
+function choiceOrderFor(question, seed) {
+  if (!isMcqQuestion(question)) return [];
+  const indexes = question.choices.map((_, index) => index);
+  return seededShuffle(indexes, `${seed}:${question.id}`);
+}
+
+function ParsonsBoard({ question, value, onChange, disabled = false }) {
   // `value` is the student's current ordering (array of line strings).
   const initial = useMemo(
     () => value ?? seededShuffle(question.lines, question.id),
@@ -77,11 +76,14 @@ function ParsonsBoard({ question, value, onChange }) {
   // Keep parent in sync when we first mount / re-seed for a new question.
   useEffect(() => {
     setOrder(initial);
-    onChange(initial);
+    if (!value) {
+      onChange(initial);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [question.id]);
 
   const move = (from, to) => {
+    if (disabled) return;
     if (from === to || from == null || to == null) return;
     const next = order.slice();
     const [moved] = next.splice(from, 1);
@@ -97,37 +99,39 @@ function ParsonsBoard({ question, value, onChange }) {
         {order.map((line, index) => (
           <li
             key={`${line}-${index}`}
-            className="cq-parsons-line"
-            draggable
+            className={`cq-parsons-line ${disabled ? "locked" : ""}`}
+            draggable={!disabled}
             onDragStart={() => {
+              if (disabled) return;
               dragIndex.current = index;
             }}
             onDragOver={(event) => event.preventDefault()}
             onDrop={() => {
+              if (disabled) return;
               move(dragIndex.current, index);
               dragIndex.current = null;
             }}
           >
             <span className="cq-parsons-grip" aria-hidden="true">
-              ⠿
+              drag
             </span>
-            <code>{line || " "}</code>
+            <code>{line || " "}</code>
             <span className="cq-parsons-controls">
               <button
                 type="button"
                 aria-label="Move line up"
-                disabled={index === 0}
+                disabled={disabled || index === 0}
                 onClick={() => move(index, index - 1)}
               >
-                ↑
+                Up
               </button>
               <button
                 type="button"
                 aria-label="Move line down"
-                disabled={index === order.length - 1}
+                disabled={disabled || index === order.length - 1}
                 onClick={() => move(index, index + 1)}
               >
-                ↓
+                Down
               </button>
             </span>
           </li>
@@ -137,7 +141,7 @@ function ParsonsBoard({ question, value, onChange }) {
   );
 }
 
-function AnswerPanel({ question, answer, onAnswer }) {
+function AnswerPanel({ question, answer, onAnswer, choiceOrder = [], locked = false }) {
   if (question.kind === "typein") {
     return (
       <div className="cq-answer cq-answer-typein">
@@ -153,6 +157,7 @@ function AnswerPanel({ question, answer, onAnswer }) {
           spellCheck={false}
           autoComplete="off"
           value={answer?.text ?? ""}
+          disabled={locked}
           placeholder={
             question.typein_mode === "code" ? "Enter one statement" : "Your answer"
           }
@@ -168,45 +173,110 @@ function AnswerPanel({ question, answer, onAnswer }) {
         question={question}
         value={answer?.order}
         onChange={(order) => onAnswer({ order })}
+        disabled={locked}
       />
     );
   }
 
   // MCQ (mcq-output / mcq-behavior)
+  const displayOrder = choiceOrder.length
+    ? choiceOrder
+    : question.choices.map((_, index) => index);
   return (
     <div className="cq-answer cq-answer-mcq">
       <p className="cq-answer-heading">Select one of the following options:</p>
       <div className="cq-choices" role="radiogroup">
-      {question.choices.map((choice, index) => {
-        const selected = answer?.choice_index === index;
-        return (
-          <button
-            type="button"
-            key={index}
-            role="radio"
-            aria-checked={selected}
-            className={`cq-choice ${selected ? "selected" : ""}`}
-            onClick={() => onAnswer({ choice_index: index })}
-          >
-            <span className="cq-choice-marker">
-              {String.fromCharCode(65 + index)}
-            </span>
-            <span className="cq-choice-text">{choice}</span>
-          </button>
-        );
-      })}
+        {displayOrder.map((originalIndex, displayIndex) => {
+          const choice = question.choices[originalIndex];
+          const selected = answer?.choice_index === originalIndex;
+          return (
+            <button
+              type="button"
+              key={originalIndex}
+              role="radio"
+              aria-checked={selected}
+              className={`cq-choice ${selected ? "selected" : ""}`}
+              disabled={locked}
+              onClick={() =>
+                onAnswer({ choice_index: originalIndex, display_index: displayIndex })
+              }
+            >
+              <span className="cq-choice-marker">
+                {String.fromCharCode(65 + displayIndex)}
+              </span>
+              <span className="cq-choice-text">{withChoiceEmphasis(choice)}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
 }
 
+const OPERATOR_TOKEN_RE = /(===|!==|==|!=|>=|<=|\+=|-=|\*=|\/=|%=|\+\+|--|&&|\|\||\/\/|\*\*|\b(?:and|or|not)\b|[+\-*/%=<>!^])/g;
+const OPERATOR_TOKENS = new Set([
+  "===",
+  "!==",
+  "==",
+  "!=",
+  ">=",
+  "<=",
+  "+=",
+  "-=",
+  "*=",
+  "/=",
+  "%=",
+  "++",
+  "--",
+  "&&",
+  "||",
+  "//",
+  "**",
+  "+",
+  "-",
+  "*",
+  "/",
+  "%",
+  "=",
+  "<",
+  ">",
+  "!",
+  "^",
+  "and",
+  "or",
+  "not",
+]);
+
+// Options should read like answer choices, not little code dumps. The quiz data
+// uses backticks to mark snippets, but bolding the whole snippet can give away the
+// answer. Strip the marks and emphasize only the operator symbols inside.
+function withChoiceEmphasis(text) {
+  return String(text || "").split(/(`[^`]+`)/g).map((part, index) => {
+    if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
+      return part.slice(1, -1).split(OPERATOR_TOKEN_RE).map((piece, pieceIndex) =>
+        OPERATOR_TOKENS.has(piece.toLowerCase()) ? (
+          <code
+            className="cq-choice-emphasis"
+            key={`choice-emphasis-${index}-${pieceIndex}`}
+          >
+            {piece}
+          </code>
+        ) : (
+          piece
+        )
+      );
+    }
+    return part;
+  });
+}
+
 // The refresher, shown beside the question the student is answering.
 //
-// This is deliberately NOT the whole lesson — mid-question, a student needs a reminder,
+// This is deliberately NOT the whole lesson; mid-question, a student needs a reminder,
 // not a chapter. It comes from the SAME file as the full lesson (see backend/lessons.py),
 // so the two can never drift apart and tell them different things. If a reminder isn't
 // enough, "Read the full lesson" takes them to Learn on this exact topic.
-function LearnTab({ apiBase, language, category, categoryLabel, onOpenLesson }) {
+function LearnTab({ apiBase, language, category, categoryLabel, questionId, onOpenLesson }) {
   const [refresher, setRefresher] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -214,13 +284,14 @@ function LearnTab({ apiBase, language, category, categoryLabel, onOpenLesson }) 
     let alive = true;
     setLoading(true);
     setRefresher(null);
-    fetch(`${apiBase}/api/coding/learn/${language}/${category}/refresher`)
+    const query = questionId ? `?question_id=${encodeURIComponent(questionId)}` : "";
+    fetch(`${apiBase}/api/coding/learn/${language}/${category}/refresher${query}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (alive) setRefresher(data?.refresher || null);
       })
       .catch(() => {
-        // A missing refresher is not an error the student needs to see — the Question
+        // A missing refresher is not an error the student needs to see; the Question
         // tab still works. Fall through to the "not written yet" copy below.
         if (alive) setRefresher(null);
       })
@@ -230,9 +301,9 @@ function LearnTab({ apiBase, language, category, categoryLabel, onOpenLesson }) 
     return () => {
       alive = false;
     };
-  }, [apiBase, language, category]);
+  }, [apiBase, language, category, questionId]);
 
-  if (loading) return <div className="cq-learn-panel"><p>Loading…</p></div>;
+  if (loading) return <div className="cq-learn-panel"><p>Loading...</p></div>;
 
   if (!refresher) {
     return (
@@ -241,7 +312,7 @@ function LearnTab({ apiBase, language, category, categoryLabel, onOpenLesson }) 
         <h4>Learn: {categoryLabel}</h4>
         <p>
           The lesson for {categoryLabel.toLowerCase()} is still being written. Use the
-          Question tab — and the floating Coding Tutor is always there if you get stuck.
+          Question tab, and the floating Coding Tutor is always there if you get stuck.
         </p>
       </div>
     );
@@ -251,6 +322,16 @@ function LearnTab({ apiBase, language, category, categoryLabel, onOpenLesson }) 
     <div className="cq-learn-panel">
       <h4>{refresher.title}</h4>
       <p className="cq-learn-refresher">{withInlineCode(refresher.refresher)}</p>
+      {refresher.notice ? (
+        <p className="cq-learn-refresher">
+          <strong>What to notice:</strong> {withInlineCode(refresher.notice)}
+        </p>
+      ) : null}
+      {refresher.mistake ? (
+        <p className="cq-learn-refresher">
+          <strong>Common mistake:</strong> {withInlineCode(refresher.mistake)}
+        </p>
+      ) : null}
       {refresher.refresher_code ? (
         <pre className="cq-learn-code">
           <code>{refresher.refresher_code}</code>
@@ -269,17 +350,22 @@ function LearnTab({ apiBase, language, category, categoryLabel, onOpenLesson }) 
   );
 }
 
-// `inline code` → <code>. Not a markdown parser: refresher text is plain sentences we
+// `inline code` becomes <code>. Not a markdown parser: refresher text is plain sentences we
 // author ourselves, so pulling in a renderer would mean sanitizing HTML we already control.
 function withInlineCode(text) {
-  const parts = String(text || "").split(/(`[^`]+`)/g);
-  return parts.map((part, i) =>
-    part.startsWith("`") && part.endsWith("`") && part.length > 2 ? (
-      <code key={i}>{part.slice(1, -1)}</code>
-    ) : (
-      part
-    )
-  );
+  const codeParts = String(text || "").split(/(`[^`]+`)/g);
+  return codeParts.flatMap((part, i) => {
+    if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
+      return [<code key={`code-${i}`}>{part.slice(1, -1)}</code>];
+    }
+    return part.split(/(\*\*[^*]+\*\*)/g).map((piece, j) =>
+      piece.startsWith("**") && piece.endsWith("**") && piece.length > 4 ? (
+        <strong key={`strong-${i}-${j}`}>{piece.slice(2, -2)}</strong>
+      ) : (
+        piece
+      )
+    );
+  });
 }
 
 function splitExplanation(text) {
@@ -292,6 +378,216 @@ function splitExplanation(text) {
     detail: sentences.slice(2).join(" "),
   };
 }
+
+function formatAnswer(value) {
+  const clean = (text) => String(text)
+    .replace(/\u00e2\u20ac\u201d/g, "-")
+    .replace(/\u00e2\u20ac\u201c/g, "-")
+    .replace(/\u00e2\u20ac\u00a6/g, "...")
+    .replace(/\u00e2\u20ac\u02dc|\u00e2\u20ac\u2122/g, "'")
+    .replace(/\u00e2\u20ac\u0153|\u00e2\u20ac\ufffd/g, "\"")
+    .replace(/\u00c2\u00b7/g, " - ")
+    .replace(/\u00c2\u00a0/g, " ");
+  if (Array.isArray(value)) return value.map(clean).join("\n");
+  if (value == null || value === "") return "No answer";
+  return clean(value);
+}
+
+function isAnswerComplete(answer) {
+  return (
+    answer != null &&
+    (answer.choice_index != null ||
+      (answer.text != null && answer.text.trim() !== "") ||
+      (answer.order != null && answer.order.length > 0))
+  );
+}
+
+function firstParsonsMismatch(studentLines, expectedLines) {
+  const max = Math.max(studentLines.length, expectedLines.length);
+  for (let index = 0; index < max; index += 1) {
+    if (studentLines[index] !== expectedLines[index]) return index;
+  }
+  return -1;
+}
+
+function gradeAnswerLocally(question, answer) {
+  if (!question || !answer) {
+    return {
+      correct: false,
+      studentAnswer: null,
+      correctAnswer: null,
+    };
+  }
+
+  if (question.kind === "mcq-output" || question.kind === "mcq-behavior") {
+    const selected = answer.choice_index;
+    const correctIndex = question.answer_index;
+    return {
+      correct: selected === correctIndex,
+      studentAnswer:
+        typeof selected === "number" ? question.choices?.[selected] : null,
+      correctAnswer:
+        typeof correctIndex === "number" ? question.choices?.[correctIndex] : null,
+    };
+  }
+
+  if (question.kind === "typein") {
+    const submitted = String(answer.text || "").trim();
+    const accepted = question.accepted || [];
+    return {
+      correct: accepted.map((item) => String(item).trim()).includes(submitted),
+      studentAnswer: submitted || null,
+      correctAnswer: accepted[0] || null,
+    };
+  }
+
+  if (question.kind === "parsons") {
+    const order = answer.order || [];
+    const expected = question.lines || [];
+    const firstMismatch = firstParsonsMismatch(order, expected);
+    return {
+      correct:
+        order.length === expected.length &&
+        order.every((line, index) => line === expected[index]),
+      studentAnswer: order,
+      correctAnswer: expected,
+      firstMismatch,
+    };
+  }
+
+  return {
+    correct: false,
+    studentAnswer: null,
+    correctAnswer: null,
+  };
+}
+
+function buildImmediateReview(question, result, explanation) {
+  if (result.correct) {
+    return {
+      summary: explanation.summary || "This answer follows the rule being tested.",
+      points: [],
+      nextStep: "",
+    };
+  }
+
+  const points = [];
+  let summary =
+    explanation.summary ||
+    "Your answer does not match the behavior this question is testing yet.";
+
+  if (question.kind === "mcq-output" || question.kind === "mcq-behavior") {
+    points.push(
+      `Your choice points to "${formatAnswer(result.studentAnswer)}", but this question expects "${formatAnswer(result.correctAnswer)}".`
+    );
+    if (question.code) {
+      points.push(
+        "Trace the code in order. Write down each value as it changes, then compare the final value or behavior to the choices."
+      );
+    } else {
+      points.push(
+        "Look for the rule in the prompt that separates the correct choice from the nearby choices."
+      );
+    }
+  } else if (question.kind === "typein") {
+    points.push(
+      `You typed "${formatAnswer(result.studentAnswer)}", but the expected answer is "${formatAnswer(result.correctAnswer)}".`
+    );
+    points.push(
+      "For type-in questions, check the exact value first: spelling, punctuation, capitalization, spacing, and whether quotes are needed."
+    );
+    if (question.typein_mode === "code") {
+      points.push(
+        "If this is code, compare the operator, variable name, and syntax one piece at a time."
+      );
+    }
+  } else if (question.kind === "parsons") {
+    const step = result.firstMismatch >= 0 ? result.firstMismatch + 1 : 1;
+    const studentLine = Array.isArray(result.studentAnswer)
+      ? result.studentAnswer[result.firstMismatch]
+      : null;
+    const expectedLine = Array.isArray(result.correctAnswer)
+      ? result.correctAnswer[result.firstMismatch]
+      : null;
+    points.push(
+      `The first line that looks out of place is step ${step}. You placed "${formatAnswer(studentLine)}", but that spot should be "${formatAnswer(expectedLine)}".`
+    );
+    points.push(
+      "Read the lines like a small recipe: setup first, then the repeated work or decision, then the final return or print."
+    );
+  }
+
+  if (explanation.detail) {
+    points.push(explanation.detail);
+  }
+
+  return {
+    summary,
+    points,
+    nextStep:
+      "Use the Learn tab to review the exact idea, then move on when the rule makes sense.",
+  };
+}
+
+function ImmediateFeedback({ question, answer, onReviewLesson }) {
+  if (!answer?.checked) return null;
+
+  const result = gradeAnswerLocally(question, answer);
+  const explanation = splitExplanation(question.explanation);
+  const review = buildImmediateReview(question, result, explanation);
+  const Icon = result.correct ? FaCheckCircle : FaTimesCircle;
+
+  return (
+    <aside
+      className={`cq-immediate-feedback ${result.correct ? "correct" : "incorrect"}`}
+      aria-live="polite"
+    >
+      <div className="cq-immediate-feedback-head">
+        <Icon aria-hidden="true" />
+        <div>
+          <strong>{result.correct ? "Correct" : "Not quite"}</strong>
+          <span>{result.correct ? "Why it works" : "What went wrong"}</span>
+        </div>
+      </div>
+
+      {!result.correct ? (
+        <div className="cq-immediate-answer-review">
+          <div>
+            <span>Your answer</span>
+            <code>{formatAnswer(result.studentAnswer)}</code>
+          </div>
+          <div>
+            <span>Correct answer</span>
+            <code>{formatAnswer(result.correctAnswer)}</code>
+          </div>
+        </div>
+      ) : null}
+
+      <p>{withChoiceEmphasis(review.summary)}</p>
+
+      {!result.correct && review.points.length ? (
+        <ul className="cq-feedback-points">
+          {review.points.map((point, pointIndex) => (
+            <li key={pointIndex}>{withChoiceEmphasis(point)}</li>
+          ))}
+        </ul>
+      ) : null}
+
+      {!result.correct && review.nextStep ? (
+        <p className="cq-feedback-next">
+          <strong>Next:</strong> {review.nextStep}
+        </p>
+      ) : null}
+
+      {!result.correct && onReviewLesson ? (
+        <button type="button" className="cq-feedback-review" onClick={onReviewLesson}>
+          Review this in Learn
+        </button>
+      ) : null}
+    </aside>
+  );
+}
+
 function ResultsScreen({ grade, questions, onRetry, onBackToCategory }) {
   const byId = useMemo(() => {
     const map = {};
@@ -302,11 +598,7 @@ function ResultsScreen({ grade, questions, onRetry, onBackToCategory }) {
   }, [grade]);
 
   const pct = Math.round((grade.score || 0) * 100);
-  const formatAnswer = (value) => {
-    if (Array.isArray(value)) return value.join("\n");
-    if (value == null || value === "") return "No answer";
-    return String(value);
-  };
+  const missed = Math.max(0, (grade.total || 0) - (grade.correct || 0));
   return (
     <div className="cq-results">
       <div className="cq-results-header">
@@ -317,11 +609,17 @@ function ResultsScreen({ grade, questions, onRetry, onBackToCategory }) {
           </span>
         </div>
         <div className="cq-results-copy">
-          <h3>{pct >= 70 ? "Nice work!" : "Keep going"}</h3>
+          <h3>{missed === 0 ? "Clean sweep!" : pct >= 70 ? "Nice work!" : "Keep going"}</h3>
           <p>
-            You got {grade.correct} of {grade.total} correct. Review the ones you
-            missed below.
+            {missed === 0
+              ? `You got all ${grade.total} correct. Open any row below if you want to review the reasoning.`
+              : `You got ${grade.correct} of ${grade.total} correct. The missed questions are expanded for review.`}
           </p>
+        </div>
+        <div className="cq-results-stats" aria-label="Quiz result summary">
+          <span><strong>{grade.correct}</strong><small>correct</small></span>
+          <span><strong>{missed}</strong><small>missed</small></span>
+          <span><strong>{grade.total}</strong><small>total</small></span>
         </div>
       </div>
 
@@ -357,14 +655,22 @@ function ResultsScreen({ grade, questions, onRetry, onBackToCategory }) {
                 ) : null}
                 {r.explanation ? (() => {
                   const explanation = splitExplanation(r.explanation);
-                  return (
+                  return ok ? (
+                    <details className="cq-result-more cq-result-correct-more">
+                      <summary>Why it works</summary>
+                      <p>{withChoiceEmphasis(explanation.summary)}</p>
+                      {explanation.detail ? (
+                        <p>{withChoiceEmphasis(explanation.detail)}</p>
+                      ) : null}
+                    </details>
+                  ) : (
                     <div className="cq-result-explanation">
                       <strong>{ok ? "Why it works" : "What happened"}</strong>
-                      <p>{explanation.summary}</p>
+                      <p>{withChoiceEmphasis(explanation.summary)}</p>
                       {explanation.detail ? (
                         <details className="cq-result-more">
                           <summary>More detail</summary>
-                          <p>{explanation.detail}</p>
+                          <p>{withChoiceEmphasis(explanation.detail)}</p>
                         </details>
                       ) : null}
                     </div>
@@ -406,7 +712,7 @@ export default function QuizRunner({
   // answersById: { [questionId]: { choice_index? , text?, order? } }
   //
   // Persisted per (language, category) for the SESSION, because this component unmounts
-  // the moment a student leaves the quiz — to check a lesson, to look at Code, to answer
+  // the moment a student leaves the quiz  to check a lesson, to look at Code, to answer
   // the door. Held in plain state, every answer they'd given was silently destroyed, and
   // a half-finished quiz could not be resumed at all.
   //
@@ -415,7 +721,10 @@ export default function QuizRunner({
   const [answersById, setAnswersById] = useState(() =>
     readQuizDraftAnswers(language, category)
   );
-  const [grade, setGrade] = useState(null);
+  const [grade, setGrade] = useState(() => readQuizLastResult(language, category));
+  const [choiceSeed, setChoiceSeed] = useState(() =>
+    getOrCreateQuizChoiceSeed(language, category)
+  );
   const [grading, setGrading] = useState(false);
   const [error, setError] = useState("");
 
@@ -423,7 +732,8 @@ export default function QuizRunner({
   // is reused across categories, so the initial state above only runs once).
   useEffect(() => {
     setAnswersById(readQuizDraftAnswers(language, category));
-    setGrade(null);
+    setGrade(readQuizLastResult(language, category));
+    setChoiceSeed(getOrCreateQuizChoiceSeed(language, category));
     setError("");
   }, [language, category]);
 
@@ -439,23 +749,25 @@ export default function QuizRunner({
   const question = questions[index];
   const total = questions.length;
   const answered = question ? answersById[question.id] : undefined;
-  const isAnswered =
-    answered != null &&
-    (answered.choice_index != null ||
-      (answered.text != null && answered.text.trim() !== "") ||
-      (answered.order != null && answered.order.length > 0));
+  const isAnswered = isAnswerComplete(answered);
+  const isChecked = Boolean(answered?.checked);
+  const choiceOrders = useMemo(() => {
+    const byQuestion = {};
+    questions.forEach((item) => {
+      if (isMcqQuestion(item)) {
+        byQuestion[item.id] = choiceOrderFor(item, choiceSeed);
+      }
+    });
+    return byQuestion;
+  }, [questions, choiceSeed]);
 
   const answeredCount = useMemo(
-    () =>
-      questions.filter((q) => {
-        const a = answersById[q.id];
-        return (
-          a != null &&
-          (a.choice_index != null ||
-            (a.text != null && a.text.trim() !== "") ||
-            (a.order != null && a.order.length > 0))
-        );
-      }).length,
+    () => questions.filter((q) => isAnswerComplete(answersById[q.id])).length,
+    [questions, answersById]
+  );
+
+  const checkedCount = useMemo(
+    () => questions.filter((q) => answersById[q.id]?.checked).length,
     [questions, answersById]
   );
 
@@ -468,6 +780,8 @@ export default function QuizRunner({
         onRetry={() => {
           setAnswersById({});
           setGrade(null);
+          clearQuizLastResult(language, category);
+          setChoiceSeed(resetQuizChoiceSeed(language, category));
           setError("");
           onNavigateIndex(0);
         }}
@@ -479,22 +793,56 @@ export default function QuizRunner({
     return <div className="cq-empty">This category has no questions yet.</div>;
   }
 
+  const isLast = index === total - 1;
+  const allChecked = checkedCount === total;
+
   const setAnswer = (patch) => {
-    setAnswersById((prev) => ({ ...prev, [question.id]: patch }));
+    const shouldCheck =
+      question.kind === "mcq-output" || question.kind === "mcq-behavior";
+    const nextAnswer = {
+      ...patch,
+      checked: shouldCheck,
+    };
+
+    setAnswersById((prev) => ({
+      ...prev,
+      [question.id]: nextAnswer,
+    }));
+
+  };
+
+  const checkAnswer = () => {
+    if (!isAnswered) return;
+    const nextAnswer = {
+      ...(answered || {}),
+      checked: true,
+    };
+    setAnswersById((prev) => ({
+      ...prev,
+      [question.id]: nextAnswer,
+    }));
   };
 
   const submit = async () => {
     setGrading(true);
     setError("");
     try {
-      const answers = questions.map((q) => ({
-        question_id: q.id,
-        ...(answersById[q.id] || {}),
-      }));
+      const answers = questions.map((q) => {
+        const {
+          checked: _checked,
+          display_index: _displayIndex,
+          ...answer
+        } = answersById[q.id] || {};
+        return {
+          question_id: q.id,
+          ...answer,
+        };
+      });
       const result = await onGrade(answers);
       // Persist the graded result (status dots + best score on the landing).
       onSaveResult?.(result);
       writeQuizDraftAnswers(language, category, {});
+      writeQuizLastResult(language, category, result);
       setAnswersById({});
       setGrade(result);
     } catch (err) {
@@ -504,19 +852,18 @@ export default function QuizRunner({
     }
   };
 
-  const isLast = index === total - 1;
-
   return (
     <div className="cq-runner cq-runner-full">
       {/* Top header bar, split to match the columns below: Question/Learn tabs on
           the LEFT half, segmented progress + % on the RIGHT half. */}
       <header className="cq-runner-top">
         <div className="cq-runner-top-left">
-          <div className="cq-tabs" role="tablist">
+          <div className="cq-tabs" role="tablist" aria-label="Concept quiz panels" onKeyDown={handleHorizontalRovingKeyDown}>
             <button
               type="button"
               role="tab"
               aria-selected={tab === "question"}
+              tabIndex={tab === "question" ? 0 : -1}
               className={`cq-tab ${tab === "question" ? "active" : ""}`}
               onClick={() => setTab("question")}
             >
@@ -527,6 +874,7 @@ export default function QuizRunner({
               type="button"
               role="tab"
               aria-selected={tab === "learn"}
+              tabIndex={tab === "learn" ? 0 : -1}
               className={`cq-tab ${tab === "learn" ? "active" : ""}`}
               onClick={() => setTab("learn")}
             >
@@ -541,10 +889,12 @@ export default function QuizRunner({
             <span>
               Question {index + 1} of {total}
             </span>
-            <span>·</span>
+            <span>/</span>
             <span>{answeredCount} answered</span>
+            <span>/</span>
+            <span>{checkedCount} checked</span>
             <span className="cq-progress-pct">
-              {Math.round((answeredCount / total) * 100)}%
+              {Math.round((checkedCount / total) * 100)}%
             </span>
           </div>
           <div
@@ -556,11 +906,7 @@ export default function QuizRunner({
           >
             {questions.map((q, i) => {
               const a = answersById[q.id];
-              const done =
-                a != null &&
-                (a.choice_index != null ||
-                  (a.text != null && a.text.trim() !== "") ||
-                  (a.order != null && a.order.length > 0));
+              const done = Boolean(a?.checked);
               return (
                 <button
                   type="button"
@@ -600,6 +946,7 @@ export default function QuizRunner({
                 language={language}
                 category={category}
                 categoryLabel={categoryLabel}
+                questionId={question.id}
                 onOpenLesson={onOpenLesson}
               />
             )}
@@ -612,6 +959,13 @@ export default function QuizRunner({
               question={question}
               answer={answered}
               onAnswer={setAnswer}
+              choiceOrder={choiceOrders[question.id]}
+              locked={isChecked}
+            />
+            <ImmediateFeedback
+              question={question}
+              answer={answered}
+              onReviewLesson={() => setTab("learn")}
             />
             {error ? <p className="cq-error">{error}</p> : null}
           </div>
@@ -626,14 +980,24 @@ export default function QuizRunner({
             >
               Previous
             </button>
-            {isLast ? (
+            {!isChecked ? (
               <button
                 type="button"
                 className="cq-btn cq-btn-primary"
-                disabled={grading}
-                onClick={submit}
+                disabled={!isAnswered}
+                onClick={checkAnswer}
               >
-                {grading ? "Grading…" : "Submit quiz"}
+                Check answer
+              </button>
+            ) : isLast ? (
+              <button
+                type="button"
+                className="cq-btn cq-btn-primary"
+                disabled={grading || !allChecked}
+                onClick={submit}
+                title={!allChecked ? "Check every question before submitting." : ""}
+              >
+                {grading ? "Grading..." : "Submit quiz"}
               </button>
             ) : (
               <button

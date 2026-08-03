@@ -19,6 +19,102 @@ function formatValue(value) {
   }
 }
 
+function normalizeDiffLines(value = "") {
+  return String(value).replace(/\r\n/g, "\n").replace(/\s+$/g, "").split("\n");
+}
+
+function buildLineDiff(studentCode = "", referenceCode = "") {
+  const student = normalizeDiffLines(studentCode);
+  const reference = normalizeDiffLines(referenceCode);
+  const rows = Array.from({ length: student.length + 1 }, () =>
+    Array(reference.length + 1).fill(0)
+  );
+
+  for (let i = student.length - 1; i >= 0; i -= 1) {
+    for (let j = reference.length - 1; j >= 0; j -= 1) {
+      rows[i][j] = student[i] === reference[j]
+        ? rows[i + 1][j + 1] + 1
+        : Math.max(rows[i + 1][j], rows[i][j + 1]);
+    }
+  }
+
+  const diff = [];
+  let i = 0;
+  let j = 0;
+  while (i < student.length && j < reference.length) {
+    if (student[i] === reference[j]) {
+      diff.push({ type: "same", text: student[i] || " " });
+      i += 1;
+      j += 1;
+    } else if (rows[i + 1][j] >= rows[i][j + 1]) {
+      diff.push({ type: "removed", text: student[i] || " " });
+      i += 1;
+    } else {
+      diff.push({ type: "added", text: reference[j] || " " });
+      j += 1;
+    }
+  }
+  while (i < student.length) {
+    diff.push({ type: "removed", text: student[i] || " " });
+    i += 1;
+  }
+  while (j < reference.length) {
+    diff.push({ type: "added", text: reference[j] || " " });
+    j += 1;
+  }
+  return diff;
+}
+
+function includesAny(text = "", terms = []) {
+  const haystack = String(text).toLowerCase();
+  return terms.some(term => haystack.includes(term));
+}
+
+function buildSolutionInsights(studentCode = "", referenceCode = "", diffLines = []) {
+  const student = String(studentCode || "");
+  const reference = String(referenceCode || "");
+  if (!student.trim() || !reference.trim()) return [];
+
+  const added = diffLines.filter(line => line.type === "added").length;
+  const removed = diffLines.filter(line => line.type === "removed").length;
+  const same = diffLines.filter(line => line.type === "same").length;
+  const insights = [];
+
+  if (added === 0 && removed === 0 && same > 0) {
+    insights.push("Your solution is very close to the reference structure, so focus on naming, clarity, and edge-case confidence.");
+  } else if (added > removed + 2) {
+    insights.push("The reference breaks the idea into more explicit steps. Compare whether those extra steps make state changes easier to follow.");
+  } else if (removed > added + 2) {
+    insights.push("Your passing solution is more compact than the reference. Compact is fine, but make sure each edge case is still easy to explain.");
+  } else {
+    insights.push("Both versions pass the authored tests, but they organize the same idea differently. Use the diff to compare the main decisions, not to copy line for line.");
+  }
+
+  const patterns = [
+    { label: "a stack", terms: ["stack", ".push", "push_back", "append(", ".pop", "pop("] },
+    { label: "a queue/front-of-line state", terms: ["queue", "deque", "shift(", "poll(", "front"] },
+    { label: "a set or map for remembering seen values", terms: ["set(", "hashset", "map<", "hashmap", "dict", "seen"] },
+    { label: "two pointers", terms: ["left", "right", "lo", "hi"] },
+    { label: "a sliding window", terms: ["window", "left", "right", "sum"] },
+    { label: "a recursive base case", terms: ["recursive", "return 1", "return 0", "base case"] },
+    { label: "tree index math", terms: ["2 *", "2*", "left child", "right child"] },
+    { label: "linked-list traversal state", terms: ["nextindexes", "next_indexes", "head", "cur", "current"] },
+  ];
+
+  const difference = patterns.find(pattern =>
+    includesAny(reference, pattern.terms) && !includesAny(student, pattern.terms)
+  );
+  if (difference) {
+    insights.push(`The reference makes ${difference.label} explicit. If your code uses a different shape, check that it is tracking the same information.`);
+  }
+
+  if (/\breturn\b/.test(reference) && !/\breturn\b/.test(student)) {
+    insights.push("The reference returns the final value directly. If your code relies on printing, switch to returning for the grader.");
+  }
+
+  return insights.slice(0, 3);
+}
+
 function TerminalOutputPane({ output, tests, onExplainError }) {
   const capturedOutput = [output.stdout, output.stderr].filter(Boolean).join("\n");
   const hasRunResults = ["passed", "failed", "error"].includes(output.status) && tests.length > 0;
@@ -109,6 +205,10 @@ function SolutionReview({ review }) {
   if (!review?.studentCode || !review?.reference) return null;
 
   const referenceLooksLikeCode = /\n|\b(def|class|function|return)\b|[{};]/.test(review.reference);
+  const diffLines = referenceLooksLikeCode
+    ? buildLineDiff(review.studentCode, review.reference)
+    : [];
+  const insights = buildSolutionInsights(review.studentCode, review.reference, diffLines);
   return (
     <section className="terminal-solution-review">
       <button
@@ -129,6 +229,37 @@ function SolutionReview({ review }) {
             Your code passed the authored tests. The reference is another approach,
             not the only correct answer.
           </p>
+          {insights.length ? (
+            <div className="terminal-solution-insights" aria-label="Tutor explanation of solution differences">
+              <span>Tutor notes</span>
+              <ul>
+                {insights.map((insight, index) => (
+                  <li key={`${index}-${insight}`}>{insight}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {diffLines.length ? (
+            <div className="terminal-solution-diff" aria-label="Line-by-line solution diff">
+              <div className="terminal-solution-diff-head">
+                <span>Diff</span>
+                <small>
+                  <strong>-</strong> your line
+                  <strong>+</strong> reference line
+                </small>
+              </div>
+              <pre>
+                {diffLines.map((line, index) => (
+                  <code key={`${line.type}-${index}`} className={`diff-line ${line.type}`}>
+                    <span aria-hidden="true">
+                      {line.type === "added" ? "+" : line.type === "removed" ? "-" : " "}
+                    </span>
+                    {line.text}
+                  </code>
+                ))}
+              </pre>
+            </div>
+          ) : null}
           <div className="terminal-solution-columns">
             <div>
               <span>Your solution</span>

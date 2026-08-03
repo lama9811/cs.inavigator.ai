@@ -1,33 +1,97 @@
 {
   "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
   "title": "Debug: Part 2",
-  "summary": "Trace coercion, mutation, references, and edge cases.",
+  "summary": "Trace coercion, mutation, **references**, and **edge cases**.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "wrong_answer",
     "timeout"
   ],
-  "refresher": "Deeper bugs can begin before the visible failure. Record both value and type, identify mutations, and test empty, one-item, and boundary inputs.",
+  "refresher": "Deeper bugs can begin before the visible failure. Record both **value** and type, identify mutations, and test empty, one-item, and boundary inputs.",
   "refresher_code": "console.log(value,typeof value);\nconsole.log(array.slice());",
   "blocks": [
     {
       "kind": "text",
-      "body": "Deeper bugs can begin before the visible failure. Record both value and type, identify mutations, and test empty, one-item, and boundary inputs. Trace coercion, mutation, references, and edge cases."
+      "body": "Deeper bugs can begin before the visible failure. Record both **value** and type, identify mutations, and test empty, one-item, and boundary inputs. Trace coercion, mutation, **references**, and **edge cases**."
+    },
+    {
+      "kind": "visual",
+      "title": "Find the first wrong state",
+      "concept": "debugging",
+      "caption": "Compare the expected state with the actual state before the final answer distracts you.",
+      "initial_state": {},
+      "steps": [
+        {
+          "title": "Before the update",
+          "body": "The total is still correct before this loop pass.",
+          "state": {
+            "table": [
+              {
+                "key": "score",
+                "value": "7",
+                "active": true
+              },
+              {
+                "key": "total before",
+                "value": "5"
+              }
+            ],
+            "note": "state still matches the trace"
+          }
+        },
+        {
+          "title": "Wrong update",
+          "body": "The update changes the wrong variable or uses the wrong operation.",
+          "animation": "highlight",
+          "state": {
+            "table": [
+              {
+                "key": "expected total",
+                "value": "12"
+              },
+              {
+                "key": "actual total",
+                "value": "57",
+                "active": true
+              }
+            ],
+            "note": "first wrong state"
+          }
+        },
+        {
+          "title": "Fix the transition",
+          "body": "Once the first bad transition is known, the fix is smaller.",
+          "state": {
+            "table": [
+              {
+                "key": "score",
+                "value": "7"
+              },
+              {
+                "key": "total after",
+                "value": "12",
+                "active": true
+              }
+            ],
+            "note": "total += score"
+          }
+        }
+      ]
     },
     {
       "kind": "text",
-      "body": "Multi-step bugs require finding the first incorrect transition, not only the line where the problem becomes visible. Take small snapshots of values, types, and shared references. When data changes unexpectedly, identify every operation that could mutate the same object."
+      "body": "Multi-step bugs require finding the first incorrect transition, not only the line where the problem becomes visible. Take small snapshots of **values**, types, and shared **references**. When data changes unexpectedly, identify every operation that could mutate the same **object**."
     },
     {
       "kind": "code",
-      "caption": "Spread creates a separate array, so pushing into the copy leaves the original unchanged.",
+      "caption": "Spread creates a separate **array**, so pushing into the copy **leaves** the original unchanged.",
       "code": "const original=[1,2];\nconst copy=[...original];\ncopy.push(3);\nconsole.log(original.length);\nconsole.log(copy.length);",
       "output": "2\n3"
     },
     {
       "kind": "compare",
-      "caption": "Give a planned copy its own array before mutation.",
+      "caption": "Give a planned copy its own **array** before mutation.",
       "wrong_label": "Common mistake",
       "wrong": "const copy = original;\ncopy.push(3);",
       "right_label": "Clearer version",
@@ -35,7 +99,7 @@
     },
     {
       "kind": "text",
-      "body": "The wrong assignment creates a second route to one array. The corrected spread creates a separate outer collection, so the lengths can diverge. If elements are objects, inspect whether those inner objects are still shared before assuming a fully independent copy."
+      "body": "The wrong assignment creates a second route to one **array**. The corrected spread creates a separate outer collection, so the lengths can diverge. If elements are **objects**, inspect whether those inner objects are still shared before assuming a fully independent copy."
     },
     {
       "kind": "callout",
@@ -54,11 +118,11 @@
         "sort drops a value"
       ],
       "answer_index": 0,
-      "why": "Without a comparison function, sort orders string forms and places eleven before two."
+      "why": "Without a comparison **function**, sort orders **string** forms and places eleven before two."
     },
     {
       "kind": "check",
-      "prompt": "What does `const b=a` do for arrays?",
+      "prompt": "What does `const b=a` do for **arrays**?",
       "code": "const a=[1];\nconst b=a;",
       "choices": [
         "copies the reference",
@@ -67,18 +131,84 @@
         "converts to text"
       ],
       "answer_index": 0,
-      "why": "Both variables point to one array, so mutation through either name changes the shared value."
+      "why": "Both **variables** point to one **array**, so mutation through either name changes the shared **value**."
     },
     {
       "kind": "list",
       "title": "Debug: Part 2 checklist",
       "items": [
         "Test smallest inputs.",
-        "Log value and type.",
+        "Log **value** and type.",
         "Mark mutating operations.",
         "Find the first wrong transition."
       ]
     }
   ],
-  "_beginner_expanded": true
+  "_beginner_expanded": true,
+  "learn_cards": {
+    "debug-p2-01": {
+      "title": "Empty input changes the math",
+      "body": "A formula that works for normal data can fail when the collection has no items.",
+      "notice": "Check the divisor or first access before running the normal-case calculation.",
+      "mistake": "Do not divide by a count before checking whether the count is zero.",
+      "section_id": "check",
+      "example": "if count == 0"
+    },
+    "debug-p2-02": {
+      "title": "Reset per-row state inside the outer loop",
+      "body": "State for one row should restart before scanning that row.",
+      "notice": "Ask whether the variable belongs to the whole grid or only the current row.",
+      "mistake": "Do not let a previous row leak into the next row's total.",
+      "section_id": "check",
+      "example": "row_total = 0"
+    },
+    "debug-p2-03": {
+      "title": "Binary search moves toward the possible half",
+      "body": "When the middle value is too small, the target must be to the right in sorted data.",
+      "notice": "Move the lower bound past mid when mid is too small.",
+      "mistake": "Do not move a boundary backward into the half you already ruled out.",
+      "section_id": "check",
+      "example": "low = mid + 1"
+    },
+    "debug-p2-04": {
+      "title": "Removal shifts later items",
+      "body": "Removing the current item moves the next item into the same index.",
+      "notice": "After removal, either recheck the current index, move backward, or build a filtered result.",
+      "mistake": "Do not increment blindly after a removal if adjacent items may also need removal.",
+      "section_id": "check",
+      "example": "remove then recheck"
+    },
+    "debug-p2-05": {
+      "title": "Initial best must come from possible data",
+      "body": "A starting best value that is not in the input can beat every real value by accident.",
+      "notice": "For maximum or minimum, initialize from the first item when possible.",
+      "mistake": "Do not use zero as a default when all real values might be below zero.",
+      "section_id": "check",
+      "example": "best = first value"
+    },
+    "debug-p2-06": {
+      "title": "Second place may need distinctness",
+      "body": "Tracking largest and second largest requires a rule for duplicates.",
+      "notice": "Decide whether equal-to-largest values are allowed before updating second.",
+      "mistake": "Do not let the same value occupy both largest and second when the prompt asks for distinct values.",
+      "section_id": "check",
+      "example": "if n != largest"
+    },
+    "debug-p2-07": {
+      "title": "Do not count the first value twice",
+      "body": "Preloading a running total and then looping over every item can add the first item again.",
+      "notice": "Choose either start at zero and loop all items, or start at first and loop the rest.",
+      "mistake": "Do not combine both patterns unless the prompt needs double counting.",
+      "section_id": "check",
+      "example": "total = 0"
+    },
+    "debug-p2-08": {
+      "title": "Mirror checks need opposite sides",
+      "body": "A palindrome-style comparison pairs the left position with the matching right position.",
+      "notice": "Compute the right index from the length and the left index.",
+      "mistake": "Do not compare neighboring characters when the prompt asks for mirrored characters.",
+      "section_id": "check",
+      "example": "right = length - i - 1"
+    }
+  }
 }

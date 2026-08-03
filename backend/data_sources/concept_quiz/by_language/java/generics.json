@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Generics concept check 1",
+      "title": "Wrapper types in generics",
       "code": null,
-      "prompt": "What does the lesson mean by \"Use reference types in angle brackets\"?",
+      "prompt": "Why does Java use `Integer` instead of `int` inside `List<Integer>`?",
       "choices": [
-        "List<int> scores = new ArrayList<>();",
-        "Write `Integer` instead of `int` and `Double` instead of `double`. Java automatically wraps and unwraps these values in most collection code.",
-        "List scores<Integer> = new ArrayList<>();",
-        "Integer<List> scores = new ArrayList<>();"
+        "Collections use wrapper types like `Integer` and `Double`, not primitives like `int`.",
+        "Use raw collection types and hope casts are correct.",
+        "Put primitive types directly inside generic angle brackets.",
+        "Store mixed unrelated types in one typed collection."
       ],
-      "answer_index": 1,
-      "explanation": "Generics place a type inside angle brackets, such as `List<String>`. The compiler then checks what can enter and leave the collection. That reasoning supports the answer: Write `Integer` instead of `int` and `Double` instead of `double`. Java automatically wraps and unwraps these values in most collection code."
+      "answer_index": 0,
+      "explanation": "Generics require reference types, so primitive values use wrapper types such as `Integer` and `Double`. Autoboxing makes most collection use feel natural, but the type written in angle brackets still has to be the wrapper."
     },
     {
       "id": "java-generics-authored-02",
@@ -96,17 +96,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Generics concept check 2",
+      "title": "Typed collections",
       "code": null,
-      "prompt": "Which choice describes a reliable Generics practice?",
+      "prompt": "Why should a Java collection usually declare its element type?",
       "choices": [
-        "A required class named T",
-        "The number of items in the box",
+        "Use a type parameter when only one concrete type is allowed.",
         "Give every collection an element type.",
-        "A private text value"
+        "Ignore compiler warnings about unchecked operations.",
+        "Cast every value instead of declaring the element type."
       ],
-      "answer_index": 2,
-      "explanation": "Generics place a type inside angle brackets, such as `List<String>`. The compiler then checks what can enter and leave the collection. That reasoning supports the answer: Give every collection an element type."
+      "answer_index": 1,
+      "explanation": "A type such as `List<String>` lets the compiler reject the wrong kind of value before the program runs. Raw collections push those mistakes later, where they show up as casts or runtime errors."
     },
     {
       "id": "java-generics-authored-03",
@@ -114,17 +114,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Generics concept check 3",
+      "title": "Primitive wrapper review",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Generics code?",
+      "prompt": "A student wants a list of whole numbers. Which generic element type should they use?",
       "choices": [
-        "List values = new ArrayList();\nvalues.add(42);\nString name = (String) values.get(0);",
-        "Integer<List> scores = new ArrayList<>();",
-        "A required class named T",
-        "Use wrapper types for primitive values."
+        "Use `Object` everywhere and give up type checking.",
+        "Forget that `Integer` is the wrapper for `int`.",
+        "Use wrapper types for primitive values.",
+        "Make the generic type name carry business meaning."
       ],
-      "answer_index": 3,
-      "explanation": "Generics place a type inside angle brackets, such as `List<String>`. The compiler then checks what can enter and leave the collection. That reasoning supports the answer: Use wrapper types for primitive values."
+      "answer_index": 2,
+      "explanation": "`Integer` is the wrapper type for `int`, so it belongs inside generic angle brackets. The collection can still hold whole-number values, and Java handles much of the wrapping and unwrapping automatically."
     },
     {
       "id": "java-generics-authored-04",
@@ -132,17 +132,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Generics concept check 4",
+      "title": "Avoid raw types",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Generics mistake?",
+      "prompt": "What is the risk of using a raw `ArrayList` instead of `ArrayList<String>`?",
       "choices": [
-        "Avoid raw collection types.",
-        "The number of items in the box",
-        "A private text value",
-        "List values = new ArrayList();\nvalues.add(42);\nString name = (String) values.get(0);"
+        "Return a raw list from a typed method.",
+        "Mix key and value type order in a map.",
+        "Assume generics change runtime values automatically.",
+        "Avoid raw collection types."
       ],
-      "answer_index": 0,
-      "explanation": "Generics place a type inside angle brackets, such as `List<String>`. The compiler then checks what can enter and leave the collection. That reasoning supports the answer: Avoid raw collection types."
+      "answer_index": 3,
+      "explanation": "A raw collection does not tell the compiler what element type is expected. That makes it easier to add the wrong kind of object and discover the problem only when code reads the value back."
     },
     {
       "id": "java-generics-authored-05",
@@ -150,17 +150,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Generics concept check 5",
+      "title": "Diamond operator",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Generics. Which advice is correct?",
+      "prompt": "What does the diamond `<>` help with in a line such as `List<String> names = new ArrayList<>();`?",
       "choices": [
-        "List<int> scores = new ArrayList<>();",
         "Let the diamond `<>` copy the type from the declaration.",
-        "List scores<Integer> = new ArrayList<>();",
-        "The number of items in the box"
+        "Use a generic class when a method parameter is enough.",
+        "Hide type errors until runtime by suppressing warnings.",
+        "Use one collection for values with different roles."
       ],
-      "answer_index": 1,
-      "explanation": "Generics place a type inside angle brackets, such as `List<String>`. The compiler then checks what can enter and leave the collection. That reasoning supports the answer: Let the diamond `<>` copy the type from the declaration."
+      "answer_index": 0,
+      "explanation": "The diamond lets Java infer the constructor's generic type from the declaration on the left. That keeps the type checked without repeating `String` twice in ordinary collection creation."
     },
     {
       "id": "java-generics-authored-06",
@@ -168,17 +168,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Generics concept check 6",
+      "title": "Type parameter purpose",
       "code": null,
-      "prompt": "Which choice shows sound reasoning about Generics?",
+      "prompt": "When does a method or class need a generic type parameter such as `T`?",
       "choices": [
-        "A private text value",
-        "List values = new ArrayList();\nvalues.add(42);\nString name = (String) values.get(0);",
+        "Forget to type both sides of a relationship.",
         "Use a type parameter when one design works for several types.",
-        "List<int> scores = new ArrayList<>();"
+        "Treat `T` as a variable holding data.",
+        "Use generics to avoid naming the actual model."
       ],
-      "answer_index": 2,
-      "explanation": "Generics place a type inside angle brackets, such as `List<String>`. The compiler then checks what can enter and leave the collection. That reasoning supports the answer: Use a type parameter when one design works for several types."
+      "answer_index": 1,
+      "explanation": "A type parameter is useful when one design works for several specific types while preserving type safety. It is not a data variable; it is a placeholder for a type the compiler tracks."
     }
   ]
 }

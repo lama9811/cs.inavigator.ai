@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Error Handling concept check 1",
+      "title": "Small try blocks",
       "code": null,
-      "prompt": "What does the lesson mean by \"Catch narrowly\"?",
+      "prompt": "What is a safer way to shape a JavaScript `try` block?",
       "choices": [
-        "catch only",
-        "Do not wrap a whole application in one broad try block. Keep the protected section close to the operation whose failure you understand, so unrelated programming mistakes are not mislabeled as expected input problems.",
-        "throw",
-        "return"
+        "Keep it close to the operation whose failure the code understands.",
+        "Catch every error and hide the message.",
+        "Wrap code that cannot fail in a broad try block.",
+        "Handle an error where no recovery is possible."
       ],
-      "answer_index": 1,
-      "explanation": "Use `try` around an operation that can fail and `catch` to respond to the resulting Error. Inspect the error, give the user a useful response, and avoid empty catch blocks that hide the cause. That reasoning supports the answer: Do not wrap a whole application in one broad try block. Keep the protected section close to the operation whose failure you understand, so unrelated programming mistakes are not mislabeled as expected input problems."
+      "answer_index": 0,
+      "explanation": "A smaller `try` block makes it clear which operation is expected to fail. Wrapping a whole app can turn programmer mistakes into vague expected-failure messages, which makes the real bug harder to find."
     },
     {
       "id": "javascript-error-handling-authored-02",
@@ -96,17 +96,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Error Handling concept check 2",
+      "title": "Expected failures",
       "code": null,
-      "prompt": "Which choice describes a reliable Error Handling practice?",
+      "prompt": "Which operation deserves protection with error handling?",
       "choices": [
-        "Catch requires a return value",
-        "It retries forever",
+        "Replace a useful error with a vague one.",
         "Protect only operations you expect can fail.",
-        "It converts the error to text"
+        "Continue as if required data loaded successfully.",
+        "Show the same message for every failure."
       ],
-      "answer_index": 2,
-      "explanation": "Use `try` around an operation that can fail and `catch` to respond to the resulting Error. Inspect the error, give the user a useful response, and avoid empty catch blocks that hide the cause. That reasoning supports the answer: Protect only operations you expect can fail."
+      "answer_index": 1,
+      "explanation": "Protect operations that can reasonably fail, such as parsing input, loading data, or calling a service. A `try/catch` should communicate the expected failure path, not cover random code just in case."
     },
     {
       "id": "javascript-error-handling-authored-03",
@@ -114,17 +114,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Error Handling concept check 3",
+      "title": "Reading error details",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Error Handling code?",
+      "prompt": "What should a useful JavaScript error handler inspect?",
       "choices": [
-        "try { riskyWork(); } catch (error) {}",
-        "return",
-        "Catch requires a return value",
-        "Read the Error name and message."
+        "Ignore the error name and message.",
+        "Catch programming mistakes and pretend they are user mistakes.",
+        "Read the Error name and message.",
+        "Put unrelated operations in one protected block."
       ],
-      "answer_index": 3,
-      "explanation": "Use `try` around an operation that can fail and `catch` to respond to the resulting Error. Inspect the error, give the user a useful response, and avoid empty catch blocks that hide the cause. That reasoning supports the answer: Read the Error name and message."
+      "answer_index": 2,
+      "explanation": "The error name and message usually say what kind of failure happened and where to begin debugging. Ignoring those details leads to generic responses that do not help users or developers."
     },
     {
       "id": "javascript-error-handling-authored-04",
@@ -132,17 +132,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Error Handling concept check 4",
+      "title": "Recovery path",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Error Handling mistake?",
+      "prompt": "After catching a failed save or load, what should the UI offer?",
       "choices": [
-        "Give users a specific recovery path.",
-        "It retries forever",
-        "It converts the error to text",
-        "try { riskyWork(); } catch (error) {}"
+        "Retry without changing the failed condition.",
+        "Swallow an error before logging useful context.",
+        "Mix validation errors with network errors.",
+        "Give users a specific recovery path."
       ],
-      "answer_index": 0,
-      "explanation": "Use `try` around an operation that can fail and `catch` to respond to the resulting Error. Inspect the error, give the user a useful response, and avoid empty catch blocks that hide the cause. That reasoning supports the answer: Give users a specific recovery path."
+      "answer_index": 3,
+      "explanation": "A handler should guide the next step: retry, choose another input, show a clear message, or use a safe fallback. Catching the error without a recovery path only hides the failure."
     },
     {
       "id": "javascript-error-handling-authored-05",
@@ -150,17 +150,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Error Handling concept check 5",
+      "title": "Rethrowing errors",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Error Handling. Which advice is correct?",
+      "prompt": "What should a layer do when it catches an error it cannot actually handle?",
       "choices": [
-        "catch only",
         "Rethrow errors the current layer cannot handle.",
-        "throw",
-        "It retries forever"
+        "Throw strings instead of error objects.",
+        "Forget to rethrow when the current layer cannot handle the problem.",
+        "Use a fallback value that breaks later code."
       ],
-      "answer_index": 1,
-      "explanation": "Use `try` around an operation that can fail and `catch` to respond to the resulting Error. Inspect the error, give the user a useful response, and avoid empty catch blocks that hide the cause. That reasoning supports the answer: Rethrow errors the current layer cannot handle."
+      "answer_index": 0,
+      "explanation": "Rethrow the error, possibly with added context, so a higher layer can respond. Returning fake success data or swallowing the error makes later code trust work that did not happen."
     },
     {
       "id": "javascript-error-handling-authored-06",
@@ -168,17 +168,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "javascript",
-      "title": "Error Handling concept check 6",
+      "title": "Expected versus real bugs",
       "code": null,
-      "prompt": "What is the main idea behind Error Handling?",
+      "prompt": "What balance should JavaScript error handling aim for?",
       "choices": [
-        "It converts the error to text",
-        "try { riskyWork(); } catch (error) {}",
+        "Report failure after already using invalid data.",
         "Handle expected failures while keeping real programming mistakes visible.",
-        "catch only"
+        "Hide stack traces during development.",
+        "Let promise rejections go unhandled."
       ],
-      "answer_index": 2,
-      "explanation": "Use `try` around an operation that can fail and `catch` to respond to the resulting Error. Inspect the error, give the user a useful response, and avoid empty catch blocks that hide the cause. That reasoning supports the answer: Handle expected failures while keeping real programming mistakes visible."
+      "answer_index": 1,
+      "explanation": "Good handlers deal with expected failures while keeping programming mistakes visible during development. That way user-facing problems get a path forward, and real bugs still get fixed instead of hidden."
     }
   ]
 }

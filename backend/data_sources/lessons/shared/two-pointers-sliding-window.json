@@ -1,0 +1,202 @@
+{
+  "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
+  "title": "Two Pointers & Sliding Window",
+  "summary": "Use **two pointers** to move through related positions. Use a **sliding window** when a contiguous group grows and shrinks.",
+  "minutes": 18,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "**Two pointers** track two positions, often left and right. A **sliding window** tracks a contiguous range and updates a running value as the range grows or shrinks.",
+  "refresher_code": "left = 0\nfor right in range(len(nums)):\n    update window",
+  "learn_cards": {
+    "advanced-tp-purpose": {
+      "title": "Two pointers avoid extra scanning",
+      "body": "**Two pointers** let you move from both ends or keep two related positions.",
+      "example": "left starts at 0, right starts at n - 1",
+      "notice": "The movement rule is the whole solution.",
+      "mistake": "Moving both **pointers** every time can skip valid answers.",
+      "section_id": "two-pointers"
+    },
+    "advanced-window-meaning": {
+      "title": "A window is a current slice",
+      "body": "A **sliding window** is the group between left and right.",
+      "example": "nums[left:right+1]",
+      "notice": "When the window changes, update the stored sum/count too.",
+      "mistake": "Shrinking the window without subtracting the removed **value** **leaves** stale data.",
+      "section_id": "sliding-window"
+    }
+  },
+  "sections": [
+    {
+      "id": "two-pointers",
+      "title": "Two pointers",
+      "summary": "Two positions move with a rule.",
+      "question_ids": [
+        "advanced-tp-purpose",
+        "advanced-tp-sorted-sum",
+        "advanced-tp-large-sum",
+        "advanced-tp-common-bug"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Two-**pointer** problems usually become easier when you name what each pointer means. In a sorted two-sum problem, left points at a small **value** and right points at a large value."
+        },
+        {
+          "kind": "code",
+          "caption": "Sorted two-sum moves one **pointer** based on the sum.",
+          "variants": {
+            "python": {
+              "code": "def has_pair(nums, target):\n    left = 0\n    right = len(nums) - 1\n    while left < right:\n        total = nums[left] + nums[right]\n        if total == target:\n            return True\n        if total < target:\n            left += 1\n        else:\n            right -= 1\n    return False",
+              "output": ""
+            },
+            "java": {
+              "code": "static boolean hasPair(int[] nums, int target) {\n    int left = 0;\n    int right = nums.length - 1;\n    while (left < right) {\n        int total = nums[left] + nums[right];\n        if (total == target) return true;\n        if (total < target) left++;\n        else right--;\n    }\n    return false;\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "function hasPair(nums, target) {\n  let left = 0;\n  let right = nums.length - 1;\n  while (left < right) {\n    const total = nums[left] + nums[right];\n    if (total === target) return true;\n    if (total < target) left++;\n    else right--;\n  }\n  return false;\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "bool hasPair(const std::vector<long long>& nums, long long target) {\n    int left = 0;\n    int right = (int)nums.size() - 1;\n    while (left < right) {\n        long long total = nums[left] + nums[right];\n        if (total == target) return true;\n        if (total < target) left++;\n        else right--;\n    }\n    return false;\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "list",
+          "title": "Movement rule",
+          "items": [
+            "If the sum is too small, move left rightward to get a larger **value**.",
+            "If the sum is too large, move right leftward to get a smaller **value**.",
+            "Do not move both unless the logic proves both are safe to discard."
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "In a sorted **list**, the pair sum is too small. Which **pointer** usually moves?",
+          "choices": [
+            "left moves right",
+            "right moves left",
+            "both always move",
+            "neither moves"
+          ],
+          "answer_index": 0,
+          "why": "Moving left rightward can increase the sum."
+        }
+      ]
+    },
+    {
+      "id": "sliding-window",
+      "title": "Sliding window",
+      "summary": "A window is a contiguous part of the **input**.",
+      "question_ids": [
+        "advanced-window-meaning",
+        "advanced-window-shrink",
+        "advanced-window-trace",
+        "advanced-window-parsons"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A **sliding window** keeps a current range from `left` to `right`. As `right` grows, the window includes more items. When the window breaks a rule, `left` moves forward until the rule is fixed."
+        },
+        {
+          "kind": "code",
+          "caption": "Longest subarray with sum at most limit, assuming nonnegative numbers.",
+          "variants": {
+            "python": {
+              "code": "def longest_at_most(nums, limit):\n    left = 0\n    total = 0\n    best = 0\n    for right in range(len(nums)):\n        total += nums[right]\n        while total > limit:\n            total -= nums[left]\n            left += 1\n        best = max(best, right - left + 1)\n    return best",
+              "output": ""
+            },
+            "java": {
+              "code": "static int longestAtMost(int[] nums, int limit) {\n    int left = 0, total = 0, best = 0;\n    for (int right = 0; right < nums.length; right++) {\n        total += nums[right];\n        while (total > limit) {\n            total -= nums[left];\n            left++;\n        }\n        best = Math.max(best, right - left + 1);\n    }\n    return best;\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "function longestAtMost(nums, limit) {\n  let left = 0, total = 0, best = 0;\n  for (let right = 0; right < nums.length; right++) {\n    total += nums[right];\n    while (total > limit) {\n      total -= nums[left];\n      left++;\n    }\n    best = Math.max(best, right - left + 1);\n  }\n  return best;\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "int longestAtMost(const std::vector<long long>& nums, long long limit) {\n    int left = 0, best = 0;\n    long long total = 0;\n    for (int right = 0; right < (int)nums.size(); right++) {\n        total += nums[right];\n        while (total > limit) {\n            total -= nums[left];\n            left++;\n        }\n        best = std::max(best, right - left + 1);\n    }\n    return best;\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "list",
+          "title": "Read the window code",
+          "items": [
+            "Add the new right **value** to the total.",
+            "While the rule is broken, subtract the left **value** and move left.",
+            "After the rule is fixed, update the best answer.",
+            "The window is always the **values** from left through right."
+          ]
+        },
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "Sliding window needs the right kind of data",
+          "body": "The sum example assumes nonnegative numbers. Negative numbers can make the window shrink/grow logic unreliable."
+        }
+      ]
+    },
+    {
+      "id": "trace-window",
+      "title": "Trace the window",
+      "summary": "Write left, right, total, and best.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Trace [2, 1, 4] with limit 5",
+          "items": [
+            "right=0: add 2, total=2, window=[2], best=1.",
+            "right=1: add 1, total=3, window=[2,1], best=2.",
+            "right=2: add 4, total=7, too large.",
+            "remove nums[left]=2, left becomes 1, total=5, window=[1,4], best stays 2."
+          ]
+        },
+        {
+          "kind": "compare",
+          "caption": "Keep window state updated.",
+          "wrong_label": "Stale total",
+          "wrong": "left += 1\n// forgot total -= nums[left]",
+          "right_label": "Updated total",
+          "right": "total -= nums[left]\nleft += 1",
+          "body": "The stored total must match the actual window."
+        },
+        {
+          "kind": "check",
+          "prompt": "What should happen before keeping a new **value** that makes the window too large?",
+          "choices": [
+            "Shrink from the left until valid",
+            "Return immediately every time",
+            "Sort the list",
+            "Move right backward"
+          ],
+          "answer_index": 0,
+          "why": "A **sliding window** fixes the broken rule by moving the left side."
+        }
+      ]
+    },
+    {
+      "id": "practice-handoff",
+      "title": "Practice handoff",
+      "summary": "Name the invariant.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "An invariant is a rule that stays true while the algorithm runs. For a window problem, write the invariant in plain English: `total is the sum of nums[left] through nums[right] and total is at most limit after the while loop`."
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Plain-English invariant",
+          "body": "You do not need fancy wording. Just say what your **pointers** mean and when they are allowed to move."
+        }
+      ]
+    }
+  ]
+}

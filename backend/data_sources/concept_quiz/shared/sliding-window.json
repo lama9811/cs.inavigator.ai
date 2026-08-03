@@ -1,0 +1,189 @@
+{
+  "_note": "Original advanced concept questions for sliding window.",
+  "concept": "sliding-window",
+  "questions": [
+    {
+      "id": "advanced-window-meaning",
+      "concept": "sliding-window",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Window meaning",
+      "prompt": "What does a sliding window represent?",
+      "explanation": "The window is the current slice of data being tracked. As left and right move, the algorithm updates only the values entering or leaving that slice.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      },
+      "code": "nums = [2, 1, 4, 3]\nleft = 1\nright = 2\nwindow = [1, 4]",
+      "choices": [
+        "The current range between left and right",
+        "Only the final answer",
+        "A sorted copy",
+        "A recursive call"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "advanced-window-shrink",
+      "concept": "sliding-window",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Shrink rule",
+      "prompt": "When should the left side of a sliding window usually move?",
+      "explanation": "Moving left shrinks the current window until it becomes valid again.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      },
+      "code": "window sum = 9\nlimit = 6\n\nThe rule is broken.",
+      "choices": [
+        "When the current window breaks the rule",
+        "Before the right side ever moves",
+        "Only after returning",
+        "Never"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "advanced-window-trace",
+      "concept": "sliding-window",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Trace a window",
+      "prompt": "What should happen before keeping 4 in a sum-limited window?",
+      "explanation": "The window must shrink from the left when the running sum is too large. Each left move removes an old value so the current window can satisfy the limit again.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      },
+      "code": "nums = [2, 1, 4]\nlimit = 3\nwindow starts empty\nadd 2, add 1, next adding 4 is too large",
+      "choices": [
+        "Move left and subtract old values until the rule is true",
+        "Return 4 immediately",
+        "Sort the window",
+        "Restart the whole program"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "advanced-window-total",
+      "concept": "sliding-window",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Running total",
+      "prompt": "After the window shrinks, what is total?",
+      "explanation": "Add the right value first, then subtract values removed from the left. 2 + 1 + 4 is 7, then subtract 2 to get 5.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      },
+      "code": "nums = [2, 1, 4]\nlimit = 5\nadd 2, add 1, add 4\ntotal = 7\nremove nums[left] which is 2",
+      "choices": [
+        "5",
+        "7",
+        "2",
+        "0"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "advanced-window-fixed-size",
+      "concept": "sliding-window",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Fixed-size window",
+      "prompt": "For a fixed-size window of 3, what happens after adding the 4th item?",
+      "explanation": "A fixed-size window removes the item that falls off the left so only 3 items remain.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      },
+      "code": "window size should stay 3\ncurrent window has 4 items",
+      "choices": [
+        "Remove the oldest left-side item",
+        "Keep all 4 items",
+        "Clear the whole array",
+        "Move right backward"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "advanced-window-negative-caveat",
+      "concept": "sliding-window",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Negative number caveat",
+      "prompt": "Why can sum-based sliding window fail with negative numbers?",
+      "explanation": "Negative numbers can make the sum drop after adding a value, so the simple grow/shrink rule may no longer be reliable.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      },
+      "code": "nums may contain negative numbers\nwindow sum can go down when right moves",
+      "choices": [
+        "The sum may not move in one predictable direction",
+        "The list cannot be looped over",
+        "left and right become strings",
+        "Negative numbers are syntax errors"
+      ],
+      "answer_index": 0
+    },
+    {
+      "id": "advanced-window-parsons",
+      "concept": "sliding-window",
+      "difficulty": "medium",
+      "kind": "parsons",
+      "title": "Sliding window loop",
+      "prompt": "Arrange the common sliding window steps.",
+      "explanation": "A window grows on the right, shrinks on the left, and updates the answer when valid.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      },
+      "lines": [
+        "Set left to 0 and current state to empty.",
+        "Move right through the data.",
+        "Add the new right-side item to the state.",
+        "While the window breaks the rule, remove the left-side item and move left.",
+        "Update the best answer when the window is valid."
+      ]
+    },
+    {
+      "id": "advanced-window-stale-state",
+      "concept": "sliding-window",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Stale state bug",
+      "prompt": "What bug happens if `left` moves but the running sum is not updated?",
+      "explanation": "The stored sum no longer describes the actual window, so later decisions use stale information.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      },
+      "code": "left += 1\n# forgot to subtract the old left value",
+      "choices": [
+        "The stored sum no longer matches the window",
+        "The array sorts itself",
+        "The right pointer disappears",
+        "The loop cannot start"
+      ],
+      "answer_index": 0
+    }
+  ]
+}

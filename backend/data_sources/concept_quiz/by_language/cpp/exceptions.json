@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Exceptions concept check 1",
+      "title": "Exception-worthy failure",
       "code": null,
-      "prompt": "What does the lesson mean by \"Exceptions are not ordinary branch logic\"?",
+      "prompt": "When should C++ code use an exception instead of a normal branch?",
       "choices": [
-        "By raw pointer",
-        "Use an if statement for expected choices such as an empty search result. Reserve exceptions for a function that cannot complete its promised operation, especially when several callers need the failure information.",
-        "By mutable global value",
-        "Only with catch-all"
+        "Use exceptions when a function cannot complete its promised operation.",
+        "Catch every exception and continue without evidence.",
+        "Use exceptions for ordinary choices an if statement can handle.",
+        "Replace the original error with a vague one and drop the cause."
       ],
-      "answer_index": 1,
-      "explanation": "Throw an exception when a function cannot fulfill its contract and the caller may recover at a higher level. Catch exceptions by const reference, handle only cases you understand, and preserve useful error details. That reasoning supports the answer: Use an if statement for expected choices such as an empty search result. Reserve exceptions for a function that cannot complete its promised operation, especially when several callers need the failure information."
+      "answer_index": 0,
+      "explanation": "Ordinary outcomes, such as an empty search result, often belong in normal `if` logic. Exceptions fit failures that prevent a function from doing what it promised, especially when callers need to decide how to recover."
     },
     {
       "id": "cpp-exceptions-authored-02",
@@ -96,17 +96,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Exceptions concept check 2",
+      "title": "Descriptive exception",
       "code": null,
-      "prompt": "Which choice describes a reliable Exceptions practice?",
+      "prompt": "What should thrown C++ exceptions communicate?",
       "choices": [
-        "They are always leaked",
-        "They become global",
+        "Wrap a whole program in one broad protected block.",
         "Throw a descriptive exception type.",
-        "Their constructors run again"
+        "Catch errors at a layer that cannot recover.",
+        "Hide unexpected programming mistakes."
       ],
-      "answer_index": 2,
-      "explanation": "Throw an exception when a function cannot fulfill its contract and the caller may recover at a higher level. Catch exceptions by const reference, handle only cases you understand, and preserve useful error details. That reasoning supports the answer: Throw a descriptive exception type."
+      "answer_index": 1,
+      "explanation": "An exception should describe the failure clearly enough for a caller or log to understand what went wrong. Vague failures make debugging harder and push context out of the place that knows it."
     },
     {
       "id": "cpp-exceptions-authored-03",
@@ -114,17 +114,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Exceptions concept check 3",
+      "title": "Catch with purpose",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Exceptions code?",
+      "prompt": "Where should C++ code catch an exception?",
       "choices": [
-        "try { work(); }\ncatch (...) { }",
-        "Only with catch-all",
-        "They are always leaked",
-        "Catch only where recovery or context is possible."
+        "Raise an exception after the function already returned successfully.",
+        "Use an exception to skip normal loop logic.",
+        "Catch only where recovery or context is possible.",
+        "Report failure without enough context to debug it."
       ],
-      "answer_index": 3,
-      "explanation": "Throw an exception when a function cannot fulfill its contract and the caller may recover at a higher level. Catch exceptions by const reference, handle only cases you understand, and preserve useful error details. That reasoning supports the answer: Catch only where recovery or context is possible."
+      "answer_index": 2,
+      "explanation": "Catch an exception where the code can recover, add useful context, or translate the failure for a caller. Catching too early often leaves the program with no real response."
     },
     {
       "id": "cpp-exceptions-authored-04",
@@ -132,17 +132,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Exceptions concept check 4",
+      "title": "Catch by const reference",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Exceptions mistake?",
+      "prompt": "How should standard C++ exceptions usually be caught?",
       "choices": [
-        "Catch standard exceptions by const reference.",
-        "They become global",
-        "Their constructors run again",
-        "try { work(); }\ncatch (...) { }"
+        "Ignore cleanup around code that can fail.",
+        "Catch a base exception type when a specific one is known.",
+        "Turn every invalid input into the same generic message.",
+        "Catch standard exceptions by const reference."
       ],
-      "answer_index": 0,
-      "explanation": "Throw an exception when a function cannot fulfill its contract and the caller may recover at a higher level. Catch exceptions by const reference, handle only cases you understand, and preserve useful error details. That reasoning supports the answer: Catch standard exceptions by const reference."
+      "answer_index": 3,
+      "explanation": "Catching by `const` reference avoids copying and preserves the real exception type for polymorphic exceptions. Catching by value can slice derived exception details away."
     },
     {
       "id": "cpp-exceptions-authored-05",
@@ -150,17 +150,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Exceptions concept check 5",
+      "title": "Do not silence failures",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Exceptions. Which advice is correct?",
+      "prompt": "Why should a C++ catch block avoid silently ignoring unknown failures?",
       "choices": [
-        "By raw pointer",
         "Do not silence unknown failures.",
-        "By mutable global value",
-        "They become global"
+        "Keep running after required work did not happen.",
+        "Handle errors by returning unrelated default data.",
+        "Assume the absence of a crash proves the operation succeeded."
       ],
-      "answer_index": 1,
-      "explanation": "Throw an exception when a function cannot fulfill its contract and the caller may recover at a higher level. Catch exceptions by const reference, handle only cases you understand, and preserve useful error details. That reasoning supports the answer: Do not silence unknown failures."
+      "answer_index": 0,
+      "explanation": "A silent catch makes required work look successful when it was not. If the layer cannot recover, it should report, add context, or rethrow so the failure is not lost."
     },
     {
       "id": "cpp-exceptions-authored-06",
@@ -168,17 +168,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Exceptions concept check 6",
+      "title": "Failure across calls",
       "code": null,
-      "prompt": "What is the main idea behind Exceptions?",
+      "prompt": "What job do exceptions serve across several function calls?",
       "choices": [
-        "Their constructors run again",
-        "try { work(); }\ncatch (...) { }",
+        "Use try/catch around code that cannot throw.",
         "Report failures across function calls without losing cleanup.",
-        "By raw pointer"
+        "Make callers guess whether a failure happened.",
+        "Discard stack-trace information during wrapping."
       ],
-      "answer_index": 2,
-      "explanation": "Throw an exception when a function cannot fulfill its contract and the caller may recover at a higher level. Catch exceptions by const reference, handle only cases you understand, and preserve useful error details. That reasoning supports the answer: Report failures across function calls without losing cleanup."
+      "answer_index": 1,
+      "explanation": "Exceptions can carry failure information to a caller that has enough context to respond. RAII cleanup still runs as the stack unwinds, so resources can be released without manual cleanup at every level."
     }
   ]
 }

@@ -57,6 +57,29 @@ def test_floating_chat_exposes_history_and_accessibility_controls():
     assert 'aria-label="Start voice input"' in source
 
 
+def test_floating_chat_previews_tutor_code_before_applying():
+    source = read(FLOATING_CHAT)
+    tutor_source = read(CODING_TUTOR)
+
+    assert "Preview tutor suggestion" in source
+    assert "floating-apply-preview" in source
+    assert 'onApplyAICode("comment")' in source
+    assert 'onApplyAICode("append")' in source
+    assert 'onApplyAICode("replace")' in source
+    assert "Replace the current workspace code with this tutor suggestion?" not in tutor_source
+    assert "applyAiCodeWithMode" in tutor_source
+
+
+def test_floating_chat_keeps_context_compact():
+    source = read(FLOATING_CHAT)
+    workspace_context = read(ROOT / "frontend" / "src" / "components" / "coding-tutor" / "WorkspaceCodeContext.jsx")
+
+    assert "TutorStatusCard" not in source
+    assert "<WorkspaceCodeContext" in source
+    assert "attempts={attempts}" in source
+    assert "<small>{attempts} attempts</small>" in workspace_context
+
+
 def test_coding_tutor_learning_style_is_saved_and_used_in_context():
     main_source = read(MAIN_API)
     profile_source = read(PROFILE_PAGE)

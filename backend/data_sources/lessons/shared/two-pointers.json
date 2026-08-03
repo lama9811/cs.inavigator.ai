@@ -1,0 +1,339 @@
+{
+  "_note": "Original advanced lesson. Shared across languages with language-specific code variants.",
+  "title": "Two Pointers",
+  "summary": "Use two **indexes** that move for a clear reason.",
+  "minutes": 18,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "**Two pointers** track two positions at the same time. The important part is the movement rule: each move should remove choices you no longer need.",
+  "refresher_code": "left = 0\nright = len(nums) - 1\nwhile left < right:\n    total = nums[left] + nums[right]",
+  "learn_cards": {
+    "advanced-tp-purpose": {
+      "title": "Two pointers avoid extra scanning",
+      "body": "**Two pointers** let you move from both ends or keep two related positions.",
+      "example": "left starts at 0, right starts at n - 1",
+      "notice": "The movement rule is the whole solution.",
+      "mistake": "Moving both **pointers** every time can skip valid answers.",
+      "section_id": "meaning"
+    },
+    "advanced-tp-sorted-sum": {
+      "title": "Too small means move left",
+      "body": "In a sorted **list**, moving left rightward gives a larger left **value**.",
+      "example": "sum = nums[left] + nums[right]",
+      "notice": "Sorted order is what makes this safe.",
+      "mistake": "Moving right when the sum is too small usually makes the sum even smaller.",
+      "section_id": "sorted-sum"
+    },
+    "advanced-tp-large-sum": {
+      "title": "Too large means move right",
+      "body": "In a sorted **list**, moving right leftward gives a smaller right **value**.",
+      "example": "right -= 1",
+      "notice": "You are lowering the larger side of the pair.",
+      "mistake": "Moving left when the sum is too large can make the sum larger.",
+      "section_id": "sorted-sum"
+    },
+    "advanced-tp-common-bug": {
+      "title": "Move with a reason",
+      "body": "Every **pointer** move should come from the comparison you just made.",
+      "example": "if total < target: left += 1",
+      "notice": "The **condition** explains the move.",
+      "mistake": "**Pointer** changes that are not tied to the **condition** often skip answers.",
+      "section_id": "trace"
+    }
+  },
+  "sections": [
+    {
+      "id": "meaning",
+      "title": "What two pointers mean",
+      "summary": "Two positions work together.",
+      "question_ids": [
+        "advanced-tp-purpose",
+        "advanced-tp-loop-stop"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A two-**pointer** solution keeps two **indexes** and moves them on purpose. The pointers might start at opposite ends, or one might follow behind the other."
+        },
+        {
+          "kind": "visual",
+          "title": "Move one pointer for a reason",
+          "concept": "two-pointers",
+          "caption": "Watch left and right move in a sorted pair-sum search.",
+          "initial_state": {
+            "items": [
+              1,
+              2,
+              4,
+              7,
+              11
+            ]
+          },
+          "steps": [
+            {
+              "title": "Start at both ends",
+              "body": "left starts small and right starts large.",
+              "state": {
+                "pointers": {
+                  "left": 0,
+                  "right": 4
+                },
+                "active": [
+                  0,
+                  4
+                ],
+                "note": "sum = 12, target = 10"
+              }
+            },
+            {
+              "title": "Sum is too large",
+              "body": "Move right leftward to try a smaller **value**.",
+              "state": {
+                "pointers": {
+                  "left": 0,
+                  "right": 3
+                },
+                "active": [
+                  0,
+                  3
+                ],
+                "note": "sum = 8"
+              }
+            },
+            {
+              "title": "Sum is too small",
+              "body": "Move left rightward to try a larger **value**.",
+              "state": {
+                "pointers": {
+                  "left": 1,
+                  "right": 3
+                },
+                "active": [
+                  1,
+                  3
+                ],
+                "note": "sum = 9"
+              }
+            },
+            {
+              "title": "Move left again",
+              "body": "The sum is still too small, so left moves again.",
+              "state": {
+                "pointers": {
+                  "left": 2,
+                  "right": 3
+                },
+                "active": [
+                  2,
+                  3
+                ],
+                "note": "sum = 11"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "list",
+          "title": "Ask this before coding",
+          "items": [
+            "What does left mean?",
+            "What does right mean?",
+            "What **condition** tells one **pointer** to move?",
+            "When do the **pointers** stop?"
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "What makes a two-**pointer** solution trustworthy?",
+          "choices": [
+            "Each pointer move follows a rule",
+            "Both pointers always move together",
+            "The list never has numbers",
+            "The loop has no condition"
+          ],
+          "answer_index": 0,
+          "why": "The rule is what prevents skipped answers."
+        }
+      ]
+    },
+    {
+      "id": "sorted-sum",
+      "title": "Sorted pair sum",
+      "summary": "Sorted order decides which **pointer** moves.",
+      "question_ids": [
+        "advanced-tp-sorted-sum",
+        "advanced-tp-large-sum",
+        "advanced-tp-found-pair"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "For sorted pair-sum problems, left points to a smaller **value** and right points to a larger value. If the sum is too small, left moves rightward. If the sum is too large, right moves leftward."
+        },
+        {
+          "kind": "code",
+          "caption": "Sorted two-sum moves one **pointer** based on the sum.",
+          "variants": {
+            "python": {
+              "code": "def has_pair(nums, target):\n    left = 0\n    right = len(nums) - 1\n    while left < right:\n        total = nums[left] + nums[right]\n        if total == target:\n            return True\n        if total < target:\n            left += 1\n        else:\n            right -= 1\n    return False",
+              "output": ""
+            },
+            "java": {
+              "code": "static boolean hasPair(int[] nums, int target) {\n    int left = 0;\n    int right = nums.length - 1;\n    while (left < right) {\n        int total = nums[left] + nums[right];\n        if (total == target) return true;\n        if (total < target) left++;\n        else right--;\n    }\n    return false;\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "function hasPair(nums, target) {\n  let left = 0;\n  let right = nums.length - 1;\n  while (left < right) {\n    const total = nums[left] + nums[right];\n    if (total === target) return true;\n    if (total < target) left++;\n    else right--;\n  }\n  return false;\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "bool hasPair(const std::vector<long long>& nums, long long target) {\n    int left = 0;\n    int right = (int)nums.size() - 1;\n    while (left < right) {\n        long long total = nums[left] + nums[right];\n        if (total == target) return true;\n        if (total < target) left++;\n        else right--;\n    }\n    return false;\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "check",
+          "prompt": "The sum is too large in a sorted **list**. Which **pointer** usually moves?",
+          "choices": [
+            "right moves left",
+            "left moves right",
+            "both always move",
+            "neither moves"
+          ],
+          "answer_index": 0,
+          "why": "Moving right leftward chooses a smaller right **value**."
+        }
+      ]
+    },
+    {
+      "id": "trace",
+      "title": "Trace before changing code",
+      "summary": "Write the pair and the reason for each move.",
+      "question_ids": [
+        "advanced-tp-palindrome",
+        "advanced-tp-parsons",
+        "advanced-tp-common-bug"
+      ],
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Trace checklist",
+          "items": [
+            "Write left **index**, right index, and the two **values**.",
+            "Compute the comparison.",
+            "Write why exactly one **pointer** moves.",
+            "Stop when the **pointers** meet or cross."
+          ]
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Common mistake",
+          "body": "Do not move a **pointer** just because the **loop** needs progress. Move it because the comparison proves that side can be discarded."
+        },
+        {
+          "kind": "check",
+          "prompt": "Why can `left < right` be the **loop** **condition** for pair checks?",
+          "choices": [
+            "A pair needs two different positions",
+            "It makes every list sorted",
+            "It checks the same item twice",
+            "It removes the target"
+          ],
+          "answer_index": 0,
+          "why": "When left meets right, there is no two-position pair left."
+        },
+        {
+          "kind": "visual",
+          "title": "Check a palindrome inward",
+          "concept": "two-pointers",
+          "caption": "Watch left and right compare matching characters before moving inward.",
+          "initial_state": {
+            "items": [
+              "r",
+              "a",
+              "c",
+              "e",
+              "c",
+              "a",
+              "r"
+            ]
+          },
+          "steps": [
+            {
+              "title": "Compare the ends",
+              "action_label": "compare",
+              "body": "left sees r and right sees r. They match.",
+              "what_changed": "Both ends are done, so both **pointers** can move inward.",
+              "animation": "highlight",
+              "state": {
+                "pointers": {
+                  "left": 0,
+                  "right": 6
+                },
+                "active": [
+                  0,
+                  6
+                ]
+              }
+            },
+            {
+              "title": "Move inward",
+              "action_label": "left++, right--",
+              "body": "Now compare a and a.",
+              "what_changed": "A palindrome check only needs to keep comparing mirrored positions.",
+              "animation": "slide",
+              "state": {
+                "pointers": {
+                  "left": 1,
+                  "right": 5
+                },
+                "active": [
+                  1,
+                  5
+                ]
+              }
+            },
+            {
+              "title": "Move inward again",
+              "action_label": "left++, right--",
+              "body": "c and c match too.",
+              "what_changed": "The unchecked part keeps getting smaller.",
+              "animation": "slide",
+              "state": {
+                "pointers": {
+                  "left": 2,
+                  "right": 4
+                },
+                "active": [
+                  2,
+                  4
+                ]
+              }
+            },
+            {
+              "title": "Pointers meet",
+              "action_label": "done",
+              "body": "The middle e does not need a partner.",
+              "what_changed": "If no mismatch appeared before the **pointers** met, the word is a palindrome.",
+              "animation": "visit",
+              "state": {
+                "pointers": {
+                  "left": 3,
+                  "right": 3
+                },
+                "active": [
+                  3
+                ],
+                "note": "palindrome"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

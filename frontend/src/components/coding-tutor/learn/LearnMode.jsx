@@ -9,7 +9,7 @@ import LessonView from "./LessonView";
 //
 // Four URL-backed views keep the address bar, Back/Forward, and refresh in sync:
 //   languages -> the four language cards
-//   tracks    -> Beginner and Intermediate cards for one language
+//   tracks    -> Beginner, Intermediate, and Advanced cards for one language
 //   lessons   -> the selected track's smaller lesson list
 //   lesson    -> one authored lesson
 
@@ -30,41 +30,52 @@ const TRACKS = [
       "Build on Part 1 with multi-step problems and the next concepts that matter most in this language.",
     cta: "Explore next steps",
   },
+  {
+    id: "advanced",
+    label: "Advanced Track",
+    kicker: "Interview ready",
+    description:
+      "Break down data structures and coding patterns before trying harder practice.",
+    cta: "Study advanced patterns",
+  },
 ];
 
 function trackDefinition(trackId) {
   return TRACKS.find((track) => track.id === trackId) || null;
 }
 
-function LanguageCards({ languages, onPick }) {
+function LanguageCards({ languages, onPick, onStartPythonBeginner }) {
   return (
     <div className="cq-language-cards">
       <div className="cq-cards-intro">
         <h2>Learn</h2>
         <p>
-          Short lessons that teach the idea before you're tested on it. Pick a
-          language, then choose the pace that fits where you are.
+          Short lessons that teach the idea before you're tested on it. Start with
+          Python Beginner if you want the gentlest path.
         </p>
       </div>
+      <button type="button" className="cq-start-here-card" onClick={onStartPythonBeginner}>
+        <span className="cq-language-card-flag">Start Here</span>
+        <strong>Python Beginner</strong>
+        <span>
+          Follow the lessons in order, then practice the same ideas with small coding problems.
+        </span>
+        <span className="cq-language-card-cta">
+          Start the first track <FaArrowRight aria-hidden="true" />
+        </span>
+      </button>
       <div className="cq-cards-grid">
         {languages.map((lang) => {
           const accent = LANGUAGE_VISUALS[lang.id] || {};
           const Icon = accent.Icon;
           const recommended = lang.id === "python";
           return (
-            <div
+            <button
+              type="button"
               key={lang.id}
               className={`cq-language-card ${recommended ? "recommended" : ""}`}
               style={{ "--cq-card-tint": accent.tint || "var(--ct-primary)" }}
-              role="button"
-              tabIndex={0}
               onClick={() => onPick(lang.id)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  onPick(lang.id);
-                }
-              }}
             >
               {recommended ? (
                 <span className="cq-language-card-flag">Start here</span>
@@ -83,7 +94,7 @@ function LanguageCards({ languages, onPick }) {
               <span className="cq-language-card-cta">
                 Choose a track <FaArrowRight aria-hidden="true" />
               </span>
-            </div>
+            </button>
           );
         })}
       </div>
@@ -117,7 +128,11 @@ function TrackCards({ language, languageLabel, categories, onPick, onBack }) {
           const ready = trackCategories.filter((category) => category.has_lesson).length;
           const completed = countReadLessons(language, trackCategories);
           const percent = ready ? Math.round((completed / ready) * 100) : 0;
-          const accent = track.id === "beginner" ? "#16a34a" : languageAccent;
+          const accent = track.id === "beginner"
+            ? "#16a34a"
+            : track.id === "advanced"
+              ? "#ea580c"
+              : languageAccent;
 
           return (
             <button
@@ -245,6 +260,7 @@ export default function LearnMode({
   apiBase,
   target,
   languageLabels,
+  onPracticeActivity,
   onNavigateToLanguages,
   onNavigateToLanguage,
   onNavigateToTrack,
@@ -328,6 +344,7 @@ export default function LearnMode({
         language={target.language}
         category={target.category}
         languageLabel={labelFor(target.language)}
+        onPracticeActivity={onPracticeActivity}
         onPractice={() => startPracticeCategory(target.language, target.category)}
         onBack={() =>
           target.track
@@ -370,5 +387,11 @@ export default function LearnMode({
     );
   }
 
-  return <LanguageCards languages={languages} onPick={onNavigateToLanguage} />;
+  return (
+    <LanguageCards
+      languages={languages}
+      onPick={onNavigateToLanguage}
+      onStartPythonBeginner={() => onNavigateToTrack("python", "beginner")}
+    />
+  );
 }

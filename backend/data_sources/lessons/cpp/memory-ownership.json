@@ -7,26 +7,26 @@
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "Prefer local values, strings, and vectors first because they clean themselves up. When one object must own something created on the heap, use `std::unique_ptr` with `std::make_unique`. Move it only when ownership should transfer.",
+  "refresher": "Prefer local **values**, **strings**, and vectors first because they clean themselves up. When one **object** must own something created on the heap, use `std::unique_ptr` with `std::make_unique`. Move it only when ownership should transfer.",
   "refresher_code": "#include <memory>\nauto score = std::make_unique<int>(85);\nstd::cout << *score;",
   "blocks": [
     {
       "kind": "text",
-      "body": "Ownership asks a simple question: who is in charge of cleaning this up? Most beginner C++ code can avoid the hard version of that question by using local values, strings, and vectors. They clean themselves up when they leave their block."
+      "body": "Ownership asks a simple question: who is in charge of cleaning this up? Most beginner C++ code can avoid the hard version of that question by using local **values**, **strings**, and vectors. They clean themselves up when they leave their block."
     },
     {
       "kind": "text",
-      "body": "`unique_ptr` means one owner. It owns one object and cleans it up when the pointer leaves scope. You cannot copy it, because then two places would both claim to be the only owner. You can move it when the responsibility should transfer."
+      "body": "`unique_ptr` means one owner. It owns one **object** and cleans it up when the **pointer** leaves **scope**. You cannot copy it, because then two places would both claim to be the only owner. You can move it when the responsibility should transfer."
     },
     {
       "kind": "callout",
       "tone": "tip",
       "title": "Python handles more of this automatically",
-      "body": "Python usually decides cleanup for you when an object is no longer reachable. C++ lets you show ownership in the type. That extra detail makes cleanup predictable."
+      "body": "Python usually decides cleanup for you when an **object** is no longer reachable. C++ lets you show ownership in the type. That extra detail makes cleanup predictable."
     },
     {
       "kind": "code",
-      "caption": "Pending first owns the Student. std::move transfers ownership to active, and the Student is cleaned up automatically when active leaves scope.",
+      "caption": "Pending first owns the Student. std::move transfers ownership to active, and the Student is cleaned up automatically when active **leaves** **scope**.",
       "code": "#include <iostream>\n#include <memory>\n#include <string>\nstruct Student { std::string name; };\nint main() {\n  auto pending = std::make_unique<Student>(Student{\"Ada\"});\n  auto active = std::move(pending);\n  if (!pending) std::cout << active->name << \"\\n\";\n}",
       "output": "Ada"
     },
@@ -36,17 +36,17 @@
       "wrong": "Student* student = new Student{\"Ada\"};\nuse(student);\n// delete is easy to forget",
       "right_label": "Clearer version",
       "right": "auto student = std::make_unique<Student>(Student{\"Ada\"});\nuse(student.get());\n// cleanup is automatic",
-      "caption": "Raw new makes you remember cleanup later. unique_ptr ties the object and its cleanup together."
+      "caption": "Raw new makes you remember cleanup later. unique_ptr ties the **object** and its cleanup together."
     },
     {
       "kind": "text",
-      "body": "Before the move, `pending` owns the Student. After the move, `active` owns it and `pending` is empty. Check an emptied pointer before using it. When main ends, active cleans up the Student once."
+      "body": "Before the move, `pending` owns the Student. After the move, `active` owns it and `pending` is empty. Check an emptied **pointer** before using it. When main ends, active cleans up the Student once."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "Shared ownership is a special case",
-      "body": "Use `std::shared_ptr` only when several parts of the program truly need to keep the same object alive. Most beginner code is clearer with local values, vectors, references for temporary access, or one `unique_ptr` owner."
+      "body": "Use `std::shared_ptr` only when several parts of the program truly need to keep the same **object** alive. Most beginner code is clearer with local **values**, vectors, **references** for temporary access, or one `unique_ptr` owner."
     },
     {
       "kind": "check",
@@ -59,7 +59,7 @@
         "Makes the object global"
       ],
       "answer_index": 0,
-      "why": "Move transfers the unique ownership; the destination owns the object and the source becomes empty."
+      "why": "Move transfers the unique ownership; the destination owns the **object** and the source becomes empty."
     },
     {
       "kind": "check",
@@ -72,17 +72,109 @@
         "To avoid including memory"
       ],
       "answer_index": 0,
-      "why": "A shared pointer models multiple owners whose lifetimes overlap, not ordinary temporary access to an object."
+      "why": "A shared **pointer** models multiple owners whose lifetimes overlap, not ordinary temporary access to an **object**."
     },
     {
       "kind": "list",
       "title": "Memory Ownership checklist",
       "items": [
-        "Prefer values and standard containers first.",
+        "Prefer **values** and standard containers first.",
         "Use make_unique for one owner.",
         "Move ownership on purpose.",
         "Use shared ownership only when the design truly needs it."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "cpp-memory-ownership-check-1": {
+      "title": "Move transfers ownership",
+      "notice": "Moving a unique_ptr transfers the owned object and leaves the old pointer empty.",
+      "mistake": "Do not reach for shared ownership just because passing a pointer seems convenient.",
+      "section_id": "check",
+      "example": "auto student = std::make_unique<Student>();",
+      "source": "question",
+      "body": "This question tests what does std::move do to a unique_ptr? Modern C++ ownership tools make it clear which code is responsible for an object lifetime."
+    },
+    "cpp-memory-ownership-check-2": {
+      "title": "Shared ownership must be real",
+      "notice": "Use shared_ptr only when multiple owners truly share lifetime responsibility.",
+      "mistake": "Do not reach for shared ownership just because passing a pointer seems convenient.",
+      "section_id": "check",
+      "example": "auto student = std::make_unique<Student>();",
+      "source": "question",
+      "body": "This question tests when is shared_ptr appropriate? Modern C++ ownership tools make it clear which code is responsible for an object lifetime."
+    },
+    "cpp-memory-ownership-output-01": {
+      "title": "Trace ownership lifetime output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "auto student = std::make_unique<Student>();",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. Modern C++ ownership tools make it clear which code is responsible for an object lifetime."
+    },
+    "cpp-memory-ownership-supplement-01": {
+      "title": "Unique ownership is single owner",
+      "notice": "unique_ptr makes one owner responsible and releases automatically at scope exit.",
+      "mistake": "Do not reach for shared ownership just because passing a pointer seems convenient.",
+      "section_id": "check",
+      "example": "auto student = std::make_unique<Student>();",
+      "source": "question",
+      "body": "This question tests what happens to the student when student (a unique_ptr) goe... Modern C++ ownership tools make it clear which code is responsible for an object lifetime."
+    },
+    "cpp-memory-ownership-authored-01": {
+      "title": "Shared ownership must be real",
+      "notice": "Use shared_ptr only when multiple owners truly share lifetime responsibility.",
+      "mistake": "Do not reach for shared ownership just because passing a pointer seems convenient.",
+      "section_id": "idea",
+      "example": "auto student = std::make_unique<Student>();",
+      "source": "question",
+      "body": "This question tests when is std::shared_ptr actually a good fit? Modern C++ ownership tools make it clear which code is responsible for an object lifetime."
+    },
+    "cpp-memory-ownership-authored-02": {
+      "title": "Ownership lifetime",
+      "notice": "Decide whether there is one owner, shared ownership, or no dynamic allocation needed at all.",
+      "mistake": "Do not reach for shared ownership just because passing a pointer seems convenient.",
+      "section_id": "idea",
+      "example": "auto student = std::make_unique<Student>();",
+      "source": "question",
+      "body": "This question tests what should c++ code prefer before reaching for manual dyna... Modern C++ ownership tools make it clear which code is responsible for an object lifetime."
+    },
+    "cpp-memory-ownership-authored-03": {
+      "title": "Ownership lifetime",
+      "notice": "Decide whether there is one owner, shared ownership, or no dynamic allocation needed at all.",
+      "mistake": "Do not reach for shared ownership just because passing a pointer seems convenient.",
+      "section_id": "check",
+      "example": "auto student = std::make_unique<Student>();",
+      "source": "question",
+      "body": "This question tests what helper expresses one dynamic owner clearly? Modern C++ ownership tools make it clear which code is responsible for an object lifetime."
+    },
+    "cpp-memory-ownership-authored-04": {
+      "title": "Unique ownership is single owner",
+      "notice": "unique_ptr makes one owner responsible and releases automatically at scope exit.",
+      "mistake": "Do not reach for shared ownership just because passing a pointer seems convenient.",
+      "section_id": "check",
+      "example": "auto student = std::make_unique<Student>();",
+      "source": "question",
+      "body": "This question tests how should code transfer a unique_ptr to another owner? Modern C++ ownership tools make it clear which code is responsible for an object lifetime."
+    },
+    "cpp-memory-ownership-authored-05": {
+      "title": "Shared ownership must be real",
+      "notice": "Use shared_ptr only when multiple owners truly share lifetime responsibility.",
+      "mistake": "Do not reach for shared ownership just because passing a pointer seems convenient.",
+      "section_id": "check",
+      "example": "auto student = std::make_unique<Student>();",
+      "source": "question",
+      "body": "This question tests why not use shared_ptr for every object? Modern C++ ownership tools make it clear which code is responsible for an object lifetime."
+    },
+    "cpp-memory-ownership-authored-06": {
+      "title": "Ownership lifetime",
+      "notice": "Decide whether there is one owner, shared ownership, or no dynamic allocation needed at all.",
+      "mistake": "Do not reach for shared ownership just because passing a pointer seems convenient.",
+      "section_id": "check",
+      "example": "auto student = std::make_unique<Student>();",
+      "source": "question",
+      "body": "This question tests what should ownership tools make clear? Modern C++ ownership tools make it clear which code is responsible for an object lifetime."
+    }
+  }
 }

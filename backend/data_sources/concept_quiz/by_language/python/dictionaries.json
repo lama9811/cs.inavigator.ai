@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Dictionaries concept check 1",
+      "title": "Dictionary membership",
       "code": null,
-      "prompt": "What does the lesson mean by \"Membership checks keys\"?",
+      "prompt": "Given `student = {\"name\": \"Ada\", \"credits\": 15}`, what does `\"Ada\" in student` check?",
       "choices": [
-        "3 2",
-        "`\"Ada\" in student` looks through the keys, not the values. Use `\"name\" in student` to ask whether that field exists.",
-        "2 2",
-        "3 3"
+        "It checks whether `\"Ada\"` is a key in the dictionary.",
+        "It checks whether `\"Ada\"` is any value in the dictionary.",
+        "It checks both keys and values at the same time.",
+        "It checks whether every key has the value `\"Ada\"`."
       ],
-      "answer_index": 1,
-      "explanation": "A dictionary connects each unique key to a value. Read or update with square brackets, test membership with `in`, and use `get` when a missing key should return a fallback instead of raising KeyError. That reasoning supports the answer: `\"Ada\" in student` looks through the keys, not the values. Use `\"name\" in student` to ask whether that field exists."
+      "answer_index": 0,
+      "explanation": "The `in` operator checks dictionary keys by default. In this example, `\"name\" in student` is true, while `\"Ada\" in student` is false unless `\"Ada\"` is also used as a key. To search values, use a values view or a different data shape."
     },
     {
       "id": "python-dictionaries-authored-02",
@@ -96,17 +96,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Dictionaries concept check 2",
+      "title": "Choosing dictionary keys",
       "code": null,
-      "prompt": "Which choice describes a reliable Dictionaries practice?",
+      "prompt": "A gradebook stores one score per course code. What makes a good dictionary key?",
       "choices": [
-        "for course, grade in grades:",
-        "for grade in grades.values, course:",
-        "Choose stable, descriptive keys.",
-        "for item in grades.keys().values():"
+        "A value that changes every time the score changes.",
+        "A stable label such as the course code.",
+        "A duplicate label reused for several unrelated courses.",
+        "A list of all scores, because lists are easier to update."
       ],
-      "answer_index": 2,
-      "explanation": "A dictionary connects each unique key to a value. Read or update with square brackets, test membership with `in`, and use `get` when a missing key should return a fallback instead of raising KeyError. That reasoning supports the answer: Choose stable, descriptive keys."
+      "answer_index": 1,
+      "explanation": "A key should identify the thing being looked up. A course code such as `\"CS101\"` is stable and descriptive, so the score can change without changing how the entry is found. Reusing one key for unrelated meanings causes updates to overwrite old values."
     },
     {
       "id": "python-dictionaries-authored-03",
@@ -114,17 +114,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Dictionaries concept check 3",
+      "title": "Direct key access",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Dictionaries code?",
+      "prompt": "When is `student[\"email\"]` the right lookup style?",
       "choices": [
-        "scores = {\"quiz\": 8}\nprint(scores[\"exam\"])",
-        "3 3",
-        "for course, grade in grades:",
-        "Use brackets when a missing key is an error."
+        "When missing email should quietly return an empty string.",
+        "When the code should search every value for an email address.",
+        "When the key is required and a missing key should be treated as an error.",
+        "When the dictionary might be empty and no error should happen."
       ],
-      "answer_index": 3,
-      "explanation": "A dictionary connects each unique key to a value. Read or update with square brackets, test membership with `in`, and use `get` when a missing key should return a fallback instead of raising KeyError. That reasoning supports the answer: Use brackets when a missing key is an error."
+      "answer_index": 2,
+      "explanation": "Square-bracket lookup is strict: if the key is absent, Python raises a KeyError. That is useful when missing data means something is wrong and should be fixed. If the field is optional, `get` with a fallback is usually clearer."
     },
     {
       "id": "python-dictionaries-authored-04",
@@ -132,17 +132,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Dictionaries concept check 4",
+      "title": "Optional dictionary values",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Dictionaries mistake?",
+      "prompt": "A campus profile may or may not have a `\"nickname\"` field. Which lookup handles that safely?",
       "choices": [
-        "Use `get` for an optional value with a fallback.",
-        "for grade in grades.values, course:",
-        "for item in grades.keys().values():",
-        "scores = {\"quiz\": 8}\nprint(scores[\"exam\"])"
+        "Use `profile[\"nickname\"]` and hope the key exists.",
+        "Loop over every key even though the field name is known.",
+        "Treat a missing key as if it always means an empty dictionary.",
+        "Use `profile.get(\"nickname\", \"\")` to supply a fallback."
       ],
-      "answer_index": 0,
-      "explanation": "A dictionary connects each unique key to a value. Read or update with square brackets, test membership with `in`, and use `get` when a missing key should return a fallback instead of raising KeyError. That reasoning supports the answer: Use `get` for an optional value with a fallback."
+      "answer_index": 3,
+      "explanation": "`get` is built for optional keys. It returns the stored value when the key exists and the fallback when it does not. That keeps expected missing data from turning into a KeyError while still making the fallback visible in the code."
     },
     {
       "id": "python-dictionaries-authored-05",
@@ -150,17 +150,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Dictionaries concept check 5",
+      "title": "Looping over pairs",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Dictionaries. Which advice is correct?",
+      "prompt": "A loop needs both each course code and its credit count. Which dictionary view fits?",
       "choices": [
-        "3 2",
-        "Use `.items()` when a loop needs keys and values.",
-        "2 2",
-        "for grade in grades.values, course:"
+        "Use `.items()` so each loop step receives a key-value pair.",
+        "Use `.keys()` and pretend each key also contains the value.",
+        "Use `.values()` and try to recover the missing key later.",
+        "Use `len(dictionary)` because it returns all pairs."
       ],
-      "answer_index": 1,
-      "explanation": "A dictionary connects each unique key to a value. Read or update with square brackets, test membership with `in`, and use `get` when a missing key should return a fallback instead of raising KeyError. That reasoning supports the answer: Use `.items()` when a loop needs keys and values."
+      "answer_index": 0,
+      "explanation": "`.items()` produces pairs, so `for course, credits in courses.items():` gives both pieces at once. Iterating over the dictionary by itself gives only keys, and `.values()` leaves out the labels needed to know which course each credit count belongs to."
     },
     {
       "id": "python-dictionaries-authored-06",
@@ -168,17 +168,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Dictionaries concept check 6",
+      "title": "Updating one key",
       "code": null,
-      "prompt": "Which choice shows sound reasoning about Dictionaries?",
+      "prompt": "What happens when code assigns a new value to a key that already exists?",
       "choices": [
-        "for item in grades.keys().values():",
-        "scores = {\"quiz\": 8}\nprint(scores[\"exam\"])",
-        "Remember that assigning the same key updates rather than duplicates it.",
-        "3 2"
+        "The dictionary keeps both old and new values under duplicate keys.",
+        "The existing key stays once, and its value is replaced.",
+        "Python raises a duplicate-key error before assignment.",
+        "The key is removed because dictionaries cannot update values."
       ],
-      "answer_index": 2,
-      "explanation": "A dictionary connects each unique key to a value. Read or update with square brackets, test membership with `in`, and use `get` when a missing key should return a fallback instead of raising KeyError. That reasoning supports the answer: Remember that assigning the same key updates rather than duplicates it."
+      "answer_index": 1,
+      "explanation": "A dictionary can hold each key only once. Assigning to an existing key updates the value for that key instead of adding a second copy. This is why counting and accumulation code must read the old value before replacing it with the updated total."
     }
   ]
 }

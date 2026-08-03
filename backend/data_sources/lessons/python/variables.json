@@ -1,19 +1,22 @@
 {
   "_note": "ORIGINAL content. Topic sequence follows the standard free intro texts (Runestone FoPP ch.2, Think Python ch.2, OpenStax ch.2); sequences are not copyrightable. No prose, examples, or exercises are copied from any of them: all are copyleft (GFDL / CC BY-NC-SA), and copying would bind CS Navigator's content to those terms.",
   "title": "Variables",
-  "summary": "Give a value a name so you can use it again.",
+  "summary": "Give a **value** a name so you can use it again.",
   "minutes": 5,
-  "error_classes": ["syntax", "runtime"],
-  "refresher": "A variable is a name that holds a value. You create one by assigning to it: `score = 10`. The name goes on the left, the value on the right, and the `=` means \"put this value in this name\". It is not a comparison. Assigning to a name that already exists replaces what was there. Using a name you never assigned is an error, because Python has nothing to look up.",
+  "error_classes": [
+    "syntax",
+    "runtime"
+  ],
+  "refresher": "A **variable** is a name that holds a **value**. You create one by assigning to it: `score = 10`. The name goes on the left, the value on the right, and the `=` means \"put this value in this name\". It is not a comparison. Assigning to a name that already exists replaces what was there. Using a name you never assigned is an error, because Python has nothing to look up.",
   "refresher_code": "score = 10\nscore = score + 5\nprint(score)\n# 15",
   "blocks": [
     {
       "kind": "text",
-      "body": "A variable is a name for a value. You make one by assigning: put the name on the left, an equals sign in the middle, and the value on the right. From then on, writing the name means the value."
+      "body": "A **variable** is a name for a **value**. You make one by assigning: put the name on the left, an equals sign in the middle, and the value on the right. From then on, writing the name means the value."
     },
     {
       "kind": "code",
-      "caption": "Three variables, three types of value. Python works out the type on its own, so you never have to announce it.",
+      "caption": "Three **variables**, three types of **value**. Python works out the type on its own, so you never have to announce it.",
       "code": "name = \"Ada\"\nage = 36\nis_student = True\n\nprint(name)\nprint(age)",
       "output": "Ada\n36"
     },
@@ -21,25 +24,30 @@
       "kind": "callout",
       "tone": "mistake",
       "title": "The equals sign does not mean equals",
-      "body": "In math, `x = 5` states a fact. In Python it gives an order: put 5 into x. That difference is why `x = x + 1` is not nonsense. It reads as \"take what x is now, add one, and put the result back into x\". Later, when you learn `==`, this is the distinction you will be leaning on: `=` puts a value in, `==` asks whether two values match."
+      "body": "In math, `x = 5` states a fact. In Python it gives an order: put 5 into x. That difference is why `x = x + 1` is not nonsense. It reads as \"take what x is now, add one, and put the result back into x\". Later, when you learn `==`, this is the distinction you will be leaning on: `=` puts a **value** in, `==` asks whether two values match."
     },
     {
       "kind": "text",
-      "body": "A variable can be reassigned as often as you like. The new value replaces the old one, and the old value is simply gone. Nothing warns you, because replacing a value is usually exactly what you meant to do."
+      "body": "A **variable** can be reassigned as often as you like. The new **value** replaces the old one, and the old value is simply gone. Nothing warns you, because replacing a value is usually exactly what you meant to do."
     },
     {
       "kind": "code",
-      "caption": "Each line runs top to bottom, so the value you get depends on when you look. Reading `count` before the last line would have given you 1, not 2.",
+      "caption": "Each line runs top to bottom, so the **value** you get depends on when you look. Reading `count` before the last line would have given you 1, not 2.",
       "code": "count = 1\nprint(count)\ncount = 2\nprint(count)",
       "output": "1\n2"
     },
     {
       "kind": "check",
-      "prompt": "What does this print?",
+      "prompt": "What does this **print**?",
       "code": "total = 5\ntotal = total + 3\ntotal = total * 2\nprint(total)",
-      "choices": ["16", "13", "10", "11"],
+      "choices": [
+        "16",
+        "13",
+        "10",
+        "11"
+      ],
       "answer_index": 0,
-      "why": "Work through it one line at a time, which is exactly how Python does. `total` starts at 5. Then it becomes 5 + 3, which is 8. Then it becomes 8 * 2, which is 16. The trick is that each line uses the value from the line before, not the original 5."
+      "why": "Work through it one line at a time, which is exactly how Python does. `total` starts at 5. Then it becomes 5 + 3, which is 8. Then it becomes 8 * 2, which is 16. The trick is that each line uses the **value** from the line before, not the original 5."
     },
     {
       "kind": "text",
@@ -51,7 +59,7 @@
       "items": [
         "Letters, digits, and underscores only. No spaces and no dashes.",
         "It cannot start with a digit. `score2` is fine, `2score` is not.",
-        "Case matters. `score` and `Score` are two different variables.",
+        "Case matters. `score` and `Score` are two different **variables**.",
         "Python style is lowercase with underscores: `final_score`, not `finalScore`.",
         "Say what it holds. `n` tells the next reader nothing; `student_count` tells them everything."
       ]
@@ -60,11 +68,11 @@
       "kind": "callout",
       "tone": "warning",
       "title": "Using a name you never assigned",
-      "body": "If you type a name Python has never seen, you get a NameError. Nine times out of ten it is a typo: you assigned `total` and then asked for `totl`. The error message names the variable it could not find, so read it and compare it letter by letter against where you defined it. The other cause is asking for a variable before the line that creates it has run."
+      "body": "If you type a name Python has never seen, you get a NameError. Nine times out of ten it is a typo: you assigned `total` and then asked for `totl`. The error message names the **variable** it could not find, so read it and compare it letter by letter against where you defined it. The other cause is asking for a variable before the line that creates it has run."
     },
     {
       "kind": "compare",
-      "caption": "Python reads top to bottom. A variable does not exist until the assignment line has actually run, so asking for it before then is asking for something that is not there yet.",
+      "caption": "Python reads top to bottom. A **variable** does not exist until the assignment line has actually run, so asking for it before then is asking for something that is not there yet.",
       "wrong_label": "NameError",
       "wrong": "print(greeting)\ngreeting = \"Hi\"\n# asked for it one\n# line too early",
       "right_label": "Works",
@@ -72,7 +80,7 @@
     },
     {
       "kind": "check",
-      "prompt": "Which of these lines is a syntax error?",
+      "prompt": "Which of these lines is a **syntax error**?",
       "code": "1st_place = \"Ada\"\nfirst_place = \"Ada\"\nfirstPlace = \"Ada\"\nfirst_place2 = \"Ada\"",
       "choices": [
         "`1st_place = \"Ada\"`",
@@ -85,7 +93,89 @@
     },
     {
       "kind": "text",
-      "body": "One last habit worth starting now. When a value in your program has a meaning, give it a name even if you only use it once. `price * 0.06` makes a reader guess. `price * sales_tax_rate` does not."
+      "body": "One last habit worth starting now. When a **value** in your program has a meaning, give it a name even if you only use it once. `price * 0.06` makes a reader guess. `price * sales_tax_rate` does not."
     }
-  ]
+  ],
+  "learn_cards": {
+    "assign-01": {
+      "title": "Reassignment replaces the old value",
+      "body": "A variable holds the latest value assigned to that name. A later assignment overwrites the earlier one.",
+      "notice": "Trace assignments in order from top to bottom.",
+      "mistake": "Do not add old and new values together unless the code explicitly does that.",
+      "section_id": "check",
+      "example": "score = 25"
+    },
+    "update-01": {
+      "title": "The right side runs first",
+      "body": "An update like `count = count + 3` reads the old value first, computes the new value, then stores it.",
+      "notice": "Write the old value beside the variable before applying the update.",
+      "mistake": "Do not replace both sides at the same time in your head.",
+      "section_id": "check",
+      "example": "count = count + 3"
+    },
+    "swap-01": {
+      "title": "Copies do not preserve overwritten values",
+      "body": "Assignment copies a value at that moment. If the original value is overwritten, it is gone unless another name saved it first.",
+      "notice": "A real swap needs a temporary save or a language-specific swap pattern.",
+      "mistake": "Do not assume two assignments automatically trade values.",
+      "section_id": "check",
+      "example": "temp = a"
+    },
+    "name-01": {
+      "title": "Variable names follow naming rules",
+      "body": "Names can use letters, digits, and underscores, but they cannot start with a digit.",
+      "notice": "Ask whether the first character is legal before checking the rest.",
+      "mistake": "Do not reject underscores just because they look unusual.",
+      "section_id": "check",
+      "example": "total_score"
+    },
+    "undefined-01": {
+      "title": "Names must exist before use",
+      "body": "The program runs in order. A name created later is not available to an earlier line.",
+      "notice": "For runtime name errors, find the first line that tries to read the missing name.",
+      "mistake": "Do not assume a later assignment reaches backward in time.",
+      "section_id": "check",
+      "example": "total = 5"
+    },
+    "typein-01": {
+      "title": "Trace the value after every line",
+      "body": "For final-value questions, keep a small table of the variable after each update.",
+      "notice": "The printed value is whatever the variable holds at the final output line.",
+      "mistake": "Do not skip middle updates because the starting value looks simple.",
+      "section_id": "check",
+      "example": "x -> 2 -> 10 -> 7"
+    },
+    "compound-update-01": {
+      "title": "Shorthand updates still use current state",
+      "body": "Compound assignment means update the variable using the value it already stores.",
+      "notice": "Apply each shorthand operation in order and replace the stored value each time.",
+      "mistake": "Do not treat `+=` or `*=` as separate values waiting until the end.",
+      "section_id": "check",
+      "example": "points += 4"
+    },
+    "copy-value-01": {
+      "title": "A copied value stays copied",
+      "body": "After one variable receives another variable's value, later reassignment of the original name does not replay old lines.",
+      "notice": "Assignment is an event, not a live connection for simple values.",
+      "mistake": "Do not update the copied variable just because the source variable changed later.",
+      "section_id": "check",
+      "example": "second = first"
+    },
+    "shadow-scope-01": {
+      "title": "Local names can hide outer names",
+      "body": "A name created inside a function or method can be separate from a name outside it.",
+      "notice": "Track which scope the code is currently running in.",
+      "mistake": "Do not assume changing an inside name changes the outside name.",
+      "section_id": "check",
+      "example": "def double(n):\n    return n * 2"
+    },
+    "static-vs-dynamic-01": {
+      "title": "Type rules depend on the language",
+      "body": "Some languages let a name later hold a different kind of value, while typed languages require a compatible type.",
+      "notice": "Read the declaration or assignment rule for the selected language before predicting behavior.",
+      "mistake": "Do not transfer Python or JavaScript habits directly into Java or C++.",
+      "section_id": "check",
+      "example": "score = 25"
+    }
+  }
 }

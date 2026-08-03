@@ -90,22 +90,26 @@
 
 .progress-badge-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   gap: 12px;
+  justify-content: start;
 }
 
 .progress-badge-card {
+  --badge-tone: #3b82f6;
+  --badge-tone-contrast: #ffffff;
   display: grid;
   grid-template-columns: 46px minmax(0, 1fr) auto;
-  gap: 12px;
+  gap: 11px;
   align-items: center;
   min-width: 0;
-  padding: 15px;
+  width: 100%;
+  padding: 13px 14px;
   border: 1px solid var(--ct-border);
-  border-radius: 18px;
+  border-radius: 14px;
   background: var(--ct-solid-raised, var(--ct-panel-raised));
   color: var(--ct-text);
-  box-shadow: 0 12px 28px color-mix(in srgb, var(--ct-primary) 9%, transparent);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--ct-primary) 6%, transparent);
 }
 
 .progress-badge-card.not-started {
@@ -126,24 +130,76 @@
 }
 
 .progress-badge-icon {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
   border-radius: 16px;
   color: #fff;
   background: linear-gradient(135deg, #2563eb, #f37021);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
 }
 
-.progress-badge-card.orange .progress-badge-icon { background: linear-gradient(135deg, #f37021, #fbbf24); color: #172033; }
-.progress-badge-card.green .progress-badge-icon { background: linear-gradient(135deg, #15803d, #22c55e); }
-.progress-badge-card.purple .progress-badge-icon { background: linear-gradient(135deg, #6d28d9, #a78bfa); }
+.progress-badge-icon svg {
+  position: relative;
+  z-index: 1;
+}
+
+.progress-badge-card.in-progress {
+  --badge-ring-color: var(--badge-tone);
+  --badge-ring-track: color-mix(in srgb, var(--badge-ring-color) 16%, var(--ct-panel-soft));
+  border-color: color-mix(in srgb, var(--badge-ring-color) 34%, var(--ct-border));
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--badge-ring-color) 7%, var(--ct-panel)),
+      var(--ct-solid-raised, var(--ct-panel-raised)) 54%
+    );
+}
+
+.progress-badge-card.in-progress .progress-badge-icon {
+  color: var(--badge-ring-color);
+  background: conic-gradient(
+    var(--badge-ring-color) var(--badge-progress, 0%),
+    var(--badge-ring-track) 0
+  );
+  box-shadow: none;
+}
+
+.progress-badge-card.in-progress .progress-badge-icon::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--badge-ring-color) 8%, var(--ct-panel));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--badge-ring-color) 24%, var(--ct-border));
+}
+
+.progress-badge-card.orange { --badge-tone: #f97316; --badge-tone-contrast: #172033; }
+.progress-badge-card.green { --badge-tone: #22c55e; }
+.progress-badge-card.purple { --badge-tone: #8b5cf6; }
+.progress-badge-card.gold { --badge-tone: #eab308; --badge-tone-contrast: #172033; }
+.progress-badge-card.red { --badge-tone: #f43f5e; }
+.progress-badge-card.pink { --badge-tone: #ec4899; }
+.progress-badge-card.cyan { --badge-tone: #06b6d4; --badge-tone-contrast: #172033; }
+
+.progress-badge-card.orange .progress-badge-icon { background: linear-gradient(135deg, #f97316, #facc15); color: #172033; }
+.progress-badge-card.green .progress-badge-icon { background: linear-gradient(135deg, #16a34a, #4ade80); }
+.progress-badge-card.purple .progress-badge-icon { background: linear-gradient(135deg, #7c3aed, #a78bfa); }
 .progress-badge-card.gold .progress-badge-icon { background: linear-gradient(135deg, #ca8a04, #fde047); color: #172033; }
-.progress-badge-card.red .progress-badge-icon { background: linear-gradient(135deg, #b91c1c, #fb7185); }
-.progress-badge-card.pink .progress-badge-icon { background: linear-gradient(135deg, #be185d, #f9a8d4); }
+.progress-badge-card.red .progress-badge-icon { background: linear-gradient(135deg, #e11d48, #fb7185); }
+.progress-badge-card.pink .progress-badge-icon { background: linear-gradient(135deg, #db2777, #f9a8d4); }
 .progress-badge-card.cyan .progress-badge-icon { background: linear-gradient(135deg, #0891b2, #67e8f9); color: #172033; }
+
+.progress-badge-card.in-progress .progress-badge-icon {
+  color: var(--badge-ring-color);
+  background: conic-gradient(
+    var(--badge-ring-color) var(--badge-progress, 0%),
+    var(--badge-ring-track) 0
+  );
+}
 
 .progress-badge-body {
   min-width: 0;
@@ -165,7 +221,7 @@
 .progress-badge-card h3 {
   margin: 0;
   color: var(--ct-text);
-  font-size: 0.98rem;
+  font-size: 0.94rem;
   line-height: 1.2;
   min-width: 0;
 }
@@ -248,65 +304,195 @@ body.coding-dark .progress-badge-card.not-started .progress-badge-rarity.rarity-
 }
 
 .progress-badge-card p {
-  margin: 4px 0 0;
+  margin: 3px 0 0;
   color: var(--ct-muted);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   line-height: 1.35;
 }
 
-/* Per-badge progress meter (locked, count-based badges only). */
-.progress-badge-meter {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 9px;
+.progress-badge-count {
+  display: inline-flex;
+  margin-top: 7px;
+  color: color-mix(in srgb, var(--ct-text) 70%, var(--ct-primary));
+  font-size: 0.74rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
 }
 
 .progress-badge-meter-track {
-  flex: 1 1 auto;
+  width: 100%;
   min-width: 0;
-  height: 8px;
+  height: 6px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--ct-primary) 20%, var(--ct-panel-soft));
+  background: color-mix(in srgb, var(--ct-text) 12%, var(--ct-panel-soft));
   overflow: hidden;
 }
 
 .progress-badge-meter-fill {
   display: block;
+  min-width: 5px;
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--ct-primary), var(--ct-accent, #f37021));
+  background: color-mix(in srgb, var(--ct-primary) 58%, var(--ct-accent, #f37021));
   transition: width 0.4s ease;
 }
 
-/* Give a NON-zero fill a small min-width so tiny progress (e.g. 2%) is still
-   visible — but only when width isn't exactly 0%, so a true 0/N bar collapses
-   fully instead of showing a permanent sliver. */
-.progress-badge-meter-fill:not([style*="width: 0%"]) {
-  min-width: 8px;
+.progress-badge-meter-fill[style*="width: 0%"] {
+  min-width: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .progress-badge-meter-fill { transition: none; }
+  .progress-badge-meter-fill {
+    transition: none;
+  }
 }
 
-.progress-badge-meter-label {
-  flex: 0 0 auto;
+.progress-habits {
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 16%, var(--ct-border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ct-primary) 4%, var(--ct-panel));
+  overflow: hidden;
+}
+
+.progress-habits-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.progress-habits-head::-webkit-details-marker {
+  display: none;
+}
+
+.progress-habits-head:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ct-primary) 40%, transparent);
+  outline-offset: -3px;
+}
+
+.progress-habits-body {
+  padding: 0 14px 14px;
+}
+
+.progress-habits-head h3 {
+  margin: 4px 0 2px;
+  color: var(--ct-text);
+  font-size: 0.95rem;
+}
+
+.progress-habits-head p,
+.progress-habits-empty {
+  margin: 0;
   color: var(--ct-muted);
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.progress-habits-summary {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ct-muted);
+}
+
+.progress-habits-summary > strong {
+  color: var(--ct-primary);
+  font-size: 0.92rem;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+}
+
+.progress-habits-summary > small {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.progress-habits[open] .progress-habits-summary > small {
+  color: var(--ct-primary);
+}
+
+.progress-habits-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.progress-habits-list li {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid var(--ct-border);
+  border-radius: 12px;
+  background: var(--ct-solid-raised, var(--ct-panel-raised));
+}
+
+.progress-habits-list li.is-complete {
+  border-color: color-mix(in srgb, #16a34a 34%, var(--ct-border));
+  background: color-mix(in srgb, #16a34a 7%, var(--ct-panel));
+}
+
+.progress-habit-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  color: var(--ct-primary);
+  background: color-mix(in srgb, var(--ct-primary) 10%, var(--ct-panel-soft));
+}
+
+.progress-habits-list li.is-complete .progress-habit-icon {
+  color: #15803d;
+  background: color-mix(in srgb, #16a34a 14%, var(--ct-panel-soft));
+}
+
+.progress-habits-list strong {
+  display: block;
+  color: var(--ct-text);
+  font-size: 0.86rem;
+  line-height: 1.2;
+}
+
+.progress-habits-list p {
+  margin: 3px 0 0;
+  color: var(--ct-muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.progress-habits-list small {
+  align-self: start;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-primary) 11%, var(--ct-panel-soft));
+  color: var(--ct-primary);
+  font-size: 0.68rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
 .progress-badge-card strong {
   justify-self: end;
   align-self: center;
-  padding: 5px 9px;
+  margin-top: 0;
+  padding: 4px 8px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--ct-primary) 12%, var(--ct-panel-soft));
   color: var(--ct-primary);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   white-space: nowrap;
 }
 
@@ -506,10 +692,6 @@ body.coding-dark .progress-badge-card.not-started strong {
 
 .progress-badge-filters button.active span {
   background: rgba(255, 255, 255, 0.18);
-}
-
-.progress-badge-card.in-progress {
-  border-color: color-mix(in srgb, var(--ct-primary) 42%, var(--ct-border));
 }
 
 .progress-badge-card.not-started {

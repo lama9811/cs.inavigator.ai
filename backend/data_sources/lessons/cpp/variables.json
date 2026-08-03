@@ -1,23 +1,23 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Variables",
-  "summary": "Give values clear names and decide whether they may change.",
+  "summary": "Give **values** clear names and decide whether they may change.",
   "minutes": 10,
   "error_classes": [
     "syntax",
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "A C++ variable starts with a type, followed by its name and an optional value. For example, `int score = 10;` stores a whole number. Add `const` when the value should not be reassigned.",
+  "refresher": "A C++ **variable** starts with a type, followed by its name and an optional **value**. For example, `int score = 10;` stores a whole number. Add `const` when the value should not be reassigned.",
   "refresher_code": "const std::string course = \"CS 201\";\nint seats = 3;\nseats = 2;",
   "blocks": [
     {
       "kind": "text",
-      "body": "A variable is a named place to keep a value. In C++, you write the type before the name: `int attempts = 0;`. The type tells C++ what kind of value belongs there, and the semicolon ends the declaration."
+      "body": "A **variable** is a named place to keep a **value**. In C++, you write the type before the name: `int attempts = 0;`. The type tells C++ what kind of value belongs there, and the semicolon ends the declaration."
     },
     {
       "kind": "text",
-      "body": "A variable keeps the same type while it exists. A name declared inside braces can be used only inside that block. Give local variables a starting value before reading them so the program never has to guess what they contain."
+      "body": "A **variable** keeps the same type while it exists. A name declared inside braces can be used only inside that block. Give local variables a starting **value** before reading them so the program never has to guess what they contain."
     },
     {
       "kind": "callout",
@@ -33,7 +33,7 @@
     },
     {
       "kind": "compare",
-      "caption": "Initialize a local variable before any branch can read it.",
+      "caption": "Initialize a **local variable** before any branch can read it.",
       "wrong_label": "Common mistake",
       "wrong": "int result;\nif (ready) result = 5;\nstd::cout << result;",
       "right_label": "Clearer version",
@@ -41,17 +41,17 @@
     },
     {
       "kind": "text",
-      "body": "If `ready` is false in the first version, `result` never receives a value. Starting it at zero gives the program a clear fallback. Use `const` for a value such as a course name or conversion rate that should stay fixed."
+      "body": "If `ready` is false in the first version, `result` never receives a **value**. Starting it at zero gives the program a clear fallback. Use `const` for a value such as a course name or conversion rate that should stay fixed."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "Initialize before use",
-      "body": "A local number without a starting value does not contain a dependable answer. Assign a value when you declare it, unless every possible path clearly assigns one before it is read."
+      "body": "A local number without a starting **value** does not contain a dependable answer. Assign a value when you declare it, unless every possible path clearly assigns one before it is read."
     },
     {
       "kind": "check",
-      "prompt": "Which declaration creates a changing integer?",
+      "prompt": "Which declaration creates a changing **integer**?",
       "code": "",
       "choices": [
         "int attempts = 0;",
@@ -60,7 +60,7 @@
         "var attempts = 0;"
       ],
       "answer_index": 0,
-      "why": "A plain int variable can be reassigned after its initialized declaration."
+      "why": "A plain int **variable** can be reassigned after its initialized declaration."
     },
     {
       "kind": "check",
@@ -73,7 +73,7 @@
         "nothing"
       ],
       "answer_index": 0,
-      "why": "Compound assignment adds three to the numeric value and stores seven."
+      "why": "Compound assignment adds three to the numeric **value** and stores seven."
     },
     {
       "kind": "list",
@@ -81,10 +81,92 @@
       "items": [
         "Choose an accurate type.",
         "Initialize before reading.",
-        "Use const for fixed values.",
-        "Keep scope as narrow as practical."
+        "Use const for fixed **values**.",
+        "Keep **scope** as narrow as practical."
       ]
     }
   ],
-  "_beginner_expanded": true
+  "_beginner_expanded": true,
+  "learn_cards": {
+    "assign-01": {
+      "title": "Reassignment replaces the old value",
+      "body": "A variable holds the latest value assigned to that name. A later assignment overwrites the earlier one.",
+      "notice": "Trace assignments in order from top to bottom.",
+      "mistake": "Do not add old and new values together unless the code explicitly does that.",
+      "section_id": "check",
+      "example": "int score = 25;"
+    },
+    "update-01": {
+      "title": "The right side runs first",
+      "body": "An update like `count = count + 3` reads the old value first, computes the new value, then stores it.",
+      "notice": "Write the old value beside the variable before applying the update.",
+      "mistake": "Do not replace both sides at the same time in your head.",
+      "section_id": "check",
+      "example": "count = count + 3;"
+    },
+    "swap-01": {
+      "title": "Copies do not preserve overwritten values",
+      "body": "Assignment copies a value at that moment. If the original value is overwritten, it is gone unless another name saved it first.",
+      "notice": "A real swap needs a temporary save or a language-specific swap pattern.",
+      "mistake": "Do not assume two assignments automatically trade values.",
+      "section_id": "check",
+      "example": "temp = a"
+    },
+    "name-01": {
+      "title": "Variable names follow naming rules",
+      "body": "Names can use letters, digits, and underscores, but they cannot start with a digit.",
+      "notice": "Ask whether the first character is legal before checking the rest.",
+      "mistake": "Do not reject underscores just because they look unusual.",
+      "section_id": "check",
+      "example": "total_score"
+    },
+    "undefined-01": {
+      "title": "Names must exist before use",
+      "body": "The program runs in order. A name created later is not available to an earlier line.",
+      "notice": "For runtime name errors, find the first line that tries to read the missing name.",
+      "mistake": "Do not assume a later assignment reaches backward in time.",
+      "section_id": "check",
+      "example": "total = 5"
+    },
+    "typein-01": {
+      "title": "Trace the value after every line",
+      "body": "For final-value questions, keep a small table of the variable after each update.",
+      "notice": "The printed value is whatever the variable holds at the final output line.",
+      "mistake": "Do not skip middle updates because the starting value looks simple.",
+      "section_id": "check",
+      "example": "x -> 2 -> 10 -> 7"
+    },
+    "compound-update-01": {
+      "title": "Shorthand updates still use current state",
+      "body": "Compound assignment means update the variable using the value it already stores.",
+      "notice": "Apply each shorthand operation in order and replace the stored value each time.",
+      "mistake": "Do not treat `+=` or `*=` as separate values waiting until the end.",
+      "section_id": "check",
+      "example": "points += 4"
+    },
+    "copy-value-01": {
+      "title": "A copied value stays copied",
+      "body": "After one variable receives another variable's value, later reassignment of the original name does not replay old lines.",
+      "notice": "Assignment is an event, not a live connection for simple values.",
+      "mistake": "Do not update the copied variable just because the source variable changed later.",
+      "section_id": "check",
+      "example": "second = first"
+    },
+    "shadow-scope-01": {
+      "title": "Local names can hide outer names",
+      "body": "A name created inside a function or method can be separate from a name outside it.",
+      "notice": "Track which scope the code is currently running in.",
+      "mistake": "Do not assume changing an inside name changes the outside name.",
+      "section_id": "check",
+      "example": "int doubleIt(int n) {\n    return n * 2;\n}"
+    },
+    "static-vs-dynamic-01": {
+      "title": "Type rules depend on the language",
+      "body": "Some languages let a name later hold a different kind of value, while typed languages require a compatible type.",
+      "notice": "Read the declaration or assignment rule for the selected language before predicting behavior.",
+      "mistake": "Do not transfer Python or JavaScript habits directly into Java or C++.",
+      "section_id": "check",
+      "example": "int score = 25;"
+    }
+  }
 }

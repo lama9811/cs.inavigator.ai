@@ -14,7 +14,6 @@ import {
 import { fetchQuizCategories, fetchQuizProgress, fetchQuizQuestions } from "./conceptQuizApi";
 import { LANGUAGE_VISUALS } from "./languageVisuals";
 import { readCategoryProgress, readQuizDraftAnswers } from "./conceptQuizProgress";
-import PlacementCheck from "./PlacementCheck";
 
 // Language landing page: a progress hero plus an ACCORDION of categories. Each
 // category row expands inline to reveal its question table (name | type | status).
@@ -28,10 +27,23 @@ const PASS_THRESHOLD = 0.7;
 const TOPIC_ALIASES = {
   arrays: "lists",
   array: "lists",
-  "hash maps": "dictionaries",
-  "hash map": "dictionaries",
-  maps: "dictionaries",
-  map: "dictionaries",
+  stacks: "stacks",
+  stack: "stacks",
+  queues: "queues",
+  queue: "queues",
+  "hash maps": "hash-maps-sets",
+  "hash map": "hash-maps-sets",
+  maps: "hash-maps-sets",
+  map: "hash-maps-sets",
+  sets: "hash-maps-sets",
+  "linked lists": "linked-lists",
+  "linked list": "linked-lists",
+  recursion: "recursion-patterns",
+  "binary search": "binary-search",
+  "two pointers": "two-pointers",
+  "sliding window": "sliding-window",
+  trees: "trees",
+  graphs: "graphs",
 };
 
 function categoryForMastery(topic, categories) {
@@ -83,7 +95,14 @@ const TRACKS = [
     label: "Intermediate",
     description: "Multi-step problems and language-specific concepts.",
   },
+  {
+    id: "advanced",
+    label: "Advanced",
+    description: "Data structures and interview-style patterns, explained step by step.",
+  },
 ];
+
+const CLOSED_TRACKS = Object.fromEntries(TRACKS.map((track) => [track.id, false]));
 
 function orderTrackCategories(trackId, categories) {
   if (trackId !== "intermediate") return categories;
@@ -251,15 +270,14 @@ export default function QuizLanguageLanding({
   const [categories, setCategories] = useState([]);
   const [openId, setOpenId] = useState("");
   const [openTracks, setOpenTracks] = useState({
+    ...CLOSED_TRACKS,
     beginner: true,
-    intermediate: false,
   });
   // Per-category question cache: { [categoryId]: question[] }.
   const [questionsByCat, setQuestionsByCat] = useState({});
   const [loadingCats, setLoadingCats] = useState(true);
   const [error, setError] = useState("");
   const [serverProgress, setServerProgress] = useState({ categories: [], mistakes: [] });
-  const [placementOpen, setPlacementOpen] = useState(false);
 
   // Load the available shared and language-specific categories.
   useEffect(() => {
@@ -272,7 +290,7 @@ export default function QuizLanguageLanding({
         if (!alive) return;
         const cats = (data.categories || []).filter((category) => !category.lesson_only);
         setCategories(cats);
-        setOpenTracks({ beginner: true, intermediate: false });
+        setOpenTracks({ ...CLOSED_TRACKS, beginner: true });
         // Open the first category that actually has questions by default.
         const firstReady = cats.find((c) => c.count > 0);
         setOpenId(firstReady ? firstReady.id : "");
@@ -370,16 +388,60 @@ export default function QuizLanguageLanding({
   const cacheQuestions = (categoryId, list) =>
     setQuestionsByCat((prev) => ({ ...prev, [categoryId]: list }));
 
+  const categoryForStartingPath = (recommendation) => {
+    if (recommendation?.category) return recommendation.category;
+    if (recommendation?.action === "syntax-quiz") return "syntax";
+    if (recommendation?.action === "variables-quiz") return "variables";
+    if (recommendation?.action === "control-flow-quiz") return "conditionals";
+    if (recommendation?.action === "functions-quiz") return "functions";
+    if (recommendation?.action === "data-structures-quiz") return "lists";
+    if (recommendation?.action === "debugging-quiz") return "debug";
+    return null;
+  };
+
   const showRecommendation = (recommendation) => {
-    setPlacementOpen(false);
-    setOpenTracks({ beginner: false, intermediate: false, [recommendation.track]: true });
-    setOpenId(recommendation.category);
+    const category = categoryForStartingPath(recommendation);
+    if (!category) return;
+    const track = recommendation.track || readyCategories.find((item) => item.id === category)?.track || "beginner";
+    setOpenTracks({ ...CLOSED_TRACKS, [track]: true });
+    setOpenId(category);
     window.setTimeout(() => {
-      document.getElementById(`cq-category-${recommendation.category}`)?.scrollIntoView({
+      document.getElementById(`cq-category-${category}`)?.scrollIntoView({
         behavior: "smooth",
         block: "center",
       });
     }, 50);
+  };
+
+  const startRecommendedTopic = async (recommendation) => {
+    showRecommendation(recommendation);
+    setError("");
+
+    const categoryId = categoryForStartingPath(recommendation);
+    if (!categoryId) return;
+
+    try {
+      const questions = questionsByCat[categoryId] || (
+        await fetchQuizQuestions(apiBase, language, categoryId)
+      ).questions || [];
+      if (!questionsByCat[categoryId]) cacheQuestions(categoryId, questions);
+
+      const categoryProgress = progressByCat[categoryId]?.questions || {};
+      const draftAnswers = readQuizDraftAnswers(language, categoryId);
+      const draftQuestion = questions.find((question) => hasDraftAnswer(draftAnswers[question.id]));
+      const nextQuestion =
+        draftQuestion ||
+        questions.find((question) => categoryProgress[question.id] !== "correct") ||
+        questions[0];
+
+      if (!nextQuestion?.id) {
+        setError("No questions are available for the recommended topic yet.");
+        return;
+      }
+      onOpenQuestion(categoryId, nextQuestion.id);
+    } catch (err) {
+      setError(err.message || "Could not open the recommended topic yet.");
+    }
   };
 
   return (
@@ -427,14 +489,11 @@ export default function QuizLanguageLanding({
           <p>{recommendationReason}</p>
         </div>
         <div className="cq-guidance-actions">
-          <button type="button" className="cq-btn cq-btn-ghost" onClick={() => setPlacementOpen(true)}>
-            Find my starting point
-          </button>
           {nextCategory ? (
             <button
               type="button"
               className="cq-btn cq-btn-primary"
-              onClick={() => showRecommendation({ track: nextCategory.track, category: nextCategory.id })}
+              onClick={() => startRecommendedTopic({ track: nextCategory.track, category: nextCategory.id })}
             >
               Open this topic
             </button>
@@ -470,15 +529,6 @@ export default function QuizLanguageLanding({
         </section>
       ) : null}
 
-      {placementOpen ? (
-        <PlacementCheck
-          apiBase={apiBase}
-          language={language}
-          onClose={() => setPlacementOpen(false)}
-          onUseRecommendation={showRecommendation}
-        />
-      ) : null}
-
       {error ? <p className="cq-error">{error}</p> : null}
 
       {loadingCats ? (
@@ -507,8 +557,7 @@ export default function QuizLanguageLanding({
                   aria-controls={"cq-" + track.id + "-categories"}
                   onClick={() =>
                     setOpenTracks((current) => ({
-                      beginner: false,
-                      intermediate: false,
+                      ...CLOSED_TRACKS,
                       [track.id]: !current[track.id],
                     }))
                   }

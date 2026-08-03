@@ -1,27 +1,93 @@
 {
   "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
   "title": "Algorithm Problems: Part 2",
-  "summary": "Coordinate multiple state values and edge cases.",
+  "summary": "Coordinate multiple state **values** and **edge cases**.",
   "minutes": 10,
   "error_classes": [
     "wrong_answer",
     "runtime",
     "timeout"
   ],
-  "refresher": "A multi-step algorithm may track a value plus its index, or a count plus a total. State what remains true after each pass, and define empty input and tie behavior.",
+  "refresher": "A multi-step algorithm may track a **value** plus its **index**, or a count plus a total. State what remains true after each pass, and define empty **input** and tie behavior.",
   "refresher_code": "let best=0;\nfor(let i=1;i<values.length;i++){\n if(values[i]>values[best]) best=i;\n}",
   "blocks": [
     {
       "kind": "text",
-      "body": "A multi-step algorithm may track a value plus its index, or a count plus a total. State what remains true after each pass, and define empty input and tie behavior. Coordinate multiple state values and edge cases."
+      "body": "A multi-step algorithm may track a value plus its **index**, or a count plus a total. State what remains true after each pass, and define empty **input** and tie behavior. Coordinate multiple state values and **edge cases**."
+    },
+    {
+      "kind": "visual",
+      "title": "Track best-so-far state",
+      "concept": "arrays",
+      "caption": "Watch the best index update only when a better value appears.",
+      "initial_state": {},
+      "steps": [
+        {
+          "title": "Initialize",
+          "body": "Best starts at index 0 because that is the first candidate.",
+          "state": {
+            "items": [
+              "4",
+              "9",
+              "7"
+            ],
+            "active": [
+              0
+            ],
+            "pointers": {
+              "best": 0
+            },
+            "note": "best value = 4"
+          }
+        },
+        {
+          "title": "Compare index 1",
+          "body": "Nine is larger than four, so best moves to index 1.",
+          "animation": "slide",
+          "state": {
+            "items": [
+              "4",
+              "9",
+              "7"
+            ],
+            "active": [
+              1
+            ],
+            "pointers": {
+              "best": 1,
+              "i": 1
+            },
+            "note": "best value = 9"
+          }
+        },
+        {
+          "title": "Compare index 2",
+          "body": "Seven is not larger than nine, so best stays put.",
+          "state": {
+            "items": [
+              "4",
+              "9",
+              "7"
+            ],
+            "active": [
+              2
+            ],
+            "pointers": {
+              "best": 1,
+              "i": 2
+            },
+            "note": "return best index 1"
+          }
+        }
+      ]
     },
     {
       "kind": "text",
-      "body": "Part 2 problems often need two related facts at once. A largest-value search may keep an index because that index provides both the value and its location. An invariant is simply a sentence that remains true after each pass, such as: `best` points to the largest item examined so far."
+      "body": "Part 2 problems often need two related facts at once. A largest-**value** search may keep an **index** because that index provides both the value and its location. An invariant is simply a sentence that remains true after each pass, such as: `best` points to the largest item examined so far."
     },
     {
       "kind": "code",
-      "caption": "The first item initializes the candidate; each later item may replace its index.",
+      "caption": "The first item initializes the candidate; each later item may replace its **index**.",
       "code": "function largestIndex(v){\n if(v.length===0)return -1;\n let best=0;\n for(let i=1;i<v.length;i++)if(v[i]>v[best])best=i;\n return best;\n}\nconsole.log(largestIndex([4,9,7]));",
       "output": "1"
     },
@@ -35,17 +101,17 @@
     },
     {
       "kind": "text",
-      "body": "Trace `[4, 9, 7]`: best begins at zero, index one contains a larger value so best becomes one, and index two does not replace it. The invariant remains true after every comparison. Decide separately whether equal values should keep the first or last index."
+      "body": "Trace `[4, 9, 7]`: best begins at zero, **index** one contains a larger **value** so best becomes one, and index two does not replace it. The invariant remains true after every comparison. Decide separately whether equal values should keep the first or last index."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "Trace this carefully",
-      "body": "Empty input has no first candidate, so guard it before reading index zero and choose an explicit contract."
+      "body": "Empty **input** has no first candidate, so guard it before reading **index** zero and choose an explicit contract."
     },
     {
       "kind": "check",
-      "prompt": "Why begin at index one?",
+      "prompt": "Why begin at **index** one?",
       "code": "",
       "choices": [
         "index zero is already the candidate",
@@ -67,7 +133,7 @@
         "neither"
       ],
       "answer_index": 0,
-      "why": "The later equal value does not pass a strict greater-than test, so the first remains."
+      "why": "The later equal **value** does not pass a strict greater-than test, so the first remains."
     },
     {
       "kind": "list",
@@ -75,10 +141,84 @@
       "items": [
         "Name each state meaning.",
         "Choose a tie rule.",
-        "Guard empty input.",
+        "Guard empty **input**.",
         "Trace an iteration table."
       ]
     }
   ],
-  "_beginner_expanded": true
+  "_beginner_expanded": true,
+  "learn_cards": {
+    "algo-p2-01": {
+      "title": "Sorted flag invariant",
+      "body": "This algorithm keeps a flag that means no out-of-order pair has been found yet. Each pass compares a value with the value just before it.",
+      "notice": "The loop starts after the first item because each comparison looks backward one position.",
+      "mistake": "Do not compare a value with itself or start at a position with no previous neighbor.",
+      "section_id": "state-invariant",
+      "example": "current vs previous",
+      "source": "question"
+    },
+    "algo-p2-02": {
+      "title": "Running totals",
+      "body": "Running totals keep one ongoing total and record a snapshot after each addition. The saved collection grows after the current value is included.",
+      "notice": "Add first, then store the new total for that position.",
+      "mistake": "Do not reset the total each pass; only the snapshot changes each pass.",
+      "section_id": "state-invariant",
+      "example": "total grows, result records",
+      "source": "question"
+    },
+    "algo-p2-03": {
+      "title": "Nested matrix scan",
+      "body": "A matrix count needs two loops: one to choose each row and one to inspect each value in that row. The counter changes only on a target match.",
+      "notice": "The inner loop must be nested inside the row loop.",
+      "mistake": "Do not increment once per row when the prompt asks for matching cells.",
+      "section_id": "trace-table",
+      "example": "row -> value -> match?",
+      "source": "question"
+    },
+    "algo-p2-04": {
+      "title": "Two best values",
+      "body": "Tracking the largest and second-largest distinct values means the variables depend on each other. When a new largest appears, the old largest has to move into second place.",
+      "notice": "Update second before replacing largest with the new value.",
+      "mistake": "Do not let a duplicate of the largest count as the second-largest distinct value.",
+      "section_id": "state-invariant",
+      "example": "old largest becomes second",
+      "source": "question"
+    },
+    "algo-p2-05": {
+      "title": "First occurrences",
+      "body": "This pattern preserves order by scanning left to right and adding a value only if it has not already been kept.",
+      "notice": "The membership check happens before the append or add step.",
+      "mistake": "Do not sort the values or use a plain set if the prompt asks to keep first-seen order.",
+      "section_id": "edges-and-ties",
+      "example": "seen before? then skip",
+      "source": "question"
+    },
+    "algo-p2-06": {
+      "title": "Mirrored string positions",
+      "body": "A palindrome check compares matching positions from the front and back. One mismatch is enough to change the answer flag.",
+      "notice": "Only half the string needs direct comparisons.",
+      "mistake": "Do not compare every character with the same final character.",
+      "section_id": "edges-and-ties",
+      "example": "left i, right length - i - 1",
+      "source": "question"
+    },
+    "algo-p2-07": {
+      "title": "Reset row-local state",
+      "body": "A best-row algorithm has two levels of state: a row total that restarts for each row and a best value that survives across rows.",
+      "notice": "Reset the row total inside the outer loop but before the inner loop.",
+      "mistake": "Do not reset the best value for every row.",
+      "section_id": "trace-table",
+      "example": "row total resets, best survives",
+      "source": "question"
+    },
+    "algo-p2-08": {
+      "title": "Separate kept values and zeros",
+      "body": "Moving zeros to the end can be traced as two pieces of state: the kept nonzero values and the number of zeros seen so far.",
+      "notice": "The scan preserves nonzero order first, then appends the counted zeros.",
+      "mistake": "Do not append zeros immediately if the prompt wants them all at the end.",
+      "section_id": "trace-table",
+      "example": "keep nonzeros, count zeros",
+      "source": "question"
+    }
+  }
 }

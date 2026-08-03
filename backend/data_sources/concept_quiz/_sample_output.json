@@ -161,7 +161,7 @@
           "code": null,
           "prompt": "Write a single statement that prints the word Hello on its own line.",
           "accepted": ["System.out.println(\"Hello\");"],
-          "explanation": "Java prints a line with System.out.println(\"Hello\"); — note the semicolon and double quotes."
+          "explanation": "Java prints a line with System.out.println(\"Hello\"); - note the semicolon and double quotes."
         },
         "javascript": {
           "code": null,

@@ -1,18 +1,18 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "User Input",
-  "summary": "Read keyboard input and check whether it matches the expected type.",
+  "summary": "Read keyboard **input** and check whether it matches the expected type.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "Use `std::cin >> value` to read one value from the keyboard. The variable's type tells C++ what kind of input to expect. Use `std::getline` when you need a full line that may contain spaces.",
+  "refresher": "Use `std::cin >> value` to read one **value** from the keyboard. The **variable**'s type tells C++ what kind of **input** to expect. Use `std::getline` when you need a full line that may contain spaces.",
   "refresher_code": "int credits;\nif (std::cin >> credits) {\n  std::cout << credits;\n}",
   "blocks": [
     {
       "kind": "text",
-      "body": "Programs can pause and read what a user types. `std::cin >> age;` reads one value into `age`. Because `age` is an integer, C++ expects the user to enter a whole number."
+      "body": "Programs can pause and read what a user types. `std::cin >> age;` reads one **value** into `age`. Because `age` is an **integer**, C++ expects the user to enter a whole number."
     },
     {
       "kind": "text",
@@ -22,17 +22,17 @@
       "kind": "callout",
       "tone": "tip",
       "title": "Python input starts as text",
-      "body": "Python's `input()` returns a string, and you convert it with something like `int(input())`. C++ can read directly into an `int`, but the read may fail when the typed text is not a whole number."
+      "body": "Python's `input()` returns a **string**, and you convert it with something like `int(input())`. C++ can read directly into an `int`, but the read may fail when the typed text is not a whole number."
     },
     {
       "kind": "code",
-      "caption": "The if condition is true only when C++ successfully reads a whole number.",
+      "caption": "The if **condition** is true only when C++ successfully reads a whole number.",
       "code": "#include <iostream>\n\nint main() {\n  int credits;\n  std::cout << \"Credits: \";\n\n  if (std::cin >> credits) {\n    std::cout << \"Next term: \" << credits + 1 << \"\\n\";\n  } else {\n    std::cout << \"Please enter a whole number.\\n\";\n  }\n}",
       "output": "Depends on input"
     },
     {
       "kind": "compare",
-      "caption": "Use std::ws before getline so the leftover Enter key does not become an empty name.",
+      "caption": "Use std::ws before getline so the leftover Enter **key** does not become an empty name.",
       "wrong_label": "Common mistake",
       "wrong": "std::cin >> age;\nstd::getline(std::cin, name);",
       "right_label": "Clearer version",
@@ -40,13 +40,13 @@
     },
     {
       "kind": "text",
-      "body": "After the user types an age and presses Enter, `>>` reads the digits but can leave the newline behind. `std::ws` removes that waiting whitespace, so `getline` pauses for the person's name instead of returning an empty string."
+      "body": "After the user types an age and presses Enter, `>>` reads the digits but can leave the newline behind. `std::ws` removes that waiting whitespace, so `getline` pauses for the person's name instead of returning an empty **string**."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "Check whether conversion worked",
-      "body": "If a user types `hello` when C++ expects an integer, the read fails. Test `std::cin` before using the number so invalid input follows a clear error path."
+      "body": "If a user types `hello` when C++ expects an **integer**, the read fails. Test `std::cin` before using the number so invalid **input** follows a clear error path."
     },
     {
       "kind": "check",
@@ -59,7 +59,7 @@
         "cout closes"
       ],
       "answer_index": 0,
-      "why": "The input stream records a failure state that can be tested in a condition."
+      "why": "The **input** stream records a failure state that can be tested in a **condition**."
     },
     {
       "kind": "check",
@@ -81,9 +81,91 @@
         "Declare a matching type.",
         "Test extraction success.",
         "Plan transitions to getline.",
-        "Reject unusable input clearly."
+        "Reject unusable **input** clearly."
       ]
     }
   ],
-  "_beginner_expanded": true
+  "_beginner_expanded": true,
+  "learn_cards": {
+    "user-input-lesson-check-1": {
+      "title": "Typed values start as text",
+      "body": "User input enters the program as text first. Convert it before doing arithmetic.",
+      "example": "age_text = input(\"Age: \")\nage = int(age_text)",
+      "notice": "Text addition joins characters. Numeric addition adds quantities.",
+      "mistake": "Do not calculate with raw input when the value is meant to be a number.",
+      "section_id": "check"
+    },
+    "user-input-lesson-check-2": {
+      "title": "Invalid numbers need a response",
+      "body": "If the program asks for a number and receives words or blank text, conversion can fail. Plan what the user should do next.",
+      "example": "value = int(raw)",
+      "notice": "Validation is part of input handling, not an optional extra after the calculation.",
+      "mistake": "Do not continue as if a failed conversion produced a useful number.",
+      "section_id": "check"
+    },
+    "user-input-summary-01": {
+      "title": "Input is outside data",
+      "body": "Anything a person types should be treated as outside text until the program checks and converts it.",
+      "example": "raw = input(\"Credits: \")",
+      "notice": "The program has to decide whether the typed value is text, a whole number, or a decimal.",
+      "mistake": "Do not assume a value is numeric just because the prompt asked for a number.",
+      "section_id": "check"
+    },
+    "user-input-supplement-01": {
+      "title": "Raw input joins like text",
+      "body": "When two typed values are still strings, adding them joins the characters. Convert first when the assignment asks for a total.",
+      "example": "total = int(a) + int(b)",
+      "notice": "The same symbol can join strings or add numbers depending on the value types.",
+      "mistake": "Do not let numeric-looking strings fool you into skipping conversion.",
+      "section_id": "check"
+    },
+    "user-input-authored-01": {
+      "title": "Know the input type",
+      "body": "Before using an input value, identify what type the input function returns in your language.",
+      "example": "raw = input(\"Name: \")",
+      "notice": "A typed value may look like a number while still being stored as text.",
+      "mistake": "Do not mix raw input with numeric code until the type is clear.",
+      "section_id": "check"
+    },
+    "user-input-authored-02": {
+      "title": "Conversion can fail",
+      "body": "Numeric conversion only works when the text has the right shape for the target number type.",
+      "example": "int(\"7\")",
+      "notice": "Words, blanks, and extra symbols can make conversion fail.",
+      "mistake": "Do not treat every bad input as a logic error later in the program.",
+      "section_id": "check"
+    },
+    "user-input-authored-03": {
+      "title": "Ask text or number first",
+      "body": "The first design question for input is simple: should this value stay text, or does the next step need a quantity?",
+      "example": "name = raw\ncredits = int(raw)",
+      "notice": "The correct choice depends on how the value will be used next.",
+      "mistake": "Do not convert names, yes/no words, or labels just because they came from input.",
+      "section_id": "check"
+    },
+    "user-input-authored-04": {
+      "title": "Some answers should stay strings",
+      "body": "Names, course codes, yes/no answers, and messages usually stay as text unless arithmetic or numeric ordering is needed.",
+      "example": "course = input(\"Course: \")",
+      "notice": "Text comparison and numeric comparison answer different questions.",
+      "mistake": "Do not convert a value if conversion would remove meaning, such as leading zeroes or letters.",
+      "section_id": "check"
+    },
+    "user-input-authored-05": {
+      "title": "Convert quantities before using them",
+      "body": "Counts, scores, prices, credits, and temperatures usually need numeric conversion before calculations.",
+      "example": "price = float(raw_price)",
+      "notice": "Convert once, store the converted value, then calculate with that clear value.",
+      "mistake": "Do not repeatedly convert the same raw text in several different places.",
+      "section_id": "check"
+    },
+    "user-input-authored-06": {
+      "title": "Prompts should be readable",
+      "body": "A prompt is part of the user interface. Leave enough spacing and wording so the person knows what kind of answer to type.",
+      "example": "input(\"Age: \")",
+      "notice": "Good prompt text reduces input mistakes before validation even runs.",
+      "mistake": "Do not hide the expected value type from the person using the program.",
+      "section_id": "check"
+    }
+  }
 }

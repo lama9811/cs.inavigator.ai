@@ -138,6 +138,7 @@ export default function ConceptQuiz({
   target,
   languageLabels,
   mastery,
+  onPracticeActivity,
   onNavigateToLanguages,
   onNavigateToLanguage,
   onNavigateToQuestion,
@@ -248,14 +249,15 @@ export default function ConceptQuiz({
           answers,
         })
       }
-      onSaveResult={(grade) =>
+      onSaveResult={(grade) => {
         saveCategoryResult(
           target.language,
           target.category,
           grade,
           Date.now()
-        )
-      }
+        );
+        onPracticeActivity?.();
+      }}
     />
   );
 }

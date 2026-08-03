@@ -93,6 +93,9 @@ def _select_model(callback_context, llm_request):
             "CODING TUTOR TOOL POLICY:",
             "- Do not call knowledge-base/search tools for this request.",
             "- Use the student's workspace code, prompt, selected language, and message as the source of truth.",
+            "- The latest workspace context overrides earlier chat history. If an older turn used a different language, class name, function name, or problem, ignore the older details.",
+            "- For rewrite/convert/refactor requests, return the code first and preserve the workspace runner shape unless the student clearly asks for a scratch example.",
+            "- For C++ graded practice, keep a top-level function with the exact starter signature. Do not wrap it in class Solution and do not add main().",
             "- If the student asks Morgan-specific academic questions, tell them to switch to Regular Tutor.",
         ])
         return None

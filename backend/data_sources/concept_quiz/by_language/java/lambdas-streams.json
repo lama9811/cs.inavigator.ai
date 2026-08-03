@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Lambdas & Streams concept check 1",
+      "title": "Loop instead of stream",
       "code": null,
-      "prompt": "What does the lesson mean by \"A loop may be clearer\"?",
+      "prompt": "When might a regular loop be clearer than a Java stream pipeline?",
       "choices": [
-        "map",
-        "Use a regular loop when the work needs several changing variables, early exits, detailed error handling, or many side effects. Streams fit best when data moves through a short set of clear steps.",
-        "count",
-        "toList"
+        "Use a regular loop for changing state, early exits, detailed error handling, or many side effects.",
+        "Use a stream when a loop would make complex state clearer.",
+        "Use `map` when the goal is to keep or discard elements.",
+        "Use `filter` when the goal is to transform each element."
       ],
-      "answer_index": 1,
-      "explanation": "A lambda is a short function value, such as `name -> name.length()`. A stream processes collection data through steps like `filter`, `map`, and `sorted`, then finishes with an operation such as `toList`, `count`, or `forEach`. That reasoning supports the answer: Use a regular loop when the work needs several changing variables, early exits, detailed error handling, or many side effects. Streams fit best when data moves through a short set of clear steps."
+      "answer_index": 0,
+      "explanation": "A loop is often clearer when the work needs changing state, early exits, detailed error handling, or many side effects. Streams shine when data flows through a short, readable series of transformations."
     },
     {
       "id": "java-lambdas-streams-authored-02",
@@ -96,17 +96,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Lambdas & Streams concept check 2",
+      "title": "Small lambda",
       "code": null,
-      "prompt": "Which choice describes a reliable Lambdas & Streams practice?",
+      "prompt": "What makes a lambda comfortable to read?",
       "choices": [
-        "[Ada, Grace]",
-        "[true, true]",
+        "Forget the terminal operation.",
         "Use a lambda for one small action.",
-        "8"
+        "Put many side effects inside a stream pipeline.",
+        "Assume intermediate stream steps run immediately."
       ],
-      "answer_index": 2,
-      "explanation": "A lambda is a short function value, such as `name -> name.length()`. A stream processes collection data through steps like `filter`, `map`, and `sorted`, then finishes with an operation such as `toList`, `count`, or `forEach`. That reasoning supports the answer: Use a lambda for one small action."
+      "answer_index": 1,
+      "explanation": "A lambda should usually express one small action or decision. If it grows into several branches and side effects, a named method or loop gives the logic room and a clearer name."
     },
     {
       "id": "java-lambdas-streams-authored-03",
@@ -114,17 +114,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Lambdas & Streams concept check 3",
+      "title": "Reading stream steps",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Lambdas & Streams code?",
+      "prompt": "How should a student mentally read a stream pipeline?",
       "choices": [
-        "scores.stream()\n    .filter(score -> score >= 60);",
-        "toList",
-        "[Ada, Grace]",
-        "Read a stream from top to bottom as data steps."
+        "Use a lambda so long that it hides the rule.",
+        "Change the source collection while streaming it.",
+        "Read a stream from top to bottom as data steps.",
+        "Use streams for error handling with many recovery paths."
       ],
-      "answer_index": 3,
-      "explanation": "A lambda is a short function value, such as `name -> name.length()`. A stream processes collection data through steps like `filter`, `map`, and `sorted`, then finishes with an operation such as `toList`, `count`, or `forEach`. That reasoning supports the answer: Read a stream from top to bottom as data steps."
+      "answer_index": 2,
+      "explanation": "Read a stream from top to bottom as data passing through steps: filter keeps values, map changes values, and the terminal operation produces or performs the result. That mental model is better than treating it as a magic loop replacement."
     },
     {
       "id": "java-lambdas-streams-authored-04",
@@ -132,17 +132,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Lambdas & Streams concept check 4",
+      "title": "Filter versus map",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Lambdas & Streams mistake?",
+      "prompt": "How do `filter` and `map` divide their jobs?",
       "choices": [
-        "Use filter to keep and map to change.",
-        "[true, true]",
-        "8",
-        "scores.stream()\n    .filter(score -> score >= 60);"
+        "Build a pipeline whose order no longer matches the data story.",
+        "Ignore readability because the stream is shorter.",
+        "Use `forEach` when a collected result is needed.",
+        "Use filter to keep and map to change."
       ],
-      "answer_index": 0,
-      "explanation": "A lambda is a short function value, such as `name -> name.length()`. A stream processes collection data through steps like `filter`, `map`, and `sorted`, then finishes with an operation such as `toList`, `count`, or `forEach`. That reasoning supports the answer: Use filter to keep and map to change."
+      "answer_index": 3,
+      "explanation": "`filter` decides which elements stay in the stream. `map` transforms each remaining element into another value. Mixing those roles makes the pipeline harder to verify."
     },
     {
       "id": "java-lambdas-streams-authored-05",
@@ -150,17 +150,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Lambdas & Streams concept check 5",
+      "title": "Terminal operation",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Lambdas & Streams. Which advice is correct?",
+      "prompt": "Why does a stream pipeline need a terminal operation?",
       "choices": [
-        "map",
         "Finish with a terminal operation.",
-        "count",
-        "[true, true]"
+        "Run independent slow operations sequentially by accident.",
+        "Treat a stream as reusable after a terminal operation.",
+        "Use a lambda when a named method would clarify intent."
       ],
-      "answer_index": 1,
-      "explanation": "A lambda is a short function value, such as `name -> name.length()`. A stream processes collection data through steps like `filter`, `map`, and `sorted`, then finishes with an operation such as `toList`, `count`, or `forEach`. That reasoning supports the answer: Finish with a terminal operation."
+      "answer_index": 0,
+      "explanation": "Intermediate stream steps are lazy; they describe work but do not complete it by themselves. A terminal operation such as `collect`, `count`, or `forEach` starts the pipeline and produces the final effect or value."
     },
     {
       "id": "java-lambdas-streams-authored-06",
@@ -168,17 +168,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Lambdas & Streams concept check 6",
+      "title": "Readability limit",
       "code": null,
-      "prompt": "Which choice shows sound reasoning about Lambdas & Streams?",
+      "prompt": "What should happen when a stream hides the real work?",
       "choices": [
-        "8",
-        "scores.stream()\n    .filter(score -> score >= 60);",
+        "Mix filtering, mapping, and mutation in one step.",
         "Choose a loop when the stream would hide the real work.",
-        "map"
+        "Assume parallel streams are always faster.",
+        "Hide null handling inside a long chain."
       ],
-      "answer_index": 2,
-      "explanation": "A lambda is a short function value, such as `name -> name.length()`. A stream processes collection data through steps like `filter`, `map`, and `sorted`, then finishes with an operation such as `toList`, `count`, or `forEach`. That reasoning supports the answer: Choose a loop when the stream would hide the real work."
+      "answer_index": 1,
+      "explanation": "Switch to a loop or named helper when the stream stops telling a clear data story. Readability matters more than using a modern feature, especially when classmates need to debug the same code."
     }
   ]
 }

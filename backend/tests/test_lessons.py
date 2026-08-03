@@ -22,6 +22,61 @@ import lessons
 
 
 ALL_LANGUAGES = ("python", "java", "javascript", "cpp")
+SHARED_QUESTION_SPECIFIC_LEARN_CARD_CATEGORIES = (
+    "syntax",
+    "operators",
+    "variables",
+    "data-types",
+    "strings",
+    "user-input",
+    "lists",
+    "conditionals",
+    "loops",
+    "functions",
+    "debug",
+    "debug-2",
+    "algorithm-problems",
+    "algorithm-problems-2",
+)
+
+LANGUAGE_SPECIFIC_LEARN_CARD_CATEGORIES = {
+    "python": (
+        "tuples",
+        "dictionaries",
+        "sets",
+        "file-handling",
+        "exceptions",
+        "classes-objects",
+        "modules-imports",
+        "comprehensions",
+        "testing",
+    ),
+    "java": (
+        "classes-objects",
+        "maps",
+        "file-io",
+        "exceptions",
+        "inheritance-interfaces",
+        "generics",
+        "enums",
+        "packages-access",
+        "lambdas-streams",
+    ),
+    "javascript": (
+        "objects",
+        "error-handling",
+        "modules",
+        "dom-events",
+        "async-promises",
+    ),
+    "cpp": (
+        "pointers",
+        "classes-objects",
+        "file-io",
+        "exceptions",
+        "memory-ownership",
+    ),
+}
 
 
 def authored_lessons():
@@ -81,9 +136,9 @@ def test_lesson_prose_is_not_robotic():
     """The voice rules, enforced rather than trusted.
 
     The first Loops draft read as machine-written, and the cause was measurable: em-dashes
-    used as all-purpose punctuation, bold as emphasis-by-force, and shouted caps. Those are
-    exactly the tells a student registers as "a computer wrote this", and this is the one
-    surface meant to feel like a person explaining something.
+    used as all-purpose punctuation and shouted caps. Those are exactly the tells a student
+    registers as "a computer wrote this", and this is the one surface meant to feel like a
+    person explaining something.
 
     Only PROSE is checked. Inline code spans are stripped first: `**` is Python's exponent
     operator and belongs in the Operators lesson, so matching it there would be a false
@@ -93,7 +148,6 @@ def test_lesson_prose_is_not_robotic():
 
     inline_code = re.compile(r"`[^`]*`")
     em_dash = re.compile(r"[—–]")          # em dash, en dash
-    bold = re.compile(r"\*\*")
     shouted = re.compile(r"\b(NEVER|ALWAYS|MUST|BEFORE|ONLY|EVERY|ALL)\b")
 
     offenses = []
@@ -107,12 +161,36 @@ def test_lesson_prose_is_not_robotic():
         where = f"{language}/{category}"
         if em_dash.search(text):
             offenses.append(f"{where}: em-dash in prose")
-        if bold.search(text):
-            offenses.append(f"{where}: bold in prose (a callout block is the emphasis)")
         for word in set(shouted.findall(text)):
             offenses.append(f"{where}: shouted caps '{word}'")
 
     assert not offenses, "Lesson prose must not read as machine-written:\n  " + "\n  ".join(offenses)
+
+
+def test_bold_markup_is_balanced_and_short():
+    """Bold is allowed for key terms, not whole paragraphs."""
+    import re
+
+    inline_code = re.compile(r"`[^`]*`")
+    bold = re.compile(r"\*\*([^*]+)\*\*")
+
+    offenses = []
+    for language, category, lesson in authored_lessons():
+        prose = [lesson["refresher"], lesson["summary"]]
+        for block in lesson["blocks"]:
+            prose += [str(block.get(f, "")) for f in ("body", "caption", "title", "why", "prompt")]
+            prose += [str(i) for i in block.get("items", [])]
+
+        text = inline_code.sub("", "\n".join(prose))
+        where = f"{language}/{category}"
+        if text.count("**") % 2:
+            offenses.append(f"{where}: unbalanced bold marker")
+        for match in bold.finditer(text):
+            words = re.findall(r"[A-Za-z0-9+/#-]+", match.group(1))
+            if not words or len(words) > 4:
+                offenses.append(f"{where}: bold phrase too long: {match.group(0)!r}")
+
+    assert not offenses, "Bold lesson markup should emphasize short key terms:\n  " + "\n  ".join(offenses)
 
 
 def test_lessons_talk_about_python_not_about_the_student():
@@ -188,6 +266,11 @@ def test_no_stock_phrase_is_reused_across_lessons():
     from collections import defaultdict
 
     STOPWORDS_OK = 2  # a phrase may legitimately recur in at most this many lessons
+    equivalent_topics = {
+        "dictionaries": "maps-and-objects",
+        "maps": "maps-and-objects",
+        "objects": "maps-and-objects",
+    }
 
     seen = defaultdict(set)
     for language, category, lesson in authored_lessons():
@@ -204,7 +287,10 @@ def test_no_stock_phrase_is_reused_across_lessons():
         # coincidence of common English.
         for i in range(len(words) - 6):
             shingle = " ".join(words[i:i + 7])
-            seen[shingle].add(f"{language}/{category}")
+            # Shared/equivalent lessons intentionally render once per language or
+            # language idiom. Count the concept, not every language copy, so this guard
+            # still catches copy-paste across unrelated lessons.
+            seen[shingle].add(equivalent_topics.get(category, category))
 
     overused = {
         phrase: sorted(where)
@@ -259,6 +345,56 @@ def test_refresher_derives_from_the_lesson():
         assert refresher is not None
         assert refresher["refresher"] == lesson["refresher"]
         assert refresher["title"] == lesson["title"]
+
+
+def test_learn_cards_reference_real_quiz_questions():
+    """Question-specific Learn cards must stay tied to real quiz question ids."""
+    for language, category, lesson in authored_lessons():
+        cards = lesson.get("learn_cards") or {}
+        if not cards:
+            continue
+        question_ids = {
+            question["id"]
+            for question in concept_quiz.questions_for_category(language, category)["questions"]
+        }
+        unknown = sorted(set(cards) - question_ids)
+        assert not unknown, (
+            f"{language}/{category}: learn_cards reference unknown quiz ids {unknown}"
+        )
+        for question_id, card in cards.items():
+            where = f"{language}/{category}/{question_id}"
+            assert card["title"], f"{where}: learn card title missing"
+            assert card["refresher"], f"{where}: learn card body missing"
+            assert card["notice"], f"{where}: learn card notice missing"
+            assert card["mistake"], f"{where}: learn card mistake missing"
+            assert card["source"] == "question"
+
+
+def test_cleaned_beginner_banks_have_question_specific_learn_cards():
+    """Cleaned banks should no longer fall back to broad topic refreshers."""
+    for language in ALL_LANGUAGES:
+        required_categories = (
+            *SHARED_QUESTION_SPECIFIC_LEARN_CARD_CATEGORIES,
+            *LANGUAGE_SPECIFIC_LEARN_CARD_CATEGORIES[language],
+        )
+        for category in required_categories:
+            lesson = lessons.get_lesson(language, category)
+            assert lesson is not None, f"{language}/{category}: missing lesson"
+            question_ids = {
+                question["id"]
+                for question in concept_quiz.questions_for_category(language, category)["questions"]
+            }
+            card_ids = set(lesson.get("learn_cards") or {})
+            missing = sorted(question_ids - card_ids)
+            assert not missing, f"{language}/{category}: missing learn cards for {missing}"
+
+            for question_id in question_ids:
+                refresher = lessons.get_refresher(language, category, question_id)
+                assert refresher is not None
+                assert refresher["source"] == "question"
+                assert refresher["section_id"], (
+                    f"{language}/{category}/{question_id}: section id missing"
+                )
 
 
 def test_every_block_kind_is_valid():

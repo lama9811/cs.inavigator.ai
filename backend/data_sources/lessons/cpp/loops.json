@@ -1,23 +1,103 @@
 {
   "_note": "ORIGINAL content. Think C++ and the Google C++ Class outline informed coverage only; no prose, examples, or exercises were copied.",
   "title": "Loops",
-  "summary": "Repeat work a known number of times or until a condition changes.",
+  "summary": "Repeat work a known number of times or until a **condition** changes.",
   "minutes": 10,
   "error_classes": [
     "wrong_answer",
     "timeout",
     "runtime"
   ],
-  "refresher": "A `for` loop has a starting value, a condition, and an update. A `while` loop repeats while its condition remains true. Make sure the condition eventually becomes false.",
+  "refresher": "A `for` **loop** has a starting **value**, a **condition**, and an update. A `while` loop repeats while its condition remains true. Make sure the condition eventually becomes false.",
   "refresher_code": "for(int i=0;i<3;i++){\n  std::cout << i << \"\\n\";\n}",
   "blocks": [
     {
       "kind": "text",
-      "body": "A loop repeats a block of code. Use a `for` loop when you can describe the start, stopping rule, and update together. Use a `while` loop when repetition depends mainly on a condition."
+      "body": "A **loop** repeats a block of code. Use a `for` loop when you can describe the start, stopping rule, and update together. Use a `while` loop when repetition depends mainly on a **condition**."
+    },
+    {
+      "kind": "visual",
+      "title": "Trace a loop one item at a time",
+      "concept": "arrays",
+      "caption": "Watch the active item move while the running total changes.",
+      "initial_state": {},
+      "steps": [
+        {
+          "title": "Start before the loop",
+          "body": "The total starts at zero before any item is read.",
+          "state": {
+            "items": [
+              "3",
+              "5",
+              "2"
+            ],
+            "pointers": {
+              "i": 0
+            },
+            "note": "total = 0"
+          }
+        },
+        {
+          "title": "First pass",
+          "body": "Read index 0 and add 3 to the total.",
+          "animation": "add",
+          "state": {
+            "items": [
+              "3",
+              "5",
+              "2"
+            ],
+            "active": [
+              0
+            ],
+            "pointers": {
+              "i": 0
+            },
+            "note": "total = 3"
+          }
+        },
+        {
+          "title": "Second pass",
+          "body": "Move to index 1 and add 5.",
+          "animation": "slide",
+          "state": {
+            "items": [
+              "3",
+              "5",
+              "2"
+            ],
+            "active": [
+              1
+            ],
+            "pointers": {
+              "i": 1
+            },
+            "note": "total = 8"
+          }
+        },
+        {
+          "title": "After the last item",
+          "body": "The loop stops after each item has contributed once.",
+          "state": {
+            "items": [
+              "3",
+              "5",
+              "2"
+            ],
+            "active": [
+              2
+            ],
+            "pointers": {
+              "i": 2
+            },
+            "note": "final total = 10"
+          }
+        }
+      ]
     },
     {
       "kind": "text",
-      "body": "Read a `for` loop in four steps: set the counter, test the condition, run the body, then update the counter. For a collection with three items, valid indexes are zero, one, and two, so the counter must stay below the size."
+      "body": "Read a `for` **loop** in four steps: **set** the counter, test the **condition**, run the body, then update the counter. For a collection with three items, valid indexes are zero, one, and two, so the counter must stay below the size."
     },
     {
       "kind": "callout",
@@ -33,7 +113,7 @@
     },
     {
       "kind": "compare",
-      "caption": "Use a strict bound so the count is never used as an index.",
+      "caption": "Use a strict bound so the count is never used as an **index**.",
       "wrong_label": "Common mistake",
       "wrong": "for (int i = 0; i <= values.size(); i++) {\n  use(values[i]);\n}",
       "right_label": "Clearer version",
@@ -41,13 +121,13 @@
     },
     {
       "kind": "text",
-      "body": "For three elements, the valid indexes are zero, one, and two. When `i` becomes three, the corrected condition is false. The version using `<=` allows index three and steps past the vector. If you do not need an index, use `for (int value : values)`."
+      "body": "For three elements, the valid **indexes** are zero, one, and two. When `i` becomes three, the corrected **condition** is false. The version using `<=` allows **index** three and steps past the vector. If you do not need an index, use `for (int value : values)`."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "A loop needs a way to finish",
-      "body": "A `while` loop can run forever when the value in its condition never changes. Point to the exact update that moves the loop toward its stopping condition."
+      "body": "A `while` **loop** can run forever when the **value** in its **condition** never changes. Point to the exact update that moves the loop toward its stopping condition."
     },
     {
       "kind": "check",
@@ -60,7 +140,7 @@
         "none"
       ],
       "answer_index": 0,
-      "why": "The loop includes one through four because its condition includes the upper boundary."
+      "why": "The **loop** includes one through four because its **condition** includes the upper boundary."
     },
     {
       "kind": "check",
@@ -73,7 +153,7 @@
         "a string"
       ],
       "answer_index": 0,
-      "why": "Count stays equal to three, leaving the while condition true forever."
+      "why": "Count stays equal to three, leaving the while **condition** true forever."
     },
     {
       "kind": "list",
@@ -86,5 +166,87 @@
       ]
     }
   ],
-  "_beginner_expanded": true
+  "_beginner_expanded": true,
+  "learn_cards": {
+    "for-count-01": {
+      "title": "Count loop passes",
+      "body": "This asks how many times the loop body runs, not what the loop variable is used for.",
+      "notice": "Count the values the loop produces, then count one body run per value.",
+      "mistake": "Do not subtract one just because counting starts at zero.",
+      "section_id": "check",
+      "example": "0, 1, 2"
+    },
+    "off-by-one-01": {
+      "title": "Stop values are often excluded",
+      "body": "A counting range usually stops before its stop value. That is the classic off-by-one place.",
+      "notice": "List the first and last generated values before picking an output.",
+      "mistake": "Do not include the stop boundary unless the syntax says it is included.",
+      "section_id": "check",
+      "example": "range(4) -> 0, 1, 2, 3"
+    },
+    "accumulator-01": {
+      "title": "Accumulators keep a running result",
+      "body": "A total starts before the loop and changes once per pass.",
+      "notice": "Write the total after each item to see the final value.",
+      "mistake": "Do not jump straight to the last item and forget earlier additions.",
+      "section_id": "check",
+      "example": "total = total + price"
+    },
+    "accumulator-reset-01": {
+      "title": "Initialize before the loop",
+      "body": "A running total must be created outside the repeated body so it does not restart each pass.",
+      "notice": "If a total keeps forgetting, check where it is initialized.",
+      "mistake": "Do not put the reset line inside the loop unless each pass needs a fresh total.",
+      "section_id": "check",
+      "example": "total = 0"
+    },
+    "while-infinite-01": {
+      "title": "A while loop needs progress",
+      "body": "A while condition is checked again and again. Something in the body must eventually make it false.",
+      "notice": "For timeouts, trace the condition variable after one pass.",
+      "mistake": "Do not write a while loop that only prints and never updates the condition state.",
+      "section_id": "check",
+      "example": "count = count + 1"
+    },
+    "while-countdown-01": {
+      "title": "The condition is checked before each pass",
+      "body": "A countdown loop stops as soon as the condition becomes false, even if that final value looks important.",
+      "notice": "Check whether the value is printed before or after the update.",
+      "mistake": "Do not include the first value that fails the condition.",
+      "section_id": "check",
+      "example": "3, 2, 1"
+    },
+    "nested-count-01": {
+      "title": "Nested loops multiply work",
+      "body": "The inner loop runs fully for every outer-loop pass.",
+      "notice": "Multiply the number of outer passes by the number of inner passes for simple nested counts.",
+      "mistake": "Do not add the loop lengths when one loop is inside the other.",
+      "section_id": "check",
+      "example": "3 outer * 4 inner"
+    },
+    "loop-body-scope-01": {
+      "title": "Indentation or braces decide the loop body",
+      "body": "A line inside the loop runs every pass. A line after the loop runs once.",
+      "notice": "Locate the output line before counting printed lines.",
+      "mistake": "Do not assume a nearby line belongs to the loop if its block shape says otherwise.",
+      "section_id": "check",
+      "example": "inside loop vs after loop"
+    },
+    "range-start-01": {
+      "title": "Start and stop are different jobs",
+      "body": "With a start and stop, the loop begins at the start value and still stops before the stop value.",
+      "notice": "Write the sequence before choosing the output.",
+      "mistake": "Do not include the stop value just because it appears in the range call.",
+      "section_id": "check",
+      "example": "2, 3, 4, 5"
+    },
+    "count-matches-01": {
+      "title": "Counters update only on matching passes",
+      "body": "A counter with an `if` changes only when the condition is true.",
+      "notice": "Walk each item and mark yes or no before counting.",
+      "mistake": "Do not add one for every item when only qualifying items count.",
+      "section_id": "check",
+      "example": "if passes: count += 1"
+    }
+  }
 }

@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Maps concept check 1",
+      "title": "Null value versus missing key",
       "code": null,
-      "prompt": "What does the lesson mean by \"Null does not prove a key is absent\"?",
+      "prompt": "Why can `map.get(key) == null` be ambiguous in Java?",
       "choices": [
-        "2 1",
-        "A map is allowed to store null as a value. If that distinction matters, use `containsKey` to ask whether the key exists rather than guessing from `get`.",
-        "2 4",
-        "1 1"
+        "`get` can mean missing key or stored null. Use `containsKey` to tell the difference.",
+        "Use `get` alone when null is a valid stored value.",
+        "Skip `containsKey` when absence and null must be separated.",
+        "Use a list scan when a key lookup would answer directly."
       ],
-      "answer_index": 1,
-      "explanation": "A `Map<K, V>` stores one value for each unique key. A `HashMap` is a common implementation. That reasoning supports the answer: A map is allowed to store null as a value. If that distinction matters, use `containsKey` to ask whether the key exists rather than guessing from `get`."
+      "answer_index": 0,
+      "explanation": "`get` returns `null` both when the key is absent and when the key exists with a stored null value. If that difference matters, `containsKey` answers the membership question directly before the value is interpreted."
     },
     {
       "id": "java-maps-authored-02",
@@ -96,17 +96,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Maps concept check 2",
+      "title": "Map interface type",
       "code": null,
-      "prompt": "Which choice describes a reliable Maps practice?",
+      "prompt": "A method only needs lookup behavior, not a specific map implementation. How should the variable usually be typed?",
       "choices": [
-        "grades.keySet()",
-        "grades.values()",
+        "Store unrelated meanings under the same key.",
         "Program to `Map` and construct a suitable implementation.",
-        "grades.size()"
+        "Read from a key before adding it.",
+        "Overwrite an existing value when accumulation was intended."
       ],
-      "answer_index": 2,
-      "explanation": "A `Map<K, V>` stores one value for each unique key. A `HashMap` is a common implementation. That reasoning supports the answer: Program to `Map` and construct a suitable implementation."
+      "answer_index": 1,
+      "explanation": "Typing the variable as `Map<K, V>` keeps callers and methods focused on the contract: key-value lookup. The chosen implementation, such as `HashMap`, can still be created where performance or ordering needs are known."
     },
     {
       "id": "java-maps-authored-03",
@@ -114,17 +114,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Maps concept check 3",
+      "title": "Stable map keys",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Maps code?",
+      "prompt": "What kind of object makes a safer Java map key?",
       "choices": [
-        "int score = grades.get(\"ENG101\");",
-        "1 1",
-        "grades.keySet()",
-        "Choose immutable, stable keys when possible."
+        "Use mutable data as a key.",
+        "Ignore generic key and value types.",
+        "Choose immutable, stable keys when possible.",
+        "Treat map iteration order as the contract."
       ],
-      "answer_index": 3,
-      "explanation": "A `Map<K, V>` stores one value for each unique key. A `HashMap` is a common implementation. That reasoning supports the answer: Choose immutable, stable keys when possible."
+      "answer_index": 2,
+      "explanation": "A key should keep the same equality and hash behavior while it is in the map. Mutable keys can become hard to find after their fields change, so immutable or stable keys are safer."
     },
     {
       "id": "java-maps-authored-04",
@@ -132,17 +132,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Maps concept check 4",
+      "title": "Put replaces values",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Maps mistake?",
+      "prompt": "What happens when `put` is called with a key already in the map?",
       "choices": [
-        "Remember that `put` replaces an equal key.",
-        "grades.values()",
-        "grades.size()",
-        "int score = grades.get(\"ENG101\");"
+        "Use a map when no lookup key exists.",
+        "Forget to initialize a count before incrementing.",
+        "Compare keys by their displayed formatting.",
+        "Remember that `put` replaces an equal key."
       ],
-      "answer_index": 0,
-      "explanation": "A `Map<K, V>` stores one value for each unique key. A `HashMap` is a common implementation. That reasoning supports the answer: Remember that `put` replaces an equal key."
+      "answer_index": 3,
+      "explanation": "`put` stores one value for an equal key. If the key is already present, the old value is replaced rather than duplicated. Counting code must read the old count first, then put the updated count back."
     },
     {
       "id": "java-maps-authored-05",
@@ -150,17 +150,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Maps concept check 5",
+      "title": "Meaningful fallback",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Maps. Which advice is correct?",
+      "prompt": "A count map should treat missing names as zero. Which lookup style fits that rule?",
       "choices": [
-        "2 1",
         "Use `getOrDefault` for a meaningful fallback.",
-        "2 4",
-        "grades.values()"
+        "Use values as keys when duplicate values are possible.",
+        "Assume missing keys return a useful default in every map.",
+        "Nest maps without checking each level."
       ],
-      "answer_index": 1,
-      "explanation": "A `Map<K, V>` stores one value for each unique key. A `HashMap` is a common implementation. That reasoning supports the answer: Use `getOrDefault` for a meaningful fallback."
+      "answer_index": 0,
+      "explanation": "`getOrDefault(name, 0)` states the missing-key policy right where the value is read. That is clearer than assuming every map returns a useful default or catching a problem after the count is already wrong."
     },
     {
       "id": "java-maps-authored-06",
@@ -168,17 +168,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Maps concept check 6",
+      "title": "Processing key-value pairs",
       "code": null,
-      "prompt": "Which choice shows sound reasoning about Maps?",
+      "prompt": "A loop needs both each student id and its score. Which map view should it use?",
       "choices": [
-        "grades.size()",
-        "int score = grades.get(\"ENG101\");",
+        "Store null when a clearer missing-value policy is needed.",
         "Use `entrySet` when processing keys and values together.",
-        "2 1"
+        "Use parallel arrays instead of one map relationship.",
+        "Let callers mutate internal map state freely."
       ],
-      "answer_index": 2,
-      "explanation": "A `Map<K, V>` stores one value for each unique key. A `HashMap` is a common implementation. That reasoning supports the answer: Use `entrySet` when processing keys and values together."
+      "answer_index": 1,
+      "explanation": "`entrySet` gives each key and value together, which avoids a second lookup for every key. It is the right shape when the loop needs the relationship, not just the keys or just the values."
     }
   ]
 }

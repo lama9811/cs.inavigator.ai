@@ -1,6 +1,9 @@
+import { VisualizeButton } from "./WorkspaceVisualizer";
+
 export default function ProblemPanel({
   problem,
   solution,
+  selectedLanguage = "Python",
   problemLoading,
   isSolved = false,
   solvedLanguages = [],
@@ -14,7 +17,19 @@ export default function ProblemPanel({
   solutionUnlocked = true,
   onStuck,
   onViewSolutionMock,
+  onOpenVisualizer,
 }) {
+  const formatExampleOutput = (output) => {
+    const text = String(output ?? "");
+    const lowered = text.toLowerCase();
+    if (lowered === "true" || lowered === "false") {
+      return selectedLanguage === "Python"
+        ? lowered === "true" ? "True" : "False"
+        : lowered;
+    }
+    return text;
+  };
+
   return (
     <aside className={`coding-problem-panel ${mockMode ? "is-mock" : ""}`}>
       {problemLoading ? <div className="coding-problem-empty">Loading problem...</div> : problem ? (
@@ -56,6 +71,7 @@ export default function ProblemPanel({
             </div>
           )}
           <p>{problem.prompt}</p>
+          {onOpenVisualizer ? <VisualizeButton onClick={onOpenVisualizer} /> : null}
           {(solution?.starter_guidance || solution?.guided_steps?.length > 0) && (
             <section className="starter-guidance-panel">
               <h3>Starter Guidance</h3>
@@ -74,7 +90,7 @@ export default function ProblemPanel({
                 {problem.examples.map((example, index) => (
                   <div className="problem-example" key={index}>
                     <code>Input: {example.input}</code>
-                    <code>Output: {example.output}</code>
+                    <code>Output: {formatExampleOutput(example.output)}</code>
                   </div>
                 ))}
               </details>
@@ -84,7 +100,7 @@ export default function ProblemPanel({
                 {problem.examples.map((example, index) => (
                   <div className="problem-example" key={index}>
                     <code>Input: {example.input}</code>
-                    <code>Output: {example.output}</code>
+                    <code>Output: {formatExampleOutput(example.output)}</code>
                   </div>
                 ))}
               </section>

@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Inheritance & Interfaces concept check 1",
+      "title": "True is-a relationship",
       "code": null,
-      "prompt": "What does the lesson mean by \"Inheritance means is-a\"?",
+      "prompt": "When is `extends` the right relationship between two Java classes?",
       "choices": [
-        "class Invoice imports Payable",
-        "Use `extends` only when every child truly is a usable version of the parent. If one class merely needs another object's help, keep that helper in a field and use composition.",
-        "class Invoice includes Payable",
-        "class Invoice instanceOf Payable"
+        "Use `extends` for a true is-a relationship. For helper objects, use composition.",
+        "Use inheritance only to borrow a helper method.",
+        "Extend a class when the child is not really a kind of parent.",
+        "Put fields in an interface to share object state."
       ],
-      "answer_index": 1,
-      "explanation": "A class `extends` one superclass and may `implement` several interfaces. Override methods to provide subtype behavior, use the interface type for flexible variables, and prefer composition when classes only need to reuse a helper rather than form a true is-a relationship. That reasoning supports the answer: Use `extends` only when every child truly is a usable version of the parent. If one class merely needs another object's help, keep that helper in a field and use composition."
+      "answer_index": 0,
+      "explanation": "`extends` should mean every child object can honestly be used as a parent object. If a class only needs help from another object, composition is clearer and avoids promising an inheritance relationship that is not true."
     },
     {
       "id": "java-inheritance-interfaces-authored-02",
@@ -96,17 +96,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Inheritance & Interfaces concept check 2",
+      "title": "Interface capability",
       "code": null,
-      "prompt": "Which choice describes a reliable Inheritance & Interfaces practice?",
+      "prompt": "When should a Java design use an interface?",
       "choices": [
-        "It makes the method private",
-        "It permits two return types",
+        "Depend on concrete classes when a capability contract is enough.",
         "Use an interface to state a capability.",
-        "It creates the superclass"
+        "Override a method but change its promised meaning.",
+        "Use a superclass to force unrelated classes together."
       ],
-      "answer_index": 2,
-      "explanation": "A class `extends` one superclass and may `implement` several interfaces. Override methods to provide subtype behavior, use the interface type for flexible variables, and prefer composition when classes only need to reuse a helper rather than form a true is-a relationship. That reasoning supports the answer: Use an interface to state a capability."
+      "answer_index": 1,
+      "explanation": "An interface names a capability or contract, such as something that can be saved, compared, or displayed. It lets different classes promise the same behavior without forcing them into one parent class."
     },
     {
       "id": "java-inheritance-interfaces-authored-03",
@@ -114,17 +114,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Inheritance & Interfaces concept check 3",
+      "title": "Typing by contract",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Inheritance & Interfaces code?",
+      "prompt": "Why type a variable as an interface when callers only need that interface's behavior?",
       "choices": [
-        "void printBill(Invoice bill) {\n    System.out.println(bill.amountDue());\n}",
-        "class Invoice instanceOf Payable",
-        "It makes the method private",
-        "Type variables by the contract when callers need flexibility."
+        "Forget that a class can implement more than one interface.",
+        "Make callers know every subclass type.",
+        "Type variables by the contract when callers need flexibility.",
+        "Use inheritance where composition would be simpler."
       ],
-      "answer_index": 3,
-      "explanation": "A class `extends` one superclass and may `implement` several interfaces. Override methods to provide subtype behavior, use the interface type for flexible variables, and prefer composition when classes only need to reuse a helper rather than form a true is-a relationship. That reasoning supports the answer: Type variables by the contract when callers need flexibility."
+      "answer_index": 2,
+      "explanation": "Typing by the contract gives callers flexibility. They can work with any implementation that honors the interface, which keeps code from depending on one concrete class too early."
     },
     {
       "id": "java-inheritance-interfaces-authored-04",
@@ -132,17 +132,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Inheritance & Interfaces concept check 4",
+      "title": "Override checking",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Inheritance & Interfaces mistake?",
+      "prompt": "Why add `@Override` when a child class replaces a parent or interface method?",
       "choices": [
-        "Use `@Override` for compiler checking.",
-        "It permits two return types",
-        "It creates the superclass",
-        "void printBill(Invoice bill) {\n    System.out.println(bill.amountDue());\n}"
+        "Leave abstract behavior undocumented.",
+        "Treat an interface as if it stores per-object data.",
+        "Break substitutability by narrowing what a child can do.",
+        "Use `@Override` for compiler checking."
       ],
-      "answer_index": 0,
-      "explanation": "A class `extends` one superclass and may `implement` several interfaces. Override methods to provide subtype behavior, use the interface type for flexible variables, and prefer composition when classes only need to reuse a helper rather than form a true is-a relationship. That reasoning supports the answer: Use `@Override` for compiler checking."
+      "answer_index": 3,
+      "explanation": "`@Override` asks the compiler to verify that a real inherited method is being implemented. It catches misspellings and wrong parameters before the program runs, which is much kinder than a silent non-override."
     },
     {
       "id": "java-inheritance-interfaces-authored-05",
@@ -150,17 +150,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Inheritance & Interfaces concept check 5",
+      "title": "Extends restraint",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Inheritance & Interfaces. Which advice is correct?",
+      "prompt": "A class only wants to reuse a helper method from another class. Why might `extends` be the wrong tool?",
       "choices": [
-        "class Invoice imports Payable",
         "Reserve `extends` for a true is-a relationship.",
-        "class Invoice includes Payable",
-        "It permits two return types"
+        "Use casting instead of designing the right contract.",
+        "Duplicate shared behavior across subclasses.",
+        "Expose parent internals just so a child can work."
       ],
-      "answer_index": 1,
-      "explanation": "A class `extends` one superclass and may `implement` several interfaces. Override methods to provide subtype behavior, use the interface type for flexible variables, and prefer composition when classes only need to reuse a helper rather than form a true is-a relationship. That reasoning supports the answer: Reserve `extends` for a true is-a relationship."
+      "answer_index": 0,
+      "explanation": "Inheritance makes a public relationship claim, not just a code-sharing shortcut. If the child is not truly a kind of parent, a helper field or separate utility keeps the design honest."
     },
     {
       "id": "java-inheritance-interfaces-authored-06",
@@ -168,17 +168,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Inheritance & Interfaces concept check 6",
+      "title": "Composition for reuse",
       "code": null,
-      "prompt": "Which choice shows sound reasoning about Inheritance & Interfaces?",
+      "prompt": "When is composition a better choice than a deeper inheritance tree?",
       "choices": [
-        "It creates the superclass",
-        "void printBill(Invoice bill) {\n    System.out.println(bill.amountDue());\n}",
+        "Make a deep hierarchy for one small variation.",
         "Prefer composition for simple code reuse.",
-        "class Invoice imports Payable"
+        "Ignore method names promised by the interface.",
+        "Use `extends` when the relationship is only uses-a."
       ],
-      "answer_index": 2,
-      "explanation": "A class `extends` one superclass and may `implement` several interfaces. Override methods to provide subtype behavior, use the interface type for flexible variables, and prefer composition when classes only need to reuse a helper rather than form a true is-a relationship. That reasoning supports the answer: Prefer composition for simple code reuse."
+      "answer_index": 1,
+      "explanation": "Composition lets one object use another object's help without pretending to be that object. It is often simpler for small variations because each class keeps its own identity and delegates only the needed work."
     }
   ]
 }

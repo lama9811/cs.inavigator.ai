@@ -1,26 +1,93 @@
 {
   "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
   "title": "Lists / Arrays",
-  "summary": "Store ordered values and access them by index.",
+  "summary": "Store ordered **values** and access them by **index**.",
   "minutes": 10,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "Arrays hold ordered values with zero-based indexes. `.length` gives the count, `.push(value)` adds at the end, and `.pop()` removes the final item.",
+  "refresher": "**Arrays** hold ordered values with zero-based indexes. `.length` gives the count, `.push(value)` adds at the end, and `.pop()` removes the final item.",
   "refresher_code": "const courses=[\"CS 101\",\"MATH 201\"];\ncourses.push(\"ENG 101\");",
   "blocks": [
     {
       "kind": "text",
-      "body": "Arrays hold ordered values with zero-based indexes. `.length` gives the count, `.push(value)` adds at the end, and `.pop()` removes the final item. Store ordered values and access them by index."
+      "body": "**Arrays** hold ordered values with zero-based indexes. `.length` gives the count, `.push(value)` adds at the end, and `.pop()` removes the final item. Store ordered **values** and access them by **index**."
+    },
+    {
+      "kind": "visual",
+      "title": "Indexes point to positions",
+      "concept": "arrays",
+      "caption": "Step through a list so the index and value stay connected.",
+      "initial_state": {},
+      "steps": [
+        {
+          "title": "Index 0",
+          "body": "The first item is at index 0.",
+          "animation": "highlight",
+          "state": {
+            "items": [
+              "Ada",
+              "Grace",
+              "Katherine"
+            ],
+            "active": [
+              0
+            ],
+            "pointers": {
+              "index": 0
+            },
+            "note": "names[0] is Ada"
+          }
+        },
+        {
+          "title": "Index 1",
+          "body": "The next item is at index 1.",
+          "animation": "slide",
+          "state": {
+            "items": [
+              "Ada",
+              "Grace",
+              "Katherine"
+            ],
+            "active": [
+              1
+            ],
+            "pointers": {
+              "index": 1
+            },
+            "note": "names[1] is Grace"
+          }
+        },
+        {
+          "title": "Append",
+          "body": "Appending adds a new item at the end.",
+          "animation": "add",
+          "state": {
+            "items": [
+              "Ada",
+              "Grace",
+              "Katherine",
+              "Mae"
+            ],
+            "active": [
+              3
+            ],
+            "pointers": {
+              "new": 3
+            },
+            "note": "new last index is 3"
+          }
+        }
+      ]
     },
     {
       "kind": "text",
-      "body": "An array stores an ordered set of values, but the array variable actually holds a reference to that collection. A reference means the variable points at the array rather than holding its own copy, so two variables can point at the same array. Methods such as `push`, `pop`, and `splice` change the existing array. Methods such as `slice`, `map`, and `filter` return another array, so save their result when you need it."
+      "body": "An array stores an ordered set of values, but the array **variable** actually holds a reference to that collection. A reference means the variable points at the array rather than holding its own copy, so two variables can point at the same array. **Methods** such as `push`, `pop`, and `splice` change the existing array. Methods such as `slice`, `map`, and `filter` **return** another array, so save their result when you need it."
     },
     {
       "kind": "code",
-      "caption": "Push adds a third item, while index one still selects the second course.",
+      "caption": "Push adds a third item, while **index** one still selects the second course.",
       "code": "const courses=[\"CS 101\",\"CS 201\"];\ncourses.push(\"CS 301\");\nconsole.log(courses[1]);\nconsole.log(courses.length);",
       "output": "CS 201\n3"
     },
@@ -34,13 +101,13 @@
     },
     {
       "kind": "text",
-      "body": "In the wrong version, `planned` and `courses` reach the same array, so both appear to gain a course. Spread reads the existing elements into a new outer array. If those elements are themselves arrays, the copy is shallow: the outer array is new, but each inner array is still shared."
+      "body": "In the wrong version, `planned` and `courses` reach the same **array**, so both appear to gain a course. Spread reads the existing elements into a new outer array. If those elements are themselves arrays, the copy is shallow: the outer array is new, but each inner array is still shared."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "Check the boundary",
-      "body": "Const prevents assigning a different array to the variable, but it does not freeze the current array contents."
+      "body": "Const prevents assigning a different **array** to the **variable**, but it does not freeze the current array contents."
     },
     {
       "kind": "check",
@@ -53,7 +120,7 @@
         "values.last"
       ],
       "answer_index": 0,
-      "why": "Length is three while the final valid index is two, so subtract one."
+      "why": "Length is three while the final valid **index** is two, so subtract one."
     },
     {
       "kind": "check",
@@ -66,7 +133,7 @@
         "a const error"
       ],
       "answer_index": 0,
-      "why": "Push mutates the existing array, so const permits it and length becomes two."
+      "why": "Push mutates the existing **array**, so const permits it and length becomes two."
     },
     {
       "kind": "list",
@@ -75,9 +142,91 @@
         "Begin indexing at zero.",
         "Subtract one for the end.",
         "Use push and pop deliberately.",
-        "Know which methods mutate."
+        "Know which **methods** mutate."
       ]
     }
   ],
-  "_beginner_expanded": true
+  "_beginner_expanded": true,
+  "learn_cards": {
+    "lists-lesson-check-1": {
+      "title": "Length is one past the last index",
+      "body": "Ordered collections start at index 0, so a collection's length is not a valid final index.",
+      "example": "last_index = len(items) - 1",
+      "notice": "A three-item collection has indexes 0, 1, and 2.",
+      "mistake": "Do not ask for index equal to the length unless you expect an out-of-range failure.",
+      "section_id": "check"
+    },
+    "lists-lesson-check-2": {
+      "title": "Changing a list during a loop can skip items",
+      "body": "When removal shifts items left, the loop can move past an item that still needs to be checked.",
+      "example": "kept = []\nfor item in items:\n    if keep(item): kept.append(item)",
+      "notice": "Building a new result is often clearer than removing from the list being walked.",
+      "mistake": "Do not assume the loop rechecks the position after an item slides into it.",
+      "section_id": "check"
+    },
+    "lists-summary-01": {
+      "title": "Lists and arrays keep order",
+      "body": "A list or array stores multiple values under one name and preserves their positions.",
+      "example": "scores[0]",
+      "notice": "Position matters. The same values in a different order may mean a different result.",
+      "mistake": "Do not choose a list when named lookup or uniqueness is the real problem.",
+      "section_id": "check"
+    },
+    "lists-supplement-01": {
+      "title": "Removal changes later positions",
+      "body": "After an item is removed, every item after it moves to a new index. Any loop using positions must account for that shift.",
+      "example": "items = [1, 2, 2, 3]",
+      "notice": "The collection is not the same size after removal.",
+      "mistake": "Do not combine removal and forward indexing without thinking through the shift.",
+      "section_id": "check"
+    },
+    "lists-authored-01": {
+      "title": "Count positions from zero",
+      "body": "For a collection with four items, the positions are 0, 1, 2, and 3.",
+      "example": "items[0]\nitems[3]",
+      "notice": "The length tells you how many items exist, not where the last one lives.",
+      "mistake": "Do not use index 4 for a four-item collection.",
+      "section_id": "check"
+    },
+    "lists-authored-02": {
+      "title": "Remove by value or by position",
+      "body": "Some operations remove a matching value, and others remove the item at a position. Decide which one the problem needs.",
+      "example": "remove value\npop index",
+      "notice": "The same number can be a value in the collection or an index into the collection.",
+      "mistake": "Do not call an index-removal operation when the assignment asks for a matching value.",
+      "section_id": "check"
+    },
+    "lists-authored-03": {
+      "title": "Debug missing neighbors first",
+      "body": "If neighboring items disappear or survive unexpectedly, check for an off-by-one boundary or a collection changed during the loop.",
+      "example": "for item in items:",
+      "notice": "Skipped neighbors are a strong clue that the loop and mutation are interfering.",
+      "mistake": "Do not rewrite the whole solution before checking the loop boundary and mutation point.",
+      "section_id": "check"
+    },
+    "lists-authored-04": {
+      "title": "Read the last item intentionally",
+      "body": "Use the language's last-item pattern for a nonempty collection, and check emptiness when the collection might have no items.",
+      "example": "items[len(items) - 1]",
+      "notice": "The safe formula depends on the collection having at least one item.",
+      "mistake": "Do not read a final item from an empty collection.",
+      "section_id": "check"
+    },
+    "lists-authored-05": {
+      "title": "Loop over values when indexes do not matter",
+      "body": "If the loop only needs each item, a value loop avoids index math and boundary mistakes.",
+      "example": "for item in items:",
+      "notice": "Use indexes when position matters; otherwise keep the loop simpler.",
+      "mistake": "Do not create index variables just because every loop you have seen used one.",
+      "section_id": "check"
+    },
+    "lists-authored-06": {
+      "title": "Filter by building a new collection",
+      "body": "When keeping some items and dropping others, a new result collection is often safer than removing while looping.",
+      "example": "kept.append(item)",
+      "notice": "The original collection can stay stable while the result is built.",
+      "mistake": "Do not mutate the same collection the loop is using for its next step.",
+      "section_id": "check"
+    }
+  }
 }

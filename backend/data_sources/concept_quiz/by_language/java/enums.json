@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Enums concept check 1",
+      "title": "Enum valueOf input",
       "code": null,
-      "prompt": "What does the lesson mean by \"Changing text into an enum can fail\"?",
+      "prompt": "Why can `Status.valueOf(text)` fail for user input such as `\"active\"`?",
       "choices": [
-        "Level level = \"MEDIUM\";",
-        "`Status.valueOf(text)` requires an exact constant name. Input such as `\"active\"` does not match `ACTIVE` unless you clean or convert it first.",
-        "Level level = 2;",
-        "Level level = new Level();"
+        "`valueOf` needs the exact constant name, so clean or convert user input first.",
+        "Represent a fixed set of choices as arbitrary strings.",
+        "Assume `valueOf` accepts any capitalization.",
+        "Add new enum meanings only in scattered if statements."
       ],
-      "answer_index": 1,
-      "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: `Status.valueOf(text)` requires an exact constant name. Input such as `\"active\"` does not match `ACTIVE` unless you clean or convert it first."
+      "answer_index": 0,
+      "explanation": "`valueOf` expects the exact enum constant name, including capitalization. User text often needs trimming, case conversion, validation, or a friendlier lookup path before it is converted to an enum."
     },
     {
       "id": "java-enums-authored-02",
@@ -96,17 +96,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Enums concept check 2",
+      "title": "Fixed choices",
       "code": null,
-      "prompt": "Which choice describes a reliable Enums practice?",
+      "prompt": "When is an enum a good fit?",
       "choices": [
-        "HIGH",
-        "2",
+        "Store an enum as text when type checking would help.",
         "Use an enum for a fixed set of choices.",
-        "Nothing"
+        "Compare user input directly to enum constants without cleaning it.",
+        "Use an enum for values that users can invent freely."
       ],
-      "answer_index": 2,
-      "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: Use an enum for a fixed set of choices."
+      "answer_index": 1,
+      "explanation": "An enum is right when the allowed values are a fixed named set, such as `ACTIVE`, `PAUSED`, and `CLOSED`. The compiler can then help prevent misspellings that loose strings would allow."
     },
     {
       "id": "java-enums-authored-03",
@@ -114,17 +114,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Enums concept check 3",
+      "title": "Clear constants",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Enums code?",
+      "prompt": "What makes enum constants easier to use across a project?",
       "choices": [
-        "String status = \"acitve\";",
-        "Level level = new Level();",
-        "HIGH",
-        "Name constants clearly and consistently."
+        "Duplicate the same allowed choices in several files.",
+        "Depend on ordinal numbers for permanent saved meaning.",
+        "Name constants clearly and consistently.",
+        "Use a boolean when there are more than two named states."
       ],
-      "answer_index": 3,
-      "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: Name constants clearly and consistently."
+      "answer_index": 2,
+      "explanation": "Clear, consistent constant names give the whole codebase one spelling for each state. That beats copying string literals or relying on ordinal numbers whose meaning can drift when constants are reordered."
     },
     {
       "id": "java-enums-authored-04",
@@ -132,17 +132,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Enums concept check 4",
+      "title": "Store enum values",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Enums mistake?",
+      "prompt": "Why store an enum value instead of a matching string when the state is known?",
       "choices": [
-        "Store the enum value instead of a matching string.",
-        "2",
-        "Nothing",
-        "String status = \"acitve\";"
+        "Forget to handle a new enum constant in branch logic.",
+        "Treat enum names as display text for every user.",
+        "Parse text without handling invalid input.",
+        "Store the enum value instead of a matching string."
       ],
-      "answer_index": 0,
-      "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: Store the enum value instead of a matching string."
+      "answer_index": 3,
+      "explanation": "An enum variable can only hold one of the declared constants, so invalid states are harder to represent. A string can carry typos and unexpected casing until much later in the program."
     },
     {
       "id": "java-enums-authored-05",
@@ -150,17 +150,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Enums concept check 5",
+      "title": "Cleaning outside text",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Enums. Which advice is correct?",
+      "prompt": "What should happen before outside text is passed to `valueOf`?",
       "choices": [
-        "Level level = \"MEDIUM\";",
         "Handle outside text before calling `valueOf`.",
-        "Level level = 2;",
-        "2"
+        "Use magic numbers instead of named constants.",
+        "Let each caller invent its own spelling for a state.",
+        "Switch on strings when enum constants exist."
       ],
-      "answer_index": 1,
-      "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: Handle outside text before calling `valueOf`."
+      "answer_index": 0,
+      "explanation": "Outside text should be normalized or checked so the program can handle bad input deliberately. Calling `valueOf` directly on raw text turns ordinary user variation into an exception path."
     },
     {
       "id": "java-enums-authored-06",
@@ -168,17 +168,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Enums concept check 6",
+      "title": "Switching on enums",
       "code": null,
-      "prompt": "Which choice shows sound reasoning about Enums?",
+      "prompt": "When does a `switch` over enum constants make sense?",
       "choices": [
-        "Nothing",
-        "String status = \"acitve\";",
+        "Put unrelated states into the same enum.",
         "Use switch when each constant needs different behavior.",
-        "Level level = \"MEDIUM\";"
+        "Assume enum constants are lowercase strings.",
+        "Use an enum to store changing numeric data."
       ],
-      "answer_index": 2,
-      "explanation": "An enum defines the complete set of values allowed for a type. Write the choices once, compare them by name, and use a switch when behavior depends on the chosen value. That reasoning supports the answer: Use switch when each constant needs different behavior."
+      "answer_index": 1,
+      "explanation": "A switch is useful when each named enum constant needs different behavior. The enum keeps the set of possible cases finite, and the branch code can focus on what each state means."
     }
   ]
 }

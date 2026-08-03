@@ -31,6 +31,7 @@ from coding_runner import (
     run_javascript_practice_tests,
     run_python_freeform,
     run_python_practice_tests,
+    run_python_practice_trace,
     set_cached_practice_run,
 )
 from practice_starters import build_starter_from_spec, get_arg_spec
@@ -86,7 +87,7 @@ print(f"[KEY] JWT_SECRET Check: {'FOUND' if os.getenv('JWT_SECRET') else 'MISSIN
 
 # SQLAlchemy Imports
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import OperationalError, ProgrammingError
+from sqlalchemy.exc import IntegrityError, OperationalError, ProgrammingError
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, text, or_, and_, func
 
 # Vertex AI Agent Engine (replaces Pinecone + OpenAI RAG pipeline)
@@ -149,7 +150,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, CodingAttemptEvent, CodingHintEvent, CodingTutorActionEvent, CodingWorkspaceState, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -791,7 +792,12 @@ CODING TUTOR MODE:
 - Use balanced tutoring: explain concepts clearly, ask useful questions, point out likely bugs, and give small examples or snippets when needed.
 - Do not provide full unknown homework solutions from scratch when the student only gives an assignment prompt.
 - If the student provides their own workspace code, starter code, or a partial attempt, you MAY generate, rewrite, convert, refactor, or complete small focused code blocks that build on that attempt.
+- The current workspace context in the latest request overrides older chat history. If an earlier message used a different language, class name, function name, or problem, ignore the earlier details and follow the latest request.
 - For rewrite, convert, translate, refactor, generate-code, or starter-code requests: output the code first in a fenced code block. Do not start with an explanation. After the code block, add at most 3 short bullets explaining the changes.
+- For graded workspace rewrites, preserve the runner shape shown in the prompt. Keep the same function/method name, class wrapper, imports, and parameter/return types unless the student explicitly asks for a scratch example.
+- Java graded practice usually runs from Solution.java and calls class Solution. Do not rename it to another public class or add a main method for a replacement answer.
+- C++ graded practice calls a top-level native function directly. Do not wrap C++ answers in class Solution, and do not add a main function for a replacement answer.
+- Python and JavaScript graded practice should keep the required function name instead of replacing the answer with only print statements or an unrelated script.
 - For debug requests: answer in small chunks. Give the first likely issue, why it matters, and one quick check/test before moving on.
 - For hint requests: give hints progressively and avoid dumping a full final solution unless the student explicitly asks after attempting.
 - If a student asks for a full solution without showing work, politely refuse that part and offer a plan, hints, tests, or the next small step.
@@ -960,10 +966,62 @@ class CodingInterviewProgressUpdate(BaseModel):
             raise ValueError(f"Status must be one of: {valid}")
         return normalized
 
+class CodingHintRequest(BaseModel):
+    language: str = "python"
+    set: str = DEFAULT_QUESTION_SET
+    level: int
+
+    @field_validator("level")
+    @classmethod
+    def validate_level(cls, value):
+        if value < 1 or value > 4:
+            raise ValueError("Hint level must be between 1 and 4.")
+        return value
+
+VALID_TUTOR_ACTION_TYPES = {"tutor_suggestion_applied"}
+
+class CodingTutorActionRequest(BaseModel):
+    action_type: str
+    source: str = "practice"
+    question_id: Optional[str] = None
+    language: str = "python"
+    metadata: Optional[dict[str, Any]] = None
+
+    @field_validator("action_type")
+    @classmethod
+    def validate_action_type(cls, value):
+        normalized = (value or "").strip().lower()
+        if normalized not in VALID_TUTOR_ACTION_TYPES:
+            valid = ", ".join(sorted(VALID_TUTOR_ACTION_TYPES))
+            raise ValueError(f"action_type must be one of: {valid}")
+        return normalized
+
+    @field_validator("source")
+    @classmethod
+    def validate_action_source(cls, value):
+        normalized = (value or "practice").strip().lower()
+        if normalized not in {"practice", "interview"}:
+            raise ValueError("source must be practice or interview")
+        return normalized
+
+class CodingWorkspaceStateUpdate(BaseModel):
+    problem_id: Optional[str] = None
+    language: str = "python"
+    source: str = "practice"
+
+    @field_validator("source")
+    @classmethod
+    def validate_source(cls, value):
+        normalized = (value or "practice").strip().lower()
+        if normalized not in {"practice", "interview"}:
+            raise ValueError("source must be practice or interview")
+        return normalized
+
 class PracticeRunRequest(BaseModel):
     question_id: str
     language: str = "python"
     code: str
+    trace_test_index: int = 0
     # Effort signals for attempt telemetry. Optional and client-reported, so an older
     # client that omits them still runs — the row is just written without them.
     hints_used: int = 0
@@ -976,6 +1034,15 @@ class PracticeRunRequest(BaseModel):
             raise ValueError("code is required")
         if len(value) > 20000:
             raise ValueError("code is too large for this lightweight runner")
+        return value
+
+    @field_validator("trace_test_index")
+    @classmethod
+    def validate_trace_test_index(cls, value):
+        if value < 0:
+            raise ValueError("trace_test_index must be zero or greater")
+        if value > 50:
+            raise ValueError("trace_test_index is out of range")
         return value
 
 class PracticeFreeRunRequest(BaseModel):
@@ -4748,6 +4815,7 @@ async def get_chat_history(user=Depends(get_current_user), db: Session = Depends
             ts = ts.replace(tzinfo=timezone.utc)
         history.append({
             "session_id": c.session_id or "default",
+            "mode": c.mode or "regular",
             "user": c.user_query,
             "bot": c.bot_response,
             "time": ts.isoformat() if ts is not None else None
@@ -5608,6 +5676,47 @@ def _find_language_solution(question_id: str, language: str, question: Optional[
             return solution
     raise HTTPException(status_code=404, detail="Practice solution not found for that question and language.")
 
+def _practice_trace_test_payloads(solution: dict[str, Any]) -> list[dict[str, Any]]:
+    payloads: list[dict[str, Any]] = []
+    for index, test in enumerate(solution.get("runner_tests") or []):
+        if not isinstance(test, dict):
+            continue
+        payloads.append({
+            "index": index,
+            "name": test.get("name") or f"Test {index + 1}",
+            "args": test.get("args", []),
+            "expected": test.get("expected"),
+        })
+    return payloads
+
+def _practice_solution_materials(solution: dict[str, Any]) -> dict[str, Any]:
+    """Return the safe client payload needed to seed the workspace.
+
+    Reference solutions stay server-side until the student has earned solution
+    review access. Authored test inputs are exposed so the execution trace can
+    let students choose the exact run they want to step through.
+    """
+    allowed = {
+        "language",
+        "question_id",
+        "function_name",
+        "starter_code",
+        "starter_guidance",
+        "complexity",
+        "input_contract",
+        "output_contract",
+    }
+    return {
+        **{key: value for key, value in solution.items() if key in allowed},
+        "trace_tests": _practice_trace_test_payloads(solution),
+    }
+
+def _practice_solution_review_payload(solution: dict[str, Any]) -> dict[str, Any]:
+    return {
+        **_practice_solution_materials(solution),
+        "reference_solution": solution.get("reference_solution") or "",
+    }
+
 def _find_interview_solution(question_id: str, language: str) -> Optional[dict[str, Any]]:
     """Look up authored interview test cases for a question+language. Returns None (not a
     404) when no answer file / entry exists — interview questions are only PARTIALLY
@@ -5722,12 +5831,12 @@ async def get_daily_practice_question(
         raise HTTPException(status_code=404, detail="No practice questions are available for that difficulty.")
     day_index = datetime.now(timezone.utc).toordinal() % len(questions)
     question = questions[day_index]
-    solution = _find_language_solution(question["id"], language)
+    solution = _find_language_solution(question["id"], language, question)
     return {
         "source": "CS Navigator Practice",
         "date": datetime.now(timezone.utc).date().isoformat(),
         "question": question,
-        "solution": solution,
+        "solution": _practice_solution_materials(solution),
     }
 
 @app.get("/api/coding/practice/questions")
@@ -5747,24 +5856,178 @@ async def get_practice_question(question_id: str, set: str = Query(DEFAULT_QUEST
     set_name, _ = _resolve_question_set(set)
     return _find_question(question_id, set_name)
 
-@app.get("/api/coding/practice/questions/{question_id}/hints")
-async def get_practice_question_hints(question_id: str, level: str = Query("1")):
+def _hint_unlock_count(attempt_count: int, solved: bool = False) -> int:
+    """Server-side ladder gate for practice/interview hints.
+
+    The first hint is always a gentle reread/check. Deeper hints require real Run
+    attempts saved in CodingAttemptEvent, so the frontend cannot simply unlock the
+    whole ladder by changing local state.
+    """
+    attempts = max(0, int(attempt_count or 0))
+    if solved or attempts >= 3:
+        return 4
+    if attempts >= 2:
+        return 3
+    if attempts >= 1:
+        return 2
+    return 1
+
+def _hint_unlock_reason(unlocked_count: int) -> str:
+    if unlocked_count >= 4:
+        return "All hints are unlocked for this problem."
+    if unlocked_count == 3:
+        return "Run one more attempt to unlock the near-solution hint."
+    if unlocked_count == 2:
+        return "Run another attempt to unlock the code-shape hint."
+    return "Run your code once to unlock the concept hint."
+
+def _practice_progress_for(
+    db: Session,
+    user_id: int,
+    question_id: str,
+    language_key: str,
+) -> Optional[CodingPracticeProgress]:
+    return (
+        db.query(CodingPracticeProgress)
+        .filter(
+            CodingPracticeProgress.user_id == user_id,
+            CodingPracticeProgress.question_id == question_id,
+            CodingPracticeProgress.language == language_key,
+        )
+        .first()
+    )
+
+def _hint_state_payload(
+    db: Session,
+    user_id: int,
+    question: dict[str, Any],
+    *,
+    language_key: str,
+    set_name: str,
+) -> dict[str, Any]:
+    source = "interview" if set_name == "interview" else "practice"
+    events = (
+        db.query(CodingAttemptEvent)
+        .filter(
+            CodingAttemptEvent.user_id == user_id,
+            CodingAttemptEvent.question_id == question["id"],
+            CodingAttemptEvent.source == source,
+        )
+        .all()
+    )
+    attempt_count = len(events)
+    solved = any(event.outcome == "pass" for event in events)
+    if source == "practice":
+        progress = _practice_progress_for(db, user_id, question["id"], language_key)
+        solved = solved or progress is not None and progress.status == "solved"
+        attempt_count = max(attempt_count, progress.attempt_count if progress else 0)
+    unlocked_count = _hint_unlock_count(attempt_count, solved)
+    authored = question.get("hints") if isinstance(question.get("hints"), list) else []
+    total = 4
+    hints = []
+    for level in range(1, total + 1):
+        unlocked = level <= unlocked_count
+        hints.append({
+            "level": level,
+            "hint": authored[level - 1] if unlocked and level <= len(authored) else None,
+            "locked": not unlocked,
+        })
+    return {
+        "question_id": question["id"],
+        "set": set_name,
+        "language": language_key,
+        "attempt_count": attempt_count,
+        "solved": solved,
+        "unlocked_count": unlocked_count,
+        "solution_unlocked": solved or attempt_count >= 3,
+        "solution_required_attempts": 3,
+        "total": total,
+        "reason": _hint_unlock_reason(unlocked_count),
+        "hints": hints,
+    }
+
+@app.get("/api/coding/practice/questions/{question_id}/hint-state")
+async def get_practice_question_hint_state(
+    question_id: str,
+    set: str = Query(DEFAULT_QUESTION_SET),
+    language: str = Query("python"),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    set_name, _ = _resolve_question_set(set)
+    question = _find_question(question_id, set_name)
+    language_key, _ = _normalize_practice_language(language)
+    return _hint_state_payload(db, user["user_id"], question, language_key=language_key, set_name=set_name)
+
+@app.post("/api/coding/practice/questions/{question_id}/hints/request")
+async def request_practice_question_hint(
+    question_id: str,
+    req: CodingHintRequest,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    set_name, _ = _resolve_question_set(req.set)
+    question = _find_question(question_id, set_name)
+    language_key, _ = _normalize_practice_language(req.language)
+    state = _hint_state_payload(db, user["user_id"], question, language_key=language_key, set_name=set_name)
+    if req.level > state["unlocked_count"]:
+        raise HTTPException(
+            status_code=423,
+            detail={
+                "message": state["reason"],
+                "hint_state": state,
+            },
+        )
+
+    source = "interview" if set_name == "interview" else "practice"
+    db.add(CodingHintEvent(
+        user_id=user["user_id"],
+        source=source,
+        question_id=question["id"],
+        language=language_key,
+        level=req.level,
+    ))
+    db.commit()
+    hint = next((item for item in state["hints"] if item["level"] == req.level), None)
+    return {
+        **state,
+        "requested_level": req.level,
+        "hint": hint,
+        "recorded": True,
+    }
+
+@app.get("/api/coding/practice/questions/{question_id}/materials")
+async def get_practice_question_materials(question_id: str, language: str = Query("python")):
     question = _find_practice_question(question_id)
-    hints = question.get("hints", [])
-    if level.lower() == "all":
-        return {"question_id": question["id"], "hints": hints}
-    try:
-        requested = int(level)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail="Hint level must be 1, 2, 3, or all.") from exc
-    if requested < 1 or requested > len(hints):
-        raise HTTPException(status_code=400, detail=f"Hint level must be between 1 and {len(hints)} for this question.")
-    return {"question_id": question["id"], "level": requested, "hint": hints[requested - 1]}
+    solution = _find_language_solution(question_id, language, question)
+    return _practice_solution_materials(solution)
 
 @app.get("/api/coding/practice/questions/{question_id}/solution")
-async def get_practice_question_solution(question_id: str, language: str = Query("python")):
+async def get_practice_question_solution(
+    question_id: str,
+    language: str = Query("python"),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     question = _find_practice_question(question_id)
-    return _find_language_solution(question_id, language, question)
+    language_key, _ = _normalize_practice_language(language)
+    state = _hint_state_payload(db, user["user_id"], question, language_key=language_key, set_name=DEFAULT_QUESTION_SET)
+    if not state["solution_unlocked"]:
+        raise HTTPException(
+            status_code=423,
+            detail={
+                "message": (
+                    f"The reference unlocks after {state['solution_required_attempts']} real runs "
+                    "or after you solve the problem."
+                ),
+                "hint_state": state,
+            },
+        )
+    solution = _find_language_solution(question_id, language_key, question)
+    return {
+        **_practice_solution_review_payload(solution),
+        "hint_state": state,
+    }
 
 # ---------------------------------------------------------------------------
 # Concept quizzes (CodeChef-style MCQ / type-in / drag-and-drop). Distinct from
@@ -6064,10 +6327,10 @@ async def read_lesson(language: str, category: str):
 
 
 @app.get("/api/coding/learn/{language}/{category}/refresher")
-async def read_lesson_refresher(language: str, category: str):
+async def read_lesson_refresher(language: str, category: str, question_id: Optional[str] = None):
     """The compact recap shown in the Learn tab INSIDE a quiz question — a reminder
     mid-question, not the whole lesson."""
-    refresher = _lesson_call(lessons.get_refresher, language, category)
+    refresher = _lesson_call(lessons.get_refresher, language, category, question_id)
     return {
         "language": lessons.normalize_language(language),
         "category": category,
@@ -6316,7 +6579,7 @@ async def search_coding_study_resources(
         "source": "curated_cs_navigator_resources",
     }
 
-from services import attempt_telemetry, mastery
+from services import adaptive_practice, attempt_telemetry, mastery
 
 @app.post("/api/coding/practice/run")
 async def run_practice_solution(
@@ -6398,6 +6661,50 @@ async def run_practice_solution(
         "progress_saved": progress_saved,
         "progress": serialized_progress,
         "message": "All local tests passed." if status_value == "passed" else "Review the failed tests and try again.",
+    }
+
+@app.post("/api/coding/practice/trace")
+async def trace_practice_solution(
+    req: PracticeRunRequest,
+    user: dict = Depends(get_current_user),
+):
+    retry_after = check_practice_run_rate_limit(str(user["user_id"]))
+    if retry_after is not None:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many code runs. Wait briefly before trying again.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
+    language_key, _ = _normalize_practice_language(req.language)
+    if language_key != "python":
+        return {
+            "status": "error",
+            "trace": [],
+            "stdout": "",
+            "stderr": "Code tracing is available for Python first. JavaScript, Java, and C++ can still use Visualize this idea.",
+            "duration_ms": 0,
+        }
+
+    question = _find_practice_question(req.question_id)
+    solution = _find_language_solution(question["id"], language_key, question)
+    function_name = str(solution.get("function_name") or "solve")
+    tests = solution.get("runner_tests") or []
+    if not tests:
+        return {
+            "status": "error",
+            "trace": [],
+            "stdout": "",
+            "stderr": "No authored test is available to trace for this question yet.",
+            "duration_ms": 0,
+        }
+
+    test_index = min(req.trace_test_index, len(tests) - 1)
+    run_result = run_python_practice_trace(req.code, function_name, tests[test_index])
+    return {
+        **run_result,
+        "trace_test_index": test_index,
+        "message": f"Trace generated from authored test {test_index + 1}.",
     }
 
 @app.post("/api/coding/interview/grade")
@@ -6580,7 +6887,144 @@ async def get_coding_mastery(
         "weakest": (
             {**weakest, "reason": mastery.explain(weakest)} if weakest else None
         ),
+        "mistake_patterns": mastery.summarize_mistake_patterns(db, user["user_id"]),
         "min_attempts_for_score": mastery.MIN_ATTEMPTS_FOR_SCORE,
+    }
+
+@app.get("/api/coding/milestones")
+async def get_coding_milestone_signals(
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Trustworthy milestone signals, derived from existing logs.
+
+    This does not award new badges yet. It lets the Progress page show which learning
+    habits are actually being tracked before those habits become achievements.
+    """
+    return mastery.build_milestone_signals(db, user["user_id"])
+
+@app.post("/api/coding/tutor-actions")
+async def record_coding_tutor_action(
+    req: CodingTutorActionRequest,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    metadata = req.metadata if isinstance(req.metadata, dict) else {}
+    # Keep this small and code-free. The only current metadata is the apply mode.
+    safe_metadata = {
+        str(key)[:40]: str(value)[:120]
+        for key, value in metadata.items()
+        if key in {"mode", "surface"}
+    }
+    language_key, _ = _normalize_practice_language(req.language)
+    db.add(CodingTutorActionEvent(
+        user_id=user["user_id"],
+        action_type=req.action_type,
+        source=req.source,
+        question_id=(req.question_id or None),
+        language=language_key,
+        metadata_json=json.dumps(safe_metadata) if safe_metadata else None,
+    ))
+    db.commit()
+    return {"recorded": True, "milestones": mastery.build_milestone_signals(db, user["user_id"])}
+
+def _practice_answer_items_by_language() -> dict[str, list[dict[str, Any]]]:
+    items_by_language: dict[str, list[dict[str, Any]]] = {}
+    for language in adaptive_practice.LANGUAGES:
+        path = os.path.join(QUIZ_ANSWERS_DIR, f"{language}.json")
+        try:
+            data = _read_quiz_json(path)
+        except HTTPException:
+            data = {}
+        if isinstance(data, dict):
+            items_by_language[language] = data.get("items", [])
+        elif isinstance(data, list):
+            items_by_language[language] = data
+        else:
+            items_by_language[language] = []
+    return items_by_language
+
+def _serialize_attempt_event(row: CodingAttemptEvent) -> dict[str, Any]:
+    return {
+        "question_id": row.question_id,
+        "topic": row.topic,
+        "difficulty": row.difficulty,
+        "language": row.language,
+        "outcome": row.outcome,
+        "error_class": row.error_class,
+        "hints_used": row.hints_used or 0,
+        "created_at": row.created_at.isoformat() if row.created_at else None,
+    }
+
+@app.get("/api/coding/adaptive/recommendations")
+async def get_adaptive_practice_recommendations(
+    language: str = Query("python"),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Readiness-gated adaptive practice recommendation.
+
+    This is scaffolding for the ladder, not a blanket adaptive mode. Topics only get
+    a true ladder recommendation when the authored bank has enough fully tested
+    easy/medium/hard depth across all supported languages.
+    """
+    language_key, _ = _normalize_practice_language(language)
+    questions = _all_practice_questions()
+    readiness = adaptive_practice.build_topic_readiness(
+        questions,
+        _practice_answer_items_by_language(),
+    )
+    topics = mastery.compute_topic_mastery(db, user["user_id"])
+    weakest = mastery.weakest_topic(topics)
+    mastery_payload = {
+        "topics": topics,
+        "weakest": ({**weakest, "reason": mastery.explain(weakest)} if weakest else None),
+        "min_attempts_for_score": mastery.MIN_ATTEMPTS_FOR_SCORE,
+    }
+    progress_rows = (
+        db.query(CodingPracticeProgress)
+        .filter(
+            CodingPracticeProgress.user_id == user["user_id"],
+            CodingPracticeProgress.language == language_key,
+        )
+        .all()
+    )
+    attempt_rows = (
+        db.query(CodingAttemptEvent)
+        .filter(
+            CodingAttemptEvent.user_id == user["user_id"],
+            CodingAttemptEvent.source == "practice",
+            CodingAttemptEvent.topic.isnot(None),
+        )
+        .order_by(CodingAttemptEvent.created_at.asc())
+        .all()
+    )
+    serialized_attempts = [_serialize_attempt_event(row) for row in attempt_rows]
+    recommendation = adaptive_practice.build_adaptive_recommendation(
+        questions=questions,
+        readiness=readiness,
+        progress_items=[_serialize_practice_progress(row) for row in progress_rows],
+        attempt_events=serialized_attempts,
+        mastery_payload=mastery_payload,
+        language=language_key,
+    )
+    review_signal = adaptive_practice.build_error_review_signal(
+        attempt_events=serialized_attempts,
+        language=language_key,
+    )
+    ready_count = sum(1 for item in readiness if item.get("ladder_ready"))
+    return {
+        "language": language_key,
+        "recommendation": recommendation,
+        "review_signal": review_signal,
+        "readiness": readiness,
+        "ready_topic_count": ready_count,
+        "total_topic_count": len(readiness),
+        "policy": {
+            "full_adaptive_enabled": False,
+            "ladder_requires_readiness": True,
+            "thresholds": adaptive_practice.READINESS_THRESHOLDS,
+        },
     }
 
 @app.get("/api/coding/practice/questions/{question_id}/progress")
@@ -6703,6 +7147,73 @@ async def update_interview_progress(
     db.commit()
     db.refresh(progress)
     return _serialize_interview_progress(progress)
+
+def _serialize_workspace_state(row: Optional[CodingWorkspaceState]) -> dict[str, Any]:
+    if not row or not row.problem_id:
+        return {
+            "problem_id": None,
+            "language": "python",
+            "source": "practice",
+            "updated_at": None,
+        }
+    return {
+        "problem_id": row.problem_id,
+        "language": row.language,
+        "source": row.source,
+        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+    }
+
+@app.get("/api/coding/workspace-state")
+async def get_coding_workspace_state(
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    row = (
+        db.query(CodingWorkspaceState)
+        .filter(CodingWorkspaceState.user_id == user["user_id"])
+        .first()
+    )
+    return _serialize_workspace_state(row)
+
+@app.patch("/api/coding/workspace-state")
+async def update_coding_workspace_state(
+    req: CodingWorkspaceStateUpdate,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    language_key, _ = _normalize_practice_language(req.language)
+    if req.problem_id:
+        _find_question(req.problem_id, "interview" if req.source == "interview" else DEFAULT_QUESTION_SET)
+    row = (
+        db.query(CodingWorkspaceState)
+        .filter(CodingWorkspaceState.user_id == user["user_id"])
+        .first()
+    )
+    if not row:
+        row = CodingWorkspaceState(user_id=user["user_id"])
+        db.add(row)
+    row.problem_id = req.problem_id
+    row.language = language_key
+    row.source = req.source
+    row.updated_at = datetime.utcnow()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        row = (
+            db.query(CodingWorkspaceState)
+            .filter(CodingWorkspaceState.user_id == user["user_id"])
+            .first()
+        )
+        if not row:
+            raise
+        row.problem_id = req.problem_id
+        row.language = language_key
+        row.source = req.source
+        row.updated_at = datetime.utcnow()
+        db.commit()
+    db.refresh(row)
+    return _serialize_workspace_state(row)
 
 
 MAX_DAILY_DAYS = 370  # ~a year; matches the frontend's cap in recordDailyChallengeDay

@@ -7,12 +7,12 @@
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "A C++ exception reports a problem across function calls. `throw` sends the problem out. `try` marks code that may throw. `catch` handles a specific kind of problem. Catch only what you can handle.",
+  "refresher": "A C++ **exception** reports a problem across **function** calls. `throw` sends the problem out. `try` marks code that may throw. `catch` handles a specific kind of problem. Catch only what you can handle.",
   "refresher_code": "try {\n  enroll(student);\n} catch (const std::exception& error) {\n  std::cerr << error.what() << \"\\n\";\n}",
   "blocks": [
     {
       "kind": "text",
-      "body": "An exception means the code hit a problem it cannot handle in the normal path. Instead of returning a fake answer, it reports the failure to a place that may know what to do."
+      "body": "An **exception** means the code hit a problem it cannot handle in the normal path. Instead of returning a fake answer, it reports the failure to a place that may know what to do."
     },
     {
       "kind": "text",
@@ -26,7 +26,7 @@
     },
     {
       "kind": "code",
-      "caption": "The function either returns a positive value or throws a message. Main catches that specific failure and prints the explanation.",
+      "caption": "The **function** either returns a positive **value** or throws a message. Main catches that specific failure and prints the explanation.",
       "code": "#include <iostream>\n#include <stdexcept>\nint requirePositive(int value) {\n  if (value <= 0) throw std::invalid_argument(\"value must be positive\");\n  return value;\n}\nint main() {\n  try {\n    std::cout << requirePositive(-2) << \"\\n\";\n  } catch (const std::invalid_argument& error) {\n    std::cout << error.what() << \"\\n\";\n  }\n}",
       "output": "value must be positive"
     },
@@ -40,17 +40,17 @@
     },
     {
       "kind": "text",
-      "body": "For the negative input, `requirePositive` cannot fulfill its rule, so it throws `invalid_argument`. The normal path stops. Main catches that type, reads its message, and then continues after the catch block."
+      "body": "For the negative **input**, `requirePositive` cannot fulfill its rule, so it throws `invalid_argument`. The normal path stops. Main catches that type, reads its message, and then continues after the catch block."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "Exceptions are not ordinary branch logic",
-      "body": "Use an `if` for an expected choice, such as an empty search result. Use an exception when a function cannot complete the job it promised and a caller needs the failure information."
+      "body": "Use an `if` for an expected choice, such as an empty search result. Use an **exception** when a **function** cannot complete the job it promised and a caller needs the failure information."
     },
     {
       "kind": "check",
-      "prompt": "How should standard exceptions usually be caught?",
+      "prompt": "How should standard **exceptions** usually be caught?",
       "code": "",
       "choices": [
         "By const reference",
@@ -59,11 +59,11 @@
         "Only with catch-all"
       ],
       "answer_index": 0,
-      "why": "Catching by const reference avoids copying and preserves the dynamic exception information for the handler."
+      "why": "Catching by const **reference** avoids copying and preserves the dynamic **exception** information for the handler."
     },
     {
       "kind": "check",
-      "prompt": "What happens to local objects when an exception leaves their block?",
+      "prompt": "What happens to local **objects** when an **exception** **leaves** their block?",
       "code": "",
       "choices": [
         "They are cleaned up as the block is exited",
@@ -72,7 +72,7 @@
         "Their constructors run again"
       ],
       "answer_index": 0,
-      "why": "C++ exits each active block on the way to a matching catch, so fully created local objects run their normal cleanup."
+      "why": "C++ exits each active block on the way to a matching catch, so fully created local **objects** run their normal cleanup."
     },
     {
       "kind": "list",
@@ -84,5 +84,97 @@
         "Do not hide errors you still need to fix."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "cpp-exceptions-check-1": {
+      "title": "Exception handling shape",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "check",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests how should standard exceptions usually be caught? Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "cpp-exceptions-check-2": {
+      "title": "Predict the exception handling shape behavior",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "check",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests what happens to local raii objects during stack unwinding? Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "cpp-exceptions-output-01": {
+      "title": "Trace exception handling shape output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "cpp-exceptions-supplement-01": {
+      "title": "Catch specific standard exceptions",
+      "notice": "A specific catch keeps the original error message available without catching unrelated failures.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "check",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests how does catch (const std::runtime_error& error) differ fro... Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "cpp-exceptions-authored-01": {
+      "title": "Exception handling shape",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "idea",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests when should c++ code use an exception instead of a normal b... Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "cpp-exceptions-authored-02": {
+      "title": "Exception handling shape",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "idea",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests what should thrown c++ exceptions communicate? Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "cpp-exceptions-authored-03": {
+      "title": "Exception handling shape",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "check",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests where should c++ code catch an exception? Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "cpp-exceptions-authored-04": {
+      "title": "Exception handling shape",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "check",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests how should standard c++ exceptions usually be caught? Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "cpp-exceptions-authored-05": {
+      "title": "Explain the exception handling shape reason",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "check",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests why should a c++ catch block avoid silently ignoring unknow... Exception handling should protect expected failures without hiding unrelated bugs."
+    },
+    "cpp-exceptions-authored-06": {
+      "title": "Exception handling shape",
+      "notice": "Look for the smallest risky operation and the most specific error type that matches it.",
+      "mistake": "Do not catch everything around a large block just to make the error disappear.",
+      "section_id": "check",
+      "example": "try: value = int(text)\nexcept ValueError:",
+      "source": "question",
+      "body": "This question tests what job do exceptions serve across several function calls? Exception handling should protect expected failures without hiding unrelated bugs."
+    }
+  }
 }

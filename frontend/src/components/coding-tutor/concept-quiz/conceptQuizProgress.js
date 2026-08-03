@@ -10,11 +10,16 @@
 //     questions: { [questionId]: "correct" | "incorrect" }  // latest per-Q result
 //   }
 
+import { currentUserStorageScope, scopedStorageKey } from "../storageScope";
+
 const PREFIX = "concept_quiz_progress";
 const QUIZ_DRAFT_PREFIX = "cq_answers";
+const QUIZ_RESULT_PREFIX = "cq_last_result";
+const QUIZ_CHOICE_SEED_PREFIX = "cq_choice_seed";
+const scopedKey = (base) => scopedStorageKey(base);
 
 function key(language, category) {
-  return `${PREFIX}:${language}:${category}`;
+  return scopedKey(`${PREFIX}:${language}:${category}`);
 }
 
 export function readCategoryProgress(language, category) {
@@ -70,7 +75,45 @@ export function readQuestionStatus(language, category, questionId) {
 }
 
 export function quizDraftKey(language, category) {
-  return `${QUIZ_DRAFT_PREFIX}:${language}:${category}`;
+  return scopedKey(`${QUIZ_DRAFT_PREFIX}:${language}:${category}`);
+}
+
+export function quizResultKey(language, category) {
+  return scopedKey(`${QUIZ_RESULT_PREFIX}:${language}:${category}`);
+}
+
+export function quizChoiceSeedKey(language, category) {
+  return scopedKey(`${QUIZ_CHOICE_SEED_PREFIX}:${language}:${category}`);
+}
+
+function makeQuizChoiceSeed(language, category) {
+  const random =
+    globalThis.crypto?.getRandomValues
+      ? Array.from(globalThis.crypto.getRandomValues(new Uint32Array(2))).join("-")
+      : `${Date.now()}-${Math.random()}`;
+  return `${language}:${category}:${random}`;
+}
+
+export function getOrCreateQuizChoiceSeed(language, category) {
+  try {
+    const seedKey = quizChoiceSeedKey(language, category);
+    const existing = sessionStorage.getItem(seedKey);
+    if (existing) return existing;
+    const next = makeQuizChoiceSeed(language, category);
+    sessionStorage.setItem(seedKey, next);
+    return next;
+  } catch {
+    return makeQuizChoiceSeed(language, category);
+  }
+}
+
+export function resetQuizChoiceSeed(language, category) {
+  try {
+    sessionStorage.removeItem(quizChoiceSeedKey(language, category));
+  } catch {
+    // Non-fatal; a fresh in-memory seed still changes this attempt.
+  }
+  return getOrCreateQuizChoiceSeed(language, category);
 }
 
 export function readQuizDraftAnswers(language, category) {
@@ -93,22 +136,41 @@ export function writeQuizDraftAnswers(language, category, answers) {
   }
 }
 
+export function readQuizLastResult(language, category) {
+  try {
+    const raw = sessionStorage.getItem(quizResultKey(language, category));
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeQuizLastResult(language, category, grade) {
+  try {
+    const resultKey = quizResultKey(language, category);
+    if (!grade) sessionStorage.removeItem(resultKey);
+    else sessionStorage.setItem(resultKey, JSON.stringify(grade));
+  } catch {
+    // Storage unavailable/full; the current results screen still works.
+  }
+}
+
+export function clearQuizLastResult(language, category) {
+  writeQuizLastResult(language, category, null);
+}
+
 // ── Lesson-read tracking ────────────────────────────────────────────────────
 // Learn has no backend yet, so "completed this lesson" lives in the same local store
 // as quiz progress, one flat set of "language:category" keys.
 // Swappable for a coding_learn_progress table later without touching callers.
-const LESSONS_KEY = `${PREFIX}:lessons_completed_v2`;
-const LEGACY_LESSONS_KEY = `${PREFIX}:lessons_read`;
+const LESSONS_BASE_KEY = `${PREFIX}:lessons_completed_v2`;
+const lessonsKey = () => scopedKey(LESSONS_BASE_KEY);
 
 function readLessonSet() {
   try {
-    const raw =
-      localStorage.getItem(LESSONS_KEY) ??
-      localStorage.getItem(LEGACY_LESSONS_KEY);
+    const raw = localStorage.getItem(lessonsKey());
     const arr = raw ? JSON.parse(raw) : [];
-    if (!localStorage.getItem(LESSONS_KEY) && raw) {
-      localStorage.setItem(LESSONS_KEY, JSON.stringify(arr));
-    }
     return Array.isArray(arr) ? new Set(arr) : new Set();
   } catch {
     return new Set();
@@ -137,7 +199,7 @@ export function markLessonRead(language, category) {
   if (set.has(id)) return;
   set.add(id);
   try {
-    localStorage.setItem(LESSONS_KEY, JSON.stringify([...set]));
+    localStorage.setItem(lessonsKey(), JSON.stringify([...set]));
   } catch {
     // storage full / unavailable — non-fatal.
   }
@@ -166,10 +228,15 @@ export function summarizeLearnQuizProgress() {
 
   let scanned = 0;
   try {
+    const scope = currentUserStorageScope();
+    const lessonsStorageKey = lessonsKey();
+    const scopedPrefix = `${PREFIX}:`;
     for (let i = 0; i < localStorage.length; i += 1) {
       const k = localStorage.key(i);
-      if (!k || !k.startsWith(`${PREFIX}:`) || k === LESSONS_KEY || k === LEGACY_LESSONS_KEY) continue;
-      // key shape: concept_quiz_progress:<language>:<category>
+      if (!k || !k.endsWith(`:${scope}`) || k === lessonsStorageKey) continue;
+      const baseKey = k.slice(0, -1 * (`:${scope}`).length);
+      if (!baseKey.startsWith(scopedPrefix)) continue;
+      // key shape: concept_quiz_progress:<language>:<category>:user:<id>
       const parts = k.split(":");
       if (parts.length < 3) continue;
       const language = parts[1];

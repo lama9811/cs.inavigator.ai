@@ -21,8 +21,8 @@ from pathlib import Path
 
 import pytest
 
-from coding_runner import run_cpp_practice_tests, run_java_practice_tests
-from practice_starters import get_arg_spec
+from coding_runner import _camel_to_snake_name, _cpp_beginner_compat_adapter, run_cpp_practice_tests, run_java_practice_tests
+from practice_starters import build_starter_from_spec, cpp_native_bridge, cpp_native_signature, get_arg_spec
 
 _HAS_GPP = shutil.which("g++") is not None or shutil.which("clang++") is not None
 _HAS_JAVA = shutil.which("javac") is not None and shutil.which("java") is not None
@@ -129,8 +129,28 @@ CPP_SOLUTIONS = {
         op=c; cur=0; } }
     long long sum=0; for(auto x:nums) sum+=x; return sum;
 }""",
+    "firstBadVersion": """long long firstBadVersion(vector<long long> versions){
+    int lo=0, hi=(int)versions.size()-1, ans=-1;
+    while(lo<=hi){ int mid=lo+(hi-lo)/2; if(versions[mid]==1){ ans=mid; hi=mid-1; } else lo=mid+1; }
+    return ans;
+}""",
     "firstMissingPositiveSmall": """long long firstMissingPositiveSmall(vector<long long> nums){
     set<long long> s(nums.begin(),nums.end()); long long i=1; while(s.count(i)) i++; return i;
+}""",
+    "firstScoreAtLeast": """long long firstScoreAtLeast(vector<long long> scores, long long target){
+    int lo=0, hi=(int)scores.size()-1, ans=-1;
+    while(lo<=hi){ int mid=lo+(hi-lo)/2; if(scores[mid]>=target){ ans=mid; hi=mid-1; } else lo=mid+1; }
+    return ans;
+}""",
+    "firstPassingScoreValue": """long long firstPassingScoreValue(vector<long long> scores, long long passingScore){
+    int lo=0, hi=(int)scores.size()-1, ans=-1;
+    while(lo<=hi){ int mid=lo+(hi-lo)/2; if(scores[mid]>=passingScore){ ans=scores[mid]; hi=mid-1; } else lo=mid+1; }
+    return ans;
+}""",
+    "followLinkedListValues": """vector<long long> followLinkedListValues(vector<long long> values, vector<long long> nextIndexes, long long head){
+    vector<long long> out; long long cur=head;
+    while(cur!=-1){ out.push_back(values[cur]); cur=nextIndexes[cur]; }
+    return out;
 }""",
     "gradeBucket": """string gradeBucket(long long score){
     if(score>=90) return "A"; if(score>=80) return "B"; if(score>=70) return "C"; if(score>=60) return "D"; return "F";
@@ -140,20 +160,57 @@ CPP_SOLUTIONS = {
     for(auto&cmd:commands){ if(cmd.rfind("join ",0)==0) q.push(cmd.substr(5)); else { if(q.empty()) out.push_back("none"); else { out.push_back(q.front()); q.pop(); } } }
     return out;
 }""",
+    "helpSessionFinishOrder": """vector<string> helpSessionFinishOrder(vector<string> names, vector<long long> tickets){
+    queue<long long> q; vector<string> out; for(long long i=0;i<(long long)names.size();i++) q.push(i);
+    while(!q.empty()){ long long i=q.front(); q.pop(); tickets[i]--; if(tickets[i]==0) out.push_back(names[i]); else q.push(i); }
+    return out;
+}""",
     "initials": """string initials(string fullName){
     istringstream is(fullName); string w, r; while(is>>w) if(!w.empty()) r+=toupper(w[0]); return r;
+}""",
+    "isRosterSymmetric": """bool isRosterSymmetric(vector<string> names){
+    int left=0, right=(int)names.size()-1;
+    while(left<right){ if(names[left]!=names[right]) return false; left++; right--; }
+    return true;
 }""",
     "isPalindrome": """bool isPalindrome(string text){
     string s; for(char c:text) if(isalnum(c)) s+=tolower(c); string r(s.rbegin(),s.rend()); return s==r;
 }""",
     "lastDigit": """long long lastDigit(long long number){ return llabs(number)%10; }""",
+    "lastScoreAtMost": """long long lastScoreAtMost(vector<long long> scores, long long target){
+    int lo=0, hi=(int)scores.size()-1, ans=-1;
+    while(lo<=hi){ int mid=lo+(hi-lo)/2; if(scores[mid]<=target){ ans=mid; lo=mid+1; } else hi=mid-1; }
+    return ans;
+}""",
+    "linkedListHasCycle": """bool linkedListHasCycle(vector<long long> nextIndexes, long long head){
+    set<long long> seen; long long cur=head;
+    while(cur!=-1){ if(seen.count(cur)) return true; seen.insert(cur); cur=nextIndexes[cur]; }
+    return false;
+}""",
+    "linkedListMiddleValue": """long long linkedListMiddleValue(vector<long long> values, vector<long long> nextIndexes, long long head){
+    if(head==-1) return -1; vector<long long> order; long long cur=head;
+    while(cur!=-1){ order.push_back(values[cur]); cur=nextIndexes[cur]; }
+    return order[order.size()/2];
+}""",
     "longestIncreasingSubsequenceLength": """long long longestIncreasingSubsequenceLength(vector<long long> nums){
     vector<long long> tails; for(long long x:nums){ auto it=lower_bound(tails.begin(),tails.end(),x); if(it==tails.end()) tails.push_back(x); else *it=x; } return tails.size();
+}""",
+    "longestStudyStretchUnderLimit": """long long longestStudyStretchUnderLimit(vector<long long> minutes, long long limit){
+    long long sum=0, best=0; size_t left=0;
+    for(size_t right=0; right<minutes.size(); right++){ sum+=minutes[right]; while(left<=right && sum>limit){ sum-=minutes[left++]; } best=max(best,(long long)(right-left+1)); }
+    return best;
 }""",
     "longestUniqueWindow": """long long longestUniqueWindow(string text){
     map<char,int> last; int start=0; long long best=0;
     for(int i=0;i<(int)text.size();i++){ if(last.count(text[i])&&last[text[i]]>=start) start=last[text[i]]+1; last[text[i]]=i; best=max(best,(long long)(i-start+1)); }
     return best;
+}""",
+    "lowestCommonAncestorValue": """long long lowestCommonAncestorValue(vector<long long> tree, long long a, long long b){
+    map<long long,long long> pos; for(int i=0;i<(int)tree.size();i++) if(tree[i]!=-1) pos[tree[i]]=i;
+    long long ia=pos[a], ib=pos[b]; set<long long> seen;
+    while(ia>=0){ seen.insert(ia); if(ia==0) break; ia=(ia-1)/2; }
+    while(!seen.count(ib)){ ib=(ib-1)/2; }
+    return tree[ib];
 }""",
     "matrixRowSums": """vector<long long> matrixRowSums(vector<vector<long long>> matrix){
     vector<long long> r; for(auto&row:matrix){ long long s=0; for(auto v:row) s+=v; r.push_back(s); } return r;
@@ -167,6 +224,9 @@ CPP_SOLUTIONS = {
     int R=matrix.size(); if(!R) return 0; int C=matrix[0].size(); vector<vector<int>> dp(R+1,vector<int>(C+1,0)); int best=0;
     for(int i=1;i<=R;i++) for(int j=1;j<=C;j++) if(matrix[i-1][j-1]==1){ dp[i][j]=1+min({dp[i-1][j],dp[i][j-1],dp[i-1][j-1]}); best=max(best,dp[i][j]); }
     return (long long)best*best;
+}""",
+    "maxPlateStackHeight": """long long maxPlateStackHeight(vector<string> commands){
+    long long cur=0, best=0; for(auto&cmd:commands){ if(cmd=="push") cur++; else if(cmd=="pop" && cur>0) cur--; best=max(best,cur); } return best;
 }""",
     "maximumSubarrayWithOneDeletion": """long long maximumSubarrayWithOneDeletion(vector<long long> nums){
     int n=nums.size(); vector<long long> nod(n), od(n); nod[0]=nums[0]; od[0]=nums[0]; long long best=nums[0];
@@ -209,6 +269,12 @@ CPP_SOLUTIONS = {
     "pairSumSorted": """bool pairSumSorted(vector<long long> nums, long long target){
     int l=0, r=(int)nums.size()-1; while(l<r){ long long s=nums[l]+nums[r]; if(s==target) return true; if(s<target) l++; else r--; } return false;
 }""",
+    "closestPairSumSorted": """vector<long long> closestPairSumSorted(vector<long long> nums, long long target){
+    if(nums.size()<2) return {};
+    int left=0, right=(int)nums.size()-1; long long bestDiff=LLONG_MAX; vector<long long> best;
+    while(left<right){ long long sum=nums[left]+nums[right]; long long diff=llabs(sum-target); if(diff<bestDiff){ bestDiff=diff; best={nums[left],nums[right]}; } if(sum<target) left++; else right--; }
+    return best;
+}""",
     "prefixSearch": """vector<string> prefixSearch(vector<string> words, string prefix){
     vector<string> r; for(auto&w:words) if(w.size()>=prefix.size()&&w.compare(0,prefix.size(),prefix)==0) r.push_back(w); return r;
 }""",
@@ -217,15 +283,34 @@ CPP_SOLUTIONS = {
     for(auto&q:queries) out.push_back(pref[q[1]+1]-pref[q[0]]);
     return out;
 }""",
+    "recentQueueCounts": """vector<long long> recentQueueCounts(vector<long long> times, long long window){
+    queue<long long> q; vector<long long> out;
+    for(long long t:times){ q.push(t); while(!q.empty() && t-q.front()>window) q.pop(); out.push_back(q.size()); }
+    return out;
+}""",
     "removeDuplicatesKeepOrder": """vector<long long> removeDuplicatesKeepOrder(vector<long long> nums){
     vector<long long> r; set<long long> seen; for(long long x:nums) if(!seen.count(x)){ seen.insert(x); r.push_back(x); } return r;
 }""",
     "recursiveDigitSum": """long long recursiveDigitSum(long long n){
     if(n<10) return n; return n%10 + recursiveDigitSum(n/10);
 }""",
+    "recursiveListCount": """long long recursiveListCount(vector<long long> nums){
+    if(nums.empty()) return 0;
+    nums.erase(nums.begin());
+    return 1 + recursiveListCount(nums);
+}""",
+    "recursiveReverseText": """string recursiveReverseText(string text){
+    if(text.size()<=1) return text;
+    return recursiveReverseText(text.substr(1)) + text[0];
+}""",
     "reverseWords": """string reverseWords(string sentence){
     istringstream is(sentence); vector<string> w; string t; while(is>>t) w.push_back(t); reverse(w.begin(),w.end());
     string r; for(size_t i=0;i<w.size();i++){ if(i) r+=" "; r+=w[i]; } return r;
+}""",
+    "reverseLinkedListValues": """vector<long long> reverseLinkedListValues(vector<long long> values, vector<long long> nextIndexes, long long head){
+    vector<long long> out; long long cur=head;
+    while(cur!=-1){ out.push_back(values[cur]); cur=nextIndexes[cur]; }
+    reverse(out.begin(), out.end()); return out;
 }""",
     "rotateListRight": """vector<long long> rotateListRight(vector<long long> items, long long k){
     int n=items.size(); if(!n) return items; k%=n; vector<long long> r; for(int i=0;i<n;i++) r.push_back(items[(i-k+n)%n]); return r;
@@ -242,10 +327,18 @@ CPP_SOLUTIONS = {
         for(int d=0;d<4;d++){ int nr=r+dr[d],nc=c+dc[d]; if(nr<0||nc<0||nr>=R||nc>=C||grid[nr][nc]=="#"||dist[nr][nc]!=-1) continue; dist[nr][nc]=dist[r][c]+1; q.push(make_pair(nr,nc)); } }
     return -1;
 }""",
+    "serveFirstStudents": """vector<string> serveFirstStudents(vector<string> names, long long serveCount){
+    vector<string> out; for(int i=0;i<(int)names.size() && i<serveCount;i++) out.push_back(names[i]); return out;
+}""",
     "subarraySumEqualsK": """long long subarraySumEqualsK(vector<long long> nums, long long k){
     map<long long,long long> cnt; cnt[0]=1; long long sum=0, res=0; for(long long x:nums){ sum+=x; res+=cnt[sum-k]; cnt[sum]++; } return res;
 }""",
     "sumEvenNumbers": """long long sumEvenNumbers(vector<long long> nums){ long long s=0; for(long long x:nums) if(x%2==0) s+=x; return s; }""",
+    "dailyTemperatureWaits": """vector<long long> dailyTemperatureWaits(vector<long long> temperatures){
+    vector<long long> ans(temperatures.size(),0), st;
+    for(int i=0;i<(int)temperatures.size();i++){ while(!st.empty() && temperatures[i]>temperatures[st.back()]){ int j=st.back(); st.pop_back(); ans[j]=i-j; } st.push_back(i); }
+    return ans;
+}""",
     "temperatureAboveThreshold": """long long temperatureAboveThreshold(vector<long long> readings, long long threshold){
     long long c=0; for(long long x:readings) if(x>threshold) c++; return c;
 }""",
@@ -259,6 +352,18 @@ CPP_SOLUTIONS = {
 }""",
     "treeLevelSums": """vector<long long> treeLevelSums(vector<long long> tree){
     vector<long long> out; for(size_t idx=0, width=1; idx<tree.size(); idx+=width, width*=2){ long long sum=0; for(size_t i=idx;i<tree.size()&&i<idx+width;i++) if(tree[i]!=-1) sum+=tree[i]; out.push_back(sum); } return out;
+}""",
+    "treePathSumCount": """long long treePathSumCount(vector<long long> tree, long long target){
+    if(tree.empty()) return 0; long long count=0;
+    function<void(int,long long)> dfs=[&](int i,long long sum){
+        if(i>=(int)tree.size() || tree[i]==-1) return;
+        sum += tree[i]; int l=2*i+1, r=2*i+2;
+        bool leftReal = l<(int)tree.size() && tree[l]!=-1;
+        bool rightReal = r<(int)tree.size() && tree[r]!=-1;
+        if(!leftReal && !rightReal){ if(sum==target) count++; return; }
+        dfs(l,sum); dfs(r,sum);
+    };
+    dfs(0,0); return count;
 }""",
     "triePrefixCounts": """vector<long long> triePrefixCounts(vector<string> commands){
     vector<string> words; vector<long long> out;
@@ -302,6 +407,265 @@ CPP_SOLUTIONS = {
     for(auto&w:words) if(w.size()>=prefix.size()&&w.compare(0,prefix.size(),prefix)==0) return true;
     return false;
 }""",
+    "countdownList": """vector<long long> countdownList(long long n){
+    vector<long long> out; for(long long x=n; x>=0; x--) out.push_back(x); return out;
+}""",
+    "courseCreditTotal": """long long courseCreditTotal(vector<string> courses, vector<long long> credits, vector<string> selectedCourses){
+    map<string,long long> lookup; for(size_t i=0;i<courses.size();i++) lookup[courses[i]]=credits[i];
+    long long total=0; for(auto& course:selectedCourses) if(lookup.count(course)) total+=lookup[course];
+    return total;
+}""",
+    "favoriteCourseCounts": """vector<long long> favoriteCourseCounts(vector<string> favorites, vector<string> targets){
+    map<string,long long> counts; for(auto& favorite:favorites) counts[favorite]++;
+    vector<long long> out; for(auto& target:targets) out.push_back(counts[target]);
+    return out;
+}""",
+    "groceryPriceLookup": """long long groceryPriceLookup(vector<string> items, vector<long long> prices, string target){
+    for(size_t i=0;i<items.size();i++) if(items[i]==target) return prices[i];
+    return -1;
+}""",
+    "lateAssignmentPenalty": """long long lateAssignmentPenalty(long long score, long long daysLate){
+    return max(0LL, score - daysLate * 5);
+}""",
+    "pairNamesWithScores": """vector<string> pairNamesWithScores(vector<string> names, vector<long long> scores){
+    vector<string> out; for(size_t i=0;i<names.size();i++) out.push_back(names[i]+":"+to_string(scores[i]));
+    return out;
+}""",
+    "parkingTicketTotal": """long long parkingTicketTotal(string day, long long hour, long long minutesParked, bool hasPermit){
+    if(day=="Saturday" || day=="Sunday") return 0;
+    if(hour < 7 || hour >= 19) return 0;
+    if(day=="Wednesday" && (hour==12 || hour==13)) return 0;
+    long long total = 20;
+    if(minutesParked > 120) total += 10;
+    if(!hasPermit && hour >= 9 && hour <= 16 && !(day=="Friday" && hour >= 15)) total += 15;
+    return total;
+}""",
+    "plantWateringMessage": """string plantWateringMessage(long long moisture, bool isSunny){
+    return (moisture < 30 || (isSunny && moisture < 45)) ? "water today" : "check tomorrow";
+}""",
+    "sharedStudyTopics": """vector<string> sharedStudyTopics(vector<string> firstTopics, vector<string> secondTopics){
+    set<string> second(secondTopics.begin(), secondTopics.end()), used; vector<string> out;
+    for(auto& topic:firstTopics) if(second.count(topic) && !used.count(topic)){ used.insert(topic); out.push_back(topic); }
+    return out;
+}""",
+    "swapPairOrder": """vector<string> swapPairOrder(vector<string> pairItems){
+    if(pairItems.size() < 2) return pairItems;
+    return {pairItems[1], pairItems[0]};
+}""",
+    "temperatureComfortCount": """long long temperatureComfortCount(vector<long long> readings, long long low, long long high){
+    long long count=0; for(long long reading:readings) if(reading>=low && reading<=high) count++;
+    return count;
+}""",
+    "threeDayStudyTotals": """vector<long long> threeDayStudyTotals(vector<long long> minutes){
+    if(minutes.size()<3) return {};
+    vector<long long> out; long long sum=minutes[0]+minutes[1]+minutes[2]; out.push_back(sum);
+    for(size_t i=3;i<minutes.size();i++){ sum += minutes[i] - minutes[i-3]; out.push_back(sum); }
+    return out;
+}""",
+    "uniqueParkingZones": """long long uniqueParkingZones(vector<string> zones){
+    set<string> seen(zones.begin(), zones.end()); return seen.size();
+}""",
+    "weeklyPlantCareDays": """vector<string> weeklyPlantCareDays(vector<long long> moistureReadings, long long threshold){
+    vector<string> days={"Mon","Tue","Wed","Thu","Fri","Sat","Sun"}, out;
+    for(size_t i=0;i<moistureReadings.size() && i<days.size();i++) if(moistureReadings[i]<threshold) out.push_back(days[i]);
+    return out;
+}""",
+    "edgePairMatches": """long long edgePairMatches(vector<string> words){
+    long long count=0; int left=0, right=(int)words.size()-1;
+    while(left<right){ if(words[left]==words[right]) count++; left++; right--; }
+    return count;
+}""",
+    "countShortStudyBlocks": """long long countShortStudyBlocks(vector<long long> minutes, long long limit){
+    long long count=0; for(size_t i=1;i<minutes.size();i++) if(minutes[i-1]+minutes[i] <= limit) count++;
+    return count;
+}""",
+    "diningLineAfterCommands": """vector<string> diningLineAfterCommands(vector<string> commands){
+    queue<string> q;
+    for(auto& cmd:commands){ if(cmd.rfind("join ",0)==0) q.push(cmd.substr(5)); else if(cmd=="serve" && !q.empty()) q.pop(); }
+    vector<string> out; while(!q.empty()){ out.push_back(q.front()); q.pop(); }
+    return out;
+}""",
+    "recursiveFactorialSmall": """long long recursiveFactorialSmall(long long n){
+    if(n<=1) return 1;
+    return n * recursiveFactorialSmall(n-1);
+}""",
+    "reverseOnlyLetters": """string reverseOnlyLetters(string text){
+    int left=0, right=(int)text.size()-1;
+    while(left<right){
+        while(left<right && !isalpha((unsigned char)text[left])) left++;
+        while(left<right && !isalpha((unsigned char)text[right])) right--;
+        if(left<right) swap(text[left++], text[right--]);
+    }
+    return text;
+}""",
+    "minimumStudyWindow": """long long minimumStudyWindow(vector<long long> minutes, long long target){
+    long long best=LLONG_MAX, sum=0; size_t left=0;
+    for(size_t right=0; right<minutes.size(); right++){
+        sum += minutes[right];
+        while(sum >= target){ best = min(best, (long long)(right-left+1)); sum -= minutes[left++]; }
+    }
+    return best==LLONG_MAX ? 0 : best;
+}""",
+    "recursivePower": """long long recursivePower(long long base, long long exponent){
+    if(exponent==0) return 1;
+    return base * recursivePower(base, exponent-1);
+}""",
+    "stackTopAfterPlates": """string stackTopAfterPlates(vector<string> commands){
+    vector<string> st;
+    for(auto& cmd:commands){ if(cmd.rfind("push ",0)==0) st.push_back(cmd.substr(5)); else if(cmd=="pop" && !st.empty()) st.pop_back(); }
+    return st.empty() ? "none" : st.back();
+}""",
+    "queueFrontAfterServes": """string queueFrontAfterServes(vector<string> names, long long serveCount){
+    return serveCount >= (long long)names.size() ? "none" : names[serveCount];
+}""",
+    "firstOneIndex": """long long firstOneIndex(vector<long long> flags){
+    long long left=0, right=(long long)flags.size()-1, ans=-1;
+    while(left<=right){ long long mid=left+(right-left)/2; if(flags[mid]==1){ ans=mid; right=mid-1; } else left=mid+1; }
+    return ans;
+}""",
+    "treeNodeCount": """long long treeNodeCount(vector<long long> tree){
+    long long count=0; for(long long value:tree) if(value!=-1) count++; return count;
+}""",
+    "treeHeightLevels": """long long treeHeightLevels(vector<long long> tree){
+    long long height=0;
+    for(size_t i=0;i<tree.size();i++){
+        if(tree[i]==-1) continue;
+        long long level=0;
+        size_t pos=i+1;
+        while(pos>0){ level++; pos/=2; }
+        height=max(height, level);
+    }
+    return height;
+}""",
+    "linkedListLength": """long long linkedListLength(vector<long long> nextIndexes, long long head){
+    long long count=0, cur=head; while(cur!=-1){ count++; cur=nextIndexes[cur]; } return count;
+}""",
+    "treeLeafCount": """long long treeLeafCount(vector<long long> tree){
+    long long count=0; for(size_t i=0;i<tree.size();i++){ if(tree[i]==-1) continue; size_t l=2*i+1, r=2*i+2; bool left=l<tree.size() && tree[l]!=-1, right=r<tree.size() && tree[r]!=-1; if(!left && !right) count++; } return count;
+}""",
+    "treeContainsValue": """bool treeContainsValue(vector<long long> tree, long long target){
+    for(long long value:tree) if(value!=-1 && value==target) return true; return false;
+}""",
+    "linkedListMergeIndex": """long long linkedListMergeIndex(vector<long long> nextIndexes, long long headA, long long headB){
+    set<long long> seen; for(long long cur=headA; cur!=-1; cur=nextIndexes[cur]) seen.insert(cur);
+    for(long long cur=headB; cur!=-1; cur=nextIndexes[cur]) if(seen.count(cur)) return cur;
+    return -1;
+}""",
+    "campusStopReachable": """bool campusStopReachable(vector<vector<string>> connections, string start, string target){
+    if(start==target) return true;
+    map<string, vector<string>> graph; for(auto& edge:connections) if(edge.size()>=2) graph[edge[0]].push_back(edge[1]);
+    queue<string> q; set<string> seen; q.push(start); seen.insert(start);
+    while(!q.empty()){ string cur=q.front(); q.pop(); for(auto& next:graph[cur]){ if(next==target) return true; if(!seen.count(next)){ seen.insert(next); q.push(next); } } }
+    return false;
+}""",
+    "clubMembershipGroups": """long long clubMembershipGroups(long long n, vector<vector<long long>> pairs){
+    vector<long long> parent(n); iota(parent.begin(), parent.end(), 0);
+    function<long long(long long)> find=[&](long long x){ while(parent[x]!=x){ parent[x]=parent[parent[x]]; x=parent[x]; } return x; };
+    for(auto& p:pairs) if(p.size()>=2) parent[find(p[0])] = find(p[1]);
+    set<long long> groups; for(long long i=0;i<n;i++) groups.insert(find(i)); return groups.size();
+}""",
+    "minStudyPlanCost": """long long minStudyPlanCost(vector<long long> costs){
+    if(costs.empty()) return 0; if(costs.size()==1) return costs[0];
+    long long prev2=costs[0], prev1=costs[1];
+    for(size_t i=2;i<costs.size();i++){ long long cur=min(prev1, prev2)+costs[i]; prev2=prev1; prev1=cur; }
+    return min(prev1, prev2);
+}""",
+    "prefixMatchCount": """long long prefixMatchCount(vector<string> words, string prefix){
+    long long count=0; for(auto& word:words) if(word.size()>=prefix.size() && word.compare(0, prefix.size(), prefix)==0) count++;
+    return count;
+}""",
+    "redundantFriendshipEdge": """vector<long long> redundantFriendshipEdge(long long n, vector<vector<long long>> pairs){
+    vector<long long> parent(n); iota(parent.begin(), parent.end(), 0);
+    function<long long(long long)> find=[&](long long x){ while(parent[x]!=x){ parent[x]=parent[parent[x]]; x=parent[x]; } return x; };
+    for(auto& p:pairs){ long long a=find(p[0]), b=find(p[1]); if(a==b) return {p[0], p[1]}; parent[a]=b; }
+    return {};
+}""",
+    "runningMedianScores": """vector<long long> runningMedianScores(vector<long long> scores){
+    vector<long long> sorted, out;
+    for(long long score:scores){ sorted.insert(lower_bound(sorted.begin(), sorted.end(), score), score); out.push_back(sorted[(sorted.size()-1)/2]); }
+    return out;
+}""",
+    "topPriorityAssignments": """vector<string> topPriorityAssignments(vector<string> names, vector<long long> priorities, long long k){
+    vector<pair<long long,string>> items; for(size_t i=0;i<names.size();i++) items.push_back({-priorities[i], names[i]});
+    sort(items.begin(), items.end()); vector<string> out; for(long long i=0;i<k && i<(long long)items.size();i++) out.push_back(items[i].second);
+    return out;
+}""",
+    "treeRightSideView": """vector<long long> treeRightSideView(vector<long long> tree){
+    vector<long long> out; size_t index=0, width=1;
+    while(index<tree.size()){ bool any=false; long long last=0; for(size_t i=0;i<width && index<tree.size();i++,index++){ if(tree[index]!=-1){ any=true; last=tree[index]; } } if(any) out.push_back(last); width*=2; }
+    return out;
+}""",
+    "countSetBits": """long long countSetBits(long long n){
+    long long count=0; while(n>0){ count += n & 1LL; n >>= 1; } return count;
+}""",
+    "isPowerOfTwo": """bool isPowerOfTwo(long long n){
+    return n > 0 && (n & (n - 1)) == 0;
+}""",
+    "prefixBalanceIndex": """long long prefixBalanceIndex(vector<long long> nums){
+    long long total=0; for(long long value:nums) total += value; long long left=0;
+    for(long long i=0;i<(long long)nums.size();i++){ if(left == total - left - nums[i]) return i; left += nums[i]; }
+    return -1;
+}""",
+    "matrixDiagonalSum": """long long matrixDiagonalSum(vector<vector<long long>> matrix){
+    long long n=matrix.size(), sum=0; for(long long i=0;i<n;i++){ sum += matrix[i][i]; long long other=n-1-i; if(other!=i) sum += matrix[i][other]; } return sum;
+}""",
+    "differentBitCount": """long long differentBitCount(long long a, long long b){
+    long long x=a^b, count=0; while(x>0){ count += x & 1LL; x >>= 1; } return count;
+}""",
+    "matrixBorderSum": """long long matrixBorderSum(vector<vector<long long>> matrix){
+    if(matrix.empty() || matrix[0].empty()) return 0; long long rows=matrix.size(), cols=matrix[0].size(), sum=0;
+    for(long long r=0;r<rows;r++) for(long long c=0;c<cols;c++) if(r==0 || c==0 || r==rows-1 || c==cols-1) sum += matrix[r][c];
+    return sum;
+}""",
+    "longestSubarraySumK": """long long longestSubarraySumK(vector<long long> nums, long long k){
+    map<long long,long long> first; first[0] = -1; long long sum=0,best=0;
+    for(long long i=0;i<(long long)nums.size();i++){ sum += nums[i]; if(first.count(sum-k)) best=max(best, i-first[sum-k]); if(!first.count(sum)) first[sum]=i; }
+    return best;
+}""",
+    "maximumPairXor": """long long maximumPairXor(vector<long long> nums){
+    long long best=0; for(size_t i=0;i<nums.size();i++) for(size_t j=i+1;j<nums.size();j++) best=max(best, nums[i]^nums[j]); return best;
+}""",
+    "gradePointsNeeded": """long long gradePointsNeeded(long long currentPoints, long long targetPoints){
+    return max(0LL, targetPoints - currentPoints);
+}""",
+    "roundUpLabGroups": """long long roundUpLabGroups(long long students, long long groupSize){
+    if(students==0) return 0; return (students + groupSize - 1) / groupSize;
+}""",
+    "studentScorePair": """string studentScorePair(vector<string> names, vector<long long> scores, long long index){
+    return names[index] + ":" + to_string(scores[index]);
+}""",
+    "firstLastPair": """vector<string> firstLastPair(vector<string> items){
+    return {items.front(), items.back()};
+}""",
+    "longestCommonPrefix": """string longestCommonPrefix(vector<string> words){
+    if(words.empty()) return "";
+    string prefix=words[0];
+    for(auto& word:words){ while(word.rfind(prefix,0)!=0){ prefix.pop_back(); if(prefix.empty()) return ""; } }
+    return prefix;
+}""",
+    "countOverlappingIntervals": """long long countOverlappingIntervals(vector<vector<long long>> intervals, long long time){
+    long long count=0; for(auto& iv:intervals) if(iv[0] <= time && time < iv[1]) count++; return count;
+}""",
+    "lowestPriorityAssignment": """string lowestPriorityAssignment(vector<string> names, vector<long long> priorities){
+    string best=names[0]; long long bestPriority=priorities[0];
+    for(size_t i=1;i<names.size();i++) if(priorities[i] < bestPriority || (priorities[i] == bestPriority && names[i] < best)){ bestPriority=priorities[i]; best=names[i]; }
+    return best;
+}""",
+    "sameClubGroup": """bool sameClubGroup(long long n, vector<vector<long long>> pairs, long long a, long long b){
+    vector<long long> parent(n); iota(parent.begin(), parent.end(), 0);
+    function<long long(long long)> find=[&](long long x){ while(parent[x]!=x){ parent[x]=parent[parent[x]]; x=parent[x]; } return x; };
+    for(auto& p:pairs) parent[find(p[0])] = find(p[1]);
+    return find(a) == find(b);
+}""",
+    "studyPlanWays": """long long studyPlanWays(long long days){
+    long long a=1,b=1; for(long long i=2;i<=days;i++){ long long c=a+b; a=b; b=c; } return days==0 ? 1 : b;
+}""",
+    "totalBusyMinutes": """long long totalBusyMinutes(vector<vector<long long>> intervals){
+    if(intervals.empty()) return 0; sort(intervals.begin(), intervals.end());
+    long long total=0, start=intervals[0][0], end=intervals[0][1];
+    for(size_t i=1;i<intervals.size();i++){ if(intervals[i][0] <= end) end=max(end, intervals[i][1]); else { total += end - start; start=intervals[i][0]; end=intervals[i][1]; } }
+    return total + end - start;
+}""",
 }
 
 
@@ -331,6 +695,118 @@ def test_cpp_solutions_cover_every_spec_function():
 
 
 # ── Java: one solution per distinct signature shape (marshalling is per-shape) ──
+def test_cpp_beginner_starter_uses_int_vector_for_sum_even_numbers():
+    starter = build_starter_from_spec("cpp", "sumEvenNumbers")
+
+    assert starter is not None
+    assert "#include <vector>" in starter
+    assert "#include <bits/stdc++.h>" not in starter
+    assert "int sumEvenNumbers(const std::vector<int>& nums)" in starter
+    assert "long long" not in starter
+
+
+def test_cpp_native_bridge_does_not_forward_declare_wider_signature():
+    bridge = cpp_native_bridge("sumEvenNumbers", get_arg_spec("sumEvenNumbers"))
+
+    assert "long long sumEvenNumbers(std::vector<long long> nums);" not in bridge
+    assert "__call_sumEvenNumbers" in bridge
+
+
+def test_cpp_beginner_adapter_ignores_local_int_vectors():
+    code = """
+long long editDistance(string source, string target) {
+    vector<vector<int>> dp(source.size() + 1, vector<int>(target.size() + 1, 0));
+    return dp[0][0];
+}
+"""
+    spec = get_arg_spec("editDistance")
+    adapter = _cpp_beginner_compat_adapter(code, "editDistance", spec, cpp_native_signature("editDistance", spec))
+
+    assert adapter == ""
+
+
+def test_all_cpp_beginner_vector_starters_get_hidden_grader_adapters():
+    missing = []
+    data = json.loads(_ANSWERS.read_text(encoding="utf-8"))
+
+    for item in data.get("items", []):
+        function_name = item.get("function_name")
+        spec = get_arg_spec(function_name)
+        if not function_name or not spec:
+            continue
+        starter = build_starter_from_spec("cpp", function_name) or ""
+        if "std::vector<int>" not in starter and "std::vector<std::vector<int>>" not in starter:
+            continue
+
+        expected_signature = cpp_native_signature(function_name, spec)
+        adapter = _cpp_beginner_compat_adapter(starter, function_name, spec, expected_signature)
+        if expected_signature not in adapter:
+            missing.append(f"{function_name}: missing adapter for generated starter")
+
+        snake_name = _camel_to_snake_name(function_name)
+        if snake_name != function_name:
+            snake_starter = starter.replace(function_name, snake_name, 1)
+            snake_adapter = _cpp_beginner_compat_adapter(snake_starter, function_name, spec, expected_signature)
+            if expected_signature not in snake_adapter or snake_name not in snake_adapter:
+                missing.append(f"{function_name}: missing adapter for snake_case starter")
+
+    assert missing == []
+
+
+@pytest.mark.skipif(not _HAS_GPP, reason="no C++ compiler on PATH")
+def test_cpp_runner_accepts_beginner_const_vector_int_signature():
+    spec = get_arg_spec("sumEvenNumbers")
+    tests = _TESTS["sumEvenNumbers"]
+    code = """#include <vector>
+
+int sumEvenNumbers(const std::vector<int>& nums) {
+    int current_sum = 0;
+    for (int num : nums) {
+        if (num % 2 == 0) {
+            current_sum += num;
+        }
+    }
+    return current_sum;
+}
+"""
+
+    result = run_cpp_practice_tests(code, "sumEvenNumbers", tests, arg_spec=spec)
+
+    assert result["status"] == "passed", result.get("stderr")
+
+
+@pytest.mark.skipif(not _HAS_GPP, reason="no C++ compiler on PATH")
+def test_cpp_tree_height_accepts_beginner_const_vector_int_signature():
+    spec = get_arg_spec("treeHeightLevels")
+    tests = _TESTS["treeHeightLevels"]
+    code = """#include <string>
+#include <vector>
+#include <cmath>
+#include <set>
+
+int treeHeightLevels(const std::vector<int>& tree) {
+    if (tree.empty()) {
+        return 0;
+    }
+
+    std::set<int> active_levels;
+    for (int i = 0; i < tree.size(); ++i) {
+        int node_value = tree[i];
+        if (node_value != -1) {
+            int current_level = static_cast<int>(std::floor(std::log2(i + 1)));
+            active_levels.insert(current_level);
+        }
+    }
+
+    return active_levels.size();
+}
+"""
+
+    result = run_cpp_practice_tests(code, "treeHeightLevels", tests, arg_spec=spec)
+
+    assert result["status"] == "passed", result
+
+
 JAVA_SOLUTIONS = {
     # string -> int
     "countVowels": "class Solution { static int countVowels(String text){ int c=0; for(char ch:text.toLowerCase().toCharArray()) if(\"aeiou\".indexOf(ch)>=0) c++; return c; } }",
@@ -374,6 +850,60 @@ JAVA_SOLUTIONS = {
     "shortestPathInCampusGrid": "import java.util.*; class Solution { static int shortestPathInCampusGrid(String[][] grid){ int R=grid.length; if(R==0) return -1; int C=grid[0].length; int sr=0,sc=0; for(int i=0;i<R;i++) for(int j=0;j<C;j++) if(grid[i][j].equals(\"S\")){ sr=i; sc=j; } int[][] dist=new int[R][C]; for(int[] row:dist) Arrays.fill(row,-1); Deque<int[]> q=new ArrayDeque<>(); q.add(new int[]{sr,sc}); dist[sr][sc]=0; int[] dr={1,-1,0,0}, dc={0,0,1,-1}; while(!q.isEmpty()){ int[] cur=q.poll(); int r=cur[0],c=cur[1]; if(grid[r][c].equals(\"T\")) return dist[r][c]; for(int d=0;d<4;d++){ int nr=r+dr[d],nc=c+dc[d]; if(nr<0||nc<0||nr>=R||nc>=C||grid[nr][nc].equals(\"#\")||dist[nr][nc]!=-1) continue; dist[nr][nc]=dist[r][c]+1; q.add(new int[]{nr,nc}); } } return -1; } }",
     # strgrid,string,string -> bool
     "coursePrerequisiteChain": "import java.util.*; class Solution { static Map<String,List<String>> g; static Set<String> seen; static boolean dfs(String c, String prereq){ if(c.equals(prereq)) return true; if(!seen.add(c)) return false; for(String n:g.getOrDefault(c,new ArrayList<>())) if(dfs(n,prereq)) return true; return false; } static boolean coursePrerequisiteChain(String[][] pairs, String course, String prereq){ g=new HashMap<>(); seen=new HashSet<>(); for(String[] p:pairs) g.computeIfAbsent(p[0],k->new ArrayList<>()).add(p[1]); return dfs(course,prereq); } }",
+    # COSC 101-style beginner shapes
+    "parkingTicketTotal": "class Solution { static int parkingTicketTotal(String day, int hour, int minutesParked, boolean hasPermit){ if(day.equals(\"Saturday\") || day.equals(\"Sunday\")) return 0; if(hour<7 || hour>=19) return 0; if(day.equals(\"Wednesday\") && (hour==12 || hour==13)) return 0; int total=20; if(minutesParked>120) total+=10; if(!hasPermit && hour>=9 && hour<=16 && !(day.equals(\"Friday\") && hour>=15)) total+=15; return total; } }",
+    "plantWateringMessage": "class Solution { static String plantWateringMessage(int moisture, boolean isSunny){ return (moisture<30 || (isSunny && moisture<45)) ? \"water today\" : \"check tomorrow\"; } }",
+    "temperatureComfortCount": "class Solution { static int temperatureComfortCount(int[] readings, int low, int high){ int c=0; for(int r:readings) if(r>=low && r<=high) c++; return c; } }",
+    "groceryPriceLookup": "class Solution { static int groceryPriceLookup(String[] items, int[] prices, String target){ for(int i=0;i<items.length;i++) if(items[i].equals(target)) return prices[i]; return -1; } }",
+    "courseCreditTotal": "import java.util.*; class Solution { static int courseCreditTotal(String[] courses, int[] credits, String[] selectedCourses){ Map<String,Integer> m=new HashMap<>(); for(int i=0;i<courses.length;i++) m.put(courses[i], credits[i]); int total=0; for(String c:selectedCourses) total += m.getOrDefault(c, 0); return total; } }",
+    "favoriteCourseCounts": "import java.util.*; class Solution { static int[] favoriteCourseCounts(String[] favorites, String[] targets){ Map<String,Integer> m=new HashMap<>(); for(String f:favorites) m.put(f, m.getOrDefault(f,0)+1); int[] out=new int[targets.length]; for(int i=0;i<targets.length;i++) out[i]=m.getOrDefault(targets[i],0); return out; } }",
+    "uniqueParkingZones": "import java.util.*; class Solution { static int uniqueParkingZones(String[] zones){ return new HashSet<>(Arrays.asList(zones)).size(); } }",
+    "sharedStudyTopics": "import java.util.*; class Solution { static String[] sharedStudyTopics(String[] firstTopics, String[] secondTopics){ Set<String> second=new HashSet<>(Arrays.asList(secondTopics)); Set<String> used=new HashSet<>(); List<String> out=new ArrayList<>(); for(String t:firstTopics) if(second.contains(t) && used.add(t)) out.add(t); return out.toArray(new String[0]); } }",
+    "pairNamesWithScores": "class Solution { static String[] pairNamesWithScores(String[] names, int[] scores){ String[] out=new String[names.length]; for(int i=0;i<names.length;i++) out[i]=names[i]+\":\"+scores[i]; return out; } }",
+    "swapPairOrder": "class Solution { static String[] swapPairOrder(String[] pairItems){ if(pairItems.length<2) return pairItems.clone(); return new String[]{pairItems[1], pairItems[0]}; } }",
+    "lateAssignmentPenalty": "class Solution { static int lateAssignmentPenalty(int score, int daysLate){ return Math.max(0, score - daysLate * 5); } }",
+    "weeklyPlantCareDays": "import java.util.*; class Solution { static String[] weeklyPlantCareDays(int[] moistureReadings, int threshold){ String[] days={\"Mon\",\"Tue\",\"Wed\",\"Thu\",\"Fri\",\"Sat\",\"Sun\"}; List<String> out=new ArrayList<>(); for(int i=0;i<moistureReadings.length && i<days.length;i++) if(moistureReadings[i]<threshold) out.add(days[i]); return out.toArray(new String[0]); } }",
+    "edgePairMatches": "class Solution { static int edgePairMatches(String[] words){ int count=0,left=0,right=words.length-1; while(left<right){ if(words[left].equals(words[right])) count++; left++; right--; } return count; } }",
+    "countShortStudyBlocks": "class Solution { static int countShortStudyBlocks(int[] minutes, int limit){ int count=0; for(int i=1;i<minutes.length;i++) if(minutes[i-1]+minutes[i]<=limit) count++; return count; } }",
+    "recursiveFactorialSmall": "class Solution { static int recursiveFactorialSmall(int n){ if(n<=1) return 1; return n * recursiveFactorialSmall(n-1); } }",
+    "reverseOnlyLetters": "class Solution { static String reverseOnlyLetters(String text){ char[] chars=text.toCharArray(); int left=0,right=chars.length-1; while(left<right){ while(left<right && !Character.isLetter(chars[left])) left++; while(left<right && !Character.isLetter(chars[right])) right--; if(left<right){ char temp=chars[left]; chars[left++]=chars[right]; chars[right--]=temp; } } return new String(chars); } }",
+    "minimumStudyWindow": "class Solution { static int minimumStudyWindow(int[] minutes, int target){ int best=Integer.MAX_VALUE,sum=0,left=0; for(int right=0;right<minutes.length;right++){ sum+=minutes[right]; while(sum>=target){ best=Math.min(best,right-left+1); sum-=minutes[left++]; } } return best==Integer.MAX_VALUE ? 0 : best; } }",
+    "recursivePower": "class Solution { static int recursivePower(int base, int exponent){ if(exponent==0) return 1; return base * recursivePower(base, exponent-1); } }",
+    "stackTopAfterPlates": "import java.util.*; class Solution { static String stackTopAfterPlates(String[] commands){ List<String> st=new ArrayList<>(); for(String cmd:commands){ if(cmd.startsWith(\"push \")) st.add(cmd.substring(5)); else if(cmd.equals(\"pop\") && !st.isEmpty()) st.remove(st.size()-1); } return st.isEmpty()?\"none\":st.get(st.size()-1); } }",
+    "queueFrontAfterServes": "class Solution { static String queueFrontAfterServes(String[] names, int serveCount){ return serveCount>=names.length ? \"none\" : names[serveCount]; } }",
+    "firstOneIndex": "class Solution { static int firstOneIndex(int[] flags){ int left=0,right=flags.length-1,ans=-1; while(left<=right){ int mid=left+(right-left)/2; if(flags[mid]==1){ ans=mid; right=mid-1; } else left=mid+1; } return ans; } }",
+    "treeNodeCount": "class Solution { static int treeNodeCount(int[] tree){ int count=0; for(int value:tree) if(value!=-1) count++; return count; } }",
+    "treeHeightLevels": "class Solution { static int treeHeightLevels(int[] tree){ int height=0; for(int i=0;i<tree.length;i++){ if(tree[i]==-1) continue; int level=0,pos=i+1; while(pos>0){ level++; pos/=2; } height=Math.max(height,level); } return height; } }",
+    "linkedListLength": "class Solution { static int linkedListLength(int[] nextIndexes, int head){ int count=0,cur=head; while(cur!=-1){ count++; cur=nextIndexes[cur]; } return count; } }",
+    "treeLeafCount": "class Solution { static int treeLeafCount(int[] tree){ int count=0; for(int i=0;i<tree.length;i++){ if(tree[i]==-1) continue; int l=2*i+1,r=2*i+2; boolean left=l<tree.length && tree[l]!=-1, right=r<tree.length && tree[r]!=-1; if(!left && !right) count++; } return count; } }",
+    "treeContainsValue": "class Solution { static boolean treeContainsValue(int[] tree, int target){ for(int value:tree) if(value!=-1 && value==target) return true; return false; } }",
+    "linkedListMergeIndex": "import java.util.*; class Solution { static int linkedListMergeIndex(int[] nextIndexes, int headA, int headB){ Set<Integer> seen=new HashSet<>(); for(int cur=headA; cur!=-1; cur=nextIndexes[cur]) seen.add(cur); for(int cur=headB; cur!=-1; cur=nextIndexes[cur]) if(seen.contains(cur)) return cur; return -1; } }",
+    "campusStopReachable": "import java.util.*; class Solution { static boolean campusStopReachable(String[][] connections, String start, String target){ if(start.equals(target)) return true; Map<String,List<String>> g=new HashMap<>(); for(String[] e:connections) g.computeIfAbsent(e[0],k->new ArrayList<>()).add(e[1]); Queue<String> q=new ArrayDeque<>(); Set<String> seen=new HashSet<>(); q.add(start); seen.add(start); while(!q.isEmpty()){ String cur=q.poll(); for(String next:g.getOrDefault(cur, Collections.emptyList())){ if(next.equals(target)) return true; if(seen.add(next)) q.add(next); } } return false; } }",
+    "clubMembershipGroups": "import java.util.*; class Solution { static int[] par; static int find(int x){ while(par[x]!=x){ par[x]=par[par[x]]; x=par[x]; } return x; } static int clubMembershipGroups(int n, int[][] pairs){ par=new int[n]; for(int i=0;i<n;i++) par[i]=i; for(int[] p:pairs) par[find(p[0])]=find(p[1]); Set<Integer> s=new HashSet<>(); for(int i=0;i<n;i++) s.add(find(i)); return s.size(); } }",
+    "minStudyPlanCost": "class Solution { static int minStudyPlanCost(int[] costs){ if(costs.length==0) return 0; if(costs.length==1) return costs[0]; int prev2=costs[0], prev1=costs[1]; for(int i=2;i<costs.length;i++){ int cur=Math.min(prev1,prev2)+costs[i]; prev2=prev1; prev1=cur; } return Math.min(prev1,prev2); } }",
+    "prefixMatchCount": "class Solution { static int prefixMatchCount(String[] words, String prefix){ int count=0; for(String word:words) if(word.startsWith(prefix)) count++; return count; } }",
+    "redundantFriendshipEdge": "class Solution { static int[] par; static int find(int x){ while(par[x]!=x){ par[x]=par[par[x]]; x=par[x]; } return x; } static int[] redundantFriendshipEdge(int n, int[][] pairs){ par=new int[n]; for(int i=0;i<n;i++) par[i]=i; for(int[] p:pairs){ int a=find(p[0]), b=find(p[1]); if(a==b) return new int[]{p[0],p[1]}; par[a]=b; } return new int[0]; } }",
+    "runningMedianScores": "import java.util.*; class Solution { static int[] runningMedianScores(int[] scores){ List<Integer> sorted=new ArrayList<>(); int[] out=new int[scores.length]; for(int i=0;i<scores.length;i++){ int pos=Collections.binarySearch(sorted, scores[i]); if(pos<0) pos=-pos-1; sorted.add(pos, scores[i]); out[i]=sorted.get((sorted.size()-1)/2); } return out; } }",
+    "topPriorityAssignments": "import java.util.*; class Solution { static String[] topPriorityAssignments(String[] names, int[] priorities, int k){ List<int[]> idx=new ArrayList<>(); for(int i=0;i<names.length;i++) idx.add(new int[]{i}); idx.sort((a,b) -> priorities[b[0]]!=priorities[a[0]] ? priorities[b[0]]-priorities[a[0]] : names[a[0]].compareTo(names[b[0]])); String[] out=new String[Math.min(k, idx.size())]; for(int i=0;i<out.length;i++) out[i]=names[idx.get(i)[0]]; return out; } }",
+    "treeRightSideView": "import java.util.*; class Solution { static int[] treeRightSideView(int[] tree){ List<Integer> out=new ArrayList<>(); int index=0, width=1; while(index<tree.length){ boolean any=false; int last=0; for(int i=0;i<width && index<tree.length;i++,index++){ if(tree[index]!=-1){ any=true; last=tree[index]; } } if(any) out.add(last); width*=2; } return out.stream().mapToInt(Integer::intValue).toArray(); } }",
+    "countSetBits": "class Solution { static int countSetBits(int n){ int count=0; while(n>0){ count += n & 1; n >>= 1; } return count; } }",
+    "isPowerOfTwo": "class Solution { static boolean isPowerOfTwo(int n){ return n > 0 && (n & (n - 1)) == 0; } }",
+    "prefixBalanceIndex": "class Solution { static int prefixBalanceIndex(int[] nums){ int total=0; for(int value:nums) total+=value; int left=0; for(int i=0;i<nums.length;i++){ if(left == total - left - nums[i]) return i; left += nums[i]; } return -1; } }",
+    "matrixDiagonalSum": "class Solution { static int matrixDiagonalSum(int[][] matrix){ int n=matrix.length,sum=0; for(int i=0;i<n;i++){ sum += matrix[i][i]; int other=n-1-i; if(other!=i) sum += matrix[i][other]; } return sum; } }",
+    "differentBitCount": "class Solution { static int differentBitCount(int a, int b){ int x=a^b,count=0; while(x>0){ count += x & 1; x >>= 1; } return count; } }",
+    "matrixBorderSum": "class Solution { static int matrixBorderSum(int[][] matrix){ if(matrix.length==0 || matrix[0].length==0) return 0; int rows=matrix.length, cols=matrix[0].length, sum=0; for(int r=0;r<rows;r++) for(int c=0;c<cols;c++) if(r==0 || c==0 || r==rows-1 || c==cols-1) sum += matrix[r][c]; return sum; } }",
+    "longestSubarraySumK": "import java.util.*; class Solution { static int longestSubarraySumK(int[] nums, int k){ Map<Integer,Integer> first=new HashMap<>(); first.put(0,-1); int sum=0,best=0; for(int i=0;i<nums.length;i++){ sum += nums[i]; if(first.containsKey(sum-k)) best=Math.max(best, i-first.get(sum-k)); first.putIfAbsent(sum,i); } return best; } }",
+    "maximumPairXor": "class Solution { static int maximumPairXor(int[] nums){ int best=0; for(int i=0;i<nums.length;i++) for(int j=i+1;j<nums.length;j++) best=Math.max(best, nums[i]^nums[j]); return best; } }",
+    "gradePointsNeeded": "class Solution { static int gradePointsNeeded(int currentPoints, int targetPoints){ return Math.max(0, targetPoints - currentPoints); } }",
+    "roundUpLabGroups": "class Solution { static int roundUpLabGroups(int students, int groupSize){ if(students==0) return 0; return (students + groupSize - 1) / groupSize; } }",
+    "studentScorePair": "class Solution { static String studentScorePair(String[] names, int[] scores, int index){ return names[index] + \":\" + scores[index]; } }",
+    "firstLastPair": "class Solution { static String[] firstLastPair(String[] items){ return new String[]{items[0], items[items.length-1]}; } }",
+    "longestCommonPrefix": "class Solution { static String longestCommonPrefix(String[] words){ if(words.length==0) return \"\"; String prefix=words[0]; for(String word:words){ while(!word.startsWith(prefix)){ prefix=prefix.substring(0,prefix.length()-1); if(prefix.isEmpty()) return \"\"; } } return prefix; } }",
+    "countOverlappingIntervals": "class Solution { static int countOverlappingIntervals(int[][] intervals, int time){ int count=0; for(int[] iv:intervals) if(iv[0] <= time && time < iv[1]) count++; return count; } }",
+    "lowestPriorityAssignment": "class Solution { static String lowestPriorityAssignment(String[] names, int[] priorities){ String best=names[0]; int bestPriority=priorities[0]; for(int i=1;i<names.length;i++) if(priorities[i] < bestPriority || (priorities[i] == bestPriority && names[i].compareTo(best) < 0)){ bestPriority=priorities[i]; best=names[i]; } return best; } }",
+    "sameClubGroup": "class Solution { static int[] par; static int find(int x){ while(par[x]!=x){ par[x]=par[par[x]]; x=par[x]; } return x; } static boolean sameClubGroup(int n, int[][] pairs, int a, int b){ par=new int[n]; for(int i=0;i<n;i++) par[i]=i; for(int[] p:pairs) par[find(p[0])]=find(p[1]); return find(a)==find(b); } }",
+    "studyPlanWays": "class Solution { static int studyPlanWays(int days){ int a=1,b=1; for(int i=2;i<=days;i++){ int c=a+b; a=b; b=c; } return days==0 ? 1 : b; } }",
+    "totalBusyMinutes": "import java.util.*; class Solution { static int totalBusyMinutes(int[][] intervals){ if(intervals.length==0) return 0; Arrays.sort(intervals, Comparator.comparingInt(a -> a[0])); int total=0,start=intervals[0][0],end=intervals[0][1]; for(int i=1;i<intervals.length;i++){ if(intervals[i][0] <= end) end=Math.max(end, intervals[i][1]); else { total += end - start; start=intervals[i][0]; end=intervals[i][1]; } } return total + end - start; } }",
 }
 
 

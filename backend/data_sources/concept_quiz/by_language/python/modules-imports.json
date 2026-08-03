@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Modules & Imports concept check 1",
+      "title": "Import side effects",
       "code": null,
-      "prompt": "What does the lesson mean by \"Imported files can run code\"?",
+      "prompt": "What happens to top-level statements in a Python file when another file imports it?",
       "choices": [
-        "from random import randint",
-        "Statements at the top level run when Python imports the file. Place demo code and direct user input inside a main guard so importing the module does not start them.",
-        "include random",
-        "using random"
+        "They run during the import.",
+        "They run only when a function from the file is called.",
+        "They are ignored unless the file has no functions.",
+        "They are converted into comments."
       ],
-      "answer_index": 1,
-      "explanation": "A Python file is a module. Use `import module` to keep its name visible, or `from module import name` to bring in one item. That reasoning supports the answer: Statements at the top level run when Python imports the file. Place demo code and direct user input inside a main guard so importing the module does not start them."
+      "answer_index": 0,
+      "explanation": "Importing a module executes its top-level code once so Python can create the module's names. That is why direct prompts, print demos, or long-running work should not sit loose at the top level when the file is meant to be imported."
     },
     {
       "id": "python-modules-imports-authored-02",
@@ -96,17 +96,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Modules & Imports concept check 2",
+      "title": "Module purpose",
       "code": null,
-      "prompt": "Which choice describes a reliable Modules & Imports practice?",
+      "prompt": "A file named `grade_utils.py` is growing. What should guide what belongs in it?",
       "choices": [
-        "Every time the file is imported",
-        "Only after an error",
-        "Group code by one clear purpose.",
-        "Before Python reads the file"
+        "Put every helper from the project into the same file.",
+        "Group functions that share one clear purpose.",
+        "Move code there only because it is currently broken.",
+        "Use the file as a place for random experiments and user input."
       ],
-      "answer_index": 2,
-      "explanation": "A Python file is a module. Use `import module` to keep its name visible, or `from module import name` to bring in one item. That reasoning supports the answer: Group code by one clear purpose."
+      "answer_index": 1,
+      "explanation": "A module is easiest to use when its contents share a purpose. `grade_utils.py` should hold grade-related helpers, not every unrelated tool. Clear grouping makes imports easier to read and keeps files from becoming cluttered."
     },
     {
       "id": "python-modules-imports-authored-03",
@@ -114,17 +114,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Modules & Imports concept check 3",
+      "title": "Readable imports",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Modules & Imports code?",
+      "prompt": "Why can `import math` followed by `math.sqrt(16)` be clearer than `from math import *`?",
       "choices": [
-        "from math import *\nprint(sqrt(16))",
-        "using random",
-        "Every time the file is imported",
-        "Prefer imports that show where a name came from."
+        "Wildcard imports make Python run faster.",
+        "Wildcard imports prevent name conflicts automatically.",
+        "The module name shows where `sqrt` came from.",
+        "The module name makes `sqrt` return a string."
       ],
-      "answer_index": 3,
-      "explanation": "A Python file is a module. Use `import module` to keep its name visible, or `from module import name` to bring in one item. That reasoning supports the answer: Prefer imports that show where a name came from."
+      "answer_index": 2,
+      "explanation": "Using the module name keeps the source of the function visible at the call site. Wildcard imports can hide where names came from and can accidentally overwrite names from other imports. Readable imports help future debugging."
     },
     {
       "id": "python-modules-imports-authored-04",
@@ -132,17 +132,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Modules & Imports concept check 4",
+      "title": "Avoid wildcard imports",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Modules & Imports mistake?",
+      "prompt": "What is a common problem with `from module import *`?",
       "choices": [
-        "Avoid wildcard imports.",
-        "Only after an error",
-        "Before Python reads the file",
-        "from math import *\nprint(sqrt(16))"
+        "It imports nothing unless the module has a class.",
+        "It forces every function call to use a module prefix.",
+        "It prevents the file from being tested.",
+        "It fills the namespace with names whose source is hard to see."
       ],
-      "answer_index": 0,
-      "explanation": "A Python file is a module. Use `import module` to keep its name visible, or `from module import name` to bring in one item. That reasoning supports the answer: Avoid wildcard imports."
+      "answer_index": 3,
+      "explanation": "Wildcard imports pull many names into the current file without showing them individually. That can make it hard to tell which module supplied a name and can create accidental conflicts. Explicit imports are usually easier for beginners and reviewers to follow."
     },
     {
       "id": "python-modules-imports-authored-05",
@@ -150,17 +150,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Modules & Imports concept check 5",
+      "title": "Top-level work",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Modules & Imports. Which advice is correct?",
+      "prompt": "What kind of work is safest to leave at the top level of an importable module?",
       "choices": [
-        "from random import randint",
-        "Keep top-level work small.",
-        "include random",
-        "Only after an error"
+        "Small definitions such as constants, functions, and classes.",
+        "A required input prompt that starts as soon as the module imports.",
+        "A long file download that runs on every import.",
+        "A demo loop that prints examples before any function is called."
       ],
-      "answer_index": 1,
-      "explanation": "A Python file is a module. Use `import module` to keep its name visible, or `from module import name` to bring in one item. That reasoning supports the answer: Keep top-level work small."
+      "answer_index": 0,
+      "explanation": "Top-level definitions are normal because importing the module needs to create those names. Interactive prompts, demos, and expensive work are surprising during import. Put that behavior in a function or behind a main guard."
     },
     {
       "id": "python-modules-imports-authored-06",
@@ -168,17 +168,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Modules & Imports concept check 6",
+      "title": "Main guard",
       "code": null,
-      "prompt": "Which choice shows sound reasoning about Modules & Imports?",
+      "prompt": "Why use `if __name__ == \"__main__\":` around demo code?",
       "choices": [
-        "Before Python reads the file",
-        "from math import *\nprint(sqrt(16))",
-        "Put demos and command-line input behind a main guard.",
-        "from random import randint"
+        "It makes imports impossible from other files.",
+        "Demo code runs when the file is executed, but not when it is imported.",
+        "It makes every function private.",
+        "It changes the file extension from `.py` to a package."
       ],
-      "answer_index": 2,
-      "explanation": "A Python file is a module. Use `import module` to keep its name visible, or `from module import name` to bring in one item. That reasoning supports the answer: Put demos and command-line input behind a main guard."
+      "answer_index": 1,
+      "explanation": "The main guard separates reusable module code from direct-run demo code. When the file is imported, `__name__` is the module name, so the guarded demo does not run. When the file is run directly, the demo can still execute."
     }
   ]
 }

@@ -231,13 +231,83 @@ body.coding-dark .coding-app .workspace-tabs .terminal-tab.active {
 
 .coding-app.coding-workspace-active .coding-workbench-main {
   flex: 1 1 auto;
-  gap: 14px;
+  display: grid;
+  grid-template-columns: minmax(240px, var(--workspace-guide-width, 340px)) 12px minmax(0, 1fr) !important;
+  gap: 0;
+}
+
+.coding-app.coding-workspace-active .coding-problem-panel {
+  grid-column: 1;
+}
+
+.coding-app.coding-workspace-active .workspace-guide-divider {
+  grid-column: 2;
+}
+
+.coding-app.coding-workspace-active .coding-editor-center {
+  grid-column: 3;
+}
+
+.workspace-guide-divider {
+  align-self: stretch;
+  position: relative;
+  cursor: ew-resize;
+  background:
+    linear-gradient(180deg, transparent, color-mix(in srgb, var(--ct-border, #d8cbb8) 78%, transparent), transparent);
+  border: 0;
+  touch-action: none;
+  min-width: 12px;
+  z-index: 2;
+}
+
+.workspace-guide-divider::before {
+  content: "";
+  position: absolute;
+  inset: 12px 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-border, #d8cbb8) 70%, transparent);
+  opacity: 0.85;
+  transition: background 0.16s ease, opacity 0.16s ease, box-shadow 0.16s ease;
+}
+
+.workspace-guide-divider:hover::before,
+.workspace-guide-divider:focus-visible::before {
+  background: color-mix(in srgb, var(--ct-primary, #0b2a4a) 70%, var(--ct-accent, #f58220));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ct-primary, #0b2a4a) 16%, transparent);
+  opacity: 1;
+}
+
+.workspace-guide-divider:focus-visible {
+  outline: none;
+}
+
+.workspace-guide-divider-grip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-text, #1d2a3a) 28%, transparent);
+}
+
+.workspace-guide-divider:hover .workspace-guide-divider-grip,
+.workspace-guide-divider:focus-visible .workspace-guide-divider-grip {
+  background: #fff;
+}
+
+body.ct-guide-resizing,
+body.ct-guide-resizing * {
+  cursor: ew-resize !important;
+  user-select: none !important;
 }
 
 .coding-app.coding-workspace-active .coding-problem-panel,
 .coding-app.coding-workspace-active .coding-editor-center {
   min-height: 0 !important;
   max-height: 100%;
+  border-radius: 16px !important;
 }
 
 .coding-app.coding-workspace-active .workspace-tab-body {
@@ -264,7 +334,33 @@ body.coding-dark .coding-app .workspace-tabs .terminal-tab.active {
 
 @media (max-height: 780px), (max-width: 1180px) {
   .coding-app.coding-workspace-active .coding-workbench-main {
+    gap: 0;
+  }
+}
+
+@media (max-width: 726px) {
+  .coding-app.coding-workspace-active .coding-workbench-main {
+    grid-template-columns: minmax(0, 1fr) !important;
     gap: 10px;
+    overflow: auto !important;
+  }
+
+  .workspace-guide-divider {
+    display: none;
+  }
+
+  .coding-app.coding-workspace-active .coding-problem-panel,
+  .coding-app.coding-workspace-active .coding-editor-center {
+    grid-column: 1;
+    max-height: none;
+  }
+}
+
+@media (max-width: 726px) {
+  .coding-app.coding-workspace-active {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
 }
 
@@ -318,6 +414,23 @@ body.coding-dark .coding-app .workspace-tabs .terminal-tab.active {
   align-items: center;
   gap: 10px;
   min-width: 0;
+}
+
+.code-trace-button {
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, var(--ct-primary, #082343) 18%, var(--ed-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ed-bg) 78%, #fff);
+  color: var(--ed-text);
+  padding: 0.42rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.code-trace-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .code-editor-filename {
@@ -499,6 +612,37 @@ body.coding-dark .coding-app .workspace-tabs .terminal-tab.active {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
+  background: var(--ed-bg);
+}
+
+.code-editor-active-indent-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  padding: var(--ed-pad-y) 16px;
+  overflow: hidden;
+  pointer-events: none;
+  font-family: var(--ed-font);
+  font-size: var(--ed-size);
+  line-height: var(--ed-lh);
+  tab-size: 4;
+  -moz-tab-size: 4;
+}
+
+.code-editor-active-indent-guide {
+  position: absolute;
+  top: var(--guide-top, 0);
+  height: var(--guide-height, 0);
+  left: calc((var(--guide-level, 0) * 4ch) - 1.55ch);
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(245, 130, 32, 0.15),
+    rgba(245, 130, 32, 0.72),
+    rgba(245, 130, 32, 0.15)
+  );
+  box-shadow: 0 0 10px rgba(245, 130, 32, 0.16);
 }
 
 .code-editor-window .coding-editor,
@@ -530,7 +674,7 @@ body.coding-dark .coding-app .workspace-tabs .terminal-tab.active {
 .code-editor-window .code-editor-textarea {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 4;
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
@@ -543,7 +687,7 @@ body.coding-dark .coding-app .workspace-tabs .terminal-tab.active {
 .code-editor-window .code-editor-textarea::selection {
   /* Keep selection text invisible too (the overlay shows the colored code) so
      highlighting doesn't reveal a second, differently-colored copy of the text. */
-  background: rgba(245, 130, 32, 0.32);
+  background: rgba(245, 130, 32, 0.52);
   color: transparent !important;
   -webkit-text-fill-color: transparent !important;
 }
@@ -556,7 +700,7 @@ body.coding-dark .coding-app .workspace-tabs .terminal-tab.active {
 .code-editor-window .code-editor-highlight {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 2;
   pointer-events: none;
   overflow: hidden;
   margin: 0;
@@ -571,7 +715,7 @@ body.coding-dark .coding-app .workspace-tabs .terminal-tab.active {
   word-wrap: normal;
   tab-size: 4;
   -moz-tab-size: 4;
-  background: var(--ed-bg) !important;
+  background: transparent !important;
   color: #e6edf3 !important;
 }
 
@@ -627,6 +771,18 @@ body.coding-dark .coding-app .workspace-tabs .terminal-tab.active {
   font-weight: 700;
   color: #fff;
   background: color-mix(in srgb, var(--ct-accent, #f58220) 88%, #000);
+}
+
+.coding-app ::selection,
+.floating-coding-chat ::selection {
+  background: rgba(245, 130, 32, 0.34);
+  color: #07111f;
+}
+
+body.coding-dark .coding-app ::selection,
+body.coding-dark .floating-coding-chat ::selection {
+  background: rgba(231, 160, 91, 0.55);
+  color: #fffaf1;
 }
 
 @media (max-width: 640px) {

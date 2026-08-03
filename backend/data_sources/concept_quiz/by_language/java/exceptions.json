@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Exceptions concept check 1",
+      "title": "Preserving causes",
       "code": null,
-      "prompt": "What does the lesson mean by \"Keep the cause when adding context\"?",
+      "prompt": "When Java code wraps one exception in another, what information should it keep?",
       "choices": [
-        "ClassCastException",
-        "If you create a new exception, pass the original one as its cause. Without that link, the stack trace loses the failure that started the chain and makes diagnosis harder.",
-        "IOException",
-        "NullPointerException"
+        "Pass the original exception as the cause so the stack trace keeps the first failure.",
+        "Catch every exception and continue without evidence.",
+        "Use exceptions for ordinary choices an if statement can handle.",
+        "Replace the original error with a vague one and drop the cause."
       ],
-      "answer_index": 1,
-      "explanation": "Place risky work in `try` and catch a specific exception that the method can handle. Checked exceptions must be caught or declared. That reasoning supports the answer: If you create a new exception, pass the original one as its cause. Without that link, the stack trace loses the failure that started the chain and makes diagnosis harder."
+      "answer_index": 0,
+      "explanation": "Passing the original exception as the cause preserves the chain of events. Without that cause, the new exception may show where wrapping happened but hide the real failure that started the problem."
     },
     {
       "id": "java-exceptions-authored-02",
@@ -96,17 +96,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Exceptions concept check 2",
+      "title": "Catch what you can recover from",
       "code": null,
-      "prompt": "Which choice describes a reliable Exceptions practice?",
+      "prompt": "Which exception type should a handler catch?",
       "choices": [
-        "Ignore it because all exceptions are optional",
-        "Convert it to an int",
+        "Wrap a whole program in one broad protected block.",
         "Catch a type that matches the recovery you can perform.",
-        "Place it in a static field"
+        "Catch errors at a layer that cannot recover.",
+        "Hide unexpected programming mistakes."
       ],
-      "answer_index": 2,
-      "explanation": "Place risky work in `try` and catch a specific exception that the method can handle. Checked exceptions must be caught or declared. That reasoning supports the answer: Catch a type that matches the recovery you can perform."
+      "answer_index": 1,
+      "explanation": "A handler should catch the type that matches the recovery it can perform. Catching too broadly can swallow unrelated bugs, while catching too narrowly may miss the expected failure path."
     },
     {
       "id": "java-exceptions-authored-03",
@@ -114,17 +114,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Exceptions concept check 3",
+      "title": "Small protected blocks",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Exceptions code?",
+      "prompt": "Why keep a Java `try` block small?",
       "choices": [
-        "try { loadCredits(raw); }\ncatch (Exception e) {\n    System.out.println(\"Bad number\");\n}",
-        "NullPointerException",
-        "Ignore it because all exceptions are optional",
-        "Keep the protected block small."
+        "Raise an exception after the function already returned successfully.",
+        "Use an exception to skip normal loop logic.",
+        "Keep the protected block small.",
+        "Report failure without enough context to debug it."
       ],
-      "answer_index": 3,
-      "explanation": "Place risky work in `try` and catch a specific exception that the method can handle. Checked exceptions must be caught or declared. That reasoning supports the answer: Keep the protected block small."
+      "answer_index": 2,
+      "explanation": "A small protected block makes it clear which operation may fail. If many unrelated lines sit inside the same `try`, the handler can blame the wrong operation or hide a separate bug."
     },
     {
       "id": "java-exceptions-authored-04",
@@ -132,17 +132,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Exceptions concept check 4",
+      "title": "Checked versus runtime",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Exceptions mistake?",
+      "prompt": "Why should students distinguish checked exceptions from runtime exceptions?",
       "choices": [
-        "Distinguish checked exceptions from runtime exceptions.",
-        "Convert it to an int",
-        "Place it in a static field",
-        "try { loadCredits(raw); }\ncatch (Exception e) {\n    System.out.println(\"Bad number\");\n}"
+        "Ignore cleanup around code that can fail.",
+        "Catch a base exception type when a specific one is known.",
+        "Turn every invalid input into the same generic message.",
+        "Distinguish checked exceptions from runtime exceptions."
       ],
-      "answer_index": 0,
-      "explanation": "Place risky work in `try` and catch a specific exception that the method can handle. Checked exceptions must be caught or declared. That reasoning supports the answer: Distinguish checked exceptions from runtime exceptions."
+      "answer_index": 3,
+      "explanation": "Checked exceptions are part of a method's visible failure contract, while runtime exceptions often point to bugs or invalid assumptions. Treating them the same can either overburden callers or hide programming mistakes."
     },
     {
       "id": "java-exceptions-authored-05",
@@ -150,17 +150,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Exceptions concept check 5",
+      "title": "Wrapping with context",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Exceptions. Which advice is correct?",
+      "prompt": "A method catches a low-level file error and throws a higher-level app error. What should it preserve?",
       "choices": [
-        "ClassCastException",
         "Preserve an original cause when wrapping.",
-        "IOException",
-        "Convert it to an int"
+        "Keep running after required work did not happen.",
+        "Handle errors by returning unrelated default data.",
+        "Assume the absence of a crash proves the operation succeeded."
       ],
-      "answer_index": 1,
-      "explanation": "Place risky work in `try` and catch a specific exception that the method can handle. Checked exceptions must be caught or declared. That reasoning supports the answer: Preserve an original cause when wrapping."
+      "answer_index": 0,
+      "explanation": "The higher-level error can add context, but it should keep the original cause. That way the message explains what the app was trying to do while the stack trace still shows the source failure."
     },
     {
       "id": "java-exceptions-authored-06",
@@ -168,17 +168,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Exceptions concept check 6",
+      "title": "Try-with-resources",
       "code": null,
-      "prompt": "Which choice shows sound reasoning about Exceptions?",
+      "prompt": "Why use try-with-resources for closeable Java objects?",
       "choices": [
-        "Place it in a static field",
-        "try { loadCredits(raw); }\ncatch (Exception e) {\n    System.out.println(\"Bad number\");\n}",
+        "Use try/catch around code that cannot throw.",
         "Use try-with-resources for closeable objects.",
-        "ClassCastException"
+        "Make callers guess whether a failure happened.",
+        "Discard stack-trace information during wrapping."
       ],
-      "answer_index": 2,
-      "explanation": "Place risky work in `try` and catch a specific exception that the method can handle. Checked exceptions must be caught or declared. That reasoning supports the answer: Use try-with-resources for closeable objects."
+      "answer_index": 1,
+      "explanation": "Try-with-resources closes the object automatically after the block, even when an exception occurs. That protects file handles, streams, and similar resources without requiring duplicated cleanup code."
     }
   ]
 }

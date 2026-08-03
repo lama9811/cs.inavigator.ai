@@ -20,7 +20,6 @@ import { FaLightbulb } from "@react-icons/all-files/fa/FaLightbulb";
 import { FaQuestionCircle } from "@react-icons/all-files/fa/FaQuestionCircle";
 import { FaPaperclip } from "@react-icons/all-files/fa/FaPaperclip";
 import { FaCheckCircle } from "@react-icons/all-files/fa/FaCheckCircle";
-import { FaGithub } from "@react-icons/all-files/fa/FaGithub";
 import { getApiBase } from "../lib/apiBase";
 import "./ChatSidebar.css";
 
@@ -503,8 +502,14 @@ export default function ChatSidebar({
       <div className="sidebar-top">
         <div className="sidebar-top-row">
           <button
+            type="button"
             className="sidebar-action-btn new-chat"
-            onClick={onNew}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onNew?.({ mode: "regular", route: "/chat", replace: true });
+              navigate("/chat", { replace: true });
+            }}
             title="Start a new chat session"
             style={{ flex: 1 }}
           >
@@ -667,10 +672,6 @@ export default function ChatSidebar({
             <FaSignOutAlt size={16} />
           </button>
         </div>
-        <a className="sidebar-opensource-badge" href="https://github.com/theaayushstha1/cs-navigator" target="_blank" rel="noopener noreferrer">
-          <FaGithub size={10} />
-          <span>Open Source</span>
-        </a>
       </div>
 
       {/* 🎫 Support Ticket Modal — portaled to <body> so it escapes the sidebar's

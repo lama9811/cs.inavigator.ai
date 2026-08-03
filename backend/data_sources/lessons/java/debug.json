@@ -9,7 +9,7 @@
     "wrong_answer",
     "timeout"
   ],
-  "refresher": "Java bugs fail at three different moments. A compile error means `javac` refused the file, so nothing ran at all, and a wrong type is caught right here. A runtime exception means the program started, ran, then crashed and printed a stack trace. A wrong answer means it ran all the way through and gave you the wrong result quietly. To read a stack trace, take the top line for the exception name, then look down for the first line that names your file and your line number. If no message points at anything, print the variables you are least sure about and compare them with what you expected.",
+  "refresher": "Java bugs fail at three different moments. A compile error means `javac` refused the file, so nothing ran at all, and a wrong type is caught right here. A runtime **exception** means the program started, ran, then crashed and printed a stack trace. A wrong answer means it ran all the way through and gave you the wrong result quietly. To read a stack trace, take the top line for the exception name, then look down for the first line that names your file and your line number. If no message points at anything, **print** the **variables** you are least sure about and compare them with what you expected.",
   "refresher_code": "int total = 0;\nfor (int s : scores) {\n    total = total + s;\n    System.out.println(\"total is now \" + total);\n}\n// println shows you what the code did,\n// not what you assumed it did",
   "blocks": [
     {
@@ -24,14 +24,14 @@
       "kind": "list",
       "title": "The three families of Java bug",
       "items": [
-        "Compile error: `javac` reads your file, cannot accept it, and produces no program. There is nothing to run, so nothing runs.",
-        "Runtime exception: the program compiled and started, then hit something impossible and crashed. It prints a stack trace and stops.",
+        "Compile error: `javac` reads your **file**, cannot accept it, and produces no program. There is nothing to run, so nothing runs.",
+        "Runtime **exception**: the program compiled and started, then hit something impossible and crashed. It prints a **stack** trace and stops.",
         "Wrong answer: the program compiles, runs to the end, prints something, and the something is wrong. Java has no complaint, because from its point of view nothing failed."
       ]
     },
     {
       "kind": "code",
-      "caption": "The signature of a compile error is that no output appears at all. Line 3 is a perfectly good println and it never got the chance to run, because `javac` reads the whole file before it produces a program. The caret under the code points at the exact spot where Java lost the thread, and here that is the end of the line, where a semicolon should be.",
+      "caption": "The signature of a compile error is that no **output** appears at all. Line 3 is a perfectly good println and it never got the chance to run, because `javac` reads the whole **file** before it produces a program. The caret under the code points at the exact spot where Java lost the thread, and here that is the end of the line, where a semicolon should be.",
       "code": "public class Greeting {\n    public static void main(String[] args) {\n        System.out.println(\"starting\")\n        System.out.println(\"done\");\n    }\n}",
       "output": "Greeting.java:3: error: ';' expected\n        System.out.println(\"starting\")\n                                      ^\n1 error"
     },
@@ -39,21 +39,21 @@
       "kind": "callout",
       "tone": "tip",
       "title": "Fix the first compile error, then compile again",
-      "body": "One missing brace or semicolon can confuse `javac` about everything that follows it, so a single typo often produces a whole list of errors. Do not try to fix them all at once. Go to the first one, the one with the lowest line number, fix it, and compile again. Half the list usually disappears on its own."
+      "body": "One missing brace or semicolon can confuse `javac` about everything that follows it, so a single typo often produces a whole **list** of errors. Do not try to fix them all at once. Go to the first one, the one with the lowest line number, fix it, and compile again. Half the list usually disappears on its own."
     },
     {
       "kind": "text",
-      "body": "The most useful compile error is one Python cannot give you. Java is statically typed, which means every variable has a declared type and the compiler checks that the values you put into it fit. So a type mistake is caught before the program ever runs."
+      "body": "The most useful compile error is one Python cannot give you. Java is statically typed, which means every **variable** has a declared type and the compiler checks that the **values** you put into it fit. So a type mistake is caught before the program ever runs."
     },
     {
       "kind": "code",
-      "caption": "In a language that checks types only while running, this line would sit quietly in your file until the moment it executed, which might be during a demo. Java will not let the file compile. The error names both types and points the caret at the value that does not fit. This is the compiler doing you a favor, early and for free.",
+      "caption": "In a language that checks types only while running, this line would sit quietly in your **file** until the moment it executed, which might be during a demo. Java will not let the file compile. The error names both types and points the caret at the **value** that does not fit. This is the compiler doing you a favor, early and for free.",
       "code": "public class Total {\n    public static void main(String[] args) {\n        int count = \"five\";\n        System.out.println(count);\n    }\n}",
       "output": "Total.java:3: error: incompatible types: String cannot be converted to int\n        int count = \"five\";\n                    ^\n1 error"
     },
     {
       "kind": "check",
-      "prompt": "You compile and run this file. What appears on the screen?",
+      "prompt": "You compile and run this **file**. What appears on the screen?",
       "code": "public class Order {\n    public static void main(String[] args) {\n        System.out.println(\"step 1\");\n        int n = \"hello\";\n        System.out.println(\"step 2\");\n    }\n}",
       "choices": [
         "No program output at all, just a compile error about incompatible types",
@@ -62,25 +62,25 @@
         "`step 1` and `step 2`, since a wrong type is only a warning"
       ],
       "answer_index": 0,
-      "why": "The compiler checks the whole file before it produces anything to run. Line 4 puts a String into an `int`, so `javac` reports `incompatible types: String cannot be converted to int` and stops. There is no program, so line 3 never executes and `step 1` is never printed. The tempting answer is the second one, because line 3 sits above the bad line and it feels like it should get its turn first. It does not. Order on the page is not the same as order in time, and a compile error happens before the program has any time at all. The third choice names the wrong family: a type mismatch in Java is caught by the compiler, not thrown as an exception while running."
+      "why": "The compiler checks the whole **file** before it produces anything to run. Line 4 puts a **String** into an `int`, so `javac` reports `incompatible types: String cannot be converted to int` and stops. There is no program, so line 3 never executes and `step 1` is never printed. The tempting answer is the second one, because line 3 sits above the bad line and it feels like it should get its turn first. It does not. Order on the page is not the same as order in time, and a compile error happens before the program has any time at all. The third choice names the wrong family: a type mismatch in Java is caught by the compiler, not thrown as an **exception** while running."
     },
     {
       "kind": "text",
-      "body": "Once your code compiles, the second family shows up. The program runs, and partway through it asks for something impossible. Java stops it and prints a stack trace. A stack trace looks like a wall of text, but you only need two lines out of it."
+      "body": "Once your code compiles, the second family shows up. The program runs, and partway through it asks for something impossible. Java stops it and prints a **stack** trace. A stack trace looks like a wall of text, but you only need two lines out of it."
     },
     {
       "kind": "code",
-      "caption": "Read the top line first: it names the exception, `ArrayIndexOutOfBoundsException`, and explains it, since index 3 does not exist in an array of length 3. Then look down for the first line that names your file, here `Roster.java:5`, and count to line 5 of the code above. It is the line that asked for `names[3]`, and the trace pointed straight at it. Notice too that `list is ready` printed. Some output, then a crash, is the fingerprint of a runtime exception: the program really did run.",
+      "caption": "Read the top line first: it names the **exception**, `ArrayIndexOutOfBoundsException`, and explains it, since **index** 3 does not exist in an **array** of length 3. Then look down for the first line that names your file, here `Roster.java:5`, and count to line 5 of the code above. It is the line that asked for `names[3]`, and the trace pointed straight at it. Notice too that `list is ready` printed. Some output, then a crash, is the fingerprint of a runtime exception: the program really did run.",
       "code": "public class Roster {\n    public static void main(String[] args) {\n        String[] names = {\"Ada\", \"Grace\", \"Alan\"};\n        System.out.println(\"list is ready\");\n        System.out.println(names[3]);\n    }\n}",
       "output": "list is ready\nException in thread \"main\" java.lang.ArrayIndexOutOfBoundsException: Index 3 out of bounds for length 3\n\tat Roster.main(Roster.java:5)"
     },
     {
       "kind": "text",
-      "body": "Array positions start at 0, so an array of three names has positions 0, 1, and 2. Asking for position 3 asks for a fourth item that was never there. This is why a loop over an array stops at `i < names.length` and never at `i <= names.length`."
+      "body": "**Array** positions start at 0, so an array of three names has positions 0, 1, and 2. Asking for position 3 asks for a fourth item that was never there. This is why a loop over an array stops at `i < names.length` and never at `i <= names.length`."
     },
     {
       "kind": "code",
-      "caption": "This trace has two `at` lines, because the crash happened inside a method that main had called. Read the `at` lines downward: the first is where it broke, line 3, and the next is who called it, line 10. That second line is the one worth having. Line 3 only tells you a null arrived; line 10 tells you where it came from, and that is where the fix goes.",
+      "caption": "This trace has two `at` lines, because the crash happened inside a **method** that main had called. Read the `at` lines downward: the first is where it broke, line 3, and the next is who called it, line 10. That second line is the one worth having. Line 3 only tells you a null arrived; line 10 tells you where it came from, and that is where the fix goes.",
       "code": "public class Roster2 {\n    static int nameLength(String name) {\n        return name.length();\n    }\n\n    public static void main(String[] args) {\n        String[] names = {\"Ada\", null};\n        System.out.println(\"checking names\");\n        for (String n : names) {\n            System.out.println(nameLength(n));\n        }\n    }\n}",
       "output": "checking names\n3\nException in thread \"main\" java.lang.NullPointerException: Cannot invoke \"String.length()\" because \"<parameter1>\" is null\n\tat Roster2.nameLength(Roster2.java:3)\n\tat Roster2.main(Roster2.java:10)"
     },
@@ -88,7 +88,7 @@
       "kind": "callout",
       "tone": "warning",
       "title": "What a NullPointerException is really saying",
-      "body": "`null` means a variable is pointing at no object at all. Calling a method on it, like `name.length()`, asks nothing to do something, and Java throws a NullPointerException. Recent versions of Java tell you which call failed and which value was null, so read the whole top line, not just the exception name. One more thing: the fix is usually not on the line that crashed. It is wherever that variable got set to null, or never got set to anything."
+      "body": "`null` means a **variable** is pointing at no object at all. Calling a **method** on it, like `name.length()`, asks nothing to do something, and Java throws a NullPointerException. Recent versions of Java tell you which call failed and which value was null, so read the whole top line, not just the exception name. One more thing: the fix is usually not on the line that crashed. It is wherever that variable got **set** to null, or never got set to anything."
     },
     {
       "kind": "text",
@@ -96,7 +96,7 @@
     },
     {
       "kind": "compare",
-      "caption": "Both versions compile and both print an average. Dividing an `int` by an `int` in Java gives you an `int`, so the fraction is thrown away rather than rounded. With scores of 90, 85, and 80 the total is 255, which divides evenly by 3, so both sides print 85 and the bug stays hidden. Change one score to 81 and the left still prints 85 while the right prints 85.33333333333333. The left version was broken the whole time. The input was covering for it.",
+      "caption": "Both versions compile and both **print** an average. Dividing an `int` by an `int` in Java gives you an `int`, so the fraction is thrown away rather than rounded. With scores of 90, 85, and 80 the total is 255, which divides evenly by 3, so both sides print 85 and the bug stays hidden. Change one score to 81 and the left still prints 85 while the right prints 85.33333333333333. The left version was broken the whole time. The **input** was covering for it.",
       "wrong_label": "Compiles, drops the fraction",
       "wrong": "int total = 0;\nfor (int s : scores) {\n    total = total + s;\n}\nint average = total / scores.length;\nSystem.out.println(average);\n// int divided by int is an int,\n// so anything after the point is gone",
       "right_label": "Compiles, keeps the fraction",
@@ -104,11 +104,11 @@
     },
     {
       "kind": "text",
-      "body": "A wrong answer will not report itself, so you have to go and look. The tool for that is `System.out.println`, used on purpose. Print each value you are unsure about at the moment it is used, and label it, because three bare numbers in a row tell you almost nothing about which is which."
+      "body": "A wrong answer will not report itself, so you have to go and look. The tool for that is `System.out.println`, used on purpose. **Print** each **value** you are unsure about at the moment it is used, and label it, because three bare numbers in a row tell you almost nothing about which is which."
     },
     {
       "kind": "code",
-      "caption": "Print what goes in, then what comes out, and compare both against numbers you worked out by hand. Here 255 divided by 3 is exactly 85, so the printout looks correct, and that is the lesson worth taking: an example that divides evenly can never expose this bug. To test division, feed it numbers that do not divide evenly. A test that cannot fail is not really a test.",
+      "caption": "**Print** what goes in, then what comes out, and compare both against numbers you worked out by hand. Here 255 divided by 3 is exactly 85, so the printout looks correct, and that is the lesson worth taking: an example that divides evenly can never expose this bug. To test division, feed it numbers that do not divide evenly. A test that cannot fail is not really a test.",
       "code": "int[] scores = {90, 85, 80};\nint total = 0;\nfor (int s : scores) {\n    total = total + s;\n}\nSystem.out.println(\"total is \" + total);\nSystem.out.println(\"count is \" + scores.length);\nint average = total / scores.length;\nSystem.out.println(\"average is \" + average);",
       "output": "total is 255\ncount is 3\naverage is 85"
     },
@@ -116,11 +116,11 @@
       "kind": "callout",
       "tone": "mistake",
       "title": "Changing things at random is not debugging",
-      "body": "Casts are where this gets dangerous in Java, because adding one can silence the compiler without fixing anything. If a red squiggle goes away after you sprinkle in a `(double)` or an `(int)`, that only proves the types now line up. It says nothing about whether the arithmetic is right. Before you add a cast, say what you expect the value to be, then print it and check. A compiler you have quieted is not the same as a program that works."
+      "body": "Casts are where this gets dangerous in Java, because adding one can silence the compiler without fixing anything. If a red squiggle goes away after you sprinkle in a `(double)` or an `(int)`, that only proves the types now line up. It says nothing about whether the arithmetic is right. Before you add a cast, say what you expect the **value** to be, then **print** it and check. A compiler you have quieted is not the same as a program that works."
     },
     {
       "kind": "text",
-      "body": "There is a fourth symptom that fits none of the three, because on screen it is indistinguishable from your program thinking hard. It compiles, it starts, it prints no error and no answer, and it simply does not end. That is a timeout, and in first-year code it is nearly always a loop that can never stop."
+      "body": "There is a fourth symptom that fits none of the three, because on screen it is indistinguishable from your program thinking hard. It compiles, it starts, it prints no error and no answer, and it simply does not end. That is a timeout, and in first-year code it is nearly always a **loop** that can never stop."
     },
     {
       "kind": "check",
@@ -133,29 +133,95 @@
         "It is a compile error, because a `while` loop needs a counter in its header"
       ],
       "answer_index": 0,
-      "why": "Go looking for the line that is supposed to make the condition false, and there is not one. Nothing inside the braces touches `i`, so `i` stays 0, `i < nums.length` stays true, and `nums[0]` prints again and again until the run is cut off. Adding `i = i + 1` inside the loop fixes it. The tempting choice is the exception, because an index and an array length are sitting right there and going out of bounds feels like the natural way for this to fail. But `i` never grows, so it never reaches 3 and never goes out of bounds. It never gets anywhere. When a run of yours hangs, look at your loops first and ask which line is meant to end them."
+      "why": "Go looking for the line that is supposed to make the **condition** false, and there is not one. Nothing inside the braces touches `i`, so `i` stays 0, `i < nums.length` stays true, and `nums[0]` prints again and again until the run is cut off. Adding `i = i + 1` inside the **loop** fixes it. The tempting choice is the exception, because an index and an **array** length are sitting right there and going out of bounds feels like the natural way for this to fail. But `i` never grows, so it never reaches 3 and never goes out of bounds. It never gets anywhere. When a run of yours hangs, look at your loops first and ask which line is meant to end them."
     },
     {
       "kind": "callout",
       "tone": "tip",
       "title": "Compile early, compile often",
-      "body": "Do not write eighty lines and then compile for the first time. You will get a page of errors and no idea which of your eighty lines started it. Compile every few lines instead. Then when `javac` complains, the cause is almost certainly in the part you just typed, and you are reading three lines rather than searching a whole file."
+      "body": "Do not write eighty lines and then compile for the first time. You will get a page of errors and no idea which of your eighty lines started it. Compile every few lines instead. Then when `javac` complains, the cause is almost certainly in the part you just typed, and you are reading three lines rather than searching a whole **file**."
     },
     {
       "kind": "list",
       "title": "Match the symptom to the family",
       "items": [
-        "Nothing runs and `javac` prints a list: compile error. Start at the lowest line number, fix that one, recompile, and ignore the rest until you have.",
-        "`incompatible types`: you put a value of one type into a variable of another. The message names both, so compare them.",
-        "`cannot find symbol`: Java has never heard of that name. Usually a typo, or a variable used outside the braces it was declared in.",
-        "Output appeared, then it stopped: runtime exception. Exception name comes from the top line. Your line number comes from the first `at` line that mentions your file.",
-        "`NullPointerException`: something is null. Do not patch the crashing line. Go find where that variable was supposed to get its value.",
-        "`ArrayIndexOutOfBoundsException`: an index reached past the end. Check that your loop uses `<` and not `<=` against `.length`.",
-        "Ran to the end, answer is wrong: nothing is broken as far as Java can tell. Print the values and compare them with an answer you worked out on paper.",
+        "Nothing runs and `javac` prints a **list**: compile error. Start at the lowest line number, fix that one, recompile, and ignore the rest until you have.",
+        "`incompatible types`: you put a **value** of one type into a **variable** of another. The message names both, so compare them.",
+        "`cannot find symbol`: Java has never heard of that name. Usually a typo, or a **variable** used outside the braces it was declared in.",
+        "**Output** appeared, then it stopped: runtime **exception**. Exception name comes from the top line. Your line number comes from the first `at` line that mentions your **file**.",
+        "`NullPointerException`: something is null. Do not patch the crashing line. Go find where that **variable** was supposed to get its **value**.",
+        "`ArrayIndexOutOfBoundsException`: an **index** reached past the end. Check that your **loop** uses `<` and not `<=` against `.length`.",
+        "Ran to the end, answer is wrong: nothing is broken as far as Java can tell. **Print** the **values** and compare them with an answer you worked out on paper.",
         "Two whole numbers divided, decimal expected: `int / int` is an `int`. Cast one side to `double` first.",
-        "Never finishes and prints nothing new: a loop with no exit. Point at the statement that is meant to make its condition false. If you cannot, that is the bug.",
-        "Change one thing per run. Two changes and a passing program leaves you unsure which one earned it."
+        "Never finishes and prints nothing new: a **loop** with no exit. Point at the statement that is meant to make its **condition** false. If you cannot, that is the bug.",
+        "Change one thing per run. Two changes and a passing program **leaves** you unsure which one earned it."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "debug-01": {
+      "title": "Assignment can erase a count",
+      "body": "A counter should move from old value to new value. Setting it to a constant each pass loses the running count.",
+      "notice": "Look for whether the variable accumulates or gets overwritten.",
+      "mistake": "Do not call a loop correct just because it visits every item.",
+      "section_id": "check",
+      "example": "total += 1"
+    },
+    "debug-02": {
+      "title": "Compare when asking a question",
+      "body": "A condition should test a value, not assign a value by accident.",
+      "notice": "Check equality syntax anywhere an `if` is asking yes or no.",
+      "mistake": "Do not use assignment syntax when the branch needs a comparison.",
+      "section_id": "check",
+      "example": "x == 10"
+    },
+    "debug-03": {
+      "title": "Start index controls skipped items",
+      "body": "An index loop that starts at 1 skips the item at index 0.",
+      "notice": "For scan-all code, verify the first and last indexes visited.",
+      "mistake": "Do not assume `len` is wrong when the start boundary is the real issue.",
+      "section_id": "check",
+      "example": "0, 1, 2"
+    },
+    "debug-04": {
+      "title": "Syntax errors often come from one missing closer",
+      "body": "A line can fail before logic runs because a parenthesis, bracket, quote, or semicolon is missing.",
+      "notice": "Match each opener with its closer before changing the algorithm.",
+      "mistake": "Do not debug variable values when the parser cannot read the line.",
+      "section_id": "check",
+      "example": "( ... )"
+    },
+    "debug-05": {
+      "title": "An expression must be stored to matter",
+      "body": "Calculating `total + n` alone does not update total. The result must be assigned or returned.",
+      "notice": "Find the line where state should change and check whether it actually writes the new value.",
+      "mistake": "Do not mistake a calculation for an update.",
+      "section_id": "check",
+      "example": "total = total + n"
+    },
+    "debug-06": {
+      "title": "Indexes stop before length",
+      "body": "The last valid index is one less than the collection length.",
+      "notice": "For out-of-range errors, compare the requested index with the valid index list.",
+      "mistake": "Do not use the length itself as a valid index.",
+      "section_id": "check",
+      "example": "length 3 -> indexes 0, 1, 2"
+    },
+    "debug-07": {
+      "title": "Return can end a search too early",
+      "body": "A return inside a loop stops the whole function, not just the current pass.",
+      "notice": "For search loops, put the failure return after the loop has checked every item.",
+      "mistake": "Do not return false after the first non-match unless only the first item matters.",
+      "section_id": "check",
+      "example": "return after loop"
+    },
+    "debug-p1-08": {
+      "title": "One extra index is still out of range",
+      "body": "Looping through length plus one allows an index equal to the length, which is outside the collection.",
+      "notice": "Check the final loop value before checking the collection access.",
+      "mistake": "Do not include the length as an index in zero-based collections.",
+      "section_id": "check",
+      "example": "i < length"
+    }
+  }
 }

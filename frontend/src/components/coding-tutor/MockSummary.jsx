@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { FaChevronDown, FaExternalLinkAlt, FaForward, FaRegCircle, FaRobot, FaCheckCircle, FaTimesCircle, FaTimes, FaTrophy, FaVideo } from "react-icons/fa";
+import useFocusTrap from "./useFocusTrap";
 
 function fmt(ms) {
   const total = Math.max(0, Math.floor(ms / 1000));
@@ -96,6 +97,8 @@ export default function MockSummary({ summary, onClose, onReview }) {
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   const grading = summary?.grading;
+  const closeSummary = useCallback(() => onCloseRef.current?.(), []);
+  const modalRef = useFocusTrap(Boolean(summary), { onEscape: closeSummary });
 
   // Auto-close after 8s so the modal never traps the student — they can always reopen
   // it from Past Interviews. The countdown does NOT run while grading is still in
@@ -115,20 +118,25 @@ export default function MockSummary({ summary, onClose, onReview }) {
   // the app subtree). This is what stops the modal from rendering unstyled/barebones.
   return createPortal(
     <div className="coding-app mock-summary-portal">
-    <div className="mock-summary-overlay" role="dialog" aria-modal="true" aria-label="Mock interview results" onClick={onClose}>
+    <div className="mock-summary-overlay" role="presentation" onClick={onClose}>
       <div
+        ref={modalRef}
         className="mock-summary"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mock-summary-title"
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
       >
-        <button type="button" className="mock-summary-x" onClick={onClose} aria-label="Close results">
+        <button type="button" className="mock-summary-x" onClick={onClose} aria-label="Close results" data-autofocus>
           <FaTimes aria-hidden="true" />
         </button>
         <div className="mock-summary-head">
           <span className="mock-summary-trophy" aria-hidden="true"><FaTrophy /></span>
           <div>
-            <h2>Mock Interview Results</h2>
+            <h2 id="mock-summary-title">Mock Interview Results</h2>
             <p>{summary.topics.map(titleCase).join(" · ") || "Mixed topics"}</p>
           </div>
         </div>

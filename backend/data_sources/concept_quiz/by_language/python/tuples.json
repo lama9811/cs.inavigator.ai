@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Tuples concept check 1",
+      "title": "Tuple assignment error",
       "code": null,
-      "prompt": "What does the lesson mean by \"A tuple cannot be edited in place\"?",
+      "prompt": "A student writes `point[0] = 10` after making `point = (3, 5)`. What should they understand?",
       "choices": [
-        "It prints ('small', 'regular', 'large')",
-        "If you see \"'tuple' object does not support item assignment\", you tried to write into something frozen. It usually means you reached for a list habit while holding a tuple.",
-        "It prints ('small', 'medium', 'large') and ignores the change",
-        "It raises a syntax error, because tuples use square brackets"
+        "Tuple positions cannot be rewritten. Make a new tuple or use a list.",
+        "The assignment changes only a temporary copy of the tuple.",
+        "The code is fine as long as the tuple has at least two values.",
+        "The problem is the zero index, because tuple positions start at one."
       ],
-      "answer_index": 1,
-      "explanation": "A tuple holds several values in order, written with parentheses: `point = (3, 5)`. It works like a list for reading, so `point[0]` is 3. That reasoning supports the answer: If you see \"'tuple' object does not support item assignment\", you tried to write into something frozen. It usually means you reached for a list habit while holding a tuple."
+      "answer_index": 0,
+      "explanation": "`point[0]` can be read, but assigning into that slot tries to mutate the tuple. Python raises a TypeError because tuples are fixed after creation. If the data must change in place, a list is the better structure; if the data should stay fixed, create a new tuple with the new value."
     },
     {
       "id": "python-tuples-authored-02",
@@ -96,17 +96,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Tuples concept check 2",
+      "title": "One-item tuple comma",
       "code": null,
-      "prompt": "What does the lesson mean by \"A tuple of one needs a trailing comma\"?",
+      "prompt": "Which line actually creates a one-item tuple?",
       "choices": [
-        "tuple tuple",
-        "int int",
-        "`(4)` is not a tuple. The parentheses there are just grouping, the way they are in `(2 + 3) * 4`, so you get the plain number 4.",
-        "tuple int"
+        "`value = (4)` because parentheses always create a tuple.",
+        "`value = (4,)` because the comma is what makes the one-item tuple.",
+        "`value = tuple(4)` because any value can be wrapped directly.",
+        "`value = [4,]` because brackets and parentheses mean the same thing."
       ],
-      "answer_index": 2,
-      "explanation": "A tuple holds several values in order, written with parentheses: `point = (3, 5)`. It works like a list for reading, so `point[0]` is 3. That reasoning supports the answer: `(4)` is not a tuple. The parentheses there are just grouping, the way they are in `(2 + 3) * 4`, so you get the plain number 4."
+      "answer_index": 1,
+      "explanation": "For one item, the comma is the signal Python needs. `(4)` is only the number 4 grouped by parentheses, while `(4,)` is a tuple containing one value. This is easy to miss because multi-item tuples already have commas between the items."
     },
     {
       "id": "python-tuples-authored-03",
@@ -114,17 +114,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Tuples concept check 3",
+      "title": "Fixed coordinate data",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Tuples code?",
+      "prompt": "A coordinate like `(row, column)` will not change after it is created. Which structure fits that job?",
       "choices": [
-        "point = (3, 5)\npoint[0] = 10\n# TypeError: 'tuple' object\n# does not support item\n# assignment",
-        "It raises a syntax error, because tuples use square brackets",
-        "tuple tuple",
-        "The values will never change, like a coordinate or a fixed pair of settings: use a tuple"
+        "A list, because fixed pairs should always be editable.",
+        "A dictionary, because every pair must use text keys.",
+        "Use a tuple when positions have fixed meanings and should stay together.",
+        "A set, because row and column order should be ignored."
       ],
-      "answer_index": 3,
-      "explanation": "A tuple holds several values in order, written with parentheses: `point = (3, 5)`. It works like a list for reading, so `point[0]` is 3. That reasoning supports the answer: The values will never change, like a coordinate or a fixed pair of settings: use a tuple"
+      "answer_index": 2,
+      "explanation": "A tuple works well when each position has a stable meaning, such as row first and column second. The fixed shape helps readers know what unpacking or indexing means. If the pair needs named fields or frequent edits, another structure may fit better."
     },
     {
       "id": "python-tuples-authored-04",
@@ -132,17 +132,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Tuples concept check 4",
+      "title": "When not to use tuples",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Tuples mistake?",
+      "prompt": "A program needs to add and remove names while it runs. What should the student use?",
       "choices": [
-        "You need to add, remove, or edit items as the program runs: use a list",
-        "int int",
-        "tuple int",
-        "point = (3, 5)\npoint[0] = 10\n# TypeError: 'tuple' object\n# does not support item\n# assignment"
+        "A tuple, then call `append` whenever a name arrives.",
+        "A tuple, because immutability makes all nested data immutable too.",
+        "A tuple, then assign into indexes to replace old names.",
+        "A list, because the collection is meant to change over time."
       ],
-      "answer_index": 0,
-      "explanation": "A tuple holds several values in order, written with parentheses: `point = (3, 5)`. It works like a list for reading, so `point[0]` is 3. That reasoning supports the answer: You need to add, remove, or edit items as the program runs: use a list"
+      "answer_index": 3,
+      "explanation": "Tuples are fixed-size containers. A changing roster needs operations such as append, remove, or item assignment, so a list matches the behavior. Choosing a tuple here turns normal updates into TypeErrors instead of making the code safer."
     },
     {
       "id": "python-tuples-authored-05",
@@ -150,17 +150,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Tuples concept check 5",
+      "title": "Returning multiple values",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Tuples. Which advice is correct?",
+      "prompt": "A function needs to return both a minimum score and a maximum score. Which pattern is clean in Python?",
       "choices": [
-        "It prints ('small', 'regular', 'large')",
-        "A function needs to hand back two or three values at once: return a tuple and unpack it",
-        "It prints ('small', 'medium', 'large') and ignores the change",
-        "int int"
+        "Return a tuple such as `(low, high)` and unpack the two values at the call site.",
+        "Print both values and make the caller read the screen output.",
+        "Store the two values in unrelated global variables.",
+        "Return only the first value and recalculate the second later."
       ],
-      "answer_index": 1,
-      "explanation": "A tuple holds several values in order, written with parentheses: `point = (3, 5)`. It works like a list for reading, so `point[0]` is 3. That reasoning supports the answer: A function needs to hand back two or three values at once: return a tuple and unpack it"
+      "answer_index": 0,
+      "explanation": "Returning a tuple keeps related results together without adding extra global state. The caller can write `low, high = result` or unpack the return value directly. This is useful when the values belong together but do not need a full class or dictionary."
     },
     {
       "id": "python-tuples-authored-06",
@@ -168,17 +168,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Tuples concept check 6",
+      "title": "Passing fixed inputs",
       "code": null,
-      "prompt": "Which choice shows sound reasoning about Tuples?",
+      "prompt": "A helper should read a sequence of settings but should not edit it. Which argument shape best communicates that?",
       "choices": [
-        "tuple int",
-        "point = (3, 5)\npoint[0] = 10\n# TypeError: 'tuple' object\n# does not support item\n# assignment",
-        "You want to be sure a function cannot alter what you passed in: pass a tuple",
-        "It prints ('small', 'regular', 'large')"
+        "Pass a list so the helper can freely rearrange it.",
+        "Pass a tuple so accidental item assignment is blocked.",
+        "Pass a set so duplicate settings are automatically removed.",
+        "Pass a dictionary so indexes become unpredictable."
       ],
-      "answer_index": 2,
-      "explanation": "A tuple holds several values in order, written with parentheses: `point = (3, 5)`. It works like a list for reading, so `point[0]` is 3. That reasoning supports the answer: You want to be sure a function cannot alter what you passed in: pass a tuple"
+      "answer_index": 1,
+      "explanation": "A tuple tells readers the sequence is meant to be read as fixed data. Python also prevents direct item assignment, which catches accidental edits early. It does not make nested mutable objects safe, but it does protect the tuple's own positions."
     }
   ]
 }

@@ -8,26 +8,89 @@
     "syntax",
     "wrong_answer"
   ],
-  "refresher": "A class describes the data and actions that its objects share. Create an object by calling the class, store its data on `self`, and use methods for work that belongs to that object. The `__init__` method sets the starting values.",
+  "refresher": "A **class** describes the data and actions that its objects share. Create an object by calling the class, store its data on `self`, and use **methods** for work that belongs to that object. The `__init__` method **sets** the starting values.",
   "refresher_code": "class Student:\n    def __init__(self, name):\n        self.name = name\n\nada = Student(\"Ada\")\nprint(ada.name)",
   "blocks": [
     {
       "kind": "text",
-      "body": "A program may need to keep a student's name, major, and earned credits together. Separate variables become hard to manage when there are many students. A class gives that group a name and describes what each student object can do."
+      "body": "A program may need to keep a student's name, major, and earned credits together. Separate **variables** become hard to manage when there are many students. A **class** gives that group a name and describes what each student **object** can do."
+    },
+    {
+      "kind": "visual",
+      "title": "One object keeps related data together",
+      "concept": "objects",
+      "caption": "Watch fields live inside one object while a method updates them.",
+      "initial_state": {},
+      "steps": [
+        {
+          "title": "Create the object",
+          "body": "The object starts with its own field values.",
+          "state": {
+            "table": [
+              {
+                "key": "name",
+                "value": "Plant"
+              },
+              {
+                "key": "watered",
+                "value": "false"
+              }
+            ],
+            "note": "plant object"
+          }
+        },
+        {
+          "title": "Call a method",
+          "body": "The method changes the object's watered field.",
+          "animation": "highlight",
+          "state": {
+            "table": [
+              {
+                "key": "name",
+                "value": "Plant"
+              },
+              {
+                "key": "watered",
+                "value": "true",
+                "active": true
+              }
+            ],
+            "note": "plant.water()"
+          }
+        },
+        {
+          "title": "State is remembered",
+          "body": "After the method ends, the object still stores the updated field.",
+          "state": {
+            "table": [
+              {
+                "key": "name",
+                "value": "Plant"
+              },
+              {
+                "key": "watered",
+                "value": "true",
+                "active": true
+              }
+            ],
+            "note": "same object, updated state"
+          }
+        }
+      ]
     },
     {
       "kind": "code",
-      "caption": "`Student` is the class. Calling it creates one object, and `__init__` stores the values that belong to that object.",
+      "caption": "`Student` is the **class**. Calling it creates one **object**, and `__init__` stores the **values** that belong to that object.",
       "code": "class Student:\n    def __init__(self, name, credits):\n        self.name = name\n        self.credits = credits\n\n    def add_credits(self, amount):\n        self.credits += amount\n\nada = Student(\"Ada\", 15)\nada.add_credits(3)\nprint(ada.name, ada.credits)",
       "output": "Ada 18"
     },
     {
       "kind": "text",
-      "body": "The name `self` refers to the object that received the method call. Python passes it automatically. `ada.add_credits(3)` uses `ada` as self and 3 as amount."
+      "body": "The name `self` refers to the **object** that received the **method** call. Python passes it automatically. `ada.add_credits(3)` uses `ada` as self and 3 as amount."
     },
     {
       "kind": "compare",
-      "caption": "A value without `self.` is only a local name. Store it on the object when another method needs it later.",
+      "caption": "A **value** without `self.` is only a local name. Store it on the **object** when another **method** needs it later.",
       "wrong_label": "Value is lost",
       "wrong": "def __init__(self, name):\n    name = name",
       "right_label": "Stored on object",
@@ -37,11 +100,11 @@
       "kind": "callout",
       "tone": "mistake",
       "title": "Each object has its own data",
-      "body": "Creating a second Student does not copy or replace the first one. Each call to the class creates a separate object with separate instance attributes."
+      "body": "Creating a second Student does not copy or replace the first one. Each call to the **class** creates a separate **object** with separate **instance** attributes."
     },
     {
       "kind": "check",
-      "prompt": "What does this print?",
+      "prompt": "What does this **print**?",
       "code": "a = Student(\"Ada\", 12)\nb = Student(\"Ben\", 9)\nb.credits += 3\nprint(a.credits, b.credits)",
       "choices": [
         "12 12",
@@ -50,15 +113,15 @@
         "12 9"
       ],
       "answer_index": 0,
-      "why": "The two calls create different objects. Changing b affects only b, so a stays at 12 while b becomes 12."
+      "why": "The two calls create different **objects**. Changing b affects only b, so a stays at 12 while b becomes 12."
     },
     {
       "kind": "text",
-      "body": "Methods keep related behavior near the data it uses. A method can return a result, update the object, or both. Give it a name that says what the object is doing."
+      "body": "**Methods** keep related behavior near the data it uses. A method can **return** a result, update the object, or both. Give it a name that says what the object is doing."
     },
     {
       "kind": "check",
-      "prompt": "What must be the first parameter of this instance method?",
+      "prompt": "What must be the first **parameter** of this **instance** **method**?",
       "code": "class Counter:\n    def increase(____, amount):\n        ____.value += amount",
       "choices": [
         "self",
@@ -67,18 +130,110 @@
         "new"
       ],
       "answer_index": 0,
-      "why": "Python passes the receiving object into the first parameter. The usual name is self, and the method uses it to reach that object's value."
+      "why": "Python passes the receiving **object** into the first **parameter**. The usual name is self, and the **method** uses it to reach that object's value."
     },
     {
       "kind": "list",
       "title": "Class checklist",
       "items": [
-        "Use a class when data and behavior belong together.",
-        "Set starting attributes inside `__init__`.",
-        "Write `self.attribute` for data stored on an object.",
-        "Remember that each class call creates a new object.",
-        "Keep a method focused on one clear action."
+        "Use a **class** when data and behavior belong together.",
+        "**Set** starting attributes inside `__init__`.",
+        "Write `self.attribute` for data stored on an **object**.",
+        "Remember that each **class** call creates a new **object**.",
+        "Keep a **method** focused on one clear action."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "python-classes-objects-check-1": {
+      "title": "Trace the object state and behavior result",
+      "notice": "Follow the code in order and update the stored state before deciding what appears.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "examples",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests what does this print? A class defines the data and behavior each object will carry."
+    },
+    "python-classes-objects-check-2": {
+      "title": "Instance methods receive self",
+      "notice": "Python passes the object into an instance method as the first parameter.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "examples",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests what must be the first parameter of this instance method? A class defines the data and behavior each object will carry."
+    },
+    "python-classes-objects-output-01": {
+      "title": "Trace object state and behavior output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. A class defines the data and behavior each object will carry."
+    },
+    "python-classes-objects-supplement-01": {
+      "title": "Store state on self",
+      "notice": "self.name writes to the object. name by itself is only the local parameter.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "check",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests in __init__, what is the difference between self.name = nam... A class defines the data and behavior each object will carry."
+    },
+    "python-classes-objects-authored-01": {
+      "title": "Choose the matching object state and behavior rule",
+      "notice": "Separate class design from one object instance, and track where each object stores its own state.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "idea",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests after creating ada = student(\"ada\") and ben = student(\"ben\"... A class defines the data and behavior each object will carry."
+    },
+    "python-classes-objects-authored-02": {
+      "title": "Object state and behavior",
+      "notice": "Separate class design from one object instance, and track where each object stores its own state.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "idea",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests a program tracks each plant's name and also has watering be... A class defines the data and behavior each object will carry."
+    },
+    "python-classes-objects-authored-03": {
+      "title": "Object state and behavior",
+      "notice": "Separate class design from one object instance, and track where each object stores its own state.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "check",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests where should a python class usually set the starting instan... A class defines the data and behavior each object will carry."
+    },
+    "python-classes-objects-authored-04": {
+      "title": "Object state and behavior",
+      "notice": "Separate class design from one object instance, and track where each object stores its own state.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "check",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests inside an instance method, how should code refer to a value... A class defines the data and behavior each object will carry."
+    },
+    "python-classes-objects-authored-05": {
+      "title": "Predict the object state and behavior behavior",
+      "notice": "Separate class design from one object instance, and track where each object stores its own state.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "check",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests what happens each time code calls a class such as student(\"... A class defines the data and behavior each object will carry."
+    },
+    "python-classes-objects-authored-06": {
+      "title": "Object state and behavior",
+      "notice": "Separate class design from one object instance, and track where each object stores its own state.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "check",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests what makes an instance method easier to test and reuse? A class defines the data and behavior each object will carry."
+    }
+  }
 }

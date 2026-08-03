@@ -48,7 +48,7 @@
       "language": "java",
       "title": "Packages & Access Modifiers summary",
       "code": null,
-      "prompt": "Which statement best describes Packages & Access Modifiers?",
+      "prompt": "Which statement is accurate about Packages & Access Modifiers?",
       "choices": [
         "Organize classes and control which code may use their details.",
         "It is used only to print a message.",
@@ -82,17 +82,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Packages & Access Modifiers concept check 1",
+      "title": "Package path match",
       "code": null,
-      "prompt": "What does the lesson mean by \"Folders and package names must agree\"?",
+      "prompt": "What should match `package school.records;` during a normal Java build?",
       "choices": [
-        "public",
-        "If a file declares `package school.records`, keep it under the matching `school/records` path for normal builds. A mismatch often leads to class loading or import errors.",
-        "package",
-        "import"
+        "Keep the file under `school/records`. The declared package and folder path should match in normal builds.",
+        "Put a package declaration that does not match the folder path.",
+        "Make every field public for convenience.",
+        "Expose large public methods that do several unrelated jobs."
       ],
-      "answer_index": 1,
-      "explanation": "A package groups related classes and gives them a shared name. Put the package statement first in the file. That reasoning supports the answer: If a file declares `package school.records`, keep it under the matching `school/records` path for normal builds. A mismatch often leads to class loading or import errors."
+      "answer_index": 0,
+      "explanation": "The source path should mirror the package name, usually `school/records`. When the declaration and folder structure drift apart, imports and class loading become harder for both tools and humans to reason about."
     },
     {
       "id": "java-packages-access-authored-02",
@@ -100,17 +100,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Packages & Access Modifiers concept check 2",
+      "title": "Package grouping",
       "code": null,
-      "prompt": "Which choice describes a reliable Packages & Access Modifiers practice?",
+      "prompt": "How should classes be grouped into packages?",
       "choices": [
-        "package java.util.ArrayList;",
-        "include java.util.ArrayList;",
+        "Repeat full package names everywhere instead of importing.",
         "Group classes that solve related problems.",
-        "using java.util.ArrayList;"
+        "Use default access when outside packages must call the member.",
+        "Hide a class that callers are supposed to construct."
       ],
-      "answer_index": 2,
-      "explanation": "A package groups related classes and gives them a shared name. Put the package statement first in the file. That reasoning supports the answer: Group classes that solve related problems."
+      "answer_index": 1,
+      "explanation": "A package should gather classes that solve related problems. That keeps imports meaningful and helps students find where a type belongs instead of dropping every class into one crowded folder."
     },
     {
       "id": "java-packages-access-authored-03",
@@ -118,17 +118,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Packages & Access Modifiers concept check 3",
+      "title": "Package declaration placement",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Packages & Access Modifiers code?",
+      "prompt": "What should a review check when a Java file declares a package?",
       "choices": [
-        "public int credits;",
-        "import",
-        "package java.util.ArrayList;",
-        "Match package names to the directory structure."
+        "Mix unrelated classes in one package.",
+        "Put the package statement after imports.",
+        "Match package names to the directory structure.",
+        "Use private access for methods other classes must call."
       ],
-      "answer_index": 3,
-      "explanation": "A package groups related classes and gives them a shared name. Put the package statement first in the file. That reasoning supports the answer: Match package names to the directory structure."
+      "answer_index": 2,
+      "explanation": "The package declaration belongs at the top of the file and should match the directory layout used by the project. A mismatch often causes confusing import or compile behavior before the logic is even tested."
     },
     {
       "id": "java-packages-access-authored-04",
@@ -136,17 +136,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Packages & Access Modifiers concept check 4",
+      "title": "Private fields",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Packages & Access Modifiers mistake?",
+      "prompt": "Why keep fields private unless outside code truly needs direct access?",
       "choices": [
-        "Keep fields private unless outside access is truly required.",
-        "include java.util.ArrayList;",
-        "using java.util.ArrayList;",
-        "public int credits;"
+        "Let package structure drift from the project structure.",
+        "Treat access modifiers as comments rather than compiler rules.",
+        "Expose implementation details as the public API.",
+        "Keep fields private unless outside access is truly required."
       ],
-      "answer_index": 0,
-      "explanation": "A package groups related classes and gives them a shared name. Put the package statement first in the file. That reasoning supports the answer: Keep fields private unless outside access is truly required."
+      "answer_index": 3,
+      "explanation": "Private fields let the class protect its own rules. Public methods can validate changes, preserve invariants, and expose only the operations callers are meant to use."
     },
     {
       "id": "java-packages-access-authored-05",
@@ -154,17 +154,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Packages & Access Modifiers concept check 5",
+      "title": "Small public API",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Packages & Access Modifiers. Which advice is correct?",
+      "prompt": "What makes a public method easier for other classes to depend on?",
       "choices": [
-        "public",
         "Expose small public methods with clear jobs.",
-        "package",
-        "include java.util.ArrayList;"
+        "Use one package for the entire application forever.",
+        "Import a class from the wrong package with the same name.",
+        "Make helper methods public only for tests without a reason."
       ],
-      "answer_index": 1,
-      "explanation": "A package groups related classes and gives them a shared name. Put the package statement first in the file. That reasoning supports the answer: Expose small public methods with clear jobs."
+      "answer_index": 0,
+      "explanation": "A public method should have a clear, stable job because outside callers may rely on it. Small public methods are easier to document and safer to keep compatible than broad methods with many hidden responsibilities."
     },
     {
       "id": "java-packages-access-authored-06",
@@ -172,17 +172,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "java",
-      "title": "Packages & Access Modifiers concept check 6",
+      "title": "Imports versus long names",
       "code": null,
-      "prompt": "Which choice shows sound reasoning about Packages & Access Modifiers?",
+      "prompt": "Why import a class instead of repeating its full package name throughout a file?",
       "choices": [
-        "using java.util.ArrayList;",
-        "public int credits;",
+        "Forget that default access means package-private.",
         "Import classes instead of repeating long names throughout a file.",
-        "public"
+        "Use package names that start with capital letters.",
+        "Change public method names without considering callers."
       ],
-      "answer_index": 2,
-      "explanation": "A package groups related classes and gives them a shared name. Put the package statement first in the file. That reasoning supports the answer: Import classes instead of repeating long names throughout a file."
+      "answer_index": 1,
+      "explanation": "Imports keep code readable while still making dependencies explicit at the top of the file. Repeating long fully qualified names clutters the logic and makes simple statements harder to scan."
     }
   ]
 }

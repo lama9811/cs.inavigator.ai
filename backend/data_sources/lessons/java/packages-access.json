@@ -1,32 +1,32 @@
 {
   "_note": "ORIGINAL content. Topic coverage follows David Eck's Introduction to Programming Using Java. No prose, examples, or exercises were copied; the source guides curriculum order only.",
   "title": "Packages & Access Modifiers",
-  "summary": "Organize classes and control which code may use their details.",
+  "summary": "Organize **classes** and control which code may use their details.",
   "minutes": 10,
   "error_classes": [
     "syntax",
     "wrong_answer"
   ],
-  "refresher": "A package groups related classes and gives them a shared name. Put the package statement first in the file. Use `public` for code meant for callers, `private` for class details, and default access for code shared only inside the package.",
+  "refresher": "A package groups related **classes** and gives them a shared name. Put the package statement first in the **file**. Use `public` for code meant for callers, `private` for **class** details, and default access for code shared only inside the package.",
   "refresher_code": "package school.records;\n\npublic class Student {\n    private int credits;\n}",
   "blocks": [
     {
       "kind": "text",
-      "body": "As a project grows, class names and files need structure. Packages group related code, avoid name collisions, and show which part of the program owns a class."
+      "body": "As a project grows, **class** names and **files** need structure. Packages group related code, avoid name collisions, and show which part of the program owns a class."
     },
     {
       "kind": "code",
-      "caption": "The package name matches the folder path. The public class name matches the filename `Student.java`.",
+      "caption": "The package name matches the folder path. The public **class** name matches the filename `Student.java`.",
       "code": "package school.records;\n\npublic class Student {\n    private int credits;\n\n    public int getCredits() {\n        return credits;\n    }\n}",
       "output": ""
     },
     {
       "kind": "text",
-      "body": "Access modifiers decide who can use a member. Public is open to callers. Private is limited to the declaring class. With no modifier, access stays inside the same package."
+      "body": "Access modifiers decide who can use a member. Public is open to callers. Private is limited to the declaring **class**. With no modifier, access stays inside the same package."
     },
     {
       "kind": "compare",
-      "caption": "A private field prevents outside code from placing the object in an invalid state. A method can check the new value before saving it.",
+      "caption": "A private field prevents outside code from placing the **object** in an invalid state. A **method** can check the new **value** before saving it.",
       "wrong_label": "State is exposed",
       "wrong": "public int credits;",
       "right_label": "Class controls changes",
@@ -36,11 +36,11 @@
       "kind": "callout",
       "tone": "mistake",
       "title": "Folders and package names must agree",
-      "body": "If a file declares `package school.records`, keep it under the matching `school/records` path for normal builds. A mismatch often leads to class loading or import errors."
+      "body": "If a **file** declares `package school.records`, keep it under the matching `school/records` path for normal builds. A mismatch often leads to **class** loading or **import** errors."
     },
     {
       "kind": "check",
-      "prompt": "Which modifier limits a field to its own class?",
+      "prompt": "Which modifier limits a field to its own **class**?",
       "code": "____ String passwordHash;",
       "choices": [
         "private",
@@ -49,15 +49,15 @@
         "import"
       ],
       "answer_index": 0,
-      "why": "A private member can be accessed only inside the class that declares it. Callers must use the public operations the class provides."
+      "why": "A private member can be accessed only inside the **class** that declares it. Callers must use the public operations the class provides."
     },
     {
       "kind": "text",
-      "body": "An import lets one file use a class from another package by its short name. Classes in `java.lang`, such as String, are imported automatically."
+      "body": "An import lets one file use a **class** from another package by its short name. **Classes** in `java.lang`, such as **String**, are imported automatically."
     },
     {
       "kind": "check",
-      "prompt": "Which line imports ArrayList from its package?",
+      "prompt": "Which line **imports** ArrayList from its package?",
       "code": "",
       "choices": [
         "import java.util.ArrayList;",
@@ -66,18 +66,110 @@
         "using java.util.ArrayList;"
       ],
       "answer_index": 0,
-      "why": "Java import statements begin with `import` and use the full package and class name. The statement ends with a semicolon."
+      "why": "Java **import** statements begin with `import` and use the full package and **class** name. The statement ends with a semicolon."
     },
     {
       "kind": "list",
       "title": "Package and access checklist",
       "items": [
-        "Group classes that solve related problems.",
+        "Group **classes** that solve related problems.",
         "Match package names to the directory structure.",
         "Keep fields private unless outside access is truly required.",
-        "Expose small public methods with clear jobs.",
-        "Import classes instead of repeating long names throughout a file."
+        "Expose small public **methods** with clear jobs.",
+        "**Import** **classes** instead of repeating long names throughout a file."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "java-packages-access-check-1": {
+      "title": "Choose the matching package and access boundary rule",
+      "notice": "Check whether the question is about folder/package match, imports, private fields, or public methods.",
+      "mistake": "Do not make fields public just to make a test pass; protect state with clear methods.",
+      "section_id": "examples",
+      "example": "private int credits;",
+      "source": "question",
+      "body": "This question tests which modifier limits a field to its own class? Packages organize classes, and access modifiers decide which details outside code may touch."
+    },
+    "java-packages-access-check-2": {
+      "title": "Choose the matching package and access boundary rule",
+      "notice": "Check whether the question is about folder/package match, imports, private fields, or public methods.",
+      "mistake": "Do not make fields public just to make a test pass; protect state with clear methods.",
+      "section_id": "check",
+      "example": "private int credits;",
+      "source": "question",
+      "body": "This question tests which line imports arraylist from its package? Packages organize classes, and access modifiers decide which details outside code may touch."
+    },
+    "java-packages-access-summary-01": {
+      "title": "Choose the matching package and access boundary rule",
+      "notice": "Check whether the question is about folder/package match, imports, private fields, or public methods.",
+      "mistake": "Do not make fields public just to make a test pass; protect state with clear methods.",
+      "section_id": "check",
+      "example": "private int credits;",
+      "source": "question",
+      "body": "This question tests which statement is accurate about packages & access modifiers? Packages organize classes, and access modifiers decide which details outside code may touch."
+    },
+    "java-packages-access-supplement-01": {
+      "title": "Private protects object state",
+      "notice": "Private fields keep outside code from bypassing the class rules.",
+      "mistake": "Do not make fields public just to make a test pass; protect state with clear methods.",
+      "section_id": "check",
+      "example": "private int credits;",
+      "source": "question",
+      "body": "This question tests what does making credits private and exposing addcredits pr... Packages organize classes, and access modifiers decide which details outside code may touch."
+    },
+    "java-packages-access-authored-01": {
+      "title": "Package and access boundary",
+      "notice": "Check whether the question is about folder/package match, imports, private fields, or public methods.",
+      "mistake": "Do not make fields public just to make a test pass; protect state with clear methods.",
+      "section_id": "idea",
+      "example": "private int credits;",
+      "source": "question",
+      "body": "This question tests what should match package school.records; during a normal j... Packages organize classes, and access modifiers decide which details outside code may touch."
+    },
+    "java-packages-access-authored-02": {
+      "title": "Package and access boundary",
+      "notice": "Check whether the question is about folder/package match, imports, private fields, or public methods.",
+      "mistake": "Do not make fields public just to make a test pass; protect state with clear methods.",
+      "section_id": "idea",
+      "example": "private int credits;",
+      "source": "question",
+      "body": "This question tests how should classes be grouped into packages? Packages organize classes, and access modifiers decide which details outside code may touch."
+    },
+    "java-packages-access-authored-03": {
+      "title": "Package and access boundary",
+      "notice": "Check whether the question is about folder/package match, imports, private fields, or public methods.",
+      "mistake": "Do not make fields public just to make a test pass; protect state with clear methods.",
+      "section_id": "check",
+      "example": "private int credits;",
+      "source": "question",
+      "body": "This question tests what should a review check when a java file declares a pack... Packages organize classes, and access modifiers decide which details outside code may touch."
+    },
+    "java-packages-access-authored-04": {
+      "title": "Private protects object state",
+      "notice": "Private fields keep outside code from bypassing the class rules.",
+      "mistake": "Do not make fields public just to make a test pass; protect state with clear methods.",
+      "section_id": "check",
+      "example": "private int credits;",
+      "source": "question",
+      "body": "This question tests why keep fields private unless outside code truly needs dir... Packages organize classes, and access modifiers decide which details outside code may touch."
+    },
+    "java-packages-access-authored-05": {
+      "title": "Package and access boundary",
+      "notice": "Check whether the question is about folder/package match, imports, private fields, or public methods.",
+      "mistake": "Do not make fields public just to make a test pass; protect state with clear methods.",
+      "section_id": "check",
+      "example": "private int credits;",
+      "source": "question",
+      "body": "This question tests what makes a public method easier for other classes to depe... Packages organize classes, and access modifiers decide which details outside code may touch."
+    },
+    "java-packages-access-authored-06": {
+      "title": "Explain the package and access boundary reason",
+      "notice": "Check whether the question is about folder/package match, imports, private fields, or public methods.",
+      "mistake": "Do not make fields public just to make a test pass; protect state with clear methods.",
+      "section_id": "check",
+      "example": "private int credits;",
+      "source": "question",
+      "body": "This question tests why import a class instead of repeating its full package na... Packages organize classes, and access modifiers decide which details outside code may touch."
+    }
+  }
 }

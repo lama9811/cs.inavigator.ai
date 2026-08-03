@@ -7,38 +7,120 @@
     "wrong_answer",
     "syntax"
   ],
-  "refresher": "Operators are the symbols that combine values. `+ - * /` do arithmetic and `%` gives the remainder. Division is the one to watch: if both sides are `int`, Java divides as integers and throws the fraction away, so `7 / 2` is 3. Make one side a `double` to get 3.5. Comparisons like `==` and `<` produce a `boolean`, and `&&`, `||`, and `!` combine those booleans. Assignment is `=`. Comparison is `==`. They are different operators.",
+  "refresher": "**Operators** are the symbols that combine values. `+ - * /` do arithmetic and `%` gives the remainder. Division is the one to watch: if both sides are `int`, Java divides as **integers** and throws the fraction away, so `7 / 2` is 3. Make one side a `double` to get 3.5. Comparisons like `==` and `<` produce a `boolean`, and `&&`, `||`, and `!` combine those **booleans**. Assignment is `=`. Comparison is `==`. They are different operators.",
   "refresher_code": "int total = 7;\nint count = 2;\n\nSystem.out.println(total / count);\n// 3\n\nSystem.out.println(total / 2.0);\n// 3.5",
+  "learn_cards": {
+    "operators-lesson-check-1": {
+      "title": "Trace arithmetic one line at a time",
+      "body": "This question is about following each **operator** in order. Work out one printed line, write that result down, then move to the next line.",
+      "example": "total = 20\nwhole = total // 6\nleft = total % 6",
+      "notice": "`//` keeps the whole-number part, `%` keeps the remainder, and `/` keeps the decimal result.",
+      "mistake": "Do not round floor division. It drops the leftover part instead of rounding up.",
+      "section_id": "check"
+    },
+    "operators-lesson-check-2": {
+      "title": "Between means both boundaries count",
+      "body": "A between check asks two questions: high enough and low enough. If both ends count, the comparison needs inclusive operators.",
+      "example": "age >= 13 and age <= 19",
+      "notice": "`and` means both comparisons must be true at the same time.",
+      "mistake": "`or` is usually too loose for a between rule because one true side is enough to enter.",
+      "section_id": "check"
+    },
+    "operators-summary-01": {
+      "title": "Operators do different jobs",
+      "body": "**Operators** calculate values, compare values, assign values, and combine true-or-false conditions. First decide which job the line is doing.",
+      "example": "total + fee\nscore == 100",
+      "notice": "Arithmetic makes a value. Comparison makes true or false. Assignment stores a value.",
+      "mistake": "Do not treat every symbol as math. Some operators ask questions or store values.",
+      "section_id": "check"
+    },
+    "operators-supplement-01": {
+      "title": "Assignment is not comparison",
+      "body": "A condition should ask whether something is true. Assignment changes a value; comparison asks whether two values match.",
+      "example": "score == 100",
+      "notice": "Use the comparison operator when an if statement is asking a yes/no question.",
+      "mistake": "A single equals sign is a common typo when the code meant to compare.",
+      "section_id": "check"
+    },
+    "operators-authored-01": {
+      "title": "Zero cannot be the divisor",
+      "body": "Division, floor division, and remainder all need a nonzero divisor. If the divisor can come from input or another calculation, check it before dividing.",
+      "example": "if count != 0:\n    average = total / count",
+      "notice": "The dangerous value is the number after the division or remainder operator.",
+      "mistake": "Do not assume a calculated count is safe just because the formula looks reasonable.",
+      "section_id": "check"
+    },
+    "operators-authored-02": {
+      "title": "Choose storing or comparing",
+      "body": "Before reading a conditional expression, ask whether the code is storing a new value or comparing existing values.",
+      "example": "score = 75\nscore == 100",
+      "notice": "Assignment changes state. Comparison produces a true-or-false answer.",
+      "mistake": "Mixing these up can either stop the program or quietly send it down the wrong branch.",
+      "section_id": "check"
+    },
+    "operators-authored-03": {
+      "title": "Pick the division that matches the problem",
+      "body": "Division operators answer different questions. Use decimal division for averages, whole-number division for complete groups, and remainder for what is left.",
+      "example": "groups = students // seats\nleft = students % seats",
+      "notice": "The same two numbers can produce different useful answers depending on the operator.",
+      "mistake": "Do not use whole-number division when the assignment expects a decimal average.",
+      "section_id": "check"
+    },
+    "operators-authored-04": {
+      "title": "Floor division drops the leftover",
+      "body": "Whole-number division keeps the number of complete groups and ignores the leftover part.",
+      "example": "7 // 2  # complete groups\n7 % 2   # leftover",
+      "notice": "The leftover is not lost forever if the code also asks for the remainder.",
+      "mistake": "Do not round up. Complete groups only count when they are fully filled.",
+      "section_id": "check"
+    },
+    "operators-authored-05": {
+      "title": "Remainder checks divisibility",
+      "body": "The remainder operator is useful when a rule depends on whether something divides evenly.",
+      "example": "number % 2 == 0",
+      "notice": "Even numbers leave remainder 0 when divided by 2.",
+      "mistake": "Do not compare the original number to 0 when the question is about the leftover.",
+      "section_id": "check"
+    },
+    "operators-authored-06": {
+      "title": "Power has its own operator",
+      "body": "When a question asks about raising a number to a power, look for the language's exponent operator or function, not a symbol that only looks mathematical.",
+      "example": "2 ** 3",
+      "notice": "A familiar-looking symbol can mean something different in code.",
+      "mistake": "Do not assume `^` means exponent just because it is used that way in some calculators or notes.",
+      "section_id": "check"
+    }
+  },
   "blocks": [
     {
       "kind": "text",
-      "body": "An operator is a symbol that takes values and produces a new one. Most of them come straight from math class. Java uses `+`, `-`, and `*` for add, subtract, and multiply, and they behave the way you expect. Division is where Java surprises people, so much of this lesson is really about division, and about telling `=` apart from `==`."
+      "body": "An **operator** is a symbol that takes **values** and produces a new one. Most of them come straight from math **class**. Java uses `+`, `-`, and `*` for add, subtract, and multiply, and they behave the way you expect. Division is where Java surprises people, so much of this lesson is really about division, and about telling `=` apart from `==`."
     },
     {
       "kind": "code",
-      "caption": "Four familiar symbols, plus `%`, which gives the remainder after division. 7 divided by 2 is 3 with 1 left over, so `7 / 2` is 3 and `7 % 2` is 1. Watch the quotient: it is the line that will cost you points on an assignment. Every example below assumes the usual `public class Main` and `main` method wrapped around it.",
+      "caption": "Four familiar symbols, plus `%`, which gives the remainder after division. 7 divided by 2 is 3 with 1 left over, so `7 / 2` is 3 and `7 % 2` is 1. Watch the quotient: it is the line that will cost you points on an assignment. Every example below assumes the usual `public class Main` and `main` **method** wrapped around it.",
       "code": "int sum = 7 + 2;\nint product = 7 * 2;\nint quotient = 7 / 2;\nint remainder = 7 % 2;\n\nSystem.out.println(sum);\nSystem.out.println(product);\nSystem.out.println(quotient);\nSystem.out.println(remainder);",
       "output": "9\n14\n3\n1"
     },
     {
       "kind": "text",
-      "body": "Look at that third line again. `7 / 2` gave you 3, not 3.5. Java did not round it. It threw the fraction away and kept the whole number. That is integer division, and it is doing exactly what it was told to do."
+      "body": "Look at that third line again. `7 / 2` gave you 3, not 3.5. Java did not round it. It threw the fraction away and kept the whole number. That is **integer division**, and it is doing exactly what it was told to do."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "Integer division truncates",
-      "body": "When both sides of `/` are integers, Java keeps the whole-number part and discards the rest. `7 / 2` is 3. `9 / 10` is 0. Nothing warns you, because you asked for integer arithmetic and you got integer arithmetic. Any time an average or a percentage comes out lower than it should, and especially when it comes out as a flat 0, this is the first thing to suspect. Look for a `/` with an `int` on both sides."
+      "body": "When both sides of `/` are **integers**, Java keeps the whole-number part and discards the rest. `7 / 2` is 3. `9 / 10` is 0. Nothing warns you, because you asked for integer arithmetic and you got integer arithmetic. Any time an average or a percentage comes out lower than it should, and especially when it comes out as a flat 0, this is the first thing to suspect. Look for a `/` with an `int` on both sides."
     },
     {
       "kind": "code",
-      "caption": "The types going in decide the type coming out. One `double` anywhere in the division is enough to make Java keep the fraction. `(double) total` is a cast: it says treat this int as a double for this expression, which is the fix when both variables are already declared as `int` and you cannot change that.",
+      "caption": "The types going in decide the type coming out. One `double` anywhere in the division is enough to make Java keep the fraction. `(double) total` is a cast: it says treat this int as a double for this expression, which is the fix when both **variables** are already declared as `int` and you cannot change that.",
       "code": "int total = 7;\nint count = 2;\n\nSystem.out.println(total / count);\nSystem.out.println(total / 2.0);\nSystem.out.println((double) total / count);",
       "output": "3\n3.5\n3.5"
     },
     {
       "kind": "check",
-      "prompt": "The result is stored in a `double`, so what does this print?",
+      "prompt": "The result is stored in a `double`, so what does this **print**?",
       "code": "int total = 7;\nint count = 2;\ndouble average = total / count;\nSystem.out.println(average);",
       "choices": [
         "3.0",
@@ -47,11 +129,11 @@
         "It does not compile"
       ],
       "answer_index": 0,
-      "why": "Java works out `total / count` on its own, before it ever looks at the left side. Both are `int`, so that is integer division and the answer is 3. Only then is the 3 stored in a `double`, which turns it into 3.0. The fraction was already gone by that point. If you picked 3.5, you assumed the `double` on the left reaches back and changes how the division is done. It does not. The type on the left says where the answer goes, not how it gets computed. Writing `(double) total / count` fixes it."
+      "why": "Java works out `total / count` on its own, before it ever looks at the left side. Both are `int`, so that is **integer division** and the answer is 3. Only then is the 3 stored in a `double`, which turns it into 3.0. The fraction was already gone by that point. If you picked 3.5, you assumed the `double` on the left reaches back and changes how the division is done. It does not. The type on the left says where the answer goes, not how it gets computed. Writing `(double) total / count` fixes it."
     },
     {
       "kind": "code",
-      "caption": "Java gives you shortcuts for updating a variable from its own current value. `score += 3` is short for `score = score + 3`, and `score++` adds exactly 1. Each line changes the variable in place, so the prints let you watch it move: 5 becomes 8, then 9, then back down to 5.",
+      "caption": "Java gives you shortcuts for updating a **variable** from its own current **value**. `score += 3` is short for `score = score + 3`, and `score++` adds exactly 1. Each line changes the variable in place, so the prints let you watch it move: 5 becomes 8, then 9, then back down to 5.",
       "code": "int score = 5;\n\nscore += 3;\nSystem.out.println(score);\n\nscore++;\nSystem.out.println(score);\n\nscore -= 4;\nSystem.out.println(score);",
       "output": "8\n9\n5"
     },
@@ -59,27 +141,27 @@
       "kind": "callout",
       "tone": "tip",
       "title": "x++ and ++x are not always the same",
-      "body": "The same pattern behind `+=` gives you `-=`, `*=`, `/=`, and `%=`, and `x--` subtracts 1 the way `x++` adds it. On a line of its own, `x++` and `++x` do the same job, so inside a loop either one is fine. They part ways when you use the value in the same expression: `System.out.println(n++)` prints the old n and then adds 1, while `++n` adds 1 first and prints the new value. If you have to stop and work out which one an expression means, split it into two lines. Clear beats clever."
+      "body": "The same pattern behind `+=` gives you `-=`, `*=`, `/=`, and `%=`, and `x--` subtracts 1 the way `x++` adds it. On a line of its own, `x++` and `++x` do the same job, so inside a **loop** either one is fine. They part ways when you use the **value** in the same expression: `System.out.println(n++)` prints the old n and then adds 1, while `++n` adds 1 first and prints the new value. If you have to stop and work out which one an expression means, split it into two lines. Clear beats clever."
     },
     {
       "kind": "text",
-      "body": "The next group asks questions instead of doing math. A comparison operator takes two values and produces a `boolean`, which is either `true` or `false`. That is the type an `if` statement needs."
+      "body": "The next group asks questions instead of doing math. A comparison **operator** takes two **values** and produces a `boolean`, which is either `true` or `false`. That is the type an `if` statement needs."
     },
     {
       "kind": "code",
-      "caption": "`==` asks whether two values match, and `!=` asks whether they differ. You also get `<`, `>`, `<=`, and `>=`. Each one hands back a boolean, and a boolean is an ordinary value, which is why you can print it straight out without an `if` anywhere in sight.",
+      "caption": "`==` asks whether two **values** match, and `!=` asks whether they differ. You also get `<`, `>`, `<=`, and `>=`. Each one hands back a **boolean**, and a boolean is an ordinary value, which is why you can **print** it straight out without an `if` anywhere in sight.",
       "code": "int a = 5;\nint b = 5;\n\nSystem.out.println(a == b);\nSystem.out.println(a != b);\nSystem.out.println(a < 10);",
       "output": "true\nfalse\ntrue"
     },
     {
       "kind": "code",
-      "caption": "Once you have booleans, the logical operators join them up. `&&` demands both sides, `||` settles for either one, and `!` flips a boolean to its opposite. Say the first line aloud as \"eighteen or older and enrolled\" and it explains itself. Mind the doubled symbols: a single `&` or `|` is a different and much rarer operator, and typing one by accident is an easy slip to make.",
+      "caption": "Once you have **booleans**, the logical **operators** join them up. `&&` demands both sides, `||` settles for either one, and `!` flips a boolean to its opposite. Say the first line aloud as \"eighteen or older and enrolled\" and it explains itself. Mind the doubled symbols: a single `&` or `|` is a different and much rarer operator, and typing one by accident is an easy slip to make.",
       "code": "int age = 19;\nboolean enrolled = true;\n\nSystem.out.println(age >= 18 && enrolled);\nSystem.out.println(age < 18 || enrolled);\nSystem.out.println(!enrolled);",
       "output": "true\ntrue\nfalse"
     },
     {
       "kind": "compare",
-      "caption": "The headline mistake of this lesson. `=` puts a value into a variable. `==` asks whether two values are equal. Java catches the slip for you when the variable is a number, and the message names the problem outright: incompatible types: int cannot be converted to boolean. An `if` needs a boolean, and `score = 5` produces an int.",
+      "caption": "The headline mistake of this lesson. `=` puts a **value** into a **variable**. `==` asks whether two values are equal. Java catches the slip for you when the variable is a number, and the message names the problem outright: incompatible types: int cannot be converted to **boolean**. An `if` needs a boolean, and `score = 5` produces an int.",
       "wrong_label": "Will not compile",
       "wrong": "int score = 3;\n\nif (score = 5) {\n    System.out.println(\"five\");\n}\n// = assigns 5 to score,\n// so the if is handed\n// an int, not a boolean",
       "right_label": "Compiles and asks the question",
@@ -89,15 +171,15 @@
       "kind": "callout",
       "tone": "warning",
       "title": "Java catches this at compile time, with one exception",
-      "body": "Java checks types before it runs anything, so `if (score = 5)` is rejected by the compiler and the program never starts. That is a syntax-class error, and it is the good outcome, because you find out straight away. The exception is a variable that is already a `boolean`. `if (done = true)` sets `done` to true and then hands `true` to the `if`, so it compiles, the branch runs on every pass, and nothing complains. That version is a wrong-answer bug and it will not announce itself. When a condition seems stuck on true, count the equals signs."
+      "body": "Java checks types before it runs anything, so `if (score = 5)` is rejected by the compiler and the program never starts. That is a syntax-class error, and it is the good outcome, because you find out straight away. The exception is a **variable** that is already a `boolean`. `if (done = true)` **sets** `done` to true and then hands `true` to the `if`, so it compiles, the branch runs on every pass, and nothing complains. That version is a wrong-answer bug and it will not announce itself. When a **condition** seems stuck on true, count the equals signs."
     },
     {
       "kind": "text",
-      "body": "The last piece is precedence: which operator goes first when you write several of them in one line. Java follows the order you already learned in math. `*`, `/`, and `%` run before `+` and `-`, so `2 + 3 * 4` is 14 and not 20. Arithmetic runs before comparisons, comparisons run before `&&`, and `&&` runs before `||`. Parentheses beat all of it, and they are free."
+      "body": "The last piece is precedence: which **operator** goes first when you write several of them in one line. Java follows the order you already learned in math. `*`, `/`, and `%` run before `+` and `-`, so `2 + 3 * 4` is 14 and not 20. Arithmetic runs before comparisons, comparisons run before `&&`, and `&&` runs before `||`. Parentheses beat all of it, and they are free."
     },
     {
       "kind": "check",
-      "prompt": "What does this print?",
+      "prompt": "What does this **print**?",
       "code": "int x = 10;\nx += 5;\nSystem.out.println(x / 3);",
       "choices": [
         "5",
@@ -114,7 +196,7 @@
       "items": [
         "An average or a percentage came out too low, or came out as 0: you divided an `int` by an `int`. Cast one side with `(double)`.",
         "Declaring the result as a `double` does not rescue you. `double avg = 7 / 2;` is 3.0, because the division finished before the assignment happened.",
-        "A condition never changes: count the equals signs. `=` assigns, `==` compares.",
+        "A **condition** never changes: count the equals signs. `=` assigns, `==` compares.",
         "Use `%` to test divisibility. `n % 2 == 0` is how you ask whether n is even.",
         "When one expression mixes `*`, `+`, and `&&`, add parentheses. They cost nothing and they say what you meant.",
         "The compiler checks types before your code runs, so an error it catches is the cheapest bug you will get. The expensive ones are the lines that compile and still give you the wrong number."

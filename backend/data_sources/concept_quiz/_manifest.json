@@ -20,7 +20,17 @@
     {"id": "algorithm-problems", "label": "Algorithm Problems - Part 1", "file": "algorithm-problems", "extra_file": "algorithm-problems-part-1-extra", "track": "beginner", "blurb": "Build foundational algorithms by arranging code (8 questions)."},
     {"id": "algorithm-problems-2", "label": "Algorithm Problems - Part 2", "file": "algorithm-problems-part-2", "track": "intermediate", "blurb": "Practice moderately harder, multi-step algorithms (8 questions)."},
     {"id": "debug", "label": "Debug - Part 1", "file": "debug", "extra_file": "debug-part-1-extra", "track": "beginner", "blurb": "Find and fix common beginner bugs (8 questions)."},
-    {"id": "debug-2", "label": "Debug - Part 2", "file": "debug-part-2", "track": "intermediate", "blurb": "Trace edge cases and multi-step bugs (8 questions)."}
+    {"id": "debug-2", "label": "Debug - Part 2", "file": "debug-part-2", "track": "intermediate", "blurb": "Trace edge cases and multi-step bugs (8 questions)."},
+    {"id": "stacks", "label": "Stacks", "file": "stacks", "track": "advanced", "blurb": "Use LIFO order, stack operations, traces, and stack applications."},
+    {"id": "queues", "label": "Queues", "file": "queues", "track": "advanced", "blurb": "Use FIFO order, queue operations, queue types, and BFS-style processing."},
+    {"id": "hash-maps-sets", "label": "Hash Maps & Sets", "file": "hash-maps-sets", "track": "advanced", "blurb": "Track counts, membership, and key/value lookups."},
+    {"id": "linked-lists", "label": "Linked Lists", "file": "linked-lists", "track": "advanced", "blurb": "Follow nodes, links, insertion, and deletion step by step."},
+    {"id": "recursion-patterns", "label": "Recursion Patterns", "file": "recursion-patterns", "track": "advanced", "blurb": "Solve problems with base cases and smaller calls."},
+    {"id": "binary-search", "label": "Binary Search", "file": "binary-search", "track": "advanced", "blurb": "Cut a sorted search space in half safely."},
+    {"id": "two-pointers", "label": "Two Pointers", "file": "two-pointers", "track": "advanced", "blurb": "Move two indexes with a clear rule instead of checking every pair."},
+    {"id": "sliding-window", "label": "Sliding Window", "file": "sliding-window", "track": "advanced", "blurb": "Grow and shrink a current range while keeping its state accurate."},
+    {"id": "trees", "label": "Trees", "file": "trees", "track": "advanced", "blurb": "Trace parent/child structure with traversal patterns."},
+    {"id": "graphs", "label": "Graphs", "file": "graphs", "track": "advanced", "blurb": "Visit connected data with BFS, DFS, and a visited set."}
   ],
   "language_specific": {
     "python": {"id": "tuples", "label": "Tuples", "file": "tuples", "track": "intermediate", "blurb": "Immutable ordered collections."},

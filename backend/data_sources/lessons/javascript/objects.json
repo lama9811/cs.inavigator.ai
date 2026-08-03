@@ -1,32 +1,101 @@
 {
   "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
   "title": "Objects",
-  "summary": "Keep related values together under names you choose.",
+  "summary": "Keep related **values** together under names you choose.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "A JavaScript object stores values under keys. Use dot notation when the key is written directly in your code. Use brackets when the key comes from a variable. Assigning an object to another variable copies the reference, not a fresh object.",
+  "refresher": "A JavaScript **object** stores values under **keys**. Use dot notation when the key is written directly in your code. Use brackets when the key comes from a **variable**. Assigning an object to another variable copies the reference, not a fresh object.",
   "refresher_code": "const student={name:\"Ada\",credits:15};\nconsole.log(student.name);",
   "blocks": [
     {
       "kind": "text",
-      "body": "An object is a small bundle of named facts. Instead of remembering that index 0 means name and index 1 means credits, you can write `student.name` and `student.credits`."
+      "body": "An **object** is a small bundle of named facts. Instead of remembering that **index** 0 means name and index 1 means credits, you can write `student.name` and `student.credits`."
+    },
+    {
+      "kind": "visual",
+      "title": "Map keys to values",
+      "concept": "maps",
+      "caption": "Watch a lookup use a key to find the matching stored value.",
+      "initial_state": {},
+      "steps": [
+        {
+          "title": "Start with pairs",
+          "body": "Each key has one value next to it.",
+          "state": {
+            "table": [
+              {
+                "key": "CS101",
+                "value": "3 credits"
+              },
+              {
+                "key": "CS102",
+                "value": "4 credits"
+              },
+              {
+                "key": "MATH",
+                "value": "4 credits"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Look up CS102",
+          "body": "The key CS102 selects the matching row.",
+          "animation": "highlight",
+          "state": {
+            "table": [
+              {
+                "key": "CS101",
+                "value": "3 credits"
+              },
+              {
+                "key": "CS102",
+                "value": "4 credits",
+                "active": true
+              },
+              {
+                "key": "MATH",
+                "value": "4 credits"
+              }
+            ],
+            "note": "lookup returns 4 credits"
+          }
+        },
+        {
+          "title": "Missing key",
+          "body": "A missing key needs a default, a guard, or an error-handling path.",
+          "state": {
+            "table": [
+              {
+                "key": "CS101",
+                "value": "3 credits"
+              },
+              {
+                "key": "CS102",
+                "value": "4 credits"
+              }
+            ],
+            "note": "ART101 is not present"
+          }
+        }
+      ]
     },
     {
       "kind": "text",
-      "body": "Use a dot when you know the property name while writing the code. Use brackets when the property name is stored in a variable. That one choice prevents a lot of quiet bugs."
+      "body": "Use a dot when you know the property name while writing the code. Use brackets when the property name is stored in a **variable**. That one choice prevents a lot of quiet bugs."
     },
     {
       "kind": "code",
-      "caption": "Dot notation reads a fixed name, while brackets use the string stored in field.",
+      "caption": "Dot notation reads a fixed name, while brackets use the **string** stored in field.",
       "code": "const student={name:\"Ada\",major:\"CS\"};\nconst field=\"major\";\nconsole.log(student.name);\nconsole.log(student[field]);",
       "output": "Ada\nCS"
     },
     {
       "kind": "compare",
-      "caption": "Use brackets when the property name comes from a variable.",
+      "caption": "Use brackets when the property name comes from a **variable**.",
       "wrong_label": "Common mistake",
       "wrong": "const key = \"credits\";\nconsole.log(student.key);",
       "right_label": "Clearer version",
@@ -34,17 +103,17 @@
     },
     {
       "kind": "text",
-      "body": "In the wrong version, JavaScript searches for a property literally named `key`. In the fixed version, JavaScript looks inside the variable `key`, finds `\"credits\"`, and uses that as the property name."
+      "body": "In the wrong version, JavaScript searches for a property literally named `key`. In the fixed version, JavaScript looks inside the **variable** `key`, finds `\"credits\"`, and uses that as the property name."
     },
     {
       "kind": "callout",
       "tone": "mistake",
       "title": "A missing property is quiet at first",
-      "body": "Reading a missing property gives you undefined. The error often shows up on the next line, when your code tries to use that missing value as if it were real."
+      "body": "Reading a missing property gives you undefined. The error often shows up on the next line, when your code tries to use that missing **value** as if it were real."
     },
     {
       "kind": "check",
-      "prompt": "Which uses the value in key?",
+      "prompt": "Which uses the **value** in **key**?",
       "code": "const key=\"credits\";",
       "choices": [
         "student[key]",
@@ -53,7 +122,7 @@
         "student(key)"
       ],
       "answer_index": 0,
-      "why": "Brackets evaluate the variable, while dot notation searches for a property literally named key."
+      "why": "Brackets evaluate the **variable**, while dot notation searches for a property literally named **key**."
     },
     {
       "kind": "check",
@@ -66,18 +135,110 @@
         "a const error"
       ],
       "answer_index": 0,
-      "why": "Both variables refer to one object, so the property change is visible through first."
+      "why": "Both **variables** refer to one **object**, so the property change is visible through first."
     },
     {
       "kind": "list",
       "title": "Objects checklist",
       "items": [
         "Use dots for property names written in the code.",
-        "Use brackets when the key comes from a variable.",
+        "Use brackets when the **key** comes from a **variable**.",
         "Check optional data before going deeper.",
-        "Copy the object first if you need a separate object."
+        "Copy the **object** first if you need a separate object."
       ]
     }
   ],
-  "_beginner_expanded": true
+  "_beginner_expanded": true,
+  "learn_cards": {
+    "javascript-objects-check-1": {
+      "title": "Choose the matching object property access rule",
+      "notice": "Decide whether the property name is written literally or stored in a variable.",
+      "mistake": "Do not use dot notation when the key must come from another variable.",
+      "section_id": "examples",
+      "example": "student[field]",
+      "source": "question",
+      "body": "This question tests which uses the value in key? A JavaScript object groups related values under property names."
+    },
+    "javascript-objects-check-2": {
+      "title": "Object property access",
+      "notice": "Decide whether the property name is written literally or stored in a variable.",
+      "mistake": "Do not use dot notation when the key must come from another variable.",
+      "section_id": "examples",
+      "example": "student[field]",
+      "source": "question",
+      "body": "This question tests what becomes of first.score? A JavaScript object groups related values under property names."
+    },
+    "javascript-objects-output-01": {
+      "title": "Trace object property access output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "student[field]",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. A JavaScript object groups related values under property names."
+    },
+    "javascript-objects-supplement-01": {
+      "title": "Bracket access uses variable keys",
+      "notice": "Bracket access uses the value stored in key; dot access uses the literal property name.",
+      "mistake": "Do not use dot notation when the key must come from another variable.",
+      "section_id": "check",
+      "example": "student[field]",
+      "source": "question",
+      "body": "This question tests given const key = \"credits\";, why use student[key] instead... A JavaScript object groups related values under property names."
+    },
+    "javascript-objects-authored-01": {
+      "title": "Missing property is undefined",
+      "notice": "Reading a missing JavaScript property gives undefined rather than a new default object.",
+      "mistake": "Do not use dot notation when the key must come from another variable.",
+      "section_id": "idea",
+      "example": "student[field]",
+      "source": "question",
+      "body": "This question tests what happens when javascript reads an object property that... A JavaScript object groups related values under property names."
+    },
+    "javascript-objects-authored-02": {
+      "title": "Object property access",
+      "notice": "Decide whether the property name is written literally or stored in a variable.",
+      "mistake": "Do not use dot notation when the key must come from another variable.",
+      "section_id": "idea",
+      "example": "student[field]",
+      "source": "question",
+      "body": "This question tests when is dot notation the clearest way to read an object pro... A JavaScript object groups related values under property names."
+    },
+    "javascript-objects-authored-03": {
+      "title": "Choose the matching object property access rule",
+      "notice": "Decide whether the property name is written literally or stored in a variable.",
+      "mistake": "Do not use dot notation when the key must come from another variable.",
+      "section_id": "check",
+      "example": "student[field]",
+      "source": "question",
+      "body": "This question tests a property name is stored in a variable called field. which... A JavaScript object groups related values under property names."
+    },
+    "javascript-objects-authored-04": {
+      "title": "Object property access",
+      "notice": "Decide whether the property name is written literally or stored in a variable.",
+      "mistake": "Do not use dot notation when the key must come from another variable.",
+      "section_id": "check",
+      "example": "student[field]",
+      "source": "question",
+      "body": "This question tests a profile object may or may not include middlename. what sh... A JavaScript object groups related values under property names."
+    },
+    "javascript-objects-authored-05": {
+      "title": "Object property access",
+      "notice": "Decide whether the property name is written literally or stored in a variable.",
+      "mistake": "Do not use dot notation when the key must come from another variable.",
+      "section_id": "check",
+      "example": "student[field]",
+      "source": "question",
+      "body": "This question tests two variables should be able to change independently. what... A JavaScript object groups related values under property names."
+    },
+    "javascript-objects-authored-06": {
+      "title": "Explain the object property access reason",
+      "notice": "Decide whether the property name is written literally or stored in a variable.",
+      "mistake": "Do not use dot notation when the key must come from another variable.",
+      "section_id": "check",
+      "example": "student[field]",
+      "source": "question",
+      "body": "This question tests why group related values into an object? A JavaScript object groups related values under property names."
+    }
+  }
 }

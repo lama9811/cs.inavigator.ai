@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Testing concept check 1",
+      "title": "One passing test",
       "code": null,
-      "prompt": "What does the lesson mean by \"A passing test can still be weak\"?",
+      "prompt": "Why can a function still be buggy after one test passes?",
       "choices": [
-        "A list with ten random items",
-        "A test proves only the case it checks. If every test uses positive numbers, a bug involving zero or negative values can remain hidden.",
-        "The same three-item list twice",
-        "A list already used in the demo"
+        "One test proves only the case it checks.",
+        "Passing one test means the function was not actually run.",
+        "A passing test always hides syntax errors.",
+        "Python tests work only when every input is positive."
       ],
-      "answer_index": 1,
-      "explanation": "A test calls a small piece of code with known input and compares the result with the expected value. `assert` is useful for quick checks. That reasoning supports the answer: A test proves only the case it checks. If every test uses positive numbers, a bug involving zero or negative values can remain hidden."
+      "answer_index": 0,
+      "explanation": "A single passing case gives useful evidence, but it is narrow evidence. If every test uses ordinary positive numbers, bugs around empty input, zero, duplicates, or negative values may stay hidden. Add cases that represent the range of behavior you care about."
     },
     {
       "id": "python-testing-authored-02",
@@ -96,17 +96,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Testing concept check 2",
+      "title": "Focused tests",
       "code": null,
-      "prompt": "Which choice describes a reliable Testing practice?",
+      "prompt": "What makes a test failure easier to understand?",
       "choices": [
-        "Python changes 5 to 4",
-        "The line is ignored",
-        "Test one clear behavior at a time.",
-        "Python returns False from the program"
+        "Check many unrelated behaviors in one assert.",
+        "Test one clear behavior with a direct expected result.",
+        "Use random expected values so failures are surprising.",
+        "Avoid naming the behavior being tested."
       ],
-      "answer_index": 2,
-      "explanation": "A test calls a small piece of code with known input and compares the result with the expected value. `assert` is useful for quick checks. That reasoning supports the answer: Test one clear behavior at a time."
+      "answer_index": 1,
+      "explanation": "When a test checks one behavior, a failure points to a specific rule. If a test combines too many ideas, you may know something failed but not what. Clear inputs, clear expected output, and a focused name make the test more useful."
     },
     {
       "id": "python-testing-authored-03",
@@ -114,17 +114,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Testing concept check 3",
+      "title": "Expected results",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Testing code?",
+      "prompt": "A test checks `total([2, 3, 5])`. What expected value should it compare against?",
       "choices": [
-        "assert total(nums) == sum(x for x in nums)",
-        "A list already used in the demo",
-        "Python changes 5 to 4",
-        "Use fixed inputs with obvious expected results."
+        "`total([2, 3, 5])`, because comparing the function to itself is enough.",
+        "`sum(x for x in nums)`, even if `nums` is not shown in the test.",
+        "`10`, because the expected result is fixed and easy to verify by hand.",
+        "`None`, because tests should not know the answer."
       ],
-      "answer_index": 3,
-      "explanation": "A test calls a small piece of code with known input and compares the result with the expected value. `assert` is useful for quick checks. That reasoning supports the answer: Use fixed inputs with obvious expected results."
+      "answer_index": 2,
+      "explanation": "A good test uses an expected value that is independent of the function being tested. `10` is obvious from the input and does not repeat the same logic. Recomputing the expected answer with similar code can copy the same bug into the test."
     },
     {
       "id": "python-testing-authored-04",
@@ -132,17 +132,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Testing concept check 4",
+      "title": "Boundary cases",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Testing mistake?",
+      "prompt": "A function finds the largest number in a list. Which test set gives better coverage?",
       "choices": [
-        "Include normal, boundary, and unusual cases.",
-        "The line is ignored",
-        "Python returns False from the program",
-        "assert total(nums) == sum(x for x in nums)"
+        "Only `[3, 8, 2]`, because one normal list is enough.",
+        "Only `[100]`, because short inputs cover every case.",
+        "Only `[1, 2, 3]`, because sorted input is easiest.",
+        "A normal list, a one-item list, and a list with negative numbers."
       ],
-      "answer_index": 0,
-      "explanation": "A test calls a small piece of code with known input and compares the result with the expected value. `assert` is useful for quick checks. That reasoning supports the answer: Include normal, boundary, and unusual cases."
+      "answer_index": 3,
+      "explanation": "Normal examples are important, but boundaries reveal different bugs. A one-item list checks the smallest non-empty shape, and negative numbers catch code that starts with an unsafe default such as 0. Coverage means choosing cases for the rules that could break."
     },
     {
       "id": "python-testing-authored-05",
@@ -150,17 +150,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Testing concept check 5",
+      "title": "Readable test names",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Testing. Which advice is correct?",
+      "prompt": "Which test name best communicates its purpose?",
       "choices": [
-        "A list with ten random items",
-        "Give tests names that describe the behavior.",
-        "The same three-item list twice",
-        "The line is ignored"
+        "`test_total_handles_empty_list`",
+        "`test1`",
+        "`check_stuff`",
+        "`temporary_test_do_not_use`"
       ],
-      "answer_index": 1,
-      "explanation": "A test calls a small piece of code with known input and compares the result with the expected value. `assert` is useful for quick checks. That reasoning supports the answer: Give tests names that describe the behavior."
+      "answer_index": 0,
+      "explanation": "A test name should say what behavior is being protected. When `test_total_handles_empty_list` fails, the reader immediately knows which case needs attention. Vague names force extra digging before the failure is useful."
     },
     {
       "id": "python-testing-authored-06",
@@ -168,17 +168,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "python",
-      "title": "Testing concept check 6",
+      "title": "Rerunning tests",
       "code": null,
-      "prompt": "Which choice shows sound reasoning about Testing?",
+      "prompt": "After changing a helper function used in several places, what should happen next?",
       "choices": [
-        "Python returns False from the program",
-        "assert total(nums) == sum(x for x in nums)",
-        "Run the tests again after every meaningful change.",
-        "A list with ten random items"
+        "Run only the one example that was edited by hand.",
+        "Run the relevant tests again to catch new breakage.",
+        "Delete old tests because the code has changed.",
+        "Assume unchanged files cannot be affected."
       ],
-      "answer_index": 2,
-      "explanation": "A test calls a small piece of code with known input and compares the result with the expected value. `assert` is useful for quick checks. That reasoning supports the answer: Run the tests again after every meaningful change."
+      "answer_index": 1,
+      "explanation": "A helper can affect callers you did not touch directly. Rerunning the relevant tests checks both the intended fix and possible side effects. This habit turns tests into a safety net instead of a one-time assignment."
     }
   ]
 }

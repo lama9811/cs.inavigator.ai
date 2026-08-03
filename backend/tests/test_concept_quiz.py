@@ -17,6 +17,7 @@ Two jobs:
 
 import json
 import os
+import re
 
 import pytest
 
@@ -89,10 +90,10 @@ def test_categories_are_split_into_small_beginner_and_intermediate_tracks():
             for track in cq.VALID_TRACKS
         }
         expected = {
-            "python": {"beginner": 12, "intermediate": 11},
-            "java": {"beginner": 12, "intermediate": 11},
-            "javascript": {"beginner": 12, "intermediate": 7},
-            "cpp": {"beginner": 12, "intermediate": 7},
+            "python": {"beginner": 12, "intermediate": 11, "advanced": 10},
+            "java": {"beginner": 12, "intermediate": 11, "advanced": 10},
+            "javascript": {"beginner": 12, "intermediate": 7, "advanced": 10},
+            "cpp": {"beginner": 12, "intermediate": 7, "advanced": 10},
         }[language]
         assert {track: len(ids) for track, ids in by_track.items()} == expected
         assert set().union(*map(set, by_track.values())) == set(all_categories(language))
@@ -134,8 +135,18 @@ def test_every_registered_category_has_expected_practice_coverage():
     eight_question_categories = {
         "algorithm-problems",
         "algorithm-problems-2",
+        "binary-search",
         "debug",
         "debug-2",
+        "graphs",
+        "hash-maps-sets",
+        "linked-lists",
+        "queues",
+        "recursion-patterns",
+        "sliding-window",
+        "stacks",
+        "trees",
+        "two-pointers",
     }
     for language in ALL_LANGUAGES:
         underfilled = [
@@ -211,6 +222,25 @@ def test_mcq_choices_are_distinct():
         )
 
 
+def test_mcq_choice_sets_are_not_reused_within_a_category():
+    """Different questions should not show students the same answer card set."""
+    for language in ALL_LANGUAGES:
+        for category in cq.categories_for_language(language):
+            seen_choice_sets = {}
+            for question in cq.questions_for_category(language, category["id"])["questions"]:
+                if not question["kind"].startswith("mcq"):
+                    continue
+                choices = question.get("choices") or []
+                normalized = tuple(sorted(" ".join(str(choice).lower().split()) for choice in choices))
+                if normalized in seen_choice_sets:
+                    previous_id = seen_choice_sets[normalized]
+                    raise AssertionError(
+                        f"{language}/{category['id']}: {question['id']} reuses the "
+                        f"same answer choices as {previous_id}"
+                    )
+                seen_choice_sets[normalized] = question["id"]
+
+
 def test_mcq_has_at_least_three_choices():
     for language, category, q in authored_questions():
         if not q["kind"].startswith("mcq"):
@@ -242,6 +272,112 @@ def test_every_question_explains_itself():
         assert len(explanation) >= 15, (
             f"{language}/{category}/{q['id']}: explanation missing or too short"
         )
+
+
+def test_question_prompts_do_not_reference_lessons():
+    """Quiz questions should stand on their own.
+
+    The Learn tab and explanations may remediate from the lesson, but the question prompt
+    itself should not ask students to decode lesson wording. That made old questions feel
+    stale and confusing, especially when the answer choices were lifted from examples.
+    """
+    blocked = (
+        "what does the lesson mean",
+        "according to the lesson",
+        "as explained in the lesson",
+        "read the line out loud",
+        "this is the one fact to carry out of this lesson",
+    )
+    for language, category, q in authored_questions():
+        prompt = (q.get("prompt") or "").lower()
+        choices = [str(choice).lower() for choice in q.get("choices") or []]
+        for phrase in blocked:
+            assert phrase not in prompt, (
+                f"{language}/{category}/{q['id']}: prompt references lesson wording"
+            )
+            assert all(phrase not in choice for choice in choices), (
+                f"{language}/{category}/{q['id']}: choice references lesson wording"
+            )
+
+
+def test_authored_concept_checks_have_coherent_answer_choices():
+    """No-code concept checks need four answers of the same kind.
+
+    A reasoning prompt with one paragraph answer and three random numbers is a giveaway,
+    not an assessment. Output-only distractors belong with output-tracing questions, not
+    with conceptual review prompts.
+    """
+    conceptual_prompt_starters = (
+        "which choice describes",
+        "which recommendation belongs",
+        "which guideline helps",
+        "which choice shows sound reasoning",
+        "a classmate is checking",
+        "what is the main idea",
+    )
+    for language, category, q in authored_questions():
+        if "-authored-" not in q["id"]:
+            continue
+        if q["kind"] != "mcq-behavior" or q.get("code") is not None:
+            continue
+        prompt = (q.get("prompt") or "").lower()
+        if not (
+            prompt.startswith(conceptual_prompt_starters)
+            or "which statement" in prompt
+            or "why" in prompt
+            or "what happens" in prompt
+        ):
+            continue
+        for choice in q.get("choices") or []:
+            normalized = str(choice).strip()
+            assert not re.fullmatch(r"[0-9.\s]+", normalized), (
+                f"{language}/{category}/{q['id']}: numeric-only choice in concept check"
+            )
+            assert normalized.count("\n") < 2, (
+                f"{language}/{category}/{q['id']}: code/output block used as concept distractor"
+            )
+            assert len(normalized) >= 8, (
+                f"{language}/{category}/{q['id']}: concept choice is too thin"
+            )
+        lengths = [len(str(choice).strip()) for choice in q.get("choices") or []]
+        if lengths:
+            assert max(lengths) <= min(lengths) * 5, (
+                f"{language}/{category}/{q['id']}: one concept choice dwarfs the others"
+            )
+
+
+def test_authored_concept_checks_do_not_reuse_the_same_wrong_answer_set():
+    """A quiz bank should not feel like the same question wearing a new prompt.
+
+    Reusing the same three distractors with different correct answers makes two
+    neighboring questions look identical while grading differently. That is
+    especially confusing for beginners because they cannot tell whether the
+    target concept changed or the quiz is inconsistent.
+    """
+    for language in ALL_LANGUAGES:
+        for category in cq.categories_for_language(language):
+            seen_wrong_sets = {}
+            questions = cq.questions_for_category(language, category["id"])["questions"]
+            for question in questions:
+                if "-authored-" not in question["id"]:
+                    continue
+                if question["kind"] != "mcq-behavior" or question.get("code") is not None:
+                    continue
+
+                choices = question.get("choices") or []
+                wrong_choices = [
+                    " ".join(str(choice).lower().split())
+                    for index, choice in enumerate(choices)
+                    if index != question["answer_index"]
+                ]
+                wrong_set = tuple(sorted(wrong_choices))
+                if wrong_set in seen_wrong_sets:
+                    previous_id = seen_wrong_sets[wrong_set]
+                    raise AssertionError(
+                        f"{language}/{category['id']}: {question['id']} reuses the "
+                        f"same wrong-answer set as {previous_id}"
+                    )
+                seen_wrong_sets[wrong_set] = question["id"]
 
 
 def test_grade_result_includes_readable_mcq_answer_review():
@@ -330,6 +466,126 @@ FILLER_PHRASES = (
     "trace this carefully",
 )
 
+MOJIBAKE_SEQUENCES = (
+    "\u00e2\u20ac\u201d",  # broken em dash
+    "\u00e2\u20ac\u201c",  # broken en dash
+    "\u00e2\u20ac\u00a6",  # broken ellipsis
+    "\u00e2\u20ac\u02dc",  # broken left quote
+    "\u00e2\u20ac\u2122",  # broken right quote
+    "\u00e2\u20ac\u0153",  # broken left double quote
+    "\u00e2\u20ac\ufffd",  # broken right double quote
+    "\u00c2\u00b7",        # broken middle dot
+    "\u00c2\u00a0",        # broken non-breaking space
+    "\ufffd",
+)
+
+AUDITED_LEGACY_BAD_PHRASES = (
+    "that reasoning supports the answer",
+    "which recommendation belongs",
+    "which guideline helps",
+    "which choice shows sound reasoning",
+    "a classmate is checking",
+    "what does the lesson mean",
+    "which statement best describes",
+    "what is the main idea behind",
+    "read the line out loud",
+)
+
+AUDITED_INTERMEDIATE_CATEGORIES_BY_LANGUAGE = {
+    "python": {
+        "tuples",
+        "dictionaries",
+        "sets",
+        "file-handling",
+        "exceptions",
+        "classes-objects",
+        "modules-imports",
+        "comprehensions",
+        "testing",
+    },
+    "java": {
+        "classes-objects",
+        "maps",
+        "file-io",
+        "exceptions",
+        "inheritance-interfaces",
+        "generics",
+        "enums",
+        "packages-access",
+        "lambdas-streams",
+    },
+    "javascript": {
+        "objects",
+        "error-handling",
+        "modules",
+        "dom-events",
+        "async-promises",
+    },
+    "cpp": {
+        "pointers",
+        "classes-objects",
+        "file-io",
+        "exceptions",
+        "memory-ownership",
+    },
+}
+
+AUDITED_SHARED_LEGACY_CATEGORIES = (
+    "syntax",
+    "operators",
+    "variables",
+    "data-types",
+    "strings",
+    "user-input",
+    "conditionals",
+    "loops",
+    "lists",
+    "functions",
+    "algorithm-problems",
+    "algorithm-problems-2",
+    "debug",
+    "debug-2",
+)
+
+INTERMEDIATE_AUDIT_BAD_PHRASES = (
+    "this matters because",
+    "which choice describes a reliable",
+    "code review note is accurate",
+    "habit prevents a common mistake",
+    "advice is accurate",
+    "reasoning is accurate",
+    "concept check",
+)
+
+SHARED_LEGACY_AUDIT_BAD_PHRASES = (
+    "this matters because",
+    "that reasoning supports the answer",
+    "which recommendation belongs",
+    "which guideline helps",
+    "which choice shows sound reasoning",
+    "a classmate is checking",
+    "what does the lesson mean",
+    "according to the lesson",
+    "as explained in the lesson",
+    "read the line out loud",
+    "assume the user always types",
+    "ignore cancellation or empty input",
+    "use one input method for every situation",
+    "continue after failed extraction as if",
+    "validate only the first test input",
+    "read values in a different order than the prompt asks",
+    "accept invalid input silently",
+    "mix validation, conversion, and output",
+)
+
+
+def _visible_question_text(question):
+    return " ".join([
+        str(question.get("prompt") or ""),
+        str(question.get("explanation") or ""),
+        " ".join(str(choice) for choice in question.get("choices") or []),
+    ]).lower()
+
 
 def test_all_banks_reject_filler_templates_and_exact_duplicate_questions():
     """Quality rules apply to every bank, not only files produced by one authoring pass.
@@ -358,6 +614,104 @@ def test_all_banks_reject_filler_templates_and_exact_duplicate_questions():
                 assert not matched, (
                     f"{language}/{category['id']}/{question['id']} uses filler: {matched}"
                 )
+
+
+def test_all_banks_do_not_use_generic_prompt_templates():
+    for language, category, question in authored_questions():
+        rendered = json.dumps(question, ensure_ascii=False).lower()
+        matched = [
+            phrase
+            for phrase in AUDITED_LEGACY_BAD_PHRASES
+            if phrase in rendered
+        ]
+        assert not matched, (
+            f"{language}/{category}/{question['id']} still uses generic audit "
+            f"phrases: {matched}"
+        )
+
+
+def test_audited_intermediate_banks_do_not_use_boilerplate():
+    for language, categories in AUDITED_INTERMEDIATE_CATEGORIES_BY_LANGUAGE.items():
+        for category in categories:
+            for question in cq.questions_for_category(language, category)["questions"]:
+                rendered = json.dumps(question, ensure_ascii=False).lower()
+                matched = [
+                    phrase
+                    for phrase in INTERMEDIATE_AUDIT_BAD_PHRASES
+                    if phrase in rendered
+                ]
+                assert not matched, (
+                    f"{language}/{category}/{question['id']} still uses "
+                    f"Intermediate audit boilerplate: {matched}"
+                )
+
+
+def test_audited_shared_legacy_banks_do_not_use_visible_boilerplate():
+    for category in AUDITED_SHARED_LEGACY_CATEGORIES:
+        for language in ALL_LANGUAGES:
+            for question in cq.questions_for_category(language, category)["questions"]:
+                visible = _visible_question_text(question)
+                matched = [
+                    phrase
+                    for phrase in SHARED_LEGACY_AUDIT_BAD_PHRASES
+                    if phrase in visible
+                ]
+                assert not matched, (
+                    f"{language}/{category}/{question['id']} still uses shared "
+                    f"legacy audit boilerplate: {matched}"
+                )
+
+
+def test_audited_shared_legacy_concept_choices_are_same_kind():
+    for category in AUDITED_SHARED_LEGACY_CATEGORIES:
+        for language in ALL_LANGUAGES:
+            for question in cq.questions_for_category(language, category)["questions"]:
+                if question["kind"] != "mcq-behavior":
+                    continue
+                if question.get("code") is not None:
+                    continue
+                choices = [str(choice).strip() for choice in question.get("choices") or []]
+                if not choices:
+                    continue
+                for choice in choices:
+                    assert not re.fullmatch(r"[0-9.\s]+", choice), (
+                        f"{language}/{category}/{question['id']}: numeric-only "
+                        f"choice in no-code concept check"
+                    )
+                    assert len(choice) >= 8, (
+                        f"{language}/{category}/{question['id']}: concept choice "
+                        f"is too thin: {choice!r}"
+                    )
+                    assert choice.count("\n") < 2, (
+                        f"{language}/{category}/{question['id']}: code/output "
+                        f"block used as concept distractor"
+                    )
+                lengths = [len(choice) for choice in choices]
+                assert max(lengths) <= min(lengths) * 5, (
+                    f"{language}/{category}/{question['id']}: one concept choice "
+                    f"dwarfs the others"
+                )
+
+
+def test_audited_intermediate_banks_are_all_intermediate_track():
+    for language, categories in AUDITED_INTERMEDIATE_CATEGORIES_BY_LANGUAGE.items():
+        manifest_by_id = {
+            category["id"]: category
+            for category in cq.categories_for_language(language)
+        }
+        for category in categories:
+            assert manifest_by_id[category]["track"] == "intermediate"
+            assert cq.questions_for_category(language, category)["questions"]
+
+
+def test_authored_quiz_text_has_no_mojibake_sequences():
+    for language, category, question in authored_questions():
+        rendered = json.dumps(question, ensure_ascii=False)
+        matched = [seq for seq in MOJIBAKE_SEQUENCES if seq in rendered]
+        assert not matched, (
+            f"{language}/{category}/{question['id']} has mojibake sequences: "
+            f"{[seq.encode('unicode_escape').decode('ascii') for seq in matched]}"
+        )
 
 
 def test_every_mcq_explanation_adds_more_than_the_correct_choice():

@@ -3,7 +3,6 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { BsArrowUpCircleFill } from "react-icons/bs";
 import { FaCommentDots, FaCompress, FaExpand, FaExternalLinkAlt, FaMicrophone, FaPaperclip, FaSyncAlt, FaTimes, FaWindowMinimize } from "react-icons/fa";
-import TutorStatusCard from "./TutorStatusCard";
 import WorkspaceCodeContext from "./WorkspaceCodeContext";
 import "./FloatingCodingChat.css";
 
@@ -38,7 +37,7 @@ function getFloatingDimensions(isOpen, isMaximized) {
     const mobile = window.innerWidth <= 760;
     return {
       width: Math.min(460, window.innerWidth - (mobile ? 24 : 40)),
-      height: Math.min(650, window.innerHeight - (mobile ? 24 : 44)),
+      height: Math.min(720, window.innerHeight - (mobile ? 24 : 44)),
     };
   }
   return { width: 176, height: 56 };
@@ -120,7 +119,8 @@ function FloatingChatButton({ onOpen, onDragStart, shouldSuppressOpen }) {
         onOpen();
       }}
       aria-label="Open coding tutor chat"
-      title="Open or drag the Coding Tutor"
+      aria-keyshortcuts="Control+Alt+C"
+      title="Open or drag the Coding Tutor. Shortcut: Ctrl+Alt+C"
     >
       <FaCommentDots aria-hidden="true" />
       <span>Coding Tutor</span>
@@ -180,15 +180,16 @@ function FloatingChatWindow({
   onMoveToCorner,
 }) {
   const activeProblem = context?.activeProblem || null;
-  const selectedLanguage = context?.selectedLanguage || "Python";
   const attempts = context?.attempts ?? 0;
   const tutorMode = context?.tutorMode || "Guided Tutor";
+  const hasEditorSelection = Boolean(context?.hasEditorSelection);
   const topic = activeProblem?.title ? `Helping with: ${activeProblem.title}` : "Personal Code Help";
   const defaultMessageLimit = isMaximized ? 24 : 10;
   const [messageLimit, setMessageLimit] = useState(defaultMessageLimit);
   const visibleMessages = messages.slice(-messageLimit);
   const hiddenMessageCount = Math.max(0, messages.length - visibleMessages.length);
   const [rewriteOpen, setRewriteOpen] = useState(false);
+  const [applyPreviewOpen, setApplyPreviewOpen] = useState(false);
   const windowRef = useRef(null);
   const messagesRef = useRef(null);
   const keepPinnedToLatestRef = useRef(true);
@@ -204,6 +205,10 @@ function FloatingChatWindow({
     setMessageLimit(defaultMessageLimit);
     keepPinnedToLatestRef.current = true;
   }, [defaultMessageLimit, messageSessionId]);
+
+  useEffect(() => {
+    setApplyPreviewOpen(false);
+  }, [suggestedCodeBlock]);
 
   useEffect(() => {
     if (!keepPinnedToLatestRef.current || !messagesRef.current) return;
@@ -244,6 +249,7 @@ function FloatingChatWindow({
         onKeyDown={handleHeaderKeyDown}
         tabIndex={0}
         aria-label="Move coding tutor window between corners with the arrow keys."
+        aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown"
       >
         <div className="floating-chat-heading">
           <span className="coding-kicker">Coding Tutor Chat</span>
@@ -271,16 +277,10 @@ function FloatingChatWindow({
         </div>
       </header>
 
-      <TutorStatusCard
-        activeProblem={activeProblem}
-        selectedLanguage={selectedLanguage}
-        attempts={attempts}
-        tutorMode={tutorMode}
-      />
-
       <WorkspaceCodeContext
         code={context?.code || ""}
         activeProblem={activeProblem}
+        attempts={attempts}
       />
 
       {/* Two optional shortcuts at the top. Debug sends immediately; Rewrite opens
@@ -326,14 +326,71 @@ function FloatingChatWindow({
       {(suggestedCodeBlock && onApplyAICode) || (canUndoAICode && onUndoAICode) ? (
         <div className="floating-code-actions">
           {suggestedCodeBlock && onApplyAICode && (
-            <button
-              type="button"
-              className="floating-apply-code-btn"
-              onClick={onApplyAICode}
-              title="Full suggestions replace only when they preserve the wrapper; partial examples are added as comments."
-            >
-              Add tutor suggestion safely
-            </button>
+            <>
+              {!applyPreviewOpen ? (
+                <button
+                  type="button"
+                  className="floating-apply-code-btn"
+                  onClick={() => setApplyPreviewOpen(true)}
+                  aria-expanded={false}
+                  aria-controls="floating-apply-preview"
+                  title="Preview the suggested code before changing your workspace."
+                >
+                  Preview tutor suggestion
+                </button>
+              ) : (
+                <div className="floating-apply-preview" id="floating-apply-preview" aria-live="polite">
+                  <div className="floating-apply-preview-head">
+                    <strong>Review suggestion</strong>
+                    <button type="button" onClick={() => setApplyPreviewOpen(false)} aria-label="Close tutor suggestion preview">
+                      Close
+                    </button>
+                  </div>
+                  <pre><code>{suggestedCodeBlock}</code></pre>
+                  <div className="floating-apply-preview-actions">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onApplyAICode("comment");
+                        setApplyPreviewOpen(false);
+                      }}
+                    >
+                      Insert as comment
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onApplyAICode("append");
+                        setApplyPreviewOpen(false);
+                      }}
+                    >
+                      Append below code
+                    </button>
+                    {hasEditorSelection && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onApplyAICode("selection");
+                          setApplyPreviewOpen(false);
+                        }}
+                      >
+                        Replace selection
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="danger"
+                      onClick={() => {
+                        onApplyAICode("replace");
+                        setApplyPreviewOpen(false);
+                      }}
+                    >
+                      Replace workspace
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
           {canUndoAICode && onUndoAICode && (
             <button
@@ -475,7 +532,8 @@ function FloatingChatWindow({
   );
 }
 
-export default function FloatingCodingChat({ isOpen, isMaximized, onOpen, ...windowProps }) {
+export default function FloatingCodingChat({ isOpen, isMaximized, onOpen, focusSignal = 0, ...windowProps }) {
+  const rootRef = useRef(null);
   // The widget rests on one of four corners. `corner` is the source of truth; a raw
   // drag position is used only WHILE dragging, then discarded when it snaps back to a
   // corner. Defaulting to bottom-right preserves the old launcher spot.
@@ -496,6 +554,16 @@ export default function FloatingCodingChat({ isOpen, isMaximized, onOpen, ...win
     ? dragPosition
     : cornerToPosition(corner, isOpen, isMaximized);
   const safePosition = clampPosition(positionBase, isOpen, isMaximized);
+
+  useEffect(() => {
+    if (!focusSignal) return;
+    window.requestAnimationFrame(() => {
+      const selector = isOpen
+        ? ".floating-chat-header, .floating-chat-window textarea, .floating-chat-window button"
+        : ".floating-chat-button";
+      rootRef.current?.querySelector(selector)?.focus?.();
+    });
+  }, [focusSignal, isOpen]);
 
   // Re-clamp on window resize so a corner position stays valid at the new size.
   useEffect(() => {
@@ -595,6 +663,7 @@ export default function FloatingCodingChat({ isOpen, isMaximized, onOpen, ...win
   // CSS anchor the launcher without inline right/bottom fighting left/top.
   return (
     <div
+      ref={rootRef}
       className={`floating-coding-chat ${isOpen ? "open" : "closed"} corner-${corner} ${isDragging ? "dragging" : ""} ${isMaximized ? "maximized" : ""}`}
       style={{ left: `${safePosition.x}px`, top: `${safePosition.y}px` }}
     >

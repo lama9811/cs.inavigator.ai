@@ -78,17 +78,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Classes & Objects concept check 1",
+      "title": "Member initializer list",
       "code": null,
-      "prompt": "What does the lesson mean by \"Initialize every member\"?",
+      "prompt": "Why does C++ often prefer a member initializer list for constructor setup?",
       "choices": [
-        "Delete the object",
-        "A constructor body runs after data members have already been initialized. Prefer the member initializer list for their starting values, especially for const members and objects that have no default constructor.",
-        "Make every member public",
-        "Run after every method"
+        "It initializes members before the constructor body, which matters for `const` and non-default members.",
+        "Store all object state in one shared global variable.",
+        "Skip constructors and fill fields only when remembered later.",
+        "Use a class when no related data or behavior is being grouped."
       ],
-      "answer_index": 1,
-      "explanation": "A class defines a new type. Private data members protect an object?s state, public methods provide controlled operations, and a constructor establishes a valid starting state. That reasoning supports the answer: A constructor body runs after data members have already been initialized. Prefer the member initializer list for their starting values, especially for const members and objects that have no default constructor."
+      "answer_index": 0,
+      "explanation": "Data members are initialized before the constructor body starts. A member initializer list lets the class give each member its starting value at the right moment, instead of default-initializing first and assigning later."
     },
     {
       "id": "cpp-classes-objects-authored-02",
@@ -96,17 +96,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Classes & Objects concept check 2",
+      "title": "One responsibility",
       "code": null,
-      "prompt": "Which choice describes a reliable Classes & Objects practice?",
+      "prompt": "What makes a C++ class easier to understand?",
       "choices": [
-        "It makes the returned integer constant forever",
-        "It hides the method",
+        "Let outside code change every field directly.",
         "Give the class one clear responsibility.",
-        "It allocates the object"
+        "Put unrelated responsibilities into one large class.",
+        "Forget that each object has its own instance data."
       ],
-      "answer_index": 2,
-      "explanation": "A class defines a new type. Private data members protect an object?s state, public methods provide controlled operations, and a constructor establishes a valid starting state. That reasoning supports the answer: Give the class one clear responsibility."
+      "answer_index": 1,
+      "explanation": "A class with one clear responsibility keeps related state and behavior together without becoming a catch-all. That makes invariants easier to protect and methods easier to name."
     },
     {
       "id": "cpp-classes-objects-authored-03",
@@ -114,17 +114,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Classes & Objects concept check 3",
+      "title": "Initialize every member",
       "code": null,
-      "prompt": "Which recommendation belongs in a review of Classes & Objects code?",
+      "prompt": "What should a constructor do for the object's data members?",
       "choices": [
-        "class Account {\npublic:\n  int balance;\n};\naccount.balance = -50;",
-        "Run after every method",
-        "It makes the returned integer constant forever",
-        "Initialize every member in the constructor."
+        "Name methods after vague actions such as `doStuff`.",
+        "Use local variables when persistent object state is needed.",
+        "Initialize every member in the constructor.",
+        "Call an instance method before creating an object."
       ],
-      "answer_index": 3,
-      "explanation": "A class defines a new type. Private data members protect an object?s state, public methods provide controlled operations, and a constructor establishes a valid starting state. That reasoning supports the answer: Initialize every member in the constructor."
+      "answer_index": 2,
+      "explanation": "Every member should start in a known valid state. Uninitialized members can carry unpredictable values, and later methods may accidentally trust those values as real state."
     },
     {
       "id": "cpp-classes-objects-authored-04",
@@ -132,17 +132,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Classes & Objects concept check 4",
+      "title": "Protect invariants",
       "code": null,
-      "prompt": "Which guideline helps prevent a common Classes & Objects mistake?",
+      "prompt": "Why keep important object state behind private data?",
       "choices": [
-        "Keep invariants behind private data.",
-        "It hides the method",
-        "It allocates the object",
-        "class Account {\npublic:\n  int balance;\n};\naccount.balance = -50;"
+        "Treat the class blueprint as the same thing as one object.",
+        "Leave an object in a half-initialized state.",
+        "Make every method change object state even when it should only read.",
+        "Keep invariants behind private data."
       ],
-      "answer_index": 0,
-      "explanation": "A class defines a new type. Private data members protect an object?s state, public methods provide controlled operations, and a constructor establishes a valid starting state. That reasoning supports the answer: Keep invariants behind private data."
+      "answer_index": 3,
+      "explanation": "Private data lets the class control how its state changes. Public methods can enforce rules, such as keeping a balance nonnegative or a size consistent with stored values."
     },
     {
       "id": "cpp-classes-objects-authored-05",
@@ -150,17 +150,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Classes & Objects concept check 5",
+      "title": "Const methods",
       "code": null,
-      "prompt": "A classmate is checking their understanding of Classes & Objects. Which advice is correct?",
+      "prompt": "When should a C++ member function be marked `const`?",
       "choices": [
-        "Delete the object",
         "Mark read-only methods const.",
-        "Make every member public",
-        "It hides the method"
+        "Use static/shared data for per-object information.",
+        "Ignore invariants that should stay true after each method call.",
+        "Mix user input directly into every object method."
       ],
-      "answer_index": 1,
-      "explanation": "A class defines a new type. Private data members protect an object?s state, public methods provide controlled operations, and a constructor establishes a valid starting state. That reasoning supports the answer: Mark read-only methods const."
+      "answer_index": 0,
+      "explanation": "Mark a member function `const` when it promises not to change the observable state of the object. That promise helps callers use const objects safely and helps the compiler catch accidental mutation."
     },
     {
       "id": "cpp-classes-objects-authored-06",
@@ -168,17 +168,17 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "language": "cpp",
-      "title": "Classes & Objects concept check 6",
+      "title": "Type design",
       "code": null,
-      "prompt": "What is the main idea behind Classes & Objects?",
+      "prompt": "What should a well-designed C++ type keep together?",
       "choices": [
-        "It allocates the object",
-        "class Account {\npublic:\n  int balance;\n};\naccount.balance = -50;",
+        "Return internal mutable data without control.",
         "Design types that keep related state and behavior together.",
-        "Delete the object"
+        "Use inheritance where a helper field would be clearer.",
+        "Hide important setup in unrelated methods."
       ],
-      "answer_index": 2,
-      "explanation": "A class defines a new type. Private data members protect an object?s state, public methods provide controlled operations, and a constructor establishes a valid starting state. That reasoning supports the answer: Design types that keep related state and behavior together."
+      "answer_index": 1,
+      "explanation": "A type should group the state and behavior that belong to one concept. That makes the object's rules live near the data they protect instead of spreading related logic across unrelated functions."
     }
   ]
 }

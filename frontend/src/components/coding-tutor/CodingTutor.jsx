@@ -20,6 +20,7 @@ import CampusLabHome from "./CampusLabHome";
 import DailyChallengeCard from "./DailyChallengeCard";
 import PersonalPanel from "./PersonalPanel";
 import ProblemPanel from "./ProblemPanel";
+import { problemHasVisualizer } from "./workspaceVisualizerUtils";
 import ProgressBadges from "./ProgressBadges";
 import QuizBank from "./QuizBank";
 import ConceptQuiz from "./concept-quiz/ConceptQuiz";
@@ -33,12 +34,14 @@ import PastInterviews from "./PastInterviews";
 import MockInterviewBar from "./MockInterviewBar";
 import MockSummary from "./MockSummary";
 import MockConfirm from "./MockConfirm";
+import { handleHorizontalRovingKeyDown } from "./keyboardNavigation";
 import { gradeMockSummary, scoreFromGraded } from "./interviewGrade";
 import { appendInterviewAttempt, summarizeInterviewHistory } from "./interviewHistory";
-import { fetchInterviewProgress, markInterviewSolved, saveInterviewProgress, useInterviewReviewed, useInterviewSolved } from "./interviewProgress";
+import { clearInterviewSolved, fetchInterviewProgress, markInterviewSolved, saveInterviewProgress, useInterviewReviewed, useInterviewSolved } from "./interviewProgress";
+import { currentUserStorageScope, scopedStorageKey } from "./storageScope";
 import {
   saveDraft,
-  readDraft,
+  readDraftEntry,
   clearDraft,
   saveLastWorkspace,
   readLastWorkspace,
@@ -51,6 +54,23 @@ import "./CodingTutor.css";
 import "./CodingTutorTheme.css";
 
 const CODE_LANGUAGES = ["Python", "Java", "JavaScript", "C++"];
+const WORKSPACE_GUIDE_MIN_W = 260;
+const WORKSPACE_GUIDE_MAX_W = 560;
+const WORKSPACE_GUIDE_DEFAULT_W = 340;
+const WORKSPACE_GUIDE_W_KEY = "csnav.workspaceGuideWidth";
+
+function readStoredWorkspaceGuideWidth() {
+  try {
+    const raw = window.localStorage.getItem(WORKSPACE_GUIDE_W_KEY);
+    const value = raw ? parseInt(raw, 10) : NaN;
+    if (Number.isFinite(value)) {
+      return Math.min(WORKSPACE_GUIDE_MAX_W, Math.max(WORKSPACE_GUIDE_MIN_W, value));
+    }
+  } catch {
+    /* localStorage can be blocked; default width is fine */
+  }
+  return WORKSPACE_GUIDE_DEFAULT_W;
+}
 // Concept-quiz language ids (backend keys) → display labels, for the quiz views.
 const CONCEPT_QUIZ_LABELS = {
   python: "Python",
@@ -89,20 +109,33 @@ const PRACTICE_TOPIC_TO_LESSON = {
   arrays: "lists",
   strings: "strings",
   conditionals: "conditionals",
-  recursion: "functions",
-  sets: "sets",
-  "hash maps": "dictionaries",
+  math: "operators",
+  tuples: { python: "tuples", default: "data-types" },
+  recursion: "recursion-patterns",
+  sets: "hash-maps-sets",
+  "hash maps": "hash-maps-sets",
+  stacks: "stacks",
+  queues: "queues",
+  "linked lists": "linked-lists",
+  "binary search": "binary-search",
+  "two pointers": "two-pointers",
+  "sliding window": "sliding-window",
+  "dynamic programming": "recursion-patterns",
+  "prefix sums": "algorithm-problems-2",
+  intervals: "algorithm-problems-2",
+  heaps: "algorithm-problems-2",
+  tries: "trees",
+  matrices: "lists",
+  "disjoint sets": "graphs",
+  trees: "trees",
+  graphs: "graphs",
 };
 function lessonCategoryForPracticeTopic(topic, languageKey) {
   const normalized = String(topic || "").toLowerCase();
-  if (normalized === "hash maps") {
-    if (languageKey === "java") return "maps";
-    if (languageKey === "javascript") return "objects";
-    if (languageKey === "cpp") return null;
-    return "dictionaries";
-  }
-  if (normalized === "sets" && languageKey !== "python") return null;
-  return PRACTICE_TOPIC_TO_LESSON[normalized] || null;
+  const mapped = PRACTICE_TOPIC_TO_LESSON[normalized];
+  if (!mapped) return null;
+  if (typeof mapped === "string") return mapped;
+  return mapped[languageKey] || mapped.default || null;
 }
 // Resolve a prerequisite label to a real Practice Library topic, or null if the library
 // has nothing for it (so the UI can grey it out instead of dead-linking).
@@ -171,8 +204,23 @@ function extractDeclarationNames(code = "", languageName = "Python") {
   return names;
 }
 
+function javaReplacementKeepsRunnerShape(currentCode = "", suggestion = "") {
+  const currentHasSolutionClass = /\bclass\s+Solution\b/.test(currentCode);
+  if (!currentHasSolutionClass) return true;
+
+  const suggestionHasSolutionClass = /\bclass\s+Solution\b/.test(suggestion);
+  const renamedPublicClass = /\bpublic\s+class\s+(?!Solution\b)([A-Za-z_]\w*)\b/.test(suggestion);
+  const hasMainOnlyProgram = /\bpublic\s+static\s+void\s+main\s*\(/.test(suggestion)
+    && !suggestionHasSolutionClass;
+
+  return suggestionHasSolutionClass && !renamedPublicClass && !hasMainOnlyProgram;
+}
+
 function suggestedCodeLooksLikeSafeReplacement(currentCode = "", suggestion = "", languageName = "Python") {
   if (!currentCode.trim()) return true;
+  if (languageName === "Java" && !javaReplacementKeepsRunnerShape(currentCode, suggestion)) {
+    return false;
+  }
   const currentNames = extractDeclarationNames(currentCode, languageName);
   if (!currentNames.size) return suggestion.length >= currentCode.trim().length * 0.8;
   const suggestedNames = extractDeclarationNames(suggestion, languageName);
@@ -291,7 +339,7 @@ function practiceTargetFromPath(pathname) {
   // --- Learn ---
   // New tracked routes add one level without breaking links created before tracks existed.
   const trackedLesson = clean.match(
-    /^\/coding\/practice\/learn\/([^/]+)\/(beginner|intermediate)\/([^/]+)$/
+    /^\/coding\/practice\/learn\/([^/]+)\/(beginner|intermediate|advanced)\/([^/]+)$/
   );
   if (trackedLesson) {
     return {
@@ -303,7 +351,7 @@ function practiceTargetFromPath(pathname) {
     };
   }
   const trackedList = clean.match(
-    /^\/coding\/practice\/learn\/([^/]+)\/(beginner|intermediate)$/
+    /^\/coding\/practice\/learn\/([^/]+)\/(beginner|intermediate|advanced)$/
   );
   if (trackedList) {
     return {
@@ -356,6 +404,7 @@ function practiceTargetFromPath(pathname) {
 const PRACTICE_LEARN_PATH = "/coding/practice";
 const PRACTICE_QUIZ_PATH = "/coding/practice/quiz";
 const PRACTICE_CODE_PATH = "/coding/practice/code";
+const LAST_PRACTICE_ROUTES_BASE_KEY = "csnav.lastPracticeRoutes";
 const learnPathForLanguage = (language) =>
   `/coding/practice/learn/${encodeURIComponent(language)}`;
 const learnPathForTrack = (language, track) =>
@@ -371,15 +420,37 @@ const quizPathForQuestion = (language, category, questionId) =>
     category
   )}/${encodeURIComponent(questionId)}`;
 
+const DEFAULT_PRACTICE_ROUTES = {
+  current: PRACTICE_LEARN_PATH,
+  learn: PRACTICE_LEARN_PATH,
+  quiz: PRACTICE_QUIZ_PATH,
+  code: PRACTICE_CODE_PATH,
+};
+
+function readStoredPracticeRoutes() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(scopedStorageKey(LAST_PRACTICE_ROUTES_BASE_KEY)) || "{}");
+    const next = { ...DEFAULT_PRACTICE_ROUTES };
+    for (const key of Object.keys(next)) {
+      if (typeof parsed[key] === "string" && parsed[key].startsWith("/coding/practice")) {
+        next[key] = parsed[key];
+      }
+    }
+    return next;
+  } catch {
+    return DEFAULT_PRACTICE_ROUTES;
+  }
+}
+
 const LANGUAGE_FORMATS = {
   Python: { file: "solution.py", style: "Function-focused" },
   Java: { file: "Solution.java", style: "Class method" },
   JavaScript: { file: "solution.js", style: "Function export" },
-  "C++": { file: "solution.cpp", style: "Solution class" },
+  "C++": { file: "solution.cpp", style: "Top-level function" },
 };
 
 function progressKey(questionId, language) {
-  return `coding_practice_progress:${questionId}:${language}`;
+  return scopedStorageKey(`coding_practice_progress:${questionId}:${language}`);
 }
 
 function readLocalProgress(questionId, language) {
@@ -408,11 +479,12 @@ function clearLocalProgress(questionId, language) {
   }
 }
 
-// ── Daily-challenge streak (gamification, #8) ─────────────────────────────
-// We record the local date (YYYY-MM-DD) each day the student practices the daily
-// challenge, then count back from today to get a real consecutive-day streak.
-// Per-device only (localStorage) — no backend needed.
-const DAILY_STREAK_KEY = "coding_daily_streak_days";
+// ── Practice streak (gamification, #8) ────────────────────────────────────
+// We record the local date (YYYY-MM-DD) each day the student practices in the
+// Learning Library, then count back from today to get a real consecutive-day streak.
+// localStorage is the offline cache; /api/coding/user-progress syncs it per user.
+const DAILY_STREAK_BASE_KEY = "coding_daily_streak_days";
+const dailyStreakKey = () => scopedStorageKey(DAILY_STREAK_BASE_KEY);
 
 function localDateKey(date = new Date()) {
   // Local calendar date, not UTC, so "today" matches the student's clock.
@@ -424,7 +496,7 @@ function localDateKey(date = new Date()) {
 
 function readDailyStreakDays() {
   try {
-    const raw = localStorage.getItem(DAILY_STREAK_KEY);
+    const raw = localStorage.getItem(dailyStreakKey());
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
   } catch (error) {
@@ -433,15 +505,15 @@ function readDailyStreakDays() {
   }
 }
 
-// Mark today as a daily-challenge completion. Returns the updated day list.
-function recordDailyChallengeDay() {
+// Mark today as a CS Navigator practice day. Returns the updated day list.
+function recordPracticeActivityDay() {
   const today = localDateKey();
   const days = readDailyStreakDays();
   if (!days.includes(today)) days.push(today);
   // Keep the list bounded — a year of dates is plenty for a streak count.
   const trimmed = days.sort().slice(-370);
   try {
-    localStorage.setItem(DAILY_STREAK_KEY, JSON.stringify(trimmed));
+    localStorage.setItem(dailyStreakKey(), JSON.stringify(trimmed));
   } catch (error) {
     console.warn("[coding-streak] write failed", error);
   }
@@ -472,11 +544,12 @@ function isDailyDoneToday(days = readDailyStreakDays()) {
 // ── Mock-interview completion counter (per-device, for the mock badges) ────────
 // A finished mock interview increments this. Read by ProgressBadges via
 // progressSummary to award Mock Rookie (1) / Mock Veteran (5).
-const MOCK_DONE_KEY = "coding_mock_completed";
+const MOCK_DONE_BASE_KEY = "coding_mock_completed";
+const mockDoneKey = () => scopedStorageKey(MOCK_DONE_BASE_KEY);
 
 function readMockCompleted() {
   try {
-    const raw = Number(localStorage.getItem(MOCK_DONE_KEY));
+    const raw = Number(localStorage.getItem(mockDoneKey()));
     return Number.isFinite(raw) && raw > 0 ? raw : 0;
   } catch (error) {
     console.warn("[coding-mock] read failed", error);
@@ -487,7 +560,7 @@ function readMockCompleted() {
 function recordMockCompleted() {
   const next = readMockCompleted() + 1;
   try {
-    localStorage.setItem(MOCK_DONE_KEY, String(next));
+    localStorage.setItem(mockDoneKey(), String(next));
   } catch (error) {
     console.warn("[coding-mock] write failed", error);
   }
@@ -497,11 +570,12 @@ function recordMockCompleted() {
 // ── Best streak ever (so Steady Streak is a trophy you don't un-earn) ─────────
 // The current streak resets to 0 when a day is missed; this remembers the highest
 // streak reached so the "3-day streak" badge stays earned forever.
-const BEST_STREAK_KEY = "coding_best_streak";
+const BEST_STREAK_BASE_KEY = "coding_best_streak";
+const bestStreakKey = () => scopedStorageKey(BEST_STREAK_BASE_KEY);
 
 function readBestStreak() {
   try {
-    const raw = Number(localStorage.getItem(BEST_STREAK_KEY));
+    const raw = Number(localStorage.getItem(bestStreakKey()));
     return Number.isFinite(raw) && raw > 0 ? raw : 0;
   } catch (error) {
     console.warn("[coding-streak] best read failed", error);
@@ -513,25 +587,491 @@ function readBestStreak() {
 function recordBestStreak(currentStreak = 0) {
   const best = Math.max(readBestStreak(), Number(currentStreak) || 0);
   try {
-    localStorage.setItem(BEST_STREAK_KEY, String(best));
+    localStorage.setItem(bestStreakKey(), String(best));
   } catch (error) {
     console.warn("[coding-streak] best write failed", error);
   }
   return best;
 }
 
-function normalizeSnippet(text = "") {
-  return String(text).split("\n").filter(line => line.trim()).slice(0, 5).join("\n");
+function pseudocodeFamily(problem = {}) {
+  const topic = String(problem.topic || "").toLowerCase();
+  const prompt = String(problem.prompt || "").toLowerCase();
+  const title = String(problem.title || "").toLowerCase();
+
+  if (topic.includes("binary search")) return "binary-search";
+  if (topic.includes("two pointers")) return "two-pointers";
+  if (topic.includes("sliding window")) return "sliding-window";
+  if (topic.includes("recursion")) return "recursion";
+  if (topic.includes("stack")) return "stack";
+  if (topic.includes("queue")) return "queue";
+  if (topic.includes("hash") || topic.includes("map") || topic.includes("dictionary")) return "map";
+  if (topic.includes("set")) return "set";
+  if (topic.includes("tree")) return "tree";
+  if (topic.includes("graph")) return "graph";
+  if (topic.includes("linked")) return "linked-list";
+  if (topic.includes("heap")) return "heap";
+  if (topic.includes("trie")) return "trie";
+  if (topic.includes("disjoint")) return "union-find";
+  if (topic.includes("dynamic")) return "dynamic-programming";
+  if (topic.includes("interval")) return "intervals";
+  if (topic.includes("prefix")) return "prefix-sum";
+  if (topic.includes("matrix")) return "matrix";
+  if (topic.includes("bit")) return "bit-manipulation";
+  if (topic.includes("math") || prompt.includes("formula") || prompt.includes("total") || title.includes("total")) return "math";
+  if (topic.includes("conditional") || prompt.includes("if ") || prompt.includes("when ")) return "conditionals";
+  if (topic.includes("string") || prompt.includes("string") || prompt.includes("text")) return "string";
+  if (topic.includes("array") || topic.includes("list") || prompt.includes("list") || prompt.includes("array")) return "array";
+  return "scan";
 }
 
-function buildShapeSnippet(solution = {}) {
-  const referenceLines = String(solution.reference_solution || "")
-    .split("\n")
-    .filter(line => line.trim() && !/^\s*(import|from\s+.+\s+import|def\s+|class\s+)/.test(line));
-  if (referenceLines.length) return referenceLines.slice(0, 4).join("\n");
-  const guided = solution.guided_steps || [];
-  const codeLikeStep = guided.find(step => /[=()[\]{}:]|return|for |while |if /.test(String(step)));
-  return normalizeSnippet(codeLikeStep || solution.starter_code || "");
+const PSEUDOCODE_TEMPLATES = {
+  array: {
+    short: [
+      "Start with an empty or zero answer",
+      "For each item in the list",
+      "Check the rule from the prompt",
+      "Update the answer only when the rule matches",
+      "Return the final answer",
+    ],
+    detailed: [
+      "Choose the starting answer value",
+      "Walk through the list one item at a time",
+      "For each item, decide whether it should count, be copied, or change the running value",
+      "Leave the answer unchanged when the item does not match the prompt rule",
+      "After the last item, return exactly the value the prompt asks for",
+    ],
+    edges: ["empty list", "one item", "no matching items", "all items match"],
+  },
+  string: {
+    short: [
+      "Start with the text and the answer state",
+      "For each character or word",
+      "Normalize only if the prompt says to",
+      "Compare or update the answer",
+      "Return the requested text, count, or boolean",
+    ],
+    detailed: [
+      "Identify whether the prompt cares about characters, words, or the full string",
+      "Walk through the text in order",
+      "Apply the exact matching rule before changing the saved answer",
+      "Preserve or change capitalization only when the prompt says to",
+      "Return the final value in the requested form",
+    ],
+    edges: ["empty text", "mixed capitalization", "spaces or punctuation", "no match found"],
+  },
+  conditionals: {
+    short: [
+      "Look at the input",
+      "Check one rule from the prompt",
+      "If the rule matches, use that answer",
+      "If it does not match, try the next rule",
+      "Return the answer for the matching rule",
+    ],
+    detailed: [
+      "Pick the first rule from the prompt",
+      "Ask: does this input match that rule?",
+      "If yes, use that branch and stop checking",
+      "If no, move to the next rule",
+      "If no rule matches, use the otherwise/default answer",
+    ],
+    edges: ["exact cutoff value", "just below the cutoff", "just above the cutoff", "default branch"],
+  },
+  math: {
+    short: [
+      "Name each input number",
+      "Apply the formula in the prompt",
+      "Update the running total if needed",
+      "Round only if the prompt says to",
+      "Return the final number",
+    ],
+    detailed: [
+      "Write down the formula using words first",
+      "Substitute the sample values into the formula",
+      "Keep separate totals for separate fees, penalties, or counts",
+      "Apply rounding, caps, or minimums only after the prompt says they happen",
+      "Return the computed number in the requested type",
+    ],
+    edges: ["zero values", "exact boundary", "large values", "rounding or cap rule"],
+  },
+  map: {
+    short: [
+      "Start with an empty lookup table",
+      "For each item",
+      "Build or read the key",
+      "Update the stored value for that key",
+      "Return the requested lookup, count, or grouping",
+    ],
+    detailed: [
+      "Decide what the key should be before looping",
+      "For each item, look up the current key",
+      "Use a default value when the key has not appeared yet",
+      "Store the updated value back under the same key",
+      "Return only the table value, count, or groups requested by the prompt",
+    ],
+    edges: ["missing key", "repeated key", "empty input", "ties or same counts"],
+  },
+  set: {
+    short: [
+      "Start with an empty set or two sets",
+      "For each item",
+      "Check whether the item is already present",
+      "Add, skip, or compare based on the prompt",
+      "Return the requested count, list, or boolean",
+    ],
+    detailed: [
+      "Decide which values should be unique",
+      "Add each eligible value to the set",
+      "For shared values, compare membership between the two collections",
+      "Avoid adding the same value more than once",
+      "Return the result in the shape requested by the prompt",
+    ],
+    edges: ["duplicates", "no overlap", "all overlap", "empty collection"],
+  },
+  stack: {
+    short: [
+      "Start with an empty stack",
+      "For each symbol or command",
+      "Push items that must wait",
+      "Inspect or remove the newest item when needed",
+      "Return the final stack state or decision",
+    ],
+    detailed: [
+      "Decide what kind of item belongs on the stack",
+      "When something opens or arrives, place it on top",
+      "When something closes or is served last-first, compare it with the top",
+      "If the top does not match the rule, return the failure value",
+      "After all input is processed, check whether the remaining stack matches the prompt",
+    ],
+    edges: ["empty stack", "closing before opening", "leftover items", "nested items"],
+  },
+  queue: {
+    short: [
+      "Start with the initial line",
+      "Process each command in order",
+      "Add arrivals to the back",
+      "Remove served items from the front",
+      "Return the requested line, front item, or order",
+    ],
+    detailed: [
+      "Write down what the front of the line means",
+      "Handle each command one at a time",
+      "Add new people or jobs after everyone already waiting",
+      "Serve or remove from the front only when the line is not empty",
+      "Return the final queue state or service result requested by the prompt",
+    ],
+    edges: ["empty line", "more serves than arrivals", "one command", "repeated names"],
+  },
+  "two-pointers": {
+    short: [
+      "Place one pointer at each required position",
+      "Compare the two pointed values",
+      "Use the prompt rule to choose a move",
+      "Update the answer when a match is found",
+      "Return the final result",
+    ],
+    detailed: [
+      "Decide whether the pointers start at opposite ends or in two different lists",
+      "Compare the current values before moving either pointer",
+      "If the pair is too small, too large, or mismatched, move only the pointer the rule allows",
+      "Record a match without reusing an item unless the prompt allows it",
+      "Stop when the pointers cross or one list runs out",
+    ],
+    edges: ["no pair found", "duplicate values", "one empty list", "pointers meet"],
+  },
+  "sliding-window": {
+    short: [
+      "Start a left edge and an empty running state",
+      "Move the right edge to include one new item",
+      "Shrink from the left while the window breaks the rule",
+      "Update the best answer for the current window",
+      "Return the best value",
+    ],
+    detailed: [
+      "Decide what value the window must track, such as sum, count, or seen items",
+      "Expand the right edge by adding the new item to that state",
+      "While the current window violates the prompt limit, remove items from the left",
+      "After the window is valid, compare it with the best answer so far",
+      "Continue until every right edge has been tried",
+    ],
+    edges: ["window of size one", "whole input is valid", "limit is exceeded immediately", "empty input"],
+  },
+  "binary-search": {
+    short: [
+      "Set the left and right search boundaries",
+      "Choose the middle position",
+      "Compare the middle value with the target rule",
+      "Discard the impossible half",
+      "Return the found position or fallback value",
+    ],
+    detailed: [
+      "Confirm the input is sorted or that the answer space has an order",
+      "Pick the middle value between the current boundaries",
+      "If the middle satisfies the target rule, save it when the prompt asks for a boundary",
+      "Move left or right so the impossible half is removed",
+      "When the boundaries cross, return the saved result or the prompt's not-found value",
+    ],
+    edges: ["target at first position", "target at last position", "target missing", "duplicate targets"],
+  },
+  recursion: {
+    short: [
+      "Handle the smallest input directly",
+      "Make the input smaller",
+      "Ask the same question about the smaller input",
+      "Combine the smaller answer with the current step",
+      "Return the combined result",
+    ],
+    detailed: [
+      "Write the base case first so the calls can stop",
+      "Choose the one piece of input handled by the current call",
+      "Pass a smaller input into the same idea",
+      "When the smaller call returns, combine its value with the current piece",
+      "Check that every recursive call gets closer to the base case",
+    ],
+    edges: ["empty input", "one item", "already at base case", "deep enough to repeat"],
+  },
+  "linked-list": {
+    short: [
+      "Start at the head of the chain",
+      "Keep track of the current node",
+      "Read or save the next link before moving",
+      "Update the answer or links",
+      "Return the requested value or new head",
+    ],
+    detailed: [
+      "Identify which pointer represents the current node",
+      "Before changing links, save any next node you still need",
+      "Move one link at a time so the chain is not lost",
+      "Update counters, saved values, or previous links as the prompt requires",
+      "Stop when the current node reaches the end or the prompt condition is met",
+    ],
+    edges: ["empty chain", "one node", "cycle or repeated index", "middle or tail node"],
+  },
+  tree: {
+    short: [
+      "Start at the root",
+      "If there is no node, return the empty-case value",
+      "Visit the current node",
+      "Send needed state to child nodes",
+      "Combine child results using the prompt rule",
+    ],
+    detailed: [
+      "Choose the traversal order that matches the prompt",
+      "Handle missing children before reading their values",
+      "Carry any needed state such as depth, path sum, or best value",
+      "Combine left and right child answers carefully",
+      "Return the value for the whole tree from the root call",
+    ],
+    edges: ["empty tree", "single node", "missing child", "unbalanced tree"],
+  },
+  graph: {
+    short: [
+      "Start with the given node or cell",
+      "Keep a frontier of places to visit",
+      "Keep a visited set",
+      "Add valid unvisited neighbors",
+      "Return the reachability, count, or path result",
+    ],
+    detailed: [
+      "Choose whether the frontier behaves like a line or a stack",
+      "Remove one item from the frontier at a time",
+      "Skip it if it has already been visited",
+      "Mark it visited before adding its neighbors",
+      "Only add neighbors that are inside the rules of the prompt",
+    ],
+    edges: ["start equals target", "no path", "cycle", "blocked neighbor"],
+  },
+  heap: {
+    short: [
+      "Keep the priority items in priority order",
+      "Add each new candidate",
+      "Remove extra or lower-priority items",
+      "Read the top priority item when needed",
+      "Return the requested priority result",
+    ],
+    detailed: [
+      "Decide whether smaller or larger values should come out first",
+      "After each new item arrives, place it into the priority structure",
+      "If the structure is too large, remove the item that should not stay",
+      "Use the current top item as the best available candidate",
+      "Return the final top item, list, or running results requested",
+    ],
+    edges: ["fewer items than requested", "ties", "negative values", "stream updates"],
+  },
+  trie: {
+    short: [
+      "Start at the root of the prefix tree",
+      "For each character in the word",
+      "Follow or create the matching child",
+      "Mark the end or count at the final node",
+      "Return the prefix or word result",
+    ],
+    detailed: [
+      "Treat each character as one step down the tree",
+      "Create a child only when the path does not already exist",
+      "Store counts or word markers at the node the prompt needs",
+      "For prefix checks, stop when a needed child is missing",
+      "Return the count, boolean, or matching words requested",
+    ],
+    edges: ["empty prefix", "shared prefix", "word equals prefix", "missing character"],
+  },
+  "union-find": {
+    short: [
+      "Start with each item in its own group",
+      "For each connection",
+      "Find each item's current group leader",
+      "Merge groups when leaders differ",
+      "Return the requested group result",
+    ],
+    detailed: [
+      "Give every item an initial parent or group label",
+      "For each pair, find the current leader for both items",
+      "If the leaders match, the pair is already connected",
+      "If the leaders differ, merge one group into the other",
+      "After all pairs, count or compare final group leaders as requested",
+    ],
+    edges: ["already connected pair", "self connection", "isolated item", "multiple groups"],
+  },
+  "dynamic-programming": {
+    short: [
+      "Define what one saved state means",
+      "Fill the smallest states first",
+      "Use earlier states to compute the next state",
+      "Save each result before moving on",
+      "Return the state the prompt asks for",
+    ],
+    detailed: [
+      "Write down exactly what one table entry represents",
+      "Set the base cases before the loop or recursion continues",
+      "For each larger case, look only at smaller cases that are already known",
+      "Choose the best, count, or combined value according to the prompt",
+      "Return the final table entry, not the whole table unless asked",
+    ],
+    edges: ["zero length", "one item", "tie between choices", "impossible state"],
+  },
+  intervals: {
+    short: [
+      "Sort or scan intervals in the needed order",
+      "Compare the current start with the saved end",
+      "Merge, count, or separate based on overlap",
+      "Update the saved interval state",
+      "Return the requested interval result",
+    ],
+    detailed: [
+      "Decide what counts as overlapping from the prompt",
+      "Keep the current active interval or room state",
+      "When the next interval overlaps, combine or count it",
+      "When it does not overlap, finalize the saved interval and start a new one",
+      "Return the final count or list after the last interval is handled",
+    ],
+    edges: ["touching endpoints", "nested interval", "no overlap", "empty interval list"],
+  },
+  "prefix-sum": {
+    short: [
+      "Start a running total",
+      "For each item",
+      "Add it to the running total",
+      "Use a saved earlier total when answering a range",
+      "Return the requested sum or count",
+    ],
+    detailed: [
+      "Build or update the running total before answering later questions",
+      "Store the total seen before each position when ranges are needed",
+      "For a range, subtract the total before the range from the total at the end",
+      "For target sums, look for an earlier total that would make the difference work",
+      "Return the count, index, or sum requested by the prompt",
+    ],
+    edges: ["range starts at first item", "negative values", "zero target", "repeated totals"],
+  },
+  matrix: {
+    short: [
+      "Choose the row and column order",
+      "Visit each needed cell",
+      "Check whether the cell belongs in the result",
+      "Update the running state",
+      "Return the final grid result",
+    ],
+    detailed: [
+      "Track row and column positions separately",
+      "Move through the grid in the order the prompt describes",
+      "Before using a neighbor, check that it is inside the grid",
+      "Update sums, counts, or best values only for valid cells",
+      "Return the requested number, list, or grid after all needed cells are handled",
+    ],
+    edges: ["one row", "one column", "corner cell", "empty grid"],
+  },
+  "bit-manipulation": {
+    short: [
+      "Look at one bit or bit operation at a time",
+      "Use the prompt rule to decide what the bit means",
+      "Update the count or answer state",
+      "Move to the next bit or value",
+      "Return the requested bit result",
+    ],
+    detailed: [
+      "Identify whether the prompt asks about one number, two numbers, or a list",
+      "Use the bit rule to expose the relevant bit or difference",
+      "Update the running count, mask, or boolean decision",
+      "Repeat until every needed bit or value has been checked",
+      "Return the result in the prompt's requested form",
+    ],
+    edges: ["zero", "one set bit", "negative not allowed unless stated", "same numbers"],
+  },
+  scan: {
+    short: [
+      "Choose the starting answer",
+      "Process one input item at a time",
+      "Apply the prompt rule",
+      "Update only the state needed for the answer",
+      "Return the requested result",
+    ],
+    detailed: [
+      "Name the value you are trying to return",
+      "Pick the small piece of state that must be remembered while scanning",
+      "For each input item, decide whether it changes that state",
+      "After the loop or process ends, check any final condition",
+      "Return the final state in the shape requested by the prompt",
+    ],
+    edges: ["empty input", "one item", "no match", "all items match"],
+  },
+};
+
+function templateForProblem(problem = {}) {
+  const family = pseudocodeFamily(problem);
+  return PSEUDOCODE_TEMPLATES[family] || PSEUDOCODE_TEMPLATES.scan;
+}
+
+function buildPseudocodeSnippet(problem = {}) {
+  return templateForProblem(problem).short.join("\n");
+}
+
+function buildDetailedPseudocodeSnippet(problem = {}) {
+  return templateForProblem(problem).detailed.join("\n");
+}
+
+function buildEdgeCaseChecklist(problem = {}) {
+  return templateForProblem(problem).edges;
+}
+
+function safeDeepHintText(text = "", solution = {}) {
+  const value = String(text || "").trim();
+  if (!value) return "";
+  const lower = value.toLowerCase();
+  const functionName = String(solution?.function_name || "").toLowerCase();
+  const unsafePatterns = [
+    /ask\s+(the\s+)?ai/,
+    /prompt\s+(the\s+)?(ai|tutor)/,
+    /chatgpt/,
+    /reference solution/,
+    /full solution/,
+    /starter (function|workspace|code|signature)/,
+    /^\s*(def|function|class|public|static|int|long|boolean|string|void|#include)\b/m,
+    /[{};]/,
+    /=>/,
+  ];
+  if (unsafePatterns.some(pattern => pattern.test(lower))) return "";
+  if (functionName && lower.includes(functionName)) return "";
+  return value;
 }
 
 function normalizeCodeForCompare(value = "") {
@@ -542,6 +1082,20 @@ function hasStarterCodeChanged(code = "", starterCode = "") {
   const normalizedCode = normalizeCodeForCompare(code);
   const normalizedStarter = normalizeCodeForCompare(starterCode);
   return Boolean(normalizedCode) && normalizedCode !== normalizedStarter;
+}
+
+function chooseWorkspaceCode({ explicitCode = null, draftEntry = null, serverProgress = null, starterCode = "" }) {
+  if (explicitCode != null) return explicitCode;
+  const draftCode = typeof draftEntry?.code === "string" ? draftEntry.code : null;
+  const serverCode = typeof serverProgress?.code === "string" && serverProgress.code.trim()
+    ? serverProgress.code
+    : null;
+  if (draftCode && serverCode) {
+    const draftTime = Number(draftEntry?.savedAt || 0);
+    const serverTime = Date.parse(serverProgress?.updated_at || "") || 0;
+    return draftTime > serverTime ? draftCode : serverCode;
+  }
+  return draftCode ?? serverCode ?? starterCode;
 }
 
 function detectLanguageMismatch(code = "", languageKey = "python") {
@@ -649,38 +1203,57 @@ function topicVideoUrl(topic = "") {
   return "https://www.youtube.com/watch?v=MK-NZ4hN7rs";
 }
 
-function buildHintSteps(problem, solution, attempts) {
+function buildHintSteps(problem, solution, attempts, hintGate = null) {
   if (!problem) return [];
   const topic = problem.topic || "the main pattern";
-  const givenHints = problem.hints || [];
+  const gateHints = Array.isArray(hintGate?.hints) ? hintGate.hints : [];
+  const hintAt = (level) => gateHints.find(item => item.level === level)?.hint || null;
   const guided = solution?.guided_steps || [];
-  const shapeSnippet = buildShapeSnippet(solution || {});
+  const pseudocodeSnippet = buildPseudocodeSnippet(problem);
+  const detailedPseudocodeSnippet = buildDetailedPseudocodeSnippet(problem);
+  const edgeChecks = buildEdgeCaseChecklist(problem);
+  const level3Lead = safeDeepHintText(hintAt(3), solution)
+    || safeDeepHintText(guided[1], solution)
+    || "Sketch the moves before writing full code.";
+  const level4Lead = safeDeepHintText(hintAt(4), solution)
+    || safeDeepHintText(guided[2], solution)
+    || "Use this final plan to check your logic before asking for the reference.";
+  const unlockedCount = Number.isFinite(hintGate?.unlocked_count)
+    ? hintGate.unlocked_count
+    : attempts >= 2 ? 4 : 3;
   return [
     {
       level: 1,
-      title: "Strategy",
-      body: givenHints[0] || `Describe the ${topic} idea in plain English first. Name what you compare, count, or store before writing the loop.`,
-      locked: false,
+      title: "Question Check",
+      body: hintAt(1) || `Reread the prompt and name what the answer should return. Then try one tiny example by hand before changing code.`,
+      locked: unlockedCount < 1,
     },
     {
       level: 2,
-      title: "Key Condition",
-      body: givenHints[1] || guided[0] || "Find the exact condition that changes your answer. Test that condition with the smallest input first.",
-      locked: false,
+      title: "Concept",
+      body: hintAt(2) || guided[0] || `Focus on the ${topic} idea: decide what you need to remember as you scan, compare, or build the answer.`,
+      locked: unlockedCount < 2,
     },
     {
       level: 3,
-      title: "Code Shape",
-      body: shapeSnippet
-        ? `Use this only as a shape check:\n\n\`\`\`\n${shapeSnippet}\n\`\`\``
-        : givenHints[2] || guided[1] || "Write just the loop or branch that updates your answer, then stop and test it manually.",
-      locked: false,
+      title: "Pseudocode Outline",
+      body: [
+        level3Lead,
+        `\nPseudocode shape:\n\n\`\`\`\n${pseudocodeSnippet}\n\`\`\``,
+      ].filter(Boolean).join("\n"),
+      locked: unlockedCount < 3,
     },
     {
       level: 4,
-      title: "Near Solution",
-      body: guided[2] || givenHints[2] || "Connect the helper logic to the return value, then test an empty, one-item, and typical input.",
-      locked: attempts < 2,
+      title: "Detailed Pseudocode Check",
+      body: [
+        level4Lead,
+        `\nDetailed pseudocode:\n\n\`\`\`\n${detailedPseudocodeSnippet}\n\`\`\``,
+        edgeChecks.length
+          ? `\nBefore running again, test:\n${edgeChecks.map(item => `- ${item}`).join("\n")}`
+          : "",
+      ].filter(Boolean).join("\n"),
+      locked: unlockedCount < 4,
     },
   ];
 }
@@ -698,6 +1271,7 @@ export default function CodingTutor({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const storageScope = currentUserStorageScope();
   // Dark mode is scoped to the Coding Tutor only (the rest of the app stays
   // light). We drive it with `body.coding-dark` instead of the global
   // `body.dark`, so it survives main removing the app-wide dark toggle. Persist
@@ -715,16 +1289,21 @@ export default function CodingTutor({
   const [lastNonWorkspacePage, setLastNonWorkspacePage] = useState("dashboard");
   const [workspaceVisible, setWorkspaceVisible] = useState(true);
   const [workspaceTab, setWorkspaceTab] = useState("Editor");
+  const [visualizerModalOpen, setVisualizerModalOpen] = useState(false);
+  const [traceModalOpen, setTraceModalOpen] = useState(false);
+  const [traceResult, setTraceResult] = useState(null);
+  const [isTracingCode, setIsTracingCode] = useState(false);
   const [dailyChallenge, setDailyChallenge] = useState(null);
   const [dailyChallengeLoading, setDailyChallengeLoading] = useState(false);
   const [learningStyle, setLearningStyle] = useState(DEFAULT_LEARNING_STYLE);
-  // Recorded local dates (YYYY-MM-DD) the student practiced the daily challenge.
-  // Drives the real "day streak" tile instead of a derived guess.
+  // Recorded local dates (YYYY-MM-DD) the student practiced in the Learning Library.
+  // Drives the real practice streak tile instead of a derived guess.
   const [dailyStreakDays, setDailyStreakDays] = useState(() => readDailyStreakDays());
   const [difficulty, setDifficulty] = useState("easy");
   // A topic to pre-filter the Practice Library by, set when a student clicks a
   // prerequisite ("Needs: …") link on an interview problem. Consumed + cleared by QuizBank.
   const [pendingQuizTopic, setPendingQuizTopic] = useState(null);
+  const [lastPracticeRoutes, setLastPracticeRoutes] = useState(readStoredPracticeRoutes);
   // NOTE: the Practice Library's [Quiz | Code] mode is NOT state — it is derived from
   // the URL (see conceptQuizTargetFromPath). Holding it in state as well would make the
   // address bar disagree with the screen: /coding/practice would render Quiz while
@@ -738,11 +1317,9 @@ export default function CodingTutor({
   // no mastery signal. Accepted — teaching the beginner beats instrumenting them. See
   // ROADMAP §1.5, backing quiz progress with a real table, which closes that gap.)
 
-  // (Removed: a "last quiz location" ref that made the Practice tab restore wherever the
-  // student was last. A top-level tab should go to its front page — the language cards —
-  // not silently teleport you into a half-finished quiz, with no way left to ask for the
-  // language list. Back/Forward still returns them to the exact question, because every
-  // view has a real URL.)
+  // The mini-sidebar Learning Library button restores the last library route. That
+  // keeps Code filters/page, a Learn lesson, or a Practice quiz landing in place after
+  // a detour into Workspace, while the in-page Back buttons still expose broader lists.
   const [practiceLanguage, setPracticeLanguage] = useState("Python");
   const [selectedLanguage, setSelectedLanguage] = useState("Python");
   const [questions, setQuestions] = useState([]);
@@ -768,6 +1345,9 @@ export default function CodingTutor({
   // Per-device counters that back the mock + best-streak badges (localStorage).
   const [mockCompleted, setMockCompleted] = useState(() => readMockCompleted());
   const [bestStreak, setBestStreak] = useState(() => readBestStreak());
+  const recordPracticeActivity = useCallback(() => {
+    setDailyStreakDays(recordPracticeActivityDay());
+  }, []);
   // Confirm dialog for mock-mode actions: { title, body, confirmLabel, onConfirm }.
   const [mockConfirm, setMockConfirm] = useState(null);
   const mockSessionActive = Boolean(mockSession); // ticker dep: only (re)start on begin/end
@@ -775,6 +1355,7 @@ export default function CodingTutor({
   const [progressByLanguage, setProgressByLanguage] = useState({});
   const [activeProblem, setActiveProblem] = useState(null);
   const [activeSolution, setActiveSolution] = useState(null);
+  const activeSolutionRef = useRef(null);
   const [problemLoading, setProblemLoading] = useState(false);
   const [listLoading, setListLoading] = useState(false);
   // Personal "My Snippets" workspace: a fresh, non-graded space separate from the
@@ -788,6 +1369,7 @@ export default function CodingTutor({
   // A pending navigation action held while the "unsaved changes" prompt is shown.
   const [unsavedPrompt, setUnsavedPrompt] = useState(null);
   const [code, setCode] = useState("");
+  const [editorSelection, setEditorSelection] = useState({ start: 0, end: 0, text: "" });
   // Live mirrors of the editor code + language key, so the mock-nav setMockSession
   // updaters (which run before React commits fresh state) can snapshot the CURRENT
   // answer without a stale closure. Kept in sync by the effect below.
@@ -796,10 +1378,25 @@ export default function CodingTutor({
   const [note, setNote] = useState("");
   const [testOutput, setTestOutput] = useState({ status: "ready", message: "" });
   const [terminalOpen, setTerminalOpen] = useState(false);
+  const [workspaceGuideWidth, setWorkspaceGuideWidth] = useState(readStoredWorkspaceGuideWidth);
   const [isRunning, setIsRunning] = useState(false);
   // Lets the Stop button abort an in-flight run. The backend's hard CPU/time
   // limit also kills a truly stuck process, so this frees the UI immediately.
   const runAbortRef = useRef(null);
+  const guideResizeRef = useRef(null);
+  const workspaceGuideWidthRef = useRef(workspaceGuideWidth);
+
+  useEffect(() => {
+    workspaceGuideWidthRef.current = workspaceGuideWidth;
+  }, [workspaceGuideWidth]);
+
+  const persistGuideWidth = useCallback((value) => {
+    try {
+      window.localStorage.setItem(WORKSPACE_GUIDE_W_KEY, String(Math.round(value)));
+    } catch {
+      /* ignore storage errors */
+    }
+  }, []);
 
   const stopRun = useCallback(() => {
     if (runAbortRef.current) {
@@ -809,7 +1406,68 @@ export default function CodingTutor({
     setIsRunning(false);
     setTestOutput({ status: "error", free_run: true, tests: [], stdout: "", stderr: "Run stopped.", message: "You stopped the run." });
   }, []);
+
+  const onGuideDividerPointerDown = useCallback((event) => {
+    event.preventDefault();
+    guideResizeRef.current = {
+      startX: event.clientX,
+      startWidth: workspaceGuideWidth,
+    };
+    document.body.classList.add("ct-guide-resizing");
+    try {
+      event.target.setPointerCapture?.(event.pointerId);
+    } catch {
+      /* pointer capture is best-effort */
+    }
+  }, [workspaceGuideWidth]);
+
+  const onGuideDividerPointerMove = useCallback((event) => {
+    const state = guideResizeRef.current;
+    if (!state) return;
+    const delta = event.clientX - state.startX;
+    const next = Math.min(
+      WORKSPACE_GUIDE_MAX_W,
+      Math.max(WORKSPACE_GUIDE_MIN_W, state.startWidth + delta),
+    );
+    workspaceGuideWidthRef.current = next;
+    setWorkspaceGuideWidth(next);
+  }, []);
+
+  const endGuideResize = useCallback(() => {
+    if (!guideResizeRef.current) return;
+    guideResizeRef.current = null;
+    document.body.classList.remove("ct-guide-resizing");
+    persistGuideWidth(workspaceGuideWidthRef.current);
+  }, [persistGuideWidth]);
+
+  const onGuideDividerKeyDown = useCallback((event) => {
+    const step = event.shiftKey ? 48 : 16;
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      const next = Math.max(WORKSPACE_GUIDE_MIN_W, workspaceGuideWidthRef.current - step);
+      workspaceGuideWidthRef.current = next;
+      setWorkspaceGuideWidth(next);
+      persistGuideWidth(next);
+    } else if (event.key === "ArrowRight") {
+      event.preventDefault();
+      const next = Math.min(WORKSPACE_GUIDE_MAX_W, workspaceGuideWidthRef.current + step);
+      workspaceGuideWidthRef.current = next;
+      setWorkspaceGuideWidth(next);
+      persistGuideWidth(next);
+    }
+  }, [persistGuideWidth]);
+
+  useEffect(() => {
+    window.addEventListener("pointerup", endGuideResize);
+    window.addEventListener("pointercancel", endGuideResize);
+    return () => {
+      window.removeEventListener("pointerup", endGuideResize);
+      window.removeEventListener("pointercancel", endGuideResize);
+      document.body.classList.remove("ct-guide-resizing");
+    };
+  }, [endGuideResize]);
   const [revealedHints, setRevealedHints] = useState(0);
+  const [hintGate, setHintGate] = useState(null);
   const [tutorMode, setTutorMode] = useState("Guided Tutor");
   const [quizPdfStartIndex, setQuizPdfStartIndex] = useState(null);
   const [workspaceSnapshots, setWorkspaceSnapshots] = useState({});
@@ -820,28 +1478,91 @@ export default function CodingTutor({
   const restoredWorkspaceTargetRef = useRef(null);
   // Ensures the "auto-reopen last workspace" fallback only fires once per mount.
   const autoReopenedRef = useRef(false);
+  const lastSyncedWorkspaceStateRef = useRef("");
   const selectedLanguageKey = PRACTICE_LANGUAGE_API[selectedLanguage] || "python";
   // Mirror the live editor code + language into refs every render so the mock-nav
   // handlers can read the current answer synchronously when switching questions.
+  activeSolutionRef.current = activeSolution;
   codeRef.current = code;
   langKeyRef.current = selectedLanguageKey;
   const activeLanguageProgress = activeProblem ? progressByLanguage[activeProblem.id]?.[selectedLanguageKey] : null;
   const activeInterviewProgress = activeProblem ? interviewProgressByQuestion[activeProblem.id]?.[selectedLanguageKey] : null;
   const activeProgress = activeLanguageProgress || (activeProblem ? progressByQuestion[activeProblem.id] : null);
   const attempts = activeProgress?.attempt_count || 0;
+
+  const saveWorkspaceState = useCallback(async (problemId, languageKey, source = "practice") => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    const normalizedSource = source === "interview" ? "interview" : "practice";
+    const normalizedLanguage = languageKey || "python";
+    const signature = `${problemId || ""}:${normalizedLanguage}:${normalizedSource}`;
+    if (lastSyncedWorkspaceStateRef.current === signature) return;
+    lastSyncedWorkspaceStateRef.current = signature;
+    try {
+      const response = await fetch(`${apiBase}/api/coding/workspace-state`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          problem_id: problemId || null,
+          language: normalizedLanguage,
+          source: normalizedSource,
+        }),
+      });
+      if (!response.ok) throw new Error(`workspace-state ${response.status}`);
+    } catch (error) {
+      // Local draft/last-workspace still works offline. Reset the signature so a
+      // later online edit gets another chance to sync.
+      lastSyncedWorkspaceStateRef.current = "";
+      console.warn("[coding-workspace] workspace-state sync failed", error);
+    }
+  }, [apiBase]);
+
+  const loadWorkspaceState = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return null;
+    try {
+      const response = await fetch(`${apiBase}/api/coding/workspace-state`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error(`workspace-state ${response.status}`);
+      const data = await response.json();
+      return data?.problem_id ? data : null;
+    } catch (error) {
+      console.warn("[coding-workspace] workspace-state load failed", error);
+      return null;
+    }
+  }, [apiBase]);
   // Interview simulation: pick your language on the FIRST question of the mock, then it
   // LOCKS for the rest of the round (advancing past Q1 commits it — like committing to a
   // language in a real interview). Stays locked even if you go Back to Q1, so a committed
   // language can't be swapped mid-round. Outside a mock it's freely switchable.
   const interviewLanguageLocked = Boolean(mockSession && activeProblem?.mock && mockSession.languageCommitted);
-  const hintSteps = useMemo(() => buildHintSteps(activeProblem, activeSolution, attempts), [activeProblem, activeSolution, attempts]);
+  const hintSteps = useMemo(() => buildHintSteps(activeProblem, activeSolution, attempts, hintGate), [activeProblem, activeSolution, attempts, hintGate]);
+  const currentWorkspaceContextKey = [
+    activeProblem?.id || activeProblem?.title || "personal",
+    selectedLanguage || "unknown-language",
+    activeSolution?.function_name || "free-run",
+  ].join("::");
   const latestFeedback = messages.slice().reverse().find((msg) =>
     msg.sender === "bot"
     && msg.text
     && msg.mode === "coding_tutor"
     && msg.surface === "widget"
     && msg.widgetSessionId === currentWidgetSessionId
+    && (!msg.workspaceContextKey || msg.workspaceContextKey === currentWorkspaceContextKey)
   )?.text || "";
+  const discussionMessages = useMemo(
+    () =>
+      messages.filter((msg) =>
+        msg.mode === "coding_tutor"
+        && msg.surface === "widget"
+        && msg.widgetSessionId === currentWidgetSessionId
+      ),
+    [messages, currentWidgetSessionId]
+  );
   const suggestedCodeBlock = latestFeedback.match(/```(?:\w+)?\n([\s\S]*?)```/)?.[1]?.trim() || "";
   const latestQuizResponse = quizPdfStartIndex !== null
     ? messages.slice(quizPdfStartIndex).slice().reverse().find((msg) => msg.sender === "bot" && msg.text)?.text || ""
@@ -865,10 +1586,64 @@ export default function CodingTutor({
   const canGoNext = activeQuestionIndex >= 0 && findAdjacentUnsolvedIndex(activeQuestionIndex, 1) >= 0;
   const activeQuestionProgress = activeProblem ? progressByQuestion[activeProblem.id] : null;
   const activeSolvedLanguages = activeQuestionProgress?.solved_languages || [];
+  const canOpenVisualizer = problemHasVisualizer(activeProblem);
+  const openProblemVisualizer = useCallback(() => {
+    if (!problemHasVisualizer(activeProblem)) return;
+    setWorkspaceVisible(true);
+    setWorkspaceTab("Visualize");
+    setVisualizerModalOpen(true);
+  }, [activeProblem]);
   const isActiveProblemSolved = (
     isQuizBankProblem
       && (activeQuestionProgress?.status === "solved" || activeLanguageProgress?.status === "solved")
   ) || (isInterviewWorkspaceProblem && interviewSolved.has(activeProblem?.id));
+
+  useEffect(() => {
+    setVisualizerModalOpen(false);
+    setTraceModalOpen(false);
+    setTraceResult(null);
+  }, [activeProblem?.id, selectedLanguageKey]);
+
+  useEffect(() => {
+    if (!activeProblem?.id) {
+      setHintGate(null);
+      return undefined;
+    }
+    if (!isQuizBankProblem && !isInterviewWorkspaceProblem) {
+      setHintGate(null);
+      return undefined;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setHintGate(null);
+      return undefined;
+    }
+
+    const questionSet = isInterviewWorkspaceProblem ? "interview" : "practice";
+    const controller = new AbortController();
+    setHintGate(null);
+    fetch(`${apiBase}/api/coding/practice/questions/${encodeURIComponent(activeProblem.id)}/hint-state?set=${questionSet}&language=${selectedLanguageKey}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal,
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(`hint-state ${response.status}`);
+        return response.json();
+      })
+      .then((data) => {
+        setHintGate(data);
+        setRevealedHints((current) => Math.min(current, data.unlocked_count || 0));
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") {
+          console.warn("[coding-hints] server hint gate unavailable; using local fallback", error);
+          setHintGate(null);
+        }
+      });
+
+    return () => controller.abort();
+  }, [activeProblem?.id, activeProblem?.source, apiBase, attempts, isInterviewWorkspaceProblem, isQuizBankProblem, selectedLanguageKey]);
 
   const progressQuestions = useMemo(
     () => (allQuestions.length ? allQuestions : questions),
@@ -882,7 +1657,7 @@ export default function CodingTutor({
   const attemptedCount = progressItems.filter(item => (item.progress?.attempt_count || 0) > 0 || item.progress?.status === "solved").length;
   const totalAttempts = progressItems.reduce((sum, item) => sum + (item.progress?.attempt_count || 0), 0);
   const completionPercent = progressQuestions.length ? Math.round((solvedCount / progressQuestions.length) * 100) : 0;
-  // Real consecutive-day streak from daily-challenge completions.
+  // Real consecutive-day streak from Learning Library practice activity.
   const displayStreak = useMemo(() => computeDailyStreak(dailyStreakDays), [dailyStreakDays]);
   const dailyDoneToday = useMemo(() => isDailyDoneToday(dailyStreakDays), [dailyStreakDays]);
 
@@ -908,6 +1683,24 @@ export default function CodingTutor({
   // just improved on.
   const [mastery, setMastery] = useState(null);
   const [masteryTick, setMasteryTick] = useState(0);
+  const [adaptivePractice, setAdaptivePractice] = useState(null);
+  const [milestoneSignals, setMilestoneSignals] = useState(null);
+  const [engagementTick, setEngagementTick] = useState(0);
+  const codingSyncReadyRef = useRef(false);
+
+  useEffect(() => {
+    codingSyncReadyRef.current = false;
+    setDailyStreakDays(readDailyStreakDays());
+    setMockCompleted(readMockCompleted());
+    setBestStreak(readBestStreak());
+    setLastPracticeRoutes(readStoredPracticeRoutes());
+    setProgressByQuestion({});
+    setProgressByLanguage({});
+    setMastery(null);
+    setAdaptivePractice(null);
+    setMilestoneSignals(null);
+  }, [storageScope]);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return undefined;
@@ -926,9 +1719,48 @@ export default function CodingTutor({
       }
     })();
     return () => { cancelled = true; };
-  }, [apiBase, masteryTick]);
+  }, [apiBase, masteryTick, storageScope]);
 
-  const codingSyncReadyRef = useRef(false);
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return undefined;
+    let cancelled = false;
+    const languageKey = PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
+    (async () => {
+      try {
+        const res = await fetch(`${apiBase}/api/coding/adaptive/recommendations?language=${encodeURIComponent(languageKey)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (!cancelled) setAdaptivePractice(data);
+      } catch {
+        // Adaptive recommendations are guidance only. Keep the existing dashboard
+        // and Practice Guide fallbacks if the endpoint is unavailable.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [apiBase, masteryTick, practiceLanguage, storageScope]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${apiBase}/api/coding/milestones`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (!cancelled) setMilestoneSignals(data);
+      } catch {
+        // Progress habits are informational. Badges and core practice still work.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [apiBase, engagementTick, masteryTick, storageScope]);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return undefined;
@@ -942,31 +1774,19 @@ export default function CodingTutor({
         const server = await res.json();
         if (cancelled) return;
         // Merge server → local (max for counters, union for days).
-        const localDays = readDailyStreakDays();
-        const mergedDays = [...new Set([...localDays, ...(server.daily_days || [])])].sort();
-        const mergedMock = Math.max(readMockCompleted(), server.mock_completed || 0);
-        const mergedBest = Math.max(readBestStreak(), server.best_streak || 0);
+        const serverDays = Array.isArray(server.daily_days) ? server.daily_days : [];
+        const mergedDays = [...new Set(serverDays)].sort().slice(-370);
+        const mergedMock = Math.max(0, Number(server.mock_completed) || 0);
+        const mergedBest = Math.max(0, Number(server.best_streak) || 0);
         // Write merged values back to the localStorage cache + state.
         try {
-          localStorage.setItem(MOCK_DONE_KEY, String(mergedMock));
-          localStorage.setItem(BEST_STREAK_KEY, String(mergedBest));
-          localStorage.setItem(DAILY_STREAK_KEY, JSON.stringify(mergedDays.slice(-370)));
+          localStorage.setItem(mockDoneKey(), String(mergedMock));
+          localStorage.setItem(bestStreakKey(), String(mergedBest));
+          localStorage.setItem(dailyStreakKey(), JSON.stringify(mergedDays.slice(-370)));
         } catch { /* cache write best-effort */ }
         setMockCompleted(mergedMock);
         setBestStreak(mergedBest);
-        setDailyStreakDays(mergedDays.slice(-370));
-        // If local had more than the server (existing single-device user), push up.
-        const serverBehind =
-          mergedMock > (server.mock_completed || 0) ||
-          mergedBest > (server.best_streak || 0) ||
-          mergedDays.length > (server.daily_days || []).length;
-        if (serverBehind) {
-          fetch(`${apiBase}/api/coding/user-progress`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ mock_completed: mergedMock, best_streak: mergedBest, daily_days: mergedDays }),
-          }).catch(() => {});
-        }
+        setDailyStreakDays(mergedDays);
       } catch {
         // Offline / backend down → keep using localStorage. No UI error.
       } finally {
@@ -974,7 +1794,7 @@ export default function CodingTutor({
       }
     })();
     return () => { cancelled = true; };
-  }, [apiBase]);
+  }, [apiBase, storageScope]);
 
   // Debounced PUT when any aggregate signal changes (after the initial sync).
   useEffect(() => {
@@ -993,7 +1813,7 @@ export default function CodingTutor({
       }).catch(() => {});
     }, 800);
     return () => clearTimeout(handle);
-  }, [apiBase, mockCompleted, bestStreak, displayStreak, dailyStreakDays]);
+  }, [apiBase, mockCompleted, bestStreak, displayStreak, dailyStreakDays, storageScope]);
 
   const progressSummary = {
     solvedCount, attemptedCount, totalAttempts, completionPercent, displayStreak,
@@ -1038,16 +1858,59 @@ export default function CodingTutor({
     [activeSnapshotKey, workspaceSnapshots]
   );
   const runnerSummary = useMemo(() => summarizeRunForTutor(testOutput), [testOutput]);
-  const applyAiCode = useCallback(() => {
-    if (!suggestedCodeBlock || suggestedCodeBlock === code) return;
-    const shouldReplace = suggestedCodeLooksLikeSafeReplacement(code, suggestedCodeBlock, selectedLanguage);
-    const nextCode = shouldReplace
-      ? suggestedCodeBlock
-      : `${code.trimEnd()}${buildCommentedTutorSuggestion(suggestedCodeBlock, selectedLanguage)}`;
-    const confirmMessage = shouldReplace
-      ? "Replace the current workspace code with this tutor suggestion? You can undo this change afterward."
-      : "This looks like a partial example, so it will be added as comments under your code instead of replacing your workspace.";
-    if (code.trim() && !window.confirm(confirmMessage)) return;
+  const recordTutorAction = useCallback((actionType, metadata = {}) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    const source = activeProblem?.source === "interview" ? "interview" : "practice";
+    fetch(`${apiBase}/api/coding/tutor-actions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        action_type: actionType,
+        source,
+        question_id: activeProblem?.id || null,
+        language: selectedLanguageKey,
+        metadata,
+      }),
+    })
+      .then(response => {
+        if (response.ok) setEngagementTick(tick => tick + 1);
+      })
+      .catch(() => {});
+  }, [activeProblem?.id, activeProblem?.source, apiBase, selectedLanguageKey]);
+
+  const applyAiCodeWithMode = useCallback((mode = "safe") => {
+    if (!suggestedCodeBlock || (mode !== "selection" && suggestedCodeBlock === code)) return;
+    const trimmedCode = code.trimEnd();
+    const hasSelection =
+      Number.isInteger(editorSelection.start) &&
+      Number.isInteger(editorSelection.end) &&
+      editorSelection.end > editorSelection.start &&
+      editorSelection.end <= code.length;
+    if (mode === "selection" && !hasSelection) {
+      toast.info("Select code in the workspace first, then use Replace selection.");
+      return;
+    }
+    const nextCode = (() => {
+      if (mode === "selection") {
+        return `${code.slice(0, editorSelection.start)}${suggestedCodeBlock}${code.slice(editorSelection.end)}`;
+      }
+      if (mode === "comment") {
+        return `${trimmedCode}${buildCommentedTutorSuggestion(suggestedCodeBlock, selectedLanguage)}`;
+      }
+      if (mode === "append") {
+        return `${trimmedCode}${trimmedCode ? "\n\n" : ""}${suggestedCodeBlock}`;
+      }
+      if (mode === "replace") {
+        return suggestedCodeBlock;
+      }
+      return suggestedCodeLooksLikeSafeReplacement(code, suggestedCodeBlock, selectedLanguage)
+        ? suggestedCodeBlock
+        : `${trimmedCode}${buildCommentedTutorSuggestion(suggestedCodeBlock, selectedLanguage)}`;
+    })();
     setWorkspaceSnapshots(prev => ({
       ...prev,
       [activeSnapshotKey]: {
@@ -1058,8 +1921,16 @@ export default function CodingTutor({
       },
     }));
     setCode(nextCode);
-    toast.success(shouldReplace ? "Tutor code applied. Undo is available in the chat." : "Tutor suggestion added as comments.");
-  }, [activeSnapshotKey, code, selectedLanguage, suggestedCodeBlock]);
+    const label = {
+      comment: "Tutor suggestion inserted as comments.",
+      append: "Tutor suggestion appended below your code.",
+      replace: "Tutor suggestion replaced the workspace.",
+      safe: "Tutor suggestion applied safely.",
+      selection: "Tutor suggestion replaced the selected code.",
+    }[mode] || "Tutor suggestion applied.";
+    toast.success(`${label} Undo is available in the chat.`);
+    recordTutorAction("tutor_suggestion_applied", { mode, surface: "workspace" });
+  }, [activeSnapshotKey, code, editorSelection, recordTutorAction, selectedLanguage, suggestedCodeBlock]);
 
   const undoAiCode = useCallback(() => {
     const previousCode = activeSnapshots.beforeAiRewrite;
@@ -1127,7 +1998,7 @@ export default function CodingTutor({
       return;
     }
     sendToWidget([
-      "My code produced this error when I ran it. In plain English: what does this error mean, what is the most likely cause, and what is one focused fix to try? Do not rewrite my whole program.",
+      "My code produced this error when I ran it. Start by asking me what I expected the code to do. Then explain the error in plain English, name the most likely cause, and give one focused fix to try. Do not rewrite my whole program.",
       "",
       `Language: ${selectedLanguage}`,
       "Error output:",
@@ -1217,6 +2088,8 @@ export default function CodingTutor({
     onContextChange?.({
       activeProblem: useWorkspace ? activeProblem : null,
       selectedLanguage,
+      expectedFunctionName: useWorkspace ? activeSolution?.function_name || "" : "",
+      starterCode: useWorkspace ? activeSolution?.starter_code || "" : "",
       code: useWorkspace ? code : "",
       attempts: useWorkspace ? attempts : 0,
       workspaceTab: activePage === "workspace" && workspaceVisible ? workspaceTab : activePage,
@@ -1225,13 +2098,19 @@ export default function CodingTutor({
       learningStyle,
       learningStyleLabel: learningStyleInfo(learningStyle).label,
       learningStyleInstruction: learningStyleInfo(learningStyle).prompt,
+      hintState: hintGate ? {
+        unlockedCount: hintGate.unlocked_count || 0,
+        solutionUnlocked: Boolean(hintGate.solution_unlocked),
+        reason: hintGate.reason || "",
+      } : null,
       runnerSummary: useWorkspace ? runnerSummary : "",
       suggestedCodeBlock,
-      onApplyAICode: suggestedCodeBlock ? applyAiCode : null,
+      hasEditorSelection: Boolean(editorSelection.text),
+      onApplyAICode: suggestedCodeBlock ? applyAiCodeWithMode : null,
       onUndoAICode: typeof activeSnapshots.beforeAiRewrite === "string" ? undoAiCode : null,
       canUndoAICode: typeof activeSnapshots.beforeAiRewrite === "string",
     });
-  }, [activePage, activeProblem, attempts, code, note, onContextChange, selectedLanguage, suggestedCodeBlock, tutorMode, learningStyle, workspaceTab, workspaceVisible, runnerSummary, activeSnapshots.beforeAiRewrite, applyAiCode, undoAiCode]);
+  }, [activePage, activeProblem, activeSolution?.function_name, activeSolution?.starter_code, attempts, code, note, onContextChange, selectedLanguage, suggestedCodeBlock, tutorMode, learningStyle, hintGate, workspaceTab, workspaceVisible, runnerSummary, activeSnapshots.beforeAiRewrite, applyAiCodeWithMode, undoAiCode, editorSelection.text]);
 
   useEffect(() => {
     onActivePageChange?.(activePage);
@@ -1245,6 +2124,28 @@ export default function CodingTutor({
     const target = LEGACY_PAGE_QUERY_TO_PATH[requestedPage];
     if (target) navigate(target, { replace: true });
   }, [location.search, navigate]);
+
+  useEffect(() => {
+    const clean = location.pathname.length > 1 ? location.pathname.replace(/\/+$/, "") : location.pathname;
+    if (clean === "/coding/practice" || clean.startsWith("/coding/practice/")) {
+      const target = practiceTargetFromPath(location.pathname);
+      const route = `${location.pathname}${location.search}${location.hash || ""}`;
+      setLastPracticeRoutes((previous) => {
+        if (previous.current === route && previous[target.mode] === route) return previous;
+        const next = { ...previous, current: route, [target.mode]: route };
+        try {
+          localStorage.setItem(scopedStorageKey(LAST_PRACTICE_ROUTES_BASE_KEY), JSON.stringify(next));
+        } catch {
+          /* localStorage can be blocked; route memory still works for this session */
+        }
+        return next;
+      });
+    }
+  }, [location.hash, location.pathname, location.search]);
+
+  const openPracticeLibrary = useCallback(() => {
+    navigate(lastPracticeRoutes.current || PRACTICE_LEARN_PATH);
+  }, [lastPracticeRoutes, navigate]);
 
   // Keep "last non-workspace section" in sync as the URL changes, so toggling the
   // workspace off returns to wherever the student was (Home/Practice/…).
@@ -1291,6 +2192,7 @@ export default function CodingTutor({
     const handle = setTimeout(() => {
       saveDraft(problemId, language, code);
       if (activeProblem.source === "interview") {
+        if (activeInterviewProgress?.code === code && activeInterviewProgress?.status !== "not_started") return;
         saveInterviewWorkspaceProgress(
           problemId,
           {
@@ -1304,15 +2206,17 @@ export default function CodingTutor({
       if (
         isQuizBankProblem &&
         activeLanguageProgress?.status !== "solved" &&
-        hasStarterCodeChanged(code, starter)
+        hasStarterCodeChanged(code, starter) &&
+        activeLanguageProgress?.code !== code
       ) {
         markInProgressLocal(problemId, language, code);
+        saveProgress(problemId, { status: "in_progress", code }, language);
       }
     }, 400);
     return () => clearTimeout(handle);
     // markInProgressLocal is a stable setState closure; excluded on purpose.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeProblem, selectedLanguageKey, code, activeSolution, isQuizBankProblem, activeLanguageProgress]);
+  }, [activeProblem, selectedLanguageKey, code, activeSolution, isQuizBankProblem, activeLanguageProgress, activeInterviewProgress]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1380,6 +2284,7 @@ export default function CodingTutor({
         }
         const nextAllQuestions = allQuestionResults.flatMap(result => result.questions || []);
         const nextLanguageProgress = {};
+        const localProgressToSeed = [];
         for (const result of progressResults) {
           if (result?.response?.ok) {
             const progressData = await result.response.json();
@@ -1401,6 +2306,14 @@ export default function CodingTutor({
                 ...(nextLanguageProgress[question.id] || {}),
                 [language]: local,
               };
+              if (token) {
+                localProgressToSeed.push({
+                  questionId: question.id,
+                  language,
+                  status: local.status === "solved" ? "solved" : "in_progress",
+                  code: typeof local.code === "string" ? local.code : "",
+                });
+              }
             }
           });
         });
@@ -1409,6 +2322,24 @@ export default function CodingTutor({
           setAllQuestions(nextAllQuestions);
           setProgressByLanguage(nextLanguageProgress);
           setProgressByQuestion(aggregateProgressMap(nextLanguageProgress));
+        }
+        if (token && localProgressToSeed.length) {
+          Promise.allSettled(
+            localProgressToSeed.map((item) =>
+              fetch(`${apiBase}/api/coding/practice/questions/${item.questionId}/progress`, {
+                method: "PATCH",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  language: item.language,
+                  status: item.status,
+                  code: item.code,
+                }),
+              })
+            )
+          ).catch(() => {});
         }
       } catch (error) {
         console.error("[coding-practice] load failed", error);
@@ -1425,7 +2356,7 @@ export default function CodingTutor({
     };
     fetchPractice();
     return () => { cancelled = true; };
-  }, [apiBase, difficulty]);
+  }, [apiBase, difficulty, storageScope]);
 
   const mergeInterviewProgressItems = (items = []) => {
     if (!Array.isArray(items) || !items.length) return;
@@ -1585,8 +2516,8 @@ export default function CodingTutor({
     const solutionCacheKey = `${problem.id}:${language}`;
     let solution = solutionCacheRef.current[solutionCacheKey];
     if (!solution) {
-      const response = await fetch(`${apiBase}/api/coding/practice/questions/${problem.id}/solution?language=${language}`);
-      if (!response.ok) throw new Error(`solution ${response.status}`);
+      const response = await fetch(`${apiBase}/api/coding/practice/questions/${problem.id}/materials?language=${language}`);
+      if (!response.ok) throw new Error(`materials ${response.status}`);
       solution = await response.json();
       solutionCacheRef.current[solutionCacheKey] = solution;
     }
@@ -1611,12 +2542,18 @@ export default function CodingTutor({
     setPracticeLanguage(languageName);
     // Code precedence: an explicit restore wins, then a local unrun draft (freshest
     // edit, survives unmount), then saved backend progress, then the starter stub.
-    const draftCode = existingCode == null ? readDraft(problem.id, language) : null;
-    const nextCode = existingCode ?? draftCode ?? progress?.code ?? solution?.starter_code ?? "";
+    const draftEntry = existingCode == null ? readDraftEntry(problem.id, language) : null;
+    const nextCode = chooseWorkspaceCode({
+      explicitCode: existingCode,
+      draftEntry,
+      serverProgress: progress,
+      starterCode: solution?.starter_code || "",
+    });
     setCode(nextCode);
     // Remember this problem+language so the workspace can auto-reopen it if the
     // student navigates to the full chat (which unmounts the workspace) and back.
     saveLastWorkspace(problem.id, language);
+    saveWorkspaceState(problem.id, language, "practice");
     setWorkspaceSnapshots(prev => ({
       ...prev,
       [`${problem.id}:${language}`]: {
@@ -1634,6 +2571,45 @@ export default function CodingTutor({
     setRevealedHints(0);
     navigate(workspacePathForProblem(problem.id));
   };
+
+  const loadUnlockedReferenceSolution = async (problem = activeProblem, language = selectedLanguageKey) => {
+    if (!problem?.id || problem.source === "interview" || problem.source === "personal" || problem.source === "leetcode") return null;
+    const token = localStorage.getItem("token");
+    if (!token) return null;
+    try {
+      const response = await fetch(`${apiBase}/api/coding/practice/questions/${problem.id}/solution?language=${language}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.status === 423) {
+        if (data?.detail?.hint_state) setHintGate(data.detail.hint_state);
+        return null;
+      }
+      if (!response.ok) throw new Error(data.detail || `solution ${response.status}`);
+      const responseQuestionId = data?.question_id || problem.id;
+      const currentQuestionId = activeSolutionRef.current?.question_id;
+      if (currentQuestionId && currentQuestionId !== responseQuestionId) {
+        return null;
+      }
+      setActiveSolution((current) => {
+        if (!current || current.question_id && current.question_id !== responseQuestionId) {
+          return current;
+        }
+        return { ...current, ...data };
+      });
+      if (data.hint_state) setHintGate(data.hint_state);
+      return data;
+    } catch (error) {
+      console.warn("[coding-solution] reference solution unavailable", error);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    if (!hintGate?.solution_unlocked || activeSolution?.reference_solution) return;
+    loadUnlockedReferenceSolution(activeProblem, selectedLanguageKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hintGate?.solution_unlocked, activeSolution?.reference_solution, activeProblem?.id, selectedLanguageKey]);
 
   // Persist the CURRENT quiz problem as in-progress if its code changed from the
   // starter, so editing a problem (even without running it) makes it show up under
@@ -1689,14 +2665,19 @@ export default function CodingTutor({
       );
       const nextLanguageName = displayLanguageName(languageName);
       const nextLanguageKey = PRACTICE_LANGUAGE_API[nextLanguageName] || "python";
-      const draftCode = readDraft(activeProblem.id, nextLanguageKey);
-      const serverCode = interviewProgressByQuestion[activeProblem.id]?.[nextLanguageKey]?.code;
+      const serverProgress = interviewProgressByQuestion[activeProblem.id]?.[nextLanguageKey];
       setSelectedLanguage(nextLanguageName);
       setPracticeLanguage(nextLanguageName);
-      setCode(draftCode ?? serverCode ?? interviewStarterStub(activeProblem, nextLanguageName));
-      saveLastWorkspace(activeProblem.id, nextLanguageKey);
+      setCode(chooseWorkspaceCode({
+        draftEntry: readDraftEntry(activeProblem.id, nextLanguageKey),
+        serverProgress,
+        starterCode: interviewStarterStub(activeProblem, nextLanguageName),
+      }));
       if (activeProblem?.mock) {
         setMockSession((prev) => (prev ? { ...prev, language: nextLanguageName } : prev));
+      } else {
+        saveLastWorkspace(activeProblem.id, nextLanguageKey, "interview");
+        saveWorkspaceState(activeProblem.id, nextLanguageKey, "interview");
       }
       return;
     }
@@ -1720,12 +2701,28 @@ export default function CodingTutor({
   };
 
   const startDailyChallenge = (withHints = false) => {
-    // Practicing the daily challenge counts toward the day streak (gamification).
-    setDailyStreakDays(recordDailyChallengeDay());
     const title = dailyChallenge?.title || "Daily coding challenge";
+    const isLeetCode = (dailyChallenge?.source || "").toLowerCase() === "leetcode";
+    const sourceUrl = dailyChallenge?.url || "https://leetcode.com/problemset/";
+    if (isLeetCode && !withHints) {
+      const opened = window.open(sourceUrl, "_blank", "noopener,noreferrer");
+      if (opened) {
+        opened.opener = null;
+        toast.success("Opened the LeetCode problem. Use CS Navigator scratchpad if you want notes or tutor help.");
+      } else {
+        toast.error("Your browser blocked the new tab. Use the View Source link on the daily card.");
+      }
+      return;
+    }
     const prompt = dailyChallenge?.available
-      ? `Solve today's LeetCode daily challenge: ${title}. Open the LeetCode link for the full prompt, then use this workspace for notes and code.`
+      ? `LeetCode daily scratchpad: ${title}. Open the LeetCode source link for the full prompt, examples, and official tests. Use this workspace for notes, experiments, and tutor help.`
       : "Daily challenge is unavailable. Use this workspace for a short practice prompt or open the Practice Library.";
+    const scratchpadStarter = {
+      Python: `# LeetCode daily scratchpad: ${title}\n# Open the Source link for the full prompt and official tests.\n# Use this space for notes, helper functions, or small experiments.\n\n`,
+      JavaScript: `// LeetCode daily scratchpad: ${title}\n// Open the Source link for the full prompt and official tests.\n// Use this space for notes, helper functions, or small experiments.\n\n`,
+      Java: `// LeetCode daily scratchpad: ${title}\n// Open the Source link for the full prompt and official tests.\n// Use this space for notes, helper methods, or small experiments.\n\nclass Solution {\n    // Start notes or helper code here.\n}\n`,
+      "C++": `// LeetCode daily scratchpad: ${title}\n// Open the Source link for the full prompt and official tests.\n// Use this space for notes, helper functions, or small experiments.\n\n#include <bits/stdc++.h>\nusing namespace std;\n\n// Start notes or helper code here.\n`,
+    };
     setActiveProblem({
       id: `daily-${new Date().toISOString().slice(0, 10)}`,
       title,
@@ -1733,14 +2730,18 @@ export default function CodingTutor({
       topic: dailyChallenge?.tags?.[0] || "Daily Challenge",
       prompt,
       examples: [],
-      constraints: dailyChallenge?.url ? [`Source: ${dailyChallenge.url}`] : [],
+      constraints: [
+        "Official prompt, examples, submissions, and judging stay on LeetCode.",
+        "CS Navigator scratchpad runs code freely, but it does not auto-grade this LeetCode problem.",
+        ...(dailyChallenge?.url ? [`Source: ${dailyChallenge.url}`] : []),
+      ],
       source: "leetcode",
     });
     setActiveSolution(null);
     setSelectedLanguage(practiceLanguage);
-    setCode("");
-    setNote(withHints ? `Daily challenge: ${title}. I want hints first.` : `Daily challenge: ${title}`);
-    setTestOutput({ status: "ready", message: "Daily challenge loaded. LeetCode daily problems are source-linked practice only; local auto-grading is for CS Navigator quiz-bank questions." });
+    setCode(scratchpadStarter[practiceLanguage] || scratchpadStarter.Python);
+    setNote(`LeetCode scratchpad: ${title}. I want hints without the full solution.`);
+    setTestOutput({ status: "ready", free_run: true, message: "LeetCode scratchpad loaded. Run executes your code as freeform practice only; official LeetCode judging stays on LeetCode." });
     setTerminalOpen(false);
     setTutorMode(withHints ? "Hinting" : "Guided Tutor");
     setWorkspaceVisible(true);
@@ -1776,23 +2777,30 @@ export default function CodingTutor({
     // Restore a saved mock answer (with its language) if the caller passed one;
     // otherwise seed the fresh starter stub. This is what stops mock navigation
     // from wiping the student's in-progress code.
+    let openedLanguageKey = PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
     if (opts.restoreCode != null) {
       const restoreLanguageName = displayLanguageName(opts.restoreLanguage || practiceLanguage);
+      openedLanguageKey = PRACTICE_LANGUAGE_API[restoreLanguageName] || "python";
       setSelectedLanguage(restoreLanguageName);
       setPracticeLanguage(restoreLanguageName);
       setCode(opts.restoreCode);
     } else {
-      const languageName = practiceLanguage;
+      const languageName = displayLanguageName(opts.restoreLanguage || practiceLanguage);
       const languageKey = PRACTICE_LANGUAGE_API[languageName] || "python";
-      const draftCode = readDraft(question.id, languageKey);
-      const serverCode = interviewProgressByQuestion[question.id]?.[languageKey]?.code;
+      openedLanguageKey = languageKey;
+      const serverProgress = interviewProgressByQuestion[question.id]?.[languageKey];
       setSelectedLanguage(languageName);
-      setCode(draftCode ?? serverCode ?? interviewStarterStub(question, languageName));
+      setPracticeLanguage(languageName);
+      setCode(chooseWorkspaceCode({
+        draftEntry: readDraftEntry(question.id, languageKey),
+        serverProgress,
+        starterCode: interviewStarterStub(question, languageName),
+      }));
     }
-    saveLastWorkspace(
-      question.id,
-      PRACTICE_LANGUAGE_API[displayLanguageName(opts.restoreLanguage || practiceLanguage)] || "python",
-    );
+    if (!opts.mock) {
+      saveLastWorkspace(question.id, openedLanguageKey, "interview");
+      saveWorkspaceState(question.id, openedLanguageKey, "interview");
+    }
     setNote(`Interview prep: ${question.title}`);
     setTestOutput({
       status: "ready",
@@ -2103,7 +3111,16 @@ export default function CodingTutor({
     setMockSummary(summary);
     // Count this finished mock toward the Mock Rookie / Veteran badges.
     setMockCompleted(recordMockCompleted());
-    setActiveProblem((prev) => (prev?.mock ? { ...prev, mock: false } : prev));
+    if (activeProblem?.mock) {
+      setActiveProblem(null);
+      setActiveSolution(null);
+      setCode("");
+      setNote("");
+      setTestOutput({ status: "ready", message: "" });
+      setTerminalOpen(false);
+      setWorkspaceTab("Editor");
+      setRevealedHints(0);
+    }
     // Leave the workspace and land on Interview Prep underneath the results modal, so
     // closing the modal drops the student straight onto the interview page (and the new
     // Past Interviews entry) instead of a stale mock workspace. The summary overlay is
@@ -2251,8 +3268,8 @@ export default function CodingTutor({
   // Fetch a single problem by id from the right library (practice vs interview)
   // and open it in the workspace. Used to RESTORE a /coding/workspace/problem/:id
   // URL on a cold load / refresh, when the problem isn't already active.
-  const restoreWorkspaceProblem = useCallback(async (problemId) => {
-    const set = questionSetForId(problemId);
+  const restoreWorkspaceProblem = useCallback(async (problemId, restoreLanguageKey = null, restoreSource = null) => {
+    const set = restoreSource === "interview" ? "interview" : questionSetForId(problemId);
     try {
       const response = await fetch(
         `${apiBase}/api/coding/practice/questions/${encodeURIComponent(problemId)}?set=${set}`
@@ -2260,16 +3277,22 @@ export default function CodingTutor({
       if (!response.ok) throw new Error(`question ${response.status}`);
       const question = await response.json();
       if (set === "interview") {
-        openInterviewProblem(question);
+        openInterviewProblem(question, {
+          restoreLanguage: PRACTICE_LANGUAGE_NAME[restoreLanguageKey] || practiceLanguage,
+        });
       } else {
         // Restore the language the student last used on THIS problem (defaulting to
         // the current practice language) so a reopen doesn't reset them to Python.
         // loadQuestionSolution then restores that language's saved draft.
         const last = readLastWorkspace();
         const restoreLanguage =
-          last?.problemId === question.id && PRACTICE_LANGUAGE_NAME[last.language]
-            ? PRACTICE_LANGUAGE_NAME[last.language]
-            : practiceLanguage;
+          PRACTICE_LANGUAGE_NAME[restoreLanguageKey]
+            ? PRACTICE_LANGUAGE_NAME[restoreLanguageKey]
+            : (
+              last?.problemId === question.id && PRACTICE_LANGUAGE_NAME[last.language]
+                ? PRACTICE_LANGUAGE_NAME[last.language]
+                : practiceLanguage
+            );
         await loadQuestionSolution(question, restoreLanguage);
       }
     } catch (error) {
@@ -2334,24 +3357,34 @@ export default function CodingTutor({
     if (mockSession && activeProblem?.mock) return;
     if (workspaceTargetFromPath(location.pathname).kind !== "none") return; // a specific target owns it
     if (listLoading) return; // wait until the practice list is ready
-    const last = readLastWorkspace();
-    if (!last?.problemId || questionSetForId(last.problemId) === "interview") return;
     autoReopenedRef.current = true;
-    const languageName = PRACTICE_LANGUAGE_NAME[last.language] || practiceLanguage;
     (async () => {
+      const localLast = readLastWorkspace();
+      const serverLast = await loadWorkspaceState();
+      const persistedServerLast =
+        (serverLast?.source === "practice" || serverLast?.source === "interview")
+          ? serverLast
+          : null;
+      const localTime = Date.parse(localLast?.updatedAt || "") || 0;
+      const serverTime = Date.parse(persistedServerLast?.updated_at || "") || 0;
+      const useServer = Boolean(persistedServerLast?.problem_id) && (!localLast?.problemId || serverTime > localTime);
+      const last = useServer
+        ? { problemId: persistedServerLast.problem_id, language: persistedServerLast.language, source: persistedServerLast.source || "practice" }
+        : localLast?.problemId
+          ? { problemId: localLast.problemId, language: localLast.language, source: localLast.source || "practice" }
+          : null;
+      if (!last?.problemId) {
+        autoReopenedRef.current = false;
+        return;
+      }
       try {
-        const response = await fetch(
-          `${apiBase}/api/coding/practice/questions/${encodeURIComponent(last.problemId)}?set=practice`
-        );
-        if (!response.ok) throw new Error(`question ${response.status}`);
-        const question = await response.json();
-        await loadQuestionSolution(question, languageName);
+        await restoreWorkspaceProblem(last.problemId, last.language, last.source);
       } catch (error) {
         console.warn("[coding-workspace] auto-reopen last workspace failed", error);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activePage, listLoading]);
+  }, [activePage, listLoading, loadWorkspaceState, restoreWorkspaceProblem]);
 
   // Returns the saved record, or null if the user cancelled the name prompt.
   const handleSaveSnippet = () => {
@@ -2556,17 +3589,11 @@ export default function CodingTutor({
       return;
     }
     if (activeProblem.source === "leetcode") {
-      setTestOutput({ status: "error", message: "Daily LeetCode challenges are not auto-graded in CS Navigator yet. Open the Source link for official tests." });
-      setTerminalOpen(true);
+      await runFreeform();
       return;
     }
     if (!isQuizBankProblem) {
       await runFreeform();
-      return;
-    }
-    if (!["python", "javascript"].includes(selectedLanguageKey)) {
-      setTestOutput({ status: "error", message: "The V2.1 runner supports Python and JavaScript. Switch to one of those languages, edit your solution, and retry." });
-      setTerminalOpen(true);
       return;
     }
     if (!hasStarterCodeChanged(code, activeSolution?.starter_code)) {
@@ -2611,6 +3638,7 @@ export default function CodingTutor({
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || `runner ${response.status}`);
       setTestOutput(data);
+      recordPracticeActivity();
       // This run just wrote an attempt event, so the mastery score is now stale.
       setMasteryTick(tick => tick + 1);
       setWorkspaceSnapshots(prev => ({
@@ -2674,25 +3702,101 @@ export default function CodingTutor({
     }
   };
 
+  const tracePythonCode = async (requestedTestIndex = 0) => {
+    const normalizedTestIndex = Number.isInteger(requestedTestIndex) && requestedTestIndex >= 0
+      ? requestedTestIndex
+      : 0;
+    if (!activeProblem || !isQuizBankProblem) {
+      toast.info("Open a Practice Library problem before tracing code.");
+      return;
+    }
+    if (selectedLanguageKey !== "python") {
+      toast.info("Execution tracing is available for Python first.");
+      return;
+    }
+    if (!code.trim()) {
+      toast.info("Write some Python code before tracing it.");
+      return;
+    }
+    const mismatchMessage = detectLanguageMismatch(code, selectedLanguageKey);
+    if (mismatchMessage) {
+      setTraceResult({ status: "error", trace: [], stderr: mismatchMessage });
+      setTraceModalOpen(true);
+      return;
+    }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.info("Please sign in before tracing code.");
+      return;
+    }
+
+    setWorkspaceVisible(true);
+    setTraceModalOpen(true);
+    setIsTracingCode(true);
+    setTraceResult(prev => prev || { status: "running", trace: [], message: "Tracing your Python code..." });
+    try {
+      const response = await fetch(`${apiBase}/api/coding/practice/trace`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          question_id: activeProblem.id,
+          language: selectedLanguageKey,
+          code,
+          trace_test_index: normalizedTestIndex,
+          hints_used: revealedHints,
+          seconds_since_open: secondsSinceOpen(),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || `trace ${response.status}`);
+      setTraceResult(data);
+    } catch (error) {
+      console.error("[coding-trace] failed", error);
+      setTraceResult({ status: "error", trace: [], stderr: String(error.message || error), message: "Trace could not complete." });
+    } finally {
+      setIsTracingCode(false);
+    }
+  };
+
   const markSolved = async () => {
     if (isInterviewWorkspaceProblem && activeProblem?.id) {
       saveDraft(activeProblem.id, selectedLanguageKey, code);
-      markInterviewSolved(activeProblem.id);
-      await saveInterviewWorkspaceProgress(activeProblem.id, { status: "solved", code }, selectedLanguageKey);
+      const wasSolved = activeInterviewProgress?.status === "solved" || interviewSolved.has(activeProblem.id);
+      await saveInterviewWorkspaceProgress(
+        activeProblem.id,
+        { status: wasSolved ? "in_progress" : "solved", code },
+        selectedLanguageKey,
+      );
+      if (wasSolved) clearInterviewSolved(activeProblem.id);
+      else markInterviewSolved(activeProblem.id);
       setTerminalOpen(true);
       setTestOutput({
-        status: "success",
-        message: `${activeProblem.title || "Interview problem"} marked solved. Your code is saved to your account.`,
+        status: wasSolved ? "ready" : "success",
+        message: wasSolved
+          ? `${activeProblem.title || "Interview problem"} marked unsolved. Your code is still saved to your account.`
+          : `${activeProblem.title || "Interview problem"} marked solved. Your code is saved to your account.`,
       });
-      toast.success("Interview problem marked solved.");
+      toast.success(wasSolved ? "Interview problem marked unsolved." : "Interview problem marked solved.");
       return;
     }
     if (!activeProblem || !isQuizBankProblem) return;
-    await saveProgress(activeProblem.id, { status: "solved", code });
-    clearDraft(activeProblem.id, selectedLanguageKey);
+    const wasSolved = activeLanguageProgress?.status === "solved";
+    await saveProgress(activeProblem.id, { status: wasSolved ? "in_progress" : "solved", code });
+    if (!wasSolved) clearDraft(activeProblem.id, selectedLanguageKey);
     setTerminalOpen(true);
-    setTestOutput({ status: "passed", message: "Marked solved manually. Your current code was saved with this problem.", passed: 0, total: 0, tests: [] });
-    toast.success("Practice problem marked solved");
+    setTestOutput({
+      status: wasSolved ? "ready" : "passed",
+      message: wasSolved
+        ? "Marked unsolved. Your current code is still saved with this problem."
+        : "Marked solved manually. Your current code was saved with this problem.",
+      passed: 0,
+      total: 0,
+      tests: [],
+    });
+    toast.success(wasSolved ? "Practice problem marked unsolved" : "Practice problem marked solved");
   };
 
   const clearWorkspace = async () => {
@@ -2722,6 +3826,7 @@ export default function CodingTutor({
     // Explicit clear = don't auto-reopen this problem next time (the draft stays,
     // so reopening it from the library still restores the code on demand).
     clearLastWorkspace();
+    saveWorkspaceState(null, selectedLanguageKey, "practice");
     autoReopenedRef.current = true;
     setActiveProblem(null);
     setActiveSolution(null);
@@ -2730,23 +3835,73 @@ export default function CodingTutor({
     setRevealedHints(0);
     setWorkspaceTab("Editor");
     setTerminalOpen(false);
-    setTestOutput({ status: "ready", message: "Workspace cleared. Write your own Python or JavaScript and press Run to test it (not graded)." });
+    setTestOutput({ status: "ready", message: "Workspace cleared. Write your own Python, JavaScript, Java, or C++ and press Run to test it (not graded)." });
     toast.success("Workspace cleared. Reopen a problem from the Practice Library to restore it.");
   };
 
-  const showNextHint = () => {
+  const requestHintLevel = async (level) => {
+    if (!activeProblem?.id) return false;
+    if (!isQuizBankProblem && !isInterviewWorkspaceProblem) return true;
+    const token = localStorage.getItem("token");
+    if (!token) return true;
+    const questionSet = isInterviewWorkspaceProblem ? "interview" : "practice";
+    try {
+      const response = await fetch(`${apiBase}/api/coding/practice/questions/${encodeURIComponent(activeProblem.id)}/hints/request`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          language: selectedLanguageKey,
+          set: questionSet,
+          level,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.status === 423) {
+        const state = data?.detail?.hint_state;
+        if (state) setHintGate(state);
+        toast.info(data?.detail?.message || state?.reason || "Run another attempt to unlock the next hint.");
+        return false;
+      }
+      if (!response.ok) throw new Error(data.detail || `hint ${response.status}`);
+      setHintGate(data);
+      setEngagementTick(tick => tick + 1);
+      return true;
+    } catch (error) {
+      console.warn("[coding-hints] could not record hint reveal; using local fallback", error);
+      return true;
+    }
+  };
+
+  const showNextHint = async () => {
     const unlocked = hintSteps.filter(hint => !hint.locked).length;
-    if (revealedHints >= unlocked && hintSteps.some(hint => hint.locked)) {
-      toast.info("Final hint unlocks after 2 Run attempts.");
+    if (!hintSteps.length || revealedHints >= hintSteps.length) {
+      setWorkspaceTab("Hints");
       return;
     }
+    if (revealedHints >= unlocked) {
+      if (hintSteps.some(hint => hint.locked)) {
+        toast.info(hintGate?.reason || "Run another attempt to unlock the next hint.");
+      }
+      setWorkspaceTab("Hints");
+      return;
+    }
+    const nextLevel = Math.min(revealedHints + 1, unlocked);
+    const allowed = await requestHintLevel(nextLevel);
+    if (!allowed) return;
     setRevealedHints(prev => Math.min(prev + 1, unlocked));
     setWorkspaceTab("Hints");
   };
 
-  const showAllHints = () => {
+  const showAllHints = async () => {
     const unlocked = hintSteps.filter(hint => !hint.locked).length;
-    if (unlocked < hintSteps.length) toast.info("Final hint unlocks after 2 Run attempts.");
+    if (unlocked < hintSteps.length) toast.info(hintGate?.reason || "Run another attempt to unlock the next hint.");
+    for (let level = revealedHints + 1; level <= unlocked; level += 1) {
+      const allowed = await requestHintLevel(level);
+      if (!allowed) return;
+    }
     setRevealedHints(unlocked);
     setWorkspaceTab("Hints");
   };
@@ -2759,19 +3914,24 @@ export default function CodingTutor({
       savePendingProblemProgress();
       if (pageId === "workspace") {
         setWorkspaceVisible(true);
-        // The nav "Workspace" tab is the CODING (Quiz Bank) workspace. If we were in
-        // the personal "My Snippets" workspace, leave it so this shows the quiz
-        // empty state with "Open Quiz Bank" — the personal workspace is reached only
-        // from the Home button.
-        if (activeProblem?.source === "personal") {
+        // Personal snippets and LeetCode scratchpads are temporary editors, not the
+        // default Workspace. Practice Library and individual Interview Prep
+        // problems should remain open when students navigate away and back.
+        if (activeProblem?.source && !["practice", "interview"].includes(activeProblem.source) && !activeProblem.mock) {
           setActiveProblem(null);
           setActiveSolution(null);
           setActiveSnippetId(null);
           setCode("");
           setPersonalSavedCode("");
+          setNote("");
           setTestOutput({ status: "ready", message: "" });
           setTerminalOpen(false);
+          setWorkspaceTab("Editor");
         }
+      }
+      if (pageId === "quiz") {
+        openPracticeLibrary();
+        return;
       }
       goToPage(pageId);
     });
@@ -2787,8 +3947,97 @@ export default function CodingTutor({
     goToPage("workspace");
   };
 
+  const openStartingCheckPath = (profile) => {
+    const language = profile?.language || "python";
+    if (profile?.action === "syntax-quiz") {
+      navigate(`${quizPathForLanguage(language)}#syntax`);
+      return;
+    }
+    if (profile?.action === "learn") {
+      navigate(learnPathForTrack("python", "beginner"));
+      return;
+    }
+    if (profile?.action === "variables-quiz") {
+      navigate(`${quizPathForLanguage(language)}#variables`);
+      return;
+    }
+    if (profile?.action === "control-flow-quiz") {
+      navigate(`${quizPathForLanguage(language)}#conditionals`);
+      return;
+    }
+    if (profile?.action === "functions-quiz") {
+      navigate(`${quizPathForLanguage(language)}#functions`);
+      return;
+    }
+    if (profile?.action === "debugging-quiz") {
+      navigate(`${quizPathForLanguage(language)}#debug`);
+      return;
+    }
+    if (profile?.action === "data-structures-quiz") {
+      navigate(`${quizPathForLanguage(language)}#lists`);
+      return;
+    }
+    if (profile?.action === "data-structures") {
+      const params = new URLSearchParams({
+        difficulty: "easy",
+        topic: "arrays,hash maps,sets,stacks,queues",
+        page: "1",
+        sort: "topic",
+      });
+      navigate(`${PRACTICE_CODE_PATH}?${params.toString()}`);
+      return;
+    }
+    if (profile?.action === "ready-skip") {
+      const params = new URLSearchParams({
+        difficulty: "easy,medium",
+        topic: "arrays,strings,conditionals,loops,hash maps,sets",
+        page: "1",
+        sort: "topic",
+      });
+      navigate(`${PRACTICE_CODE_PATH}?${params.toString()}`);
+      return;
+    }
+    if (profile?.action === "code-ready") {
+      const params = new URLSearchParams({
+        difficulty: "easy,medium",
+        topic: "arrays,strings,conditionals,loops,hash maps,sets",
+        page: "1",
+        sort: "topic",
+      });
+      navigate(`${PRACTICE_CODE_PATH}?${params.toString()}`);
+      return;
+    }
+    if (profile?.action === "advanced-ready") {
+      const params = new URLSearchParams({
+        difficulty: "medium",
+        topic: "arrays,strings,hash maps,recursion,queues,binary search,sliding window",
+        page: "1",
+        sort: "topic",
+      });
+      navigate(`${PRACTICE_CODE_PATH}?${params.toString()}`);
+      return;
+    }
+    if (profile?.action === "starter-practice") {
+      const params = new URLSearchParams({
+        difficulty: "easy",
+        topic: "conditionals,arrays,strings",
+        page: "1",
+        sort: "topic",
+      });
+      navigate(`${PRACTICE_CODE_PATH}?${params.toString()}`);
+      return;
+    }
+    const params = new URLSearchParams({
+      difficulty: "easy",
+      topic: "conditionals,arrays,strings,math,tuples,sets,hash maps",
+      page: "1",
+      sort: "topic",
+    });
+    navigate(`${PRACTICE_CODE_PATH}?${params.toString()}`);
+  };
+
   const renderDashboard = () => (
-    <CampusLabHome
+      <CampusLabHome
       progressSummary={progressSummary}
       topicPacks={topicPacks}
       questions={allQuestions.length ? allQuestions : questions}
@@ -2799,15 +4048,29 @@ export default function CodingTutor({
       dailyDoneToday={dailyDoneToday}
       displayStreak={displayStreak}
       latestQuizResponse={latestQuizResponse}
-      onStartDaily={() => startDailyChallenge(true)}
+      onStartDaily={() => startDailyChallenge(false)}
+      onOpenDailyScratch={() => startDailyChallenge(true)}
       onOpenSnippets={openMySnippets}
+      onOpenLearnStart={() => navigate(learnPathForTrack("python", "beginner"))}
+      onOpenBeginnerWarmup={() => {
+        const params = new URLSearchParams({
+          difficulty: "easy",
+          topic: "conditionals,arrays,strings,math,tuples,sets,hash maps",
+          page: "1",
+          sort: "topic",
+        });
+        navigate(`${PRACTICE_CODE_PATH}?${params.toString()}`);
+      }}
+      onOpenStartingPath={openStartingCheckPath}
       onSelectQuestion={selectQuestion}
-      onOpenQuizBank={() => navigate(PRACTICE_CODE_PATH)}
+      onOpenQuizBank={openPracticeLibrary}
       onOpenTopic={openRecommendedTopic}
+      onOpenLessonReview={openAdaptiveReviewLesson}
       onOpenInterviewPrep={() => goToPage("interview")}
       onPrompt={sendDashboardPrompt}
       onSaveQuiz={saveLatestQuizAsPdf}
       mastery={mastery}
+      adaptivePractice={adaptivePractice}
       learningStyle={learningStyle}
     />
   );
@@ -2839,7 +4102,10 @@ export default function CodingTutor({
         onFinish={finishMock}
         onEnd={confirmEndMock}
       />
-      <div className="coding-workbench-main">
+      <div
+        className="coding-workbench-main"
+        style={{ "--workspace-guide-width": `${Math.round(workspaceGuideWidth)}px` }}
+      >
         {isPersonalMode ? (
           <PersonalPanel
             snippets={snippets}
@@ -2852,6 +4118,7 @@ export default function CodingTutor({
           <ProblemPanel
             problem={activeProblem}
             solution={activeSolution}
+            selectedLanguage={selectedLanguage}
             attempts={attempts}
             problemLoading={problemLoading || isRestoringProblem}
             isSolved={isActiveProblemSolved}
@@ -2863,7 +4130,7 @@ export default function CodingTutor({
             onNextProblem={() => navigatePracticeProblem(1)}
             onShowHint={showNextHint}
             onShowAllHints={showAllHints}
-            onOpenQuizBank={() => navigate(PRACTICE_CODE_PATH)}
+            onOpenQuizBank={openPracticeLibrary}
             mockMode={Boolean(activeProblem?.mock && mockSession)}
             solutionUnlocked={
               !activeProblem?.mock ||
@@ -2873,8 +4140,28 @@ export default function CodingTutor({
             }
             onStuck={markMockStuck}
             onViewSolutionMock={requestViewSolutionMock}
+            onOpenVisualizer={canOpenVisualizer ? openProblemVisualizer : null}
           />
         )}
+        <div
+          className="workspace-guide-divider"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize problem guide"
+          aria-valuemin={WORKSPACE_GUIDE_MIN_W}
+          aria-valuemax={WORKSPACE_GUIDE_MAX_W}
+          aria-valuenow={Math.round(workspaceGuideWidth)}
+          aria-valuetext={`Problem guide width ${Math.round(workspaceGuideWidth)} pixels`}
+          tabIndex={0}
+          title="Drag to resize the problem guide"
+          onPointerDown={onGuideDividerPointerDown}
+          onPointerMove={onGuideDividerPointerMove}
+          onPointerUp={endGuideResize}
+          onPointerCancel={endGuideResize}
+          onKeyDown={onGuideDividerKeyDown}
+        >
+          <span className="workspace-guide-divider-grip" aria-hidden="true" />
+        </div>
         <CodeWorkspace
           activeProblem={activeProblem}
           code={code}
@@ -2886,6 +4173,7 @@ export default function CodingTutor({
           revealedHints={revealedHints}
           isRunning={isRunning}
           latestFeedback={latestFeedback}
+          discussionMessages={discussionMessages}
           suggestedCodeBlock={suggestedCodeBlock}
           terminalOpen={terminalOpen}
           testOutput={testOutput}
@@ -2900,8 +4188,10 @@ export default function CodingTutor({
             complexity: activeSolution?.complexity || "",
           }}
           canMarkSolved={isQuizBankProblem || isInterviewWorkspaceProblem}
+          isSolved={isActiveProblemSolved}
           isPersonalMode={isPersonalMode}
           onCodeChange={setCode}
+          onSelectionChange={setEditorSelection}
           onLanguageChange={changeSelectedLanguage}
           languageLocked={interviewLanguageLocked}
           onTabChange={setWorkspaceTab}
@@ -2910,7 +4200,7 @@ export default function CodingTutor({
           onRun={runAttempt}
           onMarkSolved={markSolved}
           onCopyCode={() => navigator.clipboard.writeText(code)}
-          onApplyAICode={applyAiCode}
+          onApplyAICode={applyAiCodeWithMode}
           onClearWorkspace={clearWorkspace}
           onShowHint={showNextHint}
           onShowAllHints={showAllHints}
@@ -2919,6 +4209,13 @@ export default function CodingTutor({
           onExplainOneTest={explainOneTest}
           onStopRun={stopRun}
           onRequestReview={activeProblem?.source === "interview" ? null : requestReview}
+          onTraceCode={tracePythonCode}
+          isTracingCode={isTracingCode}
+          traceResult={traceResult}
+          visualizerOpen={visualizerModalOpen}
+          traceModalOpen={traceModalOpen}
+          onCloseVisualizer={() => setVisualizerModalOpen(false)}
+          onCloseTraceModal={() => setTraceModalOpen(false)}
           onSaveSnippet={handleSaveSnippet}
           onUploadFile={() => personalFileInputRef.current?.click()}
           codeRenderer={codeRenderer}
@@ -2947,6 +4244,7 @@ export default function CodingTutor({
           warmupsReviewed: interviewReviewed.size,
           warmupsSolved: interviewSolved.size,
         }}
+        milestoneSignals={milestoneSignals}
         midSlot={<StatTiles progressSummary={progressSummary} />}
       />
     </section>
@@ -2955,25 +4253,38 @@ export default function CodingTutor({
   // Open the Practice Library pre-filtered to a topic (used by interview-problem
   // "Needs: …" prerequisite links so a student can go practice the fundamental first).
   // Resolves the label to a real library topic; ignores it if the library has none.
-  const openPracticeTopic = (label) => {
+  const openPracticeTopic = (label, options = {}) => {
     const topic = resolvePracticeTopic(label);
     if (!topic) return;
-    setPendingQuizTopic(topic);
+    setPendingQuizTopic(null);
+    const params = new URLSearchParams({ topic, page: "1" });
+    if (options.difficulty) params.set("difficulty", options.difficulty);
     // The CODE path, not the bare one — a "go practice this fundamental" link promises
     // code problems on that topic. The bare path is now the Quiz landing.
-    navigate(PRACTICE_CODE_PATH);
+    navigate(`${PRACTICE_CODE_PATH}?${params.toString()}`);
   };
 
-  const openRecommendedTopic = (label) => {
+  const openRecommendedTopic = (label, action = null, options = {}) => {
     const topic = resolvePracticeTopic(label);
     if (!topic) return;
     const languageKey = PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
     const lessonCategory = lessonCategoryForPracticeTopic(topic, languageKey);
-    if (learningStyle !== "try_then_hint" && lessonCategory) {
+    const wantsLesson = action === "lesson" || (!action && learningStyle !== "try_then_hint");
+    if (wantsLesson && lessonCategory) {
       navigate(learnPathForLesson(languageKey, lessonCategory));
       return;
     }
-    openPracticeTopic(topic);
+    openPracticeTopic(topic, options);
+  };
+
+  const openAdaptiveReviewLesson = (signal) => {
+    const languageKey = PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
+    const category = signal?.lesson_category || lessonCategoryForPracticeTopic(signal?.topic, languageKey);
+    if (category) {
+      navigate(learnPathForLesson(languageKey, category));
+      return;
+    }
+    if (signal?.topic) openRecommendedTopic(signal.topic, "lesson");
   };
 
   const renderInterviewPrep = () => (
@@ -2990,13 +4301,17 @@ export default function CodingTutor({
 
   const renderInterviewHistory = () => (
     <section className="coding-page-panel interview-prep-page">
-      <div className="interview-prep-hero">
-        <span className="coding-kicker">Interview Prep</span>
-        <h2>Past Interviews</h2>
-        <p>Review the mock interviews you've completed — the questions you got, your saved code, and how you scored.</p>
-        <button type="button" className="iv-history-back" onClick={() => goToPage("interview")}>
-          ← Back to Interview Prep
-        </button>
+      <div className="interview-prep-hero iv-history-hero">
+        <div className="interview-prep-hero-copy">
+          <span className="coding-kicker">Interview Prep</span>
+          <h2>Past Interviews</h2>
+          <p>Review completed mock interviews, scores, solved status, and saved code attempts.</p>
+        </div>
+        <div className="interview-prep-hero-aside">
+          <button type="button" className="iv-history-back" onClick={() => goToPage("interview")}>
+            ← Back to Interview Prep
+          </button>
+        </div>
       </div>
       <PastInterviews showEmpty />
     </section>
@@ -3061,22 +4376,17 @@ export default function CodingTutor({
         { id: "code", label: "Code", hint: "Apply it" },
       ];
 
-      // A mode button always goes to that mode's FRONT PAGE — the four language cards —
-      // never to wherever the student happened to be last. A top-level tab that silently
-      // teleports you into a half-finished quiz is unpredictable, and there's no way to
-      // ask it for the language list once it starts doing that.
-      //
-      // Nothing is lost: every view has a real URL, so Back/Forward returns the student
-      // to the exact question they were on, and quiz answers are held by the runner for
-      // the session.
+      // Mode buttons restore the last route within each mode, including Code filters
+      // and pages. Each mode still has in-page Back controls for broader lists.
       const MODE_HOME = {
-        learn: PRACTICE_LEARN_PATH,
-        quiz: PRACTICE_QUIZ_PATH,
-        code: PRACTICE_CODE_PATH,
+        learn: lastPracticeRoutes.learn || PRACTICE_LEARN_PATH,
+        quiz: lastPracticeRoutes.quiz || PRACTICE_QUIZ_PATH,
+        code: lastPracticeRoutes.code || PRACTICE_CODE_PATH,
       };
       const goToMode = (id) => {
         const to = MODE_HOME[id];
-        if (to && to !== location.pathname) navigate(to);
+        const currentRoute = `${location.pathname}${location.search}${location.hash || ""}`;
+        if (to && to !== currentRoute) navigate(to);
       };
 
       return (
@@ -3085,13 +4395,14 @@ export default function CodingTutor({
             {/* Learn -> Practice -> Code, left to right, and Learn is the default. A
                 student who hasn't met functions yet needs the idea before the editor:
                 a quiz can only tell them they're wrong, and a blank editor is a wall. */}
-            <div className="practice-mode-toggle" role="tablist" aria-label="Practice mode">
+            <div className="practice-mode-toggle" role="tablist" aria-label="Practice mode" onKeyDown={handleHorizontalRovingKeyDown}>
               {MODES.map((m) => (
                 <button
                   key={m.id}
                   type="button"
                   role="tab"
                   aria-selected={mode === m.id}
+                  tabIndex={mode === m.id ? 0 : -1}
                   title={m.hint}
                   className={`practice-mode-btn ${mode === m.id ? "active" : ""}`}
                   onClick={() => goToMode(m.id)}
@@ -3112,6 +4423,7 @@ export default function CodingTutor({
               apiBase={apiBase}
               target={target}
               languageLabels={CONCEPT_QUIZ_LABELS}
+              onPracticeActivity={recordPracticeActivity}
               onNavigateToLanguages={() => navigate(PRACTICE_LEARN_PATH)}
               onNavigateToLanguage={(language) => navigate(learnPathForLanguage(language))}
               onNavigateToTrack={(language, track) =>
@@ -3135,6 +4447,7 @@ export default function CodingTutor({
               target={target}
               languageLabels={CONCEPT_QUIZ_LABELS}
               mastery={mastery}
+              onPracticeActivity={recordPracticeActivity}
               onNavigateToLanguages={() => navigate(PRACTICE_QUIZ_PATH)}
               onNavigateToLanguage={(language) => navigate(quizPathForLanguage(language))}
               onNavigateToQuestion={(language, category, questionId) =>
@@ -3156,6 +4469,8 @@ export default function CodingTutor({
               languageOptions={CODE_LANGUAGES}
               progressSummary={progressSummary}
               mastery={mastery}
+              adaptivePractice={adaptivePractice}
+              onOpenLessonReview={openAdaptiveReviewLesson}
               onDifficultyChange={setDifficulty}
               onLanguageChange={setPracticeLanguage}
               onSelectProblem={selectQuestion}
@@ -3198,10 +4513,49 @@ export default function CodingTutor({
     .filter(Boolean)
     .join(" ");
 
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+
+  const handleMoreMenuKeyDown = (event) => {
+    const menu = event.currentTarget;
+    const moreButton = menu.querySelector("[data-coding-nav-more-button='true']");
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      setMoreMenuOpen(false);
+      moreButton?.focus();
+      return;
+    }
+
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    setMoreMenuOpen(true);
+    const menuItems = Array.from(menu.querySelectorAll(".coding-nav-more-menu > button"))
+      .filter((node) => !node.disabled);
+    if (!menuItems.length) return;
+
+    const activeIndex = menuItems.indexOf(document.activeElement);
+    const nextIndex = (() => {
+      if (event.key === "Home") return 0;
+      if (event.key === "End") return menuItems.length - 1;
+      if (activeIndex < 0) return event.key === "ArrowUp" ? menuItems.length - 1 : 0;
+      if (event.key === "ArrowUp") return (activeIndex - 1 + menuItems.length) % menuItems.length;
+      return (activeIndex + 1) % menuItems.length;
+    })();
+
+    window.requestAnimationFrame(() => menuItems[nextIndex]?.focus());
+  };
+
   return (
     <div className={appClasses}>
       <div className="coding-nav-row">
-        <nav className="coding-section-nav campus-section-nav" aria-label="Coding tutor sections">
+        <nav
+          className="coding-section-nav campus-section-nav"
+          aria-label="Coding tutor sections"
+          onKeyDown={handleHorizontalRovingKeyDown}
+        >
         {CODING_PAGES.filter((page) => page.id !== "progress").map(page => {
           const Icon = page.icon;
           // The Workspace icon and the separate "My Snippets" button below both
@@ -3215,6 +4569,7 @@ export default function CodingTutor({
           <button
             key={page.id}
             type="button"
+            data-coding-navitem="true"
             className={isActive ? "active" : ""}
             onClick={() => openPage(page.id)}
             title={page.label}
@@ -3225,37 +4580,40 @@ export default function CodingTutor({
           </button>
           );
         })}
-        <details
-          className="coding-nav-more"
+        <div
+          className={`coding-nav-more${moreMenuOpen ? " open" : ""}`}
           onBlur={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget)) {
-              event.currentTarget.removeAttribute("open");
+              setMoreMenuOpen(false);
             }
           }}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              event.currentTarget.removeAttribute("open");
-              event.currentTarget.querySelector("summary")?.focus();
-            }
-          }}
+          onKeyDown={handleMoreMenuKeyDown}
         >
-          <summary
+          <button
+            type="button"
+            data-coding-navitem="true"
+            data-coding-nav-more-button="true"
             className={
               activePage === "progress" || (activePage === "workspace" && isPersonalMode)
                 ? "active"
                 : ""
             }
             aria-label="More Coding Tutor tools"
+            aria-haspopup="menu"
+            aria-expanded={moreMenuOpen}
+            aria-controls="coding-nav-more-menu"
+            onClick={() => setMoreMenuOpen((open) => !open)}
           >
             <span className="coding-nav-icon" aria-hidden="true"><FaEllipsisH /></span>
             <span className="coding-nav-label">More</span>
-          </summary>
-          <div className="coding-nav-more-menu">
+          </button>
+          <div className="coding-nav-more-menu" id="coding-nav-more-menu" role="menu">
             <button
               type="button"
+              role="menuitem"
               className={activePage === "progress" ? "active" : ""}
-              onClick={(event) => {
-                event.currentTarget.closest("details")?.removeAttribute("open");
+              onClick={() => {
+                setMoreMenuOpen(false);
                 openPage("progress");
               }}
             >
@@ -3264,9 +4622,10 @@ export default function CodingTutor({
             </button>
             <button
               type="button"
+              role="menuitem"
               className={activePage === "workspace" && isPersonalMode ? "active" : ""}
-              onClick={(event) => {
-                event.currentTarget.closest("details")?.removeAttribute("open");
+              onClick={() => {
+                setMoreMenuOpen(false);
                 guardPersonalNav(() => {
                   savePendingProblemProgress();
                   openMySnippets();
@@ -3282,8 +4641,9 @@ export default function CodingTutor({
               return (
                 <button
                   type="button"
-                  onClick={(event) => {
-                    event.currentTarget.closest("details")?.removeAttribute("open");
+                  role="menuitem"
+                  onClick={() => {
+                    setMoreMenuOpen(false);
                     toggleWorkspace();
                   }}
                 >
@@ -3295,11 +4655,12 @@ export default function CodingTutor({
               );
             })()}
           </div>
-        </details>
+        </div>
         {/* Theme toggle sits last as a compact icon-only circle — a setting, not a
             destination. */}
         <button
           type="button"
+          data-coding-navitem="true"
           className="coding-nav-theme-toggle"
           onClick={() => setCodingDark(prev => !prev)}
           title={codingDark ? "Switch to light mode" : "Switch to dark mode"}

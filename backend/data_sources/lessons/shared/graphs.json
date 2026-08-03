@@ -1,0 +1,636 @@
+{
+  "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
+  "title": "Graphs",
+  "summary": "A **graph** stores relationships between **nodes**. Traversal needs a visited **set** so cycles do not trap the program.",
+  "minutes": 19,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "A graph has nodes and edges. An **adjacency list** stores each node's neighbors. BFS usually uses a queue, DFS uses recursion or a **stack**, and both need a visited **set**.",
+  "refresher_code": "visited = set()\nfor neighbor in graph[node]: ...",
+  "learn_cards": {
+    "advanced-graph-node-edge": {
+      "title": "Nodes and edges",
+      "body": "**Nodes** are the things. Edges are the connections between them.",
+      "example": "A -- B means A is connected to B",
+      "notice": "The same idea can model people, courses, pages, or cities.",
+      "mistake": "Do not treat a **graph** like a simple line. A **node** can have many neighbors.",
+      "section_id": "graph-shape"
+    },
+    "advanced-graph-visited": {
+      "title": "Visited prevents repeats",
+      "body": "A **visited** **set** remembers **nodes** already handled.",
+      "example": "if node in visited: skip it",
+      "notice": "Cycles can send **traversal** back to the same **node**.",
+      "mistake": "Without **visited**, a cycle can run forever.",
+      "section_id": "visited-set"
+    }
+  },
+  "sections": [
+    {
+      "id": "graph-shape",
+      "title": "Graph shape",
+      "summary": "A **graph** is **nodes** plus connections.",
+      "question_ids": [
+        "advanced-graph-node-edge",
+        "advanced-graph-adj-list",
+        "advanced-graph-components"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A **graph** is useful when relationships matter more than order. Friends in a network, prerequisites between courses, roads between cities, and links between pages can all be represented as graphs."
+        },
+        {
+          "kind": "visual",
+          "title": "BFS uses a queue and visited set",
+          "concept": "graphs",
+          "caption": "Watch BFS mark **nodes** so cycles do not repeat forever.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Start at A",
+              "body": "Put A in the **queue** and mark it **visited**.",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 90,
+                    "y": 90,
+                    "active": true,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 210,
+                    "y": 40
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 210,
+                    "y": 140
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 330,
+                    "y": 90
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B"
+                  },
+                  {
+                    "from": "A",
+                    "to": "C"
+                  },
+                  {
+                    "from": "B",
+                    "to": "D"
+                  },
+                  {
+                    "from": "C",
+                    "to": "D"
+                  }
+                ],
+                "queue": [
+                  "A"
+                ]
+              }
+            },
+            {
+              "title": "Visit A's neighbors",
+              "body": "Add B and C because they have not been **visited** yet.",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 90,
+                    "y": 90,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 210,
+                    "y": 40,
+                    "active": true,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 210,
+                    "y": 140,
+                    "active": true,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 330,
+                    "y": 90
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B",
+                    "active": true
+                  },
+                  {
+                    "from": "A",
+                    "to": "C",
+                    "active": true
+                  },
+                  {
+                    "from": "B",
+                    "to": "D"
+                  },
+                  {
+                    "from": "C",
+                    "to": "D"
+                  }
+                ],
+                "queue": [
+                  "B",
+                  "C"
+                ]
+              }
+            },
+            {
+              "title": "Visit D once",
+              "body": "D can be reached from B and C, but **visited** keeps it from being added twice.",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 90,
+                    "y": 90,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 210,
+                    "y": 40,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 210,
+                    "y": 140,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "D",
+                    "label": "D",
+                    "x": 330,
+                    "y": 90,
+                    "active": true,
+                    "note": "visited"
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B"
+                  },
+                  {
+                    "from": "A",
+                    "to": "C"
+                  },
+                  {
+                    "from": "B",
+                    "to": "D",
+                    "active": true
+                  },
+                  {
+                    "from": "C",
+                    "to": "D"
+                  }
+                ],
+                "queue": [
+                  "C",
+                  "D"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "kind": "code",
+          "caption": "An **adjacency list** **maps** each **node** to its neighbors.",
+          "variants": {
+            "python": {
+              "code": "graph = {\n    \"A\": [\"B\", \"C\"],\n    \"B\": [\"A\"],\n    \"C\": [\"A\"]\n}",
+              "output": ""
+            },
+            "java": {
+              "code": "Map<String, List<String>> graph = new HashMap<>();\ngraph.put(\"A\", List.of(\"B\", \"C\"));\ngraph.put(\"B\", List.of(\"A\"));\ngraph.put(\"C\", List.of(\"A\"));",
+              "output": ""
+            },
+            "javascript": {
+              "code": "const graph = new Map([\n  [\"A\", [\"B\", \"C\"]],\n  [\"B\", [\"A\"]],\n  [\"C\", [\"A\"]],\n]);",
+              "output": ""
+            },
+            "cpp": {
+              "code": "std::unordered_map<std::string, std::vector<std::string>> graph;\ngraph[\"A\"] = {\"B\", \"C\"};\ngraph[\"B\"] = {\"A\"};\ngraph[\"C\"] = {\"A\"};",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "list",
+          "title": "Read the structure",
+          "items": [
+            "The **key** is a **node**.",
+            "The **value** is the **list** of neighbors.",
+            "For an undirected **graph**, A **lists** B and B usually lists A.",
+            "For a directed **graph**, an **edge** may go only one way."
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "What does an **adjacency list** store for each **node**?",
+          "choices": [
+            "Its neighbors",
+            "Only its index",
+            "The final answer",
+            "The number of lines in the program"
+          ],
+          "answer_index": 0,
+          "why": "The **adjacency list** tells you where you can go next from each **node**."
+        }
+      ]
+    },
+    {
+      "id": "visited-set",
+      "title": "Visited set",
+      "summary": "**Visited** keeps traversal from repeating forever.",
+      "question_ids": [
+        "advanced-graph-visited",
+        "advanced-graph-cycle",
+        "advanced-graph-parsons"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "**Graphs** can contain cycles. In a cycle, following neighbors can lead you back to a **node** you already saw. A visited **set** prevents that."
+        },
+        {
+          "kind": "visual",
+          "title": "Visited stops a cycle",
+          "concept": "graphs",
+          "caption": "Watch DFS avoid looping forever in a **graph** with a cycle.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Visit A",
+              "action_label": "mark visited",
+              "body": "A is marked before exploring neighbors.",
+              "what_changed": "If another **node** points back to A later, the **traversal** can skip it.",
+              "animation": "visit",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 90,
+                    "y": 100,
+                    "active": true,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 210,
+                    "y": 45
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 320,
+                    "y": 100
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B"
+                  },
+                  {
+                    "from": "B",
+                    "to": "C"
+                  },
+                  {
+                    "from": "C",
+                    "to": "A"
+                  }
+                ],
+                "table": [
+                  {
+                    "key": "visited",
+                    "value": "{A}",
+                    "active": true
+                  }
+                ]
+              }
+            },
+            {
+              "title": "Visit B",
+              "action_label": "go deeper",
+              "body": "B is unvisited, so mark B and continue.",
+              "what_changed": "The **visited** **set** grows before the next **recursive call**.",
+              "animation": "visit",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 90,
+                    "y": 100,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 210,
+                    "y": 45,
+                    "active": true,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 320,
+                    "y": 100
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B",
+                    "active": true
+                  },
+                  {
+                    "from": "B",
+                    "to": "C"
+                  },
+                  {
+                    "from": "C",
+                    "to": "A"
+                  }
+                ],
+                "table": [
+                  {
+                    "key": "visited",
+                    "value": "{A, B}",
+                    "active": true
+                  }
+                ]
+              }
+            },
+            {
+              "title": "Visit C",
+              "action_label": "go deeper",
+              "body": "C is also new, so mark it.",
+              "what_changed": "Now all three **nodes** in the cycle are known.",
+              "animation": "visit",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 90,
+                    "y": 100,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 210,
+                    "y": 45,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 320,
+                    "y": 100,
+                    "active": true,
+                    "note": "visited"
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B"
+                  },
+                  {
+                    "from": "B",
+                    "to": "C",
+                    "active": true
+                  },
+                  {
+                    "from": "C",
+                    "to": "A"
+                  }
+                ],
+                "table": [
+                  {
+                    "key": "visited",
+                    "value": "{A, B, C}",
+                    "active": true
+                  }
+                ]
+              }
+            },
+            {
+              "title": "C points back to A",
+              "action_label": "skip",
+              "body": "A is already **visited**, so DFS does not call A again.",
+              "what_changed": "This skip is what prevents an infinite A -> B -> C -> A **loop**.",
+              "animation": "highlight",
+              "state": {
+                "nodes": [
+                  {
+                    "id": "A",
+                    "label": "A",
+                    "x": 90,
+                    "y": 100,
+                    "active": true,
+                    "note": "already visited"
+                  },
+                  {
+                    "id": "B",
+                    "label": "B",
+                    "x": 210,
+                    "y": 45,
+                    "note": "visited"
+                  },
+                  {
+                    "id": "C",
+                    "label": "C",
+                    "x": 320,
+                    "y": 100,
+                    "note": "visited"
+                  }
+                ],
+                "edges": [
+                  {
+                    "from": "A",
+                    "to": "B"
+                  },
+                  {
+                    "from": "B",
+                    "to": "C"
+                  },
+                  {
+                    "from": "C",
+                    "to": "A",
+                    "active": true
+                  }
+                ],
+                "table": [
+                  {
+                    "key": "visited",
+                    "value": "{A, B, C}",
+                    "active": true
+                  }
+                ],
+                "note": "skip A"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "code",
+          "caption": "Depth-first **traversal** with **visited**.",
+          "variants": {
+            "python": {
+              "code": "def dfs(graph, node, visited):\n    if node in visited:\n        return\n    visited.add(node)\n    print(node)\n    for neighbor in graph[node]:\n        dfs(graph, neighbor, visited)",
+              "output": ""
+            },
+            "java": {
+              "code": "static void dfs(Map<String, List<String>> graph, String node, Set<String> visited) {\n    if (visited.contains(node)) return;\n    visited.add(node);\n    System.out.println(node);\n    for (String neighbor : graph.getOrDefault(node, List.of())) {\n        dfs(graph, neighbor, visited);\n    }\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "function dfs(graph, node, visited) {\n  if (visited.has(node)) return;\n  visited.add(node);\n  console.log(node);\n  for (const neighbor of graph.get(node) ?? []) {\n    dfs(graph, neighbor, visited);\n  }\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "void dfs(const std::unordered_map<std::string, std::vector<std::string>>& graph,\n         const std::string& node,\n         std::unordered_set<std::string>& visited) {\n    if (visited.count(node)) return;\n    visited.insert(node);\n    std::cout << node << \"\\n\";\n    auto it = graph.find(node);\n    if (it == graph.end()) return;\n    for (const std::string& neighbor : it->second) {\n        dfs(graph, neighbor, visited);\n    }\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Mark before exploring",
+          "body": "Mark the **node** **visited** before exploring its neighbors. If you wait until after, a cycle can pull you back before the mark happens."
+        },
+        {
+          "kind": "check",
+          "prompt": "Why does **graph** traversal need a **visited** **set**?",
+          "choices": [
+            "To avoid repeating nodes and cycles",
+            "To sort every neighbor",
+            "To count string length",
+            "To make a queue unnecessary"
+          ],
+          "answer_index": 0,
+          "why": "**Visited** remembers what has already been handled."
+        }
+      ]
+    },
+    {
+      "id": "bfs-dfs",
+      "title": "BFS and DFS",
+      "summary": "BFS goes level by level. DFS goes deep first.",
+      "question_ids": [
+        "advanced-graph-bfs",
+        "advanced-graph-dfs"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Breadth-first search uses a **queue**, so it processes older waiting **nodes** first. Depth-first search uses recursion or a **stack**, so it follows one path deeply before backing up."
+        },
+        {
+          "kind": "code",
+          "caption": "Breadth-first **traversal** with a **queue**.",
+          "variants": {
+            "python": {
+              "code": "from collections import deque\n\ndef bfs(graph, start):\n    visited = {start}\n    queue = deque([start])\n    while queue:\n        node = queue.popleft()\n        print(node)\n        for neighbor in graph[node]:\n            if neighbor not in visited:\n                visited.add(neighbor)\n                queue.append(neighbor)",
+              "output": ""
+            },
+            "java": {
+              "code": "static void bfs(Map<String, List<String>> graph, String start) {\n    Set<String> visited = new HashSet<>();\n    Queue<String> queue = new ArrayDeque<>();\n    visited.add(start);\n    queue.offer(start);\n    while (!queue.isEmpty()) {\n        String node = queue.poll();\n        System.out.println(node);\n        for (String neighbor : graph.getOrDefault(node, List.of())) {\n            if (!visited.contains(neighbor)) {\n                visited.add(neighbor);\n                queue.offer(neighbor);\n            }\n        }\n    }\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "function bfs(graph, start) {\n  const visited = new Set([start]);\n  const queue = [start];\n  while (queue.length > 0) {\n    const node = queue.shift();\n    console.log(node);\n    for (const neighbor of graph.get(node) ?? []) {\n      if (!visited.has(neighbor)) {\n        visited.add(neighbor);\n        queue.push(neighbor);\n      }\n    }\n  }\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "void bfs(const std::unordered_map<std::string, std::vector<std::string>>& graph,\n         const std::string& start) {\n    std::unordered_set<std::string> visited;\n    std::queue<std::string> queue;\n    visited.insert(start);\n    queue.push(start);\n    while (!queue.empty()) {\n        std::string node = queue.front();\n        queue.pop();\n        std::cout << node << \"\\n\";\n        for (const std::string& neighbor : graph.at(node)) {\n            if (!visited.count(neighbor)) {\n                visited.insert(neighbor);\n                queue.push(neighbor);\n            }\n        }\n    }\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "list",
+          "title": "Choose BFS or DFS",
+          "items": [
+            "Need shortest path in unweighted steps? BFS is often a good fit.",
+            "Need to explore all connected **nodes**? Either BFS or DFS can work.",
+            "Need recursive shape? DFS often reads naturally.",
+            "Always include **visited** unless the **graph** is guaranteed acyclic."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "components",
+      "title": "Disconnected components",
+      "summary": "One start **node** may not reach the whole **graph**.",
+      "question_ids": [
+        "advanced-graph-components"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Some **graphs** are disconnected. That means there are groups of **nodes** with no path between them. Starting **traversal** at one node only visits that node's group."
+        },
+        {
+          "kind": "list",
+          "title": "To visit every component",
+          "items": [
+            "Keep a **visited** **set** for the whole **graph**.",
+            "**Loop** over every node.",
+            "If a **node** is not **visited**, start a new BFS or DFS there.",
+            "Each new start finds one more component."
+          ]
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Plain meaning",
+          "body": "A component is one connected group. If the **graph** has three separate groups, one **traversal** from one group cannot see the other two."
+        }
+      ]
+    }
+  ]
+}

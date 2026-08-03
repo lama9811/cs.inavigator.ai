@@ -7,12 +7,12 @@
     "syntax",
     "runtime"
   ],
-  "refresher": "Syntax is the set of rules your code has to follow before Python will run it. `print(\"Hi\")` needs the parentheses, and the text inside needs matching quotes. A `#` starts a comment, which Python ignores. Lines that end in a colon start a block, and the lines belonging to that block are indented underneath. In Python the indentation is not decoration. It is how you say which lines go together.",
+  "refresher": "Syntax is the **set** of rules your code has to follow before Python will run it. `print(\"Hi\")` needs the parentheses, and the text inside needs matching quotes. A `#` starts a comment, which Python ignores. Lines that end in a colon start a block, and the lines belonging to that block are indented underneath. In Python the indentation is not decoration. It is how you say which lines go together.",
   "refresher_code": "# a comment, ignored by Python\nname = \"Ada\"\nif name == \"Ada\":\n    print(\"Hello, Ada\")",
   "blocks": [
     {
       "kind": "text",
-      "body": "Every language has rules about how you are allowed to arrange things. English wants a subject and a verb. Python wants parentheses in certain places, quotes around text, and lines lined up in a certain way. Those rules are called syntax. Get them right and your program runs. Get one of them wrong and Python stops before it runs a single line. That last part surprises people. A syntax error is not the computer disagreeing with your idea. It is the computer saying it could not read the sentence at all. Your logic might be perfect. Python never got far enough to find out."
+      "body": "Every language has rules about how you are allowed to arrange things. English wants a subject and a verb. Python wants parentheses in certain places, quotes around text, and lines lined up in a certain way. Those rules are called syntax. Get them right and your program runs. Get one of them wrong and Python stops before it runs a single line. That last part surprises people. A **syntax error** is not the computer disagreeing with your idea. It is the computer saying it could not read the sentence at all. Your logic might be perfect. Python never got far enough to find out."
     },
     {
       "kind": "code",
@@ -22,17 +22,17 @@
     },
     {
       "kind": "text",
-      "body": "Each of those three pieces is doing a job. Without the parentheses, Python sees the word `print` and has nothing to print. Without the quotes, it reads `Hello` as the name of a variable and looks for one you never made. The punctuation is not there to look official. It is there to tell Python which parts are instructions and which parts are just text."
+      "body": "Each of those three pieces is doing a job. Without the parentheses, Python sees the word `print` and has nothing to **print**. Without the quotes, it reads `Hello` as the name of a **variable** and looks for one you never made. The punctuation is not there to look official. It is there to tell Python which parts are instructions and which parts are just text."
     },
     {
       "kind": "callout",
       "tone": "tip",
       "title": "Quotes come in pairs",
-      "body": "A string is text with quotes around both ends. Single quotes and double quotes both work, so `'hi'` and `\"hi\"` are the same to Python. What matters is that you close with the same kind you opened with. If you need an apostrophe inside your text, open with double quotes: `\"it's fine\"`."
+      "body": "A **string** is text with quotes around both ends. Single quotes and double quotes both work, so `'hi'` and `\"hi\"` are the same to Python. What matters is that you close with the same kind you opened with. If you need an apostrophe inside your text, open with double quotes: `\"it's fine\"`."
     },
     {
       "kind": "compare",
-      "caption": "Python reads left to right looking for the closing quote, and when the line ends without one it stops right there. The message says the string was never terminated, and the little arrow underneath points at the quote that started it. Read the arrow. It is usually aiming straight at the problem.",
+      "caption": "Python reads left to right looking for the closing quote, and when the line ends without one it stops right there. The message says the **string** was never terminated, and the little arrow underneath points at the quote that started it. Read the arrow. It is usually aiming straight at the problem.",
       "wrong_label": "Syntax error",
       "wrong": "print(\"Hello)\n# the quote after Hello\n# was never closed",
       "right_label": "Works",
@@ -50,7 +50,7 @@
     },
     {
       "kind": "check",
-      "prompt": "What does this program print?",
+      "prompt": "What does this program **print**?",
       "code": "# print(\"first\")\nprint(\"second\")\n# print(\"third\")",
       "choices": [
         "second",
@@ -75,7 +75,7 @@
       "kind": "callout",
       "tone": "mistake",
       "title": "The forgotten colon",
-      "body": "Anything that opens a block needs a colon at the end of the line: `if`, `else`, `for`, `while`, `def`. Leave it off and Python reports a syntax error on that line or the next one. Experienced programmers still do this, because the colon is the easiest character in the language to skip over. When an error points at a line with `if` or `for` on it, check the end of the line first."
+      "body": "Anything that opens a block needs a colon at the end of the line: `if`, `else`, `for`, `while`, `def`. Leave it off and Python reports a **syntax error** on that line or the next one. Experienced programmers still do this, because the colon is the easiest character in the language to skip over. When an error points at a line with `if` or `for` on it, check the end of the line first."
     },
     {
       "kind": "check",
@@ -88,13 +88,13 @@
         "Nothing is wrong, it prints both lines"
       ],
       "answer_index": 0,
-      "why": "The `if` line opens a block, so it has to end with a colon. Without it the file never runs, and neither line prints. If you picked the indentation, that is a very reasonable guess, and plenty of people make it. Indentation is the thing Python is famous for, so it is the first place your eye goes. Here it happens to be fine: `print(\"Hello, Ada\")` is correctly inside the `if`, and `print(\"Goodbye\")` is correctly outside it so it runs either way."
+      "why": "The `if` line opens a block, so it has to end with a colon. Without it the **file** never runs, and neither line prints. If you picked the indentation, that is a very reasonable guess, and plenty of people make it. Indentation is the thing Python is famous for, so it is the first place your eye goes. Here it happens to be fine: `print(\"Hello, Ada\")` is correctly inside the `if`, and `print(\"Goodbye\")` is correctly outside it so it runs either way."
     },
     {
       "kind": "callout",
       "tone": "warning",
       "title": "The error message is trying to help you",
-      "body": "A syntax error tells you the line, and usually draws an arrow at the exact character that confused Python. Beginners often skim past all of it and start rereading the whole file. Read it instead. `expected ':'` means a colon is missing. `'(' was never closed` means a parenthesis is still open. `unterminated string literal` means a quote never got its partner. The message is naming your bug out loud."
+      "body": "A **syntax error** tells you the line, and usually draws an arrow at the exact character that confused Python. Beginners often skim past all of it and start rereading the whole **file**. Read it instead. `expected ':'` means a colon is missing. `'(' was never closed` means a parenthesis is still open. `unterminated string literal` means a quote never got its partner. The message is naming your bug out loud."
     },
     {
       "kind": "list",
@@ -105,8 +105,90 @@
         "Every line that starts a block ends with a colon",
         "Everything inside a block is indented, and indented by the same amount",
         "Four spaces per level is the Python convention, and picking one style and sticking to it matters more than which style you pick",
-        "When you get a syntax error, read the arrow and the message before you change anything"
+        "When you get a **syntax error**, read the arrow and the message before you change anything"
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "output-01": {
+      "title": "Numbers add before they print",
+      "body": "This checks whether the values are numbers or text. Number values use `+` for arithmetic before output happens.",
+      "notice": "Evaluate the expression first, then decide what the output instruction shows.",
+      "mistake": "Do not join digits like text unless quotes make them strings.",
+      "section_id": "check",
+      "example": "print(15 + 6)"
+    },
+    "output-02": {
+      "title": "A variable name stands in for its value",
+      "body": "The output line uses the stored value, not the variable name as literal text.",
+      "notice": "Read the assignment first so the later output line has the value in place.",
+      "mistake": "Do not choose an answer that prints the name itself when the code uses the variable.",
+      "section_id": "check",
+      "example": "score = 25"
+    },
+    "output-03": {
+      "title": "Text plus text joins",
+      "body": "When both sides are strings, `+` makes one longer string instead of doing arithmetic.",
+      "notice": "Quotes are the clue that the values are text.",
+      "mistake": "Do not add quoted digits as numbers unless the code converts them first.",
+      "section_id": "check",
+      "example": "print(\"CS\" + \"101\")"
+    },
+    "output-04": {
+      "title": "Integer division keeps a whole result",
+      "body": "This question tests the division rule for whole-number output in the selected language.",
+      "notice": "Check whether the code asks for decimal division or a whole-number result.",
+      "mistake": "Do not round up. Whole-number division keeps the complete groups.",
+      "section_id": "check",
+      "example": "print(7 // 2)"
+    },
+    "output-05": {
+      "title": "Printing needs the exact output call",
+      "body": "Type-in output questions care about the statement shape and the exact text being shown.",
+      "notice": "Match the print/output function and include quotes around text.",
+      "mistake": "Do not type only the word being printed when the question asks for a statement.",
+      "section_id": "check",
+      "example": "print(\"Hello\")"
+    },
+    "syntax-delimiter-01": {
+      "title": "Open delimiters need partners",
+      "body": "Brackets, parentheses, and quotes create a shape the parser must be able to close.",
+      "notice": "When code stops before running, scan for the opening symbol that never got closed.",
+      "mistake": "Do not debug the logic until the code can be parsed.",
+      "section_id": "check",
+      "example": "[8, 10, 9]"
+    },
+    "syntax-comment-01": {
+      "title": "Comments are skipped",
+      "body": "A comment can look like code, but the language ignores it when the program runs.",
+      "notice": "Only non-commented output statements affect what appears.",
+      "mistake": "Do not count a commented-out line as a printed line.",
+      "section_id": "check",
+      "example": "# comment"
+    },
+    "syntax-case-01": {
+      "title": "Names are case-sensitive",
+      "body": "Capitalization can create a different name. Built-in words and user names must match exactly.",
+      "notice": "If a familiar name fails, compare every letter including case.",
+      "mistake": "Do not assume `Print` and `print` are the same spelling to the language.",
+      "section_id": "check",
+      "example": "print(\"Hello\")"
+    },
+    "syntax-line-break-01": {
+      "title": "Escapes can create invisible characters",
+      "body": "Some characters inside strings describe formatting, such as moving output to the next line.",
+      "notice": "Read escape sequences as one special character, not as ordinary letters.",
+      "mistake": "Do not include the backslash text literally when the code asks for output.",
+      "section_id": "check",
+      "example": "\"A\\nB\""
+    },
+    "syntax-block-01": {
+      "title": "Block headers need block syntax",
+      "body": "A decision or loop header must clearly mark that a controlled body is coming next.",
+      "notice": "Check the small symbol at the end of the header and the shape of the body below it.",
+      "mistake": "Do not focus only on the condition and miss the punctuation that opens the block.",
+      "section_id": "check",
+      "example": "if ready:\n    print(\"go\")"
+    }
+  }
 }

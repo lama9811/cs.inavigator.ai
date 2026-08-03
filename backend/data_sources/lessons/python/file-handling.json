@@ -1,32 +1,32 @@
 {
   "_note": "ORIGINAL content. Topic coverage follows the curriculum in Runestone Foundations of Python Programming, Think Python, and OpenStax Introduction to Python Programming. No prose, examples, or exercises were copied; the sources guide topic selection only.",
   "title": "File Handling",
-  "summary": "Read and write text files without leaving resources open.",
+  "summary": "Read and write text **files** without leaving resources open.",
   "minutes": 10,
   "error_classes": [
     "runtime",
     "wrong_answer"
   ],
-  "refresher": "Open files with a `with` statement so Python closes them automatically. Use mode `\"r\"` to read, `\"w\"` to replace a file, and `\"a\"` to add at the end. Text read from a file is a string and often includes newline characters.",
+  "refresher": "Open **files** with a `with` statement so Python closes them automatically. Use mode `\"r\"` to read, `\"w\"` to replace a file, and `\"a\"` to add at the end. Text read from a file is a **string** and often includes newline characters.",
   "refresher_code": "with open(\"notes.txt\", \"r\", encoding=\"utf-8\") as file:\n    text = file.read()\nprint(text)",
   "blocks": [
     {
       "kind": "text",
-      "body": "Variables disappear when a program stops, but files remain. That makes files useful for saved settings, reports, and data that another program will read later. File work also introduces failures such as a missing path or denied access."
+      "body": "**Variables** disappear when a program stops, but files remain. That makes files useful for saved settings, reports, and data that another program will read later. File work also introduces failures such as a missing path or denied access."
     },
     {
       "kind": "code",
-      "caption": "The `with` block owns the open file. When the indented block ends, Python closes it even if an error interrupted the work.",
+      "caption": "The `with` block owns the open **file**. When the indented block ends, Python closes it even if an error interrupted the work.",
       "code": "with open(\"courses.txt\", \"w\", encoding=\"utf-8\") as file:\n    file.write(\"CS101\\n\")\n    file.write(\"MATH120\\n\")\n\nwith open(\"courses.txt\", \"r\", encoding=\"utf-8\") as file:\n    print(file.read())",
       "output": "CS101\nMATH120"
     },
     {
       "kind": "text",
-      "body": "Mode `w` starts a fresh file and erases old contents. Mode `a` writes after what is already there. Mode `r` reads and raises FileNotFoundError if the path does not exist."
+      "body": "Mode `w` starts a fresh **file** and erases old contents. Mode `a` writes after what is already there. Mode `r` reads and raises FileNotFoundError if the path does not exist."
     },
     {
       "kind": "compare",
-      "caption": "Keeping the read inside `with` avoids trying to use a closed file later. The text itself can be saved and used after the block.",
+      "caption": "Keeping the read inside `with` avoids trying to use a closed **file** later. The text itself can be saved and used after the block.",
       "wrong_label": "Closed file",
       "wrong": "with open(\"notes.txt\") as file:\n    pass\ntext = file.read()",
       "right_label": "Saved text",
@@ -36,7 +36,7 @@
       "kind": "callout",
       "tone": "warning",
       "title": "Writing can replace real data",
-      "body": "Check the mode before running file code. Opening an existing file with `\"w\"` clears it immediately. Choose `\"a\"` when the goal is to preserve the old text and add another record."
+      "body": "Check the mode before running **file** code. Opening an existing file with `\"w\"` clears it immediately. Choose `\"a\"` when the goal is to preserve the old text and add another record."
     },
     {
       "kind": "check",
@@ -49,11 +49,11 @@
         "\"x\""
       ],
       "answer_index": 0,
-      "why": "Append mode `a` positions writes at the end. Write mode `w` replaces existing contents, while read mode does not permit writing."
+      "why": "**Append** mode `a` positions writes at the end. Write mode `w` replaces existing contents, while read mode does not permit writing."
     },
     {
       "kind": "text",
-      "body": "Reading line by line avoids loading a large file all at once. Each line usually ends with `\\n`; `strip()` removes surrounding whitespace when that newline is not part of the data."
+      "body": "Reading line by line avoids loading a large **file** all at once. Each line usually ends with `\\n`; `strip()` removes surrounding whitespace when that newline is not part of the data."
     },
     {
       "kind": "check",
@@ -66,7 +66,7 @@
         "To skip the first line"
       ],
       "answer_index": 0,
-      "why": "File iteration keeps the newline character at the end of most lines. `strip()` removes it so `print` does not add an extra blank line."
+      "why": "**File** iteration keeps the newline character at the end of most lines. `strip()` removes it so `print` does not add an extra blank line."
     },
     {
       "kind": "list",
@@ -76,8 +76,100 @@
         "Specify UTF-8 for text you control.",
         "Confirm whether the mode reads, replaces, or appends.",
         "Expect missing paths and permission errors.",
-        "Process large files one line at a time."
+        "Process large **files** one line at a time."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "python-file-handling-check-1": {
+      "title": "Choose the matching file handling choice rule",
+      "notice": "Identify whether the question is about reading, appending, overwriting, encoding, or closing the file safely.",
+      "mistake": "Do not use write mode when the old contents should survive.",
+      "section_id": "examples",
+      "example": "with open(path, \"r\", encoding=\"utf-8\") as file:",
+      "source": "question",
+      "body": "This question tests which mode adds new text without deleting existing text? File code must choose the right mode, keep work inside the open file block, and handle missing or large files deliberately."
+    },
+    "python-file-handling-check-2": {
+      "title": "Explain the file handling choice reason",
+      "notice": "Identify whether the question is about reading, appending, overwriting, encoding, or closing the file safely.",
+      "mistake": "Do not use write mode when the old contents should survive.",
+      "section_id": "examples",
+      "example": "with open(path, \"r\", encoding=\"utf-8\") as file:",
+      "source": "question",
+      "body": "This question tests why is strip() used here? File code must choose the right mode, keep work inside the open file block, and handle missing or large files deliberately."
+    },
+    "python-file-handling-output-01": {
+      "title": "Trace file handling choice output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "with open(path, \"r\", encoding=\"utf-8\") as file:",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. File code must choose the right mode, keep work inside the open file block, and handle missing or large files deliberately."
+    },
+    "python-file-handling-supplement-01": {
+      "title": "Use the file while open",
+      "notice": "The with block owns the open file; read or write before the block exits.",
+      "mistake": "Do not use write mode when the old contents should survive.",
+      "section_id": "check",
+      "example": "with open(path, \"r\", encoding=\"utf-8\") as file:",
+      "source": "question",
+      "body": "This question tests why keep file.read() inside the with block instead of after... File code must choose the right mode, keep work inside the open file block, and handle missing or large files deliberately."
+    },
+    "python-file-handling-authored-01": {
+      "title": "File handling choice",
+      "notice": "Identify whether the question is about reading, appending, overwriting, encoding, or closing the file safely.",
+      "mistake": "Do not use write mode when the old contents should survive.",
+      "section_id": "idea",
+      "example": "with open(path, \"r\", encoding=\"utf-8\") as file:",
+      "source": "question",
+      "body": "This question tests before opening an existing notes file with mode \"w\", what s... File code must choose the right mode, keep work inside the open file block, and handle missing or large files deliberately."
+    },
+    "python-file-handling-authored-02": {
+      "title": "Choose the matching file handling choice rule",
+      "notice": "Identify whether the question is about reading, appending, overwriting, encoding, or closing the file safely.",
+      "mistake": "Do not use write mode when the old contents should survive.",
+      "section_id": "idea",
+      "example": "with open(path, \"r\", encoding=\"utf-8\") as file:",
+      "source": "question",
+      "body": "This question tests a function reads a short text file and then returns a resul... File code must choose the right mode, keep work inside the open file block, and handle missing or large files deliberately."
+    },
+    "python-file-handling-authored-03": {
+      "title": "File handling choice",
+      "notice": "Identify whether the question is about reading, appending, overwriting, encoding, or closing the file safely.",
+      "mistake": "Do not use write mode when the old contents should survive.",
+      "section_id": "check",
+      "example": "with open(path, \"r\", encoding=\"utf-8\") as file:",
+      "source": "question",
+      "body": "This question tests a program writes course names that may include accents or s... File code must choose the right mode, keep work inside the open file block, and handle missing or large files deliberately."
+    },
+    "python-file-handling-authored-04": {
+      "title": "Choose the matching file handling choice rule",
+      "notice": "Identify whether the question is about reading, appending, overwriting, encoding, or closing the file safely.",
+      "mistake": "Do not use write mode when the old contents should survive.",
+      "section_id": "check",
+      "example": "with open(path, \"r\", encoding=\"utf-8\") as file:",
+      "source": "question",
+      "body": "This question tests a program should add a new journal line without deleting ol... File code must choose the right mode, keep work inside the open file block, and handle missing or large files deliberately."
+    },
+    "python-file-handling-authored-05": {
+      "title": "File handling choice",
+      "notice": "Identify whether the question is about reading, appending, overwriting, encoding, or closing the file safely.",
+      "mistake": "Do not use write mode when the old contents should survive.",
+      "section_id": "check",
+      "example": "with open(path, \"r\", encoding=\"utf-8\") as file:",
+      "source": "question",
+      "body": "This question tests what should code expect when opening a file path supplied b... File code must choose the right mode, keep work inside the open file block, and handle missing or large files deliberately."
+    },
+    "python-file-handling-authored-06": {
+      "title": "File handling choice",
+      "notice": "Identify whether the question is about reading, appending, overwriting, encoding, or closing the file safely.",
+      "mistake": "Do not use write mode when the old contents should survive.",
+      "section_id": "check",
+      "example": "with open(path, \"r\", encoding=\"utf-8\") as file:",
+      "source": "question",
+      "body": "This question tests a log file may be too large to comfortably load all at once... File code must choose the right mode, keep work inside the open file block, and handle missing or large files deliberately."
+    }
+  }
 }

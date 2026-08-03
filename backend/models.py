@@ -426,6 +426,78 @@ class CodingAttemptEvent(Base):
     user = relationship("User", backref="coding_attempt_events")
 
 
+class CodingHintEvent(Base):
+    """Append-only log of hint ladder reveals.
+
+    Runs tell us what happened after code executes; this table records when a
+    student asks for guidance before the next run. It lets the app enforce the
+    same hint ladder across reloads/devices without pretending a hint click is a
+    code attempt.
+    """
+    __tablename__ = "coding_hint_events"
+    __table_args__ = (
+        Index("ix_coding_hint_user_question", "user_id", "question_id"),
+        Index("ix_coding_hint_question_created", "question_id", "created_at"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    source = Column(String(20), nullable=False, default="practice")
+    question_id = Column(String(80), nullable=False, index=True)
+    language = Column(String(30), nullable=False, default="python")
+    level = Column(Integer, nullable=False, default=1)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+
+    user = relationship("User", backref="coding_hint_events")
+
+
+class CodingTutorActionEvent(Base):
+    """Append-only log for tutor-assisted actions that are not code runs or hint reveals.
+
+    Attempt events and hint events already cover most learning signals. This table is
+    deliberately small and only records product actions such as safely applying a tutor
+    suggestion, so milestone logic can stay honest without storing the student's code.
+    """
+    __tablename__ = "coding_tutor_action_events"
+    __table_args__ = (
+        Index("ix_coding_tutor_action_user_type", "user_id", "action_type"),
+        Index("ix_coding_tutor_action_question_created", "question_id", "created_at"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    action_type = Column(String(60), nullable=False, index=True)
+    source = Column(String(20), nullable=False, default="practice")
+    question_id = Column(String(80), nullable=True, index=True)
+    language = Column(String(30), nullable=False, default="python")
+    # JSON-encoded small metadata, such as the apply mode. Never source code.
+    metadata_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+
+    user = relationship("User", backref="coding_tutor_action_events")
+
+
+class CodingWorkspaceState(Base):
+    """Last Coding Tutor workspace opened by a user.
+
+    Practice/interview code itself lives in the progress tables. This row only
+    remembers which problem/language/source to reopen on another device.
+    """
+    __tablename__ = "coding_workspace_state"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_coding_workspace_state_user"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    problem_id = Column(String(80), nullable=True)
+    language = Column(String(30), nullable=False, default="python")
+    source = Column(String(20), nullable=False, default="practice")
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", backref="coding_workspace_state")
+
+
 class CodingConceptQuizAttempt(Base):
     """Append-only concept-quiz result used for cross-device progress and review.
 

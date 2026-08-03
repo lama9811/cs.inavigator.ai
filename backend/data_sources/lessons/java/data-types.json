@@ -1,22 +1,22 @@
 {
   "_note": "ORIGINAL content. The topic order follows the standard free Java text (Eck, 'Introduction to Programming Using Java', ch.2: primitive types, literals, type conversion). A topic sequence is not copyrightable; prose is. No sentence, example, or exercise here is copied or paraphrased from it. Eck's book is CC BY-NC-SA, so copying its words would bind CS Navigator's content to that license permanently, including its NonCommercial clause. Every word below was written for this project.",
   "title": "Data Types",
-  "summary": "Choose the kind of value a variable is allowed to hold.",
+  "summary": "Choose the kind of **value** a **variable** is allowed to hold.",
   "minutes": 8,
   "error_classes": [
     "wrong_answer",
     "syntax"
   ],
-  "refresher": "Java has small built-in types such as `int`, `double`, `boolean`, and `char`. `int` is for whole numbers. `double` is for decimals. `boolean` is true or false. `String` is text, but it is an object, not a primitive type.",
+  "refresher": "Java has small built-in types such as `int`, `double`, `boolean`, and `char`. `int` is for whole numbers. `double` is for decimals. `boolean` is true or false. `String` is text, but it is an **object**, not a primitive type.",
   "refresher_code": "int total = 7;\nint count = 2;\nSystem.out.println(total / count);\n// 3\nSystem.out.println((double) total / count);\n// 3.5",
   "blocks": [
     {
       "kind": "text",
-      "body": "A type tells Java what kind of value a variable can hold. That lets Java catch many mistakes before the program runs. If a variable is an `int`, Java will not quietly place a sentence inside it."
+      "body": "A type tells Java what kind of **value** a **variable** can hold. That lets Java catch many mistakes before the program runs. If a variable is an `int`, Java will not quietly place a sentence inside it."
     },
     {
       "kind": "code",
-      "caption": "Use int for whole numbers, double for decimals, boolean for true/false values, char for one character, and String for text.",
+      "caption": "Use int for whole numbers, double for decimals, **boolean** for true/false **values**, char for one character, and **String** for text.",
       "code": "public class Main {\n    public static void main(String[] args) {\n        int studentCount = 42;\n        double gpa = 3.75;\n        boolean isEnrolled = true;\n        char grade = 'A';\n        String name = \"Ada\";\n\n        System.out.println(studentCount);\n        System.out.println(gpa);\n        System.out.println(isEnrolled);\n        System.out.println(grade);\n        System.out.println(name);\n    }\n}",
       "output": "42\n3.75\ntrue\nA\nAda"
     },
@@ -26,11 +26,11 @@
       "items": [
         "`int` holds a whole number: 42, 0, -7. No decimal point, ever.",
         "`double` holds a number with a decimal point: 3.75, 2.0, -0.5.",
-        "`boolean` holds exactly one of two values: `true` or `false`, lowercase, no quotes.",
+        "`boolean` holds exactly one of two **values**: `true` or `false`, lowercase, no quotes.",
         "`char` holds one single character in single quotes: 'A', '7', '?'.",
         "`String` holds text in double quotes: \"Ada\", \"7\", \"hello world\"."
       ],
-      "body": "The type also affects math. When Java divides two `int` values, the result is still an `int`. The decimal part is dropped. If you need a decimal answer, make at least one number a `double`."
+      "body": "The type also affects math. When Java divides two `int` **values**, the result is still an `int`. The decimal part is dropped. If you need a decimal answer, make at least one number a `double`."
     },
     {
       "kind": "code",
@@ -42,15 +42,15 @@
       "kind": "callout",
       "tone": "warning",
       "title": "Casting changes how Java treats a value",
-      "body": "Casting means asking Java to treat a value as another type. Use it when you mean it. Casting can also throw information away, like turning `3.9` into `3`."
+      "body": "Casting means asking Java to treat a **value** as another type. Use it when you mean it. Casting can also throw information away, like turning `3.9` into `3`."
     },
     {
       "kind": "text",
-      "body": "Now the part of this lesson that will cost you points on an assignment if you skip it. When Java divides two `int` values, the answer is an `int`. There is no room for a decimal inside an `int`, so Java throws the decimal part away and keeps the whole number."
+      "body": "Now the part of this lesson that will cost you points on an assignment if you skip it. When Java divides two `int` **values**, the answer is an `int`. There is no room for a decimal inside an `int`, so Java throws the decimal part away and keeps the whole number."
     },
     {
       "kind": "code",
-      "caption": "Same numbers, three different answers. The type of the result is decided by the types you divided, not by the value you were hoping for. One `double` anywhere in the division is enough to get a decimal back.",
+      "caption": "Same numbers, three different answers. The type of the result is decided by the types you divided, not by the **value** you were hoping for. One `double` anywhere in the division is enough to get a decimal back.",
       "code": "System.out.println(5 / 2);\nSystem.out.println(5.0 / 2);\nSystem.out.println(5 / 2.0);",
       "output": "2\n2.5\n2.5"
     },
@@ -58,7 +58,7 @@
       "kind": "callout",
       "tone": "mistake",
       "title": "5 / 2 is 2, and Java never mentions it",
-      "body": "This is called integer division. It does not round to the nearest whole number, it chops the decimal off, so 5 / 2 is 2 and 9 / 10 is 0. Nothing is underlined, nothing crashes, and your program prints its answer with total confidence. When a number comes out lower than you expected, or comes out as a flat 0, check whether both sides of the `/` were ints."
+      "body": "This is called **integer division**. It does not round to the nearest whole number, it chops the decimal off, so 5 / 2 is 2 and 9 / 10 is 0. Nothing is underlined, nothing crashes, and your program prints its answer with total confidence. When a number comes out lower than you expected, or comes out as a flat 0, check whether both sides of the `/` were ints."
     },
     {
       "kind": "compare",
@@ -70,7 +70,7 @@
     },
     {
       "kind": "check",
-      "prompt": "A student is working out what percent of the points they earned. What does this print?",
+      "prompt": "A student is working out what percent of the points they earned. What does this **print**?",
       "code": "int earned = 3;\nint possible = 4;\ndouble percent = (earned / possible) * 100;\nSystem.out.println(percent);",
       "choices": [
         "0.0",
@@ -83,7 +83,7 @@
     },
     {
       "kind": "code",
-      "caption": "Turning one type into another is called casting. You write the type you want in parentheses in front of the value. Casting a `double` to an `int` truncates, the same way integer division does, so 9.99 becomes 9 and not 10. Do not reach for a cast when you meant to round. Going the other way, `int` into `double`, needs no cast at all, because nothing is lost.",
+      "caption": "Turning one type into another is called casting. You write the type you want in parentheses in front of the **value**. Casting a `double` to an `int` truncates, the same way **integer division** does, so 9.99 becomes 9 and not 10. Do not reach for a cast when you meant to round. Going the other way, `int` into `double`, needs no cast at all, because nothing is lost.",
       "code": "double price = 9.99;\nint rounded = (int) price;\nSystem.out.println(rounded);\n\nint whole = 7;\ndouble asDouble = whole;\nSystem.out.println(asDouble);",
       "output": "9\n7.0"
     },
@@ -95,7 +95,7 @@
     },
     {
       "kind": "compare",
-      "caption": "Java is statically typed. Before your program runs, the compiler reads every line and checks that the types line up. Here the print sits above the bad line, and you still never see the word starting. Not one line ran, because the compiler rejected the file before it produced anything to run. In Python a mix-up like this blows up mid-run, after some output has already appeared. In Java it is caught first, so if you see none of your output at all, suspect the compiler and not your logic.",
+      "caption": "Java is statically typed. Before your program runs, the compiler reads every line and checks that the types line up. Here the **print** sits above the bad line, and you still never see the word starting. Not one line ran, because the compiler rejected the **file** before it produced anything to run. In Python a mix-up like this blows up mid-run, after some **output** has already appeared. In Java it is caught first, so if you see none of your output at all, suspect the compiler and not your logic.",
       "wrong_label": "Does not compile",
       "wrong": "System.out.println(\"starting\");\nint x = \"5\";\nSystem.out.println(x);\n\n// error: incompatible types:\n// String cannot be\n// converted to int",
       "right_label": "Compiles and runs",
@@ -120,10 +120,92 @@
       "items": [
         "Use int for whole numbers.",
         "Use double when decimals matter.",
-        "Use boolean for decisions.",
-        "Use String for text.",
-        "Watch integer division before assuming the math is wrong."
+        "Use **boolean** for decisions.",
+        "Use **String** for text.",
+        "Watch **integer division** before assuming the math is wrong."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "concat-vs-add-01": {
+      "title": "Quotes turn digits into text",
+      "body": "Quoted digits are strings. With strings, `+` joins text instead of adding quantities.",
+      "notice": "Use quotes as your type clue before evaluating the expression.",
+      "mistake": "Do not calculate quoted values as numbers without conversion.",
+      "section_id": "check",
+      "example": "System.out.println(\"CS\" + \"101\");"
+    },
+    "mixed-add-01": {
+      "title": "Mixed types need an explicit plan",
+      "body": "Combining text and numbers depends on conversion rules. A clear program converts or formats the number before joining text.",
+      "notice": "Identify both operand types before deciding what `+` means.",
+      "mistake": "Do not expect the language to always guess how to combine unlike types.",
+      "section_id": "check",
+      "example": "str(age) or String.valueOf(age)"
+    },
+    "int-div-01": {
+      "title": "Division result type matters",
+      "body": "A division expression can produce a decimal or a whole-number result depending on the operator and operand types.",
+      "notice": "Look for the operator or function that chooses decimal versus whole-number behavior.",
+      "mistake": "Do not assume every division keeps the fractional part.",
+      "section_id": "check",
+      "example": "System.out.println(7 / 2);"
+    },
+    "cast-01": {
+      "title": "Conversion changes what operations do",
+      "body": "Converting text that looks numeric into a number lets arithmetic happen afterward.",
+      "notice": "Check the type after conversion, then evaluate the expression.",
+      "mistake": "Do not keep treating converted text like a string.",
+      "section_id": "check",
+      "example": "number = int(\"12\")"
+    },
+    "bool-01": {
+      "title": "Comparisons produce booleans",
+      "body": "A comparison answers a yes-or-no question. The result is a boolean value, not one of the compared numbers.",
+      "notice": "Conditionals use these boolean results to choose a branch.",
+      "mistake": "Do not expect a comparison to print the larger value.",
+      "section_id": "check",
+      "example": "5 > 3"
+    },
+    "typein-float-01": {
+      "title": "Decimals have their own type",
+      "body": "A value with a decimal point is usually stored as a floating-point value even when the fraction is zero.",
+      "notice": "The written shape of a literal often tells you its type.",
+      "mistake": "Do not call `3.0` an integer just because it equals three mathematically.",
+      "section_id": "check",
+      "example": "3.0"
+    },
+    "boolean-conversion-01": {
+      "title": "Some values convert to true or false",
+      "body": "Languages have rules for what counts as truthy or falsey when a value is used as a condition.",
+      "notice": "Zero, empty text, and null-like values are common cases to check carefully.",
+      "mistake": "Do not assume every stored value behaves as true.",
+      "section_id": "check",
+      "example": "bool(value)"
+    },
+    "decimal-to-int-01": {
+      "title": "Integer conversion is not rounding",
+      "body": "Converting a decimal to an integer often removes the fractional part rather than choosing the nearest whole number.",
+      "notice": "Ask whether the operation truncates, floors, rounds, or rejects the value.",
+      "mistake": "Do not round in your head unless the code calls for rounding.",
+      "section_id": "check",
+      "example": "int(8.9)"
+    },
+    "strict-equality-01": {
+      "title": "Same-looking values can have different types",
+      "body": "A number and a string can look alike on screen while still being different values to the program.",
+      "notice": "Check both the visible value and its type before judging equality.",
+      "mistake": "Do not assume the language converts text for every equality check.",
+      "section_id": "check",
+      "example": "5 and \"5\""
+    },
+    "floating-precision-01": {
+      "title": "Decimal floats are approximations",
+      "body": "Many decimal fractions cannot be stored exactly in binary floating-point, so tiny comparison surprises are normal.",
+      "notice": "For decimal calculations, compare with tolerance or use a decimal type when exact cents matter.",
+      "mistake": "Do not use exact equality for every floating-point calculation.",
+      "section_id": "check",
+      "example": "0.1 + 0.2"
+    }
+  }
 }

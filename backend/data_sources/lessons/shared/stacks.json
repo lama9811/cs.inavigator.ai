@@ -1,0 +1,438 @@
+{
+  "_note": "Advanced lesson authored from COSC 220 / Runestone-style topic structure. Original prose and examples only.",
+  "title": "Stacks",
+  "summary": "A **stack** is a linear structure where the newest item comes out first.",
+  "minutes": 22,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "A **stack** follows **LIFO**: last in, first out. You push to add to the top, pop to remove the top, and peek to look at the top without removing it.",
+  "refresher_code": "push A, push B, push C\npop -> C",
+  "learn_cards": {
+    "advanced-stack-lifo": {
+      "title": "LIFO means newest first",
+      "body": "A **stack** removes the last item that was added.",
+      "example": "push A, push B, push C, pop -> C",
+      "notice": "Only the top item is removed.",
+      "mistake": "If you remove A first, you are thinking like a **queue**, not a **stack**.",
+      "section_id": "what-is-stack"
+    },
+    "advanced-stack-parentheses": {
+      "title": "Stacks fit nested work",
+      "body": "Opening symbols wait on the **stack**. A closing symbol must match the newest opening symbol.",
+      "example": "([ ]) closes the bracket before the parenthesis.",
+      "notice": "Nested work finishes in reverse order.",
+      "mistake": "Matching against the oldest opening symbol breaks nested expressions.",
+      "section_id": "stack-applications"
+    },
+    "advanced-stack-trace": {
+      "title": "Trace the top",
+      "body": "When tracing a **stack**, update which item is on top after every push or pop.",
+      "example": "push 2, push 5, pop -> 5",
+      "notice": "The top changes after every operation.",
+      "mistake": "Do not read from the bottom unless the prompt says to inspect the whole **stack**.",
+      "section_id": "stack-trace"
+    },
+    "advanced-stack-parsons": {
+      "title": "Reverse with a stack",
+      "body": "Push each item, then pop until empty. The pop order is reversed.",
+      "example": "A, B, C becomes C, B, A",
+      "notice": "The second **loop** removes the newest remaining item each time.",
+      "mistake": "Popping too early only reverses part of the **input**.",
+      "section_id": "stack-applications"
+    }
+  },
+  "sections": [
+    {
+      "id": "what-is-stack",
+      "title": "What is a stack?",
+      "summary": "A **stack** is **LIFO**: last in, first out.",
+      "question_ids": [
+        "advanced-stack-lifo"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A **stack** is a linear data structure. Linear means the items are arranged in a sequence. Stack order has one special rule: the last item you add is the first item you remove."
+        },
+        {
+          "kind": "visual",
+          "title": "Watch LIFO in action",
+          "concept": "stacks",
+          "caption": "Step through push, peek, and pop so the top of the **stack** is visible.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Start empty",
+              "body": "The **stack** has no items yet.",
+              "state": {
+                "stack": [],
+                "note": "A stack removes from the same end where it adds."
+              }
+            },
+            {
+              "title": "Push A",
+              "body": "Push puts A on top.",
+              "state": {
+                "stack": [
+                  "A"
+                ],
+                "active": [
+                  0
+                ]
+              }
+            },
+            {
+              "title": "Push B",
+              "body": "B is newer, so B becomes the top.",
+              "state": {
+                "stack": [
+                  "A",
+                  "B"
+                ],
+                "active": [
+                  1
+                ]
+              }
+            },
+            {
+              "title": "Peek",
+              "body": "Peek reads B without removing it.",
+              "state": {
+                "stack": [
+                  "A",
+                  "B"
+                ],
+                "active": [
+                  1
+                ],
+                "note": "peek returns B"
+              }
+            },
+            {
+              "title": "Pop",
+              "body": "Pop removes the newest item, so B comes out first.",
+              "state": {
+                "stack": [
+                  "A"
+                ],
+                "active": [
+                  0
+                ],
+                "note": "pop returned B"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "text",
+          "body": "That rule is called **LIFO**, which stands for last in, first out. Think about a pile of plates. You place a clean plate on top. If you need a plate later, the top plate is the easiest one to take."
+        },
+        {
+          "kind": "list",
+          "title": "Stack vocabulary",
+          "items": [
+            "`top` is the end where pushes and pops happen.",
+            "`bottom` is the oldest item in the **stack**.",
+            "`push` adds a new item to the top.",
+            "`pop` removes and returns the top item.",
+            "`peek` or `top` looks at the top item without removing it.",
+            "`is_empty` checks whether there is anything to pop."
+          ]
+        },
+        {
+          "kind": "code",
+          "caption": "Trace the **LIFO** rule by hand before writing code.",
+          "variants": {
+            "python": {
+              "code": "stack = []\nstack.append(\"A\")\nstack.append(\"B\")\nstack.append(\"C\")\nprint(stack.pop())\nprint(stack.pop())",
+              "output": "C\nB"
+            },
+            "java": {
+              "code": "Deque<String> stack = new ArrayDeque<>();\nstack.push(\"A\");\nstack.push(\"B\");\nstack.push(\"C\");\nSystem.out.println(stack.pop());\nSystem.out.println(stack.pop());",
+              "output": "C\nB"
+            },
+            "javascript": {
+              "code": "const stack = [];\nstack.push(\"A\");\nstack.push(\"B\");\nstack.push(\"C\");\nconsole.log(stack.pop());\nconsole.log(stack.pop());",
+              "output": "C\nB"
+            },
+            "cpp": {
+              "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nstd::vector<std::string> stack;\nstack.push_back(\"A\");\nstack.push_back(\"B\");\nstack.push_back(\"C\");\nstd::cout << stack.back() << \"\\n\";\nstack.pop_back();\nstd::cout << stack.back() << \"\\n\";",
+              "output": "C\nB"
+            }
+          }
+        },
+        {
+          "kind": "check",
+          "prompt": "A **stack** receives A, then B, then C. What is popped first?",
+          "choices": [
+            "A",
+            "B",
+            "C",
+            "None"
+          ],
+          "answer_index": 2,
+          "why": "C was added last, so C is on top."
+        }
+      ]
+    },
+    {
+      "id": "stack-adt",
+      "title": "The Stack ADT",
+      "summary": "An ADT describes what the structure does before worrying about how it is built.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "ADT means abstract **data type**. Abstract does not mean hard. It means we describe the behavior first. For a **stack**, the behavior is the important part: add to the top, remove from the top, look at the top, and check whether it is empty."
+        },
+        {
+          "kind": "list",
+          "title": "Stack operations",
+          "items": [
+            "`push(item)`: put item on top.",
+            "`pop()`: remove and **return** the top item.",
+            "`peek()`: **return** the top item without removing it.",
+            "`is_empty()`: **return** true if the **stack** has no items.",
+            "`size()`: **return** how many items are stored."
+          ]
+        },
+        {
+          "kind": "compare",
+          "caption": "Pop changes the **stack**. Peek does not.",
+          "wrong_label": "Pop",
+          "wrong": "top = stack.pop()\n# top item is gone now",
+          "right_label": "Peek",
+          "right": "top = stack.peek()\n# top item is still there",
+          "body": "If the next operation still needs the top item, use peek instead of pop."
+        },
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "Empty stack rule",
+          "body": "A **stack** needs a rule for empty `pop` and empty `peek`. Beginner code can **return** `None` or `null`. Some real libraries throw an error. Either way, do not ignore the empty case."
+        },
+        {
+          "kind": "check",
+          "prompt": "Which operation reads the top item without removing it?",
+          "choices": [
+            "push",
+            "pop",
+            "peek",
+            "size"
+          ],
+          "answer_index": 2,
+          "why": "Peek is the non-removing read."
+        }
+      ]
+    },
+    {
+      "id": "stack-implementation",
+      "title": "Implement a stack",
+      "summary": "A **stack** can be built with an **array**/**list**, a deque, or linked nodes.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "The simplest **stack** uses a **list** or dynamic **array**. Treat the end of the list as the top. Adding and removing at the end is fast in the common built-in structures."
+        },
+        {
+          "kind": "code",
+          "caption": "A small **stack** **class** makes the operations clear.",
+          "variants": {
+            "python": {
+              "code": "class Stack:\n    def __init__(self):\n        self.items = []\n\n    def is_empty(self):\n        return len(self.items) == 0\n\n    def push(self, item):\n        self.items.append(item)\n\n    def pop(self):\n        if self.is_empty():\n            return None\n        return self.items.pop()\n\n    def peek(self):\n        if self.is_empty():\n            return None\n        return self.items[-1]\n\n    def size(self):\n        return len(self.items)",
+              "output": ""
+            },
+            "java": {
+              "code": "class StackBox<T> {\n    private ArrayList<T> items = new ArrayList<>();\n\n    boolean isEmpty() { return items.isEmpty(); }\n\n    void push(T item) { items.add(item); }\n\n    T pop() {\n        if (isEmpty()) return null;\n        return items.remove(items.size() - 1);\n    }\n\n    T peek() {\n        if (isEmpty()) return null;\n        return items.get(items.size() - 1);\n    }\n\n    int size() { return items.size(); }\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "class Stack {\n  constructor() {\n    this.items = [];\n  }\n\n  isEmpty() { return this.items.length === 0; }\n\n  push(item) { this.items.push(item); }\n\n  pop() {\n    if (this.isEmpty()) return null;\n    return this.items.pop();\n  }\n\n  peek() {\n    if (this.isEmpty()) return null;\n    return this.items[this.items.length - 1];\n  }\n\n  size() { return this.items.length; }\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "#include <vector>\n\ntemplate <typename T>\nclass StackBox {\nprivate:\n    std::vector<T> items;\n\npublic:\n    bool isEmpty() const { return items.empty(); }\n    void push(T item) { items.push_back(item); }\n\n    T pop() {\n        T top = items.back();\n        items.pop_back();\n        return top;\n    }\n\n    T peek() const { return items.back(); }\n    int size() const { return (int)items.size(); }\n};",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "list",
+          "title": "Read the Python class line by line",
+          "items": [
+            "`__init__` creates the empty storage **list**.",
+            "`self.items` belongs to this **stack** **object**.",
+            "`append(item)` adds to the end. We treat that end as the top.",
+            "`pop()` removes and returns the last item.",
+            "`items[-1]` means the last item in the **list**.",
+            "`len(self.items)` gives the number of stored items."
+          ]
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Implementation choice",
+          "body": "**Array**/**list** stacks are simple and fast for most learning problems. Linked-list stacks are useful when you are practicing nodes and pointers, but the stack behavior stays the same."
+        }
+      ]
+    },
+    {
+      "id": "stack-trace",
+      "title": "Trace stack state",
+      "summary": "Write the **stack** after each operation.",
+      "question_ids": [
+        "advanced-stack-trace"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Tracing a **stack** is quick if you draw the top. After every push, the new item becomes the top. After every pop, the next item below becomes the top."
+        },
+        {
+          "kind": "list",
+          "title": "Trace",
+          "items": [
+            "start: []",
+            "push 4 -> [4]",
+            "push 9 -> [4, 9]",
+            "peek -> 9, **stack** stays [4, 9]",
+            "pop -> 9, **stack** becomes [4]",
+            "push 2 -> [4, 2]"
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "After push 4, push 9, pop, push 2, what is on top?",
+          "choices": [
+            "4",
+            "9",
+            "2",
+            "Empty"
+          ],
+          "answer_index": 2,
+          "why": "The pop removes 9. Then 2 is pushed, so 2 is on top."
+        }
+      ]
+    },
+    {
+      "id": "stack-applications",
+      "title": "Where stacks show up",
+      "summary": "**Stacks** are used when work finishes in reverse order.",
+      "question_ids": [
+        "advanced-stack-parentheses",
+        "advanced-stack-parsons"
+      ],
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Common stack uses",
+          "items": [
+            "Undo history: the newest action is undone first.",
+            "**Function** calls: the current function finishes before the function that called it continues.",
+            "Balanced symbols: the newest opening symbol must close first.",
+            "Reversing data: pushing then popping reverses the order.",
+            "Postfix expression evaluation: numbers wait until an **operator** uses them."
+          ]
+        },
+        {
+          "kind": "code",
+          "caption": "Balanced parentheses uses a **stack** of openings.",
+          "variants": {
+            "python": {
+              "code": "def balanced(text):\n    stack = []\n    for ch in text:\n        if ch == \"(\":\n            stack.append(ch)\n        elif ch == \")\":\n            if len(stack) == 0:\n                return False\n            stack.pop()\n    return len(stack) == 0",
+              "output": ""
+            },
+            "java": {
+              "code": "static boolean balanced(String text) {\n    Deque<Character> stack = new ArrayDeque<>();\n    for (char ch : text.toCharArray()) {\n        if (ch == '(') stack.push(ch);\n        else if (ch == ')') {\n            if (stack.isEmpty()) return false;\n            stack.pop();\n        }\n    }\n    return stack.isEmpty();\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "function balanced(text) {\n  const stack = [];\n  for (const ch of text) {\n    if (ch === \"(\") stack.push(ch);\n    else if (ch === \")\") {\n      if (stack.length === 0) return false;\n      stack.pop();\n    }\n  }\n  return stack.length === 0;\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "bool balanced(const std::string& text) {\n    std::vector<char> stack;\n    for (char ch : text) {\n        if (ch == '(') stack.push_back(ch);\n        else if (ch == ')') {\n            if (stack.empty()) return false;\n            stack.pop_back();\n        }\n    }\n    return stack.empty();\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Two failure cases",
+          "body": "A closing parenthesis can appear with no opening waiting. Or openings can be left on the **stack** at the end. Both mean the symbols are not balanced."
+        },
+        {
+          "kind": "visual",
+          "title": "Match parentheses with a stack",
+          "concept": "stacks",
+          "caption": "Watch opening symbols wait on the **stack** until the matching closing symbol appears.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Read (",
+              "action_label": "push opening",
+              "body": "An opening parenthesis waits for a future closing parenthesis.",
+              "what_changed": "The **stack** now remembers the newest unfinished symbol.",
+              "animation": "push",
+              "state": {
+                "stack": [
+                  "("
+                ],
+                "active": [
+                  0
+                ],
+                "note": "waiting for )"
+              }
+            },
+            {
+              "title": "Read [",
+              "action_label": "push opening",
+              "body": "The bracket is inside the parenthesis, so it goes on top.",
+              "what_changed": "The bracket must close before the parenthesis can close.",
+              "animation": "push",
+              "state": {
+                "stack": [
+                  "(",
+                  "["
+                ],
+                "active": [
+                  1
+                ],
+                "note": "top expects ]"
+              }
+            },
+            {
+              "title": "Read ]",
+              "action_label": "pop match",
+              "body": "The closing bracket matches the top opening bracket, so pop it.",
+              "what_changed": "The bracket pair is finished. The parenthesis is back on top.",
+              "animation": "pop",
+              "state": {
+                "stack": [
+                  "("
+                ],
+                "active": [
+                  0
+                ],
+                "note": "] matched ["
+              }
+            },
+            {
+              "title": "Read )",
+              "action_label": "pop match",
+              "body": "The closing parenthesis matches the remaining top item.",
+              "what_changed": "The **stack** is empty, so every opening symbol was closed in the right order.",
+              "animation": "pop",
+              "state": {
+                "stack": [],
+                "note": "balanced"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

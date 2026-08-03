@@ -8,40 +8,103 @@
     "syntax",
     "wrong_answer"
   ],
-  "refresher": "A class is a blueprint for objects. Fields store each object's data. A constructor sets up a new object. Methods describe what the object can do. `new` creates an object from the class.",
+  "refresher": "A **class** is a blueprint for objects. Fields store each object's data. A constructor **sets** up a new object. **Methods** describe what the object can do. `new` creates an object from the class.",
   "refresher_code": "Student s = new Student(\"Ada\", 3.9);\nSystem.out.println(s.gpa);\n// 3.9",
   "blocks": [
     {
       "kind": "text",
-      "body": "A class lets you create your own kind of value. Instead of passing around a loose name, id, and GPA, you can make one Student object that keeps those facts together."
+      "body": "A **class** lets you create your own kind of **value**. Instead of passing around a loose name, id, and GPA, you can make one Student **object** that keeps those facts together."
+    },
+    {
+      "kind": "visual",
+      "title": "One object keeps related data together",
+      "concept": "objects",
+      "caption": "Watch fields live inside one object while a method updates them.",
+      "initial_state": {},
+      "steps": [
+        {
+          "title": "Create the object",
+          "body": "The object starts with its own field values.",
+          "state": {
+            "table": [
+              {
+                "key": "name",
+                "value": "Plant"
+              },
+              {
+                "key": "watered",
+                "value": "false"
+              }
+            ],
+            "note": "plant object"
+          }
+        },
+        {
+          "title": "Call a method",
+          "body": "The method changes the object's watered field.",
+          "animation": "highlight",
+          "state": {
+            "table": [
+              {
+                "key": "name",
+                "value": "Plant"
+              },
+              {
+                "key": "watered",
+                "value": "true",
+                "active": true
+              }
+            ],
+            "note": "plant.water()"
+          }
+        },
+        {
+          "title": "State is remembered",
+          "body": "After the method ends, the object still stores the updated field.",
+          "state": {
+            "table": [
+              {
+                "key": "name",
+                "value": "Plant"
+              },
+              {
+                "key": "watered",
+                "value": "true",
+                "active": true
+              }
+            ],
+            "note": "same object, updated state"
+          }
+        }
+      ]
     },
     {
       "kind": "text",
-      "body": "Fields are the data each object carries. A constructor runs when you create a new object and fills in the starting values. Methods are actions that belong with that object."
+      "body": "Fields are the data each **object** carries. A constructor runs when you create a new object and fills in the starting **values**. **Methods** are actions that belong with that object."
     },
     {
       "kind": "code",
-      "caption": "The constructor fills the fields. The displayName method uses the data stored inside this Student.",
+      "caption": "The constructor fills the fields. The displayName **method** uses the data stored inside this Student.",
       "code": "public class Student {\n    String name;\n    double gpa;\n\n    public static void main(String[] args) {\n        Student s = new Student();\n        s.name = \"Ada\";\n        s.gpa = 3.9;\n        System.out.println(s.name);\n        System.out.println(s.gpa);\n    }\n}",
       "output": "Ada\n3.9"
     },
     {
       "kind": "text",
-      "body": "`new Student(...)` creates one object. If you call it again, you get a separate object with its own field values. Changing one student does not change the other."
+      "body": "`new Student(...)` creates one **object**. If you call it again, you get a separate object with its own field **values**. Changing one student does not change the other."
     },
     {
       "kind": "callout",
       "tone": "tip",
       "title": "You have been writing classes all along",
-      "body": "Python lets you add attributes more freely. Java wants the class to say its fields up front. That feels strict at first, but it helps Java catch misspelled or missing data early."
+      "body": "Python lets you add attributes more freely. Java wants the **class** to say its fields up front. That feels strict at first, but it helps Java catch misspelled or missing data early."
     },
     {
       "kind": "text",
-      "body": "Setting each field by hand after `new` gets tedious, and it is easy to forget one. A constructor does it for you. It is a method with the same name as the class and no return type, and it runs automatically as part of `new`."
+      "body": "Setting each field by hand after `new` gets tedious, and it is easy to forget one. A constructor does it for you. It is a **method** with the same name as the **class** and no **return type**, and it runs automatically as part of `new`."
     },
     {
       "kind": "code",
-      "caption": "Methods are the behavior half of the blueprint, the way fields are the state half. Note that changing `grace` leaves `ada` untouched: they are two separate objects built from one class, each with its own copy of the fields.",
+      "caption": "**Methods** are the behavior half of the blueprint, the way fields are the state half. Note that changing `grace` leaves `ada` untouched: they are two separate **objects** built from one **class**, each with its own copy of the fields.",
       "code": "public class Student {\n    String name;\n    double gpa;\n\n    Student(String name, double gpa) {\n        this.name = name;\n        this.gpa = gpa;\n    }\n\n    String describe() {\n        return name + \" has a GPA of \" + gpa;\n    }\n\n    public static void main(String[] args) {\n        Student ada = new Student(\"Ada\", 3.9);\n        Student grace = new Student(\"Grace\", 2.5);\n        System.out.println(ada.describe());\n        System.out.println(grace.describe());\n        grace.gpa = 3.1;\n        System.out.println(grace.describe());\n        System.out.println(ada.describe());\n    }\n}",
       "output": "Ada has a GPA of 3.9\nGrace has a GPA of 2.5\nGrace has a GPA of 3.1\nAda has a GPA of 3.9"
     },
@@ -49,11 +112,11 @@
       "kind": "callout",
       "tone": "tip",
       "title": "What `this` is for",
-      "body": "In that constructor, the parameter is called `name` and the field is also called `name`. Java resolves the plain name `name` to the parameter, because the closer one wins. So `this.name = name` means: take the value that was passed in, and store it in this object's field. Drop the `this.` and you write `name = name`, which quietly assigns the parameter to itself and leaves the field empty. It compiles. It just does nothing."
+      "body": "In that constructor, the **parameter** is called `name` and the field is also called `name`. Java resolves the plain name `name` to the parameter, because the closer one wins. So `this.name = name` means: take the **value** that was passed in, and store it in this **object**'s field. Drop the `this.` and you write `name = name`, which quietly assigns the parameter to itself and leaves the field empty. It compiles. It just does nothing."
     },
     {
       "kind": "check",
-      "prompt": "What does this print?",
+      "prompt": "What does this **print**?",
       "code": "Student a = new Student(\"Ada\", 3.9);\nStudent b = a;\nb.gpa = 2.0;\nSystem.out.println(a.gpa);\n// constructor sets this.name and this.gpa",
       "choices": [
         "2.0",
@@ -62,25 +125,25 @@
         "It throws a NullPointerException"
       ],
       "answer_index": 0,
-      "why": "`new` was called once, so there is exactly one object. `Student b = a;` copies the reference, not the object, so `a` and `b` are two names pointing at the same Student. Changing it through `b` changes what you see through `a`, and the answer is 2.0. If you picked 3.9, you read `b = a` as making a second student. It does not: only `new` builds an object, and there is no second `new` here."
+      "why": "`new` was called once, so there is exactly one **object**. `Student b = a;` copies the **reference**, not the object, so `a` and `b` are two names pointing at the same Student. Changing it through `b` changes what you see through `a`, and the answer is 2.0. If you picked 3.9, you read `b = a` as making a second student. It does not: only `new` builds an object, and there is no second `new` here."
     },
     {
       "kind": "text",
-      "body": "Now for the `static` in `public static void main`. A static method belongs to the class itself, not to any object. That is exactly what `main` needs to be, because `main` is where your program starts. At that moment no objects exist yet, so there is nothing for a non-static method to be attached to. `main` runs first and builds the objects."
+      "body": "Now for the `static` in `public static void main`. A static **method** belongs to the **class** itself, not to any **object**. That is exactly what `main` needs to be, because `main` is where your program starts. At that moment no objects exist yet, so there is nothing for a non-static method to be attached to. `main` runs first and builds the objects."
     },
     {
       "kind": "code",
-      "caption": "`describe()` is an instance method: it needs a Student to describe. `main` is static, so it has no Student. Java catches this while compiling, before a single line runs. Nothing prints. You get: `error: non-static method describe() cannot be referenced from a static context`. The fix is to build an object first and call the method on it: `new Student().describe()`.",
+      "caption": "`describe()` is an **instance** **method**: it needs a Student to describe. `main` is static, so it has no Student. Java catches this while compiling, before a single line runs. Nothing prints. You get: `error: non-static method describe() cannot be referenced from a static context`. The fix is to build an **object** first and call the method on it: `new Student().describe()`.",
       "code": "public class Student {\n    String name;\n\n    String describe() {\n        return \"I am \" + name;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(describe());\n    }\n}",
       "output": ""
     },
     {
       "kind": "text",
-      "body": "That is worth pausing on, because it is a real difference from Python. Java checks types and method calls while compiling, so a mistake like this is caught before the program runs at all. An error that arrives with no output above it is a compile error, and it means the program never started. An error that arrives after some of your output has already printed is a runtime error, and it means the program was running fine until that line."
+      "body": "That is worth pausing on, because it is a real difference from Python. Java checks types and **method** calls while compiling, so a mistake like this is caught before the program runs at all. An error that arrives with no **output** above it is a compile error, and it means the program never started. An error that arrives after some of your output has already printed is a **runtime error**, and it means the program was running fine until that line."
     },
     {
       "kind": "compare",
-      "caption": "Both sides compile, which is what makes this one sting: the mistake survives the compiler and only shows up when you run it. Declaring a variable of type Student does not create a Student, so the NullPointerException side holds a reference pointing at nothing. The dot in `s.name` says \"go to the object and get its name\", and there is no object to go to.",
+      "caption": "Both sides compile, which is what makes this one sting: the mistake survives the compiler and only shows up when you run it. Declaring a **variable** of type Student does not create a Student, so the NullPointerException side holds a **reference** pointing at nothing. The dot in `s.name` says \"go to the **object** and get its name\", and there is no object to go to.",
       "wrong_label": "NullPointerException",
       "wrong": "Student s = null;\nSystem.out.println(\"here\");\nSystem.out.println(s.name);\n// prints \"here\", then crashes:\n// nothing was ever built",
       "right_label": "Works",
@@ -90,11 +153,11 @@
       "kind": "callout",
       "tone": "mistake",
       "title": "A NullPointerException means you never called new",
-      "body": "This is the error Java beginners hit most. It does not mean the object is broken. It means there is no object. Some reference is holding `null`, and you used a dot on it. Java tells you which line, so go to that line, find the variable before the dot, and trace backwards to where it should have been given a `new`. Usually you declared it in one branch of an `if` and used it outside."
+      "body": "This is the error Java beginners hit most. It does not mean the **object** is broken. It means there is no object. Some **reference** is holding `null`, and you used a dot on it. Java tells you which line, so go to that line, find the **variable** before the dot, and trace backwards to where it should have been given a `new`. Usually you declared it in one branch of an `if` and used it outside."
     },
     {
       "kind": "check",
-      "prompt": "The Student class declares `String name;` and `double gpa;` and has no constructor. What does this print?",
+      "prompt": "The Student **class** declares `String name;` and `double gpa;` and has no constructor. What does this **print**?",
       "code": "Student s = new Student();\nSystem.out.println(s.name);\nSystem.out.println(s.gpa);",
       "choices": [
         "null then 0.0",
@@ -103,18 +166,110 @@
         "An empty line then 0"
       ],
       "answer_index": 0,
-      "why": "`new` really did build an object, so `s` points at something and the dot works. Java fills unset fields with defaults: a `double` starts at 0.0, and any object type, including `String`, starts at `null`. So you get `null` and then `0.0`. If you picked the NullPointerException, you had the right idea about `null` but the wrong target: `s.name` is null, and `s` is not. Printing a null is fine. Only using a dot on a null crashes."
+      "why": "`new` really did build an **object**, so `s` points at something and the dot works. Java fills unset fields with defaults: a `double` starts at 0.0, and any object type, including `String`, starts at `null`. So you get `null` and then `0.0`. If you picked the NullPointerException, you had the right idea about `null` but the wrong target: `s.name` is null, and `s` is not. Printing a null is fine. Only using a dot on a null crashes."
     },
     {
       "kind": "list",
       "title": "Working with a new class",
       "items": [
-        "Use a class when data belongs together.",
-        "Fields hold object data.",
-        "Constructors set starting values.",
-        "Methods define useful actions.",
-        "Use new to create an object."
+        "Use a **class** when data belongs together.",
+        "Fields hold **object** data.",
+        "Constructors **set** starting **values**.",
+        "**Methods** define useful actions.",
+        "Use new to create an **object**."
       ]
     }
-  ]
+  ],
+  "learn_cards": {
+    "java-classes-objects-check-1": {
+      "title": "Trace the object state and behavior result",
+      "notice": "Follow the code in order and update the stored state before deciding what appears.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "examples",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests what does this print? A class defines the data and behavior each object will carry."
+    },
+    "java-classes-objects-check-2": {
+      "title": "Trace the object state and behavior result",
+      "notice": "Follow the code in order and update the stored state before deciding what appears.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "examples",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests the student class declares string name; and double gpa; and... A class defines the data and behavior each object will carry."
+    },
+    "java-classes-objects-output-01": {
+      "title": "Trace object state and behavior output",
+      "notice": "Write down each value at the moment it is printed, returned, or checked.",
+      "mistake": "Do not jump to the final line first. Trace each assignment and output in order.",
+      "section_id": "examples",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests what output does this code produce? enter each line in order. A class defines the data and behavior each object will carry."
+    },
+    "java-classes-objects-supplement-01": {
+      "title": "Trace the object state and behavior result",
+      "notice": "Follow the code in order and update the stored state before deciding what appears.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "examples",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests what does this code print? A class defines the data and behavior each object will carry."
+    },
+    "java-classes-objects-authored-01": {
+      "title": "Explain the object state and behavior reason",
+      "notice": "Separate class design from one object instance, and track where each object stores its own state.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "idea",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests why do small java programs usually start inside public clas... A class defines the data and behavior each object will carry."
+    },
+    "java-classes-objects-authored-02": {
+      "title": "Field versus parameter",
+      "notice": "this.name is the object field; name is the constructor parameter.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "idea",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests a constructor receives name and the class also has a field... A class defines the data and behavior each object will carry."
+    },
+    "java-classes-objects-authored-03": {
+      "title": "Null object call",
+      "notice": "Calling a method through null fails because there is no object to receive the call.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "check",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests code calls a method on an object variable that is still nul... A class defines the data and behavior each object will carry."
+    },
+    "java-classes-objects-authored-04": {
+      "title": "Choose the matching object state and behavior rule",
+      "notice": "Separate class design from one object instance, and track where each object stores its own state.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "check",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests which class name best communicates the thing being modeled? A class defines the data and behavior each object will carry."
+    },
+    "java-classes-objects-authored-05": {
+      "title": "Object state and behavior",
+      "notice": "Separate class design from one object instance, and track where each object stores its own state.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "check",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests when planning a java class, how should a student separate f... A class defines the data and behavior each object will carry."
+    },
+    "java-classes-objects-authored-06": {
+      "title": "Explain the object state and behavior reason",
+      "notice": "Separate class design from one object instance, and track where each object stores its own state.",
+      "mistake": "Do not treat a local parameter or temporary variable as object state unless it is assigned to the instance or field.",
+      "section_id": "check",
+      "example": "this.name = name",
+      "source": "question",
+      "body": "This question tests when an object needs several required fields, why write a c... A class defines the data and behavior each object will carry."
+    }
+  }
 }

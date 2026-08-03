@@ -17,9 +17,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // spoken SEGMENTS (roughly one per block) and let the user skip by segment and see
 // "section 3 of 12". That is the honest unit this API can actually offer.
 
-// Strip inline-code backticks so the voice reads the word, not the punctuation.
-function stripInlineCode(text) {
-  return String(text || "").replace(/`([^`]+)`/g, "$1");
+// Strip lightweight lesson markup so the voice reads the word, not the punctuation.
+function stripInlineMarkup(text) {
+  return String(text || "")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\*\*([^*]+)\*\*/g, "$1");
 }
 
 // Turn the lesson's blocks into an ordered list of spoken segments. Each segment is
@@ -28,7 +30,7 @@ export function lessonToSegments(lesson) {
   if (!lesson) return [];
   const segments = [];
   const push = (label, text) => {
-    const clean = stripInlineCode(text).trim();
+    const clean = stripInlineMarkup(text).trim();
     if (clean) segments.push({ label, text: clean });
   };
 
@@ -53,8 +55,11 @@ export function lessonToSegments(lesson) {
         if (block.caption) push("Comparison", `Comparison. ${block.caption} The two versions are shown side by side on screen.`);
         if (block.body) push("Comparison note", block.body);
         break;
+      case "visual":
+        push("Visualizer", `Visualizer. ${block.caption || block.title}. Open the visualizer on screen to step through it.`);
+        break;
       case "list": {
-        const items = (block.items || []).map(stripInlineCode).join(". ");
+        const items = (block.items || []).map(stripInlineMarkup).join(". ");
         push("List", `${block.title ? block.title + ". " : ""}${items}`);
         break;
       }
