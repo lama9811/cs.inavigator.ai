@@ -711,6 +711,20 @@ function cleanedResult(value: unknown): string {
     .trim();
 }
 
+function compactFlowText(value: unknown, fallback: string): string {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  if (!text) return fallback;
+  return text
+    .replace(/^return\s+/i, "")
+    .replace(/^if\s+/i, "")
+    .replace(/\s+then\s+/i, " -> ")
+    .replace(/\bis greater than or equal to\b/gi, ">=")
+    .replace(/\bis less than or equal to\b/gi, "<=")
+    .replace(/\bis greater than\b/gi, ">")
+    .replace(/\bis less than\b/gi, "<")
+    .replace(/\bequals\b/gi, "==");
+}
+
 function conditionalRules(context: GeneratorContext): Array<{ rule: string; result: string }> {
   const title = String(context.title || "").toLowerCase();
   if (title.includes("grade bucket")) {
@@ -792,17 +806,20 @@ function conditionInputLabel(context: GeneratorContext, state: Record<string, un
 }
 
 function authoredConditionalVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
-  const input = conditionInputLabel(context, state);
+  const rawInput = conditionInputLabel(context, state);
+  const input = compactFlowText(rawInput, "input");
   const output = cleanedResult(state.branch_result || context.exampleOutput || state.goal || "result");
   const rule = String(state.rule || relevantRule(context));
+  const compactRule = compactFlowText(rule, "condition?");
+  const compactOutput = compactFlowText(output, "result");
   const phase = String(state.condition_phase || (index <= 0 ? "input" : index === 1 ? "condition" : index === 2 ? "branch" : "end"));
   const branchTaken = state.branch_taken !== false;
   const branchLabel = branchTaken ? "true" : "false";
   const nodes: Node[] = [
     { id: "start", x: 68, y: 260, value: "Start", type: "logic-node", label: "", state: index >= 0 ? "visited" : "default", meta: { role: "terminator" } },
-    { id: "input", x: 190, y: 260, value: input, type: "logic-node", label: "input", state: phase === "input" ? "active" : "visited", meta: { role: "flow-step" } },
-    { id: "condition", x: 360, y: 260, value: rule, type: "logic-node", label: "condition", state: phase === "condition" || phase === "branch" ? "active" : "visited", meta: { role: "diamond" } },
-    { id: "true", x: 570, y: 168, value: output ? `return ${output}` : "steps", type: "logic-node", label: "true", state: phase === "end" || (phase === "branch" && branchTaken) ? "active" : "default", meta: { role: "flow-step" } },
+    { id: "input", x: 190, y: 260, value: input, type: "logic-node", label: "input", state: phase === "input" ? "active" : "visited", meta: { role: "flow-step", fullText: rawInput } },
+    { id: "condition", x: 360, y: 260, value: compactRule.length > 18 ? "check rule" : compactRule, type: "logic-node", label: "condition", state: phase === "condition" || phase === "branch" ? "active" : "visited", meta: { role: "diamond", fullText: rule } },
+    { id: "true", x: 570, y: 168, value: output ? `return ${compactOutput}` : "steps", type: "logic-node", label: "true", state: phase === "end" || (phase === "branch" && branchTaken) ? "active" : "default", meta: { role: "flow-step", fullText: output } },
     { id: "false", x: 570, y: 352, value: branchTaken ? "skip other branches" : "try next rule", type: "logic-node", label: "false", state: phase === "branch" && !branchTaken ? "active" : "inactive", meta: { role: "flow-step" } },
     { id: "end", x: 790, y: 260, value: "End", type: "logic-node", label: "", state: phase === "end" ? "active" : "default", meta: { role: "terminator" } },
   ];

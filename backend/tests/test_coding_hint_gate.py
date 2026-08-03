@@ -206,10 +206,14 @@ def test_universal_visualizer_covers_major_topic_families():
     assert "function HashTableVisualizer" in structure_source
     assert "function DPTableVisualizer" in structure_source
     assert "function IntervalVisualizer" in structure_source
+    assert "function MathVisualizer" in structure_source
+    assert "function StringScanVisualizer" in structure_source
+    assert "function BitVisualizer" in structure_source
     assert "function ConditionalFlowVisualizer" in structure_source
     assert 'if (step.concept === "stack") return <StackVisualizer step={step} />;' in visualizer_source
     assert 'if (step.concept === "queue") return <QueueVisualizer step={step} />;' in visualizer_source
     assert 'if (step.concept === "hash-map") return <HashTableVisualizer step={step} />;' in visualizer_source
+    assert 'if (step.concept === "math") return <MathVisualizer step={step} />;' in visualizer_source
     assert 'if (step.concept === "graph" || step.concept === "union-find") return <GraphVisualizer step={step} />;' in visualizer_source
     assert "flex-direction: column-reverse" in read(ROOT / "frontend" / "src" / "components" / "coding-tutor" / "universal-visualizer" / "UniversalCodeVisualizer.css")
     assert "ucv-queue-track" in structure_source
@@ -312,7 +316,7 @@ def test_universal_visualizer_prefers_question_examples_and_authored_steps():
     assert 'if (topic.includes("set") || visualConcept === "set") return "set";' in visualizer_source
     assert 'if (raw.includes("union") || raw.includes("disjoint")) return "union-find";' in visualizer_source
     assert "layoutConditional" not in generator_source.split("function authoredConditionalVisual", 1)[1].split("function authoredStackQueueVisual", 1)[0]
-    assert 'meta: { role: "diamond" }' in generator_source
+    assert 'meta: { role: "diamond", fullText: rule }' in generator_source
     structure_source = read(UNIVERSAL_STRUCTURE_VISUALIZERS)
     assert 'label: "true"' in structure_source
     assert 'label: "false"' in structure_source

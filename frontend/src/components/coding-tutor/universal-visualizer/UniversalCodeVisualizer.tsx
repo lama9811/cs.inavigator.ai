@@ -9,6 +9,7 @@ import {
   HashTableVisualizer,
   IntervalVisualizer,
   LinkedListVisualizer,
+  MathVisualizer,
   QueueVisualizer,
   StackVisualizer,
   TreeVisualizer,
@@ -92,6 +93,7 @@ function conceptLabel(concept: ConceptType): string {
 }
 
 function StateStrip({ step }: { step: Step }) {
+  if (step.concept === "conditional") return null;
   const hiddenKeys = new Set(["sample", "prompt_rule"]);
   const entries = Object.entries(step.state || {}).filter(([key]) => !hiddenKeys.has(key));
   if (!entries.length) return null;
@@ -161,6 +163,7 @@ function VisualizerCanvas({ step }: { step: Step }) {
   if (step.concept === "binary-tree" || step.concept === "heap" || step.concept === "trie") return <TreeVisualizer step={step} />;
   if (step.concept === "graph" || step.concept === "union-find") return <GraphVisualizer step={step} />;
   if (step.concept === "hash-map") return <HashTableVisualizer step={step} />;
+  if (step.concept === "math") return <MathVisualizer step={step} />;
   if (step.concept === "matrix" || step.concept === "dynamic-programming") return <DPTableVisualizer step={step} />;
   if (step.concept === "intervals") return <IntervalVisualizer step={step} />;
   if (step.concept === "conditional") return <ConditionalFlowVisualizer step={step} />;
