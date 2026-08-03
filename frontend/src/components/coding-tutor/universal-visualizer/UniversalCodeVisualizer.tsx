@@ -1,14 +1,25 @@
-import { AnimatePresence, motion } from "framer-motion";
-import { memo, useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
 import { generateStepsForConcept } from "./generators";
-import type { ConceptType, Edge, GeneratorContext, Node, Step } from "./types";
+import {
+  ArrayVisualizer,
+  ConditionalFlowVisualizer,
+  DPTableVisualizer,
+  GraphVisualizer,
+  HashTableVisualizer,
+  IntervalVisualizer,
+  LinkedListVisualizer,
+  QueueVisualizer,
+  StackVisualizer,
+  TreeVisualizer,
+} from "./StructureVisualizers";
+import type { ConceptType, GeneratorContext, Step } from "./types";
 import "./UniversalCodeVisualizer.css";
-
-const CANVAS_WIDTH = 900;
-const CANVAS_HEIGHT = 520;
 
 const CONCEPTS: Array<{ id: ConceptType; label: string }> = [
   { id: "array", label: "Arrays / sorting" },
+  { id: "tuple", label: "Tuples / pairs" },
+  { id: "set", label: "Sets" },
   { id: "two-pointers", label: "Two pointers" },
   { id: "sliding-window", label: "Sliding window" },
   { id: "binary-search", label: "Binary search" },
@@ -32,12 +43,19 @@ const CONCEPTS: Array<{ id: ConceptType; label: string }> = [
 ];
 
 function conceptFromProblem(problem: any): ConceptType {
-  const raw = `${problem?.visualizer?.concept || ""} ${problem?.topic || ""}`.toLowerCase();
+  const topic = String(problem?.topic || "").toLowerCase();
+  const visualConcept = String(problem?.visualizer?.concept || "").toLowerCase();
+  const raw = `${visualConcept} ${topic}`.toLowerCase();
   if (raw.includes("linked")) return "linked-list";
   if (raw.includes("two pointer")) return "two-pointers";
   if (raw.includes("sliding")) return "sliding-window";
   if (raw.includes("binary search")) return "binary-search";
-  if (raw.includes("hash") || raw.includes("map") || raw.includes("set") || raw.includes("dictionary")) return "hash-map";
+  if (raw.includes("heap")) return "heap";
+  if (raw.includes("trie")) return "trie";
+  if (raw.includes("union") || raw.includes("disjoint")) return "union-find";
+  if (topic.includes("tuple") || visualConcept.includes("tuple")) return "tuple";
+  if (topic.includes("set") || visualConcept === "set") return "set";
+  if (raw.includes("hash") || raw.includes("map") || raw.includes("dictionary")) return "hash-map";
   if (raw.includes("stack")) return "stack";
   if (raw.includes("queue")) return "queue";
   if (raw.includes("recursion")) return "recursion";
@@ -48,9 +66,6 @@ function conceptFromProblem(problem: any): ConceptType {
   if (raw.includes("matrix")) return "matrix";
   if (raw.includes("prefix")) return "prefix-sum";
   if (raw.includes("interval")) return "intervals";
-  if (raw.includes("heap")) return "heap";
-  if (raw.includes("trie")) return "trie";
-  if (raw.includes("union") || raw.includes("disjoint")) return "union-find";
   if (raw.includes("dynamic")) return "dynamic-programming";
   if (raw.includes("bit")) return "bit-manipulation";
   if (raw.includes("array-scan") || raw.includes("string-scan") || raw.includes("array") || raw.includes("string") || raw.includes("list")) return "array";
@@ -76,93 +91,6 @@ function conceptLabel(concept: ConceptType): string {
   return CONCEPTS.find((item) => item.id === concept)?.label || "Concept";
 }
 
-function edgePath(edge: Edge, nodes: Node[]): string {
-  const from = nodes.find((node) => node.id === edge.from);
-  const to = nodes.find((node) => node.id === edge.to);
-  if (!from || !to) return "";
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const curve = edge.type === "parent-child" || Math.abs(dy) < 8 ? 0 : Math.min(54, Math.abs(dx + dy) * 0.08);
-  const controlX = from.x + dx / 2;
-  const controlY = from.y + dy / 2 - curve;
-  return `M ${from.x} ${from.y} Q ${controlX} ${controlY} ${to.x} ${to.y}`;
-}
-
-function nodeClass(node: Node, highlighted: boolean): string {
-  return [
-    "ucv-node",
-    `ucv-node--${node.type}`,
-    `ucv-node--${node.state || "default"}`,
-    node.meta?.role ? `ucv-node-role--${node.meta.role}` : "",
-    highlighted ? "ucv-node--highlighted" : "",
-  ].filter(Boolean).join(" ");
-}
-
-const VisualNode = memo(function VisualNode({ node, highlighted }: { node: Node; highlighted: boolean }) {
-  return (
-    <motion.div
-      layout
-      className={nodeClass(node, highlighted)}
-      data-role={node.meta?.role}
-      initial={{ opacity: 0, scale: 0.55, x: "-50%", y: "-50%" }}
-      animate={{
-        opacity: node.state === "deleted" ? 0 : node.state === "inactive" ? 0.42 : 1,
-        scale: node.state === "active" || highlighted ? 1.12 : node.state === "deleted" ? 0 : 1,
-        left: `${(node.x / CANVAS_WIDTH) * 100}%`,
-        top: `${(node.y / CANVAS_HEIGHT) * 100}%`,
-      }}
-      exit={{ opacity: 0, scale: 0, transition: { duration: 0.24 } }}
-      transition={{ type: "spring", stiffness: 280, damping: 28, mass: 0.7 }}
-    >
-      <span>{node.label}</span>
-      <strong>{node.value}</strong>
-    </motion.div>
-  );
-});
-
-function EdgeLayer({ edges, nodes, highlights }: { edges: Edge[]; nodes: Node[]; highlights: string[] }) {
-  const highlighted = new Set(highlights);
-  return (
-    <svg className="ucv-edges" viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`} aria-hidden="true">
-      <AnimatePresence>
-        {edges.map((edge) => {
-          const id = edge.id || `${edge.from}-${edge.to}`;
-          const d = edgePath(edge, nodes);
-          if (!d) return null;
-          const isHot = highlighted.has(id) || edge.state === "active" || edge.state === "path";
-          const from = nodes.find((node) => node.id === edge.from);
-          const to = nodes.find((node) => node.id === edge.to);
-          const labelX = from && to ? (from.x + to.x) / 2 : 0;
-          const labelY = from && to ? (from.y + to.y) / 2 - 12 : 0;
-          return (
-            <g key={id}>
-              <motion.path
-                className={`ucv-edge ucv-edge--${edge.type} ${isHot ? "ucv-edge--active" : ""} ${edge.state === "inactive" ? "ucv-edge--inactive" : ""}`}
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ d, pathLength: 1, opacity: edge.state === "inactive" ? 0.28 : 1 }}
-                exit={{ opacity: 0, pathLength: 0 }}
-                transition={{ duration: 0.48, ease: "easeInOut" }}
-                fill="none"
-              />
-              {edge.label ? (
-                <motion.text
-                  className={`ucv-edge-label ${isHot ? "is-active" : ""}`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: edge.state === "inactive" ? 0.35 : 1, x: labelX, y: labelY }}
-                  transition={{ duration: 0.3 }}
-                  textAnchor="middle"
-                >
-                  {edge.label}
-                </motion.text>
-              ) : null}
-            </g>
-          );
-        })}
-      </AnimatePresence>
-    </svg>
-  );
-}
-
 function StateStrip({ step }: { step: Step }) {
   const entries = Object.entries(step.state || {});
   if (!entries.length) return null;
@@ -174,6 +102,33 @@ function StateStrip({ step }: { step: Step }) {
           <strong>{String(value)}</strong>
         </div>
       ))}
+    </div>
+  );
+}
+
+function WorkflowRail({ step }: { step: Step }) {
+  const items = step.workflow || [];
+  if (!items.length) return null;
+  return (
+    <div className="ucv-workflow" aria-label="Visualizer workflow">
+      {items.map((item, index) => {
+        const state = item.state || (item.id === step.activeWorkflowId ? "active" : "default");
+        return (
+          <div key={item.id} className={`ucv-workflow-item ucv-workflow-item--${state}`}>
+            {index > 0 ? <span className="ucv-workflow-connector" aria-hidden="true" /> : null}
+            <motion.span
+              className="ucv-workflow-dot"
+              layout
+              animate={{ scale: state === "active" ? 1.14 : 1 }}
+              transition={{ type: "spring", stiffness: 260, damping: 24 }}
+              aria-hidden="true"
+            >
+              {index + 1}
+            </motion.span>
+            <span className="ucv-workflow-label">{item.label}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -200,17 +155,16 @@ function CodeView({ step }: { step: Step }) {
 }
 
 function VisualizerCanvas({ step }: { step: Step }) {
-  const highlightedNodes = new Set(step.highlights?.nodeIds || []);
-  return (
-    <div className="ucv-canvas">
-      <EdgeLayer edges={step.edges} nodes={step.nodes} highlights={step.highlights?.edgeIds || []} />
-      <AnimatePresence>
-        {step.nodes.map((node) => (
-          <VisualNode key={node.id} node={node} highlighted={highlightedNodes.has(node.id)} />
-        ))}
-      </AnimatePresence>
-    </div>
-  );
+  if (step.concept === "stack") return <StackVisualizer step={step} />;
+  if (step.concept === "queue") return <QueueVisualizer step={step} />;
+  if (step.concept === "linked-list") return <LinkedListVisualizer step={step} />;
+  if (step.concept === "binary-tree" || step.concept === "heap" || step.concept === "trie") return <TreeVisualizer step={step} />;
+  if (step.concept === "graph" || step.concept === "union-find") return <GraphVisualizer step={step} />;
+  if (step.concept === "hash-map") return <HashTableVisualizer step={step} />;
+  if (step.concept === "matrix" || step.concept === "dynamic-programming") return <DPTableVisualizer step={step} />;
+  if (step.concept === "intervals") return <IntervalVisualizer step={step} />;
+  if (step.concept === "conditional") return <ConditionalFlowVisualizer step={step} />;
+  return <ArrayVisualizer step={step} />;
 }
 
 interface UniversalCodeVisualizerProps {
@@ -285,6 +239,7 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
 
       <div className="ucv-main">
         <div className="ucv-stage">
+          <WorkflowRail step={step} />
           <VisualizerCanvas step={step} />
           <StateStrip step={step} />
         </div>

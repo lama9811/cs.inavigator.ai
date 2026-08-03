@@ -1,5 +1,7 @@
 export type ConceptType =
   | "array"
+  | "tuple"
+  | "set"
   | "linked-list"
   | "hash-map"
   | "binary-tree"
@@ -26,6 +28,7 @@ export type ConceptType =
 export type NodeType =
   | "array-cell"
   | "array-index"
+  | "set-item"
   | "linked-node"
   | "hash-bucket"
   | "hash-entry"
@@ -72,6 +75,13 @@ export interface Highlight {
   lineNumbers?: number[];
 }
 
+export interface WorkflowStep {
+  id: string;
+  label: string;
+  detail?: string;
+  state?: NodeState;
+}
+
 export interface Step {
   id: string;
   concept: ConceptType;
@@ -83,6 +93,8 @@ export interface Step {
   code: string[];
   activeLine?: number;
   state?: Record<string, string | number | boolean>;
+  workflow?: WorkflowStep[];
+  activeWorkflowId?: string;
 }
 
 export interface ConceptConfig {

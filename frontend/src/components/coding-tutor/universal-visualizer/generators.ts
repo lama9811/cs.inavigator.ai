@@ -1,5 +1,43 @@
-import type { Edge, GeneratorContext, Node, Step } from "./types";
+import type { ConceptType, Edge, GeneratorContext, Node, Step, WorkflowStep } from "./types";
 import { insertTreeValue, layoutArray, layoutCircularGraph, layoutConditional, layoutHashBuckets, layoutTree } from "./layouts";
+
+const WORKFLOW_LABELS: Record<ConceptType, string[]> = {
+  array: ["Start", "Inspect", "Update", "Return"],
+  tuple: ["Lists", "Pair", "Build tuple", "Return"],
+  set: ["Items", "Unique memory", "Compare", "Return"],
+  "linked-list": ["Head", "Current", "Next link", "Stop"],
+  "hash-map": ["Key", "Bucket", "Compare", "Use value"],
+  "binary-tree": ["Root", "Compare", "Follow link", "Finish"],
+  graph: ["Start", "Frontier", "Visit", "Finish"],
+  search: ["Start", "Check", "Move", "Finish"],
+  sort: ["Start", "Compare", "Move", "Repeat"],
+  conditional: ["Input", "Condition", "Branch", "Result"],
+  stack: ["Start", "Top", "Push or pop", "Finish"],
+  queue: ["Front", "Serve", "Back", "Finish"],
+  "two-pointers": ["Left/right", "Compare", "Move pointer", "Return"],
+  "sliding-window": ["Start", "Window", "Update total", "Best"],
+  "binary-search": ["Range", "Middle", "Discard half", "Return"],
+  recursion: ["Call", "Base case", "Smaller call", "Unwind"],
+  math: ["Inputs", "Formula", "Adjust", "Return"],
+  matrix: ["Row", "Column", "Cell", "Update"],
+  "prefix-sum": ["Start", "Running total", "Save", "Answer"],
+  intervals: ["Sort", "Compare", "Merge or keep", "Finish"],
+  heap: ["Add", "Compare parent", "Bubble", "Top"],
+  trie: ["Root", "Character", "Branch", "Word end"],
+  "union-find": ["Items", "Find leaders", "Connect", "Count"],
+  "dynamic-programming": ["Small case", "Reuse", "Fill state", "Answer"],
+  "bit-manipulation": ["Bits", "Inspect", "Update", "Move"],
+};
+
+function workflowForConcept(concept: ConceptType, activeIndex: number): WorkflowStep[] {
+  const labels = WORKFLOW_LABELS[concept] || WORKFLOW_LABELS.array;
+  const boundedActive = Math.min(Math.max(activeIndex, 0), labels.length - 1);
+  return labels.map((label, index) => ({
+    id: `workflow-${index}`,
+    label,
+    state: index < boundedActive ? "visited" : index === boundedActive ? "active" : "default",
+  }));
+}
 
 function withNodeState(nodes: Node[], activeIds: string[], state: Node["state"] = "active"): Node[] {
   const active = new Set(activeIds);
@@ -18,7 +56,9 @@ function withEdgeState(edges: Edge[], activeIds: string[], state: Edge["state"] 
 }
 
 function step(partial: Omit<Step, "id">, index: number): Step {
-  return { ...partial, id: `${partial.concept}-${index}` };
+  const workflow = partial.workflow || workflowForConcept(partial.concept, index - 1);
+  const activeWorkflowId = partial.activeWorkflowId || workflow.find((item) => item.state === "active")?.id || workflow[0]?.id;
+  return { ...partial, id: `${partial.concept}-${index}`, workflow, activeWorkflowId };
 }
 
 function splitCodeLines(value: unknown, fallback: string[]): string[] {
@@ -86,6 +126,14 @@ function parseScalarAssignments(input?: string): Record<string, string> {
 }
 
 function valuesForState(concept: string, state: Record<string, unknown>, context: GeneratorContext): Array<string | number> {
+  if (/count\s+words|word/i.test(`${context.title || ""} ${context.prompt || ""}`) && context.exampleInput && !context.exampleInput.includes("=")) {
+    const words = context.exampleInput.trim().split(/\s+/).filter(Boolean);
+    if (words.length) return words.slice(0, 10);
+  }
+
+  const authoredItems = Array.isArray(state.items) ? state.items : Array.isArray(state.values) ? state.values : [];
+  if (authoredItems.length) return authoredItems.slice(0, 12).map((value) => value as string | number);
+
   const namedLists = parseAllNamedLists(context.exampleInput);
   const firstNamed = Object.values(namedLists)[0];
   if (firstNamed?.length) return firstNamed.slice(0, 12);
@@ -97,8 +145,6 @@ function valuesForState(concept: string, state: Record<string, unknown>, context
     return [...context.exampleInput].slice(0, 12).map((char) => char === " " ? "space" : char);
   }
 
-  const authoredItems = Array.isArray(state.items) ? state.items : Array.isArray(state.values) ? state.values : [];
-  if (authoredItems.length) return authoredItems.slice(0, 12).map((value) => value as string | number);
   return [2, 1, 5, 1, 3];
 }
 
@@ -110,12 +156,172 @@ function activeIndexes(state: Record<string, unknown>, max: number, fallback: nu
   return indexes.length ? indexes : [Math.min(Math.max(fallback, 0), Math.max(max - 1, 0))];
 }
 
+function linearNodes(
+  values: Array<string | number>,
+  active: number[] = [],
+  options: { y?: number; startX?: number; maxWidth?: number; role?: string; type?: Node["type"]; labels?: string[] } = {},
+): Node[] {
+  const count = Math.max(values.length, 1);
+  const maxWidth = options.maxWidth ?? 640;
+  const gap = count <= 1 ? 0 : Math.min(98, Math.max(58, maxWidth / (count - 1)));
+  const startX = options.startX ?? 450 - ((count - 1) * gap) / 2;
+  const activeSet = new Set(active);
+  return values.map((value, index) => ({
+    id: `item-${index}`,
+    x: startX + index * gap,
+    y: options.y ?? 260,
+    value,
+    type: options.type ?? "array-cell",
+    label: options.labels?.[index] ?? String(index),
+    state: activeSet.has(index) ? "active" : "default",
+    meta: options.role ? { role: options.role } : count > 7 ? { role: "compact-cell" } : undefined,
+  }));
+}
+
+function namedValues(context: GeneratorContext, names: string[]): Array<string | number> {
+  const lists = parseAllNamedLists(context.exampleInput);
+  for (const name of names) {
+    if (lists[name]?.length) return lists[name];
+  }
+  return [];
+}
+
+function exampleNumbers(context: GeneratorContext, names: string[] = ["nums", "values", "scores", "items"]): number[] {
+  const fromNamed = namedValues(context, names).map(Number).filter(Number.isFinite);
+  if (fromNamed.length) return fromNamed;
+  return parseFirstList(context.exampleInput).map(Number).filter(Number.isFinite);
+}
+
+function relayoutLinkedNodes(sourceNodes: Array<Record<string, unknown>>, sourceEdges: Array<Record<string, unknown>>, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
+  const ordered = sourceNodes.length ? sourceNodes : [
+    { id: "N0", label: "10" },
+    { id: "N1", label: "20" },
+    { id: "N2", label: "30" },
+  ];
+  const activeIndex = Math.min(index, ordered.length - 1);
+  const nodes = ordered.slice(0, 6).map((node, nodeIndex) => ({
+    id: String(node.id || `N${nodeIndex}`),
+    x: 145 + nodeIndex * 132,
+    y: 260,
+    value: String(node.label || node.value || nodeIndex),
+    type: "linked-node" as const,
+    label: nodeIndex === 0 ? "head" : "next",
+    state: nodeIndex === activeIndex || node.active ? "active" as const : nodeIndex < activeIndex ? "visited" as const : "default" as const,
+    meta: { role: "linked-node" },
+  }));
+  const edges = sourceEdges.length
+    ? sourceEdges.slice(0, 6).map((edge, edgeIndex) => ({
+      id: String(edge.id || `${edge.from}-${edge.to}`),
+      from: String(edge.from),
+      to: String(edge.to),
+      type: "pointer" as const,
+      state: edge.active || edgeIndex < activeIndex ? "active" as const : "default" as const,
+    }))
+    : nodes.slice(0, -1).map((node, nodeIndex) => ({
+      id: `${node.id}-${nodes[nodeIndex + 1].id}`,
+      from: node.id,
+      to: nodes[nodeIndex + 1].id,
+      type: "pointer" as const,
+      state: nodeIndex < activeIndex ? "active" as const : "default" as const,
+    }));
+  if (nodes.length) {
+    const last = nodes[nodes.length - 1];
+    nodes.push({ id: "null", x: last.x + 132, y: 260, value: "null", type: "logic-node", label: "next", state: "inactive", meta: { role: "terminator" } });
+    edges.push({ id: `${last.id}-null`, from: last.id, to: "null", type: "pointer", state: "inactive" });
+  }
+  return { nodes, edges, highlights: [nodes[activeIndex]?.id].filter(Boolean) };
+}
+
+function treeFromArray(values: Array<string | number>, activeIndex = 0, type: Node["type"] = "tree-node"): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+  const usable = values.slice(0, 15);
+  function walk(itemIndex: number, depth: number, minX: number, maxX: number, parentId?: string) {
+    const value = usable[itemIndex];
+    if (value === undefined || value === -1 || value === "-1" || value === "null" || value === "None") return;
+    const id = `tree-${itemIndex}`;
+    const x = (minX + maxX) / 2;
+    const y = 80 + depth * 105;
+    nodes.push({
+      id,
+      x,
+      y,
+      value,
+      type,
+      label: itemIndex === 0 ? "root" : itemIndex % 2 ? "left" : "right",
+      state: itemIndex === activeIndex ? "active" : itemIndex < activeIndex ? "visited" : "default",
+    });
+    if (parentId) edges.push({ id: `${parentId}-${id}`, from: parentId, to: id, type: "parent-child", state: itemIndex <= activeIndex ? "active" : "default" });
+    walk(itemIndex * 2 + 1, depth + 1, minX, x - 34, id);
+    walk(itemIndex * 2 + 2, depth + 1, x + 34, maxX, id);
+  }
+  walk(0, 0, 70, 830);
+  return { nodes, edges, highlights: nodes.filter((node) => node.state === "active").map((node) => node.id) };
+}
+
+function treeFromEdges(sourceNodes: Array<Record<string, unknown>>, sourceEdges: Array<Record<string, unknown>>, activeFallback: number, type: Node["type"] = "tree-node"): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
+  if (!sourceNodes.length) return treeFromArray([1, 2, 3, -1, 4], activeFallback, type);
+  const labels = new Map(sourceNodes.map((node, index) => [String(node.id || `N${index}`), String(node.label || node.value || node.id || index)]));
+  const children = new Map<string, string[]>();
+  const childIds = new Set<string>();
+  sourceEdges.forEach((edge) => {
+    const from = String(edge.from);
+    const to = String(edge.to);
+    childIds.add(to);
+    children.set(from, [...(children.get(from) || []), to]);
+  });
+  const rootId = [...labels.keys()].find((id) => !childIds.has(id)) || [...labels.keys()][0];
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+  function walk(id: string, depth: number, minX: number, maxX: number, parentId?: string) {
+    const x = (minX + maxX) / 2;
+    const y = 82 + depth * 108;
+    const original = sourceNodes.find((node) => String(node.id) === id);
+    nodes.push({
+      id,
+      x,
+      y,
+      value: labels.get(id) || id,
+      type,
+      label: id === rootId ? "root" : "",
+      state: original?.active ? "active" : "default",
+    });
+    if (parentId) edges.push({ id: `${parentId}-${id}`, from: parentId, to: id, type: "parent-child", state: original?.active ? "active" : "default" });
+    const kids = (children.get(id) || []).slice(0, 2);
+    if (kids[0]) walk(kids[0], depth + 1, minX, x - 34, id);
+    if (kids[1]) walk(kids[1], depth + 1, x + 34, maxX, id);
+  }
+  walk(rootId, 0, 70, 830);
+  if (!nodes.some((node) => node.state === "active")) {
+    const active = nodes[Math.min(activeFallback, nodes.length - 1)];
+    if (active) active.state = "active";
+  }
+  return { nodes, edges, highlights: nodes.filter((node) => node.state === "active").map((node) => node.id) };
+}
+
+function graphVisual(state: Record<string, unknown>, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
+  const sourceNodes = Array.isArray(state.nodes) ? state.nodes as Array<Record<string, unknown>> : [];
+  const sourceEdges = Array.isArray(state.edges) ? state.edges as Array<Record<string, unknown>> : [];
+  const labels = sourceNodes.length ? sourceNodes.map((node, nodeIndex) => String(node.id || node.label || nodeIndex)) : ["A", "B", "C", "D"];
+  const links = sourceEdges.length
+    ? sourceEdges.map((edge) => [String(edge.from), String(edge.to)] as [string, string])
+    : [["A", "B"], ["A", "C"], ["B", "D"]] as Array<[string, string]>;
+  const graph = layoutCircularGraph(labels.slice(0, 8), links);
+  const activeIds = new Set(sourceNodes.filter((node) => node.active).map((node) => String(node.id)));
+  if (!activeIds.size) activeIds.add(graph.nodes[Math.min(index, graph.nodes.length - 1)]?.id || graph.nodes[0]?.id || "A");
+  return {
+    nodes: graph.nodes.map((node) => ({ ...node, state: activeIds.has(node.id) ? "active" as const : index > 0 ? "visited" as const : "default" as const })),
+    edges: graph.edges.map((edge) => ({ ...edge, state: sourceEdges.find((item) => String(item.from) === edge.from && String(item.to) === edge.to)?.active ? "active" as const : "default" as const })),
+    highlights: [...activeIds],
+  };
+}
+
 function authoredArrayVisual(concept: string, state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
   const values = valuesForState(concept, state, context);
   const active = activeIndexes(state, values.length, index);
   const pointerMap = state.pointers && typeof state.pointers === "object" ? state.pointers as Record<string, unknown> : {};
   const windowRange = Array.isArray(state.window) ? state.window.map(Number) : null;
-  const nodes = layoutArray(values).map((node, nodeIndex) => {
+  const nodes = linearNodes(values, [], { role: values.length > 7 ? "compact-cell" : undefined }).map((node, nodeIndex) => {
     const pointerLabel = Object.entries(pointerMap)
       .filter(([, value]) => Number(value) === nodeIndex)
       .map(([key]) => key)
@@ -159,8 +365,100 @@ function buildTableVisual(state: Record<string, unknown>, context: GeneratorCont
   return { nodes, edges, highlights };
 }
 
+function rowsFromExampleOrState(state: Record<string, unknown>, context: GeneratorContext): Array<{ key: string | number; value: string | number }> {
+  const namedLists = parseAllNamedLists(context.exampleInput);
+  const keyList = namedLists.items || namedLists.names || namedLists.keys || parseFirstList(context.exampleInput);
+  const valueList = namedLists.prices || namedLists.scores || namedLists.values || [];
+  if (keyList.length) {
+    return keyList.slice(0, 5).map((key, rowIndex) => ({ key, value: valueList[rowIndex] ?? "saved value" }));
+  }
+  if (Array.isArray(state.table)) {
+    return (state.table as Array<Record<string, unknown>>)
+      .slice(0, 5)
+      .map((row, rowIndex) => ({ key: String(row.key || `key ${rowIndex + 1}`), value: String(row.value || "saved value") }));
+  }
+  return [
+    { key: "milk", value: 4 },
+    { key: "bread", value: 3 },
+  ];
+}
+
+function authoredHashMapVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
+  const assignments = parseScalarAssignments(context.exampleInput);
+  const rows = rowsFromExampleOrState(state, context);
+  const target = assignments.target || String(state.lookup || rows[1]?.key || rows[0]?.key || "key");
+  const targetRow = rows.find((row) => String(row.key) === String(target)) || rows[0];
+  const bucketCount = 4;
+  const activeBucket = 2;
+  const phase = index <= 0 ? "target" : index === 1 ? "bucket" : index === 2 ? "compare" : "value";
+  const collisionRows = rows.length > 1 ? rows.slice(0, 2) : [targetRow];
+  if (!collisionRows.some((row) => String(row.key) === String(targetRow.key))) {
+    collisionRows[collisionRows.length - 1] = targetRow;
+  }
+  const targetEntryIndex = Math.max(0, collisionRows.findIndex((row) => String(row.key) === String(targetRow.key)));
+
+  const nodes: Node[] = [
+    { id: "target", x: 105, y: 270, value: String(target), type: "logic-node", label: "key to find", state: phase === "target" ? "active" : "visited", meta: { role: "flow-step" } },
+    { id: "hash", x: 255, y: 270, value: "hash key", type: "logic-node", label: "choose bucket", state: phase === "bucket" ? "active" : index > 1 ? "visited" : "default", meta: { role: "flow-step" } },
+  ];
+  const edges: Edge[] = [
+    { id: "target-hash", from: "target", to: "hash", type: "pointer", state: index >= 1 ? "active" : "default" },
+  ];
+
+  for (let bucket = 0; bucket < bucketCount; bucket += 1) {
+    const id = `bucket-${bucket}`;
+    nodes.push({
+      id,
+      x: 420 + bucket * 105,
+      y: 130,
+      value: bucket,
+      type: "hash-bucket",
+      label: "bucket",
+      state: bucket === activeBucket ? (phase === "bucket" ? "active" : "visited") : "default",
+    });
+  }
+  edges.push({ id: "hash-bucket-2", from: "hash", to: "bucket-2", type: "pointer", state: index >= 1 ? "active" : "default" });
+
+  collisionRows.forEach((row, rowIndex) => {
+    const keyId = `entry-${rowIndex}`;
+    const valueId = `value-${rowIndex}`;
+    const y = 285 + rowIndex * 88;
+    const isTarget = String(row.key) === String(targetRow.key);
+    const isActive = phase === "compare" ? isTarget : phase === "value" && isTarget;
+    nodes.push(
+      { id: keyId, x: 630, y, value: String(row.key), type: "hash-entry", label: rowIndex === 0 ? "head" : "next", state: isActive ? "comparing" : rowIndex === 0 && index >= 2 ? "visited" : "default" },
+      { id: valueId, x: 790, y, value: String(row.value), type: "hash-entry", label: "value", state: phase === "value" && isTarget ? "active" : "default" },
+    );
+    edges.push(
+      { id: rowIndex === 0 ? "bucket-entry-0" : `entry-${rowIndex - 1}-entry-${rowIndex}`, from: rowIndex === 0 ? "bucket-2" : `entry-${rowIndex - 1}`, to: keyId, type: "pointer", state: index >= 2 ? "active" : "default" },
+      { id: `entry-${rowIndex}-value`, from: keyId, to: valueId, type: "pointer", state: phase === "value" && isTarget ? "active" : "default" },
+    );
+  });
+
+  const highlights = phase === "target"
+    ? ["target"]
+    : phase === "bucket"
+      ? ["hash", "bucket-2"]
+      : phase === "compare"
+        ? [`entry-${targetEntryIndex}`]
+        : [`entry-${targetEntryIndex}`, `value-${targetEntryIndex}`];
+  return { nodes, edges, highlights };
+}
+
 function relevantRule(context: GeneratorContext): string {
   const output = String(context.exampleOutput || "").toLowerCase();
+  const title = String(context.title || "").toLowerCase();
+  const example = String(context.exampleInput || "");
+  if (title.includes("grade bucket")) {
+    const score = Number(example.match(/-?\d+/)?.[0]);
+    if (Number.isFinite(score)) {
+      if (score >= 90) return "score >= 90";
+      if (score >= 80) return "score >= 80";
+      if (score >= 70) return "score >= 70";
+      if (score >= 60) return "score >= 60";
+      return "score < 60";
+    }
+  }
   const constraints = context.constraints || [];
   const matching = constraints.find((item) => item.toLowerCase().includes("return") && output && item.toLowerCase().includes(output));
   if (matching) return matching.replace(/^return\s+/i, "").replace(/\.$/, "");
@@ -169,52 +467,296 @@ function relevantRule(context: GeneratorContext): string {
   return constraints.find((item) => !/integer|length|same|range|empty/i.test(item)) || "the condition from the prompt";
 }
 
+function conditionInputLabel(context: GeneratorContext, state: Record<string, unknown>): string {
+  const assignments = parseScalarAssignments(context.exampleInput);
+  const pairs = Object.entries(assignments);
+  if (pairs.length === 1) return `${pairs[0][0]} = ${pairs[0][1]}`;
+  if (pairs.length > 1) return pairs.slice(0, 2).map(([key, value]) => `${key}=${value}`).join(", ");
+  return context.exampleInput || String(state.sample || "sample");
+}
+
 function authoredConditionalVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
-  const input = context.exampleInput || String(state.sample || "sample input");
+  const input = conditionInputLabel(context, state);
   const output = context.exampleOutput || String(state.goal || "result").replace(/^return shape:\s*/i, "");
   const rule = relevantRule(context);
-  const phase = index <= 0 ? "input" : index === 1 ? "condition" : index === 2 ? "yes" : "result";
+  const phase = index <= 0 ? "input" : index === 1 ? "condition" : index === 2 ? "true" : "end";
   const nodes: Node[] = [
-    { id: "input", x: 130, y: 260, value: input, type: "logic-node", label: "input", state: phase === "input" ? "active" : "visited", meta: { role: "terminator" } },
+    { id: "start", x: 68, y: 260, value: "Start", type: "logic-node", label: "", state: index >= 0 ? "visited" : "default", meta: { role: "terminator" } },
+    { id: "input", x: 190, y: 260, value: input, type: "logic-node", label: "input", state: phase === "input" ? "active" : "visited", meta: { role: "flow-step" } },
     { id: "condition", x: 360, y: 260, value: rule, type: "logic-node", label: "condition", state: phase === "condition" ? "active" : "visited", meta: { role: "diamond" } },
-    { id: "yes", x: 610, y: 150, value: "matches", type: "logic-node", label: "yes", state: phase === "yes" || phase === "result" ? "active" : "default" },
-    { id: "no", x: 610, y: 370, value: "try next rule", type: "logic-node", label: "no", state: "inactive" },
-    { id: "result", x: 800, y: 150, value: output, type: "logic-node", label: "return", state: phase === "result" ? "active" : "default", meta: { role: "terminator" } },
+    { id: "true", x: 570, y: 168, value: output ? `return ${output}` : "steps", type: "logic-node", label: "true", state: phase === "true" || phase === "end" ? "active" : "default", meta: { role: "flow-step" } },
+    { id: "false", x: 570, y: 352, value: "try next rule", type: "logic-node", label: "false", state: "inactive", meta: { role: "flow-step" } },
+    { id: "end", x: 790, y: 260, value: "End", type: "logic-node", label: "", state: phase === "end" ? "active" : "default", meta: { role: "terminator" } },
   ];
   const edges: Edge[] = [
+    { id: "start-input", from: "start", to: "input", type: "branch", state: "active" },
     { id: "input-condition", from: "input", to: "condition", type: "branch", state: index >= 1 ? "active" : "default" },
-    { id: "condition-yes", from: "condition", to: "yes", type: "branch", label: "yes", state: index >= 2 ? "active" : "default" },
-    { id: "condition-no", from: "condition", to: "no", type: "branch", label: "no", state: "inactive" },
-    { id: "yes-result", from: "yes", to: "result", type: "branch", state: index >= 3 ? "active" : "default" },
+    { id: "condition-true", from: "condition", to: "true", type: "branch", label: "True", state: index >= 2 ? "active" : "default" },
+    { id: "condition-false", from: "condition", to: "false", type: "branch", label: "False", state: "inactive" },
+    { id: "true-end", from: "true", to: "end", type: "branch", state: index >= 3 ? "active" : "default" },
+    { id: "false-end", from: "false", to: "end", type: "branch", state: "inactive" },
   ];
-  return { nodes, edges, highlights: [phase] };
+  return { nodes, edges, highlights: phase === "true" ? ["true"] : [phase] };
 }
 
 function authoredStackQueueVisual(concept: string, state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
-  const values = (Array.isArray(state.stack) ? state.stack : Array.isArray(state.queue) ? state.queue : valuesForState(concept, state, context)).map((value) => value as string | number);
-  const nodes = layoutArray(values.length ? values : ["empty"], { y: 260 }).map((node, nodeIndex) => ({
-    ...node,
-    label: concept === "queue" ? (nodeIndex === 0 ? "front" : nodeIndex === values.length - 1 ? "back" : String(nodeIndex)) : (nodeIndex === values.length - 1 ? "top" : String(nodeIndex)),
-    state: nodeIndex === Math.min(index, Math.max(values.length - 1, 0)) ? "active" as const : node.state,
+  const fallback = namedValues(context, ["names", "items", "values"]);
+  const values = (concept === "stack"
+    ? (Array.isArray(state.stack) ? state.stack : fallback)
+    : (Array.isArray(state.queue) ? state.queue : fallback)).map((value) => value as string | number);
+  const visible = values.length ? values.slice(0, 6) : ["empty"];
+  if (concept === "stack") {
+    const bottomY = 392;
+    const nodes = visible.map((value, nodeIndex) => {
+      const isEmpty = value === "empty";
+      const activeIndex = Math.min(index, visible.length - 1);
+      return {
+        id: `stack-${nodeIndex}`,
+        x: 450,
+        y: isEmpty ? 280 : bottomY - nodeIndex * 68,
+        value,
+        type: "array-cell" as const,
+        label: isEmpty ? "stack" : nodeIndex === visible.length - 1 ? "top" : nodeIndex === 0 ? "bottom" : "",
+        state: isEmpty || nodeIndex === activeIndex ? "active" as const : "default" as const,
+        meta: { role: "stack-item" },
+      };
+    });
+    return { nodes, edges: [], highlights: [nodes[Math.min(index, nodes.length - 1)]?.id || "stack-0"] };
+  }
+
+  const nodes = linearNodes(visible, [Math.min(index, visible.length - 1)], {
+    y: 270,
+    maxWidth: 620,
+    role: "queue-item",
+    labels: visible.map((_, nodeIndex) => nodeIndex === 0 ? "front" : nodeIndex === visible.length - 1 ? "rear" : String(nodeIndex)),
+  });
+  const edges = nodes.slice(0, -1).map((node, nodeIndex) => ({
+    id: `${node.id}-${nodes[nodeIndex + 1].id}`,
+    from: node.id,
+    to: nodes[nodeIndex + 1].id,
+    type: "pointer" as const,
+    state: nodeIndex < index ? "active" as const : "default" as const,
   }));
-  return { nodes, edges: [], highlights: [`item-${Math.min(index, Math.max(nodes.length - 1, 0))}`] };
+  return { nodes, edges, highlights: [nodes[Math.min(index, nodes.length - 1)]?.id || "item-0"] };
+}
+
+function authoredTupleVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
+  const lists = parseAllNamedLists(context.exampleInput);
+  const names = lists.names || lists.items || lists.keys || ["Ada", "Grace"];
+  const scores = lists.scores || lists.values || [95, 88];
+  const active = Math.min(index, Math.max(0, Math.min(names.length, scores.length) - 1));
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+  names.slice(0, 4).forEach((name, rowIndex) => {
+    const y = 140 + rowIndex * 82;
+    nodes.push(
+      { id: `tuple-name-${rowIndex}`, x: 275, y, value: name, type: "array-cell", label: `name ${rowIndex}`, state: rowIndex === active ? "active" : "default", meta: { role: "tuple-cell" } },
+      { id: `tuple-score-${rowIndex}`, x: 455, y, value: scores[rowIndex] ?? "?", type: "array-cell", label: `score ${rowIndex}`, state: rowIndex === active ? "active" : "default", meta: { role: "tuple-cell" } },
+      { id: `tuple-pair-${rowIndex}`, x: 675, y, value: `${name}:${scores[rowIndex] ?? "?"}`, type: "array-cell", label: "paired result", state: rowIndex === active && index > 0 ? "active" : "default", meta: { role: "tuple-pair" } },
+    );
+    edges.push(
+      { id: `name-score-${rowIndex}`, from: `tuple-name-${rowIndex}`, to: `tuple-score-${rowIndex}`, type: "pointer", state: rowIndex === active ? "active" : "default" },
+      { id: `score-pair-${rowIndex}`, from: `tuple-score-${rowIndex}`, to: `tuple-pair-${rowIndex}`, type: "pointer", state: rowIndex === active && index > 0 ? "active" : "default" },
+    );
+  });
+  return { nodes, edges, highlights: [`tuple-name-${active}`, `tuple-score-${active}`, `tuple-pair-${active}`] };
+}
+
+function authoredSetVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
+  const values = valuesForState("set", state, context);
+  const seen = new Set<string>();
+  const nodes: Node[] = [];
+  values.slice(0, 8).forEach((value, nodeIndex) => {
+    const key = String(value);
+    const isDuplicate = seen.has(key);
+    seen.add(key);
+    nodes.push({
+      id: `set-${nodeIndex}`,
+      x: 160 + (nodeIndex % 4) * 155,
+      y: 185 + Math.floor(nodeIndex / 4) * 135,
+      value,
+      type: "set-item",
+      label: isDuplicate ? "duplicate" : "unique",
+      state: nodeIndex === Math.min(index, values.length - 1) ? "active" : isDuplicate ? "inactive" : "visited",
+    });
+  });
+  return { nodes, edges: [], highlights: [`set-${Math.min(index, Math.max(nodes.length - 1, 0))}`] };
+}
+
+function authoredTwoPointerVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
+  const values = valuesForState("two-pointers", state, context);
+  const pointers = state.pointers && typeof state.pointers === "object" ? state.pointers as Record<string, unknown> : {};
+  const active = activeIndexes({ active: [pointers.left ?? 0, pointers.right ?? Math.max(values.length - 1, 0)] }, values.length, index);
+  const nodes = linearNodes(values, active, {
+    y: 290,
+    maxWidth: 620,
+    labels: values.map((_, nodeIndex) => nodeIndex === Number(pointers.left ?? 0) ? "left" : nodeIndex === Number(pointers.right ?? values.length - 1) ? "right" : String(nodeIndex)),
+  });
+  return { nodes, edges: [], highlights: active.map((item) => `item-${item}`) };
+}
+
+function authoredBinarySearchVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
+  const values = valuesForState("binary-search", state, context);
+  const pointerState = state.pointers && typeof state.pointers === "object" ? state.pointers as Record<string, unknown> : {};
+  const left = Number(pointerState.left ?? 0);
+  const right = Number(pointerState.right ?? Math.max(values.length - 1, 0));
+  const mid = Number(pointerState.mid ?? Math.floor((left + right) / 2));
+  const nodes = linearNodes(values, [], { y: 292, maxWidth: 640 }).map((node, nodeIndex) => ({
+    ...node,
+    label: nodeIndex === left ? "left" : nodeIndex === mid ? "mid" : nodeIndex === right ? "right" : String(nodeIndex),
+    state: nodeIndex < left || nodeIndex > right ? "inactive" as const : nodeIndex === mid ? "active" as const : "default" as const,
+    meta: { role: nodeIndex >= left && nodeIndex <= right ? "range-cell" : "compact-cell" },
+  }));
+  return { nodes, edges: [], highlights: [`item-${mid}`] };
+}
+
+function authoredSlidingWindowVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
+  const values = valuesForState("sliding-window", state, context);
+  const range = Array.isArray(state.window) ? state.window.map(Number) : [0, Math.min(2, values.length - 1)];
+  const nodes = linearNodes(values, [], { y: 292, maxWidth: 640 }).map((node, nodeIndex) => ({
+    ...node,
+    label: nodeIndex === range[0] ? "left" : nodeIndex === range[1] ? "right" : String(nodeIndex),
+    state: nodeIndex >= range[0] && nodeIndex <= range[1] ? "active" as const : "default" as const,
+    meta: { role: nodeIndex >= range[0] && nodeIndex <= range[1] ? "window-cell" : "compact-cell" },
+  }));
+  return { nodes, edges: [], highlights: nodes.filter((node) => node.state === "active").map((node) => node.id) };
+}
+
+function authoredPrefixSumVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
+  const values = exampleNumbers(context);
+  const usable = values.length ? values.slice(0, 7) : valuesForState("prefix-sum", state, context).map(Number).filter(Number.isFinite);
+  let total = 0;
+  const active = Math.min(index, Math.max(usable.length - 1, 0));
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+  usable.forEach((value, nodeIndex) => {
+    total += value;
+    const x = 170 + nodeIndex * Math.min(94, 600 / Math.max(usable.length - 1, 1));
+    nodes.push(
+      { id: `num-${nodeIndex}`, x, y: 205, value, type: "array-cell", label: `num ${nodeIndex}`, state: nodeIndex === active ? "active" : "default", meta: { role: "compact-cell" } },
+      { id: `prefix-${nodeIndex}`, x, y: 330, value: total, type: "array-cell", label: `sum ${nodeIndex}`, state: nodeIndex <= active ? "visited" : "default", meta: { role: "prefix-cell" } },
+    );
+    edges.push({ id: `num-prefix-${nodeIndex}`, from: `num-${nodeIndex}`, to: `prefix-${nodeIndex}`, type: "pointer", state: nodeIndex === active ? "active" : "default" });
+  });
+  return { nodes, edges, highlights: [`num-${active}`, `prefix-${active}`] };
+}
+
+function authoredIntervalVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
+  const rawIntervals = Array.isArray(state.intervals) ? state.intervals as Array<Record<string, unknown>> : [];
+  const intervals = rawIntervals.length ? rawIntervals : [
+    { start: 9, end: 12, label: "A" },
+    { start: 11, end: 13, label: "B" },
+    { start: 14, end: 16, label: "C" },
+  ];
+  const starts = intervals.map((item) => Number(item.start)).filter(Number.isFinite);
+  const ends = intervals.map((item) => Number(item.end)).filter(Number.isFinite);
+  const min = Math.min(...starts, 0);
+  const max = Math.max(...ends, min + 1);
+  const span = Math.max(max - min, 1);
+  const nodes = intervals.slice(0, 5).map((item, intervalIndex) => {
+    const start = Number(item.start);
+    const end = Number(item.end);
+    const width = Math.max(88, ((end - start) / span) * 560);
+    const center = 180 + ((start - min) / span) * 560 + width / 2;
+    return {
+      id: `interval-${intervalIndex}`,
+      x: center,
+      y: 150 + intervalIndex * 82,
+      value: `${start}-${end}`,
+      type: "array-cell" as const,
+      label: String(item.label || `range ${intervalIndex + 1}`),
+      state: intervalIndex <= Math.min(index, intervals.length - 1) ? "active" as const : "default" as const,
+      meta: { role: "interval-bar", width },
+    };
+  });
+  return { nodes, edges: [], highlights: [nodes[Math.min(index, nodes.length - 1)]?.id || "interval-0"] };
+}
+
+function authoredUnionFindVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
+  const n = Number(parseScalarAssignments(context.exampleInput).n || 5);
+  const labels = Array.from({ length: Math.min(Math.max(n, 4), 7) }, (_, itemIndex) => String(itemIndex));
+  const activePairs = parseAllNamedLists(context.exampleInput).pairs || [];
+  const graph = layoutCircularGraph(labels, []);
+  const pairEdge: Edge[] = labels.slice(0, Math.min(index + 1, labels.length - 1)).map((label, pairIndex) => ({
+    id: `${label}-${labels[pairIndex + 1]}`,
+    from: label,
+    to: labels[pairIndex + 1],
+    type: "graph-edge" as const,
+    state: "active" as const,
+  }));
+  return {
+    nodes: graph.nodes.map((node, nodeIndex) => ({
+      ...node,
+      label: "item",
+      state: nodeIndex <= Math.min(index + 1, labels.length - 1) ? "active" as const : "default" as const,
+    })),
+    edges: pairEdge.length ? pairEdge : activePairs.map((value, pairIndex) => ({ id: `union-${pairIndex}`, from: String(value), to: String(Number(value) + 1), type: "graph-edge" as const, state: "active" as const })),
+    highlights: labels.slice(0, Math.min(index + 2, labels.length)),
+  };
+}
+
+function authoredTrieVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
+  const words = namedValues(context, ["words", "items"]).map(String);
+  const word = words[0] || String(valuesForState("trie", state, context)[0] || "code");
+  const chars = word.slice(0, 6).split("");
+  const nodes: Node[] = [{ id: "root", x: 120, y: 260, value: "root", type: "tree-node", label: "", state: index === 0 ? "active" : "visited" }];
+  const edges: Edge[] = [];
+  chars.forEach((char, charIndex) => {
+    const id = `char-${charIndex}`;
+    nodes.push({
+      id,
+      x: 245 + charIndex * 105,
+      y: 260 + (charIndex % 2 === 0 ? -70 : 70),
+      value: char,
+      type: "tree-node",
+      label: charIndex === chars.length - 1 ? "word end" : `letter ${charIndex + 1}`,
+      state: charIndex <= index - 1 ? "active" : "default",
+    });
+    edges.push({
+      id: charIndex === 0 ? `root-${id}` : `char-${charIndex - 1}-${id}`,
+      from: charIndex === 0 ? "root" : `char-${charIndex - 1}`,
+      to: id,
+      type: "parent-child",
+      state: charIndex <= index - 1 ? "active" : "default",
+    });
+  });
+  return { nodes, edges, highlights: [index === 0 ? "root" : `char-${Math.min(index - 1, chars.length - 1)}`] };
+}
+
+function parseMatrixInput(input?: string): unknown[][] {
+  const text = String(input || "");
+  const rows: unknown[][] = [];
+  const pattern = /\[([^\[\]]+)\]/g;
+  let match = pattern.exec(text);
+  while (match) {
+    const values = match[1].split(",").map(parseToken).filter((value) => String(value).length > 0);
+    if (values.length) rows.push(values);
+    match = pattern.exec(text);
+  }
+  return rows.length > 1 ? rows : [];
 }
 
 function authoredGridVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
-  const grid = Array.isArray(state.grid) ? state.grid as unknown[][] : [[1, 2, 3], [4, 5, 6]];
+  const parsedGrid = parseMatrixInput(context.exampleInput);
+  const grid = Array.isArray(state.grid) ? state.grid as unknown[][] : parsedGrid.length ? parsedGrid : [[1, 2, 3], [4, 5, 6]];
   const activeCells = new Set((Array.isArray(state.activeCells) ? state.activeCells : [[0, Math.min(index, grid[0]?.length || 1)]]).map((cell) => Array.isArray(cell) ? cell.join("-") : String(cell)));
   const nodes: Node[] = [];
-  grid.slice(0, 5).forEach((row, rowIndex) => {
-    row.slice(0, 6).forEach((value, colIndex) => {
+  const rowCount = Math.min(grid.length, 5);
+  const colCount = Math.min(Math.max(...grid.map((row) => row.length)), 6);
+  const startX = 450 - ((colCount - 1) * 86) / 2;
+  const startY = 260 - ((rowCount - 1) * 82) / 2;
+  grid.slice(0, rowCount).forEach((row, rowIndex) => {
+    row.slice(0, colCount).forEach((value, colIndex) => {
       const id = `cell-${rowIndex}-${colIndex}`;
       nodes.push({
         id,
-        x: 300 + colIndex * 86,
-        y: 145 + rowIndex * 82,
+        x: startX + colIndex * 86,
+        y: startY + rowIndex * 82,
         value: value as string | number,
         type: "array-cell",
         label: `${rowIndex},${colIndex}`,
         state: activeCells.has(`${rowIndex}-${colIndex}`) ? "active" : "default",
+        meta: { role: "compact-cell" },
       });
     });
   });
@@ -224,6 +766,15 @@ function authoredGridVisual(state: Record<string, unknown>, context: GeneratorCo
 function authoredNodeVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
   const sourceNodes = Array.isArray(state.nodes) ? state.nodes as Array<Record<string, unknown>> : [];
   const sourceEdges = Array.isArray(state.edges) ? state.edges as Array<Record<string, unknown>> : [];
+  if (context.visualizer?.concept === "graph") return graphVisual(state, index);
+  if (context.visualizer?.concept === "linked-list") return relayoutLinkedNodes(sourceNodes, sourceEdges, index);
+  if (context.visualizer?.concept === "heap") return treeFromArray(valuesForState("heap", state, context), Math.min(index, 5), "tree-node");
+  if (context.visualizer?.concept === "trie") return authoredTrieVisual(state, context, index);
+  if (context.visualizer?.concept === "binary-tree") {
+    const treeValues = namedValues(context, ["tree"]);
+    if (treeValues.length) return treeFromArray(treeValues, Math.min(index, treeValues.length - 1));
+    return treeFromEdges(sourceNodes, sourceEdges, index);
+  }
   if (!sourceNodes.length) {
     return context.visualizer?.concept === "graph" ? { ...layoutCircularGraph(["A", "B", "C", "D"], [["A", "B"], ["A", "C"], ["B", "D"]]), highlights: ["A"] } : { ...layoutTree([8, 4, 12, 2, 6].reduce((root, value) => insertTreeValue(root, value), null as ReturnType<typeof insertTreeValue> | null)), highlights: [] };
   }
@@ -247,8 +798,17 @@ function authoredNodeVisual(state: Record<string, unknown>, context: GeneratorCo
 
 function visualForAuthoredStep(concept: string, state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
   if (concept === "conditional") return authoredConditionalVisual(state, context, index);
-  if (String(context.topic || "").toLowerCase().includes("tuple") || /pair/i.test(context.title || "")) return buildTableVisual(state, context, index);
-  if (concept === "hash-map") return buildTableVisual(state, context, index);
+  if (concept === "tuple" || String(context.topic || "").toLowerCase().includes("tuple")) return authoredTupleVisual(state, context, index);
+  if (concept === "set") return authoredSetVisual(state, context, index);
+  if (concept === "union-find") return authoredUnionFindVisual(state, context, index);
+  if (concept === "prefix-sum") return authoredPrefixSumVisual(state, context, index);
+  if (concept === "intervals") return authoredIntervalVisual(state, context, index);
+  if (concept === "binary-search") return authoredBinarySearchVisual(state, context, index);
+  if (concept === "two-pointers") return authoredTwoPointerVisual(state, context, index);
+  if (concept === "sliding-window") return authoredSlidingWindowVisual(state, context, index);
+  if (concept === "trie") return authoredTrieVisual(state, context, index);
+  if (concept === "heap") return treeFromArray(valuesForState("heap", state, context), Math.min(index, 5), "tree-node");
+  if (concept === "hash-map") return authoredHashMapVisual(state, context, index);
   if (concept === "stack" || concept === "queue") return authoredStackQueueVisual(concept, state, context, index);
   if (concept === "matrix" || concept === "dynamic-programming") return authoredGridVisual(state, context, index);
   if (concept === "binary-tree" || concept === "graph" || concept === "linked-list") return authoredNodeVisual(state, context, index);
@@ -306,6 +866,7 @@ function generateAuthoredVisualizerSteps(concept: string, context: GeneratorCont
       state: {
         example: context.exampleInput || String(rawState.sample || ""),
         expected: context.exampleOutput || "",
+        ...(concept === "conditional" ? { rule: relevantRule(context) } : {}),
         ...visibleState(rawState),
       },
     }, index + 1);
@@ -373,6 +934,42 @@ export function generateArraySwapSteps(context: GeneratorContext = {}): Step[] {
       state: { next: "compare 8 and 6" },
     }, 4),
   ];
+}
+
+export function generateTupleSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["read matching positions", "pair the values", "save the pair", "return the pairs"];
+  return [0, 1, 2].map((active, index) => {
+    const visual = authoredTupleVisual({}, context, active);
+    return step({
+      concept: "tuple",
+      title: index === 0 ? (context.title || "Tuple pairs") : "Build the next pair",
+      description: "Tuple-style problems line up related values by position, then package each matched pair.",
+      nodes: visual.nodes,
+      edges: visual.edges,
+      highlights: { nodeIds: visual.highlights, edgeIds: visual.edges.filter((edge) => edge.state === "active").map((edge) => edge.id || `${edge.from}-${edge.to}`), lineNumbers: [Math.min(index + 1, code.length)] },
+      code,
+      activeLine: Math.min(index + 1, code.length),
+      state: { pair_index: active },
+    }, index + 1);
+  });
+}
+
+export function generateSetSteps(context: GeneratorContext = {}): Step[] {
+  const code = ["read an item", "check the set memory", "keep unique values", "return the result"];
+  return [0, 1, 2, 3].map((active, index) => {
+    const visual = authoredSetVisual({ active: [active] }, context, active);
+    return step({
+      concept: "set",
+      title: index === 0 ? (context.title || "Set membership") : "Check set memory",
+      description: "A set keeps one copy of each value, so duplicates become visible as repeated entries.",
+      nodes: visual.nodes,
+      edges: visual.edges,
+      highlights: { nodeIds: visual.highlights, lineNumbers: [Math.min(index + 1, code.length)] },
+      code,
+      activeLine: Math.min(index + 1, code.length),
+      state: { checking: active },
+    }, index + 1);
+  });
 }
 
 export function generateTreeInsertSteps(context: GeneratorContext = {}): Step[] {
@@ -721,36 +1318,32 @@ export function generateMatrixSteps(context: GeneratorContext = {}): Step[] {
 
 export function generatePrefixSumSteps(context: GeneratorContext = {}): Step[] {
   const code = ["start running total at zero", "add current value", "save the new total", "answer ranges by subtracting old totals"];
-  const values = [2, 4, 1, 3];
+  const values = exampleNumbers(context);
+  const usable = values.length ? values : [2, 4, 1, 3];
   let total = 0;
-  return values.map((value, index) => {
+  return usable.slice(0, 4).map((value, index) => {
     total += value;
-    return step({ concept: "prefix-sum", title: context.title || "Prefix sum", description: `Add ${value}; the saved total becomes ${total}. Later ranges reuse this saved work.`, nodes: withNodeState(layoutArray(values), [`item-${index}`], "active"), edges: [], highlights: { nodeIds: [`item-${index}`], lineNumbers: [index < 3 ? index + 1 : 4] }, code, activeLine: index < 3 ? index + 1 : 4, state: { running_total: total } }, index + 1);
+    const visual = authoredPrefixSumVisual({ items: usable }, context, index);
+    return step({ concept: "prefix-sum", title: context.title || "Prefix sum", description: `Add ${value}; the saved total becomes ${total}. Later range answers reuse the saved totals.`, nodes: visual.nodes, edges: visual.edges, highlights: { nodeIds: visual.highlights, edgeIds: visual.edges.filter((edge) => edge.state === "active").map((edge) => edge.id || `${edge.from}-${edge.to}`), lineNumbers: [index < 3 ? index + 1 : 4] }, code, activeLine: index < 3 ? index + 1 : 4, state: { running_total: total } }, index + 1);
   });
 }
 
 export function generateIntervalsSteps(context: GeneratorContext = {}): Step[] {
   const code = ["sort by start time", "compare next start to saved end", "merge if they overlap", "start a new interval if separate"];
-  const nodes: Node[] = [
-    { id: "a", x: 240, y: 220, value: "1-4", type: "array-cell" },
-    { id: "b", x: 430, y: 220, value: "3-6", type: "array-cell" },
-    { id: "c", x: 620, y: 220, value: "8-9", type: "array-cell" },
-  ];
-  return [
-    step({ concept: "intervals", title: context.title || "Intervals", description: "Start with the first interval as the saved range.", nodes: withNodeState(nodes, ["a"], "active"), edges: [], highlights: { nodeIds: ["a"], lineNumbers: [1] }, code, activeLine: 1, state: { saved: "1-4" } }, 1),
-    step({ concept: "intervals", title: "Overlap", description: "3 starts before 4 ends, so the first two intervals touch the same time span.", nodes: withNodeState(nodes, ["a", "b"], "comparing"), edges: [], highlights: { nodeIds: ["a", "b"], lineNumbers: [2] }, code, activeLine: 2, state: { compare: "3 <= 4" } }, 2),
-    step({ concept: "intervals", title: "Merge", description: "The saved range grows to cover both overlapping intervals.", nodes: withNodeState([{ ...nodes[0], value: "1-6", x: 335 }, nodes[2]], ["a"], "active"), edges: [], highlights: { nodeIds: ["a"], lineNumbers: [3] }, code, activeLine: 3, state: { saved: "1-6" } }, 3),
-  ];
+  return [0, 1, 2].map((active, index) => {
+    const visual = authoredIntervalVisual({}, context, active);
+    return step({ concept: "intervals", title: index === 0 ? (context.title || "Intervals") : index === 1 ? "Compare ranges" : "Merge or keep separate", description: index === 2 ? "Overlapping bars become one longer busy block; separate bars stay apart." : "Each bar sits on a time line so overlaps are visible.", nodes: visual.nodes, edges: visual.edges, highlights: { nodeIds: visual.highlights, lineNumbers: [Math.min(index + 1, code.length)] }, code, activeLine: Math.min(index + 1, code.length), state: { active_range: active + 1 } }, index + 1);
+  });
 }
 
 export function generateHeapSteps(context: GeneratorContext = {}): Step[] {
   const code = ["add the new value", "compare with parent", "swap upward while priority is higher", "top holds the priority item"];
-  const root = [40, 25, 30, 10, 20].reduce((tree, value) => insertTreeValue(tree, value), null as ReturnType<typeof insertTreeValue> | null);
-  const before = layoutTree(root);
-  const after = layoutTree([50, 40, 30, 10, 25, 20].reduce((tree, value) => insertTreeValue(tree, value), null as ReturnType<typeof insertTreeValue> | null));
+  const values = [50, 40, 30, 10, 25, 20];
+  const before = treeFromArray(values.slice(0, 5), 0);
+  const after = treeFromArray(values, 5);
   return [
     step({ concept: "heap", title: context.title || "Heap", description: "A heap keeps the priority item easy to reach at the top.", nodes: before.nodes, edges: before.edges, highlights: { lineNumbers: [1] }, code, activeLine: 1, state: { top: 40 } }, 1),
-    step({ concept: "heap", title: "Bubble up", description: "A higher-priority value moves upward by swapping with parents.", nodes: withNodeState(after.nodes, ["tree-50"], "active"), edges: after.edges, highlights: { nodeIds: ["tree-50"], lineNumbers: [3] }, code, activeLine: 3, state: { top: 50 } }, 2),
+    step({ concept: "heap", title: "Bubble up", description: "A higher-priority value moves upward by swapping with parents.", nodes: withNodeState(after.nodes, ["tree-0"], "active"), edges: after.edges, highlights: { nodeIds: ["tree-0"], lineNumbers: [3] }, code, activeLine: 3, state: { top: 50 } }, 2),
   ];
 }
 
@@ -808,6 +1401,10 @@ export function generateStepsForConcept(concept: string, context: GeneratorConte
   if (authoredSteps) return authoredSteps;
 
   switch (concept) {
+    case "tuple":
+      return generateTupleSteps(context);
+    case "set":
+      return generateSetSteps(context);
     case "hash-map":
       return generateHashMapCollisionSteps(context);
     case "binary-tree":

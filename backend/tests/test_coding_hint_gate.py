@@ -17,6 +17,7 @@ APP = ROOT / "frontend" / "src" / "App.jsx"
 WORKSPACE_DRAFT = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "workspaceDraft.js"
 WORKSPACE_VISUALIZER = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "WorkspaceVisualizer.jsx"
 UNIVERSAL_VISUALIZER = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "universal-visualizer" / "UniversalCodeVisualizer.tsx"
+UNIVERSAL_STRUCTURE_VISUALIZERS = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "universal-visualizer" / "StructureVisualizers.tsx"
 UNIVERSAL_GENERATORS = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "universal-visualizer" / "generators.ts"
 UNIVERSAL_TYPES = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "universal-visualizer" / "types.ts"
 TERMINAL_PANEL = ROOT / "frontend" / "src" / "components" / "coding-tutor" / "TerminalPanel.jsx"
@@ -183,6 +184,7 @@ def test_decision_flow_visualizer_uses_real_branch_diagram():
 
 def test_universal_visualizer_covers_major_topic_families():
     visualizer_source = read(UNIVERSAL_VISUALIZER)
+    structure_source = read(UNIVERSAL_STRUCTURE_VISUALIZERS)
     generator_source = read(UNIVERSAL_GENERATORS)
     type_source = read(UNIVERSAL_TYPES)
 
@@ -190,14 +192,35 @@ def test_universal_visualizer_covers_major_topic_families():
     assert "interface Edge" in type_source
     assert "interface Step" in type_source
     assert "interface ConceptConfig" in type_source
-    assert "motion.div" in visualizer_source
-    assert "motion.path" in visualizer_source
-    assert "AnimatePresence" in visualizer_source
+    assert "motion.div" in structure_source
+    assert "ReactFlow" in structure_source
+    assert "MarkerType.ArrowClosed" in structure_source
+    assert "AnimatePresence" in structure_source
     assert "Timeline scrubber" in visualizer_source
+    assert "function StackVisualizer" in structure_source
+    assert "function QueueVisualizer" in structure_source
+    assert "function TreeVisualizer" in structure_source
+    assert "function GraphVisualizer" in structure_source
+    assert "function LinkedListVisualizer" in structure_source
+    assert "function HashTableVisualizer" in structure_source
+    assert "function DPTableVisualizer" in structure_source
+    assert "function IntervalVisualizer" in structure_source
+    assert "function ConditionalFlowVisualizer" in structure_source
+    assert 'if (step.concept === "stack") return <StackVisualizer step={step} />;' in visualizer_source
+    assert 'if (step.concept === "queue") return <QueueVisualizer step={step} />;' in visualizer_source
+    assert 'if (step.concept === "hash-map") return <HashTableVisualizer step={step} />;' in visualizer_source
+    assert 'if (step.concept === "graph" || step.concept === "union-find") return <GraphVisualizer step={step} />;' in visualizer_source
+    assert "flex-direction: column-reverse" in read(ROOT / "frontend" / "src" / "components" / "coding-tutor" / "universal-visualizer" / "UniversalCodeVisualizer.css")
+    assert "ucv-queue-track" in structure_source
+    assert "dagre.layout(graph)" in structure_source
+    assert "ucv-bucket-row" in structure_source
+    assert "ucv-dp-grid" in structure_source
     assert "UniversalCodeVisualizer" in read(WORKSPACE_VISUALIZER)
 
     families = [
         "generateArraySwapSteps",
+        "generateTupleSteps",
+        "generateSetSteps",
         "generateHashMapCollisionSteps",
         "generateTreeInsertSteps",
         "generateGraphTraversalSteps",
@@ -224,6 +247,50 @@ def test_universal_visualizer_covers_major_topic_families():
         assert f"function {family}" in generator_source
 
 
+def test_universal_visualizer_steps_have_workflow_rail():
+    visualizer_source = read(UNIVERSAL_VISUALIZER)
+    generator_source = read(UNIVERSAL_GENERATORS)
+    type_source = read(UNIVERSAL_TYPES)
+
+    assert "interface WorkflowStep" in type_source
+    assert "workflow?: WorkflowStep[]" in type_source
+    assert "activeWorkflowId?: string" in type_source
+    assert "function WorkflowRail" in visualizer_source
+    assert "ucv-workflow" in visualizer_source
+    assert "<WorkflowRail step={step} />" in visualizer_source
+    assert "const WORKFLOW_LABELS" in generator_source
+    assert "function workflowForConcept" in generator_source
+    assert "partial.workflow || workflowForConcept(partial.concept, index - 1)" in generator_source
+
+    concepts = [
+        "array",
+        "tuple",
+        "set",
+        "linked-list",
+        "hash-map",
+        "binary-tree",
+        "graph",
+        "conditional",
+        "stack",
+        "queue",
+        "two-pointers",
+        "sliding-window",
+        "binary-search",
+        "recursion",
+        "math",
+        "matrix",
+        "prefix-sum",
+        "intervals",
+        "heap",
+        "trie",
+        "union-find",
+        "dynamic-programming",
+        "bit-manipulation",
+    ]
+    for concept in concepts:
+        assert f'{concept}:' in generator_source or f'"{concept}":' in generator_source
+
+
 def test_universal_visualizer_prefers_question_examples_and_authored_steps():
     visualizer_source = read(UNIVERSAL_VISUALIZER)
     generator_source = read(UNIVERSAL_GENERATORS)
@@ -236,9 +303,18 @@ def test_universal_visualizer_prefers_question_examples_and_authored_steps():
     assert "context.exampleOutput" in generator_source
     assert "titleForAuthoredStep" in generator_source
     assert "bodyForAuthoredStep" in generator_source
+    assert "authoredTupleVisual" in generator_source
+    assert "authoredSetVisual" in generator_source
+    assert "authoredUnionFindVisual" in generator_source
+    assert "authoredPrefixSumVisual" in generator_source
+    assert "authoredIntervalVisual" in generator_source
+    assert 'if (topic.includes("set") || visualConcept === "set") return "set";' in visualizer_source
+    assert 'if (raw.includes("union") || raw.includes("disjoint")) return "union-find";' in visualizer_source
     assert "layoutConditional" not in generator_source.split("function authoredConditionalVisual", 1)[1].split("function authoredStackQueueVisual", 1)[0]
     assert 'meta: { role: "diamond" }' in generator_source
-    assert "ucv-edge-label" in visualizer_source
+    structure_source = read(UNIVERSAL_STRUCTURE_VISUALIZERS)
+    assert 'label: "true"' in structure_source
+    assert 'label: "false"' in structure_source
 
 
 def test_workspace_state_syncs_last_problem_and_prefers_newer_drafts():
