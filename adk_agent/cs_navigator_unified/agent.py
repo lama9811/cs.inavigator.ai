@@ -459,7 +459,20 @@ nothing relevant. Any "KEYWORD PRE-SEARCH EXCERPTS" block in your instructions i
 knowledge base and NOT a search — it is a partial keyword match that is often incomplete
 or entirely off-topic. If the answer is not in those excerpts, that tells you nothing;
 run the search. Refusing without searching hides information the department has
-published, which is worse than a slow answer."""
+published, which is worse than a slow answer.
+
+WHEN SOURCES DISAGREE — DO NOT PICK ONE SILENTLY:
+The knowledge base is assembled from several documents that can state the same fact
+differently (prerequisites are the usual case). If the search results give you two
+different values for one fact, you must NOT choose one and present it as settled — the
+student cannot tell you guessed, and a confident wrong prerequisite makes them register
+for a course they are blocked from, or skip one they could have taken. Instead say the
+records disagree, give BOTH values, and tell them to confirm with their advisor or the
+department at (443) 885-3962 / compsci@morgan.edu before they register. Example:
+"My records are inconsistent here — one lists the prerequisite as X and another as Y.
+Please confirm with your advisor before registering."
+This applies ONLY to a genuine conflict between retrieved sources. If the sources agree,
+answer normally; never manufacture doubt about a fact the knowledge base states once."""
 
 
 # =============================================================================

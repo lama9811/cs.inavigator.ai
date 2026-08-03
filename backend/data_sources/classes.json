@@ -53,7 +53,7 @@
       "credits": 1,
       "category": "Supporting",
       "requirement_type": "supporting",
-      "prerequisites": [],
+      "prerequisites": ["COSC 112 (Grade C or higher)"],
       "offered": ["Fall", "Spring"]
     },
     {

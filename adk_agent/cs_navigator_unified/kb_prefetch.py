@@ -132,7 +132,7 @@ def _load_cache_sync():
 
     _install_cache(new_cache)
     _bg_loading = False
-    log.info(f"[KB_PREFETCH] Cached {len(new_cache)} docs, indexed {len(df)} terms")
+    log.info(f"[KB_PREFETCH] Cached {len(new_cache)} docs, indexed {len(_df)} terms")
 
 
 def _load_cache() -> dict[str, dict]:
