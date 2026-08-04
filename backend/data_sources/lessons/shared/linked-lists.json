@@ -1,13 +1,13 @@
 {
   "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Linked Lists",
-  "summary": "A **linked list** is made of **nodes**. Each node stores data and a link to the next node.",
+  "summary": "A **linked list** is made of **nodes**. Each node stores data plus a **next** link to the following node.",
   "minutes": 22,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "A **linked list** stores **values** in **nodes**. Each node has data and a next link. The head points to the first node, and traversal follows next links until there is no next node.",
+  "refresher": "A **linked list** stores **values** in **nodes**. Each node has data and a **next** link. The **head** points to the first node, and **traversal** follows next links until there is no next node.",
   "refresher_code": "node = data + next\nhead -> first node",
   "learn_cards": {
     "advanced-node-parts": {
@@ -49,7 +49,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A **linked list** does not store items side by side like an **array**. It stores small **objects** called nodes. Each node carries one value and a link to the next node."
+          "body": "A **linked list** does not store items side by side like an **array**. It stores small **objects** called **nodes**. Each node carries one value and one next link."
         },
         {
           "kind": "visual",
@@ -253,7 +253,7 @@
     {
       "id": "traverse-list",
       "title": "Walk through a linked list",
-      "summary": "**Traversal** means following next links one at a time.",
+      "summary": "**Traversal** means following next links one node at a time.",
       "question_ids": [
         "advanced-traverse-list",
         "advanced-cycle-risk"
@@ -261,7 +261,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "You cannot jump straight to item 10 in a basic **linked list**. You start at head, read the current **node**, then move to current.next."
+          "body": "You cannot jump straight to item 10 in a basic **linked list**. You start at **head**, read the current **node**, then move to current.next."
         },
         {
           "kind": "visual",
@@ -492,7 +492,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "Some practice problems represent a linked list with two arrays: one for values and one for next indexes. That keeps Python, JavaScript, Java, and C++ runners consistent while still teaching head, current, next, and null."
+          "body": "Some practice problems represent a linked list with two arrays: one for **values** and one for **next indexes**. That keeps Python, JavaScript, Java, and C++ runners consistent while still teaching **head**, current, next, and null."
         },
         {
           "kind": "code",
@@ -548,7 +548,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "To insert after a **node**, the new node must point to the old next node. Then the current node can point to the new node."
+          "body": "To insert after a **node**, the new node must point to the old next node first. Then the current node can point to the new node."
         },
         {
           "kind": "compare",

@@ -146,6 +146,14 @@ INTERMEDIATE_FINAL_PASS_AUTHORED_SECTION_CATEGORIES = {
     ),
 }
 
+ADVANCED_FIRST_PASS_AUTHORED_SECTION_CATEGORIES = (
+    "stacks",
+    "queues",
+    "hash-maps-sets",
+    "linked-lists",
+    "recursion-patterns",
+)
+
 
 def authored_lessons():
     """Every lesson that actually exists. Grows automatically as content is authored."""
@@ -538,6 +546,20 @@ def test_intermediate_final_pass_lessons_are_raw_authored_sections():
             assert 4 <= len(sections) <= 6, (
                 f"{language}/{category}: expected 4-6 intermediate sections, got {len(sections)}"
             )
+
+
+def test_advanced_first_pass_lessons_are_raw_authored_sections():
+    """The first Advanced audit batch should stay intentionally sectioned."""
+    for category in ADVANCED_FIRST_PASS_AUTHORED_SECTION_CATEGORIES:
+        path = os.path.join(lessons.LESSONS_DIR, "shared", f"{category}.json")
+        with open(path, "r", encoding="utf-8") as handle:
+            raw = json.load(handle)
+        assert "blocks" not in raw, f"shared/{category}: still has flat blocks"
+        sections = raw.get("sections")
+        assert isinstance(sections, list), f"shared/{category}: missing raw sections"
+        assert 4 <= len(sections) <= 6, (
+            f"shared/{category}: expected 4-6 advanced sections, got {len(sections)}"
+        )
 
 
 def test_code_blocks_explain_themselves():

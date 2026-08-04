@@ -1,13 +1,13 @@
 {
   "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Recursion Patterns",
-  "summary": "**Recursion** solves a problem by handling a small case and asking the same **function** to solve a smaller version.",
+  "summary": "**Recursion** solves a problem by answering a small case directly and asking the same **function** to solve a smaller version.",
   "minutes": 21,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "A recursive **function** needs a **base case** and a smaller **recursive call**. The base case stops the calls. The smaller call moves the problem toward that stop point.",
+  "refresher": "A recursive **function** needs a **base case** and a smaller **recursive call**. The base case stops the calls. The smaller call moves the input toward that stop point.",
   "refresher_code": "if done: return answer\nreturn work + solve(smaller_input)",
   "learn_cards": {
     "advanced-recursion-base-case": {
@@ -39,7 +39,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "**Recursion** is a **function** calling itself. That sounds strange at first, but the pattern is simple: stop when the answer is obvious, otherwise solve a smaller version."
+          "body": "**Recursion** is a **function** calling itself. The pattern is simple: stop when the answer is obvious, otherwise solve a smaller version and use that answer."
         },
         {
           "kind": "visual",
@@ -171,7 +171,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A **recursive call** is not a guess. It should solve the same kind of problem with less **input**: one smaller number, the rest of a **list**, or a child node in a tree."
+          "body": "A **recursive call** should solve the same kind of problem with less **input**: one smaller number, the rest of a **list**, or a child node in a tree."
         },
         {
           "kind": "visual",
@@ -304,7 +304,7 @@
     {
       "id": "unwind-and-combine",
       "title": "Unwind and combine answers",
-      "summary": "Recursive calls return small answers that the waiting calls combine.",
+      "summary": "Small answers return first, then waiting calls combine them.",
       "question_ids": [
         "advanced-recursion-trace",
         "advanced-recursion-order"
@@ -312,7 +312,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A recursive function has a forward trip and a return trip. The forward trip makes smaller calls. The return trip unwinds those calls and combines the returned values."
+          "body": "A recursive **function** has a forward trip and a return trip. The forward trip makes smaller calls. The return trip **unwinds** those calls and combines the returned values."
         },
         {
           "kind": "visual",
@@ -430,14 +430,14 @@
     {
       "id": "when-recursion-hurts",
       "title": "When recursion can be slow",
-      "summary": "Some recursive solutions repeat the same work.",
+      "summary": "Some recursive solutions are clear but repeat work.",
       "question_ids": [
         "advanced-recursion-when-not"
       ],
       "blocks": [
         {
           "kind": "text",
-          "body": "**Recursion** is not automatically efficient. Naive Fibonacci is a classic warning because it recalculates the same **values** many times."
+          "body": "**Recursion** is not automatically efficient. Naive Fibonacci is the common warning because it recalculates the same **values** many times."
         },
         {
           "kind": "compare",
