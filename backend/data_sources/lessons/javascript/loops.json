@@ -22,15 +22,24 @@
         },
         {
           "kind": "visual",
-          "title": "Trace a loop one item at a time",
-          "concept": "arrays",
-          "caption": "Watch the active item move while the running total changes.",
-          "initial_state": {},
+          "title": "Trace a full for loop",
+          "concept": "loops",
+          "caption": "Watch setup, condition, body, and update repeat until the final condition fails.",
+          "initial_state": {
+            "loop_flow": {
+              "setup": "total = 0, i = 0",
+              "condition": "i < 3?",
+              "body": "add current item",
+              "update": "i++",
+              "done": "use total"
+            }
+          },
           "steps": [
             {
-              "title": "Start before the loop",
-              "body": "The total starts at zero before any item is read.",
+              "title": "Set up loop state",
+              "body": "Create the running total and start the index at 0 before any pass runs.",
               "state": {
+                "active_step": "setup",
                 "items": [
                   "3",
                   "5",
@@ -39,14 +48,18 @@
                 "pointers": {
                   "i": 0
                 },
-                "note": "total = 0"
+                "loop_flow": {
+                  "setup": "let total = 0; let i = 0"
+                },
+                "note": "Setup happens once, before the first condition check."
               }
             },
             {
-              "title": "First pass",
-              "body": "Read index 0 and add 3 to the total.",
-              "animation": "add",
+              "title": "Check i = 0",
+              "body": "JavaScript checks i < 3 before the body. Since 0 < 3 is truthy, pass 1 runs.",
+              "animation": "highlight",
               "state": {
+                "active_step": "condition",
                 "items": [
                   "3",
                   "5",
@@ -58,14 +71,70 @@
                 "pointers": {
                   "i": 0
                 },
-                "note": "total = 3"
+                "loop_flow": {
+                  "condition": "0 < 3 is truthy",
+                  "body": "next item is 3",
+                  "update": "i++ moves to the next index."
+                },
+                "note": "A for loop checks the condition before each pass."
               }
             },
             {
-              "title": "Second pass",
-              "body": "Move to index 1 and add 5.",
+              "title": "Run pass 1",
+              "body": "Read index 0 and add 3 to the running total.",
+              "animation": "add",
+              "state": {
+                "active_step": "body",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  0
+                ],
+                "pointers": {
+                  "i": 0
+                },
+                "loop_flow": {
+                  "condition": "0 < 3 is truthy",
+                  "body": "total = 0 + 3",
+                  "update": "next i will be 1"
+                },
+                "note": "current item = 3, total becomes 3"
+              }
+            },
+            {
+              "title": "Move after pass 1",
+              "body": "After the body, the update moves i from 0 to 1, then the loop goes back to the condition.",
               "animation": "slide",
               "state": {
+                "active_step": "update",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  0
+                ],
+                "pointers": {
+                  "i": 1
+                },
+                "loop_flow": {
+                  "condition": "next check uses i = 1",
+                  "body": "total is 3",
+                  "update": "i moves from 0 to 1"
+                },
+                "note": "The update does not end the loop by itself; it sends control back to the condition."
+              }
+            },
+            {
+              "title": "Check i = 1",
+              "body": "JavaScript checks i < 3 before the body. Since 1 < 3 is truthy, pass 2 runs.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
                 "items": [
                   "3",
                   "5",
@@ -77,13 +146,70 @@
                 "pointers": {
                   "i": 1
                 },
-                "note": "total = 8"
+                "loop_flow": {
+                  "condition": "1 < 3 is truthy",
+                  "body": "next item is 5",
+                  "update": "i++ moves to the next index."
+                },
+                "note": "A for loop checks the condition before each pass."
               }
             },
             {
-              "title": "After the last item",
-              "body": "The loop stops after each item has contributed once.",
+              "title": "Run pass 2",
+              "body": "Read index 1 and add 5 to the running total.",
+              "animation": "add",
               "state": {
+                "active_step": "body",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "i": 1
+                },
+                "loop_flow": {
+                  "condition": "1 < 3 is truthy",
+                  "body": "total = 3 + 5",
+                  "update": "next i will be 2"
+                },
+                "note": "current item = 5, total becomes 8"
+              }
+            },
+            {
+              "title": "Move after pass 2",
+              "body": "After the body, the update moves i from 1 to 2, then the loop goes back to the condition.",
+              "animation": "slide",
+              "state": {
+                "active_step": "update",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "i": 2
+                },
+                "loop_flow": {
+                  "condition": "next check uses i = 2",
+                  "body": "total is 8",
+                  "update": "i moves from 1 to 2"
+                },
+                "note": "The update does not end the loop by itself; it sends control back to the condition."
+              }
+            },
+            {
+              "title": "Check i = 2",
+              "body": "JavaScript checks i < 3 before the body. Since 2 < 3 is truthy, pass 3 runs.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
                 "items": [
                   "3",
                   "5",
@@ -95,7 +221,106 @@
                 "pointers": {
                   "i": 2
                 },
-                "note": "final total = 10"
+                "loop_flow": {
+                  "condition": "2 < 3 is truthy",
+                  "body": "next item is 2",
+                  "update": "i++ moves to the next index."
+                },
+                "note": "A for loop checks the condition before each pass."
+              }
+            },
+            {
+              "title": "Run pass 3",
+              "body": "Read index 2 and add 2 to the running total.",
+              "animation": "add",
+              "state": {
+                "active_step": "body",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  2
+                ],
+                "pointers": {
+                  "i": 2
+                },
+                "loop_flow": {
+                  "condition": "2 < 3 is truthy",
+                  "body": "total = 8 + 2",
+                  "update": "next i will be 3"
+                },
+                "note": "current item = 2, total becomes 10"
+              }
+            },
+            {
+              "title": "Move after pass 3",
+              "body": "After the body, the update moves i from 2 to 3, then the loop goes back to the condition.",
+              "animation": "slide",
+              "state": {
+                "active_step": "update",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  2
+                ],
+                "pointers": {
+                  "i": 2
+                },
+                "loop_flow": {
+                  "condition": "next check uses i = 3",
+                  "body": "total is 10",
+                  "update": "i moves from 2 to 3"
+                },
+                "note": "The update does not end the loop by itself; it sends control back to the condition."
+              }
+            },
+            {
+              "title": "Final condition fails",
+              "body": "Now i is 3. The condition is false, so the body does not run a fourth time.",
+              "animation": "return",
+              "state": {
+                "active_step": "condition",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "pointers": {
+                  "i": 3
+                },
+                "loop_flow": {
+                  "condition": "3 < 3 is false",
+                  "body": "skip body",
+                  "update": "no update runs"
+                },
+                "note": "JavaScript leaves the loop."
+              }
+            },
+            {
+              "title": "Use final total",
+              "body": "After the loop ends, the program uses the total built by all three passes.",
+              "state": {
+                "active_step": "done",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  2
+                ],
+                "pointers": {
+                  "last": 2
+                },
+                "loop_flow": {
+                  "done": "final total = 10"
+                },
+                "note": "Each item contributed once, so the final total is 10."
               }
             }
           ]
@@ -139,6 +364,169 @@
           "tone": "mistake",
           "title": "Check the boundary",
           "body": "When a **loop** hangs, locate the line that moves its tested state toward an exit; a missing update keeps the **condition** true."
+        },
+        {
+          "kind": "visual",
+          "title": "Trace a while loop until it stops",
+          "concept": "loops",
+          "caption": "Watch the condition, body, and update repeat until the condition finally fails.",
+          "initial_state": {
+            "loop_flow": {
+              "setup": "count = 3",
+              "condition": "count > 0?",
+              "body": "console.log(count)",
+              "update": "count--",
+              "done": "continue after loop"
+            }
+          },
+          "steps": [
+            {
+              "title": "Set count before the loop",
+              "body": "The loop starts with count set to 3, which is the value the condition will test.",
+              "state": {
+                "active_step": "setup",
+                "loop_flow": {
+                  "setup": "let count = 3"
+                },
+                "note": "A while loop needs a value that the condition can test."
+              }
+            },
+            {
+              "title": "Check count = 3",
+              "body": "Ask whether 3 is greater than 0. It is truthy, so the body runs.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
+                "loop_flow": {
+                  "condition": "3 > 0 is truthy"
+                },
+                "note": "The condition is checked before this pass."
+              }
+            },
+            {
+              "title": "Run body for 3",
+              "body": "The body uses the current value, 3.",
+              "animation": "branch",
+              "state": {
+                "active_step": "body",
+                "loop_flow": {
+                  "body": "console.log(count): 3"
+                },
+                "note": "The body runs only after the condition is true."
+              }
+            },
+            {
+              "title": "Update count to 2",
+              "body": "The update changes count from 3 to 2, then the loop checks the condition again.",
+              "animation": "slide",
+              "state": {
+                "active_step": "update",
+                "loop_flow": {
+                  "update": "count becomes 2",
+                  "condition": "next check uses count = 2"
+                },
+                "note": "This update is what moves the loop toward stopping."
+              }
+            },
+            {
+              "title": "Check count = 2",
+              "body": "Ask whether 2 is greater than 0. It is truthy, so the body runs.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
+                "loop_flow": {
+                  "condition": "2 > 0 is truthy"
+                },
+                "note": "The condition is checked before this pass."
+              }
+            },
+            {
+              "title": "Run body for 2",
+              "body": "The body uses the current value, 2.",
+              "animation": "branch",
+              "state": {
+                "active_step": "body",
+                "loop_flow": {
+                  "body": "console.log(count): 2"
+                },
+                "note": "The body runs only after the condition is true."
+              }
+            },
+            {
+              "title": "Update count to 1",
+              "body": "The update changes count from 2 to 1, then the loop checks the condition again.",
+              "animation": "slide",
+              "state": {
+                "active_step": "update",
+                "loop_flow": {
+                  "update": "count becomes 1",
+                  "condition": "next check uses count = 1"
+                },
+                "note": "This update is what moves the loop toward stopping."
+              }
+            },
+            {
+              "title": "Check count = 1",
+              "body": "Ask whether 1 is greater than 0. It is truthy, so the body runs.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
+                "loop_flow": {
+                  "condition": "1 > 0 is truthy"
+                },
+                "note": "The condition is checked before this pass."
+              }
+            },
+            {
+              "title": "Run body for 1",
+              "body": "The body uses the current value, 1.",
+              "animation": "branch",
+              "state": {
+                "active_step": "body",
+                "loop_flow": {
+                  "body": "console.log(count): 1"
+                },
+                "note": "The body runs only after the condition is true."
+              }
+            },
+            {
+              "title": "Update count to 0",
+              "body": "The update changes count from 1 to 0, then the loop checks the condition again.",
+              "animation": "slide",
+              "state": {
+                "active_step": "update",
+                "loop_flow": {
+                  "update": "count becomes 0",
+                  "condition": "next check uses count = 0"
+                },
+                "note": "This update is what moves the loop toward stopping."
+              }
+            },
+            {
+              "title": "Check count = 0",
+              "body": "The condition is false now, so the loop skips the body.",
+              "animation": "return",
+              "state": {
+                "active_step": "condition",
+                "loop_flow": {
+                  "condition": "0 > 0 is false",
+                  "body": "skip body"
+                },
+                "note": "Falsy means skip the body and continue after the loop."
+              }
+            },
+            {
+              "title": "Continue after the loop",
+              "body": "The loop is finished, so the next line after the loop can run.",
+              "state": {
+                "active_step": "done",
+                "loop_flow": {
+                  "done": "continue after loop"
+                },
+                "note": "The trace reaches the end of the loop, not just the first pass."
+              }
+            }
+          ]
         }
       ]
     },

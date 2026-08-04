@@ -92,14 +92,39 @@ function CodeText({ children }) {
   return <code>{highlightedCode(children)}</code>;
 }
 
-function VisualTokenRow({ items = [], active = [], pointers = {}, window = null }) {
-  const activeSet = new Set(active || []);
+function conceptKind(concept = "") {
+  const value = String(concept).toLowerCase();
+  if (value.includes("conditional") || value.includes("branch")) return "conditionals";
+  if (value.includes("loop") || value.includes("iteration")) return "loops";
+  if (value.includes("algorithm") || value.includes("state-trace") || value.includes("best-so-far")) return "state-trace";
+  if (value.includes("stack")) return "stack";
+  if (value.includes("queue")) return "queue";
+  if (value.includes("linked")) return "linked-list";
+  if (value.includes("list")) return "lists";
+  if (value.includes("tree")) return "tree";
+  if (value.includes("graph")) return "graph";
+  if (value.includes("hash") || value.includes("map") || value.includes("set") || value.includes("object")) return "map";
+  if (value.includes("function")) return "functions";
+  if (value.includes("recursion")) return "call-stack";
+  return "array";
+}
+
+function activeIndexes(active = []) {
+  return new Set((active || []).map((value) => Number(value)));
+}
+
+function visibleNodeLabel(node) {
+  return node?.label || node?.value || node?.id || "";
+}
+
+function VisualTokenRow({ items = [], active = [], pointers = {}, window = null, mode = "array" }) {
+  const activeSet = activeIndexes(active);
   const pointerEntries = Object.entries(pointers || {});
   const windowStart = Array.isArray(window) ? window[0] : null;
   const windowEnd = Array.isArray(window) ? window[1] : null;
 
   return (
-    <div className="lesson-visual-row" aria-label="Visualizer values">
+    <div className={`lesson-visual-row is-${mode}`} aria-label="Visualizer values">
       {items.map((item, index) => {
         const pointerLabels = pointerEntries
           .filter(([, value]) => value === index)
@@ -114,12 +139,17 @@ function VisualTokenRow({ items = [], active = [], pointers = {}, window = null 
             key={`${item}-${index}`}
             className={`lesson-visual-token ${activeSet.has(index) ? "is-active" : ""} ${
               inWindow ? "is-window" : ""
+            } ${
+              Number.isInteger(windowStart) &&
+              Number.isInteger(windowEnd) &&
+              !inWindow &&
+              (mode === "binary-search" || mode === "sliding-window")
+                ? "is-dimmed"
+                : ""
             }`}
           >
+            <small>{pointerLabels.length ? pointerLabels.join(" / ") : index}</small>
             <span>{item}</span>
-            {pointerLabels.length ? (
-              <small>{pointerLabels.join(" / ")}</small>
-            ) : null}
           </div>
         );
       })}
@@ -128,22 +158,52 @@ function VisualTokenRow({ items = [], active = [], pointers = {}, window = null 
 }
 
 function VisualStack({ items = [], active = [] }) {
-  const activeSet = new Set(active || []);
+  const activeSet = activeIndexes(active);
   return (
-    <div className="lesson-visual-stack" aria-label="Stack state">
-      {[...items].reverse().map((item, reverseIndex) => {
-        const index = items.length - 1 - reverseIndex;
-        return (
-          <div
-            key={`${item}-${index}`}
-            className={`lesson-visual-token ${activeSet.has(index) ? "is-active" : ""}`}
-          >
-            <span>{item}</span>
-            {reverseIndex === 0 ? <small>top</small> : null}
-          </div>
-        );
-      })}
-      {!items.length ? <p className="lesson-visual-empty">empty</p> : null}
+    <div className="lesson-visual-stack-shell" aria-label="Stack state">
+      <span className="lesson-visual-structure-label">top</span>
+      <div className="lesson-visual-stack">
+        {items.length ? (
+          items.map((item, index) => (
+            <div
+              key={`${item}-${index}`}
+              className={`lesson-visual-token ${activeSet.has(index) ? "is-active" : ""}`}
+              style={{ zIndex: index + 1 }}
+            >
+              <small>{index === items.length - 1 ? "top" : index === 0 ? "bottom" : `level ${index}`}</small>
+              <span>{item}</span>
+            </div>
+          ))
+        ) : (
+          <p className="lesson-visual-empty">empty stack</p>
+        )}
+      </div>
+      <span className="lesson-visual-stack-base">bottom</span>
+    </div>
+  );
+}
+
+function VisualQueue({ items = [], active = [] }) {
+  const activeSet = activeIndexes(active);
+  return (
+    <div className="lesson-visual-queue-shell" aria-label="Queue state">
+      <span className="lesson-visual-structure-label">front leaves first</span>
+      <div className="lesson-visual-queue">
+        {items.length ? (
+          items.map((item, index) => (
+            <div key={`${item}-${index}`} className="lesson-visual-queue-item">
+              <div className={`lesson-visual-token ${activeSet.has(index) ? "is-active" : ""}`}>
+                <small>{index === 0 ? "front" : index === items.length - 1 ? "rear" : index}</small>
+                <span>{item}</span>
+              </div>
+              {index < items.length - 1 ? <span className="lesson-visual-inline-arrow" aria-hidden="true" /> : null}
+            </div>
+          ))
+        ) : (
+          <p className="lesson-visual-empty">empty queue</p>
+        )}
+      </div>
+      <span className="lesson-visual-structure-label">new items join at rear</span>
     </div>
   );
 }
@@ -164,40 +224,435 @@ function VisualTable({ rows = [] }) {
   );
 }
 
-function VisualNodes({ nodes = [], edges = [] }) {
-  if (!nodes.length) return null;
-  const byId = Object.fromEntries(nodes.map((node) => [node.id, node]));
+function orderedLinkedNodes(nodes = [], edges = []) {
+  if (!nodes.length) return [];
+  const byId = new Map(nodes.map((node) => [node.id, node]));
+  const targets = new Set(edges.map((edge) => edge.to));
+  const first =
+    nodes.find((node) => String(node.note || "").toLowerCase().includes("head")) ||
+    nodes.find((node) => !targets.has(node.id)) ||
+    nodes[0];
+  const order = [];
+  const seen = new Set();
+  let current = first;
+  while (current && !seen.has(current.id)) {
+    order.push(current);
+    seen.add(current.id);
+    const nextEdge = edges.find((edge) => edge.from === current.id && byId.has(edge.to));
+    current = nextEdge ? byId.get(nextEdge.to) : null;
+  }
+  nodes.forEach((node) => {
+    if (!seen.has(node.id)) order.push(node);
+  });
+  return order;
+}
+
+function VisualLinkedList({ nodes = [], edges = [] }) {
+  const ordered = orderedLinkedNodes(nodes, edges);
+  if (!ordered.length) return null;
   return (
-    <svg className="lesson-visual-svg" viewBox="0 0 420 220" role="img" aria-label="Node diagram">
-      {edges.map((edge, index) => {
-        const from = byId[edge.from];
-        const to = byId[edge.to];
-        if (!from || !to) return null;
+    <div className="lesson-visual-linked" aria-label="Linked list state">
+      <span className="lesson-visual-head-label">head</span>
+      <div className="lesson-visual-linked-row">
+        {ordered.map((node) => (
+          <div className="lesson-visual-linked-item" key={node.id}>
+            <div className={`lesson-visual-linked-node ${node.active ? "is-active" : ""}`}>
+              <span className="lesson-visual-linked-value">{visibleNodeLabel(node)}</span>
+              <span className="lesson-visual-linked-next">next</span>
+            </div>
+            <span
+              className={`lesson-visual-inline-arrow ${
+                edges.some((edge) => edge.from === node.id && edge.active) ? "is-active" : ""
+              }`}
+              aria-hidden="true"
+            />
+          </div>
+        ))}
+        <div className="lesson-visual-null-node">null</div>
+      </div>
+    </div>
+  );
+}
+
+function normalizedNodePositions(nodes = []) {
+  if (!nodes.length) return new Map();
+  const xs = nodes.map((node) => Number(node.x) || 0);
+  const ys = nodes.map((node) => Number(node.y) || 0);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const spanX = Math.max(maxX - minX, 1);
+  const spanY = Math.max(maxY - minY, 1);
+  return new Map(
+    nodes.map((node) => [
+      node.id,
+      {
+        x: 14 + (((Number(node.x) || 0) - minX) / spanX) * 72,
+        y: 18 + (((Number(node.y) || 0) - minY) / spanY) * 64,
+      },
+    ])
+  );
+}
+
+function VisualNodes({ nodes = [], edges = [], kind = "tree" }) {
+  if (!nodes.length) return null;
+  const positions = normalizedNodePositions(nodes);
+  return (
+    <div className={`lesson-visual-node-canvas is-${kind}`} role="img" aria-label={`${kind} diagram`}>
+      <svg className="lesson-visual-edge-layer" viewBox="0 0 100 100" aria-hidden="true">
+        {edges.map((edge, index) => {
+          const from = positions.get(edge.from);
+          const to = positions.get(edge.to);
+          if (!from || !to) return null;
+          return (
+            <path
+              key={`${edge.from}-${edge.to}-${index}`}
+              d={`M ${from.x} ${from.y} C ${from.x} ${(from.y + to.y) / 2}, ${to.x} ${(from.y + to.y) / 2}, ${to.x} ${to.y}`}
+              className={`lesson-visual-edge ${edge.active ? "is-active" : ""}`}
+            />
+          );
+        })}
+      </svg>
+      {nodes.map((node) => (
+        <div
+          key={node.id}
+          className={`lesson-visual-flow-node ${node.active ? "is-active" : ""}`}
+          style={{
+            left: `${positions.get(node.id)?.x || 50}%`,
+            top: `${positions.get(node.id)?.y || 50}%`,
+          }}
+        >
+          <strong>{visibleNodeLabel(node)}</strong>
+          {node.note ? <small>{node.note}</small> : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function VisualBucketMap({ state }) {
+  const buckets = state.buckets || [];
+  if (!buckets.length && !state.table) return null;
+  if (!buckets.length) return <VisualTable rows={state.table || []} />;
+  return (
+    <div className="lesson-visual-buckets" aria-label="Hash map buckets">
+      {buckets.map((bucket, index) => {
+        const entries = Array.isArray(bucket.entries) ? bucket.entries : Array.isArray(bucket) ? bucket : [];
+        const label = bucket.label || bucket.key || `bucket ${index}`;
         return (
-          <line
-            key={`${edge.from}-${edge.to}-${index}`}
-            x1={from.x}
-            y1={from.y}
-            x2={to.x}
-            y2={to.y}
-            className={`lesson-visual-edge ${edge.active ? "is-active" : ""}`}
-          />
+          <div
+            key={`${label}-${index}`}
+            className={`lesson-visual-bucket ${
+              state.activeBucket === index || state.active?.includes(index) ? "is-active" : ""
+            }`}
+          >
+            <small>{label}</small>
+            <div className="lesson-visual-bucket-chain">
+              {entries.length ? (
+                entries.map((entry, entryIndex) => (
+                  <span key={`${label}-${entryIndex}`}>
+                    {typeof entry === "object" ? `${entry.key ?? entry.label}: ${entry.value ?? ""}` : entry}
+                  </span>
+                ))
+              ) : (
+                <span className="is-empty">empty</span>
+              )}
+            </div>
+          </div>
         );
       })}
-      {nodes.map((node) => (
-        <g key={node.id} className={`lesson-visual-node ${node.active ? "is-active" : ""}`}>
-          <circle cx={node.x} cy={node.y} r="24" />
-          <text x={node.x} y={node.y + 5} textAnchor="middle">
-            {node.label || node.id}
-          </text>
-          {node.note ? (
-            <text x={node.x} y={node.y + 42} textAnchor="middle" className="lesson-visual-node-note">
-              {node.note}
-            </text>
-          ) : null}
-        </g>
+    </div>
+  );
+}
+
+function VisualCallStack({ calls = [], activeCall = 0 }) {
+  return (
+    <div className="lesson-visual-call-stack" aria-label="Call stack state">
+      {calls.map((call, index) => (
+        <div
+          key={`${call}-${index}`}
+          className={`lesson-visual-token ${index === activeCall ? "is-active" : ""}`}
+        >
+          <small>{index === calls.length - 1 ? "current call" : `call ${index + 1}`}</small>
+          <span>{call}</span>
+        </div>
       ))}
-    </svg>
+    </div>
+  );
+}
+
+function conditionalFlowValue(flow, key, fallback = "") {
+  const value = flow?.[key];
+  if (typeof value === "object" && value !== null) {
+    return value.label || value.text || value.value || fallback;
+  }
+  return value || fallback;
+}
+
+function VisualFlowCard({ id, label, detail, active, shape = "card" }) {
+  return (
+    <div
+      className={`lesson-visual-flow-symbol ucv-flow-node-card ucv-flow-node-card--${shape} is-${shape} ${active ? "is-active ucv-flow-node-card--active" : ""}`}
+      data-flow-id={id}
+    >
+      <strong>{label}</strong>
+      {detail ? <span>{detail}</span> : null}
+    </div>
+  );
+}
+
+function VisualConditionalFlow({ flow = {}, active = "", path = "" }) {
+  const activeId = String(active || flow.active || "");
+  const activePath = String(path || flow.path || "");
+  const resultActive = activeId === "result" || activeId === "end";
+  const trueActive = activeId === "true" || activeId === "true_branch" || (resultActive && activePath === "true");
+  const falseActive = activeId === "false" || activeId === "false_branch" || (resultActive && activePath === "false");
+
+  return (
+    <div className="lesson-visual-conditional" aria-label="Conditional flowchart">
+      <VisualFlowCard
+        id="start"
+        label="Start"
+        detail={conditionalFlowValue(flow, "start", "Begin")}
+        active={activeId === "start"}
+        shape="terminator"
+      />
+      <span className="lesson-visual-flow-arrow ucv-inline-arrow" aria-hidden="true" />
+      <VisualFlowCard
+        id="input"
+        label="Input"
+        detail={conditionalFlowValue(flow, "input", "Use the starting value")}
+        active={activeId === "input"}
+        shape="input"
+      />
+      <span className="lesson-visual-flow-arrow ucv-inline-arrow" aria-hidden="true" />
+      <VisualFlowCard
+        id="condition"
+        label="Condition"
+        detail={conditionalFlowValue(flow, "condition", "Ask a true/false question")}
+        active={activeId === "condition"}
+        shape="diamond"
+      />
+      <div className="lesson-visual-branch-split">
+        <div className={`lesson-visual-branch is-true ${trueActive ? "is-active" : ""}`}>
+          <span className="lesson-visual-branch-label">{flow.true_label || "True"}</span>
+          <span className="lesson-visual-flow-arrow ucv-inline-arrow" aria-hidden="true" />
+          <VisualFlowCard
+            id="true_branch"
+            label="True branch"
+            detail={conditionalFlowValue(flow, "true_branch", "Run this path")}
+            active={trueActive}
+            shape="branch"
+          />
+        </div>
+        <div className={`lesson-visual-branch is-false ${falseActive ? "is-active" : ""}`}>
+          <span className="lesson-visual-branch-label">{flow.false_label || "False"}</span>
+          <span className="lesson-visual-flow-arrow ucv-inline-arrow" aria-hidden="true" />
+          <VisualFlowCard
+            id="false_branch"
+            label="False branch"
+            detail={conditionalFlowValue(flow, "false_branch", "Try the next path")}
+            active={falseActive}
+            shape="branch"
+          />
+        </div>
+      </div>
+      <span
+        className={`lesson-visual-flow-arrow ucv-inline-arrow ${resultActive ? "is-active" : ""}`}
+        aria-hidden="true"
+      />
+      <VisualFlowCard
+        id="result"
+        label="Result"
+        detail={conditionalFlowValue(flow, "result", "Use the chosen answer")}
+        active={resultActive}
+        shape="terminator"
+      />
+    </div>
+  );
+}
+
+function VisualLoopFlow({ flow = {}, active = "" }) {
+  const activeId = String(active || flow.active || "setup");
+  const order = [
+    ["setup", "Setup", "Start values"],
+    ["condition", "Condition", "Should the loop run?"],
+    ["body", "Body", "Do the repeated work"],
+    ["update", "Update", "Move to the next pass"],
+    ["done", "Done", "Use the final result"],
+  ];
+
+  return (
+    <div className="lesson-visual-loop-shell">
+      <div className="lesson-visual-loop-flow" aria-label="Loop flowchart">
+        {order.map(([id, label, fallback], index) => (
+          <div className="lesson-visual-loop-step" key={id}>
+            <VisualFlowCard
+              id={id}
+              label={label}
+              detail={conditionalFlowValue(flow, id, fallback)}
+              active={activeId === id}
+              shape={id === "condition" ? "diamond" : id === "setup" || id === "done" ? "terminator" : "input"}
+            />
+            {index < order.length - 1 ? (
+              <span
+                className={`lesson-visual-flow-arrow ucv-inline-arrow ${
+                  order.findIndex(([nextId]) => nextId === activeId) > index ? "is-active" : ""
+                }`}
+                aria-hidden="true"
+              />
+            ) : null}
+          </div>
+        ))}
+      </div>
+      <div className={`lesson-visual-loop-back ${["condition", "body", "update"].includes(activeId) ? "is-active" : ""}`}>
+        <span>after update, check the condition again</span>
+      </div>
+    </div>
+  );
+}
+
+function VisualListTrace({ state }) {
+  const items = state.items || state.array || state.values || [];
+  const activeSet = activeIndexes(state.active);
+  const pointerEntries = Object.entries(state.pointers || {});
+  const listState = state.list_state || {};
+
+  return (
+    <div className="lesson-visual-list-trace" aria-label="List index trace">
+      <div className="lesson-visual-list-meta">
+        <VisualFlowCard
+          id="list-action"
+          label={listState.action || "List action"}
+          detail={listState.detail || state.note || "Read or change one slot"}
+          active
+          shape="input"
+        />
+        <VisualFlowCard
+          id="list-result"
+          label={listState.name || "List"}
+          detail={listState.result || `length ${items.length}`}
+          active={String(state.active_step || "").includes("result")}
+          shape="terminator"
+        />
+      </div>
+      <div className="lesson-visual-list-track">
+        {items.map((item, index) => {
+          const pointerLabels = pointerEntries
+            .filter(([, value]) => value === index)
+            .map(([label]) => label);
+          return (
+            <div
+              key={`${item}-${index}`}
+              className={`lesson-visual-list-cell ${activeSet.has(index) ? "is-active" : ""}`}
+            >
+              <small>index {index}</small>
+              <strong>{item}</strong>
+              {pointerLabels.length ? (
+                <span className="lesson-visual-list-pointer">{pointerLabels.join(" / ")}</span>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function VisualFunctionFlow({ state }) {
+  const flow = state.function_flow || {};
+  const activeId = String(state.active_step || flow.active || "caller");
+  const cells = [
+    ["caller", "Caller", flow.caller || "The line that asks for work", "terminator"],
+    ["arguments", "Arguments", flow.arguments || "Values sent in", "input"],
+    ["parameters", "Function frame", flow.parameters || "Parameters receive values", "card"],
+    ["return", "Return", flow.return_value || "Send one answer back", "input"],
+    ["resume", "Caller resumes", flow.resume || "Use the returned value", "terminator"],
+  ];
+
+  return (
+    <div className="lesson-visual-function-flow" aria-label="Function call flow">
+      <div className="lesson-visual-function-main">
+        {cells.map(([id, label, detail, shape], index) => (
+          <div className="lesson-visual-function-step" key={id}>
+            <VisualFlowCard
+              id={id}
+              label={label}
+              detail={detail}
+              active={activeId === id}
+              shape={shape}
+            />
+            {index < cells.length - 1 ? (
+              <span
+                className={`lesson-visual-flow-arrow ucv-inline-arrow ${
+                  cells.findIndex(([nextId]) => nextId === activeId) > index ? "is-active" : ""
+                }`}
+                aria-hidden="true"
+              />
+            ) : null}
+          </div>
+        ))}
+      </div>
+      {flow.locals ? (
+        <div className={`lesson-visual-function-locals ${activeId === "parameters" ? "is-active" : ""}`}>
+          <small>Local state</small>
+          <strong>{flow.locals}</strong>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function VisualStateTrace({ state }) {
+  const trace = state.state_trace || {};
+  const activeId = String(state.active_step || trace.active || "input");
+  const items = state.items || state.array || state.values || [];
+  const cards = [
+    ["input", "Input", trace.input || "A small example", "terminator"],
+    ["current", "Active item", trace.current || "Look at one value", "input"],
+    ["compare", "Compare", trace.comparison || "Ask whether state changes", "diamond"],
+    ["state", "Tracked state", trace.tracked || "Keep or update memory", "card"],
+    ["result", "Result", trace.result || "Use the final state", "terminator"],
+  ];
+
+  return (
+    <div className="lesson-visual-state-trace" aria-label="Algorithm state trace">
+      <div className="lesson-visual-state-flow">
+        {cards.map(([id, label, detail, shape], index) => (
+          <div className="lesson-visual-state-step" key={id}>
+            <VisualFlowCard
+              id={id}
+              label={label}
+              detail={detail}
+              active={activeId === id}
+              shape={shape}
+            />
+            {index < cards.length - 1 ? (
+              <span
+                className={`lesson-visual-flow-arrow ucv-inline-arrow ${
+                  cards.findIndex(([nextId]) => nextId === activeId) > index ? "is-active" : ""
+                }`}
+                aria-hidden="true"
+              />
+            ) : null}
+          </div>
+        ))}
+      </div>
+      {items.length ? (
+        <VisualListTrace
+          state={{
+            ...state,
+            list_state: {
+              action: trace.decision || "Trace the next item",
+              detail: trace.current || state.note,
+              name: "Best so far",
+              result: trace.tracked || state.note,
+            },
+          }}
+        />
+      ) : null}
+    </div>
   );
 }
 
@@ -208,42 +663,69 @@ function visualAnimationClass(step) {
 }
 
 function VisualDiagram({ block, step }) {
-  const state = { ...(block.initial_state || {}), ...(step.state || {}) };
+  const initialState = block.initial_state || {};
+  const stepState = step.state || {};
+  const state = {
+    ...initialState,
+    ...stepState,
+    condition_flow:
+      initialState.condition_flow || stepState.condition_flow
+        ? { ...(initialState.condition_flow || {}), ...(stepState.condition_flow || {}) }
+        : undefined,
+    loop_flow:
+      initialState.loop_flow || stepState.loop_flow
+        ? { ...(initialState.loop_flow || {}), ...(stepState.loop_flow || {}) }
+        : undefined,
+    list_state:
+      initialState.list_state || stepState.list_state
+        ? { ...(initialState.list_state || {}), ...(stepState.list_state || {}) }
+        : undefined,
+    function_flow:
+      initialState.function_flow || stepState.function_flow
+        ? { ...(initialState.function_flow || {}), ...(stepState.function_flow || {}) }
+        : undefined,
+    state_trace:
+      initialState.state_trace || stepState.state_trace
+        ? { ...(initialState.state_trace || {}), ...(stepState.state_trace || {}) }
+        : undefined,
+  };
   const mainItems = state.items || state.array || state.values || state.queue || [];
+  const kind = conceptKind(block.concept);
+  const rowMode = String(block.concept || "").toLowerCase();
   return (
-    <div className={`lesson-visual-diagram is-${block.concept} ${visualAnimationClass(step)}`}>
-      {state.stack ? <VisualStack items={state.stack} active={state.active} /> : null}
-      {state.queue ? (
-        <div>
-          <VisualTokenRow items={state.queue} active={state.active} />
-          <div className="lesson-visual-labels">
-            <span>front</span>
-            <span>back</span>
-          </div>
-        </div>
+    <div className={`lesson-visual-diagram is-${kind} ${visualAnimationClass(step)}`}>
+      {kind === "conditionals" && state.condition_flow ? (
+        <VisualConditionalFlow
+          flow={state.condition_flow}
+          active={state.active_step}
+          path={state.path}
+        />
       ) : null}
-      {!state.stack && !state.queue && mainItems.length ? (
+      {kind === "loops" && state.loop_flow ? (
+        <VisualLoopFlow flow={state.loop_flow} active={state.active_step} />
+      ) : null}
+      {kind === "lists" ? <VisualListTrace state={state} /> : null}
+      {kind === "functions" && state.function_flow ? <VisualFunctionFlow state={state} /> : null}
+      {kind === "state-trace" ? <VisualStateTrace state={state} /> : null}
+      {state.stack ? <VisualStack items={state.stack} active={state.active} /> : null}
+      {state.queue ? <VisualQueue items={state.queue} active={state.active} /> : null}
+      {!state.stack && !state.queue && !["lists", "state-trace"].includes(kind) && mainItems.length ? (
         <VisualTokenRow
           items={mainItems}
           active={state.active}
           pointers={state.pointers}
           window={state.window}
+          mode={rowMode}
         />
       ) : null}
-      {state.table ? <VisualTable rows={state.table} /> : null}
-      {state.nodes ? <VisualNodes nodes={state.nodes} edges={state.edges || []} /> : null}
-      {state.call_stack ? (
-        <div className="lesson-visual-call-stack">
-          {state.call_stack.map((call, index) => (
-            <div
-              key={`${call}-${index}`}
-              className={`lesson-visual-token ${index === state.active_call ? "is-active" : ""}`}
-            >
-              <span>{call}</span>
-            </div>
-          ))}
-        </div>
+      {kind === "map" ? <VisualBucketMap state={state} /> : state.table ? <VisualTable rows={state.table} /> : null}
+      {state.nodes && kind === "linked-list" ? (
+        <VisualLinkedList nodes={state.nodes} edges={state.edges || []} />
       ) : null}
+      {state.nodes && kind !== "linked-list" ? (
+        <VisualNodes nodes={state.nodes} edges={state.edges || []} kind={kind} />
+      ) : null}
+      {state.call_stack ? <VisualCallStack calls={state.call_stack} activeCall={state.active_call} /> : null}
       {state.note ? <p className="lesson-visual-state-note">{state.note}</p> : null}
     </div>
   );
@@ -332,7 +814,7 @@ function VisualBlock({ block }) {
           >
             <header className="lesson-visual-modal-head">
               <div>
-                <span>Step {stepIndex + 1} of {steps.length}</span>
+                <span>Visualizer</span>
                 <h3 id="lesson-visual-title">{block.title}</h3>
               </div>
               <button type="button" onClick={close} data-autofocus>
@@ -340,20 +822,28 @@ function VisualBlock({ block }) {
               </button>
             </header>
 
-            <div className="lesson-visual-progress" aria-label="Visualizer steps">
-              {steps.map((visualStep, index) => (
-                <button
-                  type="button"
-                  key={`${visualStep.title}-${index}`}
-                  className={index === stepIndex ? "is-active" : ""}
-                  aria-label={`Go to step ${index + 1}: ${visualStep.title}`}
-                  aria-current={index === stepIndex ? "step" : undefined}
-                  onClick={() => {
-                    setIsPlaying(false);
-                    goToStep(index);
-                  }}
-                />
-              ))}
+            <div className="lesson-visual-progress-wrap">
+              <span className="lesson-visual-progress-count">
+                Step {stepIndex + 1} of {steps.length}
+              </span>
+              <div className="lesson-visual-progress" aria-label="Visualizer steps">
+                {steps.map((visualStep, index) => (
+                  <button
+                    type="button"
+                    key={`${visualStep.title}-${index}`}
+                    className={index === stepIndex ? "is-active" : ""}
+                    aria-label={`Go to step ${index + 1}: ${visualStep.title}`}
+                    aria-current={index === stepIndex ? "step" : undefined}
+                    onClick={() => {
+                      setIsPlaying(false);
+                      goToStep(index);
+                    }}
+                  >
+                    <span>{index + 1}</span>
+                    <strong>{visualStep.title}</strong>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <VisualDiagram key={`${stepIndex}-${replayKey}`} block={block} step={step} />

@@ -36,6 +36,15 @@
               "title": "Call with arguments",
               "body": "The caller sends 3 and 5 into the function.",
               "state": {
+                "active_step": "arguments",
+                "function_flow": {
+                  "caller": "main asks for add(3, 5)",
+                  "arguments": "3 and 5 leave the caller",
+                  "parameters": "a and b are waiting",
+                  "locals": "function frame not running yet",
+                  "return_value": "nothing returned yet",
+                  "resume": "result is still waiting"
+                },
                 "call_stack": [
                   "main: result = add(3, 5)"
                 ],
@@ -48,6 +57,15 @@
               "body": "Inside the function, a is 3 and b is 5.",
               "animation": "add",
               "state": {
+                "active_step": "parameters",
+                "function_flow": {
+                  "caller": "main is paused",
+                  "arguments": "3 goes to a, 5 goes to b",
+                  "parameters": "a = 3, b = 5",
+                  "locals": "a + b becomes 8",
+                  "return_value": "ready to return",
+                  "resume": "caller waits for the value"
+                },
                 "call_stack": [
                   "main",
                   "add: a=3, b=5"
@@ -72,11 +90,40 @@
               "body": "Return sends 8 back to the caller, and the function call is finished.",
               "animation": "return",
               "state": {
+                "active_step": "return",
+                "function_flow": {
+                  "caller": "main is waiting",
+                  "arguments": "3 and 5 already filled parameters",
+                  "parameters": "add finishes its frame",
+                  "locals": "a + b is 8",
+                  "return_value": "return 8",
+                  "resume": "result can store the answer"
+                },
                 "call_stack": [
                   "main: result = 8"
                 ],
                 "active_call": 0,
                 "note": "result stores 8"
+              }
+            },
+            {
+              "title": "Caller resumes",
+              "body": "The call expression has been replaced by 8, so the caller can use the stored result.",
+              "state": {
+                "active_step": "resume",
+                "function_flow": {
+                  "caller": "main continues",
+                  "arguments": "argument values are done",
+                  "parameters": "function frame is gone",
+                  "locals": "local names no longer exist",
+                  "return_value": "8",
+                  "resume": "result = 8"
+                },
+                "call_stack": [
+                  "main: result = 8"
+                ],
+                "active_call": 0,
+                "note": "the caller can use result"
               }
             }
           ]

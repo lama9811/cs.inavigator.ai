@@ -22,13 +22,13 @@
         {
           "kind": "visual",
           "title": "Track best-so-far state",
-          "concept": "arrays",
-          "caption": "Watch the best index update only when a better value appears.",
+          "concept": "state-trace",
+          "caption": "Watch the active item, the comparison, and the best-so-far state move together.",
           "initial_state": {},
           "steps": [
             {
               "title": "Initialize",
-              "body": "Best starts at index 0 because that is the first candidate.",
+              "body": "Start with the first value as the best-so-far because it is the only candidate seen.",
               "state": {
                 "items": [
                   "4",
@@ -41,12 +41,21 @@
                 "pointers": {
                   "best": 0
                 },
+                "active_step": "state",
+                "state_trace": {
+                  "input": "[4, 9, 7]",
+                  "current": "index 0 has 4",
+                  "comparison": "No comparison yet",
+                  "decision": "Initialize best",
+                  "tracked": "best = 4 at index 0",
+                  "result": "keep tracing"
+                },
                 "note": "best value = 4"
               }
             },
             {
               "title": "Compare index 1",
-              "body": "Nine is larger than four, so best moves to index 1.",
+              "body": "Compare the active item to best. Since 9 is larger than 4, best moves to index 1.",
               "animation": "slide",
               "state": {
                 "items": [
@@ -61,12 +70,21 @@
                   "best": 1,
                   "i": 1
                 },
+                "active_step": "compare",
+                "state_trace": {
+                  "input": "[4, 9, 7]",
+                  "current": "index 1 has 9",
+                  "comparison": "9 > 4 is true",
+                  "decision": "Update best",
+                  "tracked": "best = 9 at index 1",
+                  "result": "keep tracing"
+                },
                 "note": "best value = 9"
               }
             },
             {
               "title": "Compare index 2",
-              "body": "Seven is not larger than nine, so best stays put.",
+              "body": "Compare the active item to best. Since 7 is not larger than 9, best stays at index 1.",
               "state": {
                 "items": [
                   "4",
@@ -80,7 +98,43 @@
                   "best": 1,
                   "i": 2
                 },
-                "note": "return best index 1"
+                "active_step": "compare",
+                "state_trace": {
+                  "input": "[4, 9, 7]",
+                  "current": "index 2 has 7",
+                  "comparison": "7 > 9 is false",
+                  "decision": "Keep best",
+                  "tracked": "best = 9 at index 1",
+                  "result": "ready to return"
+                },
+                "note": "best still points at index 1"
+              }
+            },
+            {
+              "title": "Return best",
+              "body": "After every item has been checked, return or use the stored best value.",
+              "state": {
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "best": 1
+                },
+                "active_step": "result",
+                "state_trace": {
+                  "input": "[4, 9, 7]",
+                  "current": "no items left",
+                  "comparison": "loop is finished",
+                  "decision": "Use best",
+                  "tracked": "best = 9 at index 1",
+                  "result": "return 9"
+                },
+                "note": "return the best value 9"
               }
             }
           ]

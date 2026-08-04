@@ -33,6 +33,76 @@
           "caption": "The chain stops after the first true threshold.",
           "code": "const score=92;\nlet grade;\nif(score>=90) grade=\"A\";\nelse if(score>=80) grade=\"B\";\nelse grade=\"C or below\";\nconsole.log(grade);",
           "output": "A"
+        },
+        {
+          "kind": "visual",
+          "title": "Follow an else-if chain",
+          "concept": "conditionals",
+          "caption": "Trace the score through the first condition and into the branch that chooses the grade.",
+          "initial_state": {
+            "condition_flow": {
+              "start": "Begin the grade check",
+              "input": "score = 92",
+              "condition": "score >= 90?",
+              "true_branch": "grade = \"A\"",
+              "false_branch": "Try score >= 80",
+              "result": "console.log(\"A\")",
+              "true_label": "Truthy",
+              "false_label": "Falsy"
+            }
+          },
+          "steps": [
+            {
+              "title": "Start with input",
+              "body": "The chain starts with score set to 92.",
+              "state": {
+                "active_step": "input",
+                "condition_flow": {
+                  "input": "score = 92"
+                },
+                "note": "The input is the value JavaScript tests."
+              }
+            },
+            {
+              "title": "Ask the condition",
+              "body": "JavaScript checks whether score is at least 90. For 92, this condition is truthy.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
+                "path": "true",
+                "condition_flow": {
+                  "condition": "92 >= 90?"
+                },
+                "note": "The first branch wins."
+              }
+            },
+            {
+              "title": "Follow the true path",
+              "body": "Because the first condition is truthy, the chain chooses grade A and skips the later tests.",
+              "animation": "branch",
+              "state": {
+                "active_step": "true_branch",
+                "path": "true",
+                "condition_flow": {
+                  "true_branch": "grade = \"A\""
+                },
+                "note": "The score >= 80 branch is not checked."
+              }
+            },
+            {
+              "title": "Use the chosen result",
+              "body": "The chosen grade is used after the chain, so the output is A.",
+              "animation": "return",
+              "state": {
+                "active_step": "result",
+                "path": "true",
+                "condition_flow": {
+                  "result": "prints A"
+                },
+                "note": "Only one branch in this chain runs."
+              }
+            }
+          ]
         }
       ]
     },

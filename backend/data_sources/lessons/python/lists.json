@@ -22,13 +22,13 @@
         {
           "kind": "visual",
           "title": "Indexes point to positions",
-          "concept": "arrays",
-          "caption": "Step through a list so the index and value stay connected.",
+          "concept": "lists",
+          "caption": "Step through a list slot by slot, then watch append claim the next index.",
           "initial_state": {},
           "steps": [
             {
               "title": "Index 0",
-              "body": "The first item is at index 0.",
+              "body": "Start with the list and point the index marker at slot 0.",
               "animation": "highlight",
               "state": {
                 "items": [
@@ -42,12 +42,19 @@
                 "pointers": {
                   "index": 0
                 },
+                "active_step": "read",
+                "list_state": {
+                  "name": "names",
+                  "action": "Read slot 0",
+                  "detail": "Use the index to choose one position.",
+                  "result": "names[0] gives Ada"
+                },
                 "note": "names[0] is Ada"
               }
             },
             {
               "title": "Index 1",
-              "body": "The next item is at index 1.",
+              "body": "Move the index marker one slot to the right before reading the next value.",
               "animation": "slide",
               "state": {
                 "items": [
@@ -61,12 +68,19 @@
                 "pointers": {
                   "index": 1
                 },
+                "active_step": "read",
+                "list_state": {
+                  "name": "names",
+                  "action": "Read slot 1",
+                  "detail": "Same list, different index.",
+                  "result": "names[1] gives Grace"
+                },
                 "note": "names[1] is Grace"
               }
             },
             {
               "title": "Append",
-              "body": "Appending adds a new item at the end.",
+              "body": "Append puts the new value after the current last slot.",
               "animation": "add",
               "state": {
                 "items": [
@@ -80,6 +94,13 @@
                 ],
                 "pointers": {
                   "new": 3
+                },
+                "active_step": "result",
+                "list_state": {
+                  "name": "names",
+                  "action": "Append Mae",
+                  "detail": "The list grows by one slot.",
+                  "result": "Mae becomes index 3"
                 },
                 "note": "new last index is 3"
               }

@@ -31,6 +31,76 @@
           "output": "You can vote.\nDone."
         },
         {
+          "kind": "visual",
+          "title": "Follow an if statement",
+          "concept": "conditionals",
+          "caption": "Trace the input through the condition, the branch body, and the line after the if.",
+          "initial_state": {
+            "condition_flow": {
+              "start": "Begin the age check",
+              "input": "age = 20",
+              "condition": "age >= 18?",
+              "true_branch": "Print \"You can vote.\"",
+              "false_branch": "Skip the if body",
+              "result": "Then print \"Done.\"",
+              "true_label": "True",
+              "false_label": "False"
+            }
+          },
+          "steps": [
+            {
+              "title": "Start with input",
+              "body": "The program begins with age set to 20.",
+              "state": {
+                "active_step": "input",
+                "condition_flow": {
+                  "input": "age = 20"
+                },
+                "note": "The input is the value Java tests."
+              }
+            },
+            {
+              "title": "Ask the condition",
+              "body": "Java asks whether age is at least 18. For 20, the answer is true.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
+                "path": "true",
+                "condition_flow": {
+                  "condition": "20 >= 18?"
+                },
+                "note": "True means enter the braces."
+              }
+            },
+            {
+              "title": "Follow the true branch",
+              "body": "Because the condition is true, Java runs the statement inside the if body.",
+              "animation": "branch",
+              "state": {
+                "active_step": "true_branch",
+                "path": "true",
+                "condition_flow": {
+                  "true_branch": "Print \"You can vote.\""
+                },
+                "note": "Only the braced body belongs to this if."
+              }
+            },
+            {
+              "title": "Continue after the if",
+              "body": "After the branch body finishes, Java continues with the next line, so Done still prints.",
+              "animation": "return",
+              "state": {
+                "active_step": "result",
+                "path": "true",
+                "condition_flow": {
+                  "result": "Print \"Done.\""
+                },
+                "note": "Code after the if runs normally."
+              }
+            }
+          ]
+        },
+        {
           "kind": "text",
           "body": "A Java program has a **class**, a `main` **method**, and statements inside that method. The examples below skip the wrapper so you can focus on the condition. Indentation helps humans read. Braces decide what Java runs."
         },

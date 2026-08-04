@@ -85,6 +85,93 @@
           "output": "B"
         },
         {
+          "kind": "visual",
+          "title": "Follow an if / elif chain",
+          "concept": "conditionals",
+          "caption": "Trace the input through each yes-or-no question until one branch chooses the result.",
+          "initial_state": {
+            "condition_flow": {
+              "start": "Begin the grade check",
+              "input": "score = 85",
+              "condition": "score >= 90?",
+              "true_branch": "Print A",
+              "false_branch": "Ask score >= 80?",
+              "result": "Print B",
+              "true_label": "True",
+              "false_label": "False"
+            }
+          },
+          "steps": [
+            {
+              "title": "Start with input",
+              "body": "The program begins with the value stored in score.",
+              "state": {
+                "active_step": "input",
+                "condition_flow": {
+                  "input": "score = 85"
+                },
+                "note": "The input is the value the branch chain will test."
+              }
+            },
+            {
+              "title": "Ask the first condition",
+              "body": "Python asks whether score is at least 90. The answer is false, so the A branch is skipped.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
+                "path": "false",
+                "condition_flow": {
+                  "condition": "85 >= 90?"
+                },
+                "note": "False means move to the next question in the chain."
+              }
+            },
+            {
+              "title": "Follow the false path",
+              "body": "The false path leads to the next condition: score is at least 80.",
+              "animation": "branch",
+              "state": {
+                "active_step": "false_branch",
+                "path": "false",
+                "condition_flow": {
+                  "false_branch": "Ask 85 >= 80?"
+                },
+                "note": "This second question is true."
+              }
+            },
+            {
+              "title": "Follow the true path",
+              "body": "The second condition is true, so Python chooses the branch that prints B.",
+              "animation": "branch",
+              "state": {
+                "active_step": "true_branch",
+                "path": "true",
+                "condition_flow": {
+                  "condition": "85 >= 80?",
+                  "true_branch": "Print B",
+                  "false_branch": "Try score >= 70?"
+                },
+                "note": "The score >= 70 branch is not checked."
+              }
+            },
+            {
+              "title": "Use the chosen result",
+              "body": "Because the second condition is true, Python prints B and leaves the chain.",
+              "animation": "return",
+              "state": {
+                "active_step": "result",
+                "path": "true",
+                "condition_flow": {
+                  "condition": "85 >= 80?",
+                  "true_branch": "Print B",
+                  "result": "prints B"
+                },
+                "note": "Only the first true branch runs."
+              }
+            }
+          ]
+        },
+        {
           "kind": "callout",
           "tone": "mistake",
           "title": "A chain stops at the first true branch",
