@@ -21,6 +21,11 @@
           "body": "Java calls a **function** a **method**. Same idea, different word. A method gives a name to a piece of work so you can use it again without copying the same lines all over your program."
         },
         {
+          "kind": "code",
+          "caption": "Before real syntax, learn the shape: a **function** has a name, inputs, a body, and sometimes a returned result. The examples after this show the exact syntax.",
+          "code": "function name(parameters):\n    body that does the job\n    return the result\n\ncall function name(arguments)"
+        },
+        {
           "kind": "visual",
           "title": "Follow a function call",
           "concept": "functions",

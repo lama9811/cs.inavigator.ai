@@ -21,6 +21,11 @@
         },
         {
           "kind": "code",
+          "caption": "Before real syntax, learn the shape: ask a condition, then run only the matching **body**. The examples after this show the exact punctuation for this language.",
+          "code": "if condition is true:\n    body for the true case\notherwise:\n    body for the backup case"
+        },
+        {
+          "kind": "code",
           "caption": "The **condition** sits between `if` and the colon. When it is true, the indented line runs. When it is false, Python skips it and moves on as if it were not there.",
           "code": "age = 20\nif age >= 18:\n    print(\"You can vote.\")\nprint(\"Done.\")",
           "output": "You can vote.\nDone."

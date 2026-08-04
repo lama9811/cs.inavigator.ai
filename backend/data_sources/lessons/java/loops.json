@@ -103,6 +103,11 @@
         },
         {
           "kind": "code",
+          "caption": "Before real syntax, learn the shape: a **loop** repeats a body. The examples after this show how this language writes that shape.",
+          "code": "for each item in a group:\n    repeated body for that item\n\nwhile condition is true:\n    repeated body\n    update something so the loop can stop"
+        },
+        {
+          "kind": "code",
           "caption": "The full wrapper, shown once so you know where **loops** live. Everything after this block is a statement that would sit inside `main`, and the **class** and `main` around it are assumed rather than repeated.",
           "code": "public class Greeter {\n    public static void main(String[] args) {\n        for (int i = 0; i < 3; i++) {\n            System.out.println(\"Hello, world\");\n        }\n    }\n}",
           "output": "Hello, world\nHello, world\nHello, world"

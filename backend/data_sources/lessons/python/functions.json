@@ -21,6 +21,11 @@
           "body": "A **function** is a name for a piece of work. You describe the work once, then run it as many times as you like by writing its name. If you find yourself copying the same three lines into four places, that is a function asking to be written."
         },
         {
+          "kind": "code",
+          "caption": "Before real syntax, learn the shape: a **function** has a name, inputs, a body, and sometimes a returned result. The examples after this show the exact syntax.",
+          "code": "function name(parameters):\n    body that does the job\n    return the result\n\ncall function name(arguments)"
+        },
+        {
           "kind": "visual",
           "title": "Follow a function call",
           "concept": "functions",

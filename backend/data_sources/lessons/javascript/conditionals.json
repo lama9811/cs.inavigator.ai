@@ -20,6 +20,11 @@
           "body": "An `if` branch runs when its **condition** is truthy. Add `else if` for another test and `else` for remaining cases. Put narrower overlapping rules first. Select one path with ordered **boolean** tests."
         },
         {
+          "kind": "code",
+          "caption": "Before real syntax, learn the shape: ask a condition, then run only the matching **body**. The examples after this show the exact punctuation for this language.",
+          "code": "if condition is true:\n    body for the true case\notherwise:\n    body for the backup case"
+        },
+        {
           "kind": "text",
           "body": "A **conditional** chain is read from top to bottom. The first truthy **condition** wins, and the rest of that chain is skipped. Truthy does not mean equal to `true`; nonempty **strings** and most objects are truthy, while zero, an empty string, null, undefined, and NaN are falsy."
         },

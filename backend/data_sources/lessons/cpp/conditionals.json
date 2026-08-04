@@ -20,6 +20,11 @@
           "body": "A **conditional** lets the program choose. C++ tests the expression inside `if (...)`. If it is true, that block runs. Otherwise, the program tries the next `else if` or uses the final `else`."
         },
         {
+          "kind": "code",
+          "caption": "Before real syntax, learn the shape: ask a condition, then run only the matching **body**. The examples after this show the exact punctuation for this language.",
+          "code": "if condition is true:\n    body for the true case\notherwise:\n    body for the backup case"
+        },
+        {
           "kind": "text",
           "body": "Write comparisons that clearly show the rule, such as `score >= 60`. Put the most specific overlapping rule first because only the first true branch runs. Braces make it clear which statements belong to each choice."
         },
