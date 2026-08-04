@@ -141,7 +141,7 @@
     },
     "user-input-supplement-01": {
       "title": "Raw input joins like text",
-      "body": "When two typed values are still strings, adding them joins the characters. Convert first when the assignment asks for a total.",
+      "body": "When two typed values are still strings, `+` does **concatenation**, which means joining the characters end to end. Convert first when the assignment asks for a total.",
       "example": "total = int(a) + int(b)",
       "notice": "The same symbol can join strings or add numbers depending on the value types.",
       "mistake": "Do not let numeric-looking strings fool you into skipping conversion.",

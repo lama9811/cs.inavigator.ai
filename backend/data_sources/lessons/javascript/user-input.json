@@ -52,7 +52,7 @@
           "kind": "callout",
           "tone": "mistake",
           "title": "Check the boundary",
-          "body": "Typing 12 into a prompt produces `\"12\"`; adding one without conversion joins text into `\"121\"`."
+          "body": "Typing 12 into a prompt produces `\"12\"`; adding one without conversion does **concatenation**, which means joining text end to end, so the result becomes `\"121\"`."
         }
       ]
     },
@@ -85,7 +85,7 @@
             "const age = raw.trim;"
           ],
           "answer_index": 0,
-          "why": "Number performs explicit conversion, while adding zero concatenates text."
+          "why": "`Number()` performs explicit conversion. `raw + 0` does **concatenation** because `raw` is still text, so it joins the characters instead of doing math."
         }
       ]
     },
@@ -135,7 +135,7 @@
     },
     "user-input-supplement-01": {
       "title": "Raw input joins like text",
-      "body": "When two typed values are still strings, adding them joins the characters. Convert first when the assignment asks for a total.",
+      "body": "When two typed values are still strings, `+` does **concatenation**, which means joining the characters end to end. Convert first when the assignment asks for a total.",
       "example": "total = int(a) + int(b)",
       "notice": "The same symbol can join strings or add numbers depending on the value types.",
       "mistake": "Do not let numeric-looking strings fool you into skipping conversion.",

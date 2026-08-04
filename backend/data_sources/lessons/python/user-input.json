@@ -44,7 +44,7 @@
       "blocks": [
         {
           "kind": "code",
-          "caption": "The `+` here is not adding. Given two **strings**, `+` glues them together, so two numbers typed by a person come out stuck end to end instead of summed.",
+          "caption": "The `+` here is not adding. Given two **strings**, `+` does **concatenation**, which means joining text end to end. That is why two numbers typed by a person come out stuck together instead of summed.",
           "code": "a = input(\"First number: \")\nb = input(\"Second number: \")\nprint(a + b)",
           "output": "First number: 1\nSecond number: 2\n12"
         },
@@ -71,7 +71,7 @@
             "An error, because you cannot add input"
           ],
           "answer_index": 0,
-          "why": "Both `x` and `y` are **strings**, because that is the only thing `input()` ever returns. Between two strings, `+` joins rather than adds, so `\"4\" + \"6\"` becomes `\"46\"`. If you picked 10, you read the code the way you meant it rather than the way Python runs it, and that is the whole trap. There is no error, and that is what makes this bug so hard to spot: the program looks like it worked."
+          "why": "Both `x` and `y` are **strings**, because that is the only thing `input()` ever returns. Between two strings, `+` does **concatenation**: it joins text rather than adding numbers, so `\"4\" + \"6\"` becomes `\"46\"`. If you picked 10, you read the code the way you meant it rather than the way Python runs it. There is no error, which is what makes this bug easy to miss."
         }
       ]
     },
@@ -161,7 +161,7 @@
     },
     "user-input-supplement-01": {
       "title": "Raw input joins like text",
-      "body": "When two typed values are still strings, adding them joins the characters. Convert first when the assignment asks for a total.",
+      "body": "When two typed values are still strings, `+` does **concatenation**, which means joining the characters end to end. Convert first when the assignment asks for a total.",
       "example": "total = int(a) + int(b)",
       "notice": "The same symbol can join strings or add numbers depending on the value types.",
       "mistake": "Do not let numeric-looking strings fool you into skipping conversion.",
