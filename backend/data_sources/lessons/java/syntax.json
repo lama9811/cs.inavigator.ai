@@ -7,109 +7,8 @@
     "syntax",
     "runtime"
   ],
-  "refresher": "Java is picky about shape. A basic program lives inside a **class**, starts running at main, and uses braces to group code. Semicolons end most statements. If one of those pieces is missing, the compiler usually stops before the program ever runs.",
+  "refresher": "Java is picky about shape. A basic program lives inside a **class**, starts running at **main**, and uses **braces** to group code. **Semicolons** end most statements. If one of those pieces is missing, the compiler usually stops before the program ever runs.",
   "refresher_code": "// saved as Hello.java\npublic class Hello {\n    public static void main(String[] args) {\n        System.out.println(\"Hi\");\n    }\n}",
-  "blocks": [
-    {
-      "kind": "text",
-      "body": "Java asks for more structure than Python. Even a tiny program sits inside a **class**, and the first code that runs goes inside a **method** named main. At first, that wrapper may feel like extra typing. Think of it as the envelope Java needs before it can read your message."
-    },
-    {
-      "kind": "code",
-      "caption": "The **class** is the outside box. main is where Java starts. The **print** line is the one instruction we wrote.",
-      "code": "public class Hello {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, world\");\n    }\n}",
-      "output": "Hello, world"
-    },
-    {
-      "kind": "text",
-      "body": "Braces mark where a block starts and ends. The **class** has its own pair. main has its own pair inside the class. Most beginner **syntax errors** come from losing one brace, one quote, or one semicolon."
-    },
-    {
-      "kind": "callout",
-      "tone": "warning",
-      "title": "The file name has to match the class name",
-      "body": "If a Java **class** is marked `public`, the **file** name must match that class name exactly. `public class Hello` belongs in `Hello.java`. A mismatch stops the program before it runs."
-    },
-    {
-      "kind": "text",
-      "body": "Inside `main` you write statements. A statement is one instruction, and it ends with a semicolon. Java pays no attention to where your lines break. The semicolon is what tells it where one instruction stops and the next one starts, so leaving one off means the compiler cannot find the end of your sentence.",
-      "caption": "The broken version forgets the semicolon after println. Java points near the line where it got confused."
-    },
-    {
-      "kind": "compare",
-      "caption": "With no semicolon, Java keeps waiting for that first instruction to finish. The error it gives you says `';' expected`, and it points at the tail end of the unfinished line, just past the last thing you typed. So when the message mentions a semicolon, read the end of the line the arrow lands on, not the middle of it.",
-      "wrong_label": "Will not compile",
-      "wrong": "int score = 90\nSystem.out.println(score);\n// nothing closes the first\n// statement, so Java reads on",
-      "right_label": "Compiles",
-      "right": "int score = 90;\nSystem.out.println(score);\n// each instruction is closed,\n// so Java can tell them apart",
-      "body": "When Java gives a compiler error, read the first one first. Later errors are often just aftershocks from the first missing symbol."
-    },
-    {
-      "kind": "code",
-      "caption": "Curly braces do the other half of the job: they group statements into a block. Count them here. The **class** opens one, `main` opens another, and the `if` opens a third. The two lines wrapped in the `if` braces run only when the **condition** holds. The final line is past the closing brace, so the score never affects it.",
-      "code": "public class Score {\n    public static void main(String[] args) {\n        int score = 90;\n        if (score > 80) {\n            System.out.println(\"Nice work\");\n            System.out.println(\"Keep it up\");\n        }\n        System.out.println(\"Done\");\n    }\n}",
-      "output": "Nice work\nKeep it up\nDone"
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Braces decide the block, not the spaces",
-      "body": "If you are arriving from Python, this is the habit to unlearn first. In Python, indenting a line is what puts it inside the block. In Java, indenting a line does nothing whatsoever. You could squeeze a whole program onto one line and it would still compile. The indentation is there so a human can see the shape of the code, and the braces are what the compiler reads. When the two disagree, the braces win and your eyes lose."
-    },
-    {
-      "kind": "check",
-      "prompt": "What does this program **print**?",
-      "code": "public class Grade {\n    public static void main(String[] args) {\n        int score = 50;\n        if (score > 80) {\n            System.out.println(\"Nice work\");\n        }\n            System.out.println(\"Done\");\n    }\n}",
-      "choices": [
-        "Done",
-        "Nothing at all",
-        "Nice work, then Done",
-        "It fails to compile, because the last line is indented wrong"
-      ],
-      "answer_index": 0,
-      "why": "`score` is 50, so `score > 80` is false and \"Nice work\" is skipped. The last line is indented as though it belonged to the `if`, but the closing brace on the line above already shut that block. The line is part of `main`, not part of the `if`, so it prints for any score at all. If you picked \"Nothing at all\", you read the indentation the way Python trained you to. Java looks straight past it. Odd indentation is ugly, not illegal, so this compiles fine."
-    },
-    {
-      "kind": "code",
-      "caption": "Two smaller rules. Anything after `//` is a comment, and `/*` opens a comment that runs until `*/`, so both are skipped and one line prints. Java is also case sensitive. Notice the capital S in `System`: type it lowercase and the compiler answers `package system does not exist`, because with no such **variable** or **class** in sight it can only read `system` as the name of a package, and there is no package by that name either.",
-      "code": "public class Notes {\n    public static void main(String[] args) {\n        // This whole line is skipped.\n        /* So is this one,\n           and this one. */\n        System.out.println(\"Only this prints\");  // this tail is skipped too\n    }\n}",
-      "output": "Only this prints"
-    },
-    {
-      "kind": "text",
-      "body": "One more difference is worth naming early, because it changes what the word error means. Java is compiled before it runs. The compiler reads your whole **file** first, and since you announce a type for each **variable** up front, it can also check that you are using each one sensibly. Handing text to an `int` gets caught right there, at compile time. The program never starts, so nothing above the mistake gets to run either."
-    },
-    {
-      "kind": "code",
-      "caption": "This prints nothing. The compiler sees an `int` being given a **string**, reports `incompatible types: String cannot be converted to int`, and stops. The `println` on the line above never gets its turn, because there is no run at all, not even a partial one. In Python the same mistake would only surface later, once the bad line was actually reached.",
-      "code": "public class Broken {\n    public static void main(String[] args) {\n        System.out.println(\"Starting\");\n        int count = \"five\";\n        System.out.println(count);\n    }\n}",
-      "output": ""
-    },
-    {
-      "kind": "check",
-      "prompt": "This code is saved in a **file** named `Greeter.java`. Why does it fail to compile?",
-      "code": "public class Greeting {\n    public static void main(String[] args) {\n        System.out.println(\"Hi\")\n    }\n}",
-      "choices": [
-        "Two reasons: the `println` statement has no semicolon, and the file name does not match the class name",
-        "Just the missing semicolon. The file name is up to you.",
-        "Just the file name. A `println` line does not need a semicolon.",
-        "Nothing is wrong with it"
-      ],
-      "answer_index": 0,
-      "why": "Both rules are broken. `System.out.println(\"Hi\")` is a statement, so it needs a semicolon. And a `public class Greeting` has to live in `Greeting.java`, while this **file** is called `Greeter.java`. Worth knowing: the compiler will not **list** both at once. It cannot finish reading a file it cannot parse, so it reports the missing semicolon and quits. Only after you add the semicolon and compile again does it get far enough to notice the name and tell you `class Greeting is public, should be declared in a file named Greeting.java`. Two errors, two rounds. That is the normal rhythm of fixing Java: repair the first complaint, compile, see what was hiding behind it."
-    },
-    {
-      "kind": "list",
-      "title": "What to check when Java refuses to compile",
-      "items": [
-        "**Class** name and file name should match when the class is public.",
-        "main is the starting point.",
-        "Braces group code into blocks.",
-        "Most statements end with a semicolon.",
-        "Read the first compiler error before changing five things."
-      ]
-    }
-  ],
   "learn_cards": {
     "output-01": {
       "title": "Numbers add before they print",
@@ -191,5 +90,134 @@
       "section_id": "check",
       "example": "if (ready) {\n    System.out.println(\"go\");\n}"
     }
-  }
+  },
+  "sections": [
+    {
+      "id": "program-wrapper",
+      "title": "Class, main, and the file name",
+      "summary": "Start with the outer **program shape** Java expects before any line can run.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Java asks for more structure than Python. Even a tiny program sits inside a **class**, and the first code that runs goes inside a **method** named `main`. At first, that wrapper may feel like extra typing. Think of it as the envelope Java needs before it can read your message."
+        },
+        {
+          "kind": "code",
+          "caption": "The **class** is the outside box. **main** is where Java starts. The **print** line is the one instruction we wrote.",
+          "code": "public class Hello {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, world\");\n    }\n}",
+          "output": "Hello, world"
+        },
+        {
+          "kind": "text",
+          "body": "**Braces** mark where a block starts and ends. The **class** has its own pair. main has its own pair inside the class. Most beginner **syntax errors** come from losing one brace, one quote, or one semicolon."
+        },
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "The file name has to match the class name",
+          "body": "If a Java **class** is marked `public`, the **file** name must match that class name exactly. `public class Hello` belongs in `Hello.java`. A mismatch stops the program before it runs."
+        }
+      ]
+    },
+    {
+      "id": "statements-and-semicolons",
+      "title": "Statements and semicolons",
+      "summary": "Use **semicolons** to show Java where one instruction ends and the next begins.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Inside `main` you write statements. A **statement** is one instruction, and it ends with a **semicolon**. Java pays no attention to where your lines break. The semicolon is what tells it where one instruction stops and the next one starts, so leaving one off means the compiler cannot find the end of your sentence.",
+          "caption": "The broken version forgets the semicolon after println. Java points near the line where it got confused."
+        },
+        {
+          "kind": "compare",
+          "caption": "With no semicolon, Java keeps waiting for that first instruction to finish. The error it gives you says `';' expected`, and it points at the tail end of the unfinished line, just past the last thing you typed. So when the message mentions a semicolon, read the end of the line the arrow lands on, not the middle of it.",
+          "wrong_label": "Will not compile",
+          "wrong": "int score = 90\nSystem.out.println(score);\n// nothing closes the first\n// statement, so Java reads on",
+          "right_label": "Compiles",
+          "right": "int score = 90;\nSystem.out.println(score);\n// each instruction is closed,\n// so Java can tell them apart",
+          "body": "When Java gives a compiler error, read the first one first. Later errors are often just aftershocks from the first missing symbol."
+        }
+      ]
+    },
+    {
+      "id": "braces-comments-and-types",
+      "title": "Braces, comments, and type checks",
+      "summary": "Trace how **braces** group code, **comments** disappear, and type mistakes stop compilation.",
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "Curly braces do the other half of the job: they group statements into a **block**. Count them here. The **class** opens one, `main` opens another, and the `if` opens a third. The two lines wrapped in the `if` braces run only when the **condition** holds. The final line is past the closing brace, so the score never affects it.",
+          "code": "public class Score {\n    public static void main(String[] args) {\n        int score = 90;\n        if (score > 80) {\n            System.out.println(\"Nice work\");\n            System.out.println(\"Keep it up\");\n        }\n        System.out.println(\"Done\");\n    }\n}",
+          "output": "Nice work\nKeep it up\nDone"
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Braces decide the block, not the spaces",
+          "body": "If you are arriving from Python, this is the habit to unlearn first. In Python, indenting a line is what puts it inside the block. In Java, indenting a line does nothing whatsoever. You could squeeze a whole program onto one line and it would still compile. The indentation is there so a human can see the shape of the code, and the braces are what the compiler reads. When the two disagree, the braces win and your eyes lose."
+        },
+        {
+          "kind": "check",
+          "prompt": "What does this program **print**?",
+          "code": "public class Grade {\n    public static void main(String[] args) {\n        int score = 50;\n        if (score > 80) {\n            System.out.println(\"Nice work\");\n        }\n            System.out.println(\"Done\");\n    }\n}",
+          "choices": [
+            "Done",
+            "Nothing at all",
+            "Nice work, then Done",
+            "It fails to compile, because the last line is indented wrong"
+          ],
+          "answer_index": 0,
+          "why": "`score` is 50, so `score > 80` is false and \"Nice work\" is skipped. The last line is indented as though it belonged to the `if`, but the closing brace on the line above already shut that block. The line is part of `main`, not part of the `if`, so it prints for any score at all. If you picked \"Nothing at all\", you read the indentation the way Python trained you to. Java looks straight past it. Odd indentation is ugly, not illegal, so this compiles fine."
+        },
+        {
+          "kind": "code",
+          "caption": "Two smaller rules. Anything after `//` is a **comment**, and `/*` opens a comment that runs until `*/`, so both are skipped and one line prints. Java is also **case sensitive**. Notice the capital S in `System`: type it lowercase and the compiler answers `package system does not exist`, because with no such **variable** or **class** in sight it can only read `system` as the name of a package, and there is no package by that name either.",
+          "code": "public class Notes {\n    public static void main(String[] args) {\n        // This whole line is skipped.\n        /* So is this one,\n           and this one. */\n        System.out.println(\"Only this prints\");  // this tail is skipped too\n    }\n}",
+          "output": "Only this prints"
+        },
+        {
+          "kind": "text",
+          "body": "One more difference is worth naming early, because it changes what the word error means. Java is **compiled before it runs**. The compiler reads your whole **file** first, and since you announce a type for each **variable** up front, it can also check that you are using each one sensibly. Handing text to an `int` gets caught right there, at compile time. The program never starts, so nothing above the mistake gets to run either."
+        },
+        {
+          "kind": "code",
+          "caption": "This prints nothing. The compiler sees an `int` being given a **string**, reports `incompatible types: String cannot be converted to int`, and stops. The `println` on the line above never gets its turn, because there is no run at all, not even a partial one. In Python the same mistake would only surface later, once the bad line was actually reached.",
+          "code": "public class Broken {\n    public static void main(String[] args) {\n        System.out.println(\"Starting\");\n        int count = \"five\";\n        System.out.println(count);\n    }\n}",
+          "output": ""
+        },
+        {
+          "kind": "check",
+          "prompt": "This code is saved in a **file** named `Greeter.java`. Why does it fail to compile?",
+          "code": "public class Greeting {\n    public static void main(String[] args) {\n        System.out.println(\"Hi\")\n    }\n}",
+          "choices": [
+            "Two reasons: the `println` statement has no semicolon, and the file name does not match the class name",
+            "Just the missing semicolon. The file name is up to you.",
+            "Just the file name. A `println` line does not need a semicolon.",
+            "Nothing is wrong with it"
+          ],
+          "answer_index": 0,
+          "why": "Both rules are broken. `System.out.println(\"Hi\")` is a statement, so it needs a semicolon. And a `public class Greeting` has to live in `Greeting.java`, while this **file** is called `Greeter.java`. Worth knowing: the compiler will not **list** both at once. It cannot finish reading a file it cannot parse, so it reports the missing semicolon and quits. Only after you add the semicolon and compile again does it get far enough to notice the name and tell you `class Greeting is public, should be declared in a file named Greeting.java`. Two errors, two rounds. That is the normal rhythm of fixing Java: repair the first complaint, compile, see what was hiding behind it."
+        }
+      ]
+    },
+    {
+      "id": "check",
+      "title": "Use the compiler checklist",
+      "summary": "When Java refuses to compile, check the **first compiler message** and the small symbols around it.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "What to check when Java refuses to compile",
+          "items": [
+            "**Class** name and file name should match when the class is public.",
+            "main is the starting point.",
+            "Braces group code into blocks.",
+            "Most statements end with a semicolon.",
+            "Read the first compiler error before changing five things."
+          ]
+        }
+      ]
+    }
+  ]
 }

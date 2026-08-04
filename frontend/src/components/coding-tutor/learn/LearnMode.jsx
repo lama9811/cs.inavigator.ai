@@ -44,6 +44,16 @@ function trackDefinition(trackId) {
   return TRACKS.find((track) => track.id === trackId) || null;
 }
 
+function nextTrackDefinition(trackId) {
+  const index = TRACKS.findIndex((track) => track.id === trackId);
+  return index >= 0 ? TRACKS[index + 1] || null : null;
+}
+
+function previousTrackDefinition(trackId) {
+  const index = TRACKS.findIndex((track) => track.id === trackId);
+  return index > 0 ? TRACKS[index - 1] || null : null;
+}
+
 function LanguageCards({ languages, onPick }) {
   return (
     <div className="cq-language-cards">
@@ -178,9 +188,12 @@ function LessonList({
   track,
   categories,
   onOpen,
-  onBack,
+  onPrevTrack,
+  onNextTrack,
 }) {
   const ready = categories.filter((category) => category.has_lesson);
+  const prevTrack = previousTrackDefinition(track.id);
+  const nextTrack = nextTrackDefinition(track.id);
 
   return (
     <div className="learn-list">
@@ -239,9 +252,20 @@ function LessonList({
         })}
       </ol>
 
-      <button type="button" className="learn-back-link" onClick={onBack}>
-        <FaArrowLeft aria-hidden="true" /> Back to tracks
-      </button>
+      <div className="learn-track-nav">
+        {prevTrack ? (
+          <button type="button" className="learn-prev-track-link" onClick={onPrevTrack}>
+            <FaArrowLeft aria-hidden="true" /> Previous: {prevTrack.label}
+          </button>
+        ) : (
+          <span aria-hidden="true" />
+        )}
+        {nextTrack ? (
+          <button type="button" className="learn-next-track-link" onClick={onNextTrack}>
+            Next: {nextTrack.label} <FaArrowRight aria-hidden="true" />
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -372,7 +396,14 @@ export default function LearnMode({
         track={track}
         categories={trackCategories}
         onOpen={onNavigateToLesson}
-        onBack={() => onNavigateToLanguage(target.language)}
+        onPrevTrack={() => {
+          const prevTrack = previousTrackDefinition(target.track);
+          if (prevTrack) onNavigateToTrack(target.language, prevTrack.id);
+        }}
+        onNextTrack={() => {
+          const nextTrack = nextTrackDefinition(target.track);
+          if (nextTrack) onNavigateToTrack(target.language, nextTrack.id);
+        }}
       />
     );
   }

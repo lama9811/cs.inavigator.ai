@@ -7,13 +7,13 @@
     "syntax",
     "runtime"
   ],
-  "refresher": "A small C++ program usually includes a header, defines `main`, and places statements between braces. Most statements end with a semicolon. `std::cout` prints information on the screen.",
+  "refresher": "A small C++ program usually includes a **header**, defines `main`, and places statements between **braces**. Most statements end with a **semicolon**. `std::cout` prints information on the screen.",
   "refresher_code": "#include <iostream>\nint main() { std::cout << \"Hi\\n\"; }",
   "sections": [
     {
       "id": "program-shape",
       "title": "The shape of a C++ program",
-      "summary": "Start with the parts C++ expects: a header, `main`, braces, and statements.",
+      "summary": "Start with the parts C++ expects: a **header**, `main`, braces, and statements.",
       "question_ids": [
         "output-05",
         "syntax-delimiter-01"
@@ -21,7 +21,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "C++ needs more setup than Python. A small program usually includes a header, starts in `main`, and puts the work between `{` and `}`. Most action lines end with a semicolon."
+          "body": "C++ needs more setup than Python. A small program usually includes a **header**, starts in `main`, and puts the work between `{` and `}`. Most action lines end with a **semicolon**."
         },
         {
           "kind": "callout",
@@ -37,7 +37,7 @@
         },
         {
           "kind": "compare",
-          "caption": "The semicolon finishes the **output** statement. The braces hold the body of `main`.",
+          "caption": "The **semicolon** finishes the output statement. The **braces** hold the body of `main`.",
           "wrong_label": "Missing semicolon",
           "wrong": "int main() {\n  std::cout << \"Hello\\n\"\n}",
           "right_label": "Complete statement",
@@ -48,7 +48,7 @@
     {
       "id": "compiler-reading-clues",
       "title": "Use compiler clues without panic",
-      "summary": "Syntax errors usually point near a missing symbol, name, or block boundary.",
+      "summary": "**Syntax errors** usually point near a missing symbol, name, or block boundary.",
       "question_ids": [
         "syntax-delimiter-01",
         "syntax-block-01",
@@ -57,7 +57,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "C++ syntax errors often come from a small missing mark: a semicolon, a quote, a parenthesis, or a brace. Read the first compiler message, then inspect the line it names and the line just above it."
+          "body": "C++ **syntax errors** often come from a small missing mark: a semicolon, a quote, a parenthesis, or a brace. Read the first **compiler message**, then inspect the line it names and the line just above it."
         },
         {
           "kind": "compare",
@@ -125,7 +125,7 @@
     {
       "id": "small-symbols-that-matter",
       "title": "Small symbols that change the program",
-      "summary": "Comments, capital letters, and parentheses all matter in C++.",
+      "summary": "**Comments**, capital letters, and parentheses all matter in C++.",
       "question_ids": [
         "syntax-comment-01",
         "syntax-case-01",
@@ -134,11 +134,11 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A comment is a note for people reading the code. C++ ignores anything after `//` on that line."
+          "body": "A **comment** is a note for people reading the code. C++ ignores anything after `//` on that line."
         },
         {
           "kind": "text",
-          "body": "C++ is case-sensitive. That means `cout`, `Cout`, and `COUT` are three different names. The **print** stream is `std::cout` with a lowercase `c`."
+          "body": "C++ is **case-sensitive**. That means `cout`, `Cout`, and `COUT` are three different names. The **print** stream is `std::cout` with a lowercase `c`."
         },
         {
           "kind": "compare",

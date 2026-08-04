@@ -67,6 +67,32 @@ body.coding-dark .practice-library {
   outline-offset: 3px;
 }
 
+.coding-app .practice-back-btn.is-track-chooser,
+.coding-app .practice-back-btn.is-track-chooser:hover:not(:disabled) {
+  padding: 9px 13px !important;
+  border: 1px solid color-mix(in srgb, var(--ct-accent) 30%, var(--ct-border)) !important;
+  border-radius: 999px !important;
+  background: var(--ct-panel) !important;
+  background-color: var(--ct-panel) !important;
+  color: var(--ct-muted, #6b7280) !important;
+  font-size: 0.82rem;
+  font-weight: 700;
+  box-shadow: none !important;
+}
+
+.coding-app .practice-back-btn.is-track-chooser:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ct-accent) 30%, var(--ct-border)) !important;
+  background: color-mix(in srgb, var(--ct-accent) 6%, var(--ct-panel)) !important;
+  background-color: color-mix(in srgb, var(--ct-accent) 6%, var(--ct-panel)) !important;
+  color: var(--ct-text) !important;
+  transform: translateX(-2px) !important;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--ct-accent) 10%, transparent) !important;
+}
+
+.coding-app .practice-back-btn.is-track-chooser:hover:not(:disabled) svg {
+  transform: translateX(-3px);
+}
+
 /* ---- Learn | Practice | Code toggle ---- */
 .practice-mode-toggle {
   display: inline-flex;

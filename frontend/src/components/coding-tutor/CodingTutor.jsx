@@ -4353,6 +4353,7 @@ export default function CodingTutor({
       } else if (target.view === "lessons") {
         back = {
           label: "Choose track",
+          variant: "track-chooser",
           onClick: () => navigate(learnPathForLanguage(target.language)),
         };
       } else if (target.view === "lesson") {
@@ -4361,6 +4362,7 @@ export default function CodingTutor({
           label: target.track
             ? `Back to ${target.track === "beginner" ? "Beginner" : "Intermediate"} track`
             : `Back to ${langLabel}`,
+          variant: target.track ? "track-chooser" : undefined,
           onClick: () =>
             navigate(
               target.track
@@ -4412,7 +4414,13 @@ export default function CodingTutor({
               ))}
             </div>
             {back ? (
-              <button type="button" className="practice-back-btn" onClick={back.onClick}>
+              <button
+                type="button"
+                className={`practice-back-btn ${
+                  back.variant ? `is-${back.variant}` : ""
+                }`}
+                onClick={back.onClick}
+              >
                 <FaArrowLeft aria-hidden="true" /> {back.label}
               </button>
             ) : null}

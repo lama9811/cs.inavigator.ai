@@ -36,6 +36,10 @@ All notable changes to CS Navigator are documented here.
 - **Coding Tutor accessibility polish V1.** Main Coding Tutor modals and drawers now trap focus, close with Escape, restore focus to the opener, and use dialog labels; Learn language cards are native buttons, key tab groups support arrow-key navigation, and the floating tutor exposes clearer keyboard movement and suggestion-preview labels.
 
 ### Changed
+- Syntax lessons now emphasize first-use definitions and key beginner terms, such as syntax, comments, blocks, indentation, statements, semicolons, and compiler/parser messages.
+- Operators lessons now use authored sections for mathematical operators, bitwise operators, comparison/assignment, and conditional logic across Python, Java, JavaScript, and C++.
+- Learn track lesson lists now keep "Choose tracks" at the top and use the bottom row for Previous/Next track navigation through Beginner, Intermediate, and Advanced.
+- Python, Java, and JavaScript Syntax lessons now use four authored reading parts instead of the loader's broad auto-split, making the beginner path easier to digest.
 - Expanded the thin explicit Learn lessons so the previously 3-section and 4-section Coding Tutor lessons now have five focused sections with additional examples, checks, visual traces, and mistake guidance.
 - Coding Tutor Home now shows the Starting Point quiz as a card first instead of auto-opening the modal on reload, and the Learn page uses only one clear Python Beginner "Start Here" signal.
 - Concept Quiz multiple-choice answers now shuffle per browser attempt while preserving original answer identities for grading, draft restore, immediate feedback, and result summaries.

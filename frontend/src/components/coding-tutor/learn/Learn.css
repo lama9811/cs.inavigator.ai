@@ -163,6 +163,85 @@
   font-size: 0.72rem;
 }
 
+.learn-track-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.learn-prev-track-link,
+.learn-next-track-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 13px;
+  border: 1px solid color-mix(in srgb, var(--ct-accent) 30%, var(--ct-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-accent) 8%, var(--ct-panel));
+  color: var(--ct-text);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease,
+    box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.learn-prev-track-link {
+  color: var(--ct-muted, #6b7280);
+  background: var(--ct-panel);
+}
+
+.coding-app .learn-prev-track-link:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ct-accent) 30%, var(--ct-border)) !important;
+  background: color-mix(in srgb, var(--ct-accent) 6%, var(--ct-panel)) !important;
+  color: var(--ct-text) !important;
+  transform: translateX(-2px);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--ct-accent) 10%, transparent);
+}
+
+.coding-app .learn-next-track-link:hover:not(:disabled) {
+  border-color: var(--ct-accent) !important;
+  background: color-mix(in srgb, var(--ct-accent) 14%, var(--ct-panel)) !important;
+  color: var(--ct-text) !important;
+  transform: translateX(2px);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--ct-accent) 14%, transparent);
+}
+
+.learn-prev-track-link svg,
+.learn-next-track-link svg {
+  font-size: 0.72rem;
+  transition: transform 0.15s ease;
+}
+
+.learn-prev-track-link:hover svg {
+  transform: translateX(-3px);
+}
+
+.learn-next-track-link:hover svg {
+  transform: translateX(3px);
+}
+
+.learn-prev-track-link:focus-visible,
+.learn-next-track-link:focus-visible {
+  outline: 2px solid var(--ct-accent);
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .learn-track-nav {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .learn-prev-track-link,
+  .learn-next-track-link {
+    justify-content: center;
+  }
+}
+
 /* ---------------------------------------------------------------------------
    Lesson view
    --------------------------------------------------------------------------- */
