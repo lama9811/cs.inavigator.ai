@@ -3,11 +3,14 @@ import { FaListUl, FaArrowRight } from "react-icons/fa";
 import {
   fetchQuizLanguages,
   fetchQuizCategories,
+  fetchQuizProgress,
+  fetchQuizQuestion,
   fetchQuizQuestions,
+  gradeMistakeQuiz,
   gradeQuiz,
 } from "./conceptQuizApi";
 import { LANGUAGE_VISUALS } from "./languageVisuals";
-import { saveCategoryResult } from "./conceptQuizProgress";
+import { saveCategoryResult, saveMistakeBankResult } from "./conceptQuizProgress";
 import QuizLanguageLanding from "./QuizLanguageLanding";
 import QuizRunner from "./QuizRunner";
 
@@ -18,6 +21,8 @@ import QuizRunner from "./QuizRunner";
 //
 // Navigation is URL-first: every view change calls a navigate-* callback that
 // rewrites the path, so Back/Forward and deep links work.
+
+const MISTAKE_BANK_THRESHOLD = 3;
 
 function LanguageCards({ apiBase, onPickLanguage }) {
   const [languages, setLanguages] = useState([]);
@@ -142,6 +147,7 @@ export default function ConceptQuiz({
   onNavigateToLanguages,
   onNavigateToLanguage,
   onNavigateToQuestion,
+  onNavigateToMistakeBank,
   // "I don't remember this" → the full lesson on this exact topic. The in-quiz Learn tab
   // is only a refresher; this is the escape hatch to the real thing.
   onOpenLesson,
@@ -152,9 +158,18 @@ export default function ConceptQuiz({
   const [bank, setBank] = useState(null);
   const [bankKey, setBankKey] = useState("");
   const [runnerError, setRunnerError] = useState("");
+  const [mistakeBank, setMistakeBank] = useState({
+    key: "",
+    loading: false,
+    error: "",
+    questions: [],
+    mistakes: [],
+  });
 
   const runnerWanted =
     target.view === "runner" ? `${target.language}/${target.category}` : "";
+  const mistakeWanted =
+    target.view === "mistake-runner" ? `${target.language}/mistake-bank` : "";
 
   useEffect(() => {
     if (target.view !== "runner") return;
@@ -175,6 +190,74 @@ export default function ConceptQuiz({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiBase, target.view, runnerWanted]);
+
+  useEffect(() => {
+    if (target.view !== "mistake-runner") return;
+    let alive = true;
+    setMistakeBank({
+      key: mistakeWanted,
+      loading: true,
+      error: "",
+      questions: [],
+      mistakes: [],
+    });
+
+    fetchQuizProgress(apiBase, target.language)
+      .then((progress) => {
+        if (!alive) return null;
+        const mistakes = (progress?.mistakes || []).filter(
+          (item) => item.language === target.language
+        );
+        if (mistakes.length < MISTAKE_BANK_THRESHOLD) {
+          setMistakeBank({
+            key: mistakeWanted,
+            loading: false,
+            error: "",
+            questions: [],
+            mistakes,
+          });
+          return null;
+        }
+        return Promise.all(
+          mistakes.map(async (mistake) => {
+            const question = await fetchQuizQuestion(
+              apiBase,
+              target.language,
+              mistake.category,
+              mistake.question_id
+            );
+            return {
+              ...question,
+              category: mistake.category,
+              category_label: mistake.category.replaceAll("-", " "),
+            };
+          })
+        ).then((questions) => {
+          if (!alive) return;
+          setMistakeBank({
+            key: mistakeWanted,
+            loading: false,
+            error: "",
+            questions,
+            mistakes,
+          });
+        });
+      })
+      .catch((err) => {
+        if (!alive) return;
+        setMistakeBank({
+          key: mistakeWanted,
+          loading: false,
+          error: err.message || "Could not load the wrong-answer quiz.",
+          questions: [],
+          mistakes: [],
+        });
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [apiBase, target.view, target.language, mistakeWanted]);
 
   const runnerIndex = useMemo(() => {
     if (target.view !== "runner" || !bank) return 0;
@@ -204,6 +287,88 @@ export default function ConceptQuiz({
         onOpenQuestion={(category, questionId) =>
           onNavigateToQuestion(target.language, category, questionId)
         }
+        onOpenMistakeBank={(questionId) =>
+          onNavigateToMistakeBank(target.language, questionId)
+        }
+      />
+    );
+  }
+
+  if (target.view === "mistake-runner") {
+    if (mistakeBank.loading || mistakeBank.key !== mistakeWanted) {
+      return <p className="cq-loading">Loading wrong-answer quiz...</p>;
+    }
+
+    if (mistakeBank.error) {
+      return (
+        <div className="cq-runner">
+          <button
+            type="button"
+            className="practice-back-btn"
+            onClick={() => onNavigateToLanguage(target.language)}
+          >
+            ← {labelFor(target.language)}
+          </button>
+          <p className="cq-error">{mistakeBank.error}</p>
+        </div>
+      );
+    }
+
+    if (mistakeBank.mistakes.length < MISTAKE_BANK_THRESHOLD) {
+      return (
+        <div className="cq-empty">
+          <h3>No wrong-answer quiz yet</h3>
+          <p>
+            Miss at least {MISTAKE_BANK_THRESHOLD} questions in this language to
+            unlock a focused retry quiz.
+          </p>
+          <button
+            type="button"
+            className="cq-btn cq-btn-primary"
+            onClick={() => onNavigateToLanguage(target.language)}
+          >
+            Back to {labelFor(target.language)}
+          </button>
+        </div>
+      );
+    }
+
+    const mistakeIndex = Math.max(
+      0,
+      mistakeBank.questions.findIndex((q) => q.id === target.questionId)
+    );
+    const sourceById = Object.fromEntries(
+      mistakeBank.questions.map((question) => [question.id, question.category])
+    );
+
+    return (
+      <QuizRunner
+        apiBase={apiBase}
+        language={target.language}
+        category="mistake-bank"
+        categoryLabel="Wrong-answer quiz"
+        questions={mistakeBank.questions}
+        index={mistakeIndex}
+        onNavigateIndex={(nextIndex) => {
+          const q = mistakeBank.questions[nextIndex];
+          if (q) onNavigateToMistakeBank(target.language, q.id);
+        }}
+        onBackToCategory={() => onNavigateToLanguage(target.language)}
+        backLabel={`Back to ${labelFor(target.language)}`}
+        onOpenLesson={onOpenLesson}
+        onGrade={(answers) =>
+          gradeMistakeQuiz(apiBase, {
+            language: target.language,
+            answers: answers.map((answer) => ({
+              ...answer,
+              category: sourceById[answer.question_id],
+            })),
+          })
+        }
+        onSaveResult={(grade) => {
+          saveMistakeBankResult(target.language, grade);
+          onPracticeActivity?.();
+        }}
       />
     );
   }

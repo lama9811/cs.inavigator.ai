@@ -730,20 +730,10 @@ body.coding-dark .cq-track-badge.is-mistakes {
 }
 
 .cq-mistake-bank-list strong,
+.cq-mistake-bank-list span,
 .cq-mistake-bank-review span {
   color: var(--ct-text);
   line-height: 1.25;
-}
-
-.cq-mistake-bank-list .cq-question-link {
-  justify-self: start;
-  padding: 0.35rem 0.65rem;
-  border: 1px solid var(--ct-border);
-  border-radius: 999px;
-  background: var(--ct-panel);
-  color: var(--ct-primary);
-  font-size: 0.78rem;
-  font-weight: 800;
 }
 
 .cq-mistake-bank-runner,

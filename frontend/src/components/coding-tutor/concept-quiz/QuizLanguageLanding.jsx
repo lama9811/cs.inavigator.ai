@@ -15,20 +15,13 @@ import {
 import {
   fetchQuizCategories,
   fetchQuizProgress,
-  fetchQuizQuestion,
   fetchQuizQuestions,
-  gradeMistakeQuiz,
 } from "./conceptQuizApi";
 import { LANGUAGE_VISUALS } from "./languageVisuals";
 import {
   readCategoryProgress,
   readQuizDraftAnswers,
-  saveMistakeBankResult,
 } from "./conceptQuizProgress";
-import {
-  AnswerPanel,
-  ImmediateFeedback,
-} from "./QuizRunner";
 
 // Language landing page: a progress hero plus an ACCORDION of categories. Each
 // category row expands inline to reveal its question table (name | type | status).
@@ -38,6 +31,7 @@ import {
 // A category counts toward the hero's "complete" tally once its best score
 // passes this bar.
 const PASS_THRESHOLD = 0.7;
+const MISTAKE_BANK_THRESHOLD = 3;
 
 const TOPIC_ALIASES = {
   arrays: "lists",
@@ -275,156 +269,19 @@ function CategoryQuestions({
   );
 }
 
-function seededShuffle(list, seed) {
-  const arr = list.map((value, index) => ({ value, index }));
-  let h = 0;
-  for (let i = 0; i < seed.length; i += 1) {
-    h = (h * 31 + seed.charCodeAt(i)) & 0x7fffffff;
-  }
-  for (let i = arr.length - 1; i > 0; i -= 1) {
-    h = (h * 1103515245 + 12345) & 0x7fffffff;
-    const j = h % (i + 1);
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr.map((item) => item.value);
-}
-
-function isMistakeAnswerComplete(answer) {
-  return (
-    answer != null &&
-    (answer.choice_index != null ||
-      (answer.text != null && answer.text.trim() !== "") ||
-      (answer.order != null && answer.order.length > 0))
-  );
-}
-
-function mistakeChoiceOrderFor(question, seed) {
-  if (question?.kind !== "mcq-output" && question?.kind !== "mcq-behavior") return [];
-  return seededShuffle(
-    question.choices.map((_, index) => index),
-    `${seed}:${question.id}`
-  );
-}
-
-function formatMistakeAnswer(value) {
-  if (Array.isArray(value)) return value.join("\n");
-  if (value == null || value === "") return "No answer";
-  return String(value);
-}
-
 function mistakeKey(item) {
   return `${item.category}:${item.question_id || item.id}`;
 }
 
-function MistakeBankQuiz({
-  apiBase,
-  language,
-  mistakes,
-  onProgressRefresh,
-  onOpenQuestion,
-}) {
+function MistakeBankQuiz({ mistakes, onOpenMistakeBank }) {
   const [expanded, setExpanded] = useState(false);
-  const [started, setStarted] = useState(false);
-  const [questions, setQuestions] = useState([]);
-  const [answers, setAnswers] = useState({});
-  const [index, setIndex] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState("");
 
-  const seed = useMemo(
-    () => `mistake-bank:${language}:${mistakes.map(mistakeKey).join("|")}`,
-    [language, mistakes]
-  );
-  const current = questions[index] || null;
-  const currentKey = current ? `${current.category}:${current.id}` : "";
-  const currentAnswer = currentKey ? answers[currentKey] : null;
-  const answeredCount = questions.filter((question) =>
-    isMistakeAnswerComplete(answers[`${question.category}:${question.id}`])
-  ).length;
-  const checkedCount = questions.filter(
-    (question) => answers[`${question.category}:${question.id}`]?.checked
-  ).length;
-  const canSubmit = questions.length > 0 && checkedCount === questions.length;
+  if (mistakes.length < MISTAKE_BANK_THRESHOLD) return null;
 
-  const loadQuestions = async () => {
-    if (questions.length) return questions;
-    setLoading(true);
-    setError("");
-    try {
-      const loaded = await Promise.all(
-        mistakes.map(async (mistake) => {
-          const question = await fetchQuizQuestion(
-            apiBase,
-            language,
-            mistake.category,
-            mistake.question_id
-          );
-          return {
-            ...question,
-            category: mistake.category,
-            category_label: mistake.category.replaceAll("-", " "),
-          };
-        })
-      );
-      setQuestions(loaded);
-      setIndex(0);
-      return loaded;
-    } catch (err) {
-      setError(err.message || "Could not load the wrong-answer quiz yet.");
-      return [];
-    } finally {
-      setLoading(false);
-    }
+  const startQuiz = () => {
+    const first = mistakes[0];
+    onOpenMistakeBank?.(first?.question_id || first?.id || "");
   };
-
-  const startQuiz = async () => {
-    setStarted(true);
-    setResult(null);
-    await loadQuestions();
-  };
-
-  const updateCurrentAnswer = (patch) => {
-    if (!current) return;
-    const isMcq = current.kind === "mcq-output" || current.kind === "mcq-behavior";
-    setAnswers((prev) => ({
-      ...prev,
-      [currentKey]: {
-        ...(prev[currentKey] || {}),
-        ...patch,
-        checked: isMcq ? true : Boolean(patch.checked),
-      },
-    }));
-  };
-
-  const submit = async () => {
-    if (!canSubmit) return;
-    setSubmitting(true);
-    setError("");
-    try {
-      const payloadAnswers = questions.map((question) => {
-        const answer = { ...(answers[`${question.category}:${question.id}`] || {}) };
-        delete answer.checked;
-        delete answer.display_index;
-        return {
-          category: question.category,
-          question_id: question.id,
-          ...answer,
-        };
-      });
-      const grade = await gradeMistakeQuiz(apiBase, { language, answers: payloadAnswers });
-      saveMistakeBankResult(language, grade);
-      setResult(grade);
-      await onProgressRefresh?.();
-    } catch (err) {
-      setError(err.message || "Could not submit the wrong-answer quiz yet.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  if (!mistakes.length) return null;
 
   return (
     <section className={"cq-track-group cq-mistake-bank" + (expanded ? " open" : "")}>
@@ -437,8 +294,8 @@ function MistakeBankQuiz({
       >
         <span className="cq-track-badge is-mistakes">Wrong answers</span>
         <span className="cq-track-copy">
-          <strong>Practice the questions you missed</strong>
-          <span>Hidden until there are real missed questions from this language.</span>
+          <strong>Practice a focused wrong-answer quiz</strong>
+          <span>Unlocks after {MISTAKE_BANK_THRESHOLD} unresolved misses in this language.</span>
         </span>
         <span className="cq-track-stats">
           <strong>{mistakes.length}</strong>
@@ -449,147 +306,27 @@ function MistakeBankQuiz({
 
       {expanded ? (
         <div className="cq-track-content cq-mistake-bank-content" id="cq-mistake-bank-content">
-          {!started ? (
-            <>
-              <div className="cq-mistake-bank-intro">
-                <div>
-                  <h4>Turn misses into a focused mini-quiz</h4>
-                  <p>
-                    This pulls missed questions from Beginner, Intermediate, and Advanced.
-                    When you fix one, the original category updates too.
-                  </p>
-                </div>
-                <button type="button" className="cq-btn cq-btn-primary" onClick={startQuiz}>
-                  <FaRedo aria-hidden="true" /> Start wrong-answer quiz
-                </button>
-              </div>
-              <div className="cq-mistake-bank-list">
-                {mistakes.slice(0, 8).map((mistake) => (
-                  <article key={mistakeKey(mistake)}>
-                    <small>{mistake.category.replaceAll("-", " ")}</small>
-                    <strong>{mistake.title}</strong>
-                    <button
-                      type="button"
-                      className="cq-question-link"
-                      onClick={() => onOpenQuestion(mistake.category, mistake.question_id)}
-                    >
-                      Open original question
-                    </button>
-                  </article>
-                ))}
-              </div>
-            </>
-          ) : null}
-
-          {started && loading ? <p className="cq-loading">Loading wrong-answer quiz...</p> : null}
-          {error ? <p className="cq-error">{error}</p> : null}
-
-          {started && result ? (
-            <div className="cq-mistake-bank-result">
-              <span className="cq-hero-eyebrow">Retry complete</span>
-              <h4>
-                {result.correct}/{result.total} fixed this round
-              </h4>
-              <div className="cq-mistake-bank-review">
-                {(result.results || []).map((item) => (
-                  <article
-                    key={`${item.category}:${item.question_id}`}
-                    className={item.correct ? "correct" : "incorrect"}
-                  >
-                    <strong>{item.category.replaceAll("-", " ")}</strong>
-                    <span>{item.correct ? "Fixed" : "Still needs a look"}</span>
-                    {!item.correct ? (
-                      <small>Correct answer: {formatMistakeAnswer(item.correct_answer)}</small>
-                    ) : null}
-                  </article>
-                ))}
-              </div>
-              <button
-                type="button"
-                className="cq-btn cq-btn-secondary"
-                onClick={() => {
-                  setStarted(false);
-                  setQuestions([]);
-                  setAnswers({});
-                  setResult(null);
-                  setIndex(0);
-                }}
-              >
-                Back to mistake bank
-              </button>
+          <div className="cq-mistake-bank-intro">
+            <div>
+              <h4>Turn misses into a focused mini-quiz</h4>
+              <p>
+                This pulls missed questions from Beginner, Intermediate, and Advanced into
+                one retry quiz. Fixing them here updates the original question progress too.
+              </p>
             </div>
-          ) : null}
-
-          {started && !loading && !result && current ? (
-            <div className="cq-mistake-bank-runner">
-              <div className="cq-mistake-bank-question-head">
-                <div>
-                  <span className="cq-hero-eyebrow">
-                    {current.category_label} · Question {index + 1} of {questions.length}
-                  </span>
-                  <h4>{current.title}</h4>
-                  <p>{current.prompt}</p>
-                </div>
-                <span>
-                  {answeredCount}/{questions.length} answered · {checkedCount}/{questions.length} checked
-                </span>
-              </div>
-
-              {current.code ? (
-                <pre className="cq-code-block">
-                  <code>{current.code}</code>
-                </pre>
-              ) : null}
-
-              <AnswerPanel
-                question={current}
-                answer={currentAnswer}
-                onAnswer={updateCurrentAnswer}
-                choiceOrder={mistakeChoiceOrderFor(current, seed)}
-              />
-
-              {currentAnswer?.checked ? (
-                <ImmediateFeedback question={current} answer={currentAnswer} />
-              ) : null}
-
-              <div className="cq-mistake-bank-controls">
-                <button
-                  type="button"
-                  className="cq-btn cq-btn-secondary"
-                  disabled={index === 0}
-                  onClick={() => setIndex((value) => Math.max(0, value - 1))}
-                >
-                  Previous
-                </button>
-                {current.kind !== "mcq-output" && current.kind !== "mcq-behavior" ? (
-                  <button
-                    type="button"
-                    className="cq-btn cq-btn-secondary"
-                    disabled={!isMistakeAnswerComplete(currentAnswer)}
-                    onClick={() => updateCurrentAnswer({ checked: true })}
-                  >
-                    Check answer
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  className="cq-btn cq-btn-secondary"
-                  disabled={index >= questions.length - 1}
-                  onClick={() => setIndex((value) => Math.min(questions.length - 1, value + 1))}
-                >
-                  Next
-                </button>
-                <button
-                  type="button"
-                  className="cq-btn cq-btn-primary"
-                  disabled={!canSubmit || submitting}
-                  onClick={submit}
-                >
-                  {submitting ? "Saving..." : "Submit retry quiz"}
-                </button>
-              </div>
-            </div>
-          ) : null}
+            <button type="button" className="cq-btn cq-btn-primary" onClick={startQuiz}>
+              <FaRedo aria-hidden="true" /> Start wrong-answer quiz
+            </button>
+          </div>
+          <div className="cq-mistake-bank-list" aria-label="Questions included in the wrong-answer quiz">
+            {mistakes.slice(0, 8).map((mistake) => (
+              <article key={mistakeKey(mistake)}>
+                <small>{mistake.category.replaceAll("-", " ")}</small>
+                <strong>{mistake.title}</strong>
+                <span>Included in the wrong-answer quiz</span>
+              </article>
+            ))}
+          </div>
         </div>
       ) : null}
     </section>
@@ -602,6 +339,7 @@ export default function QuizLanguageLanding({
   languageLabel,
   mastery,
   onOpenQuestion,
+  onOpenMistakeBank,
 }) {
   const [categories, setCategories] = useState([]);
   const [openId, setOpenId] = useState("");
@@ -614,16 +352,6 @@ export default function QuizLanguageLanding({
   const [loadingCats, setLoadingCats] = useState(true);
   const [error, setError] = useState("");
   const [serverProgress, setServerProgress] = useState({ categories: [], mistakes: [] });
-
-  const refreshProgress = () =>
-    fetchQuizProgress(apiBase, language)
-      .then((data) => {
-        setServerProgress(data || { categories: [], mistakes: [] });
-      })
-      .catch(() => {
-        // Local progress remains available when sync is temporarily offline.
-        setServerProgress({ categories: [], mistakes: [] });
-      });
 
   // Load the available shared and language-specific categories.
   useEffect(() => {
@@ -997,11 +725,8 @@ export default function QuizLanguageLanding({
             );
           })}
           <MistakeBankQuiz
-            apiBase={apiBase}
-            language={language}
             mistakes={mistakes}
-            onProgressRefresh={refreshProgress}
-            onOpenQuestion={onOpenQuestion}
+            onOpenMistakeBank={onOpenMistakeBank}
           />
         </div>
       )}
