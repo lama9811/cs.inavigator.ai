@@ -38,6 +38,7 @@ All notable changes to CS Navigator are documented here.
 ### Changed
 - Syntax lessons now emphasize first-use definitions and key beginner terms, such as syntax, comments, blocks, indentation, statements, semicolons, and compiler/parser messages.
 - Operators lessons now use authored sections for mathematical operators, bitwise operators, comparison/assignment, and conditional logic across Python, Java, JavaScript, and C++.
+- Variables and Data Types lessons now use explicit beginner-sized sections across Python, Java, JavaScript, and C++ instead of relying on the loader's broad auto-split.
 - Learn track lesson lists now keep "Choose tracks" at the top and use the bottom row for Previous/Next track navigation through Beginner, Intermediate, and Advanced.
 - Python, Java, and JavaScript Syntax lessons now use four authored reading parts instead of the loader's broad auto-split, making the beginner path easier to digest.
 - Expanded the thin explicit Learn lessons so the previously 3-section and 4-section Coding Tutor lessons now have five focused sections with additional examples, checks, visual traces, and mistake guidance.
