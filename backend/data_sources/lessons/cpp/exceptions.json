@@ -9,79 +9,114 @@
   ],
   "refresher": "A C++ **exception** reports a problem across **function** calls. `throw` sends the problem out. `try` marks code that may throw. `catch` handles a specific kind of problem. Catch only what you can handle.",
   "refresher_code": "try {\n  enroll(student);\n} catch (const std::exception& error) {\n  std::cerr << error.what() << \"\\n\";\n}",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "An **exception** means the code hit a problem it cannot handle in the normal path. Instead of returning a fake answer, it reports the failure to a place that may know what to do."
+      "id": "idea",
+      "title": "What exceptions are",
+      "summary": "Separate expected failures from coding mistakes.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "An **exception** means the code hit a problem it cannot handle in the normal path. Instead of returning a fake answer, it reports the failure to a place that may know what to do."
+        },
+        {
+          "kind": "text",
+          "body": "`throw` sends the problem out. `try` surrounds the risky work. `catch` handles a matching problem. Keep the try block small so the failing line is easier to find."
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "The shape is similar to Python",
+          "body": "Python uses `try`, `raise`, and `except`. C++ uses `try`, `throw`, and `catch`. In both languages, expected choices still belong in ordinary `if` statements."
+        }
+      ]
     },
     {
-      "kind": "text",
-      "body": "`throw` sends the problem out. `try` surrounds the risky work. `catch` handles a matching problem. Keep the try block small so the failing line is easier to find."
+      "id": "examples",
+      "title": "Handle the expected failure",
+      "summary": "Protect the smallest risky operation and catch the matching error.",
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "The **function** either returns a positive **value** or throws a message. Main catches that specific failure and prints the explanation.",
+          "code": "#include <iostream>\n#include <stdexcept>\nint requirePositive(int value) {\n  if (value <= 0) throw std::invalid_argument(\"value must be positive\");\n  return value;\n}\nint main() {\n  try {\n    std::cout << requirePositive(-2) << \"\\n\";\n  } catch (const std::invalid_argument& error) {\n    std::cout << error.what() << \"\\n\";\n  }\n}",
+          "output": "value must be positive"
+        },
+        {
+          "kind": "compare",
+          "wrong_label": "Common mistake",
+          "wrong": "try { work(); }\ncatch (...) { }",
+          "right_label": "Clearer version",
+          "right": "try { work(); }\ncatch (const std::runtime_error& error) {\n  std::cerr << error.what();\n}",
+          "caption": "A catch-all that does nothing hides the cause. Catch a meaningful type where a useful response is possible."
+        }
+      ]
     },
     {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "The shape is similar to Python",
-      "body": "Python uses `try`, `raise`, and `except`. C++ uses `try`, `throw`, and `catch`. In both languages, expected choices still belong in ordinary `if` statements."
+      "id": "pitfalls",
+      "title": "Keep real bugs visible",
+      "summary": "Avoid handlers that silence useful evidence.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "For the negative **input**, `requirePositive` cannot fulfill its rule, so it throws `invalid_argument`. The normal path stops. Main catches that type, reads its message, and then continues after the catch block."
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Exceptions are not ordinary branch logic",
+          "body": "Use an `if` for an expected choice, such as an empty search result. Use an **exception** when a **function** cannot complete the job it promised and a caller needs the failure information."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "The **function** either returns a positive **value** or throws a message. Main catches that specific failure and prints the explanation.",
-      "code": "#include <iostream>\n#include <stdexcept>\nint requirePositive(int value) {\n  if (value <= 0) throw std::invalid_argument(\"value must be positive\");\n  return value;\n}\nint main() {\n  try {\n    std::cout << requirePositive(-2) << \"\\n\";\n  } catch (const std::invalid_argument& error) {\n    std::cout << error.what() << \"\\n\";\n  }\n}",
-      "output": "value must be positive"
+      "id": "check",
+      "title": "Cleanup and recovery paths",
+      "summary": "Check which blocks run on success, failure, or both.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "How should standard **exceptions** usually be caught?",
+          "code": "",
+          "choices": [
+            "By const reference",
+            "By raw pointer",
+            "By mutable global value",
+            "Only with catch-all"
+          ],
+          "answer_index": 0,
+          "why": "Catching by const **reference** avoids copying and preserves the dynamic **exception** information for the handler."
+        },
+        {
+          "kind": "check",
+          "prompt": "What happens to local **objects** when an **exception** **leaves** their block?",
+          "code": "",
+          "choices": [
+            "They are cleaned up as the block is exited",
+            "They are always leaked",
+            "They become global",
+            "Their constructors run again"
+          ],
+          "answer_index": 0,
+          "why": "C++ exits each active block on the way to a matching catch, so fully created local **objects** run their normal cleanup."
+        }
+      ]
     },
     {
-      "kind": "compare",
-      "wrong_label": "Common mistake",
-      "wrong": "try { work(); }\ncatch (...) { }",
-      "right_label": "Clearer version",
-      "right": "try { work(); }\ncatch (const std::runtime_error& error) {\n  std::cerr << error.what();\n}",
-      "caption": "A catch-all that does nothing hides the cause. Catch a meaningful type where a useful response is possible."
-    },
-    {
-      "kind": "text",
-      "body": "For the negative **input**, `requirePositive` cannot fulfill its rule, so it throws `invalid_argument`. The normal path stops. Main catches that type, reads its message, and then continues after the catch block."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Exceptions are not ordinary branch logic",
-      "body": "Use an `if` for an expected choice, such as an empty search result. Use an **exception** when a **function** cannot complete the job it promised and a caller needs the failure information."
-    },
-    {
-      "kind": "check",
-      "prompt": "How should standard **exceptions** usually be caught?",
-      "code": "",
-      "choices": [
-        "By const reference",
-        "By raw pointer",
-        "By mutable global value",
-        "Only with catch-all"
-      ],
-      "answer_index": 0,
-      "why": "Catching by const **reference** avoids copying and preserves the dynamic **exception** information for the handler."
-    },
-    {
-      "kind": "check",
-      "prompt": "What happens to local **objects** when an **exception** **leaves** their block?",
-      "code": "",
-      "choices": [
-        "They are cleaned up as the block is exited",
-        "They are always leaked",
-        "They become global",
-        "Their constructors run again"
-      ],
-      "answer_index": 0,
-      "why": "C++ exits each active block on the way to a matching catch, so fully created local **objects** run their normal cleanup."
-    },
-    {
-      "kind": "list",
-      "title": "Exceptions checklist",
-      "items": [
-        "Throw when the normal answer would be dishonest.",
-        "Catch the specific problem you can handle.",
-        "Keep try blocks small.",
-        "Do not hide errors you still need to fix."
+      "id": "practice",
+      "title": "Exception habits",
+      "summary": "Use a short checklist before adding handlers.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Exceptions checklist",
+          "items": [
+            "Throw when the normal answer would be dishonest.",
+            "Catch the specific problem you can handle.",
+            "Keep try blocks small.",
+            "Do not hide errors you still need to fix."
+          ]
+        }
       ]
     }
   ],

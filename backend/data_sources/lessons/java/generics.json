@@ -10,77 +10,112 @@
   ],
   "refresher": "Generics are the type names inside angle brackets, such as `ArrayList<String>`. They tell Java what kind of **values** belong in a collection. That lets Java catch the wrong type before the program runs.",
   "refresher_code": "List<String> names = new ArrayList<>();\nnames.add(\"Ada\");\nString first = names.get(0);",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "Generics are the type labels inside angle brackets. In `ArrayList<String>`, the **list** is meant to hold **Strings**. That promise helps Java protect you from putting the wrong kind of **value** into the list."
+      "id": "idea",
+      "title": "Label the element type",
+      "summary": "Use generics to tell Java what kind of values a container holds.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "**Generics** are the type labels inside angle brackets. In `ArrayList<String>`, the **list** is meant to hold **Strings**. That promise helps Java protect you from putting the wrong kind of **value** into the list."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "This **list** accepts **String** **values**. Getting an item returns a String, so no cast is needed.",
-      "code": "List<String> courses = new ArrayList<>();\ncourses.add(\"CS101\");\ncourses.add(\"MATH120\");\nString first = courses.get(0);\nSystem.out.println(first);",
-      "output": "CS101",
-      "body": "Without generics, Java would not know what comes back out of a collection. With generics, `names.get(0)` is already known to be a **String**, so you do not have to guess or cast it by hand."
+      "id": "examples",
+      "title": "Read angle brackets",
+      "summary": "Trace how a typed collection protects values going in and coming out.",
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "This **list** accepts **String** **values**. Getting an item returns a String, so no cast is needed.",
+          "code": "List<String> courses = new ArrayList<>();\ncourses.add(\"CS101\");\ncourses.add(\"MATH120\");\nString first = courses.get(0);\nSystem.out.println(first);",
+          "output": "CS101",
+          "body": "Without generics, Java would not know what comes back out of a collection. With generics, `names.get(0)` is already known to be a **String**, so you do not have to guess or cast it by hand."
+        },
+        {
+          "kind": "text",
+          "body": "Without a type **argument**, an older raw **list** treats its items as **Object**. That loses useful checks and can move a type mistake from compilation to runtime.",
+          "caption": "The **list** is for **Strings**. Java rejects a number before the program runs."
+        }
+      ]
     },
     {
-      "kind": "text",
-      "body": "Without a type **argument**, an older raw **list** treats its items as **Object**. That loses useful checks and can move a type mistake from compilation to runtime.",
-      "caption": "The **list** is for **Strings**. Java rejects a number before the program runs."
+      "id": "pitfalls",
+      "title": "Avoid raw collections",
+      "summary": "Keep type mistakes at compile time instead of runtime.",
+      "blocks": [
+        {
+          "kind": "compare",
+          "caption": "The generic **list** rejects the wrong item as soon as the code is compiled. The raw list accepts it and may fail during a later cast.",
+          "wrong_label": "Raw list",
+          "wrong": "List values = new ArrayList();\nvalues.add(42);\nString name = (String) values.get(0);",
+          "right_label": "Checked list",
+          "right": "List<String> names = new ArrayList<>();\nnames.add(\"Ada\");\nString name = names.get(0);",
+          "body": "Angle brackets can look noisy at first. Read them as a label on the box: this box is for this type of thing."
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Use reference types in angle brackets",
+          "body": "Write `Integer` instead of `int` and `Double` instead of `double`. Java automatically wraps and unwraps these **values** in most collection code."
+        }
+      ]
     },
     {
-      "kind": "compare",
-      "caption": "The generic **list** rejects the wrong item as soon as the code is compiled. The raw list accepts it and may fail during a later cast.",
-      "wrong_label": "Raw list",
-      "wrong": "List values = new ArrayList();\nvalues.add(42);\nString name = (String) values.get(0);",
-      "right_label": "Checked list",
-      "right": "List<String> names = new ArrayList<>();\nnames.add(\"Ada\");\nString name = names.get(0);",
-      "body": "Angle brackets can look noisy at first. Read them as a label on the box: this box is for this type of thing."
+      "id": "check",
+      "title": "Check generic syntax",
+      "summary": "Practice wrapper types, diamond syntax, and type parameters.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "Which declaration creates a **list** that accepts **Integer** **values**?",
+          "code": "",
+          "choices": [
+            "List<Integer> scores = new ArrayList<>();",
+            "List<int> scores = new ArrayList<>();",
+            "List scores<Integer> = new ArrayList<>();",
+            "Integer<List> scores = new ArrayList<>();"
+          ],
+          "answer_index": 0,
+          "why": "The element type belongs inside angle brackets after **List**. Collections use the wrapper type **Integer** rather than the primitive type int."
+        },
+        {
+          "kind": "text",
+          "body": "Your own **class** can use a type **parameter** too. A Box<T> stores one value whose type is chosen when the object is declared. The same class can then make a Box<**String**> or Box<Student>."
+        },
+        {
+          "kind": "check",
+          "prompt": "What does `T` mean in `class Box<T>`?",
+          "code": "class Box<T> {\n    T value;\n}",
+          "choices": [
+            "A type chosen when Box is used",
+            "A required class named T",
+            "The number of items in the box",
+            "A private text value"
+          ],
+          "answer_index": 0,
+          "why": "T is a placeholder for a **reference** type. Declaring Box<**String**> replaces T with String for that use of the **class**."
+        }
+      ]
     },
     {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "Use reference types in angle brackets",
-      "body": "Write `Integer` instead of `int` and `Double` instead of `double`. Java automatically wraps and unwraps these **values** in most collection code."
-    },
-    {
-      "kind": "check",
-      "prompt": "Which declaration creates a **list** that accepts **Integer** **values**?",
-      "code": "",
-      "choices": [
-        "List<Integer> scores = new ArrayList<>();",
-        "List<int> scores = new ArrayList<>();",
-        "List scores<Integer> = new ArrayList<>();",
-        "Integer<List> scores = new ArrayList<>();"
-      ],
-      "answer_index": 0,
-      "why": "The element type belongs inside angle brackets after **List**. Collections use the wrapper type **Integer** rather than the primitive type int."
-    },
-    {
-      "kind": "text",
-      "body": "Your own **class** can use a type **parameter** too. A Box<T> stores one value whose type is chosen when the object is declared. The same class can then make a Box<**String**> or Box<Student>."
-    },
-    {
-      "kind": "check",
-      "prompt": "What does `T` mean in `class Box<T>`?",
-      "code": "class Box<T> {\n    T value;\n}",
-      "choices": [
-        "A type chosen when Box is used",
-        "A required class named T",
-        "The number of items in the box",
-        "A private text value"
-      ],
-      "answer_index": 0,
-      "why": "T is a placeholder for a **reference** type. Declaring Box<**String**> replaces T with String for that use of the **class**."
-    },
-    {
-      "kind": "list",
-      "title": "Generics checklist",
-      "items": [
-        "Put the element type in angle brackets.",
-        "Use ArrayList<**String**> for a **list** of Strings.",
-        "Let Java catch the wrong type early.",
-        "Avoid raw collections in new code.",
-        "Read generics as labels on containers."
+      "id": "practice",
+      "title": "Generic habits",
+      "summary": "Use a checklist for typed containers.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Generics checklist",
+          "items": [
+            "Put the element type in angle brackets.",
+            "Use ArrayList<**String**> for a **list** of Strings.",
+            "Let Java catch the wrong type early.",
+            "Avoid raw collections in new code.",
+            "Read generics as labels on containers."
+          ]
+        }
       ]
     }
   ],
