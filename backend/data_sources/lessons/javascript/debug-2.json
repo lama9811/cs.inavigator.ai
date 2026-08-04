@@ -10,137 +10,165 @@
   ],
   "refresher": "Deeper bugs can begin before the visible failure. Record both **value** and type, identify mutations, and test empty, one-item, and boundary inputs.",
   "refresher_code": "console.log(value,typeof value);\nconsole.log(array.slice());",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "Deeper bugs can begin before the visible failure. Record both **value** and type, identify mutations, and test empty, one-item, and boundary inputs. Trace coercion, mutation, **references**, and **edge cases**."
-    },
-    {
-      "kind": "visual",
+      "id": "first-wrong-state",
       "title": "Find the first wrong state",
-      "concept": "debugging",
-      "caption": "Compare the expected state with the actual state before the final answer distracts you.",
-      "initial_state": {},
-      "steps": [
+      "summary": "Track values and types before the visible failure.",
+      "blocks": [
         {
-          "title": "Before the update",
-          "body": "The total is still correct before this loop pass.",
-          "state": {
-            "table": [
-              {
-                "key": "score",
-                "value": "7",
-                "active": true
-              },
-              {
-                "key": "total before",
-                "value": "5"
-              }
-            ],
-            "note": "state still matches the trace"
-          }
+          "kind": "text",
+          "body": "Deeper bugs can begin before the visible failure. Record both **value** and type, identify mutations, and test empty, one-item, and boundary inputs. Trace coercion, mutation, **references**, and **edge cases**."
         },
         {
-          "title": "Wrong update",
-          "body": "The update changes the wrong variable or uses the wrong operation.",
-          "animation": "highlight",
-          "state": {
-            "table": [
-              {
-                "key": "expected total",
-                "value": "12"
-              },
-              {
-                "key": "actual total",
-                "value": "57",
-                "active": true
+          "kind": "visual",
+          "title": "Find the first wrong state",
+          "concept": "debugging",
+          "caption": "Compare the expected state with the actual state before the final answer distracts you.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Before the update",
+              "body": "The total is still correct before this loop pass.",
+              "state": {
+                "table": [
+                  {
+                    "key": "score",
+                    "value": "7",
+                    "active": true
+                  },
+                  {
+                    "key": "total before",
+                    "value": "5"
+                  }
+                ],
+                "note": "state still matches the trace"
               }
-            ],
-            "note": "first wrong state"
-          }
+            },
+            {
+              "title": "Wrong update",
+              "body": "The update changes the wrong variable or uses the wrong operation.",
+              "animation": "highlight",
+              "state": {
+                "table": [
+                  {
+                    "key": "expected total",
+                    "value": "12"
+                  },
+                  {
+                    "key": "actual total",
+                    "value": "57",
+                    "active": true
+                  }
+                ],
+                "note": "first wrong state"
+              }
+            },
+            {
+              "title": "Fix the transition",
+              "body": "Once the first bad transition is known, the fix is smaller.",
+              "state": {
+                "table": [
+                  {
+                    "key": "score",
+                    "value": "7"
+                  },
+                  {
+                    "key": "total after",
+                    "value": "12",
+                    "active": true
+                  }
+                ],
+                "note": "total += score"
+              }
+            }
+          ]
         },
         {
-          "title": "Fix the transition",
-          "body": "Once the first bad transition is known, the fix is smaller.",
-          "state": {
-            "table": [
-              {
-                "key": "score",
-                "value": "7"
-              },
-              {
-                "key": "total after",
-                "value": "12",
-                "active": true
-              }
-            ],
-            "note": "total += score"
-          }
+          "kind": "text",
+          "body": "Multi-step bugs require finding the first incorrect transition, not only the line where the problem becomes visible. Take small snapshots of **values**, types, and shared **references**. When data changes unexpectedly, identify every operation that could mutate the same **object**."
+        },
+        {
+          "kind": "code",
+          "caption": "Spread creates a separate **array**, so pushing into the copy **leaves** the original unchanged.",
+          "code": "const original=[1,2];\nconst copy=[...original];\ncopy.push(3);\nconsole.log(original.length);\nconsole.log(copy.length);",
+          "output": "2\n3"
         }
       ]
     },
     {
-      "kind": "text",
-      "body": "Multi-step bugs require finding the first incorrect transition, not only the line where the problem becomes visible. Take small snapshots of **values**, types, and shared **references**. When data changes unexpectedly, identify every operation that could mutate the same **object**."
+      "id": "copy-vs-shared-state",
+      "title": "Copy versus shared state",
+      "summary": "Separate copied arrays from shared references before mutation.",
+      "blocks": [
+        {
+          "kind": "compare",
+          "caption": "Give a planned copy its own **array** before mutation.",
+          "wrong_label": "Common mistake",
+          "wrong": "const copy = original;\ncopy.push(3);",
+          "right_label": "Clearer version",
+          "right": "const copy = [...original];\ncopy.push(3);"
+        },
+        {
+          "kind": "text",
+          "body": "The wrong assignment creates a second route to one **array**. The corrected spread creates a separate outer collection, so the lengths can diverge. If elements are **objects**, inspect whether those inner objects are still shared before assuming a fully independent copy."
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Trace this carefully",
+          "body": "A console can make `5` and `\"5\"` look similar; log typeof beside uncertain data when plus or equality acts strangely."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "Spread creates a separate **array**, so pushing into the copy **leaves** the original unchanged.",
-      "code": "const original=[1,2];\nconst copy=[...original];\ncopy.push(3);\nconsole.log(original.length);\nconsole.log(copy.length);",
-      "output": "2\n3"
+      "id": "debug-checks",
+      "title": "Debug checks",
+      "summary": "Check sort behavior and assignment aliasing carefully.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "Why can numeric sort look wrong?",
+          "code": "console.log([2,11,3].sort());",
+          "choices": [
+            "default sort compares strings",
+            "arrays cannot sort numbers",
+            "eleven is negative",
+            "sort drops a value"
+          ],
+          "answer_index": 0,
+          "why": "Without a comparison **function**, sort orders **string** forms and places eleven before two."
+        },
+        {
+          "kind": "check",
+          "prompt": "What does `const b=a` do for **arrays**?",
+          "code": "const a=[1];\nconst b=a;",
+          "choices": [
+            "copies the reference",
+            "makes an independent array",
+            "freezes both",
+            "converts to text"
+          ],
+          "answer_index": 0,
+          "why": "Both **variables** point to one **array**, so mutation through either name changes the shared **value**."
+        }
+      ]
     },
     {
-      "kind": "compare",
-      "caption": "Give a planned copy its own **array** before mutation.",
-      "wrong_label": "Common mistake",
-      "wrong": "const copy = original;\ncopy.push(3);",
-      "right_label": "Clearer version",
-      "right": "const copy = [...original];\ncopy.push(3);"
-    },
-    {
-      "kind": "text",
-      "body": "The wrong assignment creates a second route to one **array**. The corrected spread creates a separate outer collection, so the lengths can diverge. If elements are **objects**, inspect whether those inner objects are still shared before assuming a fully independent copy."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Trace this carefully",
-      "body": "A console can make `5` and `\"5\"` look similar; log typeof beside uncertain data when plus or equality acts strangely."
-    },
-    {
-      "kind": "check",
-      "prompt": "Why can numeric sort look wrong?",
-      "code": "console.log([2,11,3].sort());",
-      "choices": [
-        "default sort compares strings",
-        "arrays cannot sort numbers",
-        "eleven is negative",
-        "sort drops a value"
-      ],
-      "answer_index": 0,
-      "why": "Without a comparison **function**, sort orders **string** forms and places eleven before two."
-    },
-    {
-      "kind": "check",
-      "prompt": "What does `const b=a` do for **arrays**?",
-      "code": "const a=[1];\nconst b=a;",
-      "choices": [
-        "copies the reference",
-        "makes an independent array",
-        "freezes both",
-        "converts to text"
-      ],
-      "answer_index": 0,
-      "why": "Both **variables** point to one **array**, so mutation through either name changes the shared **value**."
-    },
-    {
-      "kind": "list",
-      "title": "Debug: Part 2 checklist",
-      "items": [
-        "Test smallest inputs.",
-        "Log **value** and type.",
-        "Mark mutating operations.",
-        "Find the first wrong transition."
+      "id": "debug-checklist",
+      "title": "Debug Part 2 checklist",
+      "summary": "Review the habits for deeper JavaScript bugs.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Debug: Part 2 checklist",
+          "items": [
+            "Test smallest inputs.",
+            "Log **value** and type.",
+            "Mark mutating operations.",
+            "Find the first wrong transition."
+          ]
+        }
       ]
     }
   ],

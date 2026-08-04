@@ -88,6 +88,37 @@ BEGINNER_AUTHORED_SECTION_CATEGORIES = (
     "debug",
 )
 
+INTERMEDIATE_FIRST_PASS_AUTHORED_SECTION_CATEGORIES = {
+    "python": (
+        "algorithm-problems-2",
+        "debug-2",
+        "tuples",
+        "dictionaries",
+        "sets",
+        "file-handling",
+    ),
+    "java": (
+        "algorithm-problems-2",
+        "debug-2",
+        "classes-objects",
+        "maps",
+        "file-io",
+        "exceptions",
+    ),
+    "javascript": (
+        "algorithm-problems-2",
+        "debug-2",
+        "objects",
+        "error-handling",
+    ),
+    "cpp": (
+        "algorithm-problems-2",
+        "debug-2",
+        "pointers",
+        "classes-objects",
+    ),
+}
+
 
 def authored_lessons():
     """Every lesson that actually exists. Grows automatically as content is authored."""
@@ -445,6 +476,25 @@ def test_remaining_beginner_lessons_are_raw_authored_sections():
             assert isinstance(sections, list), f"{language}/{category}: missing raw sections"
             assert 4 <= len(sections) <= 6, (
                 f"{language}/{category}: expected 4-6 beginner sections, got {len(sections)}"
+            )
+
+
+def test_intermediate_first_pass_lessons_are_raw_authored_sections():
+    """The first Intermediate sectioning batch should not depend on auto-splitting.
+
+    These topics are the first half of each Intermediate language track in manifest order.
+    They should stay intentionally paced with authored section titles and summaries.
+    """
+    for language, categories in INTERMEDIATE_FIRST_PASS_AUTHORED_SECTION_CATEGORIES.items():
+        for category in categories:
+            path = os.path.join(lessons.LESSONS_DIR, language, f"{category}.json")
+            with open(path, "r", encoding="utf-8") as handle:
+                raw = json.load(handle)
+            assert "blocks" not in raw, f"{language}/{category}: still has flat blocks"
+            sections = raw.get("sections")
+            assert isinstance(sections, list), f"{language}/{category}: missing raw sections"
+            assert 4 <= len(sections) <= 6, (
+                f"{language}/{category}: expected 4-6 intermediate sections, got {len(sections)}"
             )
 
 

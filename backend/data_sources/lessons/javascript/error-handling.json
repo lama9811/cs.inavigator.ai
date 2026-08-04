@@ -9,73 +9,101 @@
   ],
   "refresher": "JavaScript uses `throw` to report an error and `try/catch` to handle one. Catch errors when you know what to do next. Do not catch every error just to make the console quiet.",
   "refresher_code": "try {\n  const data = JSON.parse(raw);\n} catch (error) {\n  console.log(error.message);\n}",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "Errors are not all the same. Some are expected, like bad user **input**. Some are bugs you need to fix. Good error handling tells those apart."
+      "id": "expected-errors",
+      "title": "Expected errors",
+      "summary": "Use try and catch for failures the program can handle.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Errors are not all the same. Some are expected, like bad user **input**. Some are bugs you need to fix. Good error handling tells those apart."
+        },
+        {
+          "kind": "text",
+          "body": "`try` holds the risky code. `catch` runs if that code throws. Keep the try block small so you can tell what failed."
+        },
+        {
+          "kind": "code",
+          "caption": "JSON.parse throws before the Loaded message, so catch provides a controlled response.",
+          "code": "const raw = \"{bad json}\";\ntry {\n  JSON.parse(raw);\n  console.log(\"Loaded\");\n} catch (error) {\n  console.log(\"Could not read that JSON\");\n}",
+          "output": "Could not read that JSON"
+        }
+      ]
     },
     {
-      "kind": "text",
-      "body": "`try` holds the risky code. `catch` runs if that code throws. Keep the try block small so you can tell what failed."
+      "id": "visible-failures",
+      "title": "Handle visible failures",
+      "summary": "Avoid empty catches and keep the failure cause clear.",
+      "blocks": [
+        {
+          "kind": "compare",
+          "wrong_label": "Common mistake",
+          "wrong": "try { riskyWork(); } catch (error) {}",
+          "right_label": "Clearer version",
+          "right": "try {\n  riskyWork();\n} catch (error) {\n  console.error(error);\n  throw error;\n}",
+          "caption": "An empty catch makes the program look successful even though its work failed. Handle an expected case or preserve the error for a layer that can."
+        },
+        {
+          "kind": "text",
+          "body": "Trace the malformed **input**: parse begins, detects invalid syntax, creates a SyntaxError, and transfers control to catch. The original Error still matters during development, even when the message shown to a student is simpler."
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Catch narrowly",
+          "body": "Do not wrap a whole application in one broad try block. Keep the protected section close to the operation whose failure you understand, so unrelated programming mistakes are not mislabeled as expected **input** problems."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "JSON.parse throws before the Loaded message, so catch provides a controlled response.",
-      "code": "const raw = \"{bad json}\";\ntry {\n  JSON.parse(raw);\n  console.log(\"Loaded\");\n} catch (error) {\n  console.log(\"Could not read that JSON\");\n}",
-      "output": "Could not read that JSON"
+      "id": "control-flow-checks",
+      "title": "Control-flow checks",
+      "summary": "Know when finally runs and why empty catch blocks are risky.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "Which block runs whether try succeeds or fails?",
+          "code": "",
+          "choices": [
+            "finally",
+            "catch only",
+            "throw",
+            "return"
+          ],
+          "answer_index": 0,
+          "why": "A finally block runs after the try and any matching catch, making it suitable for cleanup that both paths require."
+        },
+        {
+          "kind": "check",
+          "prompt": "What is wrong with an empty catch block?",
+          "code": "try { save(); } catch (error) {}",
+          "choices": [
+            "It hides the failure and its evidence",
+            "Catch requires a return value",
+            "It retries forever",
+            "It converts the error to text"
+          ],
+          "answer_index": 0,
+          "why": "The program silently continues, so neither the user nor the developer can see that save failed or why it failed."
+        }
+      ]
     },
     {
-      "kind": "compare",
-      "wrong_label": "Common mistake",
-      "wrong": "try { riskyWork(); } catch (error) {}",
-      "right_label": "Clearer version",
-      "right": "try {\n  riskyWork();\n} catch (error) {\n  console.error(error);\n  throw error;\n}",
-      "caption": "An empty catch makes the program look successful even though its work failed. Handle an expected case or preserve the error for a layer that can."
-    },
-    {
-      "kind": "text",
-      "body": "Trace the malformed **input**: parse begins, detects invalid syntax, creates a SyntaxError, and transfers control to catch. The original Error still matters during development, even when the message shown to a student is simpler."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Catch narrowly",
-      "body": "Do not wrap a whole application in one broad try block. Keep the protected section close to the operation whose failure you understand, so unrelated programming mistakes are not mislabeled as expected **input** problems."
-    },
-    {
-      "kind": "check",
-      "prompt": "Which block runs whether try succeeds or fails?",
-      "code": "",
-      "choices": [
-        "finally",
-        "catch only",
-        "throw",
-        "return"
-      ],
-      "answer_index": 0,
-      "why": "A finally block runs after the try and any matching catch, making it suitable for cleanup that both paths require."
-    },
-    {
-      "kind": "check",
-      "prompt": "What is wrong with an empty catch block?",
-      "code": "try { save(); } catch (error) {}",
-      "choices": [
-        "It hides the failure and its evidence",
-        "Catch requires a return value",
-        "It retries forever",
-        "It converts the error to text"
-      ],
-      "answer_index": 0,
-      "why": "The program silently continues, so neither the user nor the developer can see that save failed or why it failed."
-    },
-    {
-      "kind": "list",
+      "id": "error-checklist",
       "title": "Error Handling checklist",
-      "items": [
-        "Use throw when code cannot safely continue.",
-        "Catch errors where you can recover.",
-        "Keep try blocks small.",
-        "Do not hide bugs by catching everything silently."
+      "summary": "Review JavaScript error-handling habits.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Error Handling checklist",
+          "items": [
+            "Use throw when code cannot safely continue.",
+            "Catch errors where you can recover.",
+            "Keep try blocks small.",
+            "Do not hide bugs by catching everything silently."
+          ]
+        }
       ]
     }
   ],
