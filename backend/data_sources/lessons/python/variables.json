@@ -152,17 +152,19 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "Names are not arbitrary. Python has rules about which ones are allowed, and there is a strong convention about which ones you should actually pick."
+          "body": "Names are not arbitrary. Python has syntax rules for which names are allowed, and style habits for which names are helpful. A legal name only means Python can run it. A useful name tells a human what the value means."
         },
         {
           "kind": "list",
           "title": "Naming rules and habits",
           "items": [
-            "Letters, digits, and underscores only. No spaces and no dashes.",
-            "It cannot start with a digit. `score2` is fine, `2score` is not.",
-            "Case matters. `score` and `Score` are two different **variables**.",
-            "Python style is lowercase with underscores: `final_score`, not `finalScore`.",
-            "Say what it holds. `n` tells the next reader nothing; `student_count` tells them everything."
+            "Use letters, digits, and underscores: `final_score`, `quiz2`, and `student_count` are legal. Spaces and dashes are not, so `final score` and `final-score` are syntax errors.",
+            "Start with a letter or underscore, not a digit. `score2` is legal because the digit comes later. `2score` is illegal because it starts with a digit.",
+            "Avoid Python keywords such as `if`, `for`, `while`, `class`, and `return`. They already have jobs in the language, so they cannot be used as variable names.",
+            "Remember that case matters. `score`, `Score`, and `SCORE` are three different names. Beginners usually want one lowercase version, not several names that only differ by capitalization.",
+            "Use Python's snake_case style for normal variables: `final_score`, `student_count`, `parking_fee`. CamelCase such as `finalScore` can run, but it looks like it belongs to a different style.",
+            "Name the role, not just the type. `name_string` says it is text, but `student_name` says what the text means. `count` is okay in a tiny example; `late_assignment_count` is better in a real program.",
+            "Use short names only when the meaning is truly local. `i` is common for a loop index, but `n` for a whole assignment total will make the next reader slow down."
           ]
         }
       ]

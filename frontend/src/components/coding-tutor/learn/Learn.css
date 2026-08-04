@@ -30,7 +30,7 @@
 .learn-list-head p {
   margin: 0;
   font-size: 0.86rem;
-  color: var(--ct-muted, #6b7280);
+  color: var(--ct-text);
 }
 
 .learn-lesson-grid {
@@ -398,7 +398,7 @@
   margin: 0 0 10px;
   font-size: 1rem;
   line-height: 1.5;
-  color: var(--ct-muted, #6b7280);
+  color: var(--ct-text);
 }
 
 .lesson-minutes {
@@ -479,7 +479,7 @@
 
 .lesson-section-head p {
   margin: 0;
-  color: var(--ct-muted, #6b7280);
+  color: var(--ct-text);
   font-size: 0.9rem;
   line-height: 1.55;
 }
@@ -515,7 +515,7 @@
   margin-bottom: 8px;
   font-size: 0.86rem;
   line-height: 1.55;
-  color: var(--ct-muted, #6b7280);
+  color: var(--ct-text);
 }
 
 .lesson-code pre,
@@ -592,7 +592,7 @@ body.coding-dark .lesson-code-token.is-literal {
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--ct-muted, #6b7280);
+  color: var(--ct-text);
 }
 
 .lesson-output pre {
@@ -670,7 +670,7 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
 
 .lesson-visual-block p {
   margin: 0;
-  color: var(--ct-muted);
+  color: var(--ct-text);
   font-size: 0.88rem;
   line-height: 1.5;
 }
@@ -868,7 +868,7 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
 .lesson-visual-empty,
 .lesson-visual-state-note {
   margin: 10px 0 0;
-  color: var(--ct-muted);
+  color: var(--ct-text);
   text-align: center;
 }
 
@@ -974,7 +974,7 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
 
 .lesson-visual-change {
   margin-top: 8px !important;
-  color: var(--ct-muted) !important;
+  color: var(--ct-text) !important;
 }
 
 .lesson-visual-controls {
@@ -1118,7 +1118,7 @@ body.coding-dark .lesson-compare-col.is-right .lesson-compare-label { color: #4a
   margin-top: 8px;
   font-size: 0.86rem;
   line-height: 1.55;
-  color: var(--ct-muted, #6b7280);
+  color: var(--ct-text);
 }
 
 /* Stack the comparison on narrow screens — two code columns at half-width are
@@ -1389,7 +1389,7 @@ body.coding-dark .lesson-check-why.is-wrong .lesson-check-verdict { color: #fbbf
 .lesson-foot p {
   margin: 0 0 10px;
   font-size: 0.9rem;
-  color: var(--ct-muted, #6b7280);
+  color: var(--ct-text);
 }
 
 .lesson-practice-cta {
@@ -1435,7 +1435,7 @@ body.coding-dark .lesson-check-why.is-wrong .lesson-check-verdict { color: #fbbf
   max-width: 44ch;
   font-size: 0.9rem;
   line-height: 1.6;
-  color: var(--ct-muted, #6b7280);
+  color: var(--ct-text);
 }
 
 /* Center the back link in the empty state (it's a flex inline-flex by default). */
