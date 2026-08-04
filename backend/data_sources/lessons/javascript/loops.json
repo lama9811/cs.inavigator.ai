@@ -10,153 +10,181 @@
   ],
   "refresher": "A `for` **loop** places setup, **condition**, and update together. A `while` loop repeats while its condition stays truthy. Trace the initial state, boundary, and update.",
   "refresher_code": "for (let i=0; i<3; i++) {\n  console.log(i);\n}",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "A `for` **loop** places setup, **condition**, and update together. A `while` loop repeats while its condition stays truthy. Trace the initial state, boundary, and update. Repeat work while keeping the stopping rule visible."
-    },
-    {
-      "kind": "visual",
-      "title": "Trace a loop one item at a time",
-      "concept": "arrays",
-      "caption": "Watch the active item move while the running total changes.",
-      "initial_state": {},
-      "steps": [
+      "id": "loop-shape",
+      "title": "What a loop repeats",
+      "summary": "Read setup, condition, update, and body as separate jobs.",
+      "blocks": [
         {
-          "title": "Start before the loop",
-          "body": "The total starts at zero before any item is read.",
-          "state": {
-            "items": [
-              "3",
-              "5",
-              "2"
-            ],
-            "pointers": {
-              "i": 0
-            },
-            "note": "total = 0"
-          }
+          "kind": "text",
+          "body": "A `for` **loop** places setup, **condition**, and update together. A `while` loop repeats while its condition stays truthy. Trace the initial state, boundary, and update. Repeat work while keeping the stopping rule visible."
         },
         {
-          "title": "First pass",
-          "body": "Read index 0 and add 3 to the total.",
-          "animation": "add",
-          "state": {
-            "items": [
-              "3",
-              "5",
-              "2"
-            ],
-            "active": [
-              0
-            ],
-            "pointers": {
-              "i": 0
+          "kind": "visual",
+          "title": "Trace a loop one item at a time",
+          "concept": "arrays",
+          "caption": "Watch the active item move while the running total changes.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Start before the loop",
+              "body": "The total starts at zero before any item is read.",
+              "state": {
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "pointers": {
+                  "i": 0
+                },
+                "note": "total = 0"
+              }
             },
-            "note": "total = 3"
-          }
+            {
+              "title": "First pass",
+              "body": "Read index 0 and add 3 to the total.",
+              "animation": "add",
+              "state": {
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  0
+                ],
+                "pointers": {
+                  "i": 0
+                },
+                "note": "total = 3"
+              }
+            },
+            {
+              "title": "Second pass",
+              "body": "Move to index 1 and add 5.",
+              "animation": "slide",
+              "state": {
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "i": 1
+                },
+                "note": "total = 8"
+              }
+            },
+            {
+              "title": "After the last item",
+              "body": "The loop stops after each item has contributed once.",
+              "state": {
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  2
+                ],
+                "pointers": {
+                  "i": 2
+                },
+                "note": "final total = 10"
+              }
+            }
+          ]
         },
         {
-          "title": "Second pass",
-          "body": "Move to index 1 and add 5.",
-          "animation": "slide",
-          "state": {
-            "items": [
-              "3",
-              "5",
-              "2"
-            ],
-            "active": [
-              1
-            ],
-            "pointers": {
-              "i": 1
-            },
-            "note": "total = 8"
-          }
+          "kind": "text",
+          "body": "A **loop** has four parts to reason about: starting state, **condition**, body, and update. Write those parts on separate lines when tracing. After each pass, ask what changed and whether that change moves the condition toward false. This **method** works for both `for` and `while`."
         },
         {
-          "title": "After the last item",
-          "body": "The loop stops after each item has contributed once.",
-          "state": {
-            "items": [
-              "3",
-              "5",
-              "2"
-            ],
-            "active": [
-              2
-            ],
-            "pointers": {
-              "i": 2
-            },
-            "note": "final total = 10"
-          }
+          "kind": "code",
+          "caption": "The counter starts at zero, runs below three, and grows after each pass.",
+          "code": "for(let i=0;i<3;i++){\n  console.log(`step ${i}`);\n}",
+          "output": "step 0\nstep 1\nstep 2"
         }
       ]
     },
     {
-      "kind": "text",
-      "body": "A **loop** has four parts to reason about: starting state, **condition**, body, and update. Write those parts on separate lines when tracing. After each pass, ask what changed and whether that change moves the condition toward false. This **method** works for both `for` and `while`."
+      "id": "bounds",
+      "title": "Bounds and index safety",
+      "summary": "Use strict upper bounds to keep array indexes valid.",
+      "blocks": [
+        {
+          "kind": "compare",
+          "caption": "A strict upper bound keeps **array** **indexes** valid.",
+          "wrong_label": "Common mistake",
+          "wrong": "for (let i = 0; i <= items.length; i++) {\n  console.log(items[i]);\n}",
+          "right_label": "Clearer version",
+          "right": "for (let i = 0; i < items.length; i++) {\n  console.log(items[i]);\n}"
+        },
+        {
+          "kind": "text",
+          "body": "For three items, the corrected index values are zero, one, and two. After index two, the update makes `i` equal three, the **condition** fails, and the **loop** ends. The wrong version allows index three, which is one position past the **array**."
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Check the boundary",
+          "body": "When a **loop** hangs, locate the line that moves its tested state toward an exit; a missing update keeps the **condition** true."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "The counter starts at zero, runs below three, and grows after each pass.",
-      "code": "for(let i=0;i<3;i++){\n  console.log(`step ${i}`);\n}",
-      "output": "step 0\nstep 1\nstep 2"
+      "id": "check",
+      "title": "Check loop behavior",
+      "summary": "Practice pass counts and missing updates.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "How many passes occur?",
+          "code": "for(let i=1;i<=4;i++) console.log(i);",
+          "choices": [
+            "4",
+            "3",
+            "5",
+            "infinitely many"
+          ],
+          "answer_index": 0,
+          "why": "The **values** one through four are included by the less-than-or-equal **condition**."
+        },
+        {
+          "kind": "check",
+          "prompt": "What is missing?",
+          "code": "let count=3;\nwhile(count>0){ console.log(count); }",
+          "choices": [
+            "an update to count",
+            "a semicolon",
+            "a second condition",
+            "a const declaration"
+          ],
+          "answer_index": 0,
+          "why": "Count never changes, so the **condition** remains true and the **loop** cannot finish."
+        }
+      ]
     },
     {
-      "kind": "compare",
-      "caption": "A strict upper bound keeps **array** **indexes** valid.",
-      "wrong_label": "Common mistake",
-      "wrong": "for (let i = 0; i <= items.length; i++) {\n  console.log(items[i]);\n}",
-      "right_label": "Clearer version",
-      "right": "for (let i = 0; i < items.length; i++) {\n  console.log(items[i]);\n}"
-    },
-    {
-      "kind": "text",
-      "body": "For three items, the corrected index values are zero, one, and two. After index two, the update makes `i` equal three, the **condition** fails, and the **loop** ends. The wrong version allows index three, which is one position past the **array**."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Check the boundary",
-      "body": "When a **loop** hangs, locate the line that moves its tested state toward an exit; a missing update keeps the **condition** true."
-    },
-    {
-      "kind": "check",
-      "prompt": "How many passes occur?",
-      "code": "for(let i=1;i<=4;i++) console.log(i);",
-      "choices": [
-        "4",
-        "3",
-        "5",
-        "infinitely many"
-      ],
-      "answer_index": 0,
-      "why": "The **values** one through four are included by the less-than-or-equal **condition**."
-    },
-    {
-      "kind": "check",
-      "prompt": "What is missing?",
-      "code": "let count=3;\nwhile(count>0){ console.log(count); }",
-      "choices": [
-        "an update to count",
-        "a semicolon",
-        "a second condition",
-        "a const declaration"
-      ],
-      "answer_index": 0,
-      "why": "Count never changes, so the **condition** remains true and the **loop** cannot finish."
-    },
-    {
-      "kind": "list",
-      "title": "Loops checklist",
-      "items": [
-        "Record the initial counter.",
-        "Mark inclusive boundaries.",
-        "Confirm state changes.",
-        "Use collection length."
+      "id": "habits",
+      "title": "Loop habits",
+      "summary": "Use the checklist before coding loops.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Loops checklist",
+          "items": [
+            "Record the initial counter.",
+            "Mark inclusive boundaries.",
+            "Confirm state changes.",
+            "Use collection length."
+          ]
+        }
       ]
     }
   ],

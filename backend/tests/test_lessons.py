@@ -78,6 +78,16 @@ LANGUAGE_SPECIFIC_LEARN_CARD_CATEGORIES = {
     ),
 }
 
+BEGINNER_AUTHORED_SECTION_CATEGORIES = (
+    "strings",
+    "user-input",
+    "conditionals",
+    "loops",
+    "lists",
+    "algorithm-problems",
+    "debug",
+)
+
 
 def authored_lessons():
     """Every lesson that actually exists. Grows automatically as content is authored."""
@@ -417,6 +427,25 @@ def test_every_lesson_exposes_reading_sections():
             assert section["id"], f"{language}/{category}: section without id"
             assert section["title"], f"{language}/{category}: section without title"
             assert section["blocks"], f"{language}/{category}: empty section"
+
+
+def test_remaining_beginner_lessons_are_raw_authored_sections():
+    """These lessons used to rely on the loader's broad auto-split fallback.
+
+    The Beginner track should be deliberately paced, so these files must carry real
+    authored section boundaries in JSON instead of depending on runtime grouping.
+    """
+    for language in ALL_LANGUAGES:
+        for category in BEGINNER_AUTHORED_SECTION_CATEGORIES:
+            path = os.path.join(lessons.LESSONS_DIR, language, f"{category}.json")
+            with open(path, "r", encoding="utf-8") as handle:
+                raw = json.load(handle)
+            assert "blocks" not in raw, f"{language}/{category}: still has flat blocks"
+            sections = raw.get("sections")
+            assert isinstance(sections, list), f"{language}/{category}: missing raw sections"
+            assert 4 <= len(sections) <= 6, (
+                f"{language}/{category}: expected 4-6 beginner sections, got {len(sections)}"
+            )
 
 
 def test_code_blocks_explain_themselves():
