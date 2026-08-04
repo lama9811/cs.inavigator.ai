@@ -35,6 +35,7 @@ All notable changes to CS Navigator are documented here.
 - **Practice Guide real mistake patterns.** Practice Guide now shows recent mistake patterns only from the student's own saved practice attempts, and Progress has a quiet Learning Habits tracker for preference selection, hint usage, tutor suggestion application, and failed-then-fixed work.
 - **Coding Tutor accessibility polish V1.** Main Coding Tutor modals and drawers now trap focus, close with Escape, restore focus to the opener, and use dialog labels; Learn language cards are native buttons, key tab groups support arrow-key navigation, and the floating tutor exposes clearer keyboard movement and suggestion-preview labels.
 - **Compact exception/error type lists.** Python, Java, JavaScript, and C++ exception lessons now include short lists of common error types so students can recognize names like `ValueError`, `NumberFormatException`, `TypeError`, `IOException`, and `std::out_of_range` before the full Language Dictionary exists.
+- **Concept Quiz Mistake Bank.** Missed concept-quiz questions now stay hidden until real unresolved mistakes exist, appear after the Advanced accordion, and can be retaken as a focused wrong-answer quiz that updates the original category/question status when fixed.
 
 ### Changed
 - Syntax lessons now emphasize first-use definitions and key beginner terms, such as syntax, comments, blocks, indentation, statements, semicolons, and compiler/parser messages.

@@ -141,7 +141,7 @@ function ParsonsBoard({ question, value, onChange, disabled = false }) {
   );
 }
 
-function AnswerPanel({ question, answer, onAnswer, choiceOrder = [], locked = false }) {
+export function AnswerPanel({ question, answer, onAnswer, choiceOrder = [], locked = false }) {
   if (question.kind === "typein") {
     return (
       <div className="cq-answer cq-answer-typein">
@@ -529,7 +529,7 @@ function buildImmediateReview(question, result, explanation) {
   };
 }
 
-function ImmediateFeedback({ question, answer, onReviewLesson }) {
+export function ImmediateFeedback({ question, answer, onReviewLesson }) {
   if (!answer?.checked) return null;
 
   const result = gradeAnswerLocally(question, answer);
