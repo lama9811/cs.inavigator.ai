@@ -19,6 +19,39 @@
         {
           "kind": "text",
           "body": "Related **classes** often need the same operation but calculate it differently. An **interface** names that shared promise. Code can work with the promise while each **class** supplies its own implementation."
+        },
+        {
+          "kind": "visual",
+          "title": "Interface calls use the object's implementation",
+          "concept": "inheritance-interface-flow",
+          "caption": "Trace a Payable variable from interface contract to the actual object's amountDue method.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Name the contract",
+              "body": "The interface promises that every Payable object has amountDue.",
+              "animation": "add",
+              "state": {"active_step": "contract", "process_flow": {"steps": [{"id": "contract", "label": "Contract", "detail": "Payable.amountDue()", "shape": "terminator"}, {"id": "object", "label": "Object", "detail": "Invoice or Membership", "shape": "card"}, {"id": "call", "label": "Call", "detail": "bill.amountDue()", "shape": "diamond"}, {"id": "method", "label": "Method", "detail": "actual class version", "shape": "input"}, {"id": "result", "label": "Result", "detail": "number returned", "shape": "terminator"}]}, "table": [{"key": "Invoice", "value": "implements Payable", "active": true}, {"key": "Membership", "value": "implements Payable"}], "note": "the interface names the shared promise"}
+            },
+            {
+              "title": "Store concrete objects",
+              "body": "A List<Payable> can hold different classes because each keeps the same promise.",
+              "animation": "highlight",
+              "state": {"active_step": "object", "process_flow": {"steps": [{"id": "contract", "label": "Contract", "detail": "Payable", "shape": "terminator"}, {"id": "object", "label": "Object", "detail": "new Invoice()", "shape": "card"}, {"id": "call", "label": "Call", "detail": "loop picks bill", "shape": "diamond"}, {"id": "method", "label": "Method", "detail": "method waits", "shape": "input"}, {"id": "result", "label": "Result", "detail": "not called yet", "shape": "terminator"}]}, "table": [{"key": "bill type", "value": "Payable"}, {"key": "actual object", "value": "Invoice", "active": true}], "note": "the variable type is shared, the object type is specific"}
+            },
+            {
+              "title": "Dispatch the call",
+              "body": "When amountDue is called, Java uses the implementation from the actual object.",
+              "animation": "slide",
+              "state": {"active_step": "method", "process_flow": {"steps": [{"id": "contract", "label": "Contract", "detail": "method must exist", "shape": "terminator"}, {"id": "object", "label": "Object", "detail": "Invoice", "shape": "card"}, {"id": "call", "label": "Call", "detail": "bill.amountDue()", "shape": "diamond"}, {"id": "method", "label": "Method", "detail": "Invoice.amountDue", "shape": "input"}, {"id": "result", "label": "Result", "detail": "25.0", "shape": "terminator"}]}, "table": [{"key": "Invoice", "value": "returns 25.0", "active": true}, {"key": "Membership", "value": "returns 10.0"}], "note": "polymorphism chooses the object's method"}
+            },
+            {
+              "title": "Reuse the same loop",
+              "body": "The next object can use the same call shape but return a different value.",
+              "animation": "add",
+              "state": {"active_step": "result", "process_flow": {"steps": [{"id": "contract", "label": "Contract", "detail": "Payable", "shape": "terminator"}, {"id": "object", "label": "Object", "detail": "Membership", "shape": "card"}, {"id": "call", "label": "Call", "detail": "same expression", "shape": "diamond"}, {"id": "method", "label": "Method", "detail": "Membership.amountDue", "shape": "input"}, {"id": "result", "label": "Result", "detail": "10.0", "shape": "terminator"}]}, "table": [{"key": "Invoice", "value": "25.0"}, {"key": "Membership", "value": "10.0", "active": true}], "note": "code to the shared type when the caller only needs the contract"}
+            }
+          ]
         }
       ]
     },

@@ -97,6 +97,19 @@ function conceptKind(concept = "") {
   if (value.includes("conditional") || value.includes("branch")) return "conditionals";
   if (value.includes("loop") || value.includes("iteration")) return "loops";
   if (value.includes("debug")) return "debugging";
+  if (
+    value.includes("comprehension") ||
+    value.includes("stream") ||
+    value.includes("async") ||
+    value.includes("promise") ||
+    value.includes("exception") ||
+    value.includes("error-handling") ||
+    value.includes("file") ||
+    value.includes("inheritance") ||
+    value.includes("interface") ||
+    value.includes("generic") ||
+    value.includes("ownership")
+  ) return "process-flow";
   if (value.includes("pointer") || value.includes("reference")) return "pointers";
   if (value.includes("algorithm") || value.includes("state-trace") || value.includes("best-so-far")) return "state-trace";
   if (value.includes("stack")) return "stack";
@@ -461,6 +474,49 @@ function VisualDebugTrace({ state }) {
   );
 }
 
+function VisualProcessFlow({ state }) {
+  const flow = state.process_flow || {};
+  const activeId = String(state.active_step || flow.active || "start");
+  const cards = Array.isArray(flow.steps) && flow.steps.length
+    ? flow.steps
+    : [
+        { id: "start", label: "Start", detail: flow.start || "Begin with the current state", shape: "terminator" },
+        { id: "action", label: "Action", detail: flow.action || "Run the next step", shape: "input" },
+        { id: "check", label: "Check", detail: flow.check || "Decide what path applies", shape: "diamond" },
+        { id: "result", label: "Result", detail: flow.result || state.note || "Use the final state", shape: "terminator" },
+      ];
+
+  return (
+    <div className="lesson-visual-process-flow" aria-label="Process flow trace">
+      <div className="lesson-visual-process-track">
+        {cards.map((card, index) => (
+          <div className="lesson-visual-process-step" key={card.id || index}>
+            <VisualFlowCard
+              id={card.id || `step-${index}`}
+              label={card.label || `Step ${index + 1}`}
+              detail={card.detail || ""}
+              active={activeId === card.id}
+              shape={card.shape || "card"}
+            />
+            {index < cards.length - 1 ? (
+              <span
+                className={`lesson-visual-flow-arrow ucv-inline-arrow ${
+                  cards.findIndex((item) => item.id === activeId) > index ? "is-active" : ""
+                }`}
+                aria-hidden="true"
+              />
+            ) : null}
+          </div>
+        ))}
+      </div>
+      {Array.isArray(state.items) && state.items.length ? (
+        <VisualListTrace state={state} />
+      ) : null}
+      {state.table ? <VisualTable rows={state.table} /> : null}
+    </div>
+  );
+}
+
 function VisualCallStack({ calls = [], activeCall = 0 }) {
   return (
     <div className="lesson-visual-call-stack" aria-label="Call stack state">
@@ -799,6 +855,10 @@ function VisualDiagram({ block, step }) {
       initialState.debug_trace || stepState.debug_trace
         ? { ...(initialState.debug_trace || {}), ...(stepState.debug_trace || {}) }
         : undefined,
+    process_flow:
+      initialState.process_flow || stepState.process_flow
+        ? { ...(initialState.process_flow || {}), ...(stepState.process_flow || {}) }
+        : undefined,
   };
   const mainItems = state.items || state.array || state.values || state.queue || [];
   const kind = conceptKind(block.concept);
@@ -821,9 +881,10 @@ function VisualDiagram({ block, step }) {
       {kind === "map" ? <VisualKeyValueFlow state={state} kind={rowMode.includes("object") ? "object" : rowMode.includes("set") ? "set" : "map"} /> : null}
       {kind === "pointers" ? <VisualPointerFlow state={state} /> : null}
       {kind === "debugging" ? <VisualDebugTrace state={state} /> : null}
+      {kind === "process-flow" ? <VisualProcessFlow state={state} /> : null}
       {state.stack ? <VisualStack items={state.stack} active={state.active} /> : null}
       {state.queue ? <VisualQueue items={state.queue} active={state.active} /> : null}
-      {!state.stack && !state.queue && !["lists", "state-trace", "map", "pointers", "debugging"].includes(kind) && mainItems.length ? (
+      {!state.stack && !state.queue && !["lists", "state-trace", "map", "pointers", "debugging", "process-flow"].includes(kind) && mainItems.length ? (
         <VisualTokenRow
           items={mainItems}
           active={state.active}

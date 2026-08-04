@@ -20,6 +20,39 @@
           "body": "**Variables** disappear when a program stops, but files remain. That makes files useful for saved settings, reports, and data that another program will read later. File work also introduces failures such as a missing path or denied access."
         },
         {
+          "kind": "visual",
+          "title": "A with block owns the open file",
+          "concept": "file-flow",
+          "caption": "Trace file work from path, to open file, to read or write, and then automatic close.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Name the path",
+              "body": "The path tells Python which file the program wants to use.",
+              "animation": "add",
+              "state": {"active_step": "path", "process_flow": {"steps": [{"id": "path", "label": "Path", "detail": "courses.txt", "shape": "terminator"}, {"id": "open", "label": "Open", "detail": "with open(...)", "shape": "input"}, {"id": "check", "label": "Available?", "detail": "missing path can fail", "shape": "diamond"}, {"id": "work", "label": "Work", "detail": "read or write text", "shape": "card"}, {"id": "close", "label": "Close", "detail": "with closes for you", "shape": "terminator"}]}, "note": "a path is just the file location"}
+            },
+            {
+              "title": "Open safely",
+              "body": "The with statement creates the open file object and owns cleanup for the block.",
+              "animation": "highlight",
+              "state": {"active_step": "open", "process_flow": {"steps": [{"id": "path", "label": "Path", "detail": "courses.txt", "shape": "terminator"}, {"id": "open", "label": "Open", "detail": "file object exists", "shape": "input"}, {"id": "check", "label": "Available?", "detail": "open succeeded", "shape": "diamond"}, {"id": "work", "label": "Work", "detail": "block can use file", "shape": "card"}, {"id": "close", "label": "Close", "detail": "not closed yet", "shape": "terminator"}]}, "note": "keep file use inside the with block"}
+            },
+            {
+              "title": "Read or write text",
+              "body": "Inside the block, the program performs the file operation while the file is open.",
+              "animation": "slide",
+              "state": {"active_step": "work", "process_flow": {"steps": [{"id": "path", "label": "Path", "detail": "courses.txt", "shape": "terminator"}, {"id": "open", "label": "Open", "detail": "file is open", "shape": "input"}, {"id": "check", "label": "Available?", "detail": "ready", "shape": "diamond"}, {"id": "work", "label": "Work", "detail": "write CS101, MATH120", "shape": "card"}, {"id": "close", "label": "Close", "detail": "after block", "shape": "terminator"}]}, "note": "mode controls whether work reads, replaces, or appends"}
+            },
+            {
+              "title": "Close automatically",
+              "body": "When the block ends, Python closes the file even if the work was interrupted.",
+              "animation": "add",
+              "state": {"active_step": "close", "process_flow": {"steps": [{"id": "path", "label": "Path", "detail": "courses.txt", "shape": "terminator"}, {"id": "open", "label": "Open", "detail": "block finished", "shape": "input"}, {"id": "check", "label": "Available?", "detail": "no more file calls", "shape": "diamond"}, {"id": "work", "label": "Work", "detail": "text is saved or read", "shape": "card"}, {"id": "close", "label": "Close", "detail": "file is released", "shape": "terminator"}]}, "note": "save text in a variable if you need it after the block"}
+            }
+          ]
+        },
+        {
           "kind": "code",
           "caption": "The `with` block owns the open **file**. When the indented block ends, Python closes it even if an error interrupted the work.",
           "code": "with open(\"courses.txt\", \"w\", encoding=\"utf-8\") as file:\n    file.write(\"CS101\\n\")\n    file.write(\"MATH120\\n\")\n\nwith open(\"courses.txt\", \"r\", encoding=\"utf-8\") as file:\n    print(file.read())",

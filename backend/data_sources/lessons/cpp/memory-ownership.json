@@ -28,6 +28,103 @@
           "tone": "tip",
           "title": "Python handles more of this automatically",
           "body": "Python usually decides cleanup for you when an **object** is no longer reachable. C++ lets you show ownership in the type. That extra detail makes cleanup predictable."
+        },
+        {
+          "kind": "visual",
+          "title": "Ownership moves, cleanup follows",
+          "concept": "ownership-flow",
+          "caption": "Trace one heap object from creation, through unique ownership transfer, to automatic cleanup.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Create the resource",
+              "body": "make_unique creates the Student and gives ownership to one pointer.",
+              "animation": "add",
+              "state": {
+                "active_step": "create",
+                "process_flow": {
+                  "steps": [
+                    {"id": "create", "label": "Create", "detail": "Student{'Ada'} on heap", "shape": "terminator"},
+                    {"id": "owner", "label": "Owner", "detail": "pending owns it", "shape": "card"},
+                    {"id": "move", "label": "Move?", "detail": "transfer only on purpose", "shape": "diamond"},
+                    {"id": "use", "label": "Use", "detail": "active can read name", "shape": "input"},
+                    {"id": "cleanup", "label": "Cleanup", "detail": "owner releases at scope exit", "shape": "terminator"}
+                  ]
+                },
+                "table": [
+                  {"key": "pending", "value": "owns Ada", "active": true},
+                  {"key": "active", "value": "empty"}
+                ],
+                "note": "unique_ptr means one owner"
+              }
+            },
+            {
+              "title": "Move ownership",
+              "body": "std::move transfers the ownership promise from pending to active.",
+              "animation": "slide",
+              "state": {
+                "active_step": "move",
+                "process_flow": {
+                  "steps": [
+                    {"id": "create", "label": "Create", "detail": "resource already exists", "shape": "terminator"},
+                    {"id": "owner", "label": "Owner", "detail": "pending will give it up", "shape": "card"},
+                    {"id": "move", "label": "Move?", "detail": "active = std::move(pending)", "shape": "diamond"},
+                    {"id": "use", "label": "Use", "detail": "active becomes owner", "shape": "input"},
+                    {"id": "cleanup", "label": "Cleanup", "detail": "one cleanup later", "shape": "terminator"}
+                  ]
+                },
+                "table": [
+                  {"key": "pending", "value": "empty after move"},
+                  {"key": "active", "value": "owns Ada", "active": true}
+                ],
+                "note": "moving does not copy unique ownership"
+              }
+            },
+            {
+              "title": "Guard the empty pointer",
+              "body": "After the move, check pending before using it because it no longer owns anything.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "use",
+                "process_flow": {
+                  "steps": [
+                    {"id": "create", "label": "Create", "detail": "Ada still exists", "shape": "terminator"},
+                    {"id": "owner", "label": "Owner", "detail": "active owns it", "shape": "card"},
+                    {"id": "move", "label": "Move?", "detail": "pending is empty", "shape": "diamond"},
+                    {"id": "use", "label": "Use", "detail": "if (!pending) active->name", "shape": "input"},
+                    {"id": "cleanup", "label": "Cleanup", "detail": "not yet", "shape": "terminator"}
+                  ]
+                },
+                "table": [
+                  {"key": "pending", "value": "empty", "active": true},
+                  {"key": "active", "value": "owns Ada"}
+                ],
+                "note": "use the owner, not the moved-from pointer"
+              }
+            },
+            {
+              "title": "Clean up automatically",
+              "body": "When active leaves scope, the owned Student is released once.",
+              "animation": "add",
+              "state": {
+                "active_step": "cleanup",
+                "process_flow": {
+                  "steps": [
+                    {"id": "create", "label": "Create", "detail": "resource was created", "shape": "terminator"},
+                    {"id": "owner", "label": "Owner", "detail": "active held it", "shape": "card"},
+                    {"id": "move", "label": "Move?", "detail": "single owner preserved", "shape": "diamond"},
+                    {"id": "use", "label": "Use", "detail": "printed Ada", "shape": "input"},
+                    {"id": "cleanup", "label": "Cleanup", "detail": "active releases Student", "shape": "terminator"}
+                  ]
+                },
+                "table": [
+                  {"key": "pending", "value": "empty"},
+                  {"key": "active", "value": "leaves scope", "active": true}
+                ],
+                "note": "RAII ties cleanup to object lifetime"
+              }
+            }
+          ]
         }
       ]
     },

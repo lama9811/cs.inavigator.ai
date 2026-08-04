@@ -19,6 +19,95 @@
         {
           "kind": "text",
           "body": "Some collection work follows a clear sequence: keep certain items, change each one, then collect the results. **Streams** let the code state those steps in the same order."
+        },
+        {
+          "kind": "visual",
+          "title": "Stream data moves through a pipeline",
+          "concept": "stream-flow",
+          "caption": "Trace scores through filter, map, and the terminal operation that collects the result.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Start with collection",
+              "body": "The original list supplies values to the stream, but the stream does not change that list.",
+              "animation": "add",
+              "state": {
+                "active_step": "source",
+                "process_flow": {
+                  "steps": [
+                    {"id": "source", "label": "Source", "detail": "scores = [72, 48, 90]", "shape": "terminator"},
+                    {"id": "filter", "label": "Filter", "detail": "score >= 60", "shape": "diamond"},
+                    {"id": "map", "label": "Map", "detail": "score + 5", "shape": "input"},
+                    {"id": "terminal", "label": "Terminal", "detail": "toList asks for work", "shape": "card"},
+                    {"id": "result", "label": "Result", "detail": "adjusted waits", "shape": "terminator"}
+                  ]
+                },
+                "items": [72, 48, 90],
+                "active": [0],
+                "note": "the source collection stays the same"
+              }
+            },
+            {
+              "title": "Filter passing values",
+              "body": "Filter keeps values whose condition is true and drops the others from later steps.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "filter",
+                "process_flow": {
+                  "steps": [
+                    {"id": "source", "label": "Source", "detail": "read 48", "shape": "terminator"},
+                    {"id": "filter", "label": "Filter", "detail": "48 >= 60 is false", "shape": "diamond"},
+                    {"id": "map", "label": "Map", "detail": "skipped", "shape": "input"},
+                    {"id": "terminal", "label": "Terminal", "detail": "keeps waiting", "shape": "card"},
+                    {"id": "result", "label": "Result", "detail": "no 48 in output", "shape": "terminator"}
+                  ]
+                },
+                "items": [72, 48, 90],
+                "active": [1],
+                "note": "a filtered-out value never reaches map"
+              }
+            },
+            {
+              "title": "Map kept values",
+              "body": "Map changes each kept value into the value the result should store.",
+              "animation": "slide",
+              "state": {
+                "active_step": "map",
+                "process_flow": {
+                  "steps": [
+                    {"id": "source", "label": "Source", "detail": "read 90", "shape": "terminator"},
+                    {"id": "filter", "label": "Filter", "detail": "90 passes", "shape": "diamond"},
+                    {"id": "map", "label": "Map", "detail": "90 + 5 becomes 95", "shape": "input"},
+                    {"id": "terminal", "label": "Terminal", "detail": "collect transformed value", "shape": "card"},
+                    {"id": "result", "label": "Result", "detail": "building [77, 95]", "shape": "terminator"}
+                  ]
+                },
+                "items": [72, 48, 90],
+                "active": [2],
+                "note": "map transforms values; it does not decide whether to keep them"
+              }
+            },
+            {
+              "title": "Collect the result",
+              "body": "The terminal operation starts the pipeline work and gathers the final list.",
+              "animation": "add",
+              "state": {
+                "active_step": "result",
+                "process_flow": {
+                  "steps": [
+                    {"id": "source", "label": "Source", "detail": "all scores checked", "shape": "terminator"},
+                    {"id": "filter", "label": "Filter", "detail": "kept 72 and 90", "shape": "diamond"},
+                    {"id": "map", "label": "Map", "detail": "77 and 95", "shape": "input"},
+                    {"id": "terminal", "label": "Terminal", "detail": "toList finishes", "shape": "card"},
+                    {"id": "result", "label": "Result", "detail": "adjusted = [77, 95]", "shape": "terminator"}
+                  ]
+                },
+                "items": [77, 95],
+                "active": [0, 1],
+                "note": "without a terminal operation, the pipeline only describes work"
+              }
+            }
+          ]
         }
       ]
     },

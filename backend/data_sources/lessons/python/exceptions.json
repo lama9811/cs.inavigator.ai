@@ -18,6 +18,39 @@
         {
           "kind": "text",
           "body": "An **exception** is Python reporting that it cannot finish an operation. Some exceptions come from expected **input**, such as letters where a number is required. Others expose a coding mistake. Good handling separates those cases."
+        },
+        {
+          "kind": "visual",
+          "title": "An exception jumps to the matching except",
+          "concept": "exception-flow",
+          "caption": "Trace bad input through try, ValueError, except, and the code that continues afterward.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Enter the try block",
+              "body": "Only the risky conversion belongs inside the protected path.",
+              "animation": "add",
+              "state": {"active_step": "try", "process_flow": {"steps": [{"id": "try", "label": "Try", "detail": "credits = int(raw)", "shape": "terminator"}, {"id": "raise", "label": "Raises?", "detail": "raw = 'twelve'", "shape": "diamond"}, {"id": "match", "label": "Match", "detail": "ValueError except", "shape": "input"}, {"id": "handle", "label": "Handle", "detail": "print clear message", "shape": "card"}, {"id": "continue", "label": "Continue", "detail": "after try/except", "shape": "terminator"}]}, "note": "protect the smallest risky operation"}
+            },
+            {
+              "title": "The conversion fails",
+              "body": "int cannot turn twelve into a whole number, so the rest of try is skipped.",
+              "animation": "highlight",
+              "state": {"active_step": "raise", "process_flow": {"steps": [{"id": "try", "label": "Try", "detail": "int('twelve')", "shape": "terminator"}, {"id": "raise", "label": "Raises?", "detail": "ValueError", "shape": "diamond"}, {"id": "match", "label": "Match", "detail": "look for ValueError", "shape": "input"}, {"id": "handle", "label": "Handle", "detail": "handler waits", "shape": "card"}, {"id": "continue", "label": "Continue", "detail": "not yet", "shape": "terminator"}]}, "note": "failed statements stop the normal try path"}
+            },
+            {
+              "title": "Use the matching handler",
+              "body": "The ValueError handler runs because it matches the failure Python raised.",
+              "animation": "slide",
+              "state": {"active_step": "handle", "process_flow": {"steps": [{"id": "try", "label": "Try", "detail": "normal path skipped", "shape": "terminator"}, {"id": "raise", "label": "Raises?", "detail": "ValueError", "shape": "diamond"}, {"id": "match", "label": "Match", "detail": "except ValueError", "shape": "input"}, {"id": "handle", "label": "Handle", "detail": "Credits must be a whole number", "shape": "card"}, {"id": "continue", "label": "Continue", "detail": "ready", "shape": "terminator"}]}, "note": "catch the error type you understand"}
+            },
+            {
+              "title": "Continue after handling",
+              "body": "After the handler finishes, code after the try/except can continue.",
+              "animation": "add",
+              "state": {"active_step": "continue", "process_flow": {"steps": [{"id": "try", "label": "Try", "detail": "protected work done", "shape": "terminator"}, {"id": "raise", "label": "Raises?", "detail": "handled", "shape": "diamond"}, {"id": "match", "label": "Match", "detail": "specific handler used", "shape": "input"}, {"id": "handle", "label": "Handle", "detail": "message printed", "shape": "card"}, {"id": "continue", "label": "Continue", "detail": "program keeps going", "shape": "terminator"}]}, "note": "unexpected bugs should stay visible"}
+            }
+          ]
         }
       ]
     },

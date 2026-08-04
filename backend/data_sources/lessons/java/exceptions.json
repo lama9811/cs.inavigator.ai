@@ -21,6 +21,39 @@
           "body": "An **exception** means the program hit a problem while running. Maybe a **file** was missing. Maybe **input** was not a number. Java can stop and hand that problem to code that knows how to respond."
         },
         {
+          "kind": "visual",
+          "title": "Catch the failure you understand",
+          "concept": "exception-flow",
+          "caption": "Trace a parse failure through try, NumberFormatException, catch, and continuation.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Run risky code",
+              "body": "The try block surrounds the parse that may fail for bad input.",
+              "animation": "add",
+              "state": {"active_step": "try", "process_flow": {"steps": [{"id": "try", "label": "Try", "detail": "parseInt(raw)", "shape": "terminator"}, {"id": "throw", "label": "Throws?", "detail": "raw = \"twelve\"", "shape": "diamond"}, {"id": "match", "label": "Match", "detail": "NumberFormatException", "shape": "input"}, {"id": "catch", "label": "Catch", "detail": "print clear message", "shape": "card"}, {"id": "continue", "label": "Continue", "detail": "after catch", "shape": "terminator"}]}, "note": "keep the try block close to the risky line"}
+            },
+            {
+              "title": "Throw the parse error",
+              "body": "parseInt cannot produce an int, so Java throws and skips the remaining try statements.",
+              "animation": "highlight",
+              "state": {"active_step": "throw", "process_flow": {"steps": [{"id": "try", "label": "Try", "detail": "Integer.parseInt", "shape": "terminator"}, {"id": "throw", "label": "Throws?", "detail": "NumberFormatException", "shape": "diamond"}, {"id": "match", "label": "Match", "detail": "look for catch type", "shape": "input"}, {"id": "catch", "label": "Catch", "detail": "waiting", "shape": "card"}, {"id": "continue", "label": "Continue", "detail": "not yet", "shape": "terminator"}]}, "note": "normal try flow stops at the thrown exception"}
+            },
+            {
+              "title": "Run matching catch",
+              "body": "The matching catch handles the known bad-number case.",
+              "animation": "slide",
+              "state": {"active_step": "catch", "process_flow": {"steps": [{"id": "try", "label": "Try", "detail": "skipped after failure", "shape": "terminator"}, {"id": "throw", "label": "Throws?", "detail": "known parse failure", "shape": "diamond"}, {"id": "match", "label": "Match", "detail": "catch NumberFormatException", "shape": "input"}, {"id": "catch", "label": "Catch", "detail": "Credits must be a whole number", "shape": "card"}, {"id": "continue", "label": "Continue", "detail": "ready", "shape": "terminator"}]}, "note": "catch the type your message describes"}
+            },
+            {
+              "title": "Continue after catch",
+              "body": "After the catch block finishes, later code can continue normally.",
+              "animation": "add",
+              "state": {"active_step": "continue", "process_flow": {"steps": [{"id": "try", "label": "Try", "detail": "protected line handled", "shape": "terminator"}, {"id": "throw", "label": "Throws?", "detail": "handled", "shape": "diamond"}, {"id": "match", "label": "Match", "detail": "specific catch used", "shape": "input"}, {"id": "catch", "label": "Catch", "detail": "message printed", "shape": "card"}, {"id": "continue", "label": "Continue", "detail": "program keeps going", "shape": "terminator"}]}, "note": "broad catches can hide unrelated bugs"}
+            }
+          ]
+        },
+        {
           "kind": "code",
           "caption": "The catch type matches the conversion failure. Code after the failed parse inside try is skipped, then execution continues after catch.",
           "code": "String raw = \"twelve\";\ntry {\n    int credits = Integer.parseInt(raw);\n    System.out.println(credits);\n} catch (NumberFormatException error) {\n    System.out.println(\"Credits must be a whole number\");\n}",

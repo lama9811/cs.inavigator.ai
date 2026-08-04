@@ -21,6 +21,39 @@
           "body": "A **file** lets your program keep data after the program ends. Java needs two things before it can read one: where the file is, and what should happen if reading fails."
         },
         {
+          "kind": "visual",
+          "title": "File work starts with a Path",
+          "concept": "file-flow",
+          "caption": "Trace Java file work from Path, through Files operation, to success or IOException.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Create the Path",
+              "body": "Path names the file-system location before any text is read or written.",
+              "animation": "add",
+              "state": {"active_step": "path", "process_flow": {"steps": [{"id": "path", "label": "Path", "detail": "Path.of(\"courses.txt\")", "shape": "terminator"}, {"id": "operation", "label": "Operation", "detail": "Files.readString", "shape": "input"}, {"id": "check", "label": "Can access?", "detail": "may throw IOException", "shape": "diamond"}, {"id": "data", "label": "Data", "detail": "String text", "shape": "card"}, {"id": "finish", "label": "Finish", "detail": "print or handle failure", "shape": "terminator"}]}, "note": "a Path identifies the file"}
+            },
+            {
+              "title": "Run the Files call",
+              "body": "The library operation tries to use the file at that path.",
+              "animation": "highlight",
+              "state": {"active_step": "operation", "process_flow": {"steps": [{"id": "path", "label": "Path", "detail": "courses.txt", "shape": "terminator"}, {"id": "operation", "label": "Operation", "detail": "readString(path, UTF_8)", "shape": "input"}, {"id": "check", "label": "Can access?", "detail": "file must exist", "shape": "diamond"}, {"id": "data", "label": "Data", "detail": "waiting for text", "shape": "card"}, {"id": "finish", "label": "Finish", "detail": "not done yet", "shape": "terminator"}]}, "note": "file access can fail outside your code"}
+            },
+            {
+              "title": "Handle success or IOException",
+              "body": "On success, Java returns text; on failure, the method must catch or declare the IOException.",
+              "animation": "slide",
+              "state": {"active_step": "check", "process_flow": {"steps": [{"id": "path", "label": "Path", "detail": "courses.txt", "shape": "terminator"}, {"id": "operation", "label": "Operation", "detail": "read attempted", "shape": "input"}, {"id": "check", "label": "Can access?", "detail": "success or IOException", "shape": "diamond"}, {"id": "data", "label": "Data", "detail": "text or error path", "shape": "card"}, {"id": "finish", "label": "Finish", "detail": "caller sees result", "shape": "terminator"}]}, "note": "checked exceptions belong in the method design"}
+            },
+            {
+              "title": "Use the returned text",
+              "body": "After a successful read, the file contents are ordinary String data.",
+              "animation": "add",
+              "state": {"active_step": "finish", "process_flow": {"steps": [{"id": "path", "label": "Path", "detail": "courses.txt", "shape": "terminator"}, {"id": "operation", "label": "Operation", "detail": "readString finished", "shape": "input"}, {"id": "check", "label": "Can access?", "detail": "success", "shape": "diamond"}, {"id": "data", "label": "Data", "detail": "\"CS101\\nMATH120\"", "shape": "card"}, {"id": "finish", "label": "Finish", "detail": "System.out.print(text)", "shape": "terminator"}]}, "note": "the returned String can be stored, printed, or parsed"}
+            }
+          ]
+        },
+        {
           "kind": "code",
           "caption": "The same Path is used for writing and reading. UTF-8 makes the text encoding an explicit part of the **file** format.",
           "code": "Path path = Path.of(\"courses.txt\");\nFiles.writeString(path, \"CS101\\nMATH120\\n\", StandardCharsets.UTF_8);\nString text = Files.readString(path, StandardCharsets.UTF_8);\nSystem.out.print(text);",

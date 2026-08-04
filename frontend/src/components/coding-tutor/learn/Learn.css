@@ -1591,7 +1591,8 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
 
 .lesson-visual-kv-flow,
 .lesson-visual-pointer-flow,
-.lesson-visual-debug-flow {
+.lesson-visual-debug-flow,
+.lesson-visual-process-flow {
   display: grid;
   justify-items: center;
   gap: 14px;
@@ -1602,7 +1603,8 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
 
 .lesson-visual-kv-steps,
 .lesson-visual-pointer-track,
-.lesson-visual-debug-steps {
+.lesson-visual-debug-steps,
+.lesson-visual-process-track {
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -1615,7 +1617,8 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
 
 .lesson-visual-kv-step,
 .lesson-visual-pointer-step,
-.lesson-visual-debug-step {
+.lesson-visual-debug-step,
+.lesson-visual-process-step {
   display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
@@ -1623,13 +1626,15 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
 
 .lesson-visual-kv-steps .lesson-visual-flow-symbol,
 .lesson-visual-pointer-track .lesson-visual-flow-symbol,
-.lesson-visual-debug-steps .lesson-visual-flow-symbol {
+.lesson-visual-debug-steps .lesson-visual-flow-symbol,
+.lesson-visual-process-track .lesson-visual-flow-symbol {
   width: clamp(116px, 13vw, 164px);
   flex: 0 0 auto;
 }
 
 .lesson-visual-kv-steps .lesson-visual-flow-symbol.is-diamond,
-.lesson-visual-debug-steps .lesson-visual-flow-symbol.is-diamond {
+.lesson-visual-debug-steps .lesson-visual-flow-symbol.is-diamond,
+.lesson-visual-process-track .lesson-visual-flow-symbol.is-diamond {
   width: clamp(116px, 12vw, 136px);
   min-width: 116px;
   min-height: clamp(116px, 12vw, 136px);
@@ -1637,7 +1642,8 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
 
 .lesson-visual-kv-steps .lesson-visual-flow-arrow,
 .lesson-visual-pointer-track .lesson-visual-flow-arrow,
-.lesson-visual-debug-steps .lesson-visual-flow-arrow {
+.lesson-visual-debug-steps .lesson-visual-flow-arrow,
+.lesson-visual-process-track .lesson-visual-flow-arrow {
   width: clamp(28px, 4vw, 48px);
 }
 
@@ -1708,6 +1714,11 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
   width: min(100%, 520px);
 }
 
+.lesson-visual-process-flow .lesson-visual-list-trace,
+.lesson-visual-process-flow .lesson-visual-table {
+  width: min(100%, 620px);
+}
+
 @media (max-width: 900px) {
   .lesson-visual-modal {
     width: min(100%, 94vw);
@@ -1724,7 +1735,8 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
   .lesson-visual-state-flow,
   .lesson-visual-kv-steps,
   .lesson-visual-pointer-track,
-  .lesson-visual-debug-steps {
+  .lesson-visual-debug-steps,
+  .lesson-visual-process-track {
     justify-content: flex-start;
   }
 
@@ -1740,7 +1752,8 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
 
   .lesson-visual-kv-steps,
   .lesson-visual-pointer-track,
-  .lesson-visual-debug-steps {
+  .lesson-visual-debug-steps,
+  .lesson-visual-process-track {
     padding-inline: 28px;
     scroll-padding-inline: 28px;
   }

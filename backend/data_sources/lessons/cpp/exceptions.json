@@ -24,6 +24,39 @@
           "body": "`throw` sends the problem out. `try` surrounds the risky work. `catch` handles a matching problem. Keep the try block small so the failing line is easier to find."
         },
         {
+          "kind": "visual",
+          "title": "Throw transfers control to catch",
+          "concept": "exception-flow",
+          "caption": "Trace invalid input through a throwing function, matching catch, and safe continuation.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Call risky work",
+              "body": "The try block calls a function that promised to require a positive value.",
+              "animation": "add",
+              "state": {"active_step": "try", "process_flow": {"steps": [{"id": "try", "label": "Try", "detail": "requirePositive(-2)", "shape": "terminator"}, {"id": "throw", "label": "Throws?", "detail": "value <= 0", "shape": "diamond"}, {"id": "match", "label": "Match", "detail": "invalid_argument", "shape": "input"}, {"id": "catch", "label": "Catch", "detail": "read error.what()", "shape": "card"}, {"id": "continue", "label": "Continue", "detail": "after catch", "shape": "terminator"}]}, "note": "try marks the code that may throw"}
+            },
+            {
+              "title": "Throw the exception",
+              "body": "The function cannot return a valid positive value, so it throws instead of pretending.",
+              "animation": "highlight",
+              "state": {"active_step": "throw", "process_flow": {"steps": [{"id": "try", "label": "Try", "detail": "function entered", "shape": "terminator"}, {"id": "throw", "label": "Throws?", "detail": "std::invalid_argument", "shape": "diamond"}, {"id": "match", "label": "Match", "detail": "search catch clauses", "shape": "input"}, {"id": "catch", "label": "Catch", "detail": "waiting", "shape": "card"}, {"id": "continue", "label": "Continue", "detail": "not yet", "shape": "terminator"}]}, "note": "normal return does not happen on this path"}
+            },
+            {
+              "title": "Catch by const reference",
+              "body": "The matching catch receives the exception without copying it.",
+              "animation": "slide",
+              "state": {"active_step": "catch", "process_flow": {"steps": [{"id": "try", "label": "Try", "detail": "normal output skipped", "shape": "terminator"}, {"id": "throw", "label": "Throws?", "detail": "invalid_argument", "shape": "diamond"}, {"id": "match", "label": "Match", "detail": "catch const reference", "shape": "input"}, {"id": "catch", "label": "Catch", "detail": "value must be positive", "shape": "card"}, {"id": "continue", "label": "Continue", "detail": "ready", "shape": "terminator"}]}, "note": "catch a meaningful type where you can respond"}
+            },
+            {
+              "title": "Continue after handling",
+              "body": "After catch finishes, code after the try/catch can run.",
+              "animation": "add",
+              "state": {"active_step": "continue", "process_flow": {"steps": [{"id": "try", "label": "Try", "detail": "risky call handled", "shape": "terminator"}, {"id": "throw", "label": "Throws?", "detail": "handled", "shape": "diamond"}, {"id": "match", "label": "Match", "detail": "specific handler used", "shape": "input"}, {"id": "catch", "label": "Catch", "detail": "message printed", "shape": "card"}, {"id": "continue", "label": "Continue", "detail": "program can proceed", "shape": "terminator"}]}, "note": "do not use exceptions for ordinary branch choices"}
+            }
+          ]
+        },
+        {
           "kind": "callout",
           "tone": "tip",
           "title": "The shape is similar to Python",
