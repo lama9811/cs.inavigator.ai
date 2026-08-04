@@ -7,7 +7,7 @@
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "A graph has nodes and edges. An **adjacency list** stores each node's neighbors. BFS usually uses a queue, DFS uses recursion or a **stack**, and both need a visited **set**.",
+  "refresher": "A **graph** has **nodes** and **edges**. An **adjacency list** stores each node's neighbors. BFS usually uses a queue, DFS uses recursion or a **stack**, and both need a **visited set**.",
   "refresher_code": "visited = set()\nfor neighbor in graph[node]: ...",
   "learn_cards": {
     "advanced-graph-node-edge": {
@@ -31,7 +31,7 @@
     {
       "id": "graph-shape",
       "title": "Graph shape",
-      "summary": "A **graph** is **nodes** plus connections.",
+      "summary": "A **graph** is **nodes** plus edges between them.",
       "question_ids": [
         "advanced-graph-node-edge",
         "advanced-graph-adj-list",
@@ -40,7 +40,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A **graph** is useful when relationships matter more than order. Friends in a network, prerequisites between courses, roads between cities, and links between pages can all be represented as graphs."
+          "body": "A **graph** is useful when relationships matter more than order. Friends in a network, prerequisites between courses, roads between cities, and links between pages can all be represented as nodes connected by **edges**."
         },
         {
           "kind": "visual",
@@ -276,7 +276,7 @@
     {
       "id": "visited-set",
       "title": "Visited set",
-      "summary": "**Visited** keeps traversal from repeating forever.",
+      "summary": "**Visited** keeps traversal from repeating nodes forever.",
       "question_ids": [
         "advanced-graph-visited",
         "advanced-graph-cycle",
@@ -285,7 +285,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "**Graphs** can contain cycles. In a cycle, following neighbors can lead you back to a **node** you already saw. A visited **set** prevents that."
+          "body": "**Graphs** can contain cycles. In a cycle, following neighbors can lead you back to a **node** you already saw. A **visited set** prevents that repeat."
         },
         {
           "kind": "visual",
@@ -558,7 +558,7 @@
     {
       "id": "bfs-dfs",
       "title": "BFS and DFS",
-      "summary": "BFS goes level by level. DFS goes deep first.",
+      "summary": "**BFS** goes level by level. **DFS** goes deep first.",
       "question_ids": [
         "advanced-graph-bfs",
         "advanced-graph-dfs"
@@ -566,7 +566,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "Breadth-first search uses a **queue**, so it processes older waiting **nodes** first. Depth-first search uses recursion or a **stack**, so it follows one path deeply before backing up."
+          "body": "**Breadth-first search** uses a **queue**, so it processes older waiting **nodes** first. **Depth-first search** uses recursion or a **stack**, so it follows one path deeply before backing up."
         },
         {
           "kind": "code",
@@ -605,7 +605,7 @@
     {
       "id": "frontier-choice",
       "title": "Choose the frontier structure",
-      "summary": "BFS and DFS differ mostly in which waiting node gets processed next.",
+      "summary": "BFS and DFS differ mostly in which waiting **node** gets processed next.",
       "question_ids": [
         "advanced-graph-bfs",
         "advanced-graph-dfs"
@@ -613,7 +613,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A graph traversal has two sets of information: what has already been visited and what is waiting next. BFS uses a queue for the waiting nodes. DFS uses a stack or recursive calls."
+          "body": "A **graph traversal** tracks two groups: what has already been visited and what is waiting next. BFS uses a queue for the waiting nodes. DFS uses a stack or recursive calls."
         },
         {
           "kind": "compare",
@@ -663,7 +663,7 @@
           "kind": "callout",
           "tone": "tip",
           "title": "Plain meaning",
-          "body": "A component is one connected group. If the **graph** has three separate groups, one **traversal** from one group cannot see the other two."
+          "body": "A **component** is one connected group. If the **graph** has three separate groups, one traversal from one group cannot see the other two."
         }
       ]
     }

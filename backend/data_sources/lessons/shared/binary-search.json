@@ -1,20 +1,20 @@
 {
   "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Binary Search",
-  "summary": "**Binary search** works when the search space is sorted or has a clear true/false boundary.",
+  "summary": "**Binary search** works when the search space is **sorted** or has a clear true/false boundary.",
   "minutes": 20,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "**Binary search** cuts the search space in half each step. It needs sorted data or a monotonic condition. After checking mid, move past mid so the range gets smaller.",
+  "refresher": "**Binary search** cuts the search space in half each step. It needs **sorted** data or a **monotonic condition**, where the answer switches direction only once. After checking mid, move past mid so the range gets smaller.",
   "refresher_code": "while low <= high:\n    mid = (low + high) // 2",
   "learn_cards": {
     "advanced-bs-sorted": {
       "title": "Binary search needs order",
       "body": "Ordinary **binary search** only works when smaller **values** are on one side and larger values are on the other.",
       "example": "[2, 5, 9, 12]",
-      "notice": "The comparison at mid tells you which half can be ignored.",
+      "notice": "The comparison at **mid** tells you which half can be ignored.",
       "mistake": "On unsorted data, mid tells you almost nothing.",
       "section_id": "bounds"
     },
@@ -39,7 +39,7 @@
     {
       "id": "bounds",
       "title": "Search inside low and high",
-      "summary": "Low and high mark the range still worth checking.",
+      "summary": "`low` and `high` mark the range still worth checking.",
       "question_ids": [
         "advanced-bs-sorted",
         "advanced-bs-mid",
@@ -48,7 +48,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "**Binary search** is not just a faster loop. It is a promise: because the data is ordered, one comparison can rule out half of the remaining positions."
+          "body": "**Binary search** only works when order gives meaning to the middle check. Because the data is ordered, one comparison can rule out half of the remaining positions."
         },
         {
           "kind": "visual",
@@ -187,7 +187,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "If `nums[mid]` is too small, everything at mid and to the left is too small. Move `low` to `mid + 1`. If `nums[mid]` is too large, move `high` to `mid - 1`."
+          "body": "If `nums[mid]` is too small, everything at mid and to the left is too small. Move `low` to `mid + 1`. If `nums[mid]` is too large, move `high` to `mid - 1`. Mid was already checked, so the next range should not include it."
         },
         {
           "kind": "visual",
@@ -333,7 +333,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "Binary search does not always stop at the first match. If the prompt asks for the first passing item or the last valid item, save the match and keep searching the side that might contain a better boundary."
+          "body": "**Binary search** does not always stop at the first match. If the prompt asks for the first passing item or the last valid item, save the match and keep searching the side that might contain a better **boundary**."
         },
         {
           "kind": "visual",
@@ -462,7 +462,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "**Binary search** can also work when you are searching for the smallest value that passes a test, or the largest value that still works. The key word is monotonic: once the answer becomes true, it stays true, or once it becomes false, it stays false."
+          "body": "**Binary search** can also work when you are searching for the smallest value that passes a test, or the largest value that still works. The key word is **monotonic**: once the answer becomes true, it stays true, or once it becomes false, it stays false."
         },
         {
           "kind": "list",

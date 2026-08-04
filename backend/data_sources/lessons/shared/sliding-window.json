@@ -1,13 +1,13 @@
 {
   "_note": "Original advanced lesson. Shared across languages with language-specific code variants.",
   "title": "Sliding Window",
-  "summary": "Track one contiguous range as it grows and shrinks.",
+  "summary": "Track one **contiguous range** as it grows and shrinks.",
   "minutes": 22,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "A **sliding window** is the current range from left to right. As the right side grows, update the window state. When the window breaks a rule, move left and update the state again.",
+  "refresher": "A **sliding window** is the current range from left to right. As the right side grows, update the window **state**. When the window breaks a rule, move left and update the state again.",
   "refresher_code": "left = 0\ntotal = 0\nfor right in range(len(nums)):\n    total += nums[right]",
   "learn_cards": {
     "advanced-window-meaning": {
@@ -144,8 +144,8 @@
           "items": [
             "left is the first **index** in the window.",
             "right is the newest **index** added to the window.",
-            "state is the total, count, or table that describes the current window.",
-            "best is the answer you have found so far."
+            "**State** is the total, count, or table that describes the current window.",
+            "**Best** is the answer you have found so far."
           ]
         },
         {
@@ -172,7 +172,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A fixed-size window keeps the same length after it is full. Add the new right value, remove the old left value, then compare or save the current result."
+          "body": "A **fixed-size window** keeps the same length after it is full. Add the new right value, remove the old left value, then compare or save the current result."
         },
         {
           "kind": "visual",
@@ -291,7 +291,7 @@
     {
       "id": "grow-shrink",
       "title": "Grow right, shrink left",
-      "summary": "Update state every time the window changes.",
+      "summary": "Update **state** every time the window changes.",
       "question_ids": [
         "advanced-window-shrink",
         "advanced-window-trace",
@@ -300,7 +300,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "Most sliding-window code has two movements. The right side moves to include a new **value**. The left side moves only when the current window breaks a rule."
+          "body": "Most sliding-window code has two movements. The right side moves to include a new **value**. The left side moves only when the current window breaks a rule. Each move must update the saved state."
         },
         {
           "kind": "code",
@@ -345,7 +345,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A variable-size window changes length. The right side tries to include more data. The left side moves until the saved state follows the prompt rule again."
+          "body": "A **variable-size window** changes length. The right side tries to include more data. The left side moves until the saved state follows the prompt rule again."
         },
         {
           "kind": "callout",

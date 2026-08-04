@@ -7,7 +7,7 @@
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "A binary tree **node** stores a **value** plus left and right child links. Traversal means visiting nodes in a chosen order. Most recursive tree **functions** start with a null check.",
+  "refresher": "A binary tree **node** stores a **value** plus left and right child links. **Traversal** means visiting nodes in a chosen order. Most recursive tree **functions** start with a **null check**.",
   "refresher_code": "if node is None: return base_answer\nsolve(node.left)\nsolve(node.right)",
   "learn_cards": {
     "advanced-tree-root": {
@@ -31,7 +31,7 @@
     {
       "id": "tree-node",
       "title": "Tree node shape",
-      "summary": "A binary **tree** **node** points left and right.",
+      "summary": "A binary **tree** **node** has a value, left child, and right child.",
       "question_ids": [
         "advanced-tree-root",
         "advanced-tree-leaf",
@@ -40,7 +40,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A **tree** is made of **nodes**. In a binary tree, each node can have a left child and a right child. The first node is called the **root**."
+          "body": "A **tree** is made of **nodes**. In a **binary tree**, each node can have a left child and a right child. The first node is called the **root**."
         },
         {
           "kind": "visual",
@@ -194,7 +194,7 @@
           "title": "Tree words",
           "items": [
             "**Root**: the first **node**.",
-            "Child: a **node** below another node.",
+            "**Child**: a **node** below another node.",
             "**Leaf**: a **node** with no children.",
             "Subtree: a smaller **tree** starting at some **node**."
           ]
@@ -222,7 +222,7 @@
     {
       "id": "array-tree-shape",
       "title": "Read array-backed tree examples",
-      "summary": "Some practice prompts store tree levels in an array with placeholders for missing nodes.",
+      "summary": "Some practice prompts store tree levels in an **array** with placeholders for missing nodes.",
       "question_ids": [
         "advanced-tree-null",
         "advanced-tree-height"
@@ -230,7 +230,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A level-order tree array lists nodes from top to bottom and left to right. A placeholder such as `-1` means that position has no real node."
+          "body": "A **level-order array** lists nodes from top to bottom and left to right. A placeholder such as `-1` means that position has no real node."
         },
         {
           "kind": "visual",
@@ -344,7 +344,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "**Traversal** means visiting every **node**. The three common depth-first orders use the same three actions: visit the node, traverse left, traverse right. Only the order changes."
+          "body": "**Traversal** means visiting every **node**. The three common depth-first orders use the same three actions: visit the node, traverse left, traverse right. Only the order of those actions changes."
         },
         {
           "kind": "visual",

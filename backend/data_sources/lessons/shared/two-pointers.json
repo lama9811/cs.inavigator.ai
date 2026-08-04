@@ -1,13 +1,13 @@
 {
   "_note": "Original advanced lesson. Shared across languages with language-specific code variants.",
   "title": "Two Pointers",
-  "summary": "Use two **indexes** that move for a clear reason.",
+  "summary": "Use two **pointers** with a clear movement rule.",
   "minutes": 22,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "**Two pointers** track two positions at the same time. The important part is the movement rule: each move should remove choices you no longer need.",
+  "refresher": "**Two pointers** track two positions at the same time. The important part is the **movement rule**: each move should remove choices you no longer need.",
   "refresher_code": "left = 0\nright = len(nums) - 1\nwhile left < right:\n    total = nums[left] + nums[right]",
   "learn_cards": {
     "advanced-tp-purpose": {
@@ -47,7 +47,7 @@
     {
       "id": "meaning",
       "title": "What two pointers mean",
-      "summary": "Two positions work together.",
+      "summary": "Two positions work together to shrink the work.",
       "question_ids": [
         "advanced-tp-purpose",
         "advanced-tp-loop-stop"
@@ -55,7 +55,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A two-**pointer** solution keeps two **indexes** and moves them on purpose. The pointers might start at opposite ends, or one might follow behind the other."
+          "body": "A two-**pointer** solution keeps two **indexes** and moves one only when a comparison or rule says that side is done. The pointers might start at opposite ends, or one might follow behind the other."
         },
         {
           "kind": "visual",
@@ -165,7 +165,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "Opposite-end pointers start far apart and move inward. This shape fits sorted pair searches, palindrome checks, and problems where the outside values decide what can be ignored."
+          "body": "**Opposite-end pointers** start far apart and move inward. This shape fits sorted pair searches, palindrome checks, and problems where the outside values decide what can be ignored."
         },
         {
           "kind": "compare",
@@ -201,7 +201,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "For sorted pair-sum problems, left points to a smaller **value** and right points to a larger value. If the sum is too small, left moves rightward. If the sum is too large, right moves leftward."
+          "body": "For sorted pair-sum problems, left points to a smaller **value** and right points to a larger value. If the sum is too small, left moves rightward to raise it. If the sum is too large, right moves leftward to lower it."
         },
         {
           "kind": "code",
@@ -242,11 +242,11 @@
     {
       "id": "same-direction",
       "title": "Same-direction pointers",
-      "summary": "Sometimes one pointer reads while another writes or remembers a boundary.",
+      "summary": "Sometimes one **pointer** reads while another writes or remembers a boundary.",
       "blocks": [
         {
           "kind": "text",
-          "body": "Not every two-pointer problem starts at both ends. Some use a read pointer to scan each item and a write pointer to place kept values, remove duplicates, or compact a list."
+          "body": "Not every two-pointer problem starts at both ends. Some use a **read pointer** to scan each item and a **write pointer** to place kept values, remove duplicates, or compact a list."
         },
         {
           "kind": "code",
@@ -287,7 +287,7 @@
     {
       "id": "trace",
       "title": "Trace before changing code",
-      "summary": "Write the pair and the reason for each move.",
+      "summary": "Write the pair, comparison, and reason for each move.",
       "question_ids": [
         "advanced-tp-palindrome",
         "advanced-tp-parsons",
