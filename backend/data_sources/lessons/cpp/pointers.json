@@ -23,27 +23,44 @@
           "kind": "visual",
           "title": "A pointer stores an address-like link",
           "concept": "pointers",
-          "caption": "See a pointer name refer to an existing value instead of holding a separate copy.",
+          "caption": "Trace the value, stored address, dereference, mutation, and null guard.",
           "initial_state": {},
           "steps": [
             {
-              "title": "A value exists",
-              "body": "The variable score stores the number 92.",
+              "title": "Create a value",
+              "body": "The variable score stores 92 in one memory location.",
               "state": {
+                "active_step": "value",
+                "pointer_flow": {
+                  "value": "score = 92",
+                  "address": "&score exists",
+                  "pointer": "ptr not assigned yet",
+                  "dereference": "nothing to follow yet",
+                  "guard": "check before dereference"
+                },
                 "table": [
                   {
                     "key": "score",
                     "value": "92",
                     "active": true
                   }
-                ]
+                ],
+                "note": "the value exists before the pointer"
               }
             },
             {
-              "title": "Pointer points at it",
-              "body": "The pointer stores a way to reach score.",
+              "title": "Store its address",
+              "body": "The pointer stores a way to reach score; it does not copy 92.",
               "animation": "highlight",
               "state": {
+                "active_step": "pointer",
+                "pointer_flow": {
+                  "value": "score = 92",
+                  "address": "&score",
+                  "pointer": "ptr points to score",
+                  "dereference": "*ptr can follow",
+                  "guard": "ptr is not nullptr"
+                },
                 "table": [
                   {
                     "key": "score",
@@ -55,21 +72,90 @@
                     "value": "points to score",
                     "active": true
                   }
-                ]
+                ],
+                "note": "ptr stores the address-like link"
               }
             },
             {
-              "title": "Dereference",
-              "body": "Dereferencing reads the value through the pointer.",
+              "title": "Dereference safely",
+              "body": "Dereferencing follows the stored address and reads the original value.",
+              "animation": "slide",
               "state": {
+                "active_step": "dereference",
+                "pointer_flow": {
+                  "value": "score still stores 92",
+                  "address": "&score",
+                  "pointer": "ptr has target",
+                  "dereference": "*ptr reads 92",
+                  "guard": "safe because ptr has a target"
+                },
                 "table": [
                   {
                     "key": "*ptr",
                     "value": "92",
                     "active": true
+                  },
+                  {
+                    "key": "score",
+                    "value": "92"
                   }
                 ],
                 "note": "same value, reached indirectly"
+              }
+            },
+            {
+              "title": "Change through pointer",
+              "body": "Assigning through *ptr changes score because ptr reaches score.",
+              "animation": "branch",
+              "state": {
+                "active_step": "dereference",
+                "pointer_flow": {
+                  "value": "score becomes 85",
+                  "address": "&score",
+                  "pointer": "ptr still points to score",
+                  "dereference": "*ptr = 85",
+                  "guard": "target is valid"
+                },
+                "table": [
+                  {
+                    "key": "*ptr",
+                    "value": "85",
+                    "active": true
+                  },
+                  {
+                    "key": "score",
+                    "value": "85",
+                    "active": true
+                  }
+                ],
+                "note": "the original value changes"
+              }
+            },
+            {
+              "title": "Guard null pointer",
+              "body": "If the pointer is nullptr, do not dereference it; take the safe branch instead.",
+              "animation": "return",
+              "state": {
+                "active_step": "guard",
+                "pointer_flow": {
+                  "value": "no target value",
+                  "address": "nullptr",
+                  "pointer": "ptr points nowhere",
+                  "dereference": "skip *ptr",
+                  "guard": "if ptr != nullptr"
+                },
+                "table": [
+                  {
+                    "key": "ptr",
+                    "value": "nullptr",
+                    "active": true
+                  },
+                  {
+                    "key": "*ptr",
+                    "value": "do not use"
+                  }
+                ],
+                "note": "check before following an address"
               }
             }
           ]

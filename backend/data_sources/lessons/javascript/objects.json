@@ -21,15 +21,22 @@
         },
         {
           "kind": "visual",
-          "title": "Map keys to values",
-          "concept": "maps",
-          "caption": "Watch a lookup use a key to find the matching stored value.",
+          "title": "Object properties hold values",
+          "concept": "objects",
+          "caption": "Trace a property through object setup, lookup, missing-property handling, and final usable state.",
           "initial_state": {},
           "steps": [
             {
-              "title": "Start with pairs",
-              "body": "Each key has one value next to it.",
+              "title": "Store named pairs",
+              "body": "Each key names one stored value, so the meaning is carried by the key instead of an index.",
               "state": {
+                "active_step": "store",
+                "map_flow": {
+                  "store": "object has named pairs",
+                  "action": "prepare a lookup",
+                  "decision": "which key?",
+                  "result": "state is ready"
+                },
                 "table": [
                   {
                     "key": "CS101",
@@ -43,14 +50,22 @@
                     "key": "MATH",
                     "value": "4 credits"
                   }
-                ]
+                ],
+                "note": "keys explain what each value means"
               }
             },
             {
               "title": "Look up CS102",
-              "body": "The key CS102 selects the matching row.",
+              "body": "The lookup key selects exactly one matching pair.",
               "animation": "highlight",
               "state": {
+                "active_step": "action",
+                "map_flow": {
+                  "store": "pairs stay stored",
+                  "action": "look up CS102",
+                  "decision": "key exists?",
+                  "result": "4 credits"
+                },
                 "table": [
                   {
                     "key": "CS101",
@@ -70,9 +85,17 @@
               }
             },
             {
-              "title": "Missing key",
-              "body": "A missing key needs a default, a guard, or an error-handling path.",
+              "title": "Handle missing key",
+              "body": "A missing key needs an intentional path: default, guard, or error handling.",
+              "animation": "branch",
               "state": {
+                "active_step": "decision",
+                "map_flow": {
+                  "store": "CS101 and CS102 exist",
+                  "action": "look up ART101",
+                  "decision": "ART101 exists? no",
+                  "result": "use fallback or raise"
+                },
                 "table": [
                   {
                     "key": "CS101",
@@ -81,9 +104,40 @@
                   {
                     "key": "CS102",
                     "value": "4 credits"
+                  },
+                  {
+                    "key": "ART101",
+                    "value": "missing",
+                    "active": true
                   }
                 ],
-                "note": "ART101 is not present"
+                "note": "absence is a separate case"
+              }
+            },
+            {
+              "title": "Use final value",
+              "body": "After the lookup path is known, use the returned value or fallback in the next line.",
+              "animation": "return",
+              "state": {
+                "active_step": "result",
+                "map_flow": {
+                  "store": "stored pairs unchanged",
+                  "action": "chosen path complete",
+                  "decision": "key status known",
+                  "result": "use 4 credits or fallback"
+                },
+                "table": [
+                  {
+                    "key": "CS102",
+                    "value": "4 credits",
+                    "active": true
+                  },
+                  {
+                    "key": "fallback",
+                    "value": "only for missing keys"
+                  }
+                ],
+                "note": "the visual reaches the usable result"
               }
             }
           ]

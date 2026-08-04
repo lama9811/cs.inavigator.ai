@@ -24,17 +24,25 @@
           "kind": "visual",
           "title": "One object keeps related data together",
           "concept": "objects",
-          "caption": "Watch fields live inside one object while a method updates them.",
+          "caption": "Trace object fields from creation through method update and remembered state.",
           "initial_state": {},
           "steps": [
             {
-              "title": "Create the object",
-              "body": "The object starts with its own field values.",
+              "title": "Create object state",
+              "body": "The object groups related fields into one named thing.",
               "state": {
+                "active_step": "store",
+                "object_flow": {
+                  "store": "plant object exists",
+                  "action": "fields are initialized",
+                  "decision": "which field changes?",
+                  "result": "state is grouped"
+                },
                 "table": [
                   {
                     "key": "name",
-                    "value": "Plant"
+                    "value": "Plant",
+                    "active": true
                   },
                   {
                     "key": "watered",
@@ -45,10 +53,43 @@
               }
             },
             {
-              "title": "Call a method",
-              "body": "The method changes the object's watered field.",
+              "title": "Call method",
+              "body": "The method receives the object and decides which field to update.",
               "animation": "highlight",
               "state": {
+                "active_step": "action",
+                "object_flow": {
+                  "store": "same plant object",
+                  "action": "plant.water()",
+                  "decision": "update watered?",
+                  "result": "watered changes"
+                },
+                "table": [
+                  {
+                    "key": "name",
+                    "value": "Plant"
+                  },
+                  {
+                    "key": "watered",
+                    "value": "false",
+                    "active": true
+                  }
+                ],
+                "note": "method is running"
+              }
+            },
+            {
+              "title": "Update field",
+              "body": "Only the targeted field changes; the other fields stay with the same object.",
+              "animation": "branch",
+              "state": {
+                "active_step": "decision",
+                "object_flow": {
+                  "store": "plant object",
+                  "action": "set watered",
+                  "decision": "false becomes true",
+                  "result": "object state updates"
+                },
                 "table": [
                   {
                     "key": "name",
@@ -60,13 +101,21 @@
                     "active": true
                   }
                 ],
-                "note": "plant.water()"
+                "note": "field update happens inside the object"
               }
             },
             {
               "title": "State is remembered",
-              "body": "After the method ends, the object still stores the updated field.",
+              "body": "After the method ends, the object still stores the updated field value.",
+              "animation": "return",
               "state": {
+                "active_step": "result",
+                "object_flow": {
+                  "store": "same object",
+                  "action": "method finished",
+                  "decision": "state persists?",
+                  "result": "watered is true"
+                },
                 "table": [
                   {
                     "key": "name",

@@ -24,13 +24,20 @@
           "kind": "visual",
           "title": "Find the first wrong state",
           "concept": "debugging",
-          "caption": "Compare the expected state with the actual state before the final answer distracts you.",
+          "caption": "Compare expected and actual state until the first wrong transition is isolated.",
           "initial_state": {},
           "steps": [
             {
-              "title": "Before the update",
-              "body": "The total is still correct before this loop pass.",
+              "title": "State still matches",
+              "body": "Start from the last moment where the hand trace and program state agree.",
               "state": {
+                "active_step": "before",
+                "debug_trace": {
+                  "before": "score is 7, total is 5",
+                  "expected": "next total should be 12",
+                  "actual": "no wrong state yet",
+                  "fix": "keep tracing"
+                },
                 "table": [
                   {
                     "key": "score",
@@ -46,10 +53,43 @@
               }
             },
             {
-              "title": "Wrong update",
-              "body": "The update changes the wrong variable or uses the wrong operation.",
+              "title": "Name the expected change",
+              "body": "Before blaming the final answer, write what this one transition should do.",
               "animation": "highlight",
               "state": {
+                "active_step": "expected",
+                "debug_trace": {
+                  "before": "score = 7, total = 5",
+                  "expected": "total should become 12",
+                  "actual": "not checked yet",
+                  "fix": "compare one transition"
+                },
+                "table": [
+                  {
+                    "key": "expected total",
+                    "value": "12",
+                    "active": true
+                  },
+                  {
+                    "key": "operation",
+                    "value": "total + score"
+                  }
+                ],
+                "note": "expected state is 12"
+              }
+            },
+            {
+              "title": "Find the first wrong state",
+              "body": "The actual update produces the wrong value, so this is the first transition to inspect.",
+              "animation": "branch",
+              "state": {
+                "active_step": "actual",
+                "debug_trace": {
+                  "before": "score = 7, total = 5",
+                  "expected": "12",
+                  "actual": "57",
+                  "fix": "wrong operation or type"
+                },
                 "table": [
                   {
                     "key": "expected total",
@@ -66,8 +106,16 @@
             },
             {
               "title": "Fix the transition",
-              "body": "Once the first bad transition is known, the fix is smaller.",
+              "body": "Once the first bad transition is known, the fix is local and testable.",
+              "animation": "return",
               "state": {
+                "active_step": "fix",
+                "debug_trace": {
+                  "before": "score = 7, total = 5",
+                  "expected": "12",
+                  "actual": "12 after fix",
+                  "fix": "use numeric addition"
+                },
                 "table": [
                   {
                     "key": "score",

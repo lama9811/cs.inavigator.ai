@@ -1589,6 +1589,125 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
   grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr);
 }
 
+.lesson-visual-kv-flow,
+.lesson-visual-pointer-flow,
+.lesson-visual-debug-flow {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  width: 100%;
+  overflow-x: auto;
+  padding: 8px 4px;
+}
+
+.lesson-visual-kv-steps,
+.lesson-visual-pointer-track,
+.lesson-visual-debug-steps {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  overflow-x: auto;
+  padding: 26px 44px 30px;
+  scroll-padding-inline: 44px;
+}
+
+.lesson-visual-kv-step,
+.lesson-visual-pointer-step,
+.lesson-visual-debug-step {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.lesson-visual-kv-steps .lesson-visual-flow-symbol,
+.lesson-visual-pointer-track .lesson-visual-flow-symbol,
+.lesson-visual-debug-steps .lesson-visual-flow-symbol {
+  width: clamp(116px, 13vw, 164px);
+  flex: 0 0 auto;
+}
+
+.lesson-visual-kv-steps .lesson-visual-flow-symbol.is-diamond,
+.lesson-visual-debug-steps .lesson-visual-flow-symbol.is-diamond {
+  width: clamp(116px, 12vw, 136px);
+  min-width: 116px;
+  min-height: clamp(116px, 12vw, 136px);
+}
+
+.lesson-visual-kv-steps .lesson-visual-flow-arrow,
+.lesson-visual-pointer-track .lesson-visual-flow-arrow,
+.lesson-visual-debug-steps .lesson-visual-flow-arrow {
+  width: clamp(28px, 4vw, 48px);
+}
+
+.lesson-visual-kv-board {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 10px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 14px 28px 18px;
+  scroll-padding-inline: 28px;
+}
+
+.lesson-visual-kv-card {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 6px;
+  flex: 0 0 clamp(116px, 16vw, 160px);
+  min-height: 86px;
+  padding: 12px;
+  border: 1px solid var(--ct-border-strong, #94a3b8);
+  border-radius: 14px;
+  background: var(--ct-panel, #fff);
+  color: var(--ct-text);
+  box-shadow: 0 12px 24px rgba(8, 35, 67, 0.1);
+  text-align: center;
+}
+
+.lesson-visual-kv-card small {
+  max-width: 100%;
+  color: var(--ct-muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 1.15;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.lesson-visual-kv-card strong {
+  max-width: 100%;
+  color: var(--ct-primary, #082343);
+  font-size: 0.92rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.lesson-visual-kv-card.is-active {
+  border-color: var(--ct-accent, #f97316);
+  background: color-mix(in srgb, var(--ct-accent, #f97316) 12%, var(--ct-panel, #fff));
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--ct-accent, #f97316) 16%, transparent),
+    0 16px 30px rgba(249, 115, 22, 0.15);
+  transform: translateY(-2px);
+}
+
+.lesson-visual-pointer-flow .lesson-visual-kv-flow {
+  padding-top: 0;
+}
+
+.lesson-visual-pointer-flow .lesson-visual-kv-steps {
+  display: none;
+}
+
+.lesson-visual-debug-flow .lesson-visual-table {
+  width: min(100%, 520px);
+}
+
 @media (max-width: 900px) {
   .lesson-visual-modal {
     width: min(100%, 94vw);
@@ -1602,7 +1721,10 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
   .lesson-visual-conditional,
   .lesson-visual-loop-flow,
   .lesson-visual-function-main,
-  .lesson-visual-state-flow {
+  .lesson-visual-state-flow,
+  .lesson-visual-kv-steps,
+  .lesson-visual-pointer-track,
+  .lesson-visual-debug-steps {
     justify-content: flex-start;
   }
 
@@ -1614,6 +1736,13 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
 
   .lesson-visual-state-flow {
     padding-block: 24px 28px;
+  }
+
+  .lesson-visual-kv-steps,
+  .lesson-visual-pointer-track,
+  .lesson-visual-debug-steps {
+    padding-inline: 28px;
+    scroll-padding-inline: 28px;
   }
 }
 
@@ -1649,6 +1778,11 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
   .lesson-visual-list-track {
     justify-content: flex-start;
     width: 100%;
+  }
+
+  .lesson-visual-kv-board {
+    justify-content: flex-start;
+    padding-inline: 20px;
   }
 }
 

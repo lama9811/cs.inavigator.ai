@@ -23,51 +23,100 @@
           "kind": "visual",
           "title": "Keep one copy of each value",
           "concept": "sets",
-          "caption": "See how a set ignores duplicates while membership stays fast to check.",
+          "caption": "Trace values entering a set, duplicate handling, membership, and final unique state.",
           "initial_state": {},
           "steps": [
             {
-              "title": "Add A",
-              "body": "A is new, so it joins the set.",
-              "animation": "add",
+              "title": "Start empty",
+              "body": "A set begins with no stored values and no index order to follow.",
               "state": {
-                "items": [
-                  "A"
-                ],
-                "active": [
-                  0
-                ],
-                "note": "seen = {A}"
+                "active_step": "store",
+                "map_flow": {
+                  "store": "seen = set()",
+                  "action": "read next value",
+                  "decision": "already present?",
+                  "result": "unique values only"
+                },
+                "table": [],
+                "note": "membership matters more than position"
               }
             },
             {
-              "title": "Add B",
-              "body": "B is also new.",
+              "title": "Add new values",
+              "body": "A and B are new, so each joins the set once.",
               "animation": "add",
               "state": {
-                "items": [
-                  "A",
-                  "B"
-                ],
-                "active": [
-                  1
+                "active_step": "action",
+                "map_flow": {
+                  "store": "seen has A",
+                  "action": "add B",
+                  "decision": "B already present? no",
+                  "result": "store B"
+                },
+                "table": [
+                  {
+                    "key": "A",
+                    "value": "stored"
+                  },
+                  {
+                    "key": "B",
+                    "value": "stored",
+                    "active": true
+                  }
                 ],
                 "note": "seen = {A, B}"
               }
             },
             {
-              "title": "Try A again",
-              "body": "A is already present, so the set still has one A.",
+              "title": "Ignore duplicate",
+              "body": "Trying to add A again changes nothing because A is already a member.",
               "animation": "highlight",
               "state": {
-                "items": [
-                  "A",
-                  "B"
-                ],
-                "active": [
-                  0
+                "active_step": "decision",
+                "map_flow": {
+                  "store": "seen has A and B",
+                  "action": "add A again",
+                  "decision": "A already present? yes",
+                  "result": "do not add a second A"
+                },
+                "table": [
+                  {
+                    "key": "A",
+                    "value": "already stored",
+                    "active": true
+                  },
+                  {
+                    "key": "B",
+                    "value": "stored"
+                  }
                 ],
                 "note": "duplicate ignored"
+              }
+            },
+            {
+              "title": "Check membership",
+              "body": "The final set is useful because membership can be checked directly.",
+              "animation": "return",
+              "state": {
+                "active_step": "result",
+                "map_flow": {
+                  "store": "seen = {A, B}",
+                  "action": "check A",
+                  "decision": "A in seen?",
+                  "result": "true"
+                },
+                "table": [
+                  {
+                    "key": "A",
+                    "value": "present",
+                    "active": true
+                  },
+                  {
+                    "key": "B",
+                    "value": "present"
+                  }
+                ],
+                "note": "final state has one copy of each value"
               }
             }
           ]

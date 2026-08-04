@@ -23,14 +23,40 @@
         {
           "kind": "visual",
           "title": "Track best-so-far state",
-          "concept": "arrays",
-          "caption": "Watch the best index update only when a better value appears.",
+          "concept": "state-trace",
+          "caption": "Trace the invariant from edge-case guard to final returned index.",
           "initial_state": {},
           "steps": [
             {
-              "title": "Initialize",
-              "body": "Best starts at index 0 because that is the first candidate.",
+              "title": "Guard empty input",
+              "body": "Before using index 0, decide what the algorithm returns for an empty input.",
               "state": {
+                "active_step": "input",
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "pointers": {
+                  "candidate": 0
+                },
+                "state_trace": {
+                  "input": "{4, 9, 7}",
+                  "current": "empty case checked first",
+                  "comparison": "values empty?",
+                  "decision": "if empty, return the sentinel",
+                  "tracked": "no best index yet",
+                  "result": "safe to choose index 0"
+                },
+                "note": "The edge case is handled before reading a first item."
+              }
+            },
+            {
+              "title": "Initialize invariant",
+              "body": "Use the first item as the first best candidate, then state what best means.",
+              "animation": "add",
+              "state": {
+                "active_step": "state",
                 "items": [
                   "4",
                   "9",
@@ -42,14 +68,23 @@
                 "pointers": {
                   "best": 0
                 },
-                "note": "best value = 4"
+                "state_trace": {
+                  "input": "{4, 9, 7}",
+                  "current": "index 0 has 4",
+                  "comparison": "no later item checked yet",
+                  "decision": "best starts at index 0",
+                  "tracked": "best = index 0, value 4",
+                  "result": "invariant is ready"
+                },
+                "note": "Invariant: best is the index of the largest checked value."
               }
             },
             {
-              "title": "Compare index 1",
-              "body": "Nine is larger than four, so best moves to index 1.",
+              "title": "Update when better",
+              "body": "Compare index 1 with the saved best. Since 9 is larger than 4, best must move.",
               "animation": "slide",
               "state": {
+                "active_step": "compare",
                 "items": [
                   "4",
                   "9",
@@ -62,13 +97,23 @@
                   "best": 1,
                   "i": 1
                 },
-                "note": "best value = 9"
+                "state_trace": {
+                  "input": "{4, 9, 7}",
+                  "current": "index 1 has 9",
+                  "comparison": "9 > 4 is true",
+                  "decision": "replace best",
+                  "tracked": "best = index 1, value 9",
+                  "result": "keep scanning"
+                },
+                "note": "The saved index and saved meaning stay in sync."
               }
             },
             {
-              "title": "Compare index 2",
-              "body": "Seven is not larger than nine, so best stays put.",
+              "title": "Keep when not better",
+              "body": "Compare index 2 with best. Since 7 is not larger than 9, the invariant says best stays put.",
+              "animation": "highlight",
               "state": {
+                "active_step": "compare",
                 "items": [
                   "4",
                   "9",
@@ -81,7 +126,43 @@
                   "best": 1,
                   "i": 2
                 },
-                "note": "return best index 1"
+                "state_trace": {
+                  "input": "{4, 9, 7}",
+                  "current": "index 2 has 7",
+                  "comparison": "7 > 9 is false",
+                  "decision": "keep best",
+                  "tracked": "best = index 1, value 9",
+                  "result": "all items checked"
+                },
+                "note": "Not every pass updates the saved state."
+              }
+            },
+            {
+              "title": "Return the tracked fact",
+              "body": "After the loop, return the fact the variable promised to track: the best index.",
+              "animation": "return",
+              "state": {
+                "active_step": "result",
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "best": 1
+                },
+                "state_trace": {
+                  "input": "{4, 9, 7}",
+                  "current": "loop finished",
+                  "comparison": "no candidates left",
+                  "decision": "use best",
+                  "tracked": "best = index 1, value 9",
+                  "result": "return index 1"
+                },
+                "note": "The trace reaches the final returned index."
               }
             }
           ]

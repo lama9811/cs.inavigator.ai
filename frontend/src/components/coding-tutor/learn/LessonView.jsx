@@ -96,6 +96,8 @@ function conceptKind(concept = "") {
   const value = String(concept).toLowerCase();
   if (value.includes("conditional") || value.includes("branch")) return "conditionals";
   if (value.includes("loop") || value.includes("iteration")) return "loops";
+  if (value.includes("debug")) return "debugging";
+  if (value.includes("pointer") || value.includes("reference")) return "pointers";
   if (value.includes("algorithm") || value.includes("state-trace") || value.includes("best-so-far")) return "state-trace";
   if (value.includes("stack")) return "stack";
   if (value.includes("queue")) return "queue";
@@ -331,37 +333,130 @@ function VisualNodes({ nodes = [], edges = [], kind = "tree" }) {
   );
 }
 
-function VisualBucketMap({ state }) {
-  const buckets = state.buckets || [];
-  if (!buckets.length && !state.table) return null;
-  if (!buckets.length) return <VisualTable rows={state.table || []} />;
+function VisualKeyValueFlow({ state, kind = "map" }) {
+  const rows = state.table || [];
+  const flow = state.map_flow || state.object_flow || {};
+  const activeId = String(state.active_step || flow.active || "store");
+  const cards = [
+    ["store", kind === "map" ? "Stored pairs" : "State", flow.store || flow.setup || "Keys hold values", "terminator"],
+    ["action", "Action", flow.action || "Read, add, or update one entry", "input"],
+    ["decision", "Check", flow.decision || "Does the key or value already exist?", "diamond"],
+    ["result", "Result", flow.result || state.note || "Use the stored state", "terminator"],
+  ];
+
   return (
-    <div className="lesson-visual-buckets" aria-label="Hash map buckets">
-      {buckets.map((bucket, index) => {
-        const entries = Array.isArray(bucket.entries) ? bucket.entries : Array.isArray(bucket) ? bucket : [];
-        const label = bucket.label || bucket.key || `bucket ${index}`;
-        return (
-          <div
-            key={`${label}-${index}`}
-            className={`lesson-visual-bucket ${
-              state.activeBucket === index || state.active?.includes(index) ? "is-active" : ""
-            }`}
-          >
-            <small>{label}</small>
-            <div className="lesson-visual-bucket-chain">
-              {entries.length ? (
-                entries.map((entry, entryIndex) => (
-                  <span key={`${label}-${entryIndex}`}>
-                    {typeof entry === "object" ? `${entry.key ?? entry.label}: ${entry.value ?? ""}` : entry}
-                  </span>
-                ))
-              ) : (
-                <span className="is-empty">empty</span>
-              )}
-            </div>
+    <div className={`lesson-visual-kv-flow is-${kind}`} aria-label={`${kind} visual state`}>
+      <div className="lesson-visual-kv-steps">
+        {cards.map(([id, label, detail, shape], index) => (
+          <div className="lesson-visual-kv-step" key={id}>
+            <VisualFlowCard
+              id={id}
+              label={label}
+              detail={detail}
+              active={activeId === id}
+              shape={shape}
+            />
+            {index < cards.length - 1 ? (
+              <span
+                className={`lesson-visual-flow-arrow ucv-inline-arrow ${
+                  cards.findIndex(([nextId]) => nextId === activeId) > index ? "is-active" : ""
+                }`}
+                aria-hidden="true"
+              />
+            ) : null}
           </div>
-        );
-      })}
+        ))}
+      </div>
+      {rows.length ? (
+        <div className="lesson-visual-kv-board">
+          {rows.map((row, index) => (
+            <div
+              key={`${row.key}-${index}`}
+              className={`lesson-visual-kv-card ${row.active ? "is-active" : ""}`}
+            >
+              <small>{row.key}</small>
+              <strong>{row.value}</strong>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function VisualPointerFlow({ state }) {
+  const flow = state.pointer_flow || {};
+  const activeId = String(state.active_step || flow.active || "value");
+  const cards = [
+    ["value", "Value", flow.value || "score = 92", "terminator"],
+    ["address", "Address", flow.address || "&score", "input"],
+    ["pointer", "Pointer", flow.pointer || "ptr stores that address", "card"],
+    ["dereference", "Dereference", flow.dereference || "*ptr reads the target", "input"],
+    ["guard", "Guard", flow.guard || "check for nullptr before following", "terminator"],
+  ];
+
+  return (
+    <div className="lesson-visual-pointer-flow" aria-label="Pointer reference trace">
+      <div className="lesson-visual-pointer-track">
+        {cards.map(([id, label, detail, shape], index) => (
+          <div className="lesson-visual-pointer-step" key={id}>
+            <VisualFlowCard
+              id={id}
+              label={label}
+              detail={detail}
+              active={activeId === id}
+              shape={shape}
+            />
+            {index < cards.length - 1 ? (
+              <span
+                className={`lesson-visual-flow-arrow ucv-inline-arrow ${
+                  cards.findIndex(([nextId]) => nextId === activeId) > index ? "is-active" : ""
+                }`}
+                aria-hidden="true"
+              />
+            ) : null}
+          </div>
+        ))}
+      </div>
+      {state.table ? <VisualKeyValueFlow state={{ ...state, map_flow: flow }} kind="pointer-state" /> : null}
+    </div>
+  );
+}
+
+function VisualDebugTrace({ state }) {
+  const trace = state.debug_trace || {};
+  const activeId = String(state.active_step || trace.active || "before");
+  const cards = [
+    ["before", "Before", trace.before || "State still matches", "terminator"],
+    ["expected", "Expected", trace.expected || "What should change", "input"],
+    ["actual", "Actual", trace.actual || "What changed instead", "diamond"],
+    ["fix", "Fix", trace.fix || "Correct the transition", "terminator"],
+  ];
+
+  return (
+    <div className="lesson-visual-debug-flow" aria-label="Debug state trace">
+      <div className="lesson-visual-debug-steps">
+        {cards.map(([id, label, detail, shape], index) => (
+          <div className="lesson-visual-debug-step" key={id}>
+            <VisualFlowCard
+              id={id}
+              label={label}
+              detail={detail}
+              active={activeId === id}
+              shape={shape}
+            />
+            {index < cards.length - 1 ? (
+              <span
+                className={`lesson-visual-flow-arrow ucv-inline-arrow ${
+                  cards.findIndex(([nextId]) => nextId === activeId) > index ? "is-active" : ""
+                }`}
+                aria-hidden="true"
+              />
+            ) : null}
+          </div>
+        ))}
+      </div>
+      {state.table ? <VisualTable rows={state.table} /> : null}
     </div>
   );
 }
@@ -688,6 +783,22 @@ function VisualDiagram({ block, step }) {
       initialState.state_trace || stepState.state_trace
         ? { ...(initialState.state_trace || {}), ...(stepState.state_trace || {}) }
         : undefined,
+    map_flow:
+      initialState.map_flow || stepState.map_flow
+        ? { ...(initialState.map_flow || {}), ...(stepState.map_flow || {}) }
+        : undefined,
+    object_flow:
+      initialState.object_flow || stepState.object_flow
+        ? { ...(initialState.object_flow || {}), ...(stepState.object_flow || {}) }
+        : undefined,
+    pointer_flow:
+      initialState.pointer_flow || stepState.pointer_flow
+        ? { ...(initialState.pointer_flow || {}), ...(stepState.pointer_flow || {}) }
+        : undefined,
+    debug_trace:
+      initialState.debug_trace || stepState.debug_trace
+        ? { ...(initialState.debug_trace || {}), ...(stepState.debug_trace || {}) }
+        : undefined,
   };
   const mainItems = state.items || state.array || state.values || state.queue || [];
   const kind = conceptKind(block.concept);
@@ -707,9 +818,12 @@ function VisualDiagram({ block, step }) {
       {kind === "lists" ? <VisualListTrace state={state} /> : null}
       {kind === "functions" && state.function_flow ? <VisualFunctionFlow state={state} /> : null}
       {kind === "state-trace" ? <VisualStateTrace state={state} /> : null}
+      {kind === "map" ? <VisualKeyValueFlow state={state} kind={rowMode.includes("object") ? "object" : rowMode.includes("set") ? "set" : "map"} /> : null}
+      {kind === "pointers" ? <VisualPointerFlow state={state} /> : null}
+      {kind === "debugging" ? <VisualDebugTrace state={state} /> : null}
       {state.stack ? <VisualStack items={state.stack} active={state.active} /> : null}
       {state.queue ? <VisualQueue items={state.queue} active={state.active} /> : null}
-      {!state.stack && !state.queue && !["lists", "state-trace"].includes(kind) && mainItems.length ? (
+      {!state.stack && !state.queue && !["lists", "state-trace", "map", "pointers", "debugging"].includes(kind) && mainItems.length ? (
         <VisualTokenRow
           items={mainItems}
           active={state.active}
@@ -718,7 +832,7 @@ function VisualDiagram({ block, step }) {
           mode={rowMode}
         />
       ) : null}
-      {kind === "map" ? <VisualBucketMap state={state} /> : state.table ? <VisualTable rows={state.table} /> : null}
+      {kind !== "map" && kind !== "debugging" && kind !== "pointers" && state.table ? <VisualTable rows={state.table} /> : null}
       {state.nodes && kind === "linked-list" ? (
         <VisualLinkedList nodes={state.nodes} edges={state.edges || []} />
       ) : null}
