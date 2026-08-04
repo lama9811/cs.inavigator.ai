@@ -51,7 +51,28 @@
                   "result": "names[0] gives Ada"
                 },
                 "note": "names[0] is Ada"
-              }
+              },
+              "code_focus": "read: Index 0",
+              "input_value": "Ada",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "index: 0"
+                },
+                {
+                  "name": "step",
+                  "value": "read"
+                }
+              ],
+              "decision": "Start with the collection and point the index marker at slot 0.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "names[0] is Ada"
+                }
+              ],
+              "output": "none yet",
+              "why": "Start with the collection and point the index marker at slot 0."
             },
             {
               "title": "Index 1",
@@ -77,7 +98,28 @@
                   "result": "names[1] gives Grace"
                 },
                 "note": "names[1] is Grace"
-              }
+              },
+              "code_focus": "read: Index 1",
+              "input_value": "Grace",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "index: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "read"
+                }
+              ],
+              "decision": "Move the index marker one slot to the right before reading the next value.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "names[1] is Grace"
+                }
+              ],
+              "output": "none yet",
+              "why": "Move the index marker one slot to the right before reading the next value."
             },
             {
               "title": "Append",
@@ -104,7 +146,28 @@
                   "result": "Mae becomes index 3"
                 },
                 "note": "new last index is 3"
-              }
+              },
+              "code_focus": "result: Append",
+              "input_value": "Mae",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "new: 3"
+                },
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "ArrayList add puts the new value after the current last slot.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "new last index is 3"
+                }
+              ],
+              "output": "none yet",
+              "why": "ArrayList add puts the new value after the current last slot."
             }
           ]
         },

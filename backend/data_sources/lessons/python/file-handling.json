@@ -30,25 +30,241 @@
               "title": "Name the path",
               "body": "The path tells Python which file the program wants to use.",
               "animation": "add",
-              "state": {"active_step": "path", "process_flow": {"steps": [{"id": "path", "label": "Path", "detail": "courses.txt", "shape": "terminator"}, {"id": "open", "label": "Open", "detail": "with open(...)", "shape": "input"}, {"id": "check", "label": "Available?", "detail": "missing path can fail", "shape": "diamond"}, {"id": "work", "label": "Work", "detail": "read or write text", "shape": "card"}, {"id": "close", "label": "Close", "detail": "with closes for you", "shape": "terminator"}]}, "note": "a path is just the file location"}
+              "state": {
+                "active_step": "path",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "path",
+                      "label": "Path",
+                      "detail": "courses.txt",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "open",
+                      "label": "Open",
+                      "detail": "with open(...)",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "check",
+                      "label": "Available?",
+                      "detail": "missing path can fail",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "work",
+                      "label": "Work",
+                      "detail": "read or write text",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "close",
+                      "label": "Close",
+                      "detail": "with closes for you",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "a path is just the file location"
+              },
+              "code_focus": "path: Name the path",
+              "input_value": "courses.txt",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "path"
+                }
+              ],
+              "decision": "The path tells Python which file the program wants to use.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "a path is just the file location"
+                }
+              ],
+              "output": "none yet",
+              "why": "The path tells Python which file the program wants to use."
             },
             {
               "title": "Open safely",
               "body": "The with statement creates the open file object and owns cleanup for the block.",
               "animation": "highlight",
-              "state": {"active_step": "open", "process_flow": {"steps": [{"id": "path", "label": "Path", "detail": "courses.txt", "shape": "terminator"}, {"id": "open", "label": "Open", "detail": "file object exists", "shape": "input"}, {"id": "check", "label": "Available?", "detail": "open succeeded", "shape": "diamond"}, {"id": "work", "label": "Work", "detail": "block can use file", "shape": "card"}, {"id": "close", "label": "Close", "detail": "not closed yet", "shape": "terminator"}]}, "note": "keep file use inside the with block"}
+              "state": {
+                "active_step": "open",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "path",
+                      "label": "Path",
+                      "detail": "courses.txt",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "open",
+                      "label": "Open",
+                      "detail": "file object exists",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "check",
+                      "label": "Available?",
+                      "detail": "open succeeded",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "work",
+                      "label": "Work",
+                      "detail": "block can use file",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "close",
+                      "label": "Close",
+                      "detail": "not closed yet",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "keep file use inside the with block"
+              },
+              "code_focus": "open: Open safely",
+              "input_value": "file object exists",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "open"
+                }
+              ],
+              "decision": "The with statement creates the open file object and owns cleanup for the block.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "keep file use inside the with block"
+                }
+              ],
+              "output": "none yet",
+              "why": "The with statement creates the open file object and owns cleanup for the block."
             },
             {
               "title": "Read or write text",
               "body": "Inside the block, the program performs the file operation while the file is open.",
               "animation": "slide",
-              "state": {"active_step": "work", "process_flow": {"steps": [{"id": "path", "label": "Path", "detail": "courses.txt", "shape": "terminator"}, {"id": "open", "label": "Open", "detail": "file is open", "shape": "input"}, {"id": "check", "label": "Available?", "detail": "ready", "shape": "diamond"}, {"id": "work", "label": "Work", "detail": "write CS101, MATH120", "shape": "card"}, {"id": "close", "label": "Close", "detail": "after block", "shape": "terminator"}]}, "note": "mode controls whether work reads, replaces, or appends"}
+              "state": {
+                "active_step": "work",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "path",
+                      "label": "Path",
+                      "detail": "courses.txt",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "open",
+                      "label": "Open",
+                      "detail": "file is open",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "check",
+                      "label": "Available?",
+                      "detail": "ready",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "work",
+                      "label": "Work",
+                      "detail": "write CS101, MATH120",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "close",
+                      "label": "Close",
+                      "detail": "after block",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "mode controls whether work reads, replaces, or appends"
+              },
+              "code_focus": "work: Read or write text",
+              "input_value": "write CS101, MATH120",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "work"
+                }
+              ],
+              "decision": "Inside the block, the program performs the file operation while the file is open.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "mode controls whether work reads, replaces, or appends"
+                }
+              ],
+              "output": "none yet",
+              "why": "Inside the block, the program performs the file operation while the file is open."
             },
             {
               "title": "Close automatically",
               "body": "When the block ends, Python closes the file even if the work was interrupted.",
               "animation": "add",
-              "state": {"active_step": "close", "process_flow": {"steps": [{"id": "path", "label": "Path", "detail": "courses.txt", "shape": "terminator"}, {"id": "open", "label": "Open", "detail": "block finished", "shape": "input"}, {"id": "check", "label": "Available?", "detail": "no more file calls", "shape": "diamond"}, {"id": "work", "label": "Work", "detail": "text is saved or read", "shape": "card"}, {"id": "close", "label": "Close", "detail": "file is released", "shape": "terminator"}]}, "note": "save text in a variable if you need it after the block"}
+              "state": {
+                "active_step": "close",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "path",
+                      "label": "Path",
+                      "detail": "courses.txt",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "open",
+                      "label": "Open",
+                      "detail": "block finished",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "check",
+                      "label": "Available?",
+                      "detail": "no more file calls",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "work",
+                      "label": "Work",
+                      "detail": "text is saved or read",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "close",
+                      "label": "Close",
+                      "detail": "file is released",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "save text in a variable if you need it after the block"
+              },
+              "code_focus": "close: Close automatically",
+              "input_value": "file is released",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "close"
+                }
+              ],
+              "decision": "When the block ends, Python closes the file even if the work was interrupted.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "save text in a variable if you need it after the block"
+                }
+              ],
+              "output": "none yet",
+              "why": "When the block ends, Python closes the file even if the work was interrupted."
             }
           ]
         },

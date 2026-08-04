@@ -92,6 +92,39 @@ function CodeText({ children }) {
   return <code>{highlightedCode(children)}</code>;
 }
 
+function traceEntries(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value
+      .map((entry, index) => {
+        if (entry && typeof entry === "object") {
+          return {
+            name: entry.name || entry.key || entry.label || `Item ${index + 1}`,
+            value: entry.value ?? entry.detail ?? entry.text ?? "",
+          };
+        }
+        return { name: `Item ${index + 1}`, value: entry };
+      })
+      .filter((entry) => entry.value !== undefined && entry.value !== null && String(entry.value).trim() !== "");
+  }
+  if (typeof value === "object") {
+    return Object.entries(value)
+      .map(([name, entryValue]) => ({ name, value: entryValue }))
+      .filter((entry) => entry.value !== undefined && entry.value !== null && String(entry.value).trim() !== "");
+  }
+  return [{ name: "Value", value }];
+}
+
+function traceValueText(value) {
+  if (Array.isArray(value)) return value.map((item) => String(item)).join(", ");
+  if (value && typeof value === "object") {
+    return Object.entries(value)
+      .map(([key, entryValue]) => `${key}: ${entryValue}`)
+      .join(", ");
+  }
+  return String(value || "");
+}
+
 function conceptKind(concept = "") {
   const value = String(concept).toLowerCase();
   if (value.includes("conditional") || value.includes("branch")) return "conditionals";
@@ -906,6 +939,47 @@ function VisualDiagram({ block, step }) {
   );
 }
 
+function VisualTracePanel({ step }) {
+  const variableGroups = [
+    ["before", "State before", traceEntries(step.variables_before)],
+    ["after", "State after", traceEntries(step.variables_after)],
+  ].filter(([, , entries]) => entries.length);
+  const detailCards = [
+    ["code_focus", "Current operation", step.code_focus],
+    ["input_value", "Input now", step.input_value],
+    ["decision", "Decision", step.decision],
+    ["output", "Output so far", step.output],
+    ["why", "Why it matters", step.why],
+  ].filter(([, , value]) => value !== undefined && value !== null && String(value).trim() !== "");
+  const hasTrace = variableGroups.length || detailCards.length;
+
+  if (!hasTrace) return null;
+
+  return (
+    <aside className="lesson-visual-trace-panel" aria-label="Execution trace details">
+      {detailCards.map(([id, label, value]) => (
+        <div className={`lesson-visual-trace-card is-${id}`} key={id}>
+          <small>{label}</small>
+          <span>{withInlineCode(traceValueText(value))}</span>
+        </div>
+      ))}
+      {variableGroups.map(([id, label, entries]) => (
+        <div className={`lesson-visual-trace-card is-${id} is-state`} key={id}>
+          <small>{label}</small>
+          <dl>
+            {entries.map((entry) => (
+              <div key={`${id}-${entry.name}`}>
+                <dt>{entry.name}</dt>
+                <dd>{withInlineCode(traceValueText(entry.value))}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      ))}
+    </aside>
+  );
+}
+
 function VisualBlock({ block }) {
   const [open, setOpen] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
@@ -1022,6 +1096,7 @@ function VisualBlock({ block }) {
             </div>
 
             <VisualDiagram key={`${stepIndex}-${replayKey}`} block={block} step={step} />
+            <VisualTracePanel step={step} />
 
             <div className="lesson-visual-step-copy">
               {step.action_label ? (

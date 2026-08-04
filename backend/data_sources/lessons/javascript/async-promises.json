@@ -38,15 +38,57 @@
                 "active_step": "call",
                 "process_flow": {
                   "steps": [
-                    {"id": "call", "label": "Call", "detail": "fetch('/api/user')", "shape": "terminator"},
-                    {"id": "pending", "label": "Pending", "detail": "Promise is not data yet", "shape": "card"},
-                    {"id": "settle", "label": "Settle", "detail": "resolve or reject", "shape": "diamond"},
-                    {"id": "continue", "label": "Continue", "detail": "await resumes", "shape": "input"},
-                    {"id": "result", "label": "Result", "detail": "print or handle error", "shape": "terminator"}
+                    {
+                      "id": "call",
+                      "label": "Call",
+                      "detail": "fetch('/api/user')",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "pending",
+                      "label": "Pending",
+                      "detail": "Promise is not data yet",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "settle",
+                      "label": "Settle",
+                      "detail": "resolve or reject",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "continue",
+                      "label": "Continue",
+                      "detail": "await resumes",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "print or handle error",
+                      "shape": "terminator"
+                    }
                   ]
                 },
                 "note": "a Promise is a placeholder for a later result"
-              }
+              },
+              "code_focus": "call: Start async work",
+              "input_value": "fetch('/api/user')",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "call"
+                }
+              ],
+              "decision": "Calling fetch starts work and gives back a Promise before the user data exists.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "a Promise is a placeholder for a later result"
+                }
+              ],
+              "output": "none yet",
+              "why": "Calling fetch starts work and gives back a Promise before the user data exists."
             },
             {
               "title": "Pause at await",
@@ -56,15 +98,57 @@
                 "active_step": "pending",
                 "process_flow": {
                   "steps": [
-                    {"id": "call", "label": "Call", "detail": "request already started", "shape": "terminator"},
-                    {"id": "pending", "label": "Pending", "detail": "showName waits", "shape": "card"},
-                    {"id": "settle", "label": "Settle", "detail": "network still working", "shape": "diamond"},
-                    {"id": "continue", "label": "Continue", "detail": "not resumed yet", "shape": "input"},
-                    {"id": "result", "label": "Result", "detail": "no user value yet", "shape": "terminator"}
+                    {
+                      "id": "call",
+                      "label": "Call",
+                      "detail": "request already started",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "pending",
+                      "label": "Pending",
+                      "detail": "showName waits",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "settle",
+                      "label": "Settle",
+                      "detail": "network still working",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "continue",
+                      "label": "Continue",
+                      "detail": "not resumed yet",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "no user value yet",
+                      "shape": "terminator"
+                    }
                   ]
                 },
                 "note": "await pauses this function, not the whole page"
-              }
+              },
+              "code_focus": "pending: Pause at await",
+              "input_value": "showName waits",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "pending"
+                }
+              ],
+              "decision": "The async function pauses here, while other browser work can continue.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "await pauses this function, not the whole page"
+                }
+              ],
+              "output": "await pauses this function, not the whole page",
+              "why": "The async function pauses here, while other browser work can continue."
             },
             {
               "title": "Follow success or failure",
@@ -74,15 +158,57 @@
                 "active_step": "settle",
                 "process_flow": {
                   "steps": [
-                    {"id": "call", "label": "Call", "detail": "work finishes", "shape": "terminator"},
-                    {"id": "pending", "label": "Pending", "detail": "Promise settles", "shape": "card"},
-                    {"id": "settle", "label": "Settle", "detail": "resolved user or rejected error", "shape": "diamond"},
-                    {"id": "continue", "label": "Continue", "detail": "normal line or catch", "shape": "input"},
-                    {"id": "result", "label": "Result", "detail": "path chosen", "shape": "terminator"}
+                    {
+                      "id": "call",
+                      "label": "Call",
+                      "detail": "work finishes",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "pending",
+                      "label": "Pending",
+                      "detail": "Promise settles",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "settle",
+                      "label": "Settle",
+                      "detail": "resolved user or rejected error",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "continue",
+                      "label": "Continue",
+                      "detail": "normal line or catch",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "path chosen",
+                      "shape": "terminator"
+                    }
                   ]
                 },
                 "note": "rejection acts like an error at the await line"
-              }
+              },
+              "code_focus": "settle: Follow success or failure",
+              "input_value": "resolved user or rejected error",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "settle"
+                }
+              ],
+              "decision": "When the Promise settles, success continues after await and rejection jumps to catch.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "rejection acts like an error at the await line"
+                }
+              ],
+              "output": "none yet",
+              "why": "When the Promise settles, success continues after await and rejection jumps to catch."
             },
             {
               "title": "Use the finished value",
@@ -92,15 +218,57 @@
                 "active_step": "result",
                 "process_flow": {
                   "steps": [
-                    {"id": "call", "label": "Call", "detail": "request done", "shape": "terminator"},
-                    {"id": "pending", "label": "Pending", "detail": "no longer pending", "shape": "card"},
-                    {"id": "settle", "label": "Settle", "detail": "resolved", "shape": "diamond"},
-                    {"id": "continue", "label": "Continue", "detail": "const user = value", "shape": "input"},
-                    {"id": "result", "label": "Result", "detail": "console.log(user.name)", "shape": "terminator"}
+                    {
+                      "id": "call",
+                      "label": "Call",
+                      "detail": "request done",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "pending",
+                      "label": "Pending",
+                      "detail": "no longer pending",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "settle",
+                      "label": "Settle",
+                      "detail": "resolved",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "continue",
+                      "label": "Continue",
+                      "detail": "const user = value",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "console.log(user.name)",
+                      "shape": "terminator"
+                    }
                   ]
                 },
                 "note": "read properties after await gives you the actual value"
-              }
+              },
+              "code_focus": "result: Use the finished value",
+              "input_value": "console.log(user.name)",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "After a successful await, user.name belongs to the resolved object, not the Promise.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "read properties after await gives you the actual value"
+                }
+              ],
+              "output": "read properties after await gives you the actual value",
+              "why": "After a successful await, user.name belongs to the resolved object, not the Promise."
             }
           ]
         }

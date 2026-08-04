@@ -69,7 +69,24 @@
               "state": {
                 "stack": [],
                 "note": "A stack removes from the same end where it adds."
-              }
+              },
+              "code_focus": "trace stacks: Start empty",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The **stack** has no items yet.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "A stack removes from the same end where it adds."
+                }
+              ],
+              "output": "none yet",
+              "why": "The **stack** has no items yet."
             },
             {
               "title": "Push A",
@@ -81,7 +98,24 @@
                 "active": [
                   0
                 ]
-              }
+              },
+              "code_focus": "trace stacks: Push A",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Push puts A on top.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "Push puts A on top."
             },
             {
               "title": "Push B",
@@ -94,7 +128,24 @@
                 "active": [
                   1
                 ]
-              }
+              },
+              "code_focus": "trace stacks: Push B",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "B is newer, so B becomes the top.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "B is newer, so B becomes the top."
             },
             {
               "title": "Peek",
@@ -108,7 +159,24 @@
                   1
                 ],
                 "note": "peek returns B"
-              }
+              },
+              "code_focus": "trace stacks: Peek",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Peek reads B without removing it.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "peek returns B"
+                }
+              ],
+              "output": "none yet",
+              "why": "Peek reads B without removing it."
             },
             {
               "title": "Pop",
@@ -121,7 +189,24 @@
                   0
                 ],
                 "note": "pop returned B"
-              }
+              },
+              "code_focus": "trace stacks: Pop",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Pop removes the newest item, so B comes out first.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "pop returned B"
+                }
+              ],
+              "output": "none yet",
+              "why": "Pop removes the newest item, so B comes out first."
             }
           ]
         },
@@ -384,7 +469,24 @@
                   0
                 ],
                 "note": "waiting for )"
-              }
+              },
+              "code_focus": "trace stacks: Read (",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The **stack** now remembers the newest unfinished symbol.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "waiting for )"
+                }
+              ],
+              "output": "none yet",
+              "why": "An opening parenthesis waits for a future closing parenthesis."
             },
             {
               "title": "Read [",
@@ -401,7 +503,24 @@
                   1
                 ],
                 "note": "top expects ]"
-              }
+              },
+              "code_focus": "trace stacks: Read [",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The bracket must close before the parenthesis can close.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "top expects ]"
+                }
+              ],
+              "output": "none yet",
+              "why": "The bracket is inside the parenthesis, so it goes on top."
             },
             {
               "title": "Read ]",
@@ -417,7 +536,24 @@
                   0
                 ],
                 "note": "] matched ["
-              }
+              },
+              "code_focus": "trace stacks: Read ]",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The bracket pair is finished. The parenthesis is back on top.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "] matched ["
+                }
+              ],
+              "output": "none yet",
+              "why": "The closing bracket matches the top opening bracket, so pop it."
             },
             {
               "title": "Read )",
@@ -428,7 +564,24 @@
               "state": {
                 "stack": [],
                 "note": "balanced"
-              }
+              },
+              "code_focus": "trace stacks: Read )",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The **stack** is empty, so every opening symbol was closed in the right order.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "balanced"
+                }
+              ],
+              "output": "none yet",
+              "why": "The closing parenthesis matches the remaining top item."
             }
           ]
         }

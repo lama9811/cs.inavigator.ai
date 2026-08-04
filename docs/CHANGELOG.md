@@ -4,6 +4,7 @@ All notable changes to CS Navigator are documented here.
 
 ## [Unreleased]
 ### Added
+- **Learn guided execution traces.** All existing Learn visualizers now include a reusable trace panel with current operation, input value, state before/after, decision, output, and why-it-matters metadata across 82 visual blocks and 392 authored steps.
 - **Question-specific beginner Learn cards.** Operators, Strings, User Input, Lists/Arrays, and Conditionals now include in-question micro-lessons tied to each cleaned quiz question.
 - **Core beginner/debug Learn-card batch.** Syntax, Variables, Data Types, Loops, Functions, Debug Part 1, and Debug Part 2 now include question-specific Learn cards across Python, Java, JavaScript, and C++.
 - **Intermediate Learn-card coverage.** Language-specific Intermediate quiz banks now include question-specific Learn cards across Python, Java, JavaScript, and C++.

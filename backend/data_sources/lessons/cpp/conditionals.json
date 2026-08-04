@@ -67,7 +67,24 @@
                   "input": "score = 92"
                 },
                 "note": "The input is the value C++ tests."
-              }
+              },
+              "code_focus": "input: Start with input",
+              "input_value": "score = 92",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "input"
+                }
+              ],
+              "decision": "score >= 90?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The input is the value C++ tests."
+                }
+              ],
+              "output": "none yet",
+              "why": "The program begins with score set to 92."
             },
             {
               "title": "Ask the condition",
@@ -80,7 +97,24 @@
                   "condition": "92 >= 90?"
                 },
                 "note": "True means enter this branch."
-              }
+              },
+              "code_focus": "condition: Ask the condition",
+              "input_value": "true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "92 >= 90?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "True means enter this branch."
+                }
+              ],
+              "output": "none yet",
+              "why": "C++ checks whether score is at least 90. For 92, the answer is true."
             },
             {
               "title": "Follow the true path",
@@ -93,7 +127,24 @@
                   "true_branch": "std::cout prints A"
                 },
                 "note": "The score >= 80 branch is not checked."
-              }
+              },
+              "code_focus": "true_branch: Follow the true path",
+              "input_value": "true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "true_branch"
+                }
+              ],
+              "decision": "score >= 90?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The score >= 80 branch is not checked."
+                }
+              ],
+              "output": "none yet",
+              "why": "Because the first condition is true, C++ runs the A branch and skips the rest of the chain."
             },
             {
               "title": "Use the chosen result",
@@ -106,7 +157,24 @@
                   "result": "prints A"
                 },
                 "note": "Only the first true branch runs."
-              }
+              },
+              "code_focus": "result: Use the chosen result",
+              "input_value": "true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "score >= 90?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "Only the first true branch runs."
+                }
+              ],
+              "output": "prints A",
+              "why": "The chosen branch produces the output A."
             }
           ]
         }

@@ -34,25 +34,241 @@
               "title": "Create the stream",
               "body": "An ifstream object tries to connect the program to the named file.",
               "animation": "add",
-              "state": {"active_step": "stream", "process_flow": {"steps": [{"id": "stream", "label": "Stream", "detail": "ifstream input", "shape": "terminator"}, {"id": "open", "label": "Open", "detail": "\"courses.txt\"", "shape": "input"}, {"id": "check", "label": "Opened?", "detail": "if (!input)", "shape": "diamond"}, {"id": "read", "label": "Read", "detail": "getline", "shape": "card"}, {"id": "done", "label": "Done", "detail": "loop ends safely", "shape": "terminator"}]}, "note": "a stream represents the file connection"}
+              "state": {
+                "active_step": "stream",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "stream",
+                      "label": "Stream",
+                      "detail": "ifstream input",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "open",
+                      "label": "Open",
+                      "detail": "\"courses.txt\"",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "check",
+                      "label": "Opened?",
+                      "detail": "if (!input)",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "read",
+                      "label": "Read",
+                      "detail": "getline",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "done",
+                      "label": "Done",
+                      "detail": "loop ends safely",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "a stream represents the file connection"
+              },
+              "code_focus": "stream: Create the stream",
+              "input_value": "ifstream input",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "stream"
+                }
+              ],
+              "decision": "An ifstream object tries to connect the program to the named file.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "a stream represents the file connection"
+                }
+              ],
+              "output": "none yet",
+              "why": "An ifstream object tries to connect the program to the named file."
             },
             {
               "title": "Check open status",
               "body": "Before reading, ask whether the stream actually opened.",
               "animation": "highlight",
-              "state": {"active_step": "check", "process_flow": {"steps": [{"id": "stream", "label": "Stream", "detail": "input exists", "shape": "terminator"}, {"id": "open", "label": "Open", "detail": "open attempted", "shape": "input"}, {"id": "check", "label": "Opened?", "detail": "true: read, false: report", "shape": "diamond"}, {"id": "read", "label": "Read", "detail": "only after success", "shape": "card"}, {"id": "done", "label": "Done", "detail": "avoid bad data", "shape": "terminator"}]}, "note": "do not trust a failed stream"}
+              "state": {
+                "active_step": "check",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "stream",
+                      "label": "Stream",
+                      "detail": "input exists",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "open",
+                      "label": "Open",
+                      "detail": "open attempted",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "check",
+                      "label": "Opened?",
+                      "detail": "true: read, false: report",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "read",
+                      "label": "Read",
+                      "detail": "only after success",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "done",
+                      "label": "Done",
+                      "detail": "avoid bad data",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "do not trust a failed stream"
+              },
+              "code_focus": "check: Check open status",
+              "input_value": "true: read, false: report",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "check"
+                }
+              ],
+              "decision": "Before reading, ask whether the stream actually opened.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "do not trust a failed stream"
+                }
+              ],
+              "output": "none yet",
+              "why": "Before reading, ask whether the stream actually opened."
             },
             {
               "title": "Read one line at a time",
               "body": "getline both reads a line and tells the loop whether the read succeeded.",
               "animation": "slide",
-              "state": {"active_step": "read", "process_flow": {"steps": [{"id": "stream", "label": "Stream", "detail": "input is open", "shape": "terminator"}, {"id": "open", "label": "Open", "detail": "ready", "shape": "input"}, {"id": "check", "label": "Opened?", "detail": "success", "shape": "diamond"}, {"id": "read", "label": "Read", "detail": "getline(input, line)", "shape": "card"}, {"id": "done", "label": "Done", "detail": "continue while reads work", "shape": "terminator"}]}, "note": "test the read itself, not eof before the read"}
+              "state": {
+                "active_step": "read",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "stream",
+                      "label": "Stream",
+                      "detail": "input is open",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "open",
+                      "label": "Open",
+                      "detail": "ready",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "check",
+                      "label": "Opened?",
+                      "detail": "success",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "read",
+                      "label": "Read",
+                      "detail": "getline(input, line)",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "done",
+                      "label": "Done",
+                      "detail": "continue while reads work",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "test the read itself, not eof before the read"
+              },
+              "code_focus": "read: Read one line at a time",
+              "input_value": "getline(input, line)",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "read"
+                }
+              ],
+              "decision": "getline both reads a line and tells the loop whether the read succeeded.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "test the read itself, not eof before the read"
+                }
+              ],
+              "output": "none yet",
+              "why": "getline both reads a line and tells the loop whether the read succeeded."
             },
             {
               "title": "Stop after the last line",
               "body": "When getline fails at the end, the loop stops before stale data is used.",
               "animation": "add",
-              "state": {"active_step": "done", "process_flow": {"steps": [{"id": "stream", "label": "Stream", "detail": "file was open", "shape": "terminator"}, {"id": "open", "label": "Open", "detail": "checked", "shape": "input"}, {"id": "check", "label": "Opened?", "detail": "ok", "shape": "diamond"}, {"id": "read", "label": "Read", "detail": "final read fails cleanly", "shape": "card"}, {"id": "done", "label": "Done", "detail": "stream closes at scope exit", "shape": "terminator"}]}, "note": "the stream object closes the file when it leaves scope"}
+              "state": {
+                "active_step": "done",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "stream",
+                      "label": "Stream",
+                      "detail": "file was open",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "open",
+                      "label": "Open",
+                      "detail": "checked",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "check",
+                      "label": "Opened?",
+                      "detail": "ok",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "read",
+                      "label": "Read",
+                      "detail": "final read fails cleanly",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "done",
+                      "label": "Done",
+                      "detail": "stream closes at scope exit",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "the stream object closes the file when it leaves scope"
+              },
+              "code_focus": "done: Stop after the last line",
+              "input_value": "stream closes at scope exit",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "done"
+                }
+              ],
+              "decision": "When getline fails at the end, the loop stops before stale data is used.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the stream object closes the file when it leaves scope"
+                }
+              ],
+              "output": "none yet",
+              "why": "When getline fails at the end, the loop stops before stale data is used."
             }
           ]
         },

@@ -69,7 +69,24 @@
               "state": {
                 "queue": [],
                 "note": "A queue removes the oldest item first."
-              }
+              },
+              "code_focus": "trace queues: Start empty",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The **queue** has no waiting items.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "A queue removes the oldest item first."
+                }
+              ],
+              "output": "none yet",
+              "why": "The **queue** has no waiting items."
             },
             {
               "title": "Enqueue A",
@@ -81,7 +98,24 @@
                 "active": [
                   0
                 ]
-              }
+              },
+              "code_focus": "trace queues: Enqueue A",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "A joins at the back.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "A joins at the back."
             },
             {
               "title": "Enqueue B",
@@ -94,7 +128,24 @@
                 "active": [
                   1
                 ]
-              }
+              },
+              "code_focus": "trace queues: Enqueue B",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "B joins behind A.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "B joins behind A."
             },
             {
               "title": "Dequeue",
@@ -107,7 +158,24 @@
                   0
                 ],
                 "note": "dequeue returned A"
-              }
+              },
+              "code_focus": "trace queues: Dequeue",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "A **leaves** first because A waited the longest.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "dequeue returned A"
+                }
+              ],
+              "output": "none yet",
+              "why": "A **leaves** first because A waited the longest."
             }
           ]
         },
@@ -398,7 +466,24 @@
                   0
                 ],
                 "note": "visited: A"
-              }
+              },
+              "code_focus": "trace queues: Start at A",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The **queue** stores work in discovery order.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "visited: A"
+                }
+              ],
+              "output": "none yet",
+              "why": "A is discovered first, so A goes into the **queue**."
             },
             {
               "title": "Remove A",
@@ -416,7 +501,24 @@
                   1
                 ],
                 "note": "visited: A, B, C"
-              }
+              },
+              "code_focus": "trace queues: Remove A",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "B and C join the back, behind any older work.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "visited: A, B, C"
+                }
+              ],
+              "output": "none yet",
+              "why": "A **leaves** the front. Its neighbors B and C are discovered next."
             },
             {
               "title": "Remove B",
@@ -433,7 +535,24 @@
                   1
                 ],
                 "note": "D was discovered from B"
-              }
+              },
+              "code_focus": "trace queues: Remove B",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "This is what makes BFS move level by level.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "D was discovered from B"
+                }
+              ],
+              "output": "none yet",
+              "why": "B was waiting longer than C, so B is processed next."
             },
             {
               "title": "Remove C",
@@ -449,7 +568,24 @@
                   0
                 ],
                 "note": "D is only queued once"
-              }
+              },
+              "code_focus": "trace queues: Remove C",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "**Visited** prevents duplicate work.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "D is only queued once"
+                }
+              ],
+              "output": "none yet",
+              "why": "C also points to D, but D is already waiting or **visited**."
             }
           ]
         }

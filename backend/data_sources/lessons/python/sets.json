@@ -39,7 +39,24 @@
                 },
                 "table": [],
                 "note": "membership matters more than position"
-              }
+              },
+              "code_focus": "store: Start empty",
+              "input_value": "seen = set()",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "store"
+                }
+              ],
+              "decision": "already present?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "membership matters more than position"
+                }
+              ],
+              "output": "none yet",
+              "why": "A set begins with no stored values and no index order to follow."
             },
             {
               "title": "Add new values",
@@ -65,7 +82,28 @@
                   }
                 ],
                 "note": "seen = {A, B}"
-              }
+              },
+              "code_focus": "action: Add new values",
+              "input_value": "B -> stored",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "action"
+                }
+              ],
+              "decision": "B already present? no",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "seen = {A, B}"
+                },
+                {
+                  "name": "active entry",
+                  "value": "B -> stored"
+                }
+              ],
+              "output": "none yet",
+              "why": "A and B are new, so each joins the set once."
             },
             {
               "title": "Ignore duplicate",
@@ -91,7 +129,28 @@
                   }
                 ],
                 "note": "duplicate ignored"
-              }
+              },
+              "code_focus": "decision: Ignore duplicate",
+              "input_value": "A -> already stored",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "decision"
+                }
+              ],
+              "decision": "A already present? yes",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "duplicate ignored"
+                },
+                {
+                  "name": "active entry",
+                  "value": "A -> already stored"
+                }
+              ],
+              "output": "none yet",
+              "why": "Trying to add A again changes nothing because A is already a member."
             },
             {
               "title": "Check membership",
@@ -117,7 +176,28 @@
                   }
                 ],
                 "note": "final state has one copy of each value"
-              }
+              },
+              "code_focus": "result: Check membership",
+              "input_value": "A -> present",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "A in seen?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "final state has one copy of each value"
+                },
+                {
+                  "name": "active entry",
+                  "value": "A -> present"
+                }
+              ],
+              "output": "none yet",
+              "why": "The final set is useful because membership can be checked directly."
             }
           ]
         },

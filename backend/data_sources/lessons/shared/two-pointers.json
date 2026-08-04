@@ -85,7 +85,24 @@
                   4
                 ],
                 "note": "sum = 12, target = 10"
-              }
+              },
+              "code_focus": "trace two-pointers: Start at both ends",
+              "input_value": "1, 11",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 0, right: 4"
+                }
+              ],
+              "decision": "left starts small and right starts large.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "sum = 12, target = 10"
+                }
+              ],
+              "output": "none yet",
+              "why": "left starts small and right starts large."
             },
             {
               "title": "Sum is too large",
@@ -100,7 +117,24 @@
                   3
                 ],
                 "note": "sum = 8"
-              }
+              },
+              "code_focus": "trace two-pointers: Sum is too large",
+              "input_value": "1, 7",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 0, right: 3"
+                }
+              ],
+              "decision": "Move right leftward to try a smaller **value**.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "sum = 8"
+                }
+              ],
+              "output": "none yet",
+              "why": "Move right leftward to try a smaller **value**."
             },
             {
               "title": "Sum is too small",
@@ -115,7 +149,24 @@
                   3
                 ],
                 "note": "sum = 9"
-              }
+              },
+              "code_focus": "trace two-pointers: Sum is too small",
+              "input_value": "2, 7",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 1, right: 3"
+                }
+              ],
+              "decision": "Move left rightward to try a larger **value**.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "sum = 9"
+                }
+              ],
+              "output": "none yet",
+              "why": "Move left rightward to try a larger **value**."
             },
             {
               "title": "Move left again",
@@ -130,7 +181,24 @@
                   3
                 ],
                 "note": "sum = 11"
-              }
+              },
+              "code_focus": "trace two-pointers: Move left again",
+              "input_value": "4, 7",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 2, right: 3"
+                }
+              ],
+              "decision": "The sum is still too small, so left moves again.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "sum = 11"
+                }
+              ],
+              "output": "none yet",
+              "why": "The sum is still too small, so left moves again."
             }
           ]
         },
@@ -354,7 +422,24 @@
                   0,
                   6
                 ]
-              }
+              },
+              "code_focus": "trace two-pointers: Compare the ends",
+              "input_value": "r, r",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 0, right: 6"
+                }
+              ],
+              "decision": "Both ends are done, so both **pointers** can move inward.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "left sees r and right sees r. They match."
             },
             {
               "title": "Move inward",
@@ -371,7 +456,24 @@
                   1,
                   5
                 ]
-              }
+              },
+              "code_focus": "trace two-pointers: Move inward",
+              "input_value": "a, a",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 1, right: 5"
+                }
+              ],
+              "decision": "A palindrome check only needs to keep comparing mirrored positions.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "Now compare a and a."
             },
             {
               "title": "Move inward again",
@@ -388,7 +490,24 @@
                   2,
                   4
                 ]
-              }
+              },
+              "code_focus": "trace two-pointers: Move inward again",
+              "input_value": "c, c",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 2, right: 4"
+                }
+              ],
+              "decision": "The unchecked part keeps getting smaller.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "c and c match too."
             },
             {
               "title": "Pointers meet",
@@ -405,7 +524,24 @@
                   3
                 ],
                 "note": "palindrome"
-              }
+              },
+              "code_focus": "trace two-pointers: Pointers meet",
+              "input_value": "e",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 3, right: 3"
+                }
+              ],
+              "decision": "If no mismatch appeared before the **pointers** met, the word is a palindrome.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "palindrome"
+                }
+              ],
+              "output": "none yet",
+              "why": "The middle e does not need a partner."
             }
           ]
         }

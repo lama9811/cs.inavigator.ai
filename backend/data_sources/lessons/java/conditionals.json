@@ -57,7 +57,24 @@
                   "input": "age = 20"
                 },
                 "note": "The input is the value Java tests."
-              }
+              },
+              "code_focus": "input: Start with input",
+              "input_value": "age = 20",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "input"
+                }
+              ],
+              "decision": "age >= 18?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The input is the value Java tests."
+                }
+              ],
+              "output": "none yet",
+              "why": "The program begins with age set to 20."
             },
             {
               "title": "Ask the condition",
@@ -70,7 +87,24 @@
                   "condition": "20 >= 18?"
                 },
                 "note": "True means enter the braces."
-              }
+              },
+              "code_focus": "condition: Ask the condition",
+              "input_value": "true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "20 >= 18?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "True means enter the braces."
+                }
+              ],
+              "output": "none yet",
+              "why": "Java asks whether age is at least 18. For 20, the answer is true."
             },
             {
               "title": "Follow the true branch",
@@ -83,7 +117,24 @@
                   "true_branch": "Print \"You can vote.\""
                 },
                 "note": "Only the braced body belongs to this if."
-              }
+              },
+              "code_focus": "true_branch: Follow the true branch",
+              "input_value": "true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "true_branch"
+                }
+              ],
+              "decision": "age >= 18?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "Only the braced body belongs to this if."
+                }
+              ],
+              "output": "none yet",
+              "why": "Because the condition is true, Java runs the statement inside the if body."
             },
             {
               "title": "Continue after the if",
@@ -96,7 +147,24 @@
                   "result": "Print \"Done.\""
                 },
                 "note": "Code after the if runs normally."
-              }
+              },
+              "code_focus": "result: Continue after the if",
+              "input_value": "true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "age >= 18?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "Code after the if runs normally."
+                }
+              ],
+              "output": "Print \"Done.\"",
+              "why": "After the branch body finishes, Java continues with the next line, so Done still prints."
             }
           ]
         },

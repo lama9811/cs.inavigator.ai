@@ -52,7 +52,28 @@
                   "result": "keep tracing"
                 },
                 "note": "best value = 4"
-              }
+              },
+              "code_focus": "state: Initialize",
+              "input_value": "4",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 0"
+                },
+                {
+                  "name": "step",
+                  "value": "state"
+                }
+              ],
+              "decision": "Initialize best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "best value = 4"
+                }
+              ],
+              "output": "none yet",
+              "why": "Start with the first value as the best-so-far because it is the only candidate seen."
             },
             {
               "title": "Compare index 1",
@@ -81,7 +102,28 @@
                   "result": "keep tracing"
                 },
                 "note": "best value = 9"
-              }
+              },
+              "code_focus": "compare: Compare index 1",
+              "input_value": "9",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1, i: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "compare"
+                }
+              ],
+              "decision": "Update best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "best value = 9"
+                }
+              ],
+              "output": "none yet",
+              "why": "Compare the active item to best. Since 9 is larger than 4, best moves to index 1."
             },
             {
               "title": "Compare index 2",
@@ -109,7 +151,28 @@
                   "result": "ready to return"
                 },
                 "note": "best still points at index 1"
-              }
+              },
+              "code_focus": "compare: Compare index 2",
+              "input_value": "7",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1, i: 2"
+                },
+                {
+                  "name": "step",
+                  "value": "compare"
+                }
+              ],
+              "decision": "Keep best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "best still points at index 1"
+                }
+              ],
+              "output": "none yet",
+              "why": "Compare the active item to best. Since 7 is not larger than 9, best stays at index 1."
             },
             {
               "title": "Return best",
@@ -136,7 +199,28 @@
                   "result": "return 9"
                 },
                 "note": "return the best value 9"
-              }
+              },
+              "code_focus": "result: Return best",
+              "input_value": "9",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "Use best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "return the best value 9"
+                }
+              ],
+              "output": "return 9",
+              "why": "After every item has been checked, return or use the stored best value."
             }
           ]
         },

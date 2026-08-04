@@ -44,19 +44,72 @@
                 "active_step": "create",
                 "process_flow": {
                   "steps": [
-                    {"id": "create", "label": "Create", "detail": "Student{'Ada'} on heap", "shape": "terminator"},
-                    {"id": "owner", "label": "Owner", "detail": "pending owns it", "shape": "card"},
-                    {"id": "move", "label": "Move?", "detail": "transfer only on purpose", "shape": "diamond"},
-                    {"id": "use", "label": "Use", "detail": "active can read name", "shape": "input"},
-                    {"id": "cleanup", "label": "Cleanup", "detail": "owner releases at scope exit", "shape": "terminator"}
+                    {
+                      "id": "create",
+                      "label": "Create",
+                      "detail": "Student{'Ada'} on heap",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "owner",
+                      "label": "Owner",
+                      "detail": "pending owns it",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "move",
+                      "label": "Move?",
+                      "detail": "transfer only on purpose",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "use",
+                      "label": "Use",
+                      "detail": "active can read name",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "cleanup",
+                      "label": "Cleanup",
+                      "detail": "owner releases at scope exit",
+                      "shape": "terminator"
+                    }
                   ]
                 },
                 "table": [
-                  {"key": "pending", "value": "owns Ada", "active": true},
-                  {"key": "active", "value": "empty"}
+                  {
+                    "key": "pending",
+                    "value": "owns Ada",
+                    "active": true
+                  },
+                  {
+                    "key": "active",
+                    "value": "empty"
+                  }
                 ],
                 "note": "unique_ptr means one owner"
-              }
+              },
+              "code_focus": "create: Create the resource",
+              "input_value": "pending -> owns Ada",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "create"
+                }
+              ],
+              "decision": "make_unique creates the Student and gives ownership to one pointer.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "unique_ptr means one owner"
+                },
+                {
+                  "name": "active entry",
+                  "value": "pending -> owns Ada"
+                }
+              ],
+              "output": "none yet",
+              "why": "make_unique creates the Student and gives ownership to one pointer."
             },
             {
               "title": "Move ownership",
@@ -66,19 +119,72 @@
                 "active_step": "move",
                 "process_flow": {
                   "steps": [
-                    {"id": "create", "label": "Create", "detail": "resource already exists", "shape": "terminator"},
-                    {"id": "owner", "label": "Owner", "detail": "pending will give it up", "shape": "card"},
-                    {"id": "move", "label": "Move?", "detail": "active = std::move(pending)", "shape": "diamond"},
-                    {"id": "use", "label": "Use", "detail": "active becomes owner", "shape": "input"},
-                    {"id": "cleanup", "label": "Cleanup", "detail": "one cleanup later", "shape": "terminator"}
+                    {
+                      "id": "create",
+                      "label": "Create",
+                      "detail": "resource already exists",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "owner",
+                      "label": "Owner",
+                      "detail": "pending will give it up",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "move",
+                      "label": "Move?",
+                      "detail": "active = std::move(pending)",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "use",
+                      "label": "Use",
+                      "detail": "active becomes owner",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "cleanup",
+                      "label": "Cleanup",
+                      "detail": "one cleanup later",
+                      "shape": "terminator"
+                    }
                   ]
                 },
                 "table": [
-                  {"key": "pending", "value": "empty after move"},
-                  {"key": "active", "value": "owns Ada", "active": true}
+                  {
+                    "key": "pending",
+                    "value": "empty after move"
+                  },
+                  {
+                    "key": "active",
+                    "value": "owns Ada",
+                    "active": true
+                  }
                 ],
                 "note": "moving does not copy unique ownership"
-              }
+              },
+              "code_focus": "move: Move ownership",
+              "input_value": "active -> owns Ada",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "move"
+                }
+              ],
+              "decision": "std::move transfers the ownership promise from pending to active.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "moving does not copy unique ownership"
+                },
+                {
+                  "name": "active entry",
+                  "value": "active -> owns Ada"
+                }
+              ],
+              "output": "none yet",
+              "why": "std::move transfers the ownership promise from pending to active."
             },
             {
               "title": "Guard the empty pointer",
@@ -88,19 +194,72 @@
                 "active_step": "use",
                 "process_flow": {
                   "steps": [
-                    {"id": "create", "label": "Create", "detail": "Ada still exists", "shape": "terminator"},
-                    {"id": "owner", "label": "Owner", "detail": "active owns it", "shape": "card"},
-                    {"id": "move", "label": "Move?", "detail": "pending is empty", "shape": "diamond"},
-                    {"id": "use", "label": "Use", "detail": "if (!pending) active->name", "shape": "input"},
-                    {"id": "cleanup", "label": "Cleanup", "detail": "not yet", "shape": "terminator"}
+                    {
+                      "id": "create",
+                      "label": "Create",
+                      "detail": "Ada still exists",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "owner",
+                      "label": "Owner",
+                      "detail": "active owns it",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "move",
+                      "label": "Move?",
+                      "detail": "pending is empty",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "use",
+                      "label": "Use",
+                      "detail": "if (!pending) active->name",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "cleanup",
+                      "label": "Cleanup",
+                      "detail": "not yet",
+                      "shape": "terminator"
+                    }
                   ]
                 },
                 "table": [
-                  {"key": "pending", "value": "empty", "active": true},
-                  {"key": "active", "value": "owns Ada"}
+                  {
+                    "key": "pending",
+                    "value": "empty",
+                    "active": true
+                  },
+                  {
+                    "key": "active",
+                    "value": "owns Ada"
+                  }
                 ],
                 "note": "use the owner, not the moved-from pointer"
-              }
+              },
+              "code_focus": "use: Guard the empty pointer",
+              "input_value": "pending -> empty",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "use"
+                }
+              ],
+              "decision": "After the move, check pending before using it because it no longer owns anything.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "use the owner, not the moved-from pointer"
+                },
+                {
+                  "name": "active entry",
+                  "value": "pending -> empty"
+                }
+              ],
+              "output": "none yet",
+              "why": "After the move, check pending before using it because it no longer owns anything."
             },
             {
               "title": "Clean up automatically",
@@ -110,19 +269,72 @@
                 "active_step": "cleanup",
                 "process_flow": {
                   "steps": [
-                    {"id": "create", "label": "Create", "detail": "resource was created", "shape": "terminator"},
-                    {"id": "owner", "label": "Owner", "detail": "active held it", "shape": "card"},
-                    {"id": "move", "label": "Move?", "detail": "single owner preserved", "shape": "diamond"},
-                    {"id": "use", "label": "Use", "detail": "printed Ada", "shape": "input"},
-                    {"id": "cleanup", "label": "Cleanup", "detail": "active releases Student", "shape": "terminator"}
+                    {
+                      "id": "create",
+                      "label": "Create",
+                      "detail": "resource was created",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "owner",
+                      "label": "Owner",
+                      "detail": "active held it",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "move",
+                      "label": "Move?",
+                      "detail": "single owner preserved",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "use",
+                      "label": "Use",
+                      "detail": "printed Ada",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "cleanup",
+                      "label": "Cleanup",
+                      "detail": "active releases Student",
+                      "shape": "terminator"
+                    }
                   ]
                 },
                 "table": [
-                  {"key": "pending", "value": "empty"},
-                  {"key": "active", "value": "leaves scope", "active": true}
+                  {
+                    "key": "pending",
+                    "value": "empty"
+                  },
+                  {
+                    "key": "active",
+                    "value": "leaves scope",
+                    "active": true
+                  }
                 ],
                 "note": "RAII ties cleanup to object lifetime"
-              }
+              },
+              "code_focus": "cleanup: Clean up automatically",
+              "input_value": "active -> leaves scope",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "cleanup"
+                }
+              ],
+              "decision": "When active leaves scope, the owned Student is released once.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "RAII ties cleanup to object lifetime"
+                },
+                {
+                  "name": "active entry",
+                  "value": "active -> leaves scope"
+                }
+              ],
+              "output": "none yet",
+              "why": "When active leaves scope, the owned Student is released once."
             }
           ]
         }

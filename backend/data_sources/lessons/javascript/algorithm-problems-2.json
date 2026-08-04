@@ -49,7 +49,28 @@
                   "result": "safe to choose index 0"
                 },
                 "note": "The edge case is handled before reading a first item."
-              }
+              },
+              "code_focus": "input: Guard empty input",
+              "input_value": "candidate -> 4",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "candidate: 0"
+                },
+                {
+                  "name": "step",
+                  "value": "input"
+                }
+              ],
+              "decision": "if empty, return the sentinel",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The edge case is handled before reading a first item."
+                }
+              ],
+              "output": "none yet",
+              "why": "Before using index 0, decide what the algorithm returns for an empty input."
             },
             {
               "title": "Initialize invariant",
@@ -77,7 +98,28 @@
                   "result": "invariant is ready"
                 },
                 "note": "Invariant: best is the index of the largest checked value."
-              }
+              },
+              "code_focus": "state: Initialize invariant",
+              "input_value": "4",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 0"
+                },
+                {
+                  "name": "step",
+                  "value": "state"
+                }
+              ],
+              "decision": "best starts at index 0",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "Invariant: best is the index of the largest checked value."
+                }
+              ],
+              "output": "none yet",
+              "why": "Use the first item as the first best candidate, then state what best means."
             },
             {
               "title": "Update when better",
@@ -106,7 +148,28 @@
                   "result": "keep scanning"
                 },
                 "note": "The saved index and saved meaning stay in sync."
-              }
+              },
+              "code_focus": "compare: Update when better",
+              "input_value": "9",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1, i: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "compare"
+                }
+              ],
+              "decision": "replace best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The saved index and saved meaning stay in sync."
+                }
+              ],
+              "output": "none yet",
+              "why": "Compare index 1 with the saved best. Since 9 is larger than 4, best must move."
             },
             {
               "title": "Keep when not better",
@@ -135,7 +198,28 @@
                   "result": "all items checked"
                 },
                 "note": "Not every pass updates the saved state."
-              }
+              },
+              "code_focus": "compare: Keep when not better",
+              "input_value": "7",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1, i: 2"
+                },
+                {
+                  "name": "step",
+                  "value": "compare"
+                }
+              ],
+              "decision": "keep best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "Not every pass updates the saved state."
+                }
+              ],
+              "output": "none yet",
+              "why": "Compare index 2 with best. Since 7 is not larger than 9, the invariant says best stays put."
             },
             {
               "title": "Return the tracked fact",
@@ -163,7 +247,28 @@
                   "result": "return index 1"
                 },
                 "note": "The trace reaches the final returned index."
-              }
+              },
+              "code_focus": "result: Return the tracked fact",
+              "input_value": "9",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "use best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The trace reaches the final returned index."
+                }
+              ],
+              "output": "return index 1",
+              "why": "After the loop, return the fact the variable promised to track: the best index."
             }
           ]
         },

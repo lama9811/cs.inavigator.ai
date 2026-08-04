@@ -56,7 +56,24 @@
                   "fact(3)"
                 ],
                 "active_call": 0
-              }
+              },
+              "code_focus": "trace recursion-patterns: Call fact(3)",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "call stack",
+                  "value": "fact(3)"
+                }
+              ],
+              "decision": "The first call cannot answer yet. It needs fact(2).",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "The first call cannot answer yet. It needs fact(2)."
             },
             {
               "title": "Call fact(2)",
@@ -67,7 +84,24 @@
                   "fact(2)"
                 ],
                 "active_call": 1
-              }
+              },
+              "code_focus": "trace recursion-patterns: Call fact(2)",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "call stack",
+                  "value": "fact(3), fact(2)"
+                }
+              ],
+              "decision": "fact(2) also needs a smaller answer.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "fact(2) also needs a smaller answer."
             },
             {
               "title": "Call fact(1)",
@@ -80,7 +114,24 @@
                 ],
                 "active_call": 2,
                 "note": "fact(1) returns 1"
-              }
+              },
+              "code_focus": "trace recursion-patterns: Call fact(1)",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "call stack",
+                  "value": "fact(3), fact(2), fact(1)"
+                }
+              ],
+              "decision": "fact(1) is the **base case**, so it can answer immediately.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "fact(1) returns 1"
+                }
+              ],
+              "output": "none yet",
+              "why": "fact(1) is the **base case**, so it can answer immediately."
             },
             {
               "title": "Return upward",
@@ -92,7 +143,24 @@
                 ],
                 "active_call": 1,
                 "note": "fact(2) returns 2"
-              }
+              },
+              "code_focus": "trace recursion-patterns: Return upward",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "call stack",
+                  "value": "fact(3), fact(2)"
+                }
+              ],
+              "decision": "Now each waiting call can finish using the smaller answer.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "fact(2) returns 2"
+                }
+              ],
+              "output": "fact(2) returns 2",
+              "why": "Now each waiting call can finish using the smaller answer."
             },
             {
               "title": "Finish",
@@ -103,7 +171,24 @@
                 ],
                 "active_call": 0,
                 "note": "fact(3) returns 6"
-              }
+              },
+              "code_focus": "trace recursion-patterns: Finish",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "call stack",
+                  "value": "fact(3)"
+                }
+              ],
+              "decision": "fact(3) uses fact(2)'s result and returns 6.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "fact(3) returns 6"
+                }
+              ],
+              "output": "none yet",
+              "why": "fact(3) uses fact(2)'s result and returns 6."
             }
           ]
         },
@@ -191,7 +276,24 @@
                   "2 + sum([4, 6])"
                 ],
                 "active_call": 0
-              }
+              },
+              "code_focus": "trace recursion-patterns: Ask for the full sum",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "call stack",
+                  "value": "2 + sum([4, 6])"
+                }
+              ],
+              "decision": "The **call stack** stores the unfinished work: 2 plus a smaller answer.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "The first call keeps 2 and asks for the sum of the rest."
             },
             {
               "title": "Ask again",
@@ -205,7 +307,24 @@
                   "4 + sum([6])"
                 ],
                 "active_call": 1
-              }
+              },
+              "code_focus": "trace recursion-patterns: Ask again",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "call stack",
+                  "value": "2 + sum([4, 6]), 4 + sum([6])"
+                }
+              ],
+              "decision": "Each call is the same job with a smaller **list**.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "The next call keeps 4 and asks for the sum of [6]."
             },
             {
               "title": "Hit the empty list",
@@ -222,7 +341,24 @@
                 ],
                 "active_call": 3,
                 "note": "base case returns 0"
-              }
+              },
+              "code_focus": "trace recursion-patterns: Hit the empty list",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "call stack",
+                  "value": "2 + sum([4, 6]), 4 + sum([6]), 6 + sum([]), sum([]) = 0"
+                }
+              ],
+              "decision": "Now the waiting calls can finally finish.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "base case returns 0"
+                }
+              ],
+              "output": "none yet",
+              "why": "The empty **list** returns 0 immediately."
             },
             {
               "title": "Add back up",
@@ -238,7 +374,24 @@
                 ],
                 "active_call": 0,
                 "note": "final result will be 12"
-              }
+              },
+              "code_focus": "trace recursion-patterns: Add back up",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "call stack",
+                  "value": "2 + 10, 4 + 6, 6"
+                }
+              ],
+              "decision": "**Return** values move back to the calls that were waiting for them.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "final result will be 12"
+                }
+              ],
+              "output": "none yet",
+              "why": "6 + 0 returns 6, then 4 + 6 returns 10."
             },
             {
               "title": "Finish",
@@ -251,7 +404,24 @@
                   "sum([2, 4, 6]) = 12"
                 ],
                 "active_call": 0
-              }
+              },
+              "code_focus": "trace recursion-patterns: Finish",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "call stack",
+                  "value": "sum([2, 4, 6]) = 12"
+                }
+              ],
+              "decision": "The **stack** is done because every smaller answer returned.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "The first call returns 2 + 10, which is 12."
             }
           ]
         },
@@ -330,7 +500,24 @@
                 ],
                 "active_call": 0,
                 "note": "needs sum(2)"
-              }
+              },
+              "code_focus": "trace recursion: Call with 3",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "call stack",
+                  "value": "sum(3)"
+                }
+              ],
+              "decision": "The function is not at the base case yet, so it asks for the answer to a smaller input.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "needs sum(2)"
+                }
+              ],
+              "output": "none yet",
+              "why": "The function is not at the base case yet, so it asks for the answer to a smaller input."
             },
             {
               "title": "Call with 2",
@@ -342,7 +529,24 @@
                 ],
                 "active_call": 1,
                 "note": "needs sum(1)"
-              }
+              },
+              "code_focus": "trace recursion: Call with 2",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "call stack",
+                  "value": "sum(3), sum(2)"
+                }
+              ],
+              "decision": "The second call waits for `sum(1)`.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "needs sum(1)"
+                }
+              ],
+              "output": "none yet",
+              "why": "The second call waits for `sum(1)`."
             },
             {
               "title": "Base case returns",
@@ -355,7 +559,24 @@
                 ],
                 "active_call": 2,
                 "note": "base answer = 1"
-              }
+              },
+              "code_focus": "trace recursion: Base case returns",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "call stack",
+                  "value": "sum(3), sum(2), sum(1) -> 1"
+                }
+              ],
+              "decision": "`sum(1)` can answer directly.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "base answer = 1"
+                }
+              ],
+              "output": "base answer = 1",
+              "why": "`sum(1)` can answer directly."
             },
             {
               "title": "Unwind answers",
@@ -367,7 +588,24 @@
                 ],
                 "active_call": 0,
                 "note": "final answer = 6"
-              }
+              },
+              "code_focus": "trace recursion: Unwind answers",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "call stack",
+                  "value": "sum(3) -> 6, sum(2) -> 3"
+                }
+              ],
+              "decision": "Each waiting call combines its number with the returned smaller answer.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "final answer = 6"
+                }
+              ],
+              "output": "none yet",
+              "why": "Each waiting call combines its number with the returned smaller answer."
             }
           ]
         },

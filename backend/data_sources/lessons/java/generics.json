@@ -31,25 +31,289 @@
               "title": "Choose the element type",
               "body": "List<String> labels the collection as a box for String values.",
               "animation": "add",
-              "state": {"active_step": "type", "process_flow": {"steps": [{"id": "type", "label": "Type Label", "detail": "List<String>", "shape": "terminator"}, {"id": "add", "label": "Add", "detail": "only String values", "shape": "input"}, {"id": "check", "label": "Type OK?", "detail": "compiler checks", "shape": "diamond"}, {"id": "get", "label": "Get", "detail": "returns String", "shape": "card"}, {"id": "result", "label": "Result", "detail": "no cast needed", "shape": "terminator"}]}, "table": [{"key": "courses", "value": "List<String>", "active": true}], "note": "the angle brackets name the allowed element type"}
+              "state": {
+                "active_step": "type",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "type",
+                      "label": "Type Label",
+                      "detail": "List<String>",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "add",
+                      "label": "Add",
+                      "detail": "only String values",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "check",
+                      "label": "Type OK?",
+                      "detail": "compiler checks",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "get",
+                      "label": "Get",
+                      "detail": "returns String",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "no cast needed",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "table": [
+                  {
+                    "key": "courses",
+                    "value": "List<String>",
+                    "active": true
+                  }
+                ],
+                "note": "the angle brackets name the allowed element type"
+              },
+              "code_focus": "type: Choose the element type",
+              "input_value": "courses -> List<String>",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "type"
+                }
+              ],
+              "decision": "List<String> labels the collection as a box for String values.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the angle brackets name the allowed element type"
+                },
+                {
+                  "name": "active entry",
+                  "value": "courses -> List<String>"
+                }
+              ],
+              "output": "none yet",
+              "why": "List<String> labels the collection as a box for String values."
             },
             {
               "title": "Add a matching value",
               "body": "A String value fits the list's type promise.",
               "animation": "highlight",
-              "state": {"active_step": "add", "process_flow": {"steps": [{"id": "type", "label": "Type Label", "detail": "String elements", "shape": "terminator"}, {"id": "add", "label": "Add", "detail": "courses.add(\"CS101\")", "shape": "input"}, {"id": "check", "label": "Type OK?", "detail": "yes", "shape": "diamond"}, {"id": "get", "label": "Get", "detail": "stored safely", "shape": "card"}, {"id": "result", "label": "Result", "detail": "list has CS101", "shape": "terminator"}]}, "table": [{"key": "index 0", "value": "CS101", "active": true}], "note": "the compiler accepts values of the promised type"}
+              "state": {
+                "active_step": "add",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "type",
+                      "label": "Type Label",
+                      "detail": "String elements",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "add",
+                      "label": "Add",
+                      "detail": "courses.add(\"CS101\")",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "check",
+                      "label": "Type OK?",
+                      "detail": "yes",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "get",
+                      "label": "Get",
+                      "detail": "stored safely",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "list has CS101",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "table": [
+                  {
+                    "key": "index 0",
+                    "value": "CS101",
+                    "active": true
+                  }
+                ],
+                "note": "the compiler accepts values of the promised type"
+              },
+              "code_focus": "add: Add a matching value",
+              "input_value": "index 0 -> CS101",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "add"
+                }
+              ],
+              "decision": "A String value fits the list's type promise.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the compiler accepts values of the promised type"
+                },
+                {
+                  "name": "active entry",
+                  "value": "index 0 -> CS101"
+                }
+              ],
+              "output": "none yet",
+              "why": "A String value fits the list's type promise."
             },
             {
               "title": "Reject the wrong type",
               "body": "A number does not satisfy List<String>, so Java can catch the mistake before runtime.",
               "animation": "slide",
-              "state": {"active_step": "check", "process_flow": {"steps": [{"id": "type", "label": "Type Label", "detail": "List<String>", "shape": "terminator"}, {"id": "add", "label": "Add", "detail": "courses.add(42)", "shape": "input"}, {"id": "check", "label": "Type OK?", "detail": "no: Integer is not String", "shape": "diamond"}, {"id": "get", "label": "Get", "detail": "bad value never enters", "shape": "card"}, {"id": "result", "label": "Result", "detail": "compile-time protection", "shape": "terminator"}]}, "table": [{"key": "attempt", "value": "42", "active": true}, {"key": "allowed", "value": "String"}], "note": "generics move many mistakes earlier"}
+              "state": {
+                "active_step": "check",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "type",
+                      "label": "Type Label",
+                      "detail": "List<String>",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "add",
+                      "label": "Add",
+                      "detail": "courses.add(42)",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "check",
+                      "label": "Type OK?",
+                      "detail": "no: Integer is not String",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "get",
+                      "label": "Get",
+                      "detail": "bad value never enters",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "compile-time protection",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "table": [
+                  {
+                    "key": "attempt",
+                    "value": "42",
+                    "active": true
+                  },
+                  {
+                    "key": "allowed",
+                    "value": "String"
+                  }
+                ],
+                "note": "generics move many mistakes earlier"
+              },
+              "code_focus": "check: Reject the wrong type",
+              "input_value": "attempt -> 42",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "check"
+                }
+              ],
+              "decision": "A number does not satisfy List<String>, so Java can catch the mistake before runtime.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "generics move many mistakes earlier"
+                },
+                {
+                  "name": "active entry",
+                  "value": "attempt -> 42"
+                }
+              ],
+              "output": "none yet",
+              "why": "A number does not satisfy List<String>, so Java can catch the mistake before runtime."
             },
             {
               "title": "Get a known type",
               "body": "Because the list is typed, get returns a String and no manual cast is needed.",
               "animation": "add",
-              "state": {"active_step": "result", "process_flow": {"steps": [{"id": "type", "label": "Type Label", "detail": "List<String>", "shape": "terminator"}, {"id": "add", "label": "Add", "detail": "safe values stored", "shape": "input"}, {"id": "check", "label": "Type OK?", "detail": "already checked", "shape": "diamond"}, {"id": "get", "label": "Get", "detail": "courses.get(0)", "shape": "card"}, {"id": "result", "label": "Result", "detail": "String first = \"CS101\"", "shape": "terminator"}]}, "table": [{"key": "first", "value": "String \"CS101\"", "active": true}], "note": "typed collections make outputs predictable too"}
+              "state": {
+                "active_step": "result",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "type",
+                      "label": "Type Label",
+                      "detail": "List<String>",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "add",
+                      "label": "Add",
+                      "detail": "safe values stored",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "check",
+                      "label": "Type OK?",
+                      "detail": "already checked",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "get",
+                      "label": "Get",
+                      "detail": "courses.get(0)",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "String first = \"CS101\"",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "table": [
+                  {
+                    "key": "first",
+                    "value": "String \"CS101\"",
+                    "active": true
+                  }
+                ],
+                "note": "typed collections make outputs predictable too"
+              },
+              "code_focus": "result: Get a known type",
+              "input_value": "first -> String \"CS101\"",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "Because the list is typed, get returns a String and no manual cast is needed.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "typed collections make outputs predictable too"
+                },
+                {
+                  "name": "active entry",
+                  "value": "first -> String \"CS101\""
+                }
+              ],
+              "output": "none yet",
+              "why": "Because the list is typed, get returns a String and no manual cast is needed."
             }
           ]
         }

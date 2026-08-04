@@ -34,25 +34,241 @@
               "title": "Start risky parsing",
               "body": "JSON.parse is the risky operation, so it belongs inside try.",
               "animation": "add",
-              "state": {"active_step": "try", "process_flow": {"steps": [{"id": "try", "label": "Try", "detail": "JSON.parse(raw)", "shape": "terminator"}, {"id": "throw", "label": "Throws?", "detail": "raw is malformed", "shape": "diamond"}, {"id": "catch", "label": "Catch", "detail": "error object arrives", "shape": "input"}, {"id": "respond", "label": "Respond", "detail": "show useful message", "shape": "card"}, {"id": "continue", "label": "Continue", "detail": "keep bug evidence", "shape": "terminator"}]}, "note": "keep try close to the operation that may fail"}
+              "state": {
+                "active_step": "try",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "try",
+                      "label": "Try",
+                      "detail": "JSON.parse(raw)",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "throw",
+                      "label": "Throws?",
+                      "detail": "raw is malformed",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "catch",
+                      "label": "Catch",
+                      "detail": "error object arrives",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "respond",
+                      "label": "Respond",
+                      "detail": "show useful message",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "continue",
+                      "label": "Continue",
+                      "detail": "keep bug evidence",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "keep try close to the operation that may fail"
+              },
+              "code_focus": "try: Start risky parsing",
+              "input_value": "JSON.parse(raw)",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "try"
+                }
+              ],
+              "decision": "JSON.parse is the risky operation, so it belongs inside try.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "keep try close to the operation that may fail"
+                }
+              ],
+              "output": "none yet",
+              "why": "JSON.parse is the risky operation, so it belongs inside try."
             },
             {
               "title": "Throw SyntaxError",
               "body": "Parsing stops when the text is not valid JSON.",
               "animation": "highlight",
-              "state": {"active_step": "throw", "process_flow": {"steps": [{"id": "try", "label": "Try", "detail": "parse begins", "shape": "terminator"}, {"id": "throw", "label": "Throws?", "detail": "SyntaxError", "shape": "diamond"}, {"id": "catch", "label": "Catch", "detail": "control jumps", "shape": "input"}, {"id": "respond", "label": "Respond", "detail": "Loaded is skipped", "shape": "card"}, {"id": "continue", "label": "Continue", "detail": "not yet", "shape": "terminator"}]}, "note": "the rest of try does not run after throw"}
+              "state": {
+                "active_step": "throw",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "try",
+                      "label": "Try",
+                      "detail": "parse begins",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "throw",
+                      "label": "Throws?",
+                      "detail": "SyntaxError",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "catch",
+                      "label": "Catch",
+                      "detail": "control jumps",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "respond",
+                      "label": "Respond",
+                      "detail": "Loaded is skipped",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "continue",
+                      "label": "Continue",
+                      "detail": "not yet",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "the rest of try does not run after throw"
+              },
+              "code_focus": "throw: Throw SyntaxError",
+              "input_value": "SyntaxError",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "throw"
+                }
+              ],
+              "decision": "Parsing stops when the text is not valid JSON.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the rest of try does not run after throw"
+                }
+              ],
+              "output": "none yet",
+              "why": "Parsing stops when the text is not valid JSON."
             },
             {
               "title": "Catch with evidence",
               "body": "Catch receives the Error object, which can be logged or translated into a user-safe message.",
               "animation": "slide",
-              "state": {"active_step": "respond", "process_flow": {"steps": [{"id": "try", "label": "Try", "detail": "normal path skipped", "shape": "terminator"}, {"id": "throw", "label": "Throws?", "detail": "SyntaxError", "shape": "diamond"}, {"id": "catch", "label": "Catch", "detail": "catch (error)", "shape": "input"}, {"id": "respond", "label": "Respond", "detail": "Could not read that JSON", "shape": "card"}, {"id": "continue", "label": "Continue", "detail": "ready", "shape": "terminator"}]}, "note": "empty catches erase the clue you need"}
+              "state": {
+                "active_step": "respond",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "try",
+                      "label": "Try",
+                      "detail": "normal path skipped",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "throw",
+                      "label": "Throws?",
+                      "detail": "SyntaxError",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "catch",
+                      "label": "Catch",
+                      "detail": "catch (error)",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "respond",
+                      "label": "Respond",
+                      "detail": "Could not read that JSON",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "continue",
+                      "label": "Continue",
+                      "detail": "ready",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "empty catches erase the clue you need"
+              },
+              "code_focus": "respond: Catch with evidence",
+              "input_value": "Could not read that JSON",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "respond"
+                }
+              ],
+              "decision": "Catch receives the Error object, which can be logged or translated into a user-safe message.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "empty catches erase the clue you need"
+                }
+              ],
+              "output": "none yet",
+              "why": "Catch receives the Error object, which can be logged or translated into a user-safe message."
             },
             {
               "title": "Continue intentionally",
               "body": "The program continues only after a handler has made the failure visible or recoverable.",
               "animation": "add",
-              "state": {"active_step": "continue", "process_flow": {"steps": [{"id": "try", "label": "Try", "detail": "risky work handled", "shape": "terminator"}, {"id": "throw", "label": "Throws?", "detail": "handled", "shape": "diamond"}, {"id": "catch", "label": "Catch", "detail": "error preserved", "shape": "input"}, {"id": "respond", "label": "Respond", "detail": "message shown", "shape": "card"}, {"id": "continue", "label": "Continue", "detail": "next safe step", "shape": "terminator"}]}, "note": "handle expected failures without hiding real bugs"}
+              "state": {
+                "active_step": "continue",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "try",
+                      "label": "Try",
+                      "detail": "risky work handled",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "throw",
+                      "label": "Throws?",
+                      "detail": "handled",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "catch",
+                      "label": "Catch",
+                      "detail": "error preserved",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "respond",
+                      "label": "Respond",
+                      "detail": "message shown",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "continue",
+                      "label": "Continue",
+                      "detail": "next safe step",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "handle expected failures without hiding real bugs"
+              },
+              "code_focus": "continue: Continue intentionally",
+              "input_value": "next safe step",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "continue"
+                }
+              ],
+              "decision": "The program continues only after a handler has made the failure visible or recoverable.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "handle expected failures without hiding real bugs"
+                }
+              ],
+              "output": "handle expected failures without hiding real bugs",
+              "why": "The program continues only after a handler has made the failure visible or recoverable."
             }
           ]
         },

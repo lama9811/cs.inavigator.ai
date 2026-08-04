@@ -83,7 +83,24 @@
                     "to": "C"
                   }
                 ]
-              }
+              },
+              "code_focus": "trace linked-lists: Start with two nodes",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "A points to C. Head points to A.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "A points to C. Head points to A."
             },
             {
               "title": "Create B",
@@ -116,7 +133,24 @@
                     "to": "C"
                   }
                 ]
-              }
+              },
+              "code_focus": "trace linked-lists: Create B",
+              "input_value": "B",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Make the new **node** before changing links.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "Make the new **node** before changing links."
             },
             {
               "title": "Point B to C",
@@ -154,7 +188,24 @@
                     "active": true
                   }
                 ]
-              }
+              },
+              "code_focus": "trace linked-lists: Point B to C",
+              "input_value": "B",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "B should remember the **node** that used to come after A.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "B should remember the **node** that used to come after A."
             },
             {
               "title": "Point A to B",
@@ -194,7 +245,24 @@
                     "active": true
                   }
                 ]
-              }
+              },
+              "code_focus": "trace linked-lists: Point A to B",
+              "input_value": "A, B",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Now A can point to B. The final order is A, B, C.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "Now A can point to B. The final order is A, B, C."
             }
           ]
         },
@@ -309,7 +377,24 @@
                     "to": "C"
                   }
                 ]
-              }
+              },
+              "code_focus": "trace linked-lists: Start at head",
+              "input_value": "A",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "**Traversal** starts from the head **reference**, not from an **index**.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "current points to the first **node**, A."
             },
             {
               "title": "Move to next",
@@ -351,7 +436,24 @@
                     "to": "C"
                   }
                 ]
-              }
+              },
+              "code_focus": "trace linked-lists: Move to next",
+              "input_value": "B",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The **pointer** moves. The **nodes** stay where they are.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "After reading A, current follows A.next to B."
             },
             {
               "title": "Move again",
@@ -393,7 +495,24 @@
                     "active": true
                   }
                 ]
-              }
+              },
+              "code_focus": "trace linked-lists: Move again",
+              "input_value": "C",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "A **loop** repeats this same movement until next is missing.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "After B, current follows B.next to C."
             },
             {
               "title": "Stop at null",
@@ -435,7 +554,24 @@
                   }
                 ],
                 "note": "loop stops when current becomes null"
-              }
+              },
+              "code_focus": "trace linked-lists: Stop at null",
+              "input_value": "C",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The missing link marks the end of the **list**.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "loop stops when current becomes null"
+                }
+              ],
+              "output": "none yet",
+              "why": "C.next is null, so the **traversal** is done after C."
             }
           ]
         },

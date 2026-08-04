@@ -51,7 +51,28 @@
                 ],
                 "active_call": 0,
                 "note": "waiting for add"
-              }
+              },
+              "code_focus": "arguments: Call with arguments",
+              "input_value": "3 and 5 leave the caller",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "arguments"
+                },
+                {
+                  "name": "call stack",
+                  "value": "main: result = add(3, 5)"
+                }
+              ],
+              "decision": "The caller sends 3 and 5 into the function.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "waiting for add"
+                }
+              ],
+              "output": "none yet",
+              "why": "The caller sends 3 and 5 into the function."
             },
             {
               "title": "Parameters receive values",
@@ -84,7 +105,28 @@
                     "active": true
                   }
                 ]
-              }
+              },
+              "code_focus": "parameters: Parameters receive values",
+              "input_value": "a -> 3, b -> 5",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "parameters"
+                },
+                {
+                  "name": "call stack",
+                  "value": "main, add: a=3, b=5"
+                }
+              ],
+              "decision": "Inside the function, a is 3 and b is 5.",
+              "variables_after": [
+                {
+                  "name": "active entry",
+                  "value": "a -> 3, b -> 5"
+                }
+              ],
+              "output": "none yet",
+              "why": "Inside the function, a is 3 and b is 5."
             },
             {
               "title": "Return",
@@ -105,7 +147,28 @@
                 ],
                 "active_call": 0,
                 "note": "result stores 8"
-              }
+              },
+              "code_focus": "return: Return",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "return"
+                },
+                {
+                  "name": "call stack",
+                  "value": "main: result = 8"
+                }
+              ],
+              "decision": "Return sends 8 back to the caller, and the function call is finished.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "result stores 8"
+                }
+              ],
+              "output": "result stores 8",
+              "why": "Return sends 8 back to the caller, and the function call is finished."
             },
             {
               "title": "Caller resumes",
@@ -125,7 +188,28 @@
                 ],
                 "active_call": 0,
                 "note": "the caller can use result"
-              }
+              },
+              "code_focus": "resume: Caller resumes",
+              "input_value": "result = 8",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "resume"
+                },
+                {
+                  "name": "call stack",
+                  "value": "main: result = 8"
+                }
+              ],
+              "decision": "The function call has been replaced by 8, so main can use the stored result.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the caller can use result"
+                }
+              ],
+              "output": "none yet",
+              "why": "The function call has been replaced by 8, so main can use the stored result."
             }
           ]
         },

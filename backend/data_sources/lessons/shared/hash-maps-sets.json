@@ -82,7 +82,28 @@
                   }
                 ],
                 "note": "4 is new"
-              }
+              },
+              "code_focus": "trace hash-maps-sets: Read 4",
+              "input_value": "4",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "After the check, add 4 so future **values** can compare against it.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "4 is new"
+                },
+                {
+                  "name": "active entry",
+                  "value": "seen -> {4}"
+                }
+              ],
+              "output": "none yet",
+              "why": "4 is not in the **set** yet."
             },
             {
               "title": "Read 7",
@@ -102,7 +123,28 @@
                   }
                 ],
                 "note": "7 is new"
-              }
+              },
+              "code_focus": "trace hash-maps-sets: Read 7",
+              "input_value": "7",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The **set** now remembers both earlier **values**.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "7 is new"
+                },
+                {
+                  "name": "active entry",
+                  "value": "seen -> {4, 7}"
+                }
+              ],
+              "output": "none yet",
+              "why": "7 is also missing, so add it."
             },
             {
               "title": "Read 4 again",
@@ -122,7 +164,28 @@
                   }
                 ],
                 "note": "4 was seen before"
-              }
+              },
+              "code_focus": "trace hash-maps-sets: Read 4 again",
+              "input_value": "4",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The **set** gives a yes/no answer without scanning the earlier **list** by hand.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "4 was seen before"
+                },
+                {
+                  "name": "active entry",
+                  "value": "seen -> {4, 7}"
+                }
+              ],
+              "output": "none yet",
+              "why": "4 is already in the **set**, so this is the repeat."
             }
           ]
         },
@@ -214,7 +277,24 @@
                     "active": true
                   }
                 ]
-              }
+              },
+              "code_focus": "trace hash-maps-sets: Read b",
+              "input_value": "b",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The new count becomes 1 and is stored under **key** b.",
+              "variables_after": [
+                {
+                  "name": "active entry",
+                  "value": "b -> 1"
+                }
+              ],
+              "output": "none yet",
+              "why": "b is missing, so its old count acts like 0."
             },
             {
               "title": "Read a",
@@ -237,7 +317,24 @@
                     "active": true
                   }
                 ]
-              }
+              },
+              "code_focus": "trace hash-maps-sets: Read a",
+              "input_value": "a",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Each **key** owns its own count.",
+              "variables_after": [
+                {
+                  "name": "active entry",
+                  "value": "a -> 1"
+                }
+              ],
+              "output": "none yet",
+              "why": "a is missing too, so it starts at 1."
             },
             {
               "title": "Read a again",
@@ -264,7 +361,24 @@
                     "value": 1
                   }
                 ]
-              }
+              },
+              "code_focus": "trace hash-maps-sets: Read a again",
+              "input_value": "a",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The **key** stays a. Only the **value** changes from 1 to 2.",
+              "variables_after": [
+                {
+                  "name": "active entry",
+                  "value": "a -> 2"
+                }
+              ],
+              "output": "none yet",
+              "why": "a already exists, so read the old **value** and add one."
             }
           ]
         },
@@ -295,7 +409,24 @@
                     "active": true
                   }
                 ]
-              }
+              },
+              "code_focus": "trace hash-maps-sets: Read cat",
+              "input_value": "cat",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "cat is not in the table yet, so its count starts at 1.",
+              "variables_after": [
+                {
+                  "name": "active entry",
+                  "value": "cat -> 1"
+                }
+              ],
+              "output": "none yet",
+              "why": "cat is not in the table yet, so its count starts at 1."
             },
             {
               "title": "Read dog",
@@ -315,7 +446,24 @@
                     "active": true
                   }
                 ]
-              }
+              },
+              "code_focus": "trace hash-maps-sets: Read dog",
+              "input_value": "dog",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "dog gets its own **key** with count 1.",
+              "variables_after": [
+                {
+                  "name": "active entry",
+                  "value": "dog -> 1"
+                }
+              ],
+              "output": "none yet",
+              "why": "dog gets its own **key** with count 1."
             },
             {
               "title": "Read cat again",
@@ -335,7 +483,24 @@
                     "value": 1
                   }
                 ]
-              }
+              },
+              "code_focus": "trace hash-maps-sets: Read cat again",
+              "input_value": "cat",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "cat is already a **key**, so update its old **value**.",
+              "variables_after": [
+                {
+                  "name": "active entry",
+                  "value": "cat -> 2"
+                }
+              ],
+              "output": "none yet",
+              "why": "cat is already a **key**, so update its old **value**."
             }
           ]
         },
@@ -431,7 +596,24 @@
                 ],
                 "target": "lab",
                 "note": "key = lab"
-              }
+              },
+              "code_focus": "trace hash-map: Read key",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The key is the value used for lookup.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "key = lab"
+                }
+              ],
+              "output": "none yet",
+              "why": "The key is the value used for lookup."
             },
             {
               "title": "Choose bucket",
@@ -455,7 +637,24 @@
                 ],
                 "activeBucket": 1,
                 "note": "bucket 1"
-              }
+              },
+              "code_focus": "trace hash-map: Choose bucket",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The hash function decides which bucket to inspect.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "bucket 1"
+                }
+              ],
+              "output": "none yet",
+              "why": "The hash function decides which bucket to inspect."
             },
             {
               "title": "Key appears again",
@@ -482,7 +681,24 @@
                   "lab"
                 ],
                 "note": "old count = 1"
-              }
+              },
+              "code_focus": "trace hash-map: Key appears again",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Use the existing entry instead of making a duplicate key.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "old count = 1"
+                }
+              ],
+              "output": "none yet",
+              "why": "Use the existing entry instead of making a duplicate key."
             },
             {
               "title": "Update saved value",
@@ -506,7 +722,24 @@
                 ],
                 "activeBucket": 1,
                 "note": "lab count = 2"
-              }
+              },
+              "code_focus": "trace hash-map: Update saved value",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The value for that key changes from 1 to 2.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "lab count = 2"
+                }
+              ],
+              "output": "none yet",
+              "why": "The value for that key changes from 1 to 2."
             }
           ]
         },

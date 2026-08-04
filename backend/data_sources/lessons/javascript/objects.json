@@ -52,7 +52,24 @@
                   }
                 ],
                 "note": "keys explain what each value means"
-              }
+              },
+              "code_focus": "store: Store named pairs",
+              "input_value": "object has named pairs",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "store"
+                }
+              ],
+              "decision": "which key?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "keys explain what each value means"
+                }
+              ],
+              "output": "none yet",
+              "why": "Each key names one stored value, so the meaning is carried by the key instead of an index."
             },
             {
               "title": "Look up CS102",
@@ -82,7 +99,28 @@
                   }
                 ],
                 "note": "lookup returns 4 credits"
-              }
+              },
+              "code_focus": "action: Look up CS102",
+              "input_value": "CS102 -> 4 credits",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "action"
+                }
+              ],
+              "decision": "key exists?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "lookup returns 4 credits"
+                },
+                {
+                  "name": "active entry",
+                  "value": "CS102 -> 4 credits"
+                }
+              ],
+              "output": "none yet",
+              "why": "The lookup key selects exactly one matching pair."
             },
             {
               "title": "Handle missing key",
@@ -112,7 +150,28 @@
                   }
                 ],
                 "note": "absence is a separate case"
-              }
+              },
+              "code_focus": "decision: Handle missing key",
+              "input_value": "ART101 -> missing",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "decision"
+                }
+              ],
+              "decision": "ART101 exists? no",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "absence is a separate case"
+                },
+                {
+                  "name": "active entry",
+                  "value": "ART101 -> missing"
+                }
+              ],
+              "output": "none yet",
+              "why": "A missing key needs an intentional path: default, guard, or error handling."
             },
             {
               "title": "Use final value",
@@ -138,7 +197,28 @@
                   }
                 ],
                 "note": "the visual reaches the usable result"
-              }
+              },
+              "code_focus": "result: Use final value",
+              "input_value": "CS102 -> 4 credits",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "key status known",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the visual reaches the usable result"
+                },
+                {
+                  "name": "active entry",
+                  "value": "CS102 -> 4 credits"
+                }
+              ],
+              "output": "use 4 credits or fallback",
+              "why": "After the lookup path is known, use the returned value or fallback in the next line."
             }
           ]
         }

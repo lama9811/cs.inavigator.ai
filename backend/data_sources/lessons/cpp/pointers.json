@@ -46,7 +46,28 @@
                   }
                 ],
                 "note": "the value exists before the pointer"
-              }
+              },
+              "code_focus": "value: Create a value",
+              "input_value": "score -> 92",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "value"
+                }
+              ],
+              "decision": "The variable score stores 92 in one memory location.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the value exists before the pointer"
+                },
+                {
+                  "name": "active entry",
+                  "value": "score -> 92"
+                }
+              ],
+              "output": "none yet",
+              "why": "The variable score stores 92 in one memory location."
             },
             {
               "title": "Store its address",
@@ -74,7 +95,28 @@
                   }
                 ],
                 "note": "ptr stores the address-like link"
-              }
+              },
+              "code_focus": "pointer: Store its address",
+              "input_value": "score -> 92, ptr -> points to score",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "pointer"
+                }
+              ],
+              "decision": "The pointer stores a way to reach score; it does not copy 92.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "ptr stores the address-like link"
+                },
+                {
+                  "name": "active entry",
+                  "value": "score -> 92, ptr -> points to score"
+                }
+              ],
+              "output": "none yet",
+              "why": "The pointer stores a way to reach score; it does not copy 92."
             },
             {
               "title": "Dereference safely",
@@ -101,7 +143,28 @@
                   }
                 ],
                 "note": "same value, reached indirectly"
-              }
+              },
+              "code_focus": "dereference: Dereference safely",
+              "input_value": "*ptr -> 92",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "dereference"
+                }
+              ],
+              "decision": "Dereferencing follows the stored address and reads the original value.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "same value, reached indirectly"
+                },
+                {
+                  "name": "active entry",
+                  "value": "*ptr -> 92"
+                }
+              ],
+              "output": "none yet",
+              "why": "Dereferencing follows the stored address and reads the original value."
             },
             {
               "title": "Change through pointer",
@@ -129,7 +192,28 @@
                   }
                 ],
                 "note": "the original value changes"
-              }
+              },
+              "code_focus": "dereference: Change through pointer",
+              "input_value": "*ptr -> 85, score -> 85",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "dereference"
+                }
+              ],
+              "decision": "Assigning through *ptr changes score because ptr reaches score.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the original value changes"
+                },
+                {
+                  "name": "active entry",
+                  "value": "*ptr -> 85, score -> 85"
+                }
+              ],
+              "output": "none yet",
+              "why": "Assigning through *ptr changes score because ptr reaches score."
             },
             {
               "title": "Guard null pointer",
@@ -156,7 +240,28 @@
                   }
                 ],
                 "note": "check before following an address"
-              }
+              },
+              "code_focus": "guard: Guard null pointer",
+              "input_value": "ptr -> nullptr",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "guard"
+                }
+              ],
+              "decision": "If the pointer is nullptr, do not dereference it; take the safe branch instead.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "check before following an address"
+                },
+                {
+                  "name": "active entry",
+                  "value": "ptr -> nullptr"
+                }
+              ],
+              "output": "none yet",
+              "why": "If the pointer is nullptr, do not dereference it; take the safe branch instead."
             }
           ]
         },

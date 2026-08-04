@@ -34,17 +34,66 @@
                 "active_step": "source",
                 "process_flow": {
                   "steps": [
-                    {"id": "source", "label": "Source", "detail": "numbers = [1, 2, 3, 4]", "shape": "terminator"},
-                    {"id": "filter", "label": "Filter", "detail": "keep even n", "shape": "diamond"},
-                    {"id": "transform", "label": "Transform", "detail": "n * n", "shape": "input"},
-                    {"id": "collect", "label": "Collect", "detail": "new list waits", "shape": "card"},
-                    {"id": "result", "label": "Result", "detail": "use even_squares", "shape": "terminator"}
+                    {
+                      "id": "source",
+                      "label": "Source",
+                      "detail": "numbers = [1, 2, 3, 4]",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "filter",
+                      "label": "Filter",
+                      "detail": "keep even n",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "transform",
+                      "label": "Transform",
+                      "detail": "n * n",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "collect",
+                      "label": "Collect",
+                      "detail": "new list waits",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "use even_squares",
+                      "shape": "terminator"
+                    }
                   ]
                 },
-                "items": [1, 2, 3, 4],
-                "active": [0],
+                "items": [
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                "active": [
+                  0
+                ],
                 "note": "the source list is still unchanged"
-              }
+              },
+              "code_focus": "source: Start with source values",
+              "input_value": "1",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "source"
+                }
+              ],
+              "decision": "A comprehension reads from an existing collection without changing it.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the source list is still unchanged"
+                }
+              ],
+              "output": "none yet",
+              "why": "A comprehension reads from an existing collection without changing it."
             },
             {
               "title": "Filter each value",
@@ -54,17 +103,66 @@
                 "active_step": "filter",
                 "process_flow": {
                   "steps": [
-                    {"id": "source", "label": "Source", "detail": "read n = 2", "shape": "terminator"},
-                    {"id": "filter", "label": "Filter", "detail": "2 % 2 == 0 is true", "shape": "diamond"},
-                    {"id": "transform", "label": "Transform", "detail": "ready to square", "shape": "input"},
-                    {"id": "collect", "label": "Collect", "detail": "result still empty", "shape": "card"},
-                    {"id": "result", "label": "Result", "detail": "not finished yet", "shape": "terminator"}
+                    {
+                      "id": "source",
+                      "label": "Source",
+                      "detail": "read n = 2",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "filter",
+                      "label": "Filter",
+                      "detail": "2 % 2 == 0 is true",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "transform",
+                      "label": "Transform",
+                      "detail": "ready to square",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "collect",
+                      "label": "Collect",
+                      "detail": "result still empty",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "not finished yet",
+                      "shape": "terminator"
+                    }
                   ]
                 },
-                "items": [1, 2, 3, 4],
-                "active": [1],
+                "items": [
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                "active": [
+                  1
+                ],
                 "note": "values that fail the filter are skipped"
-              }
+              },
+              "code_focus": "filter: Filter each value",
+              "input_value": "2",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "filter"
+                }
+              ],
+              "decision": "The optional if decides whether the current value reaches the expression.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "values that fail the filter are skipped"
+                }
+              ],
+              "output": "none yet",
+              "why": "The optional if decides whether the current value reaches the expression."
             },
             {
               "title": "Transform kept values",
@@ -74,17 +172,66 @@
                 "active_step": "transform",
                 "process_flow": {
                   "steps": [
-                    {"id": "source", "label": "Source", "detail": "n is 2", "shape": "terminator"},
-                    {"id": "filter", "label": "Filter", "detail": "kept", "shape": "diamond"},
-                    {"id": "transform", "label": "Transform", "detail": "2 * 2 becomes 4", "shape": "input"},
-                    {"id": "collect", "label": "Collect", "detail": "append transformed value", "shape": "card"},
-                    {"id": "result", "label": "Result", "detail": "building list", "shape": "terminator"}
+                    {
+                      "id": "source",
+                      "label": "Source",
+                      "detail": "n is 2",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "filter",
+                      "label": "Filter",
+                      "detail": "kept",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "transform",
+                      "label": "Transform",
+                      "detail": "2 * 2 becomes 4",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "collect",
+                      "label": "Collect",
+                      "detail": "append transformed value",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "building list",
+                      "shape": "terminator"
+                    }
                   ]
                 },
-                "items": [1, 2, 3, 4],
-                "active": [1],
+                "items": [
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                "active": [
+                  1
+                ],
                 "note": "the expression creates the value that enters the new list"
-              }
+              },
+              "code_focus": "transform: Transform kept values",
+              "input_value": "2",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "transform"
+                }
+              ],
+              "decision": "Only values that passed the filter run through the result expression.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the expression creates the value that enters the new list"
+                }
+              ],
+              "output": "none yet",
+              "why": "Only values that passed the filter run through the result expression."
             },
             {
               "title": "Collect the final list",
@@ -94,17 +241,65 @@
                 "active_step": "result",
                 "process_flow": {
                   "steps": [
-                    {"id": "source", "label": "Source", "detail": "all values checked", "shape": "terminator"},
-                    {"id": "filter", "label": "Filter", "detail": "kept 2 and 4", "shape": "diamond"},
-                    {"id": "transform", "label": "Transform", "detail": "4 and 16", "shape": "input"},
-                    {"id": "collect", "label": "Collect", "detail": "[4, 16]", "shape": "card"},
-                    {"id": "result", "label": "Result", "detail": "even_squares = [4, 16]", "shape": "terminator"}
+                    {
+                      "id": "source",
+                      "label": "Source",
+                      "detail": "all values checked",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "filter",
+                      "label": "Filter",
+                      "detail": "kept 2 and 4",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "transform",
+                      "label": "Transform",
+                      "detail": "4 and 16",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "collect",
+                      "label": "Collect",
+                      "detail": "[4, 16]",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "even_squares = [4, 16]",
+                      "shape": "terminator"
+                    }
                   ]
                 },
-                "items": [4, 16],
-                "active": [0, 1],
+                "items": [
+                  4,
+                  16
+                ],
+                "active": [
+                  0,
+                  1
+                ],
                 "note": "a comprehension returns a new collection"
-              }
+              },
+              "code_focus": "result: Collect the final list",
+              "input_value": "4, 16",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "After every source value has been checked, the comprehension returns the new collection.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "a comprehension returns a new collection"
+                }
+              ],
+              "output": "a comprehension returns a new collection",
+              "why": "After every source value has been checked, the comprehension returns the new collection."
             }
           ]
         }

@@ -79,7 +79,28 @@
                   0,
                   6
                 ]
-              }
+              },
+              "code_focus": "trace binary-search: Start with the full range",
+              "input_value": "low -> 2, high -> 20",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "low: 0, high: 6"
+                },
+                {
+                  "name": "range",
+                  "value": "0, 6"
+                }
+              ],
+              "decision": "low and high cover every possible **index**.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "low and high cover every possible **index**."
             },
             {
               "title": "Check mid",
@@ -97,7 +118,28 @@
                   0,
                   6
                 ]
-              }
+              },
+              "code_focus": "trace binary-search: Check mid",
+              "input_value": "9",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "low: 0, mid: 3, high: 6"
+                },
+                {
+                  "name": "range",
+                  "value": "0, 6"
+                }
+              ],
+              "decision": "mid points to 9. The target is 15, so 9 is too small.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "mid points to 9. The target is 15, so 9 is too small."
             },
             {
               "title": "Move low right",
@@ -111,7 +153,28 @@
                   4,
                   6
                 ]
-              }
+              },
+              "code_focus": "trace binary-search: Move low right",
+              "input_value": "low -> 12, high -> 20",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "low: 4, high: 6"
+                },
+                {
+                  "name": "range",
+                  "value": "4, 6"
+                }
+              ],
+              "decision": "Everything at mid and left of mid is too small, so discard it.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "Everything at mid and left of mid is too small, so discard it."
             },
             {
               "title": "Check new mid",
@@ -130,7 +193,28 @@
                   6
                 ],
                 "note": "found at index 5"
-              }
+              },
+              "code_focus": "trace binary-search: Check new mid",
+              "input_value": "15",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "low: 4, mid: 5, high: 6"
+                },
+                {
+                  "name": "range",
+                  "value": "4, 6"
+                }
+              ],
+              "decision": "mid points to 15, which matches the target.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "found at index 5"
+                }
+              ],
+              "output": "none yet",
+              "why": "mid points to 15, which matches the target."
             }
           ]
         },
@@ -221,7 +305,28 @@
                   0
                 ],
                 "note": "target is 20"
-              }
+              },
+              "code_focus": "trace binary-search: Two items remain",
+              "input_value": "10",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "low: 0, mid: 0, high: 1"
+                },
+                {
+                  "name": "range",
+                  "value": "0, 1"
+                }
+              ],
+              "decision": "The range is tiny, so a bad update can get stuck fast.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "target is 20"
+                }
+              ],
+              "output": "none yet",
+              "why": "low is 0, high is 1, and mid becomes 0."
             },
             {
               "title": "Wrong update",
@@ -243,7 +348,28 @@
                   0
                 ],
                 "note": "range did not shrink"
-              }
+              },
+              "code_focus": "trace binary-search: Wrong update",
+              "input_value": "10",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "low: 0, mid: 0, high: 1"
+                },
+                {
+                  "name": "range",
+                  "value": "0, 1"
+                }
+              ],
+              "decision": "Nothing moved. The next **loop** checks mid 0 again.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "range did not shrink"
+                }
+              ],
+              "output": "none yet",
+              "why": "10 is too small, but setting low to mid keeps low at 0."
             },
             {
               "title": "Correct update",
@@ -264,7 +390,28 @@
                   1
                 ],
                 "note": "one candidate left"
-              }
+              },
+              "code_focus": "trace binary-search: Correct update",
+              "input_value": "20",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "low: 1, high: 1"
+                },
+                {
+                  "name": "range",
+                  "value": "1, 1"
+                }
+              ],
+              "decision": "The remaining range now contains only **index** 1.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "one candidate left"
+                }
+              ],
+              "output": "none yet",
+              "why": "Move past mid because mid was already ruled out."
             },
             {
               "title": "One item can still match",
@@ -286,7 +433,28 @@
                   1
                 ],
                 "note": "found 20"
-              }
+              },
+              "code_focus": "trace binary-search: One item can still match",
+              "input_value": "20",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "low: 1, mid: 1, high: 1"
+                },
+                {
+                  "name": "range",
+                  "value": "1, 1"
+                }
+              ],
+              "decision": "The target is found instead of skipped.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "found 20"
+                }
+              ],
+              "output": "none yet",
+              "why": "`low <= high` lets the final candidate be checked."
             }
           ]
         },
@@ -368,7 +536,24 @@
                   1
                 ],
                 "note": "candidate = 1"
-              }
+              },
+              "code_focus": "trace binary-search: Check mid",
+              "input_value": "70",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 0, mid: 1, right: 3"
+                }
+              ],
+              "decision": "Mid lands on 70, so this index is a possible answer.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "candidate = 1"
+                }
+              ],
+              "output": "none yet",
+              "why": "Mid lands on 70, so this index is a possible answer."
             },
             {
               "title": "Search left side",
@@ -393,7 +578,24 @@
                   3
                 ],
                 "note": "candidate still 1"
-              }
+              },
+              "code_focus": "trace binary-search: Search left side",
+              "input_value": "60",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 0, mid: 0, right: 0"
+                }
+              ],
+              "decision": "For first occurrence, move right before the candidate.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "candidate still 1"
+                }
+              ],
+              "output": "none yet",
+              "why": "For first occurrence, move right before the candidate."
             },
             {
               "title": "No earlier match",
@@ -418,7 +620,24 @@
                   3
                 ],
                 "note": "return candidate 1"
-              }
+              },
+              "code_focus": "trace binary-search: No earlier match",
+              "input_value": "70",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 1, right: 0"
+                }
+              ],
+              "decision": "The left side does not match the target.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "return candidate 1"
+                }
+              ],
+              "output": "none yet",
+              "why": "The left side does not match the target."
             },
             {
               "title": "Return saved candidate",
@@ -434,7 +653,24 @@
                   1
                 ],
                 "note": "answer = 1"
-              }
+              },
+              "code_focus": "trace binary-search: Return saved candidate",
+              "input_value": "70",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The saved index is the first match found by the narrowed search.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "answer = 1"
+                }
+              ],
+              "output": "answer = 1",
+              "why": "The saved index is the first match found by the narrowed search."
             }
           ]
         },

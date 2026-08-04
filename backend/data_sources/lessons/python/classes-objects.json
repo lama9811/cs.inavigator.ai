@@ -50,7 +50,28 @@
                   }
                 ],
                 "note": "plant object"
-              }
+              },
+              "code_focus": "store: Create object state",
+              "input_value": "name -> Plant",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "store"
+                }
+              ],
+              "decision": "which field changes?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "plant object"
+                },
+                {
+                  "name": "active entry",
+                  "value": "name -> Plant"
+                }
+              ],
+              "output": "none yet",
+              "why": "The object groups related fields into one named thing."
             },
             {
               "title": "Call method",
@@ -76,7 +97,28 @@
                   }
                 ],
                 "note": "method is running"
-              }
+              },
+              "code_focus": "action: Call method",
+              "input_value": "watered -> false",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "action"
+                }
+              ],
+              "decision": "update watered?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "method is running"
+                },
+                {
+                  "name": "active entry",
+                  "value": "watered -> false"
+                }
+              ],
+              "output": "none yet",
+              "why": "The method receives the object and decides which field to update."
             },
             {
               "title": "Update field",
@@ -102,7 +144,28 @@
                   }
                 ],
                 "note": "field update happens inside the object"
-              }
+              },
+              "code_focus": "decision: Update field",
+              "input_value": "watered -> true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "decision"
+                }
+              ],
+              "decision": "false becomes true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "field update happens inside the object"
+                },
+                {
+                  "name": "active entry",
+                  "value": "watered -> true"
+                }
+              ],
+              "output": "none yet",
+              "why": "Only the targeted field changes; the other fields stay with the same object."
             },
             {
               "title": "State is remembered",
@@ -128,7 +191,28 @@
                   }
                 ],
                 "note": "same object, updated state"
-              }
+              },
+              "code_focus": "result: State is remembered",
+              "input_value": "watered -> true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "state persists?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "same object, updated state"
+                },
+                {
+                  "name": "active entry",
+                  "value": "watered -> true"
+                }
+              ],
+              "output": "none yet",
+              "why": "After the method ends, the object still stores the updated field value."
             }
           ]
         }

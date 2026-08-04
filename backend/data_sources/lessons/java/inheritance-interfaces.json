@@ -31,25 +31,301 @@
               "title": "Name the contract",
               "body": "The interface promises that every Payable object has amountDue.",
               "animation": "add",
-              "state": {"active_step": "contract", "process_flow": {"steps": [{"id": "contract", "label": "Contract", "detail": "Payable.amountDue()", "shape": "terminator"}, {"id": "object", "label": "Object", "detail": "Invoice or Membership", "shape": "card"}, {"id": "call", "label": "Call", "detail": "bill.amountDue()", "shape": "diamond"}, {"id": "method", "label": "Method", "detail": "actual class version", "shape": "input"}, {"id": "result", "label": "Result", "detail": "number returned", "shape": "terminator"}]}, "table": [{"key": "Invoice", "value": "implements Payable", "active": true}, {"key": "Membership", "value": "implements Payable"}], "note": "the interface names the shared promise"}
+              "state": {
+                "active_step": "contract",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "contract",
+                      "label": "Contract",
+                      "detail": "Payable.amountDue()",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "object",
+                      "label": "Object",
+                      "detail": "Invoice or Membership",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "call",
+                      "label": "Call",
+                      "detail": "bill.amountDue()",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "method",
+                      "label": "Method",
+                      "detail": "actual class version",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "number returned",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "table": [
+                  {
+                    "key": "Invoice",
+                    "value": "implements Payable",
+                    "active": true
+                  },
+                  {
+                    "key": "Membership",
+                    "value": "implements Payable"
+                  }
+                ],
+                "note": "the interface names the shared promise"
+              },
+              "code_focus": "contract: Name the contract",
+              "input_value": "Invoice -> implements Payable",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "contract"
+                }
+              ],
+              "decision": "The interface promises that every Payable object has amountDue.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the interface names the shared promise"
+                },
+                {
+                  "name": "active entry",
+                  "value": "Invoice -> implements Payable"
+                }
+              ],
+              "output": "none yet",
+              "why": "The interface promises that every Payable object has amountDue."
             },
             {
               "title": "Store concrete objects",
               "body": "A List<Payable> can hold different classes because each keeps the same promise.",
               "animation": "highlight",
-              "state": {"active_step": "object", "process_flow": {"steps": [{"id": "contract", "label": "Contract", "detail": "Payable", "shape": "terminator"}, {"id": "object", "label": "Object", "detail": "new Invoice()", "shape": "card"}, {"id": "call", "label": "Call", "detail": "loop picks bill", "shape": "diamond"}, {"id": "method", "label": "Method", "detail": "method waits", "shape": "input"}, {"id": "result", "label": "Result", "detail": "not called yet", "shape": "terminator"}]}, "table": [{"key": "bill type", "value": "Payable"}, {"key": "actual object", "value": "Invoice", "active": true}], "note": "the variable type is shared, the object type is specific"}
+              "state": {
+                "active_step": "object",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "contract",
+                      "label": "Contract",
+                      "detail": "Payable",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "object",
+                      "label": "Object",
+                      "detail": "new Invoice()",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "call",
+                      "label": "Call",
+                      "detail": "loop picks bill",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "method",
+                      "label": "Method",
+                      "detail": "method waits",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "not called yet",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "table": [
+                  {
+                    "key": "bill type",
+                    "value": "Payable"
+                  },
+                  {
+                    "key": "actual object",
+                    "value": "Invoice",
+                    "active": true
+                  }
+                ],
+                "note": "the variable type is shared, the object type is specific"
+              },
+              "code_focus": "object: Store concrete objects",
+              "input_value": "actual object -> Invoice",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "object"
+                }
+              ],
+              "decision": "A List<Payable> can hold different classes because each keeps the same promise.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the variable type is shared, the object type is specific"
+                },
+                {
+                  "name": "active entry",
+                  "value": "actual object -> Invoice"
+                }
+              ],
+              "output": "none yet",
+              "why": "A List<Payable> can hold different classes because each keeps the same promise."
             },
             {
               "title": "Dispatch the call",
               "body": "When amountDue is called, Java uses the implementation from the actual object.",
               "animation": "slide",
-              "state": {"active_step": "method", "process_flow": {"steps": [{"id": "contract", "label": "Contract", "detail": "method must exist", "shape": "terminator"}, {"id": "object", "label": "Object", "detail": "Invoice", "shape": "card"}, {"id": "call", "label": "Call", "detail": "bill.amountDue()", "shape": "diamond"}, {"id": "method", "label": "Method", "detail": "Invoice.amountDue", "shape": "input"}, {"id": "result", "label": "Result", "detail": "25.0", "shape": "terminator"}]}, "table": [{"key": "Invoice", "value": "returns 25.0", "active": true}, {"key": "Membership", "value": "returns 10.0"}], "note": "polymorphism chooses the object's method"}
+              "state": {
+                "active_step": "method",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "contract",
+                      "label": "Contract",
+                      "detail": "method must exist",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "object",
+                      "label": "Object",
+                      "detail": "Invoice",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "call",
+                      "label": "Call",
+                      "detail": "bill.amountDue()",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "method",
+                      "label": "Method",
+                      "detail": "Invoice.amountDue",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "25.0",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "table": [
+                  {
+                    "key": "Invoice",
+                    "value": "returns 25.0",
+                    "active": true
+                  },
+                  {
+                    "key": "Membership",
+                    "value": "returns 10.0"
+                  }
+                ],
+                "note": "polymorphism chooses the object's method"
+              },
+              "code_focus": "method: Dispatch the call",
+              "input_value": "Invoice -> returns 25.0",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "method"
+                }
+              ],
+              "decision": "When amountDue is called, Java uses the implementation from the actual object.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "polymorphism chooses the object's method"
+                },
+                {
+                  "name": "active entry",
+                  "value": "Invoice -> returns 25.0"
+                }
+              ],
+              "output": "none yet",
+              "why": "When amountDue is called, Java uses the implementation from the actual object."
             },
             {
               "title": "Reuse the same loop",
               "body": "The next object can use the same call shape but return a different value.",
               "animation": "add",
-              "state": {"active_step": "result", "process_flow": {"steps": [{"id": "contract", "label": "Contract", "detail": "Payable", "shape": "terminator"}, {"id": "object", "label": "Object", "detail": "Membership", "shape": "card"}, {"id": "call", "label": "Call", "detail": "same expression", "shape": "diamond"}, {"id": "method", "label": "Method", "detail": "Membership.amountDue", "shape": "input"}, {"id": "result", "label": "Result", "detail": "10.0", "shape": "terminator"}]}, "table": [{"key": "Invoice", "value": "25.0"}, {"key": "Membership", "value": "10.0", "active": true}], "note": "code to the shared type when the caller only needs the contract"}
+              "state": {
+                "active_step": "result",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "contract",
+                      "label": "Contract",
+                      "detail": "Payable",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "object",
+                      "label": "Object",
+                      "detail": "Membership",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "call",
+                      "label": "Call",
+                      "detail": "same expression",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "method",
+                      "label": "Method",
+                      "detail": "Membership.amountDue",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "10.0",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "table": [
+                  {
+                    "key": "Invoice",
+                    "value": "25.0"
+                  },
+                  {
+                    "key": "Membership",
+                    "value": "10.0",
+                    "active": true
+                  }
+                ],
+                "note": "code to the shared type when the caller only needs the contract"
+              },
+              "code_focus": "result: Reuse the same loop",
+              "input_value": "Membership -> 10.0",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "The next object can use the same call shape but return a different value.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "code to the shared type when the caller only needs the contract"
+                },
+                {
+                  "name": "active entry",
+                  "value": "Membership -> 10.0"
+                }
+              ],
+              "output": "code to the shared type when the caller only needs the contract",
+              "why": "The next object can use the same call shape but return a different value."
             }
           ]
         }

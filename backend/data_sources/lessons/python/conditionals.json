@@ -111,7 +111,24 @@
                   "input": "score = 85"
                 },
                 "note": "The input is the value the branch chain will test."
-              }
+              },
+              "code_focus": "input: Start with input",
+              "input_value": "score = 85",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "input"
+                }
+              ],
+              "decision": "score >= 90?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The input is the value the branch chain will test."
+                }
+              ],
+              "output": "none yet",
+              "why": "The program begins with the value stored in score."
             },
             {
               "title": "Ask the first condition",
@@ -124,7 +141,24 @@
                   "condition": "85 >= 90?"
                 },
                 "note": "False means move to the next question in the chain."
-              }
+              },
+              "code_focus": "condition: Ask the first condition",
+              "input_value": "false",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "85 >= 90?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "False means move to the next question in the chain."
+                }
+              ],
+              "output": "none yet",
+              "why": "Python asks whether score is at least 90. The answer is false, so the A branch is skipped."
             },
             {
               "title": "Follow the false path",
@@ -137,7 +171,24 @@
                   "false_branch": "Ask 85 >= 80?"
                 },
                 "note": "This second question is true."
-              }
+              },
+              "code_focus": "false_branch: Follow the false path",
+              "input_value": "false",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "false_branch"
+                }
+              ],
+              "decision": "score >= 90?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "This second question is true."
+                }
+              ],
+              "output": "none yet",
+              "why": "The false path leads to the next condition: score is at least 80."
             },
             {
               "title": "Follow the true path",
@@ -152,7 +203,24 @@
                   "false_branch": "Try score >= 70?"
                 },
                 "note": "The score >= 70 branch is not checked."
-              }
+              },
+              "code_focus": "true_branch: Follow the true path",
+              "input_value": "true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "true_branch"
+                }
+              ],
+              "decision": "85 >= 80?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The score >= 70 branch is not checked."
+                }
+              ],
+              "output": "none yet",
+              "why": "The second condition is true, so Python chooses the branch that prints B."
             },
             {
               "title": "Use the chosen result",
@@ -167,7 +235,24 @@
                   "result": "prints B"
                 },
                 "note": "Only the first true branch runs."
-              }
+              },
+              "code_focus": "result: Use the chosen result",
+              "input_value": "true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "85 >= 80?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "Only the first true branch runs."
+                }
+              ],
+              "output": "prints B",
+              "why": "Because the second condition is true, Python prints B and leaves the chain."
             }
           ]
         },

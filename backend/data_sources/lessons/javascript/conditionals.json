@@ -61,7 +61,24 @@
                   "input": "score = 92"
                 },
                 "note": "The input is the value JavaScript tests."
-              }
+              },
+              "code_focus": "input: Start with input",
+              "input_value": "score = 92",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "input"
+                }
+              ],
+              "decision": "score >= 90?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The input is the value JavaScript tests."
+                }
+              ],
+              "output": "none yet",
+              "why": "The chain starts with score set to 92."
             },
             {
               "title": "Ask the condition",
@@ -74,7 +91,24 @@
                   "condition": "92 >= 90?"
                 },
                 "note": "The first branch wins."
-              }
+              },
+              "code_focus": "condition: Ask the condition",
+              "input_value": "true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "92 >= 90?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The first branch wins."
+                }
+              ],
+              "output": "none yet",
+              "why": "JavaScript checks whether score is at least 90. For 92, this condition is truthy."
             },
             {
               "title": "Follow the true path",
@@ -87,7 +121,24 @@
                   "true_branch": "grade = \"A\""
                 },
                 "note": "The score >= 80 branch is not checked."
-              }
+              },
+              "code_focus": "true_branch: Follow the true path",
+              "input_value": "true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "true_branch"
+                }
+              ],
+              "decision": "score >= 90?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The score >= 80 branch is not checked."
+                }
+              ],
+              "output": "none yet",
+              "why": "Because the first condition is truthy, the chain chooses grade A and skips the later tests."
             },
             {
               "title": "Use the chosen result",
@@ -100,7 +151,24 @@
                   "result": "prints A"
                 },
                 "note": "Only one branch in this chain runs."
-              }
+              },
+              "code_focus": "result: Use the chosen result",
+              "input_value": "true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "score >= 90?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "Only one branch in this chain runs."
+                }
+              ],
+              "output": "prints A",
+              "why": "The chosen grade is used after the chain, so the output is A."
             }
           ]
         }

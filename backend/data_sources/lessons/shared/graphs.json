@@ -102,7 +102,24 @@
                 "queue": [
                   "A"
                 ]
-              }
+              },
+              "code_focus": "trace graphs: Start at A",
+              "input_value": "A",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Put A in the **queue** and mark it **visited**.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "Put A in the **queue** and mark it **visited**."
             },
             {
               "title": "Visit A's neighbors",
@@ -163,7 +180,24 @@
                   "B",
                   "C"
                 ]
-              }
+              },
+              "code_focus": "trace graphs: Visit A's neighbors",
+              "input_value": "B, C",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Add B and C because they have not been **visited** yet.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "Add B and C because they have not been **visited** yet."
             },
             {
               "title": "Visit D once",
@@ -223,7 +257,24 @@
                   "C",
                   "D"
                 ]
-              }
+              },
+              "code_focus": "trace graphs: Visit D once",
+              "input_value": "D",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "D can be reached from B and C, but **visited** keeps it from being added twice.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "D can be reached from B and C, but **visited** keeps it from being added twice."
             }
           ]
         },
@@ -344,7 +395,24 @@
                     "active": true
                   }
                 ]
-              }
+              },
+              "code_focus": "trace graphs: Visit A",
+              "input_value": "A",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "If another **node** points back to A later, the **traversal** can skip it.",
+              "variables_after": [
+                {
+                  "name": "active entry",
+                  "value": "visited -> {A}"
+                }
+              ],
+              "output": "none yet",
+              "why": "A is marked before exploring neighbors."
             },
             {
               "title": "Visit B",
@@ -398,7 +466,24 @@
                     "active": true
                   }
                 ]
-              }
+              },
+              "code_focus": "trace graphs: Visit B",
+              "input_value": "B",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The **visited** **set** grows before the next **recursive call**.",
+              "variables_after": [
+                {
+                  "name": "active entry",
+                  "value": "visited -> {A, B}"
+                }
+              ],
+              "output": "none yet",
+              "why": "B is unvisited, so mark B and continue."
             },
             {
               "title": "Visit C",
@@ -453,7 +538,24 @@
                     "active": true
                   }
                 ]
-              }
+              },
+              "code_focus": "trace graphs: Visit C",
+              "input_value": "C",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Now all three **nodes** in the cycle are known.",
+              "variables_after": [
+                {
+                  "name": "active entry",
+                  "value": "visited -> {A, B, C}"
+                }
+              ],
+              "output": "none yet",
+              "why": "C is also new, so mark it."
             },
             {
               "title": "C points back to A",
@@ -509,7 +611,28 @@
                   }
                 ],
                 "note": "skip A"
-              }
+              },
+              "code_focus": "trace graphs: C points back to A",
+              "input_value": "A",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "This skip is what prevents an infinite A -> B -> C -> A **loop**.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "skip A"
+                },
+                {
+                  "name": "active entry",
+                  "value": "visited -> {A, B, C}"
+                }
+              ],
+              "output": "none yet",
+              "why": "A is already **visited**, so DFS does not call A again."
             }
           ]
         },

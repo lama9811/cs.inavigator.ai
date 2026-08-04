@@ -50,7 +50,28 @@
                   }
                 ],
                 "note": "state still matches the trace"
-              }
+              },
+              "code_focus": "before: State still matches",
+              "input_value": "score -> 7",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "before"
+                }
+              ],
+              "decision": "no wrong state yet",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "state still matches the trace"
+                },
+                {
+                  "name": "active entry",
+                  "value": "score -> 7"
+                }
+              ],
+              "output": "none yet",
+              "why": "Start from the last moment where the hand trace and program state agree."
             },
             {
               "title": "Name the expected change",
@@ -76,7 +97,28 @@
                   }
                 ],
                 "note": "expected state is 12"
-              }
+              },
+              "code_focus": "expected: Name the expected change",
+              "input_value": "expected total -> 12",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "expected"
+                }
+              ],
+              "decision": "not checked yet",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "expected state is 12"
+                },
+                {
+                  "name": "active entry",
+                  "value": "expected total -> 12"
+                }
+              ],
+              "output": "none yet",
+              "why": "Before blaming the final answer, write what this one transition should do."
             },
             {
               "title": "Find the first wrong state",
@@ -102,7 +144,28 @@
                   }
                 ],
                 "note": "first wrong state"
-              }
+              },
+              "code_focus": "actual: Find the first wrong state",
+              "input_value": "actual total -> 57",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "actual"
+                }
+              ],
+              "decision": "57",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "first wrong state"
+                },
+                {
+                  "name": "active entry",
+                  "value": "actual total -> 57"
+                }
+              ],
+              "output": "none yet",
+              "why": "The actual update produces the wrong value, so this is the first transition to inspect."
             },
             {
               "title": "Fix the transition",
@@ -128,7 +191,28 @@
                   }
                 ],
                 "note": "total += score"
-              }
+              },
+              "code_focus": "fix: Fix the transition",
+              "input_value": "total after -> 12",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "fix"
+                }
+              ],
+              "decision": "12 after fix",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "total += score"
+                },
+                {
+                  "name": "active entry",
+                  "value": "total after -> 12"
+                }
+              ],
+              "output": "none yet",
+              "why": "Once the first bad transition is known, the fix is local and testable."
             }
           ]
         },
