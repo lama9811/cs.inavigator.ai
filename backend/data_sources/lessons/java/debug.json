@@ -36,7 +36,7 @@
         },
         {
           "kind": "code",
-          "caption": "The signature of a compile error is that no **output** appears at all. Line 3 is a perfectly good println and it never got the chance to run, because `javac` reads the whole **file** before it produces a program. The caret under the code points at the exact spot where Java lost the thread, and here that is the end of the line, where a semicolon should be.",
+          "caption": "With a compile error, no **output** appears. `javac` reads the whole file before running anything. The caret points near the place Java got confused; here, the line needs a semicolon.",
           "code": "public class Greeting {\n    public static void main(String[] args) {\n        System.out.println(\"starting\")\n        System.out.println(\"done\");\n    }\n}",
           "output": "Greeting.java:3: error: ';' expected\n        System.out.println(\"starting\")\n                                      ^\n1 error"
         },
@@ -44,7 +44,7 @@
           "kind": "callout",
           "tone": "tip",
           "title": "Fix the first compile error, then compile again",
-          "body": "One missing brace or semicolon can confuse `javac` about everything that follows it, so a single typo often produces a whole **list** of errors. Do not try to fix them all at once. Go to the first one, the one with the lowest line number, fix it, and compile again. Half the list usually disappears on its own."
+          "body": "One missing brace or semicolon can cause many later errors. Start with the first error, usually the lowest line number. Fix it, compile again, and many later messages may disappear."
         }
       ]
     },
@@ -59,7 +59,7 @@
         },
         {
           "kind": "code",
-          "caption": "In a language that checks types only while running, this line would sit quietly in your **file** until the moment it executed, which might be during a demo. Java will not let the file compile. The error names both types and points the caret at the **value** that does not fit. This is the compiler doing you a favor, early and for free.",
+          "caption": "Java catches this before the program runs. The error names the two types and points at the **value** that does not fit. Treat that as early help, not just a complaint.",
           "code": "public class Total {\n    public static void main(String[] args) {\n        int count = \"five\";\n        System.out.println(count);\n    }\n}",
           "output": "Total.java:3: error: incompatible types: String cannot be converted to int\n        int count = \"five\";\n                    ^\n1 error"
         },
@@ -89,7 +89,7 @@
         },
         {
           "kind": "code",
-          "caption": "Read the top line first: it names the **exception**, `ArrayIndexOutOfBoundsException`, and explains it, since **index** 3 does not exist in an **array** of length 3. Then look down for the first line that names your file, here `Roster.java:5`, and count to line 5 of the code above. It is the line that asked for `names[3]`, and the trace pointed straight at it. Notice too that `list is ready` printed. Some output, then a crash, is the fingerprint of a runtime exception: the program really did run.",
+          "caption": "Read the top line first: it names the **exception**. Then find the first line that names your file, such as `Roster.java:5`. That is where your code crashed. If some output printed first, the program really did run before it failed.",
           "code": "public class Roster {\n    public static void main(String[] args) {\n        String[] names = {\"Ada\", \"Grace\", \"Alan\"};\n        System.out.println(\"list is ready\");\n        System.out.println(names[3]);\n    }\n}",
           "output": "list is ready\nException in thread \"main\" java.lang.ArrayIndexOutOfBoundsException: Index 3 out of bounds for length 3\n\tat Roster.main(Roster.java:5)"
         },
@@ -99,7 +99,7 @@
         },
         {
           "kind": "code",
-          "caption": "This trace has two `at` lines, because the crash happened inside a **method** that main had called. Read the `at` lines downward: the first is where it broke, line 3, and the next is who called it, line 10. That second line is the one worth having. Line 3 only tells you a null arrived; line 10 tells you where it came from, and that is where the fix goes.",
+          "caption": "When a trace has several `at` lines, read downward. The first line shows where it broke. The next lines show who called that method. The fix is often in the caller that passed the bad value.",
           "code": "public class Roster2 {\n    static int nameLength(String name) {\n        return name.length();\n    }\n\n    public static void main(String[] args) {\n        String[] names = {\"Ada\", null};\n        System.out.println(\"checking names\");\n        for (String n : names) {\n            System.out.println(nameLength(n));\n        }\n    }\n}",
           "output": "checking names\n3\nException in thread \"main\" java.lang.NullPointerException: Cannot invoke \"String.length()\" because \"<parameter1>\" is null\n\tat Roster2.nameLength(Roster2.java:3)\n\tat Roster2.main(Roster2.java:10)"
         },
@@ -107,7 +107,7 @@
           "kind": "callout",
           "tone": "warning",
           "title": "What a NullPointerException is really saying",
-          "body": "`null` means a **variable** is pointing at no object at all. Calling a **method** on it, like `name.length()`, asks nothing to do something, and Java throws a NullPointerException. Recent versions of Java tell you which call failed and which value was null, so read the whole top line, not just the exception name. One more thing: the fix is usually not on the line that crashed. It is wherever that variable got **set** to null, or never got set to anything."
+          "body": "`null` means a **variable** points to no object. Calling a method on it causes a NullPointerException. Read the full error line, then trace back to where the variable should have been assigned."
         }
       ]
     },
@@ -122,7 +122,7 @@
         },
         {
           "kind": "compare",
-          "caption": "Both versions compile and both **print** an average. Dividing an `int` by an `int` in Java gives you an `int`, so the fraction is thrown away rather than rounded. With scores of 90, 85, and 80 the total is 255, which divides evenly by 3, so both sides print 85 and the bug stays hidden. Change one score to 81 and the left still prints 85 while the right prints 85.33333333333333. The left version was broken the whole time. The **input** was covering for it.",
+          "caption": "Both versions compile and print an average. The bug hides because 255 divides evenly by 3. Use a test where the answer should have a decimal. Then integer division becomes visible.",
           "wrong_label": "Compiles, drops the fraction",
           "wrong": "int total = 0;\nfor (int s : scores) {\n    total = total + s;\n}\nint average = total / scores.length;\nSystem.out.println(average);\n// int divided by int is an int,\n// so anything after the point is gone",
           "right_label": "Compiles, keeps the fraction",
@@ -134,7 +134,7 @@
         },
         {
           "kind": "code",
-          "caption": "**Print** what goes in, then what comes out, and compare both against numbers you worked out by hand. Here 255 divided by 3 is exactly 85, so the printout looks correct, and that is the lesson worth taking: an example that divides evenly can never expose this bug. To test division, feed it numbers that do not divide evenly. A test that cannot fail is not really a test.",
+          "caption": "Print the input and the result, then compare them with math you did by hand. For division, include an example that does not divide evenly. A test that cannot fail is not a useful test.",
           "code": "int[] scores = {90, 85, 80};\nint total = 0;\nfor (int s : scores) {\n    total = total + s;\n}\nSystem.out.println(\"total is \" + total);\nSystem.out.println(\"count is \" + scores.length);\nint average = total / scores.length;\nSystem.out.println(\"average is \" + average);",
           "output": "total is 255\ncount is 3\naverage is 85"
         },
@@ -142,7 +142,7 @@
           "kind": "callout",
           "tone": "mistake",
           "title": "Changing things at random is not debugging",
-          "body": "Casts are where this gets dangerous in Java, because adding one can silence the compiler without fixing anything. If a red squiggle goes away after you sprinkle in a `(double)` or an `(int)`, that only proves the types now line up. It says nothing about whether the arithmetic is right. Before you add a cast, say what you expect the **value** to be, then **print** it and check. A compiler you have quieted is not the same as a program that works."
+          "body": "A cast can silence the compiler without fixing the logic. Before adding `(double)` or `(int)`, say what value you expect. Then print and check it. Passing the compiler is not the same as being correct."
         }
       ]
     },
@@ -153,7 +153,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "There is a fourth symptom that fits none of the three, because on screen it is indistinguishable from your program thinking hard. It compiles, it starts, it prints no error and no answer, and it simply does not end. That is a timeout, and in first-year code it is nearly always a **loop** that can never stop."
+          "body": "A timeout means the program compiles and starts, but never finishes. In beginner code, that is usually a **loop** whose condition never becomes false."
         },
         {
           "kind": "check",
@@ -172,7 +172,7 @@
           "kind": "callout",
           "tone": "tip",
           "title": "Compile early, compile often",
-          "body": "Do not write eighty lines and then compile for the first time. You will get a page of errors and no idea which of your eighty lines started it. Compile every few lines instead. Then when `javac` complains, the cause is almost certainly in the part you just typed, and you are reading three lines rather than searching a whole **file**."
+          "body": "Compile often. If you wait until you have eighty new lines, the first error is hard to find. If you compile every few lines, the cause is probably in the part you just typed."
         }
       ]
     },

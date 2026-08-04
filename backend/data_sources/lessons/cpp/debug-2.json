@@ -86,7 +86,7 @@
         },
         {
           "kind": "text",
-          "body": "A **pointer** or **reference** that still names an **object** after that object is gone is called dangling. Positions into a vector can also become invalid after the vector changes its storage. Trace when the object was created, changed, and destroyed instead of looking only at the line where the crash appears."
+          "body": "A **pointer** or **reference** is dangling when it still names an object after that object is gone. Vector positions can also become invalid after the vector grows. Trace when the object was created, changed, and destroyed."
         },
         {
           "kind": "callout",

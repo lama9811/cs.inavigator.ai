@@ -152,11 +152,11 @@
           "kind": "callout",
           "tone": "mistake",
           "title": "5 / 2 is 2, and Java never mentions it",
-          "body": "This is called **integer division**. It does not round to the nearest whole number, it chops the decimal off, so 5 / 2 is 2 and 9 / 10 is 0. Nothing is underlined, nothing crashes, and your program prints its answer with total confidence. When a number comes out lower than you expected, or comes out as a flat 0, check whether both sides of the `/` were ints."
+          "body": "This is **integer division**. It does not round. It cuts off the decimal, so `5 / 2` is 2 and `9 / 10` is 0. If an answer looks too low, check whether both sides of `/` are ints."
         },
         {
           "kind": "compare",
-          "caption": "The left version looks like it should work. `average` is declared as a `double`, so surely the answer is a decimal. It is not. Java finishes the division first, while both sides are still ints, and 7 / 2 is 3. Only then is that 3 stored into a `double`, which turns it into 3.0. The decimal was already gone. That trailing .0 is what makes the bug so slippery: it came from the type you declared, not from the math.",
+          "caption": "A `double` variable does not fix division that already happened. Java computes `7 / 2` as int division first, giving 3. Then it stores 3 as `3.0`. Convert before dividing when you need the decimal.",
           "wrong_label": "Prints 3.0",
           "wrong": "int total = 7;\nint count = 2;\n\ndouble average = total / count;\nSystem.out.println(average);\n// 3.0",
           "right_label": "Prints 3.5",
@@ -184,7 +184,7 @@
       "blocks": [
         {
           "kind": "code",
-          "caption": "Turning one type into another is called casting. You write the type you want in parentheses in front of the **value**. Casting a `double` to an `int` truncates, the same way **integer division** does, so 9.99 becomes 9 and not 10. Do not reach for a cast when you meant to round. Going the other way, `int` into `double`, needs no cast at all, because nothing is lost.",
+          "caption": "Changing one type into another is **casting**. Put the new type in parentheses before the value. `(int) 9.99` becomes 9, not 10. Use rounding when you mean to round.",
           "code": "double price = 9.99;\nint rounded = (int) price;\nSystem.out.println(rounded);\n\nint whole = 7;\ndouble asDouble = whole;\nSystem.out.println(asDouble);",
           "output": "9\n7.0"
         },
@@ -192,11 +192,11 @@
           "kind": "callout",
           "tone": "warning",
           "title": "Java will not quietly shrink a value for you",
-          "body": "Write `int n = 9.99;` and it does not compile. The message is `possible lossy conversion from double to int`. Java is telling you a `double` does not fit inside an `int`, and it will not guess whether you wanted to lose the .99. Adding the cast, `int n = (int) 9.99;`, is you saying yes, throw it away. Now it compiles, and n is 9."
+          "body": "`int n = 9.99;` does not compile because a decimal may lose information when stored as an int. `int n = (int) 9.99;` tells Java you accept that loss, so n becomes 9."
         },
         {
           "kind": "compare",
-          "caption": "Java is statically typed. Before your program runs, the compiler reads every line and checks that the types line up. Here the **print** sits above the bad line, and you still never see the word starting. Not one line ran, because the compiler rejected the **file** before it produced anything to run. In Python a mix-up like this blows up mid-run, after some **output** has already appeared. In Java it is caught first, so if you see none of your output at all, suspect the compiler and not your logic.",
+          "caption": "Java is **statically typed**. The compiler checks types before anything runs. If a type error exists, even a print line above it will not execute. No output usually means the program did not compile.",
           "wrong_label": "Does not compile",
           "wrong": "System.out.println(\"starting\");\nint x = \"5\";\nSystem.out.println(x);\n\n// error: incompatible types:\n// String cannot be\n// converted to int",
           "right_label": "Compiles and runs",

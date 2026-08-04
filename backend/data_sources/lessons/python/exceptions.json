@@ -111,6 +111,18 @@
             "Keep unexpected programming errors visible.",
             "Use `finally` only for cleanup shared by both outcomes."
           ]
+        },
+        {
+          "kind": "list",
+          "title": "Common Python error types",
+          "items": [
+            "`ValueError`: the type is acceptable, but the value itself is not, such as `int(\"3.5\")`.",
+            "`TypeError`: an operation receives the wrong kind of value, such as adding text and a number.",
+            "`IndexError`: a list or string index is outside the available positions.",
+            "`KeyError`: a dictionary key is missing.",
+            "`FileNotFoundError`: the requested file path cannot be opened.",
+            "`ZeroDivisionError`: code tries to divide by zero."
+          ]
         }
       ]
     }

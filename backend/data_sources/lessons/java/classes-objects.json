@@ -124,7 +124,7 @@
           "kind": "callout",
           "tone": "tip",
           "title": "What `this` is for",
-          "body": "In that constructor, the **parameter** is called `name` and the field is also called `name`. Java resolves the plain name `name` to the parameter, because the closer one wins. So `this.name = name` means: take the **value** that was passed in, and store it in this **object**'s field. Drop the `this.` and you write `name = name`, which quietly assigns the parameter to itself and leaves the field empty. It compiles. It just does nothing."
+          "body": "Here the **parameter** and the field are both named `name`. `this.name = name` means: store the passed-in value in this **object**'s field. Without `this.`, `name = name` only assigns the parameter to itself, so the field stays unchanged."
         }
       ]
     },
@@ -148,21 +148,21 @@
         },
         {
           "kind": "text",
-          "body": "Now for the `static` in `public static void main`. A static **method** belongs to the **class** itself, not to any **object**. That is exactly what `main` needs to be, because `main` is where your program starts. At that moment no objects exist yet, so there is nothing for a non-static method to be attached to. `main` runs first and builds the objects."
+          "body": "`static` means the **method** belongs to the **class**, not to one object. `main` is static because it runs before your program creates any objects. Then `main` can build the objects it needs."
         },
         {
           "kind": "code",
-          "caption": "`describe()` is an **instance** **method**: it needs a Student to describe. `main` is static, so it has no Student. Java catches this while compiling, before a single line runs. Nothing prints. You get: `error: non-static method describe() cannot be referenced from a static context`. The fix is to build an **object** first and call the method on it: `new Student().describe()`.",
+          "caption": "`describe()` is an **instance** **method**, so it needs a Student object. `main` is static and has no object by itself. Build an object first, then call the method on that object.",
           "code": "public class Student {\n    String name;\n\n    String describe() {\n        return \"I am \" + name;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(describe());\n    }\n}",
           "output": ""
         },
         {
           "kind": "text",
-          "body": "That is worth pausing on, because it is a real difference from Python. Java checks types and **method** calls while compiling, so a mistake like this is caught before the program runs at all. An error that arrives with no **output** above it is a compile error, and it means the program never started. An error that arrives after some of your output has already printed is a **runtime error**, and it means the program was running fine until that line."
+          "body": "Java checks many type and **method** mistakes before the program runs. If you see no output at all, suspect a compile error. If some output appears before the crash, suspect a **runtime error**."
         },
         {
           "kind": "compare",
-          "caption": "Both sides compile, which is what makes this one sting: the mistake survives the compiler and only shows up when you run it. Declaring a **variable** of type Student does not create a Student, so the NullPointerException side holds a **reference** pointing at nothing. The dot in `s.name` says \"go to the **object** and get its name\", and there is no object to go to.",
+          "caption": "Declaring a Student **variable** does not create a Student object. If the reference is still `null`, `s.name` has no object to read from, so the program throws a NullPointerException.",
           "wrong_label": "NullPointerException",
           "wrong": "Student s = null;\nSystem.out.println(\"here\");\nSystem.out.println(s.name);\n// prints \"here\", then crashes:\n// nothing was ever built",
           "right_label": "Works",
@@ -179,7 +179,7 @@
           "kind": "callout",
           "tone": "mistake",
           "title": "A NullPointerException means you never called new",
-          "body": "This is the error Java beginners hit most. It does not mean the **object** is broken. It means there is no object. Some **reference** is holding `null`, and you used a dot on it. Java tells you which line, so go to that line, find the **variable** before the dot, and trace backwards to where it should have been given a `new`. Usually you declared it in one branch of an `if` and used it outside."
+          "body": "A NullPointerException usually means a **reference** is `null`, not that the object is broken. Go to the line Java names, find the variable before the dot, and trace back to where it should have been assigned with `new`."
         },
         {
           "kind": "check",

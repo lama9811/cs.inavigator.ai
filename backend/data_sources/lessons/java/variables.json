@@ -134,7 +134,7 @@
           "kind": "callout",
           "tone": "mistake",
           "title": "The equals sign gives an order, it does not state a fact",
-          "body": "In math, `x = 5` claims that x is 5. In Java it commands: put 5 into x. That is why `count = count + 1;` is not a contradiction. Java reads the right side first, gets whatever `count` holds at that moment, adds one, and stores the result back under the same name. The `==` you meet later is the one that asks whether two **values** match. A single `=` never asks. It puts."
+          "body": "In Java, `x = 5` means put 5 into x. `count = count + 1;` means read the old count, add one, and store the new value back. A single `=` assigns. `==` compares."
         },
         {
           "kind": "code",
@@ -195,7 +195,7 @@
           "kind": "callout",
           "tone": "warning",
           "title": "Declaring is not the same as initializing",
-          "body": "`int score;` reserves room for a number without putting one there. Read it before you assign to it and the compiler stops you with `variable score might not have been initialized`. Java would rather refuse to build than hand you a number nobody chose. The usual fix is to declare and assign on one line, which is why most Java you come across does both at once."
+          "body": "`int score;` declares a number but does not give it a value. If you read it too soon, Java reports that it might not have been initialized. The safe habit is to declare and assign together when you can."
         },
         {
           "kind": "compare",

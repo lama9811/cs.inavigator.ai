@@ -108,6 +108,17 @@
             "Do not silence errors you still need to fix.",
             "Preserve useful error details while debugging."
           ]
+        },
+        {
+          "kind": "list",
+          "title": "Common Java exception types",
+          "items": [
+            "`NumberFormatException`: text cannot be parsed into the requested number type.",
+            "`NullPointerException`: code tries to use an object reference that is null.",
+            "`IndexOutOfBoundsException`: a list, string, or array index is outside the valid range.",
+            "`IOException`: file or stream work fails for an outside reason.",
+            "`ClassCastException`: code tries to treat an object as an incompatible type."
+          ]
         }
       ]
     }

@@ -22,7 +22,7 @@
         },
         {
           "kind": "text",
-          "body": "Java has eight primitive types, such as `int`, `double`, `boolean`, and `char`. A primitive holds a plain value and nothing else. **String** is not one of them. String is an **object**, and that single fact explains almost everything in this lesson: why you call **methods** on it with a dot, and why comparing two of them is not as simple as it looks.",
+          "body": "Java has primitive types like `int`, `double`, `boolean`, and `char`. **String** is different: it is an **object**. That is why you call methods on it with a dot, and why text comparison needs care.",
           "caption": "The dot calls **String** **methods**. length counts characters. toUpperCase makes a new uppercase String."
         },
         {
@@ -34,7 +34,7 @@
         },
         {
           "kind": "text",
-          "body": "`school.length()` is a **method** call. You are asking the **String** object to do something and hand back an answer. That is what the dot means. It needs the parentheses, because you are calling it. Write `school.length` with no parentheses and the compiler stops you, saying it cannot find a **variable** named `length`.",
+          "body": "`school.length()` is a **method** call. The dot asks the String object for something. The parentheses matter because you are calling the method, not reading a variable.",
           "caption": "The wrong version asks whether both **variables** are the same **object**. The right version asks whether the text matches."
         },
         {
@@ -66,7 +66,7 @@
           "kind": "callout",
           "tone": "mistake",
           "title": "StringIndexOutOfBoundsException",
-          "body": "\"Bears\" has five characters, so the legal **indexes** are 0, 1, 2, 3, and 4. There is no **index** 5. Ask for `word.charAt(5)` and the program stops with `StringIndexOutOfBoundsException: Index 5 out of bounds for length 5`. Read that message closely, because it hands you both numbers you need. When it appears, count the characters and subtract one. That is the largest index you are allowed to ask for."
+          "body": "`Bears` has five characters, so the valid **indexes** are 0 through 4. Index 5 is past the end. When you see StringIndexOutOfBoundsException, count the characters and subtract one to find the largest valid index."
         },
         {
           "kind": "check",
@@ -94,7 +94,7 @@
         },
         {
           "kind": "compare",
-          "caption": "`==` asks whether two names point at the same **object** in **memory**. `.equals()` asks whether two **strings** contain the same characters. When you compare text, the second question is the one you meant. The left version compiles cleanly, runs without complaint, and quietly prints the wrong thing.",
+          "caption": "`==` asks whether two names point at the same **object** in **memory**. `.equals()` asks whether two **strings** contain the same characters. When you compare text, the second question is the one you meant. The left version compiles cleanly",
           "wrong_label": "Prints \"no match\"",
           "wrong": "String typed = \"ye\";\nString answer = typed + \"s\";\n\nif (answer == \"yes\") {\n    System.out.println(\"match\");\n} else {\n    System.out.println(\"no match\");\n}",
           "right_label": "Prints \"match\"",
@@ -102,13 +102,13 @@
         },
         {
           "kind": "text",
-          "body": "Both **strings** hold the characters y, e, s. The left version still says they do not match, because `answer` was built while the program was running and so it is a different **object** from the `\"yes\"` written in the code. `==` compares the objects, finds two different ones, and answers false. It answered honestly. It just answered a question about **memory** when you were asking a question about text."
+          "body": "Both strings contain `yes`, but `==` may still say false because it compares object identity. Use `.equals()` when you care whether the text matches."
         },
         {
           "kind": "callout",
           "tone": "mistake",
           "title": "The `==` bug is quiet, and sometimes it looks like it works",
-          "body": "This is the bug that costs Java beginners the most time, and the reason is that `==` sometimes appears to work. Compare two **strings** you typed directly into your code and Java may reuse one **object** for both, so `==` returns true and you walk away believing it. Then you compare against a string that came from user **input** or from a `+`, the object is a fresh one, and the same code silently returns false. Nothing crashes and nothing warns you. The `if` just takes the wrong branch. Use `.equals()` every time you compare text, including the times `==` would have happened to work."
+          "body": "Use `.equals()` every time you compare **String** text. `==` may seem to work for text typed directly in code, but it can fail for text from input or from joining strings. Nothing crashes; the branch just goes the wrong way."
         },
         {
           "kind": "check",
@@ -142,7 +142,7 @@
         },
         {
           "kind": "code",
-          "caption": "`trim()` strips whitespace off both ends, the first thing to do with keyboard **input**. `split()` cuts a **string** into an **array** of pieces at the separator you name. Look at the third number: `raw` is still 16 characters long. `trim()` handed back a new string and left the original exactly as it was.",
+          "caption": "`trim()` strips whitespace off both ends, the first thing to do with keyboard **input**. `split()` cuts a **string** into an **array** of pieces at the separator you name. Look at the third number: `raw` is still 16 characters long. `trim()",
           "code": "String raw = \"  Ada Lovelace  \";\nString clean = raw.trim();\n\nSystem.out.println(clean.toUpperCase());\nSystem.out.println(clean.length());\nSystem.out.println(raw.length());\n\nString[] parts = clean.split(\" \");\nSystem.out.println(parts.length);\nSystem.out.println(parts[0]);",
           "output": "ADA LOVELACE\n12\n16\n2\nAda"
         },
@@ -150,7 +150,7 @@
           "kind": "callout",
           "tone": "warning",
           "title": "A String method call on its own line is usually a bug",
-          "body": "`name.trim();` sitting alone as a statement compiles fine and does nothing you can observe. It trims a copy and throws the copy away. The compiler will not warn you, because calling a **method** and ignoring its answer is legal. If a line calls a **String** method and does not assign the result, **print** it, or test it, look at that line again."
+          "body": "`name.trim();` by itself trims a copy and then throws that copy away. Store the result, print it, or test it. Otherwise the original string has not changed."
         }
       ]
     },

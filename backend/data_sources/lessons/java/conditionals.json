@@ -32,13 +32,13 @@
         },
         {
           "kind": "text",
-          "body": "That is the full shape of a Java program: a **class**, a `main` **method** inside it, and your statements inside that. Every example below assumes the same wrapper, so from here on you will only see the statements themselves. Indentation is how you make code readable for a person. Unlike Python, it means nothing to Java. The braces are what decide the body."
+          "body": "A Java program has a **class**, a `main` **method**, and statements inside that method. The examples below skip the wrapper so you can focus on the condition. Indentation helps humans read. Braces decide what Java runs."
         },
         {
           "kind": "callout",
           "tone": "warning",
           "title": "A missing brace does not always break the program",
-          "body": "Java lets you skip the braces when the body is a single statement. That sounds convenient and it is the source of a real bug. Without braces, only the very next statement belongs to the `if`. Every line after that one runs unconditionally, no matter how the question turned out. Nothing is underlined and nothing complains, because you have written legal Java. It just is not the Java you meant."
+          "body": "Java allows an `if` with no braces when the body has one statement. Be careful: only the next statement belongs to the `if`. Lines after that run no matter what. Braces make your intent clear."
         },
         {
           "kind": "compare",
@@ -74,11 +74,11 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "One test and one fallback rarely covers a real problem. `else if` gives you another test to try, and Java only reaches it when the branch above came back false. `else` sits at the bottom with no test of its own, catching whatever got past the rest. Put as many `else if` **branches** in the middle as the problem calls for."
+          "body": "Use `else if` when there is another test to try. Java reaches it only if the earlier test was false. Use `else` at the end for anything that did not match above."
         },
         {
           "kind": "code",
-          "caption": "Java tries the questions from the top, one after another, and quits the moment one of them fires. The 90 test fails, the 80 test passes, so B is printed and the remaining **branches** are never examined. Order is therefore part of the logic. Swap the 90 and 80 branches here and a score of 95 lands on the 80 test first, so every A student in the **class** quietly gets a B.",
+          "caption": "Java checks branches from top to bottom and stops at the first match. That means order matters. Put the most specific or highest-priority rule before a broader rule.",
           "code": "int score = 85;\n\nif (score >= 90) {\n    System.out.println(\"A\");\n} else if (score >= 80) {\n    System.out.println(\"B\");\n} else if (score >= 70) {\n    System.out.println(\"C\");\n} else {\n    System.out.println(\"Not passing yet\");\n}",
           "output": "B"
         },
@@ -86,11 +86,11 @@
           "kind": "callout",
           "tone": "mistake",
           "title": "if (x = 5) will not compile",
-          "body": "One `=` assigns a **value**. Two `==` asks a question. Write `if (x = 5)` and Java rejects the program before it runs, with the message \"incompatible types: int cannot be converted to **boolean**\". Unpack that: `x = 5` hands back the number 5, and an `if` can only work with true or false. The message is naming the exact gap, a number sitting where a yes-or-no belongs, and the repair is the second `=`. In C the same line compiles and misbehaves quietly, which is the version of this bug that costs you an afternoon."
+          "body": "One `=` assigns a **value**. Two `==` compares values. `if (x = 5)` gives the `if` a number, but an `if` needs true or false. Java catches that before the program runs."
         },
         {
           "kind": "text",
-          "body": "That message is worth pausing on. Java checks types when it compiles, before a single line runs. A type mistake is not something you meet halfway through a run with the wrong answer already on the screen. It stops the build, names the **file** and the line, and nothing executes. In Python you find that kind of error by running the program. In Java you find it by trying to compile."
+          "body": "Java checks types while compiling. If the types do not fit, the program does not start. Read the file name and line number first."
         }
       ]
     },
@@ -101,11 +101,11 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "**Conditions** can be joined. `&&` demands that both halves hold, and fails the moment either one does not. `||` is satisfied by either half, so it fails only when neither holds. `!` flips a condition into its opposite. Whichever you use, both sides of the **operator** have to be something Java could test on its own. `age >= 13 && <= 19` reads fine to a human and will not compile, because `<= 19` never says what it is comparing."
+          "body": "You can join **conditions**. `&&` means both sides must be true. `||` means at least one side must be true. `!` flips true to false or false to true. Each side still needs a complete comparison, such as `age >= 13 && age <= 19`."
         },
         {
           "kind": "code",
-          "caption": "Three **operators**, three different bars to clear, and the contrast is the point. `&&` wants both halves, and 16 clears the teen test on both. `||` wants only one, so it takes two failures to shut a branch out: 16 is neither under 5 nor 65 or over, and the free admission line stays quiet. `!` simply flips. Read `!hasTicket` aloud as \"not has ticket\" and it is clear the branch is meant for people who still need to buy one.",
+          "caption": "Read joined conditions out loud. `age >= 13 && age <= 19` means both age checks must pass. `age < 5 || age >= 65` means either age check can pass. `!hasTicket` means \"not has ticket.\"",
           "code": "int age = 16;\nboolean hasTicket = true;\n\nif (age >= 13 && age <= 19) {\n    System.out.println(\"Teen price\");\n}\n\nif (age < 5 || age >= 65) {\n    System.out.println(\"Free admission\");\n}\n\nif (!hasTicket) {\n    System.out.println(\"Buy a ticket first\");\n}",
           "output": "Teen price"
         },
@@ -113,7 +113,7 @@
           "kind": "callout",
           "tone": "mistake",
           "title": "Comparing Strings with == is the bug that hides",
-          "body": "On **Strings**, `==` asks whether two names point at the same **object** in memory, not whether the text matches. Use `.equals()` to compare the characters. What makes this one nasty is that `==` often appears to work: two String literals written directly in your code get shared, so `grade == \"A\"` can come out true and convince you the code is fine. The moment the text arrives from a Scanner or a **file** it is a fresh object, `==` turns false, and the branch you tested by hand stops firing. Same code, same words on screen, different answer."
+          "body": "For **Strings**, use `.equals()` to compare text. `==` checks whether two names point to the same object, not whether the characters match. This is especially important for text from Scanner or a file."
         },
         {
           "kind": "compare",

@@ -143,7 +143,7 @@
           "kind": "callout",
           "tone": "mistake",
           "title": "i <= n runs one extra time",
-          "body": "`i < 5` runs five times. `i <= 5` runs six, because it also runs the pass where `i` is 5. One character, one extra pass. When a **loop** gives you an answer that is off by exactly one, or reaches one item past the end of an **array**, this is the first line to reread. The mistake is so ordinary that it has a name: an off-by-one error."
+          "body": "`i < 5` runs five times. `i <= 5` runs six times. If a **loop** is off by one or reaches past the end of an **array**, check the comparison first."
         },
         {
           "kind": "check",
@@ -160,7 +160,7 @@
         },
         {
           "kind": "text",
-          "body": "That extra pass is worse than a wrong count when an **array** is involved. An array of 3 items has positions 0, 1, and 2. There is no position 3. Asking for one is not caught when your code is compiled, because the compiler cannot know what `i` will be. It surfaces while the program is running, as a crash."
+          "body": "With arrays, an extra loop pass can crash the program. An array of 3 items has indexes 0, 1, and 2. Index 3 is past the end, and Java only discovers that while running."
         },
         {
           "kind": "code",
@@ -172,7 +172,7 @@
           "kind": "callout",
           "tone": "tip",
           "title": "Two moments when Java can object",
-          "body": "Java checks types before it runs anything. Write `int count = \"three\";` and the compiler rejects the **file**, so not one line of your program runs, not even the correct lines above it. That is a compile error. The crash above is different: the file compiled fine and the program was already running when it hit a value it could not use. That is a **runtime error**. When something goes wrong, ask first whether you saw any **output**. Output means you got past the compiler."
+          "body": "Java checks types before running. If the file does not compile, no line runs. If the program starts and then crashes, that is a **runtime error**. Seeing output means you got past the compiler."
         }
       ]
     },
@@ -197,7 +197,7 @@
         },
         {
           "kind": "compare",
-          "caption": "A semicolon right after the closing parenthesis is itself the **loop** body: an empty one. Java dutifully runs that empty body three times. The block underneath is then just an ordinary block of code, nothing to do with the loop, so it runs once. It compiles without a warning, because an empty loop body is legal and occasionally what someone wants.",
+          "caption": "A semicolon right after a `for` line creates an empty **loop** body. The block below it is no longer part of the loop, so it runs once. This compiles, but it is usually not what you meant.",
           "wrong_label": "Prints once",
           "wrong": "for (int i = 0; i < 3; i++);\n{\n    System.out.println(\"Go Bears\");\n}\n// the ; ends the loop.\n// the block is not its body.",
           "right_label": "Prints three times",
@@ -205,7 +205,7 @@
         },
         {
           "kind": "text",
-          "body": "That stray semicolon is worth slowing down for. Your code looks right, the indentation looks right, and nothing is reported as broken. The only clue is that the body ran once instead of many times. If a **loop** body seems to run exactly one time, check the end of the `for` line before you check anything else."
+          "body": "A stray semicolon can make a loop body run once instead of many times. If the indentation looks right but the loop behaves wrong, check the end of the \for line."
         }
       ]
     },
@@ -228,7 +228,7 @@
           "kind": "callout",
           "tone": "warning",
           "title": "A loop that never stops",
-          "body": "Leave out `n = n - 1` and `n` stays 3 forever, so `n > 0` never turns false and the program prints 3 until something kills it. The same thing happens in a `for` **loop** if the update part is missing or changes the wrong **variable**. This code compiles perfectly, because an endless loop is legal Java and sometimes intentional. When a run of yours hangs or times out, ask one question about every loop in it: which line in here will eventually make this **condition** false? If you cannot point to that line, you have found the bug."
+          "body": "If `n` never changes, `n > 0` never becomes false. The loop runs forever. When a program hangs, ask: which line will eventually make the loop **condition** false? If there is no such line, you found the bug."
         },
         {
           "kind": "check",

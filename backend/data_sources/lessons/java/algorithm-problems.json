@@ -18,7 +18,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "When a problem defeats you, the cause is usually not Java. It is that you started typing while you were still reading. Nothing has been decided, so each line is a guess, and soon you are debugging a plan that never existed. There is no new syntax in this lesson. It is about what happens before your first semicolon."
+          "body": "When a problem defeats you, the issue is often the plan, not Java. Slow down before typing. Read the prompt, choose what value you need to keep, and then write code from that plan."
         },
         {
           "kind": "visual",
@@ -105,11 +105,11 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "Almost nobody bothers with the pencil, and the pencil is where the answer lives. Suppose the task is to sum 4, 8, and 15. Your hand writes a zero, crosses it out for 4, crosses that out for 12, and finishes on 27. Study what your hand did. You kept exactly one number going, and you revised it every time a new **value** arrived. There is your algorithm. It showed up before you touched Java at all."
+          "body": "Start on paper first. If the task is to add 4, 8, and 15, write 0, then 4, then 12, then 27. You kept one running **value** and updated it for each number. That is the algorithm before Java gets involved."
         },
         {
           "kind": "code",
-          "caption": "Your paper transfers almost line for line. `total` is the one number you kept going, the **loop** is the **values** arriving one at a time, and the **print** is you reading your final scribble aloud. From here on, examples drop the `public class` and `main` wrapper. Assume it is still wrapped around them.",
+          "caption": "Your paper transfers almost line for line. `total` is the one number you kept going, the **loop** is the **values** arriving one at a time, and the **print** is you reading your final scribble aloud. From here on, examples drop the `public",
           "code": "public class Totals {\n    public static void main(String[] args) {\n        int[] prices = {4, 8, 15};\n        int total = 0;\n        for (int p : prices) {\n            total += p;\n        }\n        System.out.println(total);\n    }\n}",
           "output": "27"
         }
@@ -150,11 +150,11 @@
           "kind": "callout",
           "tone": "warning",
           "title": "temps[0] blows up on an empty array",
-          "body": "Ask an **array** with zero items for slot 0 and Java throws an ArrayIndexOutOfBoundsException, killing the program on the spot. The compiler waves this through, because how many items an array holds is only settled once the program is running. If the problem says the **input** may be empty, guard it with `temps.length > 0` before you touch slot 0."
+          "body": "If an **array** may be empty, check its length before reading slot 0. Java can compile `temps[0]`, but the program will crash at runtime if the array has no items. Use a guard such as `temps.length > 0` first."
         },
         {
           "kind": "code",
-          "caption": "This one needs the position, not the **value**, so it counts with `i` rather than walking the items straight. Starting `found` at -1 is a common trick: no real slot is ever numbered -1, so -1 can safely mean \"still missing\". The `break` is doing real work. Take it out and the **loop** marches on to the second 47, leaving `found` holding 3 instead of 1.",
+          "caption": "This task needs the position, so it uses `i`. Starting `found` at -1 means \"not found yet\" because no real index is -1. The `break` matters too: it stops at the first match instead of letting a later match replace it.",
           "code": "int[] ids = {31, 47, 12, 47};\nint found = -1;\nfor (int i = 0; i < ids.length; i++) {\n    if (ids[i] == 47) {\n        found = i;\n        break;\n    }\n}\nSystem.out.println(found);",
           "output": "1"
         },
@@ -162,7 +162,7 @@
           "kind": "callout",
           "tone": "tip",
           "title": "Two questions place every line for you",
-          "body": "What am I holding on to? What causes it to change? Answer the first and you have your **variable**, and it belongs above the **loop**. Answer the second and you have your `if`, and it belongs between the braces. Then you read the variable below the loop. Those two questions will get you further than memorizing the four shapes ever will."
+          "body": "Ask two questions: What value am I keeping? What makes it change? The kept value becomes a **variable** above the **loop**. The change rule usually becomes an `if` inside the loop. Then return or print the variable after the loop."
         }
       ]
     },
@@ -186,11 +186,11 @@
         },
         {
           "kind": "text",
-          "body": "Here Java parts ways with the languages you may have met first. The declaration has to sit above the **loop**. Slide it between the braces in Python and you still get a program, just one with a bad answer. Slide it between the braces in Java and the **variable** ceases to exist at the closing brace, leaving the line below the loop talking to nobody."
+          "body": "In Java, the declaration has to be in the right place. If a **variable** is declared inside loop braces, it disappears when that loop pass ends. A line below the loop cannot use it."
         },
         {
           "kind": "compare",
-          "caption": "Same four lines both times, and only one of them moved. `int total` written between the braces is created fresh and destroyed on every single pass, so the `System.out.println` underneath is naming something that never made it out of the **loop**. Java does not run this and then produce a strange number. It declines to build it, reporting \"cannot find symbol: **variable** total\".",
+          "caption": "Only one line moved, but the meaning changed. If `int total` is inside the braces, Java creates it for one loop pass and then removes it. The print line below the **loop** cannot see it, so Java reports `cannot find symbol`.",
           "wrong_label": "Will not compile",
           "wrong": "for (int p : prices) {\n    int total = 0;\n    total += p;\n}\nSystem.out.println(total);\n// cannot find symbol:\n// variable total",
           "right_label": "Prints 27",
@@ -200,7 +200,7 @@
           "kind": "callout",
           "tone": "mistake",
           "title": "A build that fails is the kinder outcome",
-          "body": "Java inspects your whole **file** before one line executes, and it will not ship that version. Make the same slip in a language that runs first and **objects** later, and you get a program that completes, prints something, and never hints that the something is wrong. Silence plus a plausible number is the bug that eats your weekend. A red line with a file and a line number takes ten seconds."
+          "body": "Java checks the whole **file** before it runs. That can feel strict, but it helps: a compile error gives you a file and line number before any wrong answer appears."
         },
         {
           "kind": "check",
@@ -219,7 +219,7 @@
           "kind": "callout",
           "tone": "warning",
           "title": "Two ints divided give you back an int",
-          "body": "Say you have `int[] marks = {90, 85, 78}` and you add them up to 253. Ask for `sum / marks.length` and Java hands you 84, not 84.33. Both operands are `int`, so Java divides in whole numbers, discards the remainder, and never mentions it. Convert one side and the fraction survives: `(double) sum / marks.length` yields 84.33333333333333. An average that comes out oddly round is the giveaway."
+          "body": "If `sum` and `marks.length` are both `int`, Java uses whole-number division. `253 / 3` becomes 84, not 84.33. Convert one side first, such as `(double) sum / marks.length`, when the decimal matters."
         }
       ]
     },

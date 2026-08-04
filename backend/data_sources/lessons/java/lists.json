@@ -18,7 +18,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "One **variable** holds one **value**. That runs out fast. A roster of thirty students would need thirty separate names, and you would have to write every one of them by hand before you could store a single grade. An **array** solves that: it parks a whole run of values of the same type behind one name, and you pick out any single one by giving its position."
+          "body": "One **variable** holds one **value**. An **array** holds many values of the same type under one name. You pick one item by giving its position."
         },
         {
           "kind": "visual",
@@ -122,7 +122,7 @@
         },
         {
           "kind": "compare",
-          "caption": "The only difference is `<=` in place of `<`. An **array** of length 3 has no slot 3, so the left **loop** prints all three items and then asks for one that was never there. Java throws an ArrayIndexOutOfBoundsException. Reading `arr[arr.length]` is wrong for every array that has ever existed, because the length always sits one step past the final **index**.",
+          "caption": "The mistake is `<=` instead of `<`. An **array** of length 3 has indexes 0, 1, and 2. Index 3 is one step past the end, so Java throws ArrayIndexOutOfBoundsException.",
           "wrong_label": "Crashes on the last pass",
           "wrong": "int[] arr = {4, 7, 2};\nfor (int i = 0; i <= arr.length; i++) {\n    System.out.println(arr[i]);\n}\n// prints 4, 7, 2\n// then throws at i = 3",
           "right_label": "Stops in time",
@@ -150,7 +150,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "That fixed size is what an **array** gives you and also what it costs you. If ten students sign up for a five-slot array, there is no squeezing in a sixth. You would have to make a bigger array and copy everything across. When you cannot know the count in advance, reach for an `ArrayList`, which grows as you add to it."
+          "body": "An **array** has a fixed size. If more students sign up than you planned for, you need a bigger array and a copy step. Use an ArrayList when the count can grow."
         },
         {
           "kind": "code",
@@ -162,7 +162,7 @@
           "kind": "callout",
           "tone": "mistake",
           "title": "ArrayList<int> does not compile. You need ArrayList<Integer>.",
-          "body": "An ArrayList can only hold **objects**, and `int` is not one. It is a primitive: a plain machine number with no **methods** attached. `Integer` is the object version of that same value, and `Integer` is what goes in the angle brackets. Once the **list** is declared that way you can still write `nums.add(10)` and read items back into an `int`, because Java converts between the two on its own. The pairs worth memorizing are `int` with `Integer`, `double` with `Double`, and `char` with `Character`."
+          "body": "An ArrayList holds **objects**, so use wrapper types in angle brackets. Use `Integer` for `int`, `Double` for `double`, and `Character` for `char`. Java usually converts between the primitive and wrapper for you."
         },
         {
           "kind": "code",
@@ -204,7 +204,7 @@
           "kind": "callout",
           "tone": "tip",
           "title": "A compile error happens before your program runs at all",
-          "body": "Java checks types while it builds your program, so `ArrayList<int>` and `nums.length()` are caught before a single line executes. Nothing you wrote ever ran. An ArrayIndexOutOfBoundsException is the opposite: the program compiled cleanly, started running, and only failed when it reached the bad **index**. Both are worth reading closely. The compiler names the **file**, the line, and usually the exact symbol it went looking for and could not find."
+          "body": "Some list mistakes are compile errors, such as `ArrayList<int>` or `nums.length()`. Index mistakes often happen at runtime, after the program starts. Read whether Java is reporting a compile error or an exception."
         }
       ]
     },
@@ -217,7 +217,7 @@
           "kind": "callout",
           "tone": "warning",
           "title": "remove on an ArrayList of Integer is genuinely ambiguous",
-          "body": "For a **list** of **Integers**, `nums.remove(1)` deletes the item at position 1, not the item whose value is 1. Java reads a plain `int` as an **index**. To delete by value, hand it an object: `nums.remove(Integer.valueOf(1))`. An `ArrayList<String>` has no such problem, since `remove(\"read\")` can only mean the value. If a number quietly vanishes from the wrong spot in your list, this is why."
+          "body": "For an `ArrayList<Integer>`, `nums.remove(1)` removes index 1. To remove the value 1, use `nums.remove(Integer.valueOf(1))`. This confusion mostly happens with number lists."
         },
         {
           "kind": "list",

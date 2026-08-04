@@ -34,6 +34,7 @@ All notable changes to CS Navigator are documented here.
 - **Adaptive review routing.** Coding Tutor adaptive recommendations now include a conservative review signal when recent practice attempts show repeated syntax, runtime, wrong-answer, or timeout patterns.
 - **Practice Guide real mistake patterns.** Practice Guide now shows recent mistake patterns only from the student's own saved practice attempts, and Progress has a quiet Learning Habits tracker for preference selection, hint usage, tutor suggestion application, and failed-then-fixed work.
 - **Coding Tutor accessibility polish V1.** Main Coding Tutor modals and drawers now trap focus, close with Escape, restore focus to the opener, and use dialog labels; Learn language cards are native buttons, key tab groups support arrow-key navigation, and the floating tutor exposes clearer keyboard movement and suggestion-preview labels.
+- **Compact exception/error type lists.** Python, Java, JavaScript, and C++ exception lessons now include short lists of common error types so students can recognize names like `ValueError`, `NumberFormatException`, `TypeError`, `IOException`, and `std::out_of_range` before the full Language Dictionary exists.
 
 ### Changed
 - Syntax lessons now emphasize first-use definitions and key beginner terms, such as syntax, comments, blocks, indentation, statements, semicolons, and compiler/parser messages.
@@ -42,6 +43,7 @@ All notable changes to CS Navigator are documented here.
 - Beginner Learn lessons from Strings through Debug Part 1 now use explicit authored sections across Python, Java, JavaScript, and C++ instead of relying on the loader's broad auto-split.
 - Intermediate Learn sectioning pass 1 now gives authored sections to the first half of each language's Intermediate track, including shared Algorithm/Debug Part 2 anchors plus Python tuples/dictionaries/sets/files, Java classes/maps/files/exceptions, JavaScript objects/error handling, and C++ pointers/classes.
 - Intermediate Learn sectioning pass 2 now finishes the remaining language-specific Intermediate topics with authored sections, including Python exceptions/classes/modules/comprehensions/testing, Java inheritance/generics/enums/packages/lambdas, JavaScript modules/DOM/async, and C++ files/exceptions/ownership.
+- Java Learn lesson prose was simplified across the Beginner-heavy lessons and core object/debug lessons, shortening dense captions and replacing essay-style explanations with direct beginner-facing language; C++ was spot-checked and one dense debug note was tightened.
 - Learn track lesson lists now keep "Choose tracks" at the top and use the bottom row for Previous/Next track navigation through Beginner, Intermediate, and Advanced.
 - Python, Java, and JavaScript Syntax lessons now use four authored reading parts instead of the loader's broad auto-split, making the beginner path easier to digest.
 - Expanded the thin explicit Learn lessons so the previously 3-section and 4-section Coding Tutor lessons now have five focused sections with additional examples, checks, visual traces, and mistake guidance.

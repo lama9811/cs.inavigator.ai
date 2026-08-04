@@ -116,6 +116,17 @@
             "Keep try blocks small.",
             "Do not hide errors you still need to fix."
           ]
+        },
+        {
+          "kind": "list",
+          "title": "Common C++ exception types",
+          "items": [
+            "`std::invalid_argument`: an argument has a value the function cannot accept.",
+            "`std::out_of_range`: code asks for a position or value outside the allowed range.",
+            "`std::runtime_error`: a runtime failure does not fit a more specific category.",
+            "`std::logic_error`: the program's logic has broken a rule it should have protected.",
+            "`std::bad_alloc`: dynamic memory allocation fails."
+          ]
         }
       ]
     }

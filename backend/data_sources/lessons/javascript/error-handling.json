@@ -103,6 +103,17 @@
             "Keep try blocks small.",
             "Do not hide bugs by catching everything silently."
           ]
+        },
+        {
+          "kind": "list",
+          "title": "Common JavaScript error types",
+          "items": [
+            "`SyntaxError`: JavaScript cannot parse the code or JSON text.",
+            "`TypeError`: code uses a value in a way that does not fit its type.",
+            "`ReferenceError`: code uses a name that is not defined.",
+            "`RangeError`: a number is outside the allowed range.",
+            "`URIError`: URI encoding or decoding receives invalid text."
+          ]
         }
       ]
     }
