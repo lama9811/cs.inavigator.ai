@@ -10,143 +10,303 @@
   ],
   "refresher": "Harder C++ bugs often appear when code keeps an address too long, subtracts from an empty size, or changes a container while using a position inside it. Trace the first **value** or **reference** that becomes invalid.",
   "refresher_code": "for(std::size_t i=0;i<v.size();i++){\n  std::cout << i << \": \" << v[i] << \"\\n\";\n}",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "Some C++ bugs come from **values** that were once valid but are no longer safe to use. A local **object** disappears when its **function** ends. A vector may move its elements when it grows. An empty container has no final element. Check these moments when a later line behaves strangely."
-    },
-    {
-      "kind": "visual",
-      "title": "Find the first wrong state",
-      "concept": "debugging",
-      "caption": "Compare the expected state with the actual state before the final answer distracts you.",
-      "initial_state": {},
-      "steps": [
+      "id": "unsafe-state",
+      "title": "Find unsafe state",
+      "summary": "Track when a value, pointer, or reference stops being safe.",
+      "blocks": [
         {
-          "title": "Before the update",
-          "body": "The total is still correct before this loop pass.",
-          "state": {
-            "table": [
-              {
-                "key": "score",
-                "value": "7",
-                "active": true
-              },
-              {
-                "key": "total before",
-                "value": "5"
-              }
-            ],
-            "note": "state still matches the trace"
-          }
+          "kind": "text",
+          "body": "Some C++ bugs come from **values** that were once valid but are no longer safe to use. A local **object** disappears when its **function** ends. A vector may move its elements when it grows. An empty container has no final element. Check these moments when a later line behaves strangely."
         },
         {
-          "title": "Wrong update",
-          "body": "The update changes the wrong variable or uses the wrong operation.",
-          "animation": "highlight",
-          "state": {
-            "table": [
-              {
-                "key": "expected total",
-                "value": "12"
+          "kind": "visual",
+          "title": "Find the first wrong state",
+          "concept": "debugging",
+          "caption": "Compare expected and actual state until the first wrong transition is isolated.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "State still matches",
+              "body": "Start from the last moment where the hand trace and program state agree.",
+              "state": {
+                "active_step": "before",
+                "debug_trace": {
+                  "before": "score is 7, total is 5",
+                  "expected": "next total should be 12",
+                  "actual": "no wrong state yet",
+                  "fix": "keep tracing"
+                },
+                "table": [
+                  {
+                    "key": "score",
+                    "value": "7",
+                    "active": true
+                  },
+                  {
+                    "key": "total before",
+                    "value": "5"
+                  }
+                ],
+                "note": "state still matches the trace"
               },
-              {
-                "key": "actual total",
-                "value": "57",
-                "active": true
-              }
-            ],
-            "note": "first wrong state"
-          }
+              "code_focus": "before: State still matches",
+              "input_value": "score -> 7",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "before"
+                }
+              ],
+              "decision": "no wrong state yet",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "state still matches the trace"
+                },
+                {
+                  "name": "active entry",
+                  "value": "score -> 7"
+                }
+              ],
+              "output": "none yet",
+              "why": "Start from the last moment where the hand trace and program state agree."
+            },
+            {
+              "title": "Name the expected change",
+              "body": "Before blaming the final answer, write what this one transition should do.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "expected",
+                "debug_trace": {
+                  "before": "score = 7, total = 5",
+                  "expected": "total should become 12",
+                  "actual": "not checked yet",
+                  "fix": "compare one transition"
+                },
+                "table": [
+                  {
+                    "key": "expected total",
+                    "value": "12",
+                    "active": true
+                  },
+                  {
+                    "key": "operation",
+                    "value": "total + score"
+                  }
+                ],
+                "note": "expected state is 12"
+              },
+              "code_focus": "expected: Name the expected change",
+              "input_value": "expected total -> 12",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "expected"
+                }
+              ],
+              "decision": "not checked yet",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "expected state is 12"
+                },
+                {
+                  "name": "active entry",
+                  "value": "expected total -> 12"
+                }
+              ],
+              "output": "none yet",
+              "why": "Before blaming the final answer, write what this one transition should do."
+            },
+            {
+              "title": "Find the first wrong state",
+              "body": "The actual update produces the wrong value, so this is the first transition to inspect.",
+              "animation": "branch",
+              "state": {
+                "active_step": "actual",
+                "debug_trace": {
+                  "before": "score = 7, total = 5",
+                  "expected": "12",
+                  "actual": "57",
+                  "fix": "wrong operation or type"
+                },
+                "table": [
+                  {
+                    "key": "expected total",
+                    "value": "12"
+                  },
+                  {
+                    "key": "actual total",
+                    "value": "57",
+                    "active": true
+                  }
+                ],
+                "note": "first wrong state"
+              },
+              "code_focus": "actual: Find the first wrong state",
+              "input_value": "actual total -> 57",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "actual"
+                }
+              ],
+              "decision": "57",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "first wrong state"
+                },
+                {
+                  "name": "active entry",
+                  "value": "actual total -> 57"
+                }
+              ],
+              "output": "none yet",
+              "why": "The actual update produces the wrong value, so this is the first transition to inspect."
+            },
+            {
+              "title": "Fix the transition",
+              "body": "Once the first bad transition is known, the fix is local and testable.",
+              "animation": "return",
+              "state": {
+                "active_step": "fix",
+                "debug_trace": {
+                  "before": "score = 7, total = 5",
+                  "expected": "12",
+                  "actual": "12 after fix",
+                  "fix": "use numeric addition"
+                },
+                "table": [
+                  {
+                    "key": "score",
+                    "value": "7"
+                  },
+                  {
+                    "key": "total after",
+                    "value": "12",
+                    "active": true
+                  }
+                ],
+                "note": "total += score"
+              },
+              "code_focus": "fix: Fix the transition",
+              "input_value": "total after -> 12",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "fix"
+                }
+              ],
+              "decision": "12 after fix",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "total += score"
+                },
+                {
+                  "name": "active entry",
+                  "value": "total after -> 12"
+                }
+              ],
+              "output": "none yet",
+              "why": "Once the first bad transition is known, the fix is local and testable."
+            }
+          ]
         },
         {
-          "title": "Fix the transition",
-          "body": "Once the first bad transition is known, the fix is smaller.",
-          "state": {
-            "table": [
-              {
-                "key": "score",
-                "value": "7"
-              },
-              {
-                "key": "total after",
-                "value": "12",
-                "active": true
-              }
-            ],
-            "note": "total += score"
-          }
+          "kind": "text",
+          "body": "A **pointer** or **reference** is dangling when it still names an object after that object is gone. Vector positions can also become invalid after the vector grows. Trace when the object was created, changed, and destroyed."
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "What is std::size_t?",
+          "body": "`std::size_t` is the nonnegative **integer** type C++ uses for sizes and **indexes**. You do not need to memorize its internal size. Match it with `.size()` and keep the **index** strictly below the container's size."
         }
       ]
     },
     {
-      "kind": "text",
-      "body": "A **pointer** or **reference** that still names an **object** after that object is gone is called dangling. Positions into a vector can also become invalid after the vector changes its storage. Trace when the object was created, changed, and destroyed instead of looking only at the line where the crash appears."
+      "id": "bounds-and-lifetime",
+      "title": "Bounds and lifetime bugs",
+      "summary": "Separate index bounds from objects that have gone out of scope.",
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "The **loop** uses the vector's size as its stopping point and never allows the **index** to reach the size itself.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n  std::vector<int> values{2, 4};\n\n  for (std::size_t i = 0; i < values.size(); i++) {\n    std::cout << i << \": \" << values[i] << \"\\n\";\n  }\n}",
+          "output": "0:2\n1:4"
+        },
+        {
+          "kind": "compare",
+          "caption": "Do not **return** a **reference** to a local **object** that is about to disappear.",
+          "wrong_label": "Common mistake",
+          "wrong": "const std::string& label() {\n  std::string text = \"CS\";\n  return text;\n}",
+          "right_label": "Clearer version",
+          "right": "std::string label() {\n  std::string text = \"CS\";\n  return text;\n}"
+        },
+        {
+          "kind": "text",
+          "body": "The local **string** exists only while `label` is running. Returning a reference would leave the caller with a name for an **object** that has already disappeared. Returning the string by **value** gives the caller its own valid result."
+        }
+      ]
     },
     {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "What is std::size_t?",
-      "body": "`std::size_t` is the nonnegative **integer** type C++ uses for sizes and **indexes**. You do not need to memorize its internal size. Match it with `.size()` and keep the **index** strictly below the container's size."
+      "id": "boundary-checks",
+      "title": "Boundary checks",
+      "summary": "Check size math and references before trusting a loop.",
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Check emptiness before subtracting from size",
+          "body": "Container sizes use a nonnegative number type. Subtracting one from an empty size does not produce a useful negative **index**; it wraps to a very large **value**. Handle the empty case first."
+        },
+        {
+          "kind": "check",
+          "prompt": "Why is `i <= v.size()` unsafe for indexing?",
+          "code": "",
+          "choices": [
+            "it eventually uses index size",
+            "vectors reject loops",
+            "i becomes text",
+            "size excludes zero"
+          ],
+          "answer_index": 0,
+          "why": "The count itself is one past the final valid **index**, yet the inclusive test allows it."
+        },
+        {
+          "kind": "check",
+          "prompt": "What should precede `v.size()-1`?",
+          "code": "",
+          "choices": [
+            "an emptiness check",
+            "a sort call",
+            "a pointer cast",
+            "a second vector"
+          ],
+          "answer_index": 0,
+          "why": "An empty size cannot be safely decremented as an unsigned **value**, so guard the case first."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "The **loop** uses the vector's size as its stopping point and never allows the **index** to reach the size itself.",
-      "code": "#include <iostream>\n#include <vector>\n\nint main() {\n  std::vector<int> values{2, 4};\n\n  for (std::size_t i = 0; i < values.size(); i++) {\n    std::cout << i << \": \" << values[i] << \"\\n\";\n  }\n}",
-      "output": "0:2\n1:4"
-    },
-    {
-      "kind": "compare",
-      "caption": "Do not **return** a **reference** to a local **object** that is about to disappear.",
-      "wrong_label": "Common mistake",
-      "wrong": "const std::string& label() {\n  std::string text = \"CS\";\n  return text;\n}",
-      "right_label": "Clearer version",
-      "right": "std::string label() {\n  std::string text = \"CS\";\n  return text;\n}"
-    },
-    {
-      "kind": "text",
-      "body": "The local **string** exists only while `label` is running. Returning a reference would leave the caller with a name for an **object** that has already disappeared. Returning the string by **value** gives the caller its own valid result."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Check emptiness before subtracting from size",
-      "body": "Container sizes use a nonnegative number type. Subtracting one from an empty size does not produce a useful negative **index**; it wraps to a very large **value**. Handle the empty case first."
-    },
-    {
-      "kind": "check",
-      "prompt": "Why is `i <= v.size()` unsafe for indexing?",
-      "code": "",
-      "choices": [
-        "it eventually uses index size",
-        "vectors reject loops",
-        "i becomes text",
-        "size excludes zero"
-      ],
-      "answer_index": 0,
-      "why": "The count itself is one past the final valid **index**, yet the inclusive test allows it."
-    },
-    {
-      "kind": "check",
-      "prompt": "What should precede `v.size()-1`?",
-      "code": "",
-      "choices": [
-        "an emptiness check",
-        "a sort call",
-        "a pointer cast",
-        "a second vector"
-      ],
-      "answer_index": 0,
-      "why": "An empty size cannot be safely decremented as an unsigned **value**, so guard the case first."
-    },
-    {
-      "kind": "list",
-      "title": "Debug: Part 2 checklist",
-      "items": [
-        "Test empty containers.",
-        "Keep strict **index** bounds.",
-        "Track **object** lifetime.",
-        "Find the earliest bad state."
+      "id": "debug-checklist",
+      "title": "Debug Part 2 checklist",
+      "summary": "Review the habits for deeper C++ bugs.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Debug: Part 2 checklist",
+          "items": [
+            "Test empty containers.",
+            "Keep strict **index** bounds.",
+            "Track **object** lifetime.",
+            "Find the earliest bad state."
+          ]
+        }
       ]
     }
   ],

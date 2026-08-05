@@ -67,6 +67,29 @@ export function saveCategoryResult(language, category, grade, stampAt) {
   return record;
 }
 
+// Save results from the cross-category mistake bank. This updates only the
+// source question statuses inside their original categories; it intentionally
+// does not touch category best/last scores because a mistake-bank retry is not a
+// full category attempt.
+export function saveMistakeBankResult(language, grade) {
+  const updated = {};
+  (grade.results || []).forEach((result) => {
+    const category = result?.category || result?.original_category;
+    if (!category || !result?.question_id) return;
+    const prev = readCategoryProgress(language, category) || {};
+    const questions = { ...(prev.questions || {}) };
+    questions[result.question_id] = result.correct ? "correct" : "incorrect";
+    const record = { ...prev, questions };
+    updated[category] = record;
+    try {
+      localStorage.setItem(key(language, category), JSON.stringify(record));
+    } catch {
+      // Non-fatal; server progress still refreshes after a submitted retry.
+    }
+  });
+  return updated;
+}
+
 // Convenience: the latest correct/incorrect for one question ("correct" |
 // "incorrect" | null if never answered).
 export function readQuestionStatus(language, category, questionId) {

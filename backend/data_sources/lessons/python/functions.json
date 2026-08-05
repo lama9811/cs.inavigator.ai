@@ -2,7 +2,7 @@
   "_note": "ORIGINAL content. Topic sequence follows the standard free intro texts (Runestone FoPP ch.5, Think Python ch.3, OpenStax ch.9); sequences are not copyrightable. No prose, examples, or exercises are copied from any of them: all three are copyleft (GFDL / CC BY-NC-SA), and copying would bind CS Navigator's content to those terms.",
   "title": "Functions",
   "summary": "Name a piece of work once, then run it whenever you need it.",
-  "minutes": 7,
+  "minutes": 10,
   "error_classes": [
     "wrong_answer",
     "runtime",
@@ -21,6 +21,11 @@
           "body": "A **function** is a name for a piece of work. You describe the work once, then run it as many times as you like by writing its name. If you find yourself copying the same three lines into four places, that is a function asking to be written."
         },
         {
+          "kind": "code",
+          "caption": "Before real syntax, learn the shape: a **function** has a name, inputs, a body, and sometimes a returned result. The examples after this show the exact syntax.",
+          "code": "function name(parameters):\n    body that does the job\n    return the result\n\ncall function name(arguments)"
+        },
+        {
           "kind": "visual",
           "title": "Follow a function call",
           "concept": "functions",
@@ -31,18 +36,57 @@
               "title": "Call with arguments",
               "body": "The caller sends 3 and 5 into the function.",
               "state": {
+                "active_step": "arguments",
+                "function_flow": {
+                  "caller": "main asks for add(3, 5)",
+                  "arguments": "3 and 5 leave the caller",
+                  "parameters": "a and b are waiting",
+                  "locals": "function frame not running yet",
+                  "return_value": "nothing returned yet",
+                  "resume": "result is still waiting"
+                },
                 "call_stack": [
                   "main: result = add(3, 5)"
                 ],
                 "active_call": 0,
                 "note": "waiting for add"
-              }
+              },
+              "code_focus": "arguments: Call with arguments",
+              "input_value": "3 and 5 leave the caller",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "arguments"
+                },
+                {
+                  "name": "call stack",
+                  "value": "main: result = add(3, 5)"
+                }
+              ],
+              "decision": "The caller sends 3 and 5 into the function.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "waiting for add"
+                }
+              ],
+              "output": "none yet",
+              "why": "The caller sends 3 and 5 into the function."
             },
             {
               "title": "Parameters receive values",
               "body": "Inside the function, a is 3 and b is 5.",
               "animation": "add",
               "state": {
+                "active_step": "parameters",
+                "function_flow": {
+                  "caller": "main is paused",
+                  "arguments": "3 goes to a, 5 goes to b",
+                  "parameters": "a = 3, b = 5",
+                  "locals": "a + b becomes 8",
+                  "return_value": "ready to return",
+                  "resume": "caller waits for the value"
+                },
                 "call_stack": [
                   "main",
                   "add: a=3, b=5"
@@ -60,19 +104,111 @@
                     "active": true
                   }
                 ]
-              }
+              },
+              "code_focus": "parameters: Parameters receive values",
+              "input_value": "a -> 3, b -> 5",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "parameters"
+                },
+                {
+                  "name": "call stack",
+                  "value": "main, add: a=3, b=5"
+                }
+              ],
+              "decision": "Inside the function, a is 3 and b is 5.",
+              "variables_after": [
+                {
+                  "name": "active entry",
+                  "value": "a -> 3, b -> 5"
+                }
+              ],
+              "output": "none yet",
+              "why": "Inside the function, a is 3 and b is 5."
             },
             {
               "title": "Return",
               "body": "Return sends 8 back to the caller, and the function call is finished.",
               "animation": "return",
               "state": {
+                "active_step": "return",
+                "function_flow": {
+                  "caller": "main is waiting",
+                  "arguments": "3 and 5 already filled parameters",
+                  "parameters": "add finishes its frame",
+                  "locals": "a + b is 8",
+                  "return_value": "return 8",
+                  "resume": "result can store the answer"
+                },
                 "call_stack": [
                   "main: result = 8"
                 ],
                 "active_call": 0,
                 "note": "result stores 8"
-              }
+              },
+              "code_focus": "return: Return",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "return"
+                },
+                {
+                  "name": "call stack",
+                  "value": "main: result = 8"
+                }
+              ],
+              "decision": "Return sends 8 back to the caller, and the function call is finished.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "result stores 8"
+                }
+              ],
+              "output": "result stores 8",
+              "why": "Return sends 8 back to the caller, and the function call is finished."
+            },
+            {
+              "title": "Caller resumes",
+              "body": "The call expression has been replaced by 8, so the caller can use the stored result.",
+              "state": {
+                "active_step": "resume",
+                "function_flow": {
+                  "caller": "main continues",
+                  "arguments": "argument values are done",
+                  "parameters": "function frame is gone",
+                  "locals": "local names no longer exist",
+                  "return_value": "8",
+                  "resume": "result = 8"
+                },
+                "call_stack": [
+                  "main: result = 8"
+                ],
+                "active_call": 0,
+                "note": "the caller can use result"
+              },
+              "code_focus": "resume: Caller resumes",
+              "input_value": "result = 8",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "resume"
+                },
+                {
+                  "name": "call stack",
+                  "value": "main: result = 8"
+                }
+              ],
+              "decision": "The call expression has been replaced by 8, so the caller can use the stored result.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the caller can use result"
+                }
+              ],
+              "output": "none yet",
+              "why": "The call expression has been replaced by 8, so the caller can use the stored result."
             }
           ]
         },
@@ -98,6 +234,41 @@
           "caption": "Here `name` is the **parameter**, and the strings \"Ada\" and \"Grace\" are the **arguments**. The parameter is a variable that only exists while the **function** is running, and it holds whatever you passed in this time.",
           "code": "def greet(name):\n    print(\"Hello, \" + name + \"!\")\n\ngreet(\"Ada\")\ngreet(\"Grace\")",
           "output": "Hello, Ada!\nHello, Grace!"
+        }
+      ]
+    },
+    {
+      "id": "call-trace",
+      "title": "Trace one call at a time",
+      "summary": "A **function** call gets fresh parameter values, runs, then returns.",
+      "question_ids": [
+        "arg-order-01",
+        "reuse-01",
+        "param-copy-01"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "When a function confuses you, write one call on paper. Fill each parameter with the argument value, run the body in order, and replace the call with the returned value."
+        },
+        {
+          "kind": "code",
+          "caption": "Each call starts fresh. The parameter `name` holds Ada during the first call and Grace during the second.",
+          "code": "def label(name):\n    word = \"Hi \" + name\n    return word\n\nfirst = label(\"Ada\")\nsecond = label(\"Grace\")\nprint(first)\nprint(second)",
+          "output": "Hi Ada\nHi Grace"
+        },
+        {
+          "kind": "check",
+          "prompt": "What should you do first when tracing `subtract(10, 4)`?",
+          "code": "def subtract(a, b):\n    return a - b",
+          "choices": [
+            "Set a to 10 and b to 4",
+            "Set both names to 10",
+            "Run the return before filling parameters",
+            "Change the function name"
+          ],
+          "answer_index": 0,
+          "why": "Arguments fill parameters by position before the function body runs."
         }
       ]
     },
@@ -254,7 +425,7 @@
       "body": "The first argument goes into the first parameter, the second into the second, and so on unless named arguments are used.",
       "notice": "Write the parameter values before evaluating the body.",
       "mistake": "Do not swap argument meaning because the names would sound nicer the other way.",
-      "section_id": "parameters-and-arguments",
+      "section_id": "call-trace",
       "example": "subtract(a, b)"
     },
     "local-scope-01": {
@@ -270,7 +441,7 @@
       "body": "Calling the same function more than once applies the same rule to new arguments.",
       "notice": "Evaluate each call separately, then combine the returned values.",
       "mistake": "Do not reuse the previous call's local parameter values.",
-      "section_id": "what-a-function-is",
+      "section_id": "call-trace",
       "example": "double(5)"
     },
     "function-in-condition-01": {
@@ -286,7 +457,7 @@
       "body": "A parameter is the function's local name for the value it received.",
       "notice": "If the function returns an updated value, the caller must store that return to keep it.",
       "mistake": "Do not assume a local parameter assignment rewrites the original variable.",
-      "section_id": "parameters-and-arguments",
+      "section_id": "call-trace",
       "example": "x = bump(x)"
     }
   }

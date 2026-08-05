@@ -1,20 +1,20 @@
 {
   "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Binary Search",
-  "summary": "**Binary search** works when the search space is sorted or has a clear true/false boundary.",
-  "minutes": 17,
+  "summary": "**Binary search** works when the search space is **sorted** or has a clear true/false boundary.",
+  "minutes": 20,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "**Binary search** cuts the search space in half each step. It needs sorted data or a monotonic condition. After checking mid, move past mid so the range gets smaller.",
+  "refresher": "**Binary search** cuts the search space in half each step. It needs **sorted** data or a **monotonic condition**, where the answer switches direction only once. After checking mid, move past mid so the range gets smaller.",
   "refresher_code": "while low <= high:\n    mid = (low + high) // 2",
   "learn_cards": {
     "advanced-bs-sorted": {
       "title": "Binary search needs order",
       "body": "Ordinary **binary search** only works when smaller **values** are on one side and larger values are on the other.",
       "example": "[2, 5, 9, 12]",
-      "notice": "The comparison at mid tells you which half can be ignored.",
+      "notice": "The comparison at **mid** tells you which half can be ignored.",
       "mistake": "On unsorted data, mid tells you almost nothing.",
       "section_id": "bounds"
     },
@@ -39,7 +39,7 @@
     {
       "id": "bounds",
       "title": "Search inside low and high",
-      "summary": "Low and high mark the range still worth checking.",
+      "summary": "`low` and `high` mark the range still worth checking.",
       "question_ids": [
         "advanced-bs-sorted",
         "advanced-bs-mid",
@@ -48,7 +48,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "**Binary search** is not just a faster loop. It is a promise: because the data is ordered, one comparison can rule out half of the remaining positions."
+          "body": "**Binary search** only works when order gives meaning to the middle check. Because the data is ordered, one comparison can rule out half of the remaining positions."
         },
         {
           "kind": "visual",
@@ -79,7 +79,28 @@
                   0,
                   6
                 ]
-              }
+              },
+              "code_focus": "trace binary-search: Start with the full range",
+              "input_value": "low -> 2, high -> 20",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "low: 0, high: 6"
+                },
+                {
+                  "name": "range",
+                  "value": "0, 6"
+                }
+              ],
+              "decision": "low and high cover every possible **index**.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "low and high cover every possible **index**."
             },
             {
               "title": "Check mid",
@@ -97,7 +118,28 @@
                   0,
                   6
                 ]
-              }
+              },
+              "code_focus": "trace binary-search: Check mid",
+              "input_value": "9",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "low: 0, mid: 3, high: 6"
+                },
+                {
+                  "name": "range",
+                  "value": "0, 6"
+                }
+              ],
+              "decision": "mid points to 9. The target is 15, so 9 is too small.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "mid points to 9. The target is 15, so 9 is too small."
             },
             {
               "title": "Move low right",
@@ -111,7 +153,28 @@
                   4,
                   6
                 ]
-              }
+              },
+              "code_focus": "trace binary-search: Move low right",
+              "input_value": "low -> 12, high -> 20",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "low: 4, high: 6"
+                },
+                {
+                  "name": "range",
+                  "value": "4, 6"
+                }
+              ],
+              "decision": "Everything at mid and left of mid is too small, so discard it.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "Everything at mid and left of mid is too small, so discard it."
             },
             {
               "title": "Check new mid",
@@ -130,7 +193,28 @@
                   6
                 ],
                 "note": "found at index 5"
-              }
+              },
+              "code_focus": "trace binary-search: Check new mid",
+              "input_value": "15",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "low: 4, mid: 5, high: 6"
+                },
+                {
+                  "name": "range",
+                  "value": "4, 6"
+                }
+              ],
+              "decision": "mid points to 15, which matches the target.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "found at index 5"
+                }
+              ],
+              "output": "none yet",
+              "why": "mid points to 15, which matches the target."
             }
           ]
         },
@@ -187,7 +271,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "If `nums[mid]` is too small, everything at mid and to the left is too small. Move `low` to `mid + 1`. If `nums[mid]` is too large, move `high` to `mid - 1`."
+          "body": "If `nums[mid]` is too small, everything at mid and to the left is too small. Move `low` to `mid + 1`. If `nums[mid]` is too large, move `high` to `mid - 1`. Mid was already checked, so the next range should not include it."
         },
         {
           "kind": "visual",
@@ -221,7 +305,28 @@
                   0
                 ],
                 "note": "target is 20"
-              }
+              },
+              "code_focus": "trace binary-search: Two items remain",
+              "input_value": "10",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "low: 0, mid: 0, high: 1"
+                },
+                {
+                  "name": "range",
+                  "value": "0, 1"
+                }
+              ],
+              "decision": "The range is tiny, so a bad update can get stuck fast.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "target is 20"
+                }
+              ],
+              "output": "none yet",
+              "why": "low is 0, high is 1, and mid becomes 0."
             },
             {
               "title": "Wrong update",
@@ -243,7 +348,28 @@
                   0
                 ],
                 "note": "range did not shrink"
-              }
+              },
+              "code_focus": "trace binary-search: Wrong update",
+              "input_value": "10",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "low: 0, mid: 0, high: 1"
+                },
+                {
+                  "name": "range",
+                  "value": "0, 1"
+                }
+              ],
+              "decision": "Nothing moved. The next **loop** checks mid 0 again.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "range did not shrink"
+                }
+              ],
+              "output": "none yet",
+              "why": "10 is too small, but setting low to mid keeps low at 0."
             },
             {
               "title": "Correct update",
@@ -264,7 +390,28 @@
                   1
                 ],
                 "note": "one candidate left"
-              }
+              },
+              "code_focus": "trace binary-search: Correct update",
+              "input_value": "20",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "low: 1, high: 1"
+                },
+                {
+                  "name": "range",
+                  "value": "1, 1"
+                }
+              ],
+              "decision": "The remaining range now contains only **index** 1.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "one candidate left"
+                }
+              ],
+              "output": "none yet",
+              "why": "Move past mid because mid was already ruled out."
             },
             {
               "title": "One item can still match",
@@ -286,7 +433,28 @@
                   1
                 ],
                 "note": "found 20"
-              }
+              },
+              "code_focus": "trace binary-search: One item can still match",
+              "input_value": "20",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "low: 1, mid: 1, high: 1"
+                },
+                {
+                  "name": "range",
+                  "value": "1, 1"
+                }
+              ],
+              "decision": "The target is found instead of skipped.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "found 20"
+                }
+              ],
+              "output": "none yet",
+              "why": "`low <= high` lets the final candidate be checked."
             }
           ]
         },
@@ -324,6 +492,203 @@
       ]
     },
     {
+      "id": "first-last-boundaries",
+      "title": "Find first or last matching position",
+      "summary": "Some searches keep going after a match to find a boundary.",
+      "question_ids": [
+        "advanced-bs-monotonic"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "**Binary search** does not always stop at the first match. If the prompt asks for the first passing item or the last valid item, save the match and keep searching the side that might contain a better **boundary**."
+        },
+        {
+          "kind": "visual",
+          "title": "Save a match and keep narrowing",
+          "concept": "binary-search",
+          "caption": "The match is a candidate, but the search keeps looking left for an earlier match.",
+          "initial_state": {
+            "items": [
+              60,
+              70,
+              70,
+              85
+            ]
+          },
+          "steps": [
+            {
+              "title": "Check mid",
+              "body": "Mid lands on 70, so this index is a possible answer.",
+              "state": {
+                "items": [
+                  60,
+                  70,
+                  70,
+                  85
+                ],
+                "pointers": {
+                  "left": 0,
+                  "mid": 1,
+                  "right": 3
+                },
+                "active": [
+                  1
+                ],
+                "note": "candidate = 1"
+              },
+              "code_focus": "trace binary-search: Check mid",
+              "input_value": "70",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 0, mid: 1, right: 3"
+                }
+              ],
+              "decision": "Mid lands on 70, so this index is a possible answer.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "candidate = 1"
+                }
+              ],
+              "output": "none yet",
+              "why": "Mid lands on 70, so this index is a possible answer."
+            },
+            {
+              "title": "Search left side",
+              "body": "For first occurrence, move right before the candidate.",
+              "state": {
+                "items": [
+                  60,
+                  70,
+                  70,
+                  85
+                ],
+                "pointers": {
+                  "left": 0,
+                  "mid": 0,
+                  "right": 0
+                },
+                "active": [
+                  0
+                ],
+                "eliminated": [
+                  2,
+                  3
+                ],
+                "note": "candidate still 1"
+              },
+              "code_focus": "trace binary-search: Search left side",
+              "input_value": "60",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 0, mid: 0, right: 0"
+                }
+              ],
+              "decision": "For first occurrence, move right before the candidate.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "candidate still 1"
+                }
+              ],
+              "output": "none yet",
+              "why": "For first occurrence, move right before the candidate."
+            },
+            {
+              "title": "No earlier match",
+              "body": "The left side does not match the target.",
+              "state": {
+                "items": [
+                  60,
+                  70,
+                  70,
+                  85
+                ],
+                "pointers": {
+                  "left": 1,
+                  "right": 0
+                },
+                "active": [
+                  1
+                ],
+                "eliminated": [
+                  0,
+                  2,
+                  3
+                ],
+                "note": "return candidate 1"
+              },
+              "code_focus": "trace binary-search: No earlier match",
+              "input_value": "70",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 1, right: 0"
+                }
+              ],
+              "decision": "The left side does not match the target.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "return candidate 1"
+                }
+              ],
+              "output": "none yet",
+              "why": "The left side does not match the target."
+            },
+            {
+              "title": "Return saved candidate",
+              "body": "The saved index is the first match found by the narrowed search.",
+              "state": {
+                "items": [
+                  60,
+                  70,
+                  70,
+                  85
+                ],
+                "active": [
+                  1
+                ],
+                "note": "answer = 1"
+              },
+              "code_focus": "trace binary-search: Return saved candidate",
+              "input_value": "70",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The saved index is the first match found by the narrowed search.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "answer = 1"
+                }
+              ],
+              "output": "answer = 1",
+              "why": "The saved index is the first match found by the narrowed search."
+            }
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "If you need the first matching index and mid matches, what should you do?",
+          "choices": [
+            "save mid and keep searching left",
+            "throw away the match",
+            "search only to the right",
+            "sort the array again"
+          ],
+          "answer_index": 0,
+          "why": "The current mid is a valid candidate, but an earlier match may still exist on the left."
+        }
+      ]
+    },
+    {
       "id": "answer-search",
       "title": "Binary search beyond arrays",
       "summary": "You can **binary search** an answer range when true/false changes once.",
@@ -333,7 +698,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "**Binary search** can also work when you are searching for the smallest value that passes a test, or the largest value that still works. The key word is monotonic: once the answer becomes true, it stays true, or once it becomes false, it stays false."
+          "body": "**Binary search** can also work when you are searching for the smallest value that passes a test, or the largest value that still works. The key word is **monotonic**: once the answer becomes true, it stays true, or once it becomes false, it stays false."
         },
         {
           "kind": "list",

@@ -10,77 +10,354 @@
   ],
   "refresher": "Java reads **files** through library **classes** such as `Files` and `Path`. A path names the file. Reading can fail if the file is missing or blocked, so file code often uses **exceptions** or declares that an exception may be thrown.",
   "refresher_code": "Path path = Path.of(\"notes.txt\");\nFiles.writeString(path, \"Study loops\", StandardCharsets.UTF_8);",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "A **file** lets your program keep data after the program ends. Java needs two things before it can read one: where the file is, and what should happen if reading fails."
+      "id": "paths-and-text",
+      "title": "Paths and text files",
+      "summary": "Use Path and explicit text encoding to read and write files.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A **file** lets your program keep data after the program ends. Java needs two things before it can read one: where the file is, and what should happen if reading fails."
+        },
+        {
+          "kind": "visual",
+          "title": "File work starts with a Path",
+          "concept": "file-flow",
+          "caption": "Trace Java file work from Path, through Files operation, to success or IOException.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Create the Path",
+              "body": "Path names the file-system location before any text is read or written.",
+              "animation": "add",
+              "state": {
+                "active_step": "path",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "path",
+                      "label": "Path",
+                      "detail": "Path.of(\"courses.txt\")",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "operation",
+                      "label": "Operation",
+                      "detail": "Files.readString",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "check",
+                      "label": "Can access?",
+                      "detail": "may throw IOException",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "data",
+                      "label": "Data",
+                      "detail": "String text",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "finish",
+                      "label": "Finish",
+                      "detail": "print or handle failure",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "a Path identifies the file"
+              },
+              "code_focus": "path: Create the Path",
+              "input_value": "Path.of(\"courses.txt\")",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "path"
+                }
+              ],
+              "decision": "Path names the file-system location before any text is read or written.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "a Path identifies the file"
+                }
+              ],
+              "output": "none yet",
+              "why": "Path names the file-system location before any text is read or written."
+            },
+            {
+              "title": "Run the Files call",
+              "body": "The library operation tries to use the file at that path.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "operation",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "path",
+                      "label": "Path",
+                      "detail": "courses.txt",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "operation",
+                      "label": "Operation",
+                      "detail": "readString(path, UTF_8)",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "check",
+                      "label": "Can access?",
+                      "detail": "file must exist",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "data",
+                      "label": "Data",
+                      "detail": "waiting for text",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "finish",
+                      "label": "Finish",
+                      "detail": "not done yet",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "file access can fail outside your code"
+              },
+              "code_focus": "operation: Run the Files call",
+              "input_value": "readString(path, UTF_8)",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "operation"
+                }
+              ],
+              "decision": "The library operation tries to use the file at that path.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "file access can fail outside your code"
+                }
+              ],
+              "output": "none yet",
+              "why": "The library operation tries to use the file at that path."
+            },
+            {
+              "title": "Handle success or IOException",
+              "body": "On success, Java returns text; on failure, the method must catch or declare the IOException.",
+              "animation": "slide",
+              "state": {
+                "active_step": "check",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "path",
+                      "label": "Path",
+                      "detail": "courses.txt",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "operation",
+                      "label": "Operation",
+                      "detail": "read attempted",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "check",
+                      "label": "Can access?",
+                      "detail": "success or IOException",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "data",
+                      "label": "Data",
+                      "detail": "text or error path",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "finish",
+                      "label": "Finish",
+                      "detail": "caller sees result",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "checked exceptions belong in the method design"
+              },
+              "code_focus": "check: Handle success or IOException",
+              "input_value": "success or IOException",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "check"
+                }
+              ],
+              "decision": "On success, Java returns text; on failure, the method must catch or declare the IOException.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "checked exceptions belong in the method design"
+                }
+              ],
+              "output": "none yet",
+              "why": "On success, Java returns text; on failure, the method must catch or declare the IOException."
+            },
+            {
+              "title": "Use the returned text",
+              "body": "After a successful read, the file contents are ordinary String data.",
+              "animation": "add",
+              "state": {
+                "active_step": "finish",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "path",
+                      "label": "Path",
+                      "detail": "courses.txt",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "operation",
+                      "label": "Operation",
+                      "detail": "readString finished",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "check",
+                      "label": "Can access?",
+                      "detail": "success",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "data",
+                      "label": "Data",
+                      "detail": "\"CS101\\nMATH120\"",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "finish",
+                      "label": "Finish",
+                      "detail": "System.out.print(text)",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "the returned String can be stored, printed, or parsed"
+              },
+              "code_focus": "finish: Use the returned text",
+              "input_value": "System.out.print(text)",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "finish"
+                }
+              ],
+              "decision": "After a successful read, the file contents are ordinary String data.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the returned String can be stored, printed, or parsed"
+                }
+              ],
+              "output": "the returned String can be stored, printed, or parsed",
+              "why": "After a successful read, the file contents are ordinary String data."
+            }
+          ]
+        },
+        {
+          "kind": "code",
+          "caption": "The same Path is used for writing and reading. UTF-8 makes the text encoding an explicit part of the **file** format.",
+          "code": "Path path = Path.of(\"courses.txt\");\nFiles.writeString(path, \"CS101\\nMATH120\\n\", StandardCharsets.UTF_8);\nString text = Files.readString(path, StandardCharsets.UTF_8);\nSystem.out.print(text);",
+          "output": "CS101\nMATH120",
+          "body": "`Path` names the **file**. `Files.readString` reads the text from that path. If the file is not there, Java reports the problem instead of pretending the text exists."
+        },
+        {
+          "kind": "text",
+          "body": "These operations report IOException because disks, permissions, and paths can fail outside the program's control. Java requires the **method** to catch that checked **exception** or declare that it may pass upward.",
+          "caption": "The path points to the **file**. readString returns the file contents as one **String**."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "The same Path is used for writing and reading. UTF-8 makes the text encoding an explicit part of the **file** format.",
-      "code": "Path path = Path.of(\"courses.txt\");\nFiles.writeString(path, \"CS101\\nMATH120\\n\", StandardCharsets.UTF_8);\nString text = Files.readString(path, StandardCharsets.UTF_8);\nSystem.out.print(text);",
-      "output": "CS101\nMATH120",
-      "body": "`Path` names the **file**. `Files.readString` reads the text from that path. If the file is not there, Java reports the problem instead of pretending the text exists."
+      "id": "write-append",
+      "title": "Write versus append",
+      "summary": "Choose whether file output replaces or adds to existing content.",
+      "blocks": [
+        {
+          "kind": "compare",
+          "caption": "The left side replaces existing text. The right side adds content at the end by passing the **append** option.",
+          "wrong_label": "Replaces",
+          "wrong": "Files.writeString(path, \"next\\n\");",
+          "right_label": "Appends",
+          "right": "Files.writeString(path, \"next\\n\",\n    StandardOpenOption.CREATE,\n    StandardOpenOption.APPEND);",
+          "body": "**File** paths are a common beginner headache. If Java cannot find the file, check the folder your program is running from, not only the folder where the source file lives."
+        },
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "Default writing replaces contents",
+          "body": "A successful write can still be the wrong action. If old records matter, include the **append** option or read, update, and rewrite the complete data intentionally."
+        },
+        {
+          "kind": "check",
+          "prompt": "Which type represents a **file**-system path?",
+          "code": "Path notes = Path.of(\"notes.txt\");",
+          "choices": [
+            "Path",
+            "FileText",
+            "Scanner",
+            "StringBuilder"
+          ],
+          "answer_index": 0,
+          "why": "`Path` represents a location and can be passed to **Files** operations. A **String** contains characters but does not provide the file-system abstraction."
+        }
+      ]
     },
     {
-      "kind": "text",
-      "body": "These operations report IOException because disks, permissions, and paths can fail outside the program's control. Java requires the **method** to catch that checked **exception** or declare that it may pass upward.",
-      "caption": "The path points to the **file**. readString returns the file contents as one **String**."
+      "id": "stream-files",
+      "title": "Stream larger files",
+      "summary": "Use resource-safe streams when reading line by line.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "For large **files**, `Files.lines` can process a stream instead of placing the whole file in one **String**. Use try-with-resources so the stream closes when processing ends."
+        },
+        {
+          "kind": "check",
+          "prompt": "Why use try-with-resources around `Files.lines(path)`?",
+          "code": "try (Stream<String> lines = Files.lines(path)) {\n    lines.forEach(System.out::println);\n}",
+          "choices": [
+            "It closes the stream automatically",
+            "It sorts every line",
+            "It prevents IOException at compile time",
+            "It converts the file to an array"
+          ],
+          "answer_index": 0,
+          "why": "The stream holds an open **file** resource. Try-with-resources calls its close **method** even when processing throws an **exception**."
+        }
+      ]
     },
     {
-      "kind": "compare",
-      "caption": "The left side replaces existing text. The right side adds content at the end by passing the **append** option.",
-      "wrong_label": "Replaces",
-      "wrong": "Files.writeString(path, \"next\\n\");",
-      "right_label": "Appends",
-      "right": "Files.writeString(path, \"next\\n\",\n    StandardOpenOption.CREATE,\n    StandardOpenOption.APPEND);",
-      "body": "**File** paths are a common beginner headache. If Java cannot find the file, check the folder your program is running from, not only the folder where the source file lives."
-    },
-    {
-      "kind": "callout",
-      "tone": "warning",
-      "title": "Default writing replaces contents",
-      "body": "A successful write can still be the wrong action. If old records matter, include the **append** option or read, update, and rewrite the complete data intentionally."
-    },
-    {
-      "kind": "check",
-      "prompt": "Which type represents a **file**-system path?",
-      "code": "Path notes = Path.of(\"notes.txt\");",
-      "choices": [
-        "Path",
-        "FileText",
-        "Scanner",
-        "StringBuilder"
-      ],
-      "answer_index": 0,
-      "why": "`Path` represents a location and can be passed to **Files** operations. A **String** contains characters but does not provide the file-system abstraction."
-    },
-    {
-      "kind": "text",
-      "body": "For large **files**, `Files.lines` can process a stream instead of placing the whole file in one **String**. Use try-with-resources so the stream closes when processing ends."
-    },
-    {
-      "kind": "check",
-      "prompt": "Why use try-with-resources around `Files.lines(path)`?",
-      "code": "try (Stream<String> lines = Files.lines(path)) {\n    lines.forEach(System.out::println);\n}",
-      "choices": [
-        "It closes the stream automatically",
-        "It sorts every line",
-        "It prevents IOException at compile time",
-        "It converts the file to an array"
-      ],
-      "answer_index": 0,
-      "why": "The stream holds an open **file** resource. Try-with-resources calls its close **method** even when processing throws an **exception**."
-    },
-    {
-      "kind": "list",
+      "id": "file-io-checklist",
       "title": "File I/O checklist",
-      "items": [
-        "Use Path to name the **file**.",
-        "Use **Files** helpers for simple text files.",
-        "Expect missing-**file** errors.",
-        "Close resources or use helpers that close them for you.",
-        "Check the working folder when a **file** cannot be found."
+      "summary": "Review file path, encoding, and resource habits.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "File I/O checklist",
+          "items": [
+            "Use Path to name the **file**.",
+            "Use **Files** helpers for simple text files.",
+            "Expect missing-**file** errors.",
+            "Close resources or use helpers that close them for you.",
+            "Check the working folder when a **file** cannot be found."
+          ]
+        }
       ]
     }
   ],

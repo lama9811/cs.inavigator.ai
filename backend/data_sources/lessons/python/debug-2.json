@@ -2,7 +2,7 @@
   "_note": "ORIGINAL CS Navigator content expanded into sections. No source prose, examples, or exercises were copied.",
   "title": "Debug: Part 2",
   "summary": "Trace mutation, aliases, boundaries, and multi-step state.",
-  "minutes": 12,
+  "minutes": 16,
   "error_classes": [
     "runtime",
     "wrong_answer",
@@ -24,13 +24,20 @@
           "kind": "visual",
           "title": "Find the first wrong state",
           "concept": "debugging",
-          "caption": "Compare the expected state with the actual state before the final answer distracts you.",
+          "caption": "Compare expected and actual state until the first wrong transition is isolated.",
           "initial_state": {},
           "steps": [
             {
-              "title": "Before the update",
-              "body": "The total is still correct before this loop pass.",
+              "title": "State still matches",
+              "body": "Start from the last moment where the hand trace and program state agree.",
               "state": {
+                "active_step": "before",
+                "debug_trace": {
+                  "before": "score is 7, total is 5",
+                  "expected": "next total should be 12",
+                  "actual": "no wrong state yet",
+                  "fix": "keep tracing"
+                },
                 "table": [
                   {
                     "key": "score",
@@ -43,13 +50,88 @@
                   }
                 ],
                 "note": "state still matches the trace"
-              }
+              },
+              "code_focus": "before: State still matches",
+              "input_value": "score -> 7",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "before"
+                }
+              ],
+              "decision": "no wrong state yet",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "state still matches the trace"
+                },
+                {
+                  "name": "active entry",
+                  "value": "score -> 7"
+                }
+              ],
+              "output": "none yet",
+              "why": "Start from the last moment where the hand trace and program state agree."
             },
             {
-              "title": "Wrong update",
-              "body": "The update changes the wrong variable or uses the wrong operation.",
+              "title": "Name the expected change",
+              "body": "Before blaming the final answer, write what this one transition should do.",
               "animation": "highlight",
               "state": {
+                "active_step": "expected",
+                "debug_trace": {
+                  "before": "score = 7, total = 5",
+                  "expected": "total should become 12",
+                  "actual": "not checked yet",
+                  "fix": "compare one transition"
+                },
+                "table": [
+                  {
+                    "key": "expected total",
+                    "value": "12",
+                    "active": true
+                  },
+                  {
+                    "key": "operation",
+                    "value": "total + score"
+                  }
+                ],
+                "note": "expected state is 12"
+              },
+              "code_focus": "expected: Name the expected change",
+              "input_value": "expected total -> 12",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "expected"
+                }
+              ],
+              "decision": "not checked yet",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "expected state is 12"
+                },
+                {
+                  "name": "active entry",
+                  "value": "expected total -> 12"
+                }
+              ],
+              "output": "none yet",
+              "why": "Before blaming the final answer, write what this one transition should do."
+            },
+            {
+              "title": "Find the first wrong state",
+              "body": "The actual update produces the wrong value, so this is the first transition to inspect.",
+              "animation": "branch",
+              "state": {
+                "active_step": "actual",
+                "debug_trace": {
+                  "before": "score = 7, total = 5",
+                  "expected": "12",
+                  "actual": "57",
+                  "fix": "wrong operation or type"
+                },
                 "table": [
                   {
                     "key": "expected total",
@@ -62,12 +144,41 @@
                   }
                 ],
                 "note": "first wrong state"
-              }
+              },
+              "code_focus": "actual: Find the first wrong state",
+              "input_value": "actual total -> 57",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "actual"
+                }
+              ],
+              "decision": "57",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "first wrong state"
+                },
+                {
+                  "name": "active entry",
+                  "value": "actual total -> 57"
+                }
+              ],
+              "output": "none yet",
+              "why": "The actual update produces the wrong value, so this is the first transition to inspect."
             },
             {
               "title": "Fix the transition",
-              "body": "Once the first bad transition is known, the fix is smaller.",
+              "body": "Once the first bad transition is known, the fix is local and testable.",
+              "animation": "return",
               "state": {
+                "active_step": "fix",
+                "debug_trace": {
+                  "before": "score = 7, total = 5",
+                  "expected": "12",
+                  "actual": "12 after fix",
+                  "fix": "use numeric addition"
+                },
                 "table": [
                   {
                     "key": "score",
@@ -80,7 +191,28 @@
                   }
                 ],
                 "note": "total += score"
-              }
+              },
+              "code_focus": "fix: Fix the transition",
+              "input_value": "total after -> 12",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "fix"
+                }
+              ],
+              "decision": "12 after fix",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "total += score"
+                },
+                {
+                  "name": "active entry",
+                  "value": "total after -> 12"
+                }
+              ],
+              "output": "none yet",
+              "why": "Once the first bad transition is known, the fix is local and testable."
             }
           ]
         },
@@ -146,6 +278,35 @@
       ]
     },
     {
+      "id": "types-and-conversions",
+      "title": "Print values with their types",
+      "summary": "A wrong type can make a correct-looking line behave differently.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "When arithmetic or comparisons look strange, print the value and its type together. A string that looks like a number is still text until you convert it."
+        },
+        {
+          "kind": "code",
+          "caption": "The type name explains why the comparison or addition may not behave the way you expected.",
+          "code": "value = \"12\"\nprint(value, type(value).__name__)\nnumber = int(value)\nprint(number + 3)",
+          "output": "12 str\n15"
+        },
+        {
+          "kind": "check",
+          "prompt": "Why print `type(value).__name__` while debugging?",
+          "choices": [
+            "To confirm what kind of value the code really has",
+            "To sort the list automatically",
+            "To hide the error message",
+            "To change every value into an integer"
+          ],
+          "answer_index": 0,
+          "why": "Seeing the type beside the value can reveal text-number mixups and other wrong assumptions."
+        }
+      ]
+    },
+    {
       "id": "first-wrong-state",
       "title": "Find the first wrong state",
       "summary": "Debugging gets easier when you stop at the first bad transition.",
@@ -167,6 +328,37 @@
           ]
         }
       ]
+    },
+    {
+      "id": "mutation-repair",
+      "title": "Choose copy, mutate, or build new data",
+      "summary": "List and dictionary bugs get easier once you choose how data should change.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Before changing a collection, decide whether the original should change. If yes, mutate it deliberately. If no, make a copy or build a new result."
+        },
+        {
+          "kind": "compare",
+          "caption": "Building a filtered result avoids index shifts while removing items.",
+          "wrong_label": "Remove while scanning",
+          "wrong": "for item in items:\n    if item == \"late\":\n        items.remove(item)",
+          "right_label": "Build kept values",
+          "right": "kept = []\nfor item in items:\n    if item != \"late\":\n        kept.append(item)"
+        },
+        {
+          "kind": "check",
+          "prompt": "Why can building a new list be safer than removing while looping?",
+          "choices": [
+            "The scan does not fight shifting indexes",
+            "It makes every value lowercase",
+            "It skips the empty case automatically",
+            "It changes the function name"
+          ],
+          "answer_index": 0,
+          "why": "Removing from the same list being scanned can shift later items into positions the loop has already passed."
+        }
+      ]
     }
   ],
   "learn_cards": {
@@ -175,7 +367,7 @@
       "body": "A formula that works for normal data can fail when the collection has no items.",
       "notice": "Check the divisor or first access before running the normal-case calculation.",
       "mistake": "Do not divide by a count before checking whether the count is zero.",
-      "section_id": "check",
+      "section_id": "boundaries",
       "example": "if count == 0"
     },
     "debug-p2-02": {
@@ -183,7 +375,7 @@
       "body": "State for one row should restart before scanning that row.",
       "notice": "Ask whether the variable belongs to the whole grid or only the current row.",
       "mistake": "Do not let a previous row leak into the next row's total.",
-      "section_id": "check",
+      "section_id": "first-wrong-state",
       "example": "row_total = 0"
     },
     "debug-p2-03": {
@@ -191,7 +383,7 @@
       "body": "When the middle value is too small, the target must be to the right in sorted data.",
       "notice": "Move the lower bound past mid when mid is too small.",
       "mistake": "Do not move a boundary backward into the half you already ruled out.",
-      "section_id": "check",
+      "section_id": "boundaries",
       "example": "low = mid + 1"
     },
     "debug-p2-04": {
@@ -199,7 +391,7 @@
       "body": "Removing the current item moves the next item into the same index.",
       "notice": "After removal, either recheck the current index, move backward, or build a filtered result.",
       "mistake": "Do not increment blindly after a removal if adjacent items may also need removal.",
-      "section_id": "check",
+      "section_id": "mutation-repair",
       "example": "remove then recheck"
     },
     "debug-p2-05": {
@@ -207,7 +399,7 @@
       "body": "A starting best value that is not in the input can beat every real value by accident.",
       "notice": "For maximum or minimum, initialize from the first item when possible.",
       "mistake": "Do not use zero as a default when all real values might be below zero.",
-      "section_id": "check",
+      "section_id": "boundaries",
       "example": "best = first value"
     },
     "debug-p2-06": {
@@ -215,7 +407,7 @@
       "body": "Tracking largest and second largest requires a rule for duplicates.",
       "notice": "Decide whether equal-to-largest values are allowed before updating second.",
       "mistake": "Do not let the same value occupy both largest and second when the prompt asks for distinct values.",
-      "section_id": "check",
+      "section_id": "first-wrong-state",
       "example": "if n != largest"
     },
     "debug-p2-07": {
@@ -223,7 +415,7 @@
       "body": "Preloading a running total and then looping over every item can add the first item again.",
       "notice": "Choose either start at zero and loop all items, or start at first and loop the rest.",
       "mistake": "Do not combine both patterns unless the prompt needs double counting.",
-      "section_id": "check",
+      "section_id": "first-wrong-state",
       "example": "total = 0"
     },
     "debug-p2-08": {
@@ -231,7 +423,7 @@
       "body": "A palindrome-style comparison pairs the left position with the matching right position.",
       "notice": "Compute the right index from the length and the left index.",
       "mistake": "Do not compare neighboring characters when the prompt asks for mirrored characters.",
-      "section_id": "check",
+      "section_id": "first-wrong-state",
       "example": "right = length - i - 1"
     }
   }

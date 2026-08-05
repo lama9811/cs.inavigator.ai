@@ -9,140 +9,252 @@
   ],
   "refresher": "**Arrays** hold ordered values with zero-based indexes. `.length` gives the count, `.push(value)` adds at the end, and `.pop()` removes the final item.",
   "refresher_code": "const courses=[\"CS 101\",\"MATH 201\"];\ncourses.push(\"ENG 101\");",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "**Arrays** hold ordered values with zero-based indexes. `.length` gives the count, `.push(value)` adds at the end, and `.pop()` removes the final item. Store ordered **values** and access them by **index**."
-    },
-    {
-      "kind": "visual",
-      "title": "Indexes point to positions",
-      "concept": "arrays",
-      "caption": "Step through a list so the index and value stay connected.",
-      "initial_state": {},
-      "steps": [
+      "id": "array-basics",
+      "title": "Array basics",
+      "summary": "Use ordered values and zero-based indexes.",
+      "blocks": [
         {
-          "title": "Index 0",
-          "body": "The first item is at index 0.",
-          "animation": "highlight",
-          "state": {
-            "items": [
-              "Ada",
-              "Grace",
-              "Katherine"
-            ],
-            "active": [
-              0
-            ],
-            "pointers": {
-              "index": 0
-            },
-            "note": "names[0] is Ada"
-          }
+          "kind": "text",
+          "body": "**Arrays** hold ordered values with zero-based indexes. `.length` gives the count, `.push(value)` adds at the end, and `.pop()` removes the final item. Store ordered **values** and access them by **index**."
         },
         {
-          "title": "Index 1",
-          "body": "The next item is at index 1.",
-          "animation": "slide",
-          "state": {
-            "items": [
-              "Ada",
-              "Grace",
-              "Katherine"
-            ],
-            "active": [
-              1
-            ],
-            "pointers": {
-              "index": 1
+          "kind": "visual",
+          "title": "Indexes point to positions",
+          "concept": "lists",
+          "caption": "Step through an array slot by slot, then watch push claim the next index.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Index 0",
+              "body": "Start with the array and point the index marker at slot 0.",
+              "animation": "highlight",
+              "state": {
+                "items": [
+                  "Ada",
+                  "Grace",
+                  "Katherine"
+                ],
+                "active": [
+                  0
+                ],
+                "pointers": {
+                  "index": 0
+                },
+                "active_step": "read",
+                "list_state": {
+                  "name": "names",
+                  "action": "Read slot 0",
+                  "detail": "Use the index to choose one position.",
+                  "result": "names[0] gives Ada"
+                },
+                "note": "names[0] is Ada"
+              },
+              "code_focus": "read: Index 0",
+              "input_value": "Ada",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "index: 0"
+                },
+                {
+                  "name": "step",
+                  "value": "read"
+                }
+              ],
+              "decision": "Start with the array and point the index marker at slot 0.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "names[0] is Ada"
+                }
+              ],
+              "output": "none yet",
+              "why": "Start with the array and point the index marker at slot 0."
             },
-            "note": "names[1] is Grace"
-          }
+            {
+              "title": "Index 1",
+              "body": "Move the index marker one slot to the right before reading the next value.",
+              "animation": "slide",
+              "state": {
+                "items": [
+                  "Ada",
+                  "Grace",
+                  "Katherine"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "index": 1
+                },
+                "active_step": "read",
+                "list_state": {
+                  "name": "names",
+                  "action": "Read slot 1",
+                  "detail": "Same array, different index.",
+                  "result": "names[1] gives Grace"
+                },
+                "note": "names[1] is Grace"
+              },
+              "code_focus": "read: Index 1",
+              "input_value": "Grace",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "index: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "read"
+                }
+              ],
+              "decision": "Move the index marker one slot to the right before reading the next value.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "names[1] is Grace"
+                }
+              ],
+              "output": "none yet",
+              "why": "Move the index marker one slot to the right before reading the next value."
+            },
+            {
+              "title": "Append",
+              "body": "push puts the new value after the current last slot.",
+              "animation": "add",
+              "state": {
+                "items": [
+                  "Ada",
+                  "Grace",
+                  "Katherine",
+                  "Mae"
+                ],
+                "active": [
+                  3
+                ],
+                "pointers": {
+                  "new": 3
+                },
+                "active_step": "result",
+                "list_state": {
+                  "name": "names",
+                  "action": "Push Mae",
+                  "detail": "The array grows by one slot.",
+                  "result": "Mae becomes index 3"
+                },
+                "note": "new last index is 3"
+              },
+              "code_focus": "result: Append",
+              "input_value": "Mae",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "new: 3"
+                },
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "push puts the new value after the current last slot.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "new last index is 3"
+                }
+              ],
+              "output": "none yet",
+              "why": "push puts the new value after the current last slot."
+            }
+          ]
         },
         {
-          "title": "Append",
-          "body": "Appending adds a new item at the end.",
-          "animation": "add",
-          "state": {
-            "items": [
-              "Ada",
-              "Grace",
-              "Katherine",
-              "Mae"
-            ],
-            "active": [
-              3
-            ],
-            "pointers": {
-              "new": 3
-            },
-            "note": "new last index is 3"
-          }
+          "kind": "text",
+          "body": "An array stores an ordered set of values, but the array **variable** actually holds a reference to that collection. A reference means the variable points at the array rather than holding its own copy, so two variables can point at the same array. **Methods** such as `push`, `pop`, and `splice` change the existing array. Methods such as `slice`, `map`, and `filter` **return** another array, so save their result when you need it."
+        },
+        {
+          "kind": "code",
+          "caption": "Push adds a third item, while **index** one still selects the second course.",
+          "code": "const courses=[\"CS 101\",\"CS 201\"];\ncourses.push(\"CS 301\");\nconsole.log(courses[1]);\nconsole.log(courses.length);",
+          "output": "CS 201\n3"
         }
       ]
     },
     {
-      "kind": "text",
-      "body": "An array stores an ordered set of values, but the array **variable** actually holds a reference to that collection. A reference means the variable points at the array rather than holding its own copy, so two variables can point at the same array. **Methods** such as `push`, `pop`, and `splice` change the existing array. Methods such as `slice`, `map`, and `filter` **return** another array, so save their result when you need it."
+      "id": "copy-mutate",
+      "title": "Copying and mutating arrays",
+      "summary": "Know when an operation changes the same array and when to copy first.",
+      "blocks": [
+        {
+          "kind": "compare",
+          "caption": "Copy before editing when the original must stay unchanged.",
+          "wrong_label": "Common mistake",
+          "wrong": "const planned = courses;\nplanned.push(\"CS 301\");",
+          "right_label": "Clearer version",
+          "right": "const planned = [...courses];\nplanned.push(\"CS 301\");"
+        },
+        {
+          "kind": "text",
+          "body": "In the wrong version, `planned` and `courses` reach the same **array**, so both appear to gain a course. Spread reads the existing elements into a new outer array. If those elements are themselves arrays, the copy is shallow: the outer array is new, but each inner array is still shared."
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Check the boundary",
+          "body": "Const prevents assigning a different **array** to the **variable**, but it does not freeze the current array contents."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "Push adds a third item, while **index** one still selects the second course.",
-      "code": "const courses=[\"CS 101\",\"CS 201\"];\ncourses.push(\"CS 301\");\nconsole.log(courses[1]);\nconsole.log(courses.length);",
-      "output": "CS 201\n3"
+      "id": "check",
+      "title": "Check array behavior",
+      "summary": "Practice final-item access and mutation tracing.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "Which reads the final item?",
+          "code": "const values=[4,8,12];",
+          "choices": [
+            "values[values.length-1]",
+            "values[values.length]",
+            "values[-1]",
+            "values.last"
+          ],
+          "answer_index": 0,
+          "why": "Length is three while the final valid **index** is two, so subtract one."
+        },
+        {
+          "kind": "check",
+          "prompt": "What is printed?",
+          "code": "const colors=[\"blue\"];\ncolors.push(\"orange\");\nconsole.log(colors.length);",
+          "choices": [
+            "2",
+            "1",
+            "orange",
+            "a const error"
+          ],
+          "answer_index": 0,
+          "why": "Push mutates the existing **array**, so const permits it and length becomes two."
+        }
+      ]
     },
     {
-      "kind": "compare",
-      "caption": "Copy before editing when the original must stay unchanged.",
-      "wrong_label": "Common mistake",
-      "wrong": "const planned = courses;\nplanned.push(\"CS 301\");",
-      "right_label": "Clearer version",
-      "right": "const planned = [...courses];\nplanned.push(\"CS 301\");"
-    },
-    {
-      "kind": "text",
-      "body": "In the wrong version, `planned` and `courses` reach the same **array**, so both appear to gain a course. Spread reads the existing elements into a new outer array. If those elements are themselves arrays, the copy is shallow: the outer array is new, but each inner array is still shared."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Check the boundary",
-      "body": "Const prevents assigning a different **array** to the **variable**, but it does not freeze the current array contents."
-    },
-    {
-      "kind": "check",
-      "prompt": "Which reads the final item?",
-      "code": "const values=[4,8,12];",
-      "choices": [
-        "values[values.length-1]",
-        "values[values.length]",
-        "values[-1]",
-        "values.last"
-      ],
-      "answer_index": 0,
-      "why": "Length is three while the final valid **index** is two, so subtract one."
-    },
-    {
-      "kind": "check",
-      "prompt": "What is printed?",
-      "code": "const colors=[\"blue\"];\ncolors.push(\"orange\");\nconsole.log(colors.length);",
-      "choices": [
-        "2",
-        "1",
-        "orange",
-        "a const error"
-      ],
-      "answer_index": 0,
-      "why": "Push mutates the existing **array**, so const permits it and length becomes two."
-    },
-    {
-      "kind": "list",
-      "title": "Lists / Arrays checklist",
-      "items": [
-        "Begin indexing at zero.",
-        "Subtract one for the end.",
-        "Use push and pop deliberately.",
-        "Know which **methods** mutate."
+      "id": "habits",
+      "title": "Array habits",
+      "summary": "Use the checklist before coding array problems.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Lists / Arrays checklist",
+          "items": [
+            "Begin indexing at zero.",
+            "Subtract one for the end.",
+            "Use push and pop deliberately.",
+            "Know which **methods** mutate."
+          ]
+        }
       ]
     }
   ],

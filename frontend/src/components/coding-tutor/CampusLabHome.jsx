@@ -421,6 +421,7 @@ function CampusLearningQueue({
 }
 
 function StartingCheckCard({ result, onComplete, onSkip, onReset }) {
+  const [open, setOpen] = useState(false);
   const [answers, setAnswers] = useState({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [questionSet, setQuestionSet] = useState(() => buildStartingQuestionSet());
@@ -430,7 +431,7 @@ function StartingCheckCard({ result, onComplete, onSkip, onReset }) {
   const currentQuestion = questionSet[currentIndex];
   const currentAnswered = answers[currentQuestion?.id] !== undefined;
   const isLastQuestion = currentIndex === questionSet.length - 1;
-  const modalRef = useFocusTrap(!result, { onEscape: onSkip });
+  const modalRef = useFocusTrap(open && !result, { onEscape: () => setOpen(false) });
 
   useEffect(() => {
     if (!result) {
@@ -472,7 +473,13 @@ function StartingCheckCard({ result, onComplete, onSkip, onReset }) {
 
   const submit = () => {
     if (!complete) return;
+    setOpen(false);
     onComplete(buildStartingCheckResult(answers, questionSet));
+  };
+
+  const resetAndOpen = () => {
+    onReset();
+    setOpen(true);
   };
 
   if (result) {
@@ -488,9 +495,31 @@ function StartingCheckCard({ result, onComplete, onSkip, onReset }) {
             </ul>
           ) : null}
         </div>
-        <button type="button" className="starting-check-link" onClick={onReset}>
+        <button type="button" className="starting-check-link" onClick={resetAndOpen}>
           Retake check
         </button>
+      </section>
+    );
+  }
+
+  if (!open) {
+    return (
+      <section className="starting-check-card" aria-label="Coding starting point">
+        <div>
+          <span className="coding-kicker">Starting Point</span>
+          <h3>Find your starting point</h3>
+          <p>
+            Answer a few quick questions so Coding Tutor can recommend the calmest first lesson or practice set.
+          </p>
+        </div>
+        <div className="starting-check-actions">
+          <button type="button" className="starting-check-link" onClick={onSkip}>
+            Skip for now
+          </button>
+          <button type="button" className="campus-primary-action" onClick={() => setOpen(true)}>
+            Start quick check
+          </button>
+        </div>
       </section>
     );
   }
@@ -512,7 +541,15 @@ function StartingCheckCard({ result, onComplete, onSkip, onReset }) {
             <h3 id="starting-check-title">Find your starting point</h3>
             <p id="starting-check-description">Answer a few quick questions so Coding Tutor can unlock a calmer first path.</p>
           </div>
-          <button type="button" className="starting-check-link" onClick={onSkip} data-autofocus>
+          <button
+            type="button"
+            className="starting-check-link"
+            onClick={() => {
+              setOpen(false);
+              onSkip();
+            }}
+            data-autofocus
+          >
             Skip for now
           </button>
         </div>

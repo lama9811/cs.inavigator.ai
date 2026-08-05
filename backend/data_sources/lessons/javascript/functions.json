@@ -2,7 +2,7 @@
   "_note": "ORIGINAL content. javascript.info and Eloquent JavaScript informed topic coverage only; no prose, examples, or exercises were copied.",
   "title": "Functions",
   "summary": "Package reusable behavior with inputs and returned results.",
-  "minutes": 10,
+  "minutes": 14,
   "error_classes": [
     "wrong_answer",
     "runtime",
@@ -22,6 +22,11 @@
           "body": "**Parameters** receive arguments, and `return` sends a result to the caller. Local variables stay inside their call. Braced arrow **functions** need an explicit **return**. Package reusable behavior with inputs and returned results."
         },
         {
+          "kind": "code",
+          "caption": "Before real syntax, learn the shape: a **function** has a name, inputs, a body, and sometimes a returned result. The examples after this show the exact syntax.",
+          "code": "function name(parameters):\n    body that does the job\n    return the result\n\ncall function name(arguments)"
+        },
+        {
           "kind": "visual",
           "title": "Follow a function call",
           "concept": "functions",
@@ -32,18 +37,57 @@
               "title": "Call with arguments",
               "body": "The caller sends 3 and 5 into the function.",
               "state": {
+                "active_step": "arguments",
+                "function_flow": {
+                  "caller": "caller asks for add(3, 5)",
+                  "arguments": "3 and 5 leave the caller",
+                  "parameters": "a and b are waiting",
+                  "locals": "function frame not running yet",
+                  "return_value": "nothing returned yet",
+                  "resume": "result is still waiting"
+                },
                 "call_stack": [
                   "main: result = add(3, 5)"
                 ],
                 "active_call": 0,
                 "note": "waiting for add"
-              }
+              },
+              "code_focus": "arguments: Call with arguments",
+              "input_value": "3 and 5 leave the caller",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "arguments"
+                },
+                {
+                  "name": "call stack",
+                  "value": "main: result = add(3, 5)"
+                }
+              ],
+              "decision": "The caller sends 3 and 5 into the function.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "waiting for add"
+                }
+              ],
+              "output": "none yet",
+              "why": "The caller sends 3 and 5 into the function."
             },
             {
               "title": "Parameters receive values",
               "body": "Inside the function, a is 3 and b is 5.",
               "animation": "add",
               "state": {
+                "active_step": "parameters",
+                "function_flow": {
+                  "caller": "caller is paused",
+                  "arguments": "3 goes to a, 5 goes to b",
+                  "parameters": "a = 3, b = 5",
+                  "locals": "a + b becomes 8",
+                  "return_value": "ready to return",
+                  "resume": "caller waits for the value"
+                },
                 "call_stack": [
                   "main",
                   "add: a=3, b=5"
@@ -61,19 +105,111 @@
                     "active": true
                   }
                 ]
-              }
+              },
+              "code_focus": "parameters: Parameters receive values",
+              "input_value": "a -> 3, b -> 5",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "parameters"
+                },
+                {
+                  "name": "call stack",
+                  "value": "main, add: a=3, b=5"
+                }
+              ],
+              "decision": "Inside the function, a is 3 and b is 5.",
+              "variables_after": [
+                {
+                  "name": "active entry",
+                  "value": "a -> 3, b -> 5"
+                }
+              ],
+              "output": "none yet",
+              "why": "Inside the function, a is 3 and b is 5."
             },
             {
               "title": "Return",
               "body": "Return sends 8 back to the caller, and the function call is finished.",
               "animation": "return",
               "state": {
+                "active_step": "return",
+                "function_flow": {
+                  "caller": "caller is waiting",
+                  "arguments": "3 and 5 already filled parameters",
+                  "parameters": "add finishes its frame",
+                  "locals": "a + b is 8",
+                  "return_value": "return 8",
+                  "resume": "result can store the answer"
+                },
                 "call_stack": [
                   "main: result = 8"
                 ],
                 "active_call": 0,
                 "note": "result stores 8"
-              }
+              },
+              "code_focus": "return: Return",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "return"
+                },
+                {
+                  "name": "call stack",
+                  "value": "main: result = 8"
+                }
+              ],
+              "decision": "Return sends 8 back to the caller, and the function call is finished.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "result stores 8"
+                }
+              ],
+              "output": "result stores 8",
+              "why": "Return sends 8 back to the caller, and the function call is finished."
+            },
+            {
+              "title": "Caller resumes",
+              "body": "The function call has been replaced by 8, so the caller can use the stored result.",
+              "state": {
+                "active_step": "resume",
+                "function_flow": {
+                  "caller": "caller continues",
+                  "arguments": "argument values are done",
+                  "parameters": "function frame is gone",
+                  "locals": "local names no longer exist",
+                  "return_value": "8",
+                  "resume": "result = 8"
+                },
+                "call_stack": [
+                  "main: result = 8"
+                ],
+                "active_call": 0,
+                "note": "the caller can use result"
+              },
+              "code_focus": "resume: Caller resumes",
+              "input_value": "result = 8",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "resume"
+                },
+                {
+                  "name": "call stack",
+                  "value": "main: result = 8"
+                }
+              ],
+              "decision": "The function call has been replaced by 8, so the caller can use the stored result.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the caller can use result"
+                }
+              ],
+              "output": "none yet",
+              "why": "The function call has been replaced by 8, so the caller can use the stored result."
             }
           ]
         },
@@ -86,6 +222,36 @@
           "caption": "The **arguments** fill two **parameters**, and **return** supplies the finished label.",
           "code": "function label(code,section){\n  return `${code}-${section}`;\n}\nconsole.log(label(\"CS101\",2));",
           "output": "CS101-2"
+        }
+      ]
+    },
+    {
+      "id": "scope-and-reuse",
+      "title": "Each call gets its own local names",
+      "summary": "**Parameters** and temporary variables belong to one function call.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A function call creates a small local workspace. The **parameters** hold this call's arguments, and temporary variables made inside the function do not become global names."
+        },
+        {
+          "kind": "code",
+          "caption": "The two calls reuse the same parameter name, but each call receives a different value.",
+          "code": "function tag(course) {\n  const label = \"Course: \" + course;\n  return label;\n}\n\nconsole.log(tag(\"CS101\"));\nconsole.log(tag(\"CS102\"));",
+          "output": "Course: CS101\nCourse: CS102"
+        },
+        {
+          "kind": "check",
+          "prompt": "Why can both calls use the name `course` safely?",
+          "code": "tag(\"CS101\")\ntag(\"CS102\")",
+          "choices": [
+            "Each call gets its own parameter value",
+            "The second call deletes the function",
+            "Parameters are shared across all calls",
+            "The name must match the printed text"
+          ],
+          "answer_index": 0,
+          "why": "The parameter name is local to the function call, so each call fills it with the argument passed that time."
         }
       ]
     },
@@ -124,6 +290,44 @@
           ],
           "answer_index": 0,
           "why": "The **function** prints five but reaches its end without returning a **value**."
+        }
+      ]
+    },
+    {
+      "id": "return-paths-and-booleans",
+      "title": "Return paths and boolean helpers",
+      "summary": "A helper can **return** true or false so another decision can use it.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Many beginner functions answer a yes-or-no question. That answer should usually be returned, so an `if` statement or another function can use it."
+        },
+        {
+          "kind": "code",
+          "caption": "The helper returns a boolean. The caller decides what to print.",
+          "code": "function isPassing(score) {\n  return score >= 70;\n}\n\nif (isPassing(82)) {\n  console.log(\"ready\");\n}",
+          "output": "ready"
+        },
+        {
+          "kind": "compare",
+          "caption": "Printing inside the helper makes it harder to reuse in another condition.",
+          "wrong_label": "Displays only",
+          "wrong": "function isPassing(score) {\n  console.log(score >= 70);\n}",
+          "right_label": "Returns a boolean",
+          "right": "function isPassing(score) {\n  return score >= 70;\n}"
+        },
+        {
+          "kind": "check",
+          "prompt": "What should a yes-or-no helper return?",
+          "code": "function isPassing(score) { ... }",
+          "choices": [
+            "a boolean value",
+            "the function name",
+            "a new console",
+            "the parameter list"
+          ],
+          "answer_index": 0,
+          "why": "A boolean result lets later code choose a branch from the helper answer."
         }
       ]
     },
@@ -204,7 +408,7 @@
       "body": "The first argument goes into the first parameter, the second into the second, and so on unless named arguments are used.",
       "notice": "Write the parameter values before evaluating the body.",
       "mistake": "Do not swap argument meaning because the names would sound nicer the other way.",
-      "section_id": "parameters-and-arguments",
+      "section_id": "parameters-and-calls",
       "example": "subtract(a, b)"
     },
     "local-scope-01": {
@@ -212,7 +416,7 @@
       "body": "A value created inside a function or method is not automatically available outside it.",
       "notice": "Use return values to move information out of a function.",
       "mistake": "Do not print an inside-only name after the function has finished.",
-      "section_id": "arrow-functions-and-checklist",
+      "section_id": "scope-and-reuse",
       "example": "function double(n) {\n  return n * 2;\n}"
     },
     "reuse-01": {
@@ -220,7 +424,7 @@
       "body": "Calling the same function more than once applies the same rule to new arguments.",
       "notice": "Evaluate each call separately, then combine the returned values.",
       "mistake": "Do not reuse the previous call's local parameter values.",
-      "section_id": "what-a-function-is",
+      "section_id": "scope-and-reuse",
       "example": "double(5)"
     },
     "function-in-condition-01": {
@@ -228,7 +432,7 @@
       "body": "A function that returns true or false can be used directly as a condition.",
       "notice": "Evaluate the returned boolean before choosing the branch.",
       "mistake": "Do not print the boolean if the code uses it to choose an if or else path.",
-      "section_id": "return-vs-print",
+      "section_id": "return-paths-and-booleans",
       "example": "is_even(7)"
     },
     "param-copy-01": {
@@ -236,7 +440,7 @@
       "body": "A parameter is the function's local name for the value it received.",
       "notice": "If the function returns an updated value, the caller must store that return to keep it.",
       "mistake": "Do not assume a local parameter assignment rewrites the original variable.",
-      "section_id": "parameters-and-arguments",
+      "section_id": "scope-and-reuse",
       "example": "x = bump(x)"
     }
   }

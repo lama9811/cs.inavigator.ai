@@ -4,6 +4,7 @@ All notable changes to CS Navigator are documented here.
 
 ## [Unreleased]
 ### Added
+- **Learn guided execution traces.** All existing Learn visualizers now include a reusable trace panel with current operation, input value, state before/after, decision, output, and why-it-matters metadata across 82 visual blocks and 392 authored steps.
 - **Question-specific beginner Learn cards.** Operators, Strings, User Input, Lists/Arrays, and Conditionals now include in-question micro-lessons tied to each cleaned quiz question.
 - **Core beginner/debug Learn-card batch.** Syntax, Variables, Data Types, Loops, Functions, Debug Part 1, and Debug Part 2 now include question-specific Learn cards across Python, Java, JavaScript, and C++.
 - **Intermediate Learn-card coverage.** Language-specific Intermediate quiz banks now include question-specific Learn cards across Python, Java, JavaScript, and C++.
@@ -34,8 +35,23 @@ All notable changes to CS Navigator are documented here.
 - **Adaptive review routing.** Coding Tutor adaptive recommendations now include a conservative review signal when recent practice attempts show repeated syntax, runtime, wrong-answer, or timeout patterns.
 - **Practice Guide real mistake patterns.** Practice Guide now shows recent mistake patterns only from the student's own saved practice attempts, and Progress has a quiet Learning Habits tracker for preference selection, hint usage, tutor suggestion application, and failed-then-fixed work.
 - **Coding Tutor accessibility polish V1.** Main Coding Tutor modals and drawers now trap focus, close with Escape, restore focus to the opener, and use dialog labels; Learn language cards are native buttons, key tab groups support arrow-key navigation, and the floating tutor exposes clearer keyboard movement and suggestion-preview labels.
+- **Compact exception/error type lists.** Python, Java, JavaScript, and C++ exception lessons now include short lists of common error types so students can recognize names like `ValueError`, `NumberFormatException`, `TypeError`, `IOException`, and `std::out_of_range` before the full Language Dictionary exists.
+- **Concept Quiz Mistake Bank.** Missed concept-quiz questions now stay hidden until at least three unresolved misses exist, appear after the Advanced accordion, and can be retaken as a focused wrong-answer quiz without sending students back into the full source category.
 
 ### Changed
+- Syntax lessons now emphasize first-use definitions and key beginner terms, such as syntax, comments, blocks, indentation, statements, semicolons, and compiler/parser messages.
+- Operators lessons now use authored sections for mathematical operators, bitwise operators, comparison/assignment, and conditional logic across Python, Java, JavaScript, and C++.
+- Variables and Data Types lessons now use explicit beginner-sized sections across Python, Java, JavaScript, and C++ instead of relying on the loader's broad auto-split.
+- Beginner Learn lessons from Strings through Debug Part 1 now use explicit authored sections across Python, Java, JavaScript, and C++ instead of relying on the loader's broad auto-split.
+- Intermediate Learn sectioning pass 1 now gives authored sections to the first half of each language's Intermediate track, including shared Algorithm/Debug Part 2 anchors plus Python tuples/dictionaries/sets/files, Java classes/maps/files/exceptions, JavaScript objects/error handling, and C++ pointers/classes.
+- Intermediate Learn sectioning pass 2 now finishes the remaining language-specific Intermediate topics with authored sections, including Python exceptions/classes/modules/comprehensions/testing, Java inheritance/generics/enums/packages/lambdas, JavaScript modules/DOM/async, and C++ files/exceptions/ownership.
+- Advanced Learn section-depth pass 1 now audits Stacks, Queues, Hash Maps & Sets, Linked Lists, and Recursion Patterns for authored 4-6 section pacing, clearer first-use terms, and tighter beginner-facing explanations.
+- Advanced Learn section-depth pass 2 now audits Binary Search, Two Pointers, Sliding Window, Trees, and Graphs for authored pacing, clearer movement/frontier language, and first-use definitions across the remaining Advanced track.
+- Java Learn lesson prose was simplified across the Beginner-heavy lessons and core object/debug lessons, shortening dense captions and replacing essay-style explanations with direct beginner-facing language; C++ was spot-checked and one dense debug note was tightened.
+- Learn track lesson lists now keep "Choose tracks" at the top and use the bottom row for Previous/Next track navigation through Beginner, Intermediate, and Advanced.
+- Python, Java, and JavaScript Syntax lessons now use four authored reading parts instead of the loader's broad auto-split, making the beginner path easier to digest.
+- Expanded the thin explicit Learn lessons so the previously 3-section and 4-section Coding Tutor lessons now have five focused sections with additional examples, checks, visual traces, and mistake guidance.
+- Coding Tutor Home now shows the Starting Point quiz as a card first instead of auto-opening the modal on reload, and the Learn page uses only one clear Python Beginner "Start Here" signal.
 - Concept Quiz multiple-choice answers now shuffle per browser attempt while preserving original answer identities for grading, draft restore, immediate feedback, and result summaries.
 - Concept quiz banks now reject old generic prompt templates across all languages and topics; shared legacy Beginner/Intermediate banks and language-specific Intermediate banks were cleaned of lesson-referencing stems, repeated review prompts, weak distractors, giveaway-shaped choices, mojibake, and explanation boilerplate.
 - Coding Tutor Home now shows the Starting Point check before the LeetCode daily card so new students get placed before seeing outside challenge work.

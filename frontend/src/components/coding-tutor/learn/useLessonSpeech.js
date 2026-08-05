@@ -72,6 +72,8 @@ export function lessonToSegments(lesson) {
 }
 
 const SUPPORTED = typeof window !== "undefined" && "speechSynthesis" in window;
+const BETWEEN_SEGMENT_DELAY_MS = 180;
+const AFTER_CANCEL_DELAY_MS = 120;
 
 export function useLessonSpeech(lesson) {
   const segments = useMemo(() => lessonToSegments(lesson), [lesson]);
@@ -79,43 +81,70 @@ export function useLessonSpeech(lesson) {
   const [isPaused, setIsPaused] = useState(false);
   const [index, setIndex] = useState(0);
   const indexRef = useRef(0);
+  const speakTimerRef = useRef(null);
+  const pausedPendingIndexRef = useRef(null);
   // Guards an intentional cancel() (skip/stop) from being treated as "segment ended,
   // advance to the next one" inside the utterance onend handler.
   const suppressAdvanceRef = useRef(false);
 
-  const speakFrom = useCallback((startIndex) => {
+  const clearSpeakTimer = useCallback(() => {
+    if (speakTimerRef.current) {
+      window.clearTimeout(speakTimerRef.current);
+      speakTimerRef.current = null;
+    }
+  }, []);
+
+  const speakFrom = useCallback((startIndex, options = {}) => {
     if (!SUPPORTED || !segments.length) return;
+    const { cancelExisting = true, delayMs = 0 } = options;
     const synth = window.speechSynthesis;
-    suppressAdvanceRef.current = true;
-    synth.cancel(); // clear any queued utterances
-    suppressAdvanceRef.current = false;
+    clearSpeakTimer();
+    if (cancelExisting) {
+      suppressAdvanceRef.current = true;
+      synth.cancel(); // clear any queued utterances before replacing the segment
+    }
 
     const clamped = Math.max(0, Math.min(startIndex, segments.length - 1));
     indexRef.current = clamped;
     setIndex(clamped);
 
-    const utterance = new SpeechSynthesisUtterance(segments[clamped].text);
-    utterance.rate = 0.95;
-    utterance.onend = () => {
-      // Natural end of a segment (not a manual skip/stop): advance, or finish.
-      if (suppressAdvanceRef.current) return;
-      const next = indexRef.current + 1;
-      if (next < segments.length) {
-        speakFrom(next);
-      } else {
-        setIsPlaying(false);
-        setIsPaused(false);
-      }
-    };
-    synth.speak(utterance);
     setIsPlaying(true);
     setIsPaused(false);
-  }, [segments]);
+
+    speakTimerRef.current = window.setTimeout(() => {
+      speakTimerRef.current = null;
+      suppressAdvanceRef.current = false;
+
+      const utterance = new SpeechSynthesisUtterance(segments[clamped].text);
+      utterance.rate = 0.95;
+      utterance.onend = () => {
+        // Natural end of a segment (not a manual skip/stop): advance, or finish.
+        if (suppressAdvanceRef.current) return;
+        const next = indexRef.current + 1;
+        if (next < segments.length) {
+          // Browser TTS can clip the first word if the next utterance starts in the
+          // same tick as the previous one ending. A tiny pause makes section changes
+          // sound intentional and prevents the chopped-word effect.
+          speakFrom(next, { cancelExisting: false, delayMs: BETWEEN_SEGMENT_DELAY_MS });
+        } else {
+          setIsPlaying(false);
+          setIsPaused(false);
+        }
+      };
+      synth.speak(utterance);
+    }, cancelExisting ? Math.max(delayMs, AFTER_CANCEL_DELAY_MS) : delayMs);
+  }, [clearSpeakTimer, segments]);
 
   const play = useCallback(() => {
     if (!SUPPORTED) return;
     const synth = window.speechSynthesis;
     if (isPaused) {
+      if (pausedPendingIndexRef.current !== null) {
+        const pendingIndex = pausedPendingIndexRef.current;
+        pausedPendingIndexRef.current = null;
+        speakFrom(pendingIndex, { cancelExisting: false, delayMs: 0 });
+        return;
+      }
       synth.resume();
       setIsPaused(false);
       setIsPlaying(true);
@@ -126,13 +155,19 @@ export function useLessonSpeech(lesson) {
 
   const pause = useCallback(() => {
     if (!SUPPORTED || !isPlaying) return;
+    if (speakTimerRef.current) {
+      pausedPendingIndexRef.current = indexRef.current;
+    }
+    clearSpeakTimer();
     window.speechSynthesis.pause();
     setIsPaused(true);
     setIsPlaying(false);
-  }, [isPlaying]);
+  }, [clearSpeakTimer, isPlaying]);
 
   const stop = useCallback(() => {
     if (!SUPPORTED) return;
+    clearSpeakTimer();
+    pausedPendingIndexRef.current = null;
     suppressAdvanceRef.current = true;
     window.speechSynthesis.cancel();
     suppressAdvanceRef.current = false;
@@ -140,7 +175,7 @@ export function useLessonSpeech(lesson) {
     setIsPaused(false);
     indexRef.current = 0;
     setIndex(0);
-  }, []);
+  }, [clearSpeakTimer]);
 
   const skip = useCallback((delta) => {
     if (!SUPPORTED || !segments.length) return;
@@ -155,11 +190,13 @@ export function useLessonSpeech(lesson) {
   useEffect(() => {
     return () => {
       if (SUPPORTED) {
+        clearSpeakTimer();
+        pausedPendingIndexRef.current = null;
         suppressAdvanceRef.current = true;
         window.speechSynthesis.cancel();
       }
     };
-  }, [lesson]);
+  }, [clearSpeakTimer, lesson]);
 
   return {
     supported: SUPPORTED && segments.length > 0,

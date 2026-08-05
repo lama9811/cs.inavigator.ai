@@ -2,7 +2,7 @@
   "_note": "ORIGINAL content. Topic sequence follows the standard free Java text (Eck, 'Introduction to Programming Using Java', ch.4 on subroutines); a topic sequence is not copyrightable, but prose is. No sentence, example, or exercise is copied or closely paraphrased from it. Eck is CC BY-NC-SA, a copyleft NonCommercial license, and copying his words would bind CS Navigator's content to those terms permanently. Every word here was written for this lesson. All code blocks were compiled and run with javac/java 21; every 'output' field is real program output, and every compile error quoted is the real javac message. Prose is also deliberately written to share no sentences with python/functions.json: the two lessons teach the same topic, and the reuse test hashes Python and Java together.",
   "title": "Functions",
   "summary": "Put a repeatable piece of work into a **method**.",
-  "minutes": 8,
+  "minutes": 12,
   "error_classes": [
     "syntax",
     "wrong_answer",
@@ -21,6 +21,11 @@
           "body": "Java calls a **function** a **method**. Same idea, different word. A method gives a name to a piece of work so you can use it again without copying the same lines all over your program."
         },
         {
+          "kind": "code",
+          "caption": "Before real syntax, learn the shape: a **function** has a name, inputs, a body, and sometimes a returned result. The examples after this show the exact syntax.",
+          "code": "function name(parameters):\n    body that does the job\n    return the result\n\ncall function name(arguments)"
+        },
+        {
           "kind": "visual",
           "title": "Follow a function call",
           "concept": "functions",
@@ -31,18 +36,57 @@
               "title": "Call with arguments",
               "body": "The caller sends 3 and 5 into the function.",
               "state": {
+                "active_step": "arguments",
+                "function_flow": {
+                  "caller": "main asks for add(3, 5)",
+                  "arguments": "3 and 5 leave the caller",
+                  "parameters": "a and b are waiting",
+                  "locals": "method frame not running yet",
+                  "return_value": "nothing returned yet",
+                  "resume": "result is still waiting"
+                },
                 "call_stack": [
                   "main: result = add(3, 5)"
                 ],
                 "active_call": 0,
                 "note": "waiting for add"
-              }
+              },
+              "code_focus": "arguments: Call with arguments",
+              "input_value": "3 and 5 leave the caller",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "arguments"
+                },
+                {
+                  "name": "call stack",
+                  "value": "main: result = add(3, 5)"
+                }
+              ],
+              "decision": "The caller sends 3 and 5 into the function.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "waiting for add"
+                }
+              ],
+              "output": "none yet",
+              "why": "The caller sends 3 and 5 into the function."
             },
             {
               "title": "Parameters receive values",
               "body": "Inside the function, a is 3 and b is 5.",
               "animation": "add",
               "state": {
+                "active_step": "parameters",
+                "function_flow": {
+                  "caller": "main is paused",
+                  "arguments": "3 goes to a, 5 goes to b",
+                  "parameters": "a = 3, b = 5",
+                  "locals": "a + b becomes 8",
+                  "return_value": "ready to return",
+                  "resume": "caller waits for the value"
+                },
                 "call_stack": [
                   "main",
                   "add: a=3, b=5"
@@ -60,19 +104,111 @@
                     "active": true
                   }
                 ]
-              }
+              },
+              "code_focus": "parameters: Parameters receive values",
+              "input_value": "a -> 3, b -> 5",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "parameters"
+                },
+                {
+                  "name": "call stack",
+                  "value": "main, add: a=3, b=5"
+                }
+              ],
+              "decision": "Inside the function, a is 3 and b is 5.",
+              "variables_after": [
+                {
+                  "name": "active entry",
+                  "value": "a -> 3, b -> 5"
+                }
+              ],
+              "output": "none yet",
+              "why": "Inside the function, a is 3 and b is 5."
             },
             {
               "title": "Return",
               "body": "Return sends 8 back to the caller, and the function call is finished.",
               "animation": "return",
               "state": {
+                "active_step": "return",
+                "function_flow": {
+                  "caller": "main is waiting",
+                  "arguments": "3 and 5 already filled parameters",
+                  "parameters": "add finishes its frame",
+                  "locals": "a + b is 8",
+                  "return_value": "return 8",
+                  "resume": "result can store the answer"
+                },
                 "call_stack": [
                   "main: result = 8"
                 ],
                 "active_call": 0,
                 "note": "result stores 8"
-              }
+              },
+              "code_focus": "return: Return",
+              "input_value": "current visual state",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "return"
+                },
+                {
+                  "name": "call stack",
+                  "value": "main: result = 8"
+                }
+              ],
+              "decision": "Return sends 8 back to the caller, and the function call is finished.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "result stores 8"
+                }
+              ],
+              "output": "result stores 8",
+              "why": "Return sends 8 back to the caller, and the function call is finished."
+            },
+            {
+              "title": "Caller resumes",
+              "body": "The method call has been replaced by 8, so main can use the stored result.",
+              "state": {
+                "active_step": "resume",
+                "function_flow": {
+                  "caller": "main continues",
+                  "arguments": "argument values are done",
+                  "parameters": "method frame is gone",
+                  "locals": "local names no longer exist",
+                  "return_value": "8",
+                  "resume": "result = 8"
+                },
+                "call_stack": [
+                  "main: result = 8"
+                ],
+                "active_call": 0,
+                "note": "the caller can use result"
+              },
+              "code_focus": "resume: Caller resumes",
+              "input_value": "result = 8",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "resume"
+                },
+                {
+                  "name": "call stack",
+                  "value": "main: result = 8"
+                }
+              ],
+              "decision": "The method call has been replaced by 8, so main can use the stored result.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the caller can use result"
+                }
+              ],
+              "output": "none yet",
+              "why": "The method call has been replaced by 8, so main can use the stored result."
             }
           ]
         },
@@ -85,7 +221,7 @@
         },
         {
           "kind": "text",
-          "body": "The opening line of a **method** is called its signature, and it packs four decisions into one line. `public` is the modifier, controlling who may call it. `static` gets its own explanation later on. `void` is the **return type**, announcing what kind of value will come back. `greet` is the name. The empty parentheses are the **parameter list**, and empty means this method asks nothing of you. To keep things readable, the rest of this lesson prints only the methods. Picture the `public class Main { ... }` shell wrapped around each one.",
+          "body": "The first line of a **method** is its signature. It tells Java who can call the method, whether it is `static`, what it returns, its name, and its **parameters**. The rest of this lesson shows only methods; imagine the usual `class Main` wrapper around them.",
           "caption": "This **method** takes a name and returns a greeting. It does not **print** by itself; it hands the **String** back to the caller."
         },
         {
@@ -102,10 +238,49 @@
         },
         {
           "kind": "code",
-          "caption": "Inside the parentheses, `String name` is a **parameter**. Out at the call sites, \"Ada\" and \"Grace\" are the **arguments**. A parameter behaves like a variable that flickers into existence for one run of the **method**, carrying whatever got passed that time. Because you wrote its type, slipping a number in where a `String` belongs is caught while you compile, long before anyone runs the thing.",
+          "caption": "You will see `static` a lot in beginner Java because `main` is static. For now, read a static **method** as one you can call from main without building an **object** first.",
           "code": "public static void greet(String name) {\n    System.out.println(\"Hello, \" + name + \"!\");\n}\n\n// inside main:\ngreet(\"Ada\");\ngreet(\"Grace\");",
-          "output": "Hello, Ada!\nHello, Grace!",
-          "body": "You will see `static` a lot in beginner Java because `main` is static. For now, read a static **method** as one you can call from main without building an **object** first."
+          "output": "Hello, Ada!\nHello, Grace!"
+        }
+      ]
+    },
+    {
+      "id": "arguments-and-types",
+      "title": "Match arguments to typed parameters",
+      "summary": "A method call fills typed **parameters** by position.",
+      "question_ids": [
+        "arg-order-01",
+        "param-copy-01"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Java checks method calls against the method signature. The caller supplies arguments, and Java matches them to parameters from left to right."
+        },
+        {
+          "kind": "code",
+          "caption": "The call sends `7` into `score` and `3` into `bonus`. The names in the call do not have to match the parameter names.",
+          "code": "static int addBonus(int score, int bonus) {\n    return score + bonus;\n}\n\nint total = addBonus(7, 3);",
+          "output": "total stores 10"
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Types are part of the promise",
+          "body": "If a method says `int score`, the call must provide a value Java can use as an integer. The method body can trust that shape once the code compiles."
+        },
+        {
+          "kind": "check",
+          "prompt": "In `addBonus(7, 3)`, what does `3` fill?",
+          "code": "static int addBonus(int score, int bonus)",
+          "choices": [
+            "bonus",
+            "score",
+            "int",
+            "static"
+          ],
+          "answer_index": 0,
+          "why": "Arguments match parameters by position, so the second argument fills the second parameter."
         }
       ]
     },
@@ -116,7 +291,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "Up to here, every **method** has done nothing but **print**. Printing is the right call when a human is meant to read the result. It is the wrong call the second your own code wants the number. Text that has gone to the screen is spent. Your program cannot reach up and grab it back. Getting a usable **value** requires `return`."
+          "body": "Printing is for a human reading the screen. `return` is for code that needs to use the value later. Once a value is only printed, your program cannot grab it back."
         },
         {
           "kind": "code",
@@ -128,11 +303,11 @@
           "kind": "callout",
           "tone": "mistake",
           "title": "println shows a value. return gives a value back.",
-          "body": "If one idea from this lesson sticks, make it this one. `System.out.println` is a one-way trip to the screen for a human to look at, and nothing in your program can retrieve what it sent. `return` puts the **value** into the hands of the caller, ready to sit in a **variable** and be used again. A **method** that merely prints yields nothing at all. Confuse the two and the screen will look flawless while your code is holding an empty bag."
+          "body": "`System.out.println` sends text to the screen. `return` sends a **value** back to the caller. Use return when another line of code needs the answer."
         },
         {
           "kind": "compare",
-          "caption": "Run either one and 10 shows up on screen. Only the right-hand version **leaves** the caller holding something it can use. The left never even reaches that point: `doubled` is typed `void`, there is no **value** to put in `answer`, and javac halts with \"incompatible types: void cannot be converted to int\".",
+          "caption": "Both versions can show 10 on screen. Only the right version returns a value the caller can store and use. The left version is `void`, so it cannot be assigned to `answer`.",
           "wrong_label": "Prints, returns nothing",
           "wrong": "public static void doubled(int n) {\n    System.out.println(n * 2);\n}\n\n// inside main:\nint answer = doubled(5);\n// will not compile:\n// void cannot be\n// converted to int",
           "right_label": "Returns a value",
@@ -162,17 +337,17 @@
           "kind": "callout",
           "tone": "warning",
           "title": "Every path has to reach a return",
-          "body": "Declare an `int` and you owe the compiler a **value** on all possible routes through the **method**. Tuck the only `return` inside an `if`, and one route escapes out the bottom empty-handed. Javac catches it, prints \"missing **return** statement\", and declines to build. That strictness is deliberate: a method that occasionally produces no answer never gets to run."
+          "body": "If a method promises to return an `int`, every path through the method must return an int. If one path can fall out the bottom, Java reports `missing return statement`."
         },
         {
           "kind": "code",
-          "caption": "Here both **branches** deliver a **value**, so no matter which way the `if` falls, javac is satisfied. Rip out the `else` and it stops building instantly, even though the specific call `grade(75)` would happily have taken the true branch. Javac reasons about every possible route, not the one you had in mind.",
+          "caption": "Both **branches** return a **value**, so Java is satisfied. If you remove the else, one possible path has no return, and Java refuses to compile it.",
           "code": "public static int grade(int score) {\n    if (score >= 60) {\n        return 1;\n    } else {\n        return 0;\n    }\n}\n\n// inside main:\nSystem.out.println(grade(75));\nSystem.out.println(grade(40));",
           "output": "1\n0"
         },
         {
           "kind": "text",
-          "body": "Time to deal with `static`, which you have been typing on faith this whole lesson. A `static` **method** is attached to the **class**. Leave `static` off and the method attaches to an **object** instead, meaning something has to be constructed before that method can be reached. `main` is itself `static` and fires before a single object exists, so naming a non-static method inside it hands the job to an object nobody ever built."
+          "body": "A `static` **method** belongs to the **class**. A non-static method belongs to an **object**. Because `main` is static, it can call other static methods directly, but it needs an object before calling non-static ones."
         }
       ]
     },
@@ -191,7 +366,7 @@
         },
         {
           "kind": "code",
-          "caption": "Declare a **variable** inside a **method** and it belongs to that method alone. Programmers call that region its **scope**. `message` springs up while `shout` executes and vanishes the moment control leaves, so referring to it back in `main` names a thing that is not there. Javac answers with \"cannot find symbol\", the build fails, and the output field below is empty because the program never ran at all. Even the `\"hey\"` line never prints, which surprises people who expect the first statement to squeak through before the error hits.",
+          "caption": "A **variable** declared inside a method only exists inside that method. That region is its **scope**. If `main` tries to use a variable created inside `shout`, Java reports `cannot find symbol`, and the program does not run.",
           "code": "public static String shout(String word) {\n    String message = word.toUpperCase();\n    return message;\n}\n\n// inside main:\nSystem.out.println(shout(\"hey\"));\nSystem.out.println(message);",
           "output": ""
         },
@@ -268,7 +443,7 @@
       "body": "The first argument goes into the first parameter, the second into the second, and so on unless named arguments are used.",
       "notice": "Write the parameter values before evaluating the body.",
       "mistake": "Do not swap argument meaning because the names would sound nicer the other way.",
-      "section_id": "parameters-and-arguments",
+      "section_id": "arguments-and-types",
       "example": "subtract(a, b)"
     },
     "local-scope-01": {
@@ -300,7 +475,7 @@
       "body": "A parameter is the function's local name for the value it received.",
       "notice": "If the function returns an updated value, the caller must store that return to keep it.",
       "mistake": "Do not assume a local parameter assignment rewrites the original variable.",
-      "section_id": "parameters-and-arguments",
+      "section_id": "arguments-and-types",
       "example": "x = bump(x)"
     }
   }

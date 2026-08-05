@@ -10,74 +10,390 @@
   ],
   "refresher": "A lambda is a short **function** **value**, such as `name -> name.length()`. A stream processes collection data through steps like `filter`, `map`, and `sorted`, then finishes with an operation such as `toList`, `count`, or `forEach`. Stream steps do not change the original collection unless your code changes its **objects**.",
   "refresher_code": "List<String> shortNames = names.stream()\n    .filter(name -> name.length() < 5)\n    .toList();",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "Some collection work follows a clear sequence: keep certain items, change each one, then collect the results. Streams let the code state those steps in the same order."
+      "id": "idea",
+      "title": "Describe collection steps",
+      "summary": "Use streams when filtering, mapping, and collecting read like a pipeline.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Some collection work follows a clear sequence: keep certain items, change each one, then collect the results. **Streams** let the code state those steps in the same order."
+        },
+        {
+          "kind": "visual",
+          "title": "Stream data moves through a pipeline",
+          "concept": "stream-flow",
+          "caption": "Trace scores through filter, map, and the terminal operation that collects the result.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Start with collection",
+              "body": "The original list supplies values to the stream, but the stream does not change that list.",
+              "animation": "add",
+              "state": {
+                "active_step": "source",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "source",
+                      "label": "Source",
+                      "detail": "scores = [72, 48, 90]",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "filter",
+                      "label": "Filter",
+                      "detail": "score >= 60",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "map",
+                      "label": "Map",
+                      "detail": "score + 5",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "terminal",
+                      "label": "Terminal",
+                      "detail": "toList asks for work",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "adjusted waits",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "items": [
+                  72,
+                  48,
+                  90
+                ],
+                "active": [
+                  0
+                ],
+                "note": "the source collection stays the same"
+              },
+              "code_focus": "source: Start with collection",
+              "input_value": "72",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "source"
+                }
+              ],
+              "decision": "The original list supplies values to the stream, but the stream does not change that list.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the source collection stays the same"
+                }
+              ],
+              "output": "the source collection stays the same",
+              "why": "The original list supplies values to the stream, but the stream does not change that list."
+            },
+            {
+              "title": "Filter passing values",
+              "body": "Filter keeps values whose condition is true and drops the others from later steps.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "filter",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "source",
+                      "label": "Source",
+                      "detail": "read 48",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "filter",
+                      "label": "Filter",
+                      "detail": "48 >= 60 is false",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "map",
+                      "label": "Map",
+                      "detail": "skipped",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "terminal",
+                      "label": "Terminal",
+                      "detail": "keeps waiting",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "no 48 in output",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "items": [
+                  72,
+                  48,
+                  90
+                ],
+                "active": [
+                  1
+                ],
+                "note": "a filtered-out value never reaches map"
+              },
+              "code_focus": "filter: Filter passing values",
+              "input_value": "48",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "filter"
+                }
+              ],
+              "decision": "Filter keeps values whose condition is true and drops the others from later steps.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "a filtered-out value never reaches map"
+                }
+              ],
+              "output": "none yet",
+              "why": "Filter keeps values whose condition is true and drops the others from later steps."
+            },
+            {
+              "title": "Map kept values",
+              "body": "Map changes each kept value into the value the result should store.",
+              "animation": "slide",
+              "state": {
+                "active_step": "map",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "source",
+                      "label": "Source",
+                      "detail": "read 90",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "filter",
+                      "label": "Filter",
+                      "detail": "90 passes",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "map",
+                      "label": "Map",
+                      "detail": "90 + 5 becomes 95",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "terminal",
+                      "label": "Terminal",
+                      "detail": "collect transformed value",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "building [77, 95]",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "items": [
+                  72,
+                  48,
+                  90
+                ],
+                "active": [
+                  2
+                ],
+                "note": "map transforms values; it does not decide whether to keep them"
+              },
+              "code_focus": "map: Map kept values",
+              "input_value": "90",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "map"
+                }
+              ],
+              "decision": "Map changes each kept value into the value the result should store.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "map transforms values; it does not decide whether to keep them"
+                }
+              ],
+              "output": "none yet",
+              "why": "Map changes each kept value into the value the result should store."
+            },
+            {
+              "title": "Collect the result",
+              "body": "The terminal operation starts the pipeline work and gathers the final list.",
+              "animation": "add",
+              "state": {
+                "active_step": "result",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "source",
+                      "label": "Source",
+                      "detail": "all scores checked",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "filter",
+                      "label": "Filter",
+                      "detail": "kept 72 and 90",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "map",
+                      "label": "Map",
+                      "detail": "77 and 95",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "terminal",
+                      "label": "Terminal",
+                      "detail": "toList finishes",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "adjusted = [77, 95]",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "items": [
+                  77,
+                  95
+                ],
+                "active": [
+                  0,
+                  1
+                ],
+                "note": "without a terminal operation, the pipeline only describes work"
+              },
+              "code_focus": "result: Collect the result",
+              "input_value": "77, 95",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "The terminal operation starts the pipeline work and gathers the final list.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "without a terminal operation, the pipeline only describes work"
+                }
+              ],
+              "output": "without a terminal operation, the pipeline only describes work",
+              "why": "The terminal operation starts the pipeline work and gathers the final list."
+            }
+          ]
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "The filter keeps passing scores. The **map** adds five points to each remaining score. `toList` starts the work and gathers the results.",
-      "code": "List<Integer> scores = List.of(72, 48, 90);\nList<Integer> adjusted = scores.stream()\n    .filter(score -> score >= 60)\n    .map(score -> score + 5)\n    .toList();\nSystem.out.println(adjusted);",
-      "output": "[77, 95]"
+      "id": "examples",
+      "title": "Read the pipeline",
+      "summary": "Trace each step from input collection to final result.",
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "The filter keeps passing scores. The **map** adds five points to each remaining score. `toList` starts the work and gathers the results.",
+          "code": "List<Integer> scores = List.of(72, 48, 90);\nList<Integer> adjusted = scores.stream()\n    .filter(score -> score >= 60)\n    .map(score -> score + 5)\n    .toList();\nSystem.out.println(adjusted);",
+          "output": "[77, 95]"
+        },
+        {
+          "kind": "text",
+          "body": "The expression before the arrow names each **input**. The expression after it produces a result. Braces are needed when the lambda body has more than one statement."
+        }
+      ]
     },
     {
-      "kind": "text",
-      "body": "The expression before the arrow names each **input**. The expression after it produces a result. Braces are needed when the lambda body has more than one statement."
+      "id": "pitfalls",
+      "title": "Keep the pipeline simple",
+      "summary": "Do not hide complicated state changes inside a lambda.",
+      "blocks": [
+        {
+          "kind": "compare",
+          "caption": "A stream needs a final operation. Without `toList`, `count`, or another terminal step, the earlier steps describe work but do not run it.",
+          "wrong_label": "No result requested",
+          "wrong": "scores.stream()\n    .filter(score -> score >= 60);",
+          "right_label": "Result collected",
+          "right": "List<Integer> passing = scores.stream()\n    .filter(score -> score >= 60)\n    .toList();"
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "A loop may be clearer",
+          "body": "Use a regular **loop** when the work needs several changing **variables**, early exits, detailed error handling, or many side effects. Streams fit best when data moves through a short **set** of clear steps."
+        }
+      ]
     },
     {
-      "kind": "compare",
-      "caption": "A stream needs a final operation. Without `toList`, `count`, or another terminal step, the earlier steps describe work but do not run it.",
-      "wrong_label": "No result requested",
-      "wrong": "scores.stream()\n    .filter(score -> score >= 60);",
-      "right_label": "Result collected",
-      "right": "List<Integer> passing = scores.stream()\n    .filter(score -> score >= 60)\n    .toList();"
+      "id": "check",
+      "title": "Check stream behavior",
+      "summary": "Practice filters, maps, and terminal operations.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "Which stream operation keeps only items that pass a **condition**?",
+          "code": "names.stream().____(name -> name.length() > 3)",
+          "choices": [
+            "filter",
+            "map",
+            "count",
+            "toList"
+          ],
+          "answer_index": 0,
+          "why": "Filter receives a **condition** and keeps **values** for which that condition is true. **Map** changes values instead of deciding whether to keep them."
+        },
+        {
+          "kind": "text",
+          "body": "**Map** changes every selected value into another value. The output type may differ from the input type, such as changing each **String** into an **Integer** length."
+        },
+        {
+          "kind": "check",
+          "prompt": "What does this stream produce?",
+          "code": "List<String> names = List.of(\"Ada\", \"Grace\");\nList<Integer> lengths = names.stream()\n    .map(name -> name.length())\n    .toList();",
+          "choices": [
+            "[3, 5]",
+            "[Ada, Grace]",
+            "[true, true]",
+            "8"
+          ],
+          "answer_index": 0,
+          "why": "**Map** replaces each **String** with the **Integer** returned by `length()`. Ada has three characters and Grace has five."
+        }
+      ]
     },
     {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "A loop may be clearer",
-      "body": "Use a regular **loop** when the work needs several changing **variables**, early exits, detailed error handling, or many side effects. Streams fit best when data moves through a short **set** of clear steps."
-    },
-    {
-      "kind": "check",
-      "prompt": "Which stream operation keeps only items that pass a **condition**?",
-      "code": "names.stream().____(name -> name.length() > 3)",
-      "choices": [
-        "filter",
-        "map",
-        "count",
-        "toList"
-      ],
-      "answer_index": 0,
-      "why": "Filter receives a **condition** and keeps **values** for which that condition is true. **Map** changes values instead of deciding whether to keep them."
-    },
-    {
-      "kind": "text",
-      "body": "**Map** changes every selected value into another value. The output type may differ from the input type, such as changing each **String** into an **Integer** length."
-    },
-    {
-      "kind": "check",
-      "prompt": "What does this stream produce?",
-      "code": "List<String> names = List.of(\"Ada\", \"Grace\");\nList<Integer> lengths = names.stream()\n    .map(name -> name.length())\n    .toList();",
-      "choices": [
-        "[3, 5]",
-        "[Ada, Grace]",
-        "[true, true]",
-        "8"
-      ],
-      "answer_index": 0,
-      "why": "**Map** replaces each **String** with the **Integer** returned by `length()`. Ada has three characters and Grace has five."
-    },
-    {
-      "kind": "list",
-      "title": "Lambda and stream checklist",
-      "items": [
-        "Use a lambda for one small action.",
-        "Read a stream from top to bottom as data steps.",
-        "Use filter to keep and **map** to change.",
-        "Finish with a terminal operation.",
-        "Choose a **loop** when the stream would hide the real work."
+      "id": "practice",
+      "title": "Stream habits",
+      "summary": "Use a checklist before choosing streams.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Lambda and stream checklist",
+          "items": [
+            "Use a lambda for one small action.",
+            "Read a stream from top to bottom as data steps.",
+            "Use filter to keep and **map** to change.",
+            "Finish with a terminal operation.",
+            "Choose a **loop** when the stream would hide the real work."
+          ]
+        }
       ]
     }
   ],

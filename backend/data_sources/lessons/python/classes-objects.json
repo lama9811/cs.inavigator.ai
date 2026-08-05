@@ -10,137 +10,305 @@
   ],
   "refresher": "A **class** describes the data and actions that its objects share. Create an object by calling the class, store its data on `self`, and use **methods** for work that belongs to that object. The `__init__` method **sets** the starting values.",
   "refresher_code": "class Student:\n    def __init__(self, name):\n        self.name = name\n\nada = Student(\"Ada\")\nprint(ada.name)",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "A program may need to keep a student's name, major, and earned credits together. Separate **variables** become hard to manage when there are many students. A **class** gives that group a name and describes what each student **object** can do."
-    },
-    {
-      "kind": "visual",
-      "title": "One object keeps related data together",
-      "concept": "objects",
-      "caption": "Watch fields live inside one object while a method updates them.",
-      "initial_state": {},
-      "steps": [
+      "id": "idea",
+      "title": "Objects group related data",
+      "summary": "Use a class when separate variables start traveling together.",
+      "blocks": [
         {
-          "title": "Create the object",
-          "body": "The object starts with its own field values.",
-          "state": {
-            "table": [
-              {
-                "key": "name",
-                "value": "Plant"
-              },
-              {
-                "key": "watered",
-                "value": "false"
-              }
-            ],
-            "note": "plant object"
-          }
+          "kind": "text",
+          "body": "A program may need to keep a student's name, major, and earned credits together. Separate **variables** become hard to manage when there are many students. A **class** gives that group a name and describes what each student **object** can do."
         },
         {
-          "title": "Call a method",
-          "body": "The method changes the object's watered field.",
-          "animation": "highlight",
-          "state": {
-            "table": [
-              {
-                "key": "name",
-                "value": "Plant"
+          "kind": "visual",
+          "title": "One object keeps related data together",
+          "concept": "objects",
+          "caption": "Trace object fields from creation through method update and remembered state.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Create object state",
+              "body": "The object groups related fields into one named thing.",
+              "state": {
+                "active_step": "store",
+                "object_flow": {
+                  "store": "plant object exists",
+                  "action": "fields are initialized",
+                  "decision": "which field changes?",
+                  "result": "state is grouped"
+                },
+                "table": [
+                  {
+                    "key": "name",
+                    "value": "Plant",
+                    "active": true
+                  },
+                  {
+                    "key": "watered",
+                    "value": "false"
+                  }
+                ],
+                "note": "plant object"
               },
-              {
-                "key": "watered",
-                "value": "true",
-                "active": true
-              }
-            ],
-            "note": "plant.water()"
-          }
-        },
-        {
-          "title": "State is remembered",
-          "body": "After the method ends, the object still stores the updated field.",
-          "state": {
-            "table": [
-              {
-                "key": "name",
-                "value": "Plant"
+              "code_focus": "store: Create object state",
+              "input_value": "name -> Plant",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "store"
+                }
+              ],
+              "decision": "which field changes?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "plant object"
+                },
+                {
+                  "name": "active entry",
+                  "value": "name -> Plant"
+                }
+              ],
+              "output": "none yet",
+              "why": "The object groups related fields into one named thing."
+            },
+            {
+              "title": "Call method",
+              "body": "The method receives the object and decides which field to update.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "action",
+                "object_flow": {
+                  "store": "same plant object",
+                  "action": "plant.water()",
+                  "decision": "update watered?",
+                  "result": "watered changes"
+                },
+                "table": [
+                  {
+                    "key": "name",
+                    "value": "Plant"
+                  },
+                  {
+                    "key": "watered",
+                    "value": "false",
+                    "active": true
+                  }
+                ],
+                "note": "method is running"
               },
-              {
-                "key": "watered",
-                "value": "true",
-                "active": true
-              }
-            ],
-            "note": "same object, updated state"
-          }
+              "code_focus": "action: Call method",
+              "input_value": "watered -> false",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "action"
+                }
+              ],
+              "decision": "update watered?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "method is running"
+                },
+                {
+                  "name": "active entry",
+                  "value": "watered -> false"
+                }
+              ],
+              "output": "none yet",
+              "why": "The method receives the object and decides which field to update."
+            },
+            {
+              "title": "Update field",
+              "body": "Only the targeted field changes; the other fields stay with the same object.",
+              "animation": "branch",
+              "state": {
+                "active_step": "decision",
+                "object_flow": {
+                  "store": "plant object",
+                  "action": "set watered",
+                  "decision": "false becomes true",
+                  "result": "object state updates"
+                },
+                "table": [
+                  {
+                    "key": "name",
+                    "value": "Plant"
+                  },
+                  {
+                    "key": "watered",
+                    "value": "true",
+                    "active": true
+                  }
+                ],
+                "note": "field update happens inside the object"
+              },
+              "code_focus": "decision: Update field",
+              "input_value": "watered -> true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "decision"
+                }
+              ],
+              "decision": "false becomes true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "field update happens inside the object"
+                },
+                {
+                  "name": "active entry",
+                  "value": "watered -> true"
+                }
+              ],
+              "output": "none yet",
+              "why": "Only the targeted field changes; the other fields stay with the same object."
+            },
+            {
+              "title": "State is remembered",
+              "body": "After the method ends, the object still stores the updated field value.",
+              "animation": "return",
+              "state": {
+                "active_step": "result",
+                "object_flow": {
+                  "store": "same object",
+                  "action": "method finished",
+                  "decision": "state persists?",
+                  "result": "watered is true"
+                },
+                "table": [
+                  {
+                    "key": "name",
+                    "value": "Plant"
+                  },
+                  {
+                    "key": "watered",
+                    "value": "true",
+                    "active": true
+                  }
+                ],
+                "note": "same object, updated state"
+              },
+              "code_focus": "result: State is remembered",
+              "input_value": "watered -> true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "state persists?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "same object, updated state"
+                },
+                {
+                  "name": "active entry",
+                  "value": "watered -> true"
+                }
+              ],
+              "output": "none yet",
+              "why": "After the method ends, the object still stores the updated field value."
+            }
+          ]
         }
       ]
     },
     {
-      "kind": "code",
-      "caption": "`Student` is the **class**. Calling it creates one **object**, and `__init__` stores the **values** that belong to that object.",
-      "code": "class Student:\n    def __init__(self, name, credits):\n        self.name = name\n        self.credits = credits\n\n    def add_credits(self, amount):\n        self.credits += amount\n\nada = Student(\"Ada\", 15)\nada.add_credits(3)\nprint(ada.name, ada.credits)",
-      "output": "Ada 18"
+      "id": "examples",
+      "title": "Create and use an object",
+      "summary": "Trace fields, constructors, and method calls.",
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "`Student` is the **class**. Calling it creates one **object**, and `__init__` stores the **values** that belong to that object.",
+          "code": "class Student:\n    def __init__(self, name, credits):\n        self.name = name\n        self.credits = credits\n\n    def add_credits(self, amount):\n        self.credits += amount\n\nada = Student(\"Ada\", 15)\nada.add_credits(3)\nprint(ada.name, ada.credits)",
+          "output": "Ada 18"
+        },
+        {
+          "kind": "text",
+          "body": "The name `self` refers to the **object** that received the **method** call. Python passes it automatically. `ada.add_credits(3)` uses `ada` as self and 3 as amount."
+        }
+      ]
     },
     {
-      "kind": "text",
-      "body": "The name `self` refers to the **object** that received the **method** call. Python passes it automatically. `ada.add_credits(3)` uses `ada` as self and 3 as amount."
+      "id": "pitfalls",
+      "title": "Keep responsibilities clear",
+      "summary": "Notice when a design is too loose or too spread out.",
+      "blocks": [
+        {
+          "kind": "compare",
+          "caption": "A **value** without `self.` is only a local name. Store it on the **object** when another **method** needs it later.",
+          "wrong_label": "Value is lost",
+          "wrong": "def __init__(self, name):\n    name = name",
+          "right_label": "Stored on object",
+          "right": "def __init__(self, name):\n    self.name = name"
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Each object has its own data",
+          "body": "Creating a second Student does not copy or replace the first one. Each call to the **class** creates a separate **object** with separate **instance** attributes."
+        }
+      ]
     },
     {
-      "kind": "compare",
-      "caption": "A **value** without `self.` is only a local name. Store it on the **object** when another **method** needs it later.",
-      "wrong_label": "Value is lost",
-      "wrong": "def __init__(self, name):\n    name = name",
-      "right_label": "Stored on object",
-      "right": "def __init__(self, name):\n    self.name = name"
+      "id": "check",
+      "title": "Check object behavior",
+      "summary": "Practice the class vocabulary before coding.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "What does this **print**?",
+          "code": "a = Student(\"Ada\", 12)\nb = Student(\"Ben\", 9)\nb.credits += 3\nprint(a.credits, b.credits)",
+          "choices": [
+            "12 12",
+            "15 12",
+            "9 12",
+            "12 9"
+          ],
+          "answer_index": 0,
+          "why": "The two calls create different **objects**. Changing b affects only b, so a stays at 12 while b becomes 12."
+        },
+        {
+          "kind": "text",
+          "body": "**Methods** keep related behavior near the data it uses. A method can **return** a result, update the object, or both. Give it a name that says what the object is doing."
+        },
+        {
+          "kind": "check",
+          "prompt": "What must be the first **parameter** of this **instance** **method**?",
+          "code": "class Counter:\n    def increase(____, amount):\n        ____.value += amount",
+          "choices": [
+            "self",
+            "class",
+            "value",
+            "new"
+          ],
+          "answer_index": 0,
+          "why": "Python passes the receiving **object** into the first **parameter**. The usual name is self, and the **method** uses it to reach that object's value."
+        }
+      ]
     },
     {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Each object has its own data",
-      "body": "Creating a second Student does not copy or replace the first one. Each call to the **class** creates a separate **object** with separate **instance** attributes."
-    },
-    {
-      "kind": "check",
-      "prompt": "What does this **print**?",
-      "code": "a = Student(\"Ada\", 12)\nb = Student(\"Ben\", 9)\nb.credits += 3\nprint(a.credits, b.credits)",
-      "choices": [
-        "12 12",
-        "15 12",
-        "9 12",
-        "12 9"
-      ],
-      "answer_index": 0,
-      "why": "The two calls create different **objects**. Changing b affects only b, so a stays at 12 while b becomes 12."
-    },
-    {
-      "kind": "text",
-      "body": "**Methods** keep related behavior near the data it uses. A method can **return** a result, update the object, or both. Give it a name that says what the object is doing."
-    },
-    {
-      "kind": "check",
-      "prompt": "What must be the first **parameter** of this **instance** **method**?",
-      "code": "class Counter:\n    def increase(____, amount):\n        ____.value += amount",
-      "choices": [
-        "self",
-        "class",
-        "value",
-        "new"
-      ],
-      "answer_index": 0,
-      "why": "Python passes the receiving **object** into the first **parameter**. The usual name is self, and the **method** uses it to reach that object's value."
-    },
-    {
-      "kind": "list",
-      "title": "Class checklist",
-      "items": [
-        "Use a **class** when data and behavior belong together.",
-        "**Set** starting attributes inside `__init__`.",
-        "Write `self.attribute` for data stored on an **object**.",
-        "Remember that each **class** call creates a new **object**.",
-        "Keep a **method** focused on one clear action."
+      "id": "practice",
+      "title": "Class habits",
+      "summary": "Use a checklist for object design.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Class checklist",
+          "items": [
+            "Use a **class** when data and behavior belong together.",
+            "**Set** starting attributes inside `__init__`.",
+            "Write `self.attribute` for data stored on an **object**.",
+            "Remember that each **class** call creates a new **object**.",
+            "Keep a **method** focused on one clear action."
+          ]
+        }
       ]
     }
   ],

@@ -9,187 +9,1071 @@
   ],
   "refresher": "A `for` **loop** repeats once for each item in a sequence. `for x in [1, 2, 3]:` runs the body three times, with x holding 1, then 2, then 3. To count instead, use `range(n)`, which stops just before n. A `while` loop keeps going as long as its **condition** is true, so something inside it has to eventually make that condition false. Otherwise it never stops.",
   "refresher_code": "for i in range(3):\n    print(i)\n# prints 0, 1, 2",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "A **loop** is how you tell the computer to do something again. Without one, printing the numbers 1 through 100 would mean writing 100 lines. With one, it takes two."
-    },
-    {
-      "kind": "visual",
-      "title": "Trace a loop one item at a time",
-      "concept": "arrays",
-      "caption": "Watch the active item move while the running total changes.",
-      "initial_state": {},
-      "steps": [
+      "id": "loop-shape",
+      "title": "What a loop repeats",
+      "summary": "Use a loop variable and indentation to repeat a body over items.",
+      "blocks": [
         {
-          "title": "Start before the loop",
-          "body": "The total starts at zero before any item is read.",
-          "state": {
-            "items": [
-              "3",
-              "5",
-              "2"
-            ],
-            "pointers": {
-              "i": 0
-            },
-            "note": "total = 0"
-          }
+          "kind": "text",
+          "body": "A **loop** is how you tell the computer to do something again. Without one, printing the numbers 1 through 100 would mean writing 100 lines. With one, it takes two."
         },
         {
-          "title": "First pass",
-          "body": "Read index 0 and add 3 to the total.",
-          "animation": "add",
-          "state": {
-            "items": [
-              "3",
-              "5",
-              "2"
-            ],
-            "active": [
-              0
-            ],
-            "pointers": {
-              "i": 0
+          "kind": "visual",
+          "title": "Trace a full for loop",
+          "concept": "loops",
+          "caption": "Watch setup, condition, body, and update repeat until the final condition fails.",
+          "initial_state": {
+            "loop_flow": {
+              "setup": "total = 0, i = 0",
+              "condition": "i < 3?",
+              "body": "add current item",
+              "update": "move to next i",
+              "done": "use total"
+            }
+          },
+          "steps": [
+            {
+              "title": "Set up loop state",
+              "body": "Create the running total and start the index at 0 before any pass runs.",
+              "state": {
+                "active_step": "setup",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "pointers": {
+                  "i": 0
+                },
+                "loop_flow": {
+                  "setup": "total = 0, i = 0"
+                },
+                "note": "Setup happens once, before the first condition check."
+              },
+              "code_focus": "setup: Set up loop state",
+              "input_value": "i -> 3",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 0"
+                },
+                {
+                  "name": "step",
+                  "value": "setup"
+                }
+              ],
+              "decision": "i < 3?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "Setup happens once, before the first condition check."
+                }
+              ],
+              "output": "none yet",
+              "why": "Create the running total and start the index at 0 before any pass runs."
             },
-            "note": "total = 3"
-          }
+            {
+              "title": "Check i = 0",
+              "body": "Python checks whether i points to an item. Since 0 < 3 is true, pass 1 runs.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  0
+                ],
+                "pointers": {
+                  "i": 0
+                },
+                "loop_flow": {
+                  "condition": "0 < 3 is true",
+                  "body": "next item is 3",
+                  "update": "i moves to the next index."
+                },
+                "note": "A for loop checks the condition before each pass."
+              },
+              "code_focus": "condition: Check i = 0",
+              "input_value": "3",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 0"
+                },
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "0 < 3 is true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "A for loop checks the condition before each pass."
+                }
+              ],
+              "output": "none yet",
+              "why": "Python checks whether i points to an item. Since 0 < 3 is true, pass 1 runs."
+            },
+            {
+              "title": "Run pass 1",
+              "body": "Read index 0 and add 3 to the running total.",
+              "animation": "add",
+              "state": {
+                "active_step": "body",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  0
+                ],
+                "pointers": {
+                  "i": 0
+                },
+                "loop_flow": {
+                  "condition": "0 < 3 is true",
+                  "body": "total = 0 + 3",
+                  "update": "next i will be 1"
+                },
+                "note": "current item = 3, total becomes 3"
+              },
+              "code_focus": "body: Run pass 1",
+              "input_value": "3",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 0"
+                },
+                {
+                  "name": "step",
+                  "value": "body"
+                }
+              ],
+              "decision": "0 < 3 is true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "current item = 3, total becomes 3"
+                }
+              ],
+              "output": "none yet",
+              "why": "Read index 0 and add 3 to the running total."
+            },
+            {
+              "title": "Move after pass 1",
+              "body": "After the body, the update moves i from 0 to 1, then the loop goes back to the condition.",
+              "animation": "slide",
+              "state": {
+                "active_step": "update",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  0
+                ],
+                "pointers": {
+                  "i": 1
+                },
+                "loop_flow": {
+                  "condition": "next check uses i = 1",
+                  "body": "total is 3",
+                  "update": "i moves from 0 to 1"
+                },
+                "note": "The update does not end the loop by itself; it sends control back to the condition."
+              },
+              "code_focus": "update: Move after pass 1",
+              "input_value": "3",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "update"
+                }
+              ],
+              "decision": "next check uses i = 1",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The update does not end the loop by itself; it sends control back to the condition."
+                }
+              ],
+              "output": "none yet",
+              "why": "After the body, the update moves i from 0 to 1, then the loop goes back to the condition."
+            },
+            {
+              "title": "Check i = 1",
+              "body": "Python checks whether i points to an item. Since 1 < 3 is true, pass 2 runs.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "i": 1
+                },
+                "loop_flow": {
+                  "condition": "1 < 3 is true",
+                  "body": "next item is 5",
+                  "update": "i moves to the next index."
+                },
+                "note": "A for loop checks the condition before each pass."
+              },
+              "code_focus": "condition: Check i = 1",
+              "input_value": "5",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "1 < 3 is true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "A for loop checks the condition before each pass."
+                }
+              ],
+              "output": "none yet",
+              "why": "Python checks whether i points to an item. Since 1 < 3 is true, pass 2 runs."
+            },
+            {
+              "title": "Run pass 2",
+              "body": "Read index 1 and add 5 to the running total.",
+              "animation": "add",
+              "state": {
+                "active_step": "body",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "i": 1
+                },
+                "loop_flow": {
+                  "condition": "1 < 3 is true",
+                  "body": "total = 3 + 5",
+                  "update": "next i will be 2"
+                },
+                "note": "current item = 5, total becomes 8"
+              },
+              "code_focus": "body: Run pass 2",
+              "input_value": "5",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "body"
+                }
+              ],
+              "decision": "1 < 3 is true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "current item = 5, total becomes 8"
+                }
+              ],
+              "output": "none yet",
+              "why": "Read index 1 and add 5 to the running total."
+            },
+            {
+              "title": "Move after pass 2",
+              "body": "After the body, the update moves i from 1 to 2, then the loop goes back to the condition.",
+              "animation": "slide",
+              "state": {
+                "active_step": "update",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "i": 2
+                },
+                "loop_flow": {
+                  "condition": "next check uses i = 2",
+                  "body": "total is 8",
+                  "update": "i moves from 1 to 2"
+                },
+                "note": "The update does not end the loop by itself; it sends control back to the condition."
+              },
+              "code_focus": "update: Move after pass 2",
+              "input_value": "5",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 2"
+                },
+                {
+                  "name": "step",
+                  "value": "update"
+                }
+              ],
+              "decision": "next check uses i = 2",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The update does not end the loop by itself; it sends control back to the condition."
+                }
+              ],
+              "output": "none yet",
+              "why": "After the body, the update moves i from 1 to 2, then the loop goes back to the condition."
+            },
+            {
+              "title": "Check i = 2",
+              "body": "Python checks whether i points to an item. Since 2 < 3 is true, pass 3 runs.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  2
+                ],
+                "pointers": {
+                  "i": 2
+                },
+                "loop_flow": {
+                  "condition": "2 < 3 is true",
+                  "body": "next item is 2",
+                  "update": "i moves to the next index."
+                },
+                "note": "A for loop checks the condition before each pass."
+              },
+              "code_focus": "condition: Check i = 2",
+              "input_value": "2",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 2"
+                },
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "2 < 3 is true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "A for loop checks the condition before each pass."
+                }
+              ],
+              "output": "none yet",
+              "why": "Python checks whether i points to an item. Since 2 < 3 is true, pass 3 runs."
+            },
+            {
+              "title": "Run pass 3",
+              "body": "Read index 2 and add 2 to the running total.",
+              "animation": "add",
+              "state": {
+                "active_step": "body",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  2
+                ],
+                "pointers": {
+                  "i": 2
+                },
+                "loop_flow": {
+                  "condition": "2 < 3 is true",
+                  "body": "total = 8 + 2",
+                  "update": "next i will be 3"
+                },
+                "note": "current item = 2, total becomes 10"
+              },
+              "code_focus": "body: Run pass 3",
+              "input_value": "2",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 2"
+                },
+                {
+                  "name": "step",
+                  "value": "body"
+                }
+              ],
+              "decision": "2 < 3 is true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "current item = 2, total becomes 10"
+                }
+              ],
+              "output": "none yet",
+              "why": "Read index 2 and add 2 to the running total."
+            },
+            {
+              "title": "Move after pass 3",
+              "body": "After the body, the update moves i from 2 to 3, then the loop goes back to the condition.",
+              "animation": "slide",
+              "state": {
+                "active_step": "update",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  2
+                ],
+                "pointers": {
+                  "i": 2
+                },
+                "loop_flow": {
+                  "condition": "next check uses i = 3",
+                  "body": "total is 10",
+                  "update": "i moves from 2 to 3"
+                },
+                "note": "The update does not end the loop by itself; it sends control back to the condition."
+              },
+              "code_focus": "update: Move after pass 3",
+              "input_value": "2",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 2"
+                },
+                {
+                  "name": "step",
+                  "value": "update"
+                }
+              ],
+              "decision": "next check uses i = 3",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The update does not end the loop by itself; it sends control back to the condition."
+                }
+              ],
+              "output": "none yet",
+              "why": "After the body, the update moves i from 2 to 3, then the loop goes back to the condition."
+            },
+            {
+              "title": "Final condition fails",
+              "body": "Now i is 3. The condition is false, so the body does not run a fourth time.",
+              "animation": "return",
+              "state": {
+                "active_step": "condition",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "pointers": {
+                  "i": 3
+                },
+                "loop_flow": {
+                  "condition": "3 < 3 is false",
+                  "body": "skip body",
+                  "update": "no update runs"
+                },
+                "note": "Python leaves the loop."
+              },
+              "code_focus": "condition: Final condition fails",
+              "input_value": "3, 5, 2",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 3"
+                },
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "3 < 3 is false",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "Python leaves the loop."
+                }
+              ],
+              "output": "Python leaves the loop.",
+              "why": "Now i is 3. The condition is false, so the body does not run a fourth time."
+            },
+            {
+              "title": "Use final total",
+              "body": "After the loop ends, the program uses the total built by all three passes.",
+              "state": {
+                "active_step": "done",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  2
+                ],
+                "pointers": {
+                  "last": 2
+                },
+                "loop_flow": {
+                  "done": "final total = 10"
+                },
+                "note": "Each item contributed once, so the final total is 10."
+              },
+              "code_focus": "done: Use final total",
+              "input_value": "2",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "last: 2"
+                },
+                {
+                  "name": "step",
+                  "value": "done"
+                }
+              ],
+              "decision": "i < 3?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "Each item contributed once, so the final total is 10."
+                }
+              ],
+              "output": "Each item contributed once, so the final total is 10.",
+              "why": "After the loop ends, the program uses the total built by all three passes."
+            }
+          ]
         },
         {
-          "title": "Second pass",
-          "body": "Move to index 1 and add 5.",
-          "animation": "slide",
-          "state": {
-            "items": [
-              "3",
-              "5",
-              "2"
-            ],
-            "active": [
-              1
-            ],
-            "pointers": {
-              "i": 1
-            },
-            "note": "total = 8"
-          }
+          "kind": "code",
+          "caption": "Before real syntax, learn the shape: a **loop** repeats a body. The examples after this show how this language writes that shape.",
+          "code": "for each item in a group:\n    repeated body for that item\n\nwhile condition is true:\n    repeated body\n    update something so the loop can stop"
         },
         {
-          "title": "After the last item",
-          "body": "The loop stops after each item has contributed once.",
-          "state": {
-            "items": [
-              "3",
-              "5",
-              "2"
-            ],
-            "active": [
-              2
-            ],
-            "pointers": {
-              "i": 2
-            },
-            "note": "final total = 10"
-          }
+          "kind": "code",
+          "caption": "A `for` **loop** runs its body once for each item in a sequence. The sequence here is a **list** of three names, so the body runs three times.",
+          "code": "for name in [\"Ada\", \"Grace\", \"Alan\"]:\n    print(\"Hello, \" + name)",
+          "output": "Hello, Ada\nHello, Grace\nHello, Alan"
+        },
+        {
+          "kind": "text",
+          "body": "The **variable** after `for`, in this case `name`, is called the **loop** variable. You pick what to call it. On each pass it automatically holds the next item, so you never assign it yourself."
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "The indentation is the loop",
+          "body": "In Python, the indented lines under `for` are the body of the **loop**. Un-indent a line and it is no longer inside the loop, so it runs once, after the loop has finished. This is the single most common cause of \"why did it only **print** once?\""
         }
       ]
     },
     {
-      "kind": "code",
-      "caption": "A `for` **loop** runs its body once for each item in a sequence. The sequence here is a **list** of three names, so the body runs three times.",
-      "code": "for name in [\"Ada\", \"Grace\", \"Alan\"]:\n    print(\"Hello, \" + name)",
-      "output": "Hello, Ada\nHello, Grace\nHello, Alan"
+      "id": "range-counting",
+      "title": "Counting with range",
+      "summary": "Use range carefully and remember where it stops.",
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "To count rather than walk a **list**, use `range(n)`. It produces 0, 1, and so on, stopping just before n. `range(5)` therefore gives you five numbers: 0 through 4.",
+          "code": "for i in range(5):\n    print(i)",
+          "output": "0\n1\n2\n3\n4"
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "range(5) does not include 5",
+          "body": "This catches almost everyone at least once. `range(5)` gives you 0, 1, 2, 3, 4. It stops before 5, never reaching it. If you want 1 through 5, write `range(1, 6)`. Getting this wrong by a single step is so common that it has its own name: an off-by-one error."
+        },
+        {
+          "kind": "check",
+          "prompt": "How many times does this **loop** **print**, and what is the last number it prints?",
+          "code": "for i in range(4):\n    print(i)",
+          "choices": [
+            "4 times, last number 3",
+            "4 times, last number 4",
+            "5 times, last number 4",
+            "3 times, last number 3"
+          ],
+          "answer_index": 0,
+          "why": "`range(4)` produces 0, 1, 2, 3. That is four numbers, and it stops before reaching 4. So the **loop** runs four times and the last thing printed is 3. If you picked \"last number 4\", you have just met the off-by-one error in person, which is the most useful way to meet it."
+        }
+      ]
     },
     {
-      "kind": "text",
-      "body": "The **variable** after `for`, in this case `name`, is called the **loop** variable. You pick what to call it. On each pass it automatically holds the next item, so you never assign it yourself."
+      "id": "accumulators",
+      "title": "Accumulators inside loops",
+      "summary": "Set up running state before the loop and update it inside.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "The other pattern worth knowing early is the accumulator. Start with an empty total, then add to it on each pass. Almost every problem that asks you to add things up, count how many, or build a **list** is really this pattern wearing a different hat."
+        },
+        {
+          "kind": "code",
+          "caption": "Notice that `total` is created before the **loop** starts. Create it inside and it would be reset to 0 on every pass, so the answer would always come out as just the last number.",
+          "code": "total = 0\nfor price in [4, 7, 2]:\n    total = total + price\nprint(total)",
+          "output": "13"
+        }
+      ]
     },
     {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "The indentation is the loop",
-      "body": "In Python, the indented lines under `for` are the body of the **loop**. Un-indent a line and it is no longer inside the loop, so it runs once, after the loop has finished. This is the single most common cause of \"why did it only **print** once?\""
+      "id": "while-loops",
+      "title": "While loops and stopping",
+      "summary": "Make sure the condition changes so the loop can end.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A `while` **loop** works differently. It does not walk through a sequence. It simply keeps going for as long as its **condition** stays true, which makes it the right choice when you cannot know in advance how many repeats you will need."
+        },
+        {
+          "kind": "code",
+          "caption": "This counts down. The **condition** is checked before each pass, so once `n` reaches 0 the **loop** stops without running the body again.",
+          "code": "n = 3\nwhile n > 0:\n    print(n)\n    n = n - 1\nprint(\"Liftoff!\")",
+          "output": "3\n2\n1\nLiftoff!"
+        },
+        {
+          "kind": "visual",
+          "title": "Trace a while loop until it stops",
+          "concept": "loops",
+          "caption": "Watch the condition, body, and update repeat until the condition finally fails.",
+          "initial_state": {
+            "loop_flow": {
+              "setup": "n = 3",
+              "condition": "n > 0?",
+              "body": "print n",
+              "update": "n = n - 1",
+              "done": "print Liftoff!"
+            }
+          },
+          "steps": [
+            {
+              "title": "Set n before the loop",
+              "body": "The loop starts with n set to 3, which is the value the condition will test.",
+              "state": {
+                "active_step": "setup",
+                "loop_flow": {
+                  "setup": "n = 3"
+                },
+                "note": "A while loop needs a value that the condition can test."
+              },
+              "code_focus": "setup: Set n before the loop",
+              "input_value": "n = 3",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "setup"
+                }
+              ],
+              "decision": "n > 0?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "A while loop needs a value that the condition can test."
+                }
+              ],
+              "output": "none yet",
+              "why": "The loop starts with n set to 3, which is the value the condition will test."
+            },
+            {
+              "title": "Check n = 3",
+              "body": "Ask whether 3 is greater than 0. It is true, so the body runs.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
+                "loop_flow": {
+                  "condition": "3 > 0 is true"
+                },
+                "note": "The condition is checked before this pass."
+              },
+              "code_focus": "condition: Check n = 3",
+              "input_value": "3 > 0 is true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "3 > 0 is true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The condition is checked before this pass."
+                }
+              ],
+              "output": "none yet",
+              "why": "Ask whether 3 is greater than 0. It is true, so the body runs."
+            },
+            {
+              "title": "Run body for 3",
+              "body": "The body uses the current value, 3.",
+              "animation": "branch",
+              "state": {
+                "active_step": "body",
+                "loop_flow": {
+                  "body": "print n: 3"
+                },
+                "note": "The body runs only after the condition is true."
+              },
+              "code_focus": "body: Run body for 3",
+              "input_value": "print n: 3",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "body"
+                }
+              ],
+              "decision": "n > 0?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The body runs only after the condition is true."
+                }
+              ],
+              "output": "none yet",
+              "why": "The body uses the current value, 3."
+            },
+            {
+              "title": "Update n to 2",
+              "body": "The update changes n from 3 to 2, then the loop checks the condition again.",
+              "animation": "slide",
+              "state": {
+                "active_step": "update",
+                "loop_flow": {
+                  "update": "n becomes 2",
+                  "condition": "next check uses n = 2"
+                },
+                "note": "This update is what moves the loop toward stopping."
+              },
+              "code_focus": "update: Update n to 2",
+              "input_value": "n becomes 2",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "update"
+                }
+              ],
+              "decision": "next check uses n = 2",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "This update is what moves the loop toward stopping."
+                }
+              ],
+              "output": "none yet",
+              "why": "The update changes n from 3 to 2, then the loop checks the condition again."
+            },
+            {
+              "title": "Check n = 2",
+              "body": "Ask whether 2 is greater than 0. It is true, so the body runs.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
+                "loop_flow": {
+                  "condition": "2 > 0 is true"
+                },
+                "note": "The condition is checked before this pass."
+              },
+              "code_focus": "condition: Check n = 2",
+              "input_value": "2 > 0 is true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "2 > 0 is true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The condition is checked before this pass."
+                }
+              ],
+              "output": "none yet",
+              "why": "Ask whether 2 is greater than 0. It is true, so the body runs."
+            },
+            {
+              "title": "Run body for 2",
+              "body": "The body uses the current value, 2.",
+              "animation": "branch",
+              "state": {
+                "active_step": "body",
+                "loop_flow": {
+                  "body": "print n: 2"
+                },
+                "note": "The body runs only after the condition is true."
+              },
+              "code_focus": "body: Run body for 2",
+              "input_value": "print n: 2",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "body"
+                }
+              ],
+              "decision": "n > 0?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The body runs only after the condition is true."
+                }
+              ],
+              "output": "none yet",
+              "why": "The body uses the current value, 2."
+            },
+            {
+              "title": "Update n to 1",
+              "body": "The update changes n from 2 to 1, then the loop checks the condition again.",
+              "animation": "slide",
+              "state": {
+                "active_step": "update",
+                "loop_flow": {
+                  "update": "n becomes 1",
+                  "condition": "next check uses n = 1"
+                },
+                "note": "This update is what moves the loop toward stopping."
+              },
+              "code_focus": "update: Update n to 1",
+              "input_value": "n becomes 1",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "update"
+                }
+              ],
+              "decision": "next check uses n = 1",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "This update is what moves the loop toward stopping."
+                }
+              ],
+              "output": "none yet",
+              "why": "The update changes n from 2 to 1, then the loop checks the condition again."
+            },
+            {
+              "title": "Check n = 1",
+              "body": "Ask whether 1 is greater than 0. It is true, so the body runs.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
+                "loop_flow": {
+                  "condition": "1 > 0 is true"
+                },
+                "note": "The condition is checked before this pass."
+              },
+              "code_focus": "condition: Check n = 1",
+              "input_value": "1 > 0 is true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "1 > 0 is true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The condition is checked before this pass."
+                }
+              ],
+              "output": "none yet",
+              "why": "Ask whether 1 is greater than 0. It is true, so the body runs."
+            },
+            {
+              "title": "Run body for 1",
+              "body": "The body uses the current value, 1.",
+              "animation": "branch",
+              "state": {
+                "active_step": "body",
+                "loop_flow": {
+                  "body": "print n: 1"
+                },
+                "note": "The body runs only after the condition is true."
+              },
+              "code_focus": "body: Run body for 1",
+              "input_value": "print n: 1",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "body"
+                }
+              ],
+              "decision": "n > 0?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The body runs only after the condition is true."
+                }
+              ],
+              "output": "none yet",
+              "why": "The body uses the current value, 1."
+            },
+            {
+              "title": "Update n to 0",
+              "body": "The update changes n from 1 to 0, then the loop checks the condition again.",
+              "animation": "slide",
+              "state": {
+                "active_step": "update",
+                "loop_flow": {
+                  "update": "n becomes 0",
+                  "condition": "next check uses n = 0"
+                },
+                "note": "This update is what moves the loop toward stopping."
+              },
+              "code_focus": "update: Update n to 0",
+              "input_value": "n becomes 0",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "update"
+                }
+              ],
+              "decision": "next check uses n = 0",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "This update is what moves the loop toward stopping."
+                }
+              ],
+              "output": "none yet",
+              "why": "The update changes n from 1 to 0, then the loop checks the condition again."
+            },
+            {
+              "title": "Check n = 0",
+              "body": "The condition is false now, so the loop skips the body.",
+              "animation": "return",
+              "state": {
+                "active_step": "condition",
+                "loop_flow": {
+                  "condition": "0 > 0 is false",
+                  "body": "skip body"
+                },
+                "note": "False means skip the body and continue after the loop."
+              },
+              "code_focus": "condition: Check n = 0",
+              "input_value": "0 > 0 is false",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "0 > 0 is false",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "False means skip the body and continue after the loop."
+                }
+              ],
+              "output": "none yet",
+              "why": "The condition is false now, so the loop skips the body."
+            },
+            {
+              "title": "Continue after the loop",
+              "body": "The loop is finished, so the next line after the loop can run.",
+              "state": {
+                "active_step": "done",
+                "loop_flow": {
+                  "done": "print Liftoff!"
+                },
+                "note": "The trace reaches the end of the loop, not just the first pass."
+              },
+              "code_focus": "done: Continue after the loop",
+              "input_value": "print Liftoff!",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "done"
+                }
+              ],
+              "decision": "n > 0?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The trace reaches the end of the loop, not just the first pass."
+                }
+              ],
+              "output": "The trace reaches the end of the loop, not just the first pass.",
+              "why": "The loop is finished, so the next line after the loop can run."
+            }
+          ]
+        },
+        {
+          "kind": "compare",
+          "caption": "A `while` **loop** only ends if something inside it changes the **condition**. Leave that line out and the program hangs forever, because the loop has been given no reason to stop.",
+          "wrong_label": "Runs forever",
+          "wrong": "n = 3\nwhile n > 0:\n    print(n)\n# n never changes,\n# so n > 0 stays true",
+          "right_label": "Ends",
+          "right": "n = 3\nwhile n > 0:\n    print(n)\n    n = n - 1\n# n shrinks each pass,\n# so n > 0 eventually fails"
+        },
+        {
+          "kind": "check",
+          "prompt": "This **loop** is meant to count up to 5. What actually happens?",
+          "code": "count = 1\nwhile count <= 5:\n    print(count)\ncount = count + 1",
+          "choices": [
+            "It prints 1 through 5",
+            "It prints 1 forever",
+            "It prints nothing",
+            "It prints 1, 2, 3, 4, 5, 6"
+          ],
+          "answer_index": 1,
+          "why": "Look at the indentation. `count = count + 1` sits outside the **loop** body, so it never runs while the loop is going. `count` stays at 1, the **condition** `count <= 5` stays true, and the loop prints 1 over and over. Indent that last line by four spaces and it works. Whenever a run of yours times out, this is the first thing to check."
+        },
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "If your code times out, suspect a while loop",
+          "body": "An infinite **loop** is the usual reason a run never finishes. Ask yourself one question: what inside this loop will eventually make the **condition** false? If you cannot point at the line that does it, you have found your bug."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "To count rather than walk a **list**, use `range(n)`. It produces 0, 1, and so on, stopping just before n. `range(5)` therefore gives you five numbers: 0 through 4.",
-      "code": "for i in range(5):\n    print(i)",
-      "output": "0\n1\n2\n3\n4"
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "range(5) does not include 5",
-      "body": "This catches almost everyone at least once. `range(5)` gives you 0, 1, 2, 3, 4. It stops before 5, never reaching it. If you want 1 through 5, write `range(1, 6)`. Getting this wrong by a single step is so common that it has its own name: an off-by-one error."
-    },
-    {
-      "kind": "check",
-      "prompt": "How many times does this **loop** **print**, and what is the last number it prints?",
-      "code": "for i in range(4):\n    print(i)",
-      "choices": [
-        "4 times, last number 3",
-        "4 times, last number 4",
-        "5 times, last number 4",
-        "3 times, last number 3"
-      ],
-      "answer_index": 0,
-      "why": "`range(4)` produces 0, 1, 2, 3. That is four numbers, and it stops before reaching 4. So the **loop** runs four times and the last thing printed is 3. If you picked \"last number 4\", you have just met the off-by-one error in person, which is the most useful way to meet it."
-    },
-    {
-      "kind": "text",
-      "body": "The other pattern worth knowing early is the accumulator. Start with an empty total, then add to it on each pass. Almost every problem that asks you to add things up, count how many, or build a **list** is really this pattern wearing a different hat."
-    },
-    {
-      "kind": "code",
-      "caption": "Notice that `total` is created before the **loop** starts. Create it inside and it would be reset to 0 on every pass, so the answer would always come out as just the last number.",
-      "code": "total = 0\nfor price in [4, 7, 2]:\n    total = total + price\nprint(total)",
-      "output": "13"
-    },
-    {
-      "kind": "text",
-      "body": "A `while` **loop** works differently. It does not walk through a sequence. It simply keeps going for as long as its **condition** stays true, which makes it the right choice when you cannot know in advance how many repeats you will need."
-    },
-    {
-      "kind": "code",
-      "caption": "This counts down. The **condition** is checked before each pass, so once `n` reaches 0 the **loop** stops without running the body again.",
-      "code": "n = 3\nwhile n > 0:\n    print(n)\n    n = n - 1\nprint(\"Liftoff!\")",
-      "output": "3\n2\n1\nLiftoff!"
-    },
-    {
-      "kind": "compare",
-      "caption": "A `while` **loop** only ends if something inside it changes the **condition**. Leave that line out and the program hangs forever, because the loop has been given no reason to stop.",
-      "wrong_label": "Runs forever",
-      "wrong": "n = 3\nwhile n > 0:\n    print(n)\n# n never changes,\n# so n > 0 stays true",
-      "right_label": "Ends",
-      "right": "n = 3\nwhile n > 0:\n    print(n)\n    n = n - 1\n# n shrinks each pass,\n# so n > 0 eventually fails"
-    },
-    {
-      "kind": "check",
-      "prompt": "This **loop** is meant to count up to 5. What actually happens?",
-      "code": "count = 1\nwhile count <= 5:\n    print(count)\ncount = count + 1",
-      "choices": [
-        "It prints 1 through 5",
-        "It prints 1 forever",
-        "It prints nothing",
-        "It prints 1, 2, 3, 4, 5, 6"
-      ],
-      "answer_index": 1,
-      "why": "Look at the indentation. `count = count + 1` sits outside the **loop** body, so it never runs while the loop is going. `count` stays at 1, the **condition** `count <= 5` stays true, and the loop prints 1 over and over. Indent that last line by four spaces and it works. Whenever a run of yours times out, this is the first thing to check."
-    },
-    {
-      "kind": "callout",
-      "tone": "warning",
-      "title": "If your code times out, suspect a while loop",
-      "body": "An infinite **loop** is the usual reason a run never finishes. Ask yourself one question: what inside this loop will eventually make the **condition** false? If you cannot point at the line that does it, you have found your bug."
-    },
-    {
-      "kind": "list",
-      "title": "Which loop should I reach for?",
-      "items": [
-        "You have a **list**, a **string**, or a range to walk through: use `for`",
-        "You know how many times to repeat: use `for` with `range(n)`",
-        "You repeat until something becomes true, and cannot say how long that takes: use `while`",
-        "When you are unsure, start with `for`. It cannot run forever."
+      "id": "choose-loop",
+      "title": "Choose the loop shape",
+      "summary": "Pick the loop that matches the job.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Which loop should I reach for?",
+          "items": [
+            "You have a **list**, a **string**, or a range to walk through: use `for`",
+            "You know how many times to repeat: use `for` with `range(n)`",
+            "You repeat until something becomes true, and cannot say how long that takes: use `while`",
+            "When you are unsure, start with `for`. It cannot run forever."
+          ]
+        }
       ]
     }
   ],

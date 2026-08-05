@@ -10,77 +10,409 @@
   ],
   "refresher": "Generics are the type names inside angle brackets, such as `ArrayList<String>`. They tell Java what kind of **values** belong in a collection. That lets Java catch the wrong type before the program runs.",
   "refresher_code": "List<String> names = new ArrayList<>();\nnames.add(\"Ada\");\nString first = names.get(0);",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "Generics are the type labels inside angle brackets. In `ArrayList<String>`, the **list** is meant to hold **Strings**. That promise helps Java protect you from putting the wrong kind of **value** into the list."
+      "id": "idea",
+      "title": "Label the element type",
+      "summary": "Use generics to tell Java what kind of values a container holds.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "**Generics** are the type labels inside angle brackets. In `ArrayList<String>`, the **list** is meant to hold **Strings**. That promise helps Java protect you from putting the wrong kind of **value** into the list."
+        },
+        {
+          "kind": "visual",
+          "title": "Generics protect values going in and out",
+          "concept": "generics-flow",
+          "caption": "Trace a typed list as Java checks added values and returns a known type.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Choose the element type",
+              "body": "List<String> labels the collection as a box for String values.",
+              "animation": "add",
+              "state": {
+                "active_step": "type",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "type",
+                      "label": "Type Label",
+                      "detail": "List<String>",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "add",
+                      "label": "Add",
+                      "detail": "only String values",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "check",
+                      "label": "Type OK?",
+                      "detail": "compiler checks",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "get",
+                      "label": "Get",
+                      "detail": "returns String",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "no cast needed",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "table": [
+                  {
+                    "key": "courses",
+                    "value": "List<String>",
+                    "active": true
+                  }
+                ],
+                "note": "the angle brackets name the allowed element type"
+              },
+              "code_focus": "type: Choose the element type",
+              "input_value": "courses -> List<String>",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "type"
+                }
+              ],
+              "decision": "List<String> labels the collection as a box for String values.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the angle brackets name the allowed element type"
+                },
+                {
+                  "name": "active entry",
+                  "value": "courses -> List<String>"
+                }
+              ],
+              "output": "none yet",
+              "why": "List<String> labels the collection as a box for String values."
+            },
+            {
+              "title": "Add a matching value",
+              "body": "A String value fits the list's type promise.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "add",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "type",
+                      "label": "Type Label",
+                      "detail": "String elements",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "add",
+                      "label": "Add",
+                      "detail": "courses.add(\"CS101\")",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "check",
+                      "label": "Type OK?",
+                      "detail": "yes",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "get",
+                      "label": "Get",
+                      "detail": "stored safely",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "list has CS101",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "table": [
+                  {
+                    "key": "index 0",
+                    "value": "CS101",
+                    "active": true
+                  }
+                ],
+                "note": "the compiler accepts values of the promised type"
+              },
+              "code_focus": "add: Add a matching value",
+              "input_value": "index 0 -> CS101",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "add"
+                }
+              ],
+              "decision": "A String value fits the list's type promise.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "the compiler accepts values of the promised type"
+                },
+                {
+                  "name": "active entry",
+                  "value": "index 0 -> CS101"
+                }
+              ],
+              "output": "none yet",
+              "why": "A String value fits the list's type promise."
+            },
+            {
+              "title": "Reject the wrong type",
+              "body": "A number does not satisfy List<String>, so Java can catch the mistake before runtime.",
+              "animation": "slide",
+              "state": {
+                "active_step": "check",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "type",
+                      "label": "Type Label",
+                      "detail": "List<String>",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "add",
+                      "label": "Add",
+                      "detail": "courses.add(42)",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "check",
+                      "label": "Type OK?",
+                      "detail": "no: Integer is not String",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "get",
+                      "label": "Get",
+                      "detail": "bad value never enters",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "compile-time protection",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "table": [
+                  {
+                    "key": "attempt",
+                    "value": "42",
+                    "active": true
+                  },
+                  {
+                    "key": "allowed",
+                    "value": "String"
+                  }
+                ],
+                "note": "generics move many mistakes earlier"
+              },
+              "code_focus": "check: Reject the wrong type",
+              "input_value": "attempt -> 42",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "check"
+                }
+              ],
+              "decision": "A number does not satisfy List<String>, so Java can catch the mistake before runtime.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "generics move many mistakes earlier"
+                },
+                {
+                  "name": "active entry",
+                  "value": "attempt -> 42"
+                }
+              ],
+              "output": "none yet",
+              "why": "A number does not satisfy List<String>, so Java can catch the mistake before runtime."
+            },
+            {
+              "title": "Get a known type",
+              "body": "Because the list is typed, get returns a String and no manual cast is needed.",
+              "animation": "add",
+              "state": {
+                "active_step": "result",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "type",
+                      "label": "Type Label",
+                      "detail": "List<String>",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "add",
+                      "label": "Add",
+                      "detail": "safe values stored",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "check",
+                      "label": "Type OK?",
+                      "detail": "already checked",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "get",
+                      "label": "Get",
+                      "detail": "courses.get(0)",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "result",
+                      "label": "Result",
+                      "detail": "String first = \"CS101\"",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "table": [
+                  {
+                    "key": "first",
+                    "value": "String \"CS101\"",
+                    "active": true
+                  }
+                ],
+                "note": "typed collections make outputs predictable too"
+              },
+              "code_focus": "result: Get a known type",
+              "input_value": "first -> String \"CS101\"",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "Because the list is typed, get returns a String and no manual cast is needed.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "typed collections make outputs predictable too"
+                },
+                {
+                  "name": "active entry",
+                  "value": "first -> String \"CS101\""
+                }
+              ],
+              "output": "none yet",
+              "why": "Because the list is typed, get returns a String and no manual cast is needed."
+            }
+          ]
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "This **list** accepts **String** **values**. Getting an item returns a String, so no cast is needed.",
-      "code": "List<String> courses = new ArrayList<>();\ncourses.add(\"CS101\");\ncourses.add(\"MATH120\");\nString first = courses.get(0);\nSystem.out.println(first);",
-      "output": "CS101",
-      "body": "Without generics, Java would not know what comes back out of a collection. With generics, `names.get(0)` is already known to be a **String**, so you do not have to guess or cast it by hand."
+      "id": "examples",
+      "title": "Read angle brackets",
+      "summary": "Trace how a typed collection protects values going in and coming out.",
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "This **list** accepts **String** **values**. Getting an item returns a String, so no cast is needed.",
+          "code": "List<String> courses = new ArrayList<>();\ncourses.add(\"CS101\");\ncourses.add(\"MATH120\");\nString first = courses.get(0);\nSystem.out.println(first);",
+          "output": "CS101",
+          "body": "Without generics, Java would not know what comes back out of a collection. With generics, `names.get(0)` is already known to be a **String**, so you do not have to guess or cast it by hand."
+        },
+        {
+          "kind": "text",
+          "body": "Without a type **argument**, an older raw **list** treats its items as **Object**. That loses useful checks and can move a type mistake from compilation to runtime.",
+          "caption": "The **list** is for **Strings**. Java rejects a number before the program runs."
+        }
+      ]
     },
     {
-      "kind": "text",
-      "body": "Without a type **argument**, an older raw **list** treats its items as **Object**. That loses useful checks and can move a type mistake from compilation to runtime.",
-      "caption": "The **list** is for **Strings**. Java rejects a number before the program runs."
+      "id": "pitfalls",
+      "title": "Avoid raw collections",
+      "summary": "Keep type mistakes at compile time instead of runtime.",
+      "blocks": [
+        {
+          "kind": "compare",
+          "caption": "The generic **list** rejects the wrong item as soon as the code is compiled. The raw list accepts it and may fail during a later cast.",
+          "wrong_label": "Raw list",
+          "wrong": "List values = new ArrayList();\nvalues.add(42);\nString name = (String) values.get(0);",
+          "right_label": "Checked list",
+          "right": "List<String> names = new ArrayList<>();\nnames.add(\"Ada\");\nString name = names.get(0);",
+          "body": "Angle brackets can look noisy at first. Read them as a label on the box: this box is for this type of thing."
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Use reference types in angle brackets",
+          "body": "Write `Integer` instead of `int` and `Double` instead of `double`. Java automatically wraps and unwraps these **values** in most collection code."
+        }
+      ]
     },
     {
-      "kind": "compare",
-      "caption": "The generic **list** rejects the wrong item as soon as the code is compiled. The raw list accepts it and may fail during a later cast.",
-      "wrong_label": "Raw list",
-      "wrong": "List values = new ArrayList();\nvalues.add(42);\nString name = (String) values.get(0);",
-      "right_label": "Checked list",
-      "right": "List<String> names = new ArrayList<>();\nnames.add(\"Ada\");\nString name = names.get(0);",
-      "body": "Angle brackets can look noisy at first. Read them as a label on the box: this box is for this type of thing."
+      "id": "check",
+      "title": "Check generic syntax",
+      "summary": "Practice wrapper types, diamond syntax, and type parameters.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "Which declaration creates a **list** that accepts **Integer** **values**?",
+          "code": "",
+          "choices": [
+            "List<Integer> scores = new ArrayList<>();",
+            "List<int> scores = new ArrayList<>();",
+            "List scores<Integer> = new ArrayList<>();",
+            "Integer<List> scores = new ArrayList<>();"
+          ],
+          "answer_index": 0,
+          "why": "The element type belongs inside angle brackets after **List**. Collections use the wrapper type **Integer** rather than the primitive type int."
+        },
+        {
+          "kind": "text",
+          "body": "Your own **class** can use a type **parameter** too. A Box<T> stores one value whose type is chosen when the object is declared. The same class can then make a Box<**String**> or Box<Student>."
+        },
+        {
+          "kind": "check",
+          "prompt": "What does `T` mean in `class Box<T>`?",
+          "code": "class Box<T> {\n    T value;\n}",
+          "choices": [
+            "A type chosen when Box is used",
+            "A required class named T",
+            "The number of items in the box",
+            "A private text value"
+          ],
+          "answer_index": 0,
+          "why": "T is a placeholder for a **reference** type. Declaring Box<**String**> replaces T with String for that use of the **class**."
+        }
+      ]
     },
     {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "Use reference types in angle brackets",
-      "body": "Write `Integer` instead of `int` and `Double` instead of `double`. Java automatically wraps and unwraps these **values** in most collection code."
-    },
-    {
-      "kind": "check",
-      "prompt": "Which declaration creates a **list** that accepts **Integer** **values**?",
-      "code": "",
-      "choices": [
-        "List<Integer> scores = new ArrayList<>();",
-        "List<int> scores = new ArrayList<>();",
-        "List scores<Integer> = new ArrayList<>();",
-        "Integer<List> scores = new ArrayList<>();"
-      ],
-      "answer_index": 0,
-      "why": "The element type belongs inside angle brackets after **List**. Collections use the wrapper type **Integer** rather than the primitive type int."
-    },
-    {
-      "kind": "text",
-      "body": "Your own **class** can use a type **parameter** too. A Box<T> stores one value whose type is chosen when the object is declared. The same class can then make a Box<**String**> or Box<Student>."
-    },
-    {
-      "kind": "check",
-      "prompt": "What does `T` mean in `class Box<T>`?",
-      "code": "class Box<T> {\n    T value;\n}",
-      "choices": [
-        "A type chosen when Box is used",
-        "A required class named T",
-        "The number of items in the box",
-        "A private text value"
-      ],
-      "answer_index": 0,
-      "why": "T is a placeholder for a **reference** type. Declaring Box<**String**> replaces T with String for that use of the **class**."
-    },
-    {
-      "kind": "list",
-      "title": "Generics checklist",
-      "items": [
-        "Put the element type in angle brackets.",
-        "Use ArrayList<**String**> for a **list** of Strings.",
-        "Let Java catch the wrong type early.",
-        "Avoid raw collections in new code.",
-        "Read generics as labels on containers."
+      "id": "practice",
+      "title": "Generic habits",
+      "summary": "Use a checklist for typed containers.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Generics checklist",
+          "items": [
+            "Put the element type in angle brackets.",
+            "Use ArrayList<**String**> for a **list** of Strings.",
+            "Let Java catch the wrong type early.",
+            "Avoid raw collections in new code.",
+            "Read generics as labels on containers."
+          ]
+        }
       ]
     }
   ],
