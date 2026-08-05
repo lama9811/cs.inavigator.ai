@@ -11,7 +11,7 @@ import pytest
 
 from banner_scraper.class_search import (
     parse_section, _fmt_time, _days_str, _meeting_time_string,
-    human_term, sem_key_from_description,
+    human_term, sem_key_from_description, _valid_section,
 )
 
 _FIXTURE = os.path.join(os.path.dirname(__file__), "fixtures", "banner_cosc_fall2026.json")
@@ -92,6 +92,14 @@ def test_days_str():
     assert _days_str({}) == ""
 
 
+def test_tr_stays_tuesday_then_thursday_for_schedule_parser():
+    from services.schedule_planner import parse_time_slots
+
+    slots = parse_time_slots("TR 9:00AM-10:20AM")
+
+    assert [day for day, _start, _end in slots] == ["T", "R"]
+
+
 def test_meeting_time_string_online_is_tba(raw_rows):
     # COSC001 in the fixture has an EXM meeting with null begin/end -> TBA.
     row = next(r for r in raw_rows if r["courseReferenceNumber"] == "70427")
@@ -108,6 +116,52 @@ def test_meeting_time_string_builds_real_slot():
     time_str, room = _meeting_time_string(meetings)
     assert time_str == "MWF 12:00PM-12:50PM"
     assert room == "MCMN-514"
+
+
+def test_meeting_time_string_combines_multiple_timed_slots():
+    meetings = [
+        {"meetingTime": {
+            "monday": True, "wednesday": True,
+            "beginTime": "1000", "endTime": "1050",
+            "building": " MCMN ", "room": " 516 ",
+        }},
+        {"meetingTime": {
+            "friday": True,
+            "beginTime": "1100", "endTime": "1150",
+            "building": "TBA", "room": "",
+        }},
+    ]
+    time_str, room = _meeting_time_string(meetings)
+    assert time_str == "MW 10:00AM-10:50AM, F 11:00AM-11:50AM"
+    assert room == "MCMN-516"
+
+
+def test_parse_section_normalizes_missing_text_fields():
+    sec = parse_section({
+        "courseReferenceNumber": " 70099 ",
+        "subject": " COSC ",
+        "courseNumber": " 352 ",
+        "courseTitle": "  Organization   of Programming Languages ",
+        "sequenceNumber": " 001 ",
+        "faculty": [{"primaryIndicator": True, "displayName": "  Jon   White "}],
+        "campusDescription": None,
+        "scheduleTypeDescription": "  Lecture ",
+        "creditHours": "3",
+        "seatsAvailable": "4",
+        "meetingsFaculty": [],
+    }, "fall_2026")
+    assert sec["crn"] == "70099"
+    assert sec["course_code"] == "COSC 352"
+    assert sec["title"] == "Organization of Programming Languages"
+    assert sec["instructor"] == "Jon White"
+    assert sec["schedule_type"] == "Lecture"
+    assert sec["time"] == "TBA"
+
+
+def test_valid_section_requires_crn_and_course_code():
+    assert _valid_section({"crn": "70001", "course_code": "COSC 352"})
+    assert not _valid_section({"crn": "", "course_code": "COSC 352"})
+    assert not _valid_section({"crn": "70001", "course_code": ""})
 
 
 # --- term helpers ---

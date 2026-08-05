@@ -119,7 +119,9 @@ export default function ChatSidebar({
           } else if (imageUrl.startsWith('http')) {
             // Full URL - use directly
             setProfileImageUrl(imageUrl);
-          } else if (!imageUrl.startsWith('/user_icon.webp')) {
+          } else if (imageUrl === '/user_icon.jpg' || imageUrl.startsWith('/user_icon.webp')) {
+            setProfileImageUrl("/user_icon.webp");
+          } else {
             // Relative path - prepend API base
             setProfileImageUrl(`${API_BASE}${imageUrl}`);
           }

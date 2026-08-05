@@ -22,10 +22,13 @@ import re
 import time as _time
 import random
 import string
+import json
+from pathlib import Path
 import httpx
 
 BANNER_SSB_BASE = os.getenv("BANNER_SSB_BASE", "https://lbssb1nprod.morgan.edu")
 _REG = f"{BANNER_SSB_BASE}/StudentRegistrationSsb/ssb"
+_DATA_DIR = Path(__file__).resolve().parent.parent / "data_sources"
 
 # Subjects the CS planner cares about.
 CS_SUBJECTS = ["COSC", "BIOI", "CLCO"]
@@ -68,6 +71,61 @@ def _days_str(mt: dict) -> str:
     return "".join(code for key, code in _DAY_FLAGS if mt.get(key))
 
 
+def _clean_text(value, default: str = "") -> str:
+    """Collapse Banner whitespace and keep missing values predictable."""
+    text = re.sub(r"\s+", " ", str(value or "")).strip()
+    return text or default
+
+
+def _valid_section(section: dict) -> bool:
+    """A parsed row needs a CRN and course code before it can be stored."""
+    return bool(_clean_text(section.get("crn")) and _clean_text(section.get("course_code")))
+
+
+def _subject_from_code(code: str) -> str:
+    match = re.match(r"^([A-Z]{2,4})\s+\d{3}$", _clean_text(code).upper())
+    return match.group(1) if match else ""
+
+
+def gened_candidate_subjects(gened_path: Path | None = None) -> list[str]:
+    """Subjects represented by GenEd courses CS Navigator may recommend."""
+    path = gened_path or (_DATA_DIR / "gened.json")
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+
+    subjects = set()
+    for area in data.get("areas") or []:
+        for key in ("courses", "also_satisfied_by", "language_courses"):
+            for course in area.get(key) or []:
+                subject = _subject_from_code(course.get("code", ""))
+                if subject:
+                    subjects.add(subject)
+    return sorted(subjects)
+
+
+def refresh_subjects(subjects: str | list[str] | None = None, include_geneds: bool = True) -> list[str]:
+    """Subjects the scheduled refresh should pull, with optional admin override."""
+    if isinstance(subjects, str) and subjects.strip():
+        raw = re.split(r"[\s,]+", subjects)
+        base = [item.strip().upper() for item in raw if item.strip()]
+    elif isinstance(subjects, list) and subjects:
+        base = [str(item).strip().upper() for item in subjects if str(item).strip()]
+    else:
+        base = list(CS_SUBJECTS)
+        if include_geneds:
+            base.extend(gened_candidate_subjects())
+
+    seen = set()
+    clean = []
+    for subject in base:
+        if re.fullmatch(r"[A-Z]{2,4}", subject) and subject not in seen:
+            seen.add(subject)
+            clean.append(subject)
+    return clean
+
+
 def _meeting_time_string(meetings: list) -> tuple[str, str]:
     """Combine a section's meetingsFaculty into a schedule-engine time string
     ('MWF 12:00PM-12:50PM' or 'MWF 12:00PM-12:50PM, T 1:00PM-1:50PM') and pick a
@@ -82,9 +140,9 @@ def _meeting_time_string(meetings: list) -> tuple[str, str]:
         if begin and end and days:
             parts.append(f"{days} {begin}-{end}")
         if room is None:
-            bldg = (mt.get("building") or "").strip()
-            rm = (mt.get("room") or "").strip()
-            if rm and bldg and bldg.upper() not in ("TBD", "TBA", ""):
+            bldg = _clean_text(mt.get("building"))
+            rm = _clean_text(mt.get("room"))
+            if rm and bldg and bldg.upper() not in ("TBD", "TBA", "ONLINE"):
                 room = f"{bldg}-{rm}"
             elif rm:
                 room = rm
@@ -97,12 +155,12 @@ def _instructor(faculty: list) -> str:
     if not fac:
         return "TBA"
     primary = next((f for f in fac if f.get("primaryIndicator")), fac[0])
-    return primary.get("displayName") or "TBA"
+    return _clean_text(primary.get("displayName"), "TBA")
 
 
 def _course_code(subject: str, course_number: str) -> str:
     """'COSC' + '110' -> 'COSC 110' (matches the planner's normalized keys)."""
-    return f"{(subject or '').strip()} {(course_number or '').strip()}".strip()
+    return f"{_clean_text(subject)} {_clean_text(course_number)}".strip()
 
 
 def _to_int(v, default=0) -> int:
@@ -117,8 +175,8 @@ def parse_section(raw: dict, sem_key: str) -> dict:
     planner consumes (same keys as a static schedule section, PLUS seat fields).
 
     Pure function: no network, no DB. `sem_key` is our term key, e.g. 'fall_2026'."""
-    subject = raw.get("subject") or ""
-    course_number = raw.get("courseNumber") or ""
+    subject = _clean_text(raw.get("subject"))
+    course_number = _clean_text(raw.get("courseNumber"))
     time_str, room = _meeting_time_string(raw.get("meetingsFaculty"))
     seats = _to_int(raw.get("seatsAvailable"))
     credits = raw.get("creditHours")
@@ -126,16 +184,16 @@ def parse_section(raw: dict, sem_key: str) -> dict:
         credits = raw.get("creditHourLow")
     return {
         "term": sem_key,
-        "crn": str(raw.get("courseReferenceNumber") or ""),
+        "crn": _clean_text(raw.get("courseReferenceNumber")),
         "subject": subject,
         "course_number": course_number,
         "course_code": _course_code(subject, course_number),
-        "title": raw.get("courseTitle") or "",
+        "title": _clean_text(raw.get("courseTitle")),
         "credits": _to_int(credits),
-        "section": raw.get("sequenceNumber") or "",
+        "section": _clean_text(raw.get("sequenceNumber")),
         "instructor": _instructor(raw.get("faculty")),
-        "campus": raw.get("campusDescription") or "",
-        "schedule_type": raw.get("scheduleTypeDescription") or "",
+        "campus": _clean_text(raw.get("campusDescription")),
+        "schedule_type": _clean_text(raw.get("scheduleTypeDescription")),
         # Fields the schedule engine already reads:
         "time": time_str,
         "room": room,
@@ -229,7 +287,7 @@ async def fetch_sections(subject: str, term_code: str, sem_key: str) -> list[dic
     Does the confirmed 3-step handshake in a single session, pages through all
     results, and returns canonical section dicts. Raises on transport/HTTP errors
     or a non-success payload so the caller can isolate a failed subject."""
-    parsed: list[dict] = []
+    parsed_by_crn: dict[str, dict] = {}
     usid = _unique_session_id()
     async with _new_client() as client:
         # 1. Establish the session cookie.
@@ -264,9 +322,12 @@ async def fetch_sections(subject: str, term_code: str, sem_key: str) -> list[dic
             if not payload or payload.get("success") is False:
                 raise RuntimeError(f"Banner searchResults returned no success for {subject} {term_code}")
             rows = payload.get("data") or []
-            parsed.extend(parse_section(r, sem_key) for r in rows)
+            for row in rows:
+                section = parse_section(row, sem_key)
+                if _valid_section(section):
+                    parsed_by_crn.setdefault(section["crn"], section)
             total = payload.get("totalCount", len(rows)) if total is None else total
             offset += len(rows)
             if not rows or offset >= (total or 0):
                 break
-    return parsed
+    return list(parsed_by_crn.values())

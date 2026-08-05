@@ -150,7 +150,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, CodingAttemptEvent, CodingHintEvent, CodingTutorActionEvent, CodingWorkspaceState, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, SavedPlannerPlan, CodingAttemptEvent, CodingHintEvent, CodingTutorActionEvent, CodingWorkspaceState, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -3511,6 +3511,87 @@ async def momentum_score(user: dict = Depends(get_current_user), db: Session = D
 # ==============================================================================
 from services.prereq_engine import build_prerequisite_graph
 
+def _planner_json_value(value, fallback):
+    if value in (None, ""):
+        return fallback
+    if isinstance(value, (list, dict)):
+        return value
+    try:
+        return json.loads(value)
+    except (TypeError, ValueError):
+        return fallback
+
+
+def _planner_course_rows(value, limit=20):
+    rows = _planner_json_value(value, [])
+    if not isinstance(rows, list):
+        return []
+    compact = []
+    for row in rows[:limit]:
+        if isinstance(row, str):
+            compact.append({"code": row})
+            continue
+        if not isinstance(row, dict):
+            continue
+        compact.append({
+            "code": row.get("code") or row.get("course_code") or "",
+            "name": row.get("name") or row.get("course_name") or row.get("title") or "",
+            "credits": row.get("credits"),
+            "grade": row.get("grade"),
+            "semester": row.get("semester") or row.get("term"),
+            "category": row.get("category") or row.get("requirement"),
+        })
+    return compact
+
+
+def _planner_degreeworks_context(dw_dict: dict, registered_courses: list, registered_term_key: str | None) -> dict:
+    completed = _planner_course_rows(dw_dict.get("courses_completed"), limit=24)
+    in_progress = _planner_course_rows(dw_dict.get("courses_in_progress"), limit=16)
+    remaining = _planner_course_rows(dw_dict.get("courses_remaining"), limit=30)
+    requirements = _planner_json_value(dw_dict.get("requirements_status"), [])
+    gened_areas = _planner_json_value(dw_dict.get("gened_areas"), {})
+    if not isinstance(requirements, list):
+        requirements = []
+    if not isinstance(gened_areas, dict):
+        gened_areas = {}
+
+    return {
+        "connected": True,
+        "source": dw_dict.get("data_source") or "manual_entry",
+        "synced_at": dw_dict.get("synced_at"),
+        "student": {
+            "classification": dw_dict.get("classification"),
+            "degree_program": dw_dict.get("degree_program"),
+            "minor": dw_dict.get("minor"),
+            "catalog_year": dw_dict.get("catalog_year"),
+            "advisor": dw_dict.get("advisor"),
+        },
+        "progress": {
+            "overall_gpa": dw_dict.get("overall_gpa"),
+            "major_gpa": dw_dict.get("major_gpa"),
+            "credits_earned": dw_dict.get("total_credits_earned"),
+            "credits_applied": dw_dict.get("total_credits_applied"),
+            "credits_in_progress": dw_dict.get("total_credits_in_progress"),
+            "credits_required": dw_dict.get("credits_required"),
+            "credits_remaining": dw_dict.get("credits_remaining"),
+        },
+        "courses": {
+            "completed_count": len(completed),
+            "in_progress_count": len(in_progress),
+            "remaining_count": len(remaining),
+            "completed_sample": completed,
+            "in_progress": in_progress,
+            "remaining_sample": remaining,
+        },
+        "requirements_status": requirements[:12],
+        "gened_areas": gened_areas,
+        "banner_registration": {
+            "term": registered_term_key,
+            "courses": _planner_course_rows(registered_courses, limit=16),
+        },
+    }
+
+
 @app.get("/api/ripple-effect")
 async def ripple_effect(user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     """Get prerequisite dependency graph with student status overlay."""
@@ -3540,6 +3621,18 @@ async def planning_next_semester(
         generate_schedule_options, eligible_courses, next_semester_key,
         semester_key_from_label,
     )
+    from services.planner_explanations import (
+        course_interest_matches,
+        course_reason,
+        future_planner_semesters,
+        normalize_course_set,
+        plan_explanation,
+        prereqs_met_for_planner,
+        requirement_alternative_map,
+        requirement_match,
+        risk_flags,
+        unlocks_text,
+    )
     from services.course_context import _SCHEDULES
 
     uid = user["user_id"]
@@ -3550,10 +3643,11 @@ async def planning_next_semester(
 
     # Chronologically-ordered list of semesters we have schedule data for.
     from services.schedule_planner import _parse_semester_key
-    available = sorted(
+    available_all = sorted(
         [k for k in _SCHEDULES.keys() if _parse_semester_key(k)],
         key=_parse_semester_key,
     )
+    available = future_planner_semesters(available_all)
 
     # DegreeWorks not connected -> can't know remaining requirements/eligibility.
     if not dw_dict:
@@ -3570,6 +3664,13 @@ async def planning_next_semester(
     except (ValueError, TypeError):
         registered_courses = []
     registered_count = len(registered_courses) if isinstance(registered_courses, list) else 0
+    registered_codes = normalize_course_set(registered_courses)
+    completed_codes = normalize_course_set(dw_dict.get("courses_completed"))
+    in_progress_codes = normalize_course_set(dw_dict.get("courses_in_progress"))
+    eligible = [
+        course for course in eligible
+        if prereqs_met_for_planner(node_by_id.get(course.get("id")), completed_codes, in_progress_codes)
+    ]
     registered_term_key = semester_key_from_label(banner.get("current_term", ""))
 
     default_sem_key = next_semester_key(available)
@@ -3587,7 +3688,7 @@ async def planning_next_semester(
         else:
             no_later_schedule_after_registered = True
 
-    sem_key = semester if semester in _SCHEDULES else default_sem_key
+    sem_key = semester if semester in available else default_sem_key
     classification = dw_dict.get("classification") or "Senior"
     prefs = {
         "time_pref": time_pref if time_pref in ("morning", "afternoon", "evening", "any") else "any",
@@ -3597,11 +3698,20 @@ async def planning_next_semester(
 
     # Prefer live Banner data (with seats) for this term; fall back to the static
     # snapshot if the live table is empty or stale.
-    from services.live_schedule import get_live_sections
+    from services.live_schedule import attach_live_section, best_live_requirement_course, get_live_sections, get_live_sections_status, live_alternative_status
     live_sched, live_as_of = (get_live_sections(sem_key) if sem_key else (None, None))
+    live_status = get_live_sections_status(sem_key) if sem_key else {
+        "status": "static",
+        "as_of": None,
+        "fresh": False,
+        "fresh_hours": 24,
+        "subject_count": 0,
+    }
     if live_sched:
+        sem_static = dict(_SCHEDULES.get(sem_key, {}))
+        sem_static.update(live_sched)
         # generate_schedule_options expects {sem_key: {code: [sections]}}.
-        schedules_src, data_source, as_of = {sem_key: live_sched}, "live", live_as_of
+        schedules_src, data_source, as_of = {**_SCHEDULES, sem_key: sem_static}, "live", live_as_of
     else:
         schedules_src, data_source, as_of = _SCHEDULES, "static", None
 
@@ -3609,19 +3719,38 @@ async def planning_next_semester(
     # have no class times — the student picks sections in WEBSIS).
     from services.requirement_planner import build_requirements
     requirements = build_requirements(dw_dict, dw_dict.get("minor") or "")
+    if live_sched:
+        for area in requirements.get("gened") or []:
+            candidates = ([area["primary"]] if area.get("primary") else []) + (area.get("alternatives") or [])
+            best = best_live_requirement_course(candidates, live_sched, prefs)
+            if best:
+                area["alternatives"] = [course for course in candidates if course.get("code") != best.get("code")]
+                area["primary"] = best
+    requirement_alternatives = requirement_alternative_map(requirements)
 
     raw_options = (
         generate_schedule_options(eligible, sem_key, prefs, schedules_src, classification,
                                   requirements=requirements, variant=max(0, int(variant or 0)))
         if sem_key else []
     )
+    if live_sched:
+        raw_options = [
+            {
+                **opt,
+                "courses": [attach_live_section(course, live_sched, prefs) for course in opt.get("courses", [])],
+            }
+            for opt in raw_options
+        ]
 
     # Enrich each course with what requirement it satisfies + what it unlocks,
     # and (when live) its real-time availability. Drop internal fields (slots/score).
     options = []
     has_tba = False
+    option_limit_by_label = {"Lighter Load": 12, "Balanced": 15, "Heavier Load": 18}
     for opt in raw_options:
         courses = []
+        option_total = sum(c["credits"] for c in opt["courses"])
+        selected_codes = {c["code"] for c in opt["courses"]}
         for c in opt["courses"]:
             node = node_by_id.get(c["code"], {})
             untimed = c.get("untimed", False)
@@ -3634,10 +3763,20 @@ async def planning_next_semester(
             if open_flag is True:
                 availability = "open"
             elif open_flag is False:
-                availability = "waitlist" if (c.get("wait_count") or 0) < (c.get("wait_capacity") or 0) else "full"
+                wait_available = c.get("wait_available")
+                wait_capacity = c.get("wait_capacity") or 0
+                wait_count = c.get("wait_count") or 0
+                has_waitlist_room = (
+                    (wait_available is not None and wait_available > 0)
+                    or (wait_capacity > 0 and wait_count < wait_capacity)
+                )
+                availability = "waitlist" if has_waitlist_room else "full"
             else:
                 availability = "unknown"
-            courses.append({
+            interest_matches = course_interest_matches(c, prefs["interests"])
+            match = requirement_match(c, interest_matches)
+            unlock_text = unlocks_text(node.get("unlocks", []))
+            enriched_course = {
                 "code": c["code"],
                 "name": c["name"],
                 "credits": c["credits"],
@@ -3653,13 +3792,49 @@ async def planning_next_semester(
                 # Live availability (nulls when data_source == "static"):
                 "crn": c.get("crn"),
                 "seats_available": c.get("seats_available"),
+                "max_enrollment": c.get("max_enrollment"),
+                "wait_count": c.get("wait_count"),
+                "wait_capacity": c.get("wait_capacity"),
+                "wait_available": c.get("wait_available"),
+                "section_options": c.get("section_options") or [],
                 "availability": availability,
-            })
-        options.append({
+                "data_source": "live" if c.get("crn") else "static",
+                "requirement_match": match,
+                "reason": course_reason(c, match, interest_matches, unlock_text),
+                "unlocks_text": unlock_text,
+            }
+            enriched_course["risk_flags"] = risk_flags(
+                enriched_course,
+                data_source=enriched_course["data_source"],
+                completed_codes=completed_codes,
+                in_progress_codes=in_progress_codes,
+                registered_codes=registered_codes if registered_term_key == sem_key else set(),
+                node=node,
+            )
+            if c.get("kind") in {"gened", "minor"}:
+                alternatives = [
+                    alt for alt in requirement_alternatives.get(c["code"], [])
+                    if alt.get("code") not in selected_codes
+                ]
+                if live_sched:
+                    alternatives = [live_alternative_status(alt, live_sched, prefs) for alt in alternatives]
+                    alternatives = [alt for alt in alternatives if alt.get("availability") != "full"]
+                    alternatives.sort(key=lambda alt: (
+                        0 if alt.get("availability") == "open" else 1 if alt.get("availability") == "waitlist" else 2,
+                        -(alt.get("seats_available") or 0),
+                        alt.get("code") or "",
+                    ))
+                enriched_course["alternatives"] = alternatives[:3]
+            else:
+                enriched_course["alternatives"] = []
+            courses.append(enriched_course)
+        option_payload = {
             "label": opt["label"],
-            "total_credits": sum(c["credits"] for c in opt["courses"]),
+            "total_credits": option_total,
             "courses": courses,
-        })
+        }
+        option_payload.update(plan_explanation(option_payload, interests=prefs["interests"], data_source=data_source))
+        options.append(option_payload)
 
     notes = []
     if not options:
@@ -3687,12 +3862,19 @@ async def planning_next_semester(
         "available_semesters": available,
         "classification": classification,
         "credits_remaining": dw_dict.get("credits_remaining"),
+        "degreeworks_context": _planner_degreeworks_context(dw_dict, registered_courses, registered_term_key),
         "eligible_count": len(eligible),
         "options": options,
         "requirements": requirements,
         "notes": notes,
         "data_source": data_source,
         "as_of": as_of.isoformat() if as_of else None,
+        "live_schedule": {
+            **live_status,
+            "status": "live" if live_sched else live_status.get("status", "static"),
+            "as_of": live_status.get("as_of") or (as_of.isoformat() if as_of else None),
+            "course_count": len(live_sched or {}),
+        },
         "registered_term": {
             "term": banner.get("current_term"),
             "semester": registered_term_key,
@@ -3716,33 +3898,156 @@ async def planning_calendar_deadlines(
     return await asyncio.to_thread(get_calendar_deadlines, semester)
 
 
-@app.post("/api/internal/schedule/refresh")
-async def internal_schedule_refresh(request: Request):
-    """Triggered every ~6h by Cloud Scheduler. Pulls live section + seat data from
-    Banner "Browse Classes" (public, no login) for the active registerable term and
-    replaces the live_sections rows for each CS subject.
+SAVED_PLANNER_MAX_JSON_BYTES = 300_000
 
-    Per-subject isolation: the network fetch happens BEFORE any DB mutation, so a
-    subject that fails to fetch is logged and skipped with its previous rows intact;
-    a DB write that fails rolls back (delete + insert together) leaving the old
-    snapshot in place. One subject never breaks the others."""
-    _require_research_secret(request)
 
+class SavedPlannerPlanRequest(BaseModel):
+    client_id: str
+    semester: str
+    option_label: str
+    total_credits: int
+    plan: Dict[str, Any]
+    swaps: Optional[Dict[str, Any]] = None
+    preferences: Optional[Dict[str, Any]] = None
+    advisor_warnings: Optional[List[str]] = None
+
+
+def _json_dumps_compact(value: Any) -> str:
+    return json.dumps(value if value is not None else {}, separators=(",", ":"), ensure_ascii=False)
+
+
+def _json_loads_safe(value: str | None, fallback: Any):
+    if not value:
+        return fallback
+    try:
+        return json.loads(value)
+    except (TypeError, ValueError):
+        return fallback
+
+
+def _serialize_saved_planner_plan(row: SavedPlannerPlan) -> dict:
+    return {
+        "client_id": row.client_id,
+        "semester": row.semester,
+        "option_label": row.option_label,
+        "total_credits": row.total_credits,
+        "plan": _json_loads_safe(row.plan_json, {}),
+        "swaps": _json_loads_safe(row.swaps_json, {}),
+        "preferences": _json_loads_safe(row.preferences_json, {}),
+        "advisor_warnings": _json_loads_safe(row.advisor_warnings_json, []),
+        "created_at": row.created_at.isoformat() if row.created_at else None,
+        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+    }
+
+
+@app.get("/api/planning/saved-plans")
+async def list_saved_planner_plans(
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    rows = (
+        db.query(SavedPlannerPlan)
+        .filter(SavedPlannerPlan.user_id == user["user_id"])
+        .order_by(SavedPlannerPlan.updated_at.desc())
+        .all()
+    )
+    return {"items": [_serialize_saved_planner_plan(row) for row in rows]}
+
+
+@app.post("/api/planning/saved-plans")
+async def upsert_saved_planner_plan(
+    req: SavedPlannerPlanRequest,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    client_id = (req.client_id or "").strip()[:80]
+    semester = (req.semester or "").strip()[:40]
+    option_label = (req.option_label or "").strip()[:80]
+    if not client_id:
+        raise HTTPException(status_code=400, detail="client_id is required")
+    if not semester:
+        raise HTTPException(status_code=400, detail="semester is required")
+    if not option_label:
+        raise HTTPException(status_code=400, detail="option_label is required")
+    if not isinstance(req.plan, dict) or not req.plan.get("courses"):
+        raise HTTPException(status_code=400, detail="plan with courses is required")
+
+    plan_json = _json_dumps_compact(req.plan)
+    swaps_json = _json_dumps_compact(req.swaps or {})
+    preferences_json = _json_dumps_compact(req.preferences or {})
+    advisor_warnings_json = _json_dumps_compact(req.advisor_warnings or [])
+    if sum(len(part.encode("utf-8")) for part in (plan_json, swaps_json, preferences_json, advisor_warnings_json)) > SAVED_PLANNER_MAX_JSON_BYTES:
+        raise HTTPException(status_code=413, detail="Saved plan is too large.")
+
+    row = (
+        db.query(SavedPlannerPlan)
+        .filter(
+            SavedPlannerPlan.user_id == user["user_id"],
+            SavedPlannerPlan.client_id == client_id,
+        )
+        .first()
+    )
+    if not row:
+        row = SavedPlannerPlan(user_id=user["user_id"], client_id=client_id)
+        db.add(row)
+
+    row.semester = semester
+    row.option_label = option_label
+    row.total_credits = max(0, min(int(req.total_credits or 0), 30))
+    row.plan_json = plan_json
+    row.swaps_json = swaps_json
+    row.preferences_json = preferences_json
+    row.advisor_warnings_json = advisor_warnings_json
+    row.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(row)
+    return _serialize_saved_planner_plan(row)
+
+
+@app.delete("/api/planning/saved-plans/{client_id}")
+async def delete_saved_planner_plan(
+    client_id: str,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    row = (
+        db.query(SavedPlannerPlan)
+        .filter(
+            SavedPlannerPlan.user_id == user["user_id"],
+            SavedPlannerPlan.client_id == client_id,
+        )
+        .first()
+    )
+    if row:
+        db.delete(row)
+        db.commit()
+    return {"deleted": True, "client_id": client_id}
+
+
+async def _run_schedule_refresh(term: str | None = None, subjects: str | None = None, include_geneds: bool = True):
     from banner_scraper import class_search
 
-    active = await class_search.resolve_active_term()
-    if not active:
-        return {"status": "error", "reason": "could not resolve active term from Banner"}
-    term_code, sem_key = active
+    if term:
+        term_code = await class_search.resolve_term_code(term)
+        if not term_code:
+            return {"status": "error", "reason": f"could not resolve {term} from Banner"}
+        sem_key = term
+    else:
+        active = await class_search.resolve_active_term()
+        if not active:
+            return {"status": "error", "reason": "could not resolve active term from Banner"}
+        term_code, sem_key = active
 
     counts: dict[str, int] = {}
+    skipped: dict[str, int] = {}
     errors: list[dict] = []
-    for subject in class_search.CS_SUBJECTS:
+    refresh_subjects = class_search.refresh_subjects(subjects, include_geneds=include_geneds)
+    for subject in refresh_subjects:
         try:
             sections = await class_search.fetch_sections(subject, term_code, sem_key)
         except Exception as e:
             print(f"[SCHEDULE_REFRESH] {subject} {sem_key} fetch failed: {e}")
-            errors.append({"subject": subject, "error": str(e)})
+            errors.append({"subject": subject, "stage": "fetch", "error": str(e)})
             continue
 
         db = SessionLocal()
@@ -3767,16 +4072,97 @@ async def internal_schedule_refresh(request: Request):
                 ))
             db.commit()
             counts[subject] = len(sections)
+            if not sections:
+                skipped[subject] = 0
         except Exception as e:
             db.rollback()
             print(f"[SCHEDULE_REFRESH] {subject} {sem_key} DB write failed: {e}")
-            errors.append({"subject": subject, "error": f"db: {e}"})
+            errors.append({"subject": subject, "stage": "db", "error": str(e)})
         finally:
             db.close()
 
-    print(f"[SCHEDULE_REFRESH] term={sem_key} counts={counts} errors={len(errors)}")
-    return {"status": "ok", "term": sem_key, "term_code": term_code,
-            "subjects": counts, "errors": errors}
+    status_text = "partial" if errors and counts else "error" if errors and not counts else "ok"
+    print(f"[SCHEDULE_REFRESH] term={sem_key} subjects={len(refresh_subjects)} counts={counts} errors={len(errors)}")
+    return {
+        "status": status_text,
+        "term": sem_key,
+        "term_code": term_code,
+        "requested_subjects": refresh_subjects,
+        "subjects": counts,
+        "skipped_subjects": skipped,
+        "errors": errors,
+        "total_sections": sum(counts.values()),
+    }
+
+
+@app.post("/api/internal/schedule/refresh")
+async def internal_schedule_refresh(
+    request: Request,
+    term: str | None = Query(None),
+    subjects: str | None = Query(None),
+    include_geneds: bool = Query(True),
+):
+    """Triggered every ~6h by Cloud Scheduler. Pulls live section + seat data from
+    Banner "Browse Classes" (public, no login) for the active registerable term and
+    replaces the live_sections rows for each CS subject.
+
+    Per-subject isolation: the network fetch happens BEFORE any DB mutation, so a
+    subject that fails to fetch is logged and skipped with its previous rows intact;
+    a DB write that fails rolls back (delete + insert together) leaving the old
+    snapshot in place. One subject never breaks the others."""
+    _require_research_secret(request)
+    return await _run_schedule_refresh(term=term, subjects=subjects, include_geneds=include_geneds)
+
+
+@app.get("/api/admin/schedule/status")
+async def admin_schedule_status(
+    term: str | None = Query(None),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    query = db.query(
+        LiveSection.term,
+        LiveSection.subject,
+        func.count(LiveSection.id).label("rows"),
+        func.max(LiveSection.fetched_at).label("last_refresh"),
+    )
+    if term:
+        query = query.filter(LiveSection.term == term)
+    rows = query.group_by(LiveSection.term, LiveSection.subject).order_by(LiveSection.term, LiveSection.subject).all()
+
+    terms: dict[str, dict] = {}
+    for sem_key, subject, row_count, last_refresh in rows:
+        bucket = terms.setdefault(sem_key, {"term": sem_key, "subjects": {}, "total_sections": 0, "last_refresh": None})
+        bucket["subjects"][subject] = int(row_count or 0)
+        bucket["total_sections"] += int(row_count or 0)
+        aware_last = last_refresh.replace(tzinfo=timezone.utc) if last_refresh and not last_refresh.tzinfo else last_refresh
+        if aware_last and (not bucket["last_refresh"] or aware_last > bucket["last_refresh"]):
+            bucket["last_refresh"] = aware_last
+
+    from services.live_schedule import FRESH_HOURS
+    now = datetime.now(timezone.utc)
+    term_list = []
+    for item in terms.values():
+        aware_last = item["last_refresh"]
+        item["last_refresh"] = aware_last.isoformat() if aware_last else None
+        item["fresh"] = bool(aware_last and now - aware_last <= timedelta(hours=FRESH_HOURS))
+        term_list.append(item)
+    return {"status": "ok", "terms": term_list, "fresh_hours": FRESH_HOURS}
+
+
+@app.post("/api/admin/schedule/refresh")
+async def admin_schedule_refresh(
+    term: str | None = Query(None),
+    subjects: str | None = Query(None),
+    include_geneds: bool = Query(True),
+    user: dict = Depends(get_current_user),
+):
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    return await _run_schedule_refresh(term=term, subjects=subjects, include_geneds=include_geneds)
 
 
 # ==============================================================================
@@ -3832,6 +4218,8 @@ def _fetch_dw_sync(user_id: int) -> Optional[dict]:
             "overall_gpa": dw.overall_gpa,
             "major_gpa": dw.major_gpa,
             "total_credits_earned": dw.total_credits_earned,
+            "total_credits_applied": dw.total_credits_applied,
+            "total_credits_in_progress": dw.total_credits_in_progress,
             "credits_required": dw.credits_required,
             "credits_remaining": dw.credits_remaining,
             "advisor": dw.advisor,
@@ -3839,9 +4227,11 @@ def _fetch_dw_sync(user_id: int) -> Optional[dict]:
             "courses_completed": dw.courses_completed,
             "courses_in_progress": dw.courses_in_progress,
             "courses_remaining": dw.courses_remaining,
+            "requirements_status": dw.requirements_status,
             "gened_areas": getattr(dw, 'gened_areas', None),
             "raw_data": dw.raw_data,
             "data_source": getattr(dw, 'data_source', None) or "manual_entry",
+            "synced_at": dw.synced_at.isoformat() if dw.synced_at else None,
         }
 
         # Also fetch Banner data if available

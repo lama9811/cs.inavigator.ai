@@ -108,8 +108,9 @@ export default function NavBar({ role, authenticated, onToggleSidebar, onBrandCl
             // Base64 data URL - use directly
           } else if (pictureUrl.startsWith('http')) {
             // Full URL - use directly
-          } else if (pictureUrl.startsWith('/user_icon.webp')) {
+          } else if (pictureUrl === '/user_icon.jpg' || pictureUrl.startsWith('/user_icon.webp')) {
             // Default icon - use directly
+            pictureUrl = "/user_icon.webp";
           } else {
             // Relative path - prepend API base
             pictureUrl = `${API_BASE}${pictureUrl}`;
