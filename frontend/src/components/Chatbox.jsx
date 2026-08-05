@@ -29,6 +29,7 @@ import {
 } from "./coding-tutor/advisingPanelMarker";
 import SearchSuggestions from "./chatbox/SearchSuggestions";
 import { getYouTubeVideoId } from "../lib/youtube";
+import { ENABLE_LEGACY_ADVISING_FORM } from "../config/features";
 import "./Chatbox.css";
 import "./chatbox/ChatHeader.css";
 
@@ -1937,6 +1938,7 @@ export default function Chatbox({
                         Submit posts the collected values back as one structured turn. */}
                     {msg.sender === "bot" && !msg.isStreaming &&
                       i === mainMessages.length - 1 &&
+                      ENABLE_LEGACY_ADVISING_FORM &&
                       hasAdvisingPanel(msg.text) && (
                       <AdvisingFormPanel
                         prefill={parseAdvisingPrefill(msg.text)}

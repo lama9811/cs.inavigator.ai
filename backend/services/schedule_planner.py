@@ -541,6 +541,12 @@ def _parse_semester_key(key: str):
     return (int(m.group(2)), _SEASON_ORDER[m.group(1)]) if m else None
 
 
+def semester_key_from_label(label: str) -> Optional[str]:
+    """Normalize Banner labels like 'Fall 2026' to planner keys."""
+    m = re.search(r'\b(spring|summer|fall)\b\D*(20\d{2})\b', (label or "").lower())
+    return f"{m.group(1)}_{m.group(2)}" if m else None
+
+
 def next_semester_key(available, today=None) -> Optional[str]:
     """Pick the soonest upcoming semester among the `available` schedule keys.
 

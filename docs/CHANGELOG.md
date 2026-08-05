@@ -3,42 +3,18 @@
 All notable changes to CS Navigator are documented here.
 
 ## [Unreleased]
+
 ### Added
+- **Planner V2 advising prep.** The Planner now acts as the active pre-advising workspace with an advisor prep checklist, selected-plan advisor packet print view, official Morgan academic calendar link, and a plan-review helper grounded in the selected schedule.
+- **Planner V2 recommendation explanations.** Schedule options now include plan-level advisor readiness, specific review items, course-level requirement reasons, unlock notes, risk flags, and grounded alternatives.
+- **Planner V2 saved plans.** Students can save advisor-ready schedules to their account, restore exact saved snapshots, print them, and delete them with a confirm-before-delete flow.
+- **Planner live Banner schedule support.** The Banner scraper now refreshes CS-adjacent and planner GenEd subjects into cached live sections, reports subject-level counts/errors, and lets Planner show live seats, times, rooms, instructors, freshness status, GenEd section choices, and conflict-aware swaps.
+- **Admin schedule refresh controls.** Admin Dashboard now includes manual schedule refresh/status controls for Planner live section snapshots, with cadence guidance for normal and advising-season use.
 - **Learn guided execution traces.** All existing Learn visualizers now include a reusable trace panel with current operation, input value, state before/after, decision, output, and why-it-matters metadata across 82 visual blocks and 392 authored steps.
-- **Question-specific beginner Learn cards.** Operators, Strings, User Input, Lists/Arrays, and Conditionals now include in-question micro-lessons tied to each cleaned quiz question.
-- **Core beginner/debug Learn-card batch.** Syntax, Variables, Data Types, Loops, Functions, Debug Part 1, and Debug Part 2 now include question-specific Learn cards across Python, Java, JavaScript, and C++.
-- **Intermediate Learn-card coverage.** Language-specific Intermediate quiz banks now include question-specific Learn cards across Python, Java, JavaScript, and C++.
-- **Per-question Practice Library visualizers.** Every code-writing practice problem now has explicit problem-specific visualizer metadata, with guided sample steps, broader visual concepts, animated state movement, and tests preventing generic topic-only fallback.
-- **Practice Library thin-topic readiness batch.** Added nine all-language stack, queue, binary-search, tree, and linked-list problems with deterministic runner tests and native bridge coverage.
-- **Advanced V2 Practice Library depth batch.** Added eight all-language bit-manipulation, prefix-sum, and matrix problems with deterministic runner tests and native bridge coverage.
-- **Practice Library topic-balancing batch.** Added ten all-language problems for thin math, tuple/pair, trie, interval, heap, disjoint-set, and dynamic-programming topics with deterministic runner tests.
-- **Practice Library Advanced V1 on-ramp batch.** Added ten all-language easy/medium problems for two pointers, sliding window, recursion, queues, and binary search, each with deterministic runner tests and starter specs.
-- **Practice Library thin-topic depth batch.** Added six all-language practice problems for two pointers, sliding window, and recursion, including beginner on-ramps and medium follow-ups with deterministic runner tests.
-- **Advanced lesson visualizer V2.** Advanced Learn lessons now include multiple focused "Visualize this" walkthroughs per topic, built from reusable SVG/HTML state. The modal adds progress dots, play/pause, replay, reset, previous/next controls, lightweight accessible animations, and deeper tree traversal visuals for preorder, inorder, postorder, and level order.
-- **Separated Advanced Two Pointers and Sliding Window.** The former combined topic is now split into distinct Advanced lessons and concept quiz banks so students can learn pointer-pair movement separately from window grow/shrink state.
-- **Separated Advanced Stacks and Queues.** The former combined Stacks & Queues topic is now split into distinct Advanced lessons and concept quiz banks so students can digest LIFO stacks before moving into FIFO queues, queue variants, and BFS-style processing.
-- **Advanced Coding Tutor track.** Learn and Concept Quiz now support a third Advanced track for core data-structure and interview-pattern topics across Python, Java, JavaScript, and C++.
-- **Advanced V1 lessons and quizzes.** Added sectioned advanced lessons plus 8-question concept quiz banks for Stacks, Queues, Hash Maps & Sets, Linked Lists, Recursion Patterns, Binary Search, Two Pointers & Sliding Window, Trees, and Graphs.
-- **Question-specific Learn cards.** The in-question Learn tab can now show a targeted micro-lesson for the current question, fall back to the matching lesson section, and then fall back to the category refresher.
-- **Coding Tutor learning-style preference.** Students can choose whether they want examples first, to try first and then get hints, or to hear the concept before code. The preference is saved per user and used by Coding Tutor recommendations and tutor context.
-- **Section-based lesson flow and completion tracking.** Learn lessons can be split into smaller sections, with previous/next controls, a final Practice CTA, and completion gated on answering the lesson’s check-yourself questions.
-- **Concept quiz progress indicators.** Concept quiz language/category views now show in-progress and completed status so students can return to unfinished work.
-- **Clearer workspace hint ladder UI.** Hint controls now show the active ladder step, such as "Show hint 1 of 4", and disable once all available hints are shown.
-- **Server-gated Coding Tutor hint state.** Practice and Interview Prep workspace hints now ask the backend how many ladder steps are unlocked from real saved attempts before revealing deeper guidance.
-- **Backend-backed last workspace state.** Coding Tutor now remembers the last practice/interview problem, language, and source per user so another device can reopen the same workspace when localStorage has no draft.
-- **Coding Tutor practice authoring guide.** Added a documented pipeline for adding code-writing Practice Library problems in small validated batches.
-- **COSC 101 Practice Library expansion.** Added twelve beginner-friendly campus/classroom practice problems covering conditionals, scans, maps, sets, tuple-style pairs, and list building across Python, JavaScript, Java, and C++.
-- **Medium/hard Practice Library expansion.** Added eight additional graph, heap, union-find, trie, dynamic-programming, and tree problems with deterministic runner tests for all four supported languages.
-- **Practice Library data-structure authoring batch.** Added thirteen more code-writing problems across stacks, queues, binary search, recursion, linked lists, and trees, with all-language runner metadata and starter specs.
-- **Python code execution trace V1.** Added a Python-only "Trace my code" modal that steps through the current editor code and shows capped line-by-line execution with local variables.
-- **Adaptive practice scaffolding.** Added readiness-gated adaptive recommendations that only label a topic as ladder-ready when it has enough fully tested easy, medium, and hard practice depth across all supported languages.
-- **Adaptive review routing.** Coding Tutor adaptive recommendations now include a conservative review signal when recent practice attempts show repeated syntax, runtime, wrong-answer, or timeout patterns.
-- **Practice Guide real mistake patterns.** Practice Guide now shows recent mistake patterns only from the student's own saved practice attempts, and Progress has a quiet Learning Habits tracker for preference selection, hint usage, tutor suggestion application, and failed-then-fixed work.
-- **Coding Tutor accessibility polish V1.** Main Coding Tutor modals and drawers now trap focus, close with Escape, restore focus to the opener, and use dialog labels; Learn language cards are native buttons, key tab groups support arrow-key navigation, and the floating tutor exposes clearer keyboard movement and suggestion-preview labels.
-- **Compact exception/error type lists.** Python, Java, JavaScript, and C++ exception lessons now include short lists of common error types so students can recognize names like `ValueError`, `NumberFormatException`, `TypeError`, `IOException`, and `std::out_of_range` before the full Language Dictionary exists.
-- **Concept Quiz Mistake Bank.** Missed concept-quiz questions now stay hidden until at least three unresolved misses exist, appear after the Advanced accordion, and can be retaken as a focused wrong-answer quiz without sending students back into the full source category.
 
 ### Changed
+- The standalone in-app Advising Form is hidden behind a local legacy feature flag; `/advising` now sends students to Planner V2 by default while preserving the old form code and backend draft/upload endpoints.
+- Planner course cards now use compact icon actions, clearer seat/time/location/instructor ordering, distinct GenEd styling, concise review status language, sorted class times, and TBA/untimed courses at the bottom.
 - Syntax lessons now emphasize first-use definitions and key beginner terms, such as syntax, comments, blocks, indentation, statements, semicolons, and compiler/parser messages.
 - Operators lessons now use authored sections for mathematical operators, bitwise operators, comparison/assignment, and conditional logic across Python, Java, JavaScript, and C++.
 - Variables and Data Types lessons now use explicit beginner-sized sections across Python, Java, JavaScript, and C++ instead of relying on the loader's broad auto-split.
@@ -52,45 +28,6 @@ All notable changes to CS Navigator are documented here.
 - Python, Java, and JavaScript Syntax lessons now use four authored reading parts instead of the loader's broad auto-split, making the beginner path easier to digest.
 - Expanded the thin explicit Learn lessons so the previously 3-section and 4-section Coding Tutor lessons now have five focused sections with additional examples, checks, visual traces, and mistake guidance.
 - Coding Tutor Home now shows the Starting Point quiz as a card first instead of auto-opening the modal on reload, and the Learn page uses only one clear Python Beginner "Start Here" signal.
-- Concept Quiz multiple-choice answers now shuffle per browser attempt while preserving original answer identities for grading, draft restore, immediate feedback, and result summaries.
-- Concept quiz banks now reject old generic prompt templates across all languages and topics; shared legacy Beginner/Intermediate banks and language-specific Intermediate banks were cleaned of lesson-referencing stems, repeated review prompts, weak distractors, giveaway-shaped choices, mojibake, and explanation boilerplate.
-- Coding Tutor Home now shows the Starting Point check before the LeetCode daily card so new students get placed before seeing outside challenge work.
-- Concept quiz answer choices now remove noisy backtick styling and emphasize only operator symbols inside code snippets, with slightly larger answer text for readability.
-- Concept quiz result summaries now show clearer stats, collapse correct-answer explanations by default, and keep missed-question review expanded.
-- Regular Coding Workspace restore is now Practice Library only; Interview Prep, daily scratchpad, and personal snippet editors no longer become the default Workspace state.
-- Passing solution reviews now include plain-language tutor notes that explain what the diff is showing before students compare their code to the reference approach.
-- Tutor suggestion preview can now replace only the selected workspace code when a student highlights a block first.
-- Parking Ticket Total is now a medium conditional practice problem with day, time, free-parking, long-parking, and permit-surcharge rules across all four supported languages.
-- New Practice Library visualizers now open with problem-specific sample inputs, including array-backed linked lists, countdown recursion, and level-order tree traces.
-- Passing Coding Tutor solutions now show a line-by-line diff against the reference approach in the terminal review panel.
-- Applying a Coding Tutor code suggestion now uses a preview step with comment, append, replace, and cancel paths instead of a browser confirm.
-- The floating Coding Tutor chat no longer repeats the "Currently helping with" card; attempt count now lives in the workspace code context so AI review has more room.
-- C++ practice starters now use beginner-facing `int` / `std::vector<int>` signatures and explicit standard headers, while the hidden grader keeps its wider numeric bridge.
-- Practice Library validation now checks richer question shape, priority topic coverage, answer metadata defaults, and generated starter/function-name alignment across spec-backed language starters.
-- Practice Library Code now uses routed pagination and URL-backed filters/search/sort so `/coding/practice/code?page=2` and shared filtered links restore the same view.
-- Learn lesson code boxes now highlight common keywords, strings, comments, numbers, and literals so examples are easier to scan.
-- Python and Java Algorithm Problems Part 2 and Debug Part 2 are now split into explicit lesson sections with deeper traces, edge-case handling, and check-yourself stops.
-- Functions lessons across Python, JavaScript, Java, and C++ are now split into smaller sections for function shape, parameters, return behavior, scope, and practice checks.
-- Learn lesson prose now supports short bold key-term emphasis, with lesson content audited so important ideas like parameters, arguments, return values, state, and data structures are easier to scan.
-- Beginner and Intermediate Learn lessons now include visualizer blocks for loops, lists/arrays, functions, maps/dictionaries, sets, classes/objects, debugging state, algorithm tracing, and C++ pointers.
-- Lesson TTS now treats visualizer blocks like diagrams: it reads the caption and invites the student to open the visualizer, instead of reading raw diagram state.
-- Concept quizzes now reveal immediate teaching feedback after each checked answer, showing "Why it works" for correct answers and "What went wrong" plus the correct answer for missed questions, while keeping the final review screen.
-- Python trace state display now formats lists, dictionaries, sets, strings, and returned values more clearly, highlights changed variables between steps, shows call-stack depth, and scrolls the active code line into view.
-- Python trace empty/error states now give clearer next steps when tracing cannot start.
-- Recommended Focus and the Practice Guide now use one adaptive recommendation payload to route students to ladder-ready topic steps or honest review-only practice when a topic is still thin.
-- Recommended Focus and the Practice Guide now separate topic practice from error-pattern review, so students can open a targeted review lesson without confusing it with the next practice problem.
-- Advanced concept quiz questions now include small code/state blurbs where useful, so operation questions show something concrete to trace instead of rendering as plain text on an empty panel.
-- Advanced V1 lessons were expanded from short outlines into fuller teaching pages with operation walkthroughs, line-by-line code shape, trace examples, common mistakes, and language-specific examples for Python, Java, JavaScript, and C++.
-- Learn track cards and Concept Quiz category accordions now treat Advanced as a first-class track alongside Beginner and Intermediate.
-- Coding Tutor weak-topic routing now sends advanced practice topics such as graphs, trees, stacks, queues, binary search, and sliding window to matching advanced lessons.
-- Coding Tutor Home recommendations now route honestly: try-first learners open Code practice filtered to the focus topic, while example-first/concept-first learners open the matching lesson when available.
-- Coding Tutor light-mode helper surfaces use the navy learning palette instead of decorative orange where the accent was clashing.
-- "Explain error" in the Coding Tutor workspace now starts Socratic-first by asking what the student expected before explaining the error and one next fix.
-- Workspace Discussion now shows the current saved Coding Tutor widget thread instead of only the latest one-off feedback response.
-- Lesson renderer and browser TTS now handle captions and compare-block notes so authored lesson guidance is not hidden from students.
-- Practice and Interview Prep workspace drafts now prefer the freshest saved code between backend progress and local unrun drafts, with localStorage kept as the offline fallback instead of the source of truth.
-- Coding Tutor chat-history reload now preserves widget metadata for `coding-*` sessions so saved threads reopen in the floating tutor context instead of blending into regular chat.
-- Coding Tutor workspace now uses a draggable problem-guide divider and quieter editor-style tabs so the workspace feels like one connected coding surface.
 
 ### Fixed
 - Completed concept quiz summaries now persist across a Workspace detour during the current browser session instead of resetting back into the quiz.

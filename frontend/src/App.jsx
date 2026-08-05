@@ -28,6 +28,7 @@ import "./index.css";
 
 import { getApiBase } from "./lib/apiBase";
 import { generateChatTitle, shouldAutoRenameSession } from "./lib/chatTitles";
+import { ENABLE_LEGACY_ADVISING_FORM } from "./config/features";
 const API_BASE = getApiBase();
 const ACTIVE_CHAT_SESSION_KEY = "active_chat_session_id";
 const REGULAR_CHAT_RESET_KEY = "csnav_opening_regular_chat";
@@ -989,7 +990,7 @@ export default function App() {
           }
         />
 
-        {/* protected: advising form section with sidebar */}
+        {/* protected: legacy advising form. Hidden by default; Planner V2 is the active advising surface. */}
         <Route
           path="/advising"
           element={
@@ -1010,7 +1011,7 @@ export default function App() {
                 onCollapseSidebar={toggleSidebar}
                 onSidebarResize={handleSidebarResize}
               >
-                <AdvisingPage />
+                {ENABLE_LEGACY_ADVISING_FORM ? <AdvisingPage /> : <Navigate to="/planner?advising=1" replace />}
               </SidebarLayout>
             </RequireAuth>
           }

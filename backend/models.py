@@ -55,7 +55,7 @@ class User(Base):
     name = Column(String(255), nullable=True)
     student_id = Column(String(50), nullable=True)
     major = Column(String(100), nullable=True, default="Computer Science")
-    profile_picture = Column(String(500), nullable=True, default="/user_icon.jpg")
+    profile_picture = Column(String(500), nullable=True, default="/user_icon.webp")
     profile_picture_data = Column(Text, nullable=True)  # Store base64 image data
     morgan_connected = Column(Boolean, nullable=False, default=False)
     morgan_connected_at = Column(DateTime, nullable=True)  # When DegreeWorks was synced
@@ -361,6 +361,33 @@ class CodingSnippet(Base):
     )
 
     user = relationship("User", backref="coding_snippets")
+
+
+class SavedPlannerPlan(Base):
+    """Per-user saved Planner V2 schedule snapshot.
+
+    Saved plans preserve the exact card the student wanted to discuss, including
+    swaps and selected sections, so later planner refreshes do not erase it.
+    """
+    __tablename__ = "saved_planner_plans"
+    __table_args__ = (
+        UniqueConstraint("user_id", "client_id", name="uq_saved_planner_plan_user_client"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    client_id = Column(String(80), nullable=False, index=True)
+    semester = Column(String(40), nullable=False, index=True)
+    option_label = Column(String(80), nullable=False)
+    total_credits = Column(Integer, nullable=False, default=0)
+    plan_json = Column(Text, nullable=False)
+    swaps_json = Column(Text, nullable=True)
+    preferences_json = Column(Text, nullable=True)
+    advisor_warnings_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", backref="saved_planner_plans")
 
 
 class CodingAttemptEvent(Base):

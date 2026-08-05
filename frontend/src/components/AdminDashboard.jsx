@@ -47,6 +47,15 @@ import "./AdminDashboard.css";
 import { getApiBase } from "../lib/apiBase";
 const API_BASE = getApiBase();
 
+const scheduleAge = (iso) => {
+  if (!iso) return "never";
+  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 48) return `${hrs}h ago`;
+  return `${Math.round(hrs / 24)}d ago`;
+};
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
@@ -165,6 +174,14 @@ export default function AdminDashboard() {
   const [cacheStats, setCacheStats] = useState(null);
   const [cacheLoading, setCacheLoading] = useState(false);
   const [cacheClearing, setCacheClearing] = useState(false);
+
+  // Live schedule scraper state
+  const [scheduleStatus, setScheduleStatus] = useState(null);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleRefreshing, setScheduleRefreshing] = useState(false);
+  const [scheduleTerm, setScheduleTerm] = useState("fall_2026");
+  const [scheduleSubjects, setScheduleSubjects] = useState("");
+  const [scheduleIncludeGeneds, setScheduleIncludeGeneds] = useState(true);
 
   // Documentation Viewer State
   const [showDocViewer, setShowDocViewer] = useState(false);
@@ -343,6 +360,56 @@ export default function AdminDashboard() {
       }
     } catch (err) { toast.error("Cache clear error: " + err.message); }
     finally { setCacheClearing(false); }
+  };
+
+  const loadScheduleStatus = async () => {
+    setScheduleLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (scheduleTerm.trim()) params.set("term", scheduleTerm.trim());
+      const res = await fetch(`${API_BASE}/api/admin/schedule/status?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) setScheduleStatus(await res.json());
+    } catch (err) {
+      console.error("Failed to load schedule status:", err);
+    } finally {
+      setScheduleLoading(false);
+    }
+  };
+
+  const handleScheduleRefresh = async () => {
+    setScheduleRefreshing(true);
+    try {
+      const params = new URLSearchParams({
+        include_geneds: String(scheduleIncludeGeneds),
+      });
+      if (scheduleTerm.trim()) params.set("term", scheduleTerm.trim());
+      if (scheduleSubjects.trim()) params.set("subjects", scheduleSubjects.trim());
+      const res = await fetch(`${API_BASE}/api/admin/schedule/refresh?${params.toString()}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (res.ok && payload.status !== "error") {
+        toast.success("Schedule refresh finished", {
+          description: `${payload.total_sections || 0} sections saved across ${Object.keys(payload.subjects || {}).length} subjects.`,
+        });
+        setScheduleStatus({ status: "ok", terms: [{
+          term: payload.term,
+          subjects: payload.subjects || {},
+          total_sections: payload.total_sections || 0,
+          last_refresh: new Date().toISOString(),
+          fresh: true,
+        }], errors: payload.errors || [], skipped_subjects: payload.skipped_subjects || [], fresh_hours: 24 });
+      } else {
+        toast.error("Schedule refresh failed", { description: payload.detail || payload.reason || "Banner refresh did not complete." });
+      }
+    } catch (err) {
+      toast.error("Schedule refresh error", { description: err.message });
+    } finally {
+      setScheduleRefreshing(false);
+    }
   };
 
   const loadCloudKbContent = async (doc) => {
@@ -725,7 +792,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (activeTab === "overview") { loadOverview(); loadAnalytics(); }
-    if (activeTab === "system") { loadHealth(); loadCacheStats(); }
+    if (activeTab === "system") { loadHealth(); loadCacheStats(); loadScheduleStatus(); }
     if (activeTab === "knowledge") loadKbFiles();
     if (activeTab === "feedback") loadFeedbackStats();
     if (activeTab === "research") { loadResearchStats(); loadSuggestions(); }
@@ -2155,6 +2222,85 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              <div className="schedule-management">
+                <div className="system-header" style={{ marginTop: 32 }}>
+                  <h2>Live Schedule Scraper</h2>
+                  <button className="action-btn" onClick={loadScheduleStatus} disabled={scheduleLoading}>
+                    <FaSync size={14} className={scheduleLoading ? "spinning" : ""} /> Status
+                  </button>
+                </div>
+
+                <div className="schedule-panel">
+                  <p className="schedule-help">
+                    Manual refresh stays available here. Future cloud scheduling should run weekly in normal periods,
+                    every 3 days during pre-advising, and more often during active advising or registration windows.
+                  </p>
+                  <div className="schedule-controls">
+                    <label>
+                      <span>Term</span>
+                      <input
+                        value={scheduleTerm}
+                        onChange={(e) => setScheduleTerm(e.target.value)}
+                        placeholder="fall_2026"
+                      />
+                    </label>
+                    <label>
+                      <span>Subject override</span>
+                      <input
+                        value={scheduleSubjects}
+                        onChange={(e) => setScheduleSubjects(e.target.value)}
+                        placeholder="Optional: COSC, PHIL, SOCI"
+                      />
+                    </label>
+                    <label className="schedule-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={scheduleIncludeGeneds}
+                        onChange={(e) => setScheduleIncludeGeneds(e.target.checked)}
+                      />
+                      Include planner GenEds
+                    </label>
+                    <button className="action-btn" onClick={handleScheduleRefresh} disabled={scheduleRefreshing}>
+                      <FaCalendarPlus size={14} className={scheduleRefreshing ? "spinning" : ""} />
+                      {scheduleRefreshing ? "Refreshing..." : "Refresh schedule"}
+                    </button>
+                  </div>
+
+                  <div className="schedule-status-grid">
+                    {(scheduleStatus?.terms || []).length ? (
+                      scheduleStatus.terms.map((item) => (
+                        <div className={`schedule-status-card ${item.fresh ? "fresh" : "stale"}`} key={item.term}>
+                          <div>
+                            <strong>{item.term.replace("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}</strong>
+                            <span>{item.fresh ? "Fresh cache" : "Stale or needs refresh"}</span>
+                          </div>
+                          <p>{item.total_sections || 0} cached sections</p>
+                          <small>{item.last_refresh ? `Updated ${scheduleAge(item.last_refresh)} (${new Date(item.last_refresh).toLocaleString()})` : "No refresh recorded"}</small>
+                          {scheduleStatus?.fresh_hours && <small>Freshness window: {scheduleStatus.fresh_hours} hours</small>}
+                          <div className="schedule-subjects">
+                            {Object.entries(item.subjects || {}).map(([subject, count]) => (
+                              <span key={subject}>{subject}: {count}</span>
+                            ))}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="empty-state">No cached schedule rows for this term yet.</div>
+                    )}
+                  </div>
+                  {scheduleStatus?.errors?.length > 0 && (
+                    <div className="schedule-errors">
+                      <strong>Refresh issues</strong>
+                      {scheduleStatus.errors.map((err, index) => (
+                        <span key={`${err.subject || "subject"}-${index}`}>
+                          {err.subject || "Subject"}: {err.error || err.reason || "Refresh failed"}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Cache Management Section */}

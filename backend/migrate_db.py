@@ -36,7 +36,7 @@ def migrate():
                 print("⏭️  Column 'major' already exists")
 
             if not column_exists('users', 'profile_picture'):
-                conn.execute(text("ALTER TABLE users ADD COLUMN profile_picture VARCHAR(500) DEFAULT '/user_icon.jpg'"))
+                conn.execute(text("ALTER TABLE users ADD COLUMN profile_picture VARCHAR(500) DEFAULT '/user_icon.webp'"))
                 conn.commit()
                 print("✅ Added column: profile_picture")
             else:

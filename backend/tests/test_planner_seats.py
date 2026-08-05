@@ -16,7 +16,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import Base, LiveSection
-from services.schedule_planner import generate_schedule_options
+from services.schedule_planner import generate_schedule_options, semester_key_from_label
 import services.live_schedule as live_schedule
 
 
@@ -68,6 +68,12 @@ def test_static_schedule_has_no_seat_fields():
     assert opts[0]["courses"][0]["open_section"] is None
 
 
+def test_semester_key_from_banner_label():
+    assert semester_key_from_label("Fall 2026") == "fall_2026"
+    assert semester_key_from_label("Registered Courses for Spring 2027") == "spring_2027"
+    assert semester_key_from_label("") is None
+
+
 # --------------------------------------------------------------------------
 # get_live_sections: freshness + shape (isolated in-memory DB)
 # --------------------------------------------------------------------------
@@ -80,13 +86,13 @@ def _isolated_session():
     return sessionmaker(bind=engine)
 
 
-def _row(term, crn, code, when, seats, open_):
+def _row(term, crn, code, when, seats, open_, section="001", wait_available=0):
     return LiveSection(
         term=term, crn=crn, subject="COSC", course_number=code.split()[1],
-        course_code=code, title="X", credits=3, section="001", instructor="A",
+        course_code=code, title="X", credits=3, section=section, instructor="A",
         campus="Main", schedule_type="Traditional", meeting_time="MWF 9:00AM-9:50AM",
         room="R1", seats_available=seats, max_enrollment=30, enrollment=30 - seats,
-        open_section=open_, wait_count=0, wait_capacity=0, wait_available=0, fetched_at=when,
+        open_section=open_, wait_count=0, wait_capacity=0, wait_available=wait_available, fetched_at=when,
     )
 
 
@@ -104,7 +110,24 @@ def test_get_live_sections_fresh(monkeypatch):
     sec = sched["COSC 350"][0]
     assert sec["open_section"] is True and sec["seats_available"] == 5
     assert sec["crn"] == "70001"
+    assert sec["wait_available"] == 0
     assert as_of is not None
+
+
+def test_get_live_sections_sorts_best_sections_first(monkeypatch):
+    TestSession = _isolated_session()
+    now = datetime.now(timezone.utc)
+    db = TestSession()
+    db.add(_row("fall_2026", "70001", "COSC 350", now, seats=0, open_=False, section="001", wait_available=2))
+    db.add(_row("fall_2026", "70002", "COSC 350", now, seats=3, open_=True, section="002"))
+    db.add(_row("fall_2026", "70003", "COSC 350", now, seats=8, open_=True, section="003"))
+    db.commit(); db.close()
+    monkeypatch.setattr(live_schedule, "SessionLocal", TestSession)
+
+    sched, _as_of = live_schedule.get_live_sections("fall_2026")
+    sections = sched["COSC 350"]
+    assert [s["crn"] for s in sections] == ["70003", "70002", "70001"]
+    assert sections[-1]["wait_available"] == 2
 
 
 def test_get_live_sections_stale_returns_none(monkeypatch):

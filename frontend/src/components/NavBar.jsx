@@ -17,6 +17,7 @@ import "../index.css";
 import "./NavBar.css";
 
 import { getApiBase } from "../lib/apiBase";
+import { ENABLE_LEGACY_ADVISING_FORM } from "../config/features";
 const API_BASE = getApiBase();
 // A "Forms" nav dropdown styled to match the pill buttons. Holds secondary nav
 // items so the header doesn't grow a button per feature.
@@ -107,8 +108,9 @@ export default function NavBar({ role, authenticated, onToggleSidebar, onBrandCl
             // Base64 data URL - use directly
           } else if (pictureUrl.startsWith('http')) {
             // Full URL - use directly
-          } else if (pictureUrl.startsWith('/user_icon.webp')) {
+          } else if (pictureUrl === '/user_icon.jpg' || pictureUrl.startsWith('/user_icon.webp')) {
             // Default icon - use directly
+            pictureUrl = "/user_icon.webp";
           } else {
             // Relative path - prepend API base
             pictureUrl = `${API_BASE}${pictureUrl}`;
@@ -137,10 +139,10 @@ export default function NavBar({ role, authenticated, onToggleSidebar, onBrandCl
     { to: "/grade-analysis", label: "Grade Surgeon", Icon: FaChartLine },
   ];
   const toolsNav = [
-    { to: "/advising", label: "Advising Form", Icon: FaClipboardList },
+    ...(ENABLE_LEGACY_ADVISING_FORM ? [{ to: "/advising", label: "Legacy Advising Form", Icon: FaClipboardList }] : []),
     { to: "/scholarships", label: "Scholarships", Icon: FaGraduationCap },
-    { to: "/curriculum", label: "Curriculum", Icon: FaBook },
     { to: "/planner", label: "Planner", Icon: FaCalendarAlt },
+    { to: "/curriculum", label: "Curriculum", Icon: FaBook },
     { to: "/ripple-effect", label: "Ripple Effect", Icon: FaProjectDiagram },
   ];
 
