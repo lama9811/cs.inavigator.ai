@@ -4,6 +4,7 @@ All notable changes to CS Navigator are documented here.
 
 ## [Unreleased]
 ### Added
+- **Planner V2 advising prep.** The Planner now acts as the active pre-advising workspace with an advisor prep checklist, selected-plan advisor packet, copy/print actions, official Morgan academic calendar link, and a plan-review helper grounded in the selected schedule.
 - **Question-specific beginner Learn cards.** Operators, Strings, User Input, Lists/Arrays, and Conditionals now include in-question micro-lessons tied to each cleaned quiz question.
 - **Core beginner/debug Learn-card batch.** Syntax, Variables, Data Types, Loops, Functions, Debug Part 1, and Debug Part 2 now include question-specific Learn cards across Python, Java, JavaScript, and C++.
 - **Intermediate Learn-card coverage.** Language-specific Intermediate quiz banks now include question-specific Learn cards across Python, Java, JavaScript, and C++.
@@ -36,6 +37,7 @@ All notable changes to CS Navigator are documented here.
 - **Coding Tutor accessibility polish V1.** Main Coding Tutor modals and drawers now trap focus, close with Escape, restore focus to the opener, and use dialog labels; Learn language cards are native buttons, key tab groups support arrow-key navigation, and the floating tutor exposes clearer keyboard movement and suggestion-preview labels.
 
 ### Changed
+- The standalone in-app Advising Form is hidden behind a local legacy feature flag; `/advising` now sends students to Planner V2 by default while preserving the old form code and backend draft/upload endpoints.
 - Concept Quiz multiple-choice answers now shuffle per browser attempt while preserving original answer identities for grading, draft restore, immediate feedback, and result summaries.
 - Concept quiz banks now reject old generic prompt templates across all languages and topics; shared legacy Beginner/Intermediate banks and language-specific Intermediate banks were cleaned of lesson-referencing stems, repeated review prompts, weak distractors, giveaway-shaped choices, mojibake, and explanation boilerplate.
 - Coding Tutor Home now shows the Starting Point check before the LeetCode daily card so new students get placed before seeing outside challenge work.

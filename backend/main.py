@@ -3538,6 +3538,7 @@ async def planning_next_semester(
     Same logic as the conversational planner, just without the chat back-and-forth."""
     from services.schedule_planner import (
         generate_schedule_options, eligible_courses, next_semester_key,
+        semester_key_from_label,
     )
     from services.course_context import _SCHEDULES
 
@@ -3562,7 +3563,31 @@ async def planning_next_semester(
     eligible = eligible_courses(graph)
     node_by_id = {n["id"]: n for n in graph.get("nodes", [])}
 
-    sem_key = semester if semester in _SCHEDULES else next_semester_key(available)
+    banner = (dw_dict or {}).get("banner") or {}
+    registered_raw = banner.get("registered_courses") or []
+    try:
+        registered_courses = json.loads(registered_raw) if isinstance(registered_raw, str) else registered_raw
+    except (ValueError, TypeError):
+        registered_courses = []
+    registered_count = len(registered_courses) if isinstance(registered_courses, list) else 0
+    registered_term_key = semester_key_from_label(banner.get("current_term", ""))
+
+    default_sem_key = next_semester_key(available)
+    skipped_registered_term = False
+    no_later_schedule_after_registered = False
+    if not semester and registered_count > 0 and registered_term_key == default_sem_key:
+        registered_sort = _parse_semester_key(registered_term_key)
+        next_after_registered = next(
+            (key for key in available if _parse_semester_key(key) and _parse_semester_key(key) > registered_sort),
+            None,
+        ) if registered_sort else None
+        if next_after_registered:
+            default_sem_key = next_after_registered
+            skipped_registered_term = True
+        else:
+            no_later_schedule_after_registered = True
+
+    sem_key = semester if semester in _SCHEDULES else default_sem_key
     classification = dw_dict.get("classification") or "Senior"
     prefs = {
         "time_pref": time_pref if time_pref in ("morning", "afternoon", "evening", "any") else "any",
@@ -3639,6 +3664,12 @@ async def planning_next_semester(
     notes = []
     if not options:
         notes.append("No matching schedule data for this semester yet — check WEBSIS or the CS department.")
+    if registered_count > 0 and registered_term_key == sem_key:
+        notes.append(f"Banner shows you are already registered for {banner.get('current_term') or sem_key.replace('_', ' ').title()}; use this planner to review or regenerate alternatives, not as a blank first pass.")
+    if skipped_registered_term:
+        notes.append(f"Banner shows you are already registered for {banner.get('current_term')}; the planner moved to the next available schedule term.")
+    if no_later_schedule_after_registered:
+        notes.append(f"Banner shows you are already registered for {banner.get('current_term')}; no later schedule snapshot is available yet, so {sem_key.replace('_', ' ').title()} remains the latest plannable term.")
     if has_tba:
         notes.append("Some sections show TBA times and can't be conflict-checked.")
     if data_source == "live":
@@ -3662,7 +3693,27 @@ async def planning_next_semester(
         "notes": notes,
         "data_source": data_source,
         "as_of": as_of.isoformat() if as_of else None,
+        "registered_term": {
+            "term": banner.get("current_term"),
+            "semester": registered_term_key,
+            "course_count": registered_count,
+            "is_selected_term": registered_count > 0 and registered_term_key == sem_key,
+            "skipped_default": skipped_registered_term,
+            "no_later_schedule": no_later_schedule_after_registered,
+        } if registered_count > 0 and registered_term_key else None,
     }
+
+
+@app.get("/api/planning/calendar-deadlines")
+async def planning_calendar_deadlines(
+    semester: str = Query(...),
+    user: dict = Depends(get_current_user),
+):
+    """Return selected Morgan academic calendar deadlines for Planner reminders."""
+    from services.academic_calendar import get_calendar_deadlines
+
+    _ = user
+    return await asyncio.to_thread(get_calendar_deadlines, semester)
 
 
 @app.post("/api/internal/schedule/refresh")
@@ -4100,10 +4151,8 @@ async def chat_with_bot(req: QueryRequest, user=Depends(get_current_user), db: S
             set_planner_state(user["user_id"], session_id, planner_state)
             student_context += build_planner_context(planner_state)
 
-        # NOTE: the in-chat advising state machine was removed. Advising now lives on
-        # its own page (Tools -> Advising Form), which persists to AdvisingFormDraft.
-        # The chat version kept answers in an in-memory dict that never reached the DB,
-        # so a student's answers vanished on restart and never showed up on the page.
+        # NOTE: the in-chat advising state machine was removed. Advising prep now
+        # lives in Planner V2; the old form endpoints remain only as a legacy path.
 
     mode_context = build_mode_context(req.mode)
     if mode_context:
@@ -4349,7 +4398,7 @@ async def chat_stream(req: QueryRequest, user=Depends(get_current_user), db: Ses
             student_context += build_planner_context(planner_state)
 
         # NOTE: the in-chat advising state machine was removed here too. See the /chat
-        # handler above. Advising is now the Tools -> Advising Form page.
+        # handler above. Advising prep now lives in Planner V2.
 
     mode_context = build_mode_context(req.mode)
     if mode_context:

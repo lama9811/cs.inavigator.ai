@@ -16,7 +16,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from models import Base, LiveSection
-from services.schedule_planner import generate_schedule_options
+from services.schedule_planner import generate_schedule_options, semester_key_from_label
 import services.live_schedule as live_schedule
 
 
@@ -66,6 +66,12 @@ def test_static_schedule_has_no_seat_fields():
     ]}
     opts = generate_schedule_options(eligible, "fall_2026", {"max_credits": 15, "time_pref": "any", "interests": []}, {"fall_2026": schedule}, "Senior")
     assert opts[0]["courses"][0]["open_section"] is None
+
+
+def test_semester_key_from_banner_label():
+    assert semester_key_from_label("Fall 2026") == "fall_2026"
+    assert semester_key_from_label("Registered Courses for Spring 2027") == "spring_2027"
+    assert semester_key_from_label("") is None
 
 
 # --------------------------------------------------------------------------
