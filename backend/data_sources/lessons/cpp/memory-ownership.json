@@ -9,79 +9,423 @@
   ],
   "refresher": "Prefer local **values**, **strings**, and vectors first because they clean themselves up. When one **object** must own something created on the heap, use `std::unique_ptr` with `std::make_unique`. Move it only when ownership should transfer.",
   "refresher_code": "#include <memory>\nauto score = std::make_unique<int>(85);\nstd::cout << *score;",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "Ownership asks a simple question: who is in charge of cleaning this up? Most beginner C++ code can avoid the hard version of that question by using local **values**, **strings**, and vectors. They clean themselves up when they leave their block."
+      "id": "idea",
+      "title": "Name the owner",
+      "summary": "Decide which code is responsible for cleanup.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "**Ownership** asks a simple question: who is in charge of cleaning this up? Most beginner C++ code can avoid the hard version of that question by using local **values**, **strings**, and vectors. They clean themselves up when they leave their block."
+        },
+        {
+          "kind": "text",
+          "body": "`unique_ptr` means one owner. It owns one **object** and cleans it up when the **pointer** leaves **scope**. You cannot copy it, because then two places would both claim to be the only owner. You can move it when the responsibility should transfer."
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Python handles more of this automatically",
+          "body": "Python usually decides cleanup for you when an **object** is no longer reachable. C++ lets you show ownership in the type. That extra detail makes cleanup predictable."
+        },
+        {
+          "kind": "visual",
+          "title": "Ownership moves, cleanup follows",
+          "concept": "ownership-flow",
+          "caption": "Trace one heap object from creation, through unique ownership transfer, to automatic cleanup.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Create the resource",
+              "body": "make_unique creates the Student and gives ownership to one pointer.",
+              "animation": "add",
+              "state": {
+                "active_step": "create",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "create",
+                      "label": "Create",
+                      "detail": "Student{'Ada'} on heap",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "owner",
+                      "label": "Owner",
+                      "detail": "pending owns it",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "move",
+                      "label": "Move?",
+                      "detail": "transfer only on purpose",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "use",
+                      "label": "Use",
+                      "detail": "active can read name",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "cleanup",
+                      "label": "Cleanup",
+                      "detail": "owner releases at scope exit",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "table": [
+                  {
+                    "key": "pending",
+                    "value": "owns Ada",
+                    "active": true
+                  },
+                  {
+                    "key": "active",
+                    "value": "empty"
+                  }
+                ],
+                "note": "unique_ptr means one owner"
+              },
+              "code_focus": "create: Create the resource",
+              "input_value": "pending -> owns Ada",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "create"
+                }
+              ],
+              "decision": "make_unique creates the Student and gives ownership to one pointer.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "unique_ptr means one owner"
+                },
+                {
+                  "name": "active entry",
+                  "value": "pending -> owns Ada"
+                }
+              ],
+              "output": "none yet",
+              "why": "make_unique creates the Student and gives ownership to one pointer."
+            },
+            {
+              "title": "Move ownership",
+              "body": "std::move transfers the ownership promise from pending to active.",
+              "animation": "slide",
+              "state": {
+                "active_step": "move",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "create",
+                      "label": "Create",
+                      "detail": "resource already exists",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "owner",
+                      "label": "Owner",
+                      "detail": "pending will give it up",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "move",
+                      "label": "Move?",
+                      "detail": "active = std::move(pending)",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "use",
+                      "label": "Use",
+                      "detail": "active becomes owner",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "cleanup",
+                      "label": "Cleanup",
+                      "detail": "one cleanup later",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "table": [
+                  {
+                    "key": "pending",
+                    "value": "empty after move"
+                  },
+                  {
+                    "key": "active",
+                    "value": "owns Ada",
+                    "active": true
+                  }
+                ],
+                "note": "moving does not copy unique ownership"
+              },
+              "code_focus": "move: Move ownership",
+              "input_value": "active -> owns Ada",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "move"
+                }
+              ],
+              "decision": "std::move transfers the ownership promise from pending to active.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "moving does not copy unique ownership"
+                },
+                {
+                  "name": "active entry",
+                  "value": "active -> owns Ada"
+                }
+              ],
+              "output": "none yet",
+              "why": "std::move transfers the ownership promise from pending to active."
+            },
+            {
+              "title": "Guard the empty pointer",
+              "body": "After the move, check pending before using it because it no longer owns anything.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "use",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "create",
+                      "label": "Create",
+                      "detail": "Ada still exists",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "owner",
+                      "label": "Owner",
+                      "detail": "active owns it",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "move",
+                      "label": "Move?",
+                      "detail": "pending is empty",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "use",
+                      "label": "Use",
+                      "detail": "if (!pending) active->name",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "cleanup",
+                      "label": "Cleanup",
+                      "detail": "not yet",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "table": [
+                  {
+                    "key": "pending",
+                    "value": "empty",
+                    "active": true
+                  },
+                  {
+                    "key": "active",
+                    "value": "owns Ada"
+                  }
+                ],
+                "note": "use the owner, not the moved-from pointer"
+              },
+              "code_focus": "use: Guard the empty pointer",
+              "input_value": "pending -> empty",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "use"
+                }
+              ],
+              "decision": "After the move, check pending before using it because it no longer owns anything.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "use the owner, not the moved-from pointer"
+                },
+                {
+                  "name": "active entry",
+                  "value": "pending -> empty"
+                }
+              ],
+              "output": "none yet",
+              "why": "After the move, check pending before using it because it no longer owns anything."
+            },
+            {
+              "title": "Clean up automatically",
+              "body": "When active leaves scope, the owned Student is released once.",
+              "animation": "add",
+              "state": {
+                "active_step": "cleanup",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "create",
+                      "label": "Create",
+                      "detail": "resource was created",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "owner",
+                      "label": "Owner",
+                      "detail": "active held it",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "move",
+                      "label": "Move?",
+                      "detail": "single owner preserved",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "use",
+                      "label": "Use",
+                      "detail": "printed Ada",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "cleanup",
+                      "label": "Cleanup",
+                      "detail": "active releases Student",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "table": [
+                  {
+                    "key": "pending",
+                    "value": "empty"
+                  },
+                  {
+                    "key": "active",
+                    "value": "leaves scope",
+                    "active": true
+                  }
+                ],
+                "note": "RAII ties cleanup to object lifetime"
+              },
+              "code_focus": "cleanup: Clean up automatically",
+              "input_value": "active -> leaves scope",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "cleanup"
+                }
+              ],
+              "decision": "When active leaves scope, the owned Student is released once.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "RAII ties cleanup to object lifetime"
+                },
+                {
+                  "name": "active entry",
+                  "value": "active -> leaves scope"
+                }
+              ],
+              "output": "none yet",
+              "why": "When active leaves scope, the owned Student is released once."
+            }
+          ]
+        }
+      ]
     },
     {
-      "kind": "text",
-      "body": "`unique_ptr` means one owner. It owns one **object** and cleans it up when the **pointer** leaves **scope**. You cannot copy it, because then two places would both claim to be the only owner. You can move it when the responsibility should transfer."
+      "id": "examples",
+      "title": "Transfer ownership on purpose",
+      "summary": "Trace unique_ptr creation, move, and cleanup.",
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "Pending first owns the Student. std::move transfers ownership to active, and the Student is cleaned up automatically when active **leaves** **scope**.",
+          "code": "#include <iostream>\n#include <memory>\n#include <string>\nstruct Student { std::string name; };\nint main() {\n  auto pending = std::make_unique<Student>(Student{\"Ada\"});\n  auto active = std::move(pending);\n  if (!pending) std::cout << active->name << \"\\n\";\n}",
+          "output": "Ada"
+        },
+        {
+          "kind": "compare",
+          "wrong_label": "Common mistake",
+          "wrong": "Student* student = new Student{\"Ada\"};\nuse(student);\n// delete is easy to forget",
+          "right_label": "Clearer version",
+          "right": "auto student = std::make_unique<Student>(Student{\"Ada\"});\nuse(student.get());\n// cleanup is automatic",
+          "caption": "Raw new makes you remember cleanup later. unique_ptr ties the **object** and its cleanup together."
+        }
+      ]
     },
     {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "Python handles more of this automatically",
-      "body": "Python usually decides cleanup for you when an **object** is no longer reachable. C++ lets you show ownership in the type. That extra detail makes cleanup predictable."
+      "id": "pitfalls",
+      "title": "Avoid unnecessary sharing",
+      "summary": "Use shared ownership only when the design truly needs it.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Before the move, `pending` owns the Student. After the move, `active` owns it and `pending` is empty. Check an emptied **pointer** before using it. When main ends, active cleans up the Student once."
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Shared ownership is a special case",
+          "body": "Use `std::shared_ptr` only when several parts of the program truly need to keep the same **object** alive. Most beginner code is clearer with local **values**, vectors, **references** for temporary access, or one `unique_ptr` owner."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "Pending first owns the Student. std::move transfers ownership to active, and the Student is cleaned up automatically when active **leaves** **scope**.",
-      "code": "#include <iostream>\n#include <memory>\n#include <string>\nstruct Student { std::string name; };\nint main() {\n  auto pending = std::make_unique<Student>(Student{\"Ada\"});\n  auto active = std::move(pending);\n  if (!pending) std::cout << active->name << \"\\n\";\n}",
-      "output": "Ada"
+      "id": "check",
+      "title": "Check ownership behavior",
+      "summary": "Practice move, unique ownership, and shared ownership choices.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "What does `std::move` do to a unique_ptr?",
+          "code": "",
+          "choices": [
+            "Transfers its ownership to the destination",
+            "Copies the owned object automatically",
+            "Deletes both pointers",
+            "Makes the object global"
+          ],
+          "answer_index": 0,
+          "why": "Move transfers the unique ownership; the destination owns the **object** and the source becomes empty."
+        },
+        {
+          "kind": "check",
+          "prompt": "When is `shared_ptr` appropriate?",
+          "code": "",
+          "choices": [
+            "When several parts truly share ownership",
+            "For every local integer",
+            "Whenever a raw reference is enough",
+            "To avoid including memory"
+          ],
+          "answer_index": 0,
+          "why": "A shared **pointer** models multiple owners whose lifetimes overlap, not ordinary temporary access to an **object**."
+        }
+      ]
     },
     {
-      "kind": "compare",
-      "wrong_label": "Common mistake",
-      "wrong": "Student* student = new Student{\"Ada\"};\nuse(student);\n// delete is easy to forget",
-      "right_label": "Clearer version",
-      "right": "auto student = std::make_unique<Student>(Student{\"Ada\"});\nuse(student.get());\n// cleanup is automatic",
-      "caption": "Raw new makes you remember cleanup later. unique_ptr ties the **object** and its cleanup together."
-    },
-    {
-      "kind": "text",
-      "body": "Before the move, `pending` owns the Student. After the move, `active` owns it and `pending` is empty. Check an emptied **pointer** before using it. When main ends, active cleans up the Student once."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Shared ownership is a special case",
-      "body": "Use `std::shared_ptr` only when several parts of the program truly need to keep the same **object** alive. Most beginner code is clearer with local **values**, vectors, **references** for temporary access, or one `unique_ptr` owner."
-    },
-    {
-      "kind": "check",
-      "prompt": "What does `std::move` do to a unique_ptr?",
-      "code": "",
-      "choices": [
-        "Transfers its ownership to the destination",
-        "Copies the owned object automatically",
-        "Deletes both pointers",
-        "Makes the object global"
-      ],
-      "answer_index": 0,
-      "why": "Move transfers the unique ownership; the destination owns the **object** and the source becomes empty."
-    },
-    {
-      "kind": "check",
-      "prompt": "When is `shared_ptr` appropriate?",
-      "code": "",
-      "choices": [
-        "When several parts truly share ownership",
-        "For every local integer",
-        "Whenever a raw reference is enough",
-        "To avoid including memory"
-      ],
-      "answer_index": 0,
-      "why": "A shared **pointer** models multiple owners whose lifetimes overlap, not ordinary temporary access to an **object**."
-    },
-    {
-      "kind": "list",
-      "title": "Memory Ownership checklist",
-      "items": [
-        "Prefer **values** and standard containers first.",
-        "Use make_unique for one owner.",
-        "Move ownership on purpose.",
-        "Use shared ownership only when the design truly needs it."
+      "id": "practice",
+      "title": "Ownership habits",
+      "summary": "Use a checklist for safe lifetime management.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Memory Ownership checklist",
+          "items": [
+            "Prefer **values** and standard containers first.",
+            "Use make_unique for one owner.",
+            "Move ownership on purpose.",
+            "Use shared ownership only when the design truly needs it."
+          ]
+        }
       ]
     }
   ],

@@ -10,202 +10,375 @@
   ],
   "refresher": "Reading the problem is not the same as understanding it. Read it again, explain it out loud in plain language, then trace one tiny case by hand with a pencil. The thing you kept erasing and rewriting on that paper is the **variable** your program needs. Four shapes cover most first-year problems: a running total, a tally of how many, a best-so-far **value**, and a hunt for one matching item. All four are the same skeleton. Declare the variable above the **loop**, change it inside the loop, use it below the loop. Java is strict about the first of those. A variable declared between the loop braces is gone once the loop ends, and the compiler will stop the build rather than let you read it.",
   "refresher_code": "int[] nums = {4, 8, 15};\nint total = 0;\nfor (int n : nums) {\n    total += n;\n}\nSystem.out.println(total);\n// 27",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "When a problem defeats you, the cause is usually not Java. It is that you started typing while you were still reading. Nothing has been decided, so each line is a guess, and soon you are debugging a plan that never existed. There is no new syntax in this lesson. It is about what happens before your first semicolon."
-    },
-    {
-      "kind": "visual",
-      "title": "Track best-so-far state",
-      "concept": "arrays",
-      "caption": "Watch the best index update only when a better value appears.",
-      "initial_state": {},
-      "steps": [
+      "id": "read-trace",
+      "title": "Read and trace first",
+      "summary": "Say the problem back and work a small example by hand.",
+      "blocks": [
         {
-          "title": "Initialize",
-          "body": "Best starts at index 0 because that is the first candidate.",
-          "state": {
-            "items": [
-              "4",
-              "9",
-              "7"
-            ],
-            "active": [
-              0
-            ],
-            "pointers": {
-              "best": 0
-            },
-            "note": "best value = 4"
-          }
+          "kind": "text",
+          "body": "When a problem defeats you, the issue is often the plan, not Java. Slow down before typing. Read the prompt, choose what value you need to keep, and then write code from that plan."
         },
         {
-          "title": "Compare index 1",
-          "body": "Nine is larger than four, so best moves to index 1.",
-          "animation": "slide",
-          "state": {
-            "items": [
-              "4",
-              "9",
-              "7"
-            ],
-            "active": [
-              1
-            ],
-            "pointers": {
-              "best": 1,
-              "i": 1
+          "kind": "visual",
+          "title": "Track best-so-far state",
+          "concept": "state-trace",
+          "caption": "Watch the active item, the comparison, and the best-so-far state move together.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Initialize",
+              "body": "Start with the first value as the best-so-far because it is the only candidate seen.",
+              "state": {
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  0
+                ],
+                "pointers": {
+                  "best": 0
+                },
+                "active_step": "state",
+                "state_trace": {
+                  "input": "{4, 9, 7}",
+                  "current": "index 0 has 4",
+                  "comparison": "No comparison yet",
+                  "decision": "Initialize best",
+                  "tracked": "best = 4 at index 0",
+                  "result": "keep tracing"
+                },
+                "note": "best value = 4"
+              },
+              "code_focus": "state: Initialize",
+              "input_value": "4",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 0"
+                },
+                {
+                  "name": "step",
+                  "value": "state"
+                }
+              ],
+              "decision": "Initialize best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "best value = 4"
+                }
+              ],
+              "output": "none yet",
+              "why": "Start with the first value as the best-so-far because it is the only candidate seen."
             },
-            "note": "best value = 9"
-          }
+            {
+              "title": "Compare index 1",
+              "body": "Compare the active item to best. Since 9 is larger than 4, best moves to index 1.",
+              "animation": "slide",
+              "state": {
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "best": 1,
+                  "i": 1
+                },
+                "active_step": "compare",
+                "state_trace": {
+                  "input": "{4, 9, 7}",
+                  "current": "index 1 has 9",
+                  "comparison": "9 > 4 is true",
+                  "decision": "Update best",
+                  "tracked": "best = 9 at index 1",
+                  "result": "keep tracing"
+                },
+                "note": "best value = 9"
+              },
+              "code_focus": "compare: Compare index 1",
+              "input_value": "9",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1, i: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "compare"
+                }
+              ],
+              "decision": "Update best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "best value = 9"
+                }
+              ],
+              "output": "none yet",
+              "why": "Compare the active item to best. Since 9 is larger than 4, best moves to index 1."
+            },
+            {
+              "title": "Compare index 2",
+              "body": "Compare the active item to best. Since 7 is not larger than 9, best stays at index 1.",
+              "state": {
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  2
+                ],
+                "pointers": {
+                  "best": 1,
+                  "i": 2
+                },
+                "active_step": "compare",
+                "state_trace": {
+                  "input": "{4, 9, 7}",
+                  "current": "index 2 has 7",
+                  "comparison": "7 > 9 is false",
+                  "decision": "Keep best",
+                  "tracked": "best = 9 at index 1",
+                  "result": "ready to return"
+                },
+                "note": "best still points at index 1"
+              },
+              "code_focus": "compare: Compare index 2",
+              "input_value": "7",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1, i: 2"
+                },
+                {
+                  "name": "step",
+                  "value": "compare"
+                }
+              ],
+              "decision": "Keep best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "best still points at index 1"
+                }
+              ],
+              "output": "none yet",
+              "why": "Compare the active item to best. Since 7 is not larger than 9, best stays at index 1."
+            },
+            {
+              "title": "Return best",
+              "body": "After every item has been checked, return or use the stored best value.",
+              "state": {
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "best": 1
+                },
+                "active_step": "result",
+                "state_trace": {
+                  "input": "{4, 9, 7}",
+                  "current": "no items left",
+                  "comparison": "loop is finished",
+                  "decision": "Use best",
+                  "tracked": "best = 9 at index 1",
+                  "result": "return 9"
+                },
+                "note": "return the best value 9"
+              },
+              "code_focus": "result: Return best",
+              "input_value": "9",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "Use best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "return the best value 9"
+                }
+              ],
+              "output": "return 9",
+              "why": "After every item has been checked, return or use the stored best value."
+            }
+          ]
         },
         {
-          "title": "Compare index 2",
-          "body": "Seven is not larger than nine, so best stays put.",
-          "state": {
-            "items": [
-              "4",
-              "9",
-              "7"
-            ],
-            "active": [
-              2
-            ],
-            "pointers": {
-              "best": 1,
-              "i": 2
-            },
-            "note": "return best index 1"
-          }
+          "kind": "list",
+          "title": "Do these four things before you type",
+          "items": [
+            "Read it twice. Write down what you are given and what you owe back.",
+            "Explain it to the wall in plain language. If the wall would be confused, so are you.",
+            "Trace one tiny case with a pencil. Three items, and show every step.",
+            "Study your own paper. The shape you just used has a name."
+          ]
         }
       ]
     },
     {
-      "kind": "list",
-      "title": "Do these four things before you type",
-      "items": [
-        "Read it twice. Write down what you are given and what you owe back.",
-        "Explain it to the wall in plain language. If the wall would be confused, so are you.",
-        "Trace one tiny case with a pencil. Three items, and show every step.",
-        "Study your own paper. The shape you just used has a name."
+      "id": "paper-to-code",
+      "title": "Move from paper to code",
+      "summary": "Turn the hand trace into setup, loop, update, and return.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Start on paper first. If the task is to add 4, 8, and 15, write 0, then 4, then 12, then 27. You kept one running **value** and updated it for each number. That is the algorithm before Java gets involved."
+        },
+        {
+          "kind": "code",
+          "caption": "Your paper transfers almost line for line. `total` is the one number you kept going, the **loop** is the **values** arriving one at a time, and the **print** is you reading your final scribble aloud. From here on, examples drop the `public",
+          "code": "public class Totals {\n    public static void main(String[] args) {\n        int[] prices = {4, 8, 15};\n        int total = 0;\n        for (int p : prices) {\n            total += p;\n        }\n        System.out.println(total);\n    }\n}",
+          "output": "27"
+        }
       ]
     },
     {
-      "kind": "text",
-      "body": "Almost nobody bothers with the pencil, and the pencil is where the answer lives. Suppose the task is to sum 4, 8, and 15. Your hand writes a zero, crosses it out for 4, crosses that out for 12, and finishes on 27. Study what your hand did. You kept exactly one number going, and you revised it every time a new **value** arrived. There is your algorithm. It showed up before you touched Java at all."
-    },
-    {
-      "kind": "code",
-      "caption": "Your paper transfers almost line for line. `total` is the one number you kept going, the **loop** is the **values** arriving one at a time, and the **print** is you reading your final scribble aloud. From here on, examples drop the `public class` and `main` wrapper. Assume it is still wrapped around them.",
-      "code": "public class Totals {\n    public static void main(String[] args) {\n        int[] prices = {4, 8, 15};\n        int total = 0;\n        for (int p : prices) {\n            total += p;\n        }\n        System.out.println(total);\n    }\n}",
-      "output": "27"
-    },
-    {
-      "kind": "text",
-      "body": "Programmers call this an accumulator. Declare it above the **loop**, grow it inside the loop, read it below the loop. Three cousins of it will handle nearly every problem your first two semesters throw at you, and each one reuses those exact three moves."
-    },
-    {
-      "kind": "list",
-      "title": "The four shapes worth recognizing on sight",
-      "items": [
-        "Accumulator: sums the **values**. Begin at 0, and grow it by each item.",
-        "Counter: answers how many. Begin at 0, and grow it by 1 whenever an `if` says yes.",
-        "Max or min: holds the champion. Begin with item zero, and swap when beaten.",
-        "Search: finds one match. Record where it was, then quit looking."
+      "id": "patterns",
+      "title": "Recognize common patterns",
+      "summary": "Choose accumulator, counter, search, max, min, or index state.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Programmers call this an accumulator. Declare it above the **loop**, grow it inside the loop, read it below the loop. Three cousins of it will handle nearly every problem your first two semesters throw at you, and each one reuses those exact three moves."
+        },
+        {
+          "kind": "list",
+          "title": "The four shapes worth recognizing on sight",
+          "items": [
+            "Accumulator: sums the **values**. Begin at 0, and grow it by each item.",
+            "Counter: answers how many. Begin at 0, and grow it by 1 whenever an `if` says yes.",
+            "Max or min: holds the champion. Begin with item zero, and swap when beaten.",
+            "Search: finds one match. Record where it was, then quit looking."
+          ]
+        },
+        {
+          "kind": "code",
+          "caption": "Compare this to the accumulator above. Only two things moved: the `if` filters which items qualify, and the update grows by 1 rather than by the **value**. That tiny edit turns \"what do they add up to\" into \"how many of them passed\".",
+          "code": "int[] scores = {88, 45, 92, 61};\nint passes = 0;\nfor (int s : scores) {\n    if (s >= 60) {\n        passes++;\n    }\n}\nSystem.out.println(passes);",
+          "output": "3"
+        },
+        {
+          "kind": "code",
+          "caption": "The champion starts out as item zero, and gets dethroned whenever the **loop** meets something larger. Beginning at 0 instead of `temps[0]` would quietly ruin this: every reading here is below freezing, so no **value** could ever unseat 0, and the program would report 0 as the warmest day.",
+          "code": "int[] temps = {-4, -9, -1, -7};\nint biggest = temps[0];\nfor (int t : temps) {\n    if (t > biggest) {\n        biggest = t;\n    }\n}\nSystem.out.println(biggest);",
+          "output": "-1"
+        },
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "temps[0] blows up on an empty array",
+          "body": "If an **array** may be empty, check its length before reading slot 0. Java can compile `temps[0]`, but the program will crash at runtime if the array has no items. Use a guard such as `temps.length > 0` first."
+        },
+        {
+          "kind": "code",
+          "caption": "This task needs the position, so it uses `i`. Starting `found` at -1 means \"not found yet\" because no real index is -1. The `break` matters too: it stops at the first match instead of letting a later match replace it.",
+          "code": "int[] ids = {31, 47, 12, 47};\nint found = -1;\nfor (int i = 0; i < ids.length; i++) {\n    if (ids[i] == 47) {\n        found = i;\n        break;\n    }\n}\nSystem.out.println(found);",
+          "output": "1"
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "Two questions place every line for you",
+          "body": "Ask two questions: What value am I keeping? What makes it change? The kept value becomes a **variable** above the **loop**. The change rule usually becomes an `if` inside the loop. Then return or print the variable after the loop."
+        }
       ]
     },
     {
-      "kind": "code",
-      "caption": "Compare this to the accumulator above. Only two things moved: the `if` filters which items qualify, and the update grows by 1 rather than by the **value**. That tiny edit turns \"what do they add up to\" into \"how many of them passed\".",
-      "code": "int[] scores = {88, 45, 92, 61};\nint passes = 0;\nfor (int s : scores) {\n    if (s >= 60) {\n        passes++;\n    }\n}\nSystem.out.println(passes);",
-      "output": "3"
+      "id": "line-order",
+      "title": "Order the lines carefully",
+      "summary": "Place setup, loop updates, builds, casts, and return in the right positions.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "The task: \"An **array** holds the rainfall for four days. On how many days did it rain at all?\" Which shape solves it, and what does that shape **print** here?",
+          "code": "int[] rain = {0, 3, 0, 7};\n// which shape belongs here?",
+          "choices": [
+            "A counter. It prints 2.",
+            "An accumulator adding up the rainfall. It prints 10.",
+            "A max tracker holding the wettest day. It prints 7.",
+            "A search that quits on the first rainy day. It prints 1."
+          ],
+          "answer_index": 0,
+          "why": "\"On how many days\" is a tally, and a tally is a counter: begin at 0, grow by 1 whenever `r > 0` holds. Two of the four days have rain, so the answer is 2. The accumulator is placed there to tempt you, because both shapes walk the same **array** and both look at the same numbers. What separates them is the size of the step. A counter steps by 1, so `days++` answers \"how many days\", which is 2. An accumulator steps by the **value**, so `mm += r` answers \"how much rain\", which is 10. Same **loop**, same array, and the update line is the only thing that decides which question you answered."
+        },
+        {
+          "kind": "text",
+          "body": "In Java, the declaration has to be in the right place. If a **variable** is declared inside loop braces, it disappears when that loop pass ends. A line below the loop cannot use it."
+        },
+        {
+          "kind": "compare",
+          "caption": "Only one line moved, but the meaning changed. If `int total` is inside the braces, Java creates it for one loop pass and then removes it. The print line below the **loop** cannot see it, so Java reports `cannot find symbol`.",
+          "wrong_label": "Will not compile",
+          "wrong": "for (int p : prices) {\n    int total = 0;\n    total += p;\n}\nSystem.out.println(total);\n// cannot find symbol:\n// variable total",
+          "right_label": "Prints 27",
+          "right": "int total = 0;\nfor (int p : prices) {\n    total += p;\n}\nSystem.out.println(total);\n// declared once,\n// above the loop"
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "A build that fails is the kinder outcome",
+          "body": "Java checks the whole **file** before it runs. That can feel strict, but it helps: a compile error gives you a file and line number before any wrong answer appears."
+        },
+        {
+          "kind": "check",
+          "prompt": "This is supposed to report the largest number. It builds, it runs, and it says 7. What went wrong?",
+          "code": "int[] nums = {12, 30, 7};\nint biggest = 0;\nfor (int n : nums) {\n    biggest = 0;\n    if (n > biggest) {\n        biggest = n;\n    }\n}\nSystem.out.println(biggest);",
+          "choices": [
+            "The line `biggest = 0;` lives between the braces, so every pass erases the previous winner",
+            "The `if` should test `>=` rather than `>`, so that ties are kept",
+            "The `System.out.println(biggest)` line belongs between the braces",
+            "You cannot find a maximum without sorting the array first"
+          ],
+          "answer_index": 0,
+          "why": "The declaration is above the **loop**, which is why this builds at all. The reset is not. `biggest` is flattened to 0 at the top of every pass, so each comparison is only ever this item against zero, never against the champion so far. The final pass **leaves** 7 sitting there, and 7 is what you see. Sorting is the trap, because sorting genuinely would hand you 30. It also throws away the algorithm you were asked to write and leaves the erasing line untouched, waiting to spoil whatever you build next. Remove that single line and the code is right."
+        },
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "Two ints divided give you back an int",
+          "body": "If `sum` and `marks.length` are both `int`, Java uses whole-number division. `253 / 3` becomes 84, not 84.33. Convert one side first, such as `(double) sum / marks.length`, when the decimal matters."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "The champion starts out as item zero, and gets dethroned whenever the **loop** meets something larger. Beginning at 0 instead of `temps[0]` would quietly ruin this: every reading here is below freezing, so no **value** could ever unseat 0, and the program would report 0 as the warmest day.",
-      "code": "int[] temps = {-4, -9, -1, -7};\nint biggest = temps[0];\nfor (int t : temps) {\n    if (t > biggest) {\n        biggest = t;\n    }\n}\nSystem.out.println(biggest);",
-      "output": "-1"
-    },
-    {
-      "kind": "callout",
-      "tone": "warning",
-      "title": "temps[0] blows up on an empty array",
-      "body": "Ask an **array** with zero items for slot 0 and Java throws an ArrayIndexOutOfBoundsException, killing the program on the spot. The compiler waves this through, because how many items an array holds is only settled once the program is running. If the problem says the **input** may be empty, guard it with `temps.length > 0` before you touch slot 0."
-    },
-    {
-      "kind": "code",
-      "caption": "This one needs the position, not the **value**, so it counts with `i` rather than walking the items straight. Starting `found` at -1 is a common trick: no real slot is ever numbered -1, so -1 can safely mean \"still missing\". The `break` is doing real work. Take it out and the **loop** marches on to the second 47, leaving `found` holding 3 instead of 1.",
-      "code": "int[] ids = {31, 47, 12, 47};\nint found = -1;\nfor (int i = 0; i < ids.length; i++) {\n    if (ids[i] == 47) {\n        found = i;\n        break;\n    }\n}\nSystem.out.println(found);",
-      "output": "1"
-    },
-    {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "Two questions place every line for you",
-      "body": "What am I holding on to? What causes it to change? Answer the first and you have your **variable**, and it belongs above the **loop**. Answer the second and you have your `if`, and it belongs between the braces. Then you read the variable below the loop. Those two questions will get you further than memorizing the four shapes ever will."
-    },
-    {
-      "kind": "check",
-      "prompt": "The task: \"An **array** holds the rainfall for four days. On how many days did it rain at all?\" Which shape solves it, and what does that shape **print** here?",
-      "code": "int[] rain = {0, 3, 0, 7};\n// which shape belongs here?",
-      "choices": [
-        "A counter. It prints 2.",
-        "An accumulator adding up the rainfall. It prints 10.",
-        "A max tracker holding the wettest day. It prints 7.",
-        "A search that quits on the first rainy day. It prints 1."
-      ],
-      "answer_index": 0,
-      "why": "\"On how many days\" is a tally, and a tally is a counter: begin at 0, grow by 1 whenever `r > 0` holds. Two of the four days have rain, so the answer is 2. The accumulator is placed there to tempt you, because both shapes walk the same **array** and both look at the same numbers. What separates them is the size of the step. A counter steps by 1, so `days++` answers \"how many days\", which is 2. An accumulator steps by the **value**, so `mm += r` answers \"how much rain\", which is 10. Same **loop**, same array, and the update line is the only thing that decides which question you answered."
-    },
-    {
-      "kind": "text",
-      "body": "Here Java parts ways with the languages you may have met first. The declaration has to sit above the **loop**. Slide it between the braces in Python and you still get a program, just one with a bad answer. Slide it between the braces in Java and the **variable** ceases to exist at the closing brace, leaving the line below the loop talking to nobody."
-    },
-    {
-      "kind": "compare",
-      "caption": "Same four lines both times, and only one of them moved. `int total` written between the braces is created fresh and destroyed on every single pass, so the `System.out.println` underneath is naming something that never made it out of the **loop**. Java does not run this and then produce a strange number. It declines to build it, reporting \"cannot find symbol: **variable** total\".",
-      "wrong_label": "Will not compile",
-      "wrong": "for (int p : prices) {\n    int total = 0;\n    total += p;\n}\nSystem.out.println(total);\n// cannot find symbol:\n// variable total",
-      "right_label": "Prints 27",
-      "right": "int total = 0;\nfor (int p : prices) {\n    total += p;\n}\nSystem.out.println(total);\n// declared once,\n// above the loop"
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "A build that fails is the kinder outcome",
-      "body": "Java inspects your whole **file** before one line executes, and it will not ship that version. Make the same slip in a language that runs first and **objects** later, and you get a program that completes, prints something, and never hints that the something is wrong. Silence plus a plausible number is the bug that eats your weekend. A red line with a file and a line number takes ten seconds."
-    },
-    {
-      "kind": "check",
-      "prompt": "This is supposed to report the largest number. It builds, it runs, and it says 7. What went wrong?",
-      "code": "int[] nums = {12, 30, 7};\nint biggest = 0;\nfor (int n : nums) {\n    biggest = 0;\n    if (n > biggest) {\n        biggest = n;\n    }\n}\nSystem.out.println(biggest);",
-      "choices": [
-        "The line `biggest = 0;` lives between the braces, so every pass erases the previous winner",
-        "The `if` should test `>=` rather than `>`, so that ties are kept",
-        "The `System.out.println(biggest)` line belongs between the braces",
-        "You cannot find a maximum without sorting the array first"
-      ],
-      "answer_index": 0,
-      "why": "The declaration is above the **loop**, which is why this builds at all. The reset is not. `biggest` is flattened to 0 at the top of every pass, so each comparison is only ever this item against zero, never against the champion so far. The final pass **leaves** 7 sitting there, and 7 is what you see. Sorting is the trap, because sorting genuinely would hand you 30. It also throws away the algorithm you were asked to write and leaves the erasing line untouched, waiting to spoil whatever you build next. Remove that single line and the code is right."
-    },
-    {
-      "kind": "callout",
-      "tone": "warning",
-      "title": "Two ints divided give you back an int",
-      "body": "Say you have `int[] marks = {90, 85, 78}` and you add them up to 253. Ask for `sum / marks.length` and Java hands you 84, not 84.33. Both operands are `int`, so Java divides in whole numbers, discards the remainder, and never mentions it. Convert one side and the fraction survives: `(double) sum / marks.length` yields 84.33333333333333. An average that comes out oddly round is the giveaway."
-    },
-    {
-      "kind": "list",
-      "title": "A rescue plan for when you are stuck",
-      "items": [
-        "One sentence on the **input**. One sentence on the **output**. Written down, not in your head.",
-        "Pencil out the smallest case you can imagine. Three items will do.",
-        "Note what you kept revising as you went. That is the **variable**.",
-        "Give it a shape: a sum, a tally, a champion, or a target you are hunting.",
-        "Declare above the **loop**, revise inside the loop, read below the loop.",
-        "\"Cannot find symbol\" from the compiler means you declared it between the braces.",
-        "An answer that is always the final item means you are erasing the **variable** every pass."
+      "id": "stuck",
+      "title": "When you are stuck",
+      "summary": "Use the rescue checklist before guessing.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "A rescue plan for when you are stuck",
+          "items": [
+            "One sentence on the **input**. One sentence on the **output**. Written down, not in your head.",
+            "Pencil out the smallest case you can imagine. Three items will do.",
+            "Note what you kept revising as you went. That is the **variable**.",
+            "Give it a shape: a sum, a tally, a champion, or a target you are hunting.",
+            "Declare above the **loop**, revise inside the loop, read below the loop.",
+            "\"Cannot find symbol\" from the compiler means you declared it between the braces.",
+            "An answer that is always the final item means you are erasing the **variable** every pass."
+          ]
+        }
       ]
     }
   ],

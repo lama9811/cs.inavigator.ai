@@ -9,79 +9,374 @@
   ],
   "refresher": "A C++ **exception** reports a problem across **function** calls. `throw` sends the problem out. `try` marks code that may throw. `catch` handles a specific kind of problem. Catch only what you can handle.",
   "refresher_code": "try {\n  enroll(student);\n} catch (const std::exception& error) {\n  std::cerr << error.what() << \"\\n\";\n}",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "An **exception** means the code hit a problem it cannot handle in the normal path. Instead of returning a fake answer, it reports the failure to a place that may know what to do."
+      "id": "idea",
+      "title": "What exceptions are",
+      "summary": "Separate expected failures from coding mistakes.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "An **exception** means the code hit a problem it cannot handle in the normal path. Instead of returning a fake answer, it reports the failure to a place that may know what to do."
+        },
+        {
+          "kind": "text",
+          "body": "`throw` sends the problem out. `try` surrounds the risky work. `catch` handles a matching problem. Keep the try block small so the failing line is easier to find."
+        },
+        {
+          "kind": "visual",
+          "title": "Throw transfers control to catch",
+          "concept": "exception-flow",
+          "caption": "Trace invalid input through a throwing function, matching catch, and safe continuation.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Call risky work",
+              "body": "The try block calls a function that promised to require a positive value.",
+              "animation": "add",
+              "state": {
+                "active_step": "try",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "try",
+                      "label": "Try",
+                      "detail": "requirePositive(-2)",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "throw",
+                      "label": "Throws?",
+                      "detail": "value <= 0",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "match",
+                      "label": "Match",
+                      "detail": "invalid_argument",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "catch",
+                      "label": "Catch",
+                      "detail": "read error.what()",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "continue",
+                      "label": "Continue",
+                      "detail": "after catch",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "try marks the code that may throw"
+              },
+              "code_focus": "try: Call risky work",
+              "input_value": "requirePositive(-2)",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "try"
+                }
+              ],
+              "decision": "The try block calls a function that promised to require a positive value.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "try marks the code that may throw"
+                }
+              ],
+              "output": "none yet",
+              "why": "The try block calls a function that promised to require a positive value."
+            },
+            {
+              "title": "Throw the exception",
+              "body": "The function cannot return a valid positive value, so it throws instead of pretending.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "throw",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "try",
+                      "label": "Try",
+                      "detail": "function entered",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "throw",
+                      "label": "Throws?",
+                      "detail": "std::invalid_argument",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "match",
+                      "label": "Match",
+                      "detail": "search catch clauses",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "catch",
+                      "label": "Catch",
+                      "detail": "waiting",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "continue",
+                      "label": "Continue",
+                      "detail": "not yet",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "normal return does not happen on this path"
+              },
+              "code_focus": "throw: Throw the exception",
+              "input_value": "std::invalid_argument",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "throw"
+                }
+              ],
+              "decision": "The function cannot return a valid positive value, so it throws instead of pretending.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "normal return does not happen on this path"
+                }
+              ],
+              "output": "none yet",
+              "why": "The function cannot return a valid positive value, so it throws instead of pretending."
+            },
+            {
+              "title": "Catch by const reference",
+              "body": "The matching catch receives the exception without copying it.",
+              "animation": "slide",
+              "state": {
+                "active_step": "catch",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "try",
+                      "label": "Try",
+                      "detail": "normal output skipped",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "throw",
+                      "label": "Throws?",
+                      "detail": "invalid_argument",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "match",
+                      "label": "Match",
+                      "detail": "catch const reference",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "catch",
+                      "label": "Catch",
+                      "detail": "value must be positive",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "continue",
+                      "label": "Continue",
+                      "detail": "ready",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "catch a meaningful type where you can respond"
+              },
+              "code_focus": "catch: Catch by const reference",
+              "input_value": "value must be positive",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "catch"
+                }
+              ],
+              "decision": "The matching catch receives the exception without copying it.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "catch a meaningful type where you can respond"
+                }
+              ],
+              "output": "none yet",
+              "why": "The matching catch receives the exception without copying it."
+            },
+            {
+              "title": "Continue after handling",
+              "body": "After catch finishes, code after the try/catch can run.",
+              "animation": "add",
+              "state": {
+                "active_step": "continue",
+                "process_flow": {
+                  "steps": [
+                    {
+                      "id": "try",
+                      "label": "Try",
+                      "detail": "risky call handled",
+                      "shape": "terminator"
+                    },
+                    {
+                      "id": "throw",
+                      "label": "Throws?",
+                      "detail": "handled",
+                      "shape": "diamond"
+                    },
+                    {
+                      "id": "match",
+                      "label": "Match",
+                      "detail": "specific handler used",
+                      "shape": "input"
+                    },
+                    {
+                      "id": "catch",
+                      "label": "Catch",
+                      "detail": "message printed",
+                      "shape": "card"
+                    },
+                    {
+                      "id": "continue",
+                      "label": "Continue",
+                      "detail": "program can proceed",
+                      "shape": "terminator"
+                    }
+                  ]
+                },
+                "note": "do not use exceptions for ordinary branch choices"
+              },
+              "code_focus": "continue: Continue after handling",
+              "input_value": "program can proceed",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "continue"
+                }
+              ],
+              "decision": "After catch finishes, code after the try/catch can run.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "do not use exceptions for ordinary branch choices"
+                }
+              ],
+              "output": "do not use exceptions for ordinary branch choices",
+              "why": "After catch finishes, code after the try/catch can run."
+            }
+          ]
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "The shape is similar to Python",
+          "body": "Python uses `try`, `raise`, and `except`. C++ uses `try`, `throw`, and `catch`. In both languages, expected choices still belong in ordinary `if` statements."
+        }
+      ]
     },
     {
-      "kind": "text",
-      "body": "`throw` sends the problem out. `try` surrounds the risky work. `catch` handles a matching problem. Keep the try block small so the failing line is easier to find."
+      "id": "examples",
+      "title": "Handle the expected failure",
+      "summary": "Protect the smallest risky operation and catch the matching error.",
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "The **function** either returns a positive **value** or throws a message. Main catches that specific failure and prints the explanation.",
+          "code": "#include <iostream>\n#include <stdexcept>\nint requirePositive(int value) {\n  if (value <= 0) throw std::invalid_argument(\"value must be positive\");\n  return value;\n}\nint main() {\n  try {\n    std::cout << requirePositive(-2) << \"\\n\";\n  } catch (const std::invalid_argument& error) {\n    std::cout << error.what() << \"\\n\";\n  }\n}",
+          "output": "value must be positive"
+        },
+        {
+          "kind": "compare",
+          "wrong_label": "Common mistake",
+          "wrong": "try { work(); }\ncatch (...) { }",
+          "right_label": "Clearer version",
+          "right": "try { work(); }\ncatch (const std::runtime_error& error) {\n  std::cerr << error.what();\n}",
+          "caption": "A catch-all that does nothing hides the cause. Catch a meaningful type where a useful response is possible."
+        }
+      ]
     },
     {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "The shape is similar to Python",
-      "body": "Python uses `try`, `raise`, and `except`. C++ uses `try`, `throw`, and `catch`. In both languages, expected choices still belong in ordinary `if` statements."
+      "id": "pitfalls",
+      "title": "Keep real bugs visible",
+      "summary": "Avoid handlers that silence useful evidence.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "For the negative **input**, `requirePositive` cannot fulfill its rule, so it throws `invalid_argument`. The normal path stops. Main catches that type, reads its message, and then continues after the catch block."
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Exceptions are not ordinary branch logic",
+          "body": "Use an `if` for an expected choice, such as an empty search result. Use an **exception** when a **function** cannot complete the job it promised and a caller needs the failure information."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "The **function** either returns a positive **value** or throws a message. Main catches that specific failure and prints the explanation.",
-      "code": "#include <iostream>\n#include <stdexcept>\nint requirePositive(int value) {\n  if (value <= 0) throw std::invalid_argument(\"value must be positive\");\n  return value;\n}\nint main() {\n  try {\n    std::cout << requirePositive(-2) << \"\\n\";\n  } catch (const std::invalid_argument& error) {\n    std::cout << error.what() << \"\\n\";\n  }\n}",
-      "output": "value must be positive"
+      "id": "check",
+      "title": "Cleanup and recovery paths",
+      "summary": "Check which blocks run on success, failure, or both.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "How should standard **exceptions** usually be caught?",
+          "code": "",
+          "choices": [
+            "By const reference",
+            "By raw pointer",
+            "By mutable global value",
+            "Only with catch-all"
+          ],
+          "answer_index": 0,
+          "why": "Catching by const **reference** avoids copying and preserves the dynamic **exception** information for the handler."
+        },
+        {
+          "kind": "check",
+          "prompt": "What happens to local **objects** when an **exception** **leaves** their block?",
+          "code": "",
+          "choices": [
+            "They are cleaned up as the block is exited",
+            "They are always leaked",
+            "They become global",
+            "Their constructors run again"
+          ],
+          "answer_index": 0,
+          "why": "C++ exits each active block on the way to a matching catch, so fully created local **objects** run their normal cleanup."
+        }
+      ]
     },
     {
-      "kind": "compare",
-      "wrong_label": "Common mistake",
-      "wrong": "try { work(); }\ncatch (...) { }",
-      "right_label": "Clearer version",
-      "right": "try { work(); }\ncatch (const std::runtime_error& error) {\n  std::cerr << error.what();\n}",
-      "caption": "A catch-all that does nothing hides the cause. Catch a meaningful type where a useful response is possible."
-    },
-    {
-      "kind": "text",
-      "body": "For the negative **input**, `requirePositive` cannot fulfill its rule, so it throws `invalid_argument`. The normal path stops. Main catches that type, reads its message, and then continues after the catch block."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Exceptions are not ordinary branch logic",
-      "body": "Use an `if` for an expected choice, such as an empty search result. Use an **exception** when a **function** cannot complete the job it promised and a caller needs the failure information."
-    },
-    {
-      "kind": "check",
-      "prompt": "How should standard **exceptions** usually be caught?",
-      "code": "",
-      "choices": [
-        "By const reference",
-        "By raw pointer",
-        "By mutable global value",
-        "Only with catch-all"
-      ],
-      "answer_index": 0,
-      "why": "Catching by const **reference** avoids copying and preserves the dynamic **exception** information for the handler."
-    },
-    {
-      "kind": "check",
-      "prompt": "What happens to local **objects** when an **exception** **leaves** their block?",
-      "code": "",
-      "choices": [
-        "They are cleaned up as the block is exited",
-        "They are always leaked",
-        "They become global",
-        "Their constructors run again"
-      ],
-      "answer_index": 0,
-      "why": "C++ exits each active block on the way to a matching catch, so fully created local **objects** run their normal cleanup."
-    },
-    {
-      "kind": "list",
-      "title": "Exceptions checklist",
-      "items": [
-        "Throw when the normal answer would be dishonest.",
-        "Catch the specific problem you can handle.",
-        "Keep try blocks small.",
-        "Do not hide errors you still need to fix."
+      "id": "practice",
+      "title": "Exception habits",
+      "summary": "Use a short checklist before adding handlers.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Exceptions checklist",
+          "items": [
+            "Throw when the normal answer would be dishonest.",
+            "Catch the specific problem you can handle.",
+            "Keep try blocks small.",
+            "Do not hide errors you still need to fix."
+          ]
+        },
+        {
+          "kind": "list",
+          "title": "Common C++ exception types",
+          "items": [
+            "`std::invalid_argument`: an argument has a value the function cannot accept.",
+            "`std::out_of_range`: code asks for a position or value outside the allowed range.",
+            "`std::runtime_error`: a runtime failure does not fit a more specific category.",
+            "`std::logic_error`: the program's logic has broken a rule it should have protected.",
+            "`std::bad_alloc`: dynamic memory allocation fails."
+          ]
+        }
       ]
     }
   ],

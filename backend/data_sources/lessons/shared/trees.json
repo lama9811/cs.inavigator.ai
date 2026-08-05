@@ -2,12 +2,12 @@
   "_note": "Original advanced lesson. Uses language-specific block variants where syntax differs.",
   "title": "Trees",
   "summary": "A **tree** stores **nodes** in parent-child relationships. Many tree problems repeat the same work on left and right children.",
-  "minutes": 19,
+  "minutes": 22,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "A binary tree **node** stores a **value** plus left and right child links. Traversal means visiting nodes in a chosen order. Most recursive tree **functions** start with a null check.",
+  "refresher": "A binary tree **node** stores a **value** plus left and right child links. **Traversal** means visiting nodes in a chosen order. Most recursive tree **functions** start with a **null check**.",
   "refresher_code": "if node is None: return base_answer\nsolve(node.left)\nsolve(node.right)",
   "learn_cards": {
     "advanced-tree-root": {
@@ -31,7 +31,7 @@
     {
       "id": "tree-node",
       "title": "Tree node shape",
-      "summary": "A binary **tree** **node** points left and right.",
+      "summary": "A binary **tree** **node** has a value, left child, and right child.",
       "question_ids": [
         "advanced-tree-root",
         "advanced-tree-leaf",
@@ -40,7 +40,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A **tree** is made of **nodes**. In a binary tree, each node can have a left child and a right child. The first node is called the **root**."
+          "body": "A **tree** is made of **nodes**. In a **binary tree**, each node can have a left child and a right child. The first node is called the **root**."
         },
         {
           "kind": "visual",
@@ -85,7 +85,24 @@
                   }
                 ],
                 "note": "order: A"
-              }
+              },
+              "code_focus": "trace trees: Visit root A",
+              "input_value": "A",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Preorder starts with the current **node**.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "order: A"
+                }
+              ],
+              "output": "none yet",
+              "why": "Preorder starts with the current **node**."
             },
             {
               "title": "Go left to B",
@@ -124,7 +141,24 @@
                   }
                 ],
                 "note": "order: A, B"
-              }
+              },
+              "code_focus": "trace trees: Go left to B",
+              "input_value": "B",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "After the **node**, preorder visits the left subtree.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "order: A, B"
+                }
+              ],
+              "output": "none yet",
+              "why": "After the **node**, preorder visits the left subtree."
             },
             {
               "title": "Go right to C",
@@ -163,7 +197,24 @@
                   }
                 ],
                 "note": "order: A, B, C"
-              }
+              },
+              "code_focus": "trace trees: Go right to C",
+              "input_value": "C",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "After the left side is done, preorder visits the right subtree.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "order: A, B, C"
+                }
+              ],
+              "output": "none yet",
+              "why": "After the left side is done, preorder visits the right subtree."
             }
           ]
         },
@@ -194,7 +245,7 @@
           "title": "Tree words",
           "items": [
             "**Root**: the first **node**.",
-            "Child: a **node** below another node.",
+            "**Child**: a **node** below another node.",
             "**Leaf**: a **node** with no children.",
             "Subtree: a smaller **tree** starting at some **node**."
           ]
@@ -220,6 +271,187 @@
       ]
     },
     {
+      "id": "array-tree-shape",
+      "title": "Read array-backed tree examples",
+      "summary": "Some practice prompts store tree levels in an **array** with placeholders for missing nodes.",
+      "question_ids": [
+        "advanced-tree-null",
+        "advanced-tree-height"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A **level-order array** lists nodes from top to bottom and left to right. A placeholder such as `-1` means that position has no real node."
+        },
+        {
+          "kind": "visual",
+          "title": "Turn a level array into a tree",
+          "concept": "trees",
+          "caption": "The array positions become parent and child slots.",
+          "initial_state": {
+            "items": [
+              1,
+              2,
+              3,
+              -1,
+              4
+            ]
+          },
+          "steps": [
+            {
+              "title": "Root",
+              "body": "Index 0 is the root.",
+              "state": {
+                "tree": [
+                  1,
+                  2,
+                  3,
+                  -1,
+                  4
+                ],
+                "active": [
+                  0
+                ],
+                "note": "root = 1"
+              },
+              "code_focus": "trace trees: Root",
+              "input_value": "1",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Index 0 is the root.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "root = 1"
+                }
+              ],
+              "output": "none yet",
+              "why": "Index 0 is the root."
+            },
+            {
+              "title": "Children of root",
+              "body": "Indexes 1 and 2 are the left and right children.",
+              "state": {
+                "tree": [
+                  1,
+                  2,
+                  3,
+                  -1,
+                  4
+                ],
+                "active": [
+                  1,
+                  2
+                ],
+                "note": "children: 2 and 3"
+              },
+              "code_focus": "trace trees: Children of root",
+              "input_value": "2, 3",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Indexes 1 and 2 are the left and right children.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "children: 2 and 3"
+                }
+              ],
+              "output": "none yet",
+              "why": "Indexes 1 and 2 are the left and right children."
+            },
+            {
+              "title": "Missing child",
+              "body": "`-1` means the left child slot is empty.",
+              "state": {
+                "tree": [
+                  1,
+                  2,
+                  3,
+                  -1,
+                  4
+                ],
+                "active": [
+                  3
+                ],
+                "note": "no node here"
+              },
+              "code_focus": "trace trees: Missing child",
+              "input_value": "-1",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "`-1` means the left child slot is empty.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "no node here"
+                }
+              ],
+              "output": "none yet",
+              "why": "`-1` means the left child slot is empty."
+            },
+            {
+              "title": "Real lower node",
+              "body": "Index 4 is a real node below 2.",
+              "state": {
+                "tree": [
+                  1,
+                  2,
+                  3,
+                  -1,
+                  4
+                ],
+                "active": [
+                  4
+                ],
+                "note": "count or height includes 4"
+              },
+              "code_focus": "trace trees: Real lower node",
+              "input_value": "4",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Index 4 is a real node below 2.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "count or height includes 4"
+                }
+              ],
+              "output": "none yet",
+              "why": "Index 4 is a real node below 2."
+            }
+          ]
+        },
+        {
+          "kind": "check",
+          "prompt": "In a tree array, what does a placeholder such as `-1` usually mean?",
+          "choices": [
+            "that position has no real node",
+            "the root value is negative",
+            "the tree is sorted",
+            "the traversal must stop immediately"
+          ],
+          "answer_index": 0,
+          "why": "The placeholder keeps the level positions aligned while marking an empty child slot."
+        }
+      ]
+    },
+    {
       "id": "traversal",
       "title": "Traversal orders",
       "summary": "**Traversal** is the order you visit **nodes**.",
@@ -231,7 +463,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "**Traversal** means visiting every **node**. The three common depth-first orders use the same three actions: visit the node, traverse left, traverse right. Only the order changes."
+          "body": "**Traversal** means visiting every **node**. The three common depth-first orders use the same three actions: visit the node, traverse left, traverse right. Only the order of those actions changes."
         },
         {
           "kind": "visual",
@@ -303,7 +535,24 @@
                   }
                 ],
                 "note": "order: A"
-              }
+              },
+              "code_focus": "trace trees: Visit A first",
+              "input_value": "A",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "A is recorded before either subtree.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "order: A"
+                }
+              ],
+              "output": "none yet",
+              "why": "Preorder starts with the current **node**."
             },
             {
               "title": "Go left to B",
@@ -372,7 +621,24 @@
                   }
                 ],
                 "note": "order: A, B"
-              }
+              },
+              "code_focus": "trace trees: Go left to B",
+              "input_value": "B",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "B is recorded before B’s children.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "order: A, B"
+                }
+              ],
+              "output": "none yet",
+              "why": "After A, preorder moves into the left subtree."
             },
             {
               "title": "Visit D then E",
@@ -441,7 +707,24 @@
                   }
                 ],
                 "note": "order: A, B, D, E"
-              }
+              },
+              "code_focus": "trace trees: Visit D then E",
+              "input_value": "D, E",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "D comes before E because D is B’s left child.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "order: A, B, D, E"
+                }
+              ],
+              "output": "none yet",
+              "why": "Preorder keeps using **node**, left, right inside the subtree."
             },
             {
               "title": "Finish right side",
@@ -510,7 +793,24 @@
                   }
                 ],
                 "note": "order: A, B, D, E, C"
-              }
+              },
+              "code_focus": "trace trees: Finish right side",
+              "input_value": "C",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The final preorder is A, B, D, E, C.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "order: A, B, D, E, C"
+                }
+              ],
+              "output": "none yet",
+              "why": "After the left subtree is done, preorder visits C."
             }
           ]
         },
@@ -588,7 +888,24 @@
                   }
                 ],
                 "note": "A waits"
-              }
+              },
+              "code_focus": "trace trees: Go left before A",
+              "input_value": "A, B",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The current **node** waits until its left subtree is finished.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "A waits"
+                }
+              ],
+              "output": "none yet",
+              "why": "Inorder does not record A yet. It first walks left to B."
             },
             {
               "title": "Visit D",
@@ -657,7 +974,24 @@
                   }
                 ],
                 "note": "order: D"
-              }
+              },
+              "code_focus": "trace trees: Visit D",
+              "input_value": "D",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Inorder often starts at the far-left **leaf**.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "order: D"
+                }
+              ],
+              "output": "none yet",
+              "why": "D is the leftmost **node**, so D is recorded first."
             },
             {
               "title": "Visit B then E",
@@ -726,7 +1060,24 @@
                   }
                 ],
                 "note": "order: D, B, E"
-              }
+              },
+              "code_focus": "trace trees: Visit B then E",
+              "input_value": "B, E",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Inside each subtree, the pattern is still left, **node**, right.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "order: D, B, E"
+                }
+              ],
+              "output": "none yet",
+              "why": "After B’s left side, record B, then visit B’s right child E."
             },
             {
               "title": "Visit A then C",
@@ -795,7 +1146,24 @@
                   }
                 ],
                 "note": "order: D, B, E, A, C"
-              }
+              },
+              "code_focus": "trace trees: Visit A then C",
+              "input_value": "A, C",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The final inorder is D, B, E, A, C.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "order: D, B, E, A, C"
+                }
+              ],
+              "output": "none yet",
+              "why": "Now A’s left subtree is done, so record A, then visit C."
             }
           ]
         },
@@ -873,7 +1241,24 @@
                   }
                 ],
                 "note": "go left"
-              }
+              },
+              "code_focus": "trace trees: Go down first",
+              "input_value": "A, B, D",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Parents wait until their children are done.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "go left"
+                }
+              ],
+              "output": "none yet",
+              "why": "Postorder does not record A or B yet. It goes to children first."
             },
             {
               "title": "Record D then E",
@@ -942,7 +1327,24 @@
                   }
                 ],
                 "note": "order: D, E"
-              }
+              },
+              "code_focus": "trace trees: Record D then E",
+              "input_value": "D, E",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "**Leaves** have no children waiting under them.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "order: D, E"
+                }
+              ],
+              "output": "none yet",
+              "why": "D and E are **leaves**, so they can be recorded before B."
             },
             {
               "title": "Record B",
@@ -1011,7 +1413,24 @@
                   }
                 ],
                 "note": "order: D, E, B"
-              }
+              },
+              "code_focus": "trace trees: Record B",
+              "input_value": "B",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Postorder records the parent after both child paths **return**.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "order: D, E, B"
+                }
+              ],
+              "output": "none yet",
+              "why": "B’s left and right children are done, so B can be recorded."
             },
             {
               "title": "Record C, then A",
@@ -1080,7 +1499,24 @@
                   }
                 ],
                 "note": "order: D, E, B, C, A"
-              }
+              },
+              "code_focus": "trace trees: Record C, then A",
+              "input_value": "A, C",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The final postorder is D, E, B, C, A.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "order: D, E, B, C, A"
+                }
+              ],
+              "output": "none yet",
+              "why": "C is done, then the **root** A is recorded last."
             }
           ]
         },
@@ -1258,7 +1694,24 @@
                   "A"
                 ],
                 "note": "order: "
-              }
+              },
+              "code_focus": "trace trees: Start with root",
+              "input_value": "A",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The **queue** starts with the top level.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "order: "
+                }
+              ],
+              "output": "none yet",
+              "why": "The **root** A is the first **node** waiting."
             },
             {
               "title": "Visit A",
@@ -1315,7 +1768,24 @@
                   "C"
                 ],
                 "note": "order: A"
-              }
+              },
+              "code_focus": "trace trees: Visit A",
+              "input_value": "A",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The next level is waiting from left to right.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "order: A"
+                }
+              ],
+              "output": "none yet",
+              "why": "A **leaves** the **queue**, then B and C join."
             },
             {
               "title": "Visit B",
@@ -1371,7 +1841,24 @@
                   "D"
                 ],
                 "note": "order: A, B"
-              }
+              },
+              "code_focus": "trace trees: Visit B",
+              "input_value": "B",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "Children of B wait behind C, so level order is preserved.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "order: A, B"
+                }
+              ],
+              "output": "none yet",
+              "why": "B **leaves** next because it waited before C. B adds D."
             },
             {
               "title": "Visit C, then D",
@@ -1426,7 +1913,24 @@
                   "D"
                 ],
                 "note": "order: A, B, C, D"
-              }
+              },
+              "code_focus": "trace trees: Visit C, then D",
+              "input_value": "C",
+              "variables_before": [
+                {
+                  "name": "state",
+                  "value": "ready before this step"
+                }
+              ],
+              "decision": "The final order is A, B, C, D.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "order: A, B, C, D"
+                }
+              ],
+              "output": "none yet",
+              "why": "C is processed before D because C was already waiting."
             }
           ]
         },

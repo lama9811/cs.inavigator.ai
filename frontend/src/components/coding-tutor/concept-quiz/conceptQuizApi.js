@@ -98,6 +98,16 @@ export function fetchQuizQuestions(apiBase, language, category) {
   );
 }
 
+// One authored question, used by the mistake bank so it can retest only the
+// currently unresolved items without reloading a full category quiz.
+export function fetchQuizQuestion(apiBase, language, category, questionId) {
+  return getJson(
+    `${apiBase}/api/coding/concept-quiz/${encodeURIComponent(language)}/${encodeURIComponent(
+      category
+    )}/questions/${encodeURIComponent(questionId)}`
+  );
+}
+
 // Server-verified grading for a submitted set. `answers` is a list of
 // { question_id, choice_index? , text?, order? } depending on question kind.
 export async function gradeQuiz(apiBase, { language, category, answers }) {
@@ -121,4 +131,14 @@ export async function gradeQuiz(apiBase, { language, category, answers }) {
     throw new Error(detail);
   }
   return res.json();
+}
+
+// Server-verified grading for a mixed-category retry set. Each answer carries
+// its source category so a corrected miss updates the original question instead
+// of creating a fake category in progress.
+export function gradeMistakeQuiz(apiBase, { language, answers }) {
+  return postAuthenticatedJson(`${apiBase}/api/coding/concept-quiz/mistakes/grade`, {
+    language,
+    answers,
+  });
 }

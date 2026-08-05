@@ -10,159 +10,1036 @@
   ],
   "refresher": "A `for` **loop** has a starting **value**, a **condition**, and an update. A `while` loop repeats while its condition remains true. Make sure the condition eventually becomes false.",
   "refresher_code": "for(int i=0;i<3;i++){\n  std::cout << i << \"\\n\";\n}",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "A **loop** repeats a block of code. Use a `for` loop when you can describe the start, stopping rule, and update together. Use a `while` loop when repetition depends mainly on a **condition**."
-    },
-    {
-      "kind": "visual",
-      "title": "Trace a loop one item at a time",
-      "concept": "arrays",
-      "caption": "Watch the active item move while the running total changes.",
-      "initial_state": {},
-      "steps": [
+      "id": "loop-shape",
+      "title": "What a loop repeats",
+      "summary": "Read setup, condition, update, and body as separate jobs.",
+      "blocks": [
         {
-          "title": "Start before the loop",
-          "body": "The total starts at zero before any item is read.",
-          "state": {
-            "items": [
-              "3",
-              "5",
-              "2"
-            ],
-            "pointers": {
-              "i": 0
-            },
-            "note": "total = 0"
-          }
+          "kind": "text",
+          "body": "A **loop** repeats a block of code. Use a `for` loop when you can describe the start, stopping rule, and update together. Use a `while` loop when repetition depends mainly on a **condition**."
         },
         {
-          "title": "First pass",
-          "body": "Read index 0 and add 3 to the total.",
-          "animation": "add",
-          "state": {
-            "items": [
-              "3",
-              "5",
-              "2"
-            ],
-            "active": [
-              0
-            ],
-            "pointers": {
-              "i": 0
+          "kind": "visual",
+          "title": "Trace a full for loop",
+          "concept": "loops",
+          "caption": "Watch setup, condition, body, and update repeat until the final condition fails.",
+          "initial_state": {
+            "loop_flow": {
+              "setup": "total = 0, i = 0",
+              "condition": "i < 3?",
+              "body": "add current item",
+              "update": "i++",
+              "done": "use total"
+            }
+          },
+          "steps": [
+            {
+              "title": "Set up loop state",
+              "body": "Create the running total and start the index at 0 before any pass runs.",
+              "state": {
+                "active_step": "setup",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "pointers": {
+                  "i": 0
+                },
+                "loop_flow": {
+                  "setup": "long long total = 0; int i = 0"
+                },
+                "note": "Setup happens once, before the first condition check."
+              },
+              "code_focus": "setup: Set up loop state",
+              "input_value": "i -> 3",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 0"
+                },
+                {
+                  "name": "step",
+                  "value": "setup"
+                }
+              ],
+              "decision": "i < 3?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "Setup happens once, before the first condition check."
+                }
+              ],
+              "output": "none yet",
+              "why": "Create the running total and start the index at 0 before any pass runs."
             },
-            "note": "total = 3"
-          }
+            {
+              "title": "Check i = 0",
+              "body": "C++ checks i < 3 before the body. Since 0 < 3 is true, pass 1 runs.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  0
+                ],
+                "pointers": {
+                  "i": 0
+                },
+                "loop_flow": {
+                  "condition": "0 < 3 is true",
+                  "body": "next item is 3",
+                  "update": "i++ moves to the next index."
+                },
+                "note": "A for loop checks the condition before each pass."
+              },
+              "code_focus": "condition: Check i = 0",
+              "input_value": "3",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 0"
+                },
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "0 < 3 is true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "A for loop checks the condition before each pass."
+                }
+              ],
+              "output": "none yet",
+              "why": "C++ checks i < 3 before the body. Since 0 < 3 is true, pass 1 runs."
+            },
+            {
+              "title": "Run pass 1",
+              "body": "Read index 0 and add 3 to the running total.",
+              "animation": "add",
+              "state": {
+                "active_step": "body",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  0
+                ],
+                "pointers": {
+                  "i": 0
+                },
+                "loop_flow": {
+                  "condition": "0 < 3 is true",
+                  "body": "total = 0 + 3",
+                  "update": "next i will be 1"
+                },
+                "note": "current item = 3, total becomes 3"
+              },
+              "code_focus": "body: Run pass 1",
+              "input_value": "3",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 0"
+                },
+                {
+                  "name": "step",
+                  "value": "body"
+                }
+              ],
+              "decision": "0 < 3 is true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "current item = 3, total becomes 3"
+                }
+              ],
+              "output": "none yet",
+              "why": "Read index 0 and add 3 to the running total."
+            },
+            {
+              "title": "Move after pass 1",
+              "body": "After the body, the update moves i from 0 to 1, then the loop goes back to the condition.",
+              "animation": "slide",
+              "state": {
+                "active_step": "update",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  0
+                ],
+                "pointers": {
+                  "i": 1
+                },
+                "loop_flow": {
+                  "condition": "next check uses i = 1",
+                  "body": "total is 3",
+                  "update": "i moves from 0 to 1"
+                },
+                "note": "The update does not end the loop by itself; it sends control back to the condition."
+              },
+              "code_focus": "update: Move after pass 1",
+              "input_value": "3",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "update"
+                }
+              ],
+              "decision": "next check uses i = 1",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The update does not end the loop by itself; it sends control back to the condition."
+                }
+              ],
+              "output": "none yet",
+              "why": "After the body, the update moves i from 0 to 1, then the loop goes back to the condition."
+            },
+            {
+              "title": "Check i = 1",
+              "body": "C++ checks i < 3 before the body. Since 1 < 3 is true, pass 2 runs.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "i": 1
+                },
+                "loop_flow": {
+                  "condition": "1 < 3 is true",
+                  "body": "next item is 5",
+                  "update": "i++ moves to the next index."
+                },
+                "note": "A for loop checks the condition before each pass."
+              },
+              "code_focus": "condition: Check i = 1",
+              "input_value": "5",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "1 < 3 is true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "A for loop checks the condition before each pass."
+                }
+              ],
+              "output": "none yet",
+              "why": "C++ checks i < 3 before the body. Since 1 < 3 is true, pass 2 runs."
+            },
+            {
+              "title": "Run pass 2",
+              "body": "Read index 1 and add 5 to the running total.",
+              "animation": "add",
+              "state": {
+                "active_step": "body",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "i": 1
+                },
+                "loop_flow": {
+                  "condition": "1 < 3 is true",
+                  "body": "total = 3 + 5",
+                  "update": "next i will be 2"
+                },
+                "note": "current item = 5, total becomes 8"
+              },
+              "code_focus": "body: Run pass 2",
+              "input_value": "5",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "body"
+                }
+              ],
+              "decision": "1 < 3 is true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "current item = 5, total becomes 8"
+                }
+              ],
+              "output": "none yet",
+              "why": "Read index 1 and add 5 to the running total."
+            },
+            {
+              "title": "Move after pass 2",
+              "body": "After the body, the update moves i from 1 to 2, then the loop goes back to the condition.",
+              "animation": "slide",
+              "state": {
+                "active_step": "update",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "i": 2
+                },
+                "loop_flow": {
+                  "condition": "next check uses i = 2",
+                  "body": "total is 8",
+                  "update": "i moves from 1 to 2"
+                },
+                "note": "The update does not end the loop by itself; it sends control back to the condition."
+              },
+              "code_focus": "update: Move after pass 2",
+              "input_value": "5",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 2"
+                },
+                {
+                  "name": "step",
+                  "value": "update"
+                }
+              ],
+              "decision": "next check uses i = 2",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The update does not end the loop by itself; it sends control back to the condition."
+                }
+              ],
+              "output": "none yet",
+              "why": "After the body, the update moves i from 1 to 2, then the loop goes back to the condition."
+            },
+            {
+              "title": "Check i = 2",
+              "body": "C++ checks i < 3 before the body. Since 2 < 3 is true, pass 3 runs.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  2
+                ],
+                "pointers": {
+                  "i": 2
+                },
+                "loop_flow": {
+                  "condition": "2 < 3 is true",
+                  "body": "next item is 2",
+                  "update": "i++ moves to the next index."
+                },
+                "note": "A for loop checks the condition before each pass."
+              },
+              "code_focus": "condition: Check i = 2",
+              "input_value": "2",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 2"
+                },
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "2 < 3 is true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "A for loop checks the condition before each pass."
+                }
+              ],
+              "output": "none yet",
+              "why": "C++ checks i < 3 before the body. Since 2 < 3 is true, pass 3 runs."
+            },
+            {
+              "title": "Run pass 3",
+              "body": "Read index 2 and add 2 to the running total.",
+              "animation": "add",
+              "state": {
+                "active_step": "body",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  2
+                ],
+                "pointers": {
+                  "i": 2
+                },
+                "loop_flow": {
+                  "condition": "2 < 3 is true",
+                  "body": "total = 8 + 2",
+                  "update": "next i will be 3"
+                },
+                "note": "current item = 2, total becomes 10"
+              },
+              "code_focus": "body: Run pass 3",
+              "input_value": "2",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 2"
+                },
+                {
+                  "name": "step",
+                  "value": "body"
+                }
+              ],
+              "decision": "2 < 3 is true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "current item = 2, total becomes 10"
+                }
+              ],
+              "output": "none yet",
+              "why": "Read index 2 and add 2 to the running total."
+            },
+            {
+              "title": "Move after pass 3",
+              "body": "After the body, the update moves i from 2 to 3, then the loop goes back to the condition.",
+              "animation": "slide",
+              "state": {
+                "active_step": "update",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  2
+                ],
+                "pointers": {
+                  "i": 2
+                },
+                "loop_flow": {
+                  "condition": "next check uses i = 3",
+                  "body": "total is 10",
+                  "update": "i moves from 2 to 3"
+                },
+                "note": "The update does not end the loop by itself; it sends control back to the condition."
+              },
+              "code_focus": "update: Move after pass 3",
+              "input_value": "2",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 2"
+                },
+                {
+                  "name": "step",
+                  "value": "update"
+                }
+              ],
+              "decision": "next check uses i = 3",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The update does not end the loop by itself; it sends control back to the condition."
+                }
+              ],
+              "output": "none yet",
+              "why": "After the body, the update moves i from 2 to 3, then the loop goes back to the condition."
+            },
+            {
+              "title": "Final condition fails",
+              "body": "Now i is 3. The condition is false, so the body does not run a fourth time.",
+              "animation": "return",
+              "state": {
+                "active_step": "condition",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "pointers": {
+                  "i": 3
+                },
+                "loop_flow": {
+                  "condition": "3 < 3 is false",
+                  "body": "skip body",
+                  "update": "no update runs"
+                },
+                "note": "C++ leaves the loop."
+              },
+              "code_focus": "condition: Final condition fails",
+              "input_value": "3, 5, 2",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "i: 3"
+                },
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "3 < 3 is false",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "C++ leaves the loop."
+                }
+              ],
+              "output": "C++ leaves the loop.",
+              "why": "Now i is 3. The condition is false, so the body does not run a fourth time."
+            },
+            {
+              "title": "Use final total",
+              "body": "After the loop ends, the program uses the total built by all three passes.",
+              "state": {
+                "active_step": "done",
+                "items": [
+                  "3",
+                  "5",
+                  "2"
+                ],
+                "active": [
+                  2
+                ],
+                "pointers": {
+                  "last": 2
+                },
+                "loop_flow": {
+                  "done": "final total = 10"
+                },
+                "note": "Each item contributed once, so the final total is 10."
+              },
+              "code_focus": "done: Use final total",
+              "input_value": "2",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "last: 2"
+                },
+                {
+                  "name": "step",
+                  "value": "done"
+                }
+              ],
+              "decision": "i < 3?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "Each item contributed once, so the final total is 10."
+                }
+              ],
+              "output": "Each item contributed once, so the final total is 10.",
+              "why": "After the loop ends, the program uses the total built by all three passes."
+            }
+          ]
         },
         {
-          "title": "Second pass",
-          "body": "Move to index 1 and add 5.",
-          "animation": "slide",
-          "state": {
-            "items": [
-              "3",
-              "5",
-              "2"
-            ],
-            "active": [
-              1
-            ],
-            "pointers": {
-              "i": 1
-            },
-            "note": "total = 8"
-          }
+          "kind": "code",
+          "caption": "Before real syntax, learn the shape: a **loop** repeats a body. The examples after this show how this language writes that shape.",
+          "code": "for each item in a group:\n    repeated body for that item\n\nwhile condition is true:\n    repeated body\n    update something so the loop can stop"
         },
         {
-          "title": "After the last item",
-          "body": "The loop stops after each item has contributed once.",
-          "state": {
-            "items": [
-              "3",
-              "5",
-              "2"
-            ],
-            "active": [
-              2
-            ],
-            "pointers": {
-              "i": 2
-            },
-            "note": "final total = 10"
-          }
+          "kind": "text",
+          "body": "Read a `for` **loop** in four steps: **set** the counter, test the **condition**, run the body, then update the counter. For a collection with three items, valid indexes are zero, one, and two, so the counter must stay below the size."
+        },
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "C++ writes out the pieces of Python's range",
+          "body": "Python's `for i in range(3)` hides the counter update. C++ writes the same plan as `for (int i = 0; i < 3; i++)`: start at zero, stop before three, and add one."
+        },
+        {
+          "kind": "code",
+          "caption": "The counter begins at zero, prints once per pass, and stops before it reaches three.",
+          "code": "#include <iostream>\n\nint main() {\n  for (int i = 0; i < 3; i++) {\n    std::cout << \"step \" << i << \"\\n\";\n  }\n}",
+          "output": "step 0\nstep 1\nstep 2"
         }
       ]
     },
     {
-      "kind": "text",
-      "body": "Read a `for` **loop** in four steps: **set** the counter, test the **condition**, run the body, then update the counter. For a collection with three items, valid indexes are zero, one, and two, so the counter must stay below the size."
+      "id": "bounds",
+      "title": "Bounds and finishing",
+      "summary": "Use strict bounds and a condition that can eventually fail.",
+      "blocks": [
+        {
+          "kind": "compare",
+          "caption": "Use a strict bound so the count is never used as an **index**.",
+          "wrong_label": "Common mistake",
+          "wrong": "for (int i = 0; i <= values.size(); i++) {\n  use(values[i]);\n}",
+          "right_label": "Clearer version",
+          "right": "for (int i = 0; i < values.size(); i++) {\n  use(values[i]);\n}"
+        },
+        {
+          "kind": "text",
+          "body": "For three elements, the valid **indexes** are zero, one, and two. When `i` becomes three, the corrected **condition** is false. The version using `<=` allows **index** three and steps past the vector. If you do not need an index, use `for (int value : values)`."
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "A loop needs a way to finish",
+          "body": "A `while` **loop** can run forever when the **value** in its **condition** never changes. Point to the exact update that moves the loop toward its stopping condition."
+        },
+        {
+          "kind": "visual",
+          "title": "Trace a while loop until it stops",
+          "concept": "loops",
+          "caption": "Watch the condition, body, and update repeat until the condition finally fails.",
+          "initial_state": {
+            "loop_flow": {
+              "setup": "count = 3",
+              "condition": "count > 0?",
+              "body": "print count",
+              "update": "count--",
+              "done": "continue after loop"
+            }
+          },
+          "steps": [
+            {
+              "title": "Set count before the loop",
+              "body": "The loop starts with count set to 3, which is the value the condition will test.",
+              "state": {
+                "active_step": "setup",
+                "loop_flow": {
+                  "setup": "int count = 3"
+                },
+                "note": "A while loop needs a value that the condition can test."
+              },
+              "code_focus": "setup: Set count before the loop",
+              "input_value": "int count = 3",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "setup"
+                }
+              ],
+              "decision": "count > 0?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "A while loop needs a value that the condition can test."
+                }
+              ],
+              "output": "none yet",
+              "why": "The loop starts with count set to 3, which is the value the condition will test."
+            },
+            {
+              "title": "Check count = 3",
+              "body": "Ask whether 3 is greater than 0. It is true, so the body runs.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
+                "loop_flow": {
+                  "condition": "3 > 0 is true"
+                },
+                "note": "The condition is checked before this pass."
+              },
+              "code_focus": "condition: Check count = 3",
+              "input_value": "3 > 0 is true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "3 > 0 is true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The condition is checked before this pass."
+                }
+              ],
+              "output": "none yet",
+              "why": "Ask whether 3 is greater than 0. It is true, so the body runs."
+            },
+            {
+              "title": "Run body for 3",
+              "body": "The body uses the current value, 3.",
+              "animation": "branch",
+              "state": {
+                "active_step": "body",
+                "loop_flow": {
+                  "body": "std::cout << count: 3"
+                },
+                "note": "The body runs only after the condition is true."
+              },
+              "code_focus": "body: Run body for 3",
+              "input_value": "std::cout << count: 3",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "body"
+                }
+              ],
+              "decision": "count > 0?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The body runs only after the condition is true."
+                }
+              ],
+              "output": "none yet",
+              "why": "The body uses the current value, 3."
+            },
+            {
+              "title": "Update count to 2",
+              "body": "The update changes count from 3 to 2, then the loop checks the condition again.",
+              "animation": "slide",
+              "state": {
+                "active_step": "update",
+                "loop_flow": {
+                  "update": "count becomes 2",
+                  "condition": "next check uses count = 2"
+                },
+                "note": "This update is what moves the loop toward stopping."
+              },
+              "code_focus": "update: Update count to 2",
+              "input_value": "count becomes 2",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "update"
+                }
+              ],
+              "decision": "next check uses count = 2",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "This update is what moves the loop toward stopping."
+                }
+              ],
+              "output": "none yet",
+              "why": "The update changes count from 3 to 2, then the loop checks the condition again."
+            },
+            {
+              "title": "Check count = 2",
+              "body": "Ask whether 2 is greater than 0. It is true, so the body runs.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
+                "loop_flow": {
+                  "condition": "2 > 0 is true"
+                },
+                "note": "The condition is checked before this pass."
+              },
+              "code_focus": "condition: Check count = 2",
+              "input_value": "2 > 0 is true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "2 > 0 is true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The condition is checked before this pass."
+                }
+              ],
+              "output": "none yet",
+              "why": "Ask whether 2 is greater than 0. It is true, so the body runs."
+            },
+            {
+              "title": "Run body for 2",
+              "body": "The body uses the current value, 2.",
+              "animation": "branch",
+              "state": {
+                "active_step": "body",
+                "loop_flow": {
+                  "body": "std::cout << count: 2"
+                },
+                "note": "The body runs only after the condition is true."
+              },
+              "code_focus": "body: Run body for 2",
+              "input_value": "std::cout << count: 2",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "body"
+                }
+              ],
+              "decision": "count > 0?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The body runs only after the condition is true."
+                }
+              ],
+              "output": "none yet",
+              "why": "The body uses the current value, 2."
+            },
+            {
+              "title": "Update count to 1",
+              "body": "The update changes count from 2 to 1, then the loop checks the condition again.",
+              "animation": "slide",
+              "state": {
+                "active_step": "update",
+                "loop_flow": {
+                  "update": "count becomes 1",
+                  "condition": "next check uses count = 1"
+                },
+                "note": "This update is what moves the loop toward stopping."
+              },
+              "code_focus": "update: Update count to 1",
+              "input_value": "count becomes 1",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "update"
+                }
+              ],
+              "decision": "next check uses count = 1",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "This update is what moves the loop toward stopping."
+                }
+              ],
+              "output": "none yet",
+              "why": "The update changes count from 2 to 1, then the loop checks the condition again."
+            },
+            {
+              "title": "Check count = 1",
+              "body": "Ask whether 1 is greater than 0. It is true, so the body runs.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "condition",
+                "loop_flow": {
+                  "condition": "1 > 0 is true"
+                },
+                "note": "The condition is checked before this pass."
+              },
+              "code_focus": "condition: Check count = 1",
+              "input_value": "1 > 0 is true",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "1 > 0 is true",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The condition is checked before this pass."
+                }
+              ],
+              "output": "none yet",
+              "why": "Ask whether 1 is greater than 0. It is true, so the body runs."
+            },
+            {
+              "title": "Run body for 1",
+              "body": "The body uses the current value, 1.",
+              "animation": "branch",
+              "state": {
+                "active_step": "body",
+                "loop_flow": {
+                  "body": "std::cout << count: 1"
+                },
+                "note": "The body runs only after the condition is true."
+              },
+              "code_focus": "body: Run body for 1",
+              "input_value": "std::cout << count: 1",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "body"
+                }
+              ],
+              "decision": "count > 0?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The body runs only after the condition is true."
+                }
+              ],
+              "output": "none yet",
+              "why": "The body uses the current value, 1."
+            },
+            {
+              "title": "Update count to 0",
+              "body": "The update changes count from 1 to 0, then the loop checks the condition again.",
+              "animation": "slide",
+              "state": {
+                "active_step": "update",
+                "loop_flow": {
+                  "update": "count becomes 0",
+                  "condition": "next check uses count = 0"
+                },
+                "note": "This update is what moves the loop toward stopping."
+              },
+              "code_focus": "update: Update count to 0",
+              "input_value": "count becomes 0",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "update"
+                }
+              ],
+              "decision": "next check uses count = 0",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "This update is what moves the loop toward stopping."
+                }
+              ],
+              "output": "none yet",
+              "why": "The update changes count from 1 to 0, then the loop checks the condition again."
+            },
+            {
+              "title": "Check count = 0",
+              "body": "The condition is false now, so the loop skips the body.",
+              "animation": "return",
+              "state": {
+                "active_step": "condition",
+                "loop_flow": {
+                  "condition": "0 > 0 is false",
+                  "body": "skip body"
+                },
+                "note": "False means skip the body and continue after the loop."
+              },
+              "code_focus": "condition: Check count = 0",
+              "input_value": "0 > 0 is false",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "condition"
+                }
+              ],
+              "decision": "0 > 0 is false",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "False means skip the body and continue after the loop."
+                }
+              ],
+              "output": "none yet",
+              "why": "The condition is false now, so the loop skips the body."
+            },
+            {
+              "title": "Continue after the loop",
+              "body": "The loop is finished, so the next line after the loop can run.",
+              "state": {
+                "active_step": "done",
+                "loop_flow": {
+                  "done": "leave the loop"
+                },
+                "note": "The trace reaches the end of the loop, not just the first pass."
+              },
+              "code_focus": "done: Continue after the loop",
+              "input_value": "leave the loop",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "done"
+                }
+              ],
+              "decision": "count > 0?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "The trace reaches the end of the loop, not just the first pass."
+                }
+              ],
+              "output": "The trace reaches the end of the loop, not just the first pass.",
+              "why": "The loop is finished, so the next line after the loop can run."
+            }
+          ]
+        }
+      ]
     },
     {
-      "kind": "callout",
-      "tone": "tip",
-      "title": "C++ writes out the pieces of Python's range",
-      "body": "Python's `for i in range(3)` hides the counter update. C++ writes the same plan as `for (int i = 0; i < 3; i++)`: start at zero, stop before three, and add one."
+      "id": "check",
+      "title": "Check loop behavior",
+      "summary": "Practice pass counts and missing updates.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "How many passes occur?",
+          "code": "for(int i=1;i<=4;i++){}",
+          "choices": [
+            "4",
+            "3",
+            "5",
+            "none"
+          ],
+          "answer_index": 0,
+          "why": "The **loop** includes one through four because its **condition** includes the upper boundary."
+        },
+        {
+          "kind": "check",
+          "prompt": "What is missing?",
+          "code": "int count=3;\nwhile(count>0){std::cout<<count;}",
+          "choices": [
+            "an update to count",
+            "a header",
+            "a second condition",
+            "a string"
+          ],
+          "answer_index": 0,
+          "why": "Count stays equal to three, leaving the while **condition** true forever."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "The counter begins at zero, prints once per pass, and stops before it reaches three.",
-      "code": "#include <iostream>\n\nint main() {\n  for (int i = 0; i < 3; i++) {\n    std::cout << \"step \" << i << \"\\n\";\n  }\n}",
-      "output": "step 0\nstep 1\nstep 2"
-    },
-    {
-      "kind": "compare",
-      "caption": "Use a strict bound so the count is never used as an **index**.",
-      "wrong_label": "Common mistake",
-      "wrong": "for (int i = 0; i <= values.size(); i++) {\n  use(values[i]);\n}",
-      "right_label": "Clearer version",
-      "right": "for (int i = 0; i < values.size(); i++) {\n  use(values[i]);\n}"
-    },
-    {
-      "kind": "text",
-      "body": "For three elements, the valid **indexes** are zero, one, and two. When `i` becomes three, the corrected **condition** is false. The version using `<=` allows **index** three and steps past the vector. If you do not need an index, use `for (int value : values)`."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "A loop needs a way to finish",
-      "body": "A `while` **loop** can run forever when the **value** in its **condition** never changes. Point to the exact update that moves the loop toward its stopping condition."
-    },
-    {
-      "kind": "check",
-      "prompt": "How many passes occur?",
-      "code": "for(int i=1;i<=4;i++){}",
-      "choices": [
-        "4",
-        "3",
-        "5",
-        "none"
-      ],
-      "answer_index": 0,
-      "why": "The **loop** includes one through four because its **condition** includes the upper boundary."
-    },
-    {
-      "kind": "check",
-      "prompt": "What is missing?",
-      "code": "int count=3;\nwhile(count>0){std::cout<<count;}",
-      "choices": [
-        "an update to count",
-        "a header",
-        "a second condition",
-        "a string"
-      ],
-      "answer_index": 0,
-      "why": "Count stays equal to three, leaving the while **condition** true forever."
-    },
-    {
-      "kind": "list",
-      "title": "Loops checklist",
-      "items": [
-        "Record initialization.",
-        "Inspect the comparison.",
-        "Confirm forward progress.",
-        "Use container size."
+      "id": "habits",
+      "title": "Loop habits",
+      "summary": "Use the checklist before coding loops.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Loops checklist",
+          "items": [
+            "Record initialization.",
+            "Inspect the comparison.",
+            "Confirm forward progress.",
+            "Use container size."
+          ]
+        }
       ]
     }
   ],

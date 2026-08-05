@@ -44,7 +44,17 @@ function trackDefinition(trackId) {
   return TRACKS.find((track) => track.id === trackId) || null;
 }
 
-function LanguageCards({ languages, onPick, onStartPythonBeginner }) {
+function nextTrackDefinition(trackId) {
+  const index = TRACKS.findIndex((track) => track.id === trackId);
+  return index >= 0 ? TRACKS[index + 1] || null : null;
+}
+
+function previousTrackDefinition(trackId) {
+  const index = TRACKS.findIndex((track) => track.id === trackId);
+  return index > 0 ? TRACKS[index - 1] || null : null;
+}
+
+function LanguageCards({ languages, onPick }) {
   return (
     <div className="cq-language-cards">
       <div className="cq-cards-intro">
@@ -54,16 +64,6 @@ function LanguageCards({ languages, onPick, onStartPythonBeginner }) {
           Python Beginner if you want the gentlest path.
         </p>
       </div>
-      <button type="button" className="cq-start-here-card" onClick={onStartPythonBeginner}>
-        <span className="cq-language-card-flag">Start Here</span>
-        <strong>Python Beginner</strong>
-        <span>
-          Follow the lessons in order, then practice the same ideas with small coding problems.
-        </span>
-        <span className="cq-language-card-cta">
-          Start the first track <FaArrowRight aria-hidden="true" />
-        </span>
-      </button>
       <div className="cq-cards-grid">
         {languages.map((lang) => {
           const accent = LANGUAGE_VISUALS[lang.id] || {};
@@ -188,9 +188,12 @@ function LessonList({
   track,
   categories,
   onOpen,
-  onBack,
+  onPrevTrack,
+  onNextTrack,
 }) {
   const ready = categories.filter((category) => category.has_lesson);
+  const prevTrack = previousTrackDefinition(track.id);
+  const nextTrack = nextTrackDefinition(track.id);
 
   return (
     <div className="learn-list">
@@ -249,9 +252,20 @@ function LessonList({
         })}
       </ol>
 
-      <button type="button" className="learn-back-link" onClick={onBack}>
-        <FaArrowLeft aria-hidden="true" /> Back to tracks
-      </button>
+      <div className="learn-track-nav">
+        {prevTrack ? (
+          <button type="button" className="learn-prev-track-link" onClick={onPrevTrack}>
+            <FaArrowLeft aria-hidden="true" /> Previous: {prevTrack.label}
+          </button>
+        ) : (
+          <span aria-hidden="true" />
+        )}
+        {nextTrack ? (
+          <button type="button" className="learn-next-track-link" onClick={onNextTrack}>
+            Next: {nextTrack.label} <FaArrowRight aria-hidden="true" />
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -382,7 +396,14 @@ export default function LearnMode({
         track={track}
         categories={trackCategories}
         onOpen={onNavigateToLesson}
-        onBack={() => onNavigateToLanguage(target.language)}
+        onPrevTrack={() => {
+          const prevTrack = previousTrackDefinition(target.track);
+          if (prevTrack) onNavigateToTrack(target.language, prevTrack.id);
+        }}
+        onNextTrack={() => {
+          const nextTrack = nextTrackDefinition(target.track);
+          if (nextTrack) onNavigateToTrack(target.language, nextTrack.id);
+        }}
       />
     );
   }
@@ -391,7 +412,6 @@ export default function LearnMode({
     <LanguageCards
       languages={languages}
       onPick={onNavigateToLanguage}
-      onStartPythonBeginner={() => onNavigateToTrack("python", "beginner")}
     />
   );
 }

@@ -1,13 +1,13 @@
 {
   "_note": "Original advanced lesson. Shared across languages with language-specific code variants.",
   "title": "Two Pointers",
-  "summary": "Use two **indexes** that move for a clear reason.",
-  "minutes": 18,
+  "summary": "Use two **pointers** with a clear movement rule.",
+  "minutes": 22,
   "error_classes": [
     "wrong_answer",
     "runtime"
   ],
-  "refresher": "**Two pointers** track two positions at the same time. The important part is the movement rule: each move should remove choices you no longer need.",
+  "refresher": "**Two pointers** track two positions at the same time. The important part is the **movement rule**: each move should remove choices you no longer need.",
   "refresher_code": "left = 0\nright = len(nums) - 1\nwhile left < right:\n    total = nums[left] + nums[right]",
   "learn_cards": {
     "advanced-tp-purpose": {
@@ -47,7 +47,7 @@
     {
       "id": "meaning",
       "title": "What two pointers mean",
-      "summary": "Two positions work together.",
+      "summary": "Two positions work together to shrink the work.",
       "question_ids": [
         "advanced-tp-purpose",
         "advanced-tp-loop-stop"
@@ -55,7 +55,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "A two-**pointer** solution keeps two **indexes** and moves them on purpose. The pointers might start at opposite ends, or one might follow behind the other."
+          "body": "A two-**pointer** solution keeps two **indexes** and moves one only when a comparison or rule says that side is done. The pointers might start at opposite ends, or one might follow behind the other."
         },
         {
           "kind": "visual",
@@ -85,7 +85,24 @@
                   4
                 ],
                 "note": "sum = 12, target = 10"
-              }
+              },
+              "code_focus": "trace two-pointers: Start at both ends",
+              "input_value": "1, 11",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 0, right: 4"
+                }
+              ],
+              "decision": "left starts small and right starts large.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "sum = 12, target = 10"
+                }
+              ],
+              "output": "none yet",
+              "why": "left starts small and right starts large."
             },
             {
               "title": "Sum is too large",
@@ -100,7 +117,24 @@
                   3
                 ],
                 "note": "sum = 8"
-              }
+              },
+              "code_focus": "trace two-pointers: Sum is too large",
+              "input_value": "1, 7",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 0, right: 3"
+                }
+              ],
+              "decision": "Move right leftward to try a smaller **value**.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "sum = 8"
+                }
+              ],
+              "output": "none yet",
+              "why": "Move right leftward to try a smaller **value**."
             },
             {
               "title": "Sum is too small",
@@ -115,7 +149,24 @@
                   3
                 ],
                 "note": "sum = 9"
-              }
+              },
+              "code_focus": "trace two-pointers: Sum is too small",
+              "input_value": "2, 7",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 1, right: 3"
+                }
+              ],
+              "decision": "Move left rightward to try a larger **value**.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "sum = 9"
+                }
+              ],
+              "output": "none yet",
+              "why": "Move left rightward to try a larger **value**."
             },
             {
               "title": "Move left again",
@@ -130,7 +181,24 @@
                   3
                 ],
                 "note": "sum = 11"
-              }
+              },
+              "code_focus": "trace two-pointers: Move left again",
+              "input_value": "4, 7",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 2, right: 3"
+                }
+              ],
+              "decision": "The sum is still too small, so left moves again.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "sum = 11"
+                }
+              ],
+              "output": "none yet",
+              "why": "The sum is still too small, so left moves again."
             }
           ]
         },
@@ -159,6 +227,37 @@
       ]
     },
     {
+      "id": "opposite-ends",
+      "title": "Opposite-end pointers",
+      "summary": "Use both ends when sorted order or mirrored positions matter.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "**Opposite-end pointers** start far apart and move inward. This shape fits sorted pair searches, palindrome checks, and problems where the outside values decide what can be ignored."
+        },
+        {
+          "kind": "compare",
+          "caption": "The movement should match the evidence from the comparison.",
+          "wrong_label": "Guessing",
+          "wrong": "sum is too large\nmove left anyway",
+          "right_label": "Using sorted order",
+          "right": "sum is too large\nmove right leftward"
+        },
+        {
+          "kind": "check",
+          "prompt": "In a sorted pair-sum search, why move right when the sum is too large?",
+          "choices": [
+            "A smaller right value can lower the sum",
+            "It makes the list unsorted",
+            "It checks the same pair again",
+            "It guarantees no pair exists"
+          ],
+          "answer_index": 0,
+          "why": "Sorted order makes the value at the new right position less than or equal to the old right value."
+        }
+      ]
+    },
+    {
       "id": "sorted-sum",
       "title": "Sorted pair sum",
       "summary": "Sorted order decides which **pointer** moves.",
@@ -170,7 +269,7 @@
       "blocks": [
         {
           "kind": "text",
-          "body": "For sorted pair-sum problems, left points to a smaller **value** and right points to a larger value. If the sum is too small, left moves rightward. If the sum is too large, right moves leftward."
+          "body": "For sorted pair-sum problems, left points to a smaller **value** and right points to a larger value. If the sum is too small, left moves rightward to raise it. If the sum is too large, right moves leftward to lower it."
         },
         {
           "kind": "code",
@@ -209,9 +308,54 @@
       ]
     },
     {
+      "id": "same-direction",
+      "title": "Same-direction pointers",
+      "summary": "Sometimes one **pointer** reads while another writes or remembers a boundary.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Not every two-pointer problem starts at both ends. Some use a **read pointer** to scan each item and a **write pointer** to place kept values, remove duplicates, or compact a list."
+        },
+        {
+          "kind": "code",
+          "caption": "This pattern keeps values that should remain while `read` scans across the input.",
+          "variants": {
+            "python": {
+              "code": "write = 0\nfor read in range(len(nums)):\n    if keep(nums[read]):\n        nums[write] = nums[read]\n        write += 1",
+              "output": ""
+            },
+            "java": {
+              "code": "int write = 0;\nfor (int read = 0; read < nums.length; read++) {\n    if (keep(nums[read])) {\n        nums[write] = nums[read];\n        write++;\n    }\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "let write = 0;\nfor (let read = 0; read < nums.length; read++) {\n  if (keep(nums[read])) {\n    nums[write] = nums[read];\n    write++;\n  }\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "int write = 0;\nfor (int read = 0; read < (int)nums.size(); read++) {\n    if (keep(nums[read])) {\n        nums[write] = nums[read];\n        write++;\n    }\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "check",
+          "prompt": "What is the job of the write pointer in a compacting pattern?",
+          "choices": [
+            "Mark the next kept position",
+            "Sort the entire input",
+            "Jump to the last item first",
+            "Delete the loop condition"
+          ],
+          "answer_index": 0,
+          "why": "The write pointer marks where the next kept value should be placed."
+        }
+      ]
+    },
+    {
       "id": "trace",
       "title": "Trace before changing code",
-      "summary": "Write the pair and the reason for each move.",
+      "summary": "Write the pair, comparison, and reason for each move.",
       "question_ids": [
         "advanced-tp-palindrome",
         "advanced-tp-parsons",
@@ -278,7 +422,24 @@
                   0,
                   6
                 ]
-              }
+              },
+              "code_focus": "trace two-pointers: Compare the ends",
+              "input_value": "r, r",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 0, right: 6"
+                }
+              ],
+              "decision": "Both ends are done, so both **pointers** can move inward.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "left sees r and right sees r. They match."
             },
             {
               "title": "Move inward",
@@ -295,7 +456,24 @@
                   1,
                   5
                 ]
-              }
+              },
+              "code_focus": "trace two-pointers: Move inward",
+              "input_value": "a, a",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 1, right: 5"
+                }
+              ],
+              "decision": "A palindrome check only needs to keep comparing mirrored positions.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "Now compare a and a."
             },
             {
               "title": "Move inward again",
@@ -312,7 +490,24 @@
                   2,
                   4
                 ]
-              }
+              },
+              "code_focus": "trace two-pointers: Move inward again",
+              "input_value": "c, c",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 2, right: 4"
+                }
+              ],
+              "decision": "The unchecked part keeps getting smaller.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "updated for the next step"
+                }
+              ],
+              "output": "none yet",
+              "why": "c and c match too."
             },
             {
               "title": "Pointers meet",
@@ -329,7 +524,24 @@
                   3
                 ],
                 "note": "palindrome"
-              }
+              },
+              "code_focus": "trace two-pointers: Pointers meet",
+              "input_value": "e",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "left: 3, right: 3"
+                }
+              ],
+              "decision": "If no mismatch appeared before the **pointers** met, the word is a palindrome.",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "palindrome"
+                }
+              ],
+              "output": "none yet",
+              "why": "The middle e does not need a partner."
             }
           ]
         }

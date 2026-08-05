@@ -10,73 +10,108 @@
   ],
   "refresher": "A **module** is a JavaScript **file** that can share selected **values** with other files. `export` makes a value available. `import` brings it into another file. Keep side effects small so importing a file does not surprise you.",
   "refresher_code": "// math.js\nexport function add(a, b) { return a + b; }\n// app.js\nimport { add } from \"./math.js\";",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "As a program grows, one **file** becomes hard to read. **Modules** let you split code into smaller files. Each file can keep its helper details private and export only the pieces other files should use."
+      "id": "idea",
+      "title": "Split code into modules",
+      "summary": "Export only the pieces another file should use.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "As a program grows, one **file** becomes hard to read. **Modules** let you split code into smaller files. Each file can keep its helper details private and export only the pieces other files should use."
+        },
+        {
+          "kind": "text",
+          "body": "`export` shares a **function**, **class**, or value. `import` brings that shared piece into another **file**. The path tells JavaScript where to find it."
+        }
+      ]
     },
     {
-      "kind": "text",
-      "body": "`export` shares a **function**, **class**, or value. `import` brings that shared piece into another **file**. The path tells JavaScript where to find it."
+      "id": "examples",
+      "title": "Import a named helper",
+      "summary": "Trace what stays private and what crosses the file boundary.",
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "The exporting **file** defines one reusable operation, and the importing file names the same exported binding.",
+          "code": "// math.js\nexport const double = n => n * 2;\n// app.js\nimport { double } from \"./math.js\";\nconsole.log(double(6));",
+          "output": "12"
+        },
+        {
+          "kind": "compare",
+          "wrong_label": "Common mistake",
+          "wrong": "import double from \"./math.js\";",
+          "right_label": "Clearer version",
+          "right": "import { double } from \"./math.js\";",
+          "caption": "A named export uses braces when imported. A default export uses the brace-free form, so the two styles must agree."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "The exporting **file** defines one reusable operation, and the importing file names the same exported binding.",
-      "code": "// math.js\nexport const double = n => n * 2;\n// app.js\nimport { double } from \"./math.js\";\nconsole.log(double(6));",
-      "output": "12"
+      "id": "pitfalls",
+      "title": "Avoid tangled imports",
+      "summary": "Keep module relationships simple and one-directional when possible.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A **module** runs when it is imported. That is why top-level code should be calm. Put actions inside **functions** when you want the caller to choose when they run."
+        },
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Paths are part of the contract",
+          "body": "A correct export can still fail to load when its path is wrong. Relative browser **imports** normally include the **file** extension, and a server must deliver the **module** with an appropriate JavaScript content type."
+        }
+      ]
     },
     {
-      "kind": "compare",
-      "wrong_label": "Common mistake",
-      "wrong": "import double from \"./math.js\";",
-      "right_label": "Clearer version",
-      "right": "import { double } from \"./math.js\";",
-      "caption": "A named export uses braces when imported. A default export uses the brace-free form, so the two styles must agree."
+      "id": "check",
+      "title": "Check module syntax",
+      "summary": "Practice exports, imports, and file responsibilities.",
+      "blocks": [
+        {
+          "kind": "check",
+          "prompt": "Which syntax **imports** a named export called `add`?",
+          "code": "",
+          "choices": [
+            "import { add } from \"./math.js\";",
+            "import add with \"./math.js\";",
+            "include add from \"./math.js\";",
+            "require { add } \"./math.js\";"
+          ],
+          "answer_index": 0,
+          "why": "Named **imports** use braces around the exact exported name and a from clause containing the **module** path."
+        },
+        {
+          "kind": "check",
+          "prompt": "How often is a **module** normally evaluated when imported by several **files**?",
+          "code": "",
+          "choices": [
+            "Once, then its exports are reused",
+            "Once per function call",
+            "Twice for named exports",
+            "It is never evaluated"
+          ],
+          "answer_index": 0,
+          "why": "The **module** system evaluates one module **instance** and shares its exported bindings with the files that **import** it."
+        }
+      ]
     },
     {
-      "kind": "text",
-      "body": "A **module** runs when it is imported. That is why top-level code should be calm. Put actions inside **functions** when you want the caller to choose when they run."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Paths are part of the contract",
-      "body": "A correct export can still fail to load when its path is wrong. Relative browser **imports** normally include the **file** extension, and a server must deliver the **module** with an appropriate JavaScript content type."
-    },
-    {
-      "kind": "check",
-      "prompt": "Which syntax **imports** a named export called `add`?",
-      "code": "",
-      "choices": [
-        "import { add } from \"./math.js\";",
-        "import add with \"./math.js\";",
-        "include add from \"./math.js\";",
-        "require { add } \"./math.js\";"
-      ],
-      "answer_index": 0,
-      "why": "Named **imports** use braces around the exact exported name and a from clause containing the **module** path."
-    },
-    {
-      "kind": "check",
-      "prompt": "How often is a **module** normally evaluated when imported by several **files**?",
-      "code": "",
-      "choices": [
-        "Once, then its exports are reused",
-        "Once per function call",
-        "Twice for named exports",
-        "It is never evaluated"
-      ],
-      "answer_index": 0,
-      "why": "The **module** system evaluates one module **instance** and shares its exported bindings with the files that **import** it."
-    },
-    {
-      "kind": "list",
-      "title": "Modules checklist",
-      "items": [
-        "Export only what another **file** needs.",
-        "**Import** from the correct relative path.",
-        "Keep surprise work out of the top level.",
-        "Group related helpers in the same **module**."
+      "id": "practice",
+      "title": "Module habits",
+      "summary": "Use a checklist for JavaScript file boundaries.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Modules checklist",
+          "items": [
+            "Export only what another **file** needs.",
+            "**Import** from the correct relative path.",
+            "Keep surprise work out of the top level.",
+            "Group related helpers in the same **module**."
+          ]
+        }
       ]
     }
   ],

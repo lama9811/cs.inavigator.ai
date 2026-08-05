@@ -7231,6 +7231,14 @@ body.coding-dark .campus-hero-focus {
   line-height: 1.5;
 }
 
+.starting-check-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .starting-check-topics {
   display: flex;
   flex-wrap: wrap;

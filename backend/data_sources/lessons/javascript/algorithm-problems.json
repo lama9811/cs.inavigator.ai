@@ -9,139 +9,305 @@
   ],
   "refresher": "Name the **input** and expected **output**, trace a small example, initialize needed state, perform each update, and **return** after the work is complete.",
   "refresher_code": "let total=0;\nfor(const n of values) total+=n;\nreturn total;",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "Name the **input** and expected output, trace a small example, initialize needed state, perform each update, and **return** after the work is complete. Arrange setup, repetition, decisions, and output into a **method**."
-    },
-    {
-      "kind": "visual",
-      "title": "Track best-so-far state",
-      "concept": "arrays",
-      "caption": "Watch the best index update only when a better value appears.",
-      "initial_state": {},
-      "steps": [
+      "id": "read-trace",
+      "title": "Read and trace first",
+      "summary": "Name the input, expected output, and one hand-traced example.",
+      "blocks": [
         {
-          "title": "Initialize",
-          "body": "Best starts at index 0 because that is the first candidate.",
-          "state": {
-            "items": [
-              "4",
-              "9",
-              "7"
-            ],
-            "active": [
-              0
-            ],
-            "pointers": {
-              "best": 0
-            },
-            "note": "best value = 4"
-          }
+          "kind": "text",
+          "body": "Name the **input** and expected output, trace a small example, initialize needed state, perform each update, and **return** after the work is complete. Arrange setup, repetition, decisions, and output into a **method**."
         },
         {
-          "title": "Compare index 1",
-          "body": "Nine is larger than four, so best moves to index 1.",
-          "animation": "slide",
-          "state": {
-            "items": [
-              "4",
-              "9",
-              "7"
-            ],
-            "active": [
-              1
-            ],
-            "pointers": {
-              "best": 1,
-              "i": 1
+          "kind": "visual",
+          "title": "Track best-so-far state",
+          "concept": "state-trace",
+          "caption": "Watch the active item, the comparison, and the best-so-far state move together.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Initialize",
+              "body": "Start with the first value as the best-so-far because it is the only candidate seen.",
+              "state": {
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  0
+                ],
+                "pointers": {
+                  "best": 0
+                },
+                "active_step": "state",
+                "state_trace": {
+                  "input": "[4, 9, 7]",
+                  "current": "index 0 has 4",
+                  "comparison": "No comparison yet",
+                  "decision": "Initialize best",
+                  "tracked": "best = 4 at index 0",
+                  "result": "keep tracing"
+                },
+                "note": "best value = 4"
+              },
+              "code_focus": "state: Initialize",
+              "input_value": "4",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 0"
+                },
+                {
+                  "name": "step",
+                  "value": "state"
+                }
+              ],
+              "decision": "Initialize best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "best value = 4"
+                }
+              ],
+              "output": "none yet",
+              "why": "Start with the first value as the best-so-far because it is the only candidate seen."
             },
-            "note": "best value = 9"
-          }
+            {
+              "title": "Compare index 1",
+              "body": "Compare the active item to best. Since 9 is larger than 4, best moves to index 1.",
+              "animation": "slide",
+              "state": {
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "best": 1,
+                  "i": 1
+                },
+                "active_step": "compare",
+                "state_trace": {
+                  "input": "[4, 9, 7]",
+                  "current": "index 1 has 9",
+                  "comparison": "9 > 4 is true",
+                  "decision": "Update best",
+                  "tracked": "best = 9 at index 1",
+                  "result": "keep tracing"
+                },
+                "note": "best value = 9"
+              },
+              "code_focus": "compare: Compare index 1",
+              "input_value": "9",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1, i: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "compare"
+                }
+              ],
+              "decision": "Update best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "best value = 9"
+                }
+              ],
+              "output": "none yet",
+              "why": "Compare the active item to best. Since 9 is larger than 4, best moves to index 1."
+            },
+            {
+              "title": "Compare index 2",
+              "body": "Compare the active item to best. Since 7 is not larger than 9, best stays at index 1.",
+              "state": {
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  2
+                ],
+                "pointers": {
+                  "best": 1,
+                  "i": 2
+                },
+                "active_step": "compare",
+                "state_trace": {
+                  "input": "[4, 9, 7]",
+                  "current": "index 2 has 7",
+                  "comparison": "7 > 9 is false",
+                  "decision": "Keep best",
+                  "tracked": "best = 9 at index 1",
+                  "result": "ready to return"
+                },
+                "note": "best still points at index 1"
+              },
+              "code_focus": "compare: Compare index 2",
+              "input_value": "7",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1, i: 2"
+                },
+                {
+                  "name": "step",
+                  "value": "compare"
+                }
+              ],
+              "decision": "Keep best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "best still points at index 1"
+                }
+              ],
+              "output": "none yet",
+              "why": "Compare the active item to best. Since 7 is not larger than 9, best stays at index 1."
+            },
+            {
+              "title": "Return best",
+              "body": "After every item has been checked, return or use the stored best value.",
+              "state": {
+                "items": [
+                  "4",
+                  "9",
+                  "7"
+                ],
+                "active": [
+                  1
+                ],
+                "pointers": {
+                  "best": 1
+                },
+                "active_step": "result",
+                "state_trace": {
+                  "input": "[4, 9, 7]",
+                  "current": "no items left",
+                  "comparison": "loop is finished",
+                  "decision": "Use best",
+                  "tracked": "best = 9 at index 1",
+                  "result": "return 9"
+                },
+                "note": "return the best value 9"
+              },
+              "code_focus": "result: Return best",
+              "input_value": "9",
+              "variables_before": [
+                {
+                  "name": "pointers",
+                  "value": "best: 1"
+                },
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "Use best",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "return the best value 9"
+                }
+              ],
+              "output": "return 9",
+              "why": "After every item has been checked, return or use the stored best value."
+            }
+          ]
         },
         {
-          "title": "Compare index 2",
-          "body": "Seven is not larger than nine, so best stays put.",
-          "state": {
-            "items": [
-              "4",
-              "9",
-              "7"
-            ],
-            "active": [
-              2
-            ],
-            "pointers": {
-              "best": 1,
-              "i": 2
-            },
-            "note": "return best index 1"
-          }
+          "kind": "text",
+          "body": "For a small algorithm, translate the prompt into four questions: what comes in, what must come out, what state must be remembered, and what work repeats? A running total remembers progress across iterations. Its starting **value** should behave neutrally for the operation, which is zero for addition."
         }
       ]
     },
     {
-      "kind": "text",
-      "body": "For a small algorithm, translate the prompt into four questions: what comes in, what must come out, what state must be remembered, and what work repeats? A running total remembers progress across iterations. Its starting **value** should behave neutrally for the operation, which is zero for addition."
+      "id": "accumulator",
+      "title": "Build running state",
+      "summary": "Set up an accumulator and return only after traversal finishes.",
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "Zero initializes the accumulator, each **value** contributes once, and **return** follows the **loop**.",
+          "code": "function sum(values){\n let total=0;\n for(const value of values) total+=value;\n return total;\n}\nconsole.log(sum([3,5,2]));",
+          "output": "10"
+        },
+        {
+          "kind": "compare",
+          "caption": "Do not **return** an accumulator before **traversal** finishes.",
+          "wrong_label": "Common mistake",
+          "wrong": "for (const value of values) {\n  total += value;\n  return total;\n}",
+          "right_label": "Clearer version",
+          "right": "for (const value of values) {\n  total += value;\n}\nreturn total;"
+        },
+        {
+          "kind": "text",
+          "body": "With `[3, 5, 2]`, total changes from zero to three, then eight, then ten. **Return** belongs after those three updates. Try an empty **array** too: the **loop** makes no updates, and the initialized total of zero is still a sensible sum."
+        }
+      ]
     },
     {
-      "kind": "code",
-      "caption": "Zero initializes the accumulator, each **value** contributes once, and **return** follows the **loop**.",
-      "code": "function sum(values){\n let total=0;\n for(const value of values) total+=value;\n return total;\n}\nconsole.log(sum([3,5,2]));",
-      "output": "10"
+      "id": "check",
+      "title": "Check algorithm order",
+      "summary": "Practice setup-before-update and return-after-loop reasoning.",
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "mistake",
+          "title": "Trace this carefully",
+          "body": "Putting **return** inside the **loop** ends the **function** during its first pass and skips the remaining values."
+        },
+        {
+          "kind": "check",
+          "prompt": "What precedes total updates?",
+          "code": "",
+          "choices": [
+            "initialize the total",
+            "return the total",
+            "sort values",
+            "convert to text"
+          ],
+          "answer_index": 0,
+          "why": "The update needs an existing number, and zero is the correct additive starting point."
+        },
+        {
+          "kind": "check",
+          "prompt": "Where should a full-**array** maximum **return**?",
+          "code": "",
+          "choices": [
+            "after the loop",
+            "before setup",
+            "inside the first comparison",
+            "before each update"
+          ],
+          "answer_index": 0,
+          "why": "Every needed comparison must finish because a later element can replace the candidate."
+        }
+      ]
     },
     {
-      "kind": "compare",
-      "caption": "Do not **return** an accumulator before **traversal** finishes.",
-      "wrong_label": "Common mistake",
-      "wrong": "for (const value of values) {\n  total += value;\n  return total;\n}",
-      "right_label": "Clearer version",
-      "right": "for (const value of values) {\n  total += value;\n}\nreturn total;"
-    },
-    {
-      "kind": "text",
-      "body": "With `[3, 5, 2]`, total changes from zero to three, then eight, then ten. **Return** belongs after those three updates. Try an empty **array** too: the **loop** makes no updates, and the initialized total of zero is still a sensible sum."
-    },
-    {
-      "kind": "callout",
-      "tone": "mistake",
-      "title": "Trace this carefully",
-      "body": "Putting **return** inside the **loop** ends the **function** during its first pass and skips the remaining values."
-    },
-    {
-      "kind": "check",
-      "prompt": "What precedes total updates?",
-      "code": "",
-      "choices": [
-        "initialize the total",
-        "return the total",
-        "sort values",
-        "convert to text"
-      ],
-      "answer_index": 0,
-      "why": "The update needs an existing number, and zero is the correct additive starting point."
-    },
-    {
-      "kind": "check",
-      "prompt": "Where should a full-**array** maximum **return**?",
-      "code": "",
-      "choices": [
-        "after the loop",
-        "before setup",
-        "inside the first comparison",
-        "before each update"
-      ],
-      "answer_index": 0,
-      "why": "Every needed comparison must finish because a later element can replace the candidate."
-    },
-    {
-      "kind": "list",
-      "title": "Algorithm Problems: Part 1 checklist",
-      "items": [
-        "Write a tiny expected result.",
-        "Choose matching state.",
-        "Update each relevant item.",
-        "**Return** after required work."
+      "id": "habits",
+      "title": "Algorithm habits",
+      "summary": "Use the checklist before arranging code.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Algorithm Problems: Part 1 checklist",
+          "items": [
+            "Write a tiny expected result.",
+            "Choose matching state.",
+            "Update each relevant item.",
+            "**Return** after required work."
+          ]
+        }
       ]
     }
   ],

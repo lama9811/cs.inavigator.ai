@@ -9,127 +9,284 @@
   ],
   "refresher": "A **set** is an unordered collection of unique **values**. Add with `add`, remove safely with `discard`, and use union, intersection, or difference to compare groups. Empty sets use `set()`, because `{}` creates a **dictionary**.",
   "refresher_code": "skills = {\"Python\", \"Git\"}\nskills.add(\"Python\")\nprint(len(skills))\n# 2",
-  "blocks": [
+  "sections": [
     {
-      "kind": "text",
-      "body": "A **set** is useful when the question is about membership, not position. It can track the courses a student has completed or the tags attached to an article. Duplicate **input** collapses into one stored **value**."
-    },
-    {
-      "kind": "visual",
-      "title": "Keep one copy of each value",
-      "concept": "sets",
-      "caption": "See how a set ignores duplicates while membership stays fast to check.",
-      "initial_state": {},
-      "steps": [
+      "id": "unique-values",
+      "title": "Unique values",
+      "summary": "Use sets when membership matters more than position.",
+      "blocks": [
         {
-          "title": "Add A",
-          "body": "A is new, so it joins the set.",
-          "animation": "add",
-          "state": {
-            "items": [
-              "A"
-            ],
-            "active": [
-              0
-            ],
-            "note": "seen = {A}"
-          }
+          "kind": "text",
+          "body": "A **set** is useful when the question is about membership, not position. It can track the courses a student has completed or the tags attached to an article. Duplicate **input** collapses into one stored **value**."
         },
         {
-          "title": "Add B",
-          "body": "B is also new.",
-          "animation": "add",
-          "state": {
-            "items": [
-              "A",
-              "B"
-            ],
-            "active": [
-              1
-            ],
-            "note": "seen = {A, B}"
-          }
+          "kind": "visual",
+          "title": "Keep one copy of each value",
+          "concept": "sets",
+          "caption": "Trace values entering a set, duplicate handling, membership, and final unique state.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Start empty",
+              "body": "A set begins with no stored values and no index order to follow.",
+              "state": {
+                "active_step": "store",
+                "map_flow": {
+                  "store": "seen = set()",
+                  "action": "read next value",
+                  "decision": "already present?",
+                  "result": "unique values only"
+                },
+                "table": [],
+                "note": "membership matters more than position"
+              },
+              "code_focus": "store: Start empty",
+              "input_value": "seen = set()",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "store"
+                }
+              ],
+              "decision": "already present?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "membership matters more than position"
+                }
+              ],
+              "output": "none yet",
+              "why": "A set begins with no stored values and no index order to follow."
+            },
+            {
+              "title": "Add new values",
+              "body": "A and B are new, so each joins the set once.",
+              "animation": "add",
+              "state": {
+                "active_step": "action",
+                "map_flow": {
+                  "store": "seen has A",
+                  "action": "add B",
+                  "decision": "B already present? no",
+                  "result": "store B"
+                },
+                "table": [
+                  {
+                    "key": "A",
+                    "value": "stored"
+                  },
+                  {
+                    "key": "B",
+                    "value": "stored",
+                    "active": true
+                  }
+                ],
+                "note": "seen = {A, B}"
+              },
+              "code_focus": "action: Add new values",
+              "input_value": "B -> stored",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "action"
+                }
+              ],
+              "decision": "B already present? no",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "seen = {A, B}"
+                },
+                {
+                  "name": "active entry",
+                  "value": "B -> stored"
+                }
+              ],
+              "output": "none yet",
+              "why": "A and B are new, so each joins the set once."
+            },
+            {
+              "title": "Ignore duplicate",
+              "body": "Trying to add A again changes nothing because A is already a member.",
+              "animation": "highlight",
+              "state": {
+                "active_step": "decision",
+                "map_flow": {
+                  "store": "seen has A and B",
+                  "action": "add A again",
+                  "decision": "A already present? yes",
+                  "result": "do not add a second A"
+                },
+                "table": [
+                  {
+                    "key": "A",
+                    "value": "already stored",
+                    "active": true
+                  },
+                  {
+                    "key": "B",
+                    "value": "stored"
+                  }
+                ],
+                "note": "duplicate ignored"
+              },
+              "code_focus": "decision: Ignore duplicate",
+              "input_value": "A -> already stored",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "decision"
+                }
+              ],
+              "decision": "A already present? yes",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "duplicate ignored"
+                },
+                {
+                  "name": "active entry",
+                  "value": "A -> already stored"
+                }
+              ],
+              "output": "none yet",
+              "why": "Trying to add A again changes nothing because A is already a member."
+            },
+            {
+              "title": "Check membership",
+              "body": "The final set is useful because membership can be checked directly.",
+              "animation": "return",
+              "state": {
+                "active_step": "result",
+                "map_flow": {
+                  "store": "seen = {A, B}",
+                  "action": "check A",
+                  "decision": "A in seen?",
+                  "result": "true"
+                },
+                "table": [
+                  {
+                    "key": "A",
+                    "value": "present",
+                    "active": true
+                  },
+                  {
+                    "key": "B",
+                    "value": "present"
+                  }
+                ],
+                "note": "final state has one copy of each value"
+              },
+              "code_focus": "result: Check membership",
+              "input_value": "A -> present",
+              "variables_before": [
+                {
+                  "name": "step",
+                  "value": "result"
+                }
+              ],
+              "decision": "A in seen?",
+              "variables_after": [
+                {
+                  "name": "state",
+                  "value": "final state has one copy of each value"
+                },
+                {
+                  "name": "active entry",
+                  "value": "A -> present"
+                }
+              ],
+              "output": "none yet",
+              "why": "The final set is useful because membership can be checked directly."
+            }
+          ]
         },
         {
-          "title": "Try A again",
-          "body": "A is already present, so the set still has one A.",
-          "animation": "highlight",
-          "state": {
-            "items": [
-              "A",
-              "B"
-            ],
-            "active": [
-              0
-            ],
-            "note": "duplicate ignored"
-          }
+          "kind": "code",
+          "caption": "Repeated **values** disappear when the **list** becomes a **set**. The result has three unique course codes even though the source list has four items.",
+          "code": "courses = [\"CS101\", \"MATH120\", \"CS101\", \"ENG101\"]\nunique_courses = set(courses)\nprint(len(unique_courses))\nprint(\"CS101\" in unique_courses)",
+          "output": "3\nTrue"
         }
       ]
     },
     {
-      "kind": "code",
-      "caption": "Repeated **values** disappear when the **list** becomes a **set**. The result has three unique course codes even though the source list has four items.",
-      "code": "courses = [\"CS101\", \"MATH120\", \"CS101\", \"ENG101\"]\nunique_courses = set(courses)\nprint(len(unique_courses))\nprint(\"CS101\" in unique_courses)",
-      "output": "3\nTrue"
+      "id": "set-mutation",
+      "title": "Set mutation habits",
+      "summary": "Handle unordered sets, safe removal, and empty set syntax.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "**Sets** do not promise an index order, so `skills[0]` is not valid. If order matters, keep a **list**. If fast membership and uniqueness matter, a set is usually the clearer tool."
+        },
+        {
+          "kind": "compare",
+          "caption": "`remove` raises KeyError when the **value** is absent. `discard` **leaves** the **set** unchanged, which is convenient when absence is acceptable.",
+          "wrong_label": "May fail",
+          "wrong": "clubs = {\"Robotics\"}\nclubs.remove(\"Chess\")",
+          "right_label": "Safe absence",
+          "right": "clubs = {\"Robotics\"}\nclubs.discard(\"Chess\")"
+        },
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "Curly braces have one empty exception",
+          "body": "`{\"Python\"}` is a **set**, but `{}` is an empty **dictionary**. Write `set()` when you need an empty set, then add **values** to it."
+        },
+        {
+          "kind": "check",
+          "prompt": "What is the **value** of `common`?",
+          "code": "a = {1, 2, 3}\nb = {2, 3, 4}\ncommon = a & b",
+          "choices": [
+            "{2, 3}",
+            "{1, 2, 3, 4}",
+            "{1, 4}",
+            "[2, 3]"
+          ],
+          "answer_index": 0,
+          "why": "The `&` **operator** computes intersection, keeping only values present in both **sets**. The result remains a set, not a **list**."
+        }
+      ]
     },
     {
-      "kind": "text",
-      "body": "**Sets** do not promise an index order, so `skills[0]` is not valid. If order matters, keep a **list**. If fast membership and uniqueness matter, a set is usually the clearer tool."
+      "id": "compare-groups",
+      "title": "Compare groups",
+      "summary": "Use union, intersection, and difference to compare memberships.",
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Union combines both groups, intersection keeps the overlap, and difference keeps **values** found only on the left. Those operations often replace nested **loops** with a statement that matches the question directly."
+        },
+        {
+          "kind": "check",
+          "prompt": "Which expression finds courses completed by Ada but not Ben?",
+          "code": "ada = {\"CS101\", \"MATH120\"}\nben = {\"CS101\", \"ENG101\"}",
+          "choices": [
+            "ada - ben",
+            "ada | ben",
+            "ada & ben",
+            "ben - ada"
+          ],
+          "answer_index": 0,
+          "why": "**Set** difference keeps members from the left set that are absent from the right. Here the result is `{\"MATH120\"}`."
+        }
+      ]
     },
     {
-      "kind": "compare",
-      "caption": "`remove` raises KeyError when the **value** is absent. `discard` **leaves** the **set** unchanged, which is convenient when absence is acceptable.",
-      "wrong_label": "May fail",
-      "wrong": "clubs = {\"Robotics\"}\nclubs.remove(\"Chess\")",
-      "right_label": "Safe absence",
-      "right": "clubs = {\"Robotics\"}\nclubs.discard(\"Chess\")"
-    },
-    {
-      "kind": "callout",
-      "tone": "warning",
-      "title": "Curly braces have one empty exception",
-      "body": "`{\"Python\"}` is a **set**, but `{}` is an empty **dictionary**. Write `set()` when you need an empty set, then add **values** to it."
-    },
-    {
-      "kind": "check",
-      "prompt": "What is the **value** of `common`?",
-      "code": "a = {1, 2, 3}\nb = {2, 3, 4}\ncommon = a & b",
-      "choices": [
-        "{2, 3}",
-        "{1, 2, 3, 4}",
-        "{1, 4}",
-        "[2, 3]"
-      ],
-      "answer_index": 0,
-      "why": "The `&` **operator** computes intersection, keeping only values present in both **sets**. The result remains a set, not a **list**."
-    },
-    {
-      "kind": "text",
-      "body": "Union combines both groups, intersection keeps the overlap, and difference keeps **values** found only on the left. Those operations often replace nested **loops** with a statement that matches the question directly."
-    },
-    {
-      "kind": "check",
-      "prompt": "Which expression finds courses completed by Ada but not Ben?",
-      "code": "ada = {\"CS101\", \"MATH120\"}\nben = {\"CS101\", \"ENG101\"}",
-      "choices": [
-        "ada - ben",
-        "ada | ben",
-        "ada & ben",
-        "ben - ada"
-      ],
-      "answer_index": 0,
-      "why": "**Set** difference keeps members from the left set that are absent from the right. Here the result is `{\"MATH120\"}`."
-    },
-    {
-      "kind": "list",
+      "id": "set-checklist",
       "title": "Set checklist",
-      "items": [
-        "Use a **set** when duplicates have no meaning.",
-        "Do not depend on item positions.",
-        "Prefer `discard` when a missing **value** is acceptable.",
-        "Use `&`, `|`, and `-` to compare groups.",
-        "Create an empty **set** with `set()`."
+      "summary": "Review when a set is the right collection.",
+      "blocks": [
+        {
+          "kind": "list",
+          "title": "Set checklist",
+          "items": [
+            "Use a **set** when duplicates have no meaning.",
+            "Do not depend on item positions.",
+            "Prefer `discard` when a missing **value** is acceptable.",
+            "Use `&`, `|`, and `-` to compare groups.",
+            "Create an empty **set** with `set()`."
+          ]
+        }
       ]
     }
   ],

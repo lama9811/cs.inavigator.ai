@@ -803,6 +803,54 @@ def test_progress_serializer_keeps_best_latest_status_and_unresolved_mistakes():
     assert payload["mistakes"][0]["explanation"]
 
 
+def test_mistake_bank_retry_resolves_original_question_without_fake_category():
+    from datetime import datetime, timedelta, timezone
+    from main import _serialize_concept_progress
+    from models import CodingConceptQuizAttempt
+
+    question = cq.questions_for_category("python", "syntax")["questions"][0]
+    now = datetime.now(timezone.utc)
+    rows = [
+        CodingConceptQuizAttempt(
+            id=1,
+            user_id=7,
+            language="python",
+            category="syntax",
+            correct=0,
+            total=1,
+            score=0.0,
+            results_json=json.dumps([
+                {"question_id": question["id"], "kind": question["kind"], "correct": False},
+            ]),
+            created_at=now,
+        ),
+        CodingConceptQuizAttempt(
+            id=2,
+            user_id=7,
+            language="python",
+            category="mistake-bank",
+            correct=1,
+            total=1,
+            score=1.0,
+            results_json=json.dumps([
+                {
+                    "category": "syntax",
+                    "question_id": question["id"],
+                    "kind": question["kind"],
+                    "correct": True,
+                },
+            ]),
+            created_at=now + timedelta(minutes=1),
+        ),
+    ]
+
+    payload = _serialize_concept_progress(rows)
+    categories = {item["category"]: item for item in payload["categories"]}
+    assert "mistake-bank" not in categories
+    assert payload["mistakes"] == []
+    assert categories["syntax"]["questions"][question["id"]] == "correct"
+
+
 def test_placement_uses_five_foundation_topics_without_leaking_answers():
     from main import PLACEMENT_CATEGORIES, _placement_questions, _public_placement_question
 
