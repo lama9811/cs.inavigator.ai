@@ -3064,6 +3064,87 @@ def _cpp_literal(value: Any) -> str:
     return f"Value(std::string({json.dumps(str(value))}))"
 
 
+def _cpp_trace_empty_response(message: str) -> dict[str, Any]:
+    return {
+        "status": "error",
+        "trace": [],
+        "trace_v2": _empty_trace_v2_payload(),
+        "stdout": "",
+        "stderr": message,
+        "message": message,
+        "duration_ms": 0,
+    }
+
+
+def _cpp_trace_compile_line(stderr_text: str) -> int | None:
+    match = re.search(r"(?:main\.cpp|student\.cpp):(\d+):", stderr_text or "")
+    if not match:
+        return None
+    try:
+        return int(match.group(1))
+    except ValueError:
+        return None
+
+
+def _cpp_trace_is_executable_line(stripped: str) -> bool:
+    if not stripped:
+        return False
+    if stripped.startswith(("//", "/*", "*", "#", "using ", "namespace ")):
+        return False
+    if stripped in {"{", "}", "};"}:
+        return False
+    if stripped.endswith(":") and stripped in {"public:", "private:", "protected:"}:
+        return False
+    if stripped.startswith(("class ", "struct ", "else", "catch")):
+        return False
+    if re.match(r"^[\w:<>,\s*&]+\s+\w+\s*\([^;]*\)\s*\{?$", stripped):
+        return False
+    return True
+
+
+def _cpp_trace_operation(line: str) -> tuple[str, str]:
+    stripped = line.strip()
+    if stripped.startswith("return"):
+        return "return", "C++ is about to return a value from this function."
+    if stripped.startswith("throw"):
+        return "exception", "C++ is about to throw an exception."
+    if stripped.startswith(("if ", "if(")):
+        return "condition", "C++ is checking this condition to choose a branch."
+    if stripped.startswith(("for ", "for(")):
+        return "loop", "C++ is starting or continuing this loop."
+    if stripped.startswith(("while ", "while(")):
+        return "loop", "C++ is checking this while-loop condition."
+    if "cout" in stripped or "std::cout" in stripped:
+        return "stdout", "This line prints output."
+    if re.search(r"\.(?:push_back|pop_back|insert|erase|clear)\s*\(", stripped) or re.search(r"\[[^\]]+\]\s*=", stripped):
+        return "mutation", "This line changes an existing collection or stored value."
+    if "=" in stripped and "==" not in stripped and "!=" not in stripped and "<=" not in stripped and ">=" not in stripped:
+        return "assignment", "This line stores or updates a value."
+    return "line", "C++ is about to run this line."
+
+
+def _instrument_cpp_trace_source(code: str) -> str:
+    lines = code.splitlines()
+    output: list[str] = []
+    in_block_comment = False
+    for index, line in enumerate(lines, start=1):
+        stripped = line.strip()
+        if "/*" in stripped:
+            in_block_comment = True
+        if not in_block_comment and _cpp_trace_is_executable_line(stripped):
+            indent = line[: len(line) - len(line.lstrip())]
+            operation, message = _cpp_trace_operation(stripped)
+            output.append(
+                f"{indent}__Trace::line({index}, {json.dumps(stripped)}, "
+                f"{json.dumps(operation)}, {json.dumps(message)}); {stripped}"
+            )
+        else:
+            output.append(line)
+        if in_block_comment and "*/" in stripped:
+            in_block_comment = False
+    return "\n".join(output)
+
+
 def _cpp_param_prefers_int(code: str, function_name: str, param_name: str, kind: str) -> bool:
     """Best-effort compatibility check for beginner/AI C++ signatures.
 
@@ -3933,6 +4014,323 @@ int main(){{
         if index < len(tests) and "args" not in item:
             item["args"] = tests[index].get("args", [])
     return result
+
+
+def run_cpp_practice_trace(code: str, function_name: str, test: dict[str, Any], arg_spec=None) -> dict[str, Any]:
+    if not compiled_runners_enabled():
+        return _cpp_trace_empty_response(COMPILED_RUNNERS_DISABLED_MESSAGE)
+    try:
+        validate_cpp_code(code)
+    except RunnerSecurityError as exc:
+        return _cpp_trace_empty_response(f"Runner security check blocked this code: {exc}")
+
+    compiler = _find_executable("g++", "clang++")
+    if not compiler:
+        return _cpp_trace_empty_response(
+            "A C++ compiler (g++ or clang++) is not installed on this machine, so C++ tracing cannot run locally yet. "
+            "Install one, or use Python/JavaScript/Java for now."
+        )
+
+    args = test.get("args", []) or []
+    expected = test.get("expected")
+    case_insensitive = bool(test.get("case_insensitive"))
+    arg_list = ", ".join(_cpp_literal(a) for a in args)
+    if arg_spec:
+        from practice_starters import cpp_native_bridge, cpp_native_signature
+        expected_signature = cpp_native_signature(function_name, arg_spec)
+        student_decl = cpp_native_bridge(function_name, arg_spec)
+        call_target = f"__call_{function_name}"
+        compat_adapter = _cpp_beginner_compat_adapter(code, function_name, arg_spec, expected_signature)
+        student_section = f"{_instrument_cpp_trace_source(code)}\n\n{compat_adapter}\n\n{student_decl}"
+        arg_names = [name for name, _ in arg_spec[0]]
+    else:
+        expected_signature = f"Value {function_name}(std::vector<Value> args)"
+        student_decl = (
+            f"// Student provides: Value {function_name}(vector<Value> args)\n"
+            f"Value {function_name}(vector<Value> args);"
+        )
+        call_target = function_name
+        compat_adapter = ""
+        student_section = f"{student_decl}\n\n{_instrument_cpp_trace_source(code)}"
+        arg_names = [f"arg{index + 1}" for index in range(len(args))]
+
+    arg_bindings = [
+        {"name": name, "value": _truncate_text(json.dumps(value), RUN_MAX_VALUE_CHARS)}
+        for name, value in zip(arg_names, args)
+    ]
+
+    harness = f"""
+#include <bits/stdc++.h>
+using namespace std;
+
+struct __Trace {{
+    static vector<string> steps;
+    static string esc(const string& s) {{
+        string r;
+        for (char c : s) {{
+            if (c == '"' || c == '\\\\') r += '\\\\';
+            if (c == '\\n') {{ r += "\\\\n"; continue; }}
+            if (c == '\\r') {{ r += "\\\\r"; continue; }}
+            r += c;
+        }}
+        return r;
+    }}
+    static void line(int line, const string& source, const string& kind, const string& message) {{
+        steps.push_back("{{\\"line\\":" + to_string(line)
+            + ",\\"source\\":\\"" + esc(source)
+            + "\\",\\"operation_kind\\":\\"" + esc(kind)
+            + "\\",\\"student_message\\":\\"" + esc(message) + "\\"}}");
+    }}
+    static string stepsJson() {{
+        string r = "[";
+        for (size_t i = 0; i < steps.size(); i++) {{
+            if (i) r += ",";
+            r += steps[i];
+        }}
+        return r + "]";
+    }}
+}};
+vector<string> __Trace::steps;
+
+struct Value {{
+    enum Kind {{ NUL, BOOL, INT, DBL, STR, ARR }} kind = NUL;
+    bool b=false; long long i=0; double d=0; string s; vector<Value> a;
+    Value() {{}}
+    Value(bool x): kind(BOOL), b(x) {{}}
+    Value(long long x): kind(INT), i(x) {{}}
+    Value(double x): kind(DBL), d(x) {{}}
+    Value(const string& x): kind(STR), s(x) {{}}
+    Value(const vector<Value>& x): kind(ARR), a(x) {{}}
+    string show() const {{
+        switch (kind) {{
+            case NUL: return "null";
+            case BOOL: return b ? "true" : "false";
+            case INT: return to_string(i);
+            case DBL: {{ ostringstream o; o<<d; return o.str(); }}
+            case STR: return s;
+            case ARR: {{ string r="["; for(size_t k=0;k<a.size();k++){{ if(k) r+=", "; r+=a[k].show(); }} return r+"]"; }}
+        }}
+        return "";
+    }}
+    static string lowerCopy(string value) {{
+        transform(value.begin(), value.end(), value.begin(), [](unsigned char c){{ return (char)tolower(c); }});
+        return value;
+    }}
+    static string comparableString(const string& value, bool caseInsensitive) {{
+        string lowered = lowerCopy(value);
+        if (caseInsensitive || lowered == "none" || lowered == "null") return lowered;
+        return value;
+    }}
+    bool eq(const Value& o, bool caseInsensitive=false) const {{
+        if ((kind==INT||kind==DBL) && (o.kind==INT||o.kind==DBL)) {{
+            double x = kind==INT? (double)i : d, y = o.kind==INT? (double)o.i : o.d; return x==y;
+        }}
+        if (kind != o.kind) return show()==o.show();
+        switch (kind) {{
+            case NUL: return true;
+            case BOOL: return b==o.b;
+            case STR: return comparableString(s, caseInsensitive)==comparableString(o.s, caseInsensitive);
+            case ARR: {{ if(a.size()!=o.a.size()) return false; for(size_t k=0;k<a.size();k++) if(!a[k].eq(o.a[k], caseInsensitive)) return false; return true; }}
+            default: return show()==o.show();
+        }}
+    }}
+}};
+
+{student_section}
+
+static string esc(const string& s){{ string r; for(char c:s){{ if(c=='"'||c=='\\\\') r+='\\\\'; if(c=='\\n'){{ r+="\\\\n"; continue; }} if(c=='\\r'){{ r+="\\\\r"; continue; }} r+=c; }} return r; }}
+
+int main(){{
+    vector<Value> args = {{{arg_list}}};
+    Value expected = {_cpp_literal(expected)};
+    bool caseInsensitive = {str(case_insensitive).lower()};
+    streambuf* realBuf = cout.rdbuf();
+    ostringstream captured;
+    cout.rdbuf(captured.rdbuf());
+    Value actual;
+    string error;
+    try {{
+        actual = {call_target}(args);
+    }} catch (const exception& e) {{
+        error = e.what();
+    }} catch (...) {{
+        error = "Unknown C++ exception";
+    }}
+    cout.rdbuf(realBuf);
+    string stdoutText = captured.str();
+    bool ok = error.empty() && actual.eq(expected, caseInsensitive);
+    cout << "{{\\"__cpp_trace__\\":true"
+         << ",\\"passed\\":" << (ok ? "true" : "false")
+         << ",\\"expected\\":\\"" << esc(expected.show())
+         << "\\",\\"actual\\":\\"" << esc(actual.show())
+         << "\\",\\"stdout\\":\\"" << esc(stdoutText)
+         << "\\",\\"error\\":\\"" << esc(error)
+         << "\\",\\"steps\\":" << __Trace::stepsJson()
+         << "}}" << "\\n";
+    return 0;
+}}
+""".lstrip()
+
+    started = time.perf_counter()
+    try:
+        with tempfile.TemporaryDirectory(prefix="csnav_cpptrace_") as temp_dir:
+            src_path = os.path.join(temp_dir, "main.cpp")
+            bin_path = os.path.join(temp_dir, "a.out")
+            with open(src_path, "w", encoding="utf-8") as h:
+                h.write(harness)
+
+            compiled = _compile_source(
+                [compiler, "-std=c++17", "-O1", "-w", "-o", bin_path, src_path],
+                cwd=temp_dir,
+                env=_hardened_compiled_env({"PATH": os.environ.get("PATH", "")}),
+            )
+            if compiled.returncode != 0:
+                stderr = compiled.stderr.strip() or "C++ compilation failed."
+                if "undefined reference" in stderr and function_name in stderr:
+                    stderr = (
+                        "The C++ runner could not find the function it needs to test.\n\n"
+                        f"Expected shape:\n{expected_signature} {{\n"
+                        "    // your code here\n"
+                        "}\n\n"
+                        "Check that the function name, parameter types, return type, and top-level placement match the starter."
+                    )
+                stderr = _truncate_text(stderr)
+                line_no = _cpp_trace_compile_line(stderr) or 0
+                step = {
+                    "step": 1,
+                    "current_line": line_no,
+                    "previous_line": None,
+                    "line": "",
+                    "function": function_name,
+                    "event": "exception",
+                    "stdout": "",
+                    "exception": {"type": "CompileError", "message": stderr, "line": line_no},
+                    "operation_kind": "compile_error",
+                    "student_message": f"C++ could not compile this code{f' on line {line_no}' if line_no else ''}.",
+                    "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+                    "objects": {},
+                    "references": [],
+                    "return_value": None,
+                }
+                return {
+                    "status": "error",
+                    "passed": 0,
+                    "total": 1,
+                    "tests": [],
+                    "trace": [],
+                    "trace_v2": {"schema_version": "trace_v2", "steps": [step], "limits": {"max_steps": RUN_RATE_LIMIT}},
+                    "stdout": "",
+                    "stderr": stderr,
+                    "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+                }
+
+            run = _run_isolated_process(
+                [bin_path],
+                cwd=temp_dir,
+                input_text="",
+                env=_hardened_compiled_env({"PATH": os.environ.get("PATH", "")}),
+                limiter=_limit_cpp_hardened,
+            )
+    except subprocess.TimeoutExpired:
+        return _cpp_trace_empty_response(
+            f"The C++ trace timed out after {RUN_TIMEOUT_SECONDS} seconds. Check for infinite loops or very slow logic."
+        )
+    except Exception as exc:
+        return _cpp_trace_empty_response(f"C++ trace setup failed: {exc}")
+
+    payload = None
+    for line in run.stdout.splitlines():
+        if not line.strip().startswith("{"):
+            continue
+        try:
+            parsed = json.loads(line)
+        except Exception:
+            continue
+        if parsed.get("__cpp_trace__"):
+            payload = parsed
+            break
+    if not payload:
+        return _cpp_trace_empty_response(run.stderr.strip() or "C++ trace output could not be parsed.")
+
+    stdout_text = payload.get("stdout", "")
+    raw_steps = payload.get("steps") or []
+    trace_steps: list[dict[str, Any]] = []
+    previous_line = None
+    for index, item in enumerate(raw_steps, start=1):
+        line_no = item.get("line") or 0
+        step = {
+            "step": index,
+            "current_line": line_no,
+            "previous_line": previous_line,
+            "line": item.get("source", ""),
+            "function": function_name,
+            "event": "line",
+            "stdout": stdout_text if index == len(raw_steps) else "",
+            "exception": None,
+            "return_value": None,
+            "operation_kind": item.get("operation_kind") or "line",
+            "operation_summary": item.get("student_message") or "C++ is about to run this line.",
+            "student_message": item.get("student_message") or "C++ is about to run this line.",
+            "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+            "objects": {},
+            "references": [],
+        }
+        previous_line = line_no
+        trace_steps.append(step)
+
+    if payload.get("error"):
+        trace_steps.append({
+            "step": len(trace_steps) + 1,
+            "current_line": previous_line or 0,
+            "previous_line": previous_line,
+            "line": "",
+            "function": function_name,
+            "event": "exception",
+            "stdout": stdout_text,
+            "exception": {
+                "type": "RuntimeError",
+                "message": payload.get("error", ""),
+                "line": previous_line or 0,
+            },
+            "return_value": None,
+            "operation_kind": "exception",
+            "operation_summary": "C++ stopped because an exception was raised.",
+            "student_message": "C++ stopped because an exception was raised.",
+            "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+            "objects": {},
+            "references": [],
+        })
+    elif trace_steps:
+        trace_steps[-1]["return_value"] = payload.get("actual")
+        trace_steps[-1]["event"] = "return"
+        trace_steps[-1]["operation_kind"] = "return"
+        trace_steps[-1]["student_message"] = f"C++ returned {payload.get('actual')}."
+        trace_steps[-1]["operation_summary"] = trace_steps[-1]["student_message"]
+
+    test_result = {
+        "name": test.get("name") or "Trace test",
+        "passed": bool(payload.get("passed")),
+        "expected": payload.get("expected"),
+        "actual": payload.get("actual"),
+        "args": args,
+    }
+    if payload.get("error"):
+        test_result["error"] = payload.get("error")
+    return {
+        "status": "passed" if test_result["passed"] else "failed",
+        "passed": 1 if test_result["passed"] else 0,
+        "total": 1,
+        "tests": [test_result],
+        "trace": [],
+        "trace_v2": {
+            "schema_version": "trace_v2",
+            "steps": trace_steps,
+            "limits": {"max_steps": RUN_RATE_LIMIT, "max_output_chars": RUN_MAX_OUTPUT_CHARS},
+        },
+        "stdout": stdout_text,
+        "stderr": _truncate_text(run.stderr.strip()),
+        "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+    }
 
 
 def run_java_freeform(code: str) -> dict[str, Any]:

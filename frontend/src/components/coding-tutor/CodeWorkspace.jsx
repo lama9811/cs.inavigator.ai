@@ -879,7 +879,7 @@ export default function CodeWorkspace({
   const stackRef = useRef(null);
   const dragState = useRef(null);
   const canTraceLanguage = useMemo(
-    () => selectedLanguage === "Python" || selectedLanguage === "JavaScript" || selectedLanguage === "Java",
+    () => selectedLanguage === "Python" || selectedLanguage === "JavaScript" || selectedLanguage === "Java" || selectedLanguage === "C++",
     [selectedLanguage],
   );
 
@@ -1011,13 +1011,13 @@ export default function CodeWorkspace({
               className="code-trace-button"
               onClick={onTraceCode}
               disabled={!canTraceLanguage || isTracingCode}
-              title={canTraceLanguage ? "Trace your actual code step by step" : "Code tracing is available for Python, JavaScript, and Java first"}
+              title={canTraceLanguage ? "Trace your actual code step by step" : "Code tracing is available for Python, JavaScript, Java, and C++"}
             >
               {isTracingCode ? "Tracing..." : "Trace My Code"}
             </button>
             {!canTraceLanguage ? (
               <span className="code-trace-language-note" role="status">
-                Python/JS/Java trace only
+                Python/JS/Java/C++ trace only
               </span>
             ) : null}
             <span className="code-editor-lang-control">

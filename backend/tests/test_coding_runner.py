@@ -6,6 +6,7 @@ from coding_runner import (
     check_practice_run_rate_limit,
     compiled_runners_enabled,
     run_cpp_practice_tests,
+    run_cpp_practice_trace,
     run_java_practice_tests,
     run_java_practice_trace,
     run_javascript_freeform_trace,
@@ -975,6 +976,109 @@ string plantWateringMessage(long long moisture, bool isSunny) {
         pytest.skip(result["stderr"])
 
     assert result["status"] == "passed"
+
+
+def test_cpp_practice_trace_returns_trace_v2_for_native_function():
+    if not compiled_runners_enabled():
+        pytest.skip("compiled runners disabled")
+    code = """
+#include <string>
+#include <vector>
+
+int addOne(int value) {
+    int next = value + 1;
+    return next;
+}
+"""
+    result = run_cpp_practice_trace(
+        code,
+        "addOne",
+        {"name": "one", "args": [2], "expected": 3},
+        arg_spec=([("value", "int")], "int"),
+    )
+    if result["status"] == "error" and "compiler" in result.get("stderr", "").lower():
+        pytest.skip(result["stderr"])
+
+    assert result["status"] == "passed"
+    assert result["trace_v2"]["schema_version"] == "trace_v2"
+    steps = result["trace_v2"]["steps"]
+    assert len(steps) >= 2
+    assert any(step["operation_kind"] == "assignment" for step in steps)
+    assert steps[-1]["return_value"] == "3"
+    assert steps[0]["frames"][0]["bindings"][0]["name"] == "value"
+
+
+def test_cpp_practice_trace_captures_stdout():
+    if not compiled_runners_enabled():
+        pytest.skip("compiled runners disabled")
+    code = """
+#include <iostream>
+
+int echoPlusOne(int value) {
+    std::cout << value << "\\n";
+    return value + 1;
+}
+"""
+    result = run_cpp_practice_trace(
+        code,
+        "echoPlusOne",
+        {"name": "stdout", "args": [4], "expected": 5},
+        arg_spec=([("value", "int")], "int"),
+    )
+    if result["status"] == "error" and "compiler" in result.get("stderr", "").lower():
+        pytest.skip(result["stderr"])
+
+    assert result["status"] == "passed"
+    assert "4" in result["stdout"]
+    assert result["trace_v2"]["steps"][-1]["stdout"]
+
+
+def test_cpp_practice_trace_reports_exception_step():
+    if not compiled_runners_enabled():
+        pytest.skip("compiled runners disabled")
+    code = """
+#include <stdexcept>
+
+int failFast(int value) {
+    throw std::runtime_error("bad value");
+    return value;
+}
+"""
+    result = run_cpp_practice_trace(
+        code,
+        "failFast",
+        {"name": "runtime", "args": [2], "expected": 2},
+        arg_spec=([("value", "int")], "int"),
+    )
+    if result["status"] == "error" and "compiler" in result.get("stderr", "").lower():
+        pytest.skip(result["stderr"])
+
+    exception_steps = [step for step in result["trace_v2"]["steps"] if step.get("exception")]
+    assert exception_steps
+    assert "bad value" in exception_steps[-1]["exception"]["message"]
+
+
+def test_cpp_practice_trace_reports_compile_error():
+    if not compiled_runners_enabled():
+        pytest.skip("compiled runners disabled")
+    code = """
+int broken(int value) {
+    int next = ;
+    return next;
+}
+"""
+    result = run_cpp_practice_trace(
+        code,
+        "broken",
+        {"name": "compile", "args": [2], "expected": 3},
+        arg_spec=([("value", "int")], "int"),
+    )
+    if result["status"] == "error" and "compiler" in result.get("stderr", "").lower() and not result["trace_v2"].get("steps"):
+        pytest.skip(result["stderr"])
+
+    step = result["trace_v2"]["steps"][0]
+    assert step["exception"]["type"] == "CompileError"
+    assert "compile" in step["operation_kind"]
 
 
 def test_runner_rate_limit_returns_retry_after():

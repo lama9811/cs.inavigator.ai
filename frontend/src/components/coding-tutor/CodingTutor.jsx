@@ -3756,8 +3756,8 @@ export default function CodingTutor({
     const normalizedTestIndex = Number.isInteger(requestedTestIndex) && requestedTestIndex >= 0
       ? requestedTestIndex
       : 0;
-    if (!["python", "javascript", "java"].includes(selectedLanguageKey)) {
-      toast.info("Execution tracing is available for Python, JavaScript, and Java first.");
+    if (!["python", "javascript", "java", "cpp"].includes(selectedLanguageKey)) {
+      toast.info("Execution tracing is available for Python, JavaScript, Java, and C++.");
       return;
     }
     if (!code.trim()) {
