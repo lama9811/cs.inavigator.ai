@@ -14,6 +14,8 @@ All notable changes to CS Navigator are documented here.
 
 ### Changed
 - The standalone in-app Advising Form is hidden behind a local legacy feature flag; `/advising` now sends students to Planner V2 by default while preserving the old form code and backend draft/upload endpoints.
+- Coding Tutor dark-mode styling now uses a more stable scoped token layer under `body.coding-dark .coding-app`, with clearer dark surface contrast and Coding Tutor-specific legacy dark selectors moved off global `body.dark` / `[data-theme="dark"]` paths.
+- Coding Tutor dark-mode controls now have brighter, less muddy contrast for Learn visualizer buttons, Practice Library starter/filter chips, track navigation, and workspace visualizer idea actions.
 - Planner course cards now use compact icon actions, clearer seat/time/location/instructor ordering, distinct GenEd styling, concise review status language, sorted class times, and TBA/untimed courses at the bottom.
 - Syntax lessons now emphasize first-use definitions and key beginner terms, such as syntax, comments, blocks, indentation, statements, semicolons, and compiler/parser messages.
 - Operators lessons now use authored sections for mathematical operators, bitwise operators, comparison/assignment, and conditional logic across Python, Java, JavaScript, and C++.
@@ -30,6 +32,7 @@ All notable changes to CS Navigator are documented here.
 - Coding Tutor Home now shows the Starting Point quiz as a card first instead of auto-opening the modal on reload, and the Learn page uses only one clear Python Beginner "Start Here" signal.
 
 ### Fixed
+- Fixed Coding Tutor streak counting so opening a workspace, editing code, or running non-passing tests no longer starts the daily streak; it now records only concept quiz submissions, newly completed Learn lessons, and newly solved coding questions.
 - Completed concept quiz summaries now persist across a Workspace detour during the current browser session instead of resetting back into the quiz.
 - Operators concept quiz prompts and explanations were cleaned so the shared bank avoids lesson-referencing stems, repeated generic review prompts, and answer-restating blurbs.
 - Fixed a mojibake sequence in the Java concept-quiz correct-answer explanation for printing `Hello`, and added a content guard for common broken-UTF-8 sequences.

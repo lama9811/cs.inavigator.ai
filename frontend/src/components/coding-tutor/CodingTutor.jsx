@@ -518,7 +518,8 @@ function readDailyStreakDays() {
   }
 }
 
-// Mark today as a CS Navigator practice day. Returns the updated day list.
+// Mark today as a completed Coding Tutor milestone day. Opening content, loading
+// the workspace, editing code, or running failing tests should not start a streak.
 function recordPracticeActivityDay() {
   const today = localDateKey();
   const days = readDailyStreakDays();
@@ -3651,7 +3652,6 @@ export default function CodingTutor({
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || `runner ${response.status}`);
       setTestOutput(data);
-      recordPracticeActivity();
       // This run just wrote an attempt event, so the mastery score is now stale.
       setMasteryTick(tick => tick + 1);
       setWorkspaceSnapshots(prev => ({
@@ -3703,6 +3703,9 @@ export default function CodingTutor({
         });
       }
       if (data.status === "passed") {
+        if (activeLanguageProgress?.status !== "solved") {
+          recordPracticeActivity();
+        }
         toast.success("All local tests passed. Problem marked solved.");
       }
     } catch (error) {
@@ -3719,10 +3722,6 @@ export default function CodingTutor({
     const normalizedTestIndex = Number.isInteger(requestedTestIndex) && requestedTestIndex >= 0
       ? requestedTestIndex
       : 0;
-    if (!activeProblem || !isQuizBankProblem) {
-      toast.info("Open a Practice Library problem before tracing code.");
-      return;
-    }
     if (selectedLanguageKey !== "python") {
       toast.info("Execution tracing is available for Python first.");
       return;
@@ -3755,7 +3754,7 @@ export default function CodingTutor({
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          question_id: activeProblem.id,
+          question_id: isQuizBankProblem ? activeProblem.id : null,
           language: selectedLanguageKey,
           code,
           trace_test_index: normalizedTestIndex,
@@ -3798,7 +3797,10 @@ export default function CodingTutor({
     if (!activeProblem || !isQuizBankProblem) return;
     const wasSolved = activeLanguageProgress?.status === "solved";
     await saveProgress(activeProblem.id, { status: wasSolved ? "in_progress" : "solved", code });
-    if (!wasSolved) clearDraft(activeProblem.id, selectedLanguageKey);
+    if (!wasSolved) {
+      clearDraft(activeProblem.id, selectedLanguageKey);
+      recordPracticeActivity();
+    }
     setTerminalOpen(true);
     setTestOutput({
       status: wasSolved ? "ready" : "passed",

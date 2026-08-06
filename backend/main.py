@@ -29,6 +29,7 @@ from coding_runner import (
     run_java_practice_tests,
     run_javascript_freeform,
     run_javascript_practice_tests,
+    run_python_freeform_trace,
     run_python_freeform,
     run_python_practice_tests,
     run_python_practice_trace,
@@ -1018,7 +1019,7 @@ class CodingWorkspaceStateUpdate(BaseModel):
         return normalized
 
 class PracticeRunRequest(BaseModel):
-    question_id: str
+    question_id: Optional[str] = None
     language: str = "python"
     code: str
     trace_test_index: int = 0
@@ -7137,6 +7138,8 @@ async def run_practice_solution(
     if language_key not in {"python", "javascript", "java", "cpp"}:
         return empty_practice_run_response("Graded runs support Python, JavaScript, Java, and C++.")
 
+    if not req.question_id:
+        return empty_practice_run_response("Choose a Practice Library problem before running graded tests.")
     question = _find_practice_question(req.question_id)
     solution = _find_language_solution(question["id"], language_key, question)
     function_name = str(solution.get("function_name") or "solve")
@@ -7222,6 +7225,14 @@ async def trace_practice_solution(
             "stdout": "",
             "stderr": "Code tracing is available for Python first. JavaScript, Java, and C++ can still use Visualize this idea.",
             "duration_ms": 0,
+        }
+
+    if not req.question_id:
+        run_result = run_python_freeform_trace(req.code)
+        return {
+            **run_result,
+            "trace_test_index": None,
+            "message": "Trace generated from this Python snippet.",
         }
 
     question = _find_practice_question(req.question_id)

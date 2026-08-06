@@ -701,9 +701,9 @@ function CampusDailyMission({ dailyChallenge, loading, dailyDoneToday, displaySt
         <div className="daily-meta-row">
           <span className={`daily-difficulty ${difficultyClass(dailyChallenge?.difficulty)}`}>{dailyChallenge?.difficulty || "Easy"}</span>
           {isLeetCode && <span className="daily-source-pill">LeetCode</span>}
-          {dailyDoneToday
-            ? <span className="daily-streak-pill done">Practiced today - {displayStreak}-day streak</span>
-            : displayStreak > 0 && <span className="daily-streak-pill">{displayStreak}-day streak</span>}
+          {!isLeetCode && dailyDoneToday
+            ? <span className="daily-streak-pill done">CS Navigator streak - {displayStreak}-day</span>
+            : !isLeetCode && displayStreak > 0 && <span className="daily-streak-pill">{displayStreak}-day streak</span>}
         </div>
       </div>
 

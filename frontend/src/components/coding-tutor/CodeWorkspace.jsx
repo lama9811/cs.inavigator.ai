@@ -8,10 +8,43 @@ import TerminalPanel from "./TerminalPanel";
 import { WorkspaceVisualizerModal, WorkspaceVisualizerPanel } from "./WorkspaceVisualizer";
 import { handleHorizontalRovingKeyDown } from "./keyboardNavigation";
 import useFocusTrap from "./useFocusTrap";
+import { FaTimes } from "react-icons/fa";
 import "./CodeWorkspace.css";
 import "./TerminalPanel.css";
 
 const WORKSPACE_TABS = ["Editor", "Hints", "Discussion", "Visualize"];
+const PYTHON_TRACE_KEYWORDS = new Set([
+  "and",
+  "as",
+  "assert",
+  "break",
+  "class",
+  "continue",
+  "def",
+  "elif",
+  "else",
+  "except",
+  "False",
+  "finally",
+  "for",
+  "from",
+  "if",
+  "import",
+  "in",
+  "is",
+  "lambda",
+  "None",
+  "not",
+  "or",
+  "pass",
+  "raise",
+  "return",
+  "True",
+  "try",
+  "while",
+  "with",
+  "yield",
+]);
 
 // Docked-terminal height bounds (px). The drag handle clamps within this range.
 const TERMINAL_MIN_H = 140;
@@ -83,8 +116,171 @@ function TraceValue({ value }) {
   );
 }
 
+function TraceInlineValue({ value }) {
+  const formatted = formatTraceDisplayValue(value);
+  return <code className={`code-trace-value code-trace-value-${formatted.type}`}>{formatted.inline}</code>;
+}
+
+function isTraceStructuredValue(value) {
+  const parsed = parseTraceDisplayValue(value);
+  return Array.isArray(parsed) || (parsed && typeof parsed === "object");
+}
+
+function TraceObjectValue({ value, variableName, isUsedNow, status }) {
+  const formatted = formatTraceDisplayValue(value);
+  const parsed = parseTraceDisplayValue(value);
+
+  if (Array.isArray(parsed)) {
+    return (
+      <div
+        className={`code-trace-object-card code-trace-object-list is-${status} ${isUsedNow ? "is-used-now" : ""}`}
+        aria-label={`${variableName} list object`}
+      >
+        <div className="code-trace-object-head">
+          <span>list object</span>
+          <strong>{variableName}</strong>
+        </div>
+        <div className="code-trace-object-meta">
+          <span>{formatted.inline}</span>
+          <span>{status === "same" ? "stored" : status}</span>
+          {isUsedNow ? <span>active line</span> : null}
+        </div>
+        <div className="code-trace-list-slots">
+          {parsed.slice(0, 8).map((item, index) => (
+            <span key={`${variableName}-${index}`}>
+              <em>{index}</em>
+              <strong>{String(item)}</strong>
+            </span>
+          ))}
+          {parsed.length > 8 ? <span className="is-more">+{parsed.length - 8}</span> : null}
+        </div>
+      </div>
+    );
+  }
+
+  if (parsed && typeof parsed === "object") {
+    return (
+      <div
+        className={`code-trace-object-card code-trace-object-map is-${status} ${isUsedNow ? "is-used-now" : ""}`}
+        aria-label={`${variableName} object`}
+      >
+        <div className="code-trace-object-head">
+          <span>object</span>
+          <strong>{variableName}</strong>
+        </div>
+        <div className="code-trace-object-meta">
+          <span>{formatted.inline}</span>
+          <span>{status === "same" ? "stored" : status}</span>
+          {isUsedNow ? <span>active line</span> : null}
+        </div>
+        <div className="code-trace-object-pairs">
+          {Object.entries(parsed).slice(0, 6).map(([key, item]) => (
+            <span key={`${variableName}-${key}`}>
+              <em>{key}</em>
+              <strong>{String(item)}</strong>
+            </span>
+          ))}
+          {Object.keys(parsed).length > 6 ? <span className="is-more">+{Object.keys(parsed).length - 6}</span> : null}
+        </div>
+      </div>
+    );
+  }
+
+  return <TraceInlineValue value={formatted.inline} />;
+}
+
+function normalizeTraceValue(value) {
+  return String(value ?? "");
+}
+
+function extractLineVariableNames(line = "", locals = {}) {
+  const localNames = new Set(Object.keys(locals || {}));
+  const names = [];
+  String(line || "").replace(/\b[A-Za-z_][A-Za-z0-9_]*\b/g, (name, offset, fullLine) => {
+    if (PYTHON_TRACE_KEYWORDS.has(name)) return name;
+    if (!localNames.has(name)) return name;
+    if (fullLine[offset - 1] === ".") return name;
+    if (!names.includes(name)) names.push(name);
+    return name;
+  });
+  return names;
+}
+
+function variableStatus(name, value, previousLocals = {}) {
+  if (!previousLocals || !Object.prototype.hasOwnProperty.call(previousLocals, name)) return "new";
+  return normalizeTraceValue(previousLocals[name]) === normalizeTraceValue(value) ? "same" : "changed";
+}
+
+function describeTraceOperation(line = "", locals = {}, previousLine = "") {
+  const source = String(line || "").trim();
+  const previousSource = String(previousLine || "").trim();
+  const sourceToExplain = source || previousSource;
+  if (!sourceToExplain) return "";
+
+  const loopWithMethod = previousSource.match(/^for\s+([A-Za-z_]\w*)\s+in\s+([A-Za-z_]\w*)\.(lower|upper|strip|split|replace)\s*\(/);
+  if (loopWithMethod && Object.prototype.hasOwnProperty.call(locals, loopWithMethod[1])) {
+    const [, itemName, sourceName, methodName] = loopWithMethod;
+    const itemValue = formatTraceDisplayValue(locals[itemName]).inline;
+    const methodCopy =
+      methodName === "lower" ? "a lowercase copy"
+        : methodName === "upper" ? "an uppercase copy"
+          : methodName === "strip" ? "a trimmed copy"
+            : methodName === "split" ? "pieces from a split copy"
+              : "a replaced copy";
+    return `${sourceName}.${methodName}() creates ${methodCopy}; ${itemName} is now ${itemValue} from that result.`;
+  }
+
+  const assignmentWithMethod = source.match(/^([A-Za-z_]\w*)\s*=\s*([A-Za-z_]\w*)\.(lower|upper|strip|split|replace)\s*\(/);
+  if (assignmentWithMethod) {
+    const [, targetName, sourceName, methodName] = assignmentWithMethod;
+    const targetValue = Object.prototype.hasOwnProperty.call(locals, targetName)
+      ? ` ${targetName} now stores ${formatTraceDisplayValue(locals[targetName]).inline}.`
+      : "";
+    return `${sourceName}.${methodName}() returns a new value; it does not change ${sourceName} in place.${targetValue}`;
+  }
+
+  const lenCall = sourceToExplain.match(/\blen\s*\(\s*([A-Za-z_]\w*)\s*\)/);
+  if (lenCall) {
+    return `len(${lenCall[1]}) counts how many items or characters are in ${lenCall[1]}.`;
+  }
+
+  const rangeCall = sourceToExplain.match(/\brange\s*\(([^)]*)\)/);
+  if (rangeCall) {
+    return `range(${rangeCall[1].trim()}) creates the sequence of numbers the loop will step through.`;
+  }
+
+  const directMethod = sourceToExplain.match(/\b([A-Za-z_]\w*)\.(lower|upper|strip|split|replace)\s*\(/);
+  if (directMethod) {
+    const [, sourceName, methodName] = directMethod;
+    return `${sourceName}.${methodName}() returns a transformed value for this operation; ${sourceName} itself stays stored unless the result is assigned back.`;
+  }
+
+  return "";
+}
+
+function traceErrorInfo(traceResult, activeStep) {
+  const raw = String(activeStep?.exception || traceResult?.stderr || "").trim();
+  if (!raw) return null;
+  const syntaxLine = raw.match(/syntax error:?\s*([^()]*?)\s*\(line\s+(\d+)\)/i);
+  const pythonLine = raw.match(/\bline\s+(\d+)\b/i);
+  const exceptionName = raw.match(/\b([A-Za-z_][A-Za-z0-9_]*(?:Error|Exception))\b/);
+  const isSyntax = /syntax error/i.test(raw);
+  const lineNo = activeStep?.line_no || Number(syntaxLine?.[2] || pythonLine?.[1]) || null;
+  const label = isSyntax ? "Syntax error" : activeStep?.exception ? "Runtime error" : "Trace error";
+  const message = syntaxLine?.[1]?.trim()
+    ? `Python could not read the code: ${syntaxLine[1].trim()}.`
+    : exceptionName
+      ? `Python raised ${exceptionName[1]} while tracing this run.`
+      : raw.replace(/^Runner security check blocked this code:\s*/i, "");
+  const location = lineNo
+    ? `You would see this at line ${lineNo}${activeStep?.line ? `: ${activeStep.line.trim()}` : "."}`
+    : "This happened before the trace could step through your function.";
+  return { label, message, location, raw };
+}
+
 function CodeTraceModal({
   traceResult,
+  code = "",
   isTracing,
   onTraceCode,
   onClose,
@@ -97,9 +293,11 @@ function CodeTraceModal({
   const previousStep = stepIndex > 0 ? trace[stepIndex - 1] : null;
   const activeCallStack = Array.isArray(activeStep?.call_stack) ? activeStep.call_stack : [];
   const hasTraceError = traceResult?.status === "error" || Boolean(traceResult?.stderr);
-  const canGoBack = stepIndex > 0;
-  const canGoNext = stepIndex < trace.length - 1;
   const codeLines = useMemo(() => {
+    const sourceLines = String(code || "").replace(/\r\n/g, "\n").split("\n");
+    if (sourceLines.length && (sourceLines.length > 1 || sourceLines[0])) {
+      return sourceLines.map((line, index) => [index + 1, line]);
+    }
     const byLine = new Map();
     trace.forEach((step) => {
       if (step.line_no && step.line && !byLine.has(step.line_no)) {
@@ -107,17 +305,50 @@ function CodeTraceModal({
       }
     });
     return [...byLine.entries()].sort((left, right) => left[0] - right[0]);
-  }, [trace]);
+  }, [code, trace]);
+  const activeLocals = useMemo(
+    () => (activeStep?.locals && typeof activeStep.locals === "object" ? activeStep.locals : {}),
+    [activeStep?.locals]
+  );
+  const previousLocals = useMemo(
+    () => (previousStep?.locals && typeof previousStep.locals === "object" ? previousStep.locals : {}),
+    [previousStep?.locals]
+  );
+  const activeLineVariables = useMemo(
+    () => extractLineVariableNames(activeStep?.line, activeLocals),
+    [activeStep?.line, activeLocals]
+  );
+  const variableStore = useMemo(() => {
+    const names = [
+      ...activeLineVariables,
+      ...Object.keys(activeLocals).filter((name) => !activeLineVariables.includes(name)),
+    ];
+    return names.map((name) => ({
+      name,
+      value: activeLocals[name],
+      status: variableStatus(name, activeLocals[name], previousLocals),
+      usedNow: activeLineVariables.includes(name),
+    }));
+  }, [activeLineVariables, activeLocals, previousLocals]);
+  const activeErrorInfo = traceErrorInfo(traceResult, activeStep);
+  const canGoBack = stepIndex > 0;
+  const canGoNext = stepIndex < trace.length - 1;
+  const screenOutput = activeStep?.stdout || (!canGoNext ? traceResult?.stdout : "");
+  const operationInsight = useMemo(
+    () => describeTraceOperation(activeStep?.line, activeLocals, previousStep?.line),
+    [activeStep?.line, activeLocals, previousStep?.line]
+  );
   const activeExplanation = useMemo(() => {
     if (!activeStep) return "Run a trace to step through your Python code.";
     if (activeStep.event === "return") {
       return `The function is returning ${formatTraceDisplayValue(activeStep.return_value).inline}.`;
     }
     if (activeStep.event === "exception") {
-      return activeStep.exception ? `Python raised ${activeStep.exception}.` : "Python raised an exception on this step.";
+      return activeStep.exception ? `Python stopped on line ${activeStep.line_no} because ${activeStep.exception}.` : "Python raised an exception on this step.";
     }
+    if (operationInsight) return operationInsight;
     return `Python is about to run line ${activeStep.line_no}. Watch the variables below before and after this line.`;
-  }, [activeStep]);
+  }, [activeStep, operationInsight]);
   const modalRef = useFocusTrap(true, { onEscape: onClose });
 
   const goToStep = useCallback((nextIndex) => {
@@ -181,12 +412,18 @@ function CodeTraceModal({
               <h3 id="code-trace-title">Python execution trace</h3>
               <p id="code-trace-description">Steps through the Python code currently in your editor and shows what changes as it runs.</p>
             </div>
-            <button type="button" className="workspace-visual-close" onClick={onClose} data-autofocus>
-              Close
+            <button
+              type="button"
+              className="workspace-visual-close code-trace-close"
+              onClick={onClose}
+              data-autofocus
+              aria-label="Close trace"
+            >
+              <FaTimes aria-hidden="true" />
             </button>
           </header>
 
-          {traceResult?.stderr ? <p className="workspace-visualizer-error">{traceResult.stderr}</p> : null}
+          {traceResult?.stderr && !activeErrorInfo ? <p className="workspace-visualizer-error">{traceResult.stderr}</p> : null}
           {traceResult?.truncated ? <p className="workspace-visualizer-lock">Trace capped at the first 80 executed steps.</p> : null}
 
           <div className="code-trace-actions">
@@ -255,40 +492,79 @@ function CodeTraceModal({
                       </ol>
                     </div>
                   ) : null}
-                  {activeStep?.line ? <p><strong>Current line:</strong> <code>{activeStep.line.trim()}</code></p> : null}
-                  {activeStep?.exception ? <p><strong>Exception:</strong> {activeStep.exception}</p> : null}
+                  {activeStep?.line ? (
+                    <div className="code-trace-current-line">
+                      <span>Current line</span>
+                      <code>{activeStep.line.trim()}</code>
+                    </div>
+                  ) : null}
+                  {activeErrorInfo ? (
+                    <div className="code-trace-error-card">
+                      <span>{activeErrorInfo.label}</span>
+                      <strong>{activeErrorInfo.message}</strong>
+                      <p>{activeErrorInfo.location}</p>
+                    </div>
+                  ) : null}
                   {activeStep?.return_value != null ? (
                     <div className="code-trace-result-box">
                       <span>Returned value</span>
                       <strong><TraceValue value={activeStep.return_value} /></strong>
                     </div>
                   ) : null}
-                  {activeStep?.stdout ? (
+                  {screenOutput ? (
                     <div className="code-trace-output-box">
-                      <span>Printed output so far</span>
-                      <pre>{activeStep.stdout}</pre>
+                      <span>{canGoNext ? "Screen output so far" : "Final screen output"}</span>
+                      <pre>{screenOutput}</pre>
                     </div>
                   ) : null}
-                  <h5>Values right now</h5>
-                  {activeStep?.locals && Object.keys(activeStep.locals).length ? (
-                    <dl>
-                      {Object.entries(activeStep.locals).map(([name, value]) => {
-                        const previousValue = previousStep?.locals?.[name];
-                        const changed = !previousStep || previousValue !== value;
-                        return (
-                          <div key={name} className={changed ? "is-changed" : ""}>
-                            <dt>{name}</dt>
-                            <dd>
-                              <TraceValue value={value} />
-                              {changed ? <span className="code-trace-change-label">{previousStep ? "changed" : "new"}</span> : null}
-                            </dd>
+                  <div className="code-trace-variable-updates" aria-label="Variable updates for this trace step">
+                    <span>Variable updates</span>
+                    {variableStore.length ? (
+                      <div className="code-trace-frame-object-view">
+                        <section className="code-trace-frame-card" aria-label={`${activeStep?.function || "function"} frame`}>
+                          <div className="code-trace-frame-head">
+                            <span>Function frame</span>
+                            <strong>{activeStep?.function || "current function"}</strong>
                           </div>
-                        );
-                      })}
-                    </dl>
-                  ) : (
-                    <p>No local variables captured yet.</p>
-                  )}
+                          <div className="code-trace-frame-locals">
+                            {variableStore.map(({ name, value, status, usedNow }) => (
+                              <div
+                                key={name}
+                                className={`code-trace-frame-local is-${status} ${usedNow ? "is-used-now" : ""}`}
+                              >
+                                <strong>{name}</strong>
+                                <span>{status === "same" ? "stored" : status}</span>
+                                <TraceInlineValue value={value} />
+                              </div>
+                            ))}
+                          </div>
+                        </section>
+                        {variableStore.some(({ value }) => isTraceStructuredValue(value)) ? (
+                          <section className="code-trace-objects-card" aria-label="Objects used by declared variables">
+                            <div className="code-trace-frame-head">
+                              <span>Objects</span>
+                              <strong>referenced values</strong>
+                            </div>
+                            <div className="code-trace-object-list-wrap">
+                              {variableStore
+                                .filter(({ value }) => isTraceStructuredValue(value))
+                                .map(({ name, value, status, usedNow }) => (
+                                  <TraceObjectValue
+                                    key={`${name}-object`}
+                                    value={value}
+                                    variableName={name}
+                                    status={status}
+                                    isUsedNow={usedNow}
+                                  />
+                                ))}
+                            </div>
+                          </section>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <p className="code-trace-no-declared-vars">No variables captured yet.</p>
+                    )}
+                  </div>
                 </aside>
               </div>
 
@@ -311,9 +587,11 @@ function CodeTraceModal({
             <div className={`code-trace-empty-state ${hasTraceError ? "is-error" : ""}`}>
               <strong>{hasTraceError ? "Trace could not start" : "No trace generated yet"}</strong>
               <p>
-                {hasTraceError
-                  ? "Check that your code defines the expected function name and has no syntax errors, then try again."
-                  : "Press Trace my code, then step forward and backward through your code."}
+                {hasTraceError && activeErrorInfo
+                  ? `${activeErrorInfo.message} ${activeErrorInfo.location}`
+                  : hasTraceError
+                    ? "Check that your code defines the expected function name and has no syntax errors, then try again."
+                    : "Press Trace my code, then step forward and backward through your code."}
               </p>
             </div>
           )}
@@ -375,8 +653,8 @@ export default function CodeWorkspace({
   const stackRef = useRef(null);
   const dragState = useRef(null);
   const canTracePython = useMemo(
-    () => selectedLanguage === "Python" && Boolean(activeProblem && activeProblem.source !== "personal"),
-    [activeProblem, selectedLanguage],
+    () => selectedLanguage === "Python",
+    [selectedLanguage],
   );
 
   // Drag-to-resize the docked terminal. We resize from the divider: dragging up
@@ -507,10 +785,11 @@ export default function CodeWorkspace({
               className="code-trace-button"
               onClick={onTraceCode}
               disabled={!canTracePython || isTracingCode}
-              title={canTracePython ? "Trace your actual Python code step by step" : "Code tracing is available for Python practice problems first"}
+              title={canTracePython ? "Trace your actual Python code step by step" : "Code tracing is available for Python first"}
             >
               {isTracingCode ? "Tracing..." : "Trace My Code"}
             </button>
+            <span className="code-editor-lang-control">
             <select
               className="code-editor-lang-select"
               value={selectedLanguage}
@@ -520,6 +799,7 @@ export default function CodeWorkspace({
             >
               {languageOptions.map(language => <option key={language} value={language}>{language}</option>)}
             </select>
+            </span>
           </div>
         </div>
         <CodeEditor
@@ -623,6 +903,7 @@ export default function CodeWorkspace({
       {traceModalOpen ? (
         <CodeTraceModal
           traceResult={traceResult}
+          code={code}
           isTracing={isTracingCode}
           onTraceCode={onTraceCode}
           onClose={onCloseTraceModal}
