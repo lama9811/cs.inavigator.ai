@@ -78,6 +78,12 @@ function cleanText(value: unknown, fallback: string): string {
 
 function visibleState(state: Record<string, unknown> = {}): Record<string, string | number | boolean> {
   const hidden = new Set([
+    "example",
+    "sample",
+    "text",
+    "input",
+    "prompt_rule",
+    "goal",
     "items",
     "values",
     "active",
@@ -104,27 +110,129 @@ function shortText(value: unknown, fallback = "the example"): string {
   return text.length > 72 ? `${text.slice(0, 69)}...` : text;
 }
 
+function rawVisualInput(context: GeneratorContext, state: Record<string, unknown> = {}): string {
+  return String(context.exampleInput || state.example || state.text || state.input || state.sample || "").trim();
+}
+
 function compactVisualInput(context: GeneratorContext, concept: string, state: Record<string, unknown> = {}): string {
-  const raw = String(context.exampleInput || state.sample || "").trim();
+  const raw = rawVisualInput(context, state);
   if (!raw) return raw;
-  if (context.useAuthored && (Array.isArray(state.items) || Array.isArray(state.values) || concept !== "array")) return raw;
-  const title = `${context.title || ""} ${context.topic || ""} ${context.prompt || ""}`.toLowerCase();
+  const title = `${context.title || ""} ${context.topic || ""} ${context.prompt || ""} ${context.visualizer?.concept || ""}`.toLowerCase();
   const namedLists = parseAllNamedLists(raw);
   if (Object.keys(namedLists).length) {
-    return raw.replace(/\[([^\]]*)\]/g, (match) => {
+    const compacted = raw.replace(/\[([^\]]*)\]/g, (match) => {
       const values = match.slice(1, -1).split(",").map((item) => item.trim()).filter(Boolean);
       return values.length > 6 ? `[${values.slice(0, 6).join(", ")}]` : match;
     });
+    return compacted;
   }
   const firstList = parseFirstList(raw);
   if (firstList.length > 6) return `[${firstList.slice(0, 6).join(", ")}]`;
-  if (concept === "array" && raw.length > 6 && !raw.includes("=")) {
+  if (firstList.length) return raw;
+  if (title.includes("edit distance")) return "cat -> cut";
+  if (title.includes("reverse only letters") && raw.length > 8 && !raw.includes("=")) return "a-bC-d";
+  const visualConcept = String(context.visualizer?.concept || "").toLowerCase();
+  const stringLike = concept === "array" || visualConcept.includes("string-scan") || title.includes("first repeated");
+  if (stringLike && raw.length > 6 && !raw.includes("=")) {
     if (title.includes("vowel")) return "Code";
     if (title.includes("palindrome")) return "level";
+    if (title.includes("repeat")) return "cocoa";
     if (title.includes("word") || title.includes("sentence")) return "red blue";
     return raw.replace(/\s+/g, "").slice(0, 6);
   }
   return raw;
+}
+
+function valuesFromVisualSample(sample: string): Array<string | number> {
+  const namedLists = parseAllNamedLists(sample);
+  const firstNamed = Object.values(namedLists)[0];
+  if (firstNamed?.length) return firstNamed;
+  const firstList = parseFirstList(sample);
+  if (firstList.length) return firstList;
+  if (sample && !sample.includes("=")) return [...sample].map((char) => char === " " ? "space" : char);
+  return [];
+}
+
+function visualSampleExpected(context: GeneratorContext, concept: string, state: Record<string, unknown> = {}): string {
+  const sample = compactVisualInput(context, concept, state);
+  const raw = rawVisualInput(context, state);
+  const title = `${context.title || ""} ${context.topic || ""} ${context.prompt || ""}`.toLowerCase();
+  if (sample && sample !== raw) {
+    const values = valuesFromVisualSample(sample);
+    if (title.includes("vowel")) {
+      return String([...sample.toLowerCase()].filter((char) => "aeiou".includes(char)).length);
+    }
+    if (title.includes("reverse words")) return sample.trim().split(/\s+/).reverse().join(" ");
+    if (title.includes("reverse only letters")) return "d-Cb-a";
+    if (title.includes("initials")) return sample.trim().split(/\s+/).map((word) => word[0]?.toUpperCase() || "").join("");
+    if (title.includes("edit distance")) return "1";
+    if (title.includes("palindrome")) return "true";
+    if (/maximum|max|largest/.test(title) && values.every((value) => typeof value === "number")) {
+      return String(Math.max(...(values as number[])));
+    }
+    if (/sum even/.test(title) && values.every((value) => typeof value === "number")) {
+      return String((values as number[]).filter((value) => value % 2 === 0).reduce((sum, value) => sum + value, 0));
+    }
+    if (/count words/.test(title)) return String(sample.trim().split(/\s+/).filter(Boolean).length);
+    if (/first repeated/.test(title)) {
+      const seen = new Set<string>();
+      const repeated = [...sample].find((char) => seen.has(char) || !seen.add(char));
+      if (repeated) return repeated;
+    }
+  }
+  return expectedText(context, state);
+}
+
+function normalizeVisualState(
+  concept: string,
+  context: GeneratorContext,
+  state: Record<string, unknown> = {},
+): Record<string, unknown> {
+  const sample = compactVisualInput(context, concept, state);
+  const normalized = { ...state };
+  if (sample) {
+    normalized.example = sample;
+    normalized.sample = sample;
+    if (typeof state.text === "string") normalized.text = sample;
+    if (typeof state.input === "string") normalized.input = sample;
+
+    const title = `${context.title || ""} ${context.topic || ""} ${context.prompt || ""} ${context.visualizer?.concept || ""}`.toLowerCase();
+    const shouldReplaceItems = concept === "array" || /string|word|character|letter|vowel|palindrome|sentence/.test(title);
+    const sampleValues = valuesFromVisualSample(sample);
+    if (shouldReplaceItems && sampleValues.length) {
+      normalized.items = sampleValues.slice(0, 8);
+      normalized.values = sampleValues.slice(0, 8);
+      const active = Array.isArray(normalized.active) ? normalized.active : [0];
+      normalized.active = active.map(Number).filter((index) => Number.isInteger(index) && index >= 0 && index < sampleValues.length);
+      if (!Array.isArray(normalized.active) || !normalized.active.length) normalized.active = [0];
+    }
+  }
+  return normalized;
+}
+
+function sanitizeAuthoredCopy(text: string, context: GeneratorContext, concept: string, state: Record<string, unknown> = {}): string {
+  const sample = compactVisualInput(context, concept, state);
+  const rawValues = [
+    rawVisualInput(context, state),
+    state.sample,
+    state.text,
+    state.input,
+    context.exampleInput,
+  ].map((value) => String(value || "").trim()).filter(Boolean);
+  let cleaned = text;
+  rawValues.forEach((raw) => {
+    if (sample && raw && raw !== sample) cleaned = cleaned.split(raw).join(sample);
+  });
+  const raw = rawVisualInput(context, state);
+  const compactExpected = visualSampleExpected(context, concept, state);
+  if (sample && sample !== raw && context.exampleOutput && compactExpected && compactExpected !== context.exampleOutput) {
+    cleaned = cleaned.split(context.exampleOutput).join(compactExpected);
+  }
+  cleaned = cleaned
+    .replace(/authored example input/gi, "teaching sample")
+    .replace(/public example input/gi, "teaching sample")
+    .replace(/public example result/gi, "teaching sample result");
+  return cleaned;
 }
 
 function exampleText(context: GeneratorContext, state: Record<string, unknown> = {}): string {
@@ -146,7 +254,7 @@ function visualPseudocodeForStep(
   state: Record<string, unknown> = {},
 ): string[] {
   const sample = shortText(compactVisualInput(context, concept, state) || state.sample, "the example");
-  const expected = expectedText(context, state);
+  const expected = visualSampleExpected(context, concept, state);
   const rule = promptRuleText(context, state);
   const sharedFinish = `return ${expected}`;
   const topic = `${concept} ${context.topic || ""}`.toLowerCase();
@@ -452,15 +560,14 @@ function valuesForState(concept: string, state: Record<string, unknown>, context
     if (words.length) return words.slice(0, 10);
   }
 
+  const compactValues = valuesFromVisualSample(compactInput);
+  const raw = rawVisualInput(context, state);
+  if (compactValues.length && compactInput && compactInput !== raw) return compactValues.slice(0, 12);
+
   const authoredItems = Array.isArray(state.items) ? state.items : Array.isArray(state.values) ? state.values : [];
   if (authoredItems.length) return authoredItems.slice(0, 12).map((value) => value as string | number);
 
-  const namedLists = parseAllNamedLists(compactInput);
-  const firstNamed = Object.values(namedLists)[0];
-  if (firstNamed?.length) return firstNamed.slice(0, 12);
-
-  const firstList = parseFirstList(compactInput);
-  if (firstList.length) return firstList.slice(0, 12);
+  if (compactValues.length) return compactValues.slice(0, 12);
 
   if (concept === "array" && compactInput && !compactInput.includes("=")) {
     return [...compactInput].slice(0, 12).map((char) => char === " " ? "space" : char);
@@ -1472,14 +1579,17 @@ function generateAuthoredVisualizerSteps(concept: string, context: GeneratorCont
       ...baseState,
       ...((raw.state && typeof raw.state === "object") ? raw.state as Record<string, unknown> : {}),
     };
-    const visual = visualForAuthoredStep(concept, rawState, context, index);
-    const code = expandPseudocodeLines(visualPseudocodeForStep(concept, context, rawState), concept);
+    const displayState = normalizeVisualState(concept, context, rawState);
+    const visual = visualForAuthoredStep(concept, displayState, context, index);
+    const code = expandPseudocodeLines(visualPseudocodeForStep(concept, context, displayState), concept);
     const activeLine = Math.min(index + 1, code.length);
-    const displayedExample = compactVisualInput(context, concept, rawState) || context.exampleInput || String(rawState.sample || "");
+    const displayedExample = compactVisualInput(context, concept, displayState) || context.exampleInput || String(displayState.sample || "");
+    const displayedExpected = visualSampleExpected(context, concept, displayState);
+    const description = sanitizeAuthoredCopy(bodyForAuthoredStep(raw.body, context, index), context, concept, rawState);
     return step({
       concept: concept as Step["concept"],
       title: titleForAuthoredStep(raw.title, context, index),
-      description: bodyForAuthoredStep(raw.body, context, index),
+      description,
       nodes: visual.nodes,
       edges: visual.edges,
       highlights: { nodeIds: visual.highlights, edgeIds: visual.edges.filter((edge) => edge.state === "active").map((edge) => edge.id || `${edge.from}-${edge.to}`), lineNumbers: [activeLine] },
@@ -1487,10 +1597,10 @@ function generateAuthoredVisualizerSteps(concept: string, context: GeneratorCont
       activeLine,
       workflow: workflowFromLabels(workflowLabels, index),
       state: {
+        ...visibleState(displayState),
         example: displayedExample,
-        expected: context.exampleOutput || "",
+        expected: displayedExpected,
         ...(concept === "conditional" ? { rule: relevantRule(context) } : {}),
-        ...visibleState(rawState),
       },
     }, index + 1);
   });

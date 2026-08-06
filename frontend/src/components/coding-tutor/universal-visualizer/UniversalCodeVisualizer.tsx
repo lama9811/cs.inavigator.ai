@@ -94,7 +94,7 @@ function conceptLabel(concept: ConceptType): string {
 
 function StateStrip({ step }: { step: Step }) {
   if (step.concept === "conditional") return null;
-  const hiddenKeys = new Set(["sample", "prompt_rule"]);
+  const hiddenKeys = new Set(["sample", "prompt_rule", "text", "input", "goal"]);
   const entries = Object.entries(step.state || {}).filter(([key]) => !hiddenKeys.has(key));
   if (!entries.length) return null;
   return (
@@ -304,15 +304,23 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
           <span className="ucv-step-count" aria-label={`Step ${stepIndex + 1} of ${steps.length}`}>
             {stepIndex + 1} / {steps.length}
           </span>
-          <label className="ucv-speed-control">
-            Speed
-            <select value={speed} onChange={(event) => setSpeed(Number(event.target.value))}>
-              <option value={0.5}>0.5x</option>
-              <option value={1}>1x</option>
-              <option value={1.5}>1.5x</option>
-              <option value={2}>2x</option>
-            </select>
-          </label>
+          <div className="ucv-speed-control" role="group" aria-label="Playback speed">
+            <span>Speed</span>
+            <div className="ucv-speed-options">
+              {[0.75, 1, 1.5, 2].map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className={`ucv-speed-option ${speed === option ? "is-active" : ""}`}
+                  onClick={() => setSpeed(option)}
+                  aria-pressed={speed === option}
+                  title={`Play at ${option}x speed`}
+                >
+                  {option}x
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </footer>
     </section>
