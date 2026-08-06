@@ -27,6 +27,7 @@ from coding_runner import (
     run_cpp_practice_tests,
     run_java_freeform,
     run_java_practice_tests,
+    run_java_practice_trace,
     run_javascript_freeform,
     run_javascript_practice_tests,
     run_javascript_freeform_trace,
@@ -7220,7 +7221,7 @@ async def trace_practice_solution(
         )
 
     language_key, _ = _normalize_practice_language(req.language)
-    if language_key not in {"python", "javascript"}:
+    if language_key not in {"python", "javascript", "java"}:
         return {
             "status": "error",
             "trace": [],
@@ -7228,18 +7229,36 @@ async def trace_practice_solution(
                 "schema_version": "trace_v2",
                 "steps": [],
                 "limits": {},
-                "supported_languages": ["python", "javascript"],
+                "supported_languages": ["python", "javascript", "java"],
                 "requested_language": language_key,
             },
             "stdout": "",
-            "stderr": "Execution tracing is available for Python and JavaScript first. Use Run for this language, or open Visualize this idea for a concept walkthrough.",
-            "message": "Trace My Code supports Python and JavaScript right now.",
-            "supported_languages": ["python", "javascript"],
+            "stderr": "Execution tracing is available for Python, JavaScript, and Java first. Use Run for this language, or open Visualize this idea for a concept walkthrough.",
+            "message": "Trace My Code supports Python, JavaScript, and Java right now.",
+            "supported_languages": ["python", "javascript", "java"],
             "requested_language": language_key,
             "duration_ms": 0,
         }
 
     if not req.question_id:
+        if language_key == "java":
+            return {
+                "status": "error",
+                "trace": [],
+                "trace_v2": {
+                    "schema_version": "trace_v2",
+                    "steps": [],
+                    "limits": {},
+                    "supported_languages": ["python", "javascript", "java"],
+                    "requested_language": language_key,
+                },
+                "stdout": "",
+                "stderr": "Java tracing currently works from authored Practice problems, where CS Navigator knows which method and test case to run. Freeform Java tracing is planned next.",
+                "message": "Open a Java Practice problem and use Trace My Code there.",
+                "supported_languages": ["python", "javascript", "java"],
+                "requested_language": language_key,
+                "duration_ms": 0,
+            }
         run_result = run_javascript_freeform_trace(req.code) if language_key == "javascript" else run_python_freeform_trace(req.code)
         return {
             **run_result,
@@ -7263,6 +7282,9 @@ async def trace_practice_solution(
     test_index = min(req.trace_test_index, len(tests) - 1)
     if language_key == "javascript":
         run_result = run_javascript_practice_trace(req.code, function_name, tests[test_index])
+    elif language_key == "java":
+        arg_spec = get_arg_spec(function_name)
+        run_result = run_java_practice_trace(req.code, function_name, tests[test_index], arg_spec=arg_spec)
     else:
         run_result = run_python_practice_trace(req.code, function_name, tests[test_index])
     return {

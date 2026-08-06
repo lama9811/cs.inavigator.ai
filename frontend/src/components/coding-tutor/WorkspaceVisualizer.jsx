@@ -1494,7 +1494,7 @@ function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose,
             />
           </label>
         ) : (
-          <p className="workspace-visualizer-lock">This walks through the problem idea with example data. Trace My Code is separate and uses your Python code.</p>
+          <p className="workspace-visualizer-lock">This walks through the problem idea with example data. Trace My Code is separate and uses your Python, JavaScript, or Java code.</p>
         )}
       </div>
 

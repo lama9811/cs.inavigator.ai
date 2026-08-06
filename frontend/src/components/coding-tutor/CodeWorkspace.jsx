@@ -197,6 +197,14 @@ function traceLineNo(step) {
   return step?.current_line ?? step?.line_no ?? null;
 }
 
+function exceptionDisplay(exception) {
+  if (!exception) return "an exception";
+  if (typeof exception === "string") return exception;
+  const type = exception.type || "Error";
+  const message = exception.message ? `: ${exception.message}` : "";
+  return `${type}${message}`;
+}
+
 function v2ScalarDisplay(binding) {
   if (!binding) return "";
   if (binding.display != null) return String(binding.display);
@@ -383,7 +391,7 @@ function describeTraceOperation(line = "", locals = {}, previousLine = "") {
   return "";
 }
 
-function traceErrorInfo(traceResult, activeStep) {
+function traceErrorInfo(traceResult, activeStep, selectedLanguage = "Python") {
   const exceptionText = typeof activeStep?.exception === "object" && activeStep.exception
     ? `${activeStep.exception.type || "Error"}: ${activeStep.exception.message || ""}`
     : activeStep?.exception;
@@ -393,12 +401,13 @@ function traceErrorInfo(traceResult, activeStep) {
   const pythonLine = raw.match(/\bline\s+(\d+)\b/i);
   const exceptionName = raw.match(/\b([A-Za-z_][A-Za-z0-9_]*(?:Error|Exception))\b/);
   const isSyntax = /syntax error/i.test(raw);
-  const lineNo = traceLineNo(activeStep) || Number(syntaxLine?.[2] || pythonLine?.[1]) || null;
+  const exceptionLine = typeof activeStep?.exception === "object" ? Number(activeStep.exception.line) : null;
+  const lineNo = traceLineNo(activeStep) || exceptionLine || Number(syntaxLine?.[2] || pythonLine?.[1]) || null;
   const label = isSyntax ? "Syntax error" : activeStep?.exception ? "Runtime error" : "Trace error";
   const message = syntaxLine?.[1]?.trim()
-    ? `Python could not read the code: ${syntaxLine[1].trim()}.`
+    ? `${selectedLanguage} could not read the code: ${syntaxLine[1].trim()}.`
     : exceptionName
-      ? `Python raised ${exceptionName[1]} while tracing this run.`
+      ? `${selectedLanguage} raised ${exceptionName[1]} while tracing this run.`
       : raw.replace(/^Runner security check blocked this code:\s*/i, "");
   const location = lineNo
     ? `You would see this at line ${lineNo}${activeStep?.line ? `: ${activeStep.line.trim()}` : "."}`
@@ -468,7 +477,7 @@ function CodeTraceModal({
       usedNow: activeLineVariables.includes(name),
     }));
   }, [activeLineVariables, activeLocals, previousLocals]);
-  const activeErrorInfo = traceErrorInfo(traceResult, activeStep);
+  const activeErrorInfo = traceErrorInfo(traceResult, activeStep, selectedLanguage);
   const canGoBack = stepIndex > 0;
   const canGoNext = stepIndex < trace.length - 1;
   const screenOutput = activeStep?.stdout || (!canGoNext ? traceResult?.stdout : "");
@@ -484,7 +493,7 @@ function CodeTraceModal({
       return `The function is returning ${formatTraceDisplayValue(activeStep.return_value).inline}.`;
     }
     if (activeStep.event === "exception") {
-      return activeStep.exception ? `Python stopped on line ${activeStep.line_no} because ${activeStep.exception}.` : "Python raised an exception on this step.";
+      return activeStep.exception ? `${selectedLanguage} stopped on line ${traceLineNo(activeStep) || activeStep.exception?.line || "?"} because ${exceptionDisplay(activeStep.exception)}.` : `${selectedLanguage} raised an exception on this step.`;
     }
     if (operationInsight) return operationInsight;
     return `${selectedLanguage} is about to run line ${traceLineNo(activeStep)}. Watch the variables below before and after this line.`;
@@ -870,7 +879,7 @@ export default function CodeWorkspace({
   const stackRef = useRef(null);
   const dragState = useRef(null);
   const canTraceLanguage = useMemo(
-    () => selectedLanguage === "Python" || selectedLanguage === "JavaScript",
+    () => selectedLanguage === "Python" || selectedLanguage === "JavaScript" || selectedLanguage === "Java",
     [selectedLanguage],
   );
 
@@ -1002,13 +1011,13 @@ export default function CodeWorkspace({
               className="code-trace-button"
               onClick={onTraceCode}
               disabled={!canTraceLanguage || isTracingCode}
-              title={canTraceLanguage ? "Trace your actual code step by step" : "Code tracing is available for Python and JavaScript first"}
+              title={canTraceLanguage ? "Trace your actual code step by step" : "Code tracing is available for Python, JavaScript, and Java first"}
             >
               {isTracingCode ? "Tracing..." : "Trace My Code"}
             </button>
             {!canTraceLanguage ? (
               <span className="code-trace-language-note" role="status">
-                Python/JS trace only
+                Python/JS/Java trace only
               </span>
             ) : null}
             <span className="code-editor-lang-control">

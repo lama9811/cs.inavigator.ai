@@ -7,6 +7,7 @@ from coding_runner import (
     compiled_runners_enabled,
     run_cpp_practice_tests,
     run_java_practice_tests,
+    run_java_practice_trace,
     run_javascript_freeform_trace,
     run_javascript_practice_tests,
     run_javascript_practice_trace,
@@ -300,6 +301,138 @@ function addScore(scores) {
     assert any(change.get("change") == "mutated" for step in steps for change in step.get("object_changes", []))
 
 
+def test_javascript_practice_trace_supports_arrow_functions():
+    code = """
+const addOne = (number) => {
+  const result = number + 1;
+  return result;
+};
+"""
+
+    result = run_javascript_practice_trace(code, "addOne", {"name": "arrow", "args": [4], "expected": 5})
+
+    assert result["status"] == "passed"
+    assert any("number" in frame["bindings"] for step in result["trace_v2"]["steps"] for frame in step["frames"])
+    assert any(step.get("return_value", {}).get("display") == "5" for step in result["trace_v2"]["steps"])
+
+
+def test_javascript_practice_trace_supports_jsdoc_and_export_starter():
+    code = """
+/**
+ * @param {number} moisture
+ * @param {boolean} isSunny
+ * @returns {string}
+ */
+function plantWateringMessage(moisture, isSunny) {
+  // Replace this with your approach and return the answer.
+  if (moisture < 30 || (isSunny && moisture <= 45)) {
+    return "water today";
+  } else {
+    return "check tomorrow";
+  }
+}
+
+export { plantWateringMessage };
+"""
+
+    result = run_javascript_practice_trace(
+        code,
+        "plantWateringMessage",
+        {"name": "plant", "args": [28, False], "expected": "water today"},
+    )
+
+    assert result["status"] == "passed"
+    assert any("moisture" in frame["bindings"] for step in result["trace_v2"]["steps"] for frame in step["frames"])
+    assert not result["stderr"]
+
+
+def test_javascript_practice_trace_supports_for_of_loop_and_condition():
+    code = """
+function countShort(words) {
+  let count = 0;
+  for (const word of words) {
+    if (word.length <= 3) {
+      count += 1;
+    }
+  }
+  return count;
+}
+"""
+
+    result = run_javascript_practice_trace(code, "countShort", {"name": "short", "args": [["cat", "tiger", "owl"]], "expected": 2})
+    steps = result["trace_v2"]["steps"]
+
+    assert result["status"] == "passed"
+    assert any(step.get("operation_kind") == "loop_iteration" for step in steps)
+    assert any(step.get("operation_kind") == "condition" for step in steps)
+    assert any("word" in frame["bindings"] for step in steps for frame in step["frames"])
+
+
+def test_javascript_practice_trace_supports_while_loop():
+    code = """
+function climb(limit) {
+  let step = 0;
+  while (step < limit) {
+    step += 1;
+  }
+  return step;
+}
+"""
+
+    result = run_javascript_practice_trace(code, "climb", {"name": "while", "args": [2], "expected": 2})
+
+    assert result["status"] == "passed"
+    assert any(step.get("operation_kind") == "condition" for step in result["trace_v2"]["steps"])
+    assert any(
+        change.get("name") == "step" and change.get("change") == "changed"
+        for step in result["trace_v2"]["steps"]
+        for change in step.get("binding_changes", [])
+    )
+
+
+def test_javascript_practice_trace_tracks_object_property_mutation():
+    code = """
+function markDone(task) {
+  task.done = true;
+  return task.done;
+}
+"""
+
+    result = run_javascript_practice_trace(code, "markDone", {"name": "object", "args": [{"done": False}], "expected": True})
+    steps = result["trace_v2"]["steps"]
+
+    assert result["status"] == "passed"
+    assert any(obj["type"] == "dict" for step in steps for obj in step["objects"].values())
+    assert any(change.get("change") == "mutated" for step in steps for change in step.get("object_changes", []))
+
+
+def test_javascript_practice_trace_identifies_index_access():
+    code = """
+function second(items) {
+  const value = items[1];
+  return value;
+}
+"""
+
+    result = run_javascript_practice_trace(code, "second", {"name": "index", "args": [[3, 5]], "expected": 5})
+
+    assert result["status"] == "passed"
+    assert any(step.get("operation_kind") == "index_access" for step in result["trace_v2"]["steps"])
+
+
+def test_javascript_freeform_trace_reports_syntax_error():
+    result = run_javascript_freeform_trace(
+        """
+const broken = ;
+"""
+    )
+
+    assert result["status"] == "error"
+    assert result["trace_v2"]["schema_version"] == "trace_v2"
+    assert "syntax" in result["stderr"].lower() or "unexpected" in result["stderr"].lower()
+    assert any(step.get("exception", {}).get("line") for step in result["trace_v2"]["steps"])
+
+
 def test_javascript_freeform_trace_returns_trace_v2_and_stdout():
     result = run_javascript_freeform_trace(
         """
@@ -326,6 +459,24 @@ throw new Error("boom");
     assert result["status"] == "error"
     assert result["trace_v2"]["schema_version"] == "trace_v2"
     assert result["stderr"]
+
+
+def test_javascript_trace_reports_runtime_error_line():
+    result = run_javascript_practice_trace(
+        """
+function readMissing(item) {
+  return item.missing.value;
+}
+""",
+        "readMissing",
+        {"name": "runtime", "args": [{}], "expected": None},
+    )
+
+    exception_steps = [step for step in result["trace_v2"]["steps"] if step.get("event") == "exception"]
+    assert result["status"] == "error"
+    assert exception_steps
+    assert exception_steps[-1].get("current_line") == 3
+    assert "missing" in exception_steps[-1].get("line", "")
 
 
 def test_javascript_trace_uses_same_security_validation():
@@ -699,6 +850,111 @@ class Solution {
     result = run_java_practice_tests(code, "plantWateringMessage", tests, arg_spec=get_arg_spec("plantWateringMessage"))
 
     assert result["status"] == "passed"
+
+
+def test_java_practice_trace_returns_trace_v2_for_native_method():
+    if not compiled_runners_enabled():
+        pytest.skip("compiled runners disabled")
+    code = """
+class Solution {
+  static int addOne(int value) {
+    int next = value + 1;
+    return next;
+  }
+}
+"""
+    result = run_java_practice_trace(
+        code,
+        "addOne",
+        {"name": "one", "args": [2], "expected": 3},
+        arg_spec=([("value", "int")], "int"),
+    )
+
+    if result["status"] == "error" and "not installed" in result.get("stderr", "").lower():
+        pytest.skip(result["stderr"])
+
+    assert result["status"] == "passed"
+    assert result["trace_v2"]["schema_version"] == "trace_v2"
+    steps = result["trace_v2"]["steps"]
+    assert len(steps) >= 2
+    assert any(step["operation_kind"] == "assignment" for step in steps)
+    assert steps[-1]["return_value"] == "3"
+    assert steps[0]["frames"][0]["bindings"][0]["name"] == "value"
+
+
+def test_java_practice_trace_captures_stdout():
+    if not compiled_runners_enabled():
+        pytest.skip("compiled runners disabled")
+    code = """
+class Solution {
+  static int echoPlusOne(int value) {
+    System.out.println(value);
+    return value + 1;
+  }
+}
+"""
+    result = run_java_practice_trace(
+        code,
+        "echoPlusOne",
+        {"name": "stdout", "args": [4], "expected": 5},
+        arg_spec=([("value", "int")], "int"),
+    )
+    if result["status"] == "error" and "not installed" in result.get("stderr", "").lower():
+        pytest.skip(result["stderr"])
+
+    assert result["status"] == "passed"
+    assert "4" in result["stdout"]
+    assert result["trace_v2"]["steps"][-1]["stdout"]
+
+
+def test_java_practice_trace_reports_runtime_error_line():
+    if not compiled_runners_enabled():
+        pytest.skip("compiled runners disabled")
+    code = """
+class Solution {
+  static int second(int[] values) {
+    return values[4];
+  }
+}
+"""
+    result = run_java_practice_trace(
+        code,
+        "second",
+        {"name": "runtime", "args": [[1, 2]], "expected": 2},
+        arg_spec=get_arg_spec("firstScoreAtLeast") and ([("values", "intlist")], "int"),
+    )
+    if result["status"] == "error" and "not installed" in result.get("stderr", "").lower():
+        pytest.skip(result["stderr"])
+
+    exception_steps = [step for step in result["trace_v2"]["steps"] if step.get("exception")]
+    assert exception_steps
+    assert exception_steps[-1]["exception"]["line"] >= 3
+    assert "line" in exception_steps[-1]["student_message"]
+
+
+def test_java_practice_trace_reports_compile_error_line():
+    if not compiled_runners_enabled():
+        pytest.skip("compiled runners disabled")
+    code = """
+class Solution {
+  static int broken(int value) {
+    int next = ;
+    return next;
+  }
+}
+"""
+    result = run_java_practice_trace(
+        code,
+        "broken",
+        {"name": "compile", "args": [2], "expected": 3},
+        arg_spec=([("value", "int")], "int"),
+    )
+    if result["status"] == "error" and "not installed" in result.get("stderr", "").lower():
+        pytest.skip(result["stderr"])
+
+    step = result["trace_v2"]["steps"][0]
+    assert step["exception"]["type"] == "CompileError"
+    assert step["exception"]["line"] >= 3
 
 
 def test_cpp_runner_accepts_case_insensitive_message_tests():

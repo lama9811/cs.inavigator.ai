@@ -2530,6 +2530,7 @@ function operationForLine(line) {
   if (/^(if|else if)\b/.test(clean)) return { kind: "condition", target: "if condition", detail: "checks which branch should run" };
   if (/console\s*\.\s*log\s*\(/.test(clean)) return { kind: "output", target: "console.log", detail: "prints a value into the output bucket" };
   const declaration = clean.match(/^(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=/);
+  if (declaration && /\[[^\]]+\]/.test(clean)) return { kind: "index_access", target: declaration[1], detail: `reads from a collection and stores the value in ${declaration[1]}` };
   if (declaration) return { kind: "assignment", target: declaration[1], detail: `stores a value in ${declaration[1]}` };
   const assignment = clean.match(/^([A-Za-z_$][\w$]*)(?:\[[^\]]+\]|\.[A-Za-z_$][\w$]*)?\s*(?:=|\+=|-=|\*=|\/=)/);
   if (assignment) return { kind: clean.includes("[") || clean.includes(".") ? "mutation" : "assignment", target: assignment[1], detail: `updates ${assignment[1]}` };
@@ -2631,6 +2632,28 @@ function buildStep(event, lineNo, line, snapshotFactory, returnValue, exception)
   return returnValue;
 }
 
+function traceErrorLine(error) {
+  const stack = String(error?.stack || "");
+  const match = stack.match(/solution\.js:(\d+):\d+/);
+  if (match) return Number(match[1]);
+  return previousStep?.current_line || 0;
+}
+
+function traceErrorSource(lineNo, sourceLines) {
+  if (lineNo && sourceLines[lineNo - 1]) return sourceLines[lineNo - 1];
+  return previousStep?.line || "";
+}
+
+function inferSyntaxLine(sourceLines) {
+  for (let index = 0; index < sourceLines.length; index += 1) {
+    const trimmed = String(sourceLines[index] || "").trim();
+    if (trimmed && !trimmed.startsWith("//") && !trimmed.startsWith("/*") && trimmed !== "*/" && !trimmed.startsWith("*")) {
+      return index + 1;
+    }
+  }
+  return 0;
+}
+
 function __csnavRead(reader) {
   try {
     return reader();
@@ -2659,6 +2682,12 @@ function collectNames(source) {
   for (const match of source.matchAll(/\bfunction\s+[A-Za-z_$][\w$]*\s*\(([^)]*)\)/g)) {
     match[1].split(",").map((item) => item.trim()).filter(safeIdentifier).forEach((name) => names.add(name));
   }
+  for (const match of source.matchAll(/\b(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*(?:async\s*)?\(([^)]*)\)\s*=>/g)) {
+    match[1].split(",").map((item) => item.trim()).filter(safeIdentifier).forEach((name) => names.add(name));
+  }
+  for (const match of source.matchAll(/\b(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*(?:async\s*)?([A-Za-z_$][\w$]*)\s*=>/g)) {
+    names.add(match[1]);
+  }
   for (const match of source.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)/g)) names.add(match[1]);
   for (const match of source.matchAll(/\bfor\s*\(\s*(?:const|let|var)\s+([A-Za-z_$][\w$]*)\b/g)) names.add(match[1]);
   return Array.from(names).slice(0, 16);
@@ -2672,11 +2701,20 @@ function instrumentSource(source) {
   const lines = String(source).split(/\r?\n/);
   const names = collectNames(source);
   const snapshot = snapshotSource(names);
+  let inBlockComment = false;
   return lines.map((rawLine, index) => {
     const lineNo = index + 1;
     const trimmed = rawLine.trim();
     const encodedLine = JSON.stringify(rawLine);
     const indent = rawLine.match(/^\s*/)?.[0] || "";
+    if (inBlockComment) {
+      if (trimmed.includes("*/")) inBlockComment = false;
+      return rawLine;
+    }
+    if (trimmed.startsWith("/*")) {
+      if (!trimmed.includes("*/")) inBlockComment = true;
+      return rawLine;
+    }
     if (!trimmed || trimmed.startsWith("//") || trimmed === "{" || trimmed === "}" || /^[}\])]/.test(trimmed) || /^(else|catch|finally)\b/.test(trimmed)) return rawLine;
     if (/^(function|class)\b/.test(trimmed)) return rawLine;
     if (/^(const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*(?:async\s*)?(?:function\b|\([^)]*\)\s*=>|[A-Za-z_$][\w$]*\s*=>)/.test(trimmed)) return rawLine;
@@ -2686,7 +2724,7 @@ function instrumentSource(source) {
     const returnMatch = trimmed.match(/^return\s+(.+);?$/);
     if (returnMatch) {
       const expression = returnMatch[1].replace(/;$/, "");
-      return `${indent}return __csnavReturn(${lineNo}, ${encodedLine}, ${snapshot}, (${expression}));`;
+      return `${indent}__csnavTrace(${lineNo}, ${encodedLine}, ${snapshot});\n${indent}return __csnavReturn(${lineNo}, ${encodedLine}, ${snapshot}, (${expression}));`;
     }
     const throwMatch = trimmed.match(/^throw\s+(.+);?$/);
     if (throwMatch) {
@@ -2733,6 +2771,8 @@ function getNamedFunction(sandbox, name) {
 
 try {
   const source = cleanStudentCode(fs.readFileSync("solution.js", "utf8"));
+  const sourceLines = source.split(/\r?\n/);
+  new vm.Script(source, { filename: "solution.js" });
   const sandbox = {
     console: {
       log: (...args) => appendLog(args.map((arg) => typeof arg === "string" ? arg : JSON.stringify(arg)).join(" ")),
@@ -2759,7 +2799,8 @@ try {
       error = String(caught?.message || caught);
       passed = false;
       if (!trace.some((step) => step.event === "exception")) {
-        buildStep("exception", 0, "", () => ({}), null, { type: caught?.name || "Error", message: error, line: 0 });
+        const errorLine = traceErrorLine(caught);
+        buildStep("exception", errorLine, traceErrorSource(errorLine, sourceLines), () => ({}), null, { type: caught?.name || "Error", message: error, line: errorLine });
       }
     }
   }
@@ -2787,12 +2828,32 @@ try {
   }));
 } catch (caught) {
   const message = String(caught?.message || caught);
+  let errorLine = traceErrorLine(caught);
+  const source = (() => {
+    try { return cleanStudentCode(fs.readFileSync("solution.js", "utf8")); } catch { return ""; }
+  })();
+  const sourceLines = source.split(/\r?\n/);
+  if (!errorLine && caught?.name === "SyntaxError") errorLine = inferSyntaxLine(sourceLines);
+  if (!trace.length || !trace.some((step) => step.event === "exception")) {
+    buildStep("exception", errorLine, traceErrorSource(errorLine, sourceLines), () => ({}), null, { type: caught?.name || "Error", message, line: errorLine });
+  }
   process.stdout.write(JSON.stringify({
     status: "error",
     function_name: functionName || "script",
     test: test ? { name: test.name || "Trace test", args: test.args || [], expected: test.expected, actual: null, passed: false, error: message } : { name: "Snippet trace", args: [], expected: null, actual: null, passed: false, error: message },
-    trace: [],
-    trace_v2: { schema_version: "trace_v2", steps: [], limits: { max_steps: MAX_TRACE_STEPS, max_output_chars: MAX_OUTPUT_CHARS, max_display_chars: MAX_VALUE_CHARS } },
+    trace: trace.map((step) => ({
+      event: step.event,
+      function: step.function,
+      call_depth: 1,
+      call_stack: [step.function],
+      line_no: step.current_line,
+      line: step.line,
+      locals: Object.fromEntries(Object.entries(step.frames?.[0]?.bindings || {}).map(([name, binding]) => [name, binding.display])),
+      stdout: step.stdout,
+      return_value: step.return_value?.display,
+      exception: step.exception ? `${step.exception.type}: ${step.exception.message}` : undefined,
+    })),
+    trace_v2: { schema_version: "trace_v2", steps: trace, limits: { max_steps: MAX_TRACE_STEPS, max_output_chars: MAX_OUTPUT_CHARS, max_display_chars: MAX_VALUE_CHARS } },
     stdout: stdoutText(),
     duration_ms: Math.round((performance.now() - started) * 100) / 100,
     truncated: false,
@@ -2894,6 +2955,95 @@ def _java_literal(value: Any) -> str:
         return f"new Object[]{{{inner}}}"
     # Fallback: stringify
     return json.dumps(str(value))
+
+
+def _java_json_string_expr(value: str) -> str:
+    return json.dumps(value or "")
+
+
+def _java_trace_empty_response(message: str) -> dict[str, Any]:
+    return {
+        "status": "error",
+        "trace": [],
+        "trace_v2": _empty_trace_v2_payload(),
+        "stdout": "",
+        "stderr": message,
+        "message": message,
+        "duration_ms": 0,
+    }
+
+
+def _java_trace_compile_line(stderr_text: str) -> int | None:
+    match = re.search(r"Solution\.java:(\d+):", stderr_text or "")
+    if not match:
+        return None
+    try:
+        return int(match.group(1))
+    except ValueError:
+        return None
+
+
+def _java_trace_is_executable_line(stripped: str) -> bool:
+    if not stripped:
+        return False
+    if stripped.startswith(("//", "/*", "*", "@")):
+        return False
+    if stripped in {"{", "}"}:
+        return False
+    if stripped.startswith(("import ", "package ")):
+        return False
+    if re.match(r"^(?:public\s+)?class\s+\w+", stripped):
+        return False
+    if re.match(r"^(?:public|private|protected)?\s*static\s+[\w<>\[\]]+\s+\w+\s*\([^)]*\)\s*\{?$", stripped):
+        return False
+    if re.match(r"^(?:public|private|protected)?\s*[\w<>\[\]]+\s+\w+\s*\([^)]*\)\s*\{?$", stripped):
+        return False
+    return True
+
+
+def _java_trace_operation(line: str) -> tuple[str, str]:
+    stripped = line.strip()
+    if stripped.startswith("return"):
+        return "return", "Java is about to return a value from this method."
+    if stripped.startswith("throw"):
+        return "exception", "Java is about to throw an exception."
+    if stripped.startswith(("if ", "if(")):
+        return "condition", "Java is checking this condition to choose a branch."
+    if stripped.startswith(("for ", "for(")):
+        return "loop", "Java is starting or continuing this loop."
+    if stripped.startswith(("while ", "while(")):
+        return "loop", "Java is checking this while-loop condition."
+    if "System.out.print" in stripped:
+        return "stdout", "This line prints output."
+    if re.search(r"\.(?:add|remove|put|push|pop|set)\s*\(", stripped) or re.search(r"\[[^\]]+\]\s*=", stripped):
+        return "mutation", "This line changes an existing collection or stored value."
+    if "=" in stripped and "==" not in stripped and "!=" not in stripped and "<=" not in stripped and ">=" not in stripped:
+        return "assignment", "This line stores or updates a value."
+    return "line", "Java is about to run this line."
+
+
+def _instrument_java_trace_source(code: str) -> str:
+    lines = code.splitlines()
+    output: list[str] = []
+    in_block_comment = False
+    for index, line in enumerate(lines, start=1):
+        stripped = line.strip()
+        if "/*" in stripped:
+            in_block_comment = True
+        if not in_block_comment and _java_trace_is_executable_line(stripped):
+            indent = line[: len(line) - len(line.lstrip())]
+            operation, message = _java_trace_operation(stripped)
+            output.append(
+                f"{indent}__Trace.line({index}, {_java_json_string_expr(stripped)}, "
+                f"{_java_json_string_expr(operation)}, {_java_json_string_expr(message)}); {stripped}"
+            )
+        else:
+            output.append(line)
+        if in_block_comment:
+            if "*/" in stripped:
+                in_block_comment = False
+            continue
+    return "\n".join(output)
 
 
 def _cpp_literal(value: Any) -> str:
@@ -3244,6 +3394,364 @@ public class Runner {{
         if index < len(tests) and "args" not in item:
             item["args"] = tests[index].get("args", [])
     return result
+
+
+def run_java_practice_trace(code: str, function_name: str, test: dict[str, Any], arg_spec=None) -> dict[str, Any]:
+    if not compiled_runners_enabled():
+        return _java_trace_empty_response(COMPILED_RUNNERS_DISABLED_MESSAGE)
+    try:
+        validate_java_code(code)
+    except RunnerSecurityError as exc:
+        return _java_trace_empty_response(f"Runner security check blocked this code: {exc}")
+
+    javac = _find_executable("javac")
+    java = _find_executable("java")
+    if not javac or not java:
+        return _java_trace_empty_response(
+            "Java is not installed on this machine, so Java tracing cannot run locally yet. "
+            "Install a JDK (javac + java on PATH), or use Python/JavaScript for now."
+        )
+
+    args = test.get("args", []) or []
+    expected = test.get("expected")
+    case_insensitive = bool(test.get("case_insensitive"))
+    arg_list = ", ".join(_java_literal(a) for a in args)
+
+    if arg_spec:
+        from practice_starters import java_native_bridge
+        bridge_src = java_native_bridge(function_name, arg_spec)
+        call_expr = "__call(args)"
+        spec_args = arg_spec[0]
+        arg_names = [name for name, _ in spec_args]
+    else:
+        bridge_src = ""
+        call_expr = f"Solution.{function_name}(args)"
+        arg_names = [f"arg{index + 1}" for index in range(len(args))]
+
+    traced_code = _instrument_java_trace_source(code)
+    arg_bindings = [
+        {"name": name, "value": _truncate_text(json.dumps(value), RUN_MAX_VALUE_CHARS)}
+        for name, value in zip(arg_names, args)
+    ]
+
+    harness = f"""
+import java.util.*;
+import java.io.*;
+
+class __Trace {{
+    static List<String> steps = new ArrayList<>();
+    static String esc(String s) {{
+        if (s == null) return "";
+        StringBuilder b = new StringBuilder();
+        for (char c : s.toCharArray()) {{
+            if (c == '"' || c == '\\\\') b.append('\\\\').append(c);
+            else if (c == '\\n') b.append("\\\\n");
+            else if (c == '\\r') b.append("\\\\r");
+            else b.append(c);
+        }}
+        return b.toString();
+    }}
+    static void line(int line, String source, String kind, String message) {{
+        steps.add("{{\\"line\\":" + line
+            + ",\\"source\\":\\"" + esc(source)
+            + "\\",\\"operation_kind\\":\\"" + esc(kind)
+            + "\\",\\"student_message\\":\\"" + esc(message) + "\\"}}");
+    }}
+    static String stepsJson() {{
+        StringBuilder b = new StringBuilder("[");
+        for (int i = 0; i < steps.size(); i++) {{
+            if (i > 0) b.append(",");
+            b.append(steps.get(i));
+        }}
+        return b.append("]").toString();
+    }}
+}}
+
+public class Runner {{
+    static String esc(String s) {{
+        if (s == null) return "";
+        StringBuilder b = new StringBuilder();
+        for (char c : s.toCharArray()) {{
+            if (c == '"' || c == '\\\\') b.append('\\\\').append(c);
+            else if (c == '\\n') b.append("\\\\n");
+            else if (c == '\\r') b.append("\\\\r");
+            else b.append(c);
+        }}
+        return b.toString();
+    }}
+    static String show(Object o) {{
+        if (o == null) return "null";
+        if (o instanceof Object[]) return Arrays.deepToString((Object[]) o);
+        return o.toString();
+    }}
+    static String comparableString(Object o, boolean caseInsensitive) {{
+        String s = o.toString();
+        String lowered = s.toLowerCase(Locale.ROOT);
+        if (caseInsensitive || lowered.equals("none") || lowered.equals("null")) return lowered;
+        return s;
+    }}
+    static boolean eq(Object a, Object b, boolean caseInsensitive) {{
+        if (a == null || b == null) return a == b;
+        if (a instanceof Object[] && b instanceof Object[])
+            return eqArray((Object[]) a, (Object[]) b, caseInsensitive);
+        if (a instanceof Number && b instanceof Number)
+            return ((Number) a).doubleValue() == ((Number) b).doubleValue();
+        return comparableString(a, caseInsensitive).equals(comparableString(b, caseInsensitive));
+    }}
+    static boolean eqArray(Object[] a, Object[] b, boolean caseInsensitive) {{
+        if (a.length != b.length) return false;
+        for (int i = 0; i < a.length; i++) {{
+            if (!eq(a[i], b[i], caseInsensitive)) return false;
+        }}
+        return true;
+    }}
+
+{bridge_src}
+
+    public static void main(String[] argv) {{
+        Object[] args = new Object[]{{{arg_list}}};
+        Object expected = {_java_literal(expected)};
+        boolean caseInsensitive = {str(case_insensitive).lower()};
+        PrintStream realOut = System.out;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(captured));
+        Object actual = null;
+        Throwable thrown = null;
+        try {{
+            actual = {call_expr};
+        }} catch (Throwable t) {{
+            thrown = t;
+        }} finally {{
+            System.out.flush();
+            System.setOut(realOut);
+        }}
+        boolean ok = thrown == null && eq(actual, expected, caseInsensitive);
+        String stdout = captured.toString();
+        String error = thrown == null ? "" : String.valueOf(thrown);
+        int errorLine = 0;
+        if (thrown != null) {{
+            for (StackTraceElement frame : thrown.getStackTrace()) {{
+                if ("Solution".equals(frame.getClassName())) {{
+                    errorLine = frame.getLineNumber();
+                    break;
+                }}
+            }}
+        }}
+        realOut.println("{{\\"__java_trace__\\":true"
+            + ",\\"passed\\":" + ok
+            + ",\\"expected\\":\\"" + esc(show(expected))
+            + "\\",\\"actual\\":\\"" + esc(show(actual))
+            + "\\",\\"stdout\\":\\"" + esc(stdout)
+            + "\\",\\"error\\":\\"" + esc(error)
+            + "\\",\\"error_line\\":" + errorLine
+            + ",\\"steps\\":" + __Trace.stepsJson()
+            + "}}");
+    }}
+}}
+""".lstrip()
+
+    started = time.perf_counter()
+    try:
+        with tempfile.TemporaryDirectory(prefix="csnav_javatrace_") as temp_dir:
+            with open(os.path.join(temp_dir, "Solution.java"), "w", encoding="utf-8") as h:
+                h.write(code)
+            original_compiled = _compile_source(
+                [javac, "-J-Xmx256m", "-d", temp_dir, "Solution.java"],
+                cwd=temp_dir,
+                env={"PATH": os.environ.get("PATH", "")},
+                limiter=_limit_jvm_resources,
+            )
+            if original_compiled.returncode != 0:
+                stderr = _truncate_text(original_compiled.stderr.strip() or "Java compilation failed.")
+                line_no = _java_trace_compile_line(stderr) or 0
+                exception = {
+                    "type": "CompileError",
+                    "message": stderr,
+                    "line": line_no,
+                }
+                step = {
+                    "step": 1,
+                    "current_line": line_no,
+                    "previous_line": None,
+                    "line": "",
+                    "function": function_name,
+                    "event": "exception",
+                    "stdout": "",
+                    "exception": exception,
+                    "operation_kind": "compile_error",
+                    "student_message": f"Java could not compile this code{f' on line {line_no}' if line_no else ''}.",
+                    "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+                    "objects": {},
+                    "references": [],
+                    "return_value": None,
+                }
+                return {
+                    "status": "error",
+                    "passed": 0,
+                    "total": 1,
+                    "tests": [],
+                    "trace": [],
+                    "trace_v2": {"schema_version": "trace_v2", "steps": [step], "limits": {"max_steps": RUN_RATE_LIMIT}},
+                    "stdout": "",
+                    "stderr": stderr,
+                    "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+                }
+
+            with open(os.path.join(temp_dir, "Solution.java"), "w", encoding="utf-8") as h:
+                h.write(traced_code)
+            with open(os.path.join(temp_dir, "Runner.java"), "w", encoding="utf-8") as h:
+                h.write(harness)
+
+            compiled = _compile_source(
+                [javac, "-J-Xmx256m", "-d", temp_dir, "Solution.java", "Runner.java"],
+                cwd=temp_dir,
+                env={"PATH": os.environ.get("PATH", "")},
+                limiter=_limit_jvm_resources,
+            )
+            if compiled.returncode != 0:
+                stderr = _truncate_text(compiled.stderr.strip() or "Java compilation failed.")
+                line_no = _java_trace_compile_line(stderr) or 0
+                exception = {
+                    "type": "CompileError",
+                    "message": stderr,
+                    "line": line_no,
+                }
+                step = {
+                    "step": 1,
+                    "current_line": line_no,
+                    "previous_line": None,
+                    "line": "",
+                    "function": function_name,
+                    "event": "exception",
+                    "stdout": "",
+                    "exception": exception,
+                    "operation_kind": "compile_error",
+                    "student_message": f"Java could not compile this code{f' on line {line_no}' if line_no else ''}.",
+                    "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+                    "objects": {},
+                    "references": [],
+                    "return_value": None,
+                }
+                return {
+                    "status": "error",
+                    "passed": 0,
+                    "total": 1,
+                    "tests": [],
+                    "trace": [],
+                    "trace_v2": {"schema_version": "trace_v2", "steps": [step], "limits": {"max_steps": RUN_RATE_LIMIT}},
+                    "stdout": "",
+                    "stderr": stderr,
+                    "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+                }
+
+            run = _run_isolated_process(
+                [java, "-cp", temp_dir, "-Xss8m", "-Xmx128m", "Runner"],
+                cwd=temp_dir,
+                input_text="",
+                env=_hardened_compiled_env({"PATH": os.environ.get("PATH", "")}),
+                limiter=_limit_jvm_hardened,
+            )
+    except subprocess.TimeoutExpired:
+        return _java_trace_empty_response(
+            f"The Java trace timed out after {RUN_TIMEOUT_SECONDS} seconds. Check for infinite loops or very slow logic."
+        )
+    except Exception as exc:
+        return _java_trace_empty_response(f"Java trace setup failed: {exc}")
+
+    payload = None
+    for line in run.stdout.splitlines():
+        if not line.strip().startswith("{"):
+            continue
+        try:
+            parsed = json.loads(line)
+        except Exception:
+            continue
+        if parsed.get("__java_trace__"):
+            payload = parsed
+            break
+    if not payload:
+        return _java_trace_empty_response(run.stderr.strip() or "Java trace output could not be parsed.")
+
+    stdout_text = payload.get("stdout", "")
+    raw_steps = payload.get("steps") or []
+    trace_steps: list[dict[str, Any]] = []
+    previous_line = None
+    for index, item in enumerate(raw_steps, start=1):
+        line_no = item.get("line") or 0
+        step = {
+            "step": index,
+            "current_line": line_no,
+            "previous_line": previous_line,
+            "line": item.get("source", ""),
+            "function": function_name,
+            "event": "line",
+            "stdout": stdout_text if index == len(raw_steps) else "",
+            "exception": None,
+            "return_value": None,
+            "operation_kind": item.get("operation_kind") or "line",
+            "operation_summary": item.get("student_message") or "Java is about to run this line.",
+            "student_message": item.get("student_message") or "Java is about to run this line.",
+            "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+            "objects": {},
+            "references": [],
+        }
+        previous_line = line_no
+        trace_steps.append(step)
+
+    if payload.get("error"):
+        error_line = payload.get("error_line") or previous_line or 0
+        trace_steps.append({
+            "step": len(trace_steps) + 1,
+            "current_line": error_line,
+            "previous_line": previous_line,
+            "line": "",
+            "function": function_name,
+            "event": "exception",
+            "stdout": stdout_text,
+            "exception": {
+                "type": "RuntimeError",
+                "message": payload.get("error", ""),
+                "line": error_line,
+            },
+            "return_value": None,
+            "operation_kind": "exception",
+            "operation_summary": f"Java stopped on line {error_line} because an exception was raised.",
+            "student_message": f"Java stopped on line {error_line} because an exception was raised.",
+            "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+            "objects": {},
+            "references": [],
+        })
+    elif trace_steps:
+        trace_steps[-1]["return_value"] = payload.get("actual")
+        trace_steps[-1]["event"] = "return"
+        trace_steps[-1]["operation_kind"] = "return"
+        trace_steps[-1]["student_message"] = f"Java returned {payload.get('actual')}."
+        trace_steps[-1]["operation_summary"] = trace_steps[-1]["student_message"]
+
+    test_result = {
+        "name": test.get("name") or "Trace test",
+        "passed": bool(payload.get("passed")),
+        "expected": payload.get("expected"),
+        "actual": payload.get("actual"),
+        "args": args,
+    }
+    if payload.get("error"):
+        test_result["error"] = payload.get("error")
+    return {
+        "status": "passed" if test_result["passed"] else "failed",
+        "passed": 1 if test_result["passed"] else 0,
+        "total": 1,
+        "tests": [test_result],
+        "trace": [],
+        "trace_v2": {
+            "schema_version": "trace_v2",
+            "steps": trace_steps,
+            "limits": {"max_steps": RUN_RATE_LIMIT, "max_output_chars": RUN_MAX_OUTPUT_CHARS},
+        },
+        "stdout": stdout_text,
+        "stderr": _truncate_text(run.stderr.strip()),
+        "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+    }
 
 
 def run_cpp_practice_tests(code: str, function_name: str, tests: list[dict[str, Any]], arg_spec=None) -> dict[str, Any]:

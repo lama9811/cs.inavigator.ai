@@ -3756,12 +3756,12 @@ export default function CodingTutor({
     const normalizedTestIndex = Number.isInteger(requestedTestIndex) && requestedTestIndex >= 0
       ? requestedTestIndex
       : 0;
-    if (selectedLanguageKey !== "python") {
-      toast.info("Execution tracing is available for Python first.");
+    if (!["python", "javascript", "java"].includes(selectedLanguageKey)) {
+      toast.info("Execution tracing is available for Python, JavaScript, and Java first.");
       return;
     }
     if (!code.trim()) {
-      toast.info("Write some Python code before tracing it.");
+      toast.info(`Write some ${selectedLanguage} code before tracing it.`);
       return;
     }
     const mismatchMessage = detectLanguageMismatch(code, selectedLanguageKey);
@@ -3779,7 +3779,7 @@ export default function CodingTutor({
     setWorkspaceVisible(true);
     setTraceModalOpen(true);
     setIsTracingCode(true);
-    setTraceResult(prev => prev || { status: "running", trace: [], message: "Tracing your Python code..." });
+    setTraceResult(prev => prev || { status: "running", trace: [], message: `Tracing your ${selectedLanguage} code...` });
     try {
       const response = await fetch(`${apiBase}/api/coding/practice/trace`, {
         method: "POST",
