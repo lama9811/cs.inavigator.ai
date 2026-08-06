@@ -963,6 +963,73 @@ except Exception as exc:
     raise SystemExit(0)
 
 source_lines = linecache.getlines("solution.py")
+TRACE_OPERATION_BY_LINE = {}
+
+def build_operation_metadata():
+    try:
+        tree = ast.parse("".join(source_lines), filename="solution.py")
+    except Exception:
+        return {}
+    operations = {}
+    def target_name(node):
+        if isinstance(node, ast.Name):
+            return node.id
+        if isinstance(node, ast.Attribute):
+            return node.attr
+        if isinstance(node, ast.Subscript):
+            return "indexed value"
+        if isinstance(node, (ast.Tuple, ast.List)):
+            return ", ".join(target_name(item) for item in node.elts)
+        return ""
+    def call_name(node):
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Attribute):
+                return node.func.attr
+            if isinstance(node.func, ast.Name):
+                return node.func.id
+        return ""
+    for node in ast.walk(tree):
+        line_no = getattr(node, "lineno", None)
+        if not line_no:
+            continue
+        if isinstance(node, ast.Assign):
+            target = target_name(node.targets[0]) if node.targets else ""
+            value_call = call_name(node.value)
+            operations[line_no] = {
+                "kind": "assignment",
+                "target": target,
+                "detail": f"stores a value in {target}" if target else "stores a value",
+                "method": value_call,
+            }
+        elif isinstance(node, ast.AugAssign):
+            target = target_name(node.target)
+            operations[line_no] = {
+                "kind": "update",
+                "target": target,
+                "detail": f"updates {target} using its old value" if target else "updates a value",
+            }
+        elif isinstance(node, ast.Return):
+            operations[line_no] = {"kind": "return", "target": "return value", "detail": "sends a value back to the caller"}
+        elif isinstance(node, ast.For):
+            operations[line_no] = {
+                "kind": "loop_iteration",
+                "target": target_name(node.target),
+                "detail": "gets the next item for the loop variable",
+                "method": call_name(node.iter),
+            }
+        elif isinstance(node, ast.While):
+            operations[line_no] = {"kind": "condition", "target": "while condition", "detail": "checks whether the loop should keep running"}
+        elif isinstance(node, ast.If):
+            operations[line_no] = {"kind": "condition", "target": "if condition", "detail": "checks which branch should run"}
+        elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+            method = call_name(node.value)
+            kind = "output" if method == "print" else "method_call"
+            operations[line_no] = {"kind": kind, "target": method, "detail": f"runs {method}()" if method else "runs a function call", "method": method}
+        elif isinstance(node, ast.Subscript):
+            operations.setdefault(line_no, {"kind": "index_access", "target": "indexed value", "detail": "reads one item from a collection"})
+    return operations
+
+TRACE_OPERATION_BY_LINE = build_operation_metadata()
 trace = []
 trace_v2_object_ids = {}
 trace_v2_next_object_id = 1
@@ -1115,11 +1182,12 @@ def fingerprint(value):
     except Exception:
         return repr(value)
 
-def summarize_operation(line, event, arg, *, phase="before_line", previous_line_text="", binding_changes=None, object_changes=None, stdout_changed=False):
+def summarize_operation(line, event, arg, *, phase="before_line", previous_line_text="", binding_changes=None, object_changes=None, stdout_changed=False, operation=None):
     clean = (line or "").strip()
     previous_clean = (previous_line_text or "").strip()
     binding_changes = binding_changes or []
     object_changes = object_changes or []
+    operation = operation or {}
     if event == "exception":
         exc_type, exc, _tb = arg
         return f"Python stopped here because {exc_type.__name__} was raised: {exc}"
@@ -1138,6 +1206,26 @@ def summarize_operation(line, event, arg, *, phase="before_line", previous_line_
             return f"Line just ran: {previous_clean}. Python is ready for the next line."
     if not clean:
         return "Python is ready for the next executable line."
+    kind = operation.get("kind")
+    target = operation.get("target")
+    method = operation.get("method")
+    if kind == "assignment":
+        if method == "lower":
+            return f"Python is about to store a lowercase copy in {target}; the original string object is not changed."
+        if target:
+            return f"Python is about to store the right-side value in {target}."
+    if kind == "update" and target:
+        return f"Python is about to update {target} using its current value."
+    if kind == "loop_iteration":
+        if method == "lower":
+            return f"Python is about to take the next lowercase character and store it in {target}."
+        return f"Python is about to take the next item and store it in {target}."
+    if kind == "condition":
+        return "Python is about to check this condition to decide the next path."
+    if kind == "output":
+        return "Python is about to print a value into the output bucket."
+    if kind == "index_access":
+        return "Python is about to use an index or key to read one item from a collection."
     if ".append(" in clean:
         return "Python is about to run append(); it will change the existing list object instead of making a new variable."
     if ".pop(" in clean:
@@ -1193,6 +1281,7 @@ def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
     for current_frame in frames:
         references.extend(current_frame.get("references", []))
     stdout_changed = stdout_text != previous_stdout
+    operation = TRACE_OPERATION_BY_LINE.get(line_no, {})
     phase = "line_returned" if event == "return" else "line_errored" if event == "exception" else "before_line"
     if event == "line" and trace_v2_previous_step and (binding_changes or object_changes or stdout_changed):
         phase = "after_previous_line"
@@ -1221,6 +1310,9 @@ def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
         "object_changes": object_changes,
         "stdout": stdout_text,
         "stdout_changed": stdout_changed,
+        "operation_kind": operation.get("kind") or "",
+        "operation_target": operation.get("target") or "",
+        "operation_detail": operation.get("detail") or "",
         "operation_summary": summarize_operation(
             line,
             event,
@@ -1230,8 +1322,10 @@ def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
             binding_changes=binding_changes,
             object_changes=object_changes,
             stdout_changed=stdout_changed,
+            operation=operation,
         ),
     }
+    step["student_message"] = step["operation_summary"]
     if event == "return":
         step["return_value"] = serialize_value(arg, objects)
     elif event == "exception":
@@ -1506,6 +1600,73 @@ def call_stack_for_frame(frame):
     return list(reversed(stack))
 
 source_lines = linecache.getlines("solution.py")
+TRACE_OPERATION_BY_LINE = {}
+
+def build_operation_metadata():
+    try:
+        tree = ast.parse("".join(source_lines), filename="solution.py")
+    except Exception:
+        return {}
+    operations = {}
+    def target_name(node):
+        if isinstance(node, ast.Name):
+            return node.id
+        if isinstance(node, ast.Attribute):
+            return node.attr
+        if isinstance(node, ast.Subscript):
+            return "indexed value"
+        if isinstance(node, (ast.Tuple, ast.List)):
+            return ", ".join(target_name(item) for item in node.elts)
+        return ""
+    def call_name(node):
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Attribute):
+                return node.func.attr
+            if isinstance(node.func, ast.Name):
+                return node.func.id
+        return ""
+    for node in ast.walk(tree):
+        line_no = getattr(node, "lineno", None)
+        if not line_no:
+            continue
+        if isinstance(node, ast.Assign):
+            target = target_name(node.targets[0]) if node.targets else ""
+            value_call = call_name(node.value)
+            operations[line_no] = {
+                "kind": "assignment",
+                "target": target,
+                "detail": f"stores a value in {target}" if target else "stores a value",
+                "method": value_call,
+            }
+        elif isinstance(node, ast.AugAssign):
+            target = target_name(node.target)
+            operations[line_no] = {
+                "kind": "update",
+                "target": target,
+                "detail": f"updates {target} using its old value" if target else "updates a value",
+            }
+        elif isinstance(node, ast.Return):
+            operations[line_no] = {"kind": "return", "target": "return value", "detail": "sends a value back to the caller"}
+        elif isinstance(node, ast.For):
+            operations[line_no] = {
+                "kind": "loop_iteration",
+                "target": target_name(node.target),
+                "detail": "gets the next item for the loop variable",
+                "method": call_name(node.iter),
+            }
+        elif isinstance(node, ast.While):
+            operations[line_no] = {"kind": "condition", "target": "while condition", "detail": "checks whether the loop should keep running"}
+        elif isinstance(node, ast.If):
+            operations[line_no] = {"kind": "condition", "target": "if condition", "detail": "checks which branch should run"}
+        elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+            method = call_name(node.value)
+            kind = "output" if method == "print" else "method_call"
+            operations[line_no] = {"kind": kind, "target": method, "detail": f"runs {method}()" if method else "runs a function call", "method": method}
+        elif isinstance(node, ast.Subscript):
+            operations.setdefault(line_no, {"kind": "index_access", "target": "indexed value", "detail": "reads one item from a collection"})
+    return operations
+
+TRACE_OPERATION_BY_LINE = build_operation_metadata()
 trace = []
 trace_v2_object_ids = {}
 trace_v2_next_object_id = 1
@@ -1660,11 +1821,12 @@ def fingerprint(value):
     except Exception:
         return repr(value)
 
-def summarize_operation(line, event, arg, *, phase="before_line", previous_line_text="", binding_changes=None, object_changes=None, stdout_changed=False):
+def summarize_operation(line, event, arg, *, phase="before_line", previous_line_text="", binding_changes=None, object_changes=None, stdout_changed=False, operation=None):
     clean = (line or "").strip()
     previous_clean = (previous_line_text or "").strip()
     binding_changes = binding_changes or []
     object_changes = object_changes or []
+    operation = operation or {}
     if event == "exception":
         exc_type, exc, _tb = arg
         return f"Python stopped here because {exc_type.__name__} was raised: {exc}"
@@ -1683,6 +1845,26 @@ def summarize_operation(line, event, arg, *, phase="before_line", previous_line_
             return f"Line just ran: {previous_clean}. Python is ready for the next line."
     if not clean:
         return "Python is ready for the next executable line."
+    kind = operation.get("kind")
+    target = operation.get("target")
+    method = operation.get("method")
+    if kind == "assignment":
+        if method == "lower":
+            return f"Python is about to store a lowercase copy in {target}; the original string object is not changed."
+        if target:
+            return f"Python is about to store the right-side value in {target}."
+    if kind == "update" and target:
+        return f"Python is about to update {target} using its current value."
+    if kind == "loop_iteration":
+        if method == "lower":
+            return f"Python is about to take the next lowercase character and store it in {target}."
+        return f"Python is about to take the next item and store it in {target}."
+    if kind == "condition":
+        return "Python is about to check this condition to decide the next path."
+    if kind == "output":
+        return "Python is about to print a value into the output bucket."
+    if kind == "index_access":
+        return "Python is about to use an index or key to read one item from a collection."
     if ".append(" in clean:
         return "Python is about to run append(); it will change the existing list object instead of making a new variable."
     if ".pop(" in clean:
@@ -1738,6 +1920,7 @@ def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
     for current_frame in frames:
         references.extend(current_frame.get("references", []))
     stdout_changed = stdout_text != previous_stdout
+    operation = TRACE_OPERATION_BY_LINE.get(line_no, {})
     phase = "line_returned" if event == "return" else "line_errored" if event == "exception" else "before_line"
     if event == "line" and trace_v2_previous_step and (binding_changes or object_changes or stdout_changed):
         phase = "after_previous_line"
@@ -1766,6 +1949,9 @@ def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
         "object_changes": object_changes,
         "stdout": stdout_text,
         "stdout_changed": stdout_changed,
+        "operation_kind": operation.get("kind") or "",
+        "operation_target": operation.get("target") or "",
+        "operation_detail": operation.get("detail") or "",
         "operation_summary": summarize_operation(
             line,
             event,
@@ -1775,8 +1961,10 @@ def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
             binding_changes=binding_changes,
             object_changes=object_changes,
             stdout_changed=stdout_changed,
+            operation=operation,
         ),
     }
+    step["student_message"] = step["operation_summary"]
     if event == "return":
         step["return_value"] = serialize_value(arg, objects)
     elif event == "exception":
@@ -2194,6 +2382,491 @@ try {
         "stderr": _truncate_text(payload.get("error") or payload.get("warning") or stderr_text),
         "duration_ms": payload.get("duration_ms", round((time.perf_counter() - started) * 1000, 2)),
     }
+
+
+def _empty_javascript_trace_response(message: str) -> dict[str, Any]:
+    return {
+        "status": "error",
+        "trace": [],
+        "trace_v2": _empty_trace_v2_payload(),
+        "stdout": "",
+        "stderr": message,
+        "duration_ms": 0,
+    }
+
+
+def _run_javascript_trace(code: str, function_name: str | None, test: dict[str, Any] | None) -> dict[str, Any]:
+    try:
+        validate_javascript_code(code)
+    except RunnerSecurityError as exc:
+        return _empty_javascript_trace_response(f"Runner security check blocked this code: {exc}")
+
+    runner_source = r"""
+const fs = require("fs");
+const vm = require("vm");
+const { performance } = require("perf_hooks");
+
+const payload = JSON.parse(fs.readFileSync(0, "utf8") || "{}");
+const functionName = payload.function_name || "";
+const test = payload.test || null;
+const started = performance.now();
+const MAX_TRACE_STEPS = 80;
+const MAX_OUTPUT_CHARS = 12000;
+const MAX_VALUE_CHARS = 4000;
+let trace = [];
+let objectIds = new WeakMap();
+let nextObjectId = 1;
+let previousStep = null;
+let logs = [];
+let logLength = 0;
+let logsTruncated = false;
+let lastReturnValue;
+
+function appendLog(value) {
+  const text = String(value);
+  const remaining = MAX_OUTPUT_CHARS - logLength;
+  if (remaining > 0) {
+    logs.push(text.slice(0, remaining));
+    logLength += Math.min(text.length, remaining);
+  }
+  if (text.length > Math.max(remaining, 0)) logsTruncated = true;
+}
+
+function stdoutText() {
+  return logs.join("\n") + (logsTruncated ? "\n... output truncated by CS Navigator ..." : "");
+}
+
+function cleanStudentCode(source) {
+  return String(source)
+    .replace(/^\s*export\s+\{\s*[\w\s,]+\s*\};?\s*$/gm, "")
+    .replace(/^\s*export\s+default\s+/gm, "")
+    .replace(/^\s*export\s+(function|const|let|var|class)\s+/gm, "$1 ");
+}
+
+function safeIdentifier(name) {
+  return /^[A-Za-z_$][\w$]*$/.test(String(name || ""));
+}
+
+function safeDisplay(value) {
+  if (typeof value === "undefined") return "undefined";
+  try {
+    const raw = JSON.stringify(value);
+    if (typeof raw === "undefined") return String(value);
+    return raw.length <= MAX_VALUE_CHARS ? raw : `${raw.slice(0, MAX_VALUE_CHARS)}... value truncated ...`;
+  } catch {
+    const raw = String(value);
+    return raw.length <= MAX_VALUE_CHARS ? raw : `${raw.slice(0, MAX_VALUE_CHARS)}... value truncated ...`;
+  }
+}
+
+function stableObjectId(value) {
+  if (!objectIds.has(value)) {
+    objectIds.set(value, `obj_${nextObjectId}`);
+    nextObjectId += 1;
+  }
+  return objectIds.get(value);
+}
+
+function serializeScalar(value) {
+  return {
+    kind: "scalar",
+    type: value === null ? "null" : typeof value,
+    value: value,
+    display: safeDisplay(value),
+  };
+}
+
+function serializeValue(value, objects, depth = 0) {
+  if (value === null || typeof value !== "object" || depth >= 2) return serializeScalar(value);
+  const objectId = stableObjectId(value);
+  if (!objects[objectId]) objects[objectId] = serializeObject(value, objectId, objects, depth);
+  return {
+    kind: "reference",
+    object_id: objectId,
+    type: Array.isArray(value) ? "Array" : "Object",
+    display: safeDisplay(value),
+  };
+}
+
+function serializeObject(value, objectId, objects, depth = 0) {
+  if (Array.isArray(value)) {
+    return {
+      object_id: objectId,
+      type: "list",
+      repr: safeDisplay(value),
+      length: value.length,
+      items: value.slice(0, 20).map((item) => serializeValue(item, objects, depth + 1)),
+      truncated: value.length > 20,
+    };
+  }
+  const entries = Object.keys(value).slice(0, 20).map((key) => ({
+    key: serializeScalar(key),
+    value: serializeValue(value[key], objects, depth + 1),
+  }));
+  return {
+    object_id: objectId,
+    type: "dict",
+    repr: safeDisplay(value),
+    length: Object.keys(value).length,
+    entries,
+    truncated: Object.keys(value).length > 20,
+  };
+}
+
+function fingerprint(value) {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function operationForLine(line) {
+  const clean = String(line || "").trim();
+  if (/^return\b/.test(clean)) return { kind: "return", target: "return value", detail: "sends a value back to the caller" };
+  if (/^throw\b/.test(clean)) return { kind: "exception", target: "thrown error", detail: "raises an error" };
+  if (/^for\b/.test(clean)) return { kind: "loop_iteration", target: "loop variable", detail: "checks or advances a loop" };
+  if (/^while\b/.test(clean)) return { kind: "condition", target: "while condition", detail: "checks whether the loop should keep running" };
+  if (/^(if|else if)\b/.test(clean)) return { kind: "condition", target: "if condition", detail: "checks which branch should run" };
+  if (/console\s*\.\s*log\s*\(/.test(clean)) return { kind: "output", target: "console.log", detail: "prints a value into the output bucket" };
+  const declaration = clean.match(/^(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=/);
+  if (declaration) return { kind: "assignment", target: declaration[1], detail: `stores a value in ${declaration[1]}` };
+  const assignment = clean.match(/^([A-Za-z_$][\w$]*)(?:\[[^\]]+\]|\.[A-Za-z_$][\w$]*)?\s*(?:=|\+=|-=|\*=|\/=)/);
+  if (assignment) return { kind: clean.includes("[") || clean.includes(".") ? "mutation" : "assignment", target: assignment[1], detail: `updates ${assignment[1]}` };
+  const call = clean.match(/\.([A-Za-z_$][\w$]*)\s*\(/);
+  if (call) return { kind: "method_call", target: call[1], detail: `runs ${call[1]}()` };
+  if (/\[[^\]]+\]/.test(clean)) return { kind: "index_access", target: "indexed value", detail: "reads one item from a collection" };
+  return { kind: "statement", target: "", detail: "runs this line" };
+}
+
+function summarizeStep(event, line, operation, changes, stdoutChanged, exception) {
+  const clean = String(line || "").trim();
+  if (event === "exception") return `JavaScript stopped here because ${exception?.type || "an error"} was raised: ${exception?.message || ""}`;
+  if (event === "return") return "This line just returned a value to the caller.";
+  const changedNames = changes.filter((change) => change.kind === "binding").map((change) => change.name);
+  const mutated = changes.some((change) => change.kind === "object" && change.change === "mutated");
+  if (changedNames.length) return `Line just ran: ${clean}. It updated ${changedNames.slice(0, 3).join(", ")}.`;
+  if (mutated) return `Line just ran: ${clean}. It changed an existing array or object.`;
+  if (stdoutChanged) return `Line just ran: ${clean}. It printed output.`;
+  if (operation.kind === "assignment") return `JavaScript is about to store the right-side value in ${operation.target}.`;
+  if (operation.kind === "mutation") return `JavaScript is about to update ${operation.target} or one of its stored values.`;
+  if (operation.kind === "loop_iteration") return "JavaScript is about to run the next loop check or loop pass.";
+  if (operation.kind === "condition") return "JavaScript is about to check this condition to choose the next path.";
+  if (operation.kind === "method_call") return `JavaScript is about to run ${operation.target}().`;
+  if (operation.kind === "output") return "JavaScript is about to print a value into the output bucket.";
+  if (operation.kind === "index_access") return "JavaScript is about to use an index or key to read one item from a collection.";
+  return "JavaScript is ready to run this line. Watch the variables before and after it runs.";
+}
+
+function buildStep(event, lineNo, line, snapshotFactory, returnValue, exception) {
+  if (trace.length >= MAX_TRACE_STEPS) return returnValue;
+  let locals = {};
+  try {
+    locals = typeof snapshotFactory === "function" ? snapshotFactory() || {} : {};
+  } catch {
+    locals = {};
+  }
+  const objects = {};
+  const bindings = {};
+  const references = [];
+  for (const [name, value] of Object.entries(locals)) {
+    const binding = serializeValue(value, objects);
+    bindings[name] = binding;
+    if (binding.kind === "reference") {
+      references.push({ frame_id: "frame_1", name, object_id: binding.object_id });
+    }
+  }
+  const frameName = functionName || "script";
+  const frames = [{ frame_id: "frame_1", function: frameName, line_no: lineNo, bindings, references }];
+  const previousBindings = previousStep?.frames?.[0]?.bindings || {};
+  const previousObjects = previousStep?.objects || {};
+  const bindingChanges = [];
+  for (const [name, binding] of Object.entries(bindings)) {
+    if (!previousBindings[name]) bindingChanges.push({ frame: frameName, name, change: "new" });
+    else if (fingerprint(previousBindings[name]) !== fingerprint(binding)) bindingChanges.push({ frame: frameName, name, change: "changed" });
+  }
+  const objectChanges = [];
+  for (const [objectId, object] of Object.entries(objects)) {
+    if (!previousObjects[objectId]) objectChanges.push({ object_id: objectId, change: "new" });
+    else if (fingerprint(previousObjects[objectId]) !== fingerprint(object)) objectChanges.push({ object_id: objectId, change: "mutated" });
+  }
+  const previousStdout = previousStep?.stdout || "";
+  const currentStdout = stdoutText();
+  const stdoutChanged = currentStdout !== previousStdout;
+  const changes = [
+    ...bindingChanges.map((change) => ({ kind: "binding", ...change })),
+    ...objectChanges.map((change) => ({ kind: "object", ...change })),
+  ];
+  if (stdoutChanged) changes.push({ kind: "stdout", change: "changed" });
+  const operation = operationForLine(line);
+  const step = {
+    step_index: trace.length,
+    event,
+    phase: event === "line" ? "before_line" : event === "return" ? "line_returned" : "line_errored",
+    current_line: lineNo,
+    previous_line: previousStep?.current_line || null,
+    line_about_to_run: event === "line" ? lineNo : null,
+    line_just_ran: event === "line" ? null : lineNo,
+    line_just_ran_text: event === "line" ? "" : line,
+    line,
+    function: frameName,
+    frames,
+    objects,
+    references,
+    changes,
+    binding_changes: bindingChanges,
+    object_changes: objectChanges,
+    stdout: currentStdout,
+    stdout_changed: stdoutChanged,
+    operation_kind: operation.kind,
+    operation_target: operation.target,
+    operation_detail: operation.detail,
+  };
+  if (event === "return") step.return_value = serializeValue(returnValue, objects);
+  if (event === "exception") step.exception = exception;
+  step.operation_summary = summarizeStep(event, line, operation, changes, stdoutChanged, exception);
+  step.student_message = step.operation_summary;
+  trace.push(step);
+  previousStep = step;
+  return returnValue;
+}
+
+function __csnavRead(reader) {
+  try {
+    return reader();
+  } catch {
+    return undefined;
+  }
+}
+
+function __csnavTrace(lineNo, line, snapshotFactory) {
+  buildStep("line", lineNo, line, snapshotFactory);
+}
+
+function __csnavReturn(lineNo, line, snapshotFactory, value) {
+  lastReturnValue = value;
+  return buildStep("return", lineNo, line, snapshotFactory, value);
+}
+
+function __csnavThrow(lineNo, line, snapshotFactory, error) {
+  const exception = { type: error?.name || "Error", message: String(error?.message || error), line: lineNo };
+  buildStep("exception", lineNo, line, snapshotFactory, null, exception);
+  throw error;
+}
+
+function collectNames(source) {
+  const names = new Set();
+  for (const match of source.matchAll(/\bfunction\s+[A-Za-z_$][\w$]*\s*\(([^)]*)\)/g)) {
+    match[1].split(",").map((item) => item.trim()).filter(safeIdentifier).forEach((name) => names.add(name));
+  }
+  for (const match of source.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)/g)) names.add(match[1]);
+  for (const match of source.matchAll(/\bfor\s*\(\s*(?:const|let|var)\s+([A-Za-z_$][\w$]*)\b/g)) names.add(match[1]);
+  return Array.from(names).slice(0, 16);
+}
+
+function snapshotSource(names) {
+  return `() => ({${names.map((name) => `${JSON.stringify(name)}: __csnavRead(() => ${name})`).join(",")}})`;
+}
+
+function instrumentSource(source) {
+  const lines = String(source).split(/\r?\n/);
+  const names = collectNames(source);
+  const snapshot = snapshotSource(names);
+  return lines.map((rawLine, index) => {
+    const lineNo = index + 1;
+    const trimmed = rawLine.trim();
+    const encodedLine = JSON.stringify(rawLine);
+    const indent = rawLine.match(/^\s*/)?.[0] || "";
+    if (!trimmed || trimmed.startsWith("//") || trimmed === "{" || trimmed === "}" || /^[}\])]/.test(trimmed) || /^(else|catch|finally)\b/.test(trimmed)) return rawLine;
+    if (/^(function|class)\b/.test(trimmed)) return rawLine;
+    if (/^(const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*(?:async\s*)?(?:function\b|\([^)]*\)\s*=>|[A-Za-z_$][\w$]*\s*=>)/.test(trimmed)) return rawLine;
+    if (/console\s*\.\s*log\s*\(/.test(trimmed)) {
+      return `${indent}__csnavTrace(${lineNo}, ${encodedLine}, ${snapshot});\n${rawLine}\n${indent}__csnavTrace(${lineNo}, ${encodedLine}, ${snapshot});`;
+    }
+    const returnMatch = trimmed.match(/^return\s+(.+);?$/);
+    if (returnMatch) {
+      const expression = returnMatch[1].replace(/;$/, "");
+      return `${indent}return __csnavReturn(${lineNo}, ${encodedLine}, ${snapshot}, (${expression}));`;
+    }
+    const throwMatch = trimmed.match(/^throw\s+(.+);?$/);
+    if (throwMatch) {
+      const expression = throwMatch[1].replace(/;$/, "");
+      return `${indent}throw __csnavThrow(${lineNo}, ${encodedLine}, ${snapshot}, (${expression}));`;
+    }
+    return `${indent}__csnavTrace(${lineNo}, ${encodedLine}, ${snapshot});\n${rawLine}`;
+  }).join("\n");
+}
+
+function canonicalValue(value, orderInsensitive = false, caseInsensitive = false) {
+  if (typeof value === "string") {
+    const lowered = value.toLocaleLowerCase();
+    if (caseInsensitive || lowered === "none" || lowered === "null") return lowered;
+    return value;
+  }
+  if (Array.isArray(value)) {
+    const items = value.map((item) => canonicalValue(item, orderInsensitive, caseInsensitive));
+    return orderInsensitive ? items.sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right))) : items;
+  }
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonicalValue(value[key], orderInsensitive, caseInsensitive)]));
+  }
+  return value;
+}
+
+function valuesEqual(actual, expected, orderInsensitive = false, caseInsensitive = false) {
+  return JSON.stringify(canonicalValue(actual, orderInsensitive, caseInsensitive)) === JSON.stringify(canonicalValue(expected, orderInsensitive, caseInsensitive));
+}
+
+function safeIdentifierName(name) {
+  return /^[A-Za-z_$][\w$]*$/.test(String(name || ""));
+}
+
+function getNamedFunction(sandbox, name) {
+  if (!safeIdentifierName(name)) return undefined;
+  try {
+    const value = vm.runInContext(`typeof ${name} !== "undefined" ? ${name} : undefined`, sandbox, { timeout: 100 });
+    return typeof value === "function" ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+try {
+  const source = cleanStudentCode(fs.readFileSync("solution.js", "utf8"));
+  const sandbox = {
+    console: {
+      log: (...args) => appendLog(args.map((arg) => typeof arg === "string" ? arg : JSON.stringify(arg)).join(" ")),
+      error: (...args) => appendLog(args.map(String).join(" ")),
+    },
+    __csnavTrace,
+    __csnavReturn,
+    __csnavThrow,
+    __csnavRead,
+  };
+  vm.createContext(sandbox, { codeGeneration: { strings: false, wasm: false } });
+  vm.runInContext(instrumentSource(source), sandbox, { timeout: 1000 });
+  let actual = null;
+  let passed = true;
+  let error = "";
+  if (test && functionName) {
+    const target = getNamedFunction(sandbox, functionName) || getNamedFunction(sandbox, "solve");
+    if (typeof target !== "function") throw new Error(`Could not find function '${functionName}'.`);
+    const args = test.args || [];
+    try {
+      actual = target(...args);
+      passed = valuesEqual(actual, test.expected, Boolean(test.order_insensitive), Boolean(test.case_insensitive));
+    } catch (caught) {
+      error = String(caught?.message || caught);
+      passed = false;
+      if (!trace.some((step) => step.event === "exception")) {
+        buildStep("exception", 0, "", () => ({}), null, { type: caught?.name || "Error", message: error, line: 0 });
+      }
+    }
+  }
+  process.stdout.write(JSON.stringify({
+    status: error ? "error" : passed ? "passed" : "failed",
+    function_name: functionName || "script",
+    test: test ? { name: test.name || "Trace test", args: test.args || [], expected: test.expected, actual, passed, error } : { name: "Snippet trace", args: [], expected: null, actual: lastReturnValue ?? null, passed: !error, error },
+    trace: trace.map((step) => ({
+      event: step.event,
+      function: step.function,
+      call_depth: 1,
+      call_stack: [step.function],
+      line_no: step.current_line,
+      line: step.line,
+      locals: Object.fromEntries(Object.entries(step.frames?.[0]?.bindings || {}).map(([name, binding]) => [name, binding.display])),
+      stdout: step.stdout,
+      return_value: step.return_value?.display,
+      exception: step.exception ? `${step.exception.type}: ${step.exception.message}` : undefined,
+    })),
+    trace_v2: { schema_version: "trace_v2", steps: trace, limits: { max_steps: MAX_TRACE_STEPS, max_output_chars: MAX_OUTPUT_CHARS, max_display_chars: MAX_VALUE_CHARS } },
+    stdout: stdoutText(),
+    duration_ms: Math.round((performance.now() - started) * 100) / 100,
+    truncated: trace.length >= MAX_TRACE_STEPS,
+    error,
+  }));
+} catch (caught) {
+  const message = String(caught?.message || caught);
+  process.stdout.write(JSON.stringify({
+    status: "error",
+    function_name: functionName || "script",
+    test: test ? { name: test.name || "Trace test", args: test.args || [], expected: test.expected, actual: null, passed: false, error: message } : { name: "Snippet trace", args: [], expected: null, actual: null, passed: false, error: message },
+    trace: [],
+    trace_v2: { schema_version: "trace_v2", steps: [], limits: { max_steps: MAX_TRACE_STEPS, max_output_chars: MAX_OUTPUT_CHARS, max_display_chars: MAX_VALUE_CHARS } },
+    stdout: stdoutText(),
+    duration_ms: Math.round((performance.now() - started) * 100) / 100,
+    truncated: false,
+    error: message,
+  }));
+}
+"""
+    started = time.perf_counter()
+    try:
+        with tempfile.TemporaryDirectory(prefix="csnav_trace_js_") as temp_dir:
+            solution_path = os.path.join(temp_dir, "solution.js")
+            runner_path = os.path.join(temp_dir, "trace_runner.js")
+            with open(solution_path, "w", encoding="utf-8") as handle:
+                handle.write(code)
+            with open(runner_path, "w", encoding="utf-8") as handle:
+                handle.write(runner_source)
+            node_env = {
+                key: value
+                for key, value in os.environ.items()
+                if key.upper() in {"PATH", "PATHEXT", "SYSTEMROOT", "WINDIR", "TEMP", "TMP"}
+            }
+            node_env["NODE_DISABLE_COLORS"] = "1"
+            completed = _run_isolated_process(
+                [
+                    "node",
+                    "--max-old-space-size=128",
+                    "--disable-proto=delete",
+                    "--disallow-code-generation-from-strings",
+                    runner_path,
+                ],
+                cwd=temp_dir,
+                input_text=json.dumps({"function_name": function_name or "", "test": test}),
+                env=node_env,
+            )
+    except FileNotFoundError:
+        return _empty_javascript_trace_response("Node.js was not found, so JavaScript tracing cannot run locally yet.")
+    except subprocess.TimeoutExpired:
+        return _empty_javascript_trace_response(
+            f"The JavaScript trace timed out after {RUN_TIMEOUT_SECONDS} seconds. Check for infinite loops or very slow logic."
+        )
+    except Exception as exc:
+        return _empty_javascript_trace_response(f"JavaScript trace setup failed: {exc}")
+
+    stdout_text = completed.stdout.strip()
+    stderr_text = _truncate_text(completed.stderr.strip())
+    if completed.returncode != 0 and not stdout_text:
+        return _empty_javascript_trace_response(stderr_text or "Node returned an error before tracing could run.")
+    try:
+        payload = json.loads(stdout_text.splitlines()[-1])
+    except Exception:
+        return {
+            **_empty_javascript_trace_response(stderr_text or "JavaScript trace output could not be parsed."),
+            "stdout": _truncate_text(stdout_text),
+            "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+        }
+    return {
+        "status": payload.get("status", "error"),
+        "function_name": payload.get("function_name") or function_name or "script",
+        "test": payload.get("test", {}),
+        "trace": payload.get("trace", []),
+        "trace_v2": payload.get("trace_v2", _empty_trace_v2_payload()),
+        "stdout": _truncate_text(payload.get("stdout", "")),
+        "stderr": _truncate_text(payload.get("error") or stderr_text),
+        "duration_ms": payload.get("duration_ms", round((time.perf_counter() - started) * 1000, 2)),
+        "truncated": bool(payload.get("truncated")),
+    }
+
+
+def run_javascript_practice_trace(code: str, function_name: str, test: dict[str, Any]) -> dict[str, Any]:
+    return _run_javascript_trace(code, function_name, test)
+
+
+def run_javascript_freeform_trace(code: str) -> dict[str, Any]:
+    return _run_javascript_trace(code, None, None)
 
 
 # =============================================================================

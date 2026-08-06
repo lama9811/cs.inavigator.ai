@@ -29,6 +29,8 @@ from coding_runner import (
     run_java_practice_tests,
     run_javascript_freeform,
     run_javascript_practice_tests,
+    run_javascript_freeform_trace,
+    run_javascript_practice_trace,
     run_python_freeform_trace,
     run_python_freeform,
     run_python_practice_tests,
@@ -7218,7 +7220,7 @@ async def trace_practice_solution(
         )
 
     language_key, _ = _normalize_practice_language(req.language)
-    if language_key != "python":
+    if language_key not in {"python", "javascript"}:
         return {
             "status": "error",
             "trace": [],
@@ -7226,23 +7228,23 @@ async def trace_practice_solution(
                 "schema_version": "trace_v2",
                 "steps": [],
                 "limits": {},
-                "supported_languages": ["python"],
+                "supported_languages": ["python", "javascript"],
                 "requested_language": language_key,
             },
             "stdout": "",
-            "stderr": "Execution tracing is available for Python first. Use Run for this language, or open Visualize this idea for a concept walkthrough.",
-            "message": "Trace My Code is Python-first right now.",
-            "supported_languages": ["python"],
+            "stderr": "Execution tracing is available for Python and JavaScript first. Use Run for this language, or open Visualize this idea for a concept walkthrough.",
+            "message": "Trace My Code supports Python and JavaScript right now.",
+            "supported_languages": ["python", "javascript"],
             "requested_language": language_key,
             "duration_ms": 0,
         }
 
     if not req.question_id:
-        run_result = run_python_freeform_trace(req.code)
+        run_result = run_javascript_freeform_trace(req.code) if language_key == "javascript" else run_python_freeform_trace(req.code)
         return {
             **run_result,
             "trace_test_index": None,
-            "message": "Trace generated from this Python snippet.",
+            "message": f"Trace generated from this {'JavaScript' if language_key == 'javascript' else 'Python'} snippet.",
         }
 
     question = _find_practice_question(req.question_id)
@@ -7259,7 +7261,10 @@ async def trace_practice_solution(
         }
 
     test_index = min(req.trace_test_index, len(tests) - 1)
-    run_result = run_python_practice_trace(req.code, function_name, tests[test_index])
+    if language_key == "javascript":
+        run_result = run_javascript_practice_trace(req.code, function_name, tests[test_index])
+    else:
+        run_result = run_python_practice_trace(req.code, function_name, tests[test_index])
     return {
         **run_result,
         "trace_test_index": test_index,

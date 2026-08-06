@@ -7,7 +7,9 @@ from coding_runner import (
     compiled_runners_enabled,
     run_cpp_practice_tests,
     run_java_practice_tests,
+    run_javascript_freeform_trace,
     run_javascript_practice_tests,
+    run_javascript_practice_trace,
     run_python_freeform_trace,
     run_python_practice_tests,
     run_python_practice_trace,
@@ -232,7 +234,21 @@ def count_vowels(text: str) -> int:
 
     summaries = [step["operation_summary"] for step in result["trace_v2"]["steps"]]
     assert any("lower()" in summary for summary in summaries)
-    assert any("pick the next item" in summary for summary in summaries)
+    assert any("next lowercase character" in summary or "pick the next item" in summary for summary in summaries)
+
+
+def test_python_trace_v2_includes_ast_operation_fields():
+    code = """
+def read_second(items: list[int]) -> int:
+    value = items[1]
+    return value
+"""
+
+    result = run_python_practice_trace(code, "read_second", {"name": "index", "args": [[3, 5]], "expected": 5})
+    steps = result["trace_v2"]["steps"]
+
+    assert any(step.get("operation_kind") == "assignment" and step.get("operation_target") == "value" for step in steps)
+    assert any(step.get("student_message") for step in steps)
 
 
 def test_python_freeform_trace_returns_trace_v2_and_stdout():
@@ -249,6 +265,78 @@ print(values)
     assert result["trace_v2"]["schema_version"] == "trace_v2"
     assert any(obj["type"] == "list" for step in result["trace_v2"]["steps"] for obj in step["objects"].values())
     assert "[1, 2]" in result["stdout"]
+
+
+def test_javascript_practice_trace_returns_trace_v2_frames_and_return():
+    code = """
+function addOne(number) {
+  const result = number + 1;
+  return result;
+}
+"""
+
+    result = run_javascript_practice_trace(code, "addOne", {"name": "one", "args": [2], "expected": 3})
+
+    assert result["status"] == "passed"
+    assert result["trace"]
+    assert result["trace_v2"]["schema_version"] == "trace_v2"
+    assert any("number" in frame["bindings"] for step in result["trace_v2"]["steps"] for frame in step["frames"])
+    assert any(step.get("event") == "return" and step.get("return_value", {}).get("display") == "3" for step in result["trace_v2"]["steps"])
+
+
+def test_javascript_practice_trace_tracks_array_mutation():
+    code = """
+function addScore(scores) {
+  scores.push(91);
+  return scores;
+}
+"""
+
+    result = run_javascript_practice_trace(code, "addScore", {"name": "push", "args": [[72, 88]], "expected": [72, 88, 91]})
+    steps = result["trace_v2"]["steps"]
+
+    assert result["status"] == "passed"
+    assert any(obj["type"] == "list" and obj.get("length") == 3 for step in steps for obj in step["objects"].values())
+    assert any(change.get("change") == "mutated" for step in steps for change in step.get("object_changes", []))
+
+
+def test_javascript_freeform_trace_returns_trace_v2_and_stdout():
+    result = run_javascript_freeform_trace(
+        """
+const values = [1];
+values.push(2);
+console.log(values);
+"""
+    )
+
+    assert result["status"] == "passed"
+    assert result["trace_v2"]["schema_version"] == "trace_v2"
+    assert "[1,2]" in result["stdout"]
+    assert any(step.get("stdout_changed") for step in result["trace_v2"]["steps"])
+
+
+def test_javascript_trace_reports_thrown_error():
+    result = run_javascript_freeform_trace(
+        """
+const count = 1;
+throw new Error("boom");
+"""
+    )
+
+    assert result["status"] == "error"
+    assert result["trace_v2"]["schema_version"] == "trace_v2"
+    assert result["stderr"]
+
+
+def test_javascript_trace_uses_same_security_validation():
+    result = run_javascript_practice_trace(
+        "function probeSandbox() { return process.env; }",
+        "probeSandbox",
+        {"name": "blocked", "args": [], "expected": None},
+    )
+
+    assert result["status"] == "error"
+    assert "security check blocked" in result["stderr"].lower()
 
 
 def test_javascript_runner_passes_correct_solution():

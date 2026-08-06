@@ -477,7 +477,8 @@ function CodeTraceModal({
     [activeStep?.line, activeLocals, previousStep?.line]
   );
   const activeExplanation = useMemo(() => {
-    if (!activeStep) return "Run a trace to step through your Python code.";
+    if (!activeStep) return `Run a trace to step through your ${selectedLanguage} code.`;
+    if (isTraceV2 && activeStep.student_message) return activeStep.student_message;
     if (isTraceV2 && activeStep.operation_summary) return activeStep.operation_summary;
     if (activeStep.event === "return") {
       return `The function is returning ${formatTraceDisplayValue(activeStep.return_value).inline}.`;
@@ -486,8 +487,8 @@ function CodeTraceModal({
       return activeStep.exception ? `Python stopped on line ${activeStep.line_no} because ${activeStep.exception}.` : "Python raised an exception on this step.";
     }
     if (operationInsight) return operationInsight;
-    return `Python is about to run line ${traceLineNo(activeStep)}. Watch the variables below before and after this line.`;
-  }, [activeStep, isTraceV2, operationInsight]);
+    return `${selectedLanguage} is about to run line ${traceLineNo(activeStep)}. Watch the variables below before and after this line.`;
+  }, [activeStep, isTraceV2, operationInsight, selectedLanguage]);
   const changedBindings = useMemo(() => {
     const names = new Set();
     (activeStep?.binding_changes || []).forEach((change) => names.add(`${change.frame}:${change.name}`));
@@ -502,7 +503,7 @@ function CodeTraceModal({
   }, [activeStep?.object_changes]);
   const currentLineNo = traceLineNo(activeStep);
   const currentLineDisplay = stripPythonComment(activeStep?.line).trim() || activeStep?.line?.trim() || "";
-  const isPythonTraceLanguage = selectedLanguage === "Python";
+  const isTraceLanguage = selectedLanguage === "Python" || selectedLanguage === "JavaScript";
   const lineCardLabel = activeStep?.phase === "after_previous_line" ? "Next line" : activeStep?.event === "return" ? "Return line" : activeStep?.event === "exception" ? "Error line" : "Current line";
   const modalRef = useFocusTrap(true, { onEscape: onClose });
 
@@ -564,10 +565,10 @@ function CodeTraceModal({
           <header className="workspace-visualizer-head">
             <div>
               <span className="workspace-visualizer-kicker">Trace My Code</span>
-              <h3 id="code-trace-title">{isPythonTraceLanguage ? "Python execution trace" : "Execution tracing is Python-first"}</h3>
+              <h3 id="code-trace-title">{isTraceLanguage ? `${selectedLanguage} execution trace` : "Execution tracing is Python and JavaScript first"}</h3>
               <p id="code-trace-description">
-                {isPythonTraceLanguage
-                  ? "Steps through the Python code currently in your editor and shows what changes as it runs."
+                {isTraceLanguage
+                  ? `Steps through the ${selectedLanguage} code currently in your editor and shows what changes as it runs.`
                   : `${selectedLanguage} can still run tests here. Use Visualize this idea for the concept walkthrough while full execution tracing is built.`}
               </p>
             </div>
@@ -868,8 +869,8 @@ export default function CodeWorkspace({
   const [terminalHeight, setTerminalHeight] = useState(readStoredTerminalHeight);
   const stackRef = useRef(null);
   const dragState = useRef(null);
-  const canTracePython = useMemo(
-    () => selectedLanguage === "Python",
+  const canTraceLanguage = useMemo(
+    () => selectedLanguage === "Python" || selectedLanguage === "JavaScript",
     [selectedLanguage],
   );
 
@@ -1000,14 +1001,14 @@ export default function CodeWorkspace({
               type="button"
               className="code-trace-button"
               onClick={onTraceCode}
-              disabled={!canTracePython || isTracingCode}
-              title={canTracePython ? "Trace your actual Python code step by step" : "Code tracing is available for Python first"}
+              disabled={!canTraceLanguage || isTracingCode}
+              title={canTraceLanguage ? "Trace your actual code step by step" : "Code tracing is available for Python and JavaScript first"}
             >
               {isTracingCode ? "Tracing..." : "Trace My Code"}
             </button>
-            {!canTracePython ? (
+            {!canTraceLanguage ? (
               <span className="code-trace-language-note" role="status">
-                Python trace only
+                Python/JS trace only
               </span>
             ) : null}
             <span className="code-editor-lang-control">
