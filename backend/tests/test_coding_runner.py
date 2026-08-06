@@ -8,6 +8,7 @@ from coding_runner import (
     run_cpp_practice_tests,
     run_java_practice_tests,
     run_javascript_practice_tests,
+    run_python_freeform_trace,
     run_python_practice_tests,
     run_python_practice_trace,
     validate_cpp_code,
@@ -121,6 +122,112 @@ def test_python_trace_uses_same_security_validation():
 
     assert result["status"] == "error"
     assert "security check blocked" in result["stderr"].lower()
+    assert result["trace_v2"]["schema_version"] == "trace_v2"
+
+
+def test_python_trace_v2_includes_frames_objects_and_parameter_bindings():
+    code = """
+def maximum_score(scores: list[int]) -> int:
+    best = scores[0]
+    for score in scores:
+        if score > best:
+            best = score
+    return best
+"""
+
+    result = run_python_practice_trace(
+        code,
+        "maximum_score",
+        {"name": "scores", "args": [[72, 88, 91, 84]], "expected": 91},
+    )
+
+    trace_v2 = result["trace_v2"]
+    assert trace_v2["schema_version"] == "trace_v2"
+    assert trace_v2["steps"]
+    assert any(step["frames"] for step in trace_v2["steps"])
+    assert any("scores" in frame["bindings"] for step in trace_v2["steps"] for frame in step["frames"])
+    assert any(obj["type"] == "list" and obj.get("length") == 4 for step in trace_v2["steps"] for obj in step["objects"].values())
+
+
+def test_python_trace_v2_tracks_list_mutation_without_rebinding():
+    code = """
+def add_score(scores: list[int]) -> list[int]:
+    scores.append(91)
+    return scores
+"""
+
+    result = run_python_practice_trace(
+        code,
+        "add_score",
+        {"name": "append", "args": [[72, 88]], "expected": [72, 88, 91]},
+    )
+
+    steps = result["trace_v2"]["steps"]
+    score_refs = [
+        frame["bindings"]["scores"]["object_id"]
+        for step in steps
+        for frame in step["frames"]
+        if "scores" in frame["bindings"] and frame["bindings"]["scores"].get("kind") == "reference"
+    ]
+    mutated_ids = {
+        change["object_id"]
+        for step in steps
+        for change in step.get("object_changes", [])
+        if change.get("change") == "mutated"
+    }
+
+    assert len(set(score_refs)) == 1
+    assert score_refs[0] in mutated_ids
+    assert any("append() changes the existing list object" in step["operation_summary"] for step in steps)
+
+
+def test_python_trace_v2_marks_reassignment_binding_change():
+    code = """
+def bump(number: int) -> int:
+    number = number + 1
+    return number
+"""
+
+    result = run_python_practice_trace(code, "bump", {"name": "bump", "args": [2], "expected": 3})
+
+    assert any(
+        change["name"] == "number" and change["change"] == "changed"
+        for step in result["trace_v2"]["steps"]
+        for change in step.get("binding_changes", [])
+    )
+
+
+def test_python_trace_v2_summarizes_lowercase_loop_iteration():
+    code = """
+def count_vowels(text: str) -> int:
+    total = 0
+    for char in text.lower():
+        if char in "aeiou":
+            total += 1
+    return total
+"""
+
+    result = run_python_practice_trace(code, "count_vowels", COUNT_VOWELS_TESTS[1])
+
+    summaries = [step["operation_summary"] for step in result["trace_v2"]["steps"]]
+    assert any("lower()" in summary for summary in summaries)
+    assert any("loop picks the next item" in summary for summary in summaries)
+
+
+def test_python_freeform_trace_returns_trace_v2_and_stdout():
+    result = run_python_freeform_trace(
+        """
+values = [1]
+values.append(2)
+print(values)
+"""
+    )
+
+    assert result["status"] == "passed"
+    assert result["trace"]
+    assert result["trace_v2"]["schema_version"] == "trace_v2"
+    assert any(obj["type"] == "list" for step in result["trace_v2"]["steps"] for obj in step["objects"].values())
+    assert "[1, 2]" in result["stdout"]
 
 
 def test_javascript_runner_passes_correct_solution():

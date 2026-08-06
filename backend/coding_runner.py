@@ -232,6 +232,14 @@ def _security_error_response(exc: RunnerSecurityError) -> dict[str, Any]:
     }
 
 
+def _empty_trace_v2_payload() -> dict[str, Any]:
+    return {
+        "schema_version": "trace_v2",
+        "steps": [],
+        "limits": {},
+    }
+
+
 def _truncate_text(value: Any, limit: int = RUN_MAX_OUTPUT_CHARS) -> str:
     text = "" if value is None else str(value)
     if len(text) <= limit:
@@ -775,7 +783,10 @@ def run_python_practice_trace(code: str, function_name: str, test: dict[str, Any
     try:
         validate_python_code(code)
     except RunnerSecurityError as exc:
-        return _security_error_response(exc)
+        response = _security_error_response(exc)
+        response["trace"] = []
+        response["trace_v2"] = _empty_trace_v2_payload()
+        return response
 
     runner_source = """
 import ast
@@ -953,6 +964,240 @@ except Exception as exc:
 
 source_lines = linecache.getlines("solution.py")
 trace = []
+trace_v2_object_ids = {}
+trace_v2_next_object_id = 1
+trace_v2_previous_step = None
+
+def empty_trace_v2():
+    return {
+        "schema_version": "trace_v2",
+        "steps": [],
+        "limits": {
+            "max_steps": MAX_TRACE_STEPS,
+            "max_output_chars": MAX_OUTPUT_CHARS,
+            "max_display_chars": MAX_LOCAL_CHARS,
+        },
+    }
+
+def is_scalar_value(value):
+    return value is None or isinstance(value, (bool, int, float, str))
+
+def safe_type_name(value):
+    try:
+        return type(value).__name__
+    except Exception:
+        return "unknown"
+
+def stable_trace_object_id(value):
+    global trace_v2_next_object_id
+    source_id = id(value)
+    if source_id not in trace_v2_object_ids:
+        trace_v2_object_ids[source_id] = f"obj_{trace_v2_next_object_id}"
+        trace_v2_next_object_id += 1
+    return trace_v2_object_ids[source_id]
+
+def truncate_display(text):
+    raw = str(text)
+    if len(raw) > MAX_LOCAL_CHARS:
+        return raw[:MAX_LOCAL_CHARS] + "... truncated"
+    return raw
+
+def serialize_scalar(value):
+    return {
+        "kind": "scalar",
+        "type": safe_type_name(value),
+        "value": value,
+        "display": safe_display(value),
+    }
+
+def serialize_value(value, objects, depth=0):
+    if is_scalar_value(value) or depth >= 2:
+        return serialize_scalar(value)
+    object_id = stable_trace_object_id(value)
+    if object_id not in objects:
+        objects[object_id] = serialize_object(value, object_id, objects, depth)
+    return {
+        "kind": "reference",
+        "object_id": object_id,
+        "type": safe_type_name(value),
+        "display": safe_display(value),
+    }
+
+def serialize_object(value, object_id, objects, depth=0):
+    obj_type = safe_type_name(value)
+    snapshot = {
+        "object_id": object_id,
+        "type": obj_type,
+        "repr": truncate_display(repr(value)),
+    }
+    try:
+        if isinstance(value, list):
+            snapshot["length"] = len(value)
+            snapshot["items"] = [serialize_value(item, objects, depth + 1) for item in value[:20]]
+            snapshot["truncated"] = len(value) > 20
+        elif isinstance(value, tuple):
+            snapshot["length"] = len(value)
+            snapshot["items"] = [serialize_value(item, objects, depth + 1) for item in value[:20]]
+            snapshot["truncated"] = len(value) > 20
+        elif isinstance(value, set):
+            items = sorted(list(value), key=lambda item: truncate_display(repr(item)))[:20]
+            snapshot["length"] = len(value)
+            snapshot["items"] = [serialize_value(item, objects, depth + 1) for item in items]
+            snapshot["truncated"] = len(value) > 20
+        elif isinstance(value, dict):
+            entries = []
+            for key in list(value.keys())[:20]:
+                entries.append({
+                    "key": serialize_value(key, objects, depth + 1),
+                    "value": serialize_value(value[key], objects, depth + 1),
+                })
+            snapshot["length"] = len(value)
+            snapshot["entries"] = entries
+            snapshot["truncated"] = len(value) > 20
+        else:
+            attrs = {}
+            try:
+                source_attrs = vars(value)
+            except Exception:
+                source_attrs = {}
+            for key, attr_value in list(source_attrs.items())[:20]:
+                if not str(key).startswith("_"):
+                    attrs[key] = serialize_value(attr_value, objects, depth + 1)
+            snapshot["class_name"] = obj_type
+            snapshot["attributes"] = attrs
+    except Exception as exc:
+        snapshot["error"] = f"Could not inspect object: {exc}"
+    return snapshot
+
+def trace_v2_should_capture(frame, name, value):
+    if str(name).startswith("__") or name in {"self"}:
+        return False
+    if callable(value) and frame.f_code.co_name == "<module>":
+        return False
+    return True
+
+def frame_label(frame):
+    return "script" if frame.f_code.co_name == "<module>" else frame.f_code.co_name
+
+def collect_solution_frames(frame, objects):
+    frames = []
+    current = frame
+    while current is not None:
+        if current.f_code.co_filename == "solution.py":
+            bindings = {}
+            references = []
+            for key, value in current.f_locals.items():
+                if not trace_v2_should_capture(current, key, value):
+                    continue
+                binding = serialize_value(value, objects)
+                bindings[key] = binding
+                if binding.get("kind") == "reference":
+                    references.append({
+                        "frame_id": f"frame_{len(frames) + 1}",
+                        "name": key,
+                        "object_id": binding.get("object_id"),
+                    })
+                if len(bindings) >= 16:
+                    break
+            frames.append({
+                "frame_id": f"frame_{len(frames) + 1}",
+                "function": frame_label(current),
+                "line_no": current.f_lineno,
+                "bindings": bindings,
+                "references": references,
+            })
+        current = current.f_back
+    return list(reversed(frames))
+
+def fingerprint(value):
+    try:
+        return json.dumps(value, sort_keys=True, default=str)
+    except Exception:
+        return repr(value)
+
+def summarize_operation(line, event, arg):
+    clean = (line or "").strip()
+    if event == "exception":
+        exc_type, exc, _tb = arg
+        return f"{exc_type.__name__} is raised here: {exc}"
+    if event == "return":
+        return "This line returns a value to the caller."
+    if not clean:
+        return "Python is moving to the next executable line."
+    if ".append(" in clean:
+        return "append() changes the existing list object instead of making a new variable."
+    if ".pop(" in clean:
+        return "pop() removes an item from the existing collection."
+    if clean.startswith("for ") and (".lower(" in clean or ".lower()" in clean):
+        return "The loop picks the next item from a lower() copy; the original string stays unchanged."
+    if ".lower(" in clean or ".lower()" in clean:
+        return "lower() creates lowercase characters for this operation; the original string stays unchanged."
+    if clean.startswith("for "):
+        return "The loop picks the next item and stores it in the loop variable."
+    if clean.startswith("while "):
+        return "Python checks the while condition before deciding whether to run the body."
+    if clean.startswith("if ") or clean.startswith("elif "):
+        return "Python checks this condition to choose the next path."
+    if "=" in clean and "==" not in clean and not clean.startswith(("return ", "if ", "elif ", "while ")):
+        return "This assignment stores a value in a variable name."
+    if "[" in clean and "]" in clean:
+        return "This line uses an index or key to read from a collection."
+    return "Python is about to run this line. Watch the variables before and after it runs."
+
+def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
+    global trace_v2_previous_step
+    objects = {}
+    frames = collect_solution_frames(frame, objects)
+    previous_frames = trace_v2_previous_step.get("frames", []) if trace_v2_previous_step else []
+    previous_bindings = {}
+    for previous_frame in previous_frames:
+        for name, binding in previous_frame.get("bindings", {}).items():
+            previous_bindings[(previous_frame.get("function"), name)] = binding
+    binding_changes = []
+    for current_frame in frames:
+        for name, binding in current_frame.get("bindings", {}).items():
+            key = (current_frame.get("function"), name)
+            old_binding = previous_bindings.get(key)
+            if old_binding is None:
+                binding_changes.append({"frame": key[0], "name": name, "change": "new"})
+            elif fingerprint(old_binding) != fingerprint(binding):
+                binding_changes.append({"frame": key[0], "name": name, "change": "changed"})
+
+    previous_objects = trace_v2_previous_step.get("objects", {}) if trace_v2_previous_step else {}
+    object_changes = []
+    for object_id, snapshot in objects.items():
+        old_snapshot = previous_objects.get(object_id)
+        if old_snapshot is None:
+            object_changes.append({"object_id": object_id, "change": "new"})
+        elif fingerprint(old_snapshot) != fingerprint(snapshot):
+            object_changes.append({"object_id": object_id, "change": "mutated"})
+
+    references = []
+    for current_frame in frames:
+        references.extend(current_frame.get("references", []))
+    step = {
+        "step_index": len(trace),
+        "event": event,
+        "current_line": line_no,
+        "previous_line": trace_v2_previous_step.get("current_line") if trace_v2_previous_step else None,
+        "line": line,
+        "function": frame_label(frame),
+        "frames": frames,
+        "objects": objects,
+        "references": references,
+        "binding_changes": binding_changes,
+        "object_changes": object_changes,
+        "stdout": stdout_text,
+        "operation_summary": summarize_operation(line, event, arg),
+    }
+    if event == "return":
+        step["return_value"] = serialize_value(arg, objects)
+    elif event == "exception":
+        exc_type, exc, _tb = arg
+        step["exception"] = {"type": exc_type.__name__, "message": str(exc)}
+    trace_v2_previous_step = step
+    return step
+trace_v2 = empty_trace_v2()
 
 def tracer(frame, event, arg):
     if len(trace) >= MAX_TRACE_STEPS:
@@ -981,6 +1226,7 @@ def tracer(frame, event, arg):
         exc_type, exc, _tb = arg
         entry["exception"] = f"{exc_type.__name__}: {exc}"
     trace.append(entry)
+    trace_v2["steps"].append(build_trace_v2_step(frame, event, arg, line_no, entry["line"], entry["stdout"]))
     return tracer
 
 args = test.get("args", [])
@@ -1009,6 +1255,7 @@ print(json.dumps({
         "error": error,
     },
     "trace": trace,
+    "trace_v2": trace_v2,
     "stdout": stdout_buffer.getvalue(),
     "duration_ms": round((time.perf_counter() - started) * 1000, 2),
     "truncated": len(trace) >= MAX_TRACE_STEPS,
@@ -1034,6 +1281,7 @@ print(json.dumps({
         return {
             "status": "error",
             "trace": [],
+            "trace_v2": _empty_trace_v2_payload(),
             "stdout": "",
             "stderr": f"The trace timed out after {RUN_TIMEOUT_SECONDS} seconds. Check for infinite loops or very slow logic.",
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -1042,6 +1290,7 @@ print(json.dumps({
         return {
             "status": "error",
             "trace": [],
+            "trace_v2": _empty_trace_v2_payload(),
             "stdout": "",
             "stderr": f"Trace setup failed: {exc}",
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -1053,6 +1302,7 @@ print(json.dumps({
         return {
             "status": "error",
             "trace": [],
+            "trace_v2": _empty_trace_v2_payload(),
             "stdout": "",
             "stderr": stderr_text or "Python returned an error before tracing could run.",
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -1064,6 +1314,7 @@ print(json.dumps({
         return {
             "status": "error",
             "trace": [],
+            "trace_v2": _empty_trace_v2_payload(),
             "stdout": _truncate_text(stdout_text),
             "stderr": stderr_text or "Trace output could not be parsed.",
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -1074,6 +1325,7 @@ print(json.dumps({
         "function_name": payload.get("function_name", function_name),
         "test": payload.get("test", {}),
         "trace": payload.get("trace", []),
+        "trace_v2": payload.get("trace_v2", _empty_trace_v2_payload()),
         "stdout": _truncate_text(payload.get("stdout", "")),
         "stderr": _truncate_text(payload.get("error") or stderr_text),
         "duration_ms": payload.get("duration_ms", round((time.perf_counter() - started) * 1000, 2)),
@@ -1091,7 +1343,10 @@ def run_python_freeform_trace(code: str) -> dict[str, Any]:
     try:
         validate_python_code(code)
     except RunnerSecurityError as exc:
-        return _security_error_response(exc)
+        response = _security_error_response(exc)
+        response["trace"] = []
+        response["trace_v2"] = _empty_trace_v2_payload()
+        return response
 
     runner_source = """
 import ast
@@ -1210,6 +1465,242 @@ def call_stack_for_frame(frame):
 
 source_lines = linecache.getlines("solution.py")
 trace = []
+trace_v2_object_ids = {}
+trace_v2_next_object_id = 1
+trace_v2_previous_step = None
+
+def empty_trace_v2():
+    return {
+        "schema_version": "trace_v2",
+        "steps": [],
+        "limits": {
+            "max_steps": MAX_TRACE_STEPS,
+            "max_output_chars": MAX_OUTPUT_CHARS,
+            "max_display_chars": MAX_LOCAL_CHARS,
+        },
+    }
+
+def is_scalar_value(value):
+    return value is None or isinstance(value, (bool, int, float, str))
+
+def safe_type_name(value):
+    try:
+        return type(value).__name__
+    except Exception:
+        return "unknown"
+
+def stable_trace_object_id(value):
+    global trace_v2_next_object_id
+    source_id = id(value)
+    if source_id not in trace_v2_object_ids:
+        trace_v2_object_ids[source_id] = f"obj_{trace_v2_next_object_id}"
+        trace_v2_next_object_id += 1
+    return trace_v2_object_ids[source_id]
+
+def truncate_display(text):
+    raw = str(text)
+    if len(raw) > MAX_LOCAL_CHARS:
+        return raw[:MAX_LOCAL_CHARS] + "... truncated"
+    return raw
+
+def serialize_scalar(value):
+    return {
+        "kind": "scalar",
+        "type": safe_type_name(value),
+        "value": value,
+        "display": safe_display(value),
+    }
+
+def serialize_value(value, objects, depth=0):
+    if is_scalar_value(value) or depth >= 2:
+        return serialize_scalar(value)
+    object_id = stable_trace_object_id(value)
+    if object_id not in objects:
+        objects[object_id] = serialize_object(value, object_id, objects, depth)
+    return {
+        "kind": "reference",
+        "object_id": object_id,
+        "type": safe_type_name(value),
+        "display": safe_display(value),
+    }
+
+def serialize_object(value, object_id, objects, depth=0):
+    obj_type = safe_type_name(value)
+    snapshot = {
+        "object_id": object_id,
+        "type": obj_type,
+        "repr": truncate_display(repr(value)),
+    }
+    try:
+        if isinstance(value, list):
+            snapshot["length"] = len(value)
+            snapshot["items"] = [serialize_value(item, objects, depth + 1) for item in value[:20]]
+            snapshot["truncated"] = len(value) > 20
+        elif isinstance(value, tuple):
+            snapshot["length"] = len(value)
+            snapshot["items"] = [serialize_value(item, objects, depth + 1) for item in value[:20]]
+            snapshot["truncated"] = len(value) > 20
+        elif isinstance(value, set):
+            items = sorted(list(value), key=lambda item: truncate_display(repr(item)))[:20]
+            snapshot["length"] = len(value)
+            snapshot["items"] = [serialize_value(item, objects, depth + 1) for item in items]
+            snapshot["truncated"] = len(value) > 20
+        elif isinstance(value, dict):
+            entries = []
+            for key in list(value.keys())[:20]:
+                entries.append({
+                    "key": serialize_value(key, objects, depth + 1),
+                    "value": serialize_value(value[key], objects, depth + 1),
+                })
+            snapshot["length"] = len(value)
+            snapshot["entries"] = entries
+            snapshot["truncated"] = len(value) > 20
+        else:
+            attrs = {}
+            try:
+                source_attrs = vars(value)
+            except Exception:
+                source_attrs = {}
+            for key, attr_value in list(source_attrs.items())[:20]:
+                if not str(key).startswith("_"):
+                    attrs[key] = serialize_value(attr_value, objects, depth + 1)
+            snapshot["class_name"] = obj_type
+            snapshot["attributes"] = attrs
+    except Exception as exc:
+        snapshot["error"] = f"Could not inspect object: {exc}"
+    return snapshot
+
+def trace_v2_should_capture(frame, name, value):
+    if str(name).startswith("__"):
+        return False
+    if name in {"SAFE_BUILTINS", "SAFE_MODULE_CACHE", "stdout_buffer"}:
+        return False
+    if callable(value) and frame.f_code.co_name == "<module>":
+        return False
+    return True
+
+def frame_label(frame):
+    return "script" if frame.f_code.co_name == "<module>" else frame.f_code.co_name
+
+def collect_solution_frames(frame, objects):
+    frames = []
+    current = frame
+    while current is not None:
+        if current.f_code.co_filename == "solution.py":
+            bindings = {}
+            references = []
+            for key, value in current.f_locals.items():
+                if not trace_v2_should_capture(current, key, value):
+                    continue
+                binding = serialize_value(value, objects)
+                bindings[key] = binding
+                if binding.get("kind") == "reference":
+                    references.append({
+                        "frame_id": f"frame_{len(frames) + 1}",
+                        "name": key,
+                        "object_id": binding.get("object_id"),
+                    })
+                if len(bindings) >= 16:
+                    break
+            frames.append({
+                "frame_id": f"frame_{len(frames) + 1}",
+                "function": frame_label(current),
+                "line_no": current.f_lineno,
+                "bindings": bindings,
+                "references": references,
+            })
+        current = current.f_back
+    return list(reversed(frames))
+
+def fingerprint(value):
+    try:
+        return json.dumps(value, sort_keys=True, default=str)
+    except Exception:
+        return repr(value)
+
+def summarize_operation(line, event, arg):
+    clean = (line or "").strip()
+    if event == "exception":
+        exc_type, exc, _tb = arg
+        return f"{exc_type.__name__} is raised here: {exc}"
+    if event == "return":
+        return "This line returns a value to the caller."
+    if not clean:
+        return "Python is moving to the next executable line."
+    if ".append(" in clean:
+        return "append() changes the existing list object instead of making a new variable."
+    if ".pop(" in clean:
+        return "pop() removes an item from the existing collection."
+    if clean.startswith("for ") and (".lower(" in clean or ".lower()" in clean):
+        return "The loop picks the next item from a lower() copy; the original string stays unchanged."
+    if ".lower(" in clean or ".lower()" in clean:
+        return "lower() creates lowercase characters for this operation; the original string stays unchanged."
+    if clean.startswith("for "):
+        return "The loop picks the next item and stores it in the loop variable."
+    if clean.startswith("while "):
+        return "Python checks the while condition before deciding whether to run the body."
+    if clean.startswith("if ") or clean.startswith("elif "):
+        return "Python checks this condition to choose the next path."
+    if "=" in clean and "==" not in clean and not clean.startswith(("return ", "if ", "elif ", "while ")):
+        return "This assignment stores a value in a variable name."
+    if "[" in clean and "]" in clean:
+        return "This line uses an index or key to read from a collection."
+    return "Python is about to run this line. Watch the variables before and after it runs."
+
+def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
+    global trace_v2_previous_step
+    objects = {}
+    frames = collect_solution_frames(frame, objects)
+    previous_frames = trace_v2_previous_step.get("frames", []) if trace_v2_previous_step else []
+    previous_bindings = {}
+    for previous_frame in previous_frames:
+        for name, binding in previous_frame.get("bindings", {}).items():
+            previous_bindings[(previous_frame.get("function"), name)] = binding
+    binding_changes = []
+    for current_frame in frames:
+        for name, binding in current_frame.get("bindings", {}).items():
+            key = (current_frame.get("function"), name)
+            old_binding = previous_bindings.get(key)
+            if old_binding is None:
+                binding_changes.append({"frame": key[0], "name": name, "change": "new"})
+            elif fingerprint(old_binding) != fingerprint(binding):
+                binding_changes.append({"frame": key[0], "name": name, "change": "changed"})
+
+    previous_objects = trace_v2_previous_step.get("objects", {}) if trace_v2_previous_step else {}
+    object_changes = []
+    for object_id, snapshot in objects.items():
+        old_snapshot = previous_objects.get(object_id)
+        if old_snapshot is None:
+            object_changes.append({"object_id": object_id, "change": "new"})
+        elif fingerprint(old_snapshot) != fingerprint(snapshot):
+            object_changes.append({"object_id": object_id, "change": "mutated"})
+
+    references = []
+    for current_frame in frames:
+        references.extend(current_frame.get("references", []))
+    step = {
+        "step_index": len(trace),
+        "event": event,
+        "current_line": line_no,
+        "previous_line": trace_v2_previous_step.get("current_line") if trace_v2_previous_step else None,
+        "line": line,
+        "function": frame_label(frame),
+        "frames": frames,
+        "objects": objects,
+        "references": references,
+        "binding_changes": binding_changes,
+        "object_changes": object_changes,
+        "stdout": stdout_text,
+        "operation_summary": summarize_operation(line, event, arg),
+    }
+    if event == "return":
+        step["return_value"] = serialize_value(arg, objects)
+    elif event == "exception":
+        exc_type, exc, _tb = arg
+        step["exception"] = {"type": exc_type.__name__, "message": str(exc)}
+    trace_v2_previous_step = step
+    return step
+trace_v2 = empty_trace_v2()
 
 def tracer(frame, event, arg):
     if len(trace) >= MAX_TRACE_STEPS:
@@ -1236,6 +1727,7 @@ def tracer(frame, event, arg):
         exc_type, exc, _tb = arg
         entry["exception"] = f"{exc_type.__name__}: {exc}"
     trace.append(entry)
+    trace_v2["steps"].append(build_trace_v2_step(frame, event, arg, line_no, entry["line"], entry["stdout"]))
     return tracer
 
 module = types.ModuleType("student_solution")
@@ -1261,6 +1753,7 @@ print(json.dumps({
     "function_name": "script",
     "test": {"name": "Snippet trace", "args": [], "expected": None, "actual": None, "passed": not bool(error), "error": error},
     "trace": trace,
+    "trace_v2": trace_v2,
     "stdout": stdout_buffer.getvalue(),
     "duration_ms": round((time.perf_counter() - started) * 1000, 2),
     "truncated": len(trace) >= MAX_TRACE_STEPS,
@@ -1287,6 +1780,7 @@ print(json.dumps({
         return {
             "status": "error",
             "trace": [],
+            "trace_v2": _empty_trace_v2_payload(),
             "stdout": "",
             "stderr": f"The trace timed out after {RUN_TIMEOUT_SECONDS} seconds. Check for infinite loops or very slow logic.",
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -1295,6 +1789,7 @@ print(json.dumps({
         return {
             "status": "error",
             "trace": [],
+            "trace_v2": _empty_trace_v2_payload(),
             "stdout": "",
             "stderr": f"Trace setup failed: {exc}",
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -1306,6 +1801,7 @@ print(json.dumps({
         return {
             "status": "error",
             "trace": [],
+            "trace_v2": _empty_trace_v2_payload(),
             "stdout": "",
             "stderr": stderr_text or "Python returned an error before tracing could run.",
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -1317,6 +1813,7 @@ print(json.dumps({
         return {
             "status": "error",
             "trace": [],
+            "trace_v2": _empty_trace_v2_payload(),
             "stdout": _truncate_text(stdout_text),
             "stderr": stderr_text or "Trace output could not be parsed.",
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -1327,6 +1824,7 @@ print(json.dumps({
         "function_name": payload.get("function_name", "script"),
         "test": payload.get("test", {}),
         "trace": payload.get("trace", []),
+        "trace_v2": payload.get("trace_v2", _empty_trace_v2_payload()),
         "stdout": _truncate_text(payload.get("stdout", "")),
         "stderr": _truncate_text(payload.get("error") or stderr_text),
         "duration_ms": payload.get("duration_ms", round((time.perf_counter() - started) * 1000, 2)),
