@@ -3036,6 +3036,16 @@ body.coding-dark .practice-page-btn.is-active {
   margin: 14px 0 12px;
 }
 
+.problem-navigation-label {
+  flex: 1 1 100%;
+  color: var(--ct-muted, #64748b);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
 .problem-navigation button {
   flex: 1 1 110px;
   min-height: 40px;

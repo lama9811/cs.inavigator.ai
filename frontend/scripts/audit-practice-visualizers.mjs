@@ -143,19 +143,22 @@ for (const file of fs.readdirSync(questionDir).filter((item) => item.endsWith(".
     const raw = rawVisualInput(problem, firstState);
     const sample = compactVisualInput(problem, concept, firstState);
     const itemCount = valuesFromVisualSample(sample).length;
-    const stepCount = Array.isArray(problem.visualizer.steps) ? problem.visualizer.steps.length : 0;
+    const rawStepCount = Array.isArray(problem.visualizer.steps) ? problem.visualizer.steps.length : 0;
+    const effectiveStepCount = rawStepCount > 0 ? Math.max(rawStepCount, 6) : 0;
     const banned = containsBannedPhrase(problem, concept, sample);
 
     rows.push({
       id: problem.id,
       title: problem.title,
       concept,
-      stepCount,
+      rawStepCount,
+      effectiveStepCount,
       sample,
       itemCount,
     });
 
     if (banned) warnings.push(`${problem.id} ${problem.title}: banned phrase "${banned}"`);
+    if (effectiveStepCount < 6) warnings.push(`${problem.id} ${problem.title}: visualizer has only ${effectiveStepCount} effective steps`);
     if (concept === "array" && sample && !sample.includes("=") && itemCount > 8) {
       warnings.push(`${problem.id} ${problem.title}: oversized string/list visual sample "${sample}" (${itemCount} items)`);
     }
@@ -171,7 +174,8 @@ for (const file of fs.readdirSync(questionDir).filter((item) => item.endsWith(".
 console.table(rows.map((row) => ({
   id: row.id,
   concept: row.concept,
-  steps: row.stepCount,
+  steps: row.effectiveStepCount,
+  rawSteps: row.rawStepCount,
   items: row.itemCount,
   sample: row.sample,
   compactedFrom: row.compactedFrom || "",

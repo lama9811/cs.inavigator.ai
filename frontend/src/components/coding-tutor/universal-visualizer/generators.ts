@@ -511,12 +511,18 @@ function workflowFromLabels(labels: string[], activeIndex: number): WorkflowStep
 function authoredWorkflowLabels(rawSteps: Array<Record<string, unknown>>, concept: string): string[] {
   const fallback = WORKFLOW_LABELS[concept as ConceptType] || WORKFLOW_LABELS.array;
   const genericActions = new Set(["setup", "trace", "predict", "finish"]);
+  const used = new Map<string, number>();
   return rawSteps.map((raw, index) => {
     const action = shortText(raw.action, "");
-    if (action && !genericActions.has(action.toLowerCase())) return action.replace(/[-_]/g, " ");
+    let label = "";
+    if (action && !genericActions.has(action.toLowerCase())) label = action.replace(/[-_]/g, " ");
     const title = shortText(raw.title, "");
-    if (title && !/set the sample|load the example|make one|predict|connect the visual|keep the answer/i.test(title)) return title;
-    return fallback[Math.min(index, fallback.length - 1)] || `Step ${index + 1}`;
+    if (!label && title && !/set the sample|load the example|make one|predict|connect the visual|keep the answer/i.test(title)) label = title;
+    const normalized = label.toLowerCase();
+    const repeats = used.get(normalized) || 0;
+    if (!label || repeats > 0) label = fallback[Math.min(index, fallback.length - 1)] || `Step ${index + 1}`;
+    used.set(label.toLowerCase(), (used.get(label.toLowerCase()) || 0) + 1);
+    return label;
   });
 }
 
@@ -749,7 +755,7 @@ function authoredArrayVisual(concept: string, state: Record<string, unknown>, co
   const active = activeIndexes(state, values.length, index);
   const pointerMap = state.pointers && typeof state.pointers === "object" ? state.pointers as Record<string, unknown> : {};
   const windowRange = Array.isArray(state.window) ? state.window.map(Number) : null;
-  const nodes = linearNodes(values, [], { role: values.length > 7 ? "compact-cell" : undefined }).map((node, nodeIndex) => {
+  const nodes = linearNodes(values, [], { y: 235, role: values.length > 7 ? "compact-cell" : undefined }).map((node, nodeIndex) => {
     const pointerLabel = Object.entries(pointerMap)
       .filter(([, value]) => Number(value) === nodeIndex)
       .map(([key]) => key)
@@ -761,7 +767,101 @@ function authoredArrayVisual(concept: string, state: Record<string, unknown>, co
       state: active.includes(nodeIndex) || inWindow ? "active" as const : node.state,
     };
   });
-  return { nodes, edges: [], highlights: active.map((item) => `item-${item}`) };
+  const activeIndex = active[0] ?? Math.min(index, Math.max(values.length - 1, 0));
+  const activeValue = values[activeIndex] ?? "item";
+  const trackerLabel = /count|total|sum/i.test(`${context.title || ""} ${context.prompt || ""}`) ? "tracker" : "result";
+  nodes.push(
+    {
+      id: "active-read",
+      x: 300,
+      y: 375,
+      value: String(activeValue),
+      type: "logic-node",
+      label: "current item",
+      state: "active",
+      meta: { role: "flow-step" },
+    },
+    {
+      id: "tracked-result",
+      x: 595,
+      y: 375,
+      value: String(state.answer || state.result || state.total || state.count || visualSampleExpected(context, concept, state)),
+      type: "logic-node",
+      label: trackerLabel,
+      state: index >= 2 ? "active" : "default",
+      meta: { role: "result" },
+    },
+  );
+  const edges: Edge[] = [
+    { id: `item-${activeIndex}-read`, from: `item-${activeIndex}`, to: "active-read", type: "pointer", state: "active" },
+    { id: "read-result", from: "active-read", to: "tracked-result", type: "pointer", state: index >= 2 ? "active" : "default" },
+  ];
+  return { nodes, edges, highlights: [...active.map((item) => `item-${item}`), "active-read", ...(index >= 2 ? ["tracked-result"] : [])] };
+}
+
+function isStringVisualizer(concept: string, context: GeneratorContext): boolean {
+  const text = `${context.visualizer?.concept || ""} ${context.topic || ""} ${context.title || ""} ${context.prompt || ""}`.toLowerCase();
+  return concept === "array" && /string|word|sentence|letter|character|vowel|palindrome|initial|reverse/.test(text);
+}
+
+function authoredStringVisual(concept: string, state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
+  const values = valuesForState(concept, state, context).slice(0, 8);
+  const active = activeIndexes(state, values.length, index)[0] ?? 0;
+  const sample = compactVisualInput(context, concept, state) || values.join("");
+  const result = String(state.answer || state.result || state.total || state.count || visualSampleExpected(context, concept, state));
+  const gap = values.length <= 1 ? 0 : Math.min(82, 560 / Math.max(values.length - 1, 1));
+  const startX = 450 - ((Math.max(values.length, 1) - 1) * gap) / 2;
+  const nodes: Node[] = [
+    {
+      id: "source-text",
+      x: 450,
+      y: 105,
+      value: shortText(sample, "text"),
+      type: "logic-node",
+      label: "source text",
+      state: "visited",
+      meta: { role: "source-text" },
+    },
+    ...values.map((value, nodeIndex) => ({
+      id: `char-${nodeIndex}`,
+      x: startX + nodeIndex * gap,
+      y: 250,
+      value,
+      type: "array-cell" as const,
+      label: `index ${nodeIndex}`,
+      state: nodeIndex === active ? "active" as const : nodeIndex < active ? "visited" as const : "default" as const,
+      meta: { role: "string-cell" },
+    })),
+    {
+      id: "scan-cursor",
+      x: startX + active * gap,
+      y: 365,
+      value: String(values[active] ?? ""),
+      type: "logic-node",
+      label: "scan cursor",
+      state: "active",
+      meta: { role: "scan-cursor" },
+    },
+    {
+      id: "string-result",
+      x: 710,
+      y: 365,
+      value: result || "not yet",
+      type: "logic-node",
+      label: "result so far",
+      state: index >= 3 ? "active" : "default",
+      meta: { role: "result" },
+    },
+  ];
+  const edges: Edge[] = [
+    { id: `char-${active}-cursor`, from: `char-${active}`, to: "scan-cursor", type: "pointer", state: "active" },
+    { id: "cursor-result", from: "scan-cursor", to: "string-result", type: "pointer", state: index >= 3 ? "active" : "default" },
+  ];
+  return {
+    nodes,
+    edges,
+    highlights: [`char-${active}`, "scan-cursor", ...(index >= 3 ? ["string-result"] : [])],
+  };
 }
 
 function buildTableVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
@@ -1090,35 +1190,144 @@ function authoredTupleVisual(state: Record<string, unknown>, context: GeneratorC
   return { nodes, edges, highlights: [`tuple-name-${active}`, `tuple-score-${active}`, `tuple-pair-${active}`] };
 }
 
+function isTupleSwapVisualizer(context: GeneratorContext): boolean {
+  return /swap|reverse\s+pair|pair\s+order|order\s+pair/i.test(`${context.title || ""} ${context.prompt || ""} ${context.topic || ""}`);
+}
+
+function authoredTupleSwapVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
+  const values = valuesForState("tuple", state, context);
+  const first = values[0] ?? "Ada";
+  const second = values[1] ?? "Grace";
+  const phase = Math.min(index, 5);
+  const nodes: Node[] = [
+    { id: "tuple-swap-original-0", x: 310, y: 165, value: first, type: "array-cell", label: "original first", state: phase <= 1 ? "active" : "visited", meta: { role: "tuple-cell" } },
+    { id: "tuple-swap-original-1", x: 590, y: 165, value: second, type: "array-cell", label: "original second", state: phase <= 2 ? "active" : "visited", meta: { role: "tuple-cell" } },
+    { id: "tuple-swap-new-0", x: 310, y: 345, value: second, type: "array-cell", label: "new first", state: phase >= 2 ? "active" : "default", meta: { role: "tuple-cell" } },
+    { id: "tuple-swap-new-1", x: 590, y: 345, value: first, type: "array-cell", label: "new second", state: phase >= 3 ? "active" : "default", meta: { role: "tuple-cell" } },
+    { id: "tuple-swap-result", x: 760, y: 345, value: `${second}, ${first}`, type: "logic-node", label: "swapped result", state: phase >= 4 ? "active" : "default", meta: { role: "result" } },
+  ];
+  const edges: Edge[] = [
+    { id: "second-new-first", from: "tuple-swap-original-1", to: "tuple-swap-new-0", type: "pointer", state: phase >= 2 ? "active" : "default" },
+    { id: "first-new-second", from: "tuple-swap-original-0", to: "tuple-swap-new-1", type: "pointer", state: phase >= 3 ? "active" : "default" },
+    { id: "new-first-result", from: "tuple-swap-new-0", to: "tuple-swap-result", type: "pointer", state: phase >= 4 ? "active" : "default" },
+    { id: "new-second-result", from: "tuple-swap-new-1", to: "tuple-swap-result", type: "pointer", state: phase >= 4 ? "active" : "default" },
+  ];
+  const highlights = phase >= 4
+    ? ["tuple-swap-result", "tuple-swap-new-0", "tuple-swap-new-1"]
+    : phase >= 3
+      ? ["tuple-swap-original-0", "tuple-swap-new-1"]
+      : phase >= 2
+        ? ["tuple-swap-original-1", "tuple-swap-new-0"]
+        : ["tuple-swap-original-0", "tuple-swap-original-1"];
+  return { nodes, edges, highlights };
+}
+
 function authoredSetVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
   const values = valuesForState("set", state, context);
   const seen = new Set<string>();
   const nodes: Node[] = [];
-  values.slice(0, 8).forEach((value, nodeIndex) => {
+  const visibleValues = values.slice(0, 8);
+  visibleValues.forEach((value, nodeIndex) => {
     const key = String(value);
     const isDuplicate = seen.has(key);
     seen.add(key);
     nodes.push({
       id: `set-${nodeIndex}`,
-      x: 160 + (nodeIndex % 4) * 155,
-      y: 185 + Math.floor(nodeIndex / 4) * 135,
+      x: 130 + nodeIndex * Math.min(86, 560 / Math.max(visibleValues.length - 1, 1)),
+      y: 190,
       value,
       type: "set-item",
       label: isDuplicate ? "duplicate" : "unique",
       state: nodeIndex === Math.min(index, values.length - 1) ? "active" : isDuplicate ? "inactive" : "visited",
     });
   });
-  return { nodes, edges: [], highlights: [`set-${Math.min(index, Math.max(nodes.length - 1, 0))}`] };
+  const activeIndex = Math.min(index, Math.max(visibleValues.length - 1, 0));
+  const activeValue = visibleValues[activeIndex] ?? "item";
+  const keptValues = [...new Set(visibleValues.slice(0, activeIndex + 1).map(String))];
+  nodes.push(
+    { id: "membership-check", x: 310, y: 340, value: String(activeValue), type: "logic-node", label: "membership check", state: "active", meta: { role: "flow-step" } },
+    { id: "seen-memory", x: 520, y: 340, value: keptValues.join(", ") || "empty", type: "logic-node", label: "seen set", state: index >= 1 ? "active" : "default", meta: { role: "memory" } },
+    { id: "set-result", x: 730, y: 340, value: keptValues.join(", ") || "none yet", type: "logic-node", label: "kept result", state: index >= 2 ? "active" : "default", meta: { role: "result" } },
+  );
+  const edges: Edge[] = [
+    { id: `set-${activeIndex}-check`, from: `set-${activeIndex}`, to: "membership-check", type: "pointer", state: "active" },
+    { id: "check-memory", from: "membership-check", to: "seen-memory", type: "pointer", state: index >= 1 ? "active" : "default" },
+    { id: "memory-result", from: "seen-memory", to: "set-result", type: "pointer", state: index >= 2 ? "active" : "default" },
+  ];
+  return { nodes, edges, highlights: [`set-${activeIndex}`, "membership-check", "seen-memory", ...(index >= 2 ? ["set-result"] : [])] };
+}
+
+function authoredRecursionVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
+  const assignments = parseScalarAssignments(context.exampleInput);
+  const title = String(context.title || context.topic || "recursive call").toLowerCase();
+  const seed = assignments.n || assignments.base || assignments.text || assignments.input || "3";
+  const isText = /text|string|reverse|palindrome|char/.test(title) || Number.isNaN(Number(seed));
+  const frames = isText
+    ? ["code", "ode", "de", "e"].slice(0, 4)
+    : [Number(seed) || 3, Math.max((Number(seed) || 3) - 1, 1), Math.max((Number(seed) || 3) - 2, 0), 0];
+  const bounded = Math.min(index, 5);
+  const growingCount = Math.min(Math.max(bounded + 1, 1), frames.length);
+  const isUnwinding = bounded >= 3;
+  const visibleFrames = frames.slice(0, growingCount);
+  const nodes: Node[] = visibleFrames.map((value, frameIndex) => {
+    const activeFrame = isUnwinding ? visibleFrames.length - 1 - Math.min(bounded - 3, visibleFrames.length - 1) : visibleFrames.length - 1;
+    return {
+      id: `call-${frameIndex}`,
+      x: 310,
+      y: 135 + frameIndex * 78,
+      value: `${context.title || "solve"}(${value})`,
+      type: "logic-node" as const,
+      label: frameIndex === 0 ? "first call" : frameIndex === visibleFrames.length - 1 ? "current call" : "waiting",
+      state: frameIndex === activeFrame ? "active" as const : frameIndex < activeFrame ? "visited" as const : "default" as const,
+      meta: { role: "call-frame" },
+    };
+  });
+  const edges: Edge[] = nodes.slice(0, -1).map((node, edgeIndex) => ({
+    id: `${node.id}-${nodes[edgeIndex + 1].id}`,
+    from: node.id,
+    to: nodes[edgeIndex + 1].id,
+    type: "pointer" as const,
+    state: edgeIndex < bounded ? "active" as const : "default" as const,
+  }));
+  nodes.push(
+    {
+      id: "base-case",
+      x: 625,
+      y: 185,
+      value: isUnwinding ? "base reached" : "not yet",
+      type: "logic-node",
+      label: "base case",
+      state: bounded >= 2 ? "active" : "default",
+      meta: { role: "diamond" },
+    },
+    {
+      id: "return-chain",
+      x: 625,
+      y: 345,
+      value: bounded >= 4 ? cleanedResult(context.exampleOutput || state.result || "answer") : "waiting",
+      type: "logic-node",
+      label: "return chain",
+      state: bounded >= 4 ? "active" : "default",
+      meta: { role: "result" },
+    },
+  );
+  if (nodes[visibleFrames.length - 1]) {
+    edges.push({ id: "call-base", from: nodes[visibleFrames.length - 1].id, to: "base-case", type: "branch", state: bounded >= 2 ? "active" : "default" });
+  }
+  edges.push({ id: "base-return", from: "base-case", to: "return-chain", type: "branch", state: bounded >= 4 ? "active" : "default" });
+  return { nodes, edges, highlights: [nodes[Math.min(visibleFrames.length - 1, bounded)]?.id || "call-0", ...(bounded >= 2 ? ["base-case"] : []), ...(bounded >= 4 ? ["return-chain"] : [])] };
 }
 
 function authoredTwoPointerVisual(state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
   const values = valuesForState("two-pointers", state, context);
   const pointers = state.pointers && typeof state.pointers === "object" ? state.pointers as Record<string, unknown> : {};
-  const active = activeIndexes({ active: [pointers.left ?? 0, pointers.right ?? Math.max(values.length - 1, 0)] }, values.length, index);
+  const left = Number(pointers.left ?? 0);
+  const right = Number(pointers.right ?? Math.max(values.length - 1, 0));
+  const active = activeIndexes({ active: [left, right] }, values.length, index);
   const nodes = linearNodes(values, active, {
     y: 290,
     maxWidth: 620,
-    labels: values.map((_, nodeIndex) => nodeIndex === Number(pointers.left ?? 0) ? "left" : nodeIndex === Number(pointers.right ?? values.length - 1) ? "right" : String(nodeIndex)),
+    labels: values.map((_, nodeIndex) => nodeIndex === left ? "left" : nodeIndex === right ? "right" : String(nodeIndex)),
   });
   return { nodes, edges: [], highlights: active.map((item) => `item-${item}`) };
 }
@@ -1324,42 +1533,60 @@ function authoredNodeVisual(state: Record<string, unknown>, context: GeneratorCo
   return { nodes, edges, highlights: nodes.filter((node) => node.state === "active").map((node) => node.id) };
 }
 
+function generatedVisualAt(steps: Step[], index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
+  const chosen = steps[Math.min(Math.max(index, 0), Math.max(steps.length - 1, 0))] || steps[0];
+  return {
+    nodes: chosen?.nodes || [],
+    edges: chosen?.edges || [],
+    highlights: chosen?.highlights?.nodeIds || [],
+  };
+}
+
 function visualForAuthoredStep(concept: string, state: Record<string, unknown>, context: GeneratorContext, index: number): { nodes: Node[]; edges: Edge[]; highlights: string[] } {
   if (concept === "conditional") return authoredConditionalVisual(state, context, index);
+  if ((concept === "tuple" || String(context.topic || "").toLowerCase().includes("tuple")) && isTupleSwapVisualizer(context)) return authoredTupleSwapVisual(state, context, index);
   if (concept === "tuple" || String(context.topic || "").toLowerCase().includes("tuple")) return authoredTupleVisual(state, context, index);
   if (concept === "set") return authoredSetVisual(state, context, index);
-  if (concept === "union-find") return authoredUnionFindVisual(state, context, index);
+  if (concept === "union-find") return generatedVisualAt(generateUnionFindSteps(context), index);
   if (concept === "prefix-sum") return authoredPrefixSumVisual(state, context, index);
-  if (concept === "intervals") return authoredIntervalVisual(state, context, index);
+  if (concept === "intervals") return generatedVisualAt(generateIntervalsSteps(context), index);
   if (concept === "binary-search") return authoredBinarySearchVisual(state, context, index);
   if (concept === "two-pointers") return authoredTwoPointerVisual(state, context, index);
   if (concept === "sliding-window") return authoredSlidingWindowVisual(state, context, index);
-  if (concept === "trie") return authoredTrieVisual(state, context, index);
-  if (concept === "heap") return treeFromArray(valuesForState("heap", state, context), Math.min(index, 5), "tree-node");
+  if (concept === "trie") return generatedVisualAt(generateTrieSteps(context), index);
+  if (concept === "heap") return generatedVisualAt(generateHeapSteps(context), index);
   if (concept === "hash-map") return authoredHashMapVisual(state, context, index);
   if (concept === "stack" || concept === "queue") return authoredStackQueueVisual(concept, state, context, index);
-  if (concept === "matrix" || concept === "dynamic-programming") return authoredGridVisual(state, context, index);
-  if (concept === "binary-tree" || concept === "graph" || concept === "linked-list") return authoredNodeVisual(state, context, index);
+  if (concept === "matrix") return authoredGridVisual(state, context, index);
+  if (concept === "dynamic-programming") return generatedVisualAt(generateDynamicProgrammingSteps(context), index);
+  if (concept === "recursion") return authoredRecursionVisual(state, context, index);
+  if (concept === "binary-tree") return generatedVisualAt(generateTreeInsertSteps(context), index);
+  if (concept === "graph") return generatedVisualAt(generateGraphTraversalSteps(context), index);
+  if (concept === "linked-list") return authoredNodeVisual(state, context, index);
+  if (isStringVisualizer(concept, context)) return authoredStringVisual(concept, state, context, index);
   return authoredArrayVisual(concept, state, context, index);
 }
 
 function titleForAuthoredStep(rawTitle: unknown, context: GeneratorContext, index: number): string {
   const title = cleanText(rawTitle, "");
   if (!title || /make the key move|decide the next step|set up the sample/i.test(title)) {
-    const labels = ["Load the example", "Make one visible move", "Predict the next state", "Return only what the prompt asks"];
+    const labels = ["Load the example", "Inspect the active state", "Apply one rule", "Move to the next state", "Check the stopping point", "Return only what the prompt asks"];
     return `${labels[Math.min(index, labels.length - 1)]}: ${context.title || "Practice problem"}`;
   }
   return title;
 }
 
-function bodyForAuthoredStep(rawBody: unknown, context: GeneratorContext, index: number): string {
+function bodyForAuthoredStep(rawBody: unknown, context: GeneratorContext, concept: string, state: Record<string, unknown>, index: number): string {
   const body = cleanText(rawBody, "");
   if (!body || /one pointer, cell, memory slot|apply the main|tiny version of the problem/i.test(body)) {
-    const sample = context.exampleInput ? `Use the example input ${context.exampleInput}. ` : "";
+    const compactSample = compactVisualInput(context, concept, state) || context.exampleInput;
+    const sample = compactSample ? `Use the teaching sample ${compactSample}. ` : "";
     const output = context.exampleOutput ? `The example output is ${context.exampleOutput}, but the code path is still yours to build.` : "Focus on the next state change, not a memorized answer.";
     if (index === 0) return `${sample}Set up only the small state you need to trace the idea.`;
-    if (index === 1) return "Move one pointer, branch, lookup, or stored value exactly one step.";
-    if (index === 2) return "Pause and predict what the next state should be before revealing it.";
+    if (index === 1) return "Read the active item, pointer, branch, or memory slot before changing anything.";
+    if (index === 2) return "Apply the prompt rule to exactly one visible state change.";
+    if (index === 3) return "Move forward and keep the updated state visible.";
+    if (index === 4) return "Check whether the pattern should stop or repeat one more time.";
     return output;
   }
   return body;
@@ -1585,7 +1812,7 @@ function generateAuthoredVisualizerSteps(concept: string, context: GeneratorCont
     const activeLine = Math.min(index + 1, code.length);
     const displayedExample = compactVisualInput(context, concept, displayState) || context.exampleInput || String(displayState.sample || "");
     const displayedExpected = visualSampleExpected(context, concept, displayState);
-    const description = sanitizeAuthoredCopy(bodyForAuthoredStep(raw.body, context, index), context, concept, rawState);
+    const description = sanitizeAuthoredCopy(bodyForAuthoredStep(raw.body, context, concept, rawState, index), context, concept, rawState);
     return step({
       concept: concept as Step["concept"],
       title: titleForAuthoredStep(raw.title, context, index),
@@ -2150,18 +2377,28 @@ export function generateSlidingWindowSteps(context: GeneratorContext = {}): Step
 
 export function generateRecursionSteps(context: GeneratorContext = {}): Step[] {
   const code = ["if base_case: return base_value", "smaller = solve(n - 1)", "answer = combine(n, smaller)", "return answer"];
-  const values = ["call(3)", "call(2)", "call(1)", "base", "return 1", "return 2"];
-  return values.map((value, index) => step({
-    concept: "recursion",
-    title: index === 3 ? "Base case" : index > 3 ? "Unwind the answer" : (index === 0 ? (context.title || "Recursion") : "Make a smaller call"),
-    description: index === 3 ? "The base case stops the calls." : index > 3 ? "Answers return back up the call stack one frame at a time." : "Each call makes the problem smaller before answers come back up.",
-    nodes: withNodeState(layoutArray(values.slice(0, index + 1), { y: 260 }), [`item-${index}`], "active"),
-    edges: [],
-    highlights: { nodeIds: [`item-${index}`], lineNumbers: [Math.min(index + 1, 4)] },
-    code,
-    activeLine: Math.min(index + 1, 4),
-    state: { depth: index + 1 },
-  }, index + 1));
+  const phases = [
+    { title: context.title || "Recursion", desc: "Start with the first call. It owns the full problem.", line: 1 },
+    { title: "Make a smaller call", desc: "The first call pauses and asks a smaller version to run.", line: 2 },
+    { title: "Keep shrinking", desc: "Each frame waits for the smaller frame below it.", line: 2 },
+    { title: "Base case stops", desc: "The base case is the first call that can answer without another recursive call.", line: 1 },
+    { title: "Return upward", desc: "The base answer returns to the waiting call above it.", line: 3 },
+    { title: "Finish unwinding", desc: "Each waiting frame combines its piece until the first call can return.", line: 4 },
+  ];
+  return phases.map((phase, index) => {
+    const visual = authoredRecursionVisual({}, context, index);
+    return step({
+      concept: "recursion",
+      title: phase.title,
+      description: phase.desc,
+      nodes: visual.nodes,
+      edges: visual.edges,
+      highlights: { nodeIds: visual.highlights, edgeIds: visual.edges.filter((edge) => edge.state === "active").map((edge) => edge.id || `${edge.from}-${edge.to}`), lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      state: { depth: Math.min(index + 1, 4) },
+    }, index + 1);
+  });
 }
 
 export function generateMatrixSteps(context: GeneratorContext = {}): Step[] {

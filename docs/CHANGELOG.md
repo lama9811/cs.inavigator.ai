@@ -13,6 +13,7 @@ All notable changes to CS Navigator are documented here.
 - **Learn guided execution traces.** All existing Learn visualizers now include a reusable trace panel with current operation, input value, state before/after, decision, output, and why-it-matters metadata across 82 visual blocks and 392 authored steps.
 - **Trace My Code V2 frontend.** The Python trace modal now prefers the backend `trace_v2` payload when available, keeps the full source visible, shows current line/output/errors, and renders function variables plus list/object state with V1 trace fallback preserved.
 - **Practice visualizer step-depth pass.** All 151 Practice Library visualizers now expand beyond the old four-step sketch into six-step concept traces with setup, operation, state update, repeated movement, and final-result checks.
+- **Practice visualizer audit script.** A frontend audit command now prints Practice visualizer concepts, effective step counts, compact teaching samples, and oversized/banned-copy warnings across all 151 visualizers.
 
 ### Changed
 - The standalone in-app Advising Form is hidden behind a local legacy feature flag; `/advising` now sends students to Planner V2 by default while preserving the old form code and backend draft/upload endpoints.
@@ -20,6 +21,10 @@ All notable changes to CS Navigator are documented here.
 - Coding Tutor dark-mode controls now have brighter, less muddy contrast for Learn visualizer buttons, Practice Library starter/filter chips, track navigation, and workspace visualizer idea actions.
 - Practice visualizer workflow rails now use topic-specific labels and pseudocode lines that align with the active step, avoiding duplicate setup/finish beats and generic row-box pacing.
 - The "Visualize this" modal keeps a full-screen-feeling layout with a sticky X close button and an Open in Workspace action, while the Workspace Visualize tab uses a roomier stage-first layout for longer traces.
+- Practice visualizers now use compact teaching samples consistently across visual nodes, pseudocode, state strips, and copy so long examples like `Morgan State` do not leak into short walkthroughs.
+- Practice visualizer QA now gives arrays a current-item/result tracker, sets a seen-memory/result path, and recursion a call-frame/base-case/return-chain view instead of generic linear boxes.
+- Trace My Code V2 now exposes explicit timing metadata for `before_line`, `after_previous_line`, returns, exceptions, changed bindings, changed objects, and stdout updates so the frontend can distinguish "about to run" from "just ran."
+- Non-Python Trace My Code messaging now clearly explains that execution tracing is Python-first while JavaScript, Java, and C++ can still use Run and concept visualizers.
 - Planner course cards now use compact icon actions, clearer seat/time/location/instructor ordering, distinct GenEd styling, concise review status language, sorted class times, and TBA/untimed courses at the bottom.
 - Syntax lessons now emphasize first-use definitions and key beginner terms, such as syntax, comments, blocks, indentation, statements, semicolons, and compiler/parser messages.
 - Operators lessons now use authored sections for mathematical operators, bitwise operators, comparison/assignment, and conditional logic across Python, Java, JavaScript, and C++.
@@ -37,6 +42,7 @@ All notable changes to CS Navigator are documented here.
 
 ### Fixed
 - Fixed Coding Tutor streak counting so opening a workspace, editing code, or running non-passing tests no longer starts the daily streak; it now records only concept quiz submissions, newly completed Learn lessons, and newly solved coding questions.
+- Fixed Practice visualizer step rails that could show duplicate setup/finish labels after short authored visuals were expanded.
 - Completed concept quiz summaries now persist across a Workspace detour during the current browser session instead of resetting back into the quiz.
 - Operators concept quiz prompts and explanations were cleaned so the shared bank avoids lesson-referencing stems, repeated generic review prompts, and answer-restating blurbs.
 - Fixed a mojibake sequence in the Java concept-quiz correct-answer explanation for printing `Hello`, and added a content guard for common broken-UTF-8 sequences.

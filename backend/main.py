@@ -7222,8 +7222,18 @@ async def trace_practice_solution(
         return {
             "status": "error",
             "trace": [],
+            "trace_v2": {
+                "schema_version": "trace_v2",
+                "steps": [],
+                "limits": {},
+                "supported_languages": ["python"],
+                "requested_language": language_key,
+            },
             "stdout": "",
-            "stderr": "Code tracing is available for Python first. JavaScript, Java, and C++ can still use Visualize this idea.",
+            "stderr": "Execution tracing is available for Python first. Use Run for this language, or open Visualize this idea for a concept walkthrough.",
+            "message": "Trace My Code is Python-first right now.",
+            "supported_languages": ["python"],
+            "requested_language": language_key,
             "duration_ms": 0,
         }
 

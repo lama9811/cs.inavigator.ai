@@ -178,7 +178,7 @@ def add_score(scores: list[int]) -> list[int]:
 
     assert len(set(score_refs)) == 1
     assert score_refs[0] in mutated_ids
-    assert any("append() changes the existing list object" in step["operation_summary"] for step in steps)
+    assert any("append()" in step["operation_summary"] and "existing list object" in step["operation_summary"] for step in steps)
 
 
 def test_python_trace_v2_marks_reassignment_binding_change():
@@ -197,6 +197,27 @@ def bump(number: int) -> int:
     )
 
 
+def test_python_trace_v2_marks_before_and_after_line_timing():
+    code = """
+def bump(number: int) -> int:
+    number = number + 1
+    return number
+"""
+
+    result = run_python_practice_trace(code, "bump", {"name": "bump", "args": [2], "expected": 3})
+    steps = result["trace_v2"]["steps"]
+
+    assert any(step.get("phase") == "before_line" and step.get("line_about_to_run") for step in steps)
+    changed_step = next(
+        step for step in steps
+        if any(change.get("name") == "number" and change.get("change") == "changed" for change in step.get("binding_changes", []))
+    )
+    assert changed_step["phase"] == "after_previous_line"
+    assert changed_step["line_just_ran"]
+    assert changed_step["line_about_to_run"]
+    assert changed_step["changes"]
+
+
 def test_python_trace_v2_summarizes_lowercase_loop_iteration():
     code = """
 def count_vowels(text: str) -> int:
@@ -211,7 +232,7 @@ def count_vowels(text: str) -> int:
 
     summaries = [step["operation_summary"] for step in result["trace_v2"]["steps"]]
     assert any("lower()" in summary for summary in summaries)
-    assert any("loop picks the next item" in summary for summary in summaries)
+    assert any("pick the next item" in summary for summary in summaries)
 
 
 def test_python_freeform_trace_returns_trace_v2_and_stdout():

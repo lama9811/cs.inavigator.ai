@@ -409,6 +409,7 @@ function traceErrorInfo(traceResult, activeStep) {
 function CodeTraceModal({
   traceResult,
   code = "",
+  selectedLanguage = "Python",
   isTracing,
   onTraceCode,
   onClose,
@@ -501,6 +502,8 @@ function CodeTraceModal({
   }, [activeStep?.object_changes]);
   const currentLineNo = traceLineNo(activeStep);
   const currentLineDisplay = stripPythonComment(activeStep?.line).trim() || activeStep?.line?.trim() || "";
+  const isPythonTraceLanguage = selectedLanguage === "Python";
+  const lineCardLabel = activeStep?.phase === "after_previous_line" ? "Next line" : activeStep?.event === "return" ? "Return line" : activeStep?.event === "exception" ? "Error line" : "Current line";
   const modalRef = useFocusTrap(true, { onEscape: onClose });
 
   const goToStep = useCallback((nextIndex) => {
@@ -561,8 +564,12 @@ function CodeTraceModal({
           <header className="workspace-visualizer-head">
             <div>
               <span className="workspace-visualizer-kicker">Trace My Code</span>
-              <h3 id="code-trace-title">Python execution trace</h3>
-              <p id="code-trace-description">Steps through the Python code currently in your editor and shows what changes as it runs.</p>
+              <h3 id="code-trace-title">{isPythonTraceLanguage ? "Python execution trace" : "Execution tracing is Python-first"}</h3>
+              <p id="code-trace-description">
+                {isPythonTraceLanguage
+                  ? "Steps through the Python code currently in your editor and shows what changes as it runs."
+                  : `${selectedLanguage} can still run tests here. Use Visualize this idea for the concept walkthrough while full execution tracing is built.`}
+              </p>
             </div>
             <button
               type="button"
@@ -632,7 +639,7 @@ function CodeTraceModal({
                   ) : null}
                   {activeStep?.line ? (
                     <div className="code-trace-current-line">
-                      <span>Current line</span>
+                      <span>{lineCardLabel}</span>
                       <code>{currentLineDisplay}</code>
                     </div>
                   ) : null}
@@ -998,6 +1005,11 @@ export default function CodeWorkspace({
             >
               {isTracingCode ? "Tracing..." : "Trace My Code"}
             </button>
+            {!canTracePython ? (
+              <span className="code-trace-language-note" role="status">
+                Python trace only
+              </span>
+            ) : null}
             <span className="code-editor-lang-control">
             <select
               className="code-editor-lang-select"
@@ -1120,6 +1132,7 @@ export default function CodeWorkspace({
         <CodeTraceModal
           traceResult={traceResult}
           code={code}
+          selectedLanguage={selectedLanguage}
           isTracing={isTracingCode}
           onTraceCode={onTraceCode}
           onClose={onCloseTraceModal}

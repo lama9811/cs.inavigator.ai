@@ -1115,39 +1115,56 @@ def fingerprint(value):
     except Exception:
         return repr(value)
 
-def summarize_operation(line, event, arg):
+def summarize_operation(line, event, arg, *, phase="before_line", previous_line_text="", binding_changes=None, object_changes=None, stdout_changed=False):
     clean = (line or "").strip()
+    previous_clean = (previous_line_text or "").strip()
+    binding_changes = binding_changes or []
+    object_changes = object_changes or []
     if event == "exception":
         exc_type, exc, _tb = arg
-        return f"{exc_type.__name__} is raised here: {exc}"
+        return f"Python stopped here because {exc_type.__name__} was raised: {exc}"
     if event == "return":
-        return "This line returns a value to the caller."
+        return "This line just returned a value to the caller."
+    if phase == "after_previous_line":
+        changed_names = [change.get("name") for change in binding_changes if change.get("name")]
+        mutated_objects = [change for change in object_changes if change.get("change") == "mutated"]
+        if mutated_objects:
+            return f"Line just ran: {previous_clean}. It changed an existing object, then Python moved to the next line."
+        if changed_names:
+            return f"Line just ran: {previous_clean}. It updated {', '.join(changed_names[:3])}, then Python moved to the next line."
+        if stdout_changed:
+            return f"Line just ran: {previous_clean}. It printed output, then Python moved to the next line."
+        if previous_clean:
+            return f"Line just ran: {previous_clean}. Python is ready for the next line."
     if not clean:
-        return "Python is moving to the next executable line."
+        return "Python is ready for the next executable line."
     if ".append(" in clean:
-        return "append() changes the existing list object instead of making a new variable."
+        return "Python is about to run append(); it will change the existing list object instead of making a new variable."
     if ".pop(" in clean:
-        return "pop() removes an item from the existing collection."
+        return "Python is about to run pop(); it will remove an item from the existing collection."
     if clean.startswith("for ") and (".lower(" in clean or ".lower()" in clean):
-        return "The loop picks the next item from a lower() copy; the original string stays unchanged."
+        return "Python is about to pick the next item from a lower() copy; the original string stays unchanged."
     if ".lower(" in clean or ".lower()" in clean:
-        return "lower() creates lowercase characters for this operation; the original string stays unchanged."
+        return "Python is about to run lower(); it creates lowercase characters for this operation while the original string stays unchanged."
     if clean.startswith("for "):
-        return "The loop picks the next item and stores it in the loop variable."
+        return "Python is about to pick the next item and store it in the loop variable."
     if clean.startswith("while "):
-        return "Python checks the while condition before deciding whether to run the body."
+        return "Python is about to check the while condition before deciding whether to run the body."
     if clean.startswith("if ") or clean.startswith("elif "):
-        return "Python checks this condition to choose the next path."
+        return "Python is about to check this condition to choose the next path."
     if "=" in clean and "==" not in clean and not clean.startswith(("return ", "if ", "elif ", "while ")):
-        return "This assignment stores a value in a variable name."
+        return "Python is about to run this assignment and store a value in a variable name."
     if "[" in clean and "]" in clean:
-        return "This line uses an index or key to read from a collection."
-    return "Python is about to run this line. Watch the variables before and after it runs."
+        return "Python is about to use an index or key to read from a collection."
+    return "Python is ready to run this line. Watch the variables before and after it runs."
 
 def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
     global trace_v2_previous_step
     objects = {}
     frames = collect_solution_frames(frame, objects)
+    previous_stdout = trace_v2_previous_step.get("stdout", "") if trace_v2_previous_step else ""
+    previous_line_no = trace_v2_previous_step.get("current_line") if trace_v2_previous_step else None
+    previous_line_text = source_lines[previous_line_no - 1].rstrip() if previous_line_no and 0 < previous_line_no <= len(source_lines) else ""
     previous_frames = trace_v2_previous_step.get("frames", []) if trace_v2_previous_step else []
     previous_bindings = {}
     for previous_frame in previous_frames:
@@ -1175,20 +1192,45 @@ def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
     references = []
     for current_frame in frames:
         references.extend(current_frame.get("references", []))
+    stdout_changed = stdout_text != previous_stdout
+    phase = "line_returned" if event == "return" else "line_errored" if event == "exception" else "before_line"
+    if event == "line" and trace_v2_previous_step and (binding_changes or object_changes or stdout_changed):
+        phase = "after_previous_line"
+    changes = [
+        *[{"kind": "binding", **change} for change in binding_changes],
+        *[{"kind": "object", **change} for change in object_changes],
+    ]
+    if stdout_changed:
+        changes.append({"kind": "stdout", "change": "changed"})
     step = {
         "step_index": len(trace),
         "event": event,
+        "phase": phase,
         "current_line": line_no,
-        "previous_line": trace_v2_previous_step.get("current_line") if trace_v2_previous_step else None,
+        "previous_line": previous_line_no,
+        "line_about_to_run": line_no if event == "line" else None,
+        "line_just_ran": previous_line_no if phase == "after_previous_line" else line_no if event in {"return", "exception"} else None,
+        "line_just_ran_text": previous_line_text if phase == "after_previous_line" else line if event in {"return", "exception"} else "",
         "line": line,
         "function": frame_label(frame),
         "frames": frames,
         "objects": objects,
         "references": references,
+        "changes": changes,
         "binding_changes": binding_changes,
         "object_changes": object_changes,
         "stdout": stdout_text,
-        "operation_summary": summarize_operation(line, event, arg),
+        "stdout_changed": stdout_changed,
+        "operation_summary": summarize_operation(
+            line,
+            event,
+            arg,
+            phase=phase,
+            previous_line_text=previous_line_text,
+            binding_changes=binding_changes,
+            object_changes=object_changes,
+            stdout_changed=stdout_changed,
+        ),
     }
     if event == "return":
         step["return_value"] = serialize_value(arg, objects)
@@ -1618,39 +1660,56 @@ def fingerprint(value):
     except Exception:
         return repr(value)
 
-def summarize_operation(line, event, arg):
+def summarize_operation(line, event, arg, *, phase="before_line", previous_line_text="", binding_changes=None, object_changes=None, stdout_changed=False):
     clean = (line or "").strip()
+    previous_clean = (previous_line_text or "").strip()
+    binding_changes = binding_changes or []
+    object_changes = object_changes or []
     if event == "exception":
         exc_type, exc, _tb = arg
-        return f"{exc_type.__name__} is raised here: {exc}"
+        return f"Python stopped here because {exc_type.__name__} was raised: {exc}"
     if event == "return":
-        return "This line returns a value to the caller."
+        return "This line just returned a value to the caller."
+    if phase == "after_previous_line":
+        changed_names = [change.get("name") for change in binding_changes if change.get("name")]
+        mutated_objects = [change for change in object_changes if change.get("change") == "mutated"]
+        if mutated_objects:
+            return f"Line just ran: {previous_clean}. It changed an existing object, then Python moved to the next line."
+        if changed_names:
+            return f"Line just ran: {previous_clean}. It updated {', '.join(changed_names[:3])}, then Python moved to the next line."
+        if stdout_changed:
+            return f"Line just ran: {previous_clean}. It printed output, then Python moved to the next line."
+        if previous_clean:
+            return f"Line just ran: {previous_clean}. Python is ready for the next line."
     if not clean:
-        return "Python is moving to the next executable line."
+        return "Python is ready for the next executable line."
     if ".append(" in clean:
-        return "append() changes the existing list object instead of making a new variable."
+        return "Python is about to run append(); it will change the existing list object instead of making a new variable."
     if ".pop(" in clean:
-        return "pop() removes an item from the existing collection."
+        return "Python is about to run pop(); it will remove an item from the existing collection."
     if clean.startswith("for ") and (".lower(" in clean or ".lower()" in clean):
-        return "The loop picks the next item from a lower() copy; the original string stays unchanged."
+        return "Python is about to pick the next item from a lower() copy; the original string stays unchanged."
     if ".lower(" in clean or ".lower()" in clean:
-        return "lower() creates lowercase characters for this operation; the original string stays unchanged."
+        return "Python is about to run lower(); it creates lowercase characters for this operation while the original string stays unchanged."
     if clean.startswith("for "):
-        return "The loop picks the next item and stores it in the loop variable."
+        return "Python is about to pick the next item and store it in the loop variable."
     if clean.startswith("while "):
-        return "Python checks the while condition before deciding whether to run the body."
+        return "Python is about to check the while condition before deciding whether to run the body."
     if clean.startswith("if ") or clean.startswith("elif "):
-        return "Python checks this condition to choose the next path."
+        return "Python is about to check this condition to choose the next path."
     if "=" in clean and "==" not in clean and not clean.startswith(("return ", "if ", "elif ", "while ")):
-        return "This assignment stores a value in a variable name."
+        return "Python is about to run this assignment and store a value in a variable name."
     if "[" in clean and "]" in clean:
-        return "This line uses an index or key to read from a collection."
-    return "Python is about to run this line. Watch the variables before and after it runs."
+        return "Python is about to use an index or key to read from a collection."
+    return "Python is ready to run this line. Watch the variables before and after it runs."
 
 def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
     global trace_v2_previous_step
     objects = {}
     frames = collect_solution_frames(frame, objects)
+    previous_stdout = trace_v2_previous_step.get("stdout", "") if trace_v2_previous_step else ""
+    previous_line_no = trace_v2_previous_step.get("current_line") if trace_v2_previous_step else None
+    previous_line_text = source_lines[previous_line_no - 1].rstrip() if previous_line_no and 0 < previous_line_no <= len(source_lines) else ""
     previous_frames = trace_v2_previous_step.get("frames", []) if trace_v2_previous_step else []
     previous_bindings = {}
     for previous_frame in previous_frames:
@@ -1678,20 +1737,45 @@ def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
     references = []
     for current_frame in frames:
         references.extend(current_frame.get("references", []))
+    stdout_changed = stdout_text != previous_stdout
+    phase = "line_returned" if event == "return" else "line_errored" if event == "exception" else "before_line"
+    if event == "line" and trace_v2_previous_step and (binding_changes or object_changes or stdout_changed):
+        phase = "after_previous_line"
+    changes = [
+        *[{"kind": "binding", **change} for change in binding_changes],
+        *[{"kind": "object", **change} for change in object_changes],
+    ]
+    if stdout_changed:
+        changes.append({"kind": "stdout", "change": "changed"})
     step = {
         "step_index": len(trace),
         "event": event,
+        "phase": phase,
         "current_line": line_no,
-        "previous_line": trace_v2_previous_step.get("current_line") if trace_v2_previous_step else None,
+        "previous_line": previous_line_no,
+        "line_about_to_run": line_no if event == "line" else None,
+        "line_just_ran": previous_line_no if phase == "after_previous_line" else line_no if event in {"return", "exception"} else None,
+        "line_just_ran_text": previous_line_text if phase == "after_previous_line" else line if event in {"return", "exception"} else "",
         "line": line,
         "function": frame_label(frame),
         "frames": frames,
         "objects": objects,
         "references": references,
+        "changes": changes,
         "binding_changes": binding_changes,
         "object_changes": object_changes,
         "stdout": stdout_text,
-        "operation_summary": summarize_operation(line, event, arg),
+        "stdout_changed": stdout_changed,
+        "operation_summary": summarize_operation(
+            line,
+            event,
+            arg,
+            phase=phase,
+            previous_line_text=previous_line_text,
+            binding_changes=binding_changes,
+            object_changes=object_changes,
+            stdout_changed=stdout_changed,
+        ),
     }
     if event == "return":
         step["return_value"] = serialize_value(arg, objects)

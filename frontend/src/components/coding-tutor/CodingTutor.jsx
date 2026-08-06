@@ -1372,6 +1372,7 @@ export default function CodingTutor({
   const activeSolutionRef = useRef(null);
   const [problemLoading, setProblemLoading] = useState(false);
   const [listLoading, setListLoading] = useState(false);
+  const [practiceProblemQueue, setPracticeProblemQueue] = useState({ ids: [], label: "" });
   // Personal "My Snippets" workspace: a fresh, non-graded space separate from the
   // Quiz Bank. snippets are stored per-device in localStorage.
   const [snippets, setSnippets] = useState(() => listSnippets());
@@ -1582,22 +1583,38 @@ export default function CodingTutor({
     ? messages.slice(quizPdfStartIndex).slice().reverse().find((msg) => msg.sender === "bot" && msg.text)?.text || ""
     : "";
   const languageFormat = LANGUAGE_FORMATS[selectedLanguage] || LANGUAGE_FORMATS.Python;
+  const workspacePracticeQuestions = allQuestions.length ? allQuestions : questions;
   const activeQuestionIndex = activeProblem?.source !== "leetcode"
-    ? questions.findIndex(question => question.id === activeProblem?.id)
+    ? workspacePracticeQuestions.findIndex(question => question.id === activeProblem?.id)
     : -1;
   const isQuizBankProblem = Boolean(activeProblem && activeQuestionIndex >= 0 && activeProblem.source !== "personal");
   const isPersonalMode = activeProblem?.source === "personal";
   const isInterviewWorkspaceProblem = Boolean(activeProblem?.source === "interview" && !activeProblem?.mock);
+  const practiceQueueIds = useMemo(
+    () => practiceProblemQueue.ids.filter((id) => workspacePracticeQuestions.some((question) => question.id === id)),
+    [practiceProblemQueue.ids, workspacePracticeQuestions]
+  );
+  const activeQueueIndex = activeProblem?.source !== "leetcode"
+    ? practiceQueueIds.indexOf(activeProblem?.id)
+    : -1;
+  const usingPracticeQueue = isQuizBankProblem && activeQueueIndex >= 0 && practiceQueueIds.length > 1;
   // Next/Back cycle only through unsolved problems. Solved problems can still be
   // opened directly from Quiz Bank, but are skipped here to focus on what is left.
   const findAdjacentUnsolvedIndex = useCallback((fromIndex, direction) => {
-    for (let index = fromIndex + direction; index >= 0 && index < questions.length; index += direction) {
-      if (progressByQuestion[questions[index].id]?.status !== "solved") return index;
+    for (let index = fromIndex + direction; index >= 0 && index < workspacePracticeQuestions.length; index += direction) {
+      if (progressByQuestion[workspacePracticeQuestions[index].id]?.status !== "solved") return index;
     }
     return -1;
-  }, [questions, progressByQuestion]);
-  const canGoPrevious = activeQuestionIndex >= 0 && findAdjacentUnsolvedIndex(activeQuestionIndex, -1) >= 0;
-  const canGoNext = activeQuestionIndex >= 0 && findAdjacentUnsolvedIndex(activeQuestionIndex, 1) >= 0;
+  }, [workspacePracticeQuestions, progressByQuestion]);
+  const canGoPrevious = usingPracticeQueue
+    ? activeQueueIndex > 0
+    : activeQuestionIndex >= 0 && findAdjacentUnsolvedIndex(activeQuestionIndex, -1) >= 0;
+  const canGoNext = usingPracticeQueue
+    ? activeQueueIndex < practiceQueueIds.length - 1
+    : activeQuestionIndex >= 0 && findAdjacentUnsolvedIndex(activeQuestionIndex, 1) >= 0;
+  const practiceNavigationLabel = usingPracticeQueue
+    ? `${activeQueueIndex + 1} of ${practiceQueueIds.length}${practiceProblemQueue.label ? ` ${practiceProblemQueue.label}` : ""}`
+    : "";
   const activeQuestionProgress = activeProblem ? progressByQuestion[activeProblem.id] : null;
   const activeSolvedLanguages = activeQuestionProgress?.solved_languages || [];
   const canOpenVisualizer = problemHasVisualizer(activeProblem);
@@ -2639,10 +2656,20 @@ export default function CodingTutor({
     }
   };
 
-  const selectQuestion = async (problem) => {
+  const selectQuestion = async (problem, filteredSet = null) => {
     // Opening a regular practice problem leaves any mock session behind (a mock is
     // a focused round; picking another problem ends it — silently, no summary).
     abandonMockIfActive();
+    if (Array.isArray(filteredSet) && filteredSet.length) {
+      const ids = filteredSet.map((question) => question?.id).filter(Boolean);
+      const topics = [...new Set(filteredSet.map((question) => question?.topic).filter(Boolean))];
+      setPracticeProblemQueue({
+        ids,
+        label: topics.length === 1 ? `in ${topics[0]}` : "filtered",
+      });
+    } else {
+      setPracticeProblemQueue({ ids: [], label: "" });
+    }
     setProblemLoading(true);
     try {
       // Save edits to the problem we're leaving before loading the new one.
@@ -3513,9 +3540,16 @@ export default function CodingTutor({
 
   const navigatePracticeProblem = async (direction) => {
     if (activeQuestionIndex < 0) return;
-    const targetIndex = findAdjacentUnsolvedIndex(activeQuestionIndex, direction);
-    if (targetIndex < 0) return;
-    const nextQuestion = questions[targetIndex];
+    let nextQuestion = null;
+    if (usingPracticeQueue) {
+      const targetQueueIndex = activeQueueIndex + direction;
+      const targetId = practiceQueueIds[targetQueueIndex];
+      nextQuestion = workspacePracticeQuestions.find((question) => question.id === targetId);
+    } else {
+      const targetIndex = findAdjacentUnsolvedIndex(activeQuestionIndex, direction);
+      if (targetIndex < 0) return;
+      nextQuestion = workspacePracticeQuestions[targetIndex];
+    }
     if (!nextQuestion) return;
     setProblemLoading(true);
     try {
@@ -4141,6 +4175,7 @@ export default function CodingTutor({
             showProblemNavigation={isQuizBankProblem}
             canGoPrevious={canGoPrevious}
             canGoNext={canGoNext}
+            navigationLabel={practiceNavigationLabel}
             onPreviousProblem={() => navigatePracticeProblem(-1)}
             onNextProblem={() => navigatePracticeProblem(1)}
             onShowHint={showNextHint}
