@@ -3086,13 +3086,24 @@ body.coding-dark .learn-lesson-complete {
   margin-inline: auto;
 }
 
+.learn-tracks-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
 .learn-tracks-head {
   max-width: 720px;
+  margin-bottom: 0;
 }
 
 .learn-back-link {
   font-size: 0.86rem;
   color: color-mix(in srgb, var(--ct-text) 68%, transparent);
+  flex: 0 0 auto;
+  margin-top: 2px;
 }
 
 .learn-track-kicker {
@@ -3144,10 +3155,11 @@ body.coding-dark .learn-lesson-complete {
 }
 
 .coding-app .learn-tracks .learn-back-link {
-  padding: 6px 8px;
-  border-radius: 8px;
-  background: transparent !important;
-  background-color: transparent !important;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border-color: var(--ct-border) !important;
+  background: var(--ct-panel) !important;
+  background-color: var(--ct-panel) !important;
   color: color-mix(in srgb, var(--ct-text) 68%, transparent) !important;
 }
 
@@ -3160,4 +3172,16 @@ body.coding-dark .learn-lesson-complete {
 
 .coding-app .learn-tracks .learn-back-link:focus-visible {
   outline-color: var(--ct-primary);
+}
+
+@media (max-width: 700px) {
+  .learn-tracks-toolbar {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .learn-back-link {
+    width: max-content;
+  }
 }

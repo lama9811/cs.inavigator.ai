@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { FaPause, FaPlay, FaRedoAlt, FaStepBackward, FaStepForward } from "react-icons/fa";
+import { FaExternalLinkAlt, FaPause, FaPlay, FaRedoAlt, FaStepBackward, FaStepForward, FaTimes } from "react-icons/fa";
 import { generateStepsForConcept } from "./generators";
 import {
   ArrayVisualizer,
@@ -174,9 +174,10 @@ interface UniversalCodeVisualizerProps {
   activeProblem?: any;
   mode?: "panel" | "modal";
   onClose?: () => void;
+  onOpenInWorkspace?: () => void;
 }
 
-export default function UniversalCodeVisualizer({ activeProblem, mode = "panel", onClose }: UniversalCodeVisualizerProps) {
+export default function UniversalCodeVisualizer({ activeProblem, mode = "panel", onClose, onOpenInWorkspace }: UniversalCodeVisualizerProps) {
   const initialConcept = conceptFromProblem(activeProblem);
   const isAuthoredProblem = Boolean(activeProblem?.visualizer?.concept);
   const [concept, setConcept] = useState<ConceptType>(initialConcept);
@@ -233,8 +234,8 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
             </label>
           )}
           {mode === "modal" && onClose ? (
-            <button type="button" className="ucv-close" onClick={onClose} data-autofocus>
-              Close
+            <button type="button" className="ucv-close" onClick={onClose} data-autofocus aria-label="Close visualizer">
+              <FaTimes aria-hidden="true" />
             </button>
           ) : null}
         </div>
@@ -258,6 +259,12 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
 
       <footer className="ucv-controls" aria-label="Visualizer controls">
         <div className="ucv-playbar" role="group" aria-label="Step playback">
+          {mode === "modal" && onOpenInWorkspace ? (
+            <button type="button" className="ucv-control-button ucv-control-button--workspace" onClick={onOpenInWorkspace}>
+              <FaExternalLinkAlt aria-hidden="true" />
+              <span>Open in Workspace</span>
+            </button>
+          ) : null}
           <button type="button" className="ucv-control-button" onClick={() => setStepIndex(0)}>
             <FaRedoAlt aria-hidden="true" />
             <span>Reset</span>

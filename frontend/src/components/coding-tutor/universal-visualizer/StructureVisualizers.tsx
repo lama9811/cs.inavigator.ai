@@ -387,6 +387,29 @@ function SetView({ step }: { step: Step }) {
   );
 }
 
+function ArrayTraceState({ step, nodes }: { step: Step; nodes: VisualNode[] }) {
+  if (!["array", "search", "sort"].includes(step.concept)) return null;
+  const activeIndex = activeNodeIndex(step, nodes.length);
+  const current = step.state?.current ?? nodes[activeIndex]?.value ?? "item";
+  const answer = step.state?.answer ?? step.state?.result ?? step.state?.swapped ?? step.state?.next ?? "not changed yet";
+  return (
+    <div className="ucv-array-trace-state" aria-label="List trace state">
+      <div>
+        <span>index</span>
+        <strong>{step.state?.index ?? activeIndex}</strong>
+      </div>
+      <div>
+        <span>current item</span>
+        <strong>{String(current)}</strong>
+      </div>
+      <div className="ucv-array-trace-result">
+        <span>result so far</span>
+        <strong>{String(answer)}</strong>
+      </div>
+    </div>
+  );
+}
+
 export function ArrayVisualizer({ step }: { step: Step }) {
   if (step.concept === "bit-manipulation") {
     return <BitVisualizer step={step} />;
@@ -407,6 +430,7 @@ export function ArrayVisualizer({ step }: { step: Step }) {
   return (
     <Canvas concept={step.concept} className="ucv-structure-canvas ucv-array-canvas">
       <ArrayRow step={step} nodes={nodes} />
+      <ArrayTraceState step={step} nodes={nodes} />
       {step.concept === "binary-search" ? <div className="ucv-array-caption">Only the bright range can still contain the target.</div> : null}
       {step.concept === "sliding-window" ? <div className="ucv-array-caption">The window moves as one visible block.</div> : null}
     </Canvas>

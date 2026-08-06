@@ -6,6 +6,12 @@
   overflow: hidden;
 }
 
+.ucv-shell--modal {
+  max-height: min(90vh, 900px);
+  overflow: auto;
+  padding-bottom: 5.4rem;
+}
+
 .ucv-header {
   display: flex;
   justify-content: space-between;
@@ -97,14 +103,16 @@
 }
 
 .ucv-shell--panel .ucv-side {
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 380px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+  align-items: stretch;
 }
 
 .ucv-stage {
   min-width: 0;
   display: grid;
   gap: 0.75rem;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .ucv-canvas {
@@ -138,6 +146,11 @@
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--ct-panel, #fff) 96%, var(--ct-soft, #eef6ff)), var(--ct-panel, #fff));
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.ucv-shell--modal .ucv-workflow {
+  flex-wrap: nowrap;
+  scroll-padding-inline: 1rem;
 }
 
 .ucv-workflow-step {
@@ -737,6 +750,50 @@
 .ucv-array-caption {
   justify-self: center;
   margin-top: 1rem;
+}
+
+.ucv-array-trace-state {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  width: min(720px, 100%);
+  justify-self: center;
+  margin-top: 0.6rem;
+}
+
+.ucv-array-trace-state > div {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--ct-border, #c7d6ea) 80%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ct-panel, #fff) 84%, var(--ct-primary, #082343));
+  box-shadow: 0 10px 24px rgba(15, 37, 69, 0.08);
+}
+
+.ucv-array-trace-state span {
+  color: var(--ct-muted, #5d6b82);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.ucv-array-trace-state strong {
+  color: var(--ct-text, #082343);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.ucv-array-trace-result {
+  border-color: color-mix(in srgb, var(--ct-success, #16a34a) 42%, var(--ct-border, #c7d6ea)) !important;
+  background: color-mix(in srgb, var(--ct-success, #16a34a) 8%, var(--ct-panel, #fff)) !important;
+}
+
+body.coding-dark .ucv-array-trace-state > div {
+  background: color-mix(in srgb, var(--ct-raised, #17365c) 82%, #061526);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
 }
 
 .ucv-string-canvas,
@@ -1660,6 +1717,17 @@
   gap: 0.75rem;
 }
 
+.ucv-shell--modal .ucv-controls {
+  position: sticky;
+  z-index: 6;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: 0 -0.25rem -0.25rem;
+  padding: 0.65rem 0.5rem 0.25rem;
+  background: linear-gradient(180deg, transparent, var(--ct-panel, #fff) 24%);
+}
+
 .ucv-playbar {
   display: inline-flex;
   align-items: center;
@@ -1727,14 +1795,32 @@
   box-shadow: 0 8px 16px rgba(8, 35, 67, 0.16);
 }
 
+.ucv-control-button--workspace {
+  border-color: color-mix(in srgb, var(--ct-info, #2563eb) 72%, var(--ct-border, #d7e1ef));
+  background: color-mix(in srgb, var(--ct-info, #2563eb) 12%, var(--ct-panel, #fff));
+  color: var(--ct-primary, #082343);
+}
+
 .ucv-close {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  display: inline-grid;
+  width: 2.35rem;
+  height: 2.35rem;
+  place-items: center;
   border: 1px solid var(--ct-border, #d7e1ef);
   border-radius: 999px;
   background: var(--ct-panel, #fff);
   color: var(--ct-primary, #082343);
-  padding: 0.62rem 0.9rem;
+  padding: 0;
   font-weight: 900;
   cursor: pointer;
+}
+
+.ucv-close svg {
+  width: 0.9rem;
+  height: 0.9rem;
 }
 
 .ucv-controls button:hover,
@@ -1864,6 +1950,10 @@
 
   .ucv-array-row {
     justify-content: start;
+  }
+
+  .ucv-array-trace-state {
+    grid-template-columns: 1fr;
   }
 }
 

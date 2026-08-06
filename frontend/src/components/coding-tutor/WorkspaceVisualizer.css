@@ -837,8 +837,8 @@
 }
 
 .workspace-visualizer-backdrop > div {
-  width: min(1100px, 96vw);
-  max-height: 92vh;
+  width: min(1280px, 98vw);
+  max-height: 94vh;
   overflow: auto;
   border-radius: 28px;
   background: var(--ct-panel, #fff);
@@ -1423,6 +1423,140 @@
   color: #1d4ed8;
 }
 
+.code-trace-frame-local.is-reference {
+  grid-template-columns: minmax(4.25rem, 0.6fr) auto minmax(8rem, 1.35fr);
+}
+
+.code-trace-v2-graph {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.code-trace-v2-frames,
+.code-trace-v2-heap {
+  display: grid;
+  align-content: start;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.code-trace-v2-frame,
+.code-trace-v2-object {
+  display: grid;
+  gap: 0.55rem;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--ct-border, #d7e1ef) 74%, transparent);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--ct-panel, #fff) 92%, var(--ct-soft, #eef6ff)), var(--ct-panel, #fff));
+  padding: 0.62rem;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.07);
+}
+
+.code-trace-v2-frame .code-trace-frame-head,
+.code-trace-v2-heap > .code-trace-frame-head,
+.code-trace-v2-frames > .code-trace-frame-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.code-trace-v2-frame .code-trace-frame-head strong {
+  justify-self: end;
+  max-width: 14rem;
+  text-align: right;
+}
+
+.code-trace-v2-frame .code-trace-frame-local {
+  grid-template-columns: minmax(5rem, 0.8fr) auto minmax(0, 1fr);
+}
+
+.code-trace-v2-frame .code-trace-frame-local code {
+  justify-self: stretch;
+  text-align: left;
+}
+
+.code-trace-v2-frame .code-trace-frame-local .code-trace-value {
+  display: block;
+  width: 100%;
+}
+
+.code-trace-v2-frame.is-current {
+  border-color: color-mix(in srgb, var(--ct-accent, #f97316) 50%, var(--ct-border, #d7e1ef));
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--ct-accent, #f97316) 8%, transparent), transparent 74%),
+    var(--ct-panel, #fff);
+  box-shadow:
+    inset 4px 0 0 var(--ct-accent, #f97316),
+    0 14px 26px color-mix(in srgb, var(--ct-accent, #f97316) 12%, transparent);
+}
+
+.code-trace-v2-object {
+  border-color: color-mix(in srgb, var(--ct-info, #2563eb) 32%, var(--ct-border, #d7e1ef));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--ct-info, #2563eb) 7%, var(--ct-panel, #fff)), var(--ct-panel, #fff));
+}
+
+.code-trace-v2-object.is-changed {
+  border-color: color-mix(in srgb, #16a34a 52%, var(--ct-border, #d7e1ef));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #22c55e 12%, var(--ct-panel, #fff)), var(--ct-panel, #fff));
+  box-shadow:
+    inset 4px 0 0 #16a34a,
+    0 14px 26px color-mix(in srgb, #22c55e 14%, transparent);
+}
+
+.code-trace-v2-object p {
+  margin: 0;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ct-soft, #eef6ff) 64%, var(--ct-panel, #fff));
+  color: var(--ct-muted, #667085);
+  padding: 0.45rem 0.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.code-trace-v2-object-grid {
+  display: grid;
+  gap: 0.58rem;
+  min-width: 0;
+}
+
+.code-trace-v2-references {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.code-trace-v2-references span {
+  display: grid;
+  grid-template-columns: minmax(3.5rem, 0.85fr) auto minmax(4.5rem, 1fr);
+  align-items: center;
+  gap: 0.38rem;
+  border: 1px dashed color-mix(in srgb, var(--ct-info, #2563eb) 38%, var(--ct-border, #d7e1ef));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-info, #2563eb) 6%, var(--ct-panel, #fff));
+  padding: 0.28rem 0.46rem;
+  font-size: 0.72rem;
+}
+
+.code-trace-v2-references strong,
+.code-trace-v2-references code {
+  min-width: 0;
+  color: var(--ct-primary, #082343);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+.code-trace-v2-references em {
+  color: var(--ct-muted, #667085);
+  font-style: normal;
+  font-weight: 800;
+}
+
 .code-trace-object-list-wrap {
   display: grid;
   gap: 0.52rem;
@@ -1650,7 +1784,8 @@
   z-index: 8;
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.55rem;
   margin: 0;
   padding: 0.75rem clamp(1rem, 2.4vw, 1.5rem) clamp(0.9rem, 2vw, 1.2rem);
@@ -1658,6 +1793,30 @@
   background: color-mix(in srgb, var(--ct-panel, #fff) 94%, transparent);
   backdrop-filter: blur(14px);
   box-shadow: 0 -16px 28px color-mix(in srgb, var(--ct-bg, #f6f8fc) 44%, transparent);
+}
+
+.code-trace-footer-status {
+  display: grid;
+  gap: 0.12rem;
+  margin-right: auto;
+}
+
+.code-trace-footer-status strong {
+  color: var(--ct-primary, #082343);
+  font-size: 0.86rem;
+}
+
+.code-trace-footer-status span {
+  color: var(--ct-muted, #667085);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.code-trace-footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.55rem;
 }
 
 .code-trace-controls button {
@@ -1856,6 +2015,65 @@ body.coding-dark .code-trace-variable-updates {
 
 body.coding-dark .code-trace-variable-updates > span {
   color: #bcd0ec;
+}
+
+body.coding-dark .code-trace-v2-frame,
+body.coding-dark .code-trace-v2-object {
+  border-color: rgba(139, 189, 255, 0.34);
+  background:
+    linear-gradient(180deg, rgba(139, 189, 255, 0.10), rgba(96, 165, 250, 0.04)),
+    rgba(8, 25, 46, 0.94);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 16px 28px rgba(2, 6, 23, 0.28);
+}
+
+body.coding-dark .code-trace-v2-frame.is-current {
+  border-color: color-mix(in srgb, var(--ct-accent, #ffb86b) 52%, var(--ct-border, #3d5f91));
+  background:
+    linear-gradient(90deg, rgba(255, 184, 107, 0.13), transparent 72%),
+    rgba(18, 42, 72, 0.96);
+  box-shadow:
+    inset 4px 0 0 var(--ct-accent, #ffb86b),
+    0 16px 30px rgba(255, 184, 107, 0.10);
+}
+
+body.coding-dark .code-trace-v2-object {
+  border-color: rgba(139, 189, 255, 0.42);
+}
+
+body.coding-dark .code-trace-v2-object.is-changed {
+  border-color: rgba(74, 222, 128, 0.58);
+  background:
+    linear-gradient(180deg, rgba(34, 197, 94, 0.16), rgba(34, 197, 94, 0.05)),
+    rgba(8, 25, 46, 0.96);
+  box-shadow:
+    inset 4px 0 0 #4ade80,
+    0 16px 30px rgba(34, 197, 94, 0.10);
+}
+
+body.coding-dark .code-trace-v2-object p {
+  background: rgba(3, 12, 27, 0.64);
+  color: #dbeafe;
+}
+
+body.coding-dark .code-trace-v2-references span {
+  border-color: rgba(139, 189, 255, 0.42);
+  background: rgba(139, 189, 255, 0.10);
+}
+
+body.coding-dark .code-trace-v2-references strong,
+body.coding-dark .code-trace-v2-references code {
+  color: #f8fafc;
+}
+
+body.coding-dark .code-trace-v2-references em {
+  color: #bfd2ea;
+}
+
+/* Trace V2 keeps references as data, but the beginner UI presents them as stable stored list/object summaries. */
+.code-trace-v2-references {
+  display: none;
 }
 
 body.coding-dark .code-trace-variable-updates p {
@@ -2061,6 +2279,11 @@ body.coding-dark .problem-visualize-button:hover:not(:disabled) {
   .code-trace-stage {
     grid-template-columns: 1fr;
   }
+
+  .code-trace-v2-graph {
+    grid-template-columns: 1fr;
+  }
+
 }
 
 @media (max-width: 1100px) {
@@ -2078,6 +2301,11 @@ body.coding-dark .problem-visualize-button:hover:not(:disabled) {
   .code-trace-frame-local {
     grid-template-columns: 1fr;
     justify-items: start;
+  }
+
+  .code-trace-v2-references span {
+    grid-template-columns: 1fr;
+    border-radius: 14px;
   }
 
   .code-trace-frame-local code {

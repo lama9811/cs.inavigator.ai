@@ -11,11 +11,15 @@ All notable changes to CS Navigator are documented here.
 - **Planner live Banner schedule support.** The Banner scraper now refreshes CS-adjacent and planner GenEd subjects into cached live sections, reports subject-level counts/errors, and lets Planner show live seats, times, rooms, instructors, freshness status, GenEd section choices, and conflict-aware swaps.
 - **Admin schedule refresh controls.** Admin Dashboard now includes manual schedule refresh/status controls for Planner live section snapshots, with cadence guidance for normal and advising-season use.
 - **Learn guided execution traces.** All existing Learn visualizers now include a reusable trace panel with current operation, input value, state before/after, decision, output, and why-it-matters metadata across 82 visual blocks and 392 authored steps.
+- **Trace My Code V2 frontend.** The Python trace modal now prefers the backend `trace_v2` payload when available, keeps the full source visible, shows current line/output/errors, and renders function variables plus list/object state with V1 trace fallback preserved.
+- **Practice visualizer step-depth pass.** All 151 Practice Library visualizers now expand beyond the old four-step sketch into six-step concept traces with setup, operation, state update, repeated movement, and final-result checks.
 
 ### Changed
 - The standalone in-app Advising Form is hidden behind a local legacy feature flag; `/advising` now sends students to Planner V2 by default while preserving the old form code and backend draft/upload endpoints.
 - Coding Tutor dark-mode styling now uses a more stable scoped token layer under `body.coding-dark .coding-app`, with clearer dark surface contrast and Coding Tutor-specific legacy dark selectors moved off global `body.dark` / `[data-theme="dark"]` paths.
 - Coding Tutor dark-mode controls now have brighter, less muddy contrast for Learn visualizer buttons, Practice Library starter/filter chips, track navigation, and workspace visualizer idea actions.
+- Practice visualizer workflow rails now use topic-specific labels and pseudocode lines that align with the active step, avoiding duplicate setup/finish beats and generic row-box pacing.
+- The "Visualize this" modal keeps a full-screen-feeling layout with a sticky X close button and an Open in Workspace action, while the Workspace Visualize tab uses a roomier stage-first layout for longer traces.
 - Planner course cards now use compact icon actions, clearer seat/time/location/instructor ordering, distinct GenEd styling, concise review status language, sorted class times, and TBA/untimed courses at the bottom.
 - Syntax lessons now emphasize first-use definitions and key beginner terms, such as syntax, comments, blocks, indentation, statements, semicolons, and compiler/parser messages.
 - Operators lessons now use authored sections for mathematical operators, bitwise operators, comparison/assignment, and conditional logic across Python, Java, JavaScript, and C++.
