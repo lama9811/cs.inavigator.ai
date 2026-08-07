@@ -221,8 +221,32 @@ function v2ObjectSummary(object) {
   return object.type || "object";
 }
 
-function stripPythonComment(line = "") {
+const TRACE_LANGUAGE_LABELS = {
+  python: "Python",
+  javascript: "JavaScript",
+  java: "Java",
+  cpp: "C++",
+};
+
+function normalizeTraceLanguage(language = "") {
+  const value = String(language || "").toLowerCase();
+  if (value === "c++" || value === "cpp") return "cpp";
+  if (value === "js" || value === "javascript") return "javascript";
+  if (value === "py" || value === "python") return "python";
+  if (value === "java") return "java";
+  return value;
+}
+
+function traceLanguageLabel(language = "") {
+  const normalized = normalizeTraceLanguage(language);
+  return TRACE_LANGUAGE_LABELS[normalized] || language || "Code";
+}
+
+function stripLineComment(line = "", language = "Python") {
   const source = String(line || "");
+  const normalized = normalizeTraceLanguage(language);
+  const lineComment =
+    normalized === "javascript" || normalized === "java" || normalized === "cpp" ? "//" : "#";
   let quote = "";
   let escaped = false;
   for (let index = 0; index < source.length; index += 1) {
@@ -243,7 +267,10 @@ function stripPythonComment(line = "") {
       quote = char;
       continue;
     }
-    if (char === "#") {
+    if (lineComment === "#" && char === "#") {
+      return source.slice(0, index).trimEnd();
+    }
+    if (lineComment === "//" && char === "/" && source[index + 1] === "/") {
       return source.slice(0, index).trimEnd();
     }
   }
@@ -391,7 +418,7 @@ function describeTraceOperation(line = "", locals = {}, previousLine = "") {
   return "";
 }
 
-function traceErrorInfo(traceResult, activeStep, selectedLanguage = "Python") {
+function traceErrorInfo(traceResult, activeStep, languageLabel = "Python") {
   const exceptionText = typeof activeStep?.exception === "object" && activeStep.exception
     ? `${activeStep.exception.type || "Error"}: ${activeStep.exception.message || ""}`
     : activeStep?.exception;
@@ -405,9 +432,9 @@ function traceErrorInfo(traceResult, activeStep, selectedLanguage = "Python") {
   const lineNo = traceLineNo(activeStep) || exceptionLine || Number(syntaxLine?.[2] || pythonLine?.[1]) || null;
   const label = isSyntax ? "Syntax error" : activeStep?.exception ? "Runtime error" : "Trace error";
   const message = syntaxLine?.[1]?.trim()
-    ? `${selectedLanguage} could not read the code: ${syntaxLine[1].trim()}.`
+    ? `${languageLabel} could not read the code: ${syntaxLine[1].trim()}.`
     : exceptionName
-      ? `${selectedLanguage} raised ${exceptionName[1]} while tracing this run.`
+      ? `${languageLabel} raised ${exceptionName[1]} while tracing this run.`
       : raw.replace(/^Runner security check blocked this code:\s*/i, "");
   const location = lineNo
     ? `You would see this at line ${lineNo}${activeStep?.line ? `: ${activeStep.line.trim()}` : "."}`
@@ -477,7 +504,12 @@ function CodeTraceModal({
       usedNow: activeLineVariables.includes(name),
     }));
   }, [activeLineVariables, activeLocals, previousLocals]);
-  const activeErrorInfo = traceErrorInfo(traceResult, activeStep, selectedLanguage);
+  const traceMeta = traceResult?.trace_v2 || {};
+  const traceLanguage = traceLanguageLabel(traceMeta.language || traceMeta.requested_language || selectedLanguage);
+  const traceCapability = traceMeta.capability || "practice_and_freeform";
+  const traceMode = traceMeta.trace_mode || "";
+  const hasTraceSteps = trace.length > 0;
+  const activeErrorInfo = traceErrorInfo(traceResult, activeStep, traceLanguage);
   const canGoBack = stepIndex > 0;
   const canGoNext = stepIndex < trace.length - 1;
   const screenOutput = activeStep?.stdout || (!canGoNext ? traceResult?.stdout : "");
@@ -486,18 +518,18 @@ function CodeTraceModal({
     [activeStep?.line, activeLocals, previousStep?.line]
   );
   const activeExplanation = useMemo(() => {
-    if (!activeStep) return `Run a trace to step through your ${selectedLanguage} code.`;
+    if (!activeStep) return `Run a trace to step through your ${traceLanguage} code.`;
     if (isTraceV2 && activeStep.student_message) return activeStep.student_message;
     if (isTraceV2 && activeStep.operation_summary) return activeStep.operation_summary;
     if (activeStep.event === "return") {
       return `The function is returning ${formatTraceDisplayValue(activeStep.return_value).inline}.`;
     }
     if (activeStep.event === "exception") {
-      return activeStep.exception ? `${selectedLanguage} stopped on line ${traceLineNo(activeStep) || activeStep.exception?.line || "?"} because ${exceptionDisplay(activeStep.exception)}.` : `${selectedLanguage} raised an exception on this step.`;
+      return activeStep.exception ? `${traceLanguage} stopped on line ${traceLineNo(activeStep) || activeStep.exception?.line || "?"} because ${exceptionDisplay(activeStep.exception)}.` : `${traceLanguage} raised an exception on this step.`;
     }
     if (operationInsight) return operationInsight;
-    return `${selectedLanguage} is about to run line ${traceLineNo(activeStep)}. Watch the variables below before and after this line.`;
-  }, [activeStep, isTraceV2, operationInsight, selectedLanguage]);
+    return `${traceLanguage} is about to run line ${traceLineNo(activeStep)}. Watch the variables below before and after this line.`;
+  }, [activeStep, isTraceV2, operationInsight, traceLanguage]);
   const changedBindings = useMemo(() => {
     const names = new Set();
     (activeStep?.binding_changes || []).forEach((change) => names.add(`${change.frame}:${change.name}`));
@@ -511,10 +543,19 @@ function CodeTraceModal({
     return ids;
   }, [activeStep?.object_changes]);
   const currentLineNo = traceLineNo(activeStep);
-  const currentLineDisplay = stripPythonComment(activeStep?.line).trim() || activeStep?.line?.trim() || "";
-  const isTraceLanguage = selectedLanguage === "Python" || selectedLanguage === "JavaScript";
+  const currentLineDisplay = stripLineComment(activeStep?.line, traceLanguage).trim() || activeStep?.line?.trim() || "";
   const lineCardLabel = activeStep?.phase === "after_previous_line" ? "Next line" : activeStep?.event === "return" ? "Return line" : activeStep?.event === "exception" ? "Error line" : "Current line";
   const modalRef = useFocusTrap(true, { onEscape: onClose });
+  const traceTitle = hasTraceSteps
+    ? `${traceLanguage} execution trace`
+    : traceCapability === "practice_only" || traceMode === "freeform_unavailable"
+      ? `${traceLanguage} Practice trace only right now`
+      : `${traceLanguage} trace unavailable`;
+  const traceDescription = hasTraceSteps
+    ? `Steps through the ${traceLanguage} code currently in your editor and shows what changes as it runs.`
+    : traceCapability === "practice_only" || traceMode === "freeform_unavailable"
+      ? `${traceLanguage} tracing currently works from authored Practice problems, where CS Navigator knows which function and test case to run.`
+      : traceResult?.message || traceResult?.stderr || `${traceLanguage} tracing is not available for this run.`;
 
   const goToStep = useCallback((nextIndex) => {
     if (!trace.length) return;
@@ -574,11 +615,9 @@ function CodeTraceModal({
           <header className="workspace-visualizer-head">
             <div>
               <span className="workspace-visualizer-kicker">Trace My Code</span>
-              <h3 id="code-trace-title">{isTraceLanguage ? `${selectedLanguage} execution trace` : "Execution tracing is Python and JavaScript first"}</h3>
+              <h3 id="code-trace-title">{traceTitle}</h3>
               <p id="code-trace-description">
-                {isTraceLanguage
-                  ? `Steps through the ${selectedLanguage} code currently in your editor and shows what changes as it runs.`
-                  : `${selectedLanguage} can still run tests here. Use Visualize this idea for the concept walkthrough while full execution tracing is built.`}
+                {traceDescription}
               </p>
             </div>
             <button
@@ -1018,7 +1057,7 @@ export default function CodeWorkspace({
             </button>
             {!canTraceLanguage ? (
               <span className="code-trace-language-note" role="status">
-                Python/JS/Java/C++ trace only
+                Trace supports Python, JavaScript, Java, and C++
               </span>
             ) : null}
             <span className="code-editor-lang-control">

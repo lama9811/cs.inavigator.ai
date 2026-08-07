@@ -2614,8 +2614,7 @@ export default function CodingTutor({
       },
     }));
     setNote(`Practice problem: ${problem.title}`);
-    const runnerLabel = `${languageName} local tests can run from the terminal below the editor.`;
-    setTestOutput({ status: "ready", message: `${problem.title} loaded in ${languageName}. ${runnerLabel}` });
+    setTestOutput({ status: "ready", message: "Run code to see tests." });
     setTerminalOpen(false);
     setWorkspaceVisible(true);
     setWorkspaceTab("Editor");

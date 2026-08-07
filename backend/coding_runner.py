@@ -240,6 +240,94 @@ def _empty_trace_v2_payload() -> dict[str, Any]:
     }
 
 
+def _trace_scalar_binding(value: Any, *, value_type: str | None = None) -> dict[str, Any]:
+    return {
+        "kind": "scalar",
+        "type": value_type or type(value).__name__,
+        "value": value,
+        "display": _truncate_text(value, RUN_MAX_VALUE_CHARS),
+    }
+
+
+def _trace_bindings_from_pairs(pairs: list[dict[str, Any]] | tuple[dict[str, Any], ...] | None) -> dict[str, dict[str, Any]]:
+    bindings: dict[str, dict[str, Any]] = {}
+    for item in pairs or []:
+        name = str(item.get("name") or "").strip()
+        if not name:
+            continue
+        bindings[name] = _trace_scalar_binding(item.get("value", ""), value_type="argument")
+    return bindings
+
+
+def _normalize_trace_v2_frames(trace_v2: dict[str, Any] | None) -> dict[str, Any]:
+    payload = dict(trace_v2 or _empty_trace_v2_payload())
+    payload["schema_version"] = "trace_v2"
+    payload["steps"] = list(payload.get("steps") or [])
+    payload["limits"] = dict(payload.get("limits") or {})
+    for step in payload["steps"]:
+        frames = []
+        for index, frame in enumerate(step.get("frames") or []):
+            normalized = dict(frame or {})
+            function_name = normalized.get("function") or normalized.get("name") or step.get("function") or "trace"
+            normalized["function"] = function_name
+            normalized.setdefault("frame_id", f"frame_{index + 1}")
+            raw_bindings = normalized.get("bindings") or {}
+            if isinstance(raw_bindings, list):
+                normalized["bindings"] = _trace_bindings_from_pairs(raw_bindings)
+            elif isinstance(raw_bindings, dict):
+                normalized["bindings"] = raw_bindings
+            else:
+                normalized["bindings"] = {}
+            frames.append(normalized)
+        step["frames"] = frames
+        if not isinstance(step.get("objects"), dict):
+            step["objects"] = {}
+        if not isinstance(step.get("references"), list):
+            step["references"] = []
+    return payload
+
+
+def _with_trace_v2_metadata(
+    trace_v2: dict[str, Any] | None,
+    *,
+    language: str,
+    requested_language: str | None = None,
+    capability: str = "practice_and_freeform",
+    trace_mode: str = "practice",
+) -> dict[str, Any]:
+    payload = _normalize_trace_v2_frames(trace_v2)
+    payload["language"] = language
+    payload["requested_language"] = requested_language or language
+    payload["capability"] = capability
+    payload["trace_mode"] = trace_mode
+    return payload
+
+
+def _trace_capability_error_response(
+    message: str,
+    *,
+    language: str,
+    requested_language: str | None = None,
+    capability: str = "unsupported",
+    trace_mode: str = "unavailable",
+) -> dict[str, Any]:
+    return {
+        "status": "error",
+        "trace": [],
+        "trace_v2": _with_trace_v2_metadata(
+            _empty_trace_v2_payload(),
+            language=language,
+            requested_language=requested_language,
+            capability=capability,
+            trace_mode=trace_mode,
+        ),
+        "stdout": "",
+        "stderr": message,
+        "message": message,
+        "duration_ms": 0,
+    }
+
+
 def _truncate_text(value: Any, limit: int = RUN_MAX_OUTPUT_CHARS) -> str:
     text = "" if value is None else str(value)
     if len(text) <= limit:
@@ -785,7 +873,12 @@ def run_python_practice_trace(code: str, function_name: str, test: dict[str, Any
     except RunnerSecurityError as exc:
         response = _security_error_response(exc)
         response["trace"] = []
-        response["trace_v2"] = _empty_trace_v2_payload()
+        response["trace_v2"] = _with_trace_v2_metadata(
+            _empty_trace_v2_payload(),
+            language="python",
+            capability="practice_and_freeform",
+            trace_mode="practice",
+        )
         return response
 
     runner_source = """
@@ -1417,7 +1510,12 @@ print(json.dumps({
         return {
             "status": "error",
             "trace": [],
-            "trace_v2": _empty_trace_v2_payload(),
+            "trace_v2": _with_trace_v2_metadata(
+                _empty_trace_v2_payload(),
+                language="python",
+                capability="practice_and_freeform",
+                trace_mode="practice",
+            ),
             "stdout": "",
             "stderr": f"The trace timed out after {RUN_TIMEOUT_SECONDS} seconds. Check for infinite loops or very slow logic.",
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -1426,7 +1524,12 @@ print(json.dumps({
         return {
             "status": "error",
             "trace": [],
-            "trace_v2": _empty_trace_v2_payload(),
+            "trace_v2": _with_trace_v2_metadata(
+                _empty_trace_v2_payload(),
+                language="python",
+                capability="practice_and_freeform",
+                trace_mode="practice",
+            ),
             "stdout": "",
             "stderr": f"Trace setup failed: {exc}",
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -1438,7 +1541,12 @@ print(json.dumps({
         return {
             "status": "error",
             "trace": [],
-            "trace_v2": _empty_trace_v2_payload(),
+            "trace_v2": _with_trace_v2_metadata(
+                _empty_trace_v2_payload(),
+                language="python",
+                capability="practice_and_freeform",
+                trace_mode="practice",
+            ),
             "stdout": "",
             "stderr": stderr_text or "Python returned an error before tracing could run.",
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -1450,7 +1558,12 @@ print(json.dumps({
         return {
             "status": "error",
             "trace": [],
-            "trace_v2": _empty_trace_v2_payload(),
+            "trace_v2": _with_trace_v2_metadata(
+                _empty_trace_v2_payload(),
+                language="python",
+                capability="practice_and_freeform",
+                trace_mode="practice",
+            ),
             "stdout": _truncate_text(stdout_text),
             "stderr": stderr_text or "Trace output could not be parsed.",
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -1461,7 +1574,12 @@ print(json.dumps({
         "function_name": payload.get("function_name", function_name),
         "test": payload.get("test", {}),
         "trace": payload.get("trace", []),
-        "trace_v2": payload.get("trace_v2", _empty_trace_v2_payload()),
+        "trace_v2": _with_trace_v2_metadata(
+            payload.get("trace_v2", _empty_trace_v2_payload()),
+            language="python",
+            capability="practice_and_freeform",
+            trace_mode="practice",
+        ),
         "stdout": _truncate_text(payload.get("stdout", "")),
         "stderr": _truncate_text(payload.get("error") or stderr_text),
         "duration_ms": payload.get("duration_ms", round((time.perf_counter() - started) * 1000, 2)),
@@ -1481,7 +1599,12 @@ def run_python_freeform_trace(code: str) -> dict[str, Any]:
     except RunnerSecurityError as exc:
         response = _security_error_response(exc)
         response["trace"] = []
-        response["trace_v2"] = _empty_trace_v2_payload()
+        response["trace_v2"] = _with_trace_v2_metadata(
+            _empty_trace_v2_payload(),
+            language="python",
+            capability="practice_and_freeform",
+            trace_mode="freeform",
+        )
         return response
 
     runner_source = """
@@ -2052,7 +2175,12 @@ print(json.dumps({
         return {
             "status": "error",
             "trace": [],
-            "trace_v2": _empty_trace_v2_payload(),
+            "trace_v2": _with_trace_v2_metadata(
+                _empty_trace_v2_payload(),
+                language="python",
+                capability="practice_and_freeform",
+                trace_mode="freeform",
+            ),
             "stdout": "",
             "stderr": f"The trace timed out after {RUN_TIMEOUT_SECONDS} seconds. Check for infinite loops or very slow logic.",
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -2061,7 +2189,12 @@ print(json.dumps({
         return {
             "status": "error",
             "trace": [],
-            "trace_v2": _empty_trace_v2_payload(),
+            "trace_v2": _with_trace_v2_metadata(
+                _empty_trace_v2_payload(),
+                language="python",
+                capability="practice_and_freeform",
+                trace_mode="freeform",
+            ),
             "stdout": "",
             "stderr": f"Trace setup failed: {exc}",
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -2073,7 +2206,12 @@ print(json.dumps({
         return {
             "status": "error",
             "trace": [],
-            "trace_v2": _empty_trace_v2_payload(),
+            "trace_v2": _with_trace_v2_metadata(
+                _empty_trace_v2_payload(),
+                language="python",
+                capability="practice_and_freeform",
+                trace_mode="freeform",
+            ),
             "stdout": "",
             "stderr": stderr_text or "Python returned an error before tracing could run.",
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -2085,7 +2223,12 @@ print(json.dumps({
         return {
             "status": "error",
             "trace": [],
-            "trace_v2": _empty_trace_v2_payload(),
+            "trace_v2": _with_trace_v2_metadata(
+                _empty_trace_v2_payload(),
+                language="python",
+                capability="practice_and_freeform",
+                trace_mode="freeform",
+            ),
             "stdout": _truncate_text(stdout_text),
             "stderr": stderr_text or "Trace output could not be parsed.",
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -2096,7 +2239,12 @@ print(json.dumps({
         "function_name": payload.get("function_name", "script"),
         "test": payload.get("test", {}),
         "trace": payload.get("trace", []),
-        "trace_v2": payload.get("trace_v2", _empty_trace_v2_payload()),
+        "trace_v2": _with_trace_v2_metadata(
+            payload.get("trace_v2", _empty_trace_v2_payload()),
+            language="python",
+            capability="practice_and_freeform",
+            trace_mode="freeform",
+        ),
         "stdout": _truncate_text(payload.get("stdout", "")),
         "stderr": _truncate_text(payload.get("error") or stderr_text),
         "duration_ms": payload.get("duration_ms", round((time.perf_counter() - started) * 1000, 2)),
@@ -2385,14 +2533,12 @@ try {
 
 
 def _empty_javascript_trace_response(message: str) -> dict[str, Any]:
-    return {
-        "status": "error",
-        "trace": [],
-        "trace_v2": _empty_trace_v2_payload(),
-        "stdout": "",
-        "stderr": message,
-        "duration_ms": 0,
-    }
+    return _trace_capability_error_response(
+        message,
+        language="javascript",
+        capability="practice_and_freeform",
+        trace_mode="unavailable",
+    )
 
 
 def _run_javascript_trace(code: str, function_name: str | None, test: dict[str, Any] | None) -> dict[str, Any]:
@@ -2909,12 +3055,18 @@ try {
             "stdout": _truncate_text(stdout_text),
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
         }
+    trace_mode = "practice" if test else "freeform"
     return {
         "status": payload.get("status", "error"),
         "function_name": payload.get("function_name") or function_name or "script",
         "test": payload.get("test", {}),
         "trace": payload.get("trace", []),
-        "trace_v2": payload.get("trace_v2", _empty_trace_v2_payload()),
+        "trace_v2": _with_trace_v2_metadata(
+            payload.get("trace_v2", _empty_trace_v2_payload()),
+            language="javascript",
+            capability="practice_and_freeform",
+            trace_mode=trace_mode,
+        ),
         "stdout": _truncate_text(payload.get("stdout", "")),
         "stderr": _truncate_text(payload.get("error") or stderr_text),
         "duration_ms": payload.get("duration_ms", round((time.perf_counter() - started) * 1000, 2)),
@@ -2962,15 +3114,12 @@ def _java_json_string_expr(value: str) -> str:
 
 
 def _java_trace_empty_response(message: str) -> dict[str, Any]:
-    return {
-        "status": "error",
-        "trace": [],
-        "trace_v2": _empty_trace_v2_payload(),
-        "stdout": "",
-        "stderr": message,
-        "message": message,
-        "duration_ms": 0,
-    }
+    return _trace_capability_error_response(
+        message,
+        language="java",
+        capability="practice_only",
+        trace_mode="unavailable",
+    )
 
 
 def _java_trace_compile_line(stderr_text: str) -> int | None:
@@ -3065,15 +3214,12 @@ def _cpp_literal(value: Any) -> str:
 
 
 def _cpp_trace_empty_response(message: str) -> dict[str, Any]:
-    return {
-        "status": "error",
-        "trace": [],
-        "trace_v2": _empty_trace_v2_payload(),
-        "stdout": "",
-        "stderr": message,
-        "message": message,
-        "duration_ms": 0,
-    }
+    return _trace_capability_error_response(
+        message,
+        language="cpp",
+        capability="practice_only",
+        trace_mode="unavailable",
+    )
 
 
 def _cpp_trace_compile_line(stderr_text: str) -> int | None:
@@ -3479,7 +3625,9 @@ public class Runner {{
 
 def run_java_practice_trace(code: str, function_name: str, test: dict[str, Any], arg_spec=None) -> dict[str, Any]:
     if not compiled_runners_enabled():
-        return _java_trace_empty_response(COMPILED_RUNNERS_DISABLED_MESSAGE)
+        return _java_trace_empty_response(
+            "Java tracing is disabled in this environment. Use Run if it is enabled here, or switch to another trace-capable language."
+        )
     try:
         validate_java_code(code)
     except RunnerSecurityError as exc:
@@ -3490,7 +3638,7 @@ def run_java_practice_trace(code: str, function_name: str, test: dict[str, Any],
     if not javac or not java:
         return _java_trace_empty_response(
             "Java is not installed on this machine, so Java tracing cannot run locally yet. "
-            "Install a JDK (javac + java on PATH), or use Python/JavaScript for now."
+            "Install a JDK with javac and java on PATH to trace Java locally."
         )
 
     args = test.get("args", []) or []
@@ -3672,7 +3820,12 @@ public class Runner {{
                     "total": 1,
                     "tests": [],
                     "trace": [],
-                    "trace_v2": {"schema_version": "trace_v2", "steps": [step], "limits": {"max_steps": RUN_RATE_LIMIT}},
+                    "trace_v2": _with_trace_v2_metadata(
+                        {"schema_version": "trace_v2", "steps": [step], "limits": {"max_steps": RUN_RATE_LIMIT}},
+                        language="java",
+                        capability="practice_only",
+                        trace_mode="practice",
+                    ),
                     "stdout": "",
                     "stderr": stderr,
                     "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -3692,8 +3845,12 @@ public class Runner {{
             if compiled.returncode != 0:
                 stderr = _truncate_text(compiled.stderr.strip() or "Java compilation failed.")
                 line_no = _java_trace_compile_line(stderr) or 0
+                setup_message = (
+                    "Java tracing could not safely instrument this code. Your original code compiled, "
+                    "but the trace helper could not be inserted without changing the program shape."
+                )
                 exception = {
-                    "type": "CompileError",
+                    "type": "TraceInstrumentationError",
                     "message": stderr,
                     "line": line_no,
                 }
@@ -3706,8 +3863,8 @@ public class Runner {{
                     "event": "exception",
                     "stdout": "",
                     "exception": exception,
-                    "operation_kind": "compile_error",
-                    "student_message": f"Java could not compile this code{f' on line {line_no}' if line_no else ''}.",
+                    "operation_kind": "trace_setup_error",
+                    "student_message": setup_message,
                     "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
                     "objects": {},
                     "references": [],
@@ -3719,9 +3876,14 @@ public class Runner {{
                     "total": 1,
                     "tests": [],
                     "trace": [],
-                    "trace_v2": {"schema_version": "trace_v2", "steps": [step], "limits": {"max_steps": RUN_RATE_LIMIT}},
+                    "trace_v2": _with_trace_v2_metadata(
+                        {"schema_version": "trace_v2", "steps": [step], "limits": {"max_steps": RUN_RATE_LIMIT}},
+                        language="java",
+                        capability="practice_only",
+                        trace_mode="practice",
+                    ),
                     "stdout": "",
-                    "stderr": stderr,
+                    "stderr": f"{setup_message}\n\n{stderr}",
                     "duration_ms": round((time.perf_counter() - started) * 1000, 2),
                 }
 
@@ -3824,11 +3986,16 @@ public class Runner {{
         "total": 1,
         "tests": [test_result],
         "trace": [],
-        "trace_v2": {
-            "schema_version": "trace_v2",
-            "steps": trace_steps,
-            "limits": {"max_steps": RUN_RATE_LIMIT, "max_output_chars": RUN_MAX_OUTPUT_CHARS},
-        },
+        "trace_v2": _with_trace_v2_metadata(
+            {
+                "schema_version": "trace_v2",
+                "steps": trace_steps,
+                "limits": {"max_steps": RUN_RATE_LIMIT, "max_output_chars": RUN_MAX_OUTPUT_CHARS},
+            },
+            language="java",
+            capability="practice_only",
+            trace_mode="practice",
+        ),
         "stdout": stdout_text,
         "stderr": _truncate_text(run.stderr.strip()),
         "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -4018,7 +4185,9 @@ int main(){{
 
 def run_cpp_practice_trace(code: str, function_name: str, test: dict[str, Any], arg_spec=None) -> dict[str, Any]:
     if not compiled_runners_enabled():
-        return _cpp_trace_empty_response(COMPILED_RUNNERS_DISABLED_MESSAGE)
+        return _cpp_trace_empty_response(
+            "C++ tracing is disabled in this environment. Use Run if it is enabled here, or switch to another trace-capable language."
+        )
     try:
         validate_cpp_code(code)
     except RunnerSecurityError as exc:
@@ -4028,7 +4197,7 @@ def run_cpp_practice_trace(code: str, function_name: str, test: dict[str, Any], 
     if not compiler:
         return _cpp_trace_empty_response(
             "A C++ compiler (g++ or clang++) is not installed on this machine, so C++ tracing cannot run locally yet. "
-            "Install one, or use Python/JavaScript/Java for now."
+            "Install g++ or clang++ on PATH to trace C++ locally."
         )
 
     args = test.get("args", []) or []
@@ -4218,7 +4387,13 @@ int main(){{
                     "total": 1,
                     "tests": [],
                     "trace": [],
-                    "trace_v2": {"schema_version": "trace_v2", "steps": [step], "limits": {"max_steps": RUN_RATE_LIMIT}},
+                    "trace_v2": _with_trace_v2_metadata(
+                        {"schema_version": "trace_v2", "steps": [step], "limits": {"max_steps": RUN_RATE_LIMIT}},
+                        language="cpp",
+                        requested_language="cpp",
+                        capability="practice_only",
+                        trace_mode="practice",
+                    ),
                     "stdout": "",
                     "stderr": stderr,
                     "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -4322,11 +4497,17 @@ int main(){{
         "total": 1,
         "tests": [test_result],
         "trace": [],
-        "trace_v2": {
-            "schema_version": "trace_v2",
-            "steps": trace_steps,
-            "limits": {"max_steps": RUN_RATE_LIMIT, "max_output_chars": RUN_MAX_OUTPUT_CHARS},
-        },
+        "trace_v2": _with_trace_v2_metadata(
+            {
+                "schema_version": "trace_v2",
+                "steps": trace_steps,
+                "limits": {"max_steps": RUN_RATE_LIMIT, "max_output_chars": RUN_MAX_OUTPUT_CHARS},
+            },
+            language="cpp",
+            requested_language="cpp",
+            capability="practice_only",
+            trace_mode="practice",
+        ),
         "stdout": stdout_text,
         "stderr": _truncate_text(run.stderr.strip()),
         "duration_ms": round((time.perf_counter() - started) * 1000, 2),

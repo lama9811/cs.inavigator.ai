@@ -127,6 +127,8 @@ def test_python_trace_uses_same_security_validation():
     assert result["status"] == "error"
     assert "security check blocked" in result["stderr"].lower()
     assert result["trace_v2"]["schema_version"] == "trace_v2"
+    assert result["trace_v2"]["language"] == "python"
+    assert result["trace_v2"]["capability"] == "practice_and_freeform"
 
 
 def test_python_trace_v2_includes_frames_objects_and_parameter_bindings():
@@ -147,6 +149,8 @@ def maximum_score(scores: list[int]) -> int:
 
     trace_v2 = result["trace_v2"]
     assert trace_v2["schema_version"] == "trace_v2"
+    assert trace_v2["language"] == "python"
+    assert trace_v2["trace_mode"] == "practice"
     assert trace_v2["steps"]
     assert any(step["frames"] for step in trace_v2["steps"])
     assert any("scores" in frame["bindings"] for step in trace_v2["steps"] for frame in step["frames"])
@@ -265,6 +269,8 @@ print(values)
     assert result["status"] == "passed"
     assert result["trace"]
     assert result["trace_v2"]["schema_version"] == "trace_v2"
+    assert result["trace_v2"]["language"] == "python"
+    assert result["trace_v2"]["trace_mode"] == "freeform"
     assert any(obj["type"] == "list" for step in result["trace_v2"]["steps"] for obj in step["objects"].values())
     assert "[1, 2]" in result["stdout"]
 
@@ -282,6 +288,8 @@ function addOne(number) {
     assert result["status"] == "passed"
     assert result["trace"]
     assert result["trace_v2"]["schema_version"] == "trace_v2"
+    assert result["trace_v2"]["language"] == "javascript"
+    assert result["trace_v2"]["trace_mode"] == "practice"
     assert any("number" in frame["bindings"] for step in result["trace_v2"]["steps"] for frame in step["frames"])
     assert any(step.get("event") == "return" and step.get("return_value", {}).get("display") == "3" for step in result["trace_v2"]["steps"])
 
@@ -430,6 +438,8 @@ const broken = ;
 
     assert result["status"] == "error"
     assert result["trace_v2"]["schema_version"] == "trace_v2"
+    assert result["trace_v2"]["language"] == "javascript"
+    assert result["trace_v2"]["trace_mode"] == "freeform"
     assert "syntax" in result["stderr"].lower() or "unexpected" in result["stderr"].lower()
     assert any(step.get("exception", {}).get("line") for step in result["trace_v2"]["steps"])
 
@@ -445,6 +455,7 @@ console.log(values);
 
     assert result["status"] == "passed"
     assert result["trace_v2"]["schema_version"] == "trace_v2"
+    assert result["trace_v2"]["language"] == "javascript"
     assert "[1,2]" in result["stdout"]
     assert any(step.get("stdout_changed") for step in result["trace_v2"]["steps"])
 
@@ -830,6 +841,27 @@ def test_compiled_runners_gate_disables_java_and_cpp(monkeypatch):
     assert cpp_result["status"] == "error"
     assert "disabled" in cpp_result["stderr"].lower()
 
+    java_trace = run_java_practice_trace(
+        "class Solution { static int addOne(int value){ return value + 1; } }",
+        "addOne",
+        {"name": "one", "args": [2], "expected": 3},
+        arg_spec=([("value", "int")], "int"),
+    )
+    cpp_trace = run_cpp_practice_trace(
+        "int addOne(int value){ return value + 1; }",
+        "addOne",
+        {"name": "one", "args": [2], "expected": 3},
+        arg_spec=([("value", "int")], "int"),
+    )
+    assert java_trace["trace_v2"]["language"] == "java"
+    assert java_trace["trace_v2"]["capability"] == "practice_only"
+    assert java_trace["trace_v2"]["steps"] == []
+    assert "python" not in java_trace["stderr"].lower()
+    assert cpp_trace["trace_v2"]["language"] == "cpp"
+    assert cpp_trace["trace_v2"]["capability"] == "practice_only"
+    assert cpp_trace["trace_v2"]["steps"] == []
+    assert "java" not in cpp_trace["stderr"].lower()
+
 
 def test_compiled_runners_gate_on_by_default(monkeypatch):
     monkeypatch.delenv("ALLOW_COMPILED_RUNNERS", raising=False)
@@ -876,11 +908,15 @@ class Solution {
 
     assert result["status"] == "passed"
     assert result["trace_v2"]["schema_version"] == "trace_v2"
+    assert result["trace_v2"]["language"] == "java"
+    assert result["trace_v2"]["capability"] == "practice_only"
+    assert result["trace_v2"]["trace_mode"] == "practice"
     steps = result["trace_v2"]["steps"]
     assert len(steps) >= 2
     assert any(step["operation_kind"] == "assignment" for step in steps)
     assert steps[-1]["return_value"] == "3"
-    assert steps[0]["frames"][0]["bindings"][0]["name"] == "value"
+    assert "value" in steps[0]["frames"][0]["bindings"]
+    assert steps[0]["frames"][0]["bindings"]["value"]["display"] == "2"
 
 
 def test_java_practice_trace_captures_stdout():
@@ -954,6 +990,7 @@ class Solution {
         pytest.skip(result["stderr"])
 
     step = result["trace_v2"]["steps"][0]
+    assert result["trace_v2"]["language"] == "java"
     assert step["exception"]["type"] == "CompileError"
     assert step["exception"]["line"] >= 3
 
@@ -1001,11 +1038,16 @@ int addOne(int value) {
 
     assert result["status"] == "passed"
     assert result["trace_v2"]["schema_version"] == "trace_v2"
+    assert result["trace_v2"]["language"] == "cpp"
+    assert result["trace_v2"]["requested_language"] == "cpp"
+    assert result["trace_v2"]["capability"] == "practice_only"
+    assert result["trace_v2"]["trace_mode"] == "practice"
     steps = result["trace_v2"]["steps"]
     assert len(steps) >= 2
     assert any(step["operation_kind"] == "assignment" for step in steps)
     assert steps[-1]["return_value"] == "3"
-    assert steps[0]["frames"][0]["bindings"][0]["name"] == "value"
+    assert "value" in steps[0]["frames"][0]["bindings"]
+    assert steps[0]["frames"][0]["bindings"]["value"]["display"] == "2"
 
 
 def test_cpp_practice_trace_captures_stdout():
@@ -1077,6 +1119,7 @@ int broken(int value) {
         pytest.skip(result["stderr"])
 
     step = result["trace_v2"]["steps"][0]
+    assert result["trace_v2"]["language"] == "cpp"
     assert step["exception"]["type"] == "CompileError"
     assert "compile" in step["operation_kind"]
 
