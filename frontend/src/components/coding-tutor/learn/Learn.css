@@ -1826,44 +1826,80 @@ body.coding-dark .lesson-callout.is-mistake .lesson-callout-head { color: #f8717
 
 @media (max-width: 640px) {
   .lesson-visual-backdrop {
-    padding: 10px;
+    padding: 6px;
   }
 
   .lesson-visual-modal {
-    max-height: 94vh;
-    padding: 0 12px;
+    width: calc(100vw - 12px);
+    max-height: 96dvh;
+    padding: 0 10px;
     border-radius: 16px;
   }
 
   .lesson-visual-modal-head {
     align-items: flex-start;
-    margin-inline: -12px;
-    padding: 14px 12px 10px;
+    margin-inline: -10px;
+    padding: 12px 10px 10px;
+  }
+
+  .lesson-visual-modal-head h3 {
+    font-size: clamp(1.25rem, 7vw, 1.65rem);
+    line-height: 1.12;
   }
 
   .lesson-visual-controls {
-    align-items: stretch;
-    flex-direction: column;
-    margin-inline: -12px;
-    padding: 10px 12px 12px;
-  }
-
-  .lesson-visual-controls > div,
-  .lesson-visual-controls button {
-    width: 100%;
+    align-items: center;
+    flex-direction: row;
+    margin-inline: -10px;
+    padding: 8px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+    overflow-x: auto;
   }
 
   .lesson-visual-controls > div {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .lesson-visual-controls button {
+    flex: 0 0 auto;
+    min-height: 34px;
+    min-width: 74px;
+    padding: 6px 9px;
+    font-size: 0.78rem;
+    white-space: nowrap;
   }
 
   .lesson-visual-progress button {
-    flex-basis: 136px;
+    flex-basis: 124px;
+    min-width: 112px;
+    min-height: 38px;
+  }
+
+  .lesson-visual-progress button strong {
+    font-size: 0.68rem;
   }
 
   .lesson-visual-diagram {
-    min-height: 250px;
+    min-height: 320px;
+    padding: 14px 10px;
+    align-content: start;
+    justify-content: start;
+  }
+
+  .lesson-visual-diagram > * {
+    flex-shrink: 0;
+  }
+
+  .lesson-visual-flow,
+  .lesson-visual-loop-flow,
+  .lesson-visual-function-flow,
+  .lesson-visual-state-flow,
+  .lesson-visual-process-flow {
+    min-width: 620px;
   }
 
   .lesson-visual-trace-panel {

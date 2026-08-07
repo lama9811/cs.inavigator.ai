@@ -837,3 +837,198 @@ body.coding-dark .floating-coding-chat ::selection {
   .code-editor-statusbar .status-right { gap: 8px; }
   .code-editor-gutter { padding-left: 8px; padding-right: 6px; }
 }
+
+@media (min-width: 641px) {
+  .workspace-mobile-guide-toggle {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .coding-app.coding-workspace-active,
+  .coding-app.coding-workspace-active .coding-app-main,
+  .coding-app.coding-workspace-active .coding-app-content,
+  .coding-app.coding-workspace-active .coding-workbench,
+  .coding-app.coding-workspace-active .coding-workbench-main,
+  .coding-app.coding-workspace-active .coding-problem-panel,
+  .coding-app.coding-workspace-active .coding-editor-center,
+  .coding-app.coding-workspace-active .workspace-tab-body {
+    height: auto;
+    max-height: none;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .coding-app.coding-workspace-active {
+    min-height: 100dvh;
+  }
+
+  .coding-workbench-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding-inline: 8px;
+  }
+
+  .workspace-mobile-guide-toggle {
+    position: sticky;
+    top: 4px;
+    z-index: 12;
+    display: inline-flex;
+    width: fit-content;
+    min-height: 34px;
+    align-items: center;
+    justify-content: center;
+    justify-self: start;
+    border: 1px solid var(--ct-border-strong, #94a3b8);
+    border-radius: 999px;
+    background: var(--ct-primary, #082343);
+    color: #fff;
+    padding: 6px 11px;
+    font-size: 0.78rem;
+    font-weight: 750;
+    box-shadow: 0 8px 18px rgba(8, 35, 67, 0.18);
+  }
+
+  .coding-workbench-main.mobile-guide-closed .coding-problem-panel,
+  .coding-workbench-main.mobile-guide-closed .workspace-guide-divider {
+    display: none !important;
+  }
+
+  .coding-problem-panel {
+    max-height: 46dvh;
+    min-height: 0;
+    overflow: auto;
+    border-radius: 14px;
+  }
+
+  .coding-editor-center {
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    overflow: visible;
+    padding: 9px 8px;
+    gap: 8px;
+  }
+
+  .workspace-guide-divider {
+    display: none;
+  }
+
+  .workspace-header {
+    align-items: start;
+    gap: 6px;
+  }
+
+  .workspace-header h2 {
+    max-width: 100%;
+    font-size: 1rem;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  .workspace-header .workspace-kicker {
+    font-size: 0.64rem;
+  }
+
+  .workspace-tabs {
+    display: flex;
+    gap: 14px;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-inline: 2px;
+    scrollbar-width: thin;
+  }
+
+  .workspace-tabs button {
+    flex: 0 0 auto;
+    min-height: 32px;
+    padding: 5px 0;
+    font-size: 0.9rem;
+  }
+
+  .editor-terminal-stack {
+    min-height: 0;
+    height: auto;
+    gap: 8px;
+  }
+
+  .code-editor-window {
+    min-width: 0;
+    min-height: 300px;
+    border-radius: 13px;
+    --ed-size: 0.78rem;
+    --ed-lh: 1.62;
+  }
+
+  .code-editor-titlebar {
+    gap: 8px;
+    min-width: 0;
+    overflow-x: auto;
+    padding: 6px 8px;
+    scrollbar-width: thin;
+  }
+
+  .code-editor-filename {
+    flex: 1 1 72px;
+    min-width: 46px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .code-editor-actions {
+    flex: 0 0 auto;
+    gap: 6px;
+  }
+
+  .code-editor-actions button {
+    min-width: 32px;
+    height: 32px;
+  }
+
+  .code-trace-button {
+    max-width: 112px;
+    padding-inline: 10px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .code-editor-lang-select {
+    max-width: 78px;
+    min-width: 68px;
+    font-size: 0.66rem;
+  }
+
+  .code-editor-content {
+    min-width: 0;
+    overflow: auto;
+  }
+
+  .code-editor-gutter {
+    flex: 0 0 36px;
+    width: 36px;
+    min-width: 36px;
+  }
+
+  .code-editor-window .coding-editor,
+  .code-editor-window .leetcode-editor,
+  .code-editor-window .code-editor-highlight {
+    padding-inline: 12px !important;
+  }
+
+  .code-editor-statusbar {
+    min-width: 0;
+    height: auto;
+    min-height: 28px;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .coding-dock-terminal {
+    height: min(220px, 42dvh) !important;
+    min-height: 150px !important;
+    border-radius: 13px;
+  }
+}

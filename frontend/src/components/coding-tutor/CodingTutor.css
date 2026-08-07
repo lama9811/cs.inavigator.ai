@@ -8180,11 +8180,13 @@ body.coding-dark .coding-problem-empty button:hover {
 }
 
 .coding-app .campus-section-nav .coding-nav-more-menu > button {
-  display: flex;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
   align-items: center;
   justify-content: flex-start;
   gap: 10px;
   width: 100%;
+  min-width: 0;
   min-height: 40px;
   padding: 9px 11px;
   border: 0;
@@ -8195,6 +8197,28 @@ body.coding-dark .coding-problem-empty button:hover {
   font-size: 0.84rem;
   text-align: left;
   cursor: pointer;
+}
+
+.coding-app .campus-section-nav .coding-nav-more-menu .coding-nav-menu-icon {
+  display: inline-grid;
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  place-items: center;
+  color: currentColor;
+  font-size: 0.92rem;
+}
+
+.coding-app .campus-section-nav .coding-nav-more-menu .coding-nav-menu-icon svg {
+  width: 1em;
+  height: 1em;
+  fill: currentColor;
+}
+
+.coding-app .campus-section-nav .coding-nav-more-menu > button > span:last-child {
+  min-width: 0;
+  overflow-wrap: normal;
+  white-space: normal;
 }
 
 .coding-app .campus-section-nav .coding-nav-more-menu > button:hover,
@@ -8239,6 +8263,48 @@ body.coding-dark .coding-nav-more-menu {
   .coding-app .campus-section-nav .coding-nav-more > summary .coding-nav-label,
   .coding-app .campus-section-nav .coding-nav-more > button .coding-nav-label {
     display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .coding-app .campus-section-nav .coding-nav-more {
+    position: relative;
+  }
+
+  .coding-app .campus-section-nav .coding-nav-more-menu {
+    left: auto;
+    right: 0;
+    transform: none;
+    width: min(210px, calc(100vw - 18px)) !important;
+    min-width: 176px;
+    padding: 7px;
+    border-radius: 13px;
+  }
+
+  .coding-app .campus-section-nav .coding-nav-more-menu > button {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    align-items: center;
+    min-height: 40px;
+    gap: 8px;
+    padding: 8px 9px;
+    font-size: 0.8rem;
+    line-height: 1.25;
+    white-space: normal;
+  }
+
+  .coding-app .campus-section-nav .coding-nav-more-menu > button .coding-nav-menu-icon {
+    width: 24px !important;
+    min-width: 24px !important;
+    height: 24px !important;
+    justify-content: center;
+    font-size: 0.9rem;
+  }
+
+  .coding-app .campus-section-nav .coding-nav-more-menu > button > span:last-child {
+    min-width: 0;
+    overflow-wrap: normal;
+    white-space: normal;
   }
 }
 
@@ -8562,7 +8628,7 @@ body.coding-dark .coding-app .starting-check-link:hover:not(:disabled) {
   .coding-app .quiz-problem-card {
     gap: 7px;
     min-width: 0;
-    padding: 12px 12px;
+    padding: 11px 10px;
     border-radius: 12px;
   }
 
@@ -8589,8 +8655,8 @@ body.coding-dark .coding-app .starting-check-link:hover:not(:disabled) {
 
   .coding-app .quiz-problem-foot {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px;
+    grid-template-columns: minmax(0, 1fr) minmax(52px, auto);
+    gap: 6px;
     padding-top: 8px;
   }
 
@@ -8622,8 +8688,8 @@ body.coding-dark .coding-app .starting-check-link:hover:not(:disabled) {
   }
 
   .coding-app .quiz-problem-action {
-    min-width: 58px;
-    padding: 5px 10px;
+    min-width: 54px;
+    padding: 5px 9px;
     font-size: 0.72rem;
     text-align: center;
   }
@@ -8631,7 +8697,7 @@ body.coding-dark .coding-app .starting-check-link:hover:not(:disabled) {
 
 @media (max-width: 360px) {
   .coding-app .quiz-problem-card {
-    padding: 11px 10px;
+    padding: 10px 9px;
   }
 
   .coding-app .quiz-problem-name {
@@ -8648,9 +8714,9 @@ body.coding-dark .coding-app .starting-check-link:hover:not(:disabled) {
   }
 
   .coding-app .quiz-problem-action {
-    min-width: 54px;
-    padding-inline: 8px;
-    font-size: 0.68rem;
+    min-width: 50px;
+    padding-inline: 7px;
+    font-size: 0.67rem;
   }
 
   .coding-app .quiz-bank-page .quiz-insight-panel {

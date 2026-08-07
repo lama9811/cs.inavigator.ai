@@ -2293,9 +2293,185 @@ body.coding-dark .problem-visualize-button:hover:not(:disabled) {
 }
 
 @media (max-width: 640px) {
+  .workspace-visualizer-panel {
+    padding: 0.65rem;
+    overflow: auto;
+  }
+
+  .workspace-visualizer.is-panel {
+    max-width: none;
+  }
+
+  .workspace-visualizer-head {
+    gap: 0.65rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .workspace-visualizer-head h3 {
+    font-size: clamp(1.18rem, 7vw, 1.55rem);
+    line-height: 1.12;
+  }
+
+  .workspace-visualizer-head p {
+    font-size: 0.88rem;
+    line-height: 1.42;
+  }
+
+  .workspace-visualizer-stage {
+    gap: 0.65rem;
+    margin-top: 0.65rem;
+  }
+
+  .workspace-visualizer-backdrop {
+    align-items: stretch;
+    justify-items: stretch;
+    padding: 0;
+  }
+
+  .workspace-visualizer-backdrop > div {
+    width: 100vw;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+
+  .workspace-visualizer.is-modal {
+    padding: 0.8rem;
+  }
+
+  .workspace-visualizer.is-modal .workspace-visualizer-head {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    margin: -0.8rem -0.8rem 0;
+    padding: 0.85rem 0.8rem 0.7rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--ct-border, #d7e1ef) 72%, transparent);
+    background: color-mix(in srgb, var(--ct-panel, #fff) 96%, transparent);
+    backdrop-filter: blur(14px);
+  }
+
+  .workspace-visual-close {
+    width: 38px;
+    min-width: 38px;
+    height: 38px;
+    min-height: 38px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .workspace-visual-diagram {
+    justify-content: start;
+    min-height: 310px;
+    padding: 0.75rem;
+    overflow: auto;
+    place-items: center start;
+    scroll-padding-inline: 20px;
+  }
+
+  .workspace-visual-diagram > * {
+    flex-shrink: 0;
+  }
+
+  .workspace-visual-track {
+    min-width: 520px;
+    padding-block: 2.6rem 1rem;
+  }
+
+  .workspace-decision-flow {
+    min-width: 640px;
+  }
+
+  .workspace-visual-svg,
+  .workspace-visual-timeline,
+  .workspace-visual-table,
+  .workspace-visual-grid-cells,
+  .workspace-visual-call-stack {
+    min-width: min(520px, calc(100vw - 28px));
+  }
+
+  .workspace-visualizer-step {
+    padding: 0.8rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .workspace-visualizer-nav {
+    position: sticky;
+    bottom: 0;
+    z-index: 9;
+    margin: 0.7rem -0.8rem -0.8rem;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 0;
+    background: color-mix(in srgb, var(--ct-panel, #fff) 96%, transparent);
+    backdrop-filter: blur(14px);
+  }
+
+  .workspace-visualizer-progress {
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 0.2rem;
+  }
+
+  .workspace-visualizer-controls {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 0.2rem;
+  }
+
+  .workspace-visualizer-controls button {
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 0.5rem 0.72rem;
+    font-size: 0.78rem;
+  }
+
+  .workspace-visualizer-controls button {
+    width: auto;
+  }
+
+  .code-trace-modal .workspace-visualizer-head {
+    align-items: start;
+    padding: 0.9rem 0.85rem 0.75rem;
+  }
+
+  .code-trace-modal .workspace-visualizer-head h3 {
+    font-size: clamp(1.25rem, 7vw, 1.55rem);
+  }
+
+  .code-trace-modal .workspace-visualizer-head p {
+    font-size: 0.9rem;
+  }
+
+  .code-trace-stage {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+    margin: 0.75rem 0.75rem 0.85rem;
+  }
+
+  .code-trace-code-window pre {
+    max-height: 38dvh;
+  }
+
+  .code-trace-state-panel {
+    overflow: visible;
+  }
+
+  .code-trace-variable-updates {
+    margin-inline: 0.6rem;
+    padding: 0.58rem;
+  }
+
   .code-trace-controls {
+    position: sticky;
+    bottom: 0;
+    z-index: 9;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+    padding: 0.7rem 0.8rem;
+    background: color-mix(in srgb, var(--ct-panel, #fff) 96%, transparent);
+    backdrop-filter: blur(14px);
   }
 
   .code-trace-frame-local {
@@ -2313,14 +2489,36 @@ body.coding-dark .problem-visualize-button:hover:not(:disabled) {
     text-align: left;
   }
 
+  .code-trace-footer-status {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.8rem;
+  }
+
+  .code-trace-footer-actions {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
   .code-trace-controls button {
     width: 100%;
+    min-height: 36px;
+    padding-inline: 0.4rem;
+    font-size: 0.78rem;
   }
 
   .code-trace-code-window pre span {
     grid-template-columns: 3ch minmax(0, 1fr);
     gap: 0.55rem;
     padding-inline: 0.65rem;
+  }
+
+  .code-trace-frame-local .trace-inline-value,
+  .code-trace-frame-local code {
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
 }
 

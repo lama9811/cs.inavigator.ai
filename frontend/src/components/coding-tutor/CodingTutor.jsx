@@ -1394,6 +1394,7 @@ export default function CodingTutor({
   const [testOutput, setTestOutput] = useState({ status: "ready", message: "" });
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [workspaceGuideWidth, setWorkspaceGuideWidth] = useState(readStoredWorkspaceGuideWidth);
+  const [mobileWorkspaceGuideOpen, setMobileWorkspaceGuideOpen] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
   // Lets the Stop button abort an in-flight run. The backend's hard CPU/time
   // limit also kills a truly stuck process, so this frees the UI immediately.
@@ -4152,9 +4153,19 @@ export default function CodingTutor({
         onEnd={confirmEndMock}
       />
       <div
-        className="coding-workbench-main"
+        className={`coding-workbench-main ${mobileWorkspaceGuideOpen ? "mobile-guide-open" : "mobile-guide-closed"}`}
         style={{ "--workspace-guide-width": `${Math.round(workspaceGuideWidth)}px` }}
       >
+        {!isPersonalMode && (
+          <button
+            type="button"
+            className="workspace-mobile-guide-toggle"
+            onClick={() => setMobileWorkspaceGuideOpen(open => !open)}
+            aria-expanded={mobileWorkspaceGuideOpen}
+          >
+            {mobileWorkspaceGuideOpen ? "Hide guide" : "Show guide"}
+          </button>
+        )}
         {isPersonalMode ? (
           <PersonalPanel
             snippets={snippets}
@@ -4678,7 +4689,7 @@ export default function CodingTutor({
                 openPage("progress");
               }}
             >
-              <span className="coding-nav-icon" aria-hidden="true"><FaChartLine /></span>
+              <span className="coding-nav-menu-icon" aria-hidden="true"><FaChartLine /></span>
               <span>Progress</span>
             </button>
             <button
@@ -4693,7 +4704,7 @@ export default function CodingTutor({
                 });
               }}
             >
-              <span className="coding-nav-icon" aria-hidden="true"><FaFileCode /></span>
+              <span className="coding-nav-menu-icon" aria-hidden="true"><FaFileCode /></span>
               <span>My Snippets</span>
             </button>
             {(() => {
@@ -4708,7 +4719,7 @@ export default function CodingTutor({
                     toggleWorkspace();
                   }}
                 >
-                  <span className="coding-nav-icon" aria-hidden="true">
+                  <span className="coding-nav-menu-icon" aria-hidden="true">
                     {willHideWorkspace ? <FaEyeSlash /> : <FaEye />}
                   </span>
                   <span>{label}</span>

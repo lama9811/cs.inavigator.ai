@@ -763,7 +763,34 @@ body.coding-dark .iv-question-diff.diff-hard { color: #f4807d; }
 @media (max-width: 560px) {
   .iv-topic-grid { grid-template-columns: 1fr; }
   .iv-question-row { grid-template-columns: auto minmax(0, 1fr); }
-  .iv-question-actions { grid-column: 1 / -1; justify-content: flex-end; }
+  .iv-question-title {
+    font-size: 0.88rem;
+    line-height: 1.25;
+  }
+
+  .iv-question-diff,
+  .iv-question-solved {
+    padding: 2px 7px;
+    font-size: 0.66rem;
+  }
+
+  .iv-question-actions {
+    grid-column: 1 / -1;
+    justify-content: center;
+    gap: 7px;
+  }
+
+  .iv-question-action {
+    min-height: 32px;
+    padding: 5px 12px;
+    font-size: 0.8rem;
+    font-weight: 650;
+  }
+
+  .iv-question-action.icon-only {
+    width: 32px;
+    padding: 5px;
+  }
   /* Give the ring a touch more room vs the title on very narrow cards. */
   .iv-ring { --size: 40px; }
   /* Checklist steps each take a full row so labels never truncate awkwardly. */
