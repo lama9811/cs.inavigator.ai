@@ -1369,7 +1369,7 @@ function VisualStateTray({ step }) {
   );
 }
 
-function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose }) {
+function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose, onOpenInWorkspace }) {
   const baseMeta = useMemo(
     () => ({
       ...(initialVisualizer || activeProblem?.visualizer || { concept: "array-scan", title: "Visualizer unavailable", caption: "This problem does not have an authored visualizer yet." }),
@@ -1459,7 +1459,7 @@ function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose 
   }, [goToStep, mode, stepIndex]);
 
   if (hasAuthoredVisualizer(activeProblem)) {
-    return <UniversalCodeVisualizer activeProblem={activeProblem} mode={mode} onClose={onClose} />;
+    return <UniversalCodeVisualizer activeProblem={activeProblem} mode={mode} onClose={onClose} onOpenInWorkspace={onOpenInWorkspace} />;
   }
 
   return (
@@ -1494,7 +1494,7 @@ function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose 
             />
           </label>
         ) : (
-          <p className="workspace-visualizer-lock">This walks through the problem idea with example data. Trace My Code is separate and uses your Python code.</p>
+          <p className="workspace-visualizer-lock">This walks through the problem idea with example data. Trace My Code is separate and uses your Python, JavaScript, Java, or C++ code.</p>
         )}
       </div>
 
@@ -1581,7 +1581,7 @@ export function WorkspaceVisualizerPanel({ activeProblem }) {
   );
 }
 
-export function WorkspaceVisualizerModal({ activeProblem, onClose }) {
+export function WorkspaceVisualizerModal({ activeProblem, onClose, onOpenInWorkspace }) {
   const modalRef = useFocusTrap(Boolean(activeProblem), { onEscape: onClose });
   if (!activeProblem || !hasAuthoredVisualizer(activeProblem)) return null;
   return (
@@ -1595,7 +1595,7 @@ export function WorkspaceVisualizerModal({ activeProblem, onClose }) {
         tabIndex={-1}
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <TraceShell activeProblem={activeProblem} mode="modal" onClose={onClose} />
+        <TraceShell activeProblem={activeProblem} mode="modal" onClose={onClose} onOpenInWorkspace={onOpenInWorkspace} />
       </div>
     </div>
   );

@@ -58,6 +58,7 @@ const WORKSPACE_GUIDE_MIN_W = 260;
 const WORKSPACE_GUIDE_MAX_W = 560;
 const WORKSPACE_GUIDE_DEFAULT_W = 340;
 const WORKSPACE_GUIDE_W_KEY = "csnav.workspaceGuideWidth";
+const WORKSPACE_GUIDE_MOBILE_QUERY = "(max-width: 640px)";
 
 function readStoredWorkspaceGuideWidth() {
   try {
@@ -70,6 +71,11 @@ function readStoredWorkspaceGuideWidth() {
     /* localStorage can be blocked; default width is fine */
   }
   return WORKSPACE_GUIDE_DEFAULT_W;
+}
+
+function readInitialMobileWorkspaceGuideOpen() {
+  if (typeof window === "undefined") return true;
+  return !window.matchMedia?.(WORKSPACE_GUIDE_MOBILE_QUERY)?.matches;
 }
 // Concept-quiz language ids (backend keys) → display labels, for the quiz views.
 const CONCEPT_QUIZ_LABELS = {
@@ -518,7 +524,8 @@ function readDailyStreakDays() {
   }
 }
 
-// Mark today as a CS Navigator practice day. Returns the updated day list.
+// Mark today as a completed Coding Tutor milestone day. Opening content, loading
+// the workspace, editing code, or running failing tests should not start a streak.
 function recordPracticeActivityDay() {
   const today = localDateKey();
   const days = readDailyStreakDays();
@@ -1371,6 +1378,7 @@ export default function CodingTutor({
   const activeSolutionRef = useRef(null);
   const [problemLoading, setProblemLoading] = useState(false);
   const [listLoading, setListLoading] = useState(false);
+  const [practiceProblemQueue, setPracticeProblemQueue] = useState({ ids: [], label: "" });
   // Personal "My Snippets" workspace: a fresh, non-graded space separate from the
   // Quiz Bank. snippets are stored per-device in localStorage.
   const [snippets, setSnippets] = useState(() => listSnippets());
@@ -1392,6 +1400,7 @@ export default function CodingTutor({
   const [testOutput, setTestOutput] = useState({ status: "ready", message: "" });
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [workspaceGuideWidth, setWorkspaceGuideWidth] = useState(readStoredWorkspaceGuideWidth);
+  const [mobileWorkspaceGuideOpen, setMobileWorkspaceGuideOpen] = useState(readInitialMobileWorkspaceGuideOpen);
   const [isRunning, setIsRunning] = useState(false);
   // Lets the Stop button abort an in-flight run. The backend's hard CPU/time
   // limit also kills a truly stuck process, so this frees the UI immediately.
@@ -1402,6 +1411,19 @@ export default function CodingTutor({
   useEffect(() => {
     workspaceGuideWidthRef.current = workspaceGuideWidth;
   }, [workspaceGuideWidth]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return undefined;
+    const media = window.matchMedia(WORKSPACE_GUIDE_MOBILE_QUERY);
+    const syncGuideMode = () => {
+      if (!media.matches) {
+        setMobileWorkspaceGuideOpen(true);
+      }
+    };
+    syncGuideMode();
+    media.addEventListener?.("change", syncGuideMode);
+    return () => media.removeEventListener?.("change", syncGuideMode);
+  }, []);
 
   const persistGuideWidth = useCallback((value) => {
     try {
@@ -1581,22 +1603,38 @@ export default function CodingTutor({
     ? messages.slice(quizPdfStartIndex).slice().reverse().find((msg) => msg.sender === "bot" && msg.text)?.text || ""
     : "";
   const languageFormat = LANGUAGE_FORMATS[selectedLanguage] || LANGUAGE_FORMATS.Python;
+  const workspacePracticeQuestions = allQuestions.length ? allQuestions : questions;
   const activeQuestionIndex = activeProblem?.source !== "leetcode"
-    ? questions.findIndex(question => question.id === activeProblem?.id)
+    ? workspacePracticeQuestions.findIndex(question => question.id === activeProblem?.id)
     : -1;
   const isQuizBankProblem = Boolean(activeProblem && activeQuestionIndex >= 0 && activeProblem.source !== "personal");
   const isPersonalMode = activeProblem?.source === "personal";
   const isInterviewWorkspaceProblem = Boolean(activeProblem?.source === "interview" && !activeProblem?.mock);
+  const practiceQueueIds = useMemo(
+    () => practiceProblemQueue.ids.filter((id) => workspacePracticeQuestions.some((question) => question.id === id)),
+    [practiceProblemQueue.ids, workspacePracticeQuestions]
+  );
+  const activeQueueIndex = activeProblem?.source !== "leetcode"
+    ? practiceQueueIds.indexOf(activeProblem?.id)
+    : -1;
+  const usingPracticeQueue = isQuizBankProblem && activeQueueIndex >= 0 && practiceQueueIds.length > 1;
   // Next/Back cycle only through unsolved problems. Solved problems can still be
   // opened directly from Quiz Bank, but are skipped here to focus on what is left.
   const findAdjacentUnsolvedIndex = useCallback((fromIndex, direction) => {
-    for (let index = fromIndex + direction; index >= 0 && index < questions.length; index += direction) {
-      if (progressByQuestion[questions[index].id]?.status !== "solved") return index;
+    for (let index = fromIndex + direction; index >= 0 && index < workspacePracticeQuestions.length; index += direction) {
+      if (progressByQuestion[workspacePracticeQuestions[index].id]?.status !== "solved") return index;
     }
     return -1;
-  }, [questions, progressByQuestion]);
-  const canGoPrevious = activeQuestionIndex >= 0 && findAdjacentUnsolvedIndex(activeQuestionIndex, -1) >= 0;
-  const canGoNext = activeQuestionIndex >= 0 && findAdjacentUnsolvedIndex(activeQuestionIndex, 1) >= 0;
+  }, [workspacePracticeQuestions, progressByQuestion]);
+  const canGoPrevious = usingPracticeQueue
+    ? activeQueueIndex > 0
+    : activeQuestionIndex >= 0 && findAdjacentUnsolvedIndex(activeQuestionIndex, -1) >= 0;
+  const canGoNext = usingPracticeQueue
+    ? activeQueueIndex < practiceQueueIds.length - 1
+    : activeQuestionIndex >= 0 && findAdjacentUnsolvedIndex(activeQuestionIndex, 1) >= 0;
+  const practiceNavigationLabel = usingPracticeQueue
+    ? `${activeQueueIndex + 1} of ${practiceQueueIds.length}${practiceProblemQueue.label ? ` ${practiceProblemQueue.label}` : ""}`
+    : "";
   const activeQuestionProgress = activeProblem ? progressByQuestion[activeProblem.id] : null;
   const activeSolvedLanguages = activeQuestionProgress?.solved_languages || [];
   const canOpenVisualizer = problemHasVisualizer(activeProblem);
@@ -2576,8 +2614,7 @@ export default function CodingTutor({
       },
     }));
     setNote(`Practice problem: ${problem.title}`);
-    const runnerLabel = `${languageName} local tests can run from the terminal below the editor.`;
-    setTestOutput({ status: "ready", message: `${problem.title} loaded in ${languageName}. ${runnerLabel}` });
+    setTestOutput({ status: "ready", message: "Run code to see tests." });
     setTerminalOpen(false);
     setWorkspaceVisible(true);
     setWorkspaceTab("Editor");
@@ -2638,10 +2675,20 @@ export default function CodingTutor({
     }
   };
 
-  const selectQuestion = async (problem) => {
+  const selectQuestion = async (problem, filteredSet = null) => {
     // Opening a regular practice problem leaves any mock session behind (a mock is
     // a focused round; picking another problem ends it — silently, no summary).
     abandonMockIfActive();
+    if (Array.isArray(filteredSet) && filteredSet.length) {
+      const ids = filteredSet.map((question) => question?.id).filter(Boolean);
+      const topics = [...new Set(filteredSet.map((question) => question?.topic).filter(Boolean))];
+      setPracticeProblemQueue({
+        ids,
+        label: topics.length === 1 ? `in ${topics[0]}` : "filtered",
+      });
+    } else {
+      setPracticeProblemQueue({ ids: [], label: "" });
+    }
     setProblemLoading(true);
     try {
       // Save edits to the problem we're leaving before loading the new one.
@@ -3512,9 +3559,16 @@ export default function CodingTutor({
 
   const navigatePracticeProblem = async (direction) => {
     if (activeQuestionIndex < 0) return;
-    const targetIndex = findAdjacentUnsolvedIndex(activeQuestionIndex, direction);
-    if (targetIndex < 0) return;
-    const nextQuestion = questions[targetIndex];
+    let nextQuestion = null;
+    if (usingPracticeQueue) {
+      const targetQueueIndex = activeQueueIndex + direction;
+      const targetId = practiceQueueIds[targetQueueIndex];
+      nextQuestion = workspacePracticeQuestions.find((question) => question.id === targetId);
+    } else {
+      const targetIndex = findAdjacentUnsolvedIndex(activeQuestionIndex, direction);
+      if (targetIndex < 0) return;
+      nextQuestion = workspacePracticeQuestions[targetIndex];
+    }
     if (!nextQuestion) return;
     setProblemLoading(true);
     try {
@@ -3651,7 +3705,6 @@ export default function CodingTutor({
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || `runner ${response.status}`);
       setTestOutput(data);
-      recordPracticeActivity();
       // This run just wrote an attempt event, so the mastery score is now stale.
       setMasteryTick(tick => tick + 1);
       setWorkspaceSnapshots(prev => ({
@@ -3703,6 +3756,9 @@ export default function CodingTutor({
         });
       }
       if (data.status === "passed") {
+        if (activeLanguageProgress?.status !== "solved") {
+          recordPracticeActivity();
+        }
         toast.success("All local tests passed. Problem marked solved.");
       }
     } catch (error) {
@@ -3719,16 +3775,12 @@ export default function CodingTutor({
     const normalizedTestIndex = Number.isInteger(requestedTestIndex) && requestedTestIndex >= 0
       ? requestedTestIndex
       : 0;
-    if (!activeProblem || !isQuizBankProblem) {
-      toast.info("Open a Practice Library problem before tracing code.");
-      return;
-    }
-    if (selectedLanguageKey !== "python") {
-      toast.info("Execution tracing is available for Python first.");
+    if (!["python", "javascript", "java", "cpp"].includes(selectedLanguageKey)) {
+      toast.info("Execution tracing is available for Python, JavaScript, Java, and C++.");
       return;
     }
     if (!code.trim()) {
-      toast.info("Write some Python code before tracing it.");
+      toast.info(`Write some ${selectedLanguage} code before tracing it.`);
       return;
     }
     const mismatchMessage = detectLanguageMismatch(code, selectedLanguageKey);
@@ -3746,7 +3798,7 @@ export default function CodingTutor({
     setWorkspaceVisible(true);
     setTraceModalOpen(true);
     setIsTracingCode(true);
-    setTraceResult(prev => prev || { status: "running", trace: [], message: "Tracing your Python code..." });
+    setTraceResult(prev => prev || { status: "running", trace: [], message: `Tracing your ${selectedLanguage} code...` });
     try {
       const response = await fetch(`${apiBase}/api/coding/practice/trace`, {
         method: "POST",
@@ -3755,7 +3807,7 @@ export default function CodingTutor({
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          question_id: activeProblem.id,
+          question_id: isQuizBankProblem ? activeProblem.id : null,
           language: selectedLanguageKey,
           code,
           trace_test_index: normalizedTestIndex,
@@ -3798,7 +3850,10 @@ export default function CodingTutor({
     if (!activeProblem || !isQuizBankProblem) return;
     const wasSolved = activeLanguageProgress?.status === "solved";
     await saveProgress(activeProblem.id, { status: wasSolved ? "in_progress" : "solved", code });
-    if (!wasSolved) clearDraft(activeProblem.id, selectedLanguageKey);
+    if (!wasSolved) {
+      clearDraft(activeProblem.id, selectedLanguageKey);
+      recordPracticeActivity();
+    }
     setTerminalOpen(true);
     setTestOutput({
       status: wasSolved ? "ready" : "passed",
@@ -4116,7 +4171,7 @@ export default function CodingTutor({
         onEnd={confirmEndMock}
       />
       <div
-        className="coding-workbench-main"
+        className={`coding-workbench-main ${mobileWorkspaceGuideOpen ? "mobile-guide-open" : "mobile-guide-closed"}`}
         style={{ "--workspace-guide-width": `${Math.round(workspaceGuideWidth)}px` }}
       >
         {isPersonalMode ? (
@@ -4128,33 +4183,55 @@ export default function CodingTutor({
             onDeleteSnippet={handleDeleteSnippet}
           />
         ) : (
-          <ProblemPanel
-            problem={activeProblem}
-            solution={activeSolution}
-            selectedLanguage={selectedLanguage}
-            attempts={attempts}
-            problemLoading={problemLoading || isRestoringProblem}
-            isSolved={isActiveProblemSolved}
-            solvedLanguages={activeSolvedLanguages}
-            showProblemNavigation={isQuizBankProblem}
-            canGoPrevious={canGoPrevious}
-            canGoNext={canGoNext}
-            onPreviousProblem={() => navigatePracticeProblem(-1)}
-            onNextProblem={() => navigatePracticeProblem(1)}
-            onShowHint={showNextHint}
-            onShowAllHints={showAllHints}
-            onOpenQuizBank={openPracticeLibrary}
-            mockMode={Boolean(activeProblem?.mock && mockSession)}
-            solutionUnlocked={
-              !activeProblem?.mock ||
-              (mockSession &&
-                (mockSession.stuck.includes(activeProblem.id) ||
-                  mockSession.outcomes[activeProblem.id] !== "unattempted"))
-            }
-            onStuck={markMockStuck}
-            onViewSolutionMock={requestViewSolutionMock}
-            onOpenVisualizer={canOpenVisualizer ? openProblemVisualizer : null}
-          />
+          <>
+            <button
+              type="button"
+              className="workspace-guide-drawer-backdrop"
+              onClick={() => setMobileWorkspaceGuideOpen(false)}
+              aria-label="Close problem guide"
+              tabIndex={mobileWorkspaceGuideOpen ? 0 : -1}
+            />
+            <div
+              id="workspace-problem-guide-drawer"
+              className="workspace-guide-drawer-shell"
+              aria-hidden={!mobileWorkspaceGuideOpen}
+            >
+              <div className="workspace-guide-drawer-head">
+                <strong>Problem guide</strong>
+                <button type="button" onClick={() => setMobileWorkspaceGuideOpen(false)}>
+                  Close
+                </button>
+              </div>
+              <ProblemPanel
+                problem={activeProblem}
+                solution={activeSolution}
+                selectedLanguage={selectedLanguage}
+                attempts={attempts}
+                problemLoading={problemLoading || isRestoringProblem}
+                isSolved={isActiveProblemSolved}
+                solvedLanguages={activeSolvedLanguages}
+                showProblemNavigation={isQuizBankProblem}
+                canGoPrevious={canGoPrevious}
+                canGoNext={canGoNext}
+                navigationLabel={practiceNavigationLabel}
+                onPreviousProblem={() => navigatePracticeProblem(-1)}
+                onNextProblem={() => navigatePracticeProblem(1)}
+                onShowHint={showNextHint}
+                onShowAllHints={showAllHints}
+                onOpenQuizBank={openPracticeLibrary}
+                mockMode={Boolean(activeProblem?.mock && mockSession)}
+                solutionUnlocked={
+                  !activeProblem?.mock ||
+                  (mockSession &&
+                    (mockSession.stuck.includes(activeProblem.id) ||
+                      mockSession.outcomes[activeProblem.id] !== "unattempted"))
+                }
+                onStuck={markMockStuck}
+                onViewSolutionMock={requestViewSolutionMock}
+                onOpenVisualizer={canOpenVisualizer ? openProblemVisualizer : null}
+              />
+            </div>
+          </>
         )}
         <div
           className="workspace-guide-divider"
@@ -4232,6 +4309,14 @@ export default function CodingTutor({
           onSaveSnippet={handleSaveSnippet}
           onUploadFile={() => personalFileInputRef.current?.click()}
           codeRenderer={codeRenderer}
+          guideToggle={
+            !isPersonalMode
+              ? {
+                  isOpen: mobileWorkspaceGuideOpen,
+                  onToggle: () => setMobileWorkspaceGuideOpen(open => !open),
+                }
+              : null
+          }
         />
       </div>
       <input
@@ -4641,7 +4726,7 @@ export default function CodingTutor({
                 openPage("progress");
               }}
             >
-              <span className="coding-nav-icon" aria-hidden="true"><FaChartLine /></span>
+              <span className="coding-nav-menu-icon" aria-hidden="true"><FaChartLine /></span>
               <span>Progress</span>
             </button>
             <button
@@ -4656,7 +4741,7 @@ export default function CodingTutor({
                 });
               }}
             >
-              <span className="coding-nav-icon" aria-hidden="true"><FaFileCode /></span>
+              <span className="coding-nav-menu-icon" aria-hidden="true"><FaFileCode /></span>
               <span>My Snippets</span>
             </button>
             {(() => {
@@ -4671,7 +4756,7 @@ export default function CodingTutor({
                     toggleWorkspace();
                   }}
                 >
-                  <span className="coding-nav-icon" aria-hidden="true">
+                  <span className="coding-nav-menu-icon" aria-hidden="true">
                     {willHideWorkspace ? <FaEyeSlash /> : <FaEye />}
                   </span>
                   <span>{label}</span>

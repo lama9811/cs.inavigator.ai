@@ -232,6 +232,102 @@ def _security_error_response(exc: RunnerSecurityError) -> dict[str, Any]:
     }
 
 
+def _empty_trace_v2_payload() -> dict[str, Any]:
+    return {
+        "schema_version": "trace_v2",
+        "steps": [],
+        "limits": {},
+    }
+
+
+def _trace_scalar_binding(value: Any, *, value_type: str | None = None) -> dict[str, Any]:
+    return {
+        "kind": "scalar",
+        "type": value_type or type(value).__name__,
+        "value": value,
+        "display": _truncate_text(value, RUN_MAX_VALUE_CHARS),
+    }
+
+
+def _trace_bindings_from_pairs(pairs: list[dict[str, Any]] | tuple[dict[str, Any], ...] | None) -> dict[str, dict[str, Any]]:
+    bindings: dict[str, dict[str, Any]] = {}
+    for item in pairs or []:
+        name = str(item.get("name") or "").strip()
+        if not name:
+            continue
+        bindings[name] = _trace_scalar_binding(item.get("value", ""), value_type="argument")
+    return bindings
+
+
+def _normalize_trace_v2_frames(trace_v2: dict[str, Any] | None) -> dict[str, Any]:
+    payload = dict(trace_v2 or _empty_trace_v2_payload())
+    payload["schema_version"] = "trace_v2"
+    payload["steps"] = list(payload.get("steps") or [])
+    payload["limits"] = dict(payload.get("limits") or {})
+    for step in payload["steps"]:
+        frames = []
+        for index, frame in enumerate(step.get("frames") or []):
+            normalized = dict(frame or {})
+            function_name = normalized.get("function") or normalized.get("name") or step.get("function") or "trace"
+            normalized["function"] = function_name
+            normalized.setdefault("frame_id", f"frame_{index + 1}")
+            raw_bindings = normalized.get("bindings") or {}
+            if isinstance(raw_bindings, list):
+                normalized["bindings"] = _trace_bindings_from_pairs(raw_bindings)
+            elif isinstance(raw_bindings, dict):
+                normalized["bindings"] = raw_bindings
+            else:
+                normalized["bindings"] = {}
+            frames.append(normalized)
+        step["frames"] = frames
+        if not isinstance(step.get("objects"), dict):
+            step["objects"] = {}
+        if not isinstance(step.get("references"), list):
+            step["references"] = []
+    return payload
+
+
+def _with_trace_v2_metadata(
+    trace_v2: dict[str, Any] | None,
+    *,
+    language: str,
+    requested_language: str | None = None,
+    capability: str = "practice_and_freeform",
+    trace_mode: str = "practice",
+) -> dict[str, Any]:
+    payload = _normalize_trace_v2_frames(trace_v2)
+    payload["language"] = language
+    payload["requested_language"] = requested_language or language
+    payload["capability"] = capability
+    payload["trace_mode"] = trace_mode
+    return payload
+
+
+def _trace_capability_error_response(
+    message: str,
+    *,
+    language: str,
+    requested_language: str | None = None,
+    capability: str = "unsupported",
+    trace_mode: str = "unavailable",
+) -> dict[str, Any]:
+    return {
+        "status": "error",
+        "trace": [],
+        "trace_v2": _with_trace_v2_metadata(
+            _empty_trace_v2_payload(),
+            language=language,
+            requested_language=requested_language,
+            capability=capability,
+            trace_mode=trace_mode,
+        ),
+        "stdout": "",
+        "stderr": message,
+        "message": message,
+        "duration_ms": 0,
+    }
+
+
 def _truncate_text(value: Any, limit: int = RUN_MAX_OUTPUT_CHARS) -> str:
     text = "" if value is None else str(value)
     if len(text) <= limit:
@@ -775,7 +871,15 @@ def run_python_practice_trace(code: str, function_name: str, test: dict[str, Any
     try:
         validate_python_code(code)
     except RunnerSecurityError as exc:
-        return _security_error_response(exc)
+        response = _security_error_response(exc)
+        response["trace"] = []
+        response["trace_v2"] = _with_trace_v2_metadata(
+            _empty_trace_v2_payload(),
+            language="python",
+            capability="practice_and_freeform",
+            trace_mode="practice",
+        )
+        return response
 
     runner_source = """
 import ast
@@ -952,7 +1056,377 @@ except Exception as exc:
     raise SystemExit(0)
 
 source_lines = linecache.getlines("solution.py")
+TRACE_OPERATION_BY_LINE = {}
+
+def build_operation_metadata():
+    try:
+        tree = ast.parse("".join(source_lines), filename="solution.py")
+    except Exception:
+        return {}
+    operations = {}
+    def target_name(node):
+        if isinstance(node, ast.Name):
+            return node.id
+        if isinstance(node, ast.Attribute):
+            return node.attr
+        if isinstance(node, ast.Subscript):
+            return "indexed value"
+        if isinstance(node, (ast.Tuple, ast.List)):
+            return ", ".join(target_name(item) for item in node.elts)
+        return ""
+    def call_name(node):
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Attribute):
+                return node.func.attr
+            if isinstance(node.func, ast.Name):
+                return node.func.id
+        return ""
+    for node in ast.walk(tree):
+        line_no = getattr(node, "lineno", None)
+        if not line_no:
+            continue
+        if isinstance(node, ast.Assign):
+            target = target_name(node.targets[0]) if node.targets else ""
+            value_call = call_name(node.value)
+            operations[line_no] = {
+                "kind": "assignment",
+                "target": target,
+                "detail": f"stores a value in {target}" if target else "stores a value",
+                "method": value_call,
+            }
+        elif isinstance(node, ast.AugAssign):
+            target = target_name(node.target)
+            operations[line_no] = {
+                "kind": "update",
+                "target": target,
+                "detail": f"updates {target} using its old value" if target else "updates a value",
+            }
+        elif isinstance(node, ast.Return):
+            operations[line_no] = {"kind": "return", "target": "return value", "detail": "sends a value back to the caller"}
+        elif isinstance(node, ast.For):
+            operations[line_no] = {
+                "kind": "loop_iteration",
+                "target": target_name(node.target),
+                "detail": "gets the next item for the loop variable",
+                "method": call_name(node.iter),
+            }
+        elif isinstance(node, ast.While):
+            operations[line_no] = {"kind": "condition", "target": "while condition", "detail": "checks whether the loop should keep running"}
+        elif isinstance(node, ast.If):
+            operations[line_no] = {"kind": "condition", "target": "if condition", "detail": "checks which branch should run"}
+        elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+            method = call_name(node.value)
+            kind = "output" if method == "print" else "method_call"
+            operations[line_no] = {"kind": kind, "target": method, "detail": f"runs {method}()" if method else "runs a function call", "method": method}
+        elif isinstance(node, ast.Subscript):
+            operations.setdefault(line_no, {"kind": "index_access", "target": "indexed value", "detail": "reads one item from a collection"})
+    return operations
+
+TRACE_OPERATION_BY_LINE = build_operation_metadata()
 trace = []
+trace_v2_object_ids = {}
+trace_v2_next_object_id = 1
+trace_v2_previous_step = None
+
+def empty_trace_v2():
+    return {
+        "schema_version": "trace_v2",
+        "steps": [],
+        "limits": {
+            "max_steps": MAX_TRACE_STEPS,
+            "max_output_chars": MAX_OUTPUT_CHARS,
+            "max_display_chars": MAX_LOCAL_CHARS,
+        },
+    }
+
+def is_scalar_value(value):
+    return value is None or isinstance(value, (bool, int, float, str))
+
+def safe_type_name(value):
+    try:
+        return type(value).__name__
+    except Exception:
+        return "unknown"
+
+def stable_trace_object_id(value):
+    global trace_v2_next_object_id
+    source_id = id(value)
+    if source_id not in trace_v2_object_ids:
+        trace_v2_object_ids[source_id] = f"obj_{trace_v2_next_object_id}"
+        trace_v2_next_object_id += 1
+    return trace_v2_object_ids[source_id]
+
+def truncate_display(text):
+    raw = str(text)
+    if len(raw) > MAX_LOCAL_CHARS:
+        return raw[:MAX_LOCAL_CHARS] + "... truncated"
+    return raw
+
+def serialize_scalar(value):
+    return {
+        "kind": "scalar",
+        "type": safe_type_name(value),
+        "value": value,
+        "display": safe_display(value),
+    }
+
+def serialize_value(value, objects, depth=0):
+    if is_scalar_value(value) or depth >= 2:
+        return serialize_scalar(value)
+    object_id = stable_trace_object_id(value)
+    if object_id not in objects:
+        objects[object_id] = serialize_object(value, object_id, objects, depth)
+    return {
+        "kind": "reference",
+        "object_id": object_id,
+        "type": safe_type_name(value),
+        "display": safe_display(value),
+    }
+
+def serialize_object(value, object_id, objects, depth=0):
+    obj_type = safe_type_name(value)
+    snapshot = {
+        "object_id": object_id,
+        "type": obj_type,
+        "repr": truncate_display(repr(value)),
+    }
+    try:
+        if isinstance(value, list):
+            snapshot["length"] = len(value)
+            snapshot["items"] = [serialize_value(item, objects, depth + 1) for item in value[:20]]
+            snapshot["truncated"] = len(value) > 20
+        elif isinstance(value, tuple):
+            snapshot["length"] = len(value)
+            snapshot["items"] = [serialize_value(item, objects, depth + 1) for item in value[:20]]
+            snapshot["truncated"] = len(value) > 20
+        elif isinstance(value, set):
+            items = sorted(list(value), key=lambda item: truncate_display(repr(item)))[:20]
+            snapshot["length"] = len(value)
+            snapshot["items"] = [serialize_value(item, objects, depth + 1) for item in items]
+            snapshot["truncated"] = len(value) > 20
+        elif isinstance(value, dict):
+            entries = []
+            for key in list(value.keys())[:20]:
+                entries.append({
+                    "key": serialize_value(key, objects, depth + 1),
+                    "value": serialize_value(value[key], objects, depth + 1),
+                })
+            snapshot["length"] = len(value)
+            snapshot["entries"] = entries
+            snapshot["truncated"] = len(value) > 20
+        else:
+            attrs = {}
+            try:
+                source_attrs = vars(value)
+            except Exception:
+                source_attrs = {}
+            for key, attr_value in list(source_attrs.items())[:20]:
+                if not str(key).startswith("_"):
+                    attrs[key] = serialize_value(attr_value, objects, depth + 1)
+            snapshot["class_name"] = obj_type
+            snapshot["attributes"] = attrs
+    except Exception as exc:
+        snapshot["error"] = f"Could not inspect object: {exc}"
+    return snapshot
+
+def trace_v2_should_capture(frame, name, value):
+    if str(name).startswith("__") or name in {"self"}:
+        return False
+    if callable(value) and frame.f_code.co_name == "<module>":
+        return False
+    return True
+
+def frame_label(frame):
+    return "script" if frame.f_code.co_name == "<module>" else frame.f_code.co_name
+
+def collect_solution_frames(frame, objects):
+    frames = []
+    current = frame
+    while current is not None:
+        if current.f_code.co_filename == "solution.py":
+            bindings = {}
+            references = []
+            for key, value in current.f_locals.items():
+                if not trace_v2_should_capture(current, key, value):
+                    continue
+                binding = serialize_value(value, objects)
+                bindings[key] = binding
+                if binding.get("kind") == "reference":
+                    references.append({
+                        "frame_id": f"frame_{len(frames) + 1}",
+                        "name": key,
+                        "object_id": binding.get("object_id"),
+                    })
+                if len(bindings) >= 16:
+                    break
+            frames.append({
+                "frame_id": f"frame_{len(frames) + 1}",
+                "function": frame_label(current),
+                "line_no": current.f_lineno,
+                "bindings": bindings,
+                "references": references,
+            })
+        current = current.f_back
+    return list(reversed(frames))
+
+def fingerprint(value):
+    try:
+        return json.dumps(value, sort_keys=True, default=str)
+    except Exception:
+        return repr(value)
+
+def summarize_operation(line, event, arg, *, phase="before_line", previous_line_text="", binding_changes=None, object_changes=None, stdout_changed=False, operation=None):
+    clean = (line or "").strip()
+    previous_clean = (previous_line_text or "").strip()
+    binding_changes = binding_changes or []
+    object_changes = object_changes or []
+    operation = operation or {}
+    if event == "exception":
+        exc_type, exc, _tb = arg
+        return f"Python stopped here because {exc_type.__name__} was raised: {exc}"
+    if event == "return":
+        return "This line just returned a value to the caller."
+    if phase == "after_previous_line":
+        changed_names = [change.get("name") for change in binding_changes if change.get("name")]
+        mutated_objects = [change for change in object_changes if change.get("change") == "mutated"]
+        if mutated_objects:
+            return f"Line just ran: {previous_clean}. It changed an existing object, then Python moved to the next line."
+        if changed_names:
+            return f"Line just ran: {previous_clean}. It updated {', '.join(changed_names[:3])}, then Python moved to the next line."
+        if stdout_changed:
+            return f"Line just ran: {previous_clean}. It printed output, then Python moved to the next line."
+        if previous_clean:
+            return f"Line just ran: {previous_clean}. Python is ready for the next line."
+    if not clean:
+        return "Python is ready for the next executable line."
+    kind = operation.get("kind")
+    target = operation.get("target")
+    method = operation.get("method")
+    if kind == "assignment":
+        if method == "lower":
+            return f"Python is about to store a lowercase copy in {target}; the original string object is not changed."
+        if target:
+            return f"Python is about to store the right-side value in {target}."
+    if kind == "update" and target:
+        return f"Python is about to update {target} using its current value."
+    if kind == "loop_iteration":
+        if method == "lower":
+            return f"Python is about to take the next lowercase character and store it in {target}."
+        return f"Python is about to take the next item and store it in {target}."
+    if kind == "condition":
+        return "Python is about to check this condition to decide the next path."
+    if kind == "output":
+        return "Python is about to print a value into the output bucket."
+    if kind == "index_access":
+        return "Python is about to use an index or key to read one item from a collection."
+    if ".append(" in clean:
+        return "Python is about to run append(); it will change the existing list object instead of making a new variable."
+    if ".pop(" in clean:
+        return "Python is about to run pop(); it will remove an item from the existing collection."
+    if clean.startswith("for ") and (".lower(" in clean or ".lower()" in clean):
+        return "Python is about to pick the next item from a lower() copy; the original string stays unchanged."
+    if ".lower(" in clean or ".lower()" in clean:
+        return "Python is about to run lower(); it creates lowercase characters for this operation while the original string stays unchanged."
+    if clean.startswith("for "):
+        return "Python is about to pick the next item and store it in the loop variable."
+    if clean.startswith("while "):
+        return "Python is about to check the while condition before deciding whether to run the body."
+    if clean.startswith("if ") or clean.startswith("elif "):
+        return "Python is about to check this condition to choose the next path."
+    if "=" in clean and "==" not in clean and not clean.startswith(("return ", "if ", "elif ", "while ")):
+        return "Python is about to run this assignment and store a value in a variable name."
+    if "[" in clean and "]" in clean:
+        return "Python is about to use an index or key to read from a collection."
+    return "Python is ready to run this line. Watch the variables before and after it runs."
+
+def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
+    global trace_v2_previous_step
+    objects = {}
+    frames = collect_solution_frames(frame, objects)
+    previous_stdout = trace_v2_previous_step.get("stdout", "") if trace_v2_previous_step else ""
+    previous_line_no = trace_v2_previous_step.get("current_line") if trace_v2_previous_step else None
+    previous_line_text = source_lines[previous_line_no - 1].rstrip() if previous_line_no and 0 < previous_line_no <= len(source_lines) else ""
+    previous_frames = trace_v2_previous_step.get("frames", []) if trace_v2_previous_step else []
+    previous_bindings = {}
+    for previous_frame in previous_frames:
+        for name, binding in previous_frame.get("bindings", {}).items():
+            previous_bindings[(previous_frame.get("function"), name)] = binding
+    binding_changes = []
+    for current_frame in frames:
+        for name, binding in current_frame.get("bindings", {}).items():
+            key = (current_frame.get("function"), name)
+            old_binding = previous_bindings.get(key)
+            if old_binding is None:
+                binding_changes.append({"frame": key[0], "name": name, "change": "new"})
+            elif fingerprint(old_binding) != fingerprint(binding):
+                binding_changes.append({"frame": key[0], "name": name, "change": "changed"})
+
+    previous_objects = trace_v2_previous_step.get("objects", {}) if trace_v2_previous_step else {}
+    object_changes = []
+    for object_id, snapshot in objects.items():
+        old_snapshot = previous_objects.get(object_id)
+        if old_snapshot is None:
+            object_changes.append({"object_id": object_id, "change": "new"})
+        elif fingerprint(old_snapshot) != fingerprint(snapshot):
+            object_changes.append({"object_id": object_id, "change": "mutated"})
+
+    references = []
+    for current_frame in frames:
+        references.extend(current_frame.get("references", []))
+    stdout_changed = stdout_text != previous_stdout
+    operation = TRACE_OPERATION_BY_LINE.get(line_no, {})
+    phase = "line_returned" if event == "return" else "line_errored" if event == "exception" else "before_line"
+    if event == "line" and trace_v2_previous_step and (binding_changes or object_changes or stdout_changed):
+        phase = "after_previous_line"
+    changes = [
+        *[{"kind": "binding", **change} for change in binding_changes],
+        *[{"kind": "object", **change} for change in object_changes],
+    ]
+    if stdout_changed:
+        changes.append({"kind": "stdout", "change": "changed"})
+    step = {
+        "step_index": len(trace),
+        "event": event,
+        "phase": phase,
+        "current_line": line_no,
+        "previous_line": previous_line_no,
+        "line_about_to_run": line_no if event == "line" else None,
+        "line_just_ran": previous_line_no if phase == "after_previous_line" else line_no if event in {"return", "exception"} else None,
+        "line_just_ran_text": previous_line_text if phase == "after_previous_line" else line if event in {"return", "exception"} else "",
+        "line": line,
+        "function": frame_label(frame),
+        "frames": frames,
+        "objects": objects,
+        "references": references,
+        "changes": changes,
+        "binding_changes": binding_changes,
+        "object_changes": object_changes,
+        "stdout": stdout_text,
+        "stdout_changed": stdout_changed,
+        "operation_kind": operation.get("kind") or "",
+        "operation_target": operation.get("target") or "",
+        "operation_detail": operation.get("detail") or "",
+        "operation_summary": summarize_operation(
+            line,
+            event,
+            arg,
+            phase=phase,
+            previous_line_text=previous_line_text,
+            binding_changes=binding_changes,
+            object_changes=object_changes,
+            stdout_changed=stdout_changed,
+            operation=operation,
+        ),
+    }
+    step["student_message"] = step["operation_summary"]
+    if event == "return":
+        step["return_value"] = serialize_value(arg, objects)
+    elif event == "exception":
+        exc_type, exc, _tb = arg
+        step["exception"] = {"type": exc_type.__name__, "message": str(exc)}
+    trace_v2_previous_step = step
+    return step
+trace_v2 = empty_trace_v2()
 
 def tracer(frame, event, arg):
     if len(trace) >= MAX_TRACE_STEPS:
@@ -981,6 +1455,7 @@ def tracer(frame, event, arg):
         exc_type, exc, _tb = arg
         entry["exception"] = f"{exc_type.__name__}: {exc}"
     trace.append(entry)
+    trace_v2["steps"].append(build_trace_v2_step(frame, event, arg, line_no, entry["line"], entry["stdout"]))
     return tracer
 
 args = test.get("args", [])
@@ -1009,6 +1484,7 @@ print(json.dumps({
         "error": error,
     },
     "trace": trace,
+    "trace_v2": trace_v2,
     "stdout": stdout_buffer.getvalue(),
     "duration_ms": round((time.perf_counter() - started) * 1000, 2),
     "truncated": len(trace) >= MAX_TRACE_STEPS,
@@ -1034,6 +1510,12 @@ print(json.dumps({
         return {
             "status": "error",
             "trace": [],
+            "trace_v2": _with_trace_v2_metadata(
+                _empty_trace_v2_payload(),
+                language="python",
+                capability="practice_and_freeform",
+                trace_mode="practice",
+            ),
             "stdout": "",
             "stderr": f"The trace timed out after {RUN_TIMEOUT_SECONDS} seconds. Check for infinite loops or very slow logic.",
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -1042,6 +1524,12 @@ print(json.dumps({
         return {
             "status": "error",
             "trace": [],
+            "trace_v2": _with_trace_v2_metadata(
+                _empty_trace_v2_payload(),
+                language="python",
+                capability="practice_and_freeform",
+                trace_mode="practice",
+            ),
             "stdout": "",
             "stderr": f"Trace setup failed: {exc}",
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -1053,6 +1541,12 @@ print(json.dumps({
         return {
             "status": "error",
             "trace": [],
+            "trace_v2": _with_trace_v2_metadata(
+                _empty_trace_v2_payload(),
+                language="python",
+                capability="practice_and_freeform",
+                trace_mode="practice",
+            ),
             "stdout": "",
             "stderr": stderr_text or "Python returned an error before tracing could run.",
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -1064,6 +1558,12 @@ print(json.dumps({
         return {
             "status": "error",
             "trace": [],
+            "trace_v2": _with_trace_v2_metadata(
+                _empty_trace_v2_payload(),
+                language="python",
+                capability="practice_and_freeform",
+                trace_mode="practice",
+            ),
             "stdout": _truncate_text(stdout_text),
             "stderr": stderr_text or "Trace output could not be parsed.",
             "duration_ms": round((time.perf_counter() - started) * 1000, 2),
@@ -1074,6 +1574,677 @@ print(json.dumps({
         "function_name": payload.get("function_name", function_name),
         "test": payload.get("test", {}),
         "trace": payload.get("trace", []),
+        "trace_v2": _with_trace_v2_metadata(
+            payload.get("trace_v2", _empty_trace_v2_payload()),
+            language="python",
+            capability="practice_and_freeform",
+            trace_mode="practice",
+        ),
+        "stdout": _truncate_text(payload.get("stdout", "")),
+        "stderr": _truncate_text(payload.get("error") or stderr_text),
+        "duration_ms": payload.get("duration_ms", round((time.perf_counter() - started) * 1000, 2)),
+        "truncated": bool(payload.get("truncated")),
+    }
+
+
+def run_python_freeform_trace(code: str) -> dict[str, Any]:
+    """Return a capped line trace for a standalone Python snippet.
+
+    Unlike practice tracing, this runs the student's own top-level code, so a
+    saved snippet with a call at the bottom can be stepped through without an
+    authored Practice Library test.
+    """
+    try:
+        validate_python_code(code)
+    except RunnerSecurityError as exc:
+        response = _security_error_response(exc)
+        response["trace"] = []
+        response["trace_v2"] = _with_trace_v2_metadata(
+            _empty_trace_v2_payload(),
+            language="python",
+            capability="practice_and_freeform",
+            trace_mode="freeform",
+        )
+        return response
+
+    runner_source = """
+import ast
+import builtins
+import contextlib
+import io
+import json
+import linecache
+import sys
+import time
+import types
+
+started = time.perf_counter()
+MAX_OUTPUT_CHARS = 12000
+MAX_TRACE_STEPS = 80
+MAX_LOCAL_CHARS = 120
+ALLOWED_IMPORTS = {
+    "bisect", "collections", "functools", "heapq", "itertools", "math",
+    "operator", "re", "statistics", "string", "typing",
+}
+SAFE_MODULE_CACHE = {}
+
+class CappedTextIO(io.TextIOBase):
+    def __init__(self, limit):
+        self.limit = limit
+        self.parts = []
+        self.length = 0
+        self.truncated = False
+
+    def write(self, value):
+        text = str(value)
+        remaining = self.limit - self.length
+        if remaining > 0:
+            chunk = text[:remaining]
+            self.parts.append(chunk)
+            self.length += len(chunk)
+        if len(text) > max(remaining, 0):
+            self.truncated = True
+        return len(text)
+
+    def getvalue(self):
+        text = "".join(self.parts)
+        if self.truncated:
+            text += "\\n... output truncated by CS Navigator ..."
+        return text
+
+stdout_buffer = CappedTextIO(MAX_OUTPUT_CHARS)
+
+def safe_import(name, globals=None, locals=None, fromlist=(), level=0):
+    root = str(name).split(".", 1)[0]
+    if root not in ALLOWED_IMPORTS:
+        raise ImportError(f"Importing '{root}' is not available in the practice runner.")
+    if root not in SAFE_MODULE_CACHE:
+        source_module = builtins.__import__(root)
+        safe_exports = {
+            export_name: getattr(source_module, export_name)
+            for export_name in dir(source_module)
+            if not export_name.startswith("_")
+            and not isinstance(getattr(source_module, export_name), types.ModuleType)
+            and export_name not in {"attrgetter", "methodcaller"}
+        }
+        SAFE_MODULE_CACHE[root] = types.SimpleNamespace(**safe_exports)
+    return SAFE_MODULE_CACHE[root]
+
+SAFE_BUILTINS = {
+    "__build_class__": builtins.__build_class__,
+    "__import__": safe_import,
+    "abs": abs, "all": all, "any": any, "bin": bin, "bool": bool, "callable": callable,
+    "chr": chr, "complex": complex, "dict": dict, "divmod": divmod,
+    "enumerate": enumerate, "filter": filter, "float": float, "format": format,
+    "frozenset": frozenset, "hash": hash, "hex": hex, "int": int, "isinstance": isinstance,
+    "issubclass": issubclass, "iter": iter, "len": len, "list": list, "map": map,
+    "max": max, "min": min, "next": next, "object": object, "oct": oct,
+    "ord": ord, "pow": pow, "print": print, "range": range, "repr": repr,
+    "reversed": reversed, "round": round, "set": set, "slice": slice,
+    "sorted": sorted, "str": str, "sum": sum, "super": super, "tuple": tuple,
+    "zip": zip,
+    "ArithmeticError": ArithmeticError, "AssertionError": AssertionError,
+    "Exception": Exception, "IndexError": IndexError, "KeyError": KeyError,
+    "LookupError": LookupError, "RuntimeError": RuntimeError, "StopIteration": StopIteration,
+    "TypeError": TypeError, "ValueError": ValueError, "ZeroDivisionError": ZeroDivisionError,
+}
+
+def safe_display(value):
+    try:
+        raw = json.dumps(value, default=repr)
+    except Exception:
+        raw = repr(value)
+    if len(raw) > MAX_LOCAL_CHARS:
+        raw = raw[:MAX_LOCAL_CHARS] + "... truncated"
+    return raw
+
+def snapshot_locals(frame):
+    out = {}
+    for key, value in frame.f_locals.items():
+        if key.startswith("__"):
+            continue
+        if key in {"SAFE_BUILTINS", "SAFE_MODULE_CACHE", "stdout_buffer"}:
+            continue
+        if callable(value) and frame.f_code.co_name == "<module>":
+            continue
+        out[key] = safe_display(value)
+        if len(out) >= 10:
+            out["..."] = "locals truncated"
+            break
+    return out
+
+def call_stack_for_frame(frame):
+    stack = []
+    current = frame
+    while current is not None:
+        if current.f_code.co_filename == "solution.py":
+            stack.append("script" if current.f_code.co_name == "<module>" else current.f_code.co_name)
+        current = current.f_back
+    return list(reversed(stack))
+
+source_lines = linecache.getlines("solution.py")
+TRACE_OPERATION_BY_LINE = {}
+
+def build_operation_metadata():
+    try:
+        tree = ast.parse("".join(source_lines), filename="solution.py")
+    except Exception:
+        return {}
+    operations = {}
+    def target_name(node):
+        if isinstance(node, ast.Name):
+            return node.id
+        if isinstance(node, ast.Attribute):
+            return node.attr
+        if isinstance(node, ast.Subscript):
+            return "indexed value"
+        if isinstance(node, (ast.Tuple, ast.List)):
+            return ", ".join(target_name(item) for item in node.elts)
+        return ""
+    def call_name(node):
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Attribute):
+                return node.func.attr
+            if isinstance(node.func, ast.Name):
+                return node.func.id
+        return ""
+    for node in ast.walk(tree):
+        line_no = getattr(node, "lineno", None)
+        if not line_no:
+            continue
+        if isinstance(node, ast.Assign):
+            target = target_name(node.targets[0]) if node.targets else ""
+            value_call = call_name(node.value)
+            operations[line_no] = {
+                "kind": "assignment",
+                "target": target,
+                "detail": f"stores a value in {target}" if target else "stores a value",
+                "method": value_call,
+            }
+        elif isinstance(node, ast.AugAssign):
+            target = target_name(node.target)
+            operations[line_no] = {
+                "kind": "update",
+                "target": target,
+                "detail": f"updates {target} using its old value" if target else "updates a value",
+            }
+        elif isinstance(node, ast.Return):
+            operations[line_no] = {"kind": "return", "target": "return value", "detail": "sends a value back to the caller"}
+        elif isinstance(node, ast.For):
+            operations[line_no] = {
+                "kind": "loop_iteration",
+                "target": target_name(node.target),
+                "detail": "gets the next item for the loop variable",
+                "method": call_name(node.iter),
+            }
+        elif isinstance(node, ast.While):
+            operations[line_no] = {"kind": "condition", "target": "while condition", "detail": "checks whether the loop should keep running"}
+        elif isinstance(node, ast.If):
+            operations[line_no] = {"kind": "condition", "target": "if condition", "detail": "checks which branch should run"}
+        elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+            method = call_name(node.value)
+            kind = "output" if method == "print" else "method_call"
+            operations[line_no] = {"kind": kind, "target": method, "detail": f"runs {method}()" if method else "runs a function call", "method": method}
+        elif isinstance(node, ast.Subscript):
+            operations.setdefault(line_no, {"kind": "index_access", "target": "indexed value", "detail": "reads one item from a collection"})
+    return operations
+
+TRACE_OPERATION_BY_LINE = build_operation_metadata()
+trace = []
+trace_v2_object_ids = {}
+trace_v2_next_object_id = 1
+trace_v2_previous_step = None
+
+def empty_trace_v2():
+    return {
+        "schema_version": "trace_v2",
+        "steps": [],
+        "limits": {
+            "max_steps": MAX_TRACE_STEPS,
+            "max_output_chars": MAX_OUTPUT_CHARS,
+            "max_display_chars": MAX_LOCAL_CHARS,
+        },
+    }
+
+def is_scalar_value(value):
+    return value is None or isinstance(value, (bool, int, float, str))
+
+def safe_type_name(value):
+    try:
+        return type(value).__name__
+    except Exception:
+        return "unknown"
+
+def stable_trace_object_id(value):
+    global trace_v2_next_object_id
+    source_id = id(value)
+    if source_id not in trace_v2_object_ids:
+        trace_v2_object_ids[source_id] = f"obj_{trace_v2_next_object_id}"
+        trace_v2_next_object_id += 1
+    return trace_v2_object_ids[source_id]
+
+def truncate_display(text):
+    raw = str(text)
+    if len(raw) > MAX_LOCAL_CHARS:
+        return raw[:MAX_LOCAL_CHARS] + "... truncated"
+    return raw
+
+def serialize_scalar(value):
+    return {
+        "kind": "scalar",
+        "type": safe_type_name(value),
+        "value": value,
+        "display": safe_display(value),
+    }
+
+def serialize_value(value, objects, depth=0):
+    if is_scalar_value(value) or depth >= 2:
+        return serialize_scalar(value)
+    object_id = stable_trace_object_id(value)
+    if object_id not in objects:
+        objects[object_id] = serialize_object(value, object_id, objects, depth)
+    return {
+        "kind": "reference",
+        "object_id": object_id,
+        "type": safe_type_name(value),
+        "display": safe_display(value),
+    }
+
+def serialize_object(value, object_id, objects, depth=0):
+    obj_type = safe_type_name(value)
+    snapshot = {
+        "object_id": object_id,
+        "type": obj_type,
+        "repr": truncate_display(repr(value)),
+    }
+    try:
+        if isinstance(value, list):
+            snapshot["length"] = len(value)
+            snapshot["items"] = [serialize_value(item, objects, depth + 1) for item in value[:20]]
+            snapshot["truncated"] = len(value) > 20
+        elif isinstance(value, tuple):
+            snapshot["length"] = len(value)
+            snapshot["items"] = [serialize_value(item, objects, depth + 1) for item in value[:20]]
+            snapshot["truncated"] = len(value) > 20
+        elif isinstance(value, set):
+            items = sorted(list(value), key=lambda item: truncate_display(repr(item)))[:20]
+            snapshot["length"] = len(value)
+            snapshot["items"] = [serialize_value(item, objects, depth + 1) for item in items]
+            snapshot["truncated"] = len(value) > 20
+        elif isinstance(value, dict):
+            entries = []
+            for key in list(value.keys())[:20]:
+                entries.append({
+                    "key": serialize_value(key, objects, depth + 1),
+                    "value": serialize_value(value[key], objects, depth + 1),
+                })
+            snapshot["length"] = len(value)
+            snapshot["entries"] = entries
+            snapshot["truncated"] = len(value) > 20
+        else:
+            attrs = {}
+            try:
+                source_attrs = vars(value)
+            except Exception:
+                source_attrs = {}
+            for key, attr_value in list(source_attrs.items())[:20]:
+                if not str(key).startswith("_"):
+                    attrs[key] = serialize_value(attr_value, objects, depth + 1)
+            snapshot["class_name"] = obj_type
+            snapshot["attributes"] = attrs
+    except Exception as exc:
+        snapshot["error"] = f"Could not inspect object: {exc}"
+    return snapshot
+
+def trace_v2_should_capture(frame, name, value):
+    if str(name).startswith("__"):
+        return False
+    if name in {"SAFE_BUILTINS", "SAFE_MODULE_CACHE", "stdout_buffer"}:
+        return False
+    if callable(value) and frame.f_code.co_name == "<module>":
+        return False
+    return True
+
+def frame_label(frame):
+    return "script" if frame.f_code.co_name == "<module>" else frame.f_code.co_name
+
+def collect_solution_frames(frame, objects):
+    frames = []
+    current = frame
+    while current is not None:
+        if current.f_code.co_filename == "solution.py":
+            bindings = {}
+            references = []
+            for key, value in current.f_locals.items():
+                if not trace_v2_should_capture(current, key, value):
+                    continue
+                binding = serialize_value(value, objects)
+                bindings[key] = binding
+                if binding.get("kind") == "reference":
+                    references.append({
+                        "frame_id": f"frame_{len(frames) + 1}",
+                        "name": key,
+                        "object_id": binding.get("object_id"),
+                    })
+                if len(bindings) >= 16:
+                    break
+            frames.append({
+                "frame_id": f"frame_{len(frames) + 1}",
+                "function": frame_label(current),
+                "line_no": current.f_lineno,
+                "bindings": bindings,
+                "references": references,
+            })
+        current = current.f_back
+    return list(reversed(frames))
+
+def fingerprint(value):
+    try:
+        return json.dumps(value, sort_keys=True, default=str)
+    except Exception:
+        return repr(value)
+
+def summarize_operation(line, event, arg, *, phase="before_line", previous_line_text="", binding_changes=None, object_changes=None, stdout_changed=False, operation=None):
+    clean = (line or "").strip()
+    previous_clean = (previous_line_text or "").strip()
+    binding_changes = binding_changes or []
+    object_changes = object_changes or []
+    operation = operation or {}
+    if event == "exception":
+        exc_type, exc, _tb = arg
+        return f"Python stopped here because {exc_type.__name__} was raised: {exc}"
+    if event == "return":
+        return "This line just returned a value to the caller."
+    if phase == "after_previous_line":
+        changed_names = [change.get("name") for change in binding_changes if change.get("name")]
+        mutated_objects = [change for change in object_changes if change.get("change") == "mutated"]
+        if mutated_objects:
+            return f"Line just ran: {previous_clean}. It changed an existing object, then Python moved to the next line."
+        if changed_names:
+            return f"Line just ran: {previous_clean}. It updated {', '.join(changed_names[:3])}, then Python moved to the next line."
+        if stdout_changed:
+            return f"Line just ran: {previous_clean}. It printed output, then Python moved to the next line."
+        if previous_clean:
+            return f"Line just ran: {previous_clean}. Python is ready for the next line."
+    if not clean:
+        return "Python is ready for the next executable line."
+    kind = operation.get("kind")
+    target = operation.get("target")
+    method = operation.get("method")
+    if kind == "assignment":
+        if method == "lower":
+            return f"Python is about to store a lowercase copy in {target}; the original string object is not changed."
+        if target:
+            return f"Python is about to store the right-side value in {target}."
+    if kind == "update" and target:
+        return f"Python is about to update {target} using its current value."
+    if kind == "loop_iteration":
+        if method == "lower":
+            return f"Python is about to take the next lowercase character and store it in {target}."
+        return f"Python is about to take the next item and store it in {target}."
+    if kind == "condition":
+        return "Python is about to check this condition to decide the next path."
+    if kind == "output":
+        return "Python is about to print a value into the output bucket."
+    if kind == "index_access":
+        return "Python is about to use an index or key to read one item from a collection."
+    if ".append(" in clean:
+        return "Python is about to run append(); it will change the existing list object instead of making a new variable."
+    if ".pop(" in clean:
+        return "Python is about to run pop(); it will remove an item from the existing collection."
+    if clean.startswith("for ") and (".lower(" in clean or ".lower()" in clean):
+        return "Python is about to pick the next item from a lower() copy; the original string stays unchanged."
+    if ".lower(" in clean or ".lower()" in clean:
+        return "Python is about to run lower(); it creates lowercase characters for this operation while the original string stays unchanged."
+    if clean.startswith("for "):
+        return "Python is about to pick the next item and store it in the loop variable."
+    if clean.startswith("while "):
+        return "Python is about to check the while condition before deciding whether to run the body."
+    if clean.startswith("if ") or clean.startswith("elif "):
+        return "Python is about to check this condition to choose the next path."
+    if "=" in clean and "==" not in clean and not clean.startswith(("return ", "if ", "elif ", "while ")):
+        return "Python is about to run this assignment and store a value in a variable name."
+    if "[" in clean and "]" in clean:
+        return "Python is about to use an index or key to read from a collection."
+    return "Python is ready to run this line. Watch the variables before and after it runs."
+
+def build_trace_v2_step(frame, event, arg, line_no, line, stdout_text):
+    global trace_v2_previous_step
+    objects = {}
+    frames = collect_solution_frames(frame, objects)
+    previous_stdout = trace_v2_previous_step.get("stdout", "") if trace_v2_previous_step else ""
+    previous_line_no = trace_v2_previous_step.get("current_line") if trace_v2_previous_step else None
+    previous_line_text = source_lines[previous_line_no - 1].rstrip() if previous_line_no and 0 < previous_line_no <= len(source_lines) else ""
+    previous_frames = trace_v2_previous_step.get("frames", []) if trace_v2_previous_step else []
+    previous_bindings = {}
+    for previous_frame in previous_frames:
+        for name, binding in previous_frame.get("bindings", {}).items():
+            previous_bindings[(previous_frame.get("function"), name)] = binding
+    binding_changes = []
+    for current_frame in frames:
+        for name, binding in current_frame.get("bindings", {}).items():
+            key = (current_frame.get("function"), name)
+            old_binding = previous_bindings.get(key)
+            if old_binding is None:
+                binding_changes.append({"frame": key[0], "name": name, "change": "new"})
+            elif fingerprint(old_binding) != fingerprint(binding):
+                binding_changes.append({"frame": key[0], "name": name, "change": "changed"})
+
+    previous_objects = trace_v2_previous_step.get("objects", {}) if trace_v2_previous_step else {}
+    object_changes = []
+    for object_id, snapshot in objects.items():
+        old_snapshot = previous_objects.get(object_id)
+        if old_snapshot is None:
+            object_changes.append({"object_id": object_id, "change": "new"})
+        elif fingerprint(old_snapshot) != fingerprint(snapshot):
+            object_changes.append({"object_id": object_id, "change": "mutated"})
+
+    references = []
+    for current_frame in frames:
+        references.extend(current_frame.get("references", []))
+    stdout_changed = stdout_text != previous_stdout
+    operation = TRACE_OPERATION_BY_LINE.get(line_no, {})
+    phase = "line_returned" if event == "return" else "line_errored" if event == "exception" else "before_line"
+    if event == "line" and trace_v2_previous_step and (binding_changes or object_changes or stdout_changed):
+        phase = "after_previous_line"
+    changes = [
+        *[{"kind": "binding", **change} for change in binding_changes],
+        *[{"kind": "object", **change} for change in object_changes],
+    ]
+    if stdout_changed:
+        changes.append({"kind": "stdout", "change": "changed"})
+    step = {
+        "step_index": len(trace),
+        "event": event,
+        "phase": phase,
+        "current_line": line_no,
+        "previous_line": previous_line_no,
+        "line_about_to_run": line_no if event == "line" else None,
+        "line_just_ran": previous_line_no if phase == "after_previous_line" else line_no if event in {"return", "exception"} else None,
+        "line_just_ran_text": previous_line_text if phase == "after_previous_line" else line if event in {"return", "exception"} else "",
+        "line": line,
+        "function": frame_label(frame),
+        "frames": frames,
+        "objects": objects,
+        "references": references,
+        "changes": changes,
+        "binding_changes": binding_changes,
+        "object_changes": object_changes,
+        "stdout": stdout_text,
+        "stdout_changed": stdout_changed,
+        "operation_kind": operation.get("kind") or "",
+        "operation_target": operation.get("target") or "",
+        "operation_detail": operation.get("detail") or "",
+        "operation_summary": summarize_operation(
+            line,
+            event,
+            arg,
+            phase=phase,
+            previous_line_text=previous_line_text,
+            binding_changes=binding_changes,
+            object_changes=object_changes,
+            stdout_changed=stdout_changed,
+            operation=operation,
+        ),
+    }
+    step["student_message"] = step["operation_summary"]
+    if event == "return":
+        step["return_value"] = serialize_value(arg, objects)
+    elif event == "exception":
+        exc_type, exc, _tb = arg
+        step["exception"] = {"type": exc_type.__name__, "message": str(exc)}
+    trace_v2_previous_step = step
+    return step
+trace_v2 = empty_trace_v2()
+
+def tracer(frame, event, arg):
+    if len(trace) >= MAX_TRACE_STEPS:
+        return None
+    if frame.f_code.co_filename != "solution.py":
+        return tracer
+    if event not in {"line", "return", "exception"}:
+        return tracer
+    line_no = frame.f_lineno
+    call_stack = call_stack_for_frame(frame)
+    entry = {
+        "event": event,
+        "function": "script" if frame.f_code.co_name == "<module>" else frame.f_code.co_name,
+        "call_depth": len(call_stack),
+        "call_stack": call_stack,
+        "line_no": line_no,
+        "line": source_lines[line_no - 1].rstrip() if 0 < line_no <= len(source_lines) else "",
+        "locals": snapshot_locals(frame),
+        "stdout": stdout_buffer.getvalue(),
+    }
+    if event == "return":
+        entry["return_value"] = safe_display(arg)
+    elif event == "exception":
+        exc_type, exc, _tb = arg
+        entry["exception"] = f"{exc_type.__name__}: {exc}"
+    trace.append(entry)
+    trace_v2["steps"].append(build_trace_v2_step(frame, event, arg, line_no, entry["line"], entry["stdout"]))
+    return tracer
+
+module = types.ModuleType("student_solution")
+module.__file__ = "solution.py"
+module.__name__ = "student_solution"
+module.__dict__["__builtins__"] = SAFE_BUILTINS
+sys.modules[module.__name__] = module
+error = ""
+try:
+    with open("solution.py", "r", encoding="utf-8") as handle:
+        source = handle.read()
+    ast.parse(source, filename="solution.py")
+    with contextlib.redirect_stdout(stdout_buffer):
+        sys.settrace(tracer)
+        exec(compile(source, "solution.py", "exec"), module.__dict__)
+        sys.settrace(None)
+except Exception as exc:
+    sys.settrace(None)
+    error = f"{type(exc).__name__}: {exc}"
+
+print(json.dumps({
+    "status": "error" if error else "passed",
+    "function_name": "script",
+    "test": {"name": "Snippet trace", "args": [], "expected": None, "actual": None, "passed": not bool(error), "error": error},
+    "trace": trace,
+    "trace_v2": trace_v2,
+    "stdout": stdout_buffer.getvalue(),
+    "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+    "truncated": len(trace) >= MAX_TRACE_STEPS,
+    "error": error,
+}))
+"""
+    started = time.perf_counter()
+    try:
+        with tempfile.TemporaryDirectory(prefix="csnav_trace_free_") as temp_dir:
+            solution_path = os.path.join(temp_dir, "solution.py")
+            runner_path = os.path.join(temp_dir, "trace_runner.py")
+            with open(solution_path, "w", encoding="utf-8") as handle:
+                handle.write(code)
+            with open(runner_path, "w", encoding="utf-8") as handle:
+                handle.write(runner_source)
+
+            completed = _run_isolated_process(
+                [sys.executable, "-I", "-S", runner_path],
+                cwd=temp_dir,
+                input_text="",
+                env={"PYTHONIOENCODING": "utf-8"},
+            )
+    except subprocess.TimeoutExpired:
+        return {
+            "status": "error",
+            "trace": [],
+            "trace_v2": _with_trace_v2_metadata(
+                _empty_trace_v2_payload(),
+                language="python",
+                capability="practice_and_freeform",
+                trace_mode="freeform",
+            ),
+            "stdout": "",
+            "stderr": f"The trace timed out after {RUN_TIMEOUT_SECONDS} seconds. Check for infinite loops or very slow logic.",
+            "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+        }
+    except Exception as exc:
+        return {
+            "status": "error",
+            "trace": [],
+            "trace_v2": _with_trace_v2_metadata(
+                _empty_trace_v2_payload(),
+                language="python",
+                capability="practice_and_freeform",
+                trace_mode="freeform",
+            ),
+            "stdout": "",
+            "stderr": f"Trace setup failed: {exc}",
+            "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+        }
+
+    stdout_text = completed.stdout.strip()
+    stderr_text = _truncate_text(completed.stderr.strip())
+    if completed.returncode != 0 and not stdout_text:
+        return {
+            "status": "error",
+            "trace": [],
+            "trace_v2": _with_trace_v2_metadata(
+                _empty_trace_v2_payload(),
+                language="python",
+                capability="practice_and_freeform",
+                trace_mode="freeform",
+            ),
+            "stdout": "",
+            "stderr": stderr_text or "Python returned an error before tracing could run.",
+            "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+        }
+
+    try:
+        payload = json.loads(stdout_text.splitlines()[-1])
+    except Exception:
+        return {
+            "status": "error",
+            "trace": [],
+            "trace_v2": _with_trace_v2_metadata(
+                _empty_trace_v2_payload(),
+                language="python",
+                capability="practice_and_freeform",
+                trace_mode="freeform",
+            ),
+            "stdout": _truncate_text(stdout_text),
+            "stderr": stderr_text or "Trace output could not be parsed.",
+            "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+        }
+
+    return {
+        "status": payload.get("status", "error"),
+        "function_name": payload.get("function_name", "script"),
+        "test": payload.get("test", {}),
+        "trace": payload.get("trace", []),
+        "trace_v2": _with_trace_v2_metadata(
+            payload.get("trace_v2", _empty_trace_v2_payload()),
+            language="python",
+            capability="practice_and_freeform",
+            trace_mode="freeform",
+        ),
         "stdout": _truncate_text(payload.get("stdout", "")),
         "stderr": _truncate_text(payload.get("error") or stderr_text),
         "duration_ms": payload.get("duration_ms", round((time.perf_counter() - started) * 1000, 2)),
@@ -1361,6 +2532,556 @@ try {
     }
 
 
+def _empty_javascript_trace_response(message: str) -> dict[str, Any]:
+    return _trace_capability_error_response(
+        message,
+        language="javascript",
+        capability="practice_and_freeform",
+        trace_mode="unavailable",
+    )
+
+
+def _run_javascript_trace(code: str, function_name: str | None, test: dict[str, Any] | None) -> dict[str, Any]:
+    try:
+        validate_javascript_code(code)
+    except RunnerSecurityError as exc:
+        return _empty_javascript_trace_response(f"Runner security check blocked this code: {exc}")
+
+    runner_source = r"""
+const fs = require("fs");
+const vm = require("vm");
+const { performance } = require("perf_hooks");
+
+const payload = JSON.parse(fs.readFileSync(0, "utf8") || "{}");
+const functionName = payload.function_name || "";
+const test = payload.test || null;
+const started = performance.now();
+const MAX_TRACE_STEPS = 80;
+const MAX_OUTPUT_CHARS = 12000;
+const MAX_VALUE_CHARS = 4000;
+let trace = [];
+let objectIds = new WeakMap();
+let nextObjectId = 1;
+let previousStep = null;
+let logs = [];
+let logLength = 0;
+let logsTruncated = false;
+let lastReturnValue;
+
+function appendLog(value) {
+  const text = String(value);
+  const remaining = MAX_OUTPUT_CHARS - logLength;
+  if (remaining > 0) {
+    logs.push(text.slice(0, remaining));
+    logLength += Math.min(text.length, remaining);
+  }
+  if (text.length > Math.max(remaining, 0)) logsTruncated = true;
+}
+
+function stdoutText() {
+  return logs.join("\n") + (logsTruncated ? "\n... output truncated by CS Navigator ..." : "");
+}
+
+function cleanStudentCode(source) {
+  return String(source)
+    .replace(/^\s*export\s+\{\s*[\w\s,]+\s*\};?\s*$/gm, "")
+    .replace(/^\s*export\s+default\s+/gm, "")
+    .replace(/^\s*export\s+(function|const|let|var|class)\s+/gm, "$1 ");
+}
+
+function safeIdentifier(name) {
+  return /^[A-Za-z_$][\w$]*$/.test(String(name || ""));
+}
+
+function safeDisplay(value) {
+  if (typeof value === "undefined") return "undefined";
+  try {
+    const raw = JSON.stringify(value);
+    if (typeof raw === "undefined") return String(value);
+    return raw.length <= MAX_VALUE_CHARS ? raw : `${raw.slice(0, MAX_VALUE_CHARS)}... value truncated ...`;
+  } catch {
+    const raw = String(value);
+    return raw.length <= MAX_VALUE_CHARS ? raw : `${raw.slice(0, MAX_VALUE_CHARS)}... value truncated ...`;
+  }
+}
+
+function stableObjectId(value) {
+  if (!objectIds.has(value)) {
+    objectIds.set(value, `obj_${nextObjectId}`);
+    nextObjectId += 1;
+  }
+  return objectIds.get(value);
+}
+
+function serializeScalar(value) {
+  return {
+    kind: "scalar",
+    type: value === null ? "null" : typeof value,
+    value: value,
+    display: safeDisplay(value),
+  };
+}
+
+function serializeValue(value, objects, depth = 0) {
+  if (value === null || typeof value !== "object" || depth >= 2) return serializeScalar(value);
+  const objectId = stableObjectId(value);
+  if (!objects[objectId]) objects[objectId] = serializeObject(value, objectId, objects, depth);
+  return {
+    kind: "reference",
+    object_id: objectId,
+    type: Array.isArray(value) ? "Array" : "Object",
+    display: safeDisplay(value),
+  };
+}
+
+function serializeObject(value, objectId, objects, depth = 0) {
+  if (Array.isArray(value)) {
+    return {
+      object_id: objectId,
+      type: "list",
+      repr: safeDisplay(value),
+      length: value.length,
+      items: value.slice(0, 20).map((item) => serializeValue(item, objects, depth + 1)),
+      truncated: value.length > 20,
+    };
+  }
+  const entries = Object.keys(value).slice(0, 20).map((key) => ({
+    key: serializeScalar(key),
+    value: serializeValue(value[key], objects, depth + 1),
+  }));
+  return {
+    object_id: objectId,
+    type: "dict",
+    repr: safeDisplay(value),
+    length: Object.keys(value).length,
+    entries,
+    truncated: Object.keys(value).length > 20,
+  };
+}
+
+function fingerprint(value) {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function operationForLine(line) {
+  const clean = String(line || "").trim();
+  if (/^return\b/.test(clean)) return { kind: "return", target: "return value", detail: "sends a value back to the caller" };
+  if (/^throw\b/.test(clean)) return { kind: "exception", target: "thrown error", detail: "raises an error" };
+  if (/^for\b/.test(clean)) return { kind: "loop_iteration", target: "loop variable", detail: "checks or advances a loop" };
+  if (/^while\b/.test(clean)) return { kind: "condition", target: "while condition", detail: "checks whether the loop should keep running" };
+  if (/^(if|else if)\b/.test(clean)) return { kind: "condition", target: "if condition", detail: "checks which branch should run" };
+  if (/console\s*\.\s*log\s*\(/.test(clean)) return { kind: "output", target: "console.log", detail: "prints a value into the output bucket" };
+  const declaration = clean.match(/^(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=/);
+  if (declaration && /\[[^\]]+\]/.test(clean)) return { kind: "index_access", target: declaration[1], detail: `reads from a collection and stores the value in ${declaration[1]}` };
+  if (declaration) return { kind: "assignment", target: declaration[1], detail: `stores a value in ${declaration[1]}` };
+  const assignment = clean.match(/^([A-Za-z_$][\w$]*)(?:\[[^\]]+\]|\.[A-Za-z_$][\w$]*)?\s*(?:=|\+=|-=|\*=|\/=)/);
+  if (assignment) return { kind: clean.includes("[") || clean.includes(".") ? "mutation" : "assignment", target: assignment[1], detail: `updates ${assignment[1]}` };
+  const call = clean.match(/\.([A-Za-z_$][\w$]*)\s*\(/);
+  if (call) return { kind: "method_call", target: call[1], detail: `runs ${call[1]}()` };
+  if (/\[[^\]]+\]/.test(clean)) return { kind: "index_access", target: "indexed value", detail: "reads one item from a collection" };
+  return { kind: "statement", target: "", detail: "runs this line" };
+}
+
+function summarizeStep(event, line, operation, changes, stdoutChanged, exception) {
+  const clean = String(line || "").trim();
+  if (event === "exception") return `JavaScript stopped here because ${exception?.type || "an error"} was raised: ${exception?.message || ""}`;
+  if (event === "return") return "This line just returned a value to the caller.";
+  const changedNames = changes.filter((change) => change.kind === "binding").map((change) => change.name);
+  const mutated = changes.some((change) => change.kind === "object" && change.change === "mutated");
+  if (changedNames.length) return `Line just ran: ${clean}. It updated ${changedNames.slice(0, 3).join(", ")}.`;
+  if (mutated) return `Line just ran: ${clean}. It changed an existing array or object.`;
+  if (stdoutChanged) return `Line just ran: ${clean}. It printed output.`;
+  if (operation.kind === "assignment") return `JavaScript is about to store the right-side value in ${operation.target}.`;
+  if (operation.kind === "mutation") return `JavaScript is about to update ${operation.target} or one of its stored values.`;
+  if (operation.kind === "loop_iteration") return "JavaScript is about to run the next loop check or loop pass.";
+  if (operation.kind === "condition") return "JavaScript is about to check this condition to choose the next path.";
+  if (operation.kind === "method_call") return `JavaScript is about to run ${operation.target}().`;
+  if (operation.kind === "output") return "JavaScript is about to print a value into the output bucket.";
+  if (operation.kind === "index_access") return "JavaScript is about to use an index or key to read one item from a collection.";
+  return "JavaScript is ready to run this line. Watch the variables before and after it runs.";
+}
+
+function buildStep(event, lineNo, line, snapshotFactory, returnValue, exception) {
+  if (trace.length >= MAX_TRACE_STEPS) return returnValue;
+  let locals = {};
+  try {
+    locals = typeof snapshotFactory === "function" ? snapshotFactory() || {} : {};
+  } catch {
+    locals = {};
+  }
+  const objects = {};
+  const bindings = {};
+  const references = [];
+  for (const [name, value] of Object.entries(locals)) {
+    const binding = serializeValue(value, objects);
+    bindings[name] = binding;
+    if (binding.kind === "reference") {
+      references.push({ frame_id: "frame_1", name, object_id: binding.object_id });
+    }
+  }
+  const frameName = functionName || "script";
+  const frames = [{ frame_id: "frame_1", function: frameName, line_no: lineNo, bindings, references }];
+  const previousBindings = previousStep?.frames?.[0]?.bindings || {};
+  const previousObjects = previousStep?.objects || {};
+  const bindingChanges = [];
+  for (const [name, binding] of Object.entries(bindings)) {
+    if (!previousBindings[name]) bindingChanges.push({ frame: frameName, name, change: "new" });
+    else if (fingerprint(previousBindings[name]) !== fingerprint(binding)) bindingChanges.push({ frame: frameName, name, change: "changed" });
+  }
+  const objectChanges = [];
+  for (const [objectId, object] of Object.entries(objects)) {
+    if (!previousObjects[objectId]) objectChanges.push({ object_id: objectId, change: "new" });
+    else if (fingerprint(previousObjects[objectId]) !== fingerprint(object)) objectChanges.push({ object_id: objectId, change: "mutated" });
+  }
+  const previousStdout = previousStep?.stdout || "";
+  const currentStdout = stdoutText();
+  const stdoutChanged = currentStdout !== previousStdout;
+  const changes = [
+    ...bindingChanges.map((change) => ({ kind: "binding", ...change })),
+    ...objectChanges.map((change) => ({ kind: "object", ...change })),
+  ];
+  if (stdoutChanged) changes.push({ kind: "stdout", change: "changed" });
+  const operation = operationForLine(line);
+  const step = {
+    step_index: trace.length,
+    event,
+    phase: event === "line" ? "before_line" : event === "return" ? "line_returned" : "line_errored",
+    current_line: lineNo,
+    previous_line: previousStep?.current_line || null,
+    line_about_to_run: event === "line" ? lineNo : null,
+    line_just_ran: event === "line" ? null : lineNo,
+    line_just_ran_text: event === "line" ? "" : line,
+    line,
+    function: frameName,
+    frames,
+    objects,
+    references,
+    changes,
+    binding_changes: bindingChanges,
+    object_changes: objectChanges,
+    stdout: currentStdout,
+    stdout_changed: stdoutChanged,
+    operation_kind: operation.kind,
+    operation_target: operation.target,
+    operation_detail: operation.detail,
+  };
+  if (event === "return") step.return_value = serializeValue(returnValue, objects);
+  if (event === "exception") step.exception = exception;
+  step.operation_summary = summarizeStep(event, line, operation, changes, stdoutChanged, exception);
+  step.student_message = step.operation_summary;
+  trace.push(step);
+  previousStep = step;
+  return returnValue;
+}
+
+function traceErrorLine(error) {
+  const stack = String(error?.stack || "");
+  const match = stack.match(/solution\.js:(\d+):\d+/);
+  if (match) return Number(match[1]);
+  return previousStep?.current_line || 0;
+}
+
+function traceErrorSource(lineNo, sourceLines) {
+  if (lineNo && sourceLines[lineNo - 1]) return sourceLines[lineNo - 1];
+  return previousStep?.line || "";
+}
+
+function inferSyntaxLine(sourceLines) {
+  for (let index = 0; index < sourceLines.length; index += 1) {
+    const trimmed = String(sourceLines[index] || "").trim();
+    if (trimmed && !trimmed.startsWith("//") && !trimmed.startsWith("/*") && trimmed !== "*/" && !trimmed.startsWith("*")) {
+      return index + 1;
+    }
+  }
+  return 0;
+}
+
+function __csnavRead(reader) {
+  try {
+    return reader();
+  } catch {
+    return undefined;
+  }
+}
+
+function __csnavTrace(lineNo, line, snapshotFactory) {
+  buildStep("line", lineNo, line, snapshotFactory);
+}
+
+function __csnavReturn(lineNo, line, snapshotFactory, value) {
+  lastReturnValue = value;
+  return buildStep("return", lineNo, line, snapshotFactory, value);
+}
+
+function __csnavThrow(lineNo, line, snapshotFactory, error) {
+  const exception = { type: error?.name || "Error", message: String(error?.message || error), line: lineNo };
+  buildStep("exception", lineNo, line, snapshotFactory, null, exception);
+  throw error;
+}
+
+function collectNames(source) {
+  const names = new Set();
+  for (const match of source.matchAll(/\bfunction\s+[A-Za-z_$][\w$]*\s*\(([^)]*)\)/g)) {
+    match[1].split(",").map((item) => item.trim()).filter(safeIdentifier).forEach((name) => names.add(name));
+  }
+  for (const match of source.matchAll(/\b(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*(?:async\s*)?\(([^)]*)\)\s*=>/g)) {
+    match[1].split(",").map((item) => item.trim()).filter(safeIdentifier).forEach((name) => names.add(name));
+  }
+  for (const match of source.matchAll(/\b(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*(?:async\s*)?([A-Za-z_$][\w$]*)\s*=>/g)) {
+    names.add(match[1]);
+  }
+  for (const match of source.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)/g)) names.add(match[1]);
+  for (const match of source.matchAll(/\bfor\s*\(\s*(?:const|let|var)\s+([A-Za-z_$][\w$]*)\b/g)) names.add(match[1]);
+  return Array.from(names).slice(0, 16);
+}
+
+function snapshotSource(names) {
+  return `() => ({${names.map((name) => `${JSON.stringify(name)}: __csnavRead(() => ${name})`).join(",")}})`;
+}
+
+function instrumentSource(source) {
+  const lines = String(source).split(/\r?\n/);
+  const names = collectNames(source);
+  const snapshot = snapshotSource(names);
+  let inBlockComment = false;
+  return lines.map((rawLine, index) => {
+    const lineNo = index + 1;
+    const trimmed = rawLine.trim();
+    const encodedLine = JSON.stringify(rawLine);
+    const indent = rawLine.match(/^\s*/)?.[0] || "";
+    if (inBlockComment) {
+      if (trimmed.includes("*/")) inBlockComment = false;
+      return rawLine;
+    }
+    if (trimmed.startsWith("/*")) {
+      if (!trimmed.includes("*/")) inBlockComment = true;
+      return rawLine;
+    }
+    if (!trimmed || trimmed.startsWith("//") || trimmed === "{" || trimmed === "}" || /^[}\])]/.test(trimmed) || /^(else|catch|finally)\b/.test(trimmed)) return rawLine;
+    if (/^(function|class)\b/.test(trimmed)) return rawLine;
+    if (/^(const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*(?:async\s*)?(?:function\b|\([^)]*\)\s*=>|[A-Za-z_$][\w$]*\s*=>)/.test(trimmed)) return rawLine;
+    if (/console\s*\.\s*log\s*\(/.test(trimmed)) {
+      return `${indent}__csnavTrace(${lineNo}, ${encodedLine}, ${snapshot});\n${rawLine}\n${indent}__csnavTrace(${lineNo}, ${encodedLine}, ${snapshot});`;
+    }
+    const returnMatch = trimmed.match(/^return\s+(.+);?$/);
+    if (returnMatch) {
+      const expression = returnMatch[1].replace(/;$/, "");
+      return `${indent}__csnavTrace(${lineNo}, ${encodedLine}, ${snapshot});\n${indent}return __csnavReturn(${lineNo}, ${encodedLine}, ${snapshot}, (${expression}));`;
+    }
+    const throwMatch = trimmed.match(/^throw\s+(.+);?$/);
+    if (throwMatch) {
+      const expression = throwMatch[1].replace(/;$/, "");
+      return `${indent}throw __csnavThrow(${lineNo}, ${encodedLine}, ${snapshot}, (${expression}));`;
+    }
+    return `${indent}__csnavTrace(${lineNo}, ${encodedLine}, ${snapshot});\n${rawLine}`;
+  }).join("\n");
+}
+
+function canonicalValue(value, orderInsensitive = false, caseInsensitive = false) {
+  if (typeof value === "string") {
+    const lowered = value.toLocaleLowerCase();
+    if (caseInsensitive || lowered === "none" || lowered === "null") return lowered;
+    return value;
+  }
+  if (Array.isArray(value)) {
+    const items = value.map((item) => canonicalValue(item, orderInsensitive, caseInsensitive));
+    return orderInsensitive ? items.sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right))) : items;
+  }
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonicalValue(value[key], orderInsensitive, caseInsensitive)]));
+  }
+  return value;
+}
+
+function valuesEqual(actual, expected, orderInsensitive = false, caseInsensitive = false) {
+  return JSON.stringify(canonicalValue(actual, orderInsensitive, caseInsensitive)) === JSON.stringify(canonicalValue(expected, orderInsensitive, caseInsensitive));
+}
+
+function safeIdentifierName(name) {
+  return /^[A-Za-z_$][\w$]*$/.test(String(name || ""));
+}
+
+function getNamedFunction(sandbox, name) {
+  if (!safeIdentifierName(name)) return undefined;
+  try {
+    const value = vm.runInContext(`typeof ${name} !== "undefined" ? ${name} : undefined`, sandbox, { timeout: 100 });
+    return typeof value === "function" ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+try {
+  const source = cleanStudentCode(fs.readFileSync("solution.js", "utf8"));
+  const sourceLines = source.split(/\r?\n/);
+  new vm.Script(source, { filename: "solution.js" });
+  const sandbox = {
+    console: {
+      log: (...args) => appendLog(args.map((arg) => typeof arg === "string" ? arg : JSON.stringify(arg)).join(" ")),
+      error: (...args) => appendLog(args.map(String).join(" ")),
+    },
+    __csnavTrace,
+    __csnavReturn,
+    __csnavThrow,
+    __csnavRead,
+  };
+  vm.createContext(sandbox, { codeGeneration: { strings: false, wasm: false } });
+  vm.runInContext(instrumentSource(source), sandbox, { timeout: 1000 });
+  let actual = null;
+  let passed = true;
+  let error = "";
+  if (test && functionName) {
+    const target = getNamedFunction(sandbox, functionName) || getNamedFunction(sandbox, "solve");
+    if (typeof target !== "function") throw new Error(`Could not find function '${functionName}'.`);
+    const args = test.args || [];
+    try {
+      actual = target(...args);
+      passed = valuesEqual(actual, test.expected, Boolean(test.order_insensitive), Boolean(test.case_insensitive));
+    } catch (caught) {
+      error = String(caught?.message || caught);
+      passed = false;
+      if (!trace.some((step) => step.event === "exception")) {
+        const errorLine = traceErrorLine(caught);
+        buildStep("exception", errorLine, traceErrorSource(errorLine, sourceLines), () => ({}), null, { type: caught?.name || "Error", message: error, line: errorLine });
+      }
+    }
+  }
+  process.stdout.write(JSON.stringify({
+    status: error ? "error" : passed ? "passed" : "failed",
+    function_name: functionName || "script",
+    test: test ? { name: test.name || "Trace test", args: test.args || [], expected: test.expected, actual, passed, error } : { name: "Snippet trace", args: [], expected: null, actual: lastReturnValue ?? null, passed: !error, error },
+    trace: trace.map((step) => ({
+      event: step.event,
+      function: step.function,
+      call_depth: 1,
+      call_stack: [step.function],
+      line_no: step.current_line,
+      line: step.line,
+      locals: Object.fromEntries(Object.entries(step.frames?.[0]?.bindings || {}).map(([name, binding]) => [name, binding.display])),
+      stdout: step.stdout,
+      return_value: step.return_value?.display,
+      exception: step.exception ? `${step.exception.type}: ${step.exception.message}` : undefined,
+    })),
+    trace_v2: { schema_version: "trace_v2", steps: trace, limits: { max_steps: MAX_TRACE_STEPS, max_output_chars: MAX_OUTPUT_CHARS, max_display_chars: MAX_VALUE_CHARS } },
+    stdout: stdoutText(),
+    duration_ms: Math.round((performance.now() - started) * 100) / 100,
+    truncated: trace.length >= MAX_TRACE_STEPS,
+    error,
+  }));
+} catch (caught) {
+  const message = String(caught?.message || caught);
+  let errorLine = traceErrorLine(caught);
+  const source = (() => {
+    try { return cleanStudentCode(fs.readFileSync("solution.js", "utf8")); } catch { return ""; }
+  })();
+  const sourceLines = source.split(/\r?\n/);
+  if (!errorLine && caught?.name === "SyntaxError") errorLine = inferSyntaxLine(sourceLines);
+  if (!trace.length || !trace.some((step) => step.event === "exception")) {
+    buildStep("exception", errorLine, traceErrorSource(errorLine, sourceLines), () => ({}), null, { type: caught?.name || "Error", message, line: errorLine });
+  }
+  process.stdout.write(JSON.stringify({
+    status: "error",
+    function_name: functionName || "script",
+    test: test ? { name: test.name || "Trace test", args: test.args || [], expected: test.expected, actual: null, passed: false, error: message } : { name: "Snippet trace", args: [], expected: null, actual: null, passed: false, error: message },
+    trace: trace.map((step) => ({
+      event: step.event,
+      function: step.function,
+      call_depth: 1,
+      call_stack: [step.function],
+      line_no: step.current_line,
+      line: step.line,
+      locals: Object.fromEntries(Object.entries(step.frames?.[0]?.bindings || {}).map(([name, binding]) => [name, binding.display])),
+      stdout: step.stdout,
+      return_value: step.return_value?.display,
+      exception: step.exception ? `${step.exception.type}: ${step.exception.message}` : undefined,
+    })),
+    trace_v2: { schema_version: "trace_v2", steps: trace, limits: { max_steps: MAX_TRACE_STEPS, max_output_chars: MAX_OUTPUT_CHARS, max_display_chars: MAX_VALUE_CHARS } },
+    stdout: stdoutText(),
+    duration_ms: Math.round((performance.now() - started) * 100) / 100,
+    truncated: false,
+    error: message,
+  }));
+}
+"""
+    started = time.perf_counter()
+    try:
+        with tempfile.TemporaryDirectory(prefix="csnav_trace_js_") as temp_dir:
+            solution_path = os.path.join(temp_dir, "solution.js")
+            runner_path = os.path.join(temp_dir, "trace_runner.js")
+            with open(solution_path, "w", encoding="utf-8") as handle:
+                handle.write(code)
+            with open(runner_path, "w", encoding="utf-8") as handle:
+                handle.write(runner_source)
+            node_env = {
+                key: value
+                for key, value in os.environ.items()
+                if key.upper() in {"PATH", "PATHEXT", "SYSTEMROOT", "WINDIR", "TEMP", "TMP"}
+            }
+            node_env["NODE_DISABLE_COLORS"] = "1"
+            completed = _run_isolated_process(
+                [
+                    "node",
+                    "--max-old-space-size=128",
+                    "--disable-proto=delete",
+                    "--disallow-code-generation-from-strings",
+                    runner_path,
+                ],
+                cwd=temp_dir,
+                input_text=json.dumps({"function_name": function_name or "", "test": test}),
+                env=node_env,
+            )
+    except FileNotFoundError:
+        return _empty_javascript_trace_response("Node.js was not found, so JavaScript tracing cannot run locally yet.")
+    except subprocess.TimeoutExpired:
+        return _empty_javascript_trace_response(
+            f"The JavaScript trace timed out after {RUN_TIMEOUT_SECONDS} seconds. Check for infinite loops or very slow logic."
+        )
+    except Exception as exc:
+        return _empty_javascript_trace_response(f"JavaScript trace setup failed: {exc}")
+
+    stdout_text = completed.stdout.strip()
+    stderr_text = _truncate_text(completed.stderr.strip())
+    if completed.returncode != 0 and not stdout_text:
+        return _empty_javascript_trace_response(stderr_text or "Node returned an error before tracing could run.")
+    try:
+        payload = json.loads(stdout_text.splitlines()[-1])
+    except Exception:
+        return {
+            **_empty_javascript_trace_response(stderr_text or "JavaScript trace output could not be parsed."),
+            "stdout": _truncate_text(stdout_text),
+            "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+        }
+    trace_mode = "practice" if test else "freeform"
+    return {
+        "status": payload.get("status", "error"),
+        "function_name": payload.get("function_name") or function_name or "script",
+        "test": payload.get("test", {}),
+        "trace": payload.get("trace", []),
+        "trace_v2": _with_trace_v2_metadata(
+            payload.get("trace_v2", _empty_trace_v2_payload()),
+            language="javascript",
+            capability="practice_and_freeform",
+            trace_mode=trace_mode,
+        ),
+        "stdout": _truncate_text(payload.get("stdout", "")),
+        "stderr": _truncate_text(payload.get("error") or stderr_text),
+        "duration_ms": payload.get("duration_ms", round((time.perf_counter() - started) * 1000, 2)),
+        "truncated": bool(payload.get("truncated")),
+    }
+
+
+def run_javascript_practice_trace(code: str, function_name: str, test: dict[str, Any]) -> dict[str, Any]:
+    return _run_javascript_trace(code, function_name, test)
+
+
+def run_javascript_freeform_trace(code: str) -> dict[str, Any]:
+    return _run_javascript_trace(code, None, None)
+
+
 # =============================================================================
 # JAVA / C++ PRACTICE RUNNERS (compiled languages)
 # =============================================================================
@@ -1388,6 +3109,92 @@ def _java_literal(value: Any) -> str:
     return json.dumps(str(value))
 
 
+def _java_json_string_expr(value: str) -> str:
+    return json.dumps(value or "")
+
+
+def _java_trace_empty_response(message: str) -> dict[str, Any]:
+    return _trace_capability_error_response(
+        message,
+        language="java",
+        capability="practice_only",
+        trace_mode="unavailable",
+    )
+
+
+def _java_trace_compile_line(stderr_text: str) -> int | None:
+    match = re.search(r"Solution\.java:(\d+):", stderr_text or "")
+    if not match:
+        return None
+    try:
+        return int(match.group(1))
+    except ValueError:
+        return None
+
+
+def _java_trace_is_executable_line(stripped: str) -> bool:
+    if not stripped:
+        return False
+    if stripped.startswith(("//", "/*", "*", "@")):
+        return False
+    if stripped in {"{", "}"}:
+        return False
+    if stripped.startswith(("import ", "package ")):
+        return False
+    if re.match(r"^(?:public\s+)?class\s+\w+", stripped):
+        return False
+    if re.match(r"^(?:public|private|protected)?\s*static\s+[\w<>\[\]]+\s+\w+\s*\([^)]*\)\s*\{?$", stripped):
+        return False
+    if re.match(r"^(?:public|private|protected)?\s*[\w<>\[\]]+\s+\w+\s*\([^)]*\)\s*\{?$", stripped):
+        return False
+    return True
+
+
+def _java_trace_operation(line: str) -> tuple[str, str]:
+    stripped = line.strip()
+    if stripped.startswith("return"):
+        return "return", "Java is about to return a value from this method."
+    if stripped.startswith("throw"):
+        return "exception", "Java is about to throw an exception."
+    if stripped.startswith(("if ", "if(")):
+        return "condition", "Java is checking this condition to choose a branch."
+    if stripped.startswith(("for ", "for(")):
+        return "loop", "Java is starting or continuing this loop."
+    if stripped.startswith(("while ", "while(")):
+        return "loop", "Java is checking this while-loop condition."
+    if "System.out.print" in stripped:
+        return "stdout", "This line prints output."
+    if re.search(r"\.(?:add|remove|put|push|pop|set)\s*\(", stripped) or re.search(r"\[[^\]]+\]\s*=", stripped):
+        return "mutation", "This line changes an existing collection or stored value."
+    if "=" in stripped and "==" not in stripped and "!=" not in stripped and "<=" not in stripped and ">=" not in stripped:
+        return "assignment", "This line stores or updates a value."
+    return "line", "Java is about to run this line."
+
+
+def _instrument_java_trace_source(code: str) -> str:
+    lines = code.splitlines()
+    output: list[str] = []
+    in_block_comment = False
+    for index, line in enumerate(lines, start=1):
+        stripped = line.strip()
+        if "/*" in stripped:
+            in_block_comment = True
+        if not in_block_comment and _java_trace_is_executable_line(stripped):
+            indent = line[: len(line) - len(line.lstrip())]
+            operation, message = _java_trace_operation(stripped)
+            output.append(
+                f"{indent}__Trace.line({index}, {_java_json_string_expr(stripped)}, "
+                f"{_java_json_string_expr(operation)}, {_java_json_string_expr(message)}); {stripped}"
+            )
+        else:
+            output.append(line)
+        if in_block_comment:
+            if "*/" in stripped:
+                in_block_comment = False
+            continue
+    return "\n".join(output)
+
+
 def _cpp_literal(value: Any) -> str:
     """Render a Python value as a C++ Value() expression (see Value variant below)."""
     if value is None:
@@ -1404,6 +3211,84 @@ def _cpp_literal(value: Any) -> str:
         inner = ", ".join(_cpp_literal(item) for item in value)
         return f"Value(std::vector<Value>{{{inner}}})"
     return f"Value(std::string({json.dumps(str(value))}))"
+
+
+def _cpp_trace_empty_response(message: str) -> dict[str, Any]:
+    return _trace_capability_error_response(
+        message,
+        language="cpp",
+        capability="practice_only",
+        trace_mode="unavailable",
+    )
+
+
+def _cpp_trace_compile_line(stderr_text: str) -> int | None:
+    match = re.search(r"(?:main\.cpp|student\.cpp):(\d+):", stderr_text or "")
+    if not match:
+        return None
+    try:
+        return int(match.group(1))
+    except ValueError:
+        return None
+
+
+def _cpp_trace_is_executable_line(stripped: str) -> bool:
+    if not stripped:
+        return False
+    if stripped.startswith(("//", "/*", "*", "#", "using ", "namespace ")):
+        return False
+    if stripped in {"{", "}", "};"}:
+        return False
+    if stripped.endswith(":") and stripped in {"public:", "private:", "protected:"}:
+        return False
+    if stripped.startswith(("class ", "struct ", "else", "catch")):
+        return False
+    if re.match(r"^[\w:<>,\s*&]+\s+\w+\s*\([^;]*\)\s*\{?$", stripped):
+        return False
+    return True
+
+
+def _cpp_trace_operation(line: str) -> tuple[str, str]:
+    stripped = line.strip()
+    if stripped.startswith("return"):
+        return "return", "C++ is about to return a value from this function."
+    if stripped.startswith("throw"):
+        return "exception", "C++ is about to throw an exception."
+    if stripped.startswith(("if ", "if(")):
+        return "condition", "C++ is checking this condition to choose a branch."
+    if stripped.startswith(("for ", "for(")):
+        return "loop", "C++ is starting or continuing this loop."
+    if stripped.startswith(("while ", "while(")):
+        return "loop", "C++ is checking this while-loop condition."
+    if "cout" in stripped or "std::cout" in stripped:
+        return "stdout", "This line prints output."
+    if re.search(r"\.(?:push_back|pop_back|insert|erase|clear)\s*\(", stripped) or re.search(r"\[[^\]]+\]\s*=", stripped):
+        return "mutation", "This line changes an existing collection or stored value."
+    if "=" in stripped and "==" not in stripped and "!=" not in stripped and "<=" not in stripped and ">=" not in stripped:
+        return "assignment", "This line stores or updates a value."
+    return "line", "C++ is about to run this line."
+
+
+def _instrument_cpp_trace_source(code: str) -> str:
+    lines = code.splitlines()
+    output: list[str] = []
+    in_block_comment = False
+    for index, line in enumerate(lines, start=1):
+        stripped = line.strip()
+        if "/*" in stripped:
+            in_block_comment = True
+        if not in_block_comment and _cpp_trace_is_executable_line(stripped):
+            indent = line[: len(line) - len(line.lstrip())]
+            operation, message = _cpp_trace_operation(stripped)
+            output.append(
+                f"{indent}__Trace::line({index}, {json.dumps(stripped)}, "
+                f"{json.dumps(operation)}, {json.dumps(message)}); {stripped}"
+            )
+        else:
+            output.append(line)
+        if in_block_comment and "*/" in stripped:
+            in_block_comment = False
+    return "\n".join(output)
 
 
 def _cpp_param_prefers_int(code: str, function_name: str, param_name: str, kind: str) -> bool:
@@ -1738,6 +3623,385 @@ public class Runner {{
     return result
 
 
+def run_java_practice_trace(code: str, function_name: str, test: dict[str, Any], arg_spec=None) -> dict[str, Any]:
+    if not compiled_runners_enabled():
+        return _java_trace_empty_response(
+            "Java tracing is disabled in this environment. Use Run if it is enabled here, or switch to another trace-capable language."
+        )
+    try:
+        validate_java_code(code)
+    except RunnerSecurityError as exc:
+        return _java_trace_empty_response(f"Runner security check blocked this code: {exc}")
+
+    javac = _find_executable("javac")
+    java = _find_executable("java")
+    if not javac or not java:
+        return _java_trace_empty_response(
+            "Java is not installed on this machine, so Java tracing cannot run locally yet. "
+            "Install a JDK with javac and java on PATH to trace Java locally."
+        )
+
+    args = test.get("args", []) or []
+    expected = test.get("expected")
+    case_insensitive = bool(test.get("case_insensitive"))
+    arg_list = ", ".join(_java_literal(a) for a in args)
+
+    if arg_spec:
+        from practice_starters import java_native_bridge
+        bridge_src = java_native_bridge(function_name, arg_spec)
+        call_expr = "__call(args)"
+        spec_args = arg_spec[0]
+        arg_names = [name for name, _ in spec_args]
+    else:
+        bridge_src = ""
+        call_expr = f"Solution.{function_name}(args)"
+        arg_names = [f"arg{index + 1}" for index in range(len(args))]
+
+    traced_code = _instrument_java_trace_source(code)
+    arg_bindings = [
+        {"name": name, "value": _truncate_text(json.dumps(value), RUN_MAX_VALUE_CHARS)}
+        for name, value in zip(arg_names, args)
+    ]
+
+    harness = f"""
+import java.util.*;
+import java.io.*;
+
+class __Trace {{
+    static List<String> steps = new ArrayList<>();
+    static String esc(String s) {{
+        if (s == null) return "";
+        StringBuilder b = new StringBuilder();
+        for (char c : s.toCharArray()) {{
+            if (c == '"' || c == '\\\\') b.append('\\\\').append(c);
+            else if (c == '\\n') b.append("\\\\n");
+            else if (c == '\\r') b.append("\\\\r");
+            else b.append(c);
+        }}
+        return b.toString();
+    }}
+    static void line(int line, String source, String kind, String message) {{
+        steps.add("{{\\"line\\":" + line
+            + ",\\"source\\":\\"" + esc(source)
+            + "\\",\\"operation_kind\\":\\"" + esc(kind)
+            + "\\",\\"student_message\\":\\"" + esc(message) + "\\"}}");
+    }}
+    static String stepsJson() {{
+        StringBuilder b = new StringBuilder("[");
+        for (int i = 0; i < steps.size(); i++) {{
+            if (i > 0) b.append(",");
+            b.append(steps.get(i));
+        }}
+        return b.append("]").toString();
+    }}
+}}
+
+public class Runner {{
+    static String esc(String s) {{
+        if (s == null) return "";
+        StringBuilder b = new StringBuilder();
+        for (char c : s.toCharArray()) {{
+            if (c == '"' || c == '\\\\') b.append('\\\\').append(c);
+            else if (c == '\\n') b.append("\\\\n");
+            else if (c == '\\r') b.append("\\\\r");
+            else b.append(c);
+        }}
+        return b.toString();
+    }}
+    static String show(Object o) {{
+        if (o == null) return "null";
+        if (o instanceof Object[]) return Arrays.deepToString((Object[]) o);
+        return o.toString();
+    }}
+    static String comparableString(Object o, boolean caseInsensitive) {{
+        String s = o.toString();
+        String lowered = s.toLowerCase(Locale.ROOT);
+        if (caseInsensitive || lowered.equals("none") || lowered.equals("null")) return lowered;
+        return s;
+    }}
+    static boolean eq(Object a, Object b, boolean caseInsensitive) {{
+        if (a == null || b == null) return a == b;
+        if (a instanceof Object[] && b instanceof Object[])
+            return eqArray((Object[]) a, (Object[]) b, caseInsensitive);
+        if (a instanceof Number && b instanceof Number)
+            return ((Number) a).doubleValue() == ((Number) b).doubleValue();
+        return comparableString(a, caseInsensitive).equals(comparableString(b, caseInsensitive));
+    }}
+    static boolean eqArray(Object[] a, Object[] b, boolean caseInsensitive) {{
+        if (a.length != b.length) return false;
+        for (int i = 0; i < a.length; i++) {{
+            if (!eq(a[i], b[i], caseInsensitive)) return false;
+        }}
+        return true;
+    }}
+
+{bridge_src}
+
+    public static void main(String[] argv) {{
+        Object[] args = new Object[]{{{arg_list}}};
+        Object expected = {_java_literal(expected)};
+        boolean caseInsensitive = {str(case_insensitive).lower()};
+        PrintStream realOut = System.out;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(captured));
+        Object actual = null;
+        Throwable thrown = null;
+        try {{
+            actual = {call_expr};
+        }} catch (Throwable t) {{
+            thrown = t;
+        }} finally {{
+            System.out.flush();
+            System.setOut(realOut);
+        }}
+        boolean ok = thrown == null && eq(actual, expected, caseInsensitive);
+        String stdout = captured.toString();
+        String error = thrown == null ? "" : String.valueOf(thrown);
+        int errorLine = 0;
+        if (thrown != null) {{
+            for (StackTraceElement frame : thrown.getStackTrace()) {{
+                if ("Solution".equals(frame.getClassName())) {{
+                    errorLine = frame.getLineNumber();
+                    break;
+                }}
+            }}
+        }}
+        realOut.println("{{\\"__java_trace__\\":true"
+            + ",\\"passed\\":" + ok
+            + ",\\"expected\\":\\"" + esc(show(expected))
+            + "\\",\\"actual\\":\\"" + esc(show(actual))
+            + "\\",\\"stdout\\":\\"" + esc(stdout)
+            + "\\",\\"error\\":\\"" + esc(error)
+            + "\\",\\"error_line\\":" + errorLine
+            + ",\\"steps\\":" + __Trace.stepsJson()
+            + "}}");
+    }}
+}}
+""".lstrip()
+
+    started = time.perf_counter()
+    try:
+        with tempfile.TemporaryDirectory(prefix="csnav_javatrace_") as temp_dir:
+            with open(os.path.join(temp_dir, "Solution.java"), "w", encoding="utf-8") as h:
+                h.write(code)
+            original_compiled = _compile_source(
+                [javac, "-J-Xmx256m", "-d", temp_dir, "Solution.java"],
+                cwd=temp_dir,
+                env={"PATH": os.environ.get("PATH", "")},
+                limiter=_limit_jvm_resources,
+            )
+            if original_compiled.returncode != 0:
+                stderr = _truncate_text(original_compiled.stderr.strip() or "Java compilation failed.")
+                line_no = _java_trace_compile_line(stderr) or 0
+                exception = {
+                    "type": "CompileError",
+                    "message": stderr,
+                    "line": line_no,
+                }
+                step = {
+                    "step": 1,
+                    "current_line": line_no,
+                    "previous_line": None,
+                    "line": "",
+                    "function": function_name,
+                    "event": "exception",
+                    "stdout": "",
+                    "exception": exception,
+                    "operation_kind": "compile_error",
+                    "student_message": f"Java could not compile this code{f' on line {line_no}' if line_no else ''}.",
+                    "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+                    "objects": {},
+                    "references": [],
+                    "return_value": None,
+                }
+                return {
+                    "status": "error",
+                    "passed": 0,
+                    "total": 1,
+                    "tests": [],
+                    "trace": [],
+                    "trace_v2": _with_trace_v2_metadata(
+                        {"schema_version": "trace_v2", "steps": [step], "limits": {"max_steps": RUN_RATE_LIMIT}},
+                        language="java",
+                        capability="practice_only",
+                        trace_mode="practice",
+                    ),
+                    "stdout": "",
+                    "stderr": stderr,
+                    "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+                }
+
+            with open(os.path.join(temp_dir, "Solution.java"), "w", encoding="utf-8") as h:
+                h.write(traced_code)
+            with open(os.path.join(temp_dir, "Runner.java"), "w", encoding="utf-8") as h:
+                h.write(harness)
+
+            compiled = _compile_source(
+                [javac, "-J-Xmx256m", "-d", temp_dir, "Solution.java", "Runner.java"],
+                cwd=temp_dir,
+                env={"PATH": os.environ.get("PATH", "")},
+                limiter=_limit_jvm_resources,
+            )
+            if compiled.returncode != 0:
+                stderr = _truncate_text(compiled.stderr.strip() or "Java compilation failed.")
+                line_no = _java_trace_compile_line(stderr) or 0
+                setup_message = (
+                    "Java tracing could not safely instrument this code. Your original code compiled, "
+                    "but the trace helper could not be inserted without changing the program shape."
+                )
+                exception = {
+                    "type": "TraceInstrumentationError",
+                    "message": stderr,
+                    "line": line_no,
+                }
+                step = {
+                    "step": 1,
+                    "current_line": line_no,
+                    "previous_line": None,
+                    "line": "",
+                    "function": function_name,
+                    "event": "exception",
+                    "stdout": "",
+                    "exception": exception,
+                    "operation_kind": "trace_setup_error",
+                    "student_message": setup_message,
+                    "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+                    "objects": {},
+                    "references": [],
+                    "return_value": None,
+                }
+                return {
+                    "status": "error",
+                    "passed": 0,
+                    "total": 1,
+                    "tests": [],
+                    "trace": [],
+                    "trace_v2": _with_trace_v2_metadata(
+                        {"schema_version": "trace_v2", "steps": [step], "limits": {"max_steps": RUN_RATE_LIMIT}},
+                        language="java",
+                        capability="practice_only",
+                        trace_mode="practice",
+                    ),
+                    "stdout": "",
+                    "stderr": f"{setup_message}\n\n{stderr}",
+                    "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+                }
+
+            run = _run_isolated_process(
+                [java, "-cp", temp_dir, "-Xss8m", "-Xmx128m", "Runner"],
+                cwd=temp_dir,
+                input_text="",
+                env=_hardened_compiled_env({"PATH": os.environ.get("PATH", "")}),
+                limiter=_limit_jvm_hardened,
+            )
+    except subprocess.TimeoutExpired:
+        return _java_trace_empty_response(
+            f"The Java trace timed out after {RUN_TIMEOUT_SECONDS} seconds. Check for infinite loops or very slow logic."
+        )
+    except Exception as exc:
+        return _java_trace_empty_response(f"Java trace setup failed: {exc}")
+
+    payload = None
+    for line in run.stdout.splitlines():
+        if not line.strip().startswith("{"):
+            continue
+        try:
+            parsed = json.loads(line)
+        except Exception:
+            continue
+        if parsed.get("__java_trace__"):
+            payload = parsed
+            break
+    if not payload:
+        return _java_trace_empty_response(run.stderr.strip() or "Java trace output could not be parsed.")
+
+    stdout_text = payload.get("stdout", "")
+    raw_steps = payload.get("steps") or []
+    trace_steps: list[dict[str, Any]] = []
+    previous_line = None
+    for index, item in enumerate(raw_steps, start=1):
+        line_no = item.get("line") or 0
+        step = {
+            "step": index,
+            "current_line": line_no,
+            "previous_line": previous_line,
+            "line": item.get("source", ""),
+            "function": function_name,
+            "event": "line",
+            "stdout": stdout_text if index == len(raw_steps) else "",
+            "exception": None,
+            "return_value": None,
+            "operation_kind": item.get("operation_kind") or "line",
+            "operation_summary": item.get("student_message") or "Java is about to run this line.",
+            "student_message": item.get("student_message") or "Java is about to run this line.",
+            "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+            "objects": {},
+            "references": [],
+        }
+        previous_line = line_no
+        trace_steps.append(step)
+
+    if payload.get("error"):
+        error_line = payload.get("error_line") or previous_line or 0
+        trace_steps.append({
+            "step": len(trace_steps) + 1,
+            "current_line": error_line,
+            "previous_line": previous_line,
+            "line": "",
+            "function": function_name,
+            "event": "exception",
+            "stdout": stdout_text,
+            "exception": {
+                "type": "RuntimeError",
+                "message": payload.get("error", ""),
+                "line": error_line,
+            },
+            "return_value": None,
+            "operation_kind": "exception",
+            "operation_summary": f"Java stopped on line {error_line} because an exception was raised.",
+            "student_message": f"Java stopped on line {error_line} because an exception was raised.",
+            "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+            "objects": {},
+            "references": [],
+        })
+    elif trace_steps:
+        trace_steps[-1]["return_value"] = payload.get("actual")
+        trace_steps[-1]["event"] = "return"
+        trace_steps[-1]["operation_kind"] = "return"
+        trace_steps[-1]["student_message"] = f"Java returned {payload.get('actual')}."
+        trace_steps[-1]["operation_summary"] = trace_steps[-1]["student_message"]
+
+    test_result = {
+        "name": test.get("name") or "Trace test",
+        "passed": bool(payload.get("passed")),
+        "expected": payload.get("expected"),
+        "actual": payload.get("actual"),
+        "args": args,
+    }
+    if payload.get("error"):
+        test_result["error"] = payload.get("error")
+    return {
+        "status": "passed" if test_result["passed"] else "failed",
+        "passed": 1 if test_result["passed"] else 0,
+        "total": 1,
+        "tests": [test_result],
+        "trace": [],
+        "trace_v2": _with_trace_v2_metadata(
+            {
+                "schema_version": "trace_v2",
+                "steps": trace_steps,
+                "limits": {"max_steps": RUN_RATE_LIMIT, "max_output_chars": RUN_MAX_OUTPUT_CHARS},
+            },
+            language="java",
+            capability="practice_only",
+            trace_mode="practice",
+        ),
+        "stdout": stdout_text,
+        "stderr": _truncate_text(run.stderr.strip()),
+        "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+    }
+
+
 def run_cpp_practice_tests(code: str, function_name: str, tests: list[dict[str, Any]], arg_spec=None) -> dict[str, Any]:
     if not compiled_runners_enabled():
         return empty_practice_run_response(COMPILED_RUNNERS_DISABLED_MESSAGE)
@@ -1917,6 +4181,337 @@ int main(){{
         if index < len(tests) and "args" not in item:
             item["args"] = tests[index].get("args", [])
     return result
+
+
+def run_cpp_practice_trace(code: str, function_name: str, test: dict[str, Any], arg_spec=None) -> dict[str, Any]:
+    if not compiled_runners_enabled():
+        return _cpp_trace_empty_response(
+            "C++ tracing is disabled in this environment. Use Run if it is enabled here, or switch to another trace-capable language."
+        )
+    try:
+        validate_cpp_code(code)
+    except RunnerSecurityError as exc:
+        return _cpp_trace_empty_response(f"Runner security check blocked this code: {exc}")
+
+    compiler = _find_executable("g++", "clang++")
+    if not compiler:
+        return _cpp_trace_empty_response(
+            "A C++ compiler (g++ or clang++) is not installed on this machine, so C++ tracing cannot run locally yet. "
+            "Install g++ or clang++ on PATH to trace C++ locally."
+        )
+
+    args = test.get("args", []) or []
+    expected = test.get("expected")
+    case_insensitive = bool(test.get("case_insensitive"))
+    arg_list = ", ".join(_cpp_literal(a) for a in args)
+    if arg_spec:
+        from practice_starters import cpp_native_bridge, cpp_native_signature
+        expected_signature = cpp_native_signature(function_name, arg_spec)
+        student_decl = cpp_native_bridge(function_name, arg_spec)
+        call_target = f"__call_{function_name}"
+        compat_adapter = _cpp_beginner_compat_adapter(code, function_name, arg_spec, expected_signature)
+        student_section = f"{_instrument_cpp_trace_source(code)}\n\n{compat_adapter}\n\n{student_decl}"
+        arg_names = [name for name, _ in arg_spec[0]]
+    else:
+        expected_signature = f"Value {function_name}(std::vector<Value> args)"
+        student_decl = (
+            f"// Student provides: Value {function_name}(vector<Value> args)\n"
+            f"Value {function_name}(vector<Value> args);"
+        )
+        call_target = function_name
+        compat_adapter = ""
+        student_section = f"{student_decl}\n\n{_instrument_cpp_trace_source(code)}"
+        arg_names = [f"arg{index + 1}" for index in range(len(args))]
+
+    arg_bindings = [
+        {"name": name, "value": _truncate_text(json.dumps(value), RUN_MAX_VALUE_CHARS)}
+        for name, value in zip(arg_names, args)
+    ]
+
+    harness = f"""
+#include <bits/stdc++.h>
+using namespace std;
+
+struct __Trace {{
+    static vector<string> steps;
+    static string esc(const string& s) {{
+        string r;
+        for (char c : s) {{
+            if (c == '"' || c == '\\\\') r += '\\\\';
+            if (c == '\\n') {{ r += "\\\\n"; continue; }}
+            if (c == '\\r') {{ r += "\\\\r"; continue; }}
+            r += c;
+        }}
+        return r;
+    }}
+    static void line(int line, const string& source, const string& kind, const string& message) {{
+        steps.push_back("{{\\"line\\":" + to_string(line)
+            + ",\\"source\\":\\"" + esc(source)
+            + "\\",\\"operation_kind\\":\\"" + esc(kind)
+            + "\\",\\"student_message\\":\\"" + esc(message) + "\\"}}");
+    }}
+    static string stepsJson() {{
+        string r = "[";
+        for (size_t i = 0; i < steps.size(); i++) {{
+            if (i) r += ",";
+            r += steps[i];
+        }}
+        return r + "]";
+    }}
+}};
+vector<string> __Trace::steps;
+
+struct Value {{
+    enum Kind {{ NUL, BOOL, INT, DBL, STR, ARR }} kind = NUL;
+    bool b=false; long long i=0; double d=0; string s; vector<Value> a;
+    Value() {{}}
+    Value(bool x): kind(BOOL), b(x) {{}}
+    Value(long long x): kind(INT), i(x) {{}}
+    Value(double x): kind(DBL), d(x) {{}}
+    Value(const string& x): kind(STR), s(x) {{}}
+    Value(const vector<Value>& x): kind(ARR), a(x) {{}}
+    string show() const {{
+        switch (kind) {{
+            case NUL: return "null";
+            case BOOL: return b ? "true" : "false";
+            case INT: return to_string(i);
+            case DBL: {{ ostringstream o; o<<d; return o.str(); }}
+            case STR: return s;
+            case ARR: {{ string r="["; for(size_t k=0;k<a.size();k++){{ if(k) r+=", "; r+=a[k].show(); }} return r+"]"; }}
+        }}
+        return "";
+    }}
+    static string lowerCopy(string value) {{
+        transform(value.begin(), value.end(), value.begin(), [](unsigned char c){{ return (char)tolower(c); }});
+        return value;
+    }}
+    static string comparableString(const string& value, bool caseInsensitive) {{
+        string lowered = lowerCopy(value);
+        if (caseInsensitive || lowered == "none" || lowered == "null") return lowered;
+        return value;
+    }}
+    bool eq(const Value& o, bool caseInsensitive=false) const {{
+        if ((kind==INT||kind==DBL) && (o.kind==INT||o.kind==DBL)) {{
+            double x = kind==INT? (double)i : d, y = o.kind==INT? (double)o.i : o.d; return x==y;
+        }}
+        if (kind != o.kind) return show()==o.show();
+        switch (kind) {{
+            case NUL: return true;
+            case BOOL: return b==o.b;
+            case STR: return comparableString(s, caseInsensitive)==comparableString(o.s, caseInsensitive);
+            case ARR: {{ if(a.size()!=o.a.size()) return false; for(size_t k=0;k<a.size();k++) if(!a[k].eq(o.a[k], caseInsensitive)) return false; return true; }}
+            default: return show()==o.show();
+        }}
+    }}
+}};
+
+{student_section}
+
+static string esc(const string& s){{ string r; for(char c:s){{ if(c=='"'||c=='\\\\') r+='\\\\'; if(c=='\\n'){{ r+="\\\\n"; continue; }} if(c=='\\r'){{ r+="\\\\r"; continue; }} r+=c; }} return r; }}
+
+int main(){{
+    vector<Value> args = {{{arg_list}}};
+    Value expected = {_cpp_literal(expected)};
+    bool caseInsensitive = {str(case_insensitive).lower()};
+    streambuf* realBuf = cout.rdbuf();
+    ostringstream captured;
+    cout.rdbuf(captured.rdbuf());
+    Value actual;
+    string error;
+    try {{
+        actual = {call_target}(args);
+    }} catch (const exception& e) {{
+        error = e.what();
+    }} catch (...) {{
+        error = "Unknown C++ exception";
+    }}
+    cout.rdbuf(realBuf);
+    string stdoutText = captured.str();
+    bool ok = error.empty() && actual.eq(expected, caseInsensitive);
+    cout << "{{\\"__cpp_trace__\\":true"
+         << ",\\"passed\\":" << (ok ? "true" : "false")
+         << ",\\"expected\\":\\"" << esc(expected.show())
+         << "\\",\\"actual\\":\\"" << esc(actual.show())
+         << "\\",\\"stdout\\":\\"" << esc(stdoutText)
+         << "\\",\\"error\\":\\"" << esc(error)
+         << "\\",\\"steps\\":" << __Trace::stepsJson()
+         << "}}" << "\\n";
+    return 0;
+}}
+""".lstrip()
+
+    started = time.perf_counter()
+    try:
+        with tempfile.TemporaryDirectory(prefix="csnav_cpptrace_") as temp_dir:
+            src_path = os.path.join(temp_dir, "main.cpp")
+            bin_path = os.path.join(temp_dir, "a.out")
+            with open(src_path, "w", encoding="utf-8") as h:
+                h.write(harness)
+
+            compiled = _compile_source(
+                [compiler, "-std=c++17", "-O1", "-w", "-o", bin_path, src_path],
+                cwd=temp_dir,
+                env=_hardened_compiled_env({"PATH": os.environ.get("PATH", "")}),
+            )
+            if compiled.returncode != 0:
+                stderr = compiled.stderr.strip() or "C++ compilation failed."
+                if "undefined reference" in stderr and function_name in stderr:
+                    stderr = (
+                        "The C++ runner could not find the function it needs to test.\n\n"
+                        f"Expected shape:\n{expected_signature} {{\n"
+                        "    // your code here\n"
+                        "}\n\n"
+                        "Check that the function name, parameter types, return type, and top-level placement match the starter."
+                    )
+                stderr = _truncate_text(stderr)
+                line_no = _cpp_trace_compile_line(stderr) or 0
+                step = {
+                    "step": 1,
+                    "current_line": line_no,
+                    "previous_line": None,
+                    "line": "",
+                    "function": function_name,
+                    "event": "exception",
+                    "stdout": "",
+                    "exception": {"type": "CompileError", "message": stderr, "line": line_no},
+                    "operation_kind": "compile_error",
+                    "student_message": f"C++ could not compile this code{f' on line {line_no}' if line_no else ''}.",
+                    "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+                    "objects": {},
+                    "references": [],
+                    "return_value": None,
+                }
+                return {
+                    "status": "error",
+                    "passed": 0,
+                    "total": 1,
+                    "tests": [],
+                    "trace": [],
+                    "trace_v2": _with_trace_v2_metadata(
+                        {"schema_version": "trace_v2", "steps": [step], "limits": {"max_steps": RUN_RATE_LIMIT}},
+                        language="cpp",
+                        requested_language="cpp",
+                        capability="practice_only",
+                        trace_mode="practice",
+                    ),
+                    "stdout": "",
+                    "stderr": stderr,
+                    "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+                }
+
+            run = _run_isolated_process(
+                [bin_path],
+                cwd=temp_dir,
+                input_text="",
+                env=_hardened_compiled_env({"PATH": os.environ.get("PATH", "")}),
+                limiter=_limit_cpp_hardened,
+            )
+    except subprocess.TimeoutExpired:
+        return _cpp_trace_empty_response(
+            f"The C++ trace timed out after {RUN_TIMEOUT_SECONDS} seconds. Check for infinite loops or very slow logic."
+        )
+    except Exception as exc:
+        return _cpp_trace_empty_response(f"C++ trace setup failed: {exc}")
+
+    payload = None
+    for line in run.stdout.splitlines():
+        if not line.strip().startswith("{"):
+            continue
+        try:
+            parsed = json.loads(line)
+        except Exception:
+            continue
+        if parsed.get("__cpp_trace__"):
+            payload = parsed
+            break
+    if not payload:
+        return _cpp_trace_empty_response(run.stderr.strip() or "C++ trace output could not be parsed.")
+
+    stdout_text = payload.get("stdout", "")
+    raw_steps = payload.get("steps") or []
+    trace_steps: list[dict[str, Any]] = []
+    previous_line = None
+    for index, item in enumerate(raw_steps, start=1):
+        line_no = item.get("line") or 0
+        step = {
+            "step": index,
+            "current_line": line_no,
+            "previous_line": previous_line,
+            "line": item.get("source", ""),
+            "function": function_name,
+            "event": "line",
+            "stdout": stdout_text if index == len(raw_steps) else "",
+            "exception": None,
+            "return_value": None,
+            "operation_kind": item.get("operation_kind") or "line",
+            "operation_summary": item.get("student_message") or "C++ is about to run this line.",
+            "student_message": item.get("student_message") or "C++ is about to run this line.",
+            "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+            "objects": {},
+            "references": [],
+        }
+        previous_line = line_no
+        trace_steps.append(step)
+
+    if payload.get("error"):
+        trace_steps.append({
+            "step": len(trace_steps) + 1,
+            "current_line": previous_line or 0,
+            "previous_line": previous_line,
+            "line": "",
+            "function": function_name,
+            "event": "exception",
+            "stdout": stdout_text,
+            "exception": {
+                "type": "RuntimeError",
+                "message": payload.get("error", ""),
+                "line": previous_line or 0,
+            },
+            "return_value": None,
+            "operation_kind": "exception",
+            "operation_summary": "C++ stopped because an exception was raised.",
+            "student_message": "C++ stopped because an exception was raised.",
+            "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+            "objects": {},
+            "references": [],
+        })
+    elif trace_steps:
+        trace_steps[-1]["return_value"] = payload.get("actual")
+        trace_steps[-1]["event"] = "return"
+        trace_steps[-1]["operation_kind"] = "return"
+        trace_steps[-1]["student_message"] = f"C++ returned {payload.get('actual')}."
+        trace_steps[-1]["operation_summary"] = trace_steps[-1]["student_message"]
+
+    test_result = {
+        "name": test.get("name") or "Trace test",
+        "passed": bool(payload.get("passed")),
+        "expected": payload.get("expected"),
+        "actual": payload.get("actual"),
+        "args": args,
+    }
+    if payload.get("error"):
+        test_result["error"] = payload.get("error")
+    return {
+        "status": "passed" if test_result["passed"] else "failed",
+        "passed": 1 if test_result["passed"] else 0,
+        "total": 1,
+        "tests": [test_result],
+        "trace": [],
+        "trace_v2": _with_trace_v2_metadata(
+            {
+                "schema_version": "trace_v2",
+                "steps": trace_steps,
+                "limits": {"max_steps": RUN_RATE_LIMIT, "max_output_chars": RUN_MAX_OUTPUT_CHARS},
+            },
+            language="cpp",
+            requested_language="cpp",
+            capability="practice_only",
+            trace_mode="practice",
+        ),
+        "stdout": stdout_text,
+        "stderr": _truncate_text(run.stderr.strip()),
+        "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+    }
 
 
 def run_java_freeform(code: str) -> dict[str, Any]:

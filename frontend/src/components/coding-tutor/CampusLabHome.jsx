@@ -69,6 +69,34 @@ function statusOf(progress) {
   return "not_started";
 }
 
+function hasMeaningfulCodingProgress({ progressSummary, progressByQuestion, adaptivePractice, mastery }) {
+  const solvedCount = Number(progressSummary?.solvedCount || progressSummary?.solved || 0);
+  const attemptedCount = Number(progressSummary?.attemptedCount || progressSummary?.attempted || 0);
+  const streakCount = Number(progressSummary?.displayStreak || progressSummary?.streak || 0);
+  if (solvedCount > 0 || attemptedCount > 0 || streakCount > 0) return true;
+
+  const hasQuestionProgress = Object.values(progressByQuestion || {}).some(progress => {
+    const attempts = Number(progress?.attempt_count || progress?.attempts || 0);
+    const status = String(progress?.status || "").toLowerCase();
+    return attempts > 0 || (status && status !== "not_started");
+  });
+  if (hasQuestionProgress) return true;
+
+  const recommendation = adaptivePractice?.recommendation || null;
+  const hasAdaptiveSignal = Boolean(
+    adaptivePractice?.review_signal ||
+    (recommendation?.action && recommendation.action !== "starter")
+  );
+  if (hasAdaptiveSignal) return true;
+
+  const weakest = mastery?.weakest || null;
+  return Boolean(
+    weakest &&
+    (Number(weakest.attempted || weakest.attemptedCount || 0) > 0 ||
+      Number(weakest.solved || weakest.solvedCount || 0) > 0)
+  );
+}
+
 function problemRank(question) {
   return DIFFICULTY_RANK[String(question?.difficulty || "easy").toLowerCase()] ?? 1;
 }
@@ -93,6 +121,14 @@ function compactWeakTopicReason({ mastery, weakTopic }) {
   }
   if (weakTopic) return `This topic could use another pass.`;
   return "Pick one shaky topic.";
+}
+
+function conciseAdaptiveReason(value = "") {
+  const text = String(value || "").trim();
+  const reviewMarker = /this topic is review-only for now/i;
+  const match = reviewMarker.exec(text);
+  if (!match) return text;
+  return text.slice(0, match.index).trim().replace(/[.:;\s]+$/, ".");
 }
 
 function firstUnsolved(questions, progressByQuestion, predicate = () => true) {
@@ -275,6 +311,7 @@ function CampusLearningQueue({
   onOpenLessonReview,
   onOpenStartingPath,
   learningStyle,
+  hasCodingHistory,
 }) {
   // The hero owns "what to do right now" (resume / recommended). This section is a
   // guided path: next track, personal workspace, and a data-driven focus nudge.
@@ -287,7 +324,7 @@ function CampusLearningQueue({
     focus,
   });
   const firstPathQuestion = todayPath.find(step => step.question)?.question || null;
-  const hasRealProgress = Object.values(progressByQuestion || {}).some(progress =>
+  const hasRealProgress = hasCodingHistory || Object.values(progressByQuestion || {}).some(progress =>
     progress?.status === "solved" || (progress?.attempt_count || 0) > 0
   );
   const adaptiveRecommendation = hasRealProgress ? adaptivePractice?.recommendation || null : null;
@@ -310,7 +347,7 @@ function CampusLearningQueue({
   const focusBlurb = needsStartingCheck
     ? "Take the quick check above so this card can recommend a calm first step instead of guessing."
     : placementProfile?.blurb || (adaptiveRecommendation?.reason
-    ? adaptiveRecommendation.reason
+    ? conciseAdaptiveReason(adaptiveRecommendation.reason)
     : focusTopic
       ? `${focusReason(focus)} ${learningStyleHint(learningStyle)}`
     : "Pick one topic and solve the first problem you see.");
@@ -389,31 +426,27 @@ function CampusLearningQueue({
           ) : null}
           {adaptiveRecommendation ? (
             <small className={adaptiveReady ? "campus-focus-badge is-ready" : "campus-focus-badge"}>
-              {adaptiveReady ? "Ladder-ready" : "Review-only for now"}
+              {adaptiveReady ? "Ladder-ready" : "Review"}
             </small>
           ) : null}
-          {reviewSignal ? (
-            <div className="campus-review-signal">
-              <small>Review pattern</small>
-              <strong>{reviewSignal.title || "Review recent errors"}</strong>
-              <p>{reviewSignal.reason}</p>
+          <div className="campus-focus-actions">
+            {reviewSignal ? (
               <button
                 type="button"
-                className="campus-review-signal-btn"
                 onClick={() => onOpenLessonReview?.(reviewSignal)}
               >
-                Open review lesson
+                Review recent errors
               </button>
-            </div>
-          ) : null}
-          <button
-            type="button"
-            onClick={focusClick}
-          >
-            {needsStartingCheck
-              ? "Start Syntax quiz"
-              : placementProfile?.actionLabel || (focusTopic ? `${focusButton}: ${titleCase(focusTopic)}` : "Browse Practice Library")}
-          </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={focusClick}
+            >
+              {needsStartingCheck
+                ? "Start Syntax quiz"
+                : placementProfile?.actionLabel || (focusTopic ? `${focusButton}: ${titleCase(focusTopic)}` : "Browse Practice Library")}
+            </button>
+          </div>
         </article>
       </div>
     </section>
@@ -701,10 +734,15 @@ function CampusDailyMission({ dailyChallenge, loading, dailyDoneToday, displaySt
         <div className="daily-meta-row">
           <span className={`daily-difficulty ${difficultyClass(dailyChallenge?.difficulty)}`}>{dailyChallenge?.difficulty || "Easy"}</span>
           {isLeetCode && <span className="daily-source-pill">LeetCode</span>}
-          {dailyDoneToday
-            ? <span className="daily-streak-pill done">Practiced today - {displayStreak}-day streak</span>
-            : displayStreak > 0 && <span className="daily-streak-pill">{displayStreak}-day streak</span>}
+          {!isLeetCode && dailyDoneToday
+            ? <span className="daily-streak-pill done">CS Navigator streak - {displayStreak}-day</span>
+            : !isLeetCode && displayStreak > 0 && <span className="daily-streak-pill">{displayStreak}-day streak</span>}
         </div>
+        {isLeetCode && (
+          <p className="daily-handoff-note">
+            Full prompt and official judging stay on LeetCode. The scratchpad is for notes, experiments, and tutor help.
+          </p>
+        )}
       </div>
 
       {/* Right column: focus skills + the actions. (Tags now live ONLY here as
@@ -734,11 +772,6 @@ function CampusDailyMission({ dailyChallenge, loading, dailyDoneToday, displaySt
             </a>
           )}
         </div>
-        {isLeetCode && (
-          <p className="daily-handoff-note">
-            Full prompt and official judging stay on LeetCode. The scratchpad is for notes, experiments, and tutor help.
-          </p>
-        )}
       </aside>
     </section>
   );
@@ -777,17 +810,27 @@ export default function CampusLabHome({
   const focus = pickFocusTopics(topicPacks);
   const storageScope = currentUserStorageScope();
   const [startingCheckResult, setStartingCheckResult] = useState(() => readStartingCheck());
-  const hasCodingHistory =
-    (Number(progressSummary?.solvedCount) || 0) > 0 ||
-    (Number(progressSummary?.attemptedCount) || 0) > 0 ||
-    Object.values(progressByQuestion || {}).some(progress =>
-      progress?.status === "solved" || (progress?.attempt_count || 0) > 0
-    );
+  const [startingGateReady, setStartingGateReady] = useState(false);
+  const hasCodingHistory = hasMeaningfulCodingProgress({
+    progressSummary,
+    progressByQuestion,
+    adaptivePractice,
+    mastery,
+  });
   const startingCheck = startingCheckResult?.skipped ? null : startingCheckResult;
-  const shouldShowStartingCheck = !hasCodingHistory && !startingCheckResult?.skipped;
+  const shouldShowStartingCheck =
+    startingGateReady &&
+    !hasCodingHistory &&
+    !startingCheckResult?.skipped;
 
   useEffect(() => {
     setStartingCheckResult(readStartingCheck());
+  }, [storageScope]);
+
+  useEffect(() => {
+    setStartingGateReady(false);
+    const gateTimer = window.setTimeout(() => setStartingGateReady(true), 450);
+    return () => window.clearTimeout(gateTimer);
   }, [storageScope]);
 
   const completeStartingCheck = (result) => {
@@ -831,7 +874,7 @@ export default function CampusLabHome({
           onSkip={skipStartingCheck}
           onReset={resetStartingCheck}
         />
-      ) : startingCheck ? (
+      ) : startingCheck && !hasCodingHistory ? (
         <StartingCheckCard
           result={startingCheck}
           onComplete={completeStartingCheck}
@@ -869,6 +912,7 @@ export default function CampusLabHome({
         onOpenLessonReview={onOpenLessonReview}
         onOpenStartingPath={onOpenStartingPath}
         learningStyle={learningStyle}
+        hasCodingHistory={hasCodingHistory}
       />
 
       <CampusTutorActions

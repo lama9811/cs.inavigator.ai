@@ -575,9 +575,22 @@ function conditionalFlowValue(flow, key, fallback = "") {
 }
 
 function VisualFlowCard({ id, label, detail, active, shape = "card" }) {
+  const semanticId = String(id || "").toLowerCase();
+  const semanticLabel = String(label || "").toLowerCase();
+  const isResult =
+    semanticId.includes("result") ||
+    semanticId.includes("output") ||
+    semanticId === "done" ||
+    semanticId === "end" ||
+    semanticId === "return" ||
+    semanticId === "resume" ||
+    semanticLabel.includes("result") ||
+    semanticLabel.includes("output") ||
+    semanticLabel.includes("done") ||
+    semanticLabel.includes("return");
   return (
     <div
-      className={`lesson-visual-flow-symbol ucv-flow-node-card ucv-flow-node-card--${shape} is-${shape} ${active ? "is-active ucv-flow-node-card--active" : ""}`}
+      className={`lesson-visual-flow-symbol ucv-flow-node-card ucv-flow-node-card--${shape} is-${shape} ${isResult ? "is-result ucv-flow-node-card--result" : ""} ${active ? "is-active ucv-flow-node-card--active" : ""}`}
       data-flow-id={id}
     >
       <strong>{label}</strong>
@@ -1066,8 +1079,14 @@ function VisualBlock({ block }) {
                 <span>Visualizer</span>
                 <h3 id="lesson-visual-title">{block.title}</h3>
               </div>
-              <button type="button" onClick={close} data-autofocus>
-                Close
+              <button
+                type="button"
+                className="lesson-visual-close"
+                onClick={close}
+                data-autofocus
+                aria-label="Close visualizer"
+              >
+                <FaTimes aria-hidden="true" />
               </button>
             </header>
 
@@ -1452,8 +1471,9 @@ export default function LessonView({
       Object.prototype.hasOwnProperty.call(checkAnswers, key)
     ).length;
     if (answeredCount === checkKeys.length) {
-      markLessonRead(language, category);
-      onPracticeActivity?.();
+      if (markLessonRead(language, category)) {
+        onPracticeActivity?.();
+      }
     }
   }, [category, checkAnswers, checkKeys, language, lesson, onPracticeActivity]);
 

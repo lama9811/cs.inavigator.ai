@@ -32,6 +32,8 @@ import { ENABLE_LEGACY_ADVISING_FORM } from "./config/features";
 const API_BASE = getApiBase();
 const ACTIVE_CHAT_SESSION_KEY = "active_chat_session_id";
 const REGULAR_CHAT_RESET_KEY = "csnav_opening_regular_chat";
+const CODING_PRACTICE_ROUTES_BASE_KEY = "csnav.lastPracticeRoutes";
+const CODING_TRANSIENT_QUIZ_PREFIXES = ["cq_answers", "cq_last_result", "cq_choice_seed"];
 
 function makeBlankSession(id) {
   return { id, title: "New Chat", messages: [], pinned: false, archived: false, mode: "regular" };
@@ -78,15 +80,37 @@ function isTokenExpired(token) {
   return Date.now() >= (exp * 1000) - 30_000;
 }
 
+function storageScopeForToken(token) {
+  const payload = parseJwt(token);
+  const id = payload.user_id || payload.sub || payload.email;
+  return id ? `user:${String(id).toLowerCase()}` : "anonymous";
+}
+
+function clearCodingTutorResumeStorage(token) {
+  const scope = storageScopeForToken(token);
+  localStorage.removeItem("concept_quiz_last_path");
+  localStorage.removeItem(`${CODING_PRACTICE_ROUTES_BASE_KEY}:${scope}`);
+  try {
+    CODING_TRANSIENT_QUIZ_PREFIXES.forEach((prefix) => {
+      const scopedPrefix = `${prefix}:`;
+      const scopedSuffix = `:${scope}`;
+      Object.keys(sessionStorage)
+        .filter((key) => key.startsWith(scopedPrefix) && key.endsWith(scopedSuffix))
+        .forEach((key) => sessionStorage.removeItem(key));
+    });
+  } catch {
+    // Storage access can be blocked; stale quiz resume state is non-critical.
+  }
+}
+
 // Clear all auth/session state from storage. Shared by manual logout and the
 // automatic session-expiry paths so they never drift.
 function clearAuthStorage() {
+  const token = localStorage.getItem("token");
+  clearCodingTutorResumeStorage(token);
   localStorage.removeItem("token");
   localStorage.removeItem("chat_sessions");
   localStorage.removeItem(ACTIVE_CHAT_SESSION_KEY);
-  // Reset the remembered Concept Quiz location on logout so the next sign-in
-  // doesn't jump back into the previous user's quiz spot.
-  localStorage.removeItem("concept_quiz_last_path");
 }
 
 // Module-level guard so the expiry toast fires once even if several RequireAuth

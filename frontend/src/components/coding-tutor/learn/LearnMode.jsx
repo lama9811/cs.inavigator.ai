@@ -107,18 +107,19 @@ function TrackCards({ language, languageLabel, categories, onPick, onBack }) {
 
   return (
     <div className="learn-tracks">
-      <button type="button" className="learn-back-link" onClick={onBack}>
-        <FaArrowLeft aria-hidden="true" /> All languages
-      </button>
-
-      <header className="learn-tracks-head">
-        <span className="lesson-kicker">{languageLabel}</span>
-        <h2>Choose your learning track</h2>
-        <p>
-          Start with the foundation or jump to the next step when those ideas already
-          feel familiar. Nothing is locked.
-        </p>
-      </header>
+      <div className="learn-tracks-toolbar">
+        <header className="learn-tracks-head">
+          <span className="lesson-kicker">{languageLabel}</span>
+          <h2>Choose your learning track</h2>
+          <p>
+            Start with the foundation or jump to the next step when those ideas already
+            feel familiar. Nothing is locked.
+          </p>
+        </header>
+        <button type="button" className="learn-back-link" onClick={onBack}>
+          <FaArrowLeft aria-hidden="true" /> All languages
+        </button>
+      </div>
 
       <div className="learn-track-grid">
         {TRACKS.map((track) => {

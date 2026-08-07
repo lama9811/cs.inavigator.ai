@@ -83,9 +83,9 @@
       "prompt": "After `fetch` returns a response, what status check should code usually make?",
       "choices": [
         "Check `response.ok` before treating the response as successful data.",
-        "Assume every HTTP error rejects the fetch Promise.",
-        "Use `await` outside an async context without support.",
-        "Forget to handle rejection or failed status."
+        "Treat a fulfilled fetch response as successful without checking its HTTP status.",
+        "Check only whether the response variable exists.",
+        "Parse JSON first and decide whether the status mattered later."
       ],
       "answer_index": 0,
       "explanation": "`fetch` rejects for network-level failures, but an HTTP 404 or 500 can still produce a fulfilled response object. Checking `response.ok` keeps failed responses from being parsed and displayed as if they were successful data."
@@ -118,12 +118,12 @@
       "code": null,
       "prompt": "Why check HTTP response status before parsing JSON?",
       "choices": [
-        "Ignore loading and error states in the UI.",
-        "Parse JSON before checking whether the response was successful.",
-        "Check HTTP response status explicitly.",
-        "Mix callback, Promise, and async styles in one small flow."
+        "A failed HTTP status may not contain the successful data shape the code expects.",
+        "JSON parsing automatically changes 404 responses into successful data.",
+        "The status check makes the network request finish faster.",
+        "The status check replaces the need for await."
       ],
-      "answer_index": 2,
+      "answer_index": 0,
       "explanation": "A failed HTTP status may come with an error page or error payload instead of the data shape your code expects. Checking status first lets the code route failure to an error path before parsing and rendering."
     },
     {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { FaPause, FaPlay, FaRedoAlt, FaStepBackward, FaStepForward } from "react-icons/fa";
+import { FaExternalLinkAlt, FaPause, FaPlay, FaRedoAlt, FaStepBackward, FaStepForward, FaTimes } from "react-icons/fa";
 import { generateStepsForConcept } from "./generators";
 import {
   ArrayVisualizer,
@@ -94,7 +94,7 @@ function conceptLabel(concept: ConceptType): string {
 
 function StateStrip({ step }: { step: Step }) {
   if (step.concept === "conditional") return null;
-  const hiddenKeys = new Set(["sample", "prompt_rule"]);
+  const hiddenKeys = new Set(["sample", "prompt_rule", "text", "input", "goal"]);
   const entries = Object.entries(step.state || {}).filter(([key]) => !hiddenKeys.has(key));
   if (!entries.length) return null;
   return (
@@ -174,9 +174,10 @@ interface UniversalCodeVisualizerProps {
   activeProblem?: any;
   mode?: "panel" | "modal";
   onClose?: () => void;
+  onOpenInWorkspace?: () => void;
 }
 
-export default function UniversalCodeVisualizer({ activeProblem, mode = "panel", onClose }: UniversalCodeVisualizerProps) {
+export default function UniversalCodeVisualizer({ activeProblem, mode = "panel", onClose, onOpenInWorkspace }: UniversalCodeVisualizerProps) {
   const initialConcept = conceptFromProblem(activeProblem);
   const isAuthoredProblem = Boolean(activeProblem?.visualizer?.concept);
   const [concept, setConcept] = useState<ConceptType>(initialConcept);
@@ -233,8 +234,8 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
             </label>
           )}
           {mode === "modal" && onClose ? (
-            <button type="button" className="ucv-close" onClick={onClose} data-autofocus>
-              Close
+            <button type="button" className="ucv-close" onClick={onClose} data-autofocus aria-label="Close visualizer">
+              <FaTimes aria-hidden="true" />
             </button>
           ) : null}
         </div>
@@ -258,6 +259,12 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
 
       <footer className="ucv-controls" aria-label="Visualizer controls">
         <div className="ucv-playbar" role="group" aria-label="Step playback">
+          {mode === "modal" && onOpenInWorkspace ? (
+            <button type="button" className="ucv-control-button ucv-control-button--workspace" onClick={onOpenInWorkspace}>
+              <FaExternalLinkAlt aria-hidden="true" />
+              <span>Open in Workspace</span>
+            </button>
+          ) : null}
           <button type="button" className="ucv-control-button" onClick={() => setStepIndex(0)}>
             <FaRedoAlt aria-hidden="true" />
             <span>Reset</span>
@@ -297,15 +304,23 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
           <span className="ucv-step-count" aria-label={`Step ${stepIndex + 1} of ${steps.length}`}>
             {stepIndex + 1} / {steps.length}
           </span>
-          <label className="ucv-speed-control">
-            Speed
-            <select value={speed} onChange={(event) => setSpeed(Number(event.target.value))}>
-              <option value={0.5}>0.5x</option>
-              <option value={1}>1x</option>
-              <option value={1.5}>1.5x</option>
-              <option value={2}>2x</option>
-            </select>
-          </label>
+          <div className="ucv-speed-control" role="group" aria-label="Playback speed">
+            <span>Speed</span>
+            <div className="ucv-speed-options">
+              {[0.75, 1, 1.5, 2].map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className={`ucv-speed-option ${speed === option ? "is-active" : ""}`}
+                  onClick={() => setSpeed(option)}
+                  aria-pressed={speed === option}
+                  title={`Play at ${option}x speed`}
+                >
+                  {option}x
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </footer>
     </section>

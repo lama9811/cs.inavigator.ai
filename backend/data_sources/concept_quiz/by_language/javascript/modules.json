@@ -118,10 +118,10 @@
       "code": null,
       "prompt": "What should a module export?",
       "choices": [
-        "Create circular imports for ordinary helper functions.",
-        "Duplicate helpers instead of importing them.",
+        "Export every helper, constant, and temporary value in the file.",
+        "Export nothing and rely on other files copying the same helper.",
         "Export only values other files need.",
-        "Rename an export without updating import sites."
+        "Export values under names that callers are not expected to use."
       ],
       "answer_index": 2,
       "explanation": "Export the values other files are meant to use, and keep internal helpers private to the module. A smaller export surface makes refactoring safer because fewer files depend on implementation details."
@@ -136,12 +136,12 @@
       "code": null,
       "prompt": "Why must named and default import styles match the export?",
       "choices": [
-        "Use modules to hide unclear ownership.",
-        "Run app startup code just by importing a helper.",
-        "Import from an index file without checking what it re-exports.",
-        "Match named and default import styles."
+        "A named export uses braces, while a default export does not.",
+        "Every export can be imported either way with no syntax change.",
+        "Default imports require braces around the imported name.",
+        "Named imports work only when the file has no other exports."
       ],
-      "answer_index": 3,
+      "answer_index": 0,
       "explanation": "A default export and a named export are imported with different syntax. Mixing the styles can make the import fail or produce the wrong value even though the file path is correct."
     },
     {
@@ -155,9 +155,9 @@
       "prompt": "What should students check when a relative import cannot be found?",
       "choices": [
         "Check relative paths and file extensions.",
-        "Use relative paths that break when files move.",
-        "Expose internal constants as public API.",
-        "Avoid modules and keep all code in one file."
+        "Change the exported function name before checking the file path.",
+        "Remove the `./` or `../` prefix from every relative import.",
+        "Assume paths are resolved from the project root in every runtime."
       ],
       "answer_index": 0,
       "explanation": "Check the folder path from the importing file and include the file extension when the runtime expects it. Module paths are resolved from where the current file lives, not from where the developer happens to be thinking."

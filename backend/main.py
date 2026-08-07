@@ -25,10 +25,15 @@ from coding_runner import (
     get_cached_practice_run,
     run_cpp_freeform,
     run_cpp_practice_tests,
+    run_cpp_practice_trace,
     run_java_freeform,
     run_java_practice_tests,
+    run_java_practice_trace,
     run_javascript_freeform,
     run_javascript_practice_tests,
+    run_javascript_freeform_trace,
+    run_javascript_practice_trace,
+    run_python_freeform_trace,
     run_python_freeform,
     run_python_practice_tests,
     run_python_practice_trace,
@@ -1018,7 +1023,7 @@ class CodingWorkspaceStateUpdate(BaseModel):
         return normalized
 
 class PracticeRunRequest(BaseModel):
-    question_id: str
+    question_id: Optional[str] = None
     language: str = "python"
     code: str
     trace_test_index: int = 0
@@ -7137,6 +7142,8 @@ async def run_practice_solution(
     if language_key not in {"python", "javascript", "java", "cpp"}:
         return empty_practice_run_response("Graded runs support Python, JavaScript, Java, and C++.")
 
+    if not req.question_id:
+        return empty_practice_run_response("Choose a Practice Library problem before running graded tests.")
     question = _find_practice_question(req.question_id)
     solution = _find_language_solution(question["id"], language_key, question)
     function_name = str(solution.get("function_name") or "solve")
@@ -7215,13 +7222,56 @@ async def trace_practice_solution(
         )
 
     language_key, _ = _normalize_practice_language(req.language)
-    if language_key != "python":
+    if language_key not in {"python", "javascript", "java", "cpp"}:
         return {
             "status": "error",
             "trace": [],
+            "trace_v2": {
+                "schema_version": "trace_v2",
+                "steps": [],
+                "limits": {},
+                "language": language_key,
+                "requested_language": language_key,
+                "capability": "unsupported",
+                "trace_mode": "unavailable",
+                "supported_languages": ["python", "javascript", "java", "cpp"],
+            },
             "stdout": "",
-            "stderr": "Code tracing is available for Python first. JavaScript, Java, and C++ can still use Visualize this idea.",
+            "stderr": "Execution tracing is available for Python, JavaScript, Java, and C++ right now. Use Run for this language, or open Visualize this idea for a concept walkthrough.",
+            "message": "Trace My Code supports Python, JavaScript, Java, and C++ right now.",
+            "supported_languages": ["python", "javascript", "java", "cpp"],
+            "requested_language": language_key,
             "duration_ms": 0,
+        }
+
+    if not req.question_id:
+        if language_key in {"java", "cpp"}:
+            display_language = "Java" if language_key == "java" else "C++"
+            return {
+                "status": "error",
+                "trace": [],
+                "trace_v2": {
+                    "schema_version": "trace_v2",
+                    "steps": [],
+                    "limits": {},
+                    "language": language_key,
+                    "requested_language": language_key,
+                    "capability": "practice_only",
+                    "trace_mode": "freeform_unavailable",
+                    "supported_languages": ["python", "javascript", "java", "cpp"],
+                },
+                "stdout": "",
+                "stderr": f"{display_language} tracing currently works from authored Practice problems, where CS Navigator knows which function and test case to run. Freeform {display_language} tracing is planned next.",
+                "message": f"Open a {display_language} Practice problem and use Trace My Code there.",
+                "supported_languages": ["python", "javascript", "java", "cpp"],
+                "requested_language": language_key,
+                "duration_ms": 0,
+            }
+        run_result = run_javascript_freeform_trace(req.code) if language_key == "javascript" else run_python_freeform_trace(req.code)
+        return {
+            **run_result,
+            "trace_test_index": None,
+            "message": f"Trace generated from this {'JavaScript' if language_key == 'javascript' else 'Python'} snippet.",
         }
 
     question = _find_practice_question(req.question_id)
@@ -7232,13 +7282,32 @@ async def trace_practice_solution(
         return {
             "status": "error",
             "trace": [],
+            "trace_v2": {
+                "schema_version": "trace_v2",
+                "steps": [],
+                "limits": {},
+                "language": language_key,
+                "requested_language": language_key,
+                "capability": "practice_and_freeform" if language_key in {"python", "javascript"} else "practice_only",
+                "trace_mode": "unavailable",
+                "supported_languages": ["python", "javascript", "java", "cpp"],
+            },
             "stdout": "",
             "stderr": "No authored test is available to trace for this question yet.",
             "duration_ms": 0,
         }
 
     test_index = min(req.trace_test_index, len(tests) - 1)
-    run_result = run_python_practice_trace(req.code, function_name, tests[test_index])
+    if language_key == "javascript":
+        run_result = run_javascript_practice_trace(req.code, function_name, tests[test_index])
+    elif language_key == "java":
+        arg_spec = get_arg_spec(function_name)
+        run_result = run_java_practice_trace(req.code, function_name, tests[test_index], arg_spec=arg_spec)
+    elif language_key == "cpp":
+        arg_spec = get_arg_spec(function_name)
+        run_result = run_cpp_practice_trace(req.code, function_name, tests[test_index], arg_spec=arg_spec)
+    else:
+        run_result = run_python_practice_trace(req.code, function_name, tests[test_index])
     return {
         **run_result,
         "trace_test_index": test_index,

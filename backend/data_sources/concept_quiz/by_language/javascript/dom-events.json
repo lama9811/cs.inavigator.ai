@@ -83,9 +83,9 @@
       "prompt": "When should code prefer `textContent` over `innerHTML`?",
       "choices": [
         "When displaying ordinary text, especially text that came from user input.",
-        "Use `innerHTML` for untrusted plain text.",
-        "Assume a selector always finds an element.",
-        "Put a long unrelated workflow inside one event listener."
+        "When the text should be parsed as trusted HTML markup.",
+        "When the program needs to create nested elements from a template string.",
+        "When the value must run as script before it appears on the page."
       ],
       "answer_index": 0,
       "explanation": "`innerHTML` asks the browser to parse markup, so it should not be the default for plain text from users. `textContent` displays the value as text, which avoids accidentally treating user-provided text as page structure."
@@ -118,10 +118,10 @@
       "code": null,
       "prompt": "What should code do after calling a selector that might find nothing?",
       "choices": [
-        "Read input values once and never update them.",
-        "Ignore event default behavior when it matters.",
+        "Use the result immediately because selectors always return an element.",
+        "Create a new element automatically without checking what was missing.",
         "Check a selector result before use.",
-        "Change classes by rewriting the whole class string blindly."
+        "Treat a missing element as an empty string."
       ],
       "answer_index": 2,
       "explanation": "Selector calls can return `null`. Checking the result before using it turns a mysterious property-access crash into a clear branch, fallback, or setup fix."
@@ -155,9 +155,9 @@
       "prompt": "How should a page display text that came from a form field?",
       "choices": [
         "Display untrusted text with textContent.",
-        "Assume every click target is the element with the listener.",
-        "Forget to remove listeners created for temporary UI.",
-        "Use text parsing to recover data already stored in state."
+        "Put it into innerHTML so any tags are interpreted.",
+        "Store it in an event listener instead of showing it.",
+        "Convert it to a selector and query the page with it."
       ],
       "answer_index": 0,
       "explanation": "`textContent` treats the value as text instead of markup. That is the safer default for user-provided strings, while `innerHTML` should be reserved for trusted markup the program intentionally creates."

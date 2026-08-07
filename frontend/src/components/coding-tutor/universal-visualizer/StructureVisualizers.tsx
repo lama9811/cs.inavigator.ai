@@ -126,8 +126,12 @@ export function QueueVisualizer({ step }: { step: Step }) {
   return (
     <Canvas concept={step.concept} className="ucv-structure-canvas ucv-queue-canvas">
       <div className="ucv-queue-shell" aria-label="Queue visualizer">
-        <span className="ucv-flow-label">Front leaves first</span>
+        <div className="ucv-queue-guide" aria-hidden="true">
+          <span>dequeue from front</span>
+          <span>enqueue at rear</span>
+        </div>
         <div className="ucv-queue-track">
+          <span className="ucv-queue-exit" aria-hidden="true" />
           <AnimatePresence mode="popLayout">
             {nodes.map((node, index) => (
               <div key={node.id} className="ucv-queue-item-wrap">
@@ -136,12 +140,12 @@ export function QueueVisualizer({ step }: { step: Step }) {
                   step={step}
                   className="ucv-queue-item"
                 />
-                {index < nodes.length - 1 ? <span className="ucv-inline-arrow" aria-hidden="true" /> : null}
+                {index < nodes.length - 1 ? <span className="ucv-queue-order-mark" aria-hidden="true" /> : null}
               </div>
             ))}
           </AnimatePresence>
+          <span className="ucv-queue-entry" aria-hidden="true" />
         </div>
-        <span className="ucv-flow-label">New items join here</span>
       </div>
     </Canvas>
   );
@@ -181,6 +185,13 @@ export function LinkedListVisualizer({ step }: { step: Step }) {
 }
 
 function contiguousRange(step: Step, nodes: VisualNode[]): [number, number] | null {
+  if (step.concept === "binary-search") {
+    const possible = nodes
+      .map((node, index) => ({ node, index }))
+      .filter(({ node }) => node.state !== "inactive")
+      .map(({ index }) => index);
+    if (possible.length) return [Math.min(...possible), Math.max(...possible)];
+  }
   const active = nodes
     .map((node, index) => ({ node, index }))
     .filter(({ node }) => node.state === "active" || node.state === "comparing" || isHighlighted(step, node.id))
@@ -230,10 +241,15 @@ function isStringLikeStep(step: Step): boolean {
 function StringScanVisualizer({ step }: { step: Step }) {
   const example = stepExample(step);
   const useWords = /word|sentence/.test(`${step.title} ${step.description}`.toLowerCase()) && !/character|letter|vowel/.test(step.title.toLowerCase());
+  const charNodes = sortedByX(step.nodes).filter((node) => node.id.startsWith("char-") || node.meta?.role === "string-cell");
   const tokens = (useWords ? example.split(/\s+/) : [...example]).filter(Boolean).slice(0, 14);
-  const fallback = sortedByX(step.nodes).map((node) => String(node.value)).slice(0, 14);
+  const fallback = charNodes
+    .map((node) => String(node.value))
+    .slice(0, 14);
   const visibleTokens = tokens.length ? tokens : fallback;
-  const activeIndex = activeNodeIndex(step, visibleTokens.length);
+  const activeCharIndex = charNodes.findIndex((node) => node.state === "active" || node.state === "comparing" || isHighlighted(step, node.id));
+  const activeIndex = Math.min(Math.max(activeCharIndex < 0 ? activeNodeIndex(step, visibleTokens.length) : activeCharIndex, 0), Math.max(visibleTokens.length - 1, 0));
+  const resultNode = step.nodes.find((node) => node.id === "string-result" || node.meta?.role === "result");
   return (
     <Canvas concept={step.concept} className="ucv-structure-canvas ucv-string-canvas">
       <div className="ucv-string-shell" aria-label="String scan visualizer">
@@ -261,6 +277,10 @@ function StringScanVisualizer({ step }: { step: Step }) {
         </div>
         <div className="ucv-string-cursor" style={{ "--ucv-cursor-index": activeIndex, "--ucv-token-count": Math.max(visibleTokens.length, 1) } as CSSProperties}>
           <span>scan cursor</span>
+        </div>
+        <div className="ucv-string-result" aria-label="String result so far">
+          <span>result so far</span>
+          <strong>{String(resultNode?.value || step.state?.expected || "not changed yet")}</strong>
         </div>
       </div>
     </Canvas>
@@ -305,7 +325,7 @@ export function MathVisualizer({ step }: { step: Step }) {
   return (
     <Canvas concept={step.concept} className="ucv-structure-canvas ucv-math-canvas">
       <div className="ucv-math-shell" aria-label="Math formula visualizer">
-        <div className="ucv-math-flow">
+        <div className="ucv-math-flow" style={{ "--ucv-math-count": Math.max(nodes.length, 1) } as CSSProperties}>
           {nodes.map((node, index) => {
             const isResult = node.id === lastNode?.id || /total|result|answer/i.test(String(node.value));
             return (
@@ -344,6 +364,9 @@ function PrefixSumRows({ step }: { step: Step }) {
 }
 
 function TupleRows({ step }: { step: Step }) {
+  if (step.nodes.some((node) => node.id.startsWith("tuple-swap-"))) {
+    return <TupleSwapRows step={step} />;
+  }
   const names = step.nodes.filter((node) => node.id.includes("name"));
   const scores = step.nodes.filter((node) => node.id.includes("score"));
   const pairs = step.nodes.filter((node) => node.id.includes("pair"));
@@ -360,6 +383,59 @@ function TupleRows({ step }: { step: Step }) {
         </div>
       ))}
     </div>
+  );
+}
+
+function TupleSwapRows({ step }: { step: Step }) {
+  const first = step.nodes.find((node) => node.id === "tuple-swap-original-0");
+  const second = step.nodes.find((node) => node.id === "tuple-swap-original-1");
+  const newFirst = step.nodes.find((node) => node.id === "tuple-swap-new-0");
+  const newSecond = step.nodes.find((node) => node.id === "tuple-swap-new-1");
+  const result = step.nodes.find((node) => node.id === "tuple-swap-result");
+  return (
+    <div className="ucv-tuple-swap-shell" aria-label="Tuple swap visualizer">
+      <div className="ucv-tuple-swap-row">
+        {first ? <StatusBlock node={first} step={step} className="ucv-tuple-cell" /> : null}
+        {second ? <StatusBlock node={second} step={step} className="ucv-tuple-cell" /> : null}
+      </div>
+      <div className="ucv-tuple-swap-arrows" aria-hidden="true">
+        <span className={edgeBetween(step.edges, "tuple-swap-original-1", "tuple-swap-new-0") && isEdgeActive(edgeBetween(step.edges, "tuple-swap-original-1", "tuple-swap-new-0")!, step) ? "is-active" : ""} />
+        <span className={edgeBetween(step.edges, "tuple-swap-original-0", "tuple-swap-new-1") && isEdgeActive(edgeBetween(step.edges, "tuple-swap-original-0", "tuple-swap-new-1")!, step) ? "is-active" : ""} />
+      </div>
+      <div className="ucv-tuple-swap-row">
+        {newFirst ? <StatusBlock node={newFirst} step={step} className="ucv-tuple-cell" /> : null}
+        {newSecond ? <StatusBlock node={newSecond} step={step} className="ucv-tuple-cell" /> : null}
+        {result ? <StatusBlock node={result} step={step} className="ucv-tuple-result" /> : null}
+      </div>
+    </div>
+  );
+}
+
+function RecursionView({ step }: { step: Step }) {
+  const calls = step.nodes.filter((node) => node.id.startsWith("call-")).sort((a, b) => a.y - b.y);
+  const base = step.nodes.find((node) => node.id === "base-case");
+  const result = step.nodes.find((node) => node.id === "return-chain");
+  return (
+    <Canvas concept={step.concept} className="ucv-structure-canvas ucv-recursion-canvas">
+      <div className="ucv-recursion-shell" aria-label="Recursion visualizer">
+        <div className="ucv-recursion-stack">
+          <span>call stack</span>
+          <AnimatePresence mode="popLayout">
+            {calls.map((node, index) => (
+              <div key={node.id} className="ucv-recursion-frame-wrap">
+                <StatusBlock node={{ ...node, label: index === calls.length - 1 ? "current call" : visibleLabel(node, "waiting") }} step={step} className="ucv-recursion-frame" />
+                {index < calls.length - 1 ? <span className="ucv-recursion-down" aria-hidden="true" /> : null}
+              </div>
+            ))}
+          </AnimatePresence>
+        </div>
+        <div className="ucv-recursion-side">
+          {base ? <StatusBlock node={base} step={step} className="ucv-recursion-check" /> : null}
+          <span className="ucv-recursion-down ucv-recursion-down--side" aria-hidden="true" />
+          {result ? <StatusBlock node={result} step={step} className="ucv-recursion-result" /> : null}
+        </div>
+      </div>
+    </Canvas>
   );
 }
 
@@ -387,6 +463,83 @@ function SetView({ step }: { step: Step }) {
   );
 }
 
+function ArrayTraceState({ step, nodes }: { step: Step; nodes: VisualNode[] }) {
+  if (!["array", "search", "sort", "binary-search", "two-pointers", "sliding-window"].includes(step.concept)) return null;
+  const activeIndex = activeNodeIndex(step, nodes.length);
+  const current = step.state?.current ?? nodes[activeIndex]?.value ?? "item";
+  const answer = step.state?.answer ?? step.state?.result ?? step.state?.swapped ?? step.state?.next ?? "not changed yet";
+  if (step.concept === "binary-search") {
+    return (
+      <div className="ucv-array-trace-state" aria-label="Binary search trace state">
+        <div>
+          <span>target</span>
+          <strong>{String(step.state?.target ?? "find value")}</strong>
+        </div>
+        <div>
+          <span>search range</span>
+          <strong>{String(step.state?.left ?? 0)} to {String(step.state?.right ?? nodes.length - 1)}</strong>
+        </div>
+        <div className="ucv-array-trace-result">
+          <span>middle check</span>
+          <strong>{String(step.state?.mid_value ?? nodes[activeIndex]?.value ?? "mid")}</strong>
+        </div>
+      </div>
+    );
+  }
+  if (step.concept === "two-pointers") {
+    return (
+      <div className="ucv-array-trace-state" aria-label="Two pointer trace state">
+        <div>
+          <span>left pointer</span>
+          <strong>{String(step.state?.left_value ?? nodes[Number(step.state?.left ?? 0)]?.value ?? "left")}</strong>
+        </div>
+        <div>
+          <span>right pointer</span>
+          <strong>{String(step.state?.right_value ?? nodes[Number(step.state?.right ?? nodes.length - 1)]?.value ?? "right")}</strong>
+        </div>
+        <div className="ucv-array-trace-result">
+          <span>pair result</span>
+          <strong>{String(step.state?.combined ?? step.state?.answer ?? "checking pair")}</strong>
+        </div>
+      </div>
+    );
+  }
+  if (step.concept === "sliding-window") {
+    return (
+      <div className="ucv-array-trace-state" aria-label="Sliding window trace state">
+        <div>
+          <span>window</span>
+          <strong>{String(step.state?.left ?? step.state?.window_start ?? 0)} to {String(step.state?.right ?? step.state?.window_end ?? 0)}</strong>
+        </div>
+        <div>
+          <span>window value</span>
+          <strong>{String(step.state?.window_value ?? step.state?.total ?? "current total")}</strong>
+        </div>
+        <div className="ucv-array-trace-result">
+          <span>best so far</span>
+          <strong>{String(step.state?.best ?? step.state?.answer ?? "not chosen yet")}</strong>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="ucv-array-trace-state" aria-label="List trace state">
+      <div>
+        <span>index</span>
+        <strong>{step.state?.index ?? activeIndex}</strong>
+      </div>
+      <div>
+        <span>current item</span>
+        <strong>{String(current)}</strong>
+      </div>
+      <div className="ucv-array-trace-result">
+        <span>result so far</span>
+        <strong>{String(answer)}</strong>
+      </div>
+    </div>
+  );
+}
+
 export function ArrayVisualizer({ step }: { step: Step }) {
   if (step.concept === "bit-manipulation") {
     return <BitVisualizer step={step} />;
@@ -403,10 +556,16 @@ export function ArrayVisualizer({ step }: { step: Step }) {
   if (step.concept === "set") {
     return <Canvas concept={step.concept} className="ucv-structure-canvas"><SetView step={step} /></Canvas>;
   }
+  if (step.concept === "recursion") {
+    return <RecursionView step={step} />;
+  }
   const nodes = sortedByX(step.nodes);
   return (
     <Canvas concept={step.concept} className="ucv-structure-canvas ucv-array-canvas">
+      {step.concept === "two-pointers" ? <div className="ucv-pointer-guide"><span>left moves forward</span><span>right moves backward</span></div> : null}
+      {step.concept === "sliding-window" ? <div className="ucv-pointer-guide"><span>left edge</span><span>right edge</span></div> : null}
       <ArrayRow step={step} nodes={nodes} />
+      <ArrayTraceState step={step} nodes={nodes} />
       {step.concept === "binary-search" ? <div className="ucv-array-caption">Only the bright range can still contain the target.</div> : null}
       {step.concept === "sliding-window" ? <div className="ucv-array-caption">The window moves as one visible block.</div> : null}
     </Canvas>

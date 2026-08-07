@@ -152,20 +152,11 @@ body .coding-app .campus-queue-item.focus button:hover {
   box-shadow: 0 8px 20px color-mix(in srgb, var(--ct-primary) 24%, transparent) !important;
 }
 
-/* ---------- Dark mode: warm-slate coding environment ----------
-   NOTE: a warm-slate dark lab palette ALREADY exists in CodingTutor.css
-   (the `body.coding-dark .coding-app` block around line 2925: navy #789dca,
-   accent #e7a05b, panels #172235 with !important, warm ink #f4efe6,
-   editor #101826). Those panel/surface assignments use !important and
-   own the dark surfaces — we do NOT re-declare them here, to avoid a
-   third competing dark palette. This block only sets the warm-paper
-   adjacent tokens that block does not already define, and otherwise
-   defers to it. If the dark lab look ever needs tuning, edit that
-   existing block, not this file. */
+/* ---------- Dark mode support tokens ----------
+   The final authoritative token block at the bottom of this file now owns the
+   full dark palette. This early block only keeps older warm-paper aliases alive
+   for components that still reference them. */
 body.coding-dark .coding-app {
-  /* Soft success + paper accents to match the existing dark lab block.
-     (--ct-primary / --ct-accent / panels / text / border / editor are
-     owned by the existing body.coding-dark .coding-app block in CodingTutor.css.) */
   --ct-success: #79d99b;
   --ct-soft: #a6b0c2;
   --ct-paper: #1b2942;
@@ -182,12 +173,12 @@ body.coding-dark .coding-app {
    `body.theme-switching` transition-suppressor in index.css + App.jsx.
    NOTE: --ct-bg lives on .coding-app (a child), so we can't read it on the
    parent .chat-main — the literals below mirror --ct-bg in each mode
-   (light #f6f8fc / dark #0b1a33). Keep them in sync if --ct-bg changes. */
+   (light #f6f8fc / dark #071426). Keep them in sync if --ct-bg changes. */
 .chat-main.coding-chat-main {
   background: #f6f8fc;
 }
 body.coding-dark .chat-main.coding-chat-main {
-  background: #0b1a33;
+  background: #071426;
 }
 
 /* ------------------------------------------------------------------
@@ -200,14 +191,14 @@ body.coding-dark .chat-main.coding-chat-main {
    Repaint just those two shell layers to the coding canvas, but ONLY
    when body.coding-dark is on (i.e. only inside the Coding Tutor route).
    The global app theme is untouched in light mode and on every other
-   route. Mirror of --ct-bg dark literal (#0b1a33). */
+   route. Mirror of --ct-bg dark literal (#071426). */
 html:has(body.coding-dark),
 body.coding-dark,
 body.coding-dark #root,
 body.coding-dark .app-layout,
 body.coding-dark .chat-main,
 body.coding-dark .coding-app {
-  background: #0b1a33 !important;
+  background: #071426 !important;
 }
 
 /* The global top NavBar renders on /coding too (App.jsx). It paints the light
@@ -216,7 +207,7 @@ body.coding-dark .coding-app {
    on, so the whole top of the route is dark. Scoped to coding-dark only. */
 body.coding-dark .navbar,
 body.coding-dark .navbar .nav-container {
-  background: #0b1a33 !important;
+  background: #071426 !important;
   border-color: #2f4a7a !important;
 }
 
@@ -497,4 +488,891 @@ body.coding-dark .coding-app .workspace-tabs > button.active,
 body.coding-dark .coding-app .workspace-tabs > button.active:hover {
   color: #f4f8ff !important;
   border-bottom-color: #6ea8fe !important;
+}
+
+/* ============================================================
+   Authoritative Coding Tutor theme tokens
+   ------------------------------------------------------------
+   This final layer is the durable source of truth for Coding Tutor
+   surfaces. Earlier files may still contain historical fallbacks, but
+   new work should read these tokens instead of adding `body.dark`,
+   `[data-theme="dark"]`, or one-off color overrides.
+   ============================================================ */
+body .coding-app {
+  --ct-bg: #f6f8fc;
+  --ct-panel: #ffffff;
+  --ct-panel-soft: #f8fafc;
+  --ct-panel-raised: #ffffff;
+  --ct-surface: var(--ct-panel);
+  --ct-surface-soft: var(--ct-panel-soft);
+  --ct-surface-strong: var(--ct-panel-raised);
+  --ct-solid-panel: var(--ct-panel);
+  --ct-solid-soft: var(--ct-panel-soft);
+  --ct-solid-raised: var(--ct-panel-raised);
+  --ct-border: #dbe3ef;
+  --ct-border-strong: #b8c5d8;
+  --ct-text: #0b2545;
+  --ct-muted: #64748b;
+  --ct-soft: #94a3b8;
+  --ct-faint: #a8b4c7;
+  --ct-primary: #0b2545;
+  --ct-primary-hover: #123257;
+  --ct-primary-soft: rgba(11, 37, 69, 0.06);
+  --ct-accent: #f37021;
+  --ct-accent-soft: rgba(243, 112, 33, 0.10);
+  --ct-accent-strong: #c2410c;
+  --ct-info: #2563eb;
+  --ct-info-soft: rgba(37, 99, 235, 0.10);
+  --ct-success: #2f8f4e;
+  --ct-success-soft: rgba(47, 143, 78, 0.12);
+  --ct-warning: #b7791f;
+  --ct-warning-soft: rgba(183, 121, 31, 0.12);
+  --ct-danger: #b91c1c;
+  --ct-danger-soft: rgba(185, 28, 28, 0.10);
+  --ct-focus: #2563eb;
+  --ct-on-primary: #ffffff;
+  --ct-on-accent: #172033;
+  --ct-shadow-sm: 0 6px 16px rgba(15, 23, 42, 0.08);
+  --ct-shadow-md: 0 12px 30px rgba(15, 23, 42, 0.12);
+  --ct-shadow-lg: 0 24px 56px rgba(15, 23, 42, 0.18);
+  --ct-editor-bg: #11192c;
+  --ct-editor-text: #e7ecf5;
+  --ct-terminal-bg: #0c1322;
+  --ct-terminal-text: #d8e2f4;
+}
+
+body.coding-dark .coding-app {
+  --ct-bg: #071426 !important;
+  --ct-panel: #102849 !important;
+  --ct-panel-soft: #0d203c !important;
+  --ct-panel-raised: #193962 !important;
+  --ct-surface: var(--ct-panel) !important;
+  --ct-surface-soft: var(--ct-panel-soft) !important;
+  --ct-surface-strong: var(--ct-panel-raised) !important;
+  --ct-solid-panel: var(--ct-panel) !important;
+  --ct-solid-soft: var(--ct-panel-soft) !important;
+  --ct-solid-raised: var(--ct-panel-raised) !important;
+  --ct-border: #3d5f91 !important;
+  --ct-border-strong: #6e8fbd !important;
+  --ct-text: #f3f7ff !important;
+  --ct-muted: #c8d4e8 !important;
+  --ct-soft: #b5c2d8 !important;
+  --ct-faint: #98a9c2 !important;
+  --ct-primary: #9cc5f3 !important;
+  --ct-primary-hover: #bdd8f8 !important;
+  --ct-primary-soft: rgba(156, 197, 243, 0.22) !important;
+  --ct-accent: #ffb86b !important;
+  --ct-accent-soft: rgba(255, 184, 107, 0.24) !important;
+  --ct-accent-strong: #ffd3a0 !important;
+  --ct-info: #8bbdff !important;
+  --ct-info-soft: rgba(139, 189, 255, 0.18) !important;
+  --ct-success: #79d99b !important;
+  --ct-success-soft: rgba(121, 217, 155, 0.14) !important;
+  --ct-warning: #fbbf24 !important;
+  --ct-warning-soft: rgba(251, 191, 36, 0.14) !important;
+  --ct-danger: #f87171 !important;
+  --ct-danger-soft: rgba(248, 113, 113, 0.14) !important;
+  --ct-focus: #8bbdff !important;
+  --ct-on-primary: #07111f !important;
+  --ct-on-accent: #172033 !important;
+  --ct-shadow-sm: 0 6px 16px rgba(0, 0, 0, 0.30) !important;
+  --ct-shadow-md: 0 14px 34px rgba(0, 0, 0, 0.38) !important;
+  --ct-shadow-lg: 0 26px 64px rgba(3, 8, 16, 0.68) !important;
+  --ct-editor-bg: #09192e !important;
+  --ct-editor-text: #eaf0fb !important;
+  --ct-terminal-bg: #071426 !important;
+  --ct-terminal-text: #dce7f8 !important;
+  --cq-hover-blue: #3b82f6 !important;
+  --cq-hover-glow: rgba(59, 130, 246, 0.28) !important;
+  --cq-hover-wash: rgba(59, 130, 246, 0.08) !important;
+}
+
+body.coding-dark {
+  --ct-bg: #071426;
+}
+
+body.coding-dark .floating-coding-chat {
+  --ct-float-panel: var(--ct-panel-raised, #193962);
+  --ct-float-panel-soft: var(--ct-panel-soft, #0d203c);
+  --ct-float-panel-base: var(--ct-panel, #102849);
+  --ct-float-text: var(--ct-text, #eaf0fb);
+  --ct-float-muted: var(--ct-muted, #b3c1da);
+  --ct-float-border: var(--ct-border, #3d5f91);
+  --ct-float-border-strong: var(--ct-border-strong, #6e8fbd);
+  --ct-float-primary: var(--ct-primary, #9cc5f3);
+  --ct-float-accent: var(--ct-accent, #f7a054);
+  --ct-float-accent-soft: var(--ct-accent-soft, rgba(247, 160, 84, 0.20));
+}
+
+body.coding-dark,
+body.coding-dark #root,
+body.coding-dark .app-layout,
+body.coding-dark .chat-main,
+body.coding-dark .coding-app {
+  background: var(--ct-bg, #071426) !important;
+}
+
+body .coding-app :is(
+  .coding-section-nav,
+  .practice-progress-overview,
+  .daily-feature-card,
+  .coding-page-panel,
+  .quiz-library,
+  .quiz-insight-panel,
+  .quiz-problem-card,
+  .coding-problem-panel,
+  .coding-editor-center,
+  .workspace-hints-panel,
+  .workspace-discussion-panel,
+  .workspace-hidden-panel,
+  .ai-status-card,
+  .learn-lesson-card,
+  .lesson-visual-modal,
+  .lesson-visual-stage,
+  .workspace-visualizer-panel,
+  .workspace-visualizer-guidance
+) {
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text) !important;
+}
+
+body.coding-dark .coding-app :is(
+  .daily-feature-card,
+  .coding-page-panel,
+  .quiz-library,
+  .quiz-insight-panel,
+  .quiz-problem-card,
+  .coding-problem-panel,
+  .coding-editor-center,
+  .workspace-hints-panel,
+  .workspace-discussion-panel,
+  .workspace-hidden-panel,
+  .learn-lesson-card,
+  .workspace-visualizer-panel,
+  .workspace-visualizer-guidance
+) {
+  background-color: var(--ct-panel) !important;
+}
+
+body.coding-dark .coding-app :is(
+  .daily-feature-card,
+  .quiz-problem-card,
+  .learn-lesson-card,
+  .coding-prompt-card,
+  .coding-recent-card,
+  .cq-accordion-item,
+  .practice-guide-focus,
+  .practice-guide-weakest
+) {
+  border-color: var(--ct-border-strong) !important;
+}
+
+body .coding-app :is(
+  input,
+  select,
+  textarea,
+  .coding-select,
+  .practice-search input,
+  .lesson-check-choice
+) {
+  background: var(--ct-panel) !important;
+  border-color: var(--ct-border) !important;
+  color: var(--ct-text) !important;
+}
+
+body .coding-app :is(
+  input,
+  select,
+  textarea
+)::placeholder {
+  color: var(--ct-muted) !important;
+}
+
+body .coding-app .code-editor-lang-select {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  min-width: 98px;
+  border: 1px solid color-mix(in srgb, var(--ct-accent) 22%, var(--ct-border)) !important;
+  border-radius: 999px !important;
+  background-color: var(--ct-panel) !important;
+  color: var(--ct-text) !important;
+  padding: 4px 24px 4px 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.045em !important;
+  background-image: none !important;
+}
+
+body .coding-app .code-editor-lang-select:hover:not(:disabled),
+body .coding-app .code-editor-lang-select:focus-visible {
+  border-color: var(--ct-accent) !important;
+  background-color: color-mix(in srgb, var(--ct-accent) 8%, var(--ct-panel)) !important;
+}
+
+body .coding-app .code-editor-lang-select:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--ct-focus) 50%, transparent) !important;
+  outline-offset: 2px !important;
+}
+
+body.coding-dark .coding-app .code-editor-lang-select {
+  border-color: color-mix(in srgb, var(--ct-accent) 52%, var(--ct-border)) !important;
+  background-color: #071426 !important;
+  color: var(--ct-text) !important;
+  background-image: none !important;
+}
+
+body.coding-dark .coding-app .code-editor-lang-select:hover:not(:disabled),
+body.coding-dark .coding-app .code-editor-lang-select:focus-visible {
+  background-color: color-mix(in srgb, var(--ct-accent) 12%, #071426) !important;
+  color: #ffffff !important;
+}
+
+body.coding-dark .coding-app .code-editor-lang-control::after {
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--ct-accent) 45%, transparent));
+}
+
+body.coding-dark .coding-app.coding-workspace-active .workspace-tabs {
+  background: var(--ct-panel) !important;
+  border-color: color-mix(in srgb, var(--ct-border) 86%, var(--ct-editor-bg)) !important;
+}
+
+body.coding-dark .coding-app.coding-workspace-active .editor-terminal-stack {
+  border: 1px solid color-mix(in srgb, var(--ct-border) 86%, var(--ct-editor-bg));
+  border-top: 0;
+  border-radius: 0 0 12px 12px;
+  background: var(--ct-editor-bg);
+  overflow: hidden;
+}
+
+body.coding-dark .coding-app.coding-workspace-active .workspace-tab-body {
+  overflow: hidden;
+}
+
+body.coding-dark .coding-app.coding-workspace-active .code-editor-window {
+  border-top: 0;
+  border-right: 0;
+  border-left: 0;
+  border-bottom: 0;
+  border-radius: 0 0 12px 12px;
+  box-shadow: none;
+}
+
+body.coding-dark .coding-app.coding-workspace-active .code-editor-titlebar {
+  border-top: 0;
+}
+
+body.coding-dark .coding-app .code-editor-gutter {
+  color: #9fb4d2;
+  background:
+    linear-gradient(90deg, #06101f 0%, #08182c 100%) !important;
+  border-right-color: color-mix(in srgb, var(--ct-accent) 42%, var(--ct-border)) !important;
+  box-shadow:
+    inset -1px 0 0 rgba(255, 255, 255, 0.08),
+    8px 0 18px rgba(0, 0, 0, 0.14);
+}
+
+body.coding-dark .coding-app .code-editor-line-no.active {
+  color: var(--ct-accent) !important;
+  background: color-mix(in srgb, var(--ct-accent) 20%, transparent) !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ct-accent) 30%, transparent),
+    0 0 14px color-mix(in srgb, var(--ct-accent) 22%, transparent);
+}
+
+body.coding-dark .coding-app .code-editor-active-line-layer {
+  background: color-mix(in srgb, var(--ct-primary) 10%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ct-primary) 10%, transparent),
+    0 0 12px rgba(0, 0, 0, 0.10);
+}
+
+body.coding-dark .coding-app .code-editor-active-indent-guide {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ct-accent) 8%, transparent),
+    color-mix(in srgb, var(--ct-accent) 64%, transparent),
+    color-mix(in srgb, var(--ct-accent) 8%, transparent)
+  );
+  box-shadow: 0 0 10px color-mix(in srgb, var(--ct-accent) 18%, transparent);
+}
+
+body .coding-app :is(
+  .coding-section-nav,
+  .coding-editor-center,
+  .coding-problem-panel,
+  .floating-chat-window
+) {
+  box-shadow: var(--ct-shadow-md) !important;
+}
+
+body .coding-app :is(
+  .terminal-status.passed,
+  .recent-diff.easy,
+  .recent-status.solved,
+  .lesson-check-choice.is-correct,
+  .lesson-check-why.is-correct .lesson-check-verdict
+) {
+  color: var(--ct-success) !important;
+}
+
+body .coding-app :is(
+  .terminal-status.running,
+  .lesson-check-why.is-wrong .lesson-check-verdict
+) {
+  color: var(--ct-warning) !important;
+}
+
+body .coding-app :is(
+  .terminal-status.failed,
+  .terminal-status.error,
+  .recent-diff.hard,
+  .lesson-check-choice.is-wrong
+) {
+  color: var(--ct-danger) !important;
+}
+
+/* Dark-mode readability polish for recurring controls and tags.
+   These are intentional exceptions to the general token layer above: they stop
+   old component rules from making dark-mode controls muddy, translucent, or too
+   heavy against the navy canvas. */
+body.coding-dark .coding-app {
+  --ct-font-weight-action: 700;
+  --ct-font-weight-label: 650;
+}
+
+body.coding-dark .coding-app :is(
+  .lesson-visual-open,
+  .problem-visualize-button,
+  .practice-starter-strip button,
+  .practice-chip,
+  .daily-tags span,
+  .daily-difficulty,
+  .daily-source-pill,
+  .daily-streak-pill,
+  .learn-prev-track-link,
+  .learn-next-track-link,
+  .practice-back-btn.is-track-chooser
+) {
+  font-weight: var(--ct-font-weight-action) !important;
+}
+
+body.coding-dark .coding-app .lesson-visual-block {
+  border-color: color-mix(in srgb, var(--ct-primary) 46%, var(--ct-border)) !important;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--ct-primary) 12%, transparent), transparent 42%),
+    var(--ct-panel) !important;
+}
+
+body.coding-dark .coding-app .lesson-visual-open {
+  border-color: color-mix(in srgb, var(--ct-primary) 64%, var(--ct-border)) !important;
+  background: color-mix(in srgb, var(--ct-primary) 18%, var(--ct-panel-raised)) !important;
+  color: var(--ct-text) !important;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--ct-primary) 16%, transparent) !important;
+}
+
+body.coding-dark .coding-app .lesson-visual-open:hover:not(:disabled) {
+  border-color: var(--ct-primary) !important;
+  background: color-mix(in srgb, var(--ct-primary) 28%, var(--ct-panel-raised)) !important;
+  color: #ffffff !important;
+}
+
+body.coding-dark .coding-app .problem-visualize-button {
+  border-color: color-mix(in srgb, var(--ct-primary) 48%, var(--ct-border)) !important;
+  background: color-mix(in srgb, var(--ct-primary) 14%, var(--ct-panel-raised)) !important;
+  color: var(--ct-primary-hover) !important;
+}
+
+body.coding-dark .coding-app .problem-visualize-button:hover:not(:disabled) {
+  border-color: var(--ct-primary) !important;
+  background: color-mix(in srgb, var(--ct-primary) 24%, var(--ct-panel-raised)) !important;
+  color: #ffffff !important;
+}
+
+body.coding-dark .coding-app .practice-chip,
+body.coding-dark .coding-app .daily-tags span {
+  border-color: color-mix(in srgb, var(--ct-accent) 72%, var(--ct-border)) !important;
+  background: color-mix(in srgb, var(--ct-accent) 28%, var(--ct-panel-raised)) !important;
+  color: #ffe6cb !important;
+}
+
+body.coding-dark .coding-app :is(.daily-difficulty, .daily-source-pill, .daily-streak-pill) {
+  border-color: color-mix(in srgb, var(--ct-accent) 70%, var(--ct-border)) !important;
+  background: color-mix(in srgb, var(--ct-accent) 24%, var(--ct-panel-raised)) !important;
+  color: #ffe6cb !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #ffffff 10%, transparent) !important;
+}
+
+body.coding-dark .coding-app .daily-streak-pill.done {
+  border-color: color-mix(in srgb, var(--ct-success) 72%, var(--ct-border)) !important;
+  background: color-mix(in srgb, var(--ct-success) 22%, var(--ct-panel-raised)) !important;
+  color: #dfffe9 !important;
+}
+
+body.coding-dark .coding-app .practice-chip span {
+  color: #ffd3a0 !important;
+}
+
+body.coding-dark .coding-app .practice-chip:hover:not(:disabled) {
+  border-color: var(--ct-accent) !important;
+  background: color-mix(in srgb, var(--ct-accent) 38%, var(--ct-panel-raised)) !important;
+  color: #fff3e4 !important;
+}
+
+body.coding-dark .coding-app .practice-starter-strip {
+  border-color: color-mix(in srgb, var(--ct-success) 42%, var(--ct-border)) !important;
+  background: color-mix(in srgb, var(--ct-success) 13%, var(--ct-panel)) !important;
+}
+
+body.coding-dark .coding-app .practice-starter-strip button {
+  border-color: color-mix(in srgb, var(--ct-success) 56%, var(--ct-border)) !important;
+  background: color-mix(in srgb, var(--ct-success) 16%, var(--ct-panel-raised)) !important;
+  color: #d7ffe4 !important;
+}
+
+body.coding-dark .coding-app .practice-starter-strip button.is-active {
+  background: color-mix(in srgb, var(--ct-success) 24%, var(--ct-panel-raised)) !important;
+  border-color: color-mix(in srgb, var(--ct-success) 72%, var(--ct-border)) !important;
+  color: #e3ffec !important;
+}
+
+body.coding-dark .coding-app .practice-starter-strip button.is-active:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ct-success) 34%, var(--ct-panel-raised)) !important;
+  color: #ffffff !important;
+}
+
+body.coding-dark .coding-app .learn-prev-track-link,
+body.coding-dark .coding-app .practice-back-btn.is-track-chooser {
+  border-color: color-mix(in srgb, var(--ct-primary) 44%, var(--ct-border)) !important;
+  background: color-mix(in srgb, var(--ct-primary) 11%, var(--ct-panel-raised)) !important;
+  color: var(--ct-muted) !important;
+}
+
+body.coding-dark .coding-app .learn-next-track-link {
+  border-color: color-mix(in srgb, var(--ct-accent) 58%, var(--ct-border)) !important;
+  background: color-mix(in srgb, var(--ct-accent) 16%, var(--ct-panel-raised)) !important;
+  color: var(--ct-text) !important;
+}
+
+body.coding-dark .coding-app :is(
+  .learn-prev-track-link,
+  .learn-next-track-link,
+  .practice-back-btn.is-track-chooser
+):hover:not(:disabled) {
+  border-color: var(--ct-primary) !important;
+  background: color-mix(in srgb, var(--ct-primary) 20%, var(--ct-panel-raised)) !important;
+  color: #ffffff !important;
+}
+
+body.coding-dark .coding-app .learn-track-card {
+  border-color: color-mix(in srgb, var(--learn-track-accent) 45%, var(--ct-border)) !important;
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      color-mix(in srgb, var(--learn-track-accent) 17%, transparent),
+      transparent 48%
+    ),
+    var(--ct-panel) !important;
+}
+
+body.coding-dark .coding-app .learn-track-kicker,
+body.coding-dark .coding-app .learn-track-topics-label,
+body.coding-dark .coding-app .learn-track-cta {
+  color: color-mix(in srgb, var(--learn-track-accent) 78%, #ffffff) !important;
+}
+
+/* Home hero metrics should read as three distinct signals in both themes:
+   momentum, solved work, and overall completion. */
+body .coding-app .campus-hero-stat strong {
+  color: var(--ct-info) !important;
+}
+
+body .coding-app .campus-hero-stat.accent strong {
+  color: var(--ct-accent) !important;
+}
+
+body .coding-app .campus-hero-stat.success strong {
+  color: var(--ct-success) !important;
+}
+
+body .coding-app .campus-hero-stat i {
+  color: color-mix(in srgb, var(--ct-muted) 84%, var(--ct-text)) !important;
+}
+
+body.coding-dark .coding-app .campus-hero-stat strong {
+  color: #8bbdff !important;
+  text-shadow: 0 0 18px color-mix(in srgb, #8bbdff 30%, transparent);
+}
+
+body.coding-dark .coding-app .campus-hero-stat.accent strong {
+  color: var(--ct-accent) !important;
+  text-shadow: 0 0 18px color-mix(in srgb, var(--ct-accent) 28%, transparent);
+}
+
+body.coding-dark .coding-app .campus-hero-stat.success strong {
+  color: var(--ct-success) !important;
+  text-shadow: 0 0 18px color-mix(in srgb, var(--ct-success) 26%, transparent);
+}
+
+body.coding-dark .coding-app .campus-hero-stat i {
+  color: #c7d8f2 !important;
+}
+
+/* ============================================================
+   Dark visualizer hierarchy
+   ------------------------------------------------------------
+   Shared visualizers need more than "navy on navy": the canvas recedes,
+   inactive items flatten, active work lifts forward, and semantic states use
+   distinct colors. This covers Learn visuals, Workspace visuals, code traces,
+   and the Universal visualizer used across beginner/intermediate/advanced.
+   ============================================================ */
+body.coding-dark .coding-app {
+  --ct-visual-canvas: #0a1b31;
+  --ct-visual-canvas-deep: #061326;
+  --ct-visual-node: #172f52;
+  --ct-visual-node-raised: #213f6a;
+  --ct-visual-node-muted: #102640;
+  --ct-visual-border: #5577a7;
+  --ct-visual-border-soft: #365985;
+  --ct-visual-active: #ffb86b;
+  --ct-visual-active-bg: rgba(255, 184, 107, 0.18);
+  --ct-visual-compare: #8bbdff;
+  --ct-visual-compare-bg: rgba(139, 189, 255, 0.18);
+  --ct-visual-success: #79d99b;
+  --ct-visual-success-bg: rgba(121, 217, 155, 0.16);
+  --ct-visual-result: #5eead4;
+  --ct-visual-result-bg: rgba(94, 234, 212, 0.16);
+  --ct-visual-shadow: 0 18px 34px rgba(0, 0, 0, 0.42);
+  --ct-visual-shadow-soft: 0 10px 22px rgba(0, 0, 0, 0.26);
+  --ct-visual-glow-active:
+    0 0 0 4px rgba(255, 184, 107, 0.18),
+    0 22px 42px rgba(255, 134, 55, 0.24),
+    0 0 28px rgba(255, 184, 107, 0.14);
+  --ct-visual-glow-compare:
+    0 0 0 4px rgba(139, 189, 255, 0.16),
+    0 18px 34px rgba(37, 99, 235, 0.24);
+  --ct-visual-glow-success:
+    0 0 0 4px rgba(121, 217, 155, 0.15),
+    0 18px 34px rgba(34, 197, 94, 0.22);
+  --ct-visual-glow-result:
+    0 0 0 4px rgba(94, 234, 212, 0.15),
+    0 18px 34px rgba(20, 184, 166, 0.24);
+}
+
+body.coding-dark .coding-app :is(
+  .ucv-canvas,
+  .workspace-visual-diagram,
+  .lesson-visual-stage,
+  .lesson-visual-diagram
+) {
+  border-color: color-mix(in srgb, var(--ct-visual-border) 70%, var(--ct-bg)) !important;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(139, 189, 255, 0.14), transparent 32%),
+    radial-gradient(circle at 74% 22%, rgba(94, 234, 212, 0.08), transparent 28%),
+    linear-gradient(90deg, rgba(139, 189, 255, 0.12) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(139, 189, 255, 0.10) 1px, transparent 1px),
+    linear-gradient(180deg, var(--ct-visual-canvas), var(--ct-visual-canvas-deep)) !important;
+  background-size: auto, auto, 48px 48px, 48px 48px, auto !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -28px 60px rgba(0, 0, 0, 0.16),
+    0 18px 44px rgba(0, 0, 0, 0.28) !important;
+}
+
+body.coding-dark .coding-app :is(.ucv-workflow, .ucv-playbar, .workspace-visualizer-progress, .code-trace-progress) {
+  border-color: color-mix(in srgb, var(--ct-visual-border) 62%, var(--ct-bg)) !important;
+  background: linear-gradient(180deg, #153256, #102843) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 14px 28px rgba(0, 0, 0, 0.28) !important;
+}
+
+body.coding-dark .coding-app :is(.ucv-workflow-node, .workspace-visualizer-progress button, .code-trace-progress button) {
+  background: color-mix(in srgb, var(--ct-visual-node) 82%, transparent) !important;
+  border-color: color-mix(in srgb, var(--ct-visual-border-soft) 80%, transparent) !important;
+  color: #dce9ff !important;
+  box-shadow: var(--ct-visual-shadow-soft) !important;
+}
+
+body.coding-dark .coding-app :is(.ucv-workflow-node--active, .workspace-visualizer-progress button.is-active, .code-trace-progress button.is-active) {
+  border-color: var(--ct-visual-active) !important;
+  background: linear-gradient(180deg, rgba(255, 184, 107, 0.22), rgba(255, 184, 107, 0.10)), var(--ct-visual-node-raised) !important;
+  color: #ffffff !important;
+  box-shadow: var(--ct-visual-glow-active) !important;
+}
+
+body.coding-dark .coding-app .ucv-workflow-dot {
+  border-color: color-mix(in srgb, var(--ct-visual-border) 70%, transparent) !important;
+  background: #0b203a !important;
+  color: #dce9ff !important;
+}
+
+body.coding-dark .coding-app .ucv-workflow-node--active .ucv-workflow-dot {
+  border-color: var(--ct-visual-active) !important;
+  background: rgba(255, 184, 107, 0.20) !important;
+  color: #ffffff !important;
+  box-shadow:
+    0 0 0 5px rgba(255, 184, 107, 0.18),
+    0 12px 24px rgba(255, 134, 55, 0.24) !important;
+}
+
+body.coding-dark .coding-app :is(.ucv-workflow-line, .lesson-visual-flow-arrow, .workspace-visual-flow-arrow, .ucv-inline-arrow, .ucv-chain-arrow, .ucv-branch-line) {
+  background: color-mix(in srgb, var(--ct-visual-border) 54%, transparent) !important;
+}
+
+body.coding-dark .coding-app .workspace-visual-track::before {
+  background: color-mix(in srgb, var(--ct-visual-border) 54%, transparent) !important;
+}
+
+body.coding-dark .coding-app :is(.ucv-workflow-line--active, .lesson-visual-flow-arrow.is-active, .workspace-visual-flow-arrow.is-active, .ucv-inline-arrow.is-active, .ucv-chain-arrow.is-active, .ucv-branch-line.is-active) {
+  background: linear-gradient(90deg, var(--ct-visual-compare), var(--ct-visual-active)) !important;
+  box-shadow: 0 0 16px rgba(255, 184, 107, 0.22) !important;
+}
+
+body.coding-dark .coding-app :is(.ucv-edge, .workspace-visual-svg line, .ucv-structure-edge) {
+  stroke: color-mix(in srgb, var(--ct-visual-border) 70%, transparent) !important;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.28)) !important;
+}
+
+body.coding-dark .coding-app :is(.ucv-edge--active, .workspace-visual-svg line.is-active, .ucv-structure-edge.is-active) {
+  stroke: var(--ct-visual-active) !important;
+  filter: drop-shadow(0 0 10px rgba(255, 184, 107, 0.38)) !important;
+}
+
+body.coding-dark .coding-app :is(
+  .ucv-node,
+  .ucv-visual-block,
+  .ucv-network-node,
+  .ucv-interval-bar,
+  .ucv-flow-node-card,
+  .workspace-visual-token,
+  .workspace-visual-table div,
+  .workspace-visual-grid-row span,
+  .workspace-visual-interval,
+  .lesson-visual-flow-symbol,
+  .lesson-visual-flow-node,
+  .lesson-visual-list-cell,
+  .lesson-visual-trace-card,
+  .ucv-state-strip div,
+  .ucv-math-card
+) {
+  border-color: color-mix(in srgb, var(--ct-visual-border) 62%, transparent) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0)),
+    var(--ct-visual-node) !important;
+  color: #f2f7ff !important;
+  box-shadow: var(--ct-visual-shadow-soft) !important;
+}
+
+body.coding-dark .coding-app :is(
+  .ucv-node span,
+  .ucv-visual-block span,
+  .ucv-network-node span,
+  .ucv-interval-bar span,
+  .ucv-flow-node-card span,
+  .workspace-visual-token span,
+  .workspace-visual-table span,
+  .lesson-visual-flow-symbol strong,
+  .lesson-visual-flow-node small,
+  .lesson-visual-list-cell small,
+  .lesson-visual-trace-card small,
+  .ucv-state-strip span
+) {
+  color: #a9c1e3 !important;
+}
+
+body.coding-dark .coding-app :is(
+  .ucv-node strong,
+  .ucv-visual-block strong,
+  .ucv-network-node strong,
+  .ucv-interval-bar strong,
+  .ucv-flow-node-card strong,
+  .workspace-visual-token strong,
+  .workspace-visual-table strong,
+  .workspace-visual-grid-row span,
+  .lesson-visual-flow-symbol span,
+  .lesson-visual-flow-node strong,
+  .lesson-visual-list-cell strong,
+  .ucv-state-strip strong
+) {
+  color: #ffffff !important;
+}
+
+body.coding-dark .coding-app :is(.ucv-node-role--tuple-pair, .ucv-flow-node-card--terminator.ucv-flow-node-card--result, .ucv-math-card--result),
+body.coding-dark .coding-app :is(.workspace-visual-token.is-window, .lesson-visual-flow-symbol.is-result) {
+  border-color: color-mix(in srgb, var(--ct-visual-result) 58%, transparent) !important;
+  background:
+    linear-gradient(180deg, rgba(94, 234, 212, 0.18), rgba(94, 234, 212, 0.08)),
+    var(--ct-visual-node) !important;
+  box-shadow: var(--ct-visual-glow-result) !important;
+}
+
+body.coding-dark .coding-app :is(.ucv-node--active, .ucv-node--highlighted, .ucv-visual-block--active, .ucv-visual-block--highlighted, .ucv-network-node--active, .ucv-network-node--highlighted, .ucv-interval-bar--active, .ucv-interval-bar--highlighted, .ucv-flow-node-card--active, .ucv-flow-node-card--highlighted, .workspace-visual-token.is-active, .workspace-visual-table .is-active, .workspace-visual-grid-row span.is-active, .workspace-visual-interval.is-active, .lesson-visual-flow-symbol.is-active, .lesson-visual-flow-node.is-active, .lesson-visual-list-cell.is-active) {
+  border-color: var(--ct-visual-active) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 184, 107, 0.24), rgba(255, 184, 107, 0.10)),
+    var(--ct-visual-node-raised) !important;
+  color: #ffffff !important;
+  box-shadow: var(--ct-visual-glow-active) !important;
+  transform: translateY(-4px) scale(1.035);
+  z-index: 3;
+}
+
+body.coding-dark .coding-app :is(.ucv-node--comparing, .ucv-visual-block--comparing, .ucv-network-node--comparing, .ucv-flow-node-card--comparing) {
+  border-color: var(--ct-visual-compare) !important;
+  background:
+    linear-gradient(180deg, rgba(139, 189, 255, 0.22), rgba(139, 189, 255, 0.08)),
+    var(--ct-visual-node-raised) !important;
+  box-shadow: var(--ct-visual-glow-compare) !important;
+}
+
+body.coding-dark .coding-app :is(.ucv-node--visited, .ucv-node--path, .ucv-visual-block--visited, .ucv-network-node--visited, .ucv-flow-node-card--visited, .ucv-flow-node-card--path) {
+  border-color: var(--ct-visual-success) !important;
+  background:
+    linear-gradient(180deg, rgba(121, 217, 155, 0.20), rgba(121, 217, 155, 0.08)),
+    var(--ct-visual-node) !important;
+  box-shadow: var(--ct-visual-glow-success) !important;
+}
+
+body.coding-dark .coding-app :is(.ucv-node--queued, .ucv-visual-block--queued, .ucv-network-node--queued, .ucv-flow-node-card--queued) {
+  border-color: #c4a6ff !important;
+  background:
+    linear-gradient(180deg, rgba(196, 166, 255, 0.20), rgba(196, 166, 255, 0.08)),
+    var(--ct-visual-node) !important;
+  box-shadow:
+    0 0 0 4px rgba(196, 166, 255, 0.13),
+    0 18px 34px rgba(124, 58, 237, 0.20) !important;
+}
+
+body.coding-dark .coding-app :is(.ucv-node--inactive, .ucv-visual-block--inactive, .ucv-network-node--inactive, .ucv-flow-node-card--inactive),
+body.coding-dark .coding-app :is(.lesson-visual-branch.is-muted, .ucv-branch-row.is-muted) {
+  opacity: 0.46 !important;
+  filter: saturate(0.65) brightness(0.82) !important;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18) !important;
+}
+
+body.coding-dark .coding-app :is(.ucv-flow-diamond, .lesson-visual-flow-symbol.is-diamond, .ucv-flow-node-card--diamond) {
+  border-color: color-mix(in srgb, var(--ct-visual-success) 54%, var(--ct-visual-border)) !important;
+  background:
+    linear-gradient(180deg, rgba(121, 217, 155, 0.18), rgba(121, 217, 155, 0.07)),
+    var(--ct-visual-node) !important;
+  box-shadow:
+    0 16px 34px rgba(0, 0, 0, 0.32),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06) !important;
+}
+
+body.coding-dark .coding-app :is(.ucv-flow-diamond.ucv-visual-block--active, .lesson-visual-flow-symbol.is-diamond.is-active, .ucv-flow-node-card--diamond.ucv-flow-node-card--active) {
+  border-color: var(--ct-visual-active) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 184, 107, 0.24), rgba(255, 184, 107, 0.10)),
+    var(--ct-visual-node-raised) !important;
+  box-shadow: var(--ct-visual-glow-active) !important;
+}
+
+body.coding-dark .coding-app :is(.ucv-array-overlay, .workspace-window-frame) {
+  border-color: var(--ct-visual-compare) !important;
+  background: rgba(139, 189, 255, 0.14) !important;
+  box-shadow:
+    0 0 0 7px rgba(139, 189, 255, 0.08),
+    0 18px 34px rgba(37, 99, 235, 0.18) !important;
+}
+
+body.coding-dark .coding-app :is(.ucv-card, .ucv-code, .code-trace-code-window, .code-trace-state-panel, .workspace-visualizer-code, .workspace-visualizer-step, .lesson-visual-step-copy, .lesson-visual-trace-panel) {
+  border-color: color-mix(in srgb, var(--ct-visual-border) 58%, var(--ct-bg)) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0)),
+    #102640 !important;
+  box-shadow: var(--ct-visual-shadow) !important;
+}
+
+body.coding-dark .coding-app :is(.ucv-code, .code-trace-code-window, .workspace-visualizer-code pre) {
+  background:
+    linear-gradient(180deg, rgba(139, 189, 255, 0.06), rgba(139, 189, 255, 0)),
+    #061326 !important;
+}
+
+body.coding-dark .coding-app :is(.ucv-code li.is-active, .code-trace-code-window pre span.is-active) {
+  background: rgba(255, 184, 107, 0.16) !important;
+  color: #ffffff !important;
+  box-shadow:
+    inset 3px 0 0 var(--ct-visual-active),
+    0 8px 18px rgba(255, 134, 55, 0.12) !important;
+}
+
+/* Result/output nodes win over the generic active orange. The user's eye should
+   read "this is the answer/final state" differently from "this is the current
+   operation", even when the result is the active step. */
+body.coding-dark .coding-app :is(
+  .ucv-tuple-result,
+  .ucv-tuple-result.ucv-visual-block--active,
+  .ucv-node-role--tuple-pair,
+  .ucv-node-role--tuple-pair.ucv-node--active,
+  .ucv-node-role--tuple-pair.ucv-node--highlighted,
+  .ucv-math-card--result,
+  .ucv-math-card--result.ucv-node--active,
+  .ucv-flow-node-card--result,
+  .ucv-flow-node-card--result.ucv-flow-node-card--active,
+  .ucv-flow-node-card--result.ucv-flow-node-card--highlighted,
+  .lesson-visual-flow-symbol.is-result,
+  .lesson-visual-flow-symbol.is-result.is-active,
+  .lesson-visual-flow-node[id*="result"],
+  .lesson-visual-flow-node[id*="output"],
+  .lesson-visual-flow-node[id*="done"],
+  .workspace-decision-flow .decision-result,
+  .workspace-visual-token[data-role="result"],
+  .code-trace-result-box,
+  .code-trace-output-box
+) {
+  border-color: color-mix(in srgb, var(--ct-visual-success) 72%, var(--ct-visual-border)) !important;
+  background:
+    linear-gradient(180deg, rgba(121, 217, 155, 0.24), rgba(121, 217, 155, 0.10)),
+    #123c39 !important;
+  color: #f0fff6 !important;
+  box-shadow: var(--ct-visual-glow-success) !important;
+}
+
+body.coding-dark .coding-app :is(
+  .ucv-tuple-result span,
+  .ucv-node-role--tuple-pair span,
+  .ucv-math-card--result span,
+  .ucv-flow-node-card--result span,
+  .lesson-visual-flow-symbol.is-result strong,
+  .lesson-visual-flow-node[id*="result"] small,
+  .lesson-visual-flow-node[id*="output"] small,
+  .lesson-visual-flow-node[id*="done"] small,
+  .workspace-decision-flow .decision-result span,
+  .code-trace-result-box span,
+  .code-trace-output-box span
+) {
+  color: #bdf8d0 !important;
+}
+
+body.coding-dark .coding-app :is(
+  .ucv-tuple-result strong,
+  .ucv-node-role--tuple-pair strong,
+  .ucv-math-card--result strong,
+  .ucv-flow-node-card--result strong,
+  .lesson-visual-flow-symbol.is-result span,
+  .lesson-visual-flow-node[id*="result"] strong,
+  .lesson-visual-flow-node[id*="output"] strong,
+  .lesson-visual-flow-node[id*="done"] strong,
+  .workspace-decision-flow .decision-result strong,
+  .code-trace-result-box strong,
+  .code-trace-output-box pre
+) {
+  color: #ffffff !important;
+}
+
+body.coding-dark .coding-app :is(
+  .ucv-tuple-result.ucv-visual-block--active,
+  .ucv-node-role--tuple-pair.ucv-node--active,
+  .ucv-node-role--tuple-pair.ucv-node--highlighted,
+  .ucv-flow-node-card--result.ucv-flow-node-card--active,
+  .ucv-flow-node-card--result.ucv-flow-node-card--highlighted,
+  .lesson-visual-flow-symbol.is-result.is-active
+) {
+  transform: translateY(-4px) scale(1.035);
+  box-shadow:
+    0 0 0 4px rgba(121, 217, 155, 0.18),
+    0 22px 42px rgba(34, 197, 94, 0.25),
+    0 0 26px rgba(121, 217, 155, 0.16) !important;
 }

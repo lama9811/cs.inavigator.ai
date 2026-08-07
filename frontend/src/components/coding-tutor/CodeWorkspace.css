@@ -433,6 +433,19 @@ body.ct-guide-resizing * {
   cursor: not-allowed;
 }
 
+.code-trace-language-note {
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, var(--ct-border, #d7e1ef) 70%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-warning, #f59e0b) 12%, var(--ed-bg));
+  color: color-mix(in srgb, var(--ed-text) 86%, var(--ct-warning, #f59e0b));
+  padding: 0.34rem 0.55rem;
+  font-size: 0.68rem;
+  font-weight: 750;
+  line-height: 1;
+  white-space: nowrap;
+}
+
 .code-editor-filename {
   font-family: var(--ed-font);
   font-size: 0.8rem;
@@ -446,7 +459,26 @@ body.ct-guide-resizing * {
 }
 
 /* Language switch styled like LeetCode's: plain orange text + a subtle chevron,
-   not a boxed dropdown. It's a real <select> so clicking opens the native list. */
+   not a boxed dropdown. It's a real <select> so clicking opens the native list.
+   The chevron lives on the wrapper so native select rendering cannot duplicate it. */
+.code-editor-lang-control {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.code-editor-lang-control::after {
+  content: "";
+  position: absolute;
+  right: 7px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  transform: translateY(-50%);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M1 3l4 4 4-4' fill='none' stroke='%23f58220' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 10px 10px no-repeat;
+}
+
 .code-editor-lang-select {
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -461,11 +493,9 @@ body.ct-guide-resizing * {
   text-transform: uppercase;
   color: var(--ct-accent, #f58220);
   /* room for the chevron drawn on the right */
-  padding: 2px 16px 2px 6px;
+  padding: 2px 22px 2px 8px;
   border-radius: 6px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M1 3l4 4 4-4' fill='none' stroke='%23f58220' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 4px center;
+  background-image: none;
   transition: background-color 0.15s ease;
 }
 
@@ -586,23 +616,29 @@ body.ct-guide-resizing * {
   overflow: hidden;
   user-select: none;
   text-align: right;
-  padding: var(--ed-pad-y) 10px var(--ed-pad-y) 14px;
+  padding: var(--ed-pad-y) 12px var(--ed-pad-y) 16px;
   font-family: var(--ed-font);
   font-size: var(--ed-size);
   line-height: var(--ed-lh);
-  color: color-mix(in srgb, var(--ed-text) 38%, transparent);
-  background: color-mix(in srgb, var(--ed-bg) 92%, #000);
-  border-right: 1px solid color-mix(in srgb, var(--ed-border) 60%, transparent);
+  color: color-mix(in srgb, var(--ed-text) 58%, transparent);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--ed-bg) 70%, #000), color-mix(in srgb, var(--ed-bg) 86%, #000));
+  border-right: 1px solid color-mix(in srgb, var(--ct-accent, #f58220) 28%, var(--ed-border));
+  box-shadow: inset -1px 0 0 color-mix(in srgb, #ffffff 5%, transparent);
 }
 
 .code-editor-line-no {
   display: block;
-  min-width: 1.5ch;
+  min-width: 2ch;
+  padding: 0 4px;
+  border-radius: 6px;
 }
 
 .code-editor-line-no.active {
   color: var(--ct-accent, #f58220);
   font-weight: 700;
+  background: color-mix(in srgb, var(--ct-accent, #f58220) 16%, transparent);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--ct-accent, #f58220) 32%, transparent);
 }
 
 /* The textarea + the highlight overlay share these exact metrics so the colored
@@ -619,7 +655,6 @@ body.ct-guide-resizing * {
   position: absolute;
   inset: 0;
   z-index: 3;
-  padding: var(--ed-pad-y) 16px;
   overflow: hidden;
   pointer-events: none;
   font-family: var(--ed-font);
@@ -629,20 +664,31 @@ body.ct-guide-resizing * {
   -moz-tab-size: 4;
 }
 
+.code-editor-active-line-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--active-line-top, 0);
+  height: calc(var(--ed-lh) * 1em);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--ct-accent, #f58220) 7%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ct-accent, #f58220) 12%, transparent);
+}
+
 .code-editor-active-indent-guide {
   position: absolute;
   top: var(--guide-top, 0);
   height: var(--guide-height, 0);
-  left: calc((var(--guide-level, 0) * 4ch) - 1.55ch);
-  width: 2px;
+  left: calc(16px + (var(--guide-level, 0) * 4ch) - 0.75ch);
+  width: 1px;
   border-radius: 999px;
   background: linear-gradient(
     180deg,
-    rgba(245, 130, 32, 0.15),
-    rgba(245, 130, 32, 0.72),
-    rgba(245, 130, 32, 0.15)
+    rgba(245, 130, 32, 0.06),
+    rgba(245, 130, 32, 0.54),
+    rgba(245, 130, 32, 0.06)
   );
-  box-shadow: 0 0 10px rgba(245, 130, 32, 0.16);
+  box-shadow: 0 0 8px rgba(245, 130, 32, 0.12);
 }
 
 .code-editor-window .coding-editor,
@@ -790,4 +836,292 @@ body.coding-dark .floating-coding-chat ::selection {
   .code-editor-statusbar .status-left,
   .code-editor-statusbar .status-right { gap: 8px; }
   .code-editor-gutter { padding-left: 8px; padding-right: 6px; }
+}
+
+@media (min-width: 641px) {
+  .workspace-guide-drawer-shell {
+    display: contents;
+  }
+
+  .workspace-guide-drawer-head,
+  .workspace-guide-drawer-backdrop {
+    display: none;
+  }
+
+  .workspace-mobile-guide-toggle {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .coding-app.coding-workspace-active,
+  .coding-app.coding-workspace-active .coding-app-main,
+  .coding-app.coding-workspace-active .coding-app-content,
+  .coding-app.coding-workspace-active .coding-workbench,
+  .coding-app.coding-workspace-active .coding-workbench-main,
+  .coding-app.coding-workspace-active .coding-problem-panel,
+  .coding-app.coding-workspace-active .coding-editor-center,
+  .coding-app.coding-workspace-active .workspace-tab-body {
+    height: auto;
+    max-height: none;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .coding-app.coding-workspace-active {
+    min-height: 100dvh;
+  }
+
+  .coding-workbench-main {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding-inline: 8px;
+  }
+
+  .workspace-mobile-guide-toggle {
+    display: inline-flex;
+    width: auto;
+    min-height: 34px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--ct-border-strong, #94a3b8);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ct-primary, #082343) 9%, var(--ct-panel, #fff));
+    color: var(--ct-primary, #082343);
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    font-weight: 750;
+    box-shadow: none;
+  }
+
+  .coding-workbench-main.mobile-guide-closed .workspace-guide-drawer-backdrop,
+  .coding-workbench-main.mobile-guide-closed .workspace-guide-drawer-shell {
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  .coding-workbench-main.mobile-guide-closed .workspace-guide-drawer-backdrop {
+    opacity: 0;
+  }
+
+  .coding-workbench-main.mobile-guide-closed .workspace-guide-drawer-shell {
+    transform: translateX(-105%);
+  }
+
+  .workspace-guide-divider {
+    display: none !important;
+  }
+
+  .workspace-guide-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1190;
+    display: block;
+    border: 0;
+    background: rgba(8, 20, 38, 0.46);
+    opacity: 1;
+    transition: opacity 160ms ease;
+  }
+
+  .workspace-guide-drawer-shell {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 1200;
+    display: flex;
+    width: min(340px, calc(100vw - 28px));
+    max-width: calc(100vw - 28px);
+    flex-direction: column;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 10px 10px;
+    background: var(--ct-bg, #f6f8fc);
+    box-shadow: 18px 0 44px rgba(8, 20, 38, 0.24);
+    transform: translateX(0);
+    transition:
+      transform 180ms ease,
+      visibility 180ms ease;
+  }
+
+  .workspace-guide-drawer-head {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 2px 2px 9px;
+    color: var(--ct-text, #082343);
+  }
+
+  .workspace-guide-drawer-head strong {
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .workspace-guide-drawer-head button {
+    min-height: 32px;
+    border: 1px solid var(--ct-border, #d7e1ef);
+    border-radius: 999px;
+    background: var(--ct-panel, #fff);
+    color: var(--ct-primary, #082343);
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    font-weight: 750;
+  }
+
+  .coding-problem-panel {
+    flex: 1 1 auto;
+    max-height: none;
+    min-height: 0;
+    overflow: auto;
+    border-radius: 14px;
+  }
+
+  .coding-editor-center {
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    overflow: visible;
+    padding: 9px 8px;
+    gap: 8px;
+  }
+
+  .workspace-guide-divider {
+    display: none;
+  }
+
+  .workspace-header {
+    align-items: start;
+    gap: 6px;
+  }
+
+  .coding-pane-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 10px;
+  }
+
+  .workspace-header h2 {
+    max-width: 100%;
+    font-size: 1rem;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  .workspace-header .workspace-kicker {
+    font-size: 0.64rem;
+  }
+
+  .workspace-tabs {
+    display: flex;
+    gap: 14px;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-inline: 2px;
+    scrollbar-width: thin;
+  }
+
+  .workspace-tabs button {
+    flex: 0 0 auto;
+    min-height: 32px;
+    padding: 5px 0;
+    font-size: 0.86rem;
+  }
+
+  .workspace-tab-body--visualize {
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .workspace-tab-body--visualize .workspace-visualizer-panel {
+    min-width: 0;
+    width: 100%;
+    overflow: auto;
+  }
+
+  .editor-terminal-stack {
+    min-height: 0;
+    height: auto;
+    gap: 8px;
+  }
+
+  .code-editor-window {
+    min-width: 0;
+    min-height: 300px;
+    border-radius: 13px;
+    --ed-size: 0.78rem;
+    --ed-lh: 1.62;
+  }
+
+  .code-editor-titlebar {
+    gap: 8px;
+    min-width: 0;
+    overflow-x: auto;
+    padding: 6px 8px;
+    scrollbar-width: thin;
+  }
+
+  .code-editor-filename {
+    flex: 1 1 72px;
+    min-width: 46px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .code-editor-actions {
+    flex: 0 0 auto;
+    gap: 6px;
+  }
+
+  .code-editor-actions button {
+    min-width: 32px;
+    height: 32px;
+  }
+
+  .code-trace-button {
+    max-width: 112px;
+    padding-inline: 10px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .code-editor-lang-select {
+    max-width: 78px;
+    min-width: 68px;
+    font-size: 0.66rem;
+  }
+
+  .code-editor-content {
+    min-width: 0;
+    overflow: auto;
+  }
+
+  .code-editor-gutter {
+    flex: 0 0 36px;
+    width: 36px;
+    min-width: 36px;
+  }
+
+  .code-editor-window .coding-editor,
+  .code-editor-window .leetcode-editor,
+  .code-editor-window .code-editor-highlight {
+    padding-inline: 12px !important;
+  }
+
+  .code-editor-statusbar {
+    min-width: 0;
+    height: auto;
+    min-height: 28px;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .coding-dock-terminal {
+    height: min(220px, 42dvh) !important;
+    min-height: 150px !important;
+    border-radius: 13px;
+  }
 }

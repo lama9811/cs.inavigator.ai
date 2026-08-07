@@ -30,7 +30,7 @@ function getActiveBlockGuide(lines, activeIndex) {
   const safeIndex = Math.min(Math.max(activeIndex, 0), lines.length - 1);
   const stack = [];
 
-  for (let index = 0; index <= safeIndex; index += 1) {
+  for (let index = 0; index < safeIndex; index += 1) {
     const line = lines[index] || "";
     if (!line.trim()) continue;
 
@@ -52,8 +52,21 @@ function getActiveBlockGuide(lines, activeIndex) {
     }
   }
 
+  const activeLineText = lines[safeIndex] || "";
+  const activeIndentLevel = getIndentLevel(activeLineText);
+  if (activeLineText.trim()) {
+    while (
+      stack.length > 0 &&
+      activeIndentLevel <= stack[stack.length - 1].ownerLevel
+    ) {
+      stack.pop();
+    }
+  }
+
   const owner = stack[stack.length - 1];
   if (!owner) return null;
+
+  if (activeLineText.trim() && activeIndentLevel < owner.bodyLevel) return null;
 
   const start = owner.ownerIndex + 1;
   let end = start - 1;
@@ -367,18 +380,22 @@ export default function CodeEditor({ code, onCodeChange, onCursorChange, onSelec
         ))}
       </div>
       <div className="code-editor-input-wrap">
-        {activeIndentGuide && (
-          <div ref={guideRef} className="code-editor-active-indent-layer" aria-hidden="true">
+        <div ref={guideRef} className="code-editor-active-indent-layer" aria-hidden="true">
+          <span
+            className="code-editor-active-line-layer"
+            style={{ "--active-line-top": `calc(var(--ed-pad-y) + ${(activeLine - 1) * EDITOR_LINE_HEIGHT_EM}em)` }}
+          />
+          {activeIndentGuide && (
             <span
               className="code-editor-active-indent-guide"
               style={{
                 "--guide-level": String(activeIndentGuide.level),
-                "--guide-top": `${activeIndentGuide.start * EDITOR_LINE_HEIGHT_EM}em`,
+                "--guide-top": `calc(var(--ed-pad-y) + ${activeIndentGuide.start * EDITOR_LINE_HEIGHT_EM}em)`,
                 "--guide-height": `${activeIndentGuide.lines * EDITOR_LINE_HEIGHT_EM}em`,
               }}
             />
-          </div>
-        )}
+          )}
+        </div>
         {/* Colored layer behind the transparent textarea. Must share the same
             font metrics + padding as the textarea so the colors stay aligned. */}
         <pre

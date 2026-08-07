@@ -345,7 +345,7 @@
           "prompt": "Which choice describes a reliable Operators practice?",
           "choices": [
             "Use loose equality when type differences should be rejected.",
-            "Prefer strict equality.",
+            "Prefer strict equality (`===`) when the types should match too.",
             "Use one equals sign when checking whether two values match.",
             "Compare values after converting only one side by accident."
           ],
@@ -360,7 +360,7 @@
           "prompt": "Which choice describes a reliable Operators practice?",
           "choices": [
             "Assume `/` keeps decimals even when both operands are integers.",
-            "Check operand types.",
+            "Check operand types before trusting division, comparison, or signed math.",
             "Ignore signed and unsigned differences because C++ converts nothing.",
             "Use assignment inside conditions when a comparison is intended."
           ],

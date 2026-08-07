@@ -50,7 +50,7 @@
       "variants": {
         "python": {
           "code": "age = 20\nprint(\"You are \" + age)",
-          "prompt": "What happens when this runs?",
+          "prompt": "What happens when Python tries to use `+` with the string and the int?",
           "choices": [
             "It prints 'You are 20'",
             "TypeError: can only concatenate str to str",
@@ -62,7 +62,7 @@
         },
         "java": {
           "code": "int age = 20;\nSystem.out.println(\"You are \" + age);",
-          "prompt": "What happens when this runs?",
+          "prompt": "What happens when Java uses `+` with a String and an int?",
           "choices": [
             "It prints 'You are 20'",
             "Compile error: incompatible types",
@@ -74,7 +74,7 @@
         },
         "javascript": {
           "code": "let age = 20;\nconsole.log(\"You are \" + age);",
-          "prompt": "What happens when this runs?",
+          "prompt": "What happens when JavaScript uses `+` with a string and a number?",
           "choices": [
             "It prints 'You are 20'",
             "TypeError",

@@ -688,6 +688,44 @@ body.coding-dark .floating-coding-chat .floating-apply-code-btn:focus-visible {
 }
 
 @media (max-width: 520px) {
+  .floating-coding-chat.closed {
+    left: auto !important;
+    top: auto !important;
+    right: 14px !important;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+    transform: none !important;
+  }
+
+  .floating-coding-chat.open {
+    left: 8px !important;
+    top: auto !important;
+    right: 8px !important;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+    transform: none !important;
+  }
+
+  .floating-coding-chat .floating-chat-button {
+    width: 50px !important;
+    min-width: 50px !important;
+    height: 50px !important;
+    min-height: 50px !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    border-radius: 999px !important;
+  }
+
+  .floating-coding-chat .floating-chat-button span {
+    display: none !important;
+  }
+
+  .floating-coding-chat .floating-chat-window,
+  .floating-coding-chat .floating-chat-window.maximized {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    height: min(620px, calc(100dvh - 16px)) !important;
+    max-height: calc(100dvh - 16px) !important;
+  }
+
   .floating-coding-chat .floating-code-actions {
     align-items: stretch;
     flex-direction: column;
