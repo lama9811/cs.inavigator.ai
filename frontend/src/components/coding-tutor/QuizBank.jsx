@@ -307,8 +307,8 @@ export default function QuizBank({
   }, [matchedQuestions, sortBy, progressByQuestion]);
 
   const selectFromFilteredSet = useCallback((question) => {
-    onSelectProblem?.(question, filteredQuestions);
-  }, [filteredQuestions, onSelectProblem]);
+    onSelectProblem?.(question, anyFilterActive ? filteredQuestions : null);
+  }, [anyFilterActive, filteredQuestions, onSelectProblem]);
 
   // Grouping rule: group by topic only in the default "Topic order" sort with no
   // search/topic filter. Any search, topic filter, or non-topic sort shows a

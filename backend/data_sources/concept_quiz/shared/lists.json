@@ -413,10 +413,10 @@
           "code": null,
           "prompt": "How do you calculate the final JavaScript array index?",
           "choices": [
-            "Read an item before checking whether the collection is empty.",
-            "Skip the last item because the loop stops one position too early.",
+            "Use `array.length`, because length is the final index.",
+            "Use `array.length + 1`, because indexes start after the count.",
             "Use array.length - 1.",
-            "Visit one extra position because the loop uses `<=` with the length."
+            "Use index 1, because the first item is counted separately."
           ],
           "answer_index": 2,
           "explanation": "length is a count, not an index. The final index is one less than the count because array positions begin at 0."
@@ -428,10 +428,10 @@
           "code": null,
           "prompt": "Where does C++ vector indexing begin?",
           "choices": [
-            "Read an item before checking whether the collection is empty.",
-            "Skip the last item because the loop stops one position too early.",
+            "At index 1, because size() counts the first item.",
+            "At the vector's size, because size() names the first slot.",
             "Begin at index 0.",
-            "Visit one extra position because the loop uses `<=` with the length."
+            "At index -1, because vectors count backward first."
           ],
           "answer_index": 2,
           "explanation": "std::vector indexes start at 0. A vector with size 3 has valid indexes 0, 1, and 2, so size() itself is already past the end."
@@ -482,9 +482,9 @@
           "code": null,
           "prompt": "When should JavaScript code use push or pop?",
           "choices": [
-            "Copy only the variable name and assume a fresh list was created.",
-            "Mutate shared list data when independent plans are needed.",
-            "Sort the list before preserving the original order.",
+            "Use push to add at the front and pop to remove from the front.",
+            "Use push or pop when the array should stay unchanged.",
+            "Use push to sort the array and pop to reverse it.",
             "Use push to add at the end and pop to remove from the end."
           ],
           "answer_index": 3,
@@ -497,9 +497,9 @@
           "code": null,
           "prompt": "Which C++ vector index is always out of range?",
           "choices": [
-            "Copy only the variable name and assume a fresh list was created.",
-            "Mutate shared list data when independent plans are needed.",
-            "Sort the list before preserving the original order.",
+            "Index 0 when the vector has at least one item.",
+            "Index values.size() - 1 when the vector is nonempty.",
+            "Index 1 when the vector has at least two items.",
             "The index equal to values.size()."
           ],
           "answer_index": 3,
@@ -522,9 +522,9 @@
           "prompt": "When is `for item in lst:` the right Python loop shape?",
           "choices": [
             "Use it when the loop only needs each value, not the index.",
-            "Use nested indexes without checking the inner list length.",
-            "Assume every list method returns the changed list.",
-            "Append to the wrong list while building a result."
+            "Use it when the loop must change items by position.",
+            "Use it when the code needs both index and value every time.",
+            "Use it when the list should be skipped entirely."
           ],
           "answer_index": 0,
           "explanation": "If the loop only needs the values, looping directly over the list avoids index math. Use indexes only when position matters."
@@ -537,9 +537,9 @@
           "prompt": "Which Java loop boundary visits every array item once?",
           "choices": [
             "Start at i = 0 and keep going while i < arr.length.",
-            "Use nested indexes without checking the inner list length.",
-            "Assume every list method returns the changed list.",
-            "Append to the wrong list while building a result."
+            "Start at i = 1 and keep going while i <= arr.length.",
+            "Start at i = 0 and keep going while i <= arr.length.",
+            "Start at i = arr.length and count upward."
           ],
           "answer_index": 0,
           "explanation": "Array indexes start at 0 and stop at length - 1. The condition i < arr.length visits the final valid index but stops before i becomes arr.length."
@@ -552,9 +552,9 @@
           "prompt": "What should JavaScript code check about array methods?",
           "choices": [
             "Know whether the method mutates the array or returns a new value.",
-            "Use nested indexes without checking the inner list length.",
-            "Assume every list method returns the changed list.",
-            "Append to the wrong list while building a result."
+            "Assume every array method changes the same array.",
+            "Assume every array method returns a full new array.",
+            "Ignore the return value because methods never return useful data."
           ],
           "answer_index": 0,
           "explanation": "Some array methods change the array, such as push and pop. Others return new values. Knowing which one you are using prevents accidental shared-data bugs."
@@ -567,9 +567,9 @@
           "prompt": "When is vector.at(index) useful in C++?",
           "choices": [
             "Use it when an invalid index should throw a clear exception.",
-            "Use nested indexes without checking the inner list length.",
-            "Assume every list method returns the changed list.",
-            "Append to the wrong list while building a result."
+            "Use it when a bad index should silently wrap to the start.",
+            "Use it when the vector should grow to fit any index.",
+            "Use it when indexes should start at 1 instead of 0."
           ],
           "answer_index": 0,
           "explanation": "vector.at(index) checks bounds and throws std::out_of_range for a bad index. Bracket indexing is faster-looking but unchecked, so a bad index becomes undefined behavior."
@@ -590,12 +590,12 @@
           "code": null,
           "prompt": "Why avoid removing items from a Python list while looping over it?",
           "choices": [
-            "Reset the result list inside the loop.",
-            "Avoid adding to or removing from a list while you loop over it. Build a new list of what you want to keep.",
-            "Use the item value as if it were the item index.",
-            "Ignore whether the data structure is fixed-size or growable."
+            "Removing shifts later items while the loop still advances, so some values can be skipped.",
+            "Removing makes Python sort the remaining items before the loop continues.",
+            "Removing items makes Python convert the list into a string.",
+            "Removing items always deletes the whole list."
           ],
-          "answer_index": 1,
+          "answer_index": 0,
           "explanation": "Removing shifts later items left while the loop still advances. That can skip values that moved into the current position. Building a new list of kept items is usually clearer."
         },
         "java": {
@@ -605,10 +605,10 @@
           "code": null,
           "prompt": "Why is `arr[arr.length]` invalid for every Java array?",
           "choices": [
-            "Reset the result list inside the loop.",
+            "`arr.length` is the first valid index.",
             "`arr.length` is one past the final valid index.",
-            "Use the item value as if it were the item index.",
-            "Ignore whether the data structure is fixed-size or growable."
+            "`arr.length` reads the whole array at once.",
+            "`arr.length` changes after every read."
           ],
           "answer_index": 1,
           "explanation": "If arr.length is 3, the valid indexes are 0, 1, and 2. arr[arr.length] asks for arr[3], which is one past the allocated slots."
@@ -620,10 +620,10 @@
           "code": null,
           "prompt": "What do JavaScript arrays preserve about their values?",
           "choices": [
-            "Reset the result list inside the loop.",
+            "Store unordered values and choose a random position each time.",
             "Store ordered values and access them by index.",
-            "Use the item value as if it were the item index.",
-            "Ignore whether the data structure is fixed-size or growable."
+            "Store only one value, replacing the old value each time.",
+            "Store values alphabetically no matter how they were added."
           ],
           "answer_index": 1,
           "explanation": "Arrays preserve order. That lets code read values by position, loop through them in sequence, and add or remove items at known places."
@@ -635,12 +635,12 @@
           "code": null,
           "prompt": "When would C++ code choose vector instead of a fixed array?",
           "choices": [
-            "Reset the result list inside the loop.",
-            "Store ordered elements in arrays and vectors.",
-            "Use the item value as if it were the item index.",
-            "Ignore whether the data structure is fixed-size or growable."
+            "When the number of elements may grow or shrink.",
+            "When the size must be known and unchanged forever.",
+            "When indexes should start at 1.",
+            "When the data should not be stored in order."
           ],
-          "answer_index": 1,
+          "answer_index": 0,
           "explanation": "Choose vector when the number of elements may grow or shrink. A fixed array works when the size is known and should not change."
         }
       }

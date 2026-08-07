@@ -234,7 +234,7 @@
         },
         "cpp": {
           "code": "int bigger(int a, int b) {\n    if (a > b) {\n        return a;\n    }\n}",
-          "prompt": "What is wrong with this function?",
+          "prompt": "What is wrong with this C++ function when `a <= b`?",
           "choices": [
             "Not every path returns a value, so calling it with a <= b is undefined behavior",
             "Nothing, it returns 0 when a is not bigger",

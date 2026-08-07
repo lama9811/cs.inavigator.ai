@@ -100,10 +100,10 @@
       "code": null,
       "prompt": "Which exception type should a handler catch?",
       "choices": [
-        "Wrap a whole program in one broad protected block.",
+        "Catch `Exception` for every handler even when only one failure can be recovered.",
         "Catch a type that matches the recovery you can perform.",
-        "Catch errors at a layer that cannot recover.",
-        "Hide unexpected programming mistakes."
+        "Catch no exception type and let the handler guess from the message text.",
+        "Catch the most specific type possible even when the code cannot recover from it."
       ],
       "answer_index": 1,
       "explanation": "A handler should catch the type that matches the recovery it can perform. Catching too broadly can swallow unrelated bugs, while catching too narrowly may miss the expected failure path."
@@ -118,12 +118,12 @@
       "code": null,
       "prompt": "Why keep a Java `try` block small?",
       "choices": [
-        "Raise an exception after the function already returned successfully.",
-        "Use an exception to skip normal loop logic.",
-        "Keep the protected block small.",
-        "Report failure without enough context to debug it."
+        "So the catch block clearly matches the operation that might fail.",
+        "So every line in the method is handled by the same catch block.",
+        "So the program can ignore which statement caused the failure.",
+        "So unrelated successful work is treated as part of the same failure."
       ],
-      "answer_index": 2,
+      "answer_index": 0,
       "explanation": "A small protected block makes it clear which operation may fail. If many unrelated lines sit inside the same `try`, the handler can blame the wrong operation or hide a separate bug."
     },
     {
@@ -136,12 +136,12 @@
       "code": null,
       "prompt": "Why should students distinguish checked exceptions from runtime exceptions?",
       "choices": [
-        "Ignore cleanup around code that can fail.",
-        "Catch a base exception type when a specific one is known.",
-        "Turn every invalid input into the same generic message.",
-        "Distinguish checked exceptions from runtime exceptions."
+        "Checked exceptions are part of the method contract; runtime exceptions often signal bad assumptions or bugs.",
+        "Checked exceptions can be ignored, while runtime exceptions must always be declared.",
+        "Runtime exceptions are safer because Java converts them into return values.",
+        "There is no difference once code is inside a try/catch block."
       ],
-      "answer_index": 3,
+      "answer_index": 0,
       "explanation": "Checked exceptions are part of a method's visible failure contract, while runtime exceptions often point to bugs or invalid assumptions. Treating them the same can either overburden callers or hide programming mistakes."
     },
     {

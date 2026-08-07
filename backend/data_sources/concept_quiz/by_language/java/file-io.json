@@ -83,9 +83,9 @@
       "prompt": "Before writing student records to an existing file, what should the program decide?",
       "choices": [
         "Decide whether to replace, append, or rewrite updated data before opening the file.",
-        "Overwrite existing records when the task calls for appending.",
-        "Assume every file path starts in the source-code folder.",
-        "Read data before checking for an I/O failure."
+        "Use replacement mode even when the task says to add new records after old ones.",
+        "Always use the default write mode because Java will preserve old content.",
+        "Write first and decide whether old records mattered after the file closes."
       ],
       "answer_index": 0,
       "explanation": "A write can succeed and still destroy needed data if the code meant to append or update carefully. File code should make the replacement-versus-append decision explicit before it touches the existing file."
@@ -100,10 +100,10 @@
       "code": null,
       "prompt": "Why use `Path` for file locations instead of hand-built strings?",
       "choices": [
-        "Ignore character encoding for shared text files.",
+        "Build paths by manually adding `/` or `\\` between every folder name.",
         "Represent locations with Path.",
-        "Leave closeable resources unmanaged.",
-        "Catch an IOException where no useful response is possible."
+        "Store every path as one hardcoded absolute string.",
+        "Use Path only for folders, never for files."
       ],
       "answer_index": 1,
       "explanation": "`Path` represents a filesystem location without forcing the program to stitch separators by hand. That makes code easier to read and less fragile across operating systems and project layouts."

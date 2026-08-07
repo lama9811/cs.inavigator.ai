@@ -67,8 +67,8 @@ export default function ProblemPanel({
           )}
           {showProblemNavigation && (
             <div className="problem-navigation">
-              <button type="button" onClick={onPreviousProblem} disabled={!canGoPrevious} title="Previous problem in this practice set">Back</button>
               {navigationLabel ? <span className="problem-navigation-label">{navigationLabel}</span> : null}
+              <button type="button" onClick={onPreviousProblem} disabled={!canGoPrevious} title="Previous problem in this practice set">Back</button>
               <button type="button" onClick={onNextProblem} disabled={!canGoNext} title="Next problem in this practice set">Next</button>
             </div>
           )}
