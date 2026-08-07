@@ -58,6 +58,7 @@ const WORKSPACE_GUIDE_MIN_W = 260;
 const WORKSPACE_GUIDE_MAX_W = 560;
 const WORKSPACE_GUIDE_DEFAULT_W = 340;
 const WORKSPACE_GUIDE_W_KEY = "csnav.workspaceGuideWidth";
+const WORKSPACE_GUIDE_MOBILE_QUERY = "(max-width: 640px)";
 
 function readStoredWorkspaceGuideWidth() {
   try {
@@ -70,6 +71,11 @@ function readStoredWorkspaceGuideWidth() {
     /* localStorage can be blocked; default width is fine */
   }
   return WORKSPACE_GUIDE_DEFAULT_W;
+}
+
+function readInitialMobileWorkspaceGuideOpen() {
+  if (typeof window === "undefined") return true;
+  return !window.matchMedia?.(WORKSPACE_GUIDE_MOBILE_QUERY)?.matches;
 }
 // Concept-quiz language ids (backend keys) → display labels, for the quiz views.
 const CONCEPT_QUIZ_LABELS = {
@@ -1394,7 +1400,7 @@ export default function CodingTutor({
   const [testOutput, setTestOutput] = useState({ status: "ready", message: "" });
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [workspaceGuideWidth, setWorkspaceGuideWidth] = useState(readStoredWorkspaceGuideWidth);
-  const [mobileWorkspaceGuideOpen, setMobileWorkspaceGuideOpen] = useState(true);
+  const [mobileWorkspaceGuideOpen, setMobileWorkspaceGuideOpen] = useState(readInitialMobileWorkspaceGuideOpen);
   const [isRunning, setIsRunning] = useState(false);
   // Lets the Stop button abort an in-flight run. The backend's hard CPU/time
   // limit also kills a truly stuck process, so this frees the UI immediately.
@@ -1405,6 +1411,19 @@ export default function CodingTutor({
   useEffect(() => {
     workspaceGuideWidthRef.current = workspaceGuideWidth;
   }, [workspaceGuideWidth]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return undefined;
+    const media = window.matchMedia(WORKSPACE_GUIDE_MOBILE_QUERY);
+    const syncGuideMode = () => {
+      if (!media.matches) {
+        setMobileWorkspaceGuideOpen(true);
+      }
+    };
+    syncGuideMode();
+    media.addEventListener?.("change", syncGuideMode);
+    return () => media.removeEventListener?.("change", syncGuideMode);
+  }, []);
 
   const persistGuideWidth = useCallback((value) => {
     try {
@@ -4156,16 +4175,6 @@ export default function CodingTutor({
         className={`coding-workbench-main ${mobileWorkspaceGuideOpen ? "mobile-guide-open" : "mobile-guide-closed"}`}
         style={{ "--workspace-guide-width": `${Math.round(workspaceGuideWidth)}px` }}
       >
-        {!isPersonalMode && (
-          <button
-            type="button"
-            className="workspace-mobile-guide-toggle"
-            onClick={() => setMobileWorkspaceGuideOpen(open => !open)}
-            aria-expanded={mobileWorkspaceGuideOpen}
-          >
-            {mobileWorkspaceGuideOpen ? "Hide guide" : "Show guide"}
-          </button>
-        )}
         {isPersonalMode ? (
           <PersonalPanel
             snippets={snippets}
@@ -4175,34 +4184,55 @@ export default function CodingTutor({
             onDeleteSnippet={handleDeleteSnippet}
           />
         ) : (
-          <ProblemPanel
-            problem={activeProblem}
-            solution={activeSolution}
-            selectedLanguage={selectedLanguage}
-            attempts={attempts}
-            problemLoading={problemLoading || isRestoringProblem}
-            isSolved={isActiveProblemSolved}
-            solvedLanguages={activeSolvedLanguages}
-            showProblemNavigation={isQuizBankProblem}
-            canGoPrevious={canGoPrevious}
-            canGoNext={canGoNext}
-            navigationLabel={practiceNavigationLabel}
-            onPreviousProblem={() => navigatePracticeProblem(-1)}
-            onNextProblem={() => navigatePracticeProblem(1)}
-            onShowHint={showNextHint}
-            onShowAllHints={showAllHints}
-            onOpenQuizBank={openPracticeLibrary}
-            mockMode={Boolean(activeProblem?.mock && mockSession)}
-            solutionUnlocked={
-              !activeProblem?.mock ||
-              (mockSession &&
-                (mockSession.stuck.includes(activeProblem.id) ||
-                  mockSession.outcomes[activeProblem.id] !== "unattempted"))
-            }
-            onStuck={markMockStuck}
-            onViewSolutionMock={requestViewSolutionMock}
-            onOpenVisualizer={canOpenVisualizer ? openProblemVisualizer : null}
-          />
+          <>
+            <button
+              type="button"
+              className="workspace-guide-drawer-backdrop"
+              onClick={() => setMobileWorkspaceGuideOpen(false)}
+              aria-label="Close problem guide"
+              tabIndex={mobileWorkspaceGuideOpen ? 0 : -1}
+            />
+            <div
+              id="workspace-problem-guide-drawer"
+              className="workspace-guide-drawer-shell"
+              aria-hidden={!mobileWorkspaceGuideOpen}
+            >
+              <div className="workspace-guide-drawer-head">
+                <strong>Problem guide</strong>
+                <button type="button" onClick={() => setMobileWorkspaceGuideOpen(false)}>
+                  Close
+                </button>
+              </div>
+              <ProblemPanel
+                problem={activeProblem}
+                solution={activeSolution}
+                selectedLanguage={selectedLanguage}
+                attempts={attempts}
+                problemLoading={problemLoading || isRestoringProblem}
+                isSolved={isActiveProblemSolved}
+                solvedLanguages={activeSolvedLanguages}
+                showProblemNavigation={isQuizBankProblem}
+                canGoPrevious={canGoPrevious}
+                canGoNext={canGoNext}
+                navigationLabel={practiceNavigationLabel}
+                onPreviousProblem={() => navigatePracticeProblem(-1)}
+                onNextProblem={() => navigatePracticeProblem(1)}
+                onShowHint={showNextHint}
+                onShowAllHints={showAllHints}
+                onOpenQuizBank={openPracticeLibrary}
+                mockMode={Boolean(activeProblem?.mock && mockSession)}
+                solutionUnlocked={
+                  !activeProblem?.mock ||
+                  (mockSession &&
+                    (mockSession.stuck.includes(activeProblem.id) ||
+                      mockSession.outcomes[activeProblem.id] !== "unattempted"))
+                }
+                onStuck={markMockStuck}
+                onViewSolutionMock={requestViewSolutionMock}
+                onOpenVisualizer={canOpenVisualizer ? openProblemVisualizer : null}
+              />
+            </div>
+          </>
         )}
         <div
           className="workspace-guide-divider"
@@ -4280,6 +4310,14 @@ export default function CodingTutor({
           onSaveSnippet={handleSaveSnippet}
           onUploadFile={() => personalFileInputRef.current?.click()}
           codeRenderer={codeRenderer}
+          guideToggle={
+            !isPersonalMode
+              ? {
+                  isOpen: mobileWorkspaceGuideOpen,
+                  onToggle: () => setMobileWorkspaceGuideOpen(open => !open),
+                }
+              : null
+          }
         />
       </div>
       <input

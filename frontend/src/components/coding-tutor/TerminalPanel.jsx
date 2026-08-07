@@ -149,7 +149,7 @@ function TerminalOutputPane({ output, tests, onExplainError }) {
         </>
       ) : (
         <div className="terminal-panel-empty">
-          Terminal output is empty. Return values will appear here after a run, and print / console output will appear here when your code writes it.
+          No output yet.
         </div>
       )}
     </section>
@@ -347,7 +347,7 @@ function TerminalTestsPane({ output, tests, onExplainFailedTests, onRequestRevie
         </div>
       ) : (
         <div className="terminal-panel-empty">
-          Test cases will appear here after you run a local practice problem.
+          Run code to see tests.
         </div>
       )}
       {output.status === "passed" ? <SolutionReview review={solutionReview} /> : null}

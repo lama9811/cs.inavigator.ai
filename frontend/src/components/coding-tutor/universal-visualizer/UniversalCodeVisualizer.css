@@ -115,6 +115,10 @@
   overflow: visible;
 }
 
+.ucv-shell--panel .ucv-stage {
+  overflow: visible;
+}
+
 .ucv-canvas {
   position: relative;
   width: 100%;
@@ -132,6 +136,16 @@
     color-mix(in srgb, var(--ct-panel, #fff) 94%, var(--ct-soft, #eef6ff));
   background-size: auto, 48px 48px, 48px 48px, auto;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 18px 42px rgba(15, 23, 42, 0.08);
+}
+
+.ucv-shell--panel .ucv-canvas {
+  overflow: auto;
+  overscroll-behavior-inline: contain;
+  scroll-padding-inline: 1.25rem;
+}
+
+.ucv-shell--panel .ucv-canvas > * {
+  flex-shrink: 0;
 }
 
 .ucv-workflow {
@@ -2161,6 +2175,20 @@ body.coding-dark .ucv-array-trace-state > div {
     display: none;
   }
 
+  .ucv-shell--panel .ucv-workflow {
+    flex-wrap: nowrap;
+    scroll-padding-inline: 0.75rem;
+  }
+
+  .ucv-shell--panel .ucv-workflow-step {
+    flex: 0 0 auto;
+  }
+
+  .ucv-shell--panel .ucv-workflow-line {
+    display: block;
+    flex: 0 0 2rem;
+  }
+
   .ucv-workflow-label {
     max-width: 92px;
   }
@@ -2234,6 +2262,80 @@ body.coding-dark .ucv-array-trace-state > div {
 
   .ucv-array-trace-state {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .ucv-shell--panel {
+    overflow: visible;
+  }
+
+  .ucv-shell--panel .ucv-header {
+    gap: 0.65rem;
+  }
+
+  .ucv-shell--panel .ucv-header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .ucv-shell--panel .ucv-concept-pill {
+    min-width: 0;
+    max-width: calc(100vw - 5rem);
+  }
+
+  .ucv-shell--panel .ucv-main {
+    gap: 0.75rem;
+  }
+
+  .ucv-shell--panel .ucv-stage {
+    overflow-x: auto;
+    padding-bottom: 0.15rem;
+    scroll-padding-inline: 1rem;
+  }
+
+  .ucv-shell--panel .ucv-workflow,
+  .ucv-shell--panel .ucv-canvas,
+  .ucv-shell--panel .ucv-state-strip {
+    width: max(640px, 100%);
+    max-width: none;
+  }
+
+  .ucv-shell--panel .ucv-canvas {
+    height: clamp(390px, 58dvh, 560px);
+    padding-inline: 0.75rem;
+  }
+
+  .ucv-shell--panel .ucv-side {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .ucv-shell--panel .ucv-card,
+  .ucv-shell--panel .ucv-code {
+    padding: 0.8rem;
+  }
+
+  .ucv-shell--panel .ucv-code {
+    overflow-x: auto;
+  }
+
+  .ucv-shell--panel .ucv-code ol {
+    min-width: 520px;
+  }
+
+  .ucv-shell--panel .ucv-controls {
+    position: sticky;
+    bottom: 0;
+    z-index: 8;
+    margin-inline: -0.65rem;
+    padding: 0.55rem 0.65rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(180deg, transparent, var(--ct-panel, #fff) 22%, var(--ct-panel, #fff));
+  }
+
+  .ucv-shell--panel .ucv-playbar {
+    width: 100%;
+    justify-content: flex-start;
   }
 }
 

@@ -839,6 +839,15 @@ body.coding-dark .floating-coding-chat ::selection {
 }
 
 @media (min-width: 641px) {
+  .workspace-guide-drawer-shell {
+    display: contents;
+  }
+
+  .workspace-guide-drawer-head,
+  .workspace-guide-drawer-backdrop {
+    display: none;
+  }
+
   .workspace-mobile-guide-toggle {
     display: none;
   }
@@ -864,6 +873,7 @@ body.coding-dark .floating-coding-chat ::selection {
   }
 
   .coding-workbench-main {
+    position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 10px;
@@ -871,32 +881,97 @@ body.coding-dark .floating-coding-chat ::selection {
   }
 
   .workspace-mobile-guide-toggle {
-    position: sticky;
-    top: 4px;
-    z-index: 12;
     display: inline-flex;
-    width: fit-content;
+    width: auto;
     min-height: 34px;
     align-items: center;
     justify-content: center;
-    justify-self: start;
     border: 1px solid var(--ct-border-strong, #94a3b8);
     border-radius: 999px;
-    background: var(--ct-primary, #082343);
-    color: #fff;
-    padding: 6px 11px;
+    background: color-mix(in srgb, var(--ct-primary, #082343) 9%, var(--ct-panel, #fff));
+    color: var(--ct-primary, #082343);
+    padding: 6px 10px;
     font-size: 0.78rem;
     font-weight: 750;
-    box-shadow: 0 8px 18px rgba(8, 35, 67, 0.18);
+    box-shadow: none;
   }
 
-  .coding-workbench-main.mobile-guide-closed .coding-problem-panel,
-  .coding-workbench-main.mobile-guide-closed .workspace-guide-divider {
+  .coding-workbench-main.mobile-guide-closed .workspace-guide-drawer-backdrop,
+  .coding-workbench-main.mobile-guide-closed .workspace-guide-drawer-shell {
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  .coding-workbench-main.mobile-guide-closed .workspace-guide-drawer-backdrop {
+    opacity: 0;
+  }
+
+  .coding-workbench-main.mobile-guide-closed .workspace-guide-drawer-shell {
+    transform: translateX(-105%);
+  }
+
+  .workspace-guide-divider {
     display: none !important;
   }
 
+  .workspace-guide-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1190;
+    display: block;
+    border: 0;
+    background: rgba(8, 20, 38, 0.46);
+    opacity: 1;
+    transition: opacity 160ms ease;
+  }
+
+  .workspace-guide-drawer-shell {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 1200;
+    display: flex;
+    width: min(340px, calc(100vw - 28px));
+    max-width: calc(100vw - 28px);
+    flex-direction: column;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 10px 10px;
+    background: var(--ct-bg, #f6f8fc);
+    box-shadow: 18px 0 44px rgba(8, 20, 38, 0.24);
+    transform: translateX(0);
+    transition:
+      transform 180ms ease,
+      visibility 180ms ease;
+  }
+
+  .workspace-guide-drawer-head {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 2px 2px 9px;
+    color: var(--ct-text, #082343);
+  }
+
+  .workspace-guide-drawer-head strong {
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .workspace-guide-drawer-head button {
+    min-height: 32px;
+    border: 1px solid var(--ct-border, #d7e1ef);
+    border-radius: 999px;
+    background: var(--ct-panel, #fff);
+    color: var(--ct-primary, #082343);
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    font-weight: 750;
+  }
+
   .coding-problem-panel {
-    max-height: 46dvh;
+    flex: 1 1 auto;
+    max-height: none;
     min-height: 0;
     overflow: auto;
     border-radius: 14px;
@@ -918,6 +993,13 @@ body.coding-dark .floating-coding-chat ::selection {
   .workspace-header {
     align-items: start;
     gap: 6px;
+  }
+
+  .coding-pane-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 10px;
   }
 
   .workspace-header h2 {
@@ -944,7 +1026,18 @@ body.coding-dark .floating-coding-chat ::selection {
     flex: 0 0 auto;
     min-height: 32px;
     padding: 5px 0;
-    font-size: 0.9rem;
+    font-size: 0.86rem;
+  }
+
+  .workspace-tab-body--visualize {
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .workspace-tab-body--visualize .workspace-visualizer-panel {
+    min-width: 0;
+    width: 100%;
+    overflow: auto;
   }
 
   .editor-terminal-stack {

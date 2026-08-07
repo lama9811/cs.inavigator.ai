@@ -873,6 +873,7 @@ export default function CodeWorkspace({
   onSaveSnippet,
   onUploadFile,
   codeRenderer,
+  guideToggle = null,
 }) {
   const [caret, setCaret] = useState({ line: 1, col: 1, chars: 0 });
   const [terminalHeight, setTerminalHeight] = useState(readStoredTerminalHeight);
@@ -1061,6 +1062,17 @@ export default function CodeWorkspace({
     <main className="coding-editor-center">
       <div className="coding-pane-header">
         <div><span className="coding-kicker">Workspace</span><h2>{activeProblem?.title || "Code Editor"}</h2></div>
+        {guideToggle ? (
+          <button
+            type="button"
+            className="workspace-mobile-guide-toggle"
+            onClick={guideToggle.onToggle}
+            aria-expanded={guideToggle.isOpen}
+            aria-controls="workspace-problem-guide-drawer"
+          >
+            {guideToggle.isOpen ? "Hide guide" : "Guide"}
+          </button>
+        ) : null}
       </div>
       <div className="workspace-tabs" role="tablist" aria-label="Workspace panels" onKeyDown={handleHorizontalRovingKeyDown}>
         {WORKSPACE_TABS.map(tab => (
@@ -1090,7 +1102,7 @@ export default function CodeWorkspace({
       {/* The editor + terminal are ONE stacked unit. The terminal docks below the
           editor with a draggable divider — not a detached footer. */}
       <div className={`editor-terminal-stack ${showTerminal ? "terminal-docked" : ""}`} ref={stackRef}>
-        <div className="workspace-tab-body">{renderTab()}</div>
+        <div className={`workspace-tab-body workspace-tab-body--${workspaceTab.toLowerCase()}`}>{renderTab()}</div>
         {showTerminal && (
           <>
             <div
