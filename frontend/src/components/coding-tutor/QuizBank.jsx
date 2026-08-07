@@ -8,6 +8,21 @@ function titleCase(value = "") {
   return value ? value[0].toUpperCase() + value.slice(1).replace("_", " ") : "";
 }
 
+function conciseGuideReason(value = "") {
+  const text = String(value || "");
+  const marker = text.toLowerCase().indexOf("this topic is review-only for now");
+  const visible = marker >= 0 ? text.slice(0, marker) : text;
+  return visible
+    .replace(/\s*This topic is review-only for now:\s*[^.]+\.?\s*/i, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function practiceGuideBand(value = "Review") {
+  const label = titleCase(value || "Review");
+  return label.toLowerCase().includes("review-only") ? "Review" : label;
+}
+
 // How many problem cards to show per routed library page.
 const PAGE_SIZE = 24;
 
@@ -509,9 +524,9 @@ export default function QuizBank({
     ? {
       label: "Recommended next",
       title: adaptiveReviewSignal.title || "Review recent errors",
-      band: titleCase(adaptiveReviewSignal.error_class || "Review"),
+      band: practiceGuideBand(adaptiveReviewSignal.error_class || "Review"),
       bandClass: "shaky",
-      reason: adaptiveReviewSignal.reason,
+      reason: conciseGuideReason(adaptiveReviewSignal.reason),
       cta: "Open review lesson",
       onClick: () => onOpenLessonReview?.(adaptiveReviewSignal),
     }
@@ -521,7 +536,7 @@ export default function QuizBank({
         title: titleCase(adaptiveRecommendation.topic),
         band: adaptiveReady ? titleCase(adaptiveRecommendation.difficulty) : "Review",
         bandClass: adaptiveReady ? "steady" : "shaky",
-        reason: adaptiveRecommendation.reason,
+        reason: conciseGuideReason(adaptiveRecommendation.reason),
         cta: adaptiveReady
           ? `Open ${titleCase(adaptiveRecommendation.difficulty)} ladder step`
           : `Review ${titleCase(adaptiveRecommendation.topic)}`,
@@ -539,7 +554,7 @@ export default function QuizBank({
           title: titleCase(masteryWeakest.topic),
           band: Math.round(masteryWeakest.score),
           bandClass: masteryWeakest.band,
-          reason: masteryWeakest.reason,
+          reason: conciseGuideReason(masteryWeakest.reason),
           cta: `Practice ${titleCase(masteryWeakest.topic)}`,
           onClick: () => {
             updateFilter({ topic: [masteryWeakest.topic] });

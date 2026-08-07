@@ -1116,7 +1116,7 @@ export default function QuizRunner({
   };
 
   return (
-    <div className="cq-runner cq-runner-full">
+    <div className={`cq-runner cq-runner-full cq-tab-${tab}`}>
       {/* Top header bar, split to match the columns below: Question/Learn tabs on
           the LEFT half, segmented progress + % on the RIGHT half. */}
       <header className="cq-runner-top">

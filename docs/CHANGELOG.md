@@ -5,6 +5,7 @@ All notable changes to CS Navigator are documented here.
 ## [Unreleased]
 
 ### Added
+- **Concept Quiz read-aloud controls.** Quiz questions, answer choices, immediate feedback, and final review rows can now be read with browser speech synthesis, including a short pause before choices and continuation into revealed feedback.
 - **Planner V2 advising prep.** The Planner now acts as the active pre-advising workspace with an advisor prep checklist, selected-plan advisor packet print view, official Morgan academic calendar link, and a plan-review helper grounded in the selected schedule.
 - **Planner V2 recommendation explanations.** Schedule options now include plan-level advisor readiness, specific review items, course-level requirement reasons, unlock notes, risk flags, and grounded alternatives.
 - **Planner V2 saved plans.** Students can save advisor-ready schedules to their account, restore exact saved snapshots, print them, and delete them with a confirm-before-delete flow.
@@ -16,6 +17,7 @@ All notable changes to CS Navigator are documented here.
 - **Practice visualizer audit script.** A frontend audit command now prints Practice visualizer concepts, effective step counts, compact teaching samples, and oversized/banned-copy warnings across all 151 visualizers.
 
 ### Changed
+- Coding Tutor mobile Home, Practice Library, and Concept Quiz layouts are denser at 425/375/320px widths, with smaller type, tighter card padding, single-column LeetCode daily actions, compact Practice problem footers/guide cards, and one continuous quiz/review scroll instead of split panes.
 - The standalone in-app Advising Form is hidden behind a local legacy feature flag; `/advising` now sends students to Planner V2 by default while preserving the old form code and backend draft/upload endpoints.
 - Coding Tutor dark-mode styling now uses a more stable scoped token layer under `body.coding-dark .coding-app`, with clearer dark surface contrast and Coding Tutor-specific legacy dark selectors moved off global `body.dark` / `[data-theme="dark"]` paths.
 - Coding Tutor dark-mode controls now have brighter, less muddy contrast for Learn visualizer buttons, Practice Library starter/filter chips, track navigation, and workspace visualizer idea actions.
