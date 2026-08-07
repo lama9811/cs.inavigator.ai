@@ -1383,6 +1383,50 @@ body.coding-dark .cq-question-kind.group-parsons {
   border-bottom-color: var(--ct-accent);
 }
 
+.cq-question-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.coding-app .cq-read-aloud,
+.coding-app .cq-read-aloud:hover:not(:disabled) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: fit-content;
+  min-height: 34px;
+  padding: 0.38rem 0.72rem !important;
+  border: 1px solid color-mix(in srgb, var(--ct-primary) 34%, var(--ct-border)) !important;
+  border-radius: 999px !important;
+  background: color-mix(in srgb, var(--ct-primary) 8%, var(--ct-panel)) !important;
+  color: var(--ct-primary) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  font-family: "Sora", var(--font-display, "Public Sans"), sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.coding-app .cq-read-aloud:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ct-primary) 14%, var(--ct-panel)) !important;
+  border-color: color-mix(in srgb, var(--ct-primary) 55%, var(--ct-border)) !important;
+}
+
+.coding-app .cq-read-aloud.speaking,
+.coding-app .cq-read-aloud.speaking:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ct-accent) 62%, var(--ct-border)) !important;
+  background: color-mix(in srgb, var(--ct-accent) 14%, var(--ct-panel)) !important;
+  color: var(--ct-accent) !important;
+}
+
+.cq-read-aloud svg {
+  flex: 0 0 auto;
+  font-size: 0.85rem;
+}
+
 /* Larger, bolder question prompt in the display font so it anchors the pane. */
 /* Keep the active question unmistakably readable on the light quiz surface. */
 body:not(.coding-dark) .coding-app .cq-prompt {
@@ -1960,6 +2004,7 @@ body:not(.coding-dark) .coding-app .cq-prompt {
   align-items: center;
   gap: 0.6rem;
   margin-bottom: 0.35rem;
+  flex-wrap: wrap;
 }
 .cq-result-num {
   font-weight: 700;
@@ -1981,6 +2026,12 @@ body:not(.coding-dark) .coding-app .cq-prompt {
 .cq-result-row.incorrect .cq-result-tag {
   color: #d0493b;
   background: color-mix(in srgb, #d0493b 12%, var(--ct-panel));
+}
+.coding-app .cq-result-read {
+  margin-left: auto;
+  min-height: 28px;
+  padding: 0.25rem 0.58rem !important;
+  font-size: 0.72rem;
 }
 .cq-result-prompt {
   margin: 0 0 0.3rem;

@@ -5,6 +5,8 @@ import {
   FaArrowRight,
   FaCheckCircle,
   FaTimesCircle,
+  FaVolumeUp,
+  FaStopCircle,
 } from "react-icons/fa";
 import {
   clearQuizLastResult,
@@ -54,6 +56,148 @@ function seededShuffle(list, seed) {
 
 function isMcqQuestion(question) {
   return question?.kind === "mcq-output" || question?.kind === "mcq-behavior";
+}
+
+function cleanSpeechText(value) {
+  return String(value ?? "")
+    .replace(/`/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const SPEECH_PAUSE_TOKEN = "[[pause]]";
+
+function speechSegmentsFromText(value) {
+  return String(value ?? "")
+    .split(SPEECH_PAUSE_TOKEN)
+    .map(cleanSpeechText)
+    .filter(Boolean);
+}
+
+function speechAvailable() {
+  return (
+    typeof window !== "undefined" &&
+    "speechSynthesis" in window &&
+    "SpeechSynthesisUtterance" in window
+  );
+}
+
+function ReadAloudButton({ text, label = "Read aloud", className = "" }) {
+  const [speaking, setSpeaking] = useState(false);
+  const speakingRef = useRef(false);
+  const segmentsRef = useRef([]);
+  const segmentIndexRef = useRef(0);
+  const pauseTimerRef = useRef(null);
+  const lastTextRef = useRef("");
+  const supported = speechAvailable();
+  const spokenText = String(text ?? "");
+  const hasText = speechSegmentsFromText(spokenText).length > 0;
+
+  const stopSpeech = () => {
+    if (pauseTimerRef.current) {
+      window.clearTimeout(pauseTimerRef.current);
+      pauseTimerRef.current = null;
+    }
+    window.speechSynthesis.cancel();
+    speakingRef.current = false;
+    segmentsRef.current = [];
+    segmentIndexRef.current = 0;
+    setSpeaking(false);
+  };
+
+  const speakNextSegment = () => {
+    if (!speakingRef.current) return;
+    const segment = segmentsRef.current[segmentIndexRef.current];
+    if (!segment) {
+      speakingRef.current = false;
+      setSpeaking(false);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(segment);
+    utterance.rate = 0.92;
+    utterance.pitch = 1;
+    utterance.onend = () => {
+      segmentIndexRef.current += 1;
+      if (segmentIndexRef.current < segmentsRef.current.length) {
+        pauseTimerRef.current = window.setTimeout(() => {
+          pauseTimerRef.current = null;
+          speakNextSegment();
+        }, 500);
+      } else {
+        speakingRef.current = false;
+        setSpeaking(false);
+      }
+    };
+    utterance.onerror = () => stopSpeech();
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const startSpeech = (nextText) => {
+    const nextSegments = speechSegmentsFromText(nextText);
+    if (!nextSegments.length) return;
+    window.speechSynthesis.cancel();
+    segmentsRef.current = nextSegments;
+    segmentIndexRef.current = 0;
+    speakingRef.current = true;
+    lastTextRef.current = String(nextText ?? "");
+    setSpeaking(true);
+    speakNextSegment();
+  };
+
+  useEffect(() => {
+    if (!supported) return undefined;
+    return () => {
+      stopSpeech();
+    };
+  }, [supported]);
+
+  useEffect(() => {
+    if (!supported || !speakingRef.current) {
+      lastTextRef.current = spokenText;
+      return;
+    }
+
+    const previous = lastTextRef.current;
+    if (!previous || spokenText === previous) return;
+
+    if (spokenText.startsWith(previous)) {
+      const added = spokenText.slice(previous.length);
+      const addedSegments = speechSegmentsFromText(added);
+      if (addedSegments.length) {
+        segmentsRef.current = [...segmentsRef.current, ...addedSegments];
+      }
+    } else {
+      startSpeech(spokenText);
+    }
+
+    lastTextRef.current = spokenText;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spokenText, supported]);
+
+  if (!supported || !hasText) return null;
+
+  const toggleSpeech = () => {
+    if (speaking) {
+      stopSpeech();
+      return;
+    }
+
+    startSpeech(spokenText);
+  };
+
+  return (
+    <button
+      type="button"
+      className={`cq-read-aloud ${speaking ? "speaking" : ""} ${className}`.trim()}
+      onClick={toggleSpeech}
+      aria-pressed={speaking}
+      title={speaking ? "Stop reading" : label}
+    >
+      {speaking ? <FaStopCircle aria-hidden="true" /> : <FaVolumeUp aria-hidden="true" />}
+      <span>{speaking ? "Stop" : label}</span>
+    </button>
+  );
 }
 
 function choiceOrderFor(question, seed) {
@@ -393,6 +537,34 @@ function formatAnswer(value) {
   return clean(value);
 }
 
+function buildAnswerOptionsSpeech(question, choiceOrder = []) {
+  if (!question) return "";
+
+  if (isMcqQuestion(question)) {
+    const displayOrder = choiceOrder.length
+      ? choiceOrder
+      : question.choices.map((_, index) => index);
+    return displayOrder
+      .map((originalIndex, displayIndex) => {
+        const letter = String.fromCharCode(65 + displayIndex);
+        return `Option ${letter}: ${question.choices[originalIndex]}.`;
+      })
+      .join(" ");
+  }
+
+  if (question.kind === "typein") {
+    return question.typein_mode === "code"
+      ? "Type the code answer in the answer box."
+      : "Type your answer in the answer box.";
+  }
+
+  if (question.kind === "parsons") {
+    return `Arrange these lines in the correct order: ${(question.lines || []).join("; ")}.`;
+  }
+
+  return "";
+}
+
 function isAnswerComplete(answer) {
   return (
     answer != null &&
@@ -529,6 +701,70 @@ function buildImmediateReview(question, result, explanation) {
   };
 }
 
+function buildImmediateReviewSpeech(question, answer) {
+  if (!answer?.checked) return "";
+
+  const result = gradeAnswerLocally(question, answer);
+  const explanation = splitExplanation(question.explanation);
+  const review = buildImmediateReview(question, result, explanation);
+  const status = result.correct ? "Correct." : "Not quite.";
+  const answerReview = result.correct
+    ? ""
+    : `Your answer was ${formatAnswer(result.studentAnswer)}. The correct answer is ${formatAnswer(result.correctAnswer)}.`;
+  const points = review.points.length ? `Notes: ${review.points.join(" ")}` : "";
+
+  return [
+    status,
+    answerReview,
+    review.summary,
+    points,
+    !result.correct ? review.nextStep : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function buildQuestionSpeech(question, index, total, choiceOrder = [], answer) {
+  if (!question) return "";
+
+  const optionsSpeech = buildAnswerOptionsSpeech(question, choiceOrder);
+  const reviewSpeech = buildImmediateReviewSpeech(question, answer);
+
+  return [
+    `Question ${index + 1} of ${total}.`,
+    question.prompt,
+    question.code ? `Code: ${question.code}` : "",
+    question.goal ? `Goal: ${question.goal}` : "",
+    optionsSpeech ? SPEECH_PAUSE_TOKEN : "",
+    optionsSpeech,
+    reviewSpeech ? SPEECH_PAUSE_TOKEN : "",
+    reviewSpeech,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function buildResultSpeech(question, result, index) {
+  if (!question || !result) return "";
+
+  const ok = Boolean(result.correct);
+  const explanation = splitExplanation(result.explanation || question.explanation || "");
+  const answerReview = ok
+    ? ""
+    : `Your answer was ${formatAnswer(result.student_answer)}. The correct answer is ${formatAnswer(result.correct_answer)}.`;
+
+  return [
+    `Question ${index + 1}.`,
+    question.prompt,
+    ok ? "Correct." : "Incorrect.",
+    answerReview,
+    explanation.summary,
+    explanation.detail,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 export function ImmediateFeedback({ question, answer, onReviewLesson }) {
   if (!answer?.checked) return null;
 
@@ -645,6 +881,11 @@ function ResultsScreen({
                   <span className="cq-result-tag">
                     {ok ? "Correct" : "Incorrect"}
                   </span>
+                  <ReadAloudButton
+                    className="cq-result-read"
+                    label="Read review"
+                    text={buildResultSpeech(q, r, index)}
+                  />
                 </div>
                 <p className="cq-result-prompt">{q.prompt}</p>
                 {!ok ? (
@@ -778,6 +1019,18 @@ export default function QuizRunner({
   const checkedCount = useMemo(
     () => questions.filter((q) => answersById[q.id]?.checked).length,
     [questions, answersById]
+  );
+
+  const currentReadAloudText = useMemo(
+    () =>
+      buildQuestionSpeech(
+        question,
+        index,
+        total,
+        question ? choiceOrders[question.id] : [],
+        answered
+      ),
+    [answered, choiceOrders, index, question, total]
   );
 
   if (grade) {
@@ -938,6 +1191,9 @@ export default function QuizRunner({
           <div className="cq-pane-body">
             {tab === "question" ? (
               <div className="cq-question-panel">
+                <div className="cq-question-tools">
+                  <ReadAloudButton text={currentReadAloudText} />
+                </div>
                 <p className="cq-prompt">{question.prompt}</p>
                 {question.code ? (
                   <pre className="cq-code">
