@@ -253,6 +253,30 @@ def _latest_completed_lesson(learn_rows: Iterable[Any]) -> Optional[Any]:
     return rows[0] if rows else None
 
 
+def _latest_error_signal(attempt_rows: Iterable[Any]) -> Optional[dict[str, Any]]:
+    rows = [
+        row for row in attempt_rows or []
+        if _norm(getattr(row, "error_class", None)) in adaptive_practice.ERROR_REVIEW_ROUTES
+        and _norm(getattr(row, "outcome", None)) != "pass"
+    ]
+    rows.sort(key=lambda row: getattr(row, "created_at", None) or datetime.min)
+    if not rows:
+        return None
+    latest = rows[-1]
+    error_class = _norm(getattr(latest, "error_class", None))
+    route = adaptive_practice.ERROR_REVIEW_ROUTES[error_class]
+    return {
+        "error_class": error_class,
+        "topic": _norm(getattr(latest, "topic", None)),
+        "difficulty": _norm(getattr(latest, "difficulty", None)),
+        "question_id": getattr(latest, "question_id", None),
+        "lesson_category": route["lesson_category"],
+        "title": route["title"],
+        "reason": route["reason"],
+        "created_at": _iso(getattr(latest, "created_at", None)),
+    }
+
+
 def _advanced_allowed(topic: str, *, explicit_advanced: bool, evidence: Optional[dict[str, Any]] = None) -> bool:
     if _norm(topic) not in ADVANCED_TOPICS:
         return True
@@ -265,6 +289,21 @@ def _advanced_allowed(topic: str, *, explicit_advanced: bool, evidence: Optional
         return int(evidence.get("attempts") or 0) >= mastery.MIN_ATTEMPTS_FOR_SCORE
     except (TypeError, ValueError):
         return False
+
+
+def _can_resume_question(
+    question: dict[str, Any],
+    *,
+    explicit_advanced: bool,
+    surface: str,
+    evidence: Optional[dict[str, Any]] = None,
+) -> bool:
+    topic = _norm(question.get("topic"))
+    if topic not in ADVANCED_TOPICS:
+        return True
+    if surface == "workspace":
+        return True
+    return _advanced_allowed(topic, explicit_advanced=explicit_advanced, evidence=evidence)
 
 
 def build_next_step(
@@ -281,6 +320,7 @@ def build_next_step(
     adaptive_payload: dict[str, Any],
     explicit_advanced: bool = False,
     learning_style: str = "try_then_hint",
+    surface: str = "home",
 ) -> dict[str, Any]:
     progress_by_question = {str(getattr(row, "question_id", "")): row for row in progress_rows or []}
     questions_by_id = {str(question.get("id")): question for question in questions or []}
@@ -293,7 +333,7 @@ def build_next_step(
     if workspace_state and getattr(workspace_state, "source", None) == "practice":
         question = questions_by_id.get(str(getattr(workspace_state, "problem_id", "")))
         progress = progress_by_question.get(str(getattr(workspace_state, "problem_id", "")))
-        if question and _progress_status(progress) != "solved":
+        if question and _progress_status(progress) != "solved" and _can_resume_question(question, explicit_advanced=explicit_advanced, surface=surface):
             return _recommendation(
                 kind="resume",
                 title=question.get("title") or "Continue your problem",
@@ -311,19 +351,21 @@ def build_next_step(
     in_progress = _latest_in_progress(progress_rows, questions_by_id)
     if in_progress:
         row, question = in_progress
-        return _recommendation(
-            kind="resume",
-            title=question.get("title") or "Continue your problem",
-            reason="You already started this problem. Continue from your saved code and run the tests.",
-            action_label=f"Resume {question.get('title') or 'problem'}",
-            target=_target("workspace", question_id=question.get("id")),
-            confidence="high",
-            source="practice_progress",
-            beginner_mode=False,
-            evidence={"attempt_count": getattr(row, "attempt_count", 0), "updated_at": _iso(getattr(row, "updated_at", None))},
-            topic=_norm(question.get("topic")),
-            question=_serialize_question(question),
-        )
+        evidence = {"attempts": getattr(row, "attempt_count", 0), "updated_at": _iso(getattr(row, "updated_at", None))}
+        if _can_resume_question(question, explicit_advanced=explicit_advanced, surface=surface, evidence=evidence):
+            return _recommendation(
+                kind="resume",
+                title=question.get("title") or "Continue your problem",
+                reason="You already started this problem. Continue from your saved code and run the tests.",
+                action_label=f"Resume {question.get('title') or 'problem'}",
+                target=_target("workspace", question_id=question.get("id")),
+                confidence="high",
+                source="practice_progress",
+                beginner_mode=False,
+                evidence=evidence,
+                topic=_norm(question.get("topic")),
+                question=_serialize_question(question),
+            )
 
     if not has_signal:
         topic = _starter_topic(questions)
@@ -365,6 +407,29 @@ def build_next_step(
             },
             topic=topic,
             review_signal=review_signal,
+        )
+
+    latest_error = _latest_error_signal(attempt_rows)
+    if latest_error:
+        category = latest_error["lesson_category"]
+        return _recommendation(
+            kind="error_checkpoint",
+            title=latest_error["title"],
+            reason=latest_error["reason"],
+            action_label="Review the error pattern",
+            target=_target("lesson_review", topic=latest_error.get("topic"), category=category),
+            confidence="low",
+            source="latest_error",
+            beginner_mode=False,
+            evidence={
+                "error_class": latest_error["error_class"],
+                "count": 1,
+                "threshold": adaptive_practice.ERROR_REVIEW_MIN_COUNT,
+                "question_id": latest_error.get("question_id"),
+                "at": latest_error.get("created_at"),
+            },
+            topic=latest_error.get("topic") or category,
+            review_signal=latest_error,
         )
 
     quiz_signal = _quiz_miss_signal(concept_rows)

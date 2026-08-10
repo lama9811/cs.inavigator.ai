@@ -7802,6 +7802,7 @@ async def get_coding_adaptive_next_step(
         adaptive_payload=adaptive_payload,
         explicit_advanced=explicit_advanced,
         learning_style=(preference.learning_style if preference else DEFAULT_LEARNING_STYLE),
+        surface=surface,
     )
     return {
         "language": language_key,

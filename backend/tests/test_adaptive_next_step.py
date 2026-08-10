@@ -34,6 +34,7 @@ def _recommend(**overrides):
         "adaptive_payload": {"recommendation": {}, "review_signal": None},
         "explicit_advanced": False,
         "learning_style": "try_then_hint",
+        "surface": "home",
     }
     defaults.update(overrides)
     return adaptive_next_step.build_next_step(**defaults)
@@ -135,6 +136,65 @@ def test_one_failed_hard_attempt_does_not_create_advanced_recommendation():
 
     assert rec["topic"] != "dynamic programming"
     assert rec["source"] == "beginner_fallback"
+
+
+def test_low_signal_advanced_in_progress_does_not_override_latest_syntax_error_on_home():
+    now = datetime.utcnow()
+    rec = _recommend(
+        progress_rows=[
+            _row(
+                question_id="dp-hard",
+                status="in_progress",
+                attempt_count=1,
+                updated_at=now,
+            )
+        ],
+        attempt_rows=[
+            _row(
+                question_id="dp-hard",
+                topic="dynamic programming",
+                difficulty="hard",
+                language="python",
+                outcome="error",
+                error_class="syntax",
+                created_at=now,
+            )
+        ],
+        adaptive_payload={"recommendation": {}, "review_signal": None},
+    )
+
+    assert rec["kind"] == "error_checkpoint"
+    assert rec["source"] == "latest_error"
+    assert rec["target"]["category"] == "syntax"
+
+
+def test_workspace_surface_can_resume_low_signal_advanced_problem():
+    now = datetime.utcnow()
+    rec = _recommend(
+        surface="workspace",
+        progress_rows=[
+            _row(
+                question_id="dp-hard",
+                status="in_progress",
+                attempt_count=1,
+                updated_at=now,
+            )
+        ],
+        attempt_rows=[
+            _row(
+                question_id="dp-hard",
+                topic="dynamic programming",
+                difficulty="hard",
+                language="python",
+                outcome="error",
+                error_class="syntax",
+                created_at=now,
+            )
+        ],
+    )
+
+    assert rec["kind"] == "resume"
+    assert rec["topic"] == "dynamic programming"
 
 
 def test_scored_advanced_mastery_can_recommend_advanced_topic():
