@@ -86,7 +86,7 @@
         "No nodes after ca"
       ],
       "answer_index": 0,
-      "explanation": "Once the prefix node is found, autocomplete gathers complete words below that node.",
+      "explanation": "Autocomplete first walks to the node for the prefix. From there, it collects only complete words below that node, so words outside the prefix path are not included.",
       "variants": {
         "python": {},
         "java": {},

@@ -17,7 +17,7 @@
         "The number of arrays in memory"
       ],
       "answer_index": 0,
-      "explanation": "A prefix array stores running totals. The exact index convention must stay consistent.",
+      "explanation": "A prefix array stores totals from the start up to a chosen boundary. The boundary convention matters because every range subtraction depends on using the same indexing rule.",
       "variants": {
         "python": {},
         "java": {},
@@ -40,7 +40,7 @@
         "prefix[0] only"
       ],
       "answer_index": 0,
-      "explanation": "Subtracting the total before left leaves exactly the values from left through right.",
+      "explanation": "The total before left includes values you do not want. Subtracting it from the total through right leaves exactly the values from left through right.",
       "variants": {
         "python": {},
         "java": {},
@@ -109,7 +109,7 @@
         "Searching words by prefix letters"
       ],
       "answer_index": 0,
-      "explanation": "Building prefix totals once lets each later range query answer quickly.",
+      "explanation": "Prefix sums move the repeated work to the setup step. After the totals are built once, each range query can be answered with one subtraction.",
       "variants": {
         "python": {},
         "java": {},

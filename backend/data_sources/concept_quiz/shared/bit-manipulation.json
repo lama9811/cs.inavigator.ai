@@ -17,7 +17,7 @@
         "Whether n is sorted"
       ],
       "answer_index": 0,
-      "explanation": "The lowest bit is 1 for odd numbers and 0 for even numbers.",
+      "explanation": "The lowest bit shows whether the number includes the 1s place. Odd numbers have that bit set to 1, and even numbers have it set to 0.",
       "variants": {
         "python": {},
         "java": {},
@@ -40,7 +40,7 @@
         "Search a trie path"
       ],
       "answer_index": 0,
-      "explanation": "A mask has 1s in the positions code wants to inspect or modify.",
+      "explanation": "A mask is a number chosen for its bit pattern. Code uses it to keep, test, turn on, or turn off specific bit positions.",
       "variants": {
         "python": {},
         "java": {},
@@ -86,7 +86,7 @@
         "XOR works only on strings"
       ],
       "answer_index": 0,
-      "explanation": "Pairs cancel out under XOR, leaving the unpaired value when the pattern fits.",
+      "explanation": "XOR cancels equal pairs because a value xor itself becomes 0. When every other value appears twice, the unpaired value is the one left over.",
       "variants": {
         "python": {},
         "java": {},

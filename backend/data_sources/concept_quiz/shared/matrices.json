@@ -40,7 +40,7 @@
         "Only larger values"
       ],
       "answer_index": 0,
-      "explanation": "Four-direction movement changes exactly one coordinate at a time.",
+      "explanation": "Four-direction movement changes either the row or the column, not both. Diagonal movement changes both coordinates and is a different rule.",
       "variants": {
         "python": {},
         "java": {},
@@ -63,7 +63,7 @@
         "To convert strings to numbers"
       ],
       "answer_index": 0,
-      "explanation": "A neighbor can move off an edge, so bounds checks protect the read.",
+      "explanation": "A neighbor step can point outside the grid. Check bounds before reading the cell so the code does not crash on an invalid row or column.",
       "variants": {
         "python": {},
         "java": {},
@@ -109,7 +109,7 @@
         "3 and 5"
       ],
       "answer_index": 0,
-      "explanation": "Row 1 is the second row, so it contains 4 and 5.",
+      "explanation": "Row indexes start at 0, so row 1 is the second row. In the shown grid, that row contains 4 and 5.",
       "variants": {
         "python": {},
         "java": {},
@@ -155,7 +155,7 @@
         "row + col equals zero"
       ],
       "answer_index": 0,
-      "explanation": "Down-right increases both coordinates by one.",
+      "explanation": "A down-right diagonal move adds 1 to the row and 1 to the column. That is why it visits cells where the row and column move together.",
       "variants": {
         "python": {},
         "java": {},

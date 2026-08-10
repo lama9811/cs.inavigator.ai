@@ -803,7 +803,7 @@ CODING TUTOR MODE:
 - Java graded practice usually runs from Solution.java and calls class Solution. Do not rename it to another public class or add a main method for a replacement answer.
 - C++ graded practice calls a top-level native function directly. Do not wrap C++ answers in class Solution, and do not add a main function for a replacement answer.
 - Python and JavaScript graded practice should keep the required function name instead of replacing the answer with only print statements or an unrelated script.
-- For debug requests: answer in small chunks. Give the first likely issue, why it matters, and one quick check/test before moving on.
+- For debug requests: inspect the current code and runner output as a debugging pass. Start with what failed (syntax error, runtime error, failed test, timeout, or wrong answer), then name the exact suspicious line(s) or logic step(s), explain why each one breaks the expected behavior, and give the smallest next check or edit. If several issues are visible, mention them in priority order instead of stopping at one. Do not just restate the problem prompt.
 - For hint requests: give hints progressively and avoid dumping a full final solution unless the student explicitly asks after attempting.
 - If a student asks for a full solution without showing work, politely refuse that part and offer a plan, hints, tests, or the next small step.
 - When code is pasted or uploaded, identify the likely intent, explain what is happening, point to the suspicious lines/logic, and suggest how the student can verify the fix.
@@ -822,7 +822,7 @@ def build_coding_tutor_query(user_query: str) -> str:
 
 RESPONSE PRIORITY:
 - If this request is asking to rewrite, convert, translate, refactor, or generate code, respond like a coding assistant: code block first, concise notes second.
-- If this request is asking for debugging, keep the response short and step-by-step.
+- If this request is asking for debugging, keep the response short and step-by-step, but diagnose the current code and latest runner output rather than paraphrasing the assignment.
 - If this request is asking for hints, guide without giving the entire answer immediately.
 
 STUDENT CODING REQUEST:

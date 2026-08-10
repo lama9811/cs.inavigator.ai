@@ -396,7 +396,14 @@ export default function Chatbox({
         ].filter(Boolean).join("\n")
       : "";
     const debugInstruction = effectiveTutorMode === "Debugging"
-      ? "Debug mode: respond in small chunks. Give the first likely issue, why it matters, and one quick check or test to run. Avoid long paragraphs."
+      ? [
+          "Debug mode: inspect the current code and latest runner output as a real debugging pass.",
+          "Do not just restate the prompt or give only one likely issue if more than one problem is visible.",
+          "Start with what failed: syntax error, runtime error, failed test, timeout, or wrong answer.",
+          "Then list the specific suspicious line(s) or logic step(s), why each one is wrong, and the smallest check or edit that would confirm it.",
+          "If the code runs but gives the wrong answer, compare the expected behavior with what the current code actually does.",
+          "Keep the answer concise and avoid rewriting the full solution unless the student explicitly asks for a replacement.",
+        ].join(" ")
       : "";
     return [
       "You are a coding tutor. Adapt to the student's intent. For hint/debug/review requests, teach and guide. For rewrite/convert/refactor/generate-code requests, behave like a coding assistant and return usable code first.",
@@ -532,7 +539,13 @@ export default function Chatbox({
     } else {
       // Debug (default)
       nextTutorMode = "Debugging";
-      messageToSend = "Help me debug my current code. What's the most likely issue, why does it matter, and one quick check I can run?";
+      messageToSend = [
+        "Help me debug my current workspace code.",
+        "Use the code and latest runner output I have open now.",
+        "Tell me what failed, the exact line or logic step that caused it, and any other visible issues.",
+        "If the code runs but gives the wrong answer, compare what it does with what the problem expects.",
+        "Give me the smallest next check or edit instead of repeating the problem statement.",
+      ].join(" ");
     }
 
     setChatMode("coding_tutor");

@@ -63,7 +63,7 @@
         "A way to ignore repeated work"
       ],
       "answer_index": 0,
-      "explanation": "The transition explains how saved smaller answers combine into the current answer.",
+      "explanation": "A transition is the rule for building the current saved answer from smaller saved answers. If the transition is wrong, every later DP cell that depends on it can be wrong too.",
       "variants": {
         "python": {},
         "java": {},
@@ -109,7 +109,7 @@
         "The largest loop index only"
       ],
       "answer_index": 0,
-      "explanation": "Memoization keeps answers for states already solved so repeated calls can return quickly.",
+      "explanation": "Memoization saves the result for a state after it is solved once. The next time code reaches the same state, it can reuse that saved value instead of repeating the recursion.",
       "variants": {
         "python": {},
         "java": {},
@@ -132,7 +132,7 @@
         "The answer is always a boolean"
       ],
       "answer_index": 0,
-      "explanation": "DP earns its keep when repeated subproblems show up and saved answers can be reused.",
+      "explanation": "DP helps when the same smaller problem appears more than once. If each subproblem is unique, saving answers may add extra work without much benefit.",
       "variants": {
         "python": {},
         "java": {},
@@ -155,7 +155,7 @@
         "When there are no base cases"
       ],
       "answer_index": 0,
-      "explanation": "If the current state only reads the last one or two states, older table entries can often be dropped.",
+      "explanation": "Older table entries can be dropped only when later states no longer read them. If a future transition still needs an old value, removing it breaks the answer.",
       "variants": {
         "python": {},
         "java": {},

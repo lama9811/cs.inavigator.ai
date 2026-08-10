@@ -49,6 +49,15 @@ THIN_PRIORITY_TOPICS = {
     "tries",
     "two pointers",
 }
+ADVANCED_ON_RAMP_DEPTH_TARGETS = {
+    "bit manipulation": {"easy": 4, "medium": 4},
+    "disjoint sets": {"easy": 4, "medium": 4},
+    "dynamic programming": {"easy": 4, "medium": 4},
+    "graphs": {"easy": 1, "medium": 3},
+    "matrices": {"easy": 4, "medium": 4},
+    "prefix sums": {"easy": 4, "medium": 4},
+    "tries": {"easy": 4, "medium": 4},
+}
 VISUALIZER_CONCEPTS = {
     "array-scan",
     "arithmetic",
@@ -239,6 +248,23 @@ def test_advanced_topics_have_adaptive_learning_depth():
     )
 
     assert underfilled == []
+
+
+def test_advanced_on_ramp_topics_have_easy_and_medium_signal():
+    """Thin advanced topics need enough lower-pressure attempts for adaptive routing."""
+    questions = load_questions()
+    problems = []
+    for topic, targets in ADVANCED_ON_RAMP_DEPTH_TARGETS.items():
+        counts = Counter(
+            q.get("difficulty")
+            for q in questions
+            if q.get("topic") == topic
+        )
+        for difficulty, minimum in targets.items():
+            if counts[difficulty] < minimum:
+                problems.append(f"{topic}/{difficulty}: {counts[difficulty]} < {minimum}")
+
+    assert problems == []
 
 
 def test_answer_banks_match_questions_for_every_language():

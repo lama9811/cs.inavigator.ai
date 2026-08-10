@@ -109,7 +109,7 @@
         "It prevents find from working"
       ],
       "answer_index": 0,
-      "explanation": "Shallow parent trees make future find operations faster.",
+      "explanation": "Rank or size keeps the parent tree shallow when groups merge. Shallow trees make later find calls reach the representative with fewer steps.",
       "variants": {
         "python": {},
         "java": {},
@@ -155,7 +155,7 @@
         "Before any nodes exist"
       ],
       "answer_index": 0,
-      "explanation": "The count changes only when two separate components become one component.",
+      "explanation": "The component count changes only when two different groups merge. If both values already have the same representative, the link does not reduce the count.",
       "variants": {
         "python": {},
         "java": {},
@@ -178,7 +178,7 @@
         "Initializing each item as its own parent"
       ],
       "answer_index": 0,
-      "explanation": "Parent pointers may be intermediate. Calling find first gives the actual representative.",
+      "explanation": "A parent pointer may point to an intermediate node, not the final representative. Calling find first gives the group representative that should be compared.",
       "variants": {
         "python": {},
         "java": {},

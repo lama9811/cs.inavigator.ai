@@ -448,15 +448,33 @@ function traceErrorInfo(traceResult, activeStep, languageLabel = "Python") {
   const exceptionLine = typeof activeStep?.exception === "object" ? Number(activeStep.exception.line) : null;
   const lineNo = traceLineNo(activeStep) || exceptionLine || Number(syntaxLine?.[2] || pythonLine?.[1]) || null;
   const label = isSyntax ? "Syntax error" : activeStep?.exception ? "Runtime error" : "Trace error";
+  const cleanLine = activeStep?.line ? stripLineComment(activeStep.line, languageLabel).trim() : "";
+  const exceptionType = exceptionName?.[1] || (typeof activeStep?.exception === "object" ? activeStep.exception.type : "");
+  const exceptionMessage = typeof activeStep?.exception === "object" ? activeStep.exception.message || "" : raw;
+  let cause = "";
+  const missingName = exceptionType === "NameError"
+    ? exceptionMessage.match(/name ['"]([^'"]+)['"] is not defined/i)?.[1]
+    : "";
+  if (missingName) {
+    cause = `${cleanLine || "This line"} uses ${missingName}, but that name has not been created in this scope. Check for a typo or use the variable name that already exists.`;
+  } else if (exceptionType === "TypeError" && cleanLine) {
+    cause = `${cleanLine} uses a value in a way its type does not support. Check the value stored in each variable on this line.`;
+  } else if (exceptionType === "IndexError" && cleanLine) {
+    cause = `${cleanLine} tries to read a position that is outside the list or string. Check the index and the collection length.`;
+  } else if (exceptionType === "KeyError" && cleanLine) {
+    cause = `${cleanLine} tries to read a key that is not in the dictionary or map yet. Check whether the key exists before reading it.`;
+  } else if (exceptionType && cleanLine) {
+    cause = `${cleanLine} is the line that triggered this ${exceptionType}. Check the variables used on that line first.`;
+  }
   const message = syntaxLine?.[1]?.trim()
     ? `${languageLabel} could not read the code: ${syntaxLine[1].trim()}.`
     : exceptionName
-      ? `${languageLabel} raised ${exceptionName[1]} while tracing this run.`
+      ? `${exceptionName[1]}: ${exceptionMessage || "the program stopped while tracing."}`
       : raw.replace(/^Runner security check blocked this code:\s*/i, "");
   const location = lineNo
     ? `You would see this at line ${lineNo}${activeStep?.line ? `: ${activeStep.line.trim()}` : "."}`
     : "This happened before the trace could step through your function.";
-  return { label, message, location, raw };
+  return { label, message, location, raw, cause };
 }
 
 function CodeTraceModal({
@@ -536,6 +554,11 @@ function CodeTraceModal({
   );
   const activeExplanation = useMemo(() => {
     if (!activeStep) return `Run a trace to step through your ${traceLanguage} code.`;
+    if (activeErrorInfo) {
+      return activeErrorInfo.label === "Syntax error"
+        ? `${traceLanguage} could not start the trace because the code has a syntax error.`
+        : "The trace stopped at the error line. Read the error card below first.";
+    }
     if (isTraceV2 && activeStep.student_message) return activeStep.student_message;
     if (isTraceV2 && activeStep.operation_summary) return activeStep.operation_summary;
     if (activeStep.event === "return") {
@@ -546,7 +569,7 @@ function CodeTraceModal({
     }
     if (operationInsight) return operationInsight;
     return `${traceLanguage} is about to run line ${traceLineNo(activeStep)}. Check the variables before and after this line.`;
-  }, [activeStep, isTraceV2, operationInsight, traceLanguage]);
+  }, [activeErrorInfo, activeStep, isTraceV2, operationInsight, traceLanguage]);
   const changedBindings = useMemo(() => {
     const names = new Set();
     (activeStep?.binding_changes || []).forEach((change) => names.add(`${change.frame}:${change.name}`));
@@ -713,6 +736,7 @@ function CodeTraceModal({
                     <div className="code-trace-error-card">
                       <span>{activeErrorInfo.label}</span>
                       <strong>{activeErrorInfo.message}</strong>
+                      {activeErrorInfo.cause ? <p>{activeErrorInfo.cause}</p> : null}
                       <p>{activeErrorInfo.location}</p>
                     </div>
                   ) : null}

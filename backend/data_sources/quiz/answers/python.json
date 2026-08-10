@@ -8350,6 +8350,636 @@
           "expected": false
         }
       ]
+    },
+    {
+      "question_id": "easy-85",
+      "function_name": "ways_one_three_steps",
+      "runner_tests": [
+        {
+          "name": "four steps",
+          "args": [
+            4
+          ],
+          "expected": 3
+        },
+        {
+          "name": "zero steps",
+          "args": [
+            0
+          ],
+          "expected": 1
+        },
+        {
+          "name": "five steps",
+          "args": [
+            5
+          ],
+          "expected": 4
+        }
+      ]
+    },
+    {
+      "question_id": "easy-86",
+      "function_name": "best_non_adjacent_total",
+      "runner_tests": [
+        {
+          "name": "skip middle",
+          "args": [
+            [
+              4,
+              1,
+              7
+            ]
+          ],
+          "expected": 11
+        },
+        {
+          "name": "single value",
+          "args": [
+            [
+              5
+            ]
+          ],
+          "expected": 5
+        },
+        {
+          "name": "all small choices",
+          "args": [
+            [
+              2,
+              3,
+              2
+            ]
+          ],
+          "expected": 4
+        }
+      ]
+    },
+    {
+      "question_id": "easy-87",
+      "function_name": "all_words_with_prefix",
+      "runner_tests": [
+        {
+          "name": "all match",
+          "args": [
+            [
+              "cat",
+              "car",
+              "camp"
+            ],
+            "ca"
+          ],
+          "expected": true
+        },
+        {
+          "name": "one mismatch",
+          "args": [
+            [
+              "cat",
+              "dog"
+            ],
+            "ca"
+          ],
+          "expected": false
+        },
+        {
+          "name": "empty words",
+          "args": [
+            [],
+            "ca"
+          ],
+          "expected": false
+        }
+      ]
+    },
+    {
+      "question_id": "easy-88",
+      "function_name": "first_word_with_prefix",
+      "runner_tests": [
+        {
+          "name": "first match",
+          "args": [
+            [
+              "cat",
+              "car",
+              "dog"
+            ],
+            "ca"
+          ],
+          "expected": "cat"
+        },
+        {
+          "name": "later match",
+          "args": [
+            [
+              "dog",
+              "cart"
+            ],
+            "car"
+          ],
+          "expected": "cart"
+        },
+        {
+          "name": "no match",
+          "args": [
+            [
+              "sun",
+              "sky"
+            ],
+            "ca"
+          ],
+          "expected": "none"
+        }
+      ]
+    },
+    {
+      "question_id": "easy-89",
+      "function_name": "prefix_sum_at",
+      "runner_tests": [
+        {
+          "name": "middle index",
+          "args": [
+            [
+              2,
+              4,
+              1
+            ],
+            1
+          ],
+          "expected": 6
+        },
+        {
+          "name": "first index",
+          "args": [
+            [
+              5,
+              6
+            ],
+            0
+          ],
+          "expected": 5
+        },
+        {
+          "name": "last index",
+          "args": [
+            [
+              1,
+              2,
+              3
+            ],
+            2
+          ],
+          "expected": 6
+        }
+      ]
+    },
+    {
+      "question_id": "easy-90",
+      "function_name": "range_sum_one_query",
+      "runner_tests": [
+        {
+          "name": "middle range",
+          "args": [
+            [
+              2,
+              4,
+              1,
+              3
+            ],
+            1,
+            2
+          ],
+          "expected": 5
+        },
+        {
+          "name": "starts at zero",
+          "args": [
+            [
+              5,
+              1,
+              1
+            ],
+            0,
+            1
+          ],
+          "expected": 6
+        },
+        {
+          "name": "single slot",
+          "args": [
+            [
+              7,
+              8,
+              9
+            ],
+            2,
+            2
+          ],
+          "expected": 9
+        }
+      ]
+    },
+    {
+      "question_id": "easy-91",
+      "function_name": "main_diagonal_values",
+      "runner_tests": [
+        {
+          "name": "two by two",
+          "args": [
+            [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ]
+          ],
+          "expected": [
+            1,
+            4
+          ]
+        },
+        {
+          "name": "three by three",
+          "args": [
+            [
+              [
+                1,
+                0,
+                0
+              ],
+              [
+                0,
+                5,
+                0
+              ],
+              [
+                0,
+                0,
+                9
+              ]
+            ]
+          ],
+          "expected": [
+            1,
+            5,
+            9
+          ]
+        },
+        {
+          "name": "empty matrix",
+          "args": [
+            []
+          ],
+          "expected": []
+        }
+      ]
+    },
+    {
+      "question_id": "easy-92",
+      "function_name": "turn_off_lowest_bit",
+      "runner_tests": [
+        {
+          "name": "turn off four bit",
+          "args": [
+            12
+          ],
+          "expected": 8
+        },
+        {
+          "name": "power of two becomes zero",
+          "args": [
+            8
+          ],
+          "expected": 0
+        },
+        {
+          "name": "zero stays zero",
+          "args": [
+            0
+          ],
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "question_id": "easy-93",
+      "function_name": "has_repeated_group_link",
+      "runner_tests": [
+        {
+          "name": "cycle link appears",
+          "args": [
+            3,
+            [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                0,
+                2
+              ]
+            ]
+          ],
+          "expected": true
+        },
+        {
+          "name": "no repeated group",
+          "args": [
+            4,
+            [
+              [
+                0,
+                1
+              ],
+              [
+                2,
+                3
+              ]
+            ]
+          ],
+          "expected": false
+        },
+        {
+          "name": "duplicate direct link",
+          "args": [
+            2,
+            [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                0
+              ]
+            ]
+          ],
+          "expected": true
+        }
+      ]
+    },
+    {
+      "question_id": "easy-94",
+      "function_name": "members_connected_to_zero",
+      "runner_tests": [
+        {
+          "name": "three members",
+          "args": [
+            4,
+            [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ]
+          ],
+          "expected": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "name": "only zero",
+          "args": [
+            3,
+            [
+              [
+                1,
+                2
+              ]
+            ]
+          ],
+          "expected": [
+            0
+          ]
+        },
+        {
+          "name": "all connected",
+          "args": [
+            3,
+            [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ]
+            ]
+          ],
+          "expected": [
+            0,
+            1,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "question_id": "easy-95",
+      "function_name": "neighbor_count",
+      "runner_tests": [
+        {
+          "name": "two neighbors",
+          "args": [
+            [
+              [
+                "A",
+                "B"
+              ],
+              [
+                "A",
+                "C"
+              ],
+              [
+                "B",
+                "D"
+              ]
+            ],
+            "A"
+          ],
+          "expected": 2
+        },
+        {
+          "name": "one neighbor",
+          "args": [
+            [
+              [
+                "A",
+                "B"
+              ],
+              [
+                "C",
+                "B"
+              ]
+            ],
+            "C"
+          ],
+          "expected": 1
+        },
+        {
+          "name": "missing node",
+          "args": [
+            [
+              [
+                "A",
+                "B"
+              ]
+            ],
+            "Z"
+          ],
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "question_id": "medium-72",
+      "function_name": "coin_change_ways_small",
+      "runner_tests": [
+        {
+          "name": "one and two coins",
+          "args": [
+            [
+              1,
+              2
+            ],
+            4
+          ],
+          "expected": 3
+        },
+        {
+          "name": "single coin type",
+          "args": [
+            [
+              2
+            ],
+            5
+          ],
+          "expected": 0
+        },
+        {
+          "name": "three coin types",
+          "args": [
+            [
+              1,
+              2,
+              5
+            ],
+            5
+          ],
+          "expected": 4
+        }
+      ]
+    },
+    {
+      "question_id": "medium-73",
+      "function_name": "blocked_stair_ways",
+      "runner_tests": [
+        {
+          "name": "blocked middle",
+          "args": [
+            [
+              1,
+              1,
+              0,
+              1
+            ]
+          ],
+          "expected": 2
+        },
+        {
+          "name": "last blocked",
+          "args": [
+            [
+              1,
+              1,
+              0
+            ]
+          ],
+          "expected": 0
+        },
+        {
+          "name": "all open",
+          "args": [
+            [
+              1,
+              1,
+              1
+            ]
+          ],
+          "expected": 3
+        }
+      ]
+    },
+    {
+      "question_id": "medium-74",
+      "function_name": "largest_group_after_links",
+      "runner_tests": [
+        {
+          "name": "three person group",
+          "args": [
+            5,
+            [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ]
+          ],
+          "expected": 3
+        },
+        {
+          "name": "no links",
+          "args": [
+            3,
+            []
+          ],
+          "expected": 1
+        },
+        {
+          "name": "all merge",
+          "args": [
+            4,
+            [
+              [
+                0,
+                1
+              ],
+              [
+                2,
+                3
+              ],
+              [
+                1,
+                2
+              ]
+            ]
+          ],
+          "expected": 4
+        }
+      ]
     }
   ]
 }
