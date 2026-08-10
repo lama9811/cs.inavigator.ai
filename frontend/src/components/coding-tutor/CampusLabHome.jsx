@@ -15,7 +15,7 @@ function findResumeItem(questions, progressByQuestion) {
     .map(([id, progress]) => ({ id, progress, question: questions.find(q => q.id === id) }))
     .filter(item => item.question && item.progress
       && item.progress.status !== "solved"
-      && (item.progress.attempt_count > 0 || item.progress.status === "in_progress"))
+      && item.progress.attempt_count > 0)
     .sort((a, b) => new Date(b.progress.updated_at || 0) - new Date(a.progress.updated_at || 0))[0] || null;
 }
 
@@ -65,8 +65,14 @@ const DIFFICULTY_RANK = { easy: 0, medium: 1, hard: 2 };
 
 function statusOf(progress) {
   if (progress?.status === "solved") return "solved";
-  if (progress?.status === "in_progress" || (progress?.attempt_count || 0) > 0) return "in_progress";
+  if ((progress?.attempt_count || 0) > 0) return "in_progress";
   return "not_started";
+}
+
+function hasScoredPracticeProgress(progress) {
+  const status = String(progress?.status || "").toLowerCase();
+  const attempts = Number(progress?.attempt_count || progress?.attempts || 0);
+  return status === "solved" || attempts > 0;
 }
 
 function hasMeaningfulCodingProgress({ progressSummary, progressByQuestion, mastery }) {
@@ -76,9 +82,7 @@ function hasMeaningfulCodingProgress({ progressSummary, progressByQuestion, mast
   if (solvedCount > 0 || attemptedCount > 0 || streakCount > 0) return true;
 
   const hasQuestionProgress = Object.values(progressByQuestion || {}).some(progress => {
-    const attempts = Number(progress?.attempt_count || progress?.attempts || 0);
-    const status = String(progress?.status || "").toLowerCase();
-    return attempts > 0 || (status && status !== "not_started");
+    return hasScoredPracticeProgress(progress);
   });
   if (hasQuestionProgress) return true;
 
@@ -317,9 +321,7 @@ function CampusLearningQueue({
     focus,
   });
   const firstPathQuestion = todayPath.find(step => step.question)?.question || null;
-  const hasRealProgress = hasCodingHistory || Object.values(progressByQuestion || {}).some(progress =>
-    progress?.status === "solved" || (progress?.attempt_count || 0) > 0
-  );
+  const hasRealProgress = hasCodingHistory || Object.values(progressByQuestion || {}).some(hasScoredPracticeProgress);
   const adaptiveRecommendation = hasRealProgress ? adaptivePractice?.recommendation || null : null;
   const reviewSignal = adaptivePractice?.review_signal || null;
   const adaptiveTopic = adaptiveRecommendation?.topic || "";

@@ -21,6 +21,7 @@ LOW_ATTEMPTS_TO_SOLVE_MAX = 2
 FAILURE_DROP_COUNT = 2
 ERROR_REVIEW_WINDOW = 8
 ERROR_REVIEW_MIN_COUNT = 2
+BEGINNER_STARTER_TOPICS = ("conditionals", "arrays", "strings", "math", "tuples", "sets", "hash maps")
 
 ERROR_REVIEW_ROUTES = {
     "syntax": {
@@ -145,7 +146,7 @@ def _parse_dt(value: Any) -> datetime:
 def _status(progress: Optional[dict[str, Any]]) -> str:
     if progress and progress.get("status") == "solved":
         return "solved"
-    if progress and (progress.get("status") == "in_progress" or (progress.get("attempt_count") or 0) > 0):
+    if progress and (progress.get("attempt_count") or 0) > 0:
         return "in_progress"
     return "not_started"
 
@@ -178,6 +179,17 @@ def _first_unsolved(
         if _status(progress_by_question.get(str(question.get("id")))) != "solved":
             return question
     return sorted(candidates, key=_question_sort_key)[0] if candidates else None
+
+
+def _first_beginner_starter(
+    questions: Iterable[dict[str, Any]],
+    progress_by_question: dict[str, dict[str, Any]],
+) -> Optional[dict[str, Any]]:
+    for topic in BEGINNER_STARTER_TOPICS:
+        pick = _first_unsolved(questions, progress_by_question, topic=topic, difficulty="easy")
+        if pick:
+            return pick
+    return _first_unsolved(questions, progress_by_question, difficulty="easy")
 
 
 def _events_for_topic(events: Iterable[dict[str, Any]], topic: str, language: str) -> list[dict[str, Any]]:
@@ -310,7 +322,7 @@ def build_adaptive_recommendation(
     topic = _norm((weakest or {}).get("topic"))
 
     if not topic:
-        starter = _first_unsolved(questions, progress_by_question, difficulty="easy")
+        starter = _first_beginner_starter(questions, progress_by_question)
         starter_topic = _norm(starter.get("topic")) if starter else ""
         return {
             "action": "on_ramp",

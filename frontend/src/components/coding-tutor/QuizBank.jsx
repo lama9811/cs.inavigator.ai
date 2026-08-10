@@ -63,6 +63,12 @@ const DIFFICULTY_VALUES = new Set(DIFFICULTY_OPTIONS.map(option => option.value)
 const STATUS_VALUES = new Set(STATUS_OPTIONS.map(option => option.value));
 const BEGINNER_STARTER_TOPICS = ["conditionals", "arrays", "strings", "math", "tuples", "sets", "hash maps"];
 
+function hasScoredPracticeProgress(progress) {
+  const status = String(progress?.status || "").toLowerCase();
+  const attempts = Number(progress?.attempt_count || progress?.attempts || 0);
+  return status === "solved" || attempts > 0;
+}
+
 function splitParam(value, allowed = null) {
   return String(value || "")
     .split(",")
@@ -511,10 +517,7 @@ export default function QuizBank({
     return difficulty === "easy" && BEGINNER_STARTER_TOPICS.includes(topic);
   }).length;
   const hasAnyPracticeProgress = useMemo(
-    () => Object.values(progressByQuestion || {}).some((progress) => {
-      const status = String(progress?.status || "").toLowerCase();
-      return status === "solved" || status === "in_progress" || Number(progress?.attempt_count || progress?.attempts || 0) > 0;
-    }),
+    () => Object.values(progressByQuestion || {}).some(hasScoredPracticeProgress),
     [progressByQuestion],
   );
   const beginnerTopicInView = useMemo(

@@ -74,7 +74,7 @@ export const STARTING_PATH_LEVELS = {
     blurb: "Start with medium practice across core patterns, then review the lesson only when a topic feels rusty.",
     actionLabel: "Open medium practice",
     action: "advanced-ready",
-    topics: ["Arrays and strings", "Recursion and queues", "Search and window patterns"],
+    topics: ["Arrays and strings", "Recursion and queues", "Search patterns"],
   },
 };
 

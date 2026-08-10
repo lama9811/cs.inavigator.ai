@@ -4078,7 +4078,7 @@ export default function CodingTutor({
     if (profile?.action === "advanced-ready") {
       const params = new URLSearchParams({
         difficulty: "medium",
-        topic: "arrays,strings,hash maps,recursion,queues,binary search,sliding window",
+        topic: "arrays,strings,hash maps,recursion,queues,binary search",
         page: "1",
         sort: "topic",
       });
