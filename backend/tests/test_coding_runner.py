@@ -917,6 +917,12 @@ class Solution {
     assert steps[-1]["return_value"] == "3"
     assert "value" in steps[0]["frames"][0]["bindings"]
     assert steps[0]["frames"][0]["bindings"]["value"]["display"] == "2"
+    assert any("next" in step["frames"][0]["bindings"] for step in steps)
+    assert any(
+        change["name"] == "next"
+        for step in steps
+        for change in step.get("binding_changes", [])
+    )
 
 
 def test_java_practice_trace_captures_stdout():
@@ -1048,6 +1054,12 @@ int addOne(int value) {
     assert steps[-1]["return_value"] == "3"
     assert "value" in steps[0]["frames"][0]["bindings"]
     assert steps[0]["frames"][0]["bindings"]["value"]["display"] == "2"
+    assert any("next" in step["frames"][0]["bindings"] for step in steps)
+    assert any(
+        change["name"] == "next"
+        for step in steps
+        for change in step.get("binding_changes", [])
+    )
 
 
 def test_cpp_practice_trace_captures_stdout():

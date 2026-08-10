@@ -259,6 +259,38 @@ def _trace_bindings_from_pairs(pairs: list[dict[str, Any]] | tuple[dict[str, Any
     return bindings
 
 
+def _compiled_trace_bindings(
+    arg_bindings: list[dict[str, Any]],
+    runtime_vars: list[dict[str, Any]] | None,
+) -> dict[str, dict[str, Any]]:
+    bindings = _trace_bindings_from_pairs(arg_bindings)
+    for item in runtime_vars or []:
+        name = str(item.get("name") or "").strip()
+        if not name:
+            continue
+        value = _truncate_text(str(item.get("value", "")), RUN_MAX_VALUE_CHARS)
+        bindings[name] = _trace_scalar_binding(value, value_type="runtime")
+    return bindings
+
+
+def _compiled_trace_binding_changes(
+    frame_name: str,
+    bindings: dict[str, dict[str, Any]],
+    previous_bindings: dict[str, dict[str, Any]] | None,
+) -> list[dict[str, Any]]:
+    changes: list[dict[str, Any]] = []
+    previous_bindings = previous_bindings or {}
+    for name, binding in bindings.items():
+        previous = previous_bindings.get(name)
+        if previous is None or previous.get("display") != binding.get("display"):
+            changes.append({
+                "frame": frame_name,
+                "name": name,
+                "change": "bound" if previous is None else "updated",
+            })
+    return changes
+
+
 def _normalize_trace_v2_frames(trace_v2: dict[str, Any] | None) -> dict[str, Any]:
     payload = dict(trace_v2 or _empty_trace_v2_payload())
     payload["schema_version"] = "trace_v2"
@@ -3171,27 +3203,94 @@ def _java_trace_operation(line: str) -> tuple[str, str]:
     return "line", "Java is about to run this line."
 
 
+_JAVA_TRACE_DECL_RE = re.compile(
+    r"(?:^|[(;]\s*)(?:final\s+)?(?:int|long|double|float|boolean|String|char|var|"
+    r"int\[\]|long\[\]|double\[\]|String\[\]|boolean\[\]|List<[^>]+>|ArrayList<[^>]+>|"
+    r"Map<[^>]+>|HashMap<[^>]+>|Set<[^>]+>|HashSet<[^>]+>)\s+([A-Za-z_]\w*)\b"
+)
+
+
+def _trace_param_names(params: str) -> list[str]:
+    names: list[str] = []
+    for raw in params.split(","):
+        piece = raw.strip()
+        if not piece:
+            continue
+        piece = piece.split("=")[0].strip()
+        matches = re.findall(r"[A-Za-z_]\w*", piece)
+        if matches:
+            names.append(matches[-1])
+    return names
+
+
+def _trace_declared_names(line: str, decl_re: re.Pattern[str]) -> list[str]:
+    names: list[str] = []
+    for match in decl_re.finditer(line):
+        name = match.group(1)
+        if name and name not in names:
+            names.append(name)
+    return names
+
+
 def _instrument_java_trace_source(code: str) -> str:
     lines = code.splitlines()
     output: list[str] = []
     in_block_comment = False
+    brace_depth = 0
+    function_depth = 0
+    visible_vars: list[tuple[str, int]] = []
     for index, line in enumerate(lines, start=1):
         stripped = line.strip()
+        leading_closes = len(re.match(r"^\s*}*", line).group(0).replace(" ", "").replace("\t", ""))
+        if leading_closes:
+            next_depth = max(0, brace_depth - leading_closes)
+            visible_vars = [(name, depth) for name, depth in visible_vars if depth <= next_depth]
+            if function_depth and next_depth < function_depth:
+                function_depth = 0
+                visible_vars = []
+            brace_depth = next_depth
         if "/*" in stripped:
             in_block_comment = True
+        method_match = re.match(
+            r"^(?:public|private|protected)?\s*(?:static\s+)?[\w<>\[\]]+\s+\w+\s*\(([^)]*)\)\s*\{?\s*$",
+            stripped,
+        )
+        is_method_definition = bool(method_match and " class " not in f" {stripped} ")
+        if not in_block_comment and is_method_definition:
+            function_depth = brace_depth + 1
+            visible_vars = [(name, function_depth) for name in _trace_param_names(method_match.group(1))]
         if not in_block_comment and _java_trace_is_executable_line(stripped):
             indent = line[: len(line) - len(line.lstrip())]
             operation, message = _java_trace_operation(stripped)
+            visible_expr = ", ".join(
+                f"{_java_json_string_expr(name)}, {name}" for name, _ in visible_vars
+            )
+            line_call = "__Trace.lineVars" if visible_expr else "__Trace.line"
+            vars_suffix = f", {visible_expr}" if visible_expr else ""
             output.append(
-                f"{indent}__Trace.line({index}, {_java_json_string_expr(stripped)}, "
-                f"{_java_json_string_expr(operation)}, {_java_json_string_expr(message)}); {stripped}"
+                f"{indent}{line_call}({index}, {_java_json_string_expr(stripped)}, "
+                f"{_java_json_string_expr(operation)}, {_java_json_string_expr(message)}{vars_suffix}); {stripped}"
             )
         else:
             output.append(line)
+        if not in_block_comment and function_depth and not is_method_definition:
+            declaration_depth = brace_depth + stripped.count("{") - stripped.count("}")
+            if stripped.startswith(("for ", "for(")) and "{" in stripped:
+                declaration_depth = max(declaration_depth, brace_depth + 1)
+            for name in _trace_declared_names(stripped, _JAVA_TRACE_DECL_RE):
+                if all(existing != name for existing, _ in visible_vars):
+                    visible_vars.append((name, max(function_depth, declaration_depth)))
         if in_block_comment:
             if "*/" in stripped:
                 in_block_comment = False
             continue
+        opens = stripped.count("{")
+        closes = max(0, stripped.count("}") - leading_closes)
+        brace_depth = max(0, brace_depth + opens - closes)
+        visible_vars = [(name, depth) for name, depth in visible_vars if depth <= brace_depth or depth == function_depth]
+        if function_depth and brace_depth < function_depth:
+            function_depth = 0
+            visible_vars = []
     return "\n".join(output)
 
 
@@ -3269,25 +3368,69 @@ def _cpp_trace_operation(line: str) -> tuple[str, str]:
     return "line", "C++ is about to run this line."
 
 
+_CPP_TRACE_DECL_RE = re.compile(
+    r"(?:^|[(;]\s*)(?:const\s+)?(?:long\s+long|int|double|float|bool|string|std::string|char|auto|size_t|"
+    r"vector\s*<[^>]+>|std::vector\s*<[^>]+>)\s*[&*]*\s*([A-Za-z_]\w*)\b"
+)
+
+
 def _instrument_cpp_trace_source(code: str) -> str:
     lines = code.splitlines()
     output: list[str] = []
     in_block_comment = False
+    brace_depth = 0
+    function_depth = 0
+    visible_vars: list[tuple[str, int]] = []
     for index, line in enumerate(lines, start=1):
         stripped = line.strip()
+        leading_closes = len(re.match(r"^\s*}*", line).group(0).replace(" ", "").replace("\t", ""))
+        if leading_closes:
+            next_depth = max(0, brace_depth - leading_closes)
+            visible_vars = [(name, depth) for name, depth in visible_vars if depth <= next_depth]
+            if function_depth and next_depth < function_depth:
+                function_depth = 0
+                visible_vars = []
+            brace_depth = next_depth
         if "/*" in stripped:
             in_block_comment = True
+        function_match = re.match(r"^[\w:<>,\s*&]+\s+\w+\s*\(([^;]*)\)\s*\{?\s*$", stripped)
+        is_function_definition = bool(
+            function_match and not stripped.startswith(("if", "for", "while", "switch"))
+        )
+        if not in_block_comment and is_function_definition:
+            function_depth = brace_depth + 1
+            visible_vars = [(name, function_depth) for name in _trace_param_names(function_match.group(1))]
         if not in_block_comment and _cpp_trace_is_executable_line(stripped):
             indent = line[: len(line) - len(line.lstrip())]
             operation, message = _cpp_trace_operation(stripped)
+            visible_expr = ", ".join(
+                f"{{{json.dumps(name)}, __Trace::showValue({name})}}" for name, _ in visible_vars
+            )
+            line_call = "lineVars" if visible_expr else "line"
+            vars_suffix = f", {{{visible_expr}}}" if visible_expr else ""
             output.append(
-                f"{indent}__Trace::line({index}, {json.dumps(stripped)}, "
-                f"{json.dumps(operation)}, {json.dumps(message)}); {stripped}"
+                f"{indent}__Trace::{line_call}({index}, {json.dumps(stripped)}, "
+                f"{json.dumps(operation)}, {json.dumps(message)}{vars_suffix}); {stripped}"
             )
         else:
             output.append(line)
+        if not in_block_comment and function_depth and not is_function_definition:
+            declaration_depth = brace_depth + stripped.count("{") - stripped.count("}")
+            if stripped.startswith(("for ", "for(")) and "{" in stripped:
+                declaration_depth = max(declaration_depth, brace_depth + 1)
+            for name in _trace_declared_names(stripped, _CPP_TRACE_DECL_RE):
+                if all(existing != name for existing, _ in visible_vars):
+                    visible_vars.append((name, max(function_depth, declaration_depth)))
         if in_block_comment and "*/" in stripped:
             in_block_comment = False
+            continue
+        opens = stripped.count("{")
+        closes = max(0, stripped.count("}") - leading_closes)
+        brace_depth = max(0, brace_depth + opens - closes)
+        visible_vars = [(name, depth) for name, depth in visible_vars if depth <= brace_depth or depth == function_depth]
+        if function_depth and brace_depth < function_depth:
+            function_depth = 0
+            visible_vars = []
     return "\n".join(output)
 
 
@@ -3686,6 +3829,35 @@ class __Trace {{
             + "\\",\\"operation_kind\\":\\"" + esc(kind)
             + "\\",\\"student_message\\":\\"" + esc(message) + "\\"}}");
     }}
+    static void lineVars(int line, String source, String kind, String message, Object... vars) {{
+        steps.add("{{\\"line\\":" + line
+            + ",\\"source\\":\\"" + esc(source)
+            + "\\",\\"operation_kind\\":\\"" + esc(kind)
+            + "\\",\\"student_message\\":\\"" + esc(message)
+            + "\\",\\"vars\\":" + varsJson(vars) + "}}");
+    }}
+    static String showValue(Object value) {{
+        if (value == null) return "null";
+        Class<?> cls = value.getClass();
+        if (!cls.isArray()) return String.valueOf(value);
+        if (value instanceof int[]) return Arrays.toString((int[]) value);
+        if (value instanceof long[]) return Arrays.toString((long[]) value);
+        if (value instanceof double[]) return Arrays.toString((double[]) value);
+        if (value instanceof float[]) return Arrays.toString((float[]) value);
+        if (value instanceof boolean[]) return Arrays.toString((boolean[]) value);
+        if (value instanceof char[]) return Arrays.toString((char[]) value);
+        if (value instanceof Object[]) return Arrays.deepToString((Object[]) value);
+        return String.valueOf(value);
+    }}
+    static String varsJson(Object... vars) {{
+        StringBuilder b = new StringBuilder("[");
+        for (int i = 0; i + 1 < vars.length; i += 2) {{
+            if (i > 0) b.append(",");
+            b.append("{{\\"name\\":\\"").append(esc(String.valueOf(vars[i]))).append("\\",\\"value\\":\\"")
+                .append(esc(showValue(vars[i + 1]))).append("\\"}}");
+        }}
+        return b.append("]").toString();
+    }}
     static String stepsJson() {{
         StringBuilder b = new StringBuilder("[");
         for (int i = 0; i < steps.size(); i++) {{
@@ -3919,8 +4091,11 @@ public class Runner {{
     raw_steps = payload.get("steps") or []
     trace_steps: list[dict[str, Any]] = []
     previous_line = None
+    previous_bindings: dict[str, dict[str, Any]] = {}
     for index, item in enumerate(raw_steps, start=1):
         line_no = item.get("line") or 0
+        bindings = _compiled_trace_bindings(arg_bindings, item.get("vars"))
+        binding_changes = _compiled_trace_binding_changes(function_name, bindings, previous_bindings)
         step = {
             "step": index,
             "current_line": line_no,
@@ -3934,11 +4109,14 @@ public class Runner {{
             "operation_kind": item.get("operation_kind") or "line",
             "operation_summary": item.get("student_message") or "Java is about to run this line.",
             "student_message": item.get("student_message") or "Java is about to run this line.",
-            "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+            "frames": [{"name": function_name, "bindings": bindings, "is_current": True}],
+            "binding_changes": binding_changes,
+            "object_changes": [],
             "objects": {},
             "references": [],
         }
         previous_line = line_no
+        previous_bindings = bindings
         trace_steps.append(step)
 
     if payload.get("error"):
@@ -3960,7 +4138,9 @@ public class Runner {{
             "operation_kind": "exception",
             "operation_summary": f"Java stopped on line {error_line} because an exception was raised.",
             "student_message": f"Java stopped on line {error_line} because an exception was raised.",
-            "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+            "frames": [{"name": function_name, "bindings": previous_bindings or _compiled_trace_bindings(arg_bindings, []), "is_current": True}],
+            "binding_changes": [],
+            "object_changes": [],
             "objects": {},
             "references": [],
         })
@@ -4250,6 +4430,40 @@ struct __Trace {{
             + "\\",\\"operation_kind\\":\\"" + esc(kind)
             + "\\",\\"student_message\\":\\"" + esc(message) + "\\"}}");
     }}
+    template <typename T>
+    static string showValue(const T& value) {{
+        ostringstream out;
+        out << value;
+        return out.str();
+    }}
+    static string showValue(const string& value) {{ return value; }}
+    static string showValue(const char* value) {{ return string(value); }}
+    static string showValue(bool value) {{ return value ? "true" : "false"; }}
+    template <typename T>
+    static string showValue(const vector<T>& values) {{
+        string r = "[";
+        for (size_t i = 0; i < values.size(); i++) {{
+            if (i) r += ", ";
+            r += showValue(values[i]);
+        }}
+        return r + "]";
+    }}
+    static string varsJson(initializer_list<pair<string,string>> vars) {{
+        string r = "[";
+        size_t i = 0;
+        for (const auto& item : vars) {{
+            if (i++) r += ",";
+            r += "{{\\"name\\":\\"" + esc(item.first) + "\\",\\"value\\":\\"" + esc(item.second) + "\\"}}";
+        }}
+        return r + "]";
+    }}
+    static void lineVars(int line, const string& source, const string& kind, const string& message, initializer_list<pair<string,string>> vars) {{
+        steps.push_back("{{\\"line\\":" + to_string(line)
+            + ",\\"source\\":\\"" + esc(source)
+            + "\\",\\"operation_kind\\":\\"" + esc(kind)
+            + "\\",\\"student_message\\":\\"" + esc(message)
+            + "\\",\\"vars\\":" + varsJson(vars) + "}}");
+    }}
     static string stepsJson() {{
         string r = "[";
         for (size_t i = 0; i < steps.size(); i++) {{
@@ -4431,8 +4645,11 @@ int main(){{
     raw_steps = payload.get("steps") or []
     trace_steps: list[dict[str, Any]] = []
     previous_line = None
+    previous_bindings: dict[str, dict[str, Any]] = {}
     for index, item in enumerate(raw_steps, start=1):
         line_no = item.get("line") or 0
+        bindings = _compiled_trace_bindings(arg_bindings, item.get("vars"))
+        binding_changes = _compiled_trace_binding_changes(function_name, bindings, previous_bindings)
         step = {
             "step": index,
             "current_line": line_no,
@@ -4446,11 +4663,14 @@ int main(){{
             "operation_kind": item.get("operation_kind") or "line",
             "operation_summary": item.get("student_message") or "C++ is about to run this line.",
             "student_message": item.get("student_message") or "C++ is about to run this line.",
-            "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+            "frames": [{"name": function_name, "bindings": bindings, "is_current": True}],
+            "binding_changes": binding_changes,
+            "object_changes": [],
             "objects": {},
             "references": [],
         }
         previous_line = line_no
+        previous_bindings = bindings
         trace_steps.append(step)
 
     if payload.get("error"):
@@ -4471,7 +4691,9 @@ int main(){{
             "operation_kind": "exception",
             "operation_summary": "C++ stopped because an exception was raised.",
             "student_message": "C++ stopped because an exception was raised.",
-            "frames": [{"name": function_name, "bindings": arg_bindings, "is_current": True}],
+            "frames": [{"name": function_name, "bindings": previous_bindings or _compiled_trace_bindings(arg_bindings, []), "is_current": True}],
+            "binding_changes": [],
+            "object_changes": [],
             "objects": {},
             "references": [],
         })

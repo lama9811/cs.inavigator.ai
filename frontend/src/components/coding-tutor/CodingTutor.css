@@ -7898,6 +7898,25 @@ body.coding-dark .campus-code-preview {
   font-size: 0.8rem;
 }
 
+.campus-lab-home .campus-daily-mission.is-unavailable {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  padding-block: 14px;
+}
+
+.campus-lab-home .campus-daily-mission.is-unavailable h2 {
+  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+}
+
+.campus-lab-home .campus-daily-mission.is-unavailable .daily-mission-summary {
+  max-width: 58ch;
+  margin-bottom: 0.45rem;
+}
+
+.campus-lab-home .campus-daily-mission.is-unavailable .daily-mission-aside {
+  min-width: 210px;
+}
+
 /* Phone: hero stats and actions wrap cleanly. */
 @media (max-width: 560px) {
   .campus-hero-stats {
@@ -8638,6 +8657,26 @@ body.coding-dark .coding-app .starting-check-link:hover:not(:disabled) {
     padding: 0.62rem 0.7rem;
     font-size: 0.78rem;
     line-height: 1.35;
+  }
+
+  .coding-app .campus-daily-mission.is-unavailable {
+    gap: 8px;
+    padding-block: 12px;
+  }
+
+  .coding-app .campus-daily-mission.is-unavailable .daily-mission-aside {
+    min-width: 0;
+    padding-top: 8px;
+  }
+
+  .coding-app .campus-daily-mission.is-unavailable h2 {
+    margin-bottom: 0.35rem;
+    font-size: 1.08rem;
+  }
+
+  .coding-app .campus-daily-mission.is-unavailable .daily-mission-summary {
+    margin-bottom: 0.35rem;
+    font-size: 0.78rem;
   }
 }
 

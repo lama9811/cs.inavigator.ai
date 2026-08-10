@@ -2,6 +2,12 @@
 // Endpoints live in backend/main.py under /api/coding/concept-quiz/*. These are
 // thin fetch wrappers that throw on non-2xx so callers can show one error state.
 
+const quizContentCache = {
+  languages: new Map(),
+  categories: new Map(),
+  questions: new Map(),
+};
+
 async function getJson(url) {
   const res = await fetch(url);
   if (!res.ok) {
@@ -15,6 +21,28 @@ async function getJson(url) {
     throw new Error(detail);
   }
   return res.json();
+}
+
+function getCachedJson(cache, key, loader) {
+  if (cache.has(key)) return Promise.resolve(cache.get(key));
+  return loader().then((data) => {
+    cache.set(key, data);
+    return data;
+  });
+}
+
+export function readCachedQuizCategories(apiBase, language) {
+  return quizContentCache.categories.get(
+    `${apiBase}/api/coding/concept-quiz/${encodeURIComponent(language)}/categories`
+  ) || null;
+}
+
+export function readCachedQuizQuestions(apiBase, language, category) {
+  return quizContentCache.questions.get(
+    `${apiBase}/api/coding/concept-quiz/${encodeURIComponent(language)}/${encodeURIComponent(
+      category
+    )}/questions`
+  ) || null;
 }
 
 async function getAuthenticatedJson(url) {
@@ -78,23 +106,30 @@ export function gradePlacementQuiz(apiBase, language, answers) {
 
 // The 4 language cards shown when the student toggles to Quiz mode.
 export function fetchQuizLanguages(apiBase) {
-  return getJson(`${apiBase}/api/coding/concept-quiz/languages`);
+  const url = `${apiBase}/api/coding/concept-quiz/languages`;
+  return getCachedJson(quizContentCache.languages, url, () => getJson(url));
 }
 
 // The shared categories plus one language-specific category for one language, each
 // with a live `count` and `scope`.
 export function fetchQuizCategories(apiBase, language) {
-  return getJson(
-    `${apiBase}/api/coding/concept-quiz/${encodeURIComponent(language)}/categories`
+  const url = `${apiBase}/api/coding/concept-quiz/${encodeURIComponent(language)}/categories`;
+  return getCachedJson(
+    quizContentCache.categories,
+    url,
+    () => getJson(url)
   );
 }
 
 // Every question in one language + category, projected to that language.
 export function fetchQuizQuestions(apiBase, language, category) {
-  return getJson(
-    `${apiBase}/api/coding/concept-quiz/${encodeURIComponent(language)}/${encodeURIComponent(
-      category
-    )}/questions`
+  const url = `${apiBase}/api/coding/concept-quiz/${encodeURIComponent(language)}/${encodeURIComponent(
+    category
+  )}/questions`;
+  return getCachedJson(
+    quizContentCache.questions,
+    url,
+    () => getJson(url)
   );
 }
 

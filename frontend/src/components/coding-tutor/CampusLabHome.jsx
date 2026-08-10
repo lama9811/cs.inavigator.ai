@@ -687,6 +687,7 @@ function CampusTutorActions({ latestQuizResponse, onPrompt, onOpenInterviewPrep,
 
 function CampusDailyMission({ dailyChallenge, loading, dailyDoneToday, displayStreak, onPractice, onOpenScratch }) {
   const isLeetCode = (dailyChallenge?.source || "").toLowerCase() === "leetcode";
+  const unavailable = dailyChallenge?.available === false;
   const problemNumber = dailyChallenge?.frontend_id;
   const tags = Array.isArray(dailyChallenge?.tags) ? dailyChallenge.tags.filter(Boolean) : [];
   const focusSkills = tags.slice(0, 3);
@@ -716,7 +717,7 @@ function CampusDailyMission({ dailyChallenge, loading, dailyDoneToday, displaySt
   }
 
   return (
-    <section className="campus-daily-mission" aria-label="LeetCode daily challenge">
+    <section className={`campus-daily-mission ${unavailable ? "is-unavailable" : ""}`} aria-label="LeetCode daily challenge">
       {/* Left column: identity + meta. */}
       <div className="daily-mission-main">
         <span className="coding-kicker">
@@ -726,20 +727,24 @@ function CampusDailyMission({ dailyChallenge, loading, dailyDoneToday, displaySt
           {problemNumber ? `${problemNumber}. ` : ""}
           {dailyChallenge?.title || "Daily practice"}
         </h2>
-        {dailyChallenge?.available === false && <p>{dailyChallenge.message}</p>}
-        {isLeetCode && dailyChallenge?.available !== false && (
+        {unavailable && <p className="daily-mission-summary">{dailyChallenge.message}</p>}
+        {isLeetCode && !unavailable && (
           <p className="daily-mission-summary">
             Open the full prompt on LeetCode. Use CS Navigator when you want a scratchpad, notes, or tutor help.
           </p>
         )}
         <div className="daily-meta-row">
-          <span className={`daily-difficulty ${difficultyClass(dailyChallenge?.difficulty)}`}>{dailyChallenge?.difficulty || "Easy"}</span>
+          {!unavailable && (
+            <span className={`daily-difficulty ${difficultyClass(dailyChallenge?.difficulty)}`}>
+              {dailyChallenge?.difficulty || "Easy"}
+            </span>
+          )}
           {isLeetCode && <span className="daily-source-pill">LeetCode</span>}
           {!isLeetCode && dailyDoneToday
             ? <span className="daily-streak-pill done">CS Navigator streak - {displayStreak}-day</span>
             : !isLeetCode && displayStreak > 0 && <span className="daily-streak-pill">{displayStreak}-day streak</span>}
         </div>
-        {isLeetCode && (
+        {isLeetCode && !unavailable && (
           <p className="daily-handoff-note">
             Full prompt and official judging stay on LeetCode. The scratchpad is for notes, experiments, and tutor help.
           </p>
@@ -750,7 +755,7 @@ function CampusDailyMission({ dailyChallenge, loading, dailyDoneToday, displaySt
           "Focus skills" — the left-column "Good for practicing" list was the same
           data shown twice, so it was removed.) */}
       <aside className="daily-mission-aside">
-        {focusSkills.length > 0 && (
+        {focusSkills.length > 0 && !unavailable && (
           <dl className="daily-mission-facts">
             <div>
               <dt>Focus skills</dt>
@@ -760,9 +765,9 @@ function CampusDailyMission({ dailyChallenge, loading, dailyDoneToday, displaySt
         )}
         <div className="daily-actions">
           <button type="button" className="daily-practice-btn" onClick={onPractice}>
-            {isLeetCode ? "Open on LeetCode" : "Practice Now"}
+            {unavailable ? "Open LeetCode problemset" : isLeetCode ? "Open on LeetCode" : "Practice Now"}
           </button>
-          {isLeetCode && (
+          {isLeetCode && !unavailable && (
             <button type="button" className="daily-practice-btn secondary" onClick={onOpenScratch}>
               Use CS Navigator scratchpad
             </button>

@@ -169,6 +169,7 @@ const displayLanguageName = (value) =>
   PRACTICE_LANGUAGE_NAME[value] || (PRACTICE_LANGUAGE_API[value] ? value : "Python");
 const PRACTICE_LANGUAGE_KEYS = ["python", "java", "javascript", "cpp"];
 const PRACTICE_DIFFICULTIES = ["easy", "medium", "hard"];
+const practiceQuestionSessionCache = {};
 const DEFAULT_LEARNING_STYLE = "try_then_hint";
 const LEARNING_STYLE_COPY = {
   worked_examples: {
@@ -1342,8 +1343,10 @@ export default function CodingTutor({
   // a detour into Workspace, while the in-page Back buttons still expose broader lists.
   const [practiceLanguage, setPracticeLanguage] = useState("Python");
   const [selectedLanguage, setSelectedLanguage] = useState("Python");
-  const [questions, setQuestions] = useState([]);
-  const [allQuestions, setAllQuestions] = useState([]);
+  const [questions, setQuestions] = useState(() => practiceQuestionSessionCache.easy || []);
+  const [allQuestions, setAllQuestions] = useState(() =>
+    PRACTICE_DIFFICULTIES.flatMap((level) => practiceQuestionSessionCache[level] || [])
+  );
   // Interview Prep is its own question library (set=interview): link-only study
   // problems, no autograder/progress. Loaded independently of the practice set.
   const [interviewQuestions, setInterviewQuestions] = useState([]);
@@ -1506,7 +1509,7 @@ export default function CodingTutor({
   const [tutorMode, setTutorMode] = useState("Guided Tutor");
   const [quizPdfStartIndex, setQuizPdfStartIndex] = useState(null);
   const [workspaceSnapshots, setWorkspaceSnapshots] = useState({});
-  const questionCacheRef = useRef({});
+  const questionCacheRef = useRef(practiceQuestionSessionCache);
   const solutionCacheRef = useRef({});
   // Tracks which /coding/workspace/problem/:id we've already restored, so the
   // cold-load effect opens a problem once per id (not on every render).
@@ -2299,7 +2302,10 @@ export default function CodingTutor({
   useEffect(() => {
     let cancelled = false;
     const fetchPractice = async () => {
-      setListLoading(true);
+      const hasCachedPracticeQuestions = PRACTICE_DIFFICULTIES.every(
+        (level) => questionCacheRef.current[level]
+      );
+      setListLoading(!hasCachedPracticeQuestions);
       try {
         const token = localStorage.getItem("token");
         const progressRequests = token
@@ -2307,7 +2313,6 @@ export default function CodingTutor({
               headers: { Authorization: `Bearer ${token}` },
             }).then(response => ({ language, response })))
           : [];
-        const cachedQuestions = questionCacheRef.current[difficulty];
         const allQuestionRequests = PRACTICE_DIFFICULTIES.map(level => (
           questionCacheRef.current[level]
             ? Promise.resolve({ level, questions: questionCacheRef.current[level] })
@@ -2319,20 +2324,11 @@ export default function CodingTutor({
                   return { level, questions: data.questions || [] };
                 })
         ));
-        const [questionResponse, allQuestionResults, ...progressResults] = await Promise.all([
-          cachedQuestions
-            ? Promise.resolve(null)
-            : fetch(`${apiBase}/api/coding/practice/questions?difficulty=${difficulty}`),
+        const [allQuestionResults, ...progressResults] = await Promise.all([
           Promise.all(allQuestionRequests),
           ...progressRequests,
         ]);
-        let nextQuestions = cachedQuestions || [];
-        if (!cachedQuestions) {
-          if (!questionResponse.ok) throw new Error(`questions ${questionResponse.status}`);
-          const questionData = await questionResponse.json();
-          nextQuestions = questionData.questions || [];
-          questionCacheRef.current[difficulty] = nextQuestions;
-        }
+        const nextQuestions = questionCacheRef.current[difficulty] || [];
         const nextAllQuestions = allQuestionResults.flatMap(result => result.questions || []);
         const nextLanguageProgress = {};
         const localProgressToSeed = [];

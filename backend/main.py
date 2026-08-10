@@ -838,7 +838,8 @@ def _coding_tutor_query_has_workspace_code(query: str) -> bool:
         and "```" in query
     )
 
-_leetcode_daily_cache = {"date": None, "data": None}
+_leetcode_daily_cache = {"date": None, "data": None, "fetched_at": 0.0}
+LEETCODE_FAILURE_CACHE_SECONDS = 10 * 60
 _practice_cache: dict[str, dict[str, Any]] = {}
 QUIZ_DIR = os.path.join(BACKEND_DIR, "data_sources", "quiz")
 QUIZ_QUESTIONS_DIR = os.path.join(QUIZ_DIR, "questions")
@@ -5322,15 +5323,24 @@ async def text_to_speech(req: TTSRequest, _user=Depends(get_current_user)):
 async def get_daily_coding_challenge():
     """Return safe metadata for LeetCode's daily challenge without copying the full prompt."""
     today = datetime.now(timezone.utc).date().isoformat()
-    if _leetcode_daily_cache.get("date") == today and _leetcode_daily_cache.get("data"):
-        return _leetcode_daily_cache["data"]
+    cached = _leetcode_daily_cache.get("data")
+    if _leetcode_daily_cache.get("date") == today and cached:
+        # Successful LeetCode metadata is stable for the day. Failed fetches are
+        # cached briefly only, so a temporary cloud/IP block does not poison the
+        # deployed card until tomorrow.
+        if cached.get("available") is not False:
+            return cached
+        if time.time() - float(_leetcode_daily_cache.get("fetched_at") or 0) < LEETCODE_FAILURE_CACHE_SECONDS:
+            return cached
 
     fallback = {
         "available": False,
         "source": "LeetCode",
         "date": today,
-        "message": "Daily challenge metadata is unavailable right now. You can still practice by asking Coding Tutor for a debugging or algorithm exercise.",
+        "title": "LeetCode daily unavailable",
+        "message": "LeetCode metadata is unavailable right now. Open LeetCode directly for today's problem.",
         "url": "https://leetcode.com/problemset/",
+        "cache_ttl_seconds": LEETCODE_FAILURE_CACHE_SECONDS,
     }
 
     graphql_query = """
@@ -5385,11 +5395,13 @@ async def get_daily_coding_challenge():
         }
         _leetcode_daily_cache["date"] = today
         _leetcode_daily_cache["data"] = data
+        _leetcode_daily_cache["fetched_at"] = time.time()
         return data
     except Exception as e:
         print(f"[WARN] LeetCode daily challenge unavailable: {e}")
         _leetcode_daily_cache["date"] = today
         _leetcode_daily_cache["data"] = fallback
+        _leetcode_daily_cache["fetched_at"] = time.time()
         return fallback
 
 def _read_quiz_json(path: str) -> Any:
