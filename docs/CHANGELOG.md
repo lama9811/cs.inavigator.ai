@@ -19,6 +19,7 @@ All notable changes to CS Navigator are documented here.
 - **Practice visualizer audit script.** A frontend audit command now prints Practice visualizer concepts, effective step counts, compact teaching samples, and oversized/banned-copy warnings across all 151 visualizers.
 
 ### Changed
+- Coding Tutor chat now sends structured workspace debug context into tutor prompts, including the selected language, function contract, latest run status, first failing test, stderr/stdout, trace line/exception, and current variables so Debug and terminal help can diagnose the current attempt instead of paraphrasing the prompt.
 - Coding Tutor mobile Home, Practice Library, and Concept Quiz layouts are denser at 425/375/320px widths, with smaller type, tighter card padding, single-column LeetCode daily actions, compact Practice problem footers/guide cards, and one continuous quiz/review scroll instead of split panes.
 - The standalone in-app Advising Form is hidden behind a local legacy feature flag; `/advising` now sends students to Planner V2 by default while preserving the old form code and backend draft/upload endpoints.
 - Coding Tutor dark-mode styling now uses a more stable scoped token layer under `body.coding-dark .coding-app`, with clearer dark surface contrast and Coding Tutor-specific legacy dark selectors moved off global `body.dark` / `[data-theme="dark"]` paths.

@@ -1182,6 +1182,162 @@ function summarizeRunForTutor(output = {}) {
   return summary.join("\n");
 }
 
+function compactValueForTutor(value, maxLength = 500) {
+  let text;
+  try {
+    text = JSON.stringify(value);
+  } catch {
+    text = String(value ?? "");
+  }
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength)}...`;
+}
+
+function summarizeTestForTutor(test, index = 0) {
+  if (!test) return null;
+  return {
+    index,
+    name: test.name || `Test ${index + 1}`,
+    input: test.args,
+    expected: test.expected,
+    actual: test.actual,
+    error: test.error || "",
+    passed: Boolean(test.passed),
+  };
+}
+
+function contractNotesForLanguage(languageName = "Python", functionName = "", starterCode = "") {
+  if (!functionName) return [];
+  if (languageName === "Java") {
+    return [
+      "Keep the answer inside class Solution.",
+      `Keep the required method name/signature for ${functionName}.`,
+      "Do not add a main method for graded Practice code.",
+    ];
+  }
+  if (languageName === "C++") {
+    const signatureLine = String(starterCode || "").split(/\r?\n/).find(line => line.includes(functionName) && line.includes("("))?.trim();
+    return [
+      "Use a top-level function, not class Solution.",
+      signatureLine ? `Preserve this function shape: ${signatureLine}` : `Keep the required function name ${functionName}.`,
+      "Do not add a main function for graded Practice code.",
+    ];
+  }
+  if (languageName === "JavaScript") {
+    return [
+      `Keep the expected function name/export shape for ${functionName}.`,
+      "Return the value for the grader instead of only logging it.",
+    ];
+  }
+  return [
+    `Keep the required function name ${functionName}.`,
+    "Return the value for the grader instead of only printing it.",
+  ];
+}
+
+function bindingDisplayForTutor(binding) {
+  if (!binding) return "";
+  if (binding.kind === "reference") {
+    return binding.display || binding.type || binding.object_id || "object";
+  }
+  if (binding.display != null) return String(binding.display);
+  if (binding.value != null) return compactValueForTutor(binding.value, 160);
+  return "";
+}
+
+function summarizeTraceForTutor(traceResult) {
+  if (!traceResult) return null;
+  const v2 = traceResult.trace_v2;
+  const steps = v2?.schema_version === "trace_v2" && Array.isArray(v2.steps)
+    ? v2.steps
+    : Array.isArray(traceResult.trace)
+      ? traceResult.trace
+      : [];
+  if (!steps.length && !traceResult.stderr && !traceResult.message) return null;
+  const activeStep = steps.find(step => step.exception) || steps[steps.length - 1] || null;
+  const frames = Array.isArray(activeStep?.frames) ? activeStep.frames : [];
+  const currentFrame = frames[frames.length - 1] || null;
+  const currentVariables = currentFrame?.bindings
+    ? Object.fromEntries(
+        Object.entries(currentFrame.bindings)
+          .slice(0, 12)
+          .map(([name, binding]) => [name, bindingDisplayForTutor(binding)])
+      )
+    : activeStep?.locals && typeof activeStep.locals === "object"
+      ? Object.fromEntries(Object.entries(activeStep.locals).slice(0, 12))
+      : {};
+  return {
+    language: v2?.language || v2?.requested_language || "",
+    status: traceResult.status || "",
+    current_line: activeStep?.current_line || activeStep?.line_no || activeStep?.exception?.line || null,
+    current_line_text: activeStep?.line || "",
+    phase: activeStep?.phase || activeStep?.event || "",
+    function: activeStep?.function || currentFrame?.function || "",
+    exception: activeStep?.exception || null,
+    student_message: activeStep?.student_message || activeStep?.operation_summary || "",
+    variables: currentVariables,
+    changed_bindings: Array.isArray(activeStep?.binding_changes)
+      ? activeStep.binding_changes.slice(0, 8).map(change => `${change.name}: ${change.change || "changed"}`)
+      : [],
+    return_value: activeStep?.return_value ?? null,
+    stdout_so_far: activeStep?.stdout || traceResult.stdout || "",
+    stderr: traceResult.stderr || "",
+  };
+}
+
+function buildStructuredDebugContext({
+  activeProblem,
+  selectedLanguage,
+  selectedLanguageKey,
+  activeSolution,
+  code,
+  attempts,
+  workspaceTab,
+  activePage,
+  workspaceVisible,
+  note,
+  testOutput,
+  traceResult,
+  editorSelection,
+}) {
+  const tests = Array.isArray(testOutput?.tests) ? testOutput.tests : [];
+  const failedTests = tests
+    .map((test, index) => ({ test, index }))
+    .filter(({ test }) => !test.passed);
+  const firstFailing = failedTests[0] ? summarizeTestForTutor(failedTests[0].test, failedTests[0].index) : null;
+  return {
+    language: selectedLanguage,
+    language_key: selectedLanguageKey,
+    problem: activeProblem ? {
+      id: activeProblem.id || "",
+      title: activeProblem.title || "",
+      topic: activeProblem.topic || "",
+      difficulty: activeProblem.difficulty || "",
+      source: activeProblem.source || "practice",
+    } : null,
+    function_name: activeSolution?.function_name || "",
+    solution_contract: contractNotesForLanguage(selectedLanguage, activeSolution?.function_name || "", activeSolution?.starter_code || ""),
+    active_tab: activePage === "workspace" && workspaceVisible ? workspaceTab : activePage,
+    attempts,
+    student_note: note || "",
+    selected_text: editorSelection?.text ? String(editorSelection.text).slice(0, 1200) : "",
+    latest_run: {
+      status: testOutput?.status || "ready",
+      message: testOutput?.message || "",
+      passed: typeof testOutput?.passed === "number" ? testOutput.passed : null,
+      total: typeof testOutput?.total === "number" ? testOutput.total : null,
+      duration_ms: typeof testOutput?.duration_ms === "number" ? testOutput.duration_ms : null,
+      stdout: testOutput?.stdout || "",
+      stderr: testOutput?.stderr || "",
+      first_failing_test: firstFailing,
+      failed_test_count: failedTests.length,
+      sampled_tests: tests.slice(0, 4).map((test, index) => summarizeTestForTutor(test, index)),
+    },
+    latest_trace: summarizeTraceForTutor(traceResult),
+    code_snapshot_chars: String(code || "").length,
+  };
+}
+
 // A blank editor reads as "broken", so seed a minimal language-appropriate stub
 // (function signature + a "write your solution" marker) for interview problems,
 // which ship no starter code of their own. Module-level so it can be used both in
@@ -1912,6 +2068,35 @@ export default function CodingTutor({
     [activeSnapshotKey, workspaceSnapshots]
   );
   const runnerSummary = useMemo(() => summarizeRunForTutor(testOutput), [testOutput]);
+  const debugContext = useMemo(() => buildStructuredDebugContext({
+    activeProblem,
+    selectedLanguage,
+    selectedLanguageKey,
+    activeSolution,
+    code,
+    attempts,
+    workspaceTab,
+    activePage,
+    workspaceVisible,
+    note,
+    testOutput,
+    traceResult,
+    editorSelection,
+  }), [
+    activePage,
+    activeProblem,
+    activeSolution,
+    attempts,
+    code,
+    editorSelection,
+    note,
+    selectedLanguage,
+    selectedLanguageKey,
+    testOutput,
+    traceResult,
+    workspaceTab,
+    workspaceVisible,
+  ]);
   const recordTutorAction = useCallback((actionType, metadata = {}) => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -2021,7 +2206,9 @@ export default function CodingTutor({
       return;
     }
     sendToWidget([
-      "Explain these failed tests in small chunks. Point out the likely code issue first, then give one focused next step.",
+      "Explain the failed tests using the structured workspace context.",
+      "Compare expected vs actual first, then name the likely logic gap and one small check or edit.",
+      "Do not repeat the full problem statement or rewrite the whole solution.",
       "",
       summary,
     ].join("\n"), "Debugging");
@@ -2031,7 +2218,9 @@ export default function CodingTutor({
     if (!test) return;
     const label = test.name || `Test ${index + 1}`;
     const lines = [
-      `Help me with one specific failing test case. Focus only on this case — explain why my code gives the wrong answer here and give one focused next step. Do not rewrite my whole program.`,
+      "Help me with one specific failing test case.",
+      "Focus only on this case: compare expected vs actual, identify the logic gap, and give one small next edit/check.",
+      "Do not rewrite my whole program.",
       "",
       `Failing case: ${label}`,
       `Input: ${JSON.stringify(test.args)}`,
@@ -2052,7 +2241,9 @@ export default function CodingTutor({
       return;
     }
     sendToWidget([
-      "My code produced this error when I ran it. Start by asking me what I expected the code to do. Then explain the error in plain English, name the most likely cause, and give one focused fix to try. Do not rewrite my whole program.",
+      "My code produced this error when I ran it.",
+      "Explain the error in plain English, name the exact line or value that caused it when possible, and give one focused fix to try.",
+      "Do not ask what I expected first unless the error alone is not enough, and do not rewrite my whole program.",
       "",
       `Language: ${selectedLanguage}`,
       "Error output:",
@@ -2067,7 +2258,7 @@ export default function CodingTutor({
       toast.info("Write some code first so the tutor has something to review.");
       return;
     }
-    const reviewPrompt = "Review my current code for correctness and style. Point out the single biggest issue first, then any smaller ones. Don't rewrite the whole thing — guide me.";
+    const reviewPrompt = "Review my current code for correctness and style. Start with any correctness risk, then note readability or runner-shape issues. Do not rewrite the whole thing unless I ask.";
     // Opens the floating widget and appends to the ongoing Coding Tutor thread (same
     // history as Explain error and typed questions). No confirm / no new conversation —
     // the reply just appears in the widget next to the code.
@@ -2158,13 +2349,14 @@ export default function CodingTutor({
         reason: hintGate.reason || "",
       } : null,
       runnerSummary: useWorkspace ? runnerSummary : "",
+      debugContext: useWorkspace ? debugContext : null,
       suggestedCodeBlock,
       hasEditorSelection: Boolean(editorSelection.text),
       onApplyAICode: suggestedCodeBlock ? applyAiCodeWithMode : null,
       onUndoAICode: typeof activeSnapshots.beforeAiRewrite === "string" ? undoAiCode : null,
       canUndoAICode: typeof activeSnapshots.beforeAiRewrite === "string",
     });
-  }, [activePage, activeProblem, activeSolution?.function_name, activeSolution?.starter_code, attempts, code, note, onContextChange, selectedLanguage, suggestedCodeBlock, tutorMode, learningStyle, hintGate, workspaceTab, workspaceVisible, runnerSummary, activeSnapshots.beforeAiRewrite, applyAiCodeWithMode, undoAiCode, editorSelection.text]);
+  }, [activePage, activeProblem, activeSolution?.function_name, activeSolution?.starter_code, attempts, code, note, onContextChange, selectedLanguage, suggestedCodeBlock, tutorMode, learningStyle, hintGate, workspaceTab, workspaceVisible, runnerSummary, debugContext, activeSnapshots.beforeAiRewrite, applyAiCodeWithMode, undoAiCode, editorSelection.text]);
 
   useEffect(() => {
     onActivePageChange?.(activePage);

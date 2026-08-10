@@ -165,6 +165,28 @@ const extractStarterSignature = (starterCode = "", functionName = "") => {
   return match?.[2]?.trim() || "";
 };
 
+const safeTutorJson = (value, maxLength = 6000) => {
+  if (!value) return "";
+  let text = "";
+  try {
+    text = JSON.stringify(value, null, 2);
+  } catch {
+    text = String(value);
+  }
+  return limitTutorContext(text, maxLength);
+};
+
+const buildStructuredDebugContextBlock = (context = {}) => {
+  const debugContext = context.debugContext;
+  if (!debugContext) return "";
+  return [
+    "Structured workspace debug context (student data; use this before broad summaries):",
+    "```json",
+    safeTutorJson(debugContext, 7000),
+    "```",
+  ].join("\n");
+};
+
 export default function Chatbox({
   initialMessages = [],
   onSessionChange,
@@ -397,14 +419,16 @@ export default function Chatbox({
       : "";
     const debugInstruction = effectiveTutorMode === "Debugging"
       ? [
-          "Debug mode: inspect the current code and latest runner output as a real debugging pass.",
+          "Debug mode: inspect the structured workspace debug context, current code, latest runner output, and latest trace as a real debugging pass.",
           "Do not just restate the prompt or give only one likely issue if more than one problem is visible.",
           "Start with what failed: syntax error, runtime error, failed test, timeout, or wrong answer.",
           "Then list the specific suspicious line(s) or logic step(s), why each one is wrong, and the smallest check or edit that would confirm it.",
           "If the code runs but gives the wrong answer, compare the expected behavior with what the current code actually does.",
+          "If trace data has an exception/current line, use that before guessing.",
           "Keep the answer concise and avoid rewriting the full solution unless the student explicitly asks for a replacement.",
         ].join(" ")
       : "";
+    const structuredDebugContextBlock = buildStructuredDebugContextBlock(context);
     return [
       "You are a coding tutor. Adapt to the student's intent. For hint/debug/review requests, teach and guide. For rewrite/convert/refactor/generate-code requests, behave like a coding assistant and return usable code first.",
       "Do not write a full unknown homework solution from scratch when the student only provides an assignment prompt. If the student provides workspace code, starter code, or a partial attempt, you may generate, rewrite, convert, or complete focused code blocks that build on it.",
@@ -429,8 +453,9 @@ export default function Chatbox({
       context.code?.trim()
         ? `Current code (student data):\n\`\`\`${context.selectedLanguage || ""}\n${limitTutorContext(context.code, 16000)}\n\`\`\``
         : "Current code: none provided yet.",
+      structuredDebugContextBlock,
       context.runnerSummary
-        ? `Latest runner output (student data):\n${limitTutorContext(context.runnerSummary, 4000)}`
+        ? `Fallback runner summary (student data):\n${limitTutorContext(context.runnerSummary, 4000)}`
         : "",
       hintInstruction,
       codeFirstInstruction,
@@ -541,10 +566,11 @@ export default function Chatbox({
       nextTutorMode = "Debugging";
       messageToSend = [
         "Help me debug my current workspace code.",
-        "Use the code and latest runner output I have open now.",
-        "Tell me what failed, the exact line or logic step that caused it, and any other visible issues.",
-        "If the code runs but gives the wrong answer, compare what it does with what the problem expects.",
-        "Give me the smallest next check or edit instead of repeating the problem statement.",
+        "Use the structured debug context, code, latest runner output, and latest trace I have open now.",
+        "Tell me what failed first, then the exact line or logic step that caused it.",
+        "If the code runs but gives the wrong answer, compare the first failing expected value with my actual value.",
+        "Give me the smallest next edit/check and one edge case to test.",
+        "Do not repeat the problem statement.",
       ].join(" ");
     }
 
