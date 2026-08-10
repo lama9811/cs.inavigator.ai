@@ -185,6 +185,7 @@ export default function QuizBank({
   mastery = null,
   adaptivePractice = null,
   codingRecommendation = null,
+  onDismissRecommendation = null,
   onOpenLessonReview = null,
 }) {
   const location = useLocation();
@@ -963,6 +964,33 @@ export default function QuizBank({
                 >
                   {guideRecommendation.cta}
                 </button>
+                {Array.isArray(guideRecommendation.miniPlan) && guideRecommendation.miniPlan.length ? (
+                  <ol className="practice-guide-mini-plan" aria-label="Suggested plan">
+                    {guideRecommendation.miniPlan.slice(0, 5).map((item, index) => (
+                      <li key={`${item?.label || "step"}-${index}`}>{item?.label}</li>
+                    ))}
+                  </ol>
+                ) : null}
+                {guideRecommendation.explanation ? (
+                  <details className="practice-guide-why">
+                    <summary>Why this?</summary>
+                    {guideRecommendation.explanation.why_topic ? <p>{guideRecommendation.explanation.why_topic}</p> : null}
+                    {guideRecommendation.explanation.why_difficulty ? <p>{guideRecommendation.explanation.why_difficulty}</p> : null}
+                    {guideRecommendation.explanation.why_not_advanced ? <p>{guideRecommendation.explanation.why_not_advanced}</p> : null}
+                    {Array.isArray(guideRecommendation.explanation.evidence_used) && guideRecommendation.explanation.evidence_used.length ? (
+                      <ul>
+                        {guideRecommendation.explanation.evidence_used.map((item, index) => (
+                          <li key={`${item}-${index}`}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    {onDismissRecommendation ? (
+                      <button type="button" className="practice-guide-dismiss" onClick={onDismissRecommendation}>
+                        Dismiss for now
+                      </button>
+                    ) : null}
+                  </details>
+                ) : null}
               </div>
             </section>
           )}

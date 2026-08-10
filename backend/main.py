@@ -155,7 +155,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, SavedPlannerPlan, CodingAttemptEvent, CodingHintEvent, CodingTutorActionEvent, CodingWorkspaceState, CodingLearnProgress, CodingStartingCheckProgress, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, SavedPlannerPlan, CodingAttemptEvent, CodingHintEvent, CodingTutorActionEvent, CodingLearningEvent, CodingWorkspaceState, CodingLearnProgress, CodingStartingCheckProgress, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -1063,6 +1063,27 @@ class CodingStartingCheckProgressUpdate(BaseModel):
         normalized = (value or "completed").strip().lower()
         if normalized not in VALID_STARTING_CHECK_STATUSES:
             raise ValueError("status must be completed or skipped")
+        return normalized
+
+class CodingLearningEventCreate(BaseModel):
+    event_type: str
+    language: str = "python"
+    surface: Optional[str] = None
+    category: Optional[str] = None
+    topic: Optional[str] = None
+    question_id: Optional[str] = None
+    source: Optional[str] = None
+    difficulty: Optional[str] = None
+    outcome: Optional[str] = None
+    error_class: Optional[str] = None
+    metadata: Optional[dict[str, Any]] = None
+
+    @field_validator("event_type")
+    @classmethod
+    def validate_event_type(cls, value):
+        normalized = (value or "").strip().lower()
+        if normalized not in {"recommendation_dismissed", "recommendation_opened"}:
+            raise ValueError("event_type must be recommendation_dismissed or recommendation_opened")
         return normalized
 
 class PracticeRunRequest(BaseModel):
@@ -6485,6 +6506,19 @@ async def request_practice_question_hint(
         language=language_key,
         level=req.level,
     ))
+    learning_events.record_event(
+        db,
+        user_id=user["user_id"],
+        event_type="hint_used",
+        language=language_key,
+        surface="workspace",
+        category=question.get("topic"),
+        topic=question.get("topic"),
+        question_id=question["id"],
+        source=source,
+        difficulty=question.get("difficulty"),
+        metadata={"level": req.level},
+    )
     db.commit()
     hint = next((item for item in state["hints"] if item["level"] == req.level), None)
     return {
@@ -6607,6 +6641,46 @@ def _save_concept_attempt(
     )
     try:
         db.add(row)
+        stored_results = _stored_concept_results(results)
+        missed = [item for item in stored_results if not item.get("correct")]
+        base_event_type = "quiz_retried" if category == "mistake-bank" else "quiz_checked"
+        learning_events.record_event(
+            db,
+            user_id=user_id,
+            event_type=base_event_type,
+            language=concept_quiz.normalize_language(language),
+            surface="quiz",
+            category=str(category)[:80],
+            source="concept_quiz",
+            outcome="pass" if correct == total and total else "miss",
+            metadata={
+                "correct": max(0, int(correct)),
+                "total": max(0, int(total)),
+                "score": max(0.0, min(1.0, float(score))),
+                "missed_count": len(missed),
+            },
+        )
+        if missed:
+            missed_categories = sorted({
+                str(item.get("category") or category)[:80]
+                for item in missed
+                if item.get("question_id")
+            })
+            learning_events.record_event(
+                db,
+                user_id=user_id,
+                event_type="quiz_missed",
+                language=concept_quiz.normalize_language(language),
+                surface="quiz",
+                category=str(category)[:80],
+                source="concept_quiz",
+                outcome="miss",
+                metadata={
+                    "missed_count": len(missed),
+                    "missed_categories": missed_categories,
+                    "question_ids": [item.get("question_id") for item in missed[:10]],
+                },
+            )
         db.commit()
         db.refresh(row)
         return row
@@ -7176,7 +7250,7 @@ async def search_coding_study_resources(
         "source": "curated_cs_navigator_resources",
     }
 
-from services import adaptive_next_step, adaptive_practice, attempt_telemetry, mastery
+from services import adaptive_next_step, adaptive_practice, attempt_telemetry, learning_events, mastery
 
 @app.post("/api/coding/practice/run")
 async def run_practice_solution(
@@ -7254,6 +7328,46 @@ async def run_practice_solution(
         hints_used=req.hints_used,
         seconds_since_open=req.seconds_since_open,
     )
+    outcome, error_class = attempt_telemetry.classify(run_result)
+    learning_events.record_event_safely(
+        db,
+        user_id=user["user_id"],
+        event_type="practice_run",
+        language=language_key,
+        surface="workspace",
+        category=question.get("topic"),
+        topic=question.get("topic"),
+        question_id=question["id"],
+        source="practice",
+        difficulty=question.get("difficulty"),
+        outcome=outcome,
+        error_class=error_class,
+        metadata={
+            "passed": run_result.get("passed"),
+            "total": run_result.get("total"),
+            "status": status_value,
+        },
+    )
+    learning_events.record_event_safely(
+        db,
+        user_id=user["user_id"],
+        event_type="practice_solved" if outcome == "pass" else "practice_failed",
+        language=language_key,
+        surface="workspace",
+        category=question.get("topic"),
+        topic=question.get("topic"),
+        question_id=question["id"],
+        source="practice",
+        difficulty=question.get("difficulty"),
+        outcome=outcome,
+        error_class=error_class,
+        metadata={
+            "passed": run_result.get("passed"),
+            "total": run_result.get("total"),
+            "status": status_value,
+            "hints_used": req.hints_used,
+        },
+    )
 
     return {
         **run_result,
@@ -7266,6 +7380,7 @@ async def run_practice_solution(
 async def trace_practice_solution(
     req: PracticeRunRequest,
     user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     retry_after = check_practice_run_rate_limit(str(user["user_id"]))
     if retry_after is not None:
@@ -7322,6 +7437,18 @@ async def trace_practice_solution(
                 "duration_ms": 0,
             }
         run_result = run_javascript_freeform_trace(req.code) if language_key == "javascript" else run_python_freeform_trace(req.code)
+        outcome, error_class = attempt_telemetry.classify(run_result)
+        learning_events.record_event_safely(
+            db,
+            user_id=user["user_id"],
+            event_type="trace_used",
+            language=language_key,
+            surface="workspace",
+            source="freeform",
+            outcome=outcome,
+            error_class=error_class,
+            metadata={"status": run_result.get("status"), "steps": len((run_result.get("trace_v2") or {}).get("steps") or [])},
+        )
         return {
             **run_result,
             "trace_test_index": None,
@@ -7362,6 +7489,27 @@ async def trace_practice_solution(
         run_result = run_cpp_practice_trace(req.code, function_name, tests[test_index], arg_spec=arg_spec)
     else:
         run_result = run_python_practice_trace(req.code, function_name, tests[test_index])
+    outcome, error_class = attempt_telemetry.classify(run_result)
+    learning_events.record_event_safely(
+        db,
+        user_id=user["user_id"],
+        event_type="trace_used",
+        language=language_key,
+        surface="workspace",
+        category=question.get("topic"),
+        topic=question.get("topic"),
+        question_id=question["id"],
+        source="practice",
+        difficulty=question.get("difficulty"),
+        outcome=outcome,
+        error_class=error_class,
+        metadata={
+            "function_name": function_name,
+            "test_index": test_index,
+            "status": run_result.get("status"),
+            "steps": len((run_result.get("trace_v2") or {}).get("steps") or []),
+        },
+    )
     return {
         **run_result,
         "trace_test_index": test_index,
@@ -7498,6 +7646,18 @@ async def free_run_practice_solution(
         code=req.code,
         seconds_since_open=req.seconds_since_open,
     )
+    outcome, error_class = attempt_telemetry.classify(run_result)
+    learning_events.record_event_safely(
+        db,
+        user_id=user["user_id"],
+        event_type="practice_run",
+        language=language_key,
+        surface="workspace",
+        source="freerun",
+        outcome=outcome,
+        error_class=error_class,
+        metadata={"status": run_result.get("status")},
+    )
 
     message = (
         "Ran your code. Output is shown below (not graded)."
@@ -7586,8 +7746,49 @@ async def record_coding_tutor_action(
         language=language_key,
         metadata_json=json.dumps(safe_metadata) if safe_metadata else None,
     ))
+    event_type = "tutor_action_used"
+    if "debug" in req.action_type:
+        event_type = "tutor_debug_used"
+    elif "rewrite" in req.action_type or safe_metadata.get("mode") in {"replace", "append", "selection", "comment"}:
+        event_type = "tutor_rewrite_used"
+    learning_events.record_event(
+        db,
+        user_id=user["user_id"],
+        event_type=event_type,
+        language=language_key,
+        surface=safe_metadata.get("surface") or "workspace",
+        question_id=(req.question_id or None),
+        source=req.source,
+        metadata={"action_type": req.action_type, **safe_metadata},
+    )
     db.commit()
     return {"recorded": True, "milestones": mastery.build_milestone_signals(db, user["user_id"])}
+
+
+@app.post("/api/coding/learning-events")
+async def record_coding_learning_event(
+    req: CodingLearningEventCreate,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    language_key, _ = _normalize_practice_language(req.language)
+    row = learning_events.record_event(
+        db,
+        user_id=user["user_id"],
+        event_type=req.event_type,
+        language=language_key,
+        surface=req.surface,
+        category=req.category,
+        topic=req.topic,
+        question_id=req.question_id,
+        source=req.source,
+        difficulty=req.difficulty,
+        outcome=req.outcome,
+        error_class=req.error_class,
+        metadata=req.metadata,
+        commit=True,
+    )
+    return {"recorded": True, "event": learning_events.serialize_event(row)}
 
 def _practice_answer_items_by_language() -> dict[str, list[dict[str, Any]]]:
     items_by_language: dict[str, list[dict[str, Any]]] = {}
@@ -7771,6 +7972,13 @@ async def get_coding_adaptive_next_step(
         .filter(CodingTutorPreference.user_id == user["user_id"])
         .first()
     )
+    learning_event_rows = learning_events.recent_events(
+        db,
+        user["user_id"],
+        language=language_key,
+        days=30,
+        limit=200,
+    )
 
     serialized_attempts = [_serialize_attempt_event(row) for row in attempt_rows]
     adaptive_recommendation = adaptive_practice.build_adaptive_recommendation(
@@ -7803,6 +8011,7 @@ async def get_coding_adaptive_next_step(
         explicit_advanced=explicit_advanced,
         learning_style=(preference.learning_style if preference else DEFAULT_LEARNING_STYLE),
         surface=surface,
+        learning_event_rows=learning_event_rows,
     )
     return {
         "language": language_key,
@@ -7813,6 +8022,7 @@ async def get_coding_adaptive_next_step(
             "attempt_event_count": len(attempt_rows),
             "concept_quiz_attempt_count": len(concept_rows),
             "learn_progress_count": len(learn_rows),
+            "learning_event_count": len(learning_event_rows),
             "starting_check_status": starting_row.status if starting_row else "not_started",
             "mastery_scored_topics": sum(1 for topic in topics if topic.get("scored")),
         },
@@ -8085,6 +8295,18 @@ async def upsert_coding_learn_progress(
         row.completed_at = row.completed_at or now
         row.last_opened_at = row.last_opened_at or now
     row.updated_at = now
+    learning_events.record_event(
+        db,
+        user_id=user["user_id"],
+        event_type="lesson_completed" if req.status == "completed" else "lesson_opened",
+        language=language_key,
+        surface="learn",
+        category=req.category,
+        topic=req.category,
+        source="learn",
+        outcome=req.status,
+        metadata={"first_completion": first_completion},
+    )
     db.commit()
     db.refresh(row)
     return {
@@ -8176,6 +8398,16 @@ async def upsert_coding_starting_check(
         row.completed_at = now
         row.skipped_at = None
     row.updated_at = now
+    learning_events.record_event(
+        db,
+        user_id=user["user_id"],
+        event_type="starting_check_skipped" if req.status == "skipped" else "starting_check_completed",
+        language=language_key,
+        surface="home",
+        source="starting_check",
+        outcome=req.status,
+        metadata={"result_level": row.result_level},
+    )
     db.commit()
     db.refresh(row)
     return _serialize_starting_check(row, language_key)

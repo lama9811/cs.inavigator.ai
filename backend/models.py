@@ -504,6 +504,39 @@ class CodingTutorActionEvent(Base):
     user = relationship("User", backref="coding_tutor_action_events")
 
 
+class CodingLearningEvent(Base):
+    """Normalized append-only Coding Tutor activity timeline.
+
+    Source-specific rows such as attempts, hints, and quiz attempts remain the
+    source of truth. This table gives adaptive learning one small event stream to
+    reason over without joining every feature table for lightweight signals such
+    as dismissed recommendations and recent learning actions.
+    """
+    __tablename__ = "coding_learning_events"
+    __table_args__ = (
+        Index("ix_coding_learning_event_user_created", "user_id", "created_at"),
+        Index("ix_coding_learning_event_user_type", "user_id", "event_type"),
+        Index("ix_coding_learning_event_user_language_topic", "user_id", "language", "topic"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    event_type = Column(String(60), nullable=False, index=True)
+    language = Column(String(30), nullable=True, index=True)
+    surface = Column(String(40), nullable=True)
+    category = Column(String(80), nullable=True, index=True)
+    topic = Column(String(80), nullable=True, index=True)
+    question_id = Column(String(80), nullable=True, index=True)
+    source = Column(String(40), nullable=True)
+    difficulty = Column(String(20), nullable=True)
+    outcome = Column(String(30), nullable=True)
+    error_class = Column(String(40), nullable=True, index=True)
+    metadata_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+
+    user = relationship("User", backref="coding_learning_events")
+
+
 class CodingWorkspaceState(Base):
     """Last Coding Tutor workspace opened by a user.
 

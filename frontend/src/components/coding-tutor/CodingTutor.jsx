@@ -30,6 +30,7 @@ import { buildCodingRecommendation } from "./adaptiveRecommendation";
 import {
   fetchAdaptiveNextStep,
   fetchStartingCheckProgress,
+  recordLearningEvent,
   saveStartingCheckProgress,
 } from "./adaptiveApi";
 import LearnMode from "./learn/LearnMode";
@@ -2179,6 +2180,32 @@ export default function CodingTutor({
     startingCheck,
   ]);
   const codingRecommendation = adaptiveNextStep || fallbackCodingRecommendation;
+  const dismissCodingRecommendation = useCallback((recommendation = codingRecommendation) => {
+    if (!recommendation) return;
+    const languageKey = PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
+    const target = recommendation.target || {};
+    recordLearningEvent(apiBase, {
+      event_type: "recommendation_dismissed",
+      language: languageKey,
+      surface: activePage === "workspace" ? "workspace" : activePage === "quiz" ? "practice" : "home",
+      category: target.category || recommendation.topic || null,
+      topic: target.topic || recommendation.topic || null,
+      question_id: target.questionId || recommendation.question?.id || null,
+      source: recommendation.source || "adaptive_next_step",
+      difficulty: target.difficulty || recommendation.question?.difficulty || null,
+      metadata: {
+        kind: recommendation.kind,
+        topic: target.topic || recommendation.topic || null,
+        category: target.category || recommendation.topic || null,
+        target_mode: target.mode || null,
+      },
+    })
+      .then(() => {
+        setAdaptiveNextStep(null);
+        setEngagementTick(tick => tick + 1);
+      })
+      .catch(() => {});
+  }, [activePage, apiBase, codingRecommendation, practiceLanguage]);
   const activeSnapshotKey = activeProblem ? `${activeProblem.id}:${selectedLanguageKey}` : "personal";
   const activeSnapshots = useMemo(
     () => workspaceSnapshots[activeSnapshotKey] || {},
@@ -4480,6 +4507,7 @@ export default function CodingTutor({
       onOpenTopic={openRecommendedTopic}
       onOpenLessonReview={openAdaptiveReviewLesson}
       onOpenRecommendation={() => openCodingRecommendation(codingRecommendation)}
+      onDismissRecommendation={() => dismissCodingRecommendation(codingRecommendation)}
       onOpenInterviewPrep={() => goToPage("interview")}
       onPrompt={sendDashboardPrompt}
       onSaveQuiz={saveLatestQuizAsPdf}
@@ -4974,6 +5002,7 @@ export default function CodingTutor({
               mastery={mastery}
               adaptivePractice={adaptivePractice}
               codingRecommendation={codingRecommendation}
+              onDismissRecommendation={() => dismissCodingRecommendation(codingRecommendation)}
               onOpenLessonReview={openAdaptiveReviewLesson}
               onDifficultyChange={setDifficulty}
               onLanguageChange={setPracticeLanguage}

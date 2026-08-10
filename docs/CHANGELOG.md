@@ -5,6 +5,8 @@ All notable changes to CS Navigator are documented here.
 ## [Unreleased]
 
 ### Added
+- **Adaptive Learning V3 timeline.** Added a normalized append-only Coding Tutor learning-event stream for lesson opens/completions, starting-check actions, quiz checks/misses/retries, practice runs, hint use, trace use, tutor actions, and frontend recommendation dismissals.
+- **Adaptive "Why this?" and mini-plans.** The backend next-step response now includes explanation evidence, topic/difficulty rationale, advanced-gating notes, cooldowns, and a short 3-5 step learning plan rendered on Home and the Practice Guide.
 - **Advanced V2 Learn coverage.** Added shared Advanced Learn lessons for heaps, tries, disjoint sets, dynamic programming, prefix sums, matrices, intervals, and bit manipulation, with language-specific examples for Python, Java, JavaScript, and C++ plus visual blocks, checks, when-to-use guidance, and common-mistake sections.
 - **Advanced practice depth pass.** Added 38 advanced on-ramp and bridge Practice problems across dynamic programming, prefix sums, tries, matrices, bit manipulation, heaps, disjoint sets, intervals, linked lists, stacks, queues, recursion, and sliding window, each with Python, JavaScript, Java, and C++ answer entries and runner tests.
 - **Concept Quiz read-aloud controls.** Quiz questions, answer choices, immediate feedback, and final review rows can now be read with browser speech synthesis, including a short pause before choices and continuation into revealed feedback.
@@ -19,6 +21,7 @@ All notable changes to CS Navigator are documented here.
 - **Practice visualizer audit script.** A frontend audit command now prints Practice visualizer concepts, effective step counts, compact teaching samples, and oversized/banned-copy warnings across all 151 visualizers.
 
 ### Changed
+- Adaptive recommendations now use timeline-based cooldowns so dismissed review recommendations stay quiet for 24 hours and skipped starting checks stay quiet for 14 days when the student has other learning signals.
 - Coding Tutor chat now sends structured workspace debug context into tutor prompts, including the selected language, function contract, latest run status, first failing test, stderr/stdout, trace line/exception, and current variables so Debug and terminal help can diagnose the current attempt instead of paraphrasing the prompt.
 - Coding Tutor mobile Home, Practice Library, and Concept Quiz layouts are denser at 425/375/320px widths, with smaller type, tighter card padding, single-column LeetCode daily actions, compact Practice problem footers/guide cards, and one continuous quiz/review scroll instead of split panes.
 - The standalone in-app Advising Form is hidden behind a local legacy feature flag; `/advising` now sends students to Planner V2 by default while preserving the old form code and backend draft/upload endpoints.

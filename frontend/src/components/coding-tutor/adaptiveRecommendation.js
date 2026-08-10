@@ -282,6 +282,10 @@ export function buildPracticeGuideRecommendation({
       bandClass: codingRecommendation.kind === "review" ? "shaky" : "steady",
       reason: codingRecommendation.reason,
       cta: codingRecommendation.actionLabel,
+      recommendation: codingRecommendation,
+      explanation: codingRecommendation.explanation || null,
+      miniPlan: codingRecommendation.mini_plan || codingRecommendation.miniPlan || [],
+      cooldowns: codingRecommendation.cooldowns || [],
       onClick: () => {
         const target = codingRecommendation.target || {};
         if (target.mode === "lesson_review") {

@@ -49,6 +49,15 @@ export async function fetchAdaptiveNextStep(apiBase, { language = "python", surf
   return normalizeBackendRecommendation(data);
 }
 
+export async function recordLearningEvent(apiBase, payload = {}) {
+  const res = await fetch(`${apiBase}/api/coding/learning-events`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(payload),
+  });
+  return parseJsonResponse(res, "Could not save this learning event.");
+}
+
 export async function fetchStartingCheckProgress(apiBase, language = "python") {
   const url = new URL(`${apiBase}/api/coding/starting-check`);
   url.searchParams.set("language", language);

@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from models import Base, CodingLearnProgress, CodingStartingCheckProgress, User
+from models import Base, CodingLearnProgress, CodingLearningEvent, CodingStartingCheckProgress, User
 from services import adaptive_next_step, mastery
 
 
@@ -69,6 +69,12 @@ def test_progress_models_are_unique_per_user_language_and_category():
     db.add(CodingStartingCheckProgress(user_id=user.id, language="python", status="skipped"))
     with pytest.raises(IntegrityError):
         db.commit()
+    db.rollback()
+
+    db.add(CodingLearningEvent(user_id=user.id, event_type="lesson_opened", language="python", category="syntax"))
+    db.add(CodingLearningEvent(user_id=user.id, event_type="lesson_opened", language="python", category="syntax"))
+    db.commit()
+    assert db.query(CodingLearningEvent).count() == 2
 
 
 def test_brand_new_user_gets_beginner_safe_first_run_recommendation():
@@ -78,6 +84,8 @@ def test_brand_new_user_gets_beginner_safe_first_run_recommendation():
     assert rec["beginner_mode"] is True
     assert rec["target"]["mode"] == "learn"
     assert rec["topic"] == "conditionals"
+    assert rec["explanation"]["evidence_used"]
+    assert len(rec["mini_plan"]) >= 3
 
 
 def test_starting_check_result_guides_when_no_practice_signal_exists():
@@ -136,6 +144,7 @@ def test_one_failed_hard_attempt_does_not_create_advanced_recommendation():
 
     assert rec["topic"] != "dynamic programming"
     assert rec["source"] == "beginner_fallback"
+    assert "Dynamic Programming" in rec["explanation"]["why_not_advanced"]
 
 
 def test_low_signal_advanced_in_progress_does_not_override_latest_syntax_error_on_home():
@@ -252,3 +261,63 @@ def test_completed_lesson_points_to_matching_concept_check():
 
     assert rec["kind"] == "lesson_to_quiz"
     assert rec["target"] == {"mode": "quiz", "language": "python", "category": "functions"}
+
+
+def test_dismissed_review_uses_cooldown_and_falls_back():
+    now = datetime.utcnow()
+    dismissed = _row(
+        event_type="recommendation_dismissed",
+        topic="arrays",
+        category="syntax",
+        metadata_json=json.dumps({
+            "kind": "error_checkpoint",
+            "topic": "arrays",
+            "category": "syntax",
+            "target_mode": "lesson_review",
+        }),
+        created_at=now,
+    )
+    rec = _recommend(
+        attempt_rows=[
+            _row(
+                question_id="arr-easy",
+                topic="arrays",
+                difficulty="easy",
+                language="python",
+                outcome="error",
+                error_class="syntax",
+                created_at=now,
+            )
+        ],
+        adaptive_payload={"recommendation": {}, "review_signal": None},
+        learning_event_rows=[dismissed],
+    )
+
+    assert rec["kind"] != "error_checkpoint"
+    assert rec["cooldowns"][0]["type"] == "recommendation_dismissed"
+    assert "cooldown" in rec["explanation"]["what_would_change"]
+
+
+def test_starting_check_skip_event_is_reported_as_cooldown_when_signal_exists():
+    now = datetime.utcnow()
+    rec = _recommend(
+        learn_rows=[
+            _row(
+                language="python",
+                category="syntax",
+                status="completed",
+                completed_at=now,
+            )
+        ],
+        starting_row=_row(status="skipped"),
+        learning_event_rows=[
+            _row(
+                event_type="starting_check_skipped",
+                metadata_json="{}",
+                created_at=now,
+            )
+        ],
+    )
+
+    assert rec["kind"] == "lesson_to_quiz"
+    assert any(item["type"] == "starting_check_skipped" for item in rec["cooldowns"])

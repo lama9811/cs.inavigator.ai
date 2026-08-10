@@ -7,7 +7,7 @@ logs we already keep and returns one action the frontend can render anywhere.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Iterable, Optional
 
 from services import adaptive_practice, mastery
@@ -32,6 +32,8 @@ ADVANCED_TOPICS = {
 }
 PASS_SCORE = 0.7
 QUIZ_MISS_THRESHOLD = 2
+DISMISS_COOLDOWN_HOURS = 24
+STARTING_CHECK_SKIP_COOLDOWN_DAYS = 14
 
 
 def _norm(value: Any) -> str:
@@ -100,6 +102,190 @@ def _recommendation(
     if review_signal:
         payload["review_signal"] = review_signal
     return payload
+
+
+def _event_metadata(row: Any) -> dict[str, Any]:
+    raw = getattr(row, "metadata_json", None)
+    if not raw:
+        return {}
+    try:
+        parsed = json.loads(raw)
+        return parsed if isinstance(parsed, dict) else {}
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return {}
+
+
+def _aware_now(rows: Iterable[Any]) -> datetime:
+    stamps = [getattr(row, "created_at", None) for row in rows or [] if getattr(row, "created_at", None)]
+    if not stamps:
+        return datetime.utcnow()
+    latest = max(stamps)
+    return latest.replace(tzinfo=None) if latest.tzinfo else latest
+
+
+def _same_recommendation(row: Any, recommendation: dict[str, Any]) -> bool:
+    meta = _event_metadata(row)
+    target = recommendation.get("target") or {}
+    if meta.get("kind") and meta.get("kind") != recommendation.get("kind"):
+        return False
+    for key in ("topic", "category"):
+        expected = _norm(recommendation.get(key) or target.get(key))
+        actual = _norm(meta.get(key) or getattr(row, key, None))
+        if expected and actual and expected != actual:
+            return False
+    target_mode = _norm(target.get("mode"))
+    meta_mode = _norm(meta.get("target_mode"))
+    if target_mode and meta_mode and target_mode != meta_mode:
+        return False
+    return True
+
+
+def _dismissal_cooldown(
+    learning_event_rows: Iterable[Any],
+    recommendation: dict[str, Any],
+) -> Optional[dict[str, Any]]:
+    now = _aware_now(learning_event_rows)
+    for row in learning_event_rows or []:
+        if getattr(row, "event_type", None) != "recommendation_dismissed":
+            continue
+        created = getattr(row, "created_at", None)
+        if not created:
+            continue
+        created = created.replace(tzinfo=None) if created.tzinfo else created
+        if now - created > timedelta(hours=DISMISS_COOLDOWN_HOURS):
+            continue
+        if _same_recommendation(row, recommendation):
+            expires = created + timedelta(hours=DISMISS_COOLDOWN_HOURS)
+            return {
+                "type": "recommendation_dismissed",
+                "reason": "This recommendation was dismissed recently.",
+                "expires_at": expires.isoformat(),
+                "topic": recommendation.get("topic"),
+                "kind": recommendation.get("kind"),
+            }
+    return None
+
+
+def _starting_skip_cooldown(learning_event_rows: Iterable[Any], *, has_signal: bool) -> Optional[dict[str, Any]]:
+    if not has_signal:
+        return None
+    now = _aware_now(learning_event_rows)
+    for row in learning_event_rows or []:
+        if getattr(row, "event_type", None) != "starting_check_skipped":
+            continue
+        created = getattr(row, "created_at", None)
+        if not created:
+            continue
+        created = created.replace(tzinfo=None) if created.tzinfo else created
+        if now - created <= timedelta(days=STARTING_CHECK_SKIP_COOLDOWN_DAYS):
+            return {
+                "type": "starting_check_skipped",
+                "reason": "Starting check was skipped recently.",
+                "expires_at": (created + timedelta(days=STARTING_CHECK_SKIP_COOLDOWN_DAYS)).isoformat(),
+            }
+    return None
+
+
+def _topic_from_recommendation(recommendation: dict[str, Any]) -> str:
+    target = recommendation.get("target") or {}
+    return _norm(recommendation.get("topic") or target.get("topic") or target.get("category"))
+
+
+def _build_explanation(
+    recommendation: dict[str, Any],
+    *,
+    advanced_blocked_topic: Optional[str] = None,
+    cooldowns: Optional[list[dict[str, Any]]] = None,
+) -> dict[str, Any]:
+    evidence = recommendation.get("evidence") or {}
+    topic = _topic_from_recommendation(recommendation)
+    title = _title(topic) if topic else recommendation.get("title", "this step")
+    source = recommendation.get("source") or "adaptive"
+    evidence_used: list[str] = []
+    if recommendation.get("kind") == "first_run":
+        evidence_used.append("No completed lessons, quiz checks, or practice runs yet.")
+    if evidence.get("count"):
+        evidence_used.append(f"{evidence.get('count')} recent matching error signals.")
+    if evidence.get("misses"):
+        evidence_used.append(f"{evidence.get('misses')} missed quiz checks.")
+    if evidence.get("attempts") is not None:
+        evidence_used.append(f"{evidence.get('attempts')} practice attempts.")
+    if evidence.get("completed_at"):
+        evidence_used.append("A recently completed lesson.")
+    if not evidence_used:
+        evidence_used.append(f"Recommendation source: {source.replace('_', ' ')}.")
+
+    if recommendation.get("beginner_mode"):
+        why_topic = "This keeps the first step in beginner material."
+        why_difficulty = "Beginner mode starts with short lessons and Easy practice."
+    elif topic:
+        why_topic = f"{title} is the topic connected to the strongest current signal."
+        why_difficulty = "The difficulty stays low until there is enough scored practice evidence."
+    else:
+        why_topic = "This is the clearest action from the current progress."
+        why_difficulty = "The app is using the safest available difficulty."
+
+    if advanced_blocked_topic:
+        why_not_advanced = (
+            f"{_title(advanced_blocked_topic)} is not being recommended yet because one attempt is not enough evidence."
+        )
+    elif topic in ADVANCED_TOPICS and recommendation.get("confidence") == "high":
+        why_not_advanced = ""
+    else:
+        why_not_advanced = "Advanced topics need repeated or scored evidence first."
+
+    what_would_change = "Solving problems, completing a lesson, or repeating the same miss can change this recommendation."
+    if cooldowns:
+        what_would_change = "A dismissed recommendation can return after its cooldown, or sooner if new work creates stronger evidence."
+
+    return {
+        "summary": recommendation.get("reason") or "This is the next useful Coding Tutor step.",
+        "evidence_used": evidence_used[:4],
+        "why_topic": why_topic,
+        "why_difficulty": why_difficulty,
+        "why_not_advanced": why_not_advanced,
+        "what_would_change": what_would_change,
+    }
+
+
+def _build_mini_plan(recommendation: dict[str, Any], *, language: str) -> list[dict[str, Any]]:
+    topic = _topic_from_recommendation(recommendation) or "conditionals"
+    display = _title(topic)
+    lesson_target = _target("learn_topic", language=language, topic=topic)
+    quiz_target = _target("quiz", language=language, category=topic)
+    practice_target = _target("practice", topic=topic, difficulty="easy")
+    return [
+        {"label": f"Review {display}", "target": lesson_target},
+        {"label": f"Answer 3 {display} checks", "target": quiz_target},
+        {"label": f"Try one Easy {display} problem", "target": practice_target},
+        {"label": "If a run fails, use Trace or Debug", "target": _target("workspace", tool="trace")},
+    ]
+
+
+def _decorate_recommendation(
+    recommendation: dict[str, Any],
+    *,
+    language: str,
+    learning_event_rows: Iterable[Any],
+    has_signal: bool,
+    advanced_blocked_topic: Optional[str] = None,
+    extra_cooldowns: Optional[list[dict[str, Any]]] = None,
+) -> dict[str, Any]:
+    cooldowns = list(extra_cooldowns or [])
+    skip_cooldown = _starting_skip_cooldown(learning_event_rows, has_signal=has_signal)
+    if skip_cooldown:
+        cooldowns.append(skip_cooldown)
+    decorated = {
+        **recommendation,
+        "explanation": _build_explanation(
+            recommendation,
+            advanced_blocked_topic=advanced_blocked_topic,
+            cooldowns=cooldowns,
+        ),
+        "mini_plan": _build_mini_plan(recommendation, language=language),
+        "cooldowns": cooldowns,
+    }
+    return decorated
 
 
 def _progress_status(row: Any) -> str:
@@ -321,7 +507,9 @@ def build_next_step(
     explicit_advanced: bool = False,
     learning_style: str = "try_then_hint",
     surface: str = "home",
+    learning_event_rows: Optional[list[Any]] = None,
 ) -> dict[str, Any]:
+    learning_event_rows = learning_event_rows or []
     progress_by_question = {str(getattr(row, "question_id", "")): row for row in progress_rows or []}
     questions_by_id = {str(question.get("id")): question for question in questions or []}
     has_practice = _has_practice_signal(progress_rows, attempt_rows)
@@ -329,12 +517,31 @@ def build_next_step(
     has_learn = _has_learn_signal(learn_rows)
     has_starting = bool(starting_row and getattr(starting_row, "status", None) in {"completed", "skipped"})
     has_signal = has_practice or has_quiz or has_learn or has_starting
+    active_cooldowns: list[dict[str, Any]] = []
+    advanced_blocked_topic: Optional[str] = None
+
+    def done(recommendation: dict[str, Any]) -> dict[str, Any]:
+        return _decorate_recommendation(
+            recommendation,
+            language=language,
+            learning_event_rows=learning_event_rows,
+            has_signal=has_signal,
+            advanced_blocked_topic=advanced_blocked_topic,
+            extra_cooldowns=active_cooldowns,
+        )
+
+    def suppressed(recommendation: dict[str, Any]) -> bool:
+        cooldown = _dismissal_cooldown(learning_event_rows, recommendation)
+        if cooldown:
+            active_cooldowns.append(cooldown)
+            return True
+        return False
 
     if workspace_state and getattr(workspace_state, "source", None) == "practice":
         question = questions_by_id.get(str(getattr(workspace_state, "problem_id", "")))
         progress = progress_by_question.get(str(getattr(workspace_state, "problem_id", "")))
         if question and _progress_status(progress) != "solved" and _can_resume_question(question, explicit_advanced=explicit_advanced, surface=surface):
-            return _recommendation(
+            rec = _recommendation(
                 kind="resume",
                 title=question.get("title") or "Continue your problem",
                 reason="You already started this problem. Continue from your saved code and run the tests.",
@@ -347,13 +554,14 @@ def build_next_step(
                 topic=_norm(question.get("topic")),
                 question=_serialize_question(question),
             )
+            return done(rec)
 
     in_progress = _latest_in_progress(progress_rows, questions_by_id)
     if in_progress:
         row, question = in_progress
         evidence = {"attempts": getattr(row, "attempt_count", 0), "updated_at": _iso(getattr(row, "updated_at", None))}
         if _can_resume_question(question, explicit_advanced=explicit_advanced, surface=surface, evidence=evidence):
-            return _recommendation(
+            rec = _recommendation(
                 kind="resume",
                 title=question.get("title") or "Continue your problem",
                 reason="You already started this problem. Continue from your saved code and run the tests.",
@@ -366,11 +574,12 @@ def build_next_step(
                 topic=_norm(question.get("topic")),
                 question=_serialize_question(question),
             )
+            return done(rec)
 
     if not has_signal:
         topic = _starter_topic(questions)
         starter = _first_unsolved(questions, progress_by_question, topic=topic, difficulty="easy")
-        return _recommendation(
+        rec = _recommendation(
             kind="first_run",
             title="Start with Python Beginner",
             reason="Start with a short lesson, then try a few simple questions before coding.",
@@ -383,15 +592,16 @@ def build_next_step(
             topic=topic,
             question=_serialize_question(starter),
         )
+        return done(rec)
 
     placement = None if has_practice else _starting_check_recommendation(starting_row, language)
     if placement:
-        return placement
+        return done(placement)
 
     review_signal = (adaptive_payload or {}).get("review_signal")
     if review_signal:
         topic = _norm(review_signal.get("topic"))
-        return _recommendation(
+        rec = _recommendation(
             kind="review",
             title=review_signal.get("title") or f"Review {_title(topic)}",
             reason=review_signal.get("reason") or "Recent runs show a repeated error pattern.",
@@ -408,11 +618,13 @@ def build_next_step(
             topic=topic,
             review_signal=review_signal,
         )
+        if not suppressed(rec):
+            return done(rec)
 
     latest_error = _latest_error_signal(attempt_rows)
     if latest_error:
         category = latest_error["lesson_category"]
-        return _recommendation(
+        rec = _recommendation(
             kind="error_checkpoint",
             title=latest_error["title"],
             reason=latest_error["reason"],
@@ -431,11 +643,13 @@ def build_next_step(
             topic=latest_error.get("topic") or category,
             review_signal=latest_error,
         )
+        if not suppressed(rec):
+            return done(rec)
 
     quiz_signal = _quiz_miss_signal(concept_rows)
     if quiz_signal:
         category = quiz_signal["category"]
-        return _recommendation(
+        rec = _recommendation(
             kind="quiz_review",
             title=f"Review {_title(category)}",
             reason=f"You missed {quiz_signal['count']} recent {category.replace('-', ' ')} question checks.",
@@ -447,6 +661,8 @@ def build_next_step(
             evidence={"misses": quiz_signal["count"], "threshold": QUIZ_MISS_THRESHOLD, "at": quiz_signal.get("at")},
             topic=category,
         )
+        if not suppressed(rec):
+            return done(rec)
 
     adaptive = (adaptive_payload or {}).get("recommendation") or {}
     adaptive_topic = _norm(adaptive.get("topic"))
@@ -455,7 +671,7 @@ def build_next_step(
     adaptive_evidence = weakest if weakest_topic == adaptive_topic else {}
     if adaptive_topic and _advanced_allowed(adaptive_topic, explicit_advanced=explicit_advanced, evidence=adaptive_evidence):
         difficulty = _norm(adaptive.get("difficulty") or "easy")
-        return _recommendation(
+        rec = _recommendation(
             kind="practice_ladder" if adaptive.get("action") == "ladder" else "practice_review",
             title=_title(adaptive_topic),
             reason=adaptive.get("reason") or f"Practice {_title(adaptive_topic)} next.",
@@ -471,9 +687,13 @@ def build_next_step(
             },
             topic=adaptive_topic,
         )
+        if not suppressed(rec):
+            return done(rec)
+    elif adaptive_topic in ADVANCED_TOPICS:
+        advanced_blocked_topic = adaptive_topic
 
     if weakest_topic and _advanced_allowed(weakest_topic, explicit_advanced=explicit_advanced, evidence=weakest):
-        return _recommendation(
+        rec = _recommendation(
             kind="mastery_review",
             title=_title(weakest_topic),
             reason=weakest.get("reason") or f"Practice {_title(weakest_topic)} next.",
@@ -485,11 +705,15 @@ def build_next_step(
             evidence={"attempts": weakest.get("attempts"), "score": weakest.get("score"), "min_attempts": mastery.MIN_ATTEMPTS_FOR_SCORE},
             topic=weakest_topic,
         )
+        if not suppressed(rec):
+            return done(rec)
+    elif weakest_topic in ADVANCED_TOPICS:
+        advanced_blocked_topic = advanced_blocked_topic or weakest_topic
 
     latest_lesson = _latest_completed_lesson(learn_rows)
     if latest_lesson:
         category = getattr(latest_lesson, "category", "")
-        return _recommendation(
+        rec = _recommendation(
             kind="lesson_to_quiz",
             title=f"Check {_title(category)}",
             reason="You finished this lesson. Answer a few questions on the same topic while it is fresh.",
@@ -501,11 +725,12 @@ def build_next_step(
             evidence={"completed_at": _iso(getattr(latest_lesson, "completed_at", None))},
             topic=category,
         )
+        return done(rec)
 
     topic = _starter_topic(questions)
     starter = _first_unsolved(questions, progress_by_question, beginner_only=True, difficulty="easy")
     lesson_first = learning_style != "try_then_hint"
-    return _recommendation(
+    rec = _recommendation(
         kind="starter",
         title=f"Review {_title(topic)}" if lesson_first else ((starter or {}).get("title") or f"Practice {_title(topic)}"),
         reason=f"Read a short {_title(topic)} lesson, then answer the matching questions." if lesson_first else f"Try one Easy {_title(topic)} problem.",
@@ -518,3 +743,4 @@ def build_next_step(
         topic=topic,
         question=_serialize_question(starter),
     )
+    return done(rec)

@@ -81,6 +81,45 @@ function titleCase(value = "") {
   return value ? value[0].toUpperCase() + value.slice(1).replace("_", " ") : "";
 }
 
+function MiniPlanList({ items }) {
+  const plan = Array.isArray(items) ? items.filter(item => item?.label).slice(0, 5) : [];
+  if (!plan.length) return null;
+  return (
+    <ol className="campus-mini-plan" aria-label="Suggested plan">
+      {plan.map((item, index) => (
+        <li key={`${item.label}-${index}`}>{item.label}</li>
+      ))}
+    </ol>
+  );
+}
+
+function WhyThisDetails({ recommendation, onDismiss }) {
+  const explanation = recommendation?.explanation;
+  if (!explanation) return null;
+  const evidence = Array.isArray(explanation.evidence_used) ? explanation.evidence_used : [];
+  return (
+    <details className="campus-why-this">
+      <summary>Why this?</summary>
+      <div>
+        {explanation.why_topic ? <p>{explanation.why_topic}</p> : null}
+        {explanation.why_difficulty ? <p>{explanation.why_difficulty}</p> : null}
+        {explanation.why_not_advanced ? <p>{explanation.why_not_advanced}</p> : null}
+        {evidence.length ? (
+          <ul>
+            {evidence.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
+          </ul>
+        ) : null}
+        {explanation.what_would_change ? <small>{explanation.what_would_change}</small> : null}
+        {onDismiss ? (
+          <button type="button" className="campus-dismiss-recommendation" onClick={onDismiss}>
+            Dismiss for now
+          </button>
+        ) : null}
+      </div>
+    </details>
+  );
+}
+
 function learningStyleHint(style) {
   if (style === "worked_examples") return "Start with a worked example, then try one similar problem.";
   if (style === "concept_then_code") return "Start with the idea in plain English, then move into code.";
@@ -300,6 +339,7 @@ function CampusLearningQueue({
   startingCheck,
   codingRecommendation,
   onOpenRecommendation,
+  onDismissRecommendation,
   onSelect,
   onOpenQuizBank,
   onOpenBeginnerWarmup,
@@ -449,6 +489,8 @@ function CampusLearningQueue({
                 : placementProfile?.actionLabel || (focusTopic ? `${focusButton}: ${titleCase(focusTopic)}` : "Browse Practice Library"))}
             </button>
           </div>
+          <MiniPlanList items={codingRecommendation?.mini_plan} />
+          <WhyThisDetails recommendation={codingRecommendation} onDismiss={codingRecommendation ? onDismissRecommendation : null} />
         </article>
       </div>
     </section>
@@ -813,6 +855,7 @@ export default function CampusLabHome({
   onSkipStartingCheck,
   onResetStartingCheck,
   onOpenRecommendation,
+  onDismissRecommendation,
   learnQuizStats,
   learningStyle = "try_then_hint",
 }) {
@@ -879,6 +922,7 @@ export default function CampusLabHome({
         startingCheck={startingCheck}
         codingRecommendation={codingRecommendation}
         onOpenRecommendation={onOpenRecommendation}
+        onDismissRecommendation={onDismissRecommendation}
         onSelect={onSelectQuestion}
         onOpenQuizBank={onOpenQuizBank}
         onOpenBeginnerWarmup={onOpenBeginnerWarmup}

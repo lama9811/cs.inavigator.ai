@@ -7165,6 +7165,63 @@ body.coding-dark .campus-hero-focus {
   width: 100%;
 }
 
+.campus-mini-plan,
+.practice-guide-mini-plan {
+  margin: 12px 0 0;
+  padding-left: 22px;
+  color: var(--ct-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.campus-mini-plan li,
+.practice-guide-mini-plan li {
+  margin: 4px 0;
+}
+
+.campus-why-this,
+.practice-guide-why {
+  margin-top: 12px;
+  border-top: 1px solid var(--ct-border);
+  padding-top: 10px;
+  color: var(--ct-muted);
+  font-size: 0.9rem;
+}
+
+.campus-why-this summary,
+.practice-guide-why summary {
+  cursor: pointer;
+  color: var(--ct-text);
+  font-weight: 650;
+}
+
+.campus-why-this p,
+.practice-guide-why p {
+  margin: 8px 0 0;
+}
+
+.campus-why-this ul,
+.practice-guide-why ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.campus-why-this small {
+  display: block;
+  margin-top: 8px;
+}
+
+.campus-dismiss-recommendation,
+.practice-guide-dismiss {
+  margin-top: 10px;
+  border: 1px solid var(--ct-border);
+  border-radius: 999px;
+  background: var(--ct-panel);
+  color: var(--ct-text);
+  padding: 7px 12px;
+  font-weight: 650;
+}
+
 .starting-check-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
