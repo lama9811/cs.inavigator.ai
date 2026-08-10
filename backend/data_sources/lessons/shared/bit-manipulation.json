@@ -1,0 +1,345 @@
+{
+  "_note": "Advanced V2 shared lesson with language variants.",
+  "title": "Bit Manipulation",
+  "summary": "**Bit manipulation** uses binary positions to inspect or change compact state.",
+  "minutes": 24,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "**Bit manipulation** is about binary positions, not decimal digits. Masks select bits, shifts place masks, and XOR/AND/OR each have specific jobs.",
+  "refresher_code": "n=6, mask=2",
+  "learn_cards": {
+    "advanced-bit-odd": {
+      "title": "Odd bit",
+      "notice": "Trace n=6, mask=2 before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "read-one-bit",
+      "body": "**Bit manipulation** is about binary positions, not decimal digits. Masks select bits, shifts place masks, and XOR/AND/OR each have specific jobs."
+    },
+    "advanced-bit-mask": {
+      "title": "Mask meaning",
+      "notice": "Trace n=6, mask=2 before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "build-a-mask",
+      "body": "**Bit manipulation** is about binary positions, not decimal digits. Masks select bits, shifts place masks, and XOR/AND/OR each have specific jobs."
+    },
+    "advanced-bit-shift": {
+      "title": "Left shift",
+      "notice": "Trace n=6, mask=2 before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "use-bit-operations",
+      "body": "**Bit manipulation** is about binary positions, not decimal digits. Masks select bits, shifts place masks, and XOR/AND/OR each have specific jobs."
+    },
+    "advanced-bit-xor": {
+      "title": "XOR property",
+      "notice": "Trace n=6, mask=2 before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "when-bits-help",
+      "body": "**Bit manipulation** is about binary positions, not decimal digits. Masks select bits, shifts place masks, and XOR/AND/OR each have specific jobs."
+    }
+  },
+  "sections": [
+    {
+      "id": "read-one-bit",
+      "title": "Read one bit",
+      "summary": "**Bit manipulation** uses binary positions to inspect or change compact state. Use n=6 and mask=2 because the selected b",
+      "question_ids": [
+        "advanced-bit-odd"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "**Bit manipulation** uses binary positions to inspect or change compact state. Use n=6 and mask=2 because the selected binary position can be checked in a single step."
+        },
+        {
+          "kind": "visual",
+          "title": "Trace bit manipulation state",
+          "concept": "bit-manipulation",
+          "caption": "Watch n=6, mask=2 move toward bit is on.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Load sample",
+              "body": "Place the compact example on the board before any state changes.",
+              "state": {
+                "sample": "n=6, mask=2",
+                "active": "start",
+                "result": "none yet"
+              },
+              "code_focus": "bit manipulation: load sample",
+              "input_value": "n=6, mask=2",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "empty"
+                }
+              ],
+              "decision": "Place the compact example on the board before any state changes.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "output": "none yet",
+              "why": "No operation should happen until the starting state is clear."
+            },
+            {
+              "title": "Choose active state",
+              "body": "Mark the pointer, cell, root, or group that is being inspected now.",
+              "state": {
+                "sample": "n=6, mask=2",
+                "active": "first meaningful item",
+                "result": "none yet"
+              },
+              "code_focus": "bit manipulation: choose active state",
+              "input_value": "first meaningful item",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "decision": "Mark the pointer, cell, root, or group that is being inspected now.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "output": "none yet",
+              "why": "Advanced topics still become manageable one state at a time."
+            },
+            {
+              "title": "Apply rule",
+              "body": "Use the topic rule once and update the tracked state.",
+              "state": {
+                "sample": "n=6, mask=2",
+                "active": "rule applied",
+                "changed": "one stored state",
+                "result": "not final"
+              },
+              "code_focus": "bit manipulation: apply rule",
+              "input_value": "rule applied",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "decision": "Use the topic rule once and update the tracked state.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "output": "none yet",
+              "why": "The useful part is seeing which value changed and why."
+            },
+            {
+              "title": "Check next case",
+              "body": "Compare the next candidate against the same rule.",
+              "state": {
+                "sample": "n=6, mask=2",
+                "active": "next candidate",
+                "decision": "keep or discard by topic rule",
+                "result": "not final"
+              },
+              "code_focus": "bit manipulation: check next case",
+              "input_value": "next candidate",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "decision": "keep or discard by topic rule",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "output": "none yet",
+              "why": "A second check shows the pattern is not a one-off move."
+            },
+            {
+              "title": "Record result",
+              "body": "Save the value, range, path, or group that the prompt asks for.",
+              "state": {
+                "sample": "n=6, mask=2",
+                "active": "answer state",
+                "changed": "bit is on",
+                "result": "bit is on"
+              },
+              "code_focus": "bit manipulation: record result",
+              "input_value": "answer state",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "decision": "Save the value, range, path, or group that the prompt asks for.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "bit is on"
+                }
+              ],
+              "output": "none yet",
+              "why": "Most advanced bugs come from losing the answer state after the move."
+            },
+            {
+              "title": "Finish trace",
+              "body": "The compact trace ends with bit is on.",
+              "state": {
+                "sample": "n=6, mask=2",
+                "active": "complete",
+                "result": "bit is on",
+                "goal": "bit is on"
+              },
+              "code_focus": "bit manipulation: finish trace",
+              "input_value": "complete",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "bit is on"
+                }
+              ],
+              "decision": "The compact trace ends with bit is on.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "bit is on"
+                }
+              ],
+              "output": "bit is on",
+              "why": "The final state connects the diagram back to code without revealing a full solution."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "build-a-mask",
+      "title": "Build a mask",
+      "summary": "Trace one part of the idea.",
+      "question_ids": [
+        "advanced-bit-mask"
+      ],
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "Bit syntax is compact in every language, so names and parentheses keep the intent readable.",
+          "variants": {
+            "python": {
+              "code": "mask = 1 << bit\nis_on = (n & mask) != 0",
+              "output": ""
+            },
+            "java": {
+              "code": "int mask = 1 << bit;\nboolean isOn = (n & mask) != 0;",
+              "output": ""
+            },
+            "javascript": {
+              "code": "const mask = 1 << bit;\nconst isOn = (n & mask) !== 0;",
+              "output": ""
+            },
+            "cpp": {
+              "code": "int mask = 1 << bit;\nbool isOn = (n & mask) != 0;",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "check",
+          "prompt": "What should a bit trace watch first?",
+          "choices": [
+            "The state that proves the next move",
+            "The largest hidden test case",
+            "The final button the user clicks",
+            "The color of the code editor"
+          ],
+          "answer_index": 0,
+          "why": "Watch the mask before the final boolean or number. The mask says which binary position is being tested."
+        }
+      ]
+    },
+    {
+      "id": "use-bit-operations",
+      "title": "Use bit operations",
+      "summary": "Bit tracing works best by naming positions. Read the binary shape first, then apply the mask to one position.",
+      "question_ids": [
+        "advanced-bit-shift"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "Bit tracing works best by naming positions. Read the binary shape first, then apply the mask to one position."
+        },
+        {
+          "kind": "list",
+          "title": "Trace moves",
+          "items": [
+            "Write the bit position.",
+            "Build the mask with one shifted bit.",
+            "Use AND, OR, or XOR for its specific job.",
+            "Convert the result back to the prompt answer."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "when-bits-help",
+      "title": "When bits help",
+      "summary": "Use bit manipulation for compact flags, parity checks, masks, powers of two, and problems that rely on binary positions.",
+      "question_ids": [
+        "advanced-bit-xor"
+      ],
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "When to use this",
+          "body": "Use bit manipulation for compact flags, parity checks, masks, powers of two, and problems that rely on binary positions."
+        },
+        {
+          "kind": "check",
+          "prompt": "Which debugging habit fits bit manipulation best?",
+          "choices": [
+            "Trace one small state change before trying a larger input",
+            "Start with the largest hidden case",
+            "Change the data structure after each failed test",
+            "Ignore the saved state and read only the final answer"
+          ],
+          "answer_index": 0,
+          "why": "Small numbers make each bit visible. Once the mask is correct, the same operation scales to larger integers."
+        }
+      ]
+    },
+    {
+      "id": "common-bit-mistakes",
+      "title": "Common bit mistakes",
+      "summary": "Bit code often confuses decimal digits with binary positions. The value 10 is not bit position ten.",
+      "question_ids": [],
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "Common mistake",
+          "body": "Bit code often confuses decimal digits with binary positions. The value 10 is not bit position ten."
+        },
+        {
+          "kind": "text",
+          "body": "Before Practice, trace n=6 with mask=2 and show which bit remains after AND."
+        }
+      ]
+    }
+  ]
+}

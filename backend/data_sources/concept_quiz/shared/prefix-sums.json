@@ -1,0 +1,190 @@
+{
+  "_note": "Advanced V2 concept questions for prefix-sums.",
+  "concept": "prefix-sums",
+  "questions": [
+    {
+      "id": "advanced-prefix-meaning",
+      "concept": "prefix-sums",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Prefix meaning",
+      "code": null,
+      "prompt": "What does prefix[i] usually store?",
+      "choices": [
+        "The sum before or through position i, depending on the convention",
+        "The maximum value after i",
+        "The original value at i only",
+        "The number of arrays in memory"
+      ],
+      "answer_index": 0,
+      "explanation": "A prefix array stores running totals. The exact index convention must stay consistent.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-prefix-range",
+      "concept": "prefix-sums",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Range formula",
+      "code": null,
+      "prompt": "Using prefix where prefix[0]=0 and prefix[i+1] is the sum through i, how do you get sum left..right?",
+      "choices": [
+        "prefix[right + 1] - prefix[left]",
+        "prefix[left] - prefix[right]",
+        "prefix[right] + prefix[left]",
+        "prefix[0] only"
+      ],
+      "answer_index": 0,
+      "explanation": "Subtracting the total before left leaves exactly the values from left through right.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-prefix-empty",
+      "concept": "prefix-sums",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Empty prefix",
+      "code": null,
+      "prompt": "Why start some prefix arrays with a leading 0?",
+      "choices": [
+        "It makes ranges starting at index 0 use the same formula",
+        "It sorts the values",
+        "It removes negative numbers",
+        "It stores the final answer twice"
+      ],
+      "answer_index": 0,
+      "explanation": "The leading 0 represents the sum before the array begins, so left=0 does not need a special case.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-prefix-offbyone",
+      "concept": "prefix-sums",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Index mistake",
+      "code": null,
+      "prompt": "What usually causes prefix-sum off-by-one bugs?",
+      "choices": [
+        "Mixing inclusive and exclusive index conventions",
+        "Using addition before subtraction",
+        "Testing an empty list",
+        "Naming the prefix array"
+      ],
+      "answer_index": 0,
+      "explanation": "The formula is simple only when the meaning of each prefix index stays consistent.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-prefix-queries",
+      "concept": "prefix-sums",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Many queries",
+      "code": null,
+      "prompt": "When are prefix sums especially useful?",
+      "choices": [
+        "Many range-sum queries on data that is not changing",
+        "One value lookup only",
+        "A stack pop operation",
+        "Searching words by prefix letters"
+      ],
+      "answer_index": 0,
+      "explanation": "Building prefix totals once lets each later range query answer quickly.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-prefix-2d",
+      "concept": "prefix-sums",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Grid prefix",
+      "code": null,
+      "prompt": "What extra issue appears in a 2D prefix sum?",
+      "choices": [
+        "Overlapping rectangle area must be added back once",
+        "Rows cannot have numbers",
+        "Columns must be sorted",
+        "Every query becomes recursive"
+      ],
+      "answer_index": 0,
+      "explanation": "The top-left overlap is subtracted twice when removing top and left areas, so it must be added back.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-prefix-negative",
+      "concept": "prefix-sums",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Negative values",
+      "code": null,
+      "prompt": "Can prefix sums work when numbers are negative?",
+      "choices": [
+        "Yes, running totals still preserve range differences",
+        "No, negative numbers break addition",
+        "Only if values are sorted",
+        "Only with strings"
+      ],
+      "answer_index": 0,
+      "explanation": "The subtraction formula still works because each prefix total includes the same earlier negative values consistently.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-prefix-mistake",
+      "concept": "prefix-sums",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Prefix mistake",
+      "code": null,
+      "prompt": "A range sum from index 2 to 4 is wrong by one item. What should be checked first?",
+      "choices": [
+        "Whether right is inclusive or exclusive in the formula",
+        "Whether the list is alphabetical",
+        "Whether the code uses a heap",
+        "Whether every value is positive"
+      ],
+      "answer_index": 0,
+      "explanation": "Most range errors come from including one endpoint too many or too few. Check the prefix convention, then trace the left and right indexes against a tiny range.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    }
+  ]
+}

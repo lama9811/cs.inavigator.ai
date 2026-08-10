@@ -1,0 +1,190 @@
+{
+  "_note": "Advanced V2 concept questions for bit-manipulation.",
+  "concept": "bit-manipulation",
+  "questions": [
+    {
+      "id": "advanced-bit-odd",
+      "concept": "bit-manipulation",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Odd bit",
+      "code": null,
+      "prompt": "What does n & 1 tell you about an integer n?",
+      "choices": [
+        "Whether n is odd",
+        "Whether n is negative",
+        "How many digits n has",
+        "Whether n is sorted"
+      ],
+      "answer_index": 0,
+      "explanation": "The lowest bit is 1 for odd numbers and 0 for even numbers.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-bit-mask",
+      "concept": "bit-manipulation",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Mask meaning",
+      "code": null,
+      "prompt": "What does a bit mask usually do?",
+      "choices": [
+        "Select or change specific bit positions",
+        "Sort an array",
+        "Create a function call stack",
+        "Search a trie path"
+      ],
+      "answer_index": 0,
+      "explanation": "A mask has 1s in the positions code wants to inspect or modify.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-bit-shift",
+      "concept": "bit-manipulation",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Left shift",
+      "code": null,
+      "prompt": "What does 1 << 3 represent in binary position terms?",
+      "choices": [
+        "A 1 placed at bit position 3",
+        "The number 1 divided by 3",
+        "A queue with three items",
+        "A string prefix"
+      ],
+      "answer_index": 0,
+      "explanation": "Left shift moves the single 1 three positions, creating the mask for bit 3.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-bit-xor",
+      "concept": "bit-manipulation",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "XOR property",
+      "code": null,
+      "prompt": "Why can XOR find a value that appears once when others appear twice?",
+      "choices": [
+        "x ^ x cancels to 0, and 0 ^ y leaves y",
+        "XOR sorts all numbers",
+        "XOR counts decimal digits",
+        "XOR works only on strings"
+      ],
+      "answer_index": 0,
+      "explanation": "Pairs cancel out under XOR, leaving the unpaired value when the pattern fits.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-bit-set",
+      "concept": "bit-manipulation",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Set bit",
+      "code": null,
+      "prompt": "Which operation turns on a bit without changing other bits?",
+      "choices": [
+        "n | mask",
+        "n & mask",
+        "n - mask",
+        "n == mask"
+      ],
+      "answer_index": 0,
+      "explanation": "OR with a mask sets the selected 1 bits while leaving other positions unchanged.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-bit-clear",
+      "concept": "bit-manipulation",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Clear bit",
+      "code": null,
+      "prompt": "Which idea clears bits safely?",
+      "choices": [
+        "AND with a mask that has 0 at the bit to clear",
+        "OR with the same bit mask",
+        "Add the bit index",
+        "Convert the number to a list"
+      ],
+      "answer_index": 0,
+      "explanation": "AND keeps positions where the mask has 1 and clears positions where the mask has 0.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-bit-count",
+      "concept": "bit-manipulation",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Count bits",
+      "code": null,
+      "prompt": "What does repeatedly using n & (n - 1) do?",
+      "choices": [
+        "Removes one set bit each time",
+        "Adds a new set bit",
+        "Checks only decimal digits",
+        "Builds a heap"
+      ],
+      "answer_index": 0,
+      "explanation": "The expression clears the lowest set bit, so each loop can count one 1 bit.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-bit-mistake",
+      "concept": "bit-manipulation",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Bit mistake",
+      "code": null,
+      "prompt": "What is a common bit manipulation mistake?",
+      "choices": [
+        "Confusing bit positions with decimal digits",
+        "Testing small numbers first",
+        "Writing masks with names",
+        "Using parentheses around shifts"
+      ],
+      "answer_index": 0,
+      "explanation": "Bits are binary positions. Decimal digits like 10 or 25 are not the same thing as bit indexes.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    }
+  ]
+}

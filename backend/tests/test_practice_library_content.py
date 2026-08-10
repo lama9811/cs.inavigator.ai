@@ -19,14 +19,23 @@ ANSWER_DIR = ROOT / "data_sources" / "quiz" / "answers"
 LANGUAGES = ("python", "javascript", "java", "cpp")
 ADVANCED_V1_TOPICS = {
     "binary search",
+    "bit manipulation",
+    "disjoint sets",
+    "dynamic programming",
     "graphs",
     "hash maps",
+    "heaps",
+    "intervals",
+    "linked lists",
     "queues",
     "recursion",
     "sliding window",
     "stacks",
+    "matrices",
+    "prefix sums",
     "trees",
     "two pointers",
+    "tries",
 }
 THIN_PRIORITY_TOPICS = {
     "disjoint sets",
@@ -213,6 +222,23 @@ def test_priority_practice_topics_have_code_problem_coverage():
 
     assert missing_advanced == []
     assert missing_thin == []
+
+
+def test_advanced_topics_have_adaptive_learning_depth():
+    """Adaptive routing needs more than a token problem or two per topic.
+
+    The advanced bank now treats eight problems as the minimum signal floor. A topic can
+    still improve toward ten, but anything below eight is too thin to route students
+    with confidence.
+    """
+    counts = Counter(q.get("topic") for q in load_questions())
+    underfilled = sorted(
+        f"{topic} ({counts[topic]})"
+        for topic in ADVANCED_V1_TOPICS
+        if counts[topic] < 8
+    )
+
+    assert underfilled == []
 
 
 def test_answer_banks_match_questions_for_every_language():

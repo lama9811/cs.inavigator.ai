@@ -1,0 +1,190 @@
+{
+  "_note": "Advanced V2 concept questions for matrices.",
+  "concept": "matrices",
+  "questions": [
+    {
+      "id": "advanced-matrix-coordinates",
+      "concept": "matrices",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Coordinates",
+      "code": null,
+      "prompt": "In a matrix, what do row and column indexes identify together?",
+      "choices": [
+        "One cell",
+        "One whole diagonal only",
+        "The number of rows",
+        "A heap root"
+      ],
+      "answer_index": 0,
+      "explanation": "A row index and a column index point to a single cell in the grid.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-matrix-neighbors",
+      "concept": "matrices",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Neighbor check",
+      "code": null,
+      "prompt": "Which neighbors usually count in a four-direction grid search?",
+      "choices": [
+        "Up, down, left, and right",
+        "Every diagonal only",
+        "Only cells in row 0",
+        "Only larger values"
+      ],
+      "answer_index": 0,
+      "explanation": "Four-direction movement changes exactly one coordinate at a time.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-matrix-bounds",
+      "concept": "matrices",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Bounds guard",
+      "code": null,
+      "prompt": "Why check row and column bounds before reading grid[row][col]?",
+      "choices": [
+        "To avoid indexing outside the grid",
+        "To make the grid sorted",
+        "To erase visited cells",
+        "To convert strings to numbers"
+      ],
+      "answer_index": 0,
+      "explanation": "A neighbor can move off an edge, so bounds checks protect the read.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-matrix-visited",
+      "concept": "matrices",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Visited state",
+      "code": null,
+      "prompt": "Why mark visited cells during a grid traversal?",
+      "choices": [
+        "To avoid revisiting the same cell forever",
+        "To change every value to zero",
+        "To skip the starting cell",
+        "To sort each row"
+      ],
+      "answer_index": 0,
+      "explanation": "Visited memory prevents cycles and duplicate work when paths can lead back to old cells.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-matrix-rowcol",
+      "concept": "matrices",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Row scan",
+      "code": null,
+      "prompt": "A scan checks row 1 of [[2,3],[4,5]]. Which values are in that row?",
+      "choices": [
+        "4 and 5",
+        "2 and 3",
+        "2 and 4",
+        "3 and 5"
+      ],
+      "answer_index": 0,
+      "explanation": "Row 1 is the second row, so it contains 4 and 5.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-matrix-transpose",
+      "concept": "matrices",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Transpose",
+      "code": null,
+      "prompt": "What does transpose do to coordinates?",
+      "choices": [
+        "It swaps row and column positions",
+        "It deletes the last row",
+        "It sorts each column",
+        "It reverses only the first row"
+      ],
+      "answer_index": 0,
+      "explanation": "A value at row r, column c moves to row c, column r in the transposed grid.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-matrix-diagonal",
+      "concept": "matrices",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Diagonal movement",
+      "code": null,
+      "prompt": "What coordinate change moves down-right one step?",
+      "choices": [
+        "row + 1 and col + 1",
+        "row - 1 only",
+        "col - 1 only",
+        "row + col equals zero"
+      ],
+      "answer_index": 0,
+      "explanation": "Down-right increases both coordinates by one.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-matrix-mistake",
+      "concept": "matrices",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Matrix mistake",
+      "code": null,
+      "prompt": "What is a common matrix bug?",
+      "choices": [
+        "Using the number of rows as the number of columns",
+        "Checking bounds before indexing",
+        "Using nested loops",
+        "Tracking row and column separately"
+      ],
+      "answer_index": 0,
+      "explanation": "Rectangular grids can have different row and column counts, so each dimension needs its own limit.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    }
+  ]
+}

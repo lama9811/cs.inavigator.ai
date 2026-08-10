@@ -1,0 +1,345 @@
+{
+  "_note": "Advanced V2 shared lesson with language variants.",
+  "title": "Heaps",
+  "summary": "A **heap** keeps one priority item near the top while the full collection stays only partly ordered.",
+  "minutes": 24,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "A **heap** is useful when code repeatedly needs the next smallest or largest item. The root is quick to read, while insert and remove repair the parent-child rule.",
+  "refresher_code": "priorities=[4, 9, 6]",
+  "learn_cards": {
+    "advanced-heaps-root": {
+      "title": "Heap root",
+      "notice": "Trace priorities=[4, 9, 6] before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "keep-priority-visible",
+      "body": "A **heap** is useful when code repeatedly needs the next smallest or largest item. The root is quick to read, while insert and remove repair the parent-child rule."
+    },
+    "advanced-heaps-insert": {
+      "title": "Insert bubble-up",
+      "notice": "Trace priorities=[4, 9, 6] before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "insert-and-bubble",
+      "body": "A **heap** is useful when code repeatedly needs the next smallest or largest item. The root is quick to read, while insert and remove repair the parent-child rule."
+    },
+    "advanced-heaps-pop": {
+      "title": "Remove priority",
+      "notice": "Trace priorities=[4, 9, 6] before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "remove-and-repair",
+      "body": "A **heap** is useful when code repeatedly needs the next smallest or largest item. The root is quick to read, while insert and remove repair the parent-child rule."
+    },
+    "advanced-heaps-shape": {
+      "title": "Complete shape",
+      "notice": "Trace priorities=[4, 9, 6] before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "when-to-use-heaps",
+      "body": "A **heap** is useful when code repeatedly needs the next smallest or largest item. The root is quick to read, while insert and remove repair the parent-child rule."
+    }
+  },
+  "sections": [
+    {
+      "id": "keep-priority-visible",
+      "title": "Keep priority visible",
+      "summary": "A **heap** keeps one priority item near the top while the full collection stays only partly ordered. Use priorities=[4, ",
+      "question_ids": [
+        "advanced-heaps-root"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A **heap** keeps one priority item near the top while the full collection stays only partly ordered. Use priorities=[4, 9, 6] because one insert can show the root changing without drawing a large tree."
+        },
+        {
+          "kind": "visual",
+          "title": "Trace heaps state",
+          "concept": "heap",
+          "caption": "Watch priorities=[4, 9, 6] move toward top priority 9.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Load sample",
+              "body": "Place the compact example on the board before any state changes.",
+              "state": {
+                "sample": "priorities=[4, 9, 6]",
+                "active": "start",
+                "result": "none yet"
+              },
+              "code_focus": "heaps: load sample",
+              "input_value": "priorities=[4, 9, 6]",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "empty"
+                }
+              ],
+              "decision": "Place the compact example on the board before any state changes.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "output": "none yet",
+              "why": "No operation should happen until the starting state is clear."
+            },
+            {
+              "title": "Choose active state",
+              "body": "Mark the pointer, cell, root, or group that is being inspected now.",
+              "state": {
+                "sample": "priorities=[4, 9, 6]",
+                "active": "first meaningful item",
+                "result": "none yet"
+              },
+              "code_focus": "heaps: choose active state",
+              "input_value": "first meaningful item",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "decision": "Mark the pointer, cell, root, or group that is being inspected now.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "output": "none yet",
+              "why": "Advanced topics still become manageable one state at a time."
+            },
+            {
+              "title": "Apply rule",
+              "body": "Use the topic rule once and update the tracked state.",
+              "state": {
+                "sample": "priorities=[4, 9, 6]",
+                "active": "rule applied",
+                "changed": "one stored state",
+                "result": "not final"
+              },
+              "code_focus": "heaps: apply rule",
+              "input_value": "rule applied",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "decision": "Use the topic rule once and update the tracked state.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "output": "none yet",
+              "why": "The useful part is seeing which value changed and why."
+            },
+            {
+              "title": "Check next case",
+              "body": "Compare the next candidate against the same rule.",
+              "state": {
+                "sample": "priorities=[4, 9, 6]",
+                "active": "next candidate",
+                "decision": "keep or discard by topic rule",
+                "result": "not final"
+              },
+              "code_focus": "heaps: check next case",
+              "input_value": "next candidate",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "decision": "keep or discard by topic rule",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "output": "none yet",
+              "why": "A second check shows the pattern is not a one-off move."
+            },
+            {
+              "title": "Record result",
+              "body": "Save the value, range, path, or group that the prompt asks for.",
+              "state": {
+                "sample": "priorities=[4, 9, 6]",
+                "active": "answer state",
+                "changed": "top priority 9",
+                "result": "top priority 9"
+              },
+              "code_focus": "heaps: record result",
+              "input_value": "answer state",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "decision": "Save the value, range, path, or group that the prompt asks for.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "top priority 9"
+                }
+              ],
+              "output": "none yet",
+              "why": "Most advanced bugs come from losing the answer state after the move."
+            },
+            {
+              "title": "Finish trace",
+              "body": "The compact trace ends with top priority 9.",
+              "state": {
+                "sample": "priorities=[4, 9, 6]",
+                "active": "complete",
+                "result": "top priority 9",
+                "goal": "top priority 9"
+              },
+              "code_focus": "heaps: finish trace",
+              "input_value": "complete",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "top priority 9"
+                }
+              ],
+              "decision": "The compact trace ends with top priority 9.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "top priority 9"
+                }
+              ],
+              "output": "top priority 9",
+              "why": "The final state connects the diagram back to code without revealing a full solution."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "insert-and-bubble",
+      "title": "Insert and bubble",
+      "summary": "Trace one part of the idea.",
+      "question_ids": [
+        "advanced-heaps-insert"
+      ],
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "Heap syntax differs by language, but each version protects the root priority.",
+          "variants": {
+            "python": {
+              "code": "import heapq\nheap = []\nheapq.heappush(heap, (-9, \"Ada\"))\nheapq.heappush(heap, (-4, \"Bo\"))\npriority, name = heapq.heappop(heap)",
+              "output": ""
+            },
+            "java": {
+              "code": "PriorityQueue<Integer> heap = new PriorityQueue<>(Collections.reverseOrder());\nheap.add(9);\nheap.add(4);\nint top = heap.remove();",
+              "output": ""
+            },
+            "javascript": {
+              "code": "const heap = [9, 4, 6];\n// A real heap helper keeps the largest priority at the top.\nconst top = Math.max(...heap);",
+              "output": ""
+            },
+            "cpp": {
+              "code": "std::priority_queue<int> heap;\nheap.push(9);\nheap.push(4);\nint top = heap.top();",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "check",
+          "prompt": "What should a heap trace watch first?",
+          "choices": [
+            "The state that proves the next move",
+            "The largest hidden test case",
+            "The final button the user clicks",
+            "The color of the code editor"
+          ],
+          "answer_index": 0,
+          "why": "Watch the root and one child comparison first. If that comparison is wrong, later heap operations cannot be trusted."
+        }
+      ]
+    },
+    {
+      "id": "remove-and-repair",
+      "title": "Remove and repair",
+      "summary": "During a heap trace, watch the root separately from the last array slot. Insert starts at the new leaf; removal borrows ",
+      "question_ids": [
+        "advanced-heaps-pop"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "During a heap trace, watch the root separately from the last array slot. Insert starts at the new leaf; removal borrows the final slot before bubbling down."
+        },
+        {
+          "kind": "list",
+          "title": "Trace moves",
+          "items": [
+            "Circle the root priority.",
+            "Mark the child being compared.",
+            "Swap only when the parent rule breaks.",
+            "Stop when parent and child are ordered."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "when-to-use-heaps",
+      "title": "When to use heaps",
+      "summary": "Use heaps for repeated priority choices: next ticket, next deadline, smallest wait, largest score, or top k results.",
+      "question_ids": [
+        "advanced-heaps-shape"
+      ],
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "When to use this",
+          "body": "Use heaps for repeated priority choices: next ticket, next deadline, smallest wait, largest score, or top k results."
+        },
+        {
+          "kind": "check",
+          "prompt": "Which debugging habit fits heaps best?",
+          "choices": [
+            "Trace one small state change before trying a larger input",
+            "Start with the largest hidden case",
+            "Change the data structure after each failed test",
+            "Ignore the saved state and read only the final answer"
+          ],
+          "answer_index": 0,
+          "why": "A heap bug is easiest to find when one parent-child comparison is visible. The whole tree is too much to debug at once."
+        }
+      ]
+    },
+    {
+      "id": "common-heap-mistakes",
+      "title": "Common heap mistakes",
+      "summary": "Heap code often breaks when it treats the array as fully sorted. Siblings can appear in either order; parent-child prior",
+      "question_ids": [],
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "Common mistake",
+          "body": "Heap code often breaks when it treats the array as fully sorted. Siblings can appear in either order; parent-child priority is the contract."
+        },
+        {
+          "kind": "text",
+          "body": "Before Practice, trace priorities=[4, 9, 6] and point to the root after each insert."
+        }
+      ]
+    }
+  ]
+}

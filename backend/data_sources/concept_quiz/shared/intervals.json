@@ -1,0 +1,190 @@
+{
+  "_note": "Advanced V2 concept questions for intervals.",
+  "concept": "intervals",
+  "questions": [
+    {
+      "id": "advanced-interval-overlap",
+      "concept": "intervals",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Overlap rule",
+      "code": null,
+      "prompt": "For half-open intervals [start, end), when do [1, 4) and [4, 6) overlap?",
+      "choices": [
+        "They do not overlap because one ends where the other starts",
+        "They overlap at 4",
+        "They overlap for every value",
+        "They cannot be compared"
+      ],
+      "answer_index": 0,
+      "explanation": "In a half-open convention, the end value is not included, so touching at 4 is not overlap.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-interval-sort",
+      "concept": "intervals",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Sort first",
+      "code": null,
+      "prompt": "Why sort intervals by start before merging?",
+      "choices": [
+        "Nearby overlaps become neighbors in the scan",
+        "It changes every end time to zero",
+        "It removes all gaps",
+        "It guarantees equal lengths"
+      ],
+      "answer_index": 0,
+      "explanation": "Sorting by start lets one left-to-right pass compare each interval with the current merged range.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-interval-merge",
+      "concept": "intervals",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Merge update",
+      "code": null,
+      "prompt": "Merging [1, 5] with [3, 7] should produce what range?",
+      "choices": [
+        "[1, 7]",
+        "[3, 5]",
+        "[5, 7]",
+        "[1, 3]"
+      ],
+      "answer_index": 0,
+      "explanation": "The merged range keeps the earlier start and the later end.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-interval-gap",
+      "concept": "intervals",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Gap check",
+      "code": null,
+      "prompt": "How can a scan tell the next interval starts after the current merged interval?",
+      "choices": [
+        "next.start > current.end",
+        "next.end < current.start always",
+        "next.start equals zero",
+        "current.end is negative"
+      ],
+      "answer_index": 0,
+      "explanation": "If the next start is beyond the current end, there is a gap and a new merged interval begins.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-interval-touch",
+      "concept": "intervals",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Touching policy",
+      "code": null,
+      "prompt": "Why must a prompt define whether touching intervals merge?",
+      "choices": [
+        "Because closed and half-open ranges treat endpoints differently",
+        "Because intervals cannot be sorted",
+        "Because starts are always unique",
+        "Because ends are never compared"
+      ],
+      "answer_index": 0,
+      "explanation": "The condition changes when endpoints touch, so the prompt convention controls the merge rule.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-interval-insert",
+      "concept": "intervals",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Insert interval",
+      "code": null,
+      "prompt": "When inserting a new interval into sorted non-overlapping intervals, what should happen first?",
+      "choices": [
+        "Copy intervals that end before the new one starts",
+        "Merge every interval immediately",
+        "Drop intervals after the new one",
+        "Reverse the list"
+      ],
+      "answer_index": 0,
+      "explanation": "Intervals completely before the new range cannot overlap it, so they can be kept first.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-interval-cover",
+      "concept": "intervals",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Covered range",
+      "code": null,
+      "prompt": "If [2, 8] already covers [3, 5], what is the merged result?",
+      "choices": [
+        "[2, 8]",
+        "[3, 5]",
+        "[2, 5]",
+        "[3, 8]"
+      ],
+      "answer_index": 0,
+      "explanation": "The larger range already contains the smaller one, so the outer endpoints stay.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-interval-mistake",
+      "concept": "intervals",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Interval mistake",
+      "code": null,
+      "prompt": "What is a common interval bug?",
+      "choices": [
+        "Changing the start when only the end should expand",
+        "Sorting before scanning",
+        "Comparing the next start to the current end",
+        "Keeping a merged list"
+      ],
+      "answer_index": 0,
+      "explanation": "Most range errors come from including one endpoint too many or too few. Check the interval convention and the update line before changing the whole scan.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    }
+  ]
+}

@@ -1,0 +1,345 @@
+{
+  "_note": "Advanced V2 shared lesson with language variants.",
+  "title": "Disjoint Sets",
+  "summary": "A **disjoint set** groups items so code can ask whether two items are connected.",
+  "minutes": 24,
+  "error_classes": [
+    "wrong_answer",
+    "runtime"
+  ],
+  "refresher": "A **disjoint set** uses `find` to locate a group representative and `union` to merge groups. It is strong for connectivity, components, and cycle checks.",
+  "refresher_code": "union(A,B), union(B,C)",
+  "learn_cards": {
+    "advanced-dsu-group": {
+      "title": "Group representative",
+      "notice": "Trace union(A,B), union(B,C) before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "represent-each-group",
+      "body": "A **disjoint set** uses `find` to locate a group representative and `union` to merge groups. It is strong for connectivity, components, and cycle checks."
+    },
+    "advanced-dsu-union": {
+      "title": "Union meaning",
+      "notice": "Trace union(A,B), union(B,C) before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "merge-groups",
+      "body": "A **disjoint set** uses `find` to locate a group representative and `union` to merge groups. It is strong for connectivity, components, and cycle checks."
+    },
+    "advanced-dsu-same": {
+      "title": "Connected check",
+      "notice": "Trace union(A,B), union(B,C) before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "ask-same-group",
+      "body": "A **disjoint set** uses `find` to locate a group representative and `union` to merge groups. It is strong for connectivity, components, and cycle checks."
+    },
+    "advanced-dsu-compression": {
+      "title": "Path compression",
+      "notice": "Trace union(A,B), union(B,C) before coding the larger case.",
+      "mistake": "Do not let the visual move while the stored state stays stale.",
+      "source": "question",
+      "section_id": "when-unions-help",
+      "body": "A **disjoint set** uses `find` to locate a group representative and `union` to merge groups. It is strong for connectivity, components, and cycle checks."
+    }
+  },
+  "sections": [
+    {
+      "id": "represent-each-group",
+      "title": "Represent each group",
+      "summary": "A **disjoint set** groups items so code can ask whether two items are connected. Use union(A,B), union(B,C) because it e",
+      "question_ids": [
+        "advanced-dsu-group"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A **disjoint set** groups items so code can ask whether two items are connected. Use union(A,B), union(B,C) because it exposes representatives without needing a large graph."
+        },
+        {
+          "kind": "visual",
+          "title": "Trace disjoint sets state",
+          "concept": "union-find",
+          "caption": "Watch union(A,B), union(B,C) move toward A and C connected.",
+          "initial_state": {},
+          "steps": [
+            {
+              "title": "Load sample",
+              "body": "Place the compact example on the board before any state changes.",
+              "state": {
+                "sample": "union(A,B), union(B,C)",
+                "active": "start",
+                "result": "none yet"
+              },
+              "code_focus": "disjoint sets: load sample",
+              "input_value": "union(A,B), union(B,C)",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "empty"
+                }
+              ],
+              "decision": "Place the compact example on the board before any state changes.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "output": "none yet",
+              "why": "No operation should happen until the starting state is clear."
+            },
+            {
+              "title": "Choose active state",
+              "body": "Mark the pointer, cell, root, or group that is being inspected now.",
+              "state": {
+                "sample": "union(A,B), union(B,C)",
+                "active": "first meaningful item",
+                "result": "none yet"
+              },
+              "code_focus": "disjoint sets: choose active state",
+              "input_value": "first meaningful item",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "decision": "Mark the pointer, cell, root, or group that is being inspected now.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "output": "none yet",
+              "why": "Advanced topics still become manageable one state at a time."
+            },
+            {
+              "title": "Apply rule",
+              "body": "Use the topic rule once and update the tracked state.",
+              "state": {
+                "sample": "union(A,B), union(B,C)",
+                "active": "rule applied",
+                "changed": "one stored state",
+                "result": "not final"
+              },
+              "code_focus": "disjoint sets: apply rule",
+              "input_value": "rule applied",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "none yet"
+                }
+              ],
+              "decision": "Use the topic rule once and update the tracked state.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "output": "none yet",
+              "why": "The useful part is seeing which value changed and why."
+            },
+            {
+              "title": "Check next case",
+              "body": "Compare the next candidate against the same rule.",
+              "state": {
+                "sample": "union(A,B), union(B,C)",
+                "active": "next candidate",
+                "decision": "keep or discard by topic rule",
+                "result": "not final"
+              },
+              "code_focus": "disjoint sets: check next case",
+              "input_value": "next candidate",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "decision": "keep or discard by topic rule",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "output": "none yet",
+              "why": "A second check shows the pattern is not a one-off move."
+            },
+            {
+              "title": "Record result",
+              "body": "Save the value, range, path, or group that the prompt asks for.",
+              "state": {
+                "sample": "union(A,B), union(B,C)",
+                "active": "answer state",
+                "changed": "A and C connected",
+                "result": "A and C connected"
+              },
+              "code_focus": "disjoint sets: record result",
+              "input_value": "answer state",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "not final"
+                }
+              ],
+              "decision": "Save the value, range, path, or group that the prompt asks for.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "A and C connected"
+                }
+              ],
+              "output": "none yet",
+              "why": "Most advanced bugs come from losing the answer state after the move."
+            },
+            {
+              "title": "Finish trace",
+              "body": "The compact trace ends with A and C connected.",
+              "state": {
+                "sample": "union(A,B), union(B,C)",
+                "active": "complete",
+                "result": "A and C connected",
+                "goal": "A and C connected"
+              },
+              "code_focus": "disjoint sets: finish trace",
+              "input_value": "complete",
+              "variables_before": [
+                {
+                  "name": "tracked state",
+                  "value": "A and C connected"
+                }
+              ],
+              "decision": "The compact trace ends with A and C connected.",
+              "variables_after": [
+                {
+                  "name": "tracked state",
+                  "value": "A and C connected"
+                }
+              ],
+              "output": "A and C connected",
+              "why": "The final state connects the diagram back to code without revealing a full solution."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "merge-groups",
+      "title": "Merge groups",
+      "summary": "Trace one part of the idea.",
+      "question_ids": [
+        "advanced-dsu-union"
+      ],
+      "blocks": [
+        {
+          "kind": "code",
+          "caption": "Each language stores parents differently, but find and union carry the same job.",
+          "variants": {
+            "python": {
+              "code": "def find(x):\n    if parent[x] != x:\n        parent[x] = find(parent[x])\n    return parent[x]",
+              "output": ""
+            },
+            "java": {
+              "code": "int find(int x) {\n    if (parent[x] != x) parent[x] = find(parent[x]);\n    return parent[x];\n}",
+              "output": ""
+            },
+            "javascript": {
+              "code": "function find(x) {\n  if (parent[x] !== x) parent[x] = find(parent[x]);\n  return parent[x];\n}",
+              "output": ""
+            },
+            "cpp": {
+              "code": "int find(int x) {\n    if (parent[x] != x) parent[x] = find(parent[x]);\n    return parent[x];\n}",
+              "output": ""
+            }
+          }
+        },
+        {
+          "kind": "check",
+          "prompt": "What should a disjoint-set trace watch first?",
+          "choices": [
+            "The state that proves the next move",
+            "The largest hidden test case",
+            "The final button the user clicks",
+            "The color of the code editor"
+          ],
+          "answer_index": 0,
+          "why": "Watch representatives before comparing groups. Raw parent values can be misleading before find runs."
+        }
+      ]
+    },
+    {
+      "id": "ask-same-group",
+      "title": "Ask same group",
+      "summary": "A disjoint-set trace should show representatives, not just the raw parent array. The question is whether two values reso",
+      "question_ids": [
+        "advanced-dsu-same"
+      ],
+      "blocks": [
+        {
+          "kind": "text",
+          "body": "A disjoint-set trace should show representatives, not just the raw parent array. The question is whether two values resolve to the same group leader."
+        },
+        {
+          "kind": "list",
+          "title": "Trace moves",
+          "items": [
+            "Initialize each value as its own parent.",
+            "Call find before comparing groups.",
+            "Union only different representatives.",
+            "Update the component count only after a real merge."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "when-unions-help",
+      "title": "When unions help",
+      "summary": "Use disjoint sets for connectivity questions where edges arrive and code keeps asking who belongs together.",
+      "question_ids": [
+        "advanced-dsu-compression"
+      ],
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "tip",
+          "title": "When to use this",
+          "body": "Use disjoint sets for connectivity questions where edges arrive and code keeps asking who belongs together."
+        },
+        {
+          "kind": "check",
+          "prompt": "Which debugging habit fits disjoint sets best?",
+          "choices": [
+            "Trace one small state change before trying a larger input",
+            "Start with the largest hidden case",
+            "Change the data structure after each failed test",
+            "Ignore the saved state and read only the final answer"
+          ],
+          "answer_index": 0,
+          "why": "The representative is the evidence. If you compare raw parents too early, a compressed path can make the trace look wrong."
+        }
+      ]
+    },
+    {
+      "id": "common-disjoint-set-mistakes",
+      "title": "Common disjoint-set mistakes",
+      "summary": "Union code often reports a merge even when both values already share a representative. That inflates component changes.",
+      "question_ids": [],
+      "blocks": [
+        {
+          "kind": "callout",
+          "tone": "warning",
+          "title": "Common mistake",
+          "body": "Union code often reports a merge even when both values already share a representative. That inflates component changes."
+        },
+        {
+          "kind": "text",
+          "body": "Before Practice, trace union(A,B), union(B,C) and compare find(A) with find(C)."
+        }
+      ]
+    }
+  ]
+}

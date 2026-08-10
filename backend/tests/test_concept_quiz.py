@@ -90,10 +90,10 @@ def test_categories_are_split_into_small_beginner_and_intermediate_tracks():
             for track in cq.VALID_TRACKS
         }
         expected = {
-            "python": {"beginner": 12, "intermediate": 11, "advanced": 10},
-            "java": {"beginner": 12, "intermediate": 11, "advanced": 10},
-            "javascript": {"beginner": 12, "intermediate": 7, "advanced": 10},
-            "cpp": {"beginner": 12, "intermediate": 7, "advanced": 10},
+            "python": {"beginner": 12, "intermediate": 11, "advanced": 18},
+            "java": {"beginner": 12, "intermediate": 11, "advanced": 18},
+            "javascript": {"beginner": 12, "intermediate": 7, "advanced": 18},
+            "cpp": {"beginner": 12, "intermediate": 7, "advanced": 18},
         }[language]
         assert {track: len(ids) for track, ids in by_track.items()} == expected
         assert set().union(*map(set, by_track.values())) == set(all_categories(language))
@@ -138,6 +138,12 @@ def test_every_registered_category_has_expected_practice_coverage():
         "binary-search",
         "debug",
         "debug-2",
+        "disjoint-sets",
+        "dynamic-programming",
+        "heaps",
+        "intervals",
+        "matrices",
+        "prefix-sums",
         "graphs",
         "hash-maps-sets",
         "linked-lists",
@@ -146,7 +152,9 @@ def test_every_registered_category_has_expected_practice_coverage():
         "sliding-window",
         "stacks",
         "trees",
+        "tries",
         "two-pointers",
+        "bit-manipulation",
     }
     for language in ALL_LANGUAGES:
         underfilled = [

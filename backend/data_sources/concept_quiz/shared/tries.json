@@ -1,0 +1,190 @@
+{
+  "_note": "Advanced V2 concept questions for tries.",
+  "concept": "tries",
+  "questions": [
+    {
+      "id": "advanced-tries-prefix",
+      "concept": "tries",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Prefix path",
+      "code": null,
+      "prompt": "A trie stores cat, car, and dog. Which first letter path is shared by cat and car?",
+      "choices": [
+        "c",
+        "a",
+        "t",
+        "d"
+      ],
+      "answer_index": 0,
+      "explanation": "Both words start with c, so they share the first trie edge before splitting later.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-tries-end",
+      "concept": "tries",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Word ending marker",
+      "code": null,
+      "prompt": "Why does a trie node need an end-of-word marker?",
+      "choices": [
+        "A prefix can also be a complete word",
+        "It keeps letters sorted by score",
+        "It replaces every child pointer",
+        "It stores the word backward"
+      ],
+      "answer_index": 0,
+      "explanation": "Without an end marker, the trie cannot tell whether app is a word or only the start of apple.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-tries-search",
+      "concept": "tries",
+      "difficulty": "medium",
+      "kind": "mcq-output",
+      "title": "Missing edge",
+      "code": null,
+      "prompt": "A trie has paths for sun and sum. Searching for sad reaches s, then needs a. What happens?",
+      "choices": [
+        "The search fails at the missing a edge",
+        "The search returns sun",
+        "The trie adds a automatically",
+        "The search starts from the last node"
+      ],
+      "answer_index": 0,
+      "explanation": "A missing child edge means no stored word has that prefix path, so the lookup stops.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-tries-autocomplete",
+      "concept": "tries",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Autocomplete",
+      "code": null,
+      "prompt": "For autocomplete with prefix ca, what part of the trie should be explored after reaching ca?",
+      "choices": [
+        "Only the subtree below ca",
+        "Every root child",
+        "Only words with shorter length",
+        "No nodes after ca"
+      ],
+      "answer_index": 0,
+      "explanation": "Once the prefix node is found, autocomplete gathers complete words below that node.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-tries-count",
+      "concept": "tries",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Prefix count",
+      "code": null,
+      "prompt": "What extra field makes prefix counting faster in a trie?",
+      "choices": [
+        "A count of words passing through each node",
+        "A random priority at each node",
+        "The index of the last array item",
+        "A stack of previous searches"
+      ],
+      "answer_index": 0,
+      "explanation": "A pass-through count lets a prefix query return the number stored at the prefix node.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-tries-case",
+      "concept": "tries",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Character order",
+      "code": null,
+      "prompt": "Before inserting words into a simple lowercase trie, what should code do with mixed-case input?",
+      "choices": [
+        "Normalize case consistently",
+        "Store uppercase letters as null",
+        "Reverse only uppercase words",
+        "Skip every lowercase word"
+      ],
+      "answer_index": 0,
+      "explanation": "Consistent normalization keeps A and a from creating two separate paths unless the prompt wants that distinction.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-tries-space",
+      "concept": "tries",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Trie tradeoff",
+      "code": null,
+      "prompt": "What is the main tradeoff of a trie?",
+      "choices": [
+        "Fast prefix searches can use more memory",
+        "It cannot store strings",
+        "It only works for numbers",
+        "It always beats hashing for exact lookup"
+      ],
+      "answer_index": 0,
+      "explanation": "A trie spends nodes on character paths so prefix work is quick, but that can cost more memory than a flat set.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    },
+    {
+      "id": "advanced-tries-mistake",
+      "concept": "tries",
+      "difficulty": "medium",
+      "kind": "mcq-behavior",
+      "title": "Prefix mistake",
+      "code": null,
+      "prompt": "A search reaches the prefix node for app. What must be checked before returning that app is a word?",
+      "choices": [
+        "Whether that node marks a complete word",
+        "Whether the root is empty",
+        "Whether app has three letters",
+        "Whether the previous search passed"
+      ],
+      "answer_index": 0,
+      "explanation": "A prefix path alone is not enough. The node must mark the end of a stored word.",
+      "variants": {
+        "python": {},
+        "java": {},
+        "javascript": {},
+        "cpp": {}
+      }
+    }
+  ]
+}
