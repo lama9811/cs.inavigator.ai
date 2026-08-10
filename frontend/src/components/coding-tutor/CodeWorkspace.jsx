@@ -48,7 +48,7 @@ const PYTHON_TRACE_KEYWORDS = new Set([
 
 // Docked-terminal height bounds (px). The drag handle clamps within this range.
 const TERMINAL_MIN_H = 140;
-const TERMINAL_MOBILE_MIN_H = 92;
+const TERMINAL_MOBILE_MIN_H = 104;
 const TERMINAL_MAX_H = 560;
 const TERMINAL_DEFAULT_H = 240;
 const TERMINAL_H_KEY = "csnav.terminalHeight";
@@ -56,10 +56,15 @@ const TERMINAL_H_KEY = "csnav.terminalHeight";
 function terminalResizeBounds(availableHeight = window.innerHeight) {
   const isMobile = typeof window !== "undefined" && window.matchMedia?.("(max-width: 640px)")?.matches;
   const minHeight = isMobile ? TERMINAL_MOBILE_MIN_H : TERMINAL_MIN_H;
-  const editorFloor = isMobile ? 330 : 180;
+  const editorFloor = isMobile ? 260 : 180;
+  const mobileMaxRatio = isMobile ? 0.52 : 1;
   return {
     minHeight,
-    maxHeight: Math.min(TERMINAL_MAX_H, Math.max(minHeight, availableHeight - editorFloor)),
+    maxHeight: Math.min(
+      TERMINAL_MAX_H,
+      Math.max(minHeight, availableHeight - editorFloor),
+      Math.max(minHeight, Math.floor(availableHeight * mobileMaxRatio)),
+    ),
   };
 }
 
@@ -928,6 +933,7 @@ export default function CodeWorkspace({
 }) {
   const [caret, setCaret] = useState({ line: 1, col: 1, chars: 0 });
   const [terminalHeight, setTerminalHeight] = useState(readStoredTerminalHeight);
+  const [isTerminalDragging, setIsTerminalDragging] = useState(false);
   const stackRef = useRef(null);
   const dragState = useRef(null);
   const canTraceLanguage = useMemo(
@@ -935,49 +941,63 @@ export default function CodeWorkspace({
     [selectedLanguage],
   );
 
+  const clampTerminalHeight = useCallback((height) => {
+    const stack = stackRef.current;
+    const available = stack ? stack.getBoundingClientRect().height : window.innerHeight;
+    const bounds = terminalResizeBounds(available);
+    return Math.min(bounds.maxHeight, Math.max(bounds.minHeight, height));
+  }, []);
+
   // Drag-to-resize the docked terminal. We resize from the divider: dragging up
   // grows the terminal, dragging down shrinks it. Height is clamped + persisted.
   const onDividerPointerDown = useCallback((event) => {
     event.preventDefault();
     const stack = stackRef.current;
     const available = stack ? stack.getBoundingClientRect().height : window.innerHeight;
+    const stackBottom = stack?.getBoundingClientRect().bottom ?? null;
     const bounds = terminalResizeBounds(available);
     dragState.current = {
       startY: event.clientY,
-      startHeight: terminalHeight,
+      startHeight: clampTerminalHeight(terminalHeight),
+      stackBottom,
       // Never let the terminal eat the whole stack — leave room for the editor.
       minForStack: bounds.minHeight,
       maxForStack: bounds.maxHeight,
     };
+    setIsTerminalDragging(true);
     document.body.classList.add("ct-terminal-resizing");
     try {
-      event.target.setPointerCapture?.(event.pointerId);
+      event.currentTarget.setPointerCapture?.(event.pointerId);
     } catch {
       /* pointer capture is best-effort */
     }
-  }, [terminalHeight]);
+  }, [clampTerminalHeight, terminalHeight]);
 
   const onDividerPointerMove = useCallback((event) => {
     const state = dragState.current;
     if (!state) return;
-    const delta = state.startY - event.clientY; // up = positive = taller terminal
-    const next = Math.min(state.maxForStack, Math.max(state.minForStack, state.startHeight + delta));
+    const pointerBasedHeight = state.stackBottom ? state.stackBottom - event.clientY : NaN;
+    const deltaBasedHeight = state.startHeight + (state.startY - event.clientY);
+    const rawHeight = Number.isFinite(pointerBasedHeight) ? pointerBasedHeight : deltaBasedHeight;
+    const next = Math.min(state.maxForStack, Math.max(state.minForStack, rawHeight));
     setTerminalHeight(next);
   }, []);
 
   const endDrag = useCallback(() => {
     if (!dragState.current) return;
     dragState.current = null;
+    setIsTerminalDragging(false);
     document.body.classList.remove("ct-terminal-resizing");
     setTerminalHeight((value) => {
+      const next = clampTerminalHeight(value);
       try {
-        window.localStorage.setItem(TERMINAL_H_KEY, String(Math.round(value)));
+        window.localStorage.setItem(TERMINAL_H_KEY, String(Math.round(next)));
       } catch {
         /* ignore storage errors */
       }
-      return value;
+      return next;
     });
-  }, []);
+  }, [clampTerminalHeight]);
 
   // Keyboard resize on the divider for accessibility (Up/Down arrows).
   const onDividerKeyDown = useCallback((event) => {
@@ -997,6 +1017,29 @@ export default function CodeWorkspace({
   useEffect(() => {
     return () => document.body.classList.remove("ct-terminal-resizing");
   }, []);
+
+  useEffect(() => {
+    if (!isTerminalDragging) return undefined;
+    const handleMove = (event) => {
+      event.preventDefault();
+      onDividerPointerMove(event);
+    };
+    const handleEnd = () => endDrag();
+    window.addEventListener("pointermove", handleMove, { passive: false });
+    window.addEventListener("pointerup", handleEnd);
+    window.addEventListener("pointercancel", handleEnd);
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleEnd);
+      window.removeEventListener("pointercancel", handleEnd);
+    };
+  }, [endDrag, isTerminalDragging, onDividerPointerMove]);
+
+  useEffect(() => {
+    const onResize = () => setTerminalHeight((height) => clampTerminalHeight(height));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [clampTerminalHeight]);
 
   const renderTab = () => {
     if (workspaceTab === "Hints") {
@@ -1113,6 +1156,7 @@ export default function CodeWorkspace({
   };
 
   const showTerminal = terminalOpen && workspaceTab === "Editor";
+  const displayedTerminalHeight = clampTerminalHeight(terminalHeight);
 
   return (
     <main className="coding-editor-center">
@@ -1157,7 +1201,10 @@ export default function CodeWorkspace({
 
       {/* The editor + terminal are ONE stacked unit. The terminal docks below the
           editor with a draggable divider — not a detached footer. */}
-      <div className={`editor-terminal-stack ${showTerminal ? "terminal-docked" : ""}`} ref={stackRef}>
+      <div
+        className={`editor-terminal-stack ${showTerminal ? "terminal-docked" : ""} ${isTerminalDragging ? "is-resizing-terminal" : ""}`}
+        ref={stackRef}
+      >
         <div className={`workspace-tab-body workspace-tab-body--${workspaceTab.toLowerCase()}`}>{renderTab()}</div>
         {showTerminal && (
           <>
@@ -1166,10 +1213,10 @@ export default function CodeWorkspace({
               role="separator"
               aria-orientation="horizontal"
               aria-label="Resize terminal"
-              aria-valuemin={TERMINAL_MIN_H}
+              aria-valuemin={TERMINAL_MOBILE_MIN_H}
               aria-valuemax={TERMINAL_MAX_H}
-              aria-valuenow={Math.round(terminalHeight)}
-              aria-valuetext={`Terminal height ${Math.round(terminalHeight)} pixels`}
+              aria-valuenow={Math.round(displayedTerminalHeight)}
+              aria-valuetext={`Terminal height ${Math.round(displayedTerminalHeight)} pixels`}
               tabIndex={0}
               onPointerDown={onDividerPointerDown}
               onPointerMove={onDividerPointerMove}
@@ -1179,7 +1226,7 @@ export default function CodeWorkspace({
             >
               <span className="editor-terminal-divider-grip" aria-hidden="true" />
             </div>
-            <div className="coding-dock-terminal" style={{ height: `${terminalHeight}px` }}>
+            <div className="coding-dock-terminal" style={{ height: `${displayedTerminalHeight}px` }}>
               <TerminalPanel
                 testOutput={testOutput}
                 isRunning={isRunning}

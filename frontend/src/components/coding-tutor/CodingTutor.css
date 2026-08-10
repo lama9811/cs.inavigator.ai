@@ -7962,6 +7962,63 @@ body.coding-dark .campus-code-preview {
     gap: 16px;
   }
 
+  .starting-check-card {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 16px;
+  }
+
+  .starting-check-card h3 {
+    margin: 2px 0 4px;
+    font-size: 1.05rem;
+    line-height: 1.15;
+  }
+
+  .starting-check-card p {
+    display: -webkit-box;
+    max-width: 100%;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 0.84rem;
+    line-height: 1.35;
+  }
+
+  .starting-check-card:not(.is-complete) p {
+    -webkit-line-clamp: 1;
+  }
+
+  .starting-check-card .coding-kicker {
+    font-size: 0.62rem;
+  }
+
+  .starting-check-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 8px;
+    width: 100%;
+  }
+
+  .starting-check-actions .starting-check-link,
+  .starting-check-actions .campus-primary-action,
+  .starting-check-card.is-complete .starting-check-link {
+    width: 100%;
+    min-height: 34px;
+    padding: 7px 10px;
+    font-size: 0.78rem;
+  }
+
+  .starting-check-topics {
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .starting-check-topics li {
+    padding: 3px 8px;
+    font-size: 0.7rem;
+  }
+
   .starting-check-modal-backdrop {
     align-items: stretch;
     padding: 10px;
