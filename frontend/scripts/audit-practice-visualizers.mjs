@@ -10,6 +10,29 @@ const bannedPhrases = [
   "hidden test",
 ];
 
+const conceptStepTargets = {
+  "dynamic-programming": 8,
+  "binary-search": 8,
+  "sliding-window": 8,
+  "prefix-sum": 8,
+  recursion: 8,
+  graph: 7,
+  "binary-tree": 7,
+  heap: 7,
+  trie: 7,
+  "union-find": 7,
+  intervals: 7,
+  "bit-manipulation": 7,
+};
+
+function targetStepCount(concept) {
+  return conceptStepTargets[concept] || 6;
+}
+
+function difficultyFromFile(file) {
+  return file.replace(/\.json$/i, "");
+}
+
 function parseToken(token) {
   const cleaned = String(token || "").trim().replace(/^['"]|['"]$/g, "");
   const numeric = Number(cleaned);
@@ -72,6 +95,33 @@ function compactVisualInput(problem, concept, state = {}) {
   const raw = rawVisualInput(problem, state);
   if (!raw) return raw;
   const title = `${problem.title || ""} ${problem.topic || ""} ${problem.prompt || ""} ${problem.visualizer?.concept || ""}`.toLowerCase();
+  if (title.includes("vowel")) return "Code";
+  if (title.includes("palindrome")) return "level";
+  if (title.includes("reverse words")) return "red blue";
+  if (title.includes("reverse only letters")) return "a-bC-d";
+  if (title.includes("first repeated")) return "cocoa";
+  if (title.includes("edit distance")) return "cat -> cut";
+  if (concept === "stack") return "commands=[push 3, push +, pop +]";
+  if (concept === "queue") return "commands=[join Ana, join Bo, serve Ana]";
+  if (concept === "hash-map") {
+    if (/two sum|complement/.test(title)) return "nums=[2, 7], target=9";
+    if (/count|frequency|anagram/.test(title)) return "items=[A, B, A]";
+    return "keys=[Ana, Bo], values=[90, 82], lookup=Ana";
+  }
+  if (concept === "binary-search") return "values=[1, 3, 5], target=3";
+  if (concept === "two-pointers") return "values=[1, 4, 6], target=7";
+  if (concept === "sliding-window") return "values=[2, 4, 1], k=2";
+  if (concept === "recursion") return "n=3";
+  if (concept === "binary-tree") return "values=[4, 2, 6]";
+  if (concept === "graph") return "edges=[A-B, A-C, B-D], start=A";
+  if (concept === "matrix") return "grid=[[1,2],[3,4]]";
+  if (concept === "prefix-sum") return "values=[2, 4, 1]";
+  if (concept === "intervals") return "intervals=[[1,3],[2,5]]";
+  if (concept === "heap") return "values=[30, 40, 50]";
+  if (concept === "trie") return "words=[cat, car]";
+  if (concept === "union-find") return "pairs=[A-B, B-C]";
+  if (concept === "dynamic-programming") return "n=4";
+  if (concept === "bit-manipulation") return "bits=1011";
   const namedLists = parseAllNamedLists(raw);
   if (Object.keys(namedLists).length) {
     const compacted = raw.replace(/\[([^\]]*)\]/g, (match) => {
@@ -132,9 +182,47 @@ function containsBannedPhrase(problem, concept, sample) {
   return bannedPhrases.find((phrase) => visualText.includes(phrase));
 }
 
+function normalizedStepLabel(step = {}) {
+  return String(step.action || step.title || "").replace(/[-_]/g, " ").trim().toLowerCase();
+}
+
+function duplicateGenericStepLabels(steps = []) {
+  const counts = new Map();
+  const duplicates = [];
+  for (const step of steps) {
+    const label = normalizedStepLabel(step);
+    if (!label) continue;
+    const count = counts.get(label) || 0;
+    counts.set(label, count + 1);
+    if (count === 1 && /\b(setup|finish|trace|predict|load|result)\b/.test(label)) duplicates.push(label);
+  }
+  return duplicates;
+}
+
+function stableState(value) {
+  return JSON.stringify(value || {});
+}
+
+function adjacentNoStateChanges(steps = []) {
+  let count = 0;
+  for (let index = 1; index < steps.length; index += 1) {
+    const prev = steps[index - 1] || {};
+    const next = steps[index] || {};
+    if (
+      stableState(prev.state) === stableState(next.state)
+      && String(prev.code || "") === String(next.code || "")
+      && normalizedStepLabel(prev) !== normalizedStepLabel(next)
+    ) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
 const rows = [];
 const warnings = [];
 for (const file of fs.readdirSync(questionDir).filter((item) => item.endsWith(".json"))) {
+  const difficulty = difficultyFromFile(file);
   const data = JSON.parse(fs.readFileSync(path.join(questionDir, file), "utf8"));
   for (const problem of data.questions || []) {
     if (!problem.visualizer) continue;
@@ -144,13 +232,19 @@ for (const file of fs.readdirSync(questionDir).filter((item) => item.endsWith(".
     const sample = compactVisualInput(problem, concept, firstState);
     const itemCount = valuesFromVisualSample(sample).length;
     const rawStepCount = Array.isArray(problem.visualizer.steps) ? problem.visualizer.steps.length : 0;
-    const effectiveStepCount = rawStepCount > 0 ? Math.max(rawStepCount, 6) : 0;
+    const targetSteps = targetStepCount(concept);
+    const effectiveStepCount = rawStepCount > 0 ? Math.max(rawStepCount, targetSteps) : 0;
     const banned = containsBannedPhrase(problem, concept, sample);
+    const rawSteps = Array.isArray(problem.visualizer.steps) ? problem.visualizer.steps : [];
+    const duplicateLabels = duplicateGenericStepLabels(rawSteps);
+    const noStateChangeCount = adjacentNoStateChanges(rawSteps);
 
     rows.push({
       id: problem.id,
       title: problem.title,
+      difficulty,
       concept,
+      targetSteps,
       rawStepCount,
       effectiveStepCount,
       sample,
@@ -158,9 +252,17 @@ for (const file of fs.readdirSync(questionDir).filter((item) => item.endsWith(".
     });
 
     if (banned) warnings.push(`${problem.id} ${problem.title}: banned phrase "${banned}"`);
-    if (effectiveStepCount < 6) warnings.push(`${problem.id} ${problem.title}: visualizer has only ${effectiveStepCount} effective steps`);
+    if (effectiveStepCount < targetSteps) warnings.push(`${problem.id} ${problem.title}: visualizer has only ${effectiveStepCount} effective steps; target is ${targetSteps}`);
+    if ((difficulty === "medium" || difficulty === "hard") && effectiveStepCount < targetSteps) {
+      warnings.push(`${problem.id} ${problem.title}: medium/hard visualizer is below ${concept} target depth`);
+    }
+    if (duplicateLabels.length) warnings.push(`${problem.id} ${problem.title}: duplicate generic step label(s): ${duplicateLabels.join(", ")}`);
+    if (noStateChangeCount > 1) warnings.push(`${problem.id} ${problem.title}: ${noStateChangeCount} adjacent authored step(s) have no state/code change`);
     if (concept === "array" && sample && !sample.includes("=") && itemCount > 8) {
       warnings.push(`${problem.id} ${problem.title}: oversized string/list visual sample "${sample}" (${itemCount} items)`);
+    }
+    if ((difficulty === "medium" || difficulty === "hard") && /morgan state|university|data structures are useful/i.test(sample)) {
+      warnings.push(`${problem.id} ${problem.title}: medium/hard visualizer still uses a long public sample "${sample}"`);
     }
     if (/count vowels/i.test(problem.title || "") && /morgan state/i.test(sample)) {
       warnings.push(`${problem.id} ${problem.title}: Count Vowels still uses Morgan State`);
@@ -174,6 +276,7 @@ for (const file of fs.readdirSync(questionDir).filter((item) => item.endsWith(".
 console.table(rows.map((row) => ({
   id: row.id,
   concept: row.concept,
+  target: row.targetSteps,
   steps: row.effectiveStepCount,
   rawSteps: row.rawStepCount,
   items: row.itemCount,

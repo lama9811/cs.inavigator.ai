@@ -1988,6 +1988,16 @@ body.coding-dark .ucv-array-trace-state > div {
   background: linear-gradient(180deg, transparent, var(--ct-panel, #fff) 24%);
 }
 
+.ucv-shell--panel .ucv-stage > .ucv-controls {
+  justify-content: flex-start;
+  padding-inline: clamp(0.15rem, 1vw, 0.65rem);
+}
+
+.ucv-shell--panel .ucv-stage > .ucv-controls .ucv-playbar {
+  width: auto;
+  max-width: min(720px, 100%);
+}
+
 .ucv-playbar {
   display: inline-flex;
   align-items: center;

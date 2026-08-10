@@ -211,6 +211,75 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
 
   if (!step) return null;
 
+  const controls = (
+    <footer className="ucv-controls" aria-label="Visualizer controls">
+      <div className="ucv-playbar" role="group" aria-label="Step playback">
+        {mode === "modal" && onOpenInWorkspace ? (
+          <button type="button" className="ucv-control-button ucv-control-button--workspace" onClick={onOpenInWorkspace}>
+            <FaExternalLinkAlt aria-hidden="true" />
+            <span>Open in Workspace</span>
+          </button>
+        ) : null}
+        <button type="button" className="ucv-control-button" onClick={() => setStepIndex(0)}>
+          <FaRedoAlt aria-hidden="true" />
+          <span>Reset</span>
+        </button>
+        <button
+          type="button"
+          className="ucv-control-button"
+          onClick={() => {
+            setPlaying(false);
+            setStepIndex((current) => Math.max(0, current - 1));
+          }}
+          disabled={stepIndex <= 0}
+        >
+          <FaStepBackward aria-hidden="true" />
+          <span>Previous</span>
+        </button>
+        <button
+          type="button"
+          className="ucv-control-button ucv-control-button--play"
+          onClick={() => setPlaying((current) => !current)}
+        >
+          {playing ? <FaPause aria-hidden="true" /> : <FaPlay aria-hidden="true" />}
+          <span>{playing ? "Pause" : "Play"}</span>
+        </button>
+        <button
+          type="button"
+          className="ucv-control-button"
+          onClick={() => {
+            setPlaying(false);
+            setStepIndex((current) => Math.min(steps.length - 1, current + 1));
+          }}
+          disabled={stepIndex >= steps.length - 1}
+        >
+          <span>Next</span>
+          <FaStepForward aria-hidden="true" />
+        </button>
+        <span className="ucv-step-count" aria-label={`Step ${stepIndex + 1} of ${steps.length}`}>
+          {stepIndex + 1} / {steps.length}
+        </span>
+        <div className="ucv-speed-control" role="group" aria-label="Playback speed">
+          <span>Speed</span>
+          <div className="ucv-speed-options">
+            {[0.75, 1, 1.5, 2].map((option) => (
+              <button
+                key={option}
+                type="button"
+                className={`ucv-speed-option ${speed === option ? "is-active" : ""}`}
+                onClick={() => setSpeed(option)}
+                aria-pressed={speed === option}
+                title={`Play at ${option}x speed`}
+              >
+                {option}x
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+
   return (
     <section className={`ucv-shell ucv-shell--${mode}`}>
       <header className="ucv-header">
@@ -254,6 +323,7 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
         <div className="ucv-stage">
           <WorkflowRail step={step} />
           <VisualizerCanvas step={step} />
+          {mode === "panel" ? controls : null}
           <StateStrip step={step} />
         </div>
         <aside className="ucv-side">
@@ -266,72 +336,7 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
         </aside>
       </div>
 
-      <footer className="ucv-controls" aria-label="Visualizer controls">
-        <div className="ucv-playbar" role="group" aria-label="Step playback">
-          {mode === "modal" && onOpenInWorkspace ? (
-            <button type="button" className="ucv-control-button ucv-control-button--workspace" onClick={onOpenInWorkspace}>
-              <FaExternalLinkAlt aria-hidden="true" />
-              <span>Open in Workspace</span>
-            </button>
-          ) : null}
-          <button type="button" className="ucv-control-button" onClick={() => setStepIndex(0)}>
-            <FaRedoAlt aria-hidden="true" />
-            <span>Reset</span>
-          </button>
-          <button
-            type="button"
-            className="ucv-control-button"
-            onClick={() => {
-              setPlaying(false);
-              setStepIndex((current) => Math.max(0, current - 1));
-            }}
-            disabled={stepIndex <= 0}
-          >
-            <FaStepBackward aria-hidden="true" />
-            <span>Previous</span>
-          </button>
-          <button
-            type="button"
-            className="ucv-control-button ucv-control-button--play"
-            onClick={() => setPlaying((current) => !current)}
-          >
-            {playing ? <FaPause aria-hidden="true" /> : <FaPlay aria-hidden="true" />}
-            <span>{playing ? "Pause" : "Play"}</span>
-          </button>
-          <button
-            type="button"
-            className="ucv-control-button"
-            onClick={() => {
-              setPlaying(false);
-              setStepIndex((current) => Math.min(steps.length - 1, current + 1));
-            }}
-            disabled={stepIndex >= steps.length - 1}
-          >
-            <span>Next</span>
-            <FaStepForward aria-hidden="true" />
-          </button>
-          <span className="ucv-step-count" aria-label={`Step ${stepIndex + 1} of ${steps.length}`}>
-            {stepIndex + 1} / {steps.length}
-          </span>
-          <div className="ucv-speed-control" role="group" aria-label="Playback speed">
-            <span>Speed</span>
-            <div className="ucv-speed-options">
-              {[0.75, 1, 1.5, 2].map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  className={`ucv-speed-option ${speed === option ? "is-active" : ""}`}
-                  onClick={() => setSpeed(option)}
-                  aria-pressed={speed === option}
-                  title={`Play at ${option}x speed`}
-                >
-                  {option}x
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </footer>
+      {mode === "modal" ? controls : null}
     </section>
   );
 }

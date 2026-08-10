@@ -1043,12 +1043,12 @@ body.coding-dark .floating-coding-chat ::selection {
   .editor-terminal-stack {
     min-height: 0;
     height: auto;
-    gap: 8px;
+    gap: 0;
   }
 
   .code-editor-window {
     min-width: 0;
-    min-height: 300px;
+    min-height: clamp(340px, 58dvh, 520px);
     border-radius: 13px;
     --ed-size: 0.78rem;
     --ed-lh: 1.62;
@@ -1120,8 +1120,20 @@ body.coding-dark .floating-coding-chat ::selection {
   }
 
   .coding-dock-terminal {
-    height: min(220px, 42dvh) !important;
-    min-height: 150px !important;
+    min-height: 92px;
+    max-height: 40dvh;
     border-radius: 13px;
+  }
+
+  .editor-terminal-divider {
+    height: 18px;
+    border-radius: 999px;
+    margin-block: 4px;
+    border-inline: 1px solid var(--ct-border, #d7e1ef);
+  }
+
+  .editor-terminal-divider-grip {
+    width: 56px;
+    height: 4px;
   }
 }

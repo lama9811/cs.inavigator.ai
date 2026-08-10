@@ -48,16 +48,28 @@ const PYTHON_TRACE_KEYWORDS = new Set([
 
 // Docked-terminal height bounds (px). The drag handle clamps within this range.
 const TERMINAL_MIN_H = 140;
+const TERMINAL_MOBILE_MIN_H = 92;
 const TERMINAL_MAX_H = 560;
 const TERMINAL_DEFAULT_H = 240;
 const TERMINAL_H_KEY = "csnav.terminalHeight";
+
+function terminalResizeBounds(availableHeight = window.innerHeight) {
+  const isMobile = typeof window !== "undefined" && window.matchMedia?.("(max-width: 640px)")?.matches;
+  const minHeight = isMobile ? TERMINAL_MOBILE_MIN_H : TERMINAL_MIN_H;
+  const editorFloor = isMobile ? 330 : 180;
+  return {
+    minHeight,
+    maxHeight: Math.min(TERMINAL_MAX_H, Math.max(minHeight, availableHeight - editorFloor)),
+  };
+}
 
 function readStoredTerminalHeight() {
   try {
     const raw = window.localStorage.getItem(TERMINAL_H_KEY);
     const value = raw ? parseInt(raw, 10) : NaN;
     if (Number.isFinite(value)) {
-      return Math.min(TERMINAL_MAX_H, Math.max(TERMINAL_MIN_H, value));
+      const bounds = terminalResizeBounds();
+      return Math.min(bounds.maxHeight, Math.max(bounds.minHeight, value));
     }
   } catch {
     /* ignore storage errors */
@@ -929,11 +941,13 @@ export default function CodeWorkspace({
     event.preventDefault();
     const stack = stackRef.current;
     const available = stack ? stack.getBoundingClientRect().height : window.innerHeight;
+    const bounds = terminalResizeBounds(available);
     dragState.current = {
       startY: event.clientY,
       startHeight: terminalHeight,
       // Never let the terminal eat the whole stack — leave room for the editor.
-      maxForStack: Math.min(TERMINAL_MAX_H, Math.max(TERMINAL_MIN_H, available - 180)),
+      minForStack: bounds.minHeight,
+      maxForStack: bounds.maxHeight,
     };
     document.body.classList.add("ct-terminal-resizing");
     try {
@@ -947,7 +961,7 @@ export default function CodeWorkspace({
     const state = dragState.current;
     if (!state) return;
     const delta = state.startY - event.clientY; // up = positive = taller terminal
-    const next = Math.min(state.maxForStack, Math.max(TERMINAL_MIN_H, state.startHeight + delta));
+    const next = Math.min(state.maxForStack, Math.max(state.minForStack, state.startHeight + delta));
     setTerminalHeight(next);
   }, []);
 
@@ -968,12 +982,15 @@ export default function CodeWorkspace({
   // Keyboard resize on the divider for accessibility (Up/Down arrows).
   const onDividerKeyDown = useCallback((event) => {
     const step = event.shiftKey ? 48 : 16;
+    const stack = stackRef.current;
+    const available = stack ? stack.getBoundingClientRect().height : window.innerHeight;
+    const bounds = terminalResizeBounds(available);
     if (event.key === "ArrowUp") {
       event.preventDefault();
-      setTerminalHeight((v) => Math.min(TERMINAL_MAX_H, v + step));
+      setTerminalHeight((v) => Math.min(bounds.maxHeight, v + step));
     } else if (event.key === "ArrowDown") {
       event.preventDefault();
-      setTerminalHeight((v) => Math.max(TERMINAL_MIN_H, v - step));
+      setTerminalHeight((v) => Math.max(bounds.minHeight, v - step));
     }
   }, []);
 

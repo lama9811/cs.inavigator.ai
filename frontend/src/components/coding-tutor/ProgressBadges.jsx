@@ -529,7 +529,6 @@ export default function ProgressBadges({ questions = [], progressByQuestion = {}
       <div className="progress-badge-toolbar">
         <div>
           <h2>Achievement badges</h2>
-          <p>Focus on active goals. Bigger trophies appear later, after the app has real evidence.</p>
         </div>
         <div className="progress-badge-filters" role="group" aria-label="Filter milestone badges">
           {filters.map(filter => (
