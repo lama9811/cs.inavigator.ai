@@ -51,91 +51,91 @@ const DEFAULT_STRING_TEXT = "Morgan State";
 
 const CONCEPT_GUIDANCE = {
   "array-scan": {
-    focus: "Watch the loop visit one item, test one rule, then update one small piece of memory.",
+    focus: "Read one item, test one rule, then update one small piece of memory.",
     cue: "What should happen when the current item does not match the rule?",
   },
   "string-scan": {
-    focus: "Watch each character get normalized or compared before the answer variable changes.",
+    focus: "Read each character after any normalization, then decide whether the answer changes.",
     cue: "What character is being inspected right now, and should it change the state?",
   },
   stack: {
-    focus: "Watch the top of the stack. Push, pop, and peek all touch that same end.",
+    focus: "Use the top of the stack. Push, pop, and peek all touch that same end.",
     cue: "Which item is newest, and is this operation allowed to remove it?",
   },
   queue: {
-    focus: "Watch the front and back of the line. New items join one end; served items leave the other.",
+    focus: "Track the front and back. New items join one end; served items leave the other.",
     cue: "Who has been waiting the longest at this step?",
   },
   "hash-map-set": {
-    focus: "Watch what gets stored as a key and when a lookup happens before an update.",
+    focus: "Store keys deliberately, then look up before updating memory.",
     cue: "Do you need to check the table before changing it?",
   },
   "linked-list": {
-    focus: "Watch the current node and the next link so the chain is never lost.",
+    focus: "Track the current node and next link so the chain is never lost.",
     cue: "Which link do you need to save before moving or reconnecting nodes?",
   },
   recursion: {
-    focus: "Watch the base case, the smaller call, and what gets combined as calls return.",
+    focus: "Check the base case, make the smaller call, then combine values as calls return.",
     cue: "Is this call closer to the stopping rule than the previous call?",
   },
   "binary-search": {
-    focus: "Watch left, mid, and right. Sorted order tells you which half can be ignored.",
+    focus: "Compare left, mid, and right. Sorted order tells you which half can be ignored.",
     cue: "After this comparison, which side is impossible?",
   },
   "two-pointers": {
-    focus: "Watch both pointer positions and the rule that decides which pointer moves.",
+    focus: "Compare both pointer positions, then move the pointer the rule allows.",
     cue: "Which pointer can move without skipping a possible match?",
   },
   "sliding-window": {
-    focus: "Watch what enters, what leaves, and which running value is updated instead of recalculating.",
+    focus: "Track what enters, what leaves, and which running value changes.",
     cue: "What changed since the previous window?",
   },
   tree: {
-    focus: "Watch the current node, the child or parent link, and the order the traversal follows.",
+    focus: "Track the current node, link, and traversal order.",
     cue: "What information must travel with the traversal to the next node?",
   },
   graph: {
-    focus: "Watch the queue or stack plus the visited set so nodes are explored once.",
+    focus: "Use the queue or stack with a visited set so each node is explored once.",
     cue: "Has this neighbor already been visited?",
   },
   "decision-flow": {
-    focus: "Watch the condition that chooses which branch runs, then track only the branch that matches.",
+    focus: "Check the condition, then track only the branch that matches.",
     cue: "Which condition is true for this sample?",
   },
   arithmetic: {
-    focus: "Watch each value enter the formula and how the running result changes.",
+    focus: "Apply each value to the formula and update the running result.",
     cue: "Which number changes the result at this step?",
   },
   matrix: {
-    focus: "Watch row and column positions so the grid is read in the intended order.",
+    focus: "Use row and column positions to read the intended grid cell.",
     cue: "Which cell is active, and does it belong in the running result?",
   },
   "prefix-sum": {
-    focus: "Watch the running total get stored so later range checks can reuse earlier work.",
+    focus: "Store the running total so later range checks can reuse earlier work.",
     cue: "What total has been seen before this step?",
   },
   intervals: {
-    focus: "Watch starts and ends on the timeline to decide whether ranges overlap or merge.",
+    focus: "Compare starts and ends to decide whether ranges overlap or merge.",
     cue: "Do these two ranges touch, overlap, or stay separate?",
   },
   heap: {
-    focus: "Watch the priority item rise to the front while the rest stays organized by priority.",
+    focus: "Move the priority item toward the front while the rest stays ordered.",
     cue: "Which value has priority after this update?",
   },
   trie: {
-    focus: "Watch characters become a path of shared prefixes.",
+    focus: "Turn characters into a path of shared prefixes.",
     cue: "Does this character continue an existing path or start a new branch?",
   },
   "union-find": {
-    focus: "Watch items point to group leaders, then see groups merge when a connection appears.",
+    focus: "Follow group leaders, then merge groups when a connection appears.",
     cue: "Do these two items already share the same leader?",
   },
   "dynamic-programming": {
-    focus: "Watch smaller answers fill a table before the larger answer uses them.",
+    focus: "Fill smaller answers before a larger state reuses them.",
     cue: "Which earlier answer does this cell depend on?",
   },
   "bit-manipulation": {
-    focus: "Watch the binary representation and the bit that changes or gets counted.",
+    focus: "Read the binary representation and inspect the bit that changes or gets counted.",
     cue: "Which bit is being inspected right now?",
   },
 };
@@ -255,7 +255,7 @@ function arrayScanTrace(meta, inputText) {
     return {
       title: meta?.title || "Array scan: add only matching values",
       concept: "array-scan",
-      caption: meta?.caption || "Watch each number get checked before the running sum changes.",
+      caption: meta?.caption || "Read each number before the running sum changes.",
       steps,
     };
   }
@@ -295,7 +295,7 @@ function arrayScanTrace(meta, inputText) {
     code: "return count",
     action: "finish",
   }));
-  return { title, concept: "array-scan", caption: meta?.caption || "Watch the loop visit each list item and update one answer variable.", steps };
+  return { title, concept: "array-scan", caption: meta?.caption || "Read each list item and update one answer variable.", steps };
 }
 
 function stringScanTrace(meta, inputText) {
@@ -327,7 +327,7 @@ function stringScanTrace(meta, inputText) {
       action: "scan",
     }));
   });
-  return { title: meta?.title || "String scan: one character at a time", concept: "string-scan", caption: meta?.caption || "Watch each character get checked against one simple rule.", steps };
+  return { title: meta?.title || "String scan: one character at a time", concept: "string-scan", caption: meta?.caption || "Read each character and test one simple rule.", steps };
 }
 
 function stackTrace(meta) {
@@ -429,7 +429,7 @@ function queueTrace(meta) {
       }));
     }
   });
-  return { title: meta?.title || "Queue: first in, first out", concept: "queue", caption: meta?.caption || "Watch the front and back of the line change.", steps };
+  return { title: meta?.title || "Queue: first in, first out", concept: "queue", caption: meta?.caption || "Track the front and back of the line.", steps };
 }
 
 function hashTrace(meta) {
@@ -467,7 +467,7 @@ function hashTrace(meta) {
       }));
       if (!found) seen[value] = index;
     });
-    return { title: meta?.title || "Hash map: lookup before insert", concept: "hash-map-set", caption: meta?.caption || "Watch the map store old values so the complement check is quick.", steps };
+    return { title: meta?.title || "Hash map: lookup before insert", concept: "hash-map-set", caption: meta?.caption || "Use the map to store old values before the complement check.", steps };
   }
   const counts = {};
   const steps = [
@@ -658,7 +658,7 @@ function decisionFlowTrace(meta) {
   const steps = [
     makeStep({
       title: "Start with one sample input",
-      body: `Use ${inputLabel} and decide which prompt rule handles it.`,
+      body: `Use ${inputLabel} and decide which rule handles it.`,
       changed: "input is ready",
       why: "A conditional problem is about choosing one path, not running every path.",
       state: { ...baseState, activeDecision: "input" },
@@ -704,7 +704,7 @@ function decisionFlowTrace(meta) {
   return {
     title: meta?.title || "Decision flow: choose one branch",
     concept: "decision-flow",
-    caption: meta?.caption || "Watch one input move through a yes/no decision and return the matching result.",
+    caption: meta?.caption || "Trace one input through a yes/no decision and return the matching result.",
     patternSketch: "look at input\nask one yes/no question\nfollow only the matching branch\nreturn that branch's result",
     steps,
   };
@@ -738,7 +738,7 @@ function recursionTrace(meta) {
       action: "return",
       animation: "return",
     }));
-    return { title: meta?.title || "Countdown recursion: stop, then return", concept: "recursion", caption: meta?.caption || "Watch each call move toward the base case.", steps };
+    return { title: meta?.title || "Countdown recursion: stop, then return", concept: "recursion", caption: meta?.caption || "Trace each call as it moves toward the base case.", steps };
   }
   const steps = [
     makeStep({
@@ -780,7 +780,7 @@ function recursionTrace(meta) {
       animation: "return",
     }),
   ];
-  return { title: meta?.title || "Recursion: calls go down, answers come back", concept: "recursion", caption: meta?.caption || "Watch calls stack up until the base case, then return.", steps };
+  return { title: meta?.title || "Recursion: calls go down, answers come back", concept: "recursion", caption: meta?.caption || "Trace calls until the base case, then return.", steps };
 }
 
 function binarySearchTrace(meta, inputText) {
@@ -805,7 +805,7 @@ function binarySearchTrace(meta, inputText) {
     if (value < target) left = mid + 1;
     else right = mid - 1;
   }
-  return { title: meta?.title || "Binary search: shrink the range", concept: "binary-search", caption: meta?.caption || "Watch left, mid, and right move on a sorted list.", steps };
+  return { title: meta?.title || "Binary search: shrink the range", concept: "binary-search", caption: meta?.caption || "Compare left, mid, and right on a sorted list.", steps };
 }
 
 function twoPointersTrace(meta, inputText) {
@@ -829,7 +829,7 @@ function twoPointersTrace(meta, inputText) {
     if (sum < target) left += 1;
     else right -= 1;
   }
-  return { title: meta?.title || "Two pointers: move from both ends", concept: "two-pointers", caption: meta?.caption || "Watch a sorted pair search decide which side moves.", steps };
+  return { title: meta?.title || "Two pointers: move from both ends", concept: "two-pointers", caption: meta?.caption || "Compare a sorted pair and decide which side moves.", steps };
 }
 
 function slidingWindowTrace(meta, inputText) {
@@ -864,7 +864,7 @@ function slidingWindowTrace(meta, inputText) {
       animation: "slide",
     }));
   }
-  return { title: meta?.title || "Sliding window: update the moving range", concept: "sliding-window", caption: meta?.caption || "Watch the window slide while the running total changes.", steps };
+  return { title: meta?.title || "Sliding window: update the moving range", concept: "sliding-window", caption: meta?.caption || "Slide the window while the running total changes.", steps };
 }
 
 function treeTrace(meta) {
@@ -949,7 +949,7 @@ function treeTrace(meta) {
           animation: "visit",
         }),
       ];
-      return { title: meta?.title || "Tree LCA: climb parent links", concept: "tree", caption: meta?.caption || "Watch two tree nodes climb to their shared ancestor.", steps };
+      return { title: meta?.title || "Tree LCA: climb parent links", concept: "tree", caption: meta?.caption || "Trace two tree nodes as they climb to their shared ancestor.", steps };
     }
     if (meta?.preset === "tree-path-sum") {
       const target = Number(meta.input.target);
@@ -982,7 +982,7 @@ function treeTrace(meta) {
           animation: "visit",
         });
       });
-      return { title: meta?.title || "Tree path sum: carry a running sum", concept: "tree", caption: meta?.caption || "Watch each root-to-leaf path compare its sum with the target.", steps };
+      return { title: meta?.title || "Tree path sum: carry a running sum", concept: "tree", caption: meta?.caption || "Compare each root-to-leaf path sum with the target.", steps };
     }
   }
   const nodes = [
@@ -1008,7 +1008,7 @@ function treeTrace(meta) {
       animation: "visit",
     });
   });
-  return { title: meta?.title || `Tree: ${order} traversal`, concept: "tree", caption: meta?.caption || "Watch nodes get visited one at a time.", steps };
+  return { title: meta?.title || `Tree: ${order} traversal`, concept: "tree", caption: meta?.caption || "Visit nodes one at a time.", steps };
 }
 
 function graphTrace(meta) {
@@ -1045,7 +1045,7 @@ function graphTrace(meta) {
       animation: "visit",
     }));
   });
-  return { title: meta?.title || "Graph: BFS and visited set", concept: "graph", caption: meta?.caption || "Watch the search visit nodes without repeating them.", steps };
+  return { title: meta?.title || "Graph: BFS and visited set", concept: "graph", caption: meta?.caption || "Visit graph nodes without repeating them.", steps };
 }
 
 function authoredTrace(meta) {
@@ -1060,7 +1060,7 @@ function authoredTrace(meta) {
     patternSketch: meta?.patternSketch || meta?.pattern_sketch || "",
     steps: rawSteps.map((step) => makeStep({
       title: step.title || "Trace the next move",
-      body: step.body || "Watch the active state before moving forward.",
+      body: step.body || "Read the active state before moving forward.",
       changed: step.changed || "",
       why: step.why || "",
       state: step.state || {},

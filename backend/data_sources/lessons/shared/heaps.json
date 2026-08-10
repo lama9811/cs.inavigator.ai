@@ -60,7 +60,7 @@
           "kind": "visual",
           "title": "Trace heaps state",
           "concept": "heap",
-          "caption": "Watch priorities=[4, 9, 6] move toward top priority 9.",
+          "caption": "Move priorities=[4, 9, 6] until top priority is 9.",
           "initial_state": {},
           "steps": [
             {
@@ -259,7 +259,7 @@
         },
         {
           "kind": "check",
-          "prompt": "What should a heap trace watch first?",
+          "prompt": "What should a heap trace check first?",
           "choices": [
             "The state that proves the next move",
             "The largest hidden test case",
@@ -267,21 +267,21 @@
             "The color of the code editor"
           ],
           "answer_index": 0,
-          "why": "Watch the root and one child comparison first. If that comparison is wrong, later heap operations cannot be trusted."
+          "why": "Check the root and one child comparison first. If that comparison is wrong, later heap operations cannot be trusted."
         }
       ]
     },
     {
       "id": "remove-and-repair",
       "title": "Remove and repair",
-      "summary": "During a heap trace, watch the root separately from the last array slot. Insert starts at the new leaf; removal borrows ",
+      "summary": "During a heap trace, track the root separately from the last array slot. Insert starts at the new leaf; removal borrows ",
       "question_ids": [
         "advanced-heaps-pop"
       ],
       "blocks": [
         {
           "kind": "text",
-          "body": "During a heap trace, watch the root separately from the last array slot. Insert starts at the new leaf; removal borrows the final slot before bubbling down."
+          "body": "During a heap trace, track the root separately from the last array slot. Insert starts at the new leaf; removal borrows the final slot before bubbling down."
         },
         {
           "kind": "list",

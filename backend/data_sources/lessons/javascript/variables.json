@@ -112,7 +112,7 @@
     {
       "id": "example",
       "title": "Trace one changing value",
-      "summary": "Watch a fixed binding and a changing counter side by side.",
+      "summary": "Compare a fixed binding and a changing counter side by side.",
       "blocks": [
         {
           "kind": "code",
@@ -142,7 +142,7 @@
         {
           "kind": "callout",
           "tone": "mistake",
-          "title": "Watch this detail",
+          "title": "Check this detail",
           "body": "Repeating `let score` in one block redeclares the name and causes a **syntax error**; reassignment omits `let`."
         }
       ]

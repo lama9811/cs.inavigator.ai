@@ -295,7 +295,7 @@
         },
         {
           "kind": "code",
-          "caption": "Where `println` throws a **value** away after showing it, `return` delivers it to whoever made the call. Delivered means usable, so you can assign it, add it, or pass it onward. Watch the final line: since `doubled` yields an `int`, two calls can be summed on the spot, giving 6 plus 8.",
+          "caption": "Where `println` throws a **value** away after showing it, `return` delivers it to whoever made the call. Delivered means usable, so you can assign it, add it, or pass it onward. Check the final line: since `doubled` yields an `int`, two calls can be summed on the spot, giving 6 plus 8.",
           "code": "public static int doubled(int n) {\n    return n * 2;\n}\n\n// inside main:\nint result = doubled(5);\nSystem.out.println(result);\nSystem.out.println(doubled(3) + doubled(4));",
           "output": "10\n14"
         },

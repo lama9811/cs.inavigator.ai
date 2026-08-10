@@ -14,6 +14,11 @@ function conciseGuideReason(value = "") {
   const visible = marker >= 0 ? text.slice(0, marker) : text;
   return visible
     .replace(/\s*This topic is review-only for now:\s*[^.]+\.?\s*/i, " ")
+    .replace(new RegExp("\\bladder\\s+step\\b", "gi"), "problem")
+    .replace(new RegExp("\\blow-" + "pressure\\s+warmup\\b", "gi"), "short warmup")
+    .replace(new RegExp("\\bweak\\s+spot\\b", "gi"), "topic to review")
+    .replace(new RegExp("\\bshaky\\s+topic\\b", "gi"), "topic to review")
+    .replace(new RegExp("\\bcould\\s+use\\s+another\\s+pass\\b", "gi"), "should be reviewed next")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -541,7 +546,7 @@ export default function QuizBank({
       title: beginnerTopicTitle,
       band: "Easy",
       bandClass: "steady",
-      reason: `${beginnerTopicTitle} is a good first practice lane because it uses small rules before harder patterns.`,
+      reason: `Start with ${beginnerTopicTitle}. These Easy problems use short rules before longer code.`,
       cta: `Start ${beginnerTopicTitle}`,
       onClick: () => {
         updateFilter({ difficulty: ["easy"], topic: [beginnerTopicInView], status: [], sort: "topic" });
@@ -566,7 +571,7 @@ export default function QuizBank({
         bandClass: adaptiveReady ? "steady" : "shaky",
         reason: conciseGuideReason(adaptiveRecommendation.reason),
         cta: adaptiveReady
-          ? `Open ${titleCase(adaptiveRecommendation.difficulty)} ladder step`
+          ? `Open ${titleCase(adaptiveRecommendation.difficulty)} problem`
           : `Review ${titleCase(adaptiveRecommendation.topic)}`,
         onClick: () => {
           updateFilter({
@@ -607,7 +612,7 @@ export default function QuizBank({
             title: "Beginner starter set",
             band: "Easy",
             bandClass: "steady",
-            reason: "A short COSC 101/102-friendly set is ready when you want a low-pressure warmup.",
+            reason: "Start with a short COSC 101/102-friendly warmup.",
             cta: "Open beginner starter set",
             onClick: applyBeginnerStarter,
           };
@@ -968,7 +973,7 @@ export default function QuizBank({
               </ul>
             ) : (
               <p className="practice-guide-unlocked-note">
-                Run a few tests and this will unlock patterns from your own attempts.
+                Run a few tests to see patterns from your own attempts.
               </p>
             )}
           </section>

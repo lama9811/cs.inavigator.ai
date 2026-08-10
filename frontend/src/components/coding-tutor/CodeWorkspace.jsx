@@ -528,7 +528,7 @@ function CodeTraceModal({
       return activeStep.exception ? `${traceLanguage} stopped on line ${traceLineNo(activeStep) || activeStep.exception?.line || "?"} because ${exceptionDisplay(activeStep.exception)}.` : `${traceLanguage} raised an exception on this step.`;
     }
     if (operationInsight) return operationInsight;
-    return `${traceLanguage} is about to run line ${traceLineNo(activeStep)}. Watch the variables below before and after this line.`;
+    return `${traceLanguage} is about to run line ${traceLineNo(activeStep)}. Check the variables before and after this line.`;
   }, [activeStep, isTraceV2, operationInsight, traceLanguage]);
   const changedBindings = useMemo(() => {
     const names = new Set();
@@ -671,7 +671,7 @@ function CodeTraceModal({
 
                 <aside className="code-trace-state-panel" aria-label="Current trace state">
                   <div>
-                    <span>What is happening</span>
+                    <span>Current step</span>
                     <h4>{activeExplanation}</h4>
                   </div>
                   {activeCallStack.length ? (

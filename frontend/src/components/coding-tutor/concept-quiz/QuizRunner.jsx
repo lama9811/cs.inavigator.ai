@@ -575,6 +575,16 @@ function formatAnswer(value) {
   return clean(value);
 }
 
+function sentence(text) {
+  const trimmed = String(text || "").trim();
+  if (!trimmed) return "";
+  return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
+}
+
+function quotedAnswer(value) {
+  return `"${formatAnswer(value)}"`;
+}
+
 function buildAnswerOptionsSpeech(question, choiceOrder = []) {
   if (!question) return "";
 
@@ -682,29 +692,26 @@ function buildImmediateReview(question, result, explanation) {
   }
 
   const points = [];
-  let summary =
+  const correct = quotedAnswer(result.correctAnswer);
+  const picked = quotedAnswer(result.studentAnswer);
+  const explanationText = sentence(
     explanation.summary ||
-    "Your answer does not match the behavior this question is testing yet.";
-  if (explanation.detail) {
-    summary = `${summary} ${explanation.detail}`.trim();
-  }
+      "The correct answer follows the rule shown in the question."
+  );
+  let summary = `You picked ${picked}. That would make sense if that choice matched what the code or rule actually produces. ${explanationText} So the answer is ${correct}.`;
 
   if (question.kind === "mcq-output" || question.kind === "mcq-behavior") {
-    if (question.code) {
-      points.push(
-        `You picked "${formatAnswer(result.studentAnswer)}", so compare the line where your trace first stops matching "${formatAnswer(result.correctAnswer)}".`
-      );
-    } else {
-      points.push(
-        `You picked "${formatAnswer(result.studentAnswer)}". The key rule in the prompt points to "${formatAnswer(result.correctAnswer)}" instead.`
-      );
+    if (explanation.detail) {
+      points.push(sentence(explanation.detail));
     }
   } else if (question.kind === "typein") {
-    points.push(
-      `You typed "${formatAnswer(result.studentAnswer)}". Check the exact expected value "${formatAnswer(result.correctAnswer)}" for spelling, punctuation, capitalization, spacing, and quotes.`
-    );
+    summary = `You typed ${picked}. The expected answer is ${correct}. ${explanationText}`;
+    const exactMatchNote =
+      "Check spelling, punctuation, capitalization, spacing, and quotes.";
     if (question.typein_mode === "code") {
-      points[0] = `${points[0]} Then compare the operator, variable name, and syntax one piece at a time.`;
+      points.push(`${exactMatchNote} Then check the operator, variable name, and syntax.`);
+    } else {
+      points.push(exactMatchNote);
     }
   } else if (question.kind === "parsons") {
     const step = result.firstMismatch >= 0 ? result.firstMismatch + 1 : 1;
@@ -714,6 +721,7 @@ function buildImmediateReview(question, result, explanation) {
     const expectedLine = Array.isArray(result.correctAnswer)
       ? result.correctAnswer[result.firstMismatch]
       : null;
+    summary = `The first line out of order is step ${step}. ${explanationText}`;
     points.push(
       `The first line that looks out of place is step ${step}. You placed "${formatAnswer(studentLine)}", but that spot should be "${formatAnswer(expectedLine)}".`
     );

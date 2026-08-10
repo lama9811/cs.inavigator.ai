@@ -129,7 +129,7 @@ def test_ladder_drops_after_repeated_medium_failures():
 
     assert recommendation["action"] == "ladder"
     assert recommendation["difficulty"] == "easy"
-    assert "steps back to easy" in recommendation["reason"]
+    assert "try an easy problem next" in recommendation["reason"]
 
 
 def test_error_review_signal_routes_repeated_syntax_errors_to_syntax_lesson():

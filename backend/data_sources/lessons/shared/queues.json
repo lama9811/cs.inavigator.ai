@@ -58,7 +58,7 @@
         },
         {
           "kind": "visual",
-          "title": "Watch FIFO in action",
+          "title": "Trace FIFO in action",
           "concept": "queues",
           "caption": "Step through enqueue and dequeue so front and back are clear.",
           "initial_state": {},
@@ -449,7 +449,7 @@
           "kind": "visual",
           "title": "Use a queue for BFS order",
           "concept": "queues",
-          "caption": "Watch BFS process the oldest waiting **node** before newer neighbors.",
+          "caption": "Process the oldest waiting **node** before newer neighbors.",
           "initial_state": {},
           "steps": [
             {

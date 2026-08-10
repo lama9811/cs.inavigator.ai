@@ -96,7 +96,7 @@
     {
       "id": "arithmetic-operators",
       "title": "Mathematical operators",
-      "summary": "Calculate values and watch integer division before assignment.",
+      "summary": "Calculate values and check integer division before assignment.",
       "blocks": [
         {
           "kind": "text",

@@ -116,16 +116,22 @@ function compactWeakTopicReason({ mastery, weakTopic }) {
   if (mastery?.weakest?.topic) {
     return `Recent practice points to ${titleCase(weakTopic)}.`;
   }
-  if (weakTopic) return `This topic could use another pass.`;
-  return "Pick one shaky topic.";
+  if (weakTopic) return `Review ${titleCase(weakTopic)} next.`;
+  return "Pick one topic to review.";
 }
 
 function conciseAdaptiveReason(value = "") {
   const text = String(value || "").trim();
   const reviewMarker = /this topic is review-only for now/i;
   const match = reviewMarker.exec(text);
-  if (!match) return text;
-  return text.slice(0, match.index).trim().replace(/[.:;\s]+$/, ".");
+  const visible = match ? text.slice(0, match.index) : text;
+  return visible
+    .replace(new RegExp("\\bladder\\s+steps?\\b", "gi"), "practice")
+    .replace(new RegExp("\\bweak\\s+spot\\b", "gi"), "topic to review")
+    .replace(new RegExp("\\bshaky\\s+topic\\b", "gi"), "topic to review")
+    .replace(new RegExp("\\bcould\\s+use\\s+another\\s+pass\\b", "gi"), "should be reviewed next")
+    .trim()
+    .replace(/[.:;\s]+$/, ".");
 }
 
 function firstUnsolved(questions, progressByQuestion, predicate = () => true) {
@@ -171,9 +177,9 @@ function buildTodayPath({ questions, progressByQuestion, resumeItem, nextUpQuest
     .find(q => !used.has(q.id));
   add(
     "practice",
-    weakTopic ? `Practice ${titleCase(weakTopic)}` : "Practice a weak spot",
+    weakTopic ? `Practice ${titleCase(weakTopic)}` : "Practice a topic",
     weakPick,
-    "Pick one topic that feels shaky and solve one problem from it.",
+    "Pick one topic to review and solve one problem from it.",
     compactWeakTopicReason({ mastery, weakTopic })
   );
 
@@ -331,7 +337,7 @@ function CampusLearningQueue({
   const needsStartingCheck = !hasRealProgress && !startingCheck;
   const placementProfile = !hasRealProgress ? startingCheck : null;
   const focusTitle = needsStartingCheck ? "Find your starting point" : placementProfile?.title || (adaptiveReady
-    ? `${titleCase(adaptiveTopic)} adaptive ladder`
+    ? `${titleCase(adaptiveTopic)} practice`
     : adaptiveRecommendation?.action === "practice_review"
       ? `Review ${titleCase(adaptiveTopic)}`
       : focus?.hasProgress
@@ -340,7 +346,7 @@ function CampusLearningQueue({
       ? `Start with ${titleCase(focus.first.topic)}`
       : "Choose a topic");
   const focusBlurb = needsStartingCheck
-    ? "Take the quick check above so this card can recommend a calm first step instead of guessing."
+    ? "Take the quick check above so this card can suggest where to start."
     : placementProfile?.blurb || (adaptiveRecommendation?.reason
     ? conciseAdaptiveReason(adaptiveRecommendation.reason)
     : focusTopic
@@ -421,7 +427,7 @@ function CampusLearningQueue({
           ) : null}
           {adaptiveRecommendation ? (
             <small className={adaptiveReady ? "campus-focus-badge is-ready" : "campus-focus-badge"}>
-              {adaptiveReady ? "Ladder-ready" : "Review"}
+              {adaptiveReady ? "Ready" : "Review"}
             </small>
           ) : null}
           <div className="campus-focus-actions">
@@ -537,7 +543,7 @@ function StartingCheckCard({ result, onComplete, onSkip, onReset }) {
           <span className="coding-kicker">Starting Point</span>
           <h3>Find your starting point</h3>
           <p>
-            Answer a few quick questions so Coding Tutor can recommend the calmest first lesson or practice set.
+            Answer a few questions so we can recommend your first lesson or practice set.
           </p>
         </div>
         <div className="starting-check-actions">
@@ -567,7 +573,7 @@ function StartingCheckCard({ result, onComplete, onSkip, onReset }) {
           <div>
             <span className="coding-kicker">Before You Start</span>
             <h3 id="starting-check-title">Find your starting point</h3>
-            <p id="starting-check-description">Answer a few quick questions so Coding Tutor can unlock a calmer first path.</p>
+            <p id="starting-check-description">Answer a few questions so we can suggest where to start.</p>
           </div>
           <button
             type="button"
@@ -612,7 +618,7 @@ function StartingCheckCard({ result, onComplete, onSkip, onReset }) {
           <div className="starting-check-footer">
             <span>
               {isLastQuestion && complete
-                ? "Ready to unlock your starting path."
+                ? "Starting check ready."
                 : `${answeredCount}/${questionSet.length} answered`}
             </span>
             <div>

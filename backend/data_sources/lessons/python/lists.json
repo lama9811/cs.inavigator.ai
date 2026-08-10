@@ -23,7 +23,7 @@
           "kind": "visual",
           "title": "Indexes point to positions",
           "concept": "lists",
-          "caption": "Step through a list slot by slot, then watch append claim the next index.",
+          "caption": "Step through a list slot by slot, then append into the next index.",
           "initial_state": {},
           "steps": [
             {

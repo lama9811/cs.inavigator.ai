@@ -60,7 +60,7 @@
           "kind": "visual",
           "title": "Trace dynamic programming state",
           "concept": "dynamic-programming",
-          "caption": "Watch ways for 0,1,2,3 steps move toward ways[3] = 3.",
+          "caption": "Fill ways for 0, 1, 2, and 3 steps until ways[3] = 3.",
           "initial_state": {},
           "steps": [
             {
@@ -259,7 +259,7 @@
         },
         {
           "kind": "check",
-          "prompt": "What should a DP trace watch first?",
+          "prompt": "What should a DP trace check first?",
           "choices": [
             "The state that proves the next move",
             "The largest hidden test case",
@@ -267,7 +267,7 @@
             "The color of the code editor"
           ],
           "answer_index": 0,
-          "why": "Watch what one table entry means first. A recurrence is hard to debug when the state meaning is vague."
+          "why": "Check what one table entry means first. A recurrence is hard to debug when the state meaning is vague."
         }
       ]
     },

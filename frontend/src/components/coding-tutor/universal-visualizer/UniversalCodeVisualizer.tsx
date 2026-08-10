@@ -258,7 +258,7 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
         </div>
         <aside className="ucv-side">
           <div className="ucv-card">
-            <span>What is happening</span>
+            <span>Current step</span>
             <h4>{step.title}</h4>
             <p>{step.description}</p>
           </div>

@@ -2,8 +2,8 @@
 
 This module is deliberately conservative. It does not claim every topic is ready for
 adaptive difficulty. It first checks whether a topic has enough authored, deterministic
-practice depth across all supported languages, then recommends either a true ladder step
-or a normal review/practice step.
+practice depth across all supported languages, then recommends either a next practice
+problem or a normal review/practice step.
 """
 
 from __future__ import annotations
@@ -297,14 +297,14 @@ def choose_ladder_difficulty(events: Iterable[dict[str, Any]]) -> tuple[str, str
     low_hint = _low_hint_solves(topic_events)
 
     if _recent_failure_count(topic_events, "hard") >= FAILURE_DROP_COUNT:
-        return "medium", "Recent hard attempts are not passing yet, so the ladder steps back to medium."
+        return "medium", "Recent hard attempts are not passing yet, so try a medium problem next."
     if _recent_failure_count(topic_events, "medium") >= FAILURE_DROP_COUNT:
-        return "easy", "Recent medium attempts are not passing yet, so the ladder steps back to easy."
+        return "easy", "Recent medium attempts are not passing yet, so try an easy problem next."
     if len(low_hint["medium"]) >= 1:
-        return "hard", "A low-hint medium solve is enough to try the hard step."
+        return "hard", "A low-hint medium solve is enough to try a hard problem."
     if len(low_hint["easy"]) >= 1:
-        return "medium", "A low-hint easy solve is enough to try the medium step."
-    return "easy", "Start with the easy step and move up after a low-hint solve."
+        return "medium", "A low-hint easy solve is enough to try a medium problem."
+    return "easy", "Start with an easy problem and move up after a low-hint solve."
 
 
 def build_adaptive_recommendation(

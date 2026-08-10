@@ -51,7 +51,7 @@
         {
           "kind": "callout",
           "tone": "mistake",
-          "title": "Watch this detail",
+          "title": "Check this detail",
           "body": "A **string** with length five ends at **index** four. Reading `text[text.length]` goes one place too far."
         }
       ]

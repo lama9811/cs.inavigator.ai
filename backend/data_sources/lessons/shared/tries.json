@@ -60,7 +60,7 @@
           "kind": "visual",
           "title": "Trace tries state",
           "concept": "trie",
-          "caption": "Watch words=[cat, car] move toward prefix ca finds both words.",
+          "caption": "Trace words=[cat, car] until prefix ca finds both words.",
           "initial_state": {},
           "steps": [
             {
@@ -259,7 +259,7 @@
         },
         {
           "kind": "check",
-          "prompt": "What should a trie trace watch first?",
+          "prompt": "What should a trie trace check first?",
           "choices": [
             "The state that proves the next move",
             "The largest hidden test case",
@@ -267,7 +267,7 @@
             "The color of the code editor"
           ],
           "answer_index": 0,
-          "why": "Watch the current node and next character first. Prefix bugs usually start at the first missing edge."
+          "why": "Check the current node and next character first. Prefix bugs usually start at the first missing edge."
         }
       ]
     },

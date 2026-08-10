@@ -3930,7 +3930,7 @@ export default function CodingTutor({
       if (response.status === 423) {
         const state = data?.detail?.hint_state;
         if (state) setHintGate(state);
-        toast.info(data?.detail?.message || state?.reason || "Run another attempt to unlock the next hint.");
+        toast.info(data?.detail?.message || state?.reason || "Run your code again to see the next hint.");
         return false;
       }
       if (!response.ok) throw new Error(data.detail || `hint ${response.status}`);
@@ -3951,7 +3951,7 @@ export default function CodingTutor({
     }
     if (revealedHints >= unlocked) {
       if (hintSteps.some(hint => hint.locked)) {
-        toast.info(hintGate?.reason || "Run another attempt to unlock the next hint.");
+        toast.info(hintGate?.reason || "Run your code again to see the next hint.");
       }
       setWorkspaceTab("Hints");
       return;
@@ -3965,7 +3965,7 @@ export default function CodingTutor({
 
   const showAllHints = async () => {
     const unlocked = hintSteps.filter(hint => !hint.locked).length;
-    if (unlocked < hintSteps.length) toast.info(hintGate?.reason || "Run another attempt to unlock the next hint.");
+    if (unlocked < hintSteps.length) toast.info(hintGate?.reason || "Run your code again to see the next hint.");
     for (let level = revealedHints + 1; level <= unlocked; level += 1) {
       const allowed = await requestHintLevel(level);
       if (!allowed) return;

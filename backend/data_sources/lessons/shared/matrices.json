@@ -60,7 +60,7 @@
           "kind": "visual",
           "title": "Trace matrices state",
           "concept": "matrix",
-          "caption": "Watch grid=[[1,2],[3,4]] move toward cell row 1 col 0 is 3.",
+          "caption": "Read grid=[[1,2],[3,4]] until row 1, col 0 gives 3.",
           "initial_state": {},
           "steps": [
             {
@@ -259,7 +259,7 @@
         },
         {
           "kind": "check",
-          "prompt": "What should a matrix trace watch first?",
+          "prompt": "What should a matrix trace check first?",
           "choices": [
             "The state that proves the next move",
             "The largest hidden test case",
@@ -267,7 +267,7 @@
             "The color of the code editor"
           ],
           "answer_index": 0,
-          "why": "Watch row and column together. Treating one dimension as the other causes many grid bugs."
+          "why": "Check row and column together. Treating one dimension as the other causes many grid bugs."
         }
       ]
     },

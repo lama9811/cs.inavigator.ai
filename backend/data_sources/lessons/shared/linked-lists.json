@@ -55,7 +55,7 @@
           "kind": "visual",
           "title": "Do not lose the link",
           "concept": "linked-lists",
-          "caption": "Watch how a new **node** is inserted between two existing nodes.",
+          "caption": "Insert a new **node** between two existing nodes.",
           "initial_state": {},
           "steps": [
             {
@@ -335,7 +335,7 @@
           "kind": "visual",
           "title": "Move current one link at a time",
           "concept": "linked-lists",
-          "caption": "Watch **traversal** follow next links from head until the **list** ends.",
+          "caption": "Follow next links from head until the **list** ends.",
           "initial_state": {},
           "steps": [
             {

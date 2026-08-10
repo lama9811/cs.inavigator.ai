@@ -60,7 +60,7 @@
           "kind": "visual",
           "title": "Trace disjoint sets state",
           "concept": "union-find",
-          "caption": "Watch union(A,B), union(B,C) move toward A and C connected.",
+          "caption": "Trace union(A,B), then union(B,C), until A and C are connected.",
           "initial_state": {},
           "steps": [
             {
@@ -259,7 +259,7 @@
         },
         {
           "kind": "check",
-          "prompt": "What should a disjoint-set trace watch first?",
+          "prompt": "What should a disjoint-set trace check first?",
           "choices": [
             "The state that proves the next move",
             "The largest hidden test case",
@@ -267,7 +267,7 @@
             "The color of the code editor"
           ],
           "answer_index": 0,
-          "why": "Watch representatives before comparing groups. Raw parent values can be misleading before find runs."
+          "why": "Check representatives before comparing groups. Raw parent values can be misleading before find runs."
         }
       ]
     },

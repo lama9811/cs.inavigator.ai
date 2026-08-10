@@ -60,7 +60,7 @@
           "kind": "visual",
           "title": "Trace bit manipulation state",
           "concept": "bit-manipulation",
-          "caption": "Watch n=6, mask=2 move toward bit is on.",
+          "caption": "Inspect n=6 and mask=2 to decide whether the bit is on.",
           "initial_state": {},
           "steps": [
             {
@@ -259,7 +259,7 @@
         },
         {
           "kind": "check",
-          "prompt": "What should a bit trace watch first?",
+          "prompt": "What should a bit trace check first?",
           "choices": [
             "The state that proves the next move",
             "The largest hidden test case",
@@ -267,7 +267,7 @@
             "The color of the code editor"
           ],
           "answer_index": 0,
-          "why": "Watch the mask before the final boolean or number. The mask says which binary position is being tested."
+          "why": "Check the mask before the final boolean or number. The mask says which binary position is being tested."
         }
       ]
     },

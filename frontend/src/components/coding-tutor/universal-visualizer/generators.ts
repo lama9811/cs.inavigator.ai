@@ -1058,7 +1058,7 @@ function expandConditionalSteps(
   return [
     {
       title: `Read the ${context.title || "conditional"} example`,
-      body: `Start with the public example input: ${input}. The visual will test one branch at a time.`,
+      body: `Start with the teaching sample ${input}. Test one branch at a time.`,
       action: "input",
       state: { ...baseState, condition_phase: "input" },
     },
@@ -1083,7 +1083,7 @@ function expandConditionalSteps(
     }),
     {
       title: "Return the chosen branch",
-      body: `Only the matching branch supplies the public example result: ${expected || "the requested result"}.`,
+      body: `Only the matching branch supplies the result: ${expected || "the requested result"}.`,
       action: "result",
       state: { ...baseState, condition_phase: "end", rule: rules[chosenIndex]?.rule, branch_result: expected, branch_taken: true },
     },
@@ -1584,7 +1584,7 @@ function bodyForAuthoredStep(rawBody: unknown, context: GeneratorContext, concep
     const output = context.exampleOutput ? `The example output is ${context.exampleOutput}, but the code path is still yours to build.` : "Focus on the next state change, not a memorized answer.";
     if (index === 0) return `${sample}Set up only the small state you need to trace the idea.`;
     if (index === 1) return "Read the active item, pointer, branch, or memory slot before changing anything.";
-    if (index === 2) return "Apply the prompt rule to exactly one visible state change.";
+    if (index === 2) return "Apply the rule to exactly one visible state change.";
     if (index === 3) return "Move forward and keep the updated state visible.";
     if (index === 4) return "Check whether the pattern should stop or repeat one more time.";
     return output;
@@ -1601,7 +1601,7 @@ function inferredSetupStep(
   return {
     ...first,
     title: "Load the example",
-    body: `Start with the public example input: ${sample}. Name the small pieces of state before the first move.`,
+    body: `Start with the teaching sample ${sample}. Name the small pieces of state before the first move.`,
     code: "values = input",
     cue: "What values, pointers, or memory slots exist before anything changes?",
     action: "load",
@@ -1617,7 +1617,7 @@ function inferredFinalStep(
   return {
     ...last,
     title: "Check the final result",
-    body: `End by comparing the traced state with the expected public example result: ${expected}.`,
+    body: `End by checking the traced state against the expected result: ${expected}.`,
     changed: expected ? `result = ${expected}` : last.changed,
     why: "The last visual state should explain the output shape without revealing solution code.",
     code: "return result",

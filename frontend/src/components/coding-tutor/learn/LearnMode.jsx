@@ -27,15 +27,15 @@ const TRACKS = [
     label: "Intermediate Track",
     kicker: "Next step",
     description:
-      "Build on Part 1 with multi-step problems and the next concepts that matter most in this language.",
+      "Build on Part 1 with multi-step problems and language-specific concepts.",
     cta: "Explore next steps",
   },
   {
     id: "advanced",
     label: "Advanced Track",
-    kicker: "Interview ready",
+    kicker: "Advanced practice",
     description:
-      "Break down data structures and coding patterns before trying harder practice.",
+      "Study data structures and coding patterns before trying harder practice.",
     cta: "Study advanced patterns",
   },
 ];

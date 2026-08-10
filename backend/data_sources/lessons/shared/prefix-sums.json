@@ -60,7 +60,7 @@
           "kind": "visual",
           "title": "Trace prefix sums state",
           "concept": "prefix-sum",
-          "caption": "Watch nums=[2,4,1] move toward prefix=[0,2,6,7].",
+          "caption": "Build prefix=[0,2,6,7] from nums=[2,4,1].",
           "initial_state": {},
           "steps": [
             {
@@ -259,7 +259,7 @@
         },
         {
           "kind": "check",
-          "prompt": "What should a prefix-sum trace watch first?",
+          "prompt": "What should a prefix-sum trace check first?",
           "choices": [
             "The state that proves the next move",
             "The largest hidden test case",
@@ -267,7 +267,7 @@
             "The color of the code editor"
           ],
           "answer_index": 0,
-          "why": "Watch the meaning of prefix indexes first. The formula works only when the convention stays steady."
+          "why": "Check the meaning of prefix indexes first. The formula works only when the convention stays steady."
         }
       ]
     },

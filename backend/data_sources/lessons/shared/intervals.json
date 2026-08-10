@@ -60,7 +60,7 @@
           "kind": "visual",
           "title": "Trace intervals state",
           "concept": "intervals",
-          "caption": "Watch [1,4] and [3,6] move toward merged [1,6].",
+          "caption": "Merge [1,4] and [3,6] into [1,6].",
           "initial_state": {},
           "steps": [
             {
@@ -259,7 +259,7 @@
         },
         {
           "kind": "check",
-          "prompt": "What should an interval trace watch first?",
+          "prompt": "What should an interval trace check first?",
           "choices": [
             "The state that proves the next move",
             "The largest hidden test case",
@@ -267,7 +267,7 @@
             "The color of the code editor"
           ],
           "answer_index": 0,
-          "why": "Watch the current end and the next start first. That comparison decides merge or gap."
+          "why": "Check the current end and the next start first. That comparison decides merge or gap."
         }
       ]
     },
