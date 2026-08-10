@@ -155,7 +155,7 @@ def _check_course_faithfulness(text: str, dw_dict: dict, query: str = "") -> lis
 
 # Local Imports (Auth & DB) - These must run AFTER load_dotenv
 from db import SessionLocal, engine, Base
-from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, SavedPlannerPlan, CodingAttemptEvent, CodingHintEvent, CodingTutorActionEvent, CodingWorkspaceState, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
+from models import User, DegreeWorksData, BannerStudentData, SupportTicket, FailedQuery, KBSuggestion, CanvasStudentData, UserMemory, ChatHistory, Feedback, CodingPracticeProgress, CodingUserProgress, CodingTutorPreference, CodingInterviewProgress, CodingSnippet, SavedPlannerPlan, CodingAttemptEvent, CodingHintEvent, CodingTutorActionEvent, CodingWorkspaceState, CodingLearnProgress, CodingStartingCheckProgress, CodingConceptQuizAttempt, ReminderSubscription, SentReminder, LiveSection, AdvisingFormDraft, AdvisingUpload, SavedScholarship, DismissedScholarship
 from security import hash_password, verify_password, create_access_token
 from jose import JWTError, jwt
 
@@ -1023,6 +1023,46 @@ class CodingWorkspaceStateUpdate(BaseModel):
         normalized = (value or "practice").strip().lower()
         if normalized not in {"practice", "interview"}:
             raise ValueError("source must be practice or interview")
+        return normalized
+
+VALID_LEARN_PROGRESS_STATUSES = {"opened", "completed"}
+
+class CodingLearnProgressUpdate(BaseModel):
+    language: str = "python"
+    category: str
+    status: str = "completed"
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value):
+        normalized = (value or "completed").strip().lower()
+        if normalized not in VALID_LEARN_PROGRESS_STATUSES:
+            raise ValueError("status must be opened or completed")
+        return normalized
+
+    @field_validator("category")
+    @classmethod
+    def validate_category(cls, value):
+        normalized = (value or "").strip()
+        if not normalized:
+            raise ValueError("category is required")
+        return normalized[:80]
+
+VALID_STARTING_CHECK_STATUSES = {"completed", "skipped"}
+
+class CodingStartingCheckProgressUpdate(BaseModel):
+    language: str = "python"
+    status: str = "completed"
+    result_level: Optional[str] = None
+    recommendation: Optional[dict[str, Any]] = None
+    answers: Optional[dict[str, Any]] = None
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value):
+        normalized = (value or "completed").strip().lower()
+        if normalized not in VALID_STARTING_CHECK_STATUSES:
+            raise ValueError("status must be completed or skipped")
         return normalized
 
 class PracticeRunRequest(BaseModel):
@@ -7136,7 +7176,7 @@ async def search_coding_study_resources(
         "source": "curated_cs_navigator_resources",
     }
 
-from services import adaptive_practice, attempt_telemetry, mastery
+from services import adaptive_next_step, adaptive_practice, attempt_telemetry, mastery
 
 @app.post("/api/coding/practice/run")
 async def run_practice_solution(
@@ -7648,6 +7688,141 @@ async def get_adaptive_practice_recommendations(
         },
     }
 
+
+@app.get("/api/coding/adaptive/next-step")
+async def get_coding_adaptive_next_step(
+    language: str = Query("python"),
+    surface: str = Query("home", pattern="^(home|practice|learn|workspace)$"),
+    explicit_advanced: bool = Query(False),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Canonical Coding Tutor recommendation.
+
+    Home, Practice Guide, Learn exits, and Workspace should render this same shape
+    instead of each assembling a separate "next" decision in the browser.
+    """
+    language_key, _ = _normalize_practice_language(language)
+    questions = _all_practice_questions()
+    readiness = adaptive_practice.build_topic_readiness(
+        questions,
+        _practice_answer_items_by_language(),
+    )
+
+    topics = mastery.compute_topic_mastery(db, user["user_id"])
+    weakest = mastery.weakest_topic(topics)
+    mastery_payload = {
+        "topics": topics,
+        "weakest": ({**weakest, "reason": mastery.explain(weakest)} if weakest else None),
+        "min_attempts_for_score": mastery.MIN_ATTEMPTS_FOR_SCORE,
+    }
+
+    progress_rows = (
+        db.query(CodingPracticeProgress)
+        .filter(
+            CodingPracticeProgress.user_id == user["user_id"],
+            CodingPracticeProgress.language == language_key,
+        )
+        .all()
+    )
+    attempt_rows = (
+        db.query(CodingAttemptEvent)
+        .filter(
+            CodingAttemptEvent.user_id == user["user_id"],
+            CodingAttemptEvent.source == "practice",
+            CodingAttemptEvent.language == language_key,
+            CodingAttemptEvent.topic.isnot(None),
+        )
+        .order_by(CodingAttemptEvent.created_at.asc())
+        .all()
+    )
+    concept_rows = (
+        db.query(CodingConceptQuizAttempt)
+        .filter(
+            CodingConceptQuizAttempt.user_id == user["user_id"],
+            CodingConceptQuizAttempt.language == language_key,
+        )
+        .order_by(CodingConceptQuizAttempt.created_at.asc())
+        .all()
+    )
+    learn_rows = (
+        db.query(CodingLearnProgress)
+        .filter(
+            CodingLearnProgress.user_id == user["user_id"],
+            CodingLearnProgress.language == language_key,
+        )
+        .all()
+    )
+    starting_row = (
+        db.query(CodingStartingCheckProgress)
+        .filter(
+            CodingStartingCheckProgress.user_id == user["user_id"],
+            CodingStartingCheckProgress.language == language_key,
+        )
+        .first()
+    )
+    workspace_state = (
+        db.query(CodingWorkspaceState)
+        .filter(CodingWorkspaceState.user_id == user["user_id"])
+        .first()
+    )
+    preference = (
+        db.query(CodingTutorPreference)
+        .filter(CodingTutorPreference.user_id == user["user_id"])
+        .first()
+    )
+
+    serialized_attempts = [_serialize_attempt_event(row) for row in attempt_rows]
+    adaptive_recommendation = adaptive_practice.build_adaptive_recommendation(
+        questions=questions,
+        readiness=readiness,
+        progress_items=[_serialize_practice_progress(row) for row in progress_rows],
+        attempt_events=serialized_attempts,
+        mastery_payload=mastery_payload,
+        language=language_key,
+    )
+    adaptive_payload = {
+        "recommendation": adaptive_recommendation,
+        "review_signal": adaptive_practice.build_error_review_signal(
+            attempt_events=serialized_attempts,
+            language=language_key,
+        ),
+    }
+
+    recommendation = adaptive_next_step.build_next_step(
+        language=language_key,
+        questions=questions,
+        progress_rows=progress_rows,
+        attempt_rows=attempt_rows,
+        concept_rows=concept_rows,
+        learn_rows=learn_rows,
+        starting_row=starting_row,
+        workspace_state=workspace_state,
+        mastery_payload=mastery_payload,
+        adaptive_payload=adaptive_payload,
+        explicit_advanced=explicit_advanced,
+        learning_style=(preference.learning_style if preference else DEFAULT_LEARNING_STYLE),
+    )
+    return {
+        "language": language_key,
+        "surface": surface,
+        "recommendation": recommendation,
+        "signals": {
+            "practice_progress_count": len(progress_rows),
+            "attempt_event_count": len(attempt_rows),
+            "concept_quiz_attempt_count": len(concept_rows),
+            "learn_progress_count": len(learn_rows),
+            "starting_check_status": starting_row.status if starting_row else "not_started",
+            "mastery_scored_topics": sum(1 for topic in topics if topic.get("scored")),
+        },
+        "policy": {
+            "min_attempts_for_mastery": mastery.MIN_ATTEMPTS_FOR_SCORE,
+            "error_review_min_count": adaptive_practice.ERROR_REVIEW_MIN_COUNT,
+            "quiz_miss_threshold": adaptive_next_step.QUIZ_MISS_THRESHOLD,
+            "advanced_requires_evidence": not explicit_advanced,
+        },
+    }
+
 @app.get("/api/coding/practice/questions/{question_id}/progress")
 async def get_practice_progress(
     question_id: str,
@@ -7835,6 +8010,174 @@ async def update_coding_workspace_state(
         db.commit()
     db.refresh(row)
     return _serialize_workspace_state(row)
+
+
+def _serialize_learn_progress(row: CodingLearnProgress) -> dict[str, Any]:
+    return {
+        "language": row.language,
+        "category": row.category,
+        "status": row.status,
+        "completed_at": row.completed_at.isoformat() if row.completed_at else None,
+        "last_opened_at": row.last_opened_at.isoformat() if row.last_opened_at else None,
+        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+    }
+
+
+@app.get("/api/coding/learn/progress")
+async def list_coding_learn_progress(
+    language: str = Query("python"),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    language_key, _ = _normalize_practice_language(language)
+    rows = (
+        db.query(CodingLearnProgress)
+        .filter(
+            CodingLearnProgress.user_id == user["user_id"],
+            CodingLearnProgress.language == language_key,
+        )
+        .order_by(CodingLearnProgress.updated_at.desc())
+        .all()
+    )
+    return {"language": language_key, "items": [_serialize_learn_progress(row) for row in rows]}
+
+
+@app.post("/api/coding/learn/progress")
+async def upsert_coding_learn_progress(
+    req: CodingLearnProgressUpdate,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    language_key, _ = _normalize_practice_language(req.language)
+    try:
+        lessons.get_lesson(language_key, req.category)
+    except lessons.LessonError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except lessons.LessonDataError as exc:
+        raise HTTPException(status_code=500, detail="This lesson is temporarily unavailable.") from exc
+
+    row = (
+        db.query(CodingLearnProgress)
+        .filter(
+            CodingLearnProgress.user_id == user["user_id"],
+            CodingLearnProgress.language == language_key,
+            CodingLearnProgress.category == req.category,
+        )
+        .first()
+    )
+    first_completion = False
+    now = datetime.utcnow()
+    if not row:
+        row = CodingLearnProgress(
+            user_id=user["user_id"],
+            language=language_key,
+            category=req.category,
+        )
+        db.add(row)
+    if req.status == "opened":
+        row.last_opened_at = now
+        if row.status != "completed":
+            row.status = "opened"
+    else:
+        first_completion = row.status != "completed"
+        row.status = "completed"
+        row.completed_at = row.completed_at or now
+        row.last_opened_at = row.last_opened_at or now
+    row.updated_at = now
+    db.commit()
+    db.refresh(row)
+    return {
+        **_serialize_learn_progress(row),
+        "first_completion": first_completion,
+    }
+
+
+def _serialize_starting_check(row: Optional[CodingStartingCheckProgress], language: str) -> dict[str, Any]:
+    def _decode_optional_json(raw: Optional[str]):
+        if not raw:
+            return None
+        try:
+            return json.loads(raw)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return None
+
+    if not row:
+        return {
+            "language": language,
+            "status": "not_started",
+            "result_level": None,
+            "recommendation": None,
+            "answers": None,
+            "completed_at": None,
+            "skipped_at": None,
+            "updated_at": None,
+        }
+    return {
+        "language": row.language,
+        "status": row.status,
+        "result_level": row.result_level,
+        "recommendation": _decode_optional_json(row.recommendation_json),
+        "answers": _decode_optional_json(row.answers_json),
+        "completed_at": row.completed_at.isoformat() if row.completed_at else None,
+        "skipped_at": row.skipped_at.isoformat() if row.skipped_at else None,
+        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+    }
+
+
+@app.get("/api/coding/starting-check")
+async def get_coding_starting_check(
+    language: str = Query("python"),
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    language_key, _ = _normalize_practice_language(language)
+    row = (
+        db.query(CodingStartingCheckProgress)
+        .filter(
+            CodingStartingCheckProgress.user_id == user["user_id"],
+            CodingStartingCheckProgress.language == language_key,
+        )
+        .first()
+    )
+    return _serialize_starting_check(row, language_key)
+
+
+@app.post("/api/coding/starting-check")
+async def upsert_coding_starting_check(
+    req: CodingStartingCheckProgressUpdate,
+    user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    language_key, _ = _normalize_practice_language(req.language)
+    row = (
+        db.query(CodingStartingCheckProgress)
+        .filter(
+            CodingStartingCheckProgress.user_id == user["user_id"],
+            CodingStartingCheckProgress.language == language_key,
+        )
+        .first()
+    )
+    now = datetime.utcnow()
+    if not row:
+        row = CodingStartingCheckProgress(user_id=user["user_id"], language=language_key)
+        db.add(row)
+
+    row.status = req.status
+    row.result_level = req.result_level or (
+        req.recommendation.get("level") if isinstance(req.recommendation, dict) else None
+    )
+    row.recommendation_json = json.dumps(req.recommendation or {})
+    row.answers_json = json.dumps(req.answers or {})
+    if req.status == "skipped":
+        row.skipped_at = now
+        row.completed_at = None
+    else:
+        row.completed_at = now
+        row.skipped_at = None
+    row.updated_at = now
+    db.commit()
+    db.refresh(row)
+    return _serialize_starting_check(row, language_key)
 
 
 MAX_DAILY_DAYS = 370  # ~a year; matches the frontend's cap in recordDailyChallengeDay

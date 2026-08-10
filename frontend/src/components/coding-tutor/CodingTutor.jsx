@@ -27,6 +27,11 @@ import ConceptQuiz from "./concept-quiz/ConceptQuiz";
 import { readStartingCheck, writeStartingCheck, clearStartingCheck } from "./startingPath";
 import { summarizeLearnQuizProgress } from "./concept-quiz/conceptQuizProgress";
 import { buildCodingRecommendation } from "./adaptiveRecommendation";
+import {
+  fetchAdaptiveNextStep,
+  fetchStartingCheckProgress,
+  saveStartingCheckProgress,
+} from "./adaptiveApi";
 import LearnMode from "./learn/LearnMode";
 import "./learn/Learn.css";
 import "./concept-quiz/ConceptQuiz.css";
@@ -1896,6 +1901,7 @@ export default function CodingTutor({
   const [mastery, setMastery] = useState(null);
   const [masteryTick, setMasteryTick] = useState(0);
   const [adaptivePractice, setAdaptivePractice] = useState(null);
+  const [adaptiveNextStep, setAdaptiveNextStep] = useState(null);
   const [milestoneSignals, setMilestoneSignals] = useState(null);
   const [engagementTick, setEngagementTick] = useState(0);
   const [startingCheckResult, setStartingCheckResult] = useState(() => readStartingCheck());
@@ -1911,6 +1917,7 @@ export default function CodingTutor({
     setProgressByLanguage({});
     setMastery(null);
     setAdaptivePractice(null);
+    setAdaptiveNextStep(null);
     setMilestoneSignals(null);
     setStartingCheckResult(readStartingCheck());
   }, [storageScope]);
@@ -1955,6 +1962,67 @@ export default function CodingTutor({
     })();
     return () => { cancelled = true; };
   }, [apiBase, masteryTick, practiceLanguage, storageScope]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return undefined;
+    let cancelled = false;
+    const languageKey = PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
+    const localResult = readStartingCheck();
+    (async () => {
+      try {
+        const server = await fetchStartingCheckProgress(apiBase, languageKey);
+        if (cancelled) return;
+        if (server.status === "completed" && server.recommendation) {
+          const merged = {
+            ...server.recommendation,
+            completedAt: server.completed_at,
+            answers: server.answers || server.recommendation.answers,
+          };
+          writeStartingCheck(merged);
+          setStartingCheckResult(merged);
+          return;
+        }
+        if (server.status === "skipped") {
+          const skipped = { skipped: true, completedAt: server.skipped_at || server.updated_at };
+          writeStartingCheck(skipped);
+          setStartingCheckResult(skipped);
+          return;
+        }
+        if (localResult) {
+          await saveStartingCheckProgress(apiBase, {
+            language: languageKey,
+            status: localResult.skipped ? "skipped" : "completed",
+            recommendation: localResult.skipped ? null : localResult,
+            answers: localResult.answers || null,
+            resultLevel: localResult.level || null,
+          });
+        }
+      } catch {
+        // Local storage remains the fallback for older/offline sessions.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [apiBase, practiceLanguage, storageScope]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return undefined;
+    let cancelled = false;
+    const languageKey = PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
+    (async () => {
+      try {
+        const nextStep = await fetchAdaptiveNextStep(apiBase, {
+          language: languageKey,
+          surface: activePage === "workspace" ? "workspace" : activePage === "quiz" ? "practice" : "home",
+        });
+        if (!cancelled) setAdaptiveNextStep(nextStep);
+      } catch {
+        if (!cancelled) setAdaptiveNextStep(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [activePage, apiBase, engagementTick, masteryTick, practiceLanguage, storageScope]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -2087,7 +2155,7 @@ export default function CodingTutor({
       .slice(0, 8);
   }, [allQuestions, progressByQuestion]);
   const startingCheck = startingCheckResult?.skipped ? null : startingCheckResult;
-  const codingRecommendation = useMemo(() => buildCodingRecommendation({
+  const fallbackCodingRecommendation = useMemo(() => buildCodingRecommendation({
     questions: progressQuestions,
     progressSummary,
     progressByQuestion,
@@ -2110,6 +2178,7 @@ export default function CodingTutor({
     progressSummary,
     startingCheck,
   ]);
+  const codingRecommendation = adaptiveNextStep || fallbackCodingRecommendation;
   const activeSnapshotKey = activeProblem ? `${activeProblem.id}:${selectedLanguageKey}` : "personal";
   const activeSnapshots = useMemo(
     () => workspaceSnapshots[activeSnapshotKey] || {},
@@ -2172,13 +2241,36 @@ export default function CodingTutor({
   const completeStartingCheck = useCallback((result) => {
     writeStartingCheck(result);
     setStartingCheckResult(result);
-  }, []);
+    const languageKey = PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
+    saveStartingCheckProgress(apiBase, {
+      language: languageKey,
+      status: "completed",
+      recommendation: result,
+      answers: result.answers || null,
+      resultLevel: result.level || null,
+    })
+      .then(() => {
+        setEngagementTick(tick => tick + 1);
+        setMasteryTick(tick => tick + 1);
+      })
+      .catch(() => {});
+  }, [apiBase, practiceLanguage]);
 
   const skipStartingCheck = useCallback(() => {
     const result = { skipped: true, completedAt: new Date().toISOString() };
     writeStartingCheck(result);
     setStartingCheckResult(result);
-  }, []);
+    const languageKey = PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
+    saveStartingCheckProgress(apiBase, {
+      language: languageKey,
+      status: "skipped",
+      recommendation: null,
+      answers: null,
+      resultLevel: null,
+    })
+      .then(() => setMasteryTick(tick => tick + 1))
+      .catch(() => {});
+  }, [apiBase, practiceLanguage]);
 
   const resetStartingCheck = useCallback(() => {
     clearStartingCheck();

@@ -525,6 +525,56 @@ class CodingWorkspaceState(Base):
     user = relationship("User", backref="coding_workspace_state")
 
 
+class CodingLearnProgress(Base):
+    """Durable Learn progress for Coding Tutor lessons.
+
+    Quiz attempts already have their own append-only table. This row answers the
+    smaller question: has the student opened or completed a lesson on this topic?
+    """
+    __tablename__ = "coding_learn_progress"
+    __table_args__ = (
+        UniqueConstraint("user_id", "language", "category", name="uq_coding_learn_user_language_category"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    language = Column(String(30), nullable=False, index=True)
+    category = Column(String(80), nullable=False, index=True)
+    status = Column(String(30), nullable=False, default="opened")
+    completed_at = Column(DateTime, nullable=True)
+    last_opened_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", backref="coding_learn_progress")
+
+
+class CodingStartingCheckProgress(Base):
+    """Durable starting-check placement for Coding Tutor.
+
+    Answers stay small and topic-level. They are used for placement, not grading
+    transcripts, and can be overwritten when the student retakes the check.
+    """
+    __tablename__ = "coding_starting_check_progress"
+    __table_args__ = (
+        UniqueConstraint("user_id", "language", name="uq_coding_starting_check_user_language"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    language = Column(String(30), nullable=False, default="python", index=True)
+    status = Column(String(30), nullable=False, default="completed")
+    result_level = Column(String(80), nullable=True)
+    recommendation_json = Column(Text, nullable=True)
+    answers_json = Column(Text, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    skipped_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", backref="coding_starting_check_progress")
+
+
 class CodingConceptQuizAttempt(Base):
     """Append-only concept-quiz result used for cross-device progress and review.
 
