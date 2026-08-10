@@ -647,31 +647,26 @@ function buildImmediateReview(question, result, explanation) {
   let summary =
     explanation.summary ||
     "Your answer does not match the behavior this question is testing yet.";
+  if (explanation.detail) {
+    summary = `${summary} ${explanation.detail}`.trim();
+  }
 
   if (question.kind === "mcq-output" || question.kind === "mcq-behavior") {
-    points.push(
-      `Your choice points to "${formatAnswer(result.studentAnswer)}", but this question expects "${formatAnswer(result.correctAnswer)}".`
-    );
     if (question.code) {
       points.push(
-        "Trace the code in order. Write down each value as it changes, then compare the final value or behavior to the choices."
+        `You picked "${formatAnswer(result.studentAnswer)}", so compare the line where your trace first stops matching "${formatAnswer(result.correctAnswer)}".`
       );
     } else {
       points.push(
-        "Look for the rule in the prompt that separates the correct choice from the nearby choices."
+        `You picked "${formatAnswer(result.studentAnswer)}". The key rule in the prompt points to "${formatAnswer(result.correctAnswer)}" instead.`
       );
     }
   } else if (question.kind === "typein") {
     points.push(
-      `You typed "${formatAnswer(result.studentAnswer)}", but the expected answer is "${formatAnswer(result.correctAnswer)}".`
-    );
-    points.push(
-      "For type-in questions, check the exact value first: spelling, punctuation, capitalization, spacing, and whether quotes are needed."
+      `You typed "${formatAnswer(result.studentAnswer)}". Check the exact expected value "${formatAnswer(result.correctAnswer)}" for spelling, punctuation, capitalization, spacing, and quotes.`
     );
     if (question.typein_mode === "code") {
-      points.push(
-        "If this is code, compare the operator, variable name, and syntax one piece at a time."
-      );
+      points[0] = `${points[0]} Then compare the operator, variable name, and syntax one piece at a time.`;
     }
   } else if (question.kind === "parsons") {
     const step = result.firstMismatch >= 0 ? result.firstMismatch + 1 : 1;
@@ -684,20 +679,13 @@ function buildImmediateReview(question, result, explanation) {
     points.push(
       `The first line that looks out of place is step ${step}. You placed "${formatAnswer(studentLine)}", but that spot should be "${formatAnswer(expectedLine)}".`
     );
-    points.push(
-      "Read the lines like a small recipe: setup first, then the repeated work or decision, then the final return or print."
-    );
-  }
-
-  if (explanation.detail) {
-    points.push(explanation.detail);
   }
 
   return {
     summary,
     points,
     nextStep:
-      "Use the Learn tab to review the exact idea, then move on when the rule makes sense.",
+      "Use Learn if the rule still feels fuzzy; otherwise try the next question.",
   };
 }
 
