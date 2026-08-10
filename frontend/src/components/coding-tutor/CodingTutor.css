@@ -5606,8 +5606,10 @@ body.coding-dark .coding-prompt-card:hover {
   }
 
   .floating-coding-chat.closed {
-    right: 16px;
-    bottom: 16px;
+    left: auto !important;
+    top: auto !important;
+    right: calc(12px + env(safe-area-inset-right, 0px)) !important;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   .floating-chat-window {
@@ -8626,6 +8628,8 @@ body.coding-dark .coding-app .starting-check-link:hover:not(:disabled) {
   }
 
   .coding-app .quiz-problem-card {
+    box-sizing: border-box;
+    width: 100%;
     gap: 7px;
     min-width: 0;
     padding: 11px 10px;
@@ -8633,7 +8637,10 @@ body.coding-dark .coding-app .starting-check-link:hover:not(:disabled) {
   }
 
   .coding-app .quiz-problem-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 8px;
+    min-width: 0;
   }
 
   .coding-app .quiz-problem-name {
@@ -8655,9 +8662,10 @@ body.coding-dark .coding-app .starting-check-link:hover:not(:disabled) {
 
   .coding-app .quiz-problem-foot {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(52px, auto);
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 6px;
     padding-top: 8px;
+    min-width: 0;
   }
 
   .coding-app .quiz-problem-tags {
@@ -8677,6 +8685,7 @@ body.coding-dark .coding-app .starting-check-link:hover:not(:disabled) {
   .coding-app .quiz-foot-right {
     gap: 0;
     min-width: 0;
+    justify-content: end;
   }
 
   .coding-app .quiz-lang-pills,
@@ -8692,12 +8701,17 @@ body.coding-dark .coding-app .starting-check-link:hover:not(:disabled) {
     padding: 5px 9px;
     font-size: 0.72rem;
     text-align: center;
+    white-space: nowrap;
   }
 }
 
 @media (max-width: 360px) {
+  .coding-app .quiz-bank-page {
+    padding-inline: 6px;
+  }
+
   .coding-app .quiz-problem-card {
-    padding: 10px 9px;
+    padding: 10px 8px;
   }
 
   .coding-app .quiz-problem-name {
@@ -8706,6 +8720,9 @@ body.coding-dark .coding-app .starting-check-link:hover:not(:disabled) {
 
   .coding-app .quiz-status-pill {
     padding-inline: 7px;
+    max-width: 76px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .coding-app .quiz-tag {

@@ -51,12 +51,17 @@
 .workspace-visual-close {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.45rem;
+  flex: 0 0 auto;
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
   border: 1px solid var(--ct-border, #d7e1ef);
   border-radius: 999px;
   background: var(--ct-panel, #fff);
   color: var(--ct-primary, #082343);
-  padding: 0.55rem 0.9rem;
+  padding: 0;
   font-weight: 800;
 }
 
@@ -2332,6 +2337,7 @@ body.coding-dark .problem-visualize-button:hover:not(:disabled) {
     width: 100vw;
     max-height: 100dvh;
     border-radius: 0;
+    overflow-x: hidden;
   }
 
   .workspace-visualizer.is-modal {
@@ -2350,6 +2356,10 @@ body.coding-dark .problem-visualize-button:hover:not(:disabled) {
   }
 
   .workspace-visual-close {
+    position: fixed;
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    right: calc(10px + env(safe-area-inset-right, 0px));
+    z-index: 30;
     width: 38px;
     min-width: 38px;
     height: 38px;
@@ -2362,7 +2372,8 @@ body.coding-dark .problem-visualize-button:hover:not(:disabled) {
     justify-content: start;
     min-height: 310px;
     padding: 0.75rem;
-    overflow: auto;
+    overflow-x: auto;
+    overflow-y: hidden;
     place-items: center start;
     scroll-padding-inline: 20px;
   }

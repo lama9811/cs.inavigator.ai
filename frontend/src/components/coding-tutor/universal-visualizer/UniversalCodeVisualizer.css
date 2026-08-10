@@ -2087,7 +2087,7 @@ body.coding-dark .ucv-array-trace-state > div {
 
 .ucv-close {
   position: sticky;
-  top: 0;
+  top: 0.25rem;
   z-index: 8;
   display: inline-grid;
   width: 2.35rem;
@@ -2100,6 +2100,13 @@ body.coding-dark .ucv-array-trace-state > div {
   padding: 0;
   font-weight: 900;
   cursor: pointer;
+}
+
+.ucv-shell--modal .ucv-close {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  right: calc(12px + env(safe-area-inset-right, 0px));
+  z-index: 40;
 }
 
 .ucv-close svg {

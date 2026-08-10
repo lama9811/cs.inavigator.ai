@@ -234,7 +234,16 @@ export default function UniversalCodeVisualizer({ activeProblem, mode = "panel",
             </label>
           )}
           {mode === "modal" && onClose ? (
-            <button type="button" className="ucv-close" onClick={onClose} data-autofocus aria-label="Close visualizer">
+            <button
+              type="button"
+              className="ucv-close"
+              onClick={(event) => {
+                event.stopPropagation();
+                onClose();
+              }}
+              data-autofocus
+              aria-label="Close visualizer"
+            >
               <FaTimes aria-hidden="true" />
             </button>
           ) : null}

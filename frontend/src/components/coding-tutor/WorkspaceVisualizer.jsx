@@ -1471,8 +1471,17 @@ function TraceShell({ activeProblem, initialVisualizer, mode = "panel", onClose,
           <p id={mode === "modal" ? "workspace-visualizer-description" : undefined}>{trace.caption}</p>
         </div>
         {mode === "modal" ? (
-          <button type="button" className="workspace-visual-close" onClick={onClose} data-autofocus>
-            <FaTimes aria-hidden="true" /> Close
+          <button
+            type="button"
+            className="workspace-visual-close"
+            onClick={(event) => {
+              event.stopPropagation();
+              onClose();
+            }}
+            data-autofocus
+            aria-label="Close visualizer"
+          >
+            <FaTimes aria-hidden="true" />
           </button>
         ) : null}
       </header>

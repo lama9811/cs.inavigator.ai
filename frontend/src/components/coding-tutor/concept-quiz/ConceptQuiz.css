@@ -2634,8 +2634,8 @@ body.coding-dark .cq-mistake-review-head > span {
   }
 
   .coding-app .cq-runner-right .cq-pane-body {
-    padding-top: 0.95rem;
-    padding-bottom: 1.25rem;
+    padding-top: 0.65rem;
+    padding-bottom: 0.75rem;
   }
 
   .coding-app .cq-runner-full.cq-tab-learn .cq-runner-left {
@@ -2655,11 +2655,13 @@ body.coding-dark .cq-mistake-review-head > span {
   }
 
   .coding-app .cq-question-panel {
-    display: flow-root;
+    display: block;
+    overflow: visible;
   }
 
   .coding-app .cq-question-tools {
     margin-bottom: 0.8rem;
+    justify-content: flex-end;
   }
 
   .coding-app .cq-prompt {
@@ -2667,6 +2669,7 @@ body.coding-dark .cq-mistake-review-head > span {
     margin: 0 0 0.85rem;
     font-size: clamp(1.05rem, 5.6vw, 1.24rem);
     line-height: 1.25;
+    overflow-wrap: anywhere;
   }
 
   .coding-app .cq-code {
@@ -2686,6 +2689,7 @@ body.coding-dark .cq-mistake-review-head > span {
   }
 
   .coding-app .cq-answer-heading {
+    clear: both;
     margin: 0 0 0.75rem;
     font-size: 0.92rem;
     line-height: 1.35;
@@ -2693,11 +2697,14 @@ body.coding-dark .cq-mistake-review-head > span {
 
   .coding-app .cq-choices {
     gap: 0.65rem;
+    min-width: 0;
   }
 
   .coding-app .cq-choice {
     min-height: 54px;
     padding: 0.78rem 0.9rem;
+    width: 100%;
+    min-width: 0;
   }
 
   .coding-app .cq-immediate-feedback {
@@ -2707,7 +2714,10 @@ body.coding-dark .cq-mistake-review-head > span {
 
   .coding-app .cq-pane-nav {
     position: static;
-    background: color-mix(in srgb, var(--ct-panel) 96%, transparent);
+    margin: 0 1rem 1rem;
+    padding: 0.75rem 0 0;
+    border-top: 1px solid color-mix(in srgb, var(--ct-border) 70%, transparent);
+    background: transparent;
     box-shadow: none;
   }
 }

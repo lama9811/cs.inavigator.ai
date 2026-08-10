@@ -69,7 +69,7 @@ function statusOf(progress) {
   return "not_started";
 }
 
-function hasMeaningfulCodingProgress({ progressSummary, progressByQuestion, adaptivePractice, mastery }) {
+function hasMeaningfulCodingProgress({ progressSummary, progressByQuestion, mastery }) {
   const solvedCount = Number(progressSummary?.solvedCount || progressSummary?.solved || 0);
   const attemptedCount = Number(progressSummary?.attemptedCount || progressSummary?.attempted || 0);
   const streakCount = Number(progressSummary?.displayStreak || progressSummary?.streak || 0);
@@ -81,13 +81,6 @@ function hasMeaningfulCodingProgress({ progressSummary, progressByQuestion, adap
     return attempts > 0 || (status && status !== "not_started");
   });
   if (hasQuestionProgress) return true;
-
-  const recommendation = adaptivePractice?.recommendation || null;
-  const hasAdaptiveSignal = Boolean(
-    adaptivePractice?.review_signal ||
-    (recommendation?.action && recommendation.action !== "starter")
-  );
-  if (hasAdaptiveSignal) return true;
 
   const weakest = mastery?.weakest || null;
   return Boolean(
@@ -810,7 +803,6 @@ export default function CampusLabHome({
   const focus = pickFocusTopics(topicPacks);
   const storageScope = currentUserStorageScope();
   const [startingCheckResult, setStartingCheckResult] = useState(() => readStartingCheck());
-  const [startingGateReady, setStartingGateReady] = useState(false);
   const hasCodingHistory = hasMeaningfulCodingProgress({
     progressSummary,
     progressByQuestion,
@@ -819,18 +811,11 @@ export default function CampusLabHome({
   });
   const startingCheck = startingCheckResult?.skipped ? null : startingCheckResult;
   const shouldShowStartingCheck =
-    startingGateReady &&
     !hasCodingHistory &&
     !startingCheckResult?.skipped;
 
   useEffect(() => {
     setStartingCheckResult(readStartingCheck());
-  }, [storageScope]);
-
-  useEffect(() => {
-    setStartingGateReady(false);
-    const gateTimer = window.setTimeout(() => setStartingGateReady(true), 450);
-    return () => window.clearTimeout(gateTimer);
   }, [storageScope]);
 
   const completeStartingCheck = (result) => {

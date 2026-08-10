@@ -510,6 +510,18 @@ export default function QuizBank({
     const difficulty = String(question.difficulty || "").toLowerCase();
     return difficulty === "easy" && BEGINNER_STARTER_TOPICS.includes(topic);
   }).length;
+  const hasAnyPracticeProgress = useMemo(
+    () => Object.values(progressByQuestion || {}).some((progress) => {
+      const status = String(progress?.status || "").toLowerCase();
+      return status === "solved" || status === "in_progress" || Number(progress?.attempt_count || progress?.attempts || 0) > 0;
+    }),
+    [progressByQuestion],
+  );
+  const beginnerTopicInView = useMemo(
+    () => topicsInView.find(topic => BEGINNER_STARTER_TOPICS.includes(String(topic || "").toLowerCase())) || BEGINNER_STARTER_TOPICS[0],
+    [topicsInView],
+  );
+  const beginnerTopicTitle = titleCase(beginnerTopicInView);
   const applyBeginnerStarter = () => {
     updateFilter({
       difficulty: ["easy"],
@@ -520,7 +532,20 @@ export default function QuizBank({
     setFiltersOpen(false);
   };
 
-  const guideRecommendation = adaptiveReviewSignal
+  const guideRecommendation = !hasAnyPracticeProgress
+    ? {
+      label: "Recommended next",
+      title: beginnerTopicTitle,
+      band: "Easy",
+      bandClass: "steady",
+      reason: `${beginnerTopicTitle} is a good first practice lane because it uses small rules before harder patterns.`,
+      cta: `Start ${beginnerTopicTitle}`,
+      onClick: () => {
+        updateFilter({ difficulty: ["easy"], topic: [beginnerTopicInView], status: [], sort: "topic" });
+        setFiltersOpen(false);
+      },
+    }
+    : adaptiveReviewSignal
     ? {
       label: "Recommended next",
       title: adaptiveReviewSignal.title || "Review recent errors",

@@ -66,6 +66,8 @@ function cleanSpeechText(value) {
 }
 
 const SPEECH_PAUSE_TOKEN = "[[pause]]";
+const SPEECH_SEGMENT_PAUSE_MS = 650;
+const SPEECH_WAIT_FOR_REVIEW_MS = 9000;
 
 function speechSegmentsFromText(value) {
   return String(value ?? "")
@@ -82,12 +84,14 @@ function speechAvailable() {
   );
 }
 
-function ReadAloudButton({ text, label = "Read aloud", className = "" }) {
+function ReadAloudButton({ text, label = "Read aloud", className = "", waitForUpdatesMs = 0 }) {
   const [speaking, setSpeaking] = useState(false);
   const speakingRef = useRef(false);
+  const waitingForUpdateRef = useRef(false);
   const segmentsRef = useRef([]);
   const segmentIndexRef = useRef(0);
   const pauseTimerRef = useRef(null);
+  const waitTimerRef = useRef(null);
   const lastTextRef = useRef("");
   const supported = speechAvailable();
   const spokenText = String(text ?? "");
@@ -98,11 +102,33 @@ function ReadAloudButton({ text, label = "Read aloud", className = "" }) {
       window.clearTimeout(pauseTimerRef.current);
       pauseTimerRef.current = null;
     }
+    if (waitTimerRef.current) {
+      window.clearTimeout(waitTimerRef.current);
+      waitTimerRef.current = null;
+    }
     window.speechSynthesis.cancel();
     speakingRef.current = false;
+    waitingForUpdateRef.current = false;
     segmentsRef.current = [];
     segmentIndexRef.current = 0;
     setSpeaking(false);
+  };
+
+  const waitForReviewUpdate = () => {
+    if (!waitForUpdatesMs) {
+      speakingRef.current = false;
+      waitingForUpdateRef.current = false;
+      setSpeaking(false);
+      return;
+    }
+
+    waitingForUpdateRef.current = true;
+    waitTimerRef.current = window.setTimeout(() => {
+      waitTimerRef.current = null;
+      waitingForUpdateRef.current = false;
+      speakingRef.current = false;
+      setSpeaking(false);
+    }, waitForUpdatesMs);
   };
 
   const speakNextSegment = () => {
@@ -123,10 +149,9 @@ function ReadAloudButton({ text, label = "Read aloud", className = "" }) {
         pauseTimerRef.current = window.setTimeout(() => {
           pauseTimerRef.current = null;
           speakNextSegment();
-        }, 500);
+        }, SPEECH_SEGMENT_PAUSE_MS);
       } else {
-        speakingRef.current = false;
-        setSpeaking(false);
+        waitForReviewUpdate();
       }
     };
     utterance.onerror = () => stopSpeech();
@@ -137,9 +162,14 @@ function ReadAloudButton({ text, label = "Read aloud", className = "" }) {
     const nextSegments = speechSegmentsFromText(nextText);
     if (!nextSegments.length) return;
     window.speechSynthesis.cancel();
+    if (waitTimerRef.current) {
+      window.clearTimeout(waitTimerRef.current);
+      waitTimerRef.current = null;
+    }
     segmentsRef.current = nextSegments;
     segmentIndexRef.current = 0;
     speakingRef.current = true;
+    waitingForUpdateRef.current = false;
     lastTextRef.current = String(nextText ?? "");
     setSpeaking(true);
     speakNextSegment();
@@ -166,6 +196,14 @@ function ReadAloudButton({ text, label = "Read aloud", className = "" }) {
       const addedSegments = speechSegmentsFromText(added);
       if (addedSegments.length) {
         segmentsRef.current = [...segmentsRef.current, ...addedSegments];
+        if (waitingForUpdateRef.current) {
+          if (waitTimerRef.current) {
+            window.clearTimeout(waitTimerRef.current);
+            waitTimerRef.current = null;
+          }
+          waitingForUpdateRef.current = false;
+          speakNextSegment();
+        }
       }
     } else {
       startSpeech(spokenText);
@@ -549,7 +587,7 @@ function buildAnswerOptionsSpeech(question, choiceOrder = []) {
         const letter = String.fromCharCode(65 + displayIndex);
         return `Option ${letter}: ${question.choices[originalIndex]}.`;
       })
-      .join(" ");
+      .join(` ${SPEECH_PAUSE_TOKEN} `);
   }
 
   if (question.kind === "typein") {
@@ -684,8 +722,7 @@ function buildImmediateReview(question, result, explanation) {
   return {
     summary,
     points,
-    nextStep:
-      "Use Learn if the rule still feels fuzzy; otherwise try the next question.",
+    nextStep: "",
   };
 }
 
@@ -706,7 +743,6 @@ function buildImmediateReviewSpeech(question, answer) {
     answerReview,
     review.summary,
     points,
-    !result.correct ? review.nextStep : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -1180,7 +1216,7 @@ export default function QuizRunner({
             {tab === "question" ? (
               <div className="cq-question-panel">
                 <div className="cq-question-tools">
-                  <ReadAloudButton text={currentReadAloudText} />
+                  <ReadAloudButton text={currentReadAloudText} waitForUpdatesMs={SPEECH_WAIT_FOR_REVIEW_MS} />
                 </div>
                 <p className="cq-prompt">{question.prompt}</p>
                 {question.code ? (
