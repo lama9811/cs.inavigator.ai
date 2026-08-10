@@ -24,7 +24,9 @@ import { problemHasVisualizer } from "./workspaceVisualizerUtils";
 import ProgressBadges from "./ProgressBadges";
 import QuizBank from "./QuizBank";
 import ConceptQuiz from "./concept-quiz/ConceptQuiz";
+import { readStartingCheck, writeStartingCheck, clearStartingCheck } from "./startingPath";
 import { summarizeLearnQuizProgress } from "./concept-quiz/conceptQuizProgress";
+import { buildCodingRecommendation } from "./adaptiveRecommendation";
 import LearnMode from "./learn/LearnMode";
 import "./learn/Learn.css";
 import "./concept-quiz/ConceptQuiz.css";
@@ -1896,6 +1898,7 @@ export default function CodingTutor({
   const [adaptivePractice, setAdaptivePractice] = useState(null);
   const [milestoneSignals, setMilestoneSignals] = useState(null);
   const [engagementTick, setEngagementTick] = useState(0);
+  const [startingCheckResult, setStartingCheckResult] = useState(() => readStartingCheck());
   const codingSyncReadyRef = useRef(false);
 
   useEffect(() => {
@@ -1909,6 +1912,7 @@ export default function CodingTutor({
     setMastery(null);
     setAdaptivePractice(null);
     setMilestoneSignals(null);
+    setStartingCheckResult(readStartingCheck());
   }, [storageScope]);
 
   useEffect(() => {
@@ -2025,12 +2029,32 @@ export default function CodingTutor({
     return () => clearTimeout(handle);
   }, [apiBase, mockCompleted, bestStreak, displayStreak, dailyStreakDays, storageScope]);
 
-  const progressSummary = {
-    solvedCount, attemptedCount, totalAttempts, completionPercent, displayStreak,
+  const progressSummary = useMemo(() => ({
+    solvedCount,
+    attemptedCount,
+    totalAttempts,
+    completionPercent,
+    displayStreak,
     dailyDaysCompleted: dailyStreakDays.length,
     mockCompleted,
     bestStreak: Math.max(bestStreak, displayStreak),
-  };
+  }), [
+    attemptedCount,
+    bestStreak,
+    completionPercent,
+    dailyStreakDays.length,
+    displayStreak,
+    mockCompleted,
+    solvedCount,
+    totalAttempts,
+  ]);
+  const learnQuizStats = useMemo(() => {
+    void dailyStreakDays.length;
+    void engagementTick;
+    void masteryTick;
+    void storageScope;
+    return summarizeLearnQuizProgress();
+  }, [dailyStreakDays.length, engagementTick, masteryTick, storageScope]);
 
   // "Up Next" recommendation: the first question the student hasn't started yet
   // (not solved, no attempts). Falls back to the first non-solved if every
@@ -2062,6 +2086,30 @@ export default function CodingTutor({
       .sort((a, b) => topicOrderIndex(a.topic) - topicOrderIndex(b.topic) || a.topic.localeCompare(b.topic))
       .slice(0, 8);
   }, [allQuestions, progressByQuestion]);
+  const startingCheck = startingCheckResult?.skipped ? null : startingCheckResult;
+  const codingRecommendation = useMemo(() => buildCodingRecommendation({
+    questions: progressQuestions,
+    progressSummary,
+    progressByQuestion,
+    learnQuizStats,
+    startingCheck,
+    adaptivePractice,
+    mastery,
+    languageKey: PRACTICE_LANGUAGE_API[practiceLanguage] || "python",
+    learningStyle,
+    activeProblem,
+  }), [
+    activeProblem,
+    adaptivePractice,
+    learnQuizStats,
+    learningStyle,
+    mastery,
+    practiceLanguage,
+    progressByQuestion,
+    progressQuestions,
+    progressSummary,
+    startingCheck,
+  ]);
   const activeSnapshotKey = activeProblem ? `${activeProblem.id}:${selectedLanguageKey}` : "personal";
   const activeSnapshots = useMemo(
     () => workspaceSnapshots[activeSnapshotKey] || {},
@@ -2120,6 +2168,22 @@ export default function CodingTutor({
       })
       .catch(() => {});
   }, [activeProblem?.id, activeProblem?.source, apiBase, selectedLanguageKey]);
+
+  const completeStartingCheck = useCallback((result) => {
+    writeStartingCheck(result);
+    setStartingCheckResult(result);
+  }, []);
+
+  const skipStartingCheck = useCallback(() => {
+    const result = { skipped: true, completedAt: new Date().toISOString() };
+    writeStartingCheck(result);
+    setStartingCheckResult(result);
+  }, []);
+
+  const resetStartingCheck = useCallback(() => {
+    clearStartingCheck();
+    setStartingCheckResult(null);
+  }, []);
 
   const applyAiCodeWithMode = useCallback((mode = "safe") => {
     if (!suggestedCodeBlock || (mode !== "selection" && suggestedCodeBlock === code)) return;
@@ -4296,6 +4360,7 @@ export default function CodingTutor({
       <CampusLabHome
       progressSummary={progressSummary}
       topicPacks={topicPacks}
+      listLoading={listLoading}
       questions={allQuestions.length ? allQuestions : questions}
       progressByQuestion={progressByQuestion}
       nextUpQuestion={nextUpQuestion}
@@ -4322,11 +4387,18 @@ export default function CodingTutor({
       onOpenQuizBank={openPracticeLibrary}
       onOpenTopic={openRecommendedTopic}
       onOpenLessonReview={openAdaptiveReviewLesson}
+      onOpenRecommendation={() => openCodingRecommendation(codingRecommendation)}
       onOpenInterviewPrep={() => goToPage("interview")}
       onPrompt={sendDashboardPrompt}
       onSaveQuiz={saveLatestQuizAsPdf}
       mastery={mastery}
       adaptivePractice={adaptivePractice}
+      codingRecommendation={codingRecommendation}
+      startingCheckResult={startingCheckResult}
+      onCompleteStartingCheck={completeStartingCheck}
+      onSkipStartingCheck={skipStartingCheck}
+      onResetStartingCheck={resetStartingCheck}
+      learnQuizStats={learnQuizStats}
       learningStyle={learningStyle}
     />
   );
@@ -4524,7 +4596,7 @@ export default function CodingTutor({
         progressByQuestion={progressByQuestion}
         progressByLanguage={progressByLanguage}
         progressSummary={progressSummary}
-        learnQuizStats={summarizeLearnQuizProgress()}
+        learnQuizStats={learnQuizStats}
         interviewStats={{
           ...summarizeInterviewHistory(),
           warmupsReviewed: interviewReviewed.size,
@@ -4571,6 +4643,48 @@ export default function CodingTutor({
       return;
     }
     if (signal?.topic) openRecommendedTopic(signal.topic, "lesson");
+  };
+
+  const openCodingRecommendation = (recommendation = codingRecommendation) => {
+    const target = recommendation?.target || {};
+    const languageKey = target.language || PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
+    if (target.mode === "workspace" && target.questionId) {
+      const question = progressQuestions.find(item => item.id === target.questionId) || recommendation.question;
+      if (question) {
+        selectQuestion(question);
+        return;
+      }
+      navigate(workspacePathForProblem(target.questionId));
+      return;
+    }
+    if (target.mode === "learn") {
+      navigate(target.track ? learnPathForTrack(languageKey, target.track) : learnPathForLanguage(languageKey));
+      return;
+    }
+    if (target.mode === "learn_topic") {
+      const category = lessonCategoryForPracticeTopic(target.topic, languageKey);
+      if (category) {
+        navigate(learnPathForLesson(languageKey, category));
+        return;
+      }
+      navigate(learnPathForTrack(languageKey, "beginner"));
+      return;
+    }
+    if (target.mode === "quiz" && target.category) {
+      navigate(target.questionId
+        ? quizPathForQuestion(languageKey, target.category, target.questionId)
+        : `${quizPathForLanguage(languageKey)}#${target.category}`);
+      return;
+    }
+    if (target.mode === "lesson_review") {
+      openAdaptiveReviewLesson(recommendation.reviewSignal || target);
+      return;
+    }
+    if (target.mode === "practice" && target.topic) {
+      openPracticeTopic(target.topic, { difficulty: target.difficulty });
+      return;
+    }
+    openPracticeLibrary();
   };
 
   const renderInterviewPrep = () => (
@@ -4767,6 +4881,7 @@ export default function CodingTutor({
               progressSummary={progressSummary}
               mastery={mastery}
               adaptivePractice={adaptivePractice}
+              codingRecommendation={codingRecommendation}
               onOpenLessonReview={openAdaptiveReviewLesson}
               onDifficultyChange={setDifficulty}
               onLanguageChange={setPracticeLanguage}

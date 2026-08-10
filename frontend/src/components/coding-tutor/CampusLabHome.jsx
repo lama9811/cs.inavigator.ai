@@ -1,13 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { FaBook, FaChartLine, FaLaptopCode, FaPlay, FaRegCompass } from "react-icons/fa";
-import { currentUserStorageScope } from "./storageScope";
 import {
   buildStartingCheckResult,
   buildStartingQuestionSet,
-  clearStartingCheck,
-  readStartingCheck,
-  writeStartingCheck,
 } from "./startingPath";
+import { hasMeaningfulAdaptiveSignal } from "./adaptiveRecommendation";
 import useFocusTrap from "./useFocusTrap";
 
 function findResumeItem(questions, progressByQuestion) {
@@ -25,7 +22,8 @@ function difficultyClass(value) {
 
 // One concrete next step, derived from real data — not generic filler.
 // Priority: resume in-progress → today's daily → recommended next → library.
-function buildFocusPlan({ resumeItem, nextUpQuestion, dailyChallenge, dailyDoneToday }) {
+function buildFocusPlan({ resumeItem, nextUpQuestion, dailyChallenge, dailyDoneToday, codingRecommendation }) {
+  if (codingRecommendation?.reason) return codingRecommendation.reason;
   if (resumeItem?.question) {
     return `Finish ${resumeItem.question.title} — run your tests, then ask for one hint if you're stuck.`;
   }
@@ -73,25 +71,6 @@ function hasScoredPracticeProgress(progress) {
   const status = String(progress?.status || "").toLowerCase();
   const attempts = Number(progress?.attempt_count || progress?.attempts || 0);
   return status === "solved" || attempts > 0;
-}
-
-function hasMeaningfulCodingProgress({ progressSummary, progressByQuestion, mastery }) {
-  const solvedCount = Number(progressSummary?.solvedCount || progressSummary?.solved || 0);
-  const attemptedCount = Number(progressSummary?.attemptedCount || progressSummary?.attempted || 0);
-  const streakCount = Number(progressSummary?.displayStreak || progressSummary?.streak || 0);
-  if (solvedCount > 0 || attemptedCount > 0 || streakCount > 0) return true;
-
-  const hasQuestionProgress = Object.values(progressByQuestion || {}).some(progress => {
-    return hasScoredPracticeProgress(progress);
-  });
-  if (hasQuestionProgress) return true;
-
-  const weakest = mastery?.weakest || null;
-  return Boolean(
-    weakest &&
-    (Number(weakest.attempted || weakest.attemptedCount || 0) > 0 ||
-      Number(weakest.solved || weakest.solvedCount || 0) > 0)
-  );
 }
 
 function problemRank(question) {
@@ -205,6 +184,9 @@ function CampusHero({
   nextUpQuestion,
   dailyChallenge,
   dailyDoneToday,
+  codingRecommendation,
+  beginnerMode,
+  onOpenRecommendation,
   onResume,
   onOpenLearnStart,
   onOpenBeginnerWarmup,
@@ -212,11 +194,11 @@ function CampusHero({
 }) {
   // State-first hero: lead with the student's status and ONE primary action —
   // resume in-progress work if any, otherwise start the recommended problem.
-  const primaryQuestion = resumeItem?.question || nextUpQuestion || null;
+  const primaryQuestion = resumeItem?.question || codingRecommendation?.question || nextUpQuestion || null;
   const isResume = Boolean(resumeItem?.question);
   // The hero owns the next action: one concrete "Today's Focus" line (was a
   // separate strip below the hero).
-  const focusPlan = buildFocusPlan({ resumeItem, nextUpQuestion, dailyChallenge, dailyDoneToday });
+  const focusPlan = buildFocusPlan({ resumeItem, nextUpQuestion, dailyChallenge, dailyDoneToday, codingRecommendation });
   const streakDays = Number(progressSummary.displayStreak) || 0;
   const streakValue = streakDays > 0 ? `${streakDays}-day` : "0";
   const streakLabel = streakDays > 0 ? "streak" : "day streak";
@@ -244,7 +226,16 @@ function CampusHero({
           </span>
         </div>
         <div className="campus-hero-actions">
-          {primaryQuestion ? (
+          {codingRecommendation ? (
+            <button
+              type="button"
+              className="campus-primary-action"
+              onClick={onOpenRecommendation}
+            >
+              <FaPlay aria-hidden="true" />
+              {codingRecommendation.actionLabel}
+            </button>
+          ) : primaryQuestion ? (
             <button
               type="button"
               className="campus-primary-action"
@@ -259,9 +250,9 @@ function CampusHero({
               Start Python Beginner
             </button>
           )}
-          <button type="button" className="campus-secondary-action" onClick={onOpenBeginnerWarmup}>
+          <button type="button" className="campus-secondary-action" onClick={beginnerMode ? onOpenLearnStart : onOpenBeginnerWarmup}>
             <FaRegCompass aria-hidden="true" />
-            Before Class Warmup
+            {beginnerMode ? "Open Beginner Track" : "Before Class Warmup"}
           </button>
         </div>
         <div className="campus-hero-focus" role="note">
@@ -307,6 +298,8 @@ function CampusLearningQueue({
   mastery,
   adaptivePractice,
   startingCheck,
+  codingRecommendation,
+  onOpenRecommendation,
   onSelect,
   onOpenQuizBank,
   onOpenBeginnerWarmup,
@@ -336,7 +329,7 @@ function CampusLearningQueue({
   const focusTopic = adaptiveTopic || (focus?.hasProgress ? focus.next?.topic : focus?.first?.topic);
   const needsStartingCheck = !hasRealProgress && !startingCheck;
   const placementProfile = !hasRealProgress ? startingCheck : null;
-  const focusTitle = needsStartingCheck ? "Find your starting point" : placementProfile?.title || (adaptiveReady
+  const focusTitle = codingRecommendation?.title || (needsStartingCheck ? "Find your starting point" : placementProfile?.title || (adaptiveReady
     ? `${titleCase(adaptiveTopic)} practice`
     : adaptiveRecommendation?.action === "practice_review"
       ? `Review ${titleCase(adaptiveTopic)}`
@@ -344,19 +337,23 @@ function CampusLearningQueue({
     ? `Practice ${titleCase(focus.next.topic)}`
     : focus
       ? `Start with ${titleCase(focus.first.topic)}`
-      : "Choose a topic");
-  const focusBlurb = needsStartingCheck
+      : "Choose a topic"));
+  const focusBlurb = codingRecommendation?.reason || (needsStartingCheck
     ? "Take the quick check above so this card can suggest where to start."
     : placementProfile?.blurb || (adaptiveRecommendation?.reason
     ? conciseAdaptiveReason(adaptiveRecommendation.reason)
     : focusTopic
       ? `${focusReason(focus)} ${learningStyleHint(learningStyle)}`
-    : "Pick one topic and solve the first problem you see.");
+    : "Pick one topic and solve the first problem you see."));
   const focusAction = adaptiveReady ? "practice" : focusActionKind(learningStyle);
   const focusButton = adaptiveReady
     ? `Open ${titleCase(adaptiveDifficulty)} step`
     : focusAction === "practice" ? "Open practice" : "Open topic lesson";
   const focusClick = () => {
+    if (codingRecommendation) {
+      onOpenRecommendation?.();
+      return;
+    }
     if (needsStartingCheck) {
       onOpenStartingPath?.({ action: "syntax-quiz" });
       return;
@@ -425,7 +422,11 @@ function CampusLearningQueue({
           {placementProfile ? (
             <small className="campus-focus-badge is-ready">{placementProfile.label}</small>
           ) : null}
-          {adaptiveRecommendation ? (
+          {codingRecommendation?.source ? (
+            <small className="campus-focus-badge is-ready">
+              {codingRecommendation.confidence === "high" ? "Recommended" : "Suggested"}
+            </small>
+          ) : adaptiveRecommendation ? (
             <small className={adaptiveReady ? "campus-focus-badge is-ready" : "campus-focus-badge"}>
               {adaptiveReady ? "Ready" : "Review"}
             </small>
@@ -443,9 +444,9 @@ function CampusLearningQueue({
               type="button"
               onClick={focusClick}
             >
-              {needsStartingCheck
+              {codingRecommendation?.actionLabel || (needsStartingCheck
                 ? "Start Syntax quiz"
-                : placementProfile?.actionLabel || (focusTopic ? `${focusButton}: ${titleCase(focusTopic)}` : "Browse Practice Library")}
+                : placementProfile?.actionLabel || (focusTopic ? `${focusButton}: ${titleCase(focusTopic)}` : "Browse Practice Library"))}
             </button>
           </div>
         </article>
@@ -659,10 +660,6 @@ function CampusTutorActions({ latestQuizResponse, onPrompt, onOpenInterviewPrep,
         <span className="coding-kicker">Ask the Tutor</span>
       </div>
       <div className="campus-action-list compact">
-        <button type="button" onClick={() => onPrompt("Can you generate a practice quiz for me on arrays, strings, and loops?", { quizPdf: true, title: "Practice quiz" })}>
-          <FaBook aria-hidden="true" />
-          <span>Generate a 5-question quiz</span>
-        </button>
         <button type="button" onClick={() => onPrompt("Help me pick what to practice next based on my progress. Keep it short and give me three clear steps.", { title: "Practice plan" })}>
           <FaRegCompass aria-hidden="true" />
           <span>Plan my next practice</span>
@@ -789,6 +786,7 @@ export default function CampusLabHome({
   progressByQuestion,
   nextUpQuestion,
   topicPacks,
+  listLoading = false,
   dailyChallenge,
   dailyChallengeLoading,
   dailyDoneToday,
@@ -809,43 +807,29 @@ export default function CampusLabHome({
   onSaveQuiz,
   mastery,
   adaptivePractice,
+  codingRecommendation,
+  startingCheckResult,
+  onCompleteStartingCheck,
+  onSkipStartingCheck,
+  onResetStartingCheck,
+  onOpenRecommendation,
+  learnQuizStats,
   learningStyle = "try_then_hint",
 }) {
   const queueQuestions = questions || [];
   const resumeItem = findResumeItem(queueQuestions, progressByQuestion);
   const focus = pickFocusTopics(topicPacks);
-  const storageScope = currentUserStorageScope();
-  const [startingCheckResult, setStartingCheckResult] = useState(() => readStartingCheck());
-  const hasCodingHistory = hasMeaningfulCodingProgress({
+  const hasCodingHistory = hasMeaningfulAdaptiveSignal({
     progressSummary,
     progressByQuestion,
-    adaptivePractice,
-    mastery,
+    learnQuizStats,
+    startingCheck: startingCheckResult?.skipped ? null : startingCheckResult,
   });
   const startingCheck = startingCheckResult?.skipped ? null : startingCheckResult;
   const shouldShowStartingCheck =
+    !listLoading &&
     !hasCodingHistory &&
     !startingCheckResult?.skipped;
-
-  useEffect(() => {
-    setStartingCheckResult(readStartingCheck());
-  }, [storageScope]);
-
-  const completeStartingCheck = (result) => {
-    writeStartingCheck(result);
-    setStartingCheckResult(result);
-  };
-
-  const skipStartingCheck = () => {
-    const result = { skipped: true, completedAt: new Date().toISOString() };
-    writeStartingCheck(result);
-    setStartingCheckResult(result);
-  };
-
-  const resetStartingCheck = () => {
-    clearStartingCheck();
-    setStartingCheckResult(null);
-  };
 
   // One landing for everyone. The hero already handles the brand-new case
   // gracefully (0 streak / 0 solved, recommended starter, start-here focus copy),
@@ -859,6 +843,9 @@ export default function CampusLabHome({
         nextUpQuestion={nextUpQuestion}
         dailyChallenge={dailyChallenge}
         dailyDoneToday={dailyDoneToday}
+        codingRecommendation={codingRecommendation}
+        beginnerMode={Boolean(codingRecommendation?.beginnerMode)}
+        onOpenRecommendation={onOpenRecommendation}
         onResume={onSelectQuestion}
         onOpenLearnStart={onOpenLearnStart}
         onOpenBeginnerWarmup={onOpenBeginnerWarmup}
@@ -868,31 +855,18 @@ export default function CampusLabHome({
       {shouldShowStartingCheck ? (
         <StartingCheckCard
           result={startingCheck}
-          onComplete={completeStartingCheck}
-          onSkip={skipStartingCheck}
-          onReset={resetStartingCheck}
+          onComplete={onCompleteStartingCheck}
+          onSkip={onSkipStartingCheck}
+          onReset={onResetStartingCheck}
         />
       ) : startingCheck && !hasCodingHistory ? (
         <StartingCheckCard
           result={startingCheck}
-          onComplete={completeStartingCheck}
-          onSkip={skipStartingCheck}
-          onReset={resetStartingCheck}
+          onComplete={onCompleteStartingCheck}
+          onSkip={onSkipStartingCheck}
+          onReset={onResetStartingCheck}
         />
       ) : null}
-
-      {/* The hero already shows streak / solved / % complete and the "Today's
-          focus" line, so the standalone progress/plan strips were redundant and
-          removed. Starting Point now comes before the LeetCode daily card so new
-          students get placed before they see outside challenge work. */}
-      <CampusDailyMission
-        dailyChallenge={dailyChallenge}
-        loading={dailyChallengeLoading}
-        dailyDoneToday={dailyDoneToday}
-        displayStreak={displayStreak}
-        onPractice={onStartDaily}
-        onOpenScratch={onOpenDailyScratch}
-      />
 
       <CampusLearningQueue
         questions={queueQuestions}
@@ -903,6 +877,8 @@ export default function CampusLabHome({
         mastery={mastery}
         adaptivePractice={adaptivePractice}
         startingCheck={startingCheck}
+        codingRecommendation={codingRecommendation}
+        onOpenRecommendation={onOpenRecommendation}
         onSelect={onSelectQuestion}
         onOpenQuizBank={onOpenQuizBank}
         onOpenBeginnerWarmup={onOpenBeginnerWarmup}
@@ -911,6 +887,17 @@ export default function CampusLabHome({
         onOpenStartingPath={onOpenStartingPath}
         learningStyle={learningStyle}
         hasCodingHistory={hasCodingHistory}
+      />
+
+      {/* LeetCode is useful, but the adaptive path should come first for new
+          students. Keep the outside challenge as a tertiary Home action. */}
+      <CampusDailyMission
+        dailyChallenge={dailyChallenge}
+        loading={dailyChallengeLoading}
+        dailyDoneToday={dailyDoneToday}
+        displayStreak={displayStreak}
+        onPractice={onStartDaily}
+        onOpenScratch={onOpenDailyScratch}
       />
 
       <CampusTutorActions

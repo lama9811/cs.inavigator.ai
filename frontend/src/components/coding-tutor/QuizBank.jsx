@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { FaFire, FaCheckCircle, FaPenFancy, FaChartLine, FaSearch, FaSlidersH } from "react-icons/fa";
 import QuizProblemCard from "./QuizProblemCard";
 import useFocusTrap from "./useFocusTrap";
+import { buildPracticeGuideRecommendation } from "./adaptiveRecommendation";
 
 function titleCase(value = "") {
   return value ? value[0].toUpperCase() + value.slice(1).replace("_", " ") : "";
@@ -183,6 +184,7 @@ export default function QuizBank({
   // loads, and `weakest` is null until some topic has enough attempts to score.
   mastery = null,
   adaptivePractice = null,
+  codingRecommendation = null,
   onOpenLessonReview = null,
 }) {
   const location = useLocation();
@@ -540,7 +542,7 @@ export default function QuizBank({
     setFiltersOpen(false);
   };
 
-  const guideRecommendation = !hasAnyPracticeProgress
+  const fallbackGuideRecommendation = !hasAnyPracticeProgress
     ? {
       label: "Recommended next",
       title: beginnerTopicTitle,
@@ -616,6 +618,15 @@ export default function QuizBank({
             cta: "Open beginner starter set",
             onClick: applyBeginnerStarter,
           };
+  const sharedGuideRecommendation = buildPracticeGuideRecommendation({
+    codingRecommendation,
+    topicsInView,
+    filteredQuestions,
+    progressByQuestion,
+    updateFilter,
+    onOpenLessonReview,
+  });
+  const guideRecommendation = sharedGuideRecommendation || fallbackGuideRecommendation;
 
   // Per-topic mastery scores, keyed for a quick lookup in the topic-progress list.
   const scoreByTopic = useMemo(() => {

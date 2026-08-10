@@ -1576,7 +1576,7 @@ export default function LessonView({
               className="is-practice"
               onClick={onPractice}
             >
-              Practice {lesson.title} <FaArrowRight aria-hidden="true" />
+              Check {lesson.title} <FaArrowRight aria-hidden="true" />
             </button>
           ) : (
             <button
@@ -1589,12 +1589,12 @@ export default function LessonView({
         </div>
       ) : null}
 
-      {/* The handoff. Reading without doing doesn't stick, so a lesson always exits
-          into the quiz on the same topic rather than into nothing. */}
+      {/* The handoff. Reading without doing doesn't stick, so a lesson exits into
+          the matching concept check instead of a broad library page. */}
       <footer className={`lesson-foot ${hasMultipleSections ? "is-sectioned" : ""}`}>
-        <p>Ready to check it?</p>
+        <p>Next: answer a few questions on this topic.</p>
         <button type="button" className="lesson-practice-cta" onClick={onPractice}>
-          Practice {lesson.title} <FaArrowRight aria-hidden="true" />
+          Check {lesson.title} <FaArrowRight aria-hidden="true" />
         </button>
       </footer>
     </article>
