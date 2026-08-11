@@ -81,32 +81,62 @@ function titleCase(value = "") {
   return value ? value[0].toUpperCase() + value.slice(1).replace("_", " ") : "";
 }
 
+function useCompactHomeCards() {
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return undefined;
+    const query = window.matchMedia("(max-width: 560px)");
+    const update = () => setCompact(query.matches);
+    update();
+    query.addEventListener?.("change", update);
+    return () => query.removeEventListener?.("change", update);
+  }, []);
+  return compact;
+}
+
 function MiniPlanList({ items }) {
   const plan = Array.isArray(items) ? items.filter(item => item?.label).slice(0, 5) : [];
   if (!plan.length) return null;
   return (
-    <ol className="campus-mini-plan" aria-label="Suggested plan">
+    <div className="campus-mini-plan-wrap">
+      <span>Next steps</span>
+      <ol className="campus-mini-plan" aria-label="Suggested plan">
       {plan.map((item, index) => (
-        <li key={`${item.label}-${index}`}>{item.label}</li>
+        <li key={`${item.label}-${index}`}>
+          <span>{index + 1}</span>
+          <p>{item.label}</p>
+        </li>
       ))}
-    </ol>
+      </ol>
+    </div>
   );
+}
+
+function cleanRecommendationEvidence(item = "") {
+  return String(item)
+    .replace(/^Recommendation source:\s*/i, "Based on ")
+    .replace(/\bworkspace state\b/i, "your saved workspace")
+    .replace(/\badaptive practice\b/i, "recent practice")
+    .replace(/\blearn progress\b/i, "completed lessons")
+    .replace(/\bconcept quiz\b/i, "quiz checks");
 }
 
 function WhyThisDetails({ recommendation, onDismiss }) {
   const explanation = recommendation?.explanation;
   if (!explanation) return null;
   const evidence = Array.isArray(explanation.evidence_used) ? explanation.evidence_used : [];
+  const usefulEvidence = evidence
+    .map(cleanRecommendationEvidence)
+    .filter(Boolean)
+    .slice(0, 2);
   return (
     <details className="campus-why-this">
       <summary>Why this?</summary>
       <div>
         {explanation.why_topic ? <p>{explanation.why_topic}</p> : null}
-        {explanation.why_difficulty ? <p>{explanation.why_difficulty}</p> : null}
-        {explanation.why_not_advanced ? <p>{explanation.why_not_advanced}</p> : null}
-        {evidence.length ? (
+        {usefulEvidence.length ? (
           <ul>
-            {evidence.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
+            {usefulEvidence.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
           </ul>
         ) : null}
         {explanation.what_would_change ? <small>{explanation.what_would_change}</small> : null}
@@ -397,6 +427,21 @@ function CampusLearningQueue({
   const focusButton = adaptiveReady
     ? `Open ${titleCase(adaptiveDifficulty)} step`
     : focusAction === "practice" ? "Open practice" : "Open topic lesson";
+  const compactCards = useCompactHomeCards();
+  const [expandedMobileCards, setExpandedMobileCards] = useState({});
+  const toggleCard = (card) => {
+    setExpandedMobileCards(current => ({ ...current, [card]: !current[card] }));
+  };
+  const mobileToggle = (card) => compactCards ? (
+    <button
+      type="button"
+      className="campus-card-details-toggle"
+      aria-expanded={!!expandedMobileCards[card]}
+      onClick={() => toggleCard(card)}
+    >
+      {expandedMobileCards[card] ? "Hide details" : "Show details"}
+    </button>
+  ) : null;
   const focusClick = () => {
     if (codingRecommendation) {
       onOpenRecommendation?.();
@@ -422,6 +467,7 @@ function CampusLearningQueue({
         <article className="campus-queue-item featured">
           <span>One Small Step</span>
           <strong>{todayPath[0]?.question?.title || "Start with one problem"}</strong>
+          {mobileToggle("featured")}
           <ol className="campus-path-list">
             {todayPath.map((step, index) => (
               <li key={`${step.kind}-${index}`}>
@@ -460,12 +506,14 @@ function CampusLearningQueue({
         <article className="campus-queue-item warmup">
           <span>5-10 Minutes</span>
           <strong>Before Class Warmup</strong>
+          {mobileToggle("warmup")}
           <p>Open a small set of beginner-friendly problems: conditionals, arrays, strings, math, tuples, sets, and maps.</p>
           <button type="button" onClick={onOpenBeginnerWarmup}>Start warmup</button>
         </article>
         <article className="campus-queue-item focus">
           <span>Recommended Next</span>
           <strong>{focusTitle}</strong>
+          {mobileToggle("focus")}
           <p>{focusBlurb}</p>
           {placementProfile ? (
             <small className="campus-focus-badge is-ready">{placementProfile.label}</small>
