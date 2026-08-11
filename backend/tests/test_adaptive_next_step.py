@@ -298,6 +298,53 @@ def test_dismissed_review_uses_cooldown_and_falls_back():
     assert "cooldown" in rec["explanation"]["what_would_change"]
 
 
+def test_dismissed_resume_uses_cooldown_on_home():
+    now = datetime.utcnow()
+    dismissed = _row(
+        event_type="recommendation_dismissed",
+        topic="arrays",
+        question_id="arr-easy",
+        metadata_json=json.dumps({
+            "kind": "resume",
+            "topic": "arrays",
+            "target_mode": "workspace",
+            "question_id": "arr-easy",
+        }),
+        created_at=now,
+    )
+    rec = _recommend(
+        progress_rows=[
+            _row(
+                question_id="arr-easy",
+                status="in_progress",
+                attempt_count=1,
+                updated_at=now,
+            )
+        ],
+        learning_event_rows=[dismissed],
+    )
+
+    assert rec["kind"] != "resume"
+    assert any(item["type"] == "recommendation_dismissed" for item in rec["cooldowns"])
+
+
+def test_first_run_does_not_target_solved_starter_problem():
+    rec = _recommend(
+        progress_rows=[
+            _row(
+                question_id="cond-easy",
+                status="solved",
+                attempt_count=1,
+                updated_at=datetime.utcnow(),
+            )
+        ],
+        starting_row=_row(status="skipped"),
+    )
+
+    assert rec["question"]["id"] == "arr-easy"
+    assert rec["target"].get("question_id") == "arr-easy"
+
+
 def test_starting_check_skip_event_is_reported_as_cooldown_when_signal_exists():
     now = datetime.utcnow()
     rec = _recommend(

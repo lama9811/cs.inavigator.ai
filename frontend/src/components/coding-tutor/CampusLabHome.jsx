@@ -111,7 +111,15 @@ function WhyThisDetails({ recommendation, onDismiss }) {
         ) : null}
         {explanation.what_would_change ? <small>{explanation.what_would_change}</small> : null}
         {onDismiss ? (
-          <button type="button" className="campus-dismiss-recommendation" onClick={onDismiss}>
+          <button
+            type="button"
+            className="campus-dismiss-recommendation"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onDismiss?.();
+            }}
+          >
             Dismiss for now
           </button>
         ) : null}
@@ -472,7 +480,7 @@ function CampusLearningQueue({
             </small>
           ) : null}
           <div className="campus-focus-actions">
-            {reviewSignal ? (
+            {reviewSignal && !codingRecommendation ? (
               <button
                 type="button"
                 onClick={() => onOpenLessonReview?.(reviewSignal)}

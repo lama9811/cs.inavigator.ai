@@ -985,7 +985,15 @@ export default function QuizBank({
                       </ul>
                     ) : null}
                     {onDismissRecommendation ? (
-                      <button type="button" className="practice-guide-dismiss" onClick={onDismissRecommendation}>
+                      <button
+                        type="button"
+                        className="practice-guide-dismiss"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          onDismissRecommendation?.();
+                        }}
+                      >
                         Dismiss for now
                       </button>
                     ) : null}

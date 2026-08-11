@@ -258,7 +258,7 @@
           "kind": "compare",
           "caption": "Removing items from a **list** while you **loop** over it makes the loop skip items. The loop tracks its place by position, so deleting an item shifts everything after it back by one, and the loop moves forward past the item that just slid into the empty spot. Build a new list instead and nothing shifts underneath you.",
           "wrong_label": "Skips items",
-          "wrong": "nums = [1, 2, 2, 3, 2]\nfor n in nums:\n    if n == 2:\n        nums.remove(n)\nprint(nums)\n# [1, 3, 2]\n# two 2s left behind",
+          "wrong": "nums = [1, 2, 2, 3, 2]\nfor n in nums:\n    if n == 2:\n        nums.remove(n)\nprint(nums)\n# [1, 3, 2]\n# one 2 is skipped",
           "right_label": "Keeps what you want",
           "right": "nums = [1, 2, 2, 3, 2]\nkeep = []\nfor n in nums:\n    if n != 2:\n        keep.append(n)\nprint(keep)\n# [1, 3]\n# every 2 is gone"
         },

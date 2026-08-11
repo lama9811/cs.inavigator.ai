@@ -137,6 +137,10 @@ def _same_recommendation(row: Any, recommendation: dict[str, Any]) -> bool:
     meta_mode = _norm(meta.get("target_mode"))
     if target_mode and meta_mode and target_mode != meta_mode:
         return False
+    target_question = _norm(target.get("question_id") or target.get("questionId") or (recommendation.get("question") or {}).get("id"))
+    meta_question = _norm(meta.get("question_id") or getattr(row, "question_id", None))
+    if target_question and meta_question and target_question != meta_question:
+        return False
     return True
 
 
@@ -319,7 +323,7 @@ def _first_unsolved(
     for question in sorted(candidates, key=_question_sort_key):
         if _progress_status(progress_by_question.get(str(question.get("id")))) != "solved":
             return question
-    return sorted(candidates, key=_question_sort_key)[0] if candidates else None
+    return None
 
 
 def _serialize_question(question: Optional[dict[str, Any]]) -> Optional[dict[str, Any]]:
@@ -533,7 +537,14 @@ def build_next_step(
     def suppressed(recommendation: dict[str, Any]) -> bool:
         cooldown = _dismissal_cooldown(learning_event_rows, recommendation)
         if cooldown:
-            active_cooldowns.append(cooldown)
+            duplicate = any(
+                existing.get("type") == cooldown.get("type")
+                and existing.get("kind") == cooldown.get("kind")
+                and _norm(existing.get("topic")) == _norm(cooldown.get("topic"))
+                for existing in active_cooldowns
+            )
+            if not duplicate:
+                active_cooldowns.append(cooldown)
             return True
         return False
 
@@ -554,7 +565,8 @@ def build_next_step(
                 topic=_norm(question.get("topic")),
                 question=_serialize_question(question),
             )
-            return done(rec)
+            if not suppressed(rec) or surface == "workspace":
+                return done(rec)
 
     in_progress = _latest_in_progress(progress_rows, questions_by_id)
     if in_progress:
@@ -574,11 +586,12 @@ def build_next_step(
                 topic=_norm(question.get("topic")),
                 question=_serialize_question(question),
             )
-            return done(rec)
+            if not suppressed(rec) or surface == "workspace":
+                return done(rec)
 
     if not has_signal:
-        topic = _starter_topic(questions)
-        starter = _first_unsolved(questions, progress_by_question, topic=topic, difficulty="easy")
+        starter = _first_unsolved(questions, progress_by_question, beginner_only=True, difficulty="easy")
+        topic = _norm((starter or {}).get("topic")) or _starter_topic(questions)
         rec = _recommendation(
             kind="first_run",
             title="Start with Python Beginner",
@@ -727,8 +740,8 @@ def build_next_step(
         )
         return done(rec)
 
-    topic = _starter_topic(questions)
     starter = _first_unsolved(questions, progress_by_question, beginner_only=True, difficulty="easy")
+    topic = _norm((starter or {}).get("topic")) or _starter_topic(questions)
     lesson_first = learning_style != "try_then_hint"
     rec = _recommendation(
         kind="starter",

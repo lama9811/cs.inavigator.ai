@@ -77,7 +77,7 @@
             "`.remove()` cannot delete numbers, only strings"
           ],
           "answer_index": 0,
-          "explanation": "The loop keeps its place by position. It checks position 1, finds a 2, and removes it. Everything after that slides one step to the left, but the loop still advances to position 2, so the 2 that just moved into position 1 is never looked at. `.remove()` worked fine every time you called it, which is why the second choice is tempting and still wrong. The real problem is that you changed the list out from under the loop. Loop over the list to decide what to keep, and put those items in a new list."
+          "explanation": "The loop keeps its place by position. It checks position 1, finds a 2, and removes the first matching 2. Everything after that slides one step left, but the loop still advances to position 2, so one 2 is skipped. Later, another `remove(2)` again deletes the first matching 2 it can find, leaving the final 2 in place. The real problem is that the list changed while the loop was walking through it."
         },
         "java": {
           "code": "ArrayList<String> names = new ArrayList<>();\nnames.add(\"Ada\");\nnames.add(\"Grace\");\n\n// which line prints 2?",
@@ -182,16 +182,16 @@
       "title": "Lists / Arrays practice 5",
       "variants": {
         "python": {
-          "code": "nums = [1, 2, 2, 3, 2]\nfor n in nums:\n    if n == 2:\n        nums.remove(n)\nprint(nums)",
-          "prompt": "What does this print, and why?",
+          "code": "nums = [1, 2, 2, 3, 2]\nkept = []\nfor n in nums:\n    if n != 2:\n        kept.append(n)\nprint(kept)",
+          "prompt": "What does this print?",
           "choices": [
             "[1, 3, 2] — removing while looping makes the loop skip items",
             "[1, 3] — every 2 is removed",
             "[1, 2, 2, 3, 2] — remove does nothing inside a loop",
             "It raises an error"
           ],
-          "answer_index": 0,
-          "explanation": "Deleting from a list while looping over it shifts later items back by one, and the loop's position still moves forward, so it steps past the item that slid into the gap. Two of the 2s get skipped and survive, leaving [1, 3, 2]. Build a new list instead of mutating the one you are iterating."
+          "answer_index": 1,
+          "explanation": "`nums` is only being read, so the loop order stays stable. Each value that is not 2 gets appended to `kept`, which produces [1, 3]. This is safer than deleting from `nums` while the loop is still using it."
         },
         "java": {
           "code": "int[] arr = {4, 7, 2};\nfor (int i = 0; i <= arr.length; i++) {\n    System.out.println(arr[i]);\n}",

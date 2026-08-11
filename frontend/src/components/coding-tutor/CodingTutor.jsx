@@ -1903,6 +1903,8 @@ export default function CodingTutor({
   const [masteryTick, setMasteryTick] = useState(0);
   const [adaptivePractice, setAdaptivePractice] = useState(null);
   const [adaptiveNextStep, setAdaptiveNextStep] = useState(null);
+  const [dismissedRecommendationKey, setDismissedRecommendationKey] = useState(null);
+  const [recommendationDismissedLocally, setRecommendationDismissedLocally] = useState(false);
   const [milestoneSignals, setMilestoneSignals] = useState(null);
   const [engagementTick, setEngagementTick] = useState(0);
   const [startingCheckResult, setStartingCheckResult] = useState(() => readStartingCheck());
@@ -2179,9 +2181,35 @@ export default function CodingTutor({
     progressSummary,
     startingCheck,
   ]);
-  const codingRecommendation = adaptiveNextStep || fallbackCodingRecommendation;
+  const recommendationKey = useCallback((recommendation) => {
+    if (!recommendation) return "";
+    const target = recommendation.target || {};
+    return [
+      recommendation.kind || "",
+      recommendation.source || "",
+      recommendation.topic || target.topic || target.category || "",
+      target.mode || "",
+      target.questionId || target.question_id || recommendation.question?.id || "",
+      target.category || "",
+      target.difficulty || "",
+    ].map(value => String(value || "").toLowerCase()).join("|");
+  }, []);
+  const rawCodingRecommendation = adaptiveNextStep || (recommendationDismissedLocally ? null : fallbackCodingRecommendation);
+  const codingRecommendation = rawCodingRecommendation &&
+    recommendationKey(rawCodingRecommendation) !== dismissedRecommendationKey
+    ? rawCodingRecommendation
+    : null;
+  useEffect(() => {
+    if (!adaptiveNextStep || !dismissedRecommendationKey) return;
+    if (recommendationKey(adaptiveNextStep) !== dismissedRecommendationKey) {
+      setDismissedRecommendationKey(null);
+      setRecommendationDismissedLocally(false);
+    }
+  }, [adaptiveNextStep, dismissedRecommendationKey, recommendationKey]);
   const dismissCodingRecommendation = useCallback((recommendation = codingRecommendation) => {
     if (!recommendation) return;
+    setDismissedRecommendationKey(recommendationKey(recommendation));
+    setRecommendationDismissedLocally(true);
     const languageKey = PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
     const target = recommendation.target || {};
     recordLearningEvent(apiBase, {
@@ -2190,7 +2218,7 @@ export default function CodingTutor({
       surface: activePage === "workspace" ? "workspace" : activePage === "quiz" ? "practice" : "home",
       category: target.category || recommendation.topic || null,
       topic: target.topic || recommendation.topic || null,
-      question_id: target.questionId || recommendation.question?.id || null,
+      question_id: target.questionId || target.question_id || recommendation.question?.id || null,
       source: recommendation.source || "adaptive_next_step",
       difficulty: target.difficulty || recommendation.question?.difficulty || null,
       metadata: {
@@ -2198,14 +2226,17 @@ export default function CodingTutor({
         topic: target.topic || recommendation.topic || null,
         category: target.category || recommendation.topic || null,
         target_mode: target.mode || null,
+        question_id: target.questionId || target.question_id || recommendation.question?.id || null,
       },
     })
       .then(() => {
         setAdaptiveNextStep(null);
         setEngagementTick(tick => tick + 1);
       })
-      .catch(() => {});
-  }, [activePage, apiBase, codingRecommendation, practiceLanguage]);
+      .catch(() => {
+        setEngagementTick(tick => tick + 1);
+      });
+  }, [activePage, apiBase, codingRecommendation, practiceLanguage, recommendationKey]);
   const activeSnapshotKey = activeProblem ? `${activeProblem.id}:${selectedLanguageKey}` : "personal";
   const activeSnapshots = useMemo(
     () => workspaceSnapshots[activeSnapshotKey] || {},
@@ -4768,13 +4799,14 @@ export default function CodingTutor({
   const openCodingRecommendation = (recommendation = codingRecommendation) => {
     const target = recommendation?.target || {};
     const languageKey = target.language || PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
-    if (target.mode === "workspace" && target.questionId) {
-      const question = progressQuestions.find(item => item.id === target.questionId) || recommendation.question;
+    const targetQuestionId = target.questionId || target.question_id;
+    if (target.mode === "workspace" && targetQuestionId) {
+      const question = progressQuestions.find(item => item.id === targetQuestionId) || recommendation.question;
       if (question) {
         selectQuestion(question);
         return;
       }
-      navigate(workspacePathForProblem(target.questionId));
+      navigate(workspacePathForProblem(targetQuestionId));
       return;
     }
     if (target.mode === "learn") {
@@ -4791,8 +4823,8 @@ export default function CodingTutor({
       return;
     }
     if (target.mode === "quiz" && target.category) {
-      navigate(target.questionId
-        ? quizPathForQuestion(languageKey, target.category, target.questionId)
+      navigate(targetQuestionId
+        ? quizPathForQuestion(languageKey, target.category, targetQuestionId)
         : `${quizPathForLanguage(languageKey)}#${target.category}`);
       return;
     }
@@ -4801,6 +4833,15 @@ export default function CodingTutor({
       return;
     }
     if (target.mode === "practice" && target.topic) {
+      if (targetQuestionId) {
+        const question = progressQuestions.find(item => item.id === targetQuestionId) || recommendation.question;
+        if (question) {
+          selectQuestion(question);
+          return;
+        }
+        navigate(workspacePathForProblem(targetQuestionId));
+        return;
+      }
       openPracticeTopic(target.topic, { difficulty: target.difficulty });
       return;
     }
