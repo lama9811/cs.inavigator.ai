@@ -6900,6 +6900,341 @@ async def list_concept_quiz_categories(language: str):
 # The lesson and the in-quiz refresher come from the SAME file (see lessons.py), so
 # they cannot drift apart and tell a student two different things.
 # ---------------------------------------------------------------------------
+LANGUAGE_LIBRARY_FILE = os.path.join(DATA_DIR, "coding_language_library.json")
+LANGUAGE_LIBRARY_COMPACT_KEYS = (
+    "category",
+    "method_name",
+    "syntax",
+    "description",
+    "example",
+    "complexity",
+    "lesson_label",
+    "lesson_track",
+    "lesson_category",
+    "common_mistake",
+)
+
+
+def _language_library_setup_lines(lang: str, category: str, method_name: str, example: str) -> list[str]:
+    """Small snippet setup for reference examples.
+
+    The library examples are intentionally short, but Java/JS/C++ one-liners can
+    feel abrupt when they use `scores`, `nums`, or `items` without showing what
+    those values are. This adds tiny setup lines without turning each card into a
+    full program.
+    """
+    text = example or ""
+    setup: list[str] = []
+
+    def needs(name: str) -> bool:
+        if not re.search(rf"\b{re.escape(name)}\b", text):
+            return False
+        if re.search(rf"\b{re.escape(name)}\b\s*=", text):
+            return False
+        if re.search(rf"\b{re.escape(name)}\b\s*:", text):
+            return False
+        return True
+
+    def add(line: str) -> None:
+        if line not in setup and line not in text:
+            setup.append(line)
+
+    if lang == "javascript":
+        if needs("text"):
+            add('const text = "Morgan State";')
+        if needs("input"):
+            add('const input = "42";')
+        if needs("value"):
+            add("const value = 42;")
+        if needs("name"):
+            add('const name = "Ada";')
+        if needs("code"):
+            add('const code = "CS101";')
+        if needs("student"):
+            add('const student = { name: "Ada", major: "CS" };')
+        if needs("data"):
+            add('const data = { course: "CS101", credits: 3 };')
+        if needs("items"):
+            add("const items = [3, 1, 2];")
+        if needs("nums"):
+            add("const nums = [3, 1, 2];")
+        if needs("names"):
+            add('const names = ["Ada", "Grace", "Mae"];')
+        if needs("counts"):
+            add('const counts = { Ada: 2, Grace: 1 };')
+        if needs("scores"):
+            if "scores.get" in text or "scores.set" in text or "scores.has" in text or "scores.delete" in text:
+                add('const scores = new Map([["Ada", 95], ["Grace", 88]]);')
+            elif "Math." in text:
+                add("const scores = [88, 91, 84];")
+            else:
+                add('const scores = { Ada: 95, Grace: 88 };')
+        if needs("map"):
+            add('const map = new Map([["Ada", 95]]);')
+        if needs("seen"):
+            add('const seen = new Set(["Ada", "Grace"]);')
+        if needs("a"):
+            add("const a = new Set([1, 2]);")
+        if needs("b"):
+            add("const b = new Set([2, 3]);")
+
+    elif lang == "java":
+        if needs("text"):
+            add('String text = "Morgan State";')
+        if needs("input"):
+            add('String input = "42";')
+        if needs("value"):
+            add("int value = 42;")
+        if needs("name"):
+            add('String name = "Ada";')
+        if needs("code"):
+            add('String code = "CS101";')
+        if needs("array"):
+            add("int[] array = {3, 1, 2};")
+        if needs("nums"):
+            add("int[] nums = {3, 1, 2};")
+        if needs("names"):
+            add('ArrayList<String> names = new ArrayList<>(List.of("Ada", "Grace"));')
+        if needs("scores"):
+            if "scores.put" in text or "scores.get" in text or "scores.contains" in text or "scores.entrySet" in text or "scores.keySet" in text:
+                add('HashMap<String, Integer> scores = new HashMap<>(Map.of("Ada", 95, "Grace", 88));')
+            else:
+                add("ArrayList<Integer> scores = new ArrayList<>(List.of(88, 91, 84));")
+        if needs("counts"):
+            add('HashMap<String, Integer> counts = new HashMap<>(Map.of("Ada", 2));')
+        if needs("list"):
+            add("ArrayList<Integer> list = new ArrayList<>(List.of(3, 1, 2));")
+        if needs("map"):
+            add('HashMap<String, Integer> map = new HashMap<>();')
+        if needs("set"):
+            add('HashSet<String> set = new HashSet<>(Set.of("Ada", "Grace"));')
+        if needs("seen"):
+            add('HashSet<String> seen = new HashSet<>(Set.of("Ada", "Grace"));')
+        if needs("required"):
+            add('HashSet<String> required = new HashSet<>(Set.of("Ada"));')
+        if needs("items"):
+            add("ArrayList<Integer> items = new ArrayList<>(List.of(3, 1, 2));")
+        numeric_pair_example = method_name in {"Math.max", "Math.min"}
+        if numeric_pair_example:
+            if needs("a"):
+                add("int a = 3;")
+            if needs("b"):
+                add("int b = 5;")
+        if not numeric_pair_example and needs("a"):
+            add("HashSet<Integer> a = new HashSet<>(Set.of(1, 2));")
+        if not numeric_pair_example and needs("b"):
+            add("HashSet<Integer> b = new HashSet<>(Set.of(2, 3));")
+
+    elif lang == "cpp":
+        if needs("text"):
+            add('string text = "Morgan State";')
+        if needs("input"):
+            add('string input = "42";')
+        if needs("value"):
+            add("int value = 42;")
+        if needs("name"):
+            add('string name = "Ada";')
+        if needs("code"):
+            add('string code = "CS101";')
+        if needs("part"):
+            add('string part = "CS";')
+        if needs("ch"):
+            add("char ch = '!';")
+        if needs("items"):
+            add("vector<int> items = {3, 1, 2};")
+        if needs("nums"):
+            add("vector<int> nums = {3, 1, 2};")
+        if needs("names"):
+            add('vector<string> names = {"Ada", "Grace"};')
+        if needs("scores"):
+            if "scores." in text or "scores[" in text:
+                add('unordered_map<string, int> scores = {{"Ada", 95}, {"Grace", 88}};')
+            else:
+                add("vector<int> scores = {88, 91, 84};")
+        if needs("counts"):
+            add('unordered_map<string, int> counts = {{"Ada", 2}};')
+        if needs("table"):
+            add('unordered_map<string, int> table = {{"Ada", 95}};')
+        if needs("seen"):
+            add("unordered_set<int> seen = {3, 5};")
+        if needs("ordered"):
+            add("set<int> ordered = {3, 10, 12};")
+        numeric_pair_example = method_name in {"min", "max", "swap"}
+        if numeric_pair_example:
+            if needs("a"):
+                add("int a = 3;")
+            if needs("b"):
+                add("int b = 5;")
+        if not numeric_pair_example and needs("a"):
+            add("unordered_set<int> a = {1, 2};")
+        if not numeric_pair_example and needs("b"):
+            add("unordered_set<int> b = {2, 3};")
+        if needs("left"):
+            add("int left = 1;")
+        if needs("right"):
+            add("int right = 2;")
+        if needs("target"):
+            add("int target = 2;")
+
+    if not setup:
+        return []
+    return setup
+
+
+def _language_library_result_comment(lang: str, method_name: str, example: str) -> str | None:
+    if "//" in example or "#" in example:
+        return None
+
+    if lang == "javascript":
+        if method_name == "clear":
+            if "seen" in example:
+                return "// seen.size === 0"
+            return "// size is now 0"
+        if method_name == "add":
+            return "// seen.has(\"Ada\") === true"
+        if method_name == "delete":
+            return "// removed === true when the value existed"
+        if method_name == "discard":
+            return "// no error when the value is missing"
+        if method_name == "has":
+            return "// ok === true when the value is present"
+        if method_name == "includes":
+            return "// ok === true when the value is found"
+        if method_name == "join":
+            return '// line === "Ada, Grace, Mae"'
+        if method_name == "map":
+            return "// doubled === [6, 2, 4]"
+        if method_name == "pop":
+            return "// last === 2; items === [3, 1]"
+        if method_name == "push":
+            return "// items === [3, 1, 2, 95]"
+        if method_name == "set":
+            return '// scores.get("Ada") === 95'
+        if method_name == "shift":
+            return "// first === 3; items === [1, 2]"
+        if method_name == "slice":
+            return "// part has the selected values"
+        if method_name == "sort":
+            return "// nums === [1, 2, 3]"
+        if method_name == "splice":
+            return "// items changes at the selected index"
+        if method_name == "unshift":
+            return "// items === [0, 3, 1, 2]"
+
+    if lang == "java":
+        if method_name == "add":
+            if "names.add(1" in example:
+                return "// names == [Ada, Grace, Grace]"
+            if "names" in example:
+                return "// names == [Ada, Grace, Ada]"
+            if "seen" in example:
+                return '// seen.contains("Ada") == true'
+            return "// size increases by 1"
+        if method_name == "addAll":
+            return "// seen contains every value from names"
+        if method_name == "clear":
+            return "// collection.size() == 0"
+        if method_name == "contains":
+            return "// ok == true when the value is present"
+        if method_name == "get":
+            return "// first is the value at that index"
+        if method_name == "put":
+            return '// scores.get("Ada") == 96'
+        if method_name == "remove":
+            return "// removed == true when the value existed"
+        if method_name == "set":
+            if "scores" in example:
+                return "// scores.get(0) == 100"
+            return '// names.get(0).equals("Mae")'
+
+    if lang == "java" and method_name == "Collections.reverse":
+        if "names" in example:
+            return "// names == [Grace, Ada]"
+        return "// scores == [84, 91, 88]"
+    if lang == "java" and method_name == "Collections.sort":
+        if "names" in example:
+            return "// names == [Ada, Grace]"
+        return "// scores == [84, 88, 91]"
+
+    comments = {
+        ("javascript", "Array.isArray"): "// ok === true",
+        ("javascript", "Math.max"): "// best === 91",
+        ("javascript", "Math.min"): "// low === 84",
+        ("javascript", "Number"): "// amount === 42",
+        ("javascript", "Object.keys"): '// keys === ["course", "credits"]',
+        ("javascript", "parseInt"): "// amount === 42",
+        ("java", "Arrays.binarySearch"): "// index == 1",
+        ("java", "Arrays.sort"): "// nums == [1, 2, 3]",
+        ("java", "Collections.max"): "// best == 91",
+        ("java", "Collections.min"): "// low == 84",
+        ("java", "Integer.parseInt"): "// amount == 42",
+        ("java", "Math.abs"): "// distance == 5",
+        ("java", "Math.max"): "// best == 5",
+        ("java", "Math.min"): "// low == 3",
+        ("java", "String.valueOf"): '// text.equals("42")',
+        ("cpp", "accumulate"): "// total == 6",
+        ("cpp", "binary_search"): "// ok == true",
+        ("cpp", "count"): "// matches == 1",
+        ("cpp", "max"): "// best == 5",
+        ("cpp", "max_element"): "// *best == 91",
+        ("cpp", "min"): "// low == 3",
+        ("cpp", "min_element"): "// *low == 84",
+        ("cpp", "sort"): "// nums == {1, 2, 3}",
+        ("cpp", "stoi"): "// amount == 42",
+        ("cpp", "swap"): "// a == 5; b == 3",
+        ("cpp", "to_string"): '// text == "42"',
+    }
+    if lang == "cpp":
+        cpp_mutation_comments = {
+            "clear": "// container.size() == 0",
+            "contains": "// ok == true when the key/value is present",
+            "count": "// matches is 1 when the value exists",
+            "erase": "// removed is the number of values removed",
+            "find": "// found == true when the value exists",
+            "insert": "// container now includes the value",
+            "replace": "// text contains the replacement",
+            "substr": "// part contains the selected characters",
+        }
+        if method_name == "operator[]":
+            if "nums[" in example:
+                return "// nums == {10, 1, 2}"
+            if "counts[" in example:
+                return '// counts["Ada"] == 3'
+            if "text[" in example:
+                return "// c == 'M'"
+            return "// bracket access reads or updates one slot"
+        if method_name == "pop_back":
+            if "text." in example:
+                return '// text == "Morgan Stat"'
+            return "// nums has one fewer value"
+        if method_name == "push_back":
+            if "text." in example:
+                return '// text == "Morgan State!"'
+            return "// nums == {3, 1, 2, 5}"
+        if method_name in cpp_mutation_comments:
+            return cpp_mutation_comments[method_name]
+    return comments.get((lang, method_name))
+
+
+def _flesh_language_library_example(lang: str, entry: dict[str, Any]) -> dict[str, Any]:
+    if lang not in {"javascript", "java", "cpp"}:
+        return entry
+    example = entry.get("example")
+    if not isinstance(example, str) or "\n" in example:
+        return entry
+    method_name = str(entry.get("method_name") or "")
+    setup = _language_library_setup_lines(lang, str(entry.get("category") or ""), method_name, example)
+    result_comment = _language_library_result_comment(lang, method_name, example)
+    if not setup and not result_comment:
+        return entry
+    enriched = dict(entry)
+    lines = [*setup, example]
+    if result_comment and result_comment not in example:
+        lines.append(result_comment)
+    enriched["example"] = "\n".join(lines)
+    return enriched
+
+
 def _lesson_call(fn, *args):
     """Run a lesson loader function, mapping its exceptions onto HTTP status codes."""
     try:
@@ -6910,6 +7245,80 @@ def _lesson_call(fn, *args):
         # Malformed content is OUR bug, not the student's — 500, and loudly.
         print(f"[ERROR] Lesson content is malformed: {exc}")
         raise HTTPException(status_code=500, detail="This lesson is temporarily unavailable.") from exc
+
+
+def _read_language_library(language: str) -> dict[str, Any]:
+    lang = _concept_quiz_call(concept_quiz.normalize_language, language)
+    try:
+        with open(LANGUAGE_LIBRARY_FILE, "r", encoding="utf-8") as handle:
+            data = json.load(handle)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=500, detail="Language library content is missing.") from exc
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail="Language library content is invalid.") from exc
+
+    library = data.get(lang)
+    if not isinstance(library, dict):
+        raise HTTPException(status_code=404, detail="Language library is not available for this language.")
+
+    categories = library.get("categories")
+    entries = library.get("entries") or []
+    compact_entries = library.get("entries_compact") or []
+    if not isinstance(categories, list) or not isinstance(entries, list) or not isinstance(compact_entries, list):
+        raise HTTPException(status_code=500, detail="Language library content is malformed.")
+
+    expanded_entries = list(entries)
+    for index, row in enumerate(compact_entries, start=1):
+        if not isinstance(row, list) or len(row) != len(LANGUAGE_LIBRARY_COMPACT_KEYS):
+            raise HTTPException(status_code=500, detail="Language library compact content is malformed.")
+        item = dict(zip(LANGUAGE_LIBRARY_COMPACT_KEYS, row))
+        slug = re.sub(r"[^a-z0-9]+", "-", str(item["method_name"]).lower()).strip("-") or str(index)
+        expanded_entries.append({
+            "id": f"{lang}-{item['category']}-{slug}-{index}",
+            "category": item["category"],
+            "method_name": item["method_name"],
+            "syntax": item["syntax"],
+            "description": item["description"],
+            "example": item["example"],
+            "complexity": item["complexity"],
+            "lesson_link": {
+                "label": item["lesson_label"],
+                "track": item["lesson_track"],
+                "category": item["lesson_category"],
+            },
+            "common_mistake": item["common_mistake"],
+        })
+
+    sorted_categories = sorted(
+        categories,
+        key=lambda item: str(item.get("label") or item.get("id") or "").lower(),
+    )
+    sorted_entries = sorted(
+        [_flesh_language_library_example(lang, entry) for entry in expanded_entries],
+        key=lambda item: (
+            str(item.get("category") or "").lower(),
+            str(item.get("method_name") or "").lower(),
+            str(item.get("syntax") or "").lower(),
+        ),
+    )
+
+    return {
+        "language": lang,
+        "label": library.get("label") or lang.title(),
+        "categories": sorted_categories,
+        "entries": sorted_entries,
+    }
+
+
+@app.get("/api/coding/language-library/{language}")
+async def read_language_library(language: str):
+    """Curated language reference cards for Learn mode.
+
+    This is intentionally local, static content in V1: no grading, no generated
+    answers, and no scrape dependency. Keeping it in data_sources lets chat/search
+    reuse the same reference text later.
+    """
+    return _read_language_library(language)
 
 
 @app.get("/api/coding/learn/{language}/{category}")

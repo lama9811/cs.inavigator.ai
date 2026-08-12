@@ -8117,27 +8117,28 @@ body.coding-dark .campus-code-preview {
   .coding-app .campus-queue-item.featured button.campus-card-details-toggle {
     display: inline-flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
     align-self: start;
     width: auto;
     min-height: 0;
-    padding: 0 !important;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    color: var(--ct-primary);
+    padding: 5px 10px !important;
+    border: 1px solid color-mix(in srgb, var(--ct-primary) 16%, transparent) !important;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ct-panel) 72%, transparent) !important;
+    color: color-mix(in srgb, var(--ct-primary) 80%, var(--ct-text)) !important;
     font-size: 0.78rem;
     font-weight: 750;
-    box-shadow: none;
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 40%, transparent) !important;
+    backdrop-filter: blur(6px);
   }
 
   .coding-app .campus-queue-item button.campus-card-details-toggle:hover,
   .coding-app .campus-queue-item.featured button.campus-card-details-toggle:hover {
-    background: transparent !important;
-    border-color: transparent !important;
-    color: color-mix(in srgb, var(--ct-primary) 72%, var(--ct-accent)) !important;
+    background: color-mix(in srgb, var(--ct-panel) 84%, transparent) !important;
+    border-color: color-mix(in srgb, var(--ct-primary) 28%, transparent) !important;
+    color: var(--ct-primary) !important;
     transform: none;
-    box-shadow: none;
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 46%, transparent) !important;
   }
 
   .coding-app .campus-queue-item button.campus-card-details-toggle:focus-visible,
@@ -8171,9 +8172,15 @@ body.coding-dark .campus-code-preview {
 
   .campus-queue-item .campus-primary-action,
   .campus-focus-actions button,
-  .campus-queue-item.warmup > button {
+  .campus-queue-item.warmup > button:not(.campus-card-details-toggle) {
     justify-self: center;
     width: min(100%, 260px);
+  }
+
+  .campus-queue-item.warmup > button:not(.campus-card-details-toggle) {
+    border-color: color-mix(in srgb, var(--ct-success) 34%, var(--ct-border));
+    background: color-mix(in srgb, var(--ct-success) 10%, var(--ct-panel));
+    color: color-mix(in srgb, var(--ct-success) 66%, var(--ct-text));
   }
 }
 
@@ -8921,20 +8928,26 @@ body.coding-dark .coding-app .starting-check-link:hover:not(:disabled) {
 
   .coding-app .campus-queue-item button.campus-card-details-toggle,
   .coding-app .campus-queue-item.featured button.campus-card-details-toggle {
+    appearance: none;
+    -webkit-appearance: none;
     display: inline-flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
     align-self: start;
     width: auto;
     min-height: 0;
-    padding: 0 !important;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    color: var(--ct-primary);
+    padding: 5px 10px !important;
+    border: 1px solid color-mix(in srgb, var(--ct-primary) 16%, transparent) !important;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ct-panel) 72%, transparent) !important;
+    color: color-mix(in srgb, var(--ct-primary) 80%, var(--ct-text)) !important;
     font-size: 0.78rem;
     font-weight: 750;
-    box-shadow: none;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 40%, transparent) !important;
+    backdrop-filter: blur(6px);
   }
 
   .coding-app .campus-queue-item button.campus-card-details-toggle::after {
@@ -8942,18 +8955,36 @@ body.coding-dark .coding-app .starting-check-link:hover:not(:disabled) {
   }
 
   .coding-app .campus-queue-item button.campus-card-details-toggle:hover,
-  .coding-app .campus-queue-item.featured button.campus-card-details-toggle:hover {
-    background: transparent !important;
-    border-color: transparent !important;
-    color: color-mix(in srgb, var(--ct-primary) 72%, var(--ct-accent)) !important;
-    box-shadow: none !important;
+  .coding-app .campus-queue-item.featured button.campus-card-details-toggle:hover,
+  .coding-app .campus-queue-item button.campus-card-details-toggle:active,
+  .coding-app .campus-queue-item.featured button.campus-card-details-toggle:active,
+  .coding-app .campus-queue-item button.campus-card-details-toggle:focus,
+  .coding-app .campus-queue-item.featured button.campus-card-details-toggle:focus {
+    background: color-mix(in srgb, var(--ct-panel) 84%, transparent) !important;
+    border-color: color-mix(in srgb, var(--ct-primary) 28%, transparent) !important;
+    color: var(--ct-primary) !important;
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 46%, transparent) !important;
+    outline: 0;
+    transform: none;
+  }
+
+  .coding-app .campus-queue-item button.campus-card-details-toggle:focus-visible,
+  .coding-app .campus-queue-item.featured button.campus-card-details-toggle:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--ct-primary) 36%, transparent);
+    outline-offset: 2px;
   }
 
   .coding-app .campus-queue-item .campus-primary-action,
   .coding-app .campus-focus-actions button,
-  .coding-app .campus-queue-item.warmup > button {
+  .coding-app .campus-queue-item.warmup > button:not(.campus-card-details-toggle) {
     justify-self: center;
     width: min(100%, 260px);
+  }
+
+  .coding-app .campus-queue-item.warmup > button:not(.campus-card-details-toggle) {
+    border-color: color-mix(in srgb, var(--ct-success) 34%, var(--ct-border));
+    background: color-mix(in srgb, var(--ct-success) 10%, var(--ct-panel));
+    color: color-mix(in srgb, var(--ct-success) 66%, var(--ct-text));
   }
 
   .coding-app .campus-daily-mission.is-unavailable {

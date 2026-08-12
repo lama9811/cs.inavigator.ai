@@ -331,8 +331,11 @@ const workspacePathForSnippet = (id) => `/coding/workspace/snippet/${encodeURICo
 // to start otherwise: a quiz can only tell them they're wrong, and an editor is a wall.
 //
 //   /coding/practice                                       → LEARN, the language cards (DEFAULT)
-//   /coding/practice/learn/:language                        → that language's lesson list
-//   /coding/practice/learn/:language/:category              → one lesson
+//   /coding/practice/learn/:language                        → track chooser
+//   /coding/practice/learn/:language/library                → language reference categories
+//   /coding/practice/learn/:language/library/:category      → one reference category
+//   /coding/practice/learn/:language/:track                 → that track's lesson list
+//   /coding/practice/learn/:language/:track/:category       → one lesson
 //   /coding/practice/quiz                                   → PRACTICE, the language cards
 //   /coding/practice/quiz/:language                         → language landing (categories)
 //   /coding/practice/quiz/:language/:category/:questionId   → the quiz runner
@@ -353,6 +356,23 @@ function practiceTargetFromPath(pathname) {
 
   // --- Learn ---
   // New tracked routes add one level without breaking links created before tracks existed.
+  const languageLibraryCategory = clean.match(/^\/coding\/practice\/learn\/([^/]+)\/library\/([^/]+)$/);
+  if (languageLibraryCategory) {
+    return {
+      mode: "learn",
+      view: "library-category",
+      language: decodeURIComponent(languageLibraryCategory[1]),
+      category: decodeURIComponent(languageLibraryCategory[2]),
+    };
+  }
+  const languageLibrary = clean.match(/^\/coding\/practice\/learn\/([^/]+)\/library$/);
+  if (languageLibrary) {
+    return {
+      mode: "learn",
+      view: "library",
+      language: decodeURIComponent(languageLibrary[1]),
+    };
+  }
   const trackedLesson = clean.match(
     /^\/coding\/practice\/learn\/([^/]+)\/(beginner|intermediate|advanced)\/([^/]+)$/
   );
@@ -431,6 +451,10 @@ const PRACTICE_CODE_PATH = "/coding/practice/code";
 const LAST_PRACTICE_ROUTES_BASE_KEY = "csnav.lastPracticeRoutes";
 const learnPathForLanguage = (language) =>
   `/coding/practice/learn/${encodeURIComponent(language)}`;
+const learnPathForLanguageLibrary = (language) =>
+  `/coding/practice/learn/${encodeURIComponent(language)}/library`;
+const learnPathForLanguageLibraryCategory = (language, category) =>
+  `${learnPathForLanguageLibrary(language)}/${encodeURIComponent(category)}`;
 const learnPathForTrack = (language, track) =>
   `/coding/practice/learn/${encodeURIComponent(language)}/${encodeURIComponent(track)}`;
 const learnPathForLesson = (language, category, track) =>
@@ -4911,6 +4935,9 @@ export default function CodingTutor({
         // The track chooser renders its own in-page "All languages" link (see
         // LearnMode's TrackCards), so the toolbar back button would be a duplicate.
         back = null;
+      } else if (target.view === "library" || target.view === "library-category") {
+        // The library renders its own "Choose track" link in the reference header.
+        back = null;
       } else if (target.view === "lessons") {
         back = {
           label: "Choose track",
@@ -5000,6 +5027,12 @@ export default function CodingTutor({
               }
               onNavigateToLesson={(language, category, track) =>
                 navigate(learnPathForLesson(language, category, track))
+              }
+              onNavigateToLibrary={(language) =>
+                navigate(learnPathForLanguageLibrary(language))
+              }
+              onNavigateToLibraryCategory={(language, category) =>
+                navigate(learnPathForLanguageLibraryCategory(language, category))
               }
               // The whole point of Learn: it hands off to Practice on the same topic.
               onPracticeCategory={(language, category, questionId) =>
