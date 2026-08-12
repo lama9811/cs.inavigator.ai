@@ -16,7 +16,9 @@ def _questions():
     return [
         {"id": "cond-easy", "title": "Can Vote", "topic": "conditionals", "difficulty": "easy"},
         {"id": "arr-easy", "title": "Find Index", "topic": "arrays", "difficulty": "easy"},
+        {"id": "loops-easy", "title": "Count Loop Runs", "topic": "loops", "difficulty": "easy"},
         {"id": "dp-hard", "title": "Decode Ways", "topic": "dynamic programming", "difficulty": "hard"},
+        {"id": "tries-easy", "title": "Prefix Lookup", "topic": "tries", "difficulty": "easy"},
     ]
 
 
@@ -245,6 +247,78 @@ def test_repeated_unresolved_quiz_misses_recommend_same_category_review():
     assert rec["kind"] == "quiz_review"
     assert rec["target"] == {"mode": "quiz", "language": "python", "category": "loops"}
     assert rec["evidence"]["misses"] == 2
+
+
+def test_completed_quiz_points_to_same_topic_practice_before_advanced_fallback():
+    now = datetime.utcnow()
+    rec = _recommend(
+        concept_rows=[
+            _row(
+                category="loops",
+                language="python",
+                results_json=json.dumps([
+                    {"question_id": "loops-q1", "correct": True},
+                    {"question_id": "loops-q2", "correct": True},
+                    {"question_id": "loops-q3", "correct": True},
+                ]),
+                created_at=now,
+            )
+        ],
+        adaptive_payload={
+            "recommendation": {
+                "topic": "tries",
+                "difficulty": "easy",
+                "action": "ladder",
+                "ladder_ready": True,
+                "question_id": "tries-easy",
+            },
+            "review_signal": None,
+        },
+        mastery_payload={"weakest": {"topic": "tries", "attempts": 1, "scored": False}},
+    )
+
+    assert rec["kind"] == "quiz_to_practice"
+    assert rec["topic"] == "loops"
+    assert rec["target"]["question_id"] == "loops-easy"
+
+
+def test_unscored_advanced_mastery_does_not_recommend_tries_after_easy_work():
+    now = datetime.utcnow()
+    rec = _recommend(
+        progress_rows=[
+            _row(
+                question_id="arr-easy",
+                status="solved",
+                attempt_count=1,
+                updated_at=now,
+            )
+        ],
+        attempt_rows=[
+            _row(
+                question_id="arr-easy",
+                topic="arrays",
+                difficulty="easy",
+                language="python",
+                outcome="pass",
+                error_class=None,
+                created_at=now,
+            )
+        ],
+        adaptive_payload={
+            "recommendation": {
+                "topic": "tries",
+                "difficulty": "easy",
+                "action": "ladder",
+                "ladder_ready": True,
+                "question_id": "tries-easy",
+            },
+            "review_signal": None,
+        },
+        mastery_payload={"weakest": {"topic": "tries", "attempts": 1, "scored": False}},
+    )
+
+    assert rec["topic"] != "tries"
+    assert rec["source"] == "beginner_fallback"
 
 
 def test_completed_lesson_points_to_matching_concept_check():

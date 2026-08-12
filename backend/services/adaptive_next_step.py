@@ -443,6 +443,27 @@ def _latest_completed_lesson(learn_rows: Iterable[Any]) -> Optional[Any]:
     return rows[0] if rows else None
 
 
+def _latest_quiz_attempt(concept_rows: Iterable[Any]) -> Optional[dict[str, Any]]:
+    rows = [
+        row for row in concept_rows or []
+        if getattr(row, "category", None) not in {"placement", "mistake-bank"}
+    ]
+    rows.sort(key=lambda row: getattr(row, "created_at", None) or datetime.min, reverse=True)
+    for row in rows:
+        results = _parse_json(getattr(row, "results_json", None), [])
+        if not results:
+            continue
+        misses = sum(1 for result in results if not bool(result.get("correct")))
+        return {
+            "category": str(getattr(row, "category", "") or ""),
+            "language": getattr(row, "language", None) or "python",
+            "checked": len(results),
+            "misses": misses,
+            "at": _iso(getattr(row, "created_at", None)),
+        }
+    return None
+
+
 def _latest_error_signal(attempt_rows: Iterable[Any]) -> Optional[dict[str, Any]]:
     rows = [
         row for row in attempt_rows or []
@@ -473,8 +494,8 @@ def _advanced_allowed(topic: str, *, explicit_advanced: bool, evidence: Optional
     if explicit_advanced:
         return True
     evidence = evidence or {}
-    if evidence.get("scored") is True:
-        return True
+    if evidence.get("scored") is not True:
+        return False
     try:
         return int(evidence.get("attempts") or 0) >= mastery.MIN_ATTEMPTS_FOR_SCORE
     except (TypeError, ValueError):
@@ -551,7 +572,11 @@ def build_next_step(
     if workspace_state and getattr(workspace_state, "source", None) == "practice":
         question = questions_by_id.get(str(getattr(workspace_state, "problem_id", "")))
         progress = progress_by_question.get(str(getattr(workspace_state, "problem_id", "")))
-        if question and _progress_status(progress) != "solved" and _can_resume_question(question, explicit_advanced=explicit_advanced, surface=surface):
+        resume_evidence = {
+            "attempts": getattr(progress, "attempt_count", 0) if progress else 0,
+            "updated_at": _iso(getattr(workspace_state, "updated_at", None)),
+        }
+        if question and _progress_status(progress) != "solved" and _can_resume_question(question, explicit_advanced=explicit_advanced, surface=surface, evidence=resume_evidence):
             rec = _recommendation(
                 kind="resume",
                 title=question.get("title") or "Continue your problem",
@@ -561,7 +586,7 @@ def build_next_step(
                 confidence="high",
                 source="workspace_state",
                 beginner_mode=False,
-                evidence={"question_id": question.get("id"), "updated_at": _iso(getattr(workspace_state, "updated_at", None))},
+                evidence={"question_id": question.get("id"), **resume_evidence},
                 topic=_norm(question.get("topic")),
                 question=_serialize_question(question),
             )
@@ -676,6 +701,37 @@ def build_next_step(
         )
         if not suppressed(rec):
             return done(rec)
+
+    latest_quiz = _latest_quiz_attempt(concept_rows)
+    if latest_quiz:
+        category = _norm(latest_quiz["category"])
+        practice = _first_unsolved(questions, progress_by_question, topic=category, difficulty="easy")
+        if practice and _advanced_allowed(category, explicit_advanced=explicit_advanced, evidence={}):
+            missed = int(latest_quiz.get("misses") or 0)
+            reason = (
+                f"You checked {_title(category)} and missed {missed}. Try one Easy practice problem on the same topic."
+                if missed
+                else f"You finished a {_title(category)} check. Try one Easy practice problem on the same topic."
+            )
+            rec = _recommendation(
+                kind="quiz_to_practice",
+                title=practice.get("title") or f"Practice {_title(category)}",
+                reason=reason,
+                action_label=f"Start {practice.get('title') or _title(category)}",
+                target=_target("practice", topic=category, difficulty="easy", question_id=practice.get("id")),
+                confidence="medium",
+                source="concept_quiz_completion",
+                beginner_mode=False,
+                evidence={
+                    "checked": latest_quiz.get("checked"),
+                    "misses": missed,
+                    "completed_at": latest_quiz.get("at"),
+                },
+                topic=category,
+                question=_serialize_question(practice),
+            )
+            if not suppressed(rec):
+                return done(rec)
 
     adaptive = (adaptive_payload or {}).get("recommendation") or {}
     adaptive_topic = _norm(adaptive.get("topic"))

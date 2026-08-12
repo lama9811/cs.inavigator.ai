@@ -186,7 +186,13 @@ def add_score(scores: list[int]) -> list[int]:
 
     assert len(set(score_refs)) == 1
     assert score_refs[0] in mutated_ids
-    assert any("append()" in step["operation_summary"] and "existing list object" in step["operation_summary"] for step in steps)
+    assert any(
+        step.get("operation_kind") == "mutation"
+        and step.get("operation_target") == "scores"
+        and "append" in step["operation_summary"]
+        and "existing" in step["operation_summary"]
+        for step in steps
+    )
 
 
 def test_python_trace_v2_marks_reassignment_binding_change():
@@ -253,8 +259,29 @@ def read_second(items: list[int]) -> int:
     result = run_python_practice_trace(code, "read_second", {"name": "index", "args": [[3, 5]], "expected": 5})
     steps = result["trace_v2"]["steps"]
 
-    assert any(step.get("operation_kind") == "assignment" and step.get("operation_target") == "value" for step in steps)
+    assert any(step.get("operation_kind") == "index_access" and step.get("operation_target") == "value" for step in steps)
     assert any(step.get("student_message") for step in steps)
+
+
+def test_python_trace_v2_identifies_index_write_and_dict_update():
+    code = """
+def update_values(items: list[int], table: dict[str, int]) -> int:
+    items[0] = items[0] + 1
+    table["count"] = items[0]
+    return table["count"]
+"""
+
+    result = run_python_practice_trace(
+        code,
+        "update_values",
+        {"name": "writes", "args": [[2], {}], "expected": 3},
+    )
+    steps = result["trace_v2"]["steps"]
+
+    assert result["status"] == "passed"
+    assert any(step.get("operation_kind") == "index_write" and step.get("operation_target") == "items[0]" for step in steps)
+    assert any(step.get("operation_kind") == "index_write" and step.get("operation_target") == "table['count']" for step in steps)
+    assert any(change.get("change") == "mutated" for step in steps for change in step.get("object_changes", []))
 
 
 def test_python_freeform_trace_returns_trace_v2_and_stdout():
@@ -427,6 +454,25 @@ function second(items) {
 
     assert result["status"] == "passed"
     assert any(step.get("operation_kind") == "index_access" for step in result["trace_v2"]["steps"])
+
+
+def test_javascript_practice_trace_identifies_index_write_and_string_transform():
+    code = """
+function cleanFirst(items, text) {
+  items[0] = text.toLowerCase();
+  return items[0];
+}
+"""
+
+    result = run_javascript_practice_trace(code, "cleanFirst", {"name": "write", "args": [[""], "Ada"], "expected": "ada"})
+    steps = result["trace_v2"]["steps"]
+
+    assert result["status"] == "passed"
+    assert any(step.get("operation_kind") == "index_write" and step.get("operation_target") == "items" for step in steps)
+    assert any(
+        "stored item" in step.get("student_message", "") or "toLowerCase" in step.get("student_message", "")
+        for step in steps
+    )
 
 
 def test_javascript_freeform_trace_reports_syntax_error():
