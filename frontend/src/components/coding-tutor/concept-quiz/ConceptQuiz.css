@@ -1340,10 +1340,9 @@ body.coding-dark .cq-question-kind.group-parsons {
   }
 }
 
-/* Phones should read as one continuous quiz page, not two split panes. The
-   desktop runner draws a center divider with ::before and gives each pane its
-   own scroll area; both make 320-425px screens feel cut in half. */
-@media (max-width: 640px) {
+/* Narrow and tablet-width quiz screens should read as one continuous page. The
+   desktop divider and independent pane scrolling feel broken between 640-860px. */
+@media (max-width: 860px) {
   .coding-quiz-runner-active .cq-runner-full,
   .cq-runner-full {
     height: auto;
@@ -1423,6 +1422,9 @@ body.coding-dark .cq-question-kind.group-parsons {
   .cq-question-tools {
     justify-content: flex-start;
   }
+}
+
+@media (max-width: 640px) {
 
   .cq-prompt {
     font-size: clamp(1.05rem, 5.6vw, 1.24rem);

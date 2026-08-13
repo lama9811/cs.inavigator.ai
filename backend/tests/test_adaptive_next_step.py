@@ -179,6 +179,29 @@ def test_low_signal_advanced_in_progress_does_not_override_latest_syntax_error_o
     assert rec["target"]["category"] == "syntax"
 
 
+def test_error_checkpoint_mini_plan_uses_review_category_not_advanced_topic():
+    now = datetime.utcnow()
+    rec = _recommend(
+        attempt_rows=[
+            _row(
+                question_id="dp-hard",
+                topic="trees",
+                difficulty="hard",
+                language="python",
+                outcome="wrong_answer",
+                error_class="wrong_answer",
+                created_at=now,
+            )
+        ],
+        adaptive_payload={"recommendation": {}, "review_signal": None},
+    )
+
+    assert rec["kind"] == "error_checkpoint"
+    assert rec["target"]["category"] == "debug-2"
+    assert rec["mini_plan"][0]["label"] == "Review Debugging"
+    assert all("Trees" not in step["label"] for step in rec["mini_plan"])
+
+
 def test_workspace_surface_can_resume_low_signal_advanced_problem():
     now = datetime.utcnow()
     rec = _recommend(

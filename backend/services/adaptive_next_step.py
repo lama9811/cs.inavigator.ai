@@ -44,6 +44,17 @@ def _title(value: Any) -> str:
     return " ".join(word.capitalize() for word in _norm(value).split())
 
 
+def _display_topic(value: Any) -> str:
+    topic = _norm(value)
+    labels = {
+        "debug": "Debugging",
+        "debug-2": "Debugging",
+        "algorithm-problems": "Algorithm Problems",
+        "algorithm-problems-2": "Algorithm Problems",
+    }
+    return labels.get(topic, _title(topic))
+
+
 def _parse_json(value: Any, fallback: Any) -> Any:
     if value in (None, ""):
         return fallback
@@ -195,6 +206,15 @@ def _topic_from_recommendation(recommendation: dict[str, Any]) -> str:
     return _norm(recommendation.get("topic") or target.get("topic") or target.get("category"))
 
 
+def _learning_topic_from_recommendation(recommendation: dict[str, Any]) -> str:
+    target = recommendation.get("target") or {}
+    kind = _norm(recommendation.get("kind"))
+    mode = _norm(target.get("mode"))
+    if kind in {"review", "error_checkpoint"} or mode == "lesson_review":
+        return _norm(target.get("category") or target.get("topic") or recommendation.get("topic"))
+    return _topic_from_recommendation(recommendation)
+
+
 def _build_explanation(
     recommendation: dict[str, Any],
     *,
@@ -253,8 +273,8 @@ def _build_explanation(
 
 
 def _build_mini_plan(recommendation: dict[str, Any], *, language: str) -> list[dict[str, Any]]:
-    topic = _topic_from_recommendation(recommendation) or "conditionals"
-    display = _title(topic)
+    topic = _learning_topic_from_recommendation(recommendation) or "conditionals"
+    display = _display_topic(topic)
     lesson_target = _target("learn_topic", language=language, topic=topic)
     quiz_target = _target("quiz", language=language, category=topic)
     practice_target = _target("practice", topic=topic, difficulty="easy")
