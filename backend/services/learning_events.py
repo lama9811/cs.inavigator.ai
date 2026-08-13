@@ -12,7 +12,13 @@ from models import CodingLearningEvent
 
 
 MAX_METADATA_CHARS = 2000
-FRONTEND_EVENT_TYPES = {"recommendation_dismissed", "recommendation_opened"}
+MINI_PLAN_EVENT_TYPES = {
+    "mini_plan_started",
+    "mini_plan_step_opened",
+    "mini_plan_step_completed",
+    "mini_plan_completed",
+}
+FRONTEND_EVENT_TYPES = {"recommendation_dismissed", "recommendation_opened", *MINI_PLAN_EVENT_TYPES}
 KNOWN_EVENT_TYPES = {
     "lesson_opened",
     "lesson_completed",

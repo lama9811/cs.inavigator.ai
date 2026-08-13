@@ -269,24 +269,31 @@ export function buildPracticeGuideRecommendation({
   progressByQuestion = {},
   updateFilter,
   onOpenLessonReview,
+  onOpenMiniPlanStep,
 }) {
   const inView = new Set((topicsInView || []).map(norm));
   const recTopic = norm(codingRecommendation?.topic || codingRecommendation?.target?.topic);
   const recFitsView = !recTopic || !inView.size || inView.has(recTopic);
 
   if (codingRecommendation && recFitsView) {
+    const miniPlan = codingRecommendation.miniPlan || codingRecommendation.mini_plan || [];
+    const currentStep = miniPlan.find(step => step?.is_current) || null;
     return {
       label: "Recommended next",
-      title: codingRecommendation.title,
+      title: currentStep?.label || codingRecommendation.title,
       band: codingRecommendation.kind === "first_run" ? "Easy" : titleTopic(codingRecommendation.target?.difficulty || "Review"),
       bandClass: codingRecommendation.kind === "review" ? "shaky" : "steady",
       reason: codingRecommendation.reason,
-      cta: codingRecommendation.actionLabel,
+      cta: currentStep?.label || codingRecommendation.actionLabel,
       recommendation: codingRecommendation,
       explanation: codingRecommendation.explanation || null,
-      miniPlan: codingRecommendation.mini_plan || codingRecommendation.miniPlan || [],
+      miniPlan,
       cooldowns: codingRecommendation.cooldowns || [],
       onClick: () => {
+        if (currentStep) {
+          onOpenMiniPlanStep?.(currentStep, codingRecommendation);
+          return;
+        }
         const target = codingRecommendation.target || {};
         if (target.mode === "lesson_review") {
           onOpenLessonReview?.(codingRecommendation.reviewSignal || target);

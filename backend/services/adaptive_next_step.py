@@ -7,6 +7,7 @@ logs we already keep and returns one action the frontend can render anywhere.
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Any, Iterable, Optional
 
@@ -34,6 +35,7 @@ PASS_SCORE = 0.7
 QUIZ_MISS_THRESHOLD = 2
 DISMISS_COOLDOWN_HOURS = 24
 STARTING_CHECK_SKIP_COOLDOWN_DAYS = 14
+QUIZ_STEP_CHECK_COUNT = 3
 
 
 def _norm(value: Any) -> str:
@@ -80,6 +82,10 @@ def _target(mode: str, **kwargs: Any) -> dict[str, Any]:
     return {"mode": mode, **{key: value for key, value in kwargs.items() if value not in (None, "")}}
 
 
+def _slug(value: Any) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", _norm(value)).strip("-") or "step"
+
+
 def _recommendation(
     *,
     kind: str,
@@ -124,6 +130,13 @@ def _event_metadata(row: Any) -> dict[str, Any]:
         return parsed if isinstance(parsed, dict) else {}
     except (TypeError, ValueError, json.JSONDecodeError):
         return {}
+
+
+def _event_time(row: Any) -> Optional[datetime]:
+    created = getattr(row, "created_at", None)
+    if not isinstance(created, datetime):
+        return None
+    return created.replace(tzinfo=None) if created.tzinfo else created
 
 
 def _aware_now(rows: Iterable[Any]) -> datetime:
@@ -279,17 +292,191 @@ def _build_mini_plan(recommendation: dict[str, Any], *, language: str) -> list[d
     quiz_target = _target("quiz", language=language, category=topic)
     practice_target = _target("practice", topic=topic, difficulty="easy")
     return [
-        {"label": f"Review {display}", "target": lesson_target},
-        {"label": f"Answer 3 {display} checks", "target": quiz_target},
-        {"label": f"Try one Easy {display} problem", "target": practice_target},
-        {"label": "If a run fails, use Trace or Debug", "target": _target("workspace", tool="trace")},
+        {"id": f"learn-{_slug(topic)}", "label": f"Review {display}", "target": lesson_target},
+        {"id": f"quiz-{_slug(topic)}", "label": f"Answer 3 {display} checks", "target": quiz_target},
+        {"id": f"practice-{_slug(topic)}", "label": f"Try one Easy {display} problem", "target": practice_target},
+        {"id": f"trace-debug-{_slug(topic)}", "label": "If a run fails, use Trace or Debug", "target": _target("workspace", tool="trace")},
     ]
+
+
+def _plan_topic(recommendation: dict[str, Any]) -> str:
+    return _learning_topic_from_recommendation(recommendation) or _topic_from_recommendation(recommendation) or "conditionals"
+
+
+def _plan_id(recommendation: dict[str, Any], *, language: str) -> str:
+    target = recommendation.get("target") or {}
+    parts = [
+        language,
+        recommendation.get("kind"),
+        recommendation.get("source"),
+        _plan_topic(recommendation),
+        target.get("mode"),
+        target.get("question_id") or target.get("questionId") or (recommendation.get("question") or {}).get("id"),
+    ]
+    return "plan-" + "-".join(_slug(part) for part in parts if part not in (None, ""))
+
+
+def _latest_learn_completion(learn_rows: Iterable[Any], topic: str) -> Optional[str]:
+    matches = [
+        row for row in learn_rows or []
+        if _norm(getattr(row, "category", None)) == _norm(topic)
+        and _norm(getattr(row, "status", None)) in {"opened", "completed"}
+    ]
+    matches.sort(key=lambda row: getattr(row, "completed_at", None) or getattr(row, "last_opened_at", None) or getattr(row, "updated_at", None) or datetime.min, reverse=True)
+    row = matches[0] if matches else None
+    if not row:
+        return None
+    return _iso(getattr(row, "completed_at", None)) or _iso(getattr(row, "last_opened_at", None)) or _iso(getattr(row, "updated_at", None))
+
+
+def _latest_quiz_progress_time(concept_rows: Iterable[Any], topic: str, *, min_checked: int = QUIZ_STEP_CHECK_COUNT) -> Optional[str]:
+    rows = [
+        row for row in concept_rows or []
+        if _norm(getattr(row, "category", None)) == _norm(topic)
+    ]
+    rows.sort(key=lambda row: getattr(row, "created_at", None) or datetime.min, reverse=True)
+    checked = 0
+    latest: Optional[datetime] = None
+    seen: set[str] = set()
+    for row in rows:
+        created = getattr(row, "created_at", None)
+        for result in _parse_json(getattr(row, "results_json", None), []):
+            qid = str(result.get("question_id") or "")
+            if qid and qid in seen:
+                continue
+            if qid:
+                seen.add(qid)
+            checked += 1
+        if created and (latest is None or created > latest):
+            latest = created
+        if checked >= min_checked:
+            return _iso(latest)
+    return None
+
+
+def _latest_practice_progress_time(
+    questions_by_id: dict[str, dict[str, Any]],
+    progress_rows: Iterable[Any],
+    attempt_rows: Iterable[Any],
+    topic: str,
+) -> Optional[str]:
+    stamps: list[datetime] = []
+    for row in progress_rows or []:
+        question = questions_by_id.get(str(getattr(row, "question_id", "")))
+        if question and _norm(question.get("topic")) == _norm(topic) and _progress_status(row) != "not_started":
+            stamp = getattr(row, "last_attempt_at", None) or getattr(row, "solved_at", None) or getattr(row, "updated_at", None)
+            if isinstance(stamp, datetime):
+                stamps.append(stamp)
+    for row in attempt_rows or []:
+        if _norm(getattr(row, "topic", None)) == _norm(topic):
+            stamp = getattr(row, "created_at", None)
+            if isinstance(stamp, datetime):
+                stamps.append(stamp)
+    if not stamps:
+        return None
+    return max(stamps).isoformat()
+
+
+def _latest_trace_or_debug_time(learning_event_rows: Iterable[Any], topic: str) -> Optional[str]:
+    stamps = []
+    for row in learning_event_rows or []:
+        if getattr(row, "event_type", None) not in {"trace_used", "tutor_debug_used"}:
+            continue
+        if _norm(getattr(row, "topic", None) or getattr(row, "category", None)) not in {_norm(topic), ""}:
+            continue
+        stamp = _event_time(row)
+        if stamp:
+            stamps.append(stamp)
+    return max(stamps).isoformat() if stamps else None
+
+
+def _latest_active_plan_topic(learning_event_rows: Iterable[Any]) -> Optional[dict[str, Any]]:
+    rows = [
+        row for row in learning_event_rows or []
+        if getattr(row, "event_type", None) in {"mini_plan_started", "mini_plan_step_opened", "recommendation_opened"}
+    ]
+    rows.sort(key=lambda row: _event_time(row) or datetime.min, reverse=True)
+    for row in rows:
+        meta = _event_metadata(row)
+        topic = _norm(meta.get("plan_topic") or meta.get("topic") or getattr(row, "topic", None) or getattr(row, "category", None))
+        if topic and topic not in ADVANCED_TOPICS:
+            return {
+                "topic": topic,
+                "event_type": getattr(row, "event_type", None),
+                "at": _iso(getattr(row, "created_at", None)),
+            }
+    return None
+
+
+def _dismissed_plan_steps(learning_event_rows: Iterable[Any], plan_id: str) -> set[str]:
+    dismissed: set[str] = set()
+    for row in learning_event_rows or []:
+        if getattr(row, "event_type", None) != "recommendation_dismissed":
+            continue
+        meta = _event_metadata(row)
+        if meta.get("plan_id") == plan_id and meta.get("step_id"):
+            dismissed.add(str(meta["step_id"]))
+    return dismissed
+
+
+def _decorate_mini_plan_steps(
+    plan: list[dict[str, Any]],
+    *,
+    plan_id: str,
+    topic: str,
+    questions_by_id: dict[str, dict[str, Any]],
+    progress_rows: Iterable[Any],
+    attempt_rows: Iterable[Any],
+    concept_rows: Iterable[Any],
+    learn_rows: Iterable[Any],
+    learning_event_rows: Iterable[Any],
+) -> list[dict[str, Any]]:
+    completions = {
+        "learn": _latest_learn_completion(learn_rows, topic),
+        "quiz": _latest_quiz_progress_time(concept_rows, topic),
+        "practice": _latest_practice_progress_time(questions_by_id, progress_rows, attempt_rows, topic),
+        "trace-debug": _latest_trace_or_debug_time(learning_event_rows, topic),
+    }
+    if completions["quiz"] and not completions["learn"]:
+        completions["learn"] = completions["quiz"]
+    if completions["practice"]:
+        completions["quiz"] = completions["quiz"] or completions["practice"]
+        completions["learn"] = completions["learn"] or completions["practice"]
+    if completions["trace-debug"]:
+        completions["practice"] = completions["practice"] or completions["trace-debug"]
+        completions["quiz"] = completions["quiz"] or completions["trace-debug"]
+        completions["learn"] = completions["learn"] or completions["trace-debug"]
+    dismissed = _dismissed_plan_steps(learning_event_rows, plan_id)
+    decorated: list[dict[str, Any]] = []
+    current_set = False
+    for step in plan:
+        prefix = str(step.get("id") or "").split("-", 1)[0]
+        if str(step.get("id") or "").startswith("trace-debug"):
+            prefix = "trace-debug"
+        completed_at = completions.get(prefix)
+        status = "completed" if completed_at else "upcoming"
+        if step.get("id") in dismissed and status != "completed":
+            status = "dismissed"
+        is_current = False
+        if status == "upcoming" and not current_set:
+            is_current = True
+            status = "current"
+            current_set = True
+        decorated.append({**step, "status": status, "completed_at": completed_at, "is_current": is_current})
+    if decorated and not any(step.get("is_current") for step in decorated):
+        decorated[-1] = {**decorated[-1], "is_current": True}
+    return decorated
 
 
 def _decorate_recommendation(
     recommendation: dict[str, Any],
     *,
     language: str,
+    questions_by_id: dict[str, dict[str, Any]],
+    progress_rows: Iterable[Any],
+    attempt_rows: Iterable[Any],
+    concept_rows: Iterable[Any],
+    learn_rows: Iterable[Any],
     learning_event_rows: Iterable[Any],
     has_signal: bool,
     advanced_blocked_topic: Optional[str] = None,
@@ -299,14 +486,37 @@ def _decorate_recommendation(
     skip_cooldown = _starting_skip_cooldown(learning_event_rows, has_signal=has_signal)
     if skip_cooldown:
         cooldowns.append(skip_cooldown)
+    plan_id = _plan_id(recommendation, language=language)
+    plan_topic = _plan_topic(recommendation)
+    mini_plan = _decorate_mini_plan_steps(
+        _build_mini_plan(recommendation, language=language),
+        plan_id=plan_id,
+        topic=plan_topic,
+        questions_by_id=questions_by_id,
+        progress_rows=progress_rows,
+        attempt_rows=attempt_rows,
+        concept_rows=concept_rows,
+        learn_rows=learn_rows,
+        learning_event_rows=learning_event_rows,
+    )
     decorated = {
         **recommendation,
+        "plan_id": plan_id,
+        "plan_context": {
+            "language": language,
+            "kind": recommendation.get("kind"),
+            "source": recommendation.get("source"),
+            "topic": plan_topic,
+            "target": recommendation.get("target") or {},
+            "reason": recommendation.get("reason"),
+            "generated_at": _aware_now(learning_event_rows).isoformat(),
+        },
         "explanation": _build_explanation(
             recommendation,
             advanced_blocked_topic=advanced_blocked_topic,
             cooldowns=cooldowns,
         ),
-        "mini_plan": _build_mini_plan(recommendation, language=language),
+        "mini_plan": mini_plan,
         "cooldowns": cooldowns,
     }
     return decorated
@@ -569,6 +779,11 @@ def build_next_step(
         return _decorate_recommendation(
             recommendation,
             language=language,
+            questions_by_id=questions_by_id,
+            progress_rows=progress_rows,
+            attempt_rows=attempt_rows,
+            concept_rows=concept_rows,
+            learn_rows=learn_rows,
             learning_event_rows=learning_event_rows,
             has_signal=has_signal,
             advanced_blocked_topic=advanced_blocked_topic,
@@ -726,7 +941,7 @@ def build_next_step(
     if latest_quiz:
         category = _norm(latest_quiz["category"])
         practice = _first_unsolved(questions, progress_by_question, topic=category, difficulty="easy")
-        if practice and _advanced_allowed(category, explicit_advanced=explicit_advanced, evidence={}):
+        if _advanced_allowed(category, explicit_advanced=explicit_advanced, evidence={}):
             missed = int(latest_quiz.get("misses") or 0)
             reason = (
                 f"You checked {_title(category)} and missed {missed}. Try one Easy practice problem on the same topic."
@@ -735,10 +950,10 @@ def build_next_step(
             )
             rec = _recommendation(
                 kind="quiz_to_practice",
-                title=practice.get("title") or f"Practice {_title(category)}",
+                title=(practice or {}).get("title") or f"Practice {_title(category)}",
                 reason=reason,
-                action_label=f"Start {practice.get('title') or _title(category)}",
-                target=_target("practice", topic=category, difficulty="easy", question_id=practice.get("id")),
+                action_label=f"Start {(practice or {}).get('title') or _title(category)}",
+                target=_target("practice", topic=category, difficulty="easy", question_id=(practice or {}).get("id")),
                 confidence="medium",
                 source="concept_quiz_completion",
                 beginner_mode=False,
@@ -815,6 +1030,26 @@ def build_next_step(
             topic=category,
         )
         return done(rec)
+
+    active_plan = _latest_active_plan_topic(learning_event_rows)
+    if active_plan:
+        topic = active_plan["topic"]
+        starter_question = _first_unsolved(questions, progress_by_question, topic=topic, difficulty="easy")
+        rec = _recommendation(
+            kind="active_plan",
+            title=(starter_question or {}).get("title") or f"Continue {_display_topic(topic)}",
+            reason=f"Continue the {_display_topic(topic)} plan you started.",
+            action_label=(f"Start {(starter_question or {}).get('title')}" if starter_question else f"Continue {_display_topic(topic)}"),
+            target=_target("practice", topic=topic, difficulty="easy", question_id=(starter_question or {}).get("id")),
+            confidence="medium",
+            source="mini_plan",
+            beginner_mode=False,
+            evidence={"event_type": active_plan.get("event_type"), "at": active_plan.get("at")},
+            topic=topic,
+            question=_serialize_question(starter_question),
+        )
+        if not suppressed(rec):
+            return done(rec)
 
     starter = _first_unsolved(questions, progress_by_question, beginner_only=True, difficulty="easy")
     topic = _norm((starter or {}).get("topic")) or _starter_topic(questions)

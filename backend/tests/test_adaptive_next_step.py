@@ -83,6 +83,9 @@ def test_brand_new_user_gets_beginner_safe_first_run_recommendation():
     rec = _recommend()
 
     assert rec["kind"] == "first_run"
+    assert rec["plan_id"].startswith("plan-python-first-run")
+    assert all(step.get("id") for step in rec["mini_plan"])
+    assert sum(1 for step in rec["mini_plan"] if step.get("is_current")) == 1
     assert rec["beginner_mode"] is True
     assert rec["target"]["mode"] == "learn"
     assert rec["topic"] == "conditionals"
@@ -358,6 +361,91 @@ def test_completed_lesson_points_to_matching_concept_check():
 
     assert rec["kind"] == "lesson_to_quiz"
     assert rec["target"] == {"mode": "quiz", "language": "python", "category": "functions"}
+    assert rec["mini_plan"][0]["status"] == "completed"
+    assert rec["mini_plan"][1]["status"] == "current"
+
+
+def test_quiz_progress_advances_mini_plan_to_practice_step():
+    now = datetime.utcnow()
+    rec = _recommend(
+        concept_rows=[
+            _row(
+                category="loops",
+                language="python",
+                results_json=json.dumps([
+                    {"question_id": "q1", "correct": True},
+                    {"question_id": "q2", "correct": True},
+                    {"question_id": "q3", "correct": True},
+                ]),
+                created_at=now,
+            )
+        ]
+    )
+
+    assert rec["kind"] == "quiz_to_practice"
+    assert rec["mini_plan"][1]["status"] == "completed"
+    assert rec["mini_plan"][2]["status"] == "current"
+
+
+def test_practice_progress_advances_mini_plan_past_easy_problem():
+    now = datetime.utcnow()
+    rec = _recommend(
+        concept_rows=[
+            _row(
+                category="loops",
+                language="python",
+                results_json=json.dumps([
+                    {"question_id": "q1", "correct": True},
+                    {"question_id": "q2", "correct": True},
+                    {"question_id": "q3", "correct": True},
+                ]),
+                created_at=now,
+            )
+        ],
+        progress_rows=[
+            _row(
+                question_id="loops-easy",
+                status="solved",
+                attempt_count=1,
+                last_attempt_at=now,
+                solved_at=now,
+                updated_at=now,
+            )
+        ],
+        attempt_rows=[
+            _row(
+                question_id="loops-easy",
+                topic="loops",
+                difficulty="easy",
+                language="python",
+                outcome="pass",
+                error_class=None,
+                created_at=now,
+            )
+        ],
+    )
+
+    assert rec["mini_plan"][2]["status"] == "completed"
+
+
+def test_active_topic_plan_beats_conditionals_fallback():
+    now = datetime.utcnow()
+    rec = _recommend(
+        starting_row=_row(status="skipped"),
+        learning_event_rows=[
+            _row(
+                event_type="mini_plan_step_opened",
+                topic="loops",
+                category="loops",
+                metadata_json=json.dumps({"plan_topic": "loops", "plan_id": "plan-python-loops"}),
+                created_at=now,
+            )
+        ],
+    )
+
+    assert rec["kind"] == "active_plan"
+    assert rec["topic"] == "loops"
+    assert rec["topic"] != "conditionals"
 
 
 def test_dismissed_review_uses_cooldown_and_falls_back():

@@ -94,17 +94,32 @@ function useCompactHomeCards() {
   return compact;
 }
 
-function MiniPlanList({ items }) {
+function stepMarker(item, index) {
+  if (item?.status === "completed") return "✓";
+  if (item?.status === "dismissed") return "-";
+  return index + 1;
+}
+
+function MiniPlanList({ items, onOpenStep }) {
   const plan = Array.isArray(items) ? items.filter(item => item?.label).slice(0, 5) : [];
   if (!plan.length) return null;
   return (
     <div className="campus-mini-plan-wrap">
-      <span>Next steps</span>
+      <span>Plan progress</span>
       <ol className="campus-mini-plan" aria-label="Suggested plan">
       {plan.map((item, index) => (
-        <li key={`${item.label}-${index}`}>
-          <span>{index + 1}</span>
-          <p>{item.label}</p>
+        <li
+          key={item.id || `${item.label}-${index}`}
+          className={`${item.status ? `is-${item.status}` : "is-upcoming"}${item.is_current ? " is-current" : ""}`}
+        >
+          <span>{stepMarker(item, index)}</span>
+          <button
+            type="button"
+            onClick={() => onOpenStep?.(item)}
+            disabled={!onOpenStep || item.status === "completed"}
+          >
+            {item.label}
+          </button>
         </li>
       ))}
       </ol>
@@ -377,6 +392,7 @@ function CampusLearningQueue({
   startingCheck,
   codingRecommendation,
   onOpenRecommendation,
+  onOpenMiniPlanStep,
   onDismissRecommendation,
   onSelect,
   onOpenQuizBank,
@@ -407,7 +423,9 @@ function CampusLearningQueue({
   const focusTopic = adaptiveTopic || (focus?.hasProgress ? focus.next?.topic : focus?.first?.topic);
   const needsStartingCheck = !hasRealProgress && !startingCheck;
   const placementProfile = !hasRealProgress ? startingCheck : null;
-  const focusTitle = codingRecommendation?.title || (needsStartingCheck ? "Find your starting point" : placementProfile?.title || (adaptiveReady
+  const currentPlanStep = (codingRecommendation?.miniPlan || codingRecommendation?.mini_plan || [])
+    .find(step => step?.is_current) || null;
+  const focusTitle = currentPlanStep?.label || codingRecommendation?.title || (needsStartingCheck ? "Find your starting point" : placementProfile?.title || (adaptiveReady
     ? `${titleCase(adaptiveTopic)} practice`
     : adaptiveRecommendation?.action === "practice_review"
       ? `Review ${titleCase(adaptiveTopic)}`
@@ -443,6 +461,10 @@ function CampusLearningQueue({
     </button>
   ) : null;
   const focusClick = () => {
+    if (codingRecommendation && currentPlanStep) {
+      onOpenMiniPlanStep?.(currentPlanStep);
+      return;
+    }
     if (codingRecommendation) {
       onOpenRecommendation?.();
       return;
@@ -540,12 +562,15 @@ function CampusLearningQueue({
               type="button"
               onClick={focusClick}
             >
-              {codingRecommendation?.actionLabel || (needsStartingCheck
+              {currentPlanStep?.label || codingRecommendation?.actionLabel || (needsStartingCheck
                 ? "Start Syntax quiz"
                 : placementProfile?.actionLabel || (focusTopic ? `${focusButton}: ${titleCase(focusTopic)}` : "Browse Practice Library"))}
             </button>
           </div>
-          <MiniPlanList items={codingRecommendation?.mini_plan} />
+          <MiniPlanList
+            items={codingRecommendation?.miniPlan || codingRecommendation?.mini_plan}
+            onOpenStep={codingRecommendation ? onOpenMiniPlanStep : null}
+          />
           <WhyThisDetails recommendation={codingRecommendation} onDismiss={codingRecommendation ? onDismissRecommendation : null} />
         </article>
       </div>
@@ -911,6 +936,7 @@ export default function CampusLabHome({
   onSkipStartingCheck,
   onResetStartingCheck,
   onOpenRecommendation,
+  onOpenMiniPlanStep,
   onDismissRecommendation,
   learnQuizStats,
   learningStyle = "try_then_hint",
@@ -978,6 +1004,7 @@ export default function CampusLabHome({
         startingCheck={startingCheck}
         codingRecommendation={codingRecommendation}
         onOpenRecommendation={onOpenRecommendation}
+        onOpenMiniPlanStep={onOpenMiniPlanStep}
         onDismissRecommendation={onDismissRecommendation}
         onSelect={onSelectQuestion}
         onOpenQuizBank={onOpenQuizBank}

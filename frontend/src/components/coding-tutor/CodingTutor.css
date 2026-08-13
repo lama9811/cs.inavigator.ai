@@ -7228,6 +7228,19 @@ body.coding-dark .campus-hero-focus {
   line-height: 1.35;
 }
 
+.campus-mini-plan li.is-current {
+  color: var(--ct-text);
+  font-weight: 650;
+}
+
+.campus-mini-plan li.is-completed {
+  color: color-mix(in srgb, var(--ct-success) 78%, var(--ct-text));
+}
+
+.campus-mini-plan li.is-dismissed {
+  opacity: 0.7;
+}
+
 .campus-mini-plan li > span {
   display: inline-flex;
   align-items: center;
@@ -7246,16 +7259,73 @@ body.coding-dark .campus-hero-focus {
   min-width: 0;
 }
 
+.campus-mini-plan button,
+.practice-guide-mini-plan button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.campus-mini-plan button:hover,
+.practice-guide-mini-plan button:hover {
+  color: var(--ct-primary);
+}
+
+.campus-mini-plan button:disabled,
+.practice-guide-mini-plan button:disabled {
+  cursor: default;
+}
+
 .practice-guide-mini-plan {
+  display: grid;
+  gap: 7px;
   margin: 12px 0 0;
-  padding-left: 22px;
+  padding: 10px 12px;
+  list-style: none;
+  border: 1px solid color-mix(in srgb, var(--ct-success) 16%, var(--ct-border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ct-success) 4%, var(--ct-panel));
   color: var(--ct-muted);
   font-size: 0.9rem;
   line-height: 1.45;
 }
 
 .practice-guide-mini-plan li {
-  margin: 4px 0;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.practice-guide-mini-plan li > span {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ct-success) 12%, var(--ct-panel));
+  color: var(--ct-success);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.practice-guide-mini-plan li.is-current {
+  color: var(--ct-text);
+  font-weight: 650;
+}
+
+.practice-guide-mini-plan li.is-completed {
+  color: color-mix(in srgb, var(--ct-success) 78%, var(--ct-text));
+}
+
+.practice-guide-mini-plan li.is-dismissed {
+  opacity: 0.7;
 }
 
 .campus-why-this,

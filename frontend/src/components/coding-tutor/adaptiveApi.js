@@ -24,11 +24,16 @@ export function normalizeBackendRecommendation(payload) {
   const recommendation = payload?.recommendation || payload;
   if (!recommendation || typeof recommendation !== "object") return null;
   const target = recommendation.target || {};
+  const miniPlan = recommendation.miniPlan || recommendation.mini_plan || [];
   return {
     ...recommendation,
+    planId: recommendation.planId || recommendation.plan_id || null,
+    planContext: recommendation.planContext || recommendation.plan_context || null,
     actionLabel: recommendation.actionLabel || recommendation.action_label || "Open recommendation",
     beginnerMode: Boolean(recommendation.beginnerMode ?? recommendation.beginner_mode),
     reviewSignal: recommendation.reviewSignal || recommendation.review_signal || null,
+    miniPlan,
+    mini_plan: miniPlan,
     target: {
       ...target,
       questionId: target.questionId || target.question_id || null,

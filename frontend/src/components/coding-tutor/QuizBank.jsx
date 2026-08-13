@@ -186,6 +186,7 @@ export default function QuizBank({
   adaptivePractice = null,
   codingRecommendation = null,
   onDismissRecommendation = null,
+  onOpenMiniPlanStep = null,
   onOpenLessonReview = null,
 }) {
   const location = useLocation();
@@ -626,6 +627,7 @@ export default function QuizBank({
     progressByQuestion,
     updateFilter,
     onOpenLessonReview,
+    onOpenMiniPlanStep,
   });
   const guideRecommendation = sharedGuideRecommendation || fallbackGuideRecommendation;
 
@@ -967,7 +969,19 @@ export default function QuizBank({
                 {Array.isArray(guideRecommendation.miniPlan) && guideRecommendation.miniPlan.length ? (
                   <ol className="practice-guide-mini-plan" aria-label="Suggested plan">
                     {guideRecommendation.miniPlan.slice(0, 5).map((item, index) => (
-                      <li key={`${item?.label || "step"}-${index}`}>{item?.label}</li>
+                      <li
+                        key={item?.id || `${item?.label || "step"}-${index}`}
+                        className={`${item?.status ? `is-${item.status}` : "is-upcoming"}${item?.is_current ? " is-current" : ""}`}
+                      >
+                        <span>{item?.status === "completed" ? "✓" : index + 1}</span>
+                        <button
+                          type="button"
+                          disabled={!onOpenMiniPlanStep || item?.status === "completed"}
+                          onClick={() => onOpenMiniPlanStep?.(item, guideRecommendation.recommendation)}
+                        >
+                          {item?.label}
+                        </button>
+                      </li>
                     ))}
                   </ol>
                 ) : null}

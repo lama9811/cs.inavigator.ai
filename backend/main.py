@@ -1082,8 +1082,9 @@ class CodingLearningEventCreate(BaseModel):
     @classmethod
     def validate_event_type(cls, value):
         normalized = (value or "").strip().lower()
-        if normalized not in {"recommendation_dismissed", "recommendation_opened"}:
-            raise ValueError("event_type must be recommendation_dismissed or recommendation_opened")
+        if normalized not in learning_events.FRONTEND_EVENT_TYPES:
+            allowed = ", ".join(sorted(learning_events.FRONTEND_EVENT_TYPES))
+            raise ValueError(f"event_type must be one of: {allowed}")
         return normalized
 
 class PracticeRunRequest(BaseModel):

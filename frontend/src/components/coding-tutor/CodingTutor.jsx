@@ -2236,6 +2236,8 @@ export default function CodingTutor({
     setRecommendationDismissedLocally(true);
     const languageKey = PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
     const target = recommendation.target || {};
+    const currentStep = (recommendation.miniPlan || recommendation.mini_plan || []).find(step => step?.is_current) || null;
+    const planContext = recommendation.planContext || recommendation.plan_context || {};
     recordLearningEvent(apiBase, {
       event_type: "recommendation_dismissed",
       language: languageKey,
@@ -2247,6 +2249,9 @@ export default function CodingTutor({
       difficulty: target.difficulty || recommendation.question?.difficulty || null,
       metadata: {
         kind: recommendation.kind,
+        plan_id: recommendation.planId || recommendation.plan_id || null,
+        step_id: currentStep?.id || null,
+        plan_topic: planContext.topic || target.topic || recommendation.topic || null,
         topic: target.topic || recommendation.topic || null,
         category: target.category || recommendation.topic || null,
         target_mode: target.mode || null,
@@ -4562,6 +4567,7 @@ export default function CodingTutor({
       onOpenTopic={openRecommendedTopic}
       onOpenLessonReview={openAdaptiveReviewLesson}
       onOpenRecommendation={() => openCodingRecommendation(codingRecommendation)}
+      onOpenMiniPlanStep={(step) => openMiniPlanStep(step, codingRecommendation)}
       onDismissRecommendation={() => dismissCodingRecommendation(codingRecommendation)}
       onOpenInterviewPrep={() => goToPage("interview")}
       onPrompt={sendDashboardPrompt}
@@ -4872,6 +4878,32 @@ export default function CodingTutor({
     openPracticeLibrary();
   };
 
+  const openMiniPlanStep = (step, recommendation = codingRecommendation) => {
+    if (!step || !recommendation) return;
+    const target = step.target || recommendation.target || {};
+    const languageKey = target.language || PRACTICE_LANGUAGE_API[practiceLanguage] || "python";
+    const planContext = recommendation.planContext || recommendation.plan_context || {};
+    recordLearningEvent(apiBase, {
+      event_type: "mini_plan_step_opened",
+      language: languageKey,
+      surface: activePage === "workspace" ? "workspace" : activePage === "quiz" ? "practice" : "home",
+      category: target.category || planContext.topic || recommendation.topic || null,
+      topic: target.topic || planContext.topic || recommendation.topic || null,
+      question_id: target.questionId || target.question_id || recommendation.question?.id || null,
+      source: recommendation.source || "adaptive_next_step",
+      difficulty: target.difficulty || recommendation.question?.difficulty || null,
+      metadata: {
+        plan_id: recommendation.planId || recommendation.plan_id || null,
+        step_id: step.id || null,
+        step_label: step.label || null,
+        plan_topic: planContext.topic || target.topic || recommendation.topic || null,
+        kind: recommendation.kind || null,
+        target_mode: target.mode || null,
+      },
+    }).catch(() => {});
+    openCodingRecommendation({ ...recommendation, target, actionLabel: step.label || recommendation.actionLabel });
+  };
+
   const renderInterviewPrep = () => (
     <InterviewPrep
       questions={interviewQuestions}
@@ -5077,6 +5109,7 @@ export default function CodingTutor({
               adaptivePractice={adaptivePractice}
               codingRecommendation={codingRecommendation}
               onDismissRecommendation={() => dismissCodingRecommendation(codingRecommendation)}
+              onOpenMiniPlanStep={(step, recommendation) => openMiniPlanStep(step, recommendation || codingRecommendation)}
               onOpenLessonReview={openAdaptiveReviewLesson}
               onDifficultyChange={setDifficulty}
               onLanguageChange={setPracticeLanguage}

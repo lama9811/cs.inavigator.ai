@@ -87,3 +87,26 @@ def test_learning_event_metadata_is_sanitized_and_serialized():
     assert len(raw["items"]) == 10
     payload = learning_events.serialize_event(row)
     assert payload["metadata"]["kind"] == "error_checkpoint"
+
+
+def test_mini_plan_learning_events_are_allowed():
+    db = _session()
+    user = User(email="timeline-plan@example.com", password_hash="x")
+    db.add(user)
+    db.commit()
+
+    for event_type in sorted(learning_events.MINI_PLAN_EVENT_TYPES):
+        row = learning_events.record_event(
+            db,
+            user_id=user.id,
+            event_type=event_type,
+            language="python",
+            surface="home",
+            topic="loops",
+            metadata={"plan_id": "plan-python-loops", "step_id": "quiz-loops"},
+            commit=True,
+        )
+        assert row.event_type == event_type
+
+    rows = learning_events.recent_events(db, user.id, language="python")
+    assert {row.event_type for row in rows} == learning_events.MINI_PLAN_EVENT_TYPES
