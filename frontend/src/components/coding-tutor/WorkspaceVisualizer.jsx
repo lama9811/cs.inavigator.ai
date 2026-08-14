@@ -331,58 +331,91 @@ function stringScanTrace(meta, inputText) {
 }
 
 function stackTrace(meta) {
-  const ops = meta?.input?.operations || ["push A", "push B", "peek", "pop"];
-  const stack = [];
+  const tokens = Array.isArray(meta?.input?.tokens) ? meta.input.tokens.map(String).slice(0, 5) : ["3", "+", "2", "*", "2"];
+  const [first, plus, second, times, third] = tokens;
   const steps = [
     makeStep({
-      title: "Start with an empty stack",
-      body: "A stack removes the newest item first. That rule is called LIFO.",
-      changed: "stack = []",
-      why: "The top is the only end you touch.",
-      state: { stack: [] },
-      code: "stack = []",
-      action: "setup",
+      title: "Read the first number",
+      body: `Read ${first} and push it onto the value stack.`,
+      changed: `values = [${first}]`,
+      why: "Stacks keep the newest item at the top.",
+      state: { stack: [first], active: [0], note: `expression: ${tokens.join(" ")}` },
+      code: "if token is a number: values.push(token)",
+      action: "push",
+      animation: "add",
+    }),
+    makeStep({
+      title: `Push ${plus}`,
+      body: `${plus} waits on the operator stack until there are enough values to apply it.`,
+      changed: `operators = [${plus}]`,
+      why: "Operators can wait while more values arrive.",
+      state: { stack: [first, plus], active: [1], note: "operator waits" },
+      code: "if token is an operator: ops.push(token)",
+      action: "push",
+      animation: "add",
+    }),
+    makeStep({
+      title: `Read ${second}`,
+      body: `${second} joins the value stack above ${first}.`,
+      changed: `values = [${first}, ${second}]`,
+      why: "The stack records the newest value without losing the earlier one.",
+      state: { stack: [first, second, plus], active: [1], note: "values plus waiting operator" },
+      code: "values.push(token)",
+      action: "push",
+      animation: "add",
+    }),
+    makeStep({
+      title: `Push ${times}`,
+      body: `${times} has higher priority than ${plus}, so it will be applied first.`,
+      changed: `operators = [${plus}, ${times}]`,
+      why: "Expression stacks can preserve operation order.",
+      state: { stack: [first, second, plus, times], active: [3], note: `${times} waits on top` },
+      code: "ops.push(operator)",
+      action: "push",
+      animation: "add",
+    }),
+    makeStep({
+      title: `Read ${third}`,
+      body: `${third} completes the right side of ${second} ${times} ${third}.`,
+      changed: `values = [${first}, ${second}, ${third}]`,
+      why: "Now the top operator has two values to use.",
+      state: { stack: [first, second, third, plus, times], active: [2], note: "ready to reduce" },
+      code: "values.push(token)",
+      action: "push",
+      animation: "add",
+    }),
+    makeStep({
+      title: `Apply ${times}`,
+      body: `Pop ${second} and ${third}, apply ${times}, then push 4 back.`,
+      changed: `${second} ${times} ${third} = 4`,
+      why: "A reduction removes operands and replaces them with their result.",
+      state: { stack: [first, "4", plus], active: [1], note: "multiply first" },
+      code: "values.push(apply(left, op, right))",
+      action: "reduce",
+      animation: "replace",
+    }),
+    makeStep({
+      title: `Apply ${plus}`,
+      body: `${plus} combines ${first} and 4 into the final value.`,
+      changed: `${first} ${plus} 4 = 7`,
+      why: "After the higher-priority operation finishes, the waiting operator can run.",
+      state: { stack: ["7"], active: [0], note: "all operators used" },
+      code: "values.push(apply(left, op, right))",
+      action: "reduce",
+      animation: "replace",
+    }),
+    makeStep({
+      title: "Return the result",
+      body: "The remaining value is the expression result.",
+      changed: "result = 7",
+      why: "A complete stack trace should end with the final answer, not halfway through the sample.",
+      state: { stack: ["7"], active: [0], result: 7 },
+      code: "return values[-1]",
+      action: "return",
+      animation: "return",
     }),
   ];
-  ops.forEach((op) => {
-    const [command, value] = String(op).split(/\s+/);
-    if (command === "push") {
-      stack.push(value);
-      steps.push(makeStep({
-        title: `Push ${value}`,
-        body: `${value} goes on top of the stack.`,
-        changed: `top is now ${value}`,
-        why: "Push and pop use the same end.",
-        state: { stack: [...stack], active: [stack.length - 1] },
-        code: `stack.append("${value}")`,
-        action: "push",
-        animation: "add",
-      }));
-    } else if (command === "peek") {
-      steps.push(makeStep({
-        title: "Peek at the top",
-        body: `Peek sees ${stack.at(-1)} without removing it.`,
-        changed: "stack does not change",
-        why: "Peek is a read, not a remove.",
-        state: { stack: [...stack], active: [stack.length - 1] },
-        code: "top = stack[-1]",
-        action: "peek",
-      }));
-    } else if (command === "pop") {
-      const removed = stack.pop();
-      steps.push(makeStep({
-        title: `Pop removes ${removed}`,
-        body: "Pop removes and returns the current top item.",
-        changed: `${removed} leaves the stack`,
-        why: "The newest item is the first one out.",
-        state: { stack: [...stack], active: [stack.length - 1] },
-        code: "top = stack.pop()",
-        action: "pop",
-        animation: "remove",
-      }));
-    }
-  });
-  return { title: meta?.title || "Stack: push, peek, pop", concept: "stack", caption: meta?.caption || "See why the newest item comes out first.", steps };
+  return { title: meta?.title || "Stack: complete expression trace", concept: "stack", caption: meta?.caption || "Trace every token in a small expression until one result remains.", steps };
 }
 
 function queueTrace(meta) {

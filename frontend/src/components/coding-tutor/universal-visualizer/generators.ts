@@ -12,14 +12,14 @@ const WORKFLOW_LABELS: Record<ConceptType, string[]> = {
   search: ["Load", "Check item", "No match", "Move", "Match/stop", "Return"],
   sort: ["Load", "Compare pair", "Swap/move", "Next pair", "Repeat pass", "Return"],
   conditional: ["Input", "Question", "True path", "False path", "Chosen result", "Return"],
-  stack: ["Empty", "Push first", "Push next", "Peek top", "Pop top", "Finish"],
+  stack: ["Read 3", "Push +", "Read 2", "Push *", "Read 2", "Apply *", "Apply +", "Return"],
   queue: ["Line starts", "Join back", "Front waits", "Serve front", "Next front", "Finish"],
   "two-pointers": ["Place pointers", "Compare pair", "Too small", "Move left", "Too large", "Return"],
   "sliding-window": ["Start", "Grow", "Measure", "Update best", "Slide", "Repeat", "Stop", "Return"],
   "binary-search": ["Range", "Middle", "Compare", "Discard half", "New range", "New middle", "Final check", "Return"],
   recursion: ["Call", "Check base", "Smaller call", "Stack grows", "Base returns", "Unwind", "Combine", "Return"],
   math: ["Inputs", "First value", "Apply rule", "Adjust", "Check result", "Return"],
-  matrix: ["Row start", "Column start", "Read cell", "Update", "Next cell", "Return"],
+  matrix: ["Row start", "Column start", "Read cell", "Update", "Next cell", "Check bounds", "Return"],
   "prefix-sum": ["Start total", "Add value", "Save prefix", "Next value", "Finish prefix", "Read range", "Subtract", "Return"],
   intervals: ["Sort", "First range", "Compare next", "Merge", "Carry", "Separate", "Finish"],
   heap: ["Start heap", "Add item", "Compare parent", "Swap up", "Check again", "Top ready", "Finish"],
@@ -34,7 +34,12 @@ const CONCEPT_STEP_TARGETS: Partial<Record<ConceptType, number>> = {
   "binary-search": 8,
   "sliding-window": 8,
   "prefix-sum": 8,
+  stack: 8,
   recursion: 8,
+  "two-pointers": 7,
+  "hash-map": 7,
+  "linked-list": 7,
+  matrix: 7,
   graph: 7,
   "binary-tree": 7,
   heap: 7,
@@ -152,9 +157,9 @@ function teachingSampleOverride(context: GeneratorContext, concept: string, stat
 
   switch (concept) {
     case "stack":
-      return "commands=[push 3, push +, pop +]";
+      return "expression=3+2*2";
     case "queue":
-      return "commands=[join Ana, join Bo, serve Ana]";
+      return "commands=[join Ana, join Bo, join Cy, serve Ana]";
     case "hash-map":
       if (/two sum|complement/.test(title)) return "nums=[2, 7], target=9";
       if (/count|frequency|anagram/.test(title)) return "items=[A, B, A]";
@@ -241,6 +246,7 @@ function valuesFromVisualSample(sample: string): Array<string | number> {
 
 function indexableTeachingValues(concept: string, sample: string): Array<string | number> {
   if (concept === "stack" || concept === "queue") {
+    if (concept === "stack" && /expression\s*=\s*3\s*\+\s*2\s*\*\s*2/i.test(sample)) return [3, "+", 2, "*", 2];
     const commands = parseFirstList(sample).map(String);
     const values = commands
       .map((command) => command.match(/^(?:push|join)\s+(.+)$/i)?.[1])
@@ -256,7 +262,7 @@ function visualSampleExpected(context: GeneratorContext, concept: string, state:
   const title = `${context.title || ""} ${context.topic || ""} ${context.prompt || ""}`.toLowerCase();
   const override = teachingSampleOverride(context, concept, state);
   if (override) {
-    if (concept === "stack") return "top 3";
+    if (concept === "stack") return "7";
     if (concept === "queue") return "served Ana";
     if (concept === "hash-map") {
       if (/two sum|complement/.test(title)) return "indexes 0 and 1";
@@ -316,7 +322,7 @@ function normalizeVisualState(
     normalized.sample = sample;
     if (typeof state.text === "string") normalized.text = sample;
     if (typeof state.input === "string") normalized.input = sample;
-    if (concept === "stack") normalized.stack = indexableTeachingValues(concept, sample).slice(0, 2);
+    if (concept === "stack") normalized.stack = indexableTeachingValues(concept, sample).slice(0, 5);
     if (concept === "queue") normalized.queue = indexableTeachingValues(concept, sample).slice(0, 3);
     if (concept === "hash-map") normalized.lookup = sample.includes("lookup=Ana") ? "Ana" : normalized.lookup;
 
@@ -394,9 +400,11 @@ function visualPseudocodeForStep(
   }
   if (concept === "stack") {
     return [
-      `commands = ${sample}`,
-      "if command == 'push': stack.append(item)",
-      "if command == 'pop': item = stack.pop()",
+      `tokens = ${sample}`,
+      "if token is a number: values.push(token)",
+      "if token is an operator: ops.push(token)",
+      "if top operator is ready: apply it",
+      "values.push(result)",
       sharedFinish,
     ];
   }
@@ -591,19 +599,19 @@ function expandPseudocodeLines(lines: string[], concept: string): string[] {
   if (lines.length >= target) return lines;
   const additions: Record<string, string[]> = {
     conditional: ["chosen = true_value if condition else false_value", "return chosen"],
-    stack: ["top = stack[-1] if stack else None", "return top"],
+    stack: ["ops.append(operator)", "values.append(number)", "right = values.pop()", "left = values.pop()", "values.append(apply(left, operator, right))", "return values[-1]"],
     queue: ["front = queue[0] if queue else None", "return front"],
-    "hash-map": ["table[key] = value", "return table[key]"],
+    "hash-map": ["bucket = hash(key)", "entry = table[bucket]", "compare entry.key", "move to next entry", "table[key] = value", "return table[key]"],
     set: ["seen.add(item)", "return seen"],
     tuple: ["index += 1", "return pairs"],
-    "linked-list": ["current = next_node", "return result"],
+    "linked-list": ["save next_node", "use current.value", "current = next_node", "stop when current is null", "return result"],
     recursion: ["call_stack.append(smaller_call)", "base_value returns", "answer = combine(current, smaller)", "return answer"],
     "binary-search": ["left, right = next_range", "mid = (left + right) // 2", "return found_index"],
-    "two-pointers": ["left, right = next_pair", "return result"],
+    "two-pointers": ["sum = values[left] + values[right]", "move left or right", "compare the new pair", "save match or best", "return result"],
     "sliding-window": ["best = max(best, window_value)", "left += 1", "return best"],
     "binary-tree": ["result = update(result, node.value)", "check tree rule", "return result"],
     graph: ["if neighbor not in visited: frontier.append(neighbor)", "skip already visited", "return visited"],
-    matrix: ["row, col = next_cell(row, col)", "return result"],
+    matrix: ["value = grid[row][col]", "answer = update(answer, value)", "row, col = next_cell(row, col)", "check bounds", "return result"],
     "prefix-sum": ["prefix[index] = running", "range_sum = prefix[right] - prefix[left - 1]", "return range_sum"],
     intervals: ["merged = merge_or_append(merged, current)", "move to next interval", "return merged"],
     heap: ["heapify_up(heap, index)", "check parent rule", "return heap[0]"],
@@ -1919,10 +1927,41 @@ function deepenAuthoredSteps(
   return expanded.slice(0, target);
 }
 
+function shouldUseGeneratedTrace(concept: string, rawSteps: Array<Record<string, unknown>>): boolean {
+  const generatedConcepts = new Set([
+    "array",
+    "conditional",
+    "stack",
+    "queue",
+    "hash-map",
+    "set",
+    "linked-list",
+    "binary-search",
+    "two-pointers",
+    "sliding-window",
+    "recursion",
+    "binary-tree",
+    "graph",
+    "heap",
+    "trie",
+    "union-find",
+    "dynamic-programming",
+    "prefix-sum",
+    "intervals",
+    "bit-manipulation",
+  ]);
+  if (!generatedConcepts.has(concept)) return false;
+  if (rawSteps.length >= targetStepCount(concept)) return false;
+  if (rawSteps.length < Math.min(targetStepCount(concept), 6)) return true;
+  const genericText = rawSteps.map((step) => `${step.title || ""} ${step.body || ""} ${step.action || ""}`).join(" ").toLowerCase();
+  return /load the example|set the sample|predict the next state|connect the visual|return only what the prompt asks|movement pattern/.test(genericText);
+}
+
 function generateAuthoredVisualizerSteps(concept: string, context: GeneratorContext = {}): Step[] | null {
   const rawAuthoredSteps = context.visualizer?.steps;
   if (!context.useAuthored || !Array.isArray(rawAuthoredSteps) || !rawAuthoredSteps.length) return null;
   const normalizedSteps = rawAuthoredSteps as Array<Record<string, unknown>>;
+  if (shouldUseGeneratedTrace(concept, normalizedSteps)) return null;
   const expandedSteps = concept === "conditional"
     ? expandConditionalSteps(normalizedSteps, (context.visualizer?.input || {}) as Record<string, unknown>, context)
     : deepenAuthoredSteps(normalizedSteps, concept, context);
@@ -2396,27 +2435,51 @@ function makeLinearNodes(values: Array<string | number>, active: string[], state
 }
 
 export function generateStackSteps(context: GeneratorContext = {}): Step[] {
-  const code = ["stack = []", "stack.append(first)", "stack.append(next_item)", "top = stack[-1]", "removed = stack.pop()", "return stack[-1]"];
-  const sample = compactVisualInput(context, "stack", context.visualizer?.input || {});
+  const code = [
+    "values = []",
+    "ops = []",
+    "if token is a number: values.push(token)",
+    "if token is an operator: ops.push(token)",
+    "right = values.pop(); left = values.pop()",
+    "values.push(apply(left, op, right))",
+    "return values[-1]",
+  ];
+  const sample = compactVisualInput(context, "stack", context.visualizer?.input || {}) || "expression=3+2*2";
   const teachingValues = indexableTeachingValues("stack", sample);
-  const first = String(teachingValues[0] ?? "lab");
-  const second = String(teachingValues[1] ?? "quiz");
-  const makeNodes = (values: string[], active: string[] = []) => withNodeState(values.map((value, index) => ({
-    id: `stack-${index}`,
-    x: 450,
-    y: 390 - index * 88,
-    value,
-    type: "array-cell" as const,
-    label: index === values.length - 1 ? "top" : "",
-    state: "default" as const,
-  })), active, "active");
+  const tokens = teachingValues.length >= 5 ? teachingValues.map(String).slice(0, 5) : ["3", "+", "2", "*", "2"];
+  const [first, plus, second, times, third] = tokens;
+  const makeNodes = (values: string[], ops: string[] = [], active: string[] = []) => {
+    const valueNodes = values.map((value, index) => ({
+      id: `value-${index}`,
+      x: 330,
+      y: 405 - index * 76,
+      value,
+      type: "array-cell" as const,
+      label: index === values.length - 1 ? "value top" : "",
+      state: "default" as const,
+      meta: { role: "stack-item" },
+    }));
+    const opNodes = ops.map((value, index) => ({
+      id: `op-${index}`,
+      x: 570,
+      y: 405 - index * 76,
+      value,
+      type: "array-cell" as const,
+      label: index === ops.length - 1 ? "operator top" : "",
+      state: "default" as const,
+      meta: { role: "stack-item" },
+    }));
+    return withNodeState([...valueNodes, ...opNodes], active, "active");
+  };
   return [
-    step({ concept: "stack", title: context.title || "Stack", description: "Start empty so it is clear every later item enters from the same top end.", nodes: makeNodes([], []), edges: [], highlights: { nodeIds: [], lineNumbers: [1] }, code, activeLine: 1, state: { top: "empty" } }, 1),
-    step({ concept: "stack", title: "Push first item", description: `The first pushed item, ${first}, becomes the top because nothing else is above it.`, nodes: makeNodes([first], ["stack-0"]), edges: [], highlights: { nodeIds: ["stack-0"], lineNumbers: [2] }, code, activeLine: 2, state: { top: first } }, 2),
-    step({ concept: "stack", title: "Push next item", description: `A new item, ${second}, lands above the old top. The old item stays in the stack.`, nodes: makeNodes([first, second], ["stack-1"]), edges: [], highlights: { nodeIds: ["stack-1"], lineNumbers: [3] }, code, activeLine: 3, state: { top: second } }, 3),
-    step({ concept: "stack", title: "Peek at the top", description: `Peek reads ${second} without removing it, so the stack shape does not change.`, nodes: makeNodes([first, second], ["stack-1"]), edges: [], highlights: { nodeIds: ["stack-1"], lineNumbers: [4] }, code, activeLine: 4, state: { peek: second, top: second } }, 4),
-    step({ concept: "stack", title: "Pop the top", description: `Pop removes only the newest item, ${second}. Older items are still underneath.`, nodes: makeNodes([first], ["stack-0"]), edges: [], highlights: { nodeIds: ["stack-0"], lineNumbers: [5] }, code, activeLine: 5, state: { removed: second, top: first } }, 5),
-    step({ concept: "stack", title: "Use the revealed top", description: `After the pop, ${first} is visible again. This is why stacks are last-in, first-out.`, nodes: makeNodes([first], ["stack-0"]), edges: [], highlights: { nodeIds: ["stack-0"], lineNumbers: [6] }, code, activeLine: 6, state: { top: first, rule: "LIFO" } }, 6),
+    step({ concept: "stack", title: context.title || "Read the first number", description: `Read ${first} from ${tokens.join(" ")} and push it onto the value stack.`, nodes: makeNodes([first], [], ["value-0"]), edges: [], highlights: { nodeIds: ["value-0"], lineNumbers: [3] }, code, activeLine: 3, state: { expression: tokens.join(" "), values: first, operators: "empty" } }, 1),
+    step({ concept: "stack", title: `Push ${plus}`, description: `${plus} waits on the operator stack until there are enough values to apply it.`, nodes: makeNodes([first], [plus], ["op-0"]), edges: [], highlights: { nodeIds: ["op-0"], lineNumbers: [4] }, code, activeLine: 4, state: { values: first, operators: plus } }, 2),
+    step({ concept: "stack", title: `Read ${second}`, description: `The next number ${second} joins the value stack above ${first}.`, nodes: makeNodes([first, second], [plus], ["value-1"]), edges: [], highlights: { nodeIds: ["value-1"], lineNumbers: [3] }, code, activeLine: 3, state: { values: `${first}, ${second}`, operators: plus } }, 3),
+    step({ concept: "stack", title: `Push ${times}`, description: `${times} has higher priority than ${plus}, so it waits on top and will run first.`, nodes: makeNodes([first, second], [plus, times], ["op-1"]), edges: [], highlights: { nodeIds: ["op-1"], lineNumbers: [4] }, code, activeLine: 4, state: { values: `${first}, ${second}`, operators: `${plus}, ${times}` } }, 4),
+    step({ concept: "stack", title: `Read ${third}`, description: `${third} completes the right side of ${second} ${times} ${third}.`, nodes: makeNodes([first, second, third], [plus, times], ["value-2"]), edges: [], highlights: { nodeIds: ["value-2"], lineNumbers: [3] }, code, activeLine: 3, state: { values: `${first}, ${second}, ${third}`, operators: `${plus}, ${times}` } }, 5),
+    step({ concept: "stack", title: `Apply ${times}`, description: `Pop ${second} and ${third}, apply ${times}, then push 4 back onto the value stack.`, nodes: makeNodes([first, "4"], [plus], ["value-1"]), edges: [], highlights: { nodeIds: ["value-1"], lineNumbers: [5, 6] }, code, activeLine: 6, state: { changed: `${second} ${times} ${third} = 4`, values: `${first}, 4`, operators: plus } }, 6),
+    step({ concept: "stack", title: `Apply ${plus}`, description: `Now ${plus} can combine ${first} and 4 into the final value.`, nodes: makeNodes(["7"], [], ["value-0"]), edges: [], highlights: { nodeIds: ["value-0"], lineNumbers: [5, 6] }, code, activeLine: 6, state: { changed: `${first} ${plus} 4 = 7`, values: "7", operators: "empty" } }, 7),
+    step({ concept: "stack", title: "Return the result", description: "The only remaining value is the expression result, so return 7.", nodes: makeNodes(["7"], [], ["value-0"]), edges: [], highlights: { nodeIds: ["value-0"], lineNumbers: [7] }, code, activeLine: 7, state: { result: 7 } }, 8),
   ];
 }
 
@@ -2564,10 +2627,29 @@ export function generateRecursionSteps(context: GeneratorContext = {}): Step[] {
 }
 
 export function generateMatrixSteps(context: GeneratorContext = {}): Step[] {
-  const code = ["row = current_row", "col = current_col", "value = grid[row][col]", "answer = update(answer, value)", "row, col = next_cell(row, col)", "return answer"];
+  const code = ["row = current_row", "col = current_col", "value = grid[row][col]", "answer = update(answer, value)", "row, col = next_cell(row, col)", "if row < rows and col < cols: continue", "return answer"];
   const values = [1, 2, 3, 4, 5, 6];
   const nodes = values.map((value, index) => ({ id: `cell-${index}`, x: 350 + (index % 3) * 96, y: 180 + Math.floor(index / 3) * 96, value, type: "array-cell" as const, label: `${Math.floor(index / 3)},${index % 3}` }));
-  return [0, 1, 2, 3, 4, 5].map((activeIndex, index) => step({ concept: "matrix", title: index === 0 ? (context.title || "Matrix scan") : index === 5 ? "Finish the grid pass" : "Move through the grid", description: "Track row and column so each grid cell is visited on purpose.", nodes: withNodeState(nodes, [`cell-${activeIndex}`], index === 5 ? "visited" : "active"), edges: [], highlights: { nodeIds: [`cell-${activeIndex}`], lineNumbers: [Math.min(index + 1, code.length)] }, code, activeLine: Math.min(index + 1, code.length), state: { row: Math.floor(activeIndex / 3), column: activeIndex % 3 } }, index + 1));
+  const phases = [
+    { cell: 0, title: context.title || "Start at row 0", desc: "Use row and column together so the scan starts at one exact cell.", line: 1, state: { row: 0, column: 0 } },
+    { cell: 0, title: "Set column 0", desc: "The column value completes the address grid[0][0].", line: 2, state: { row: 0, column: 0 } },
+    { cell: 0, title: "Read cell 0,0", desc: "Read the value in the active cell before updating the answer.", line: 3, state: { value: 1 } },
+    { cell: 0, title: "Update answer", desc: "Use the cell value to update the running answer.", line: 4, state: { answer: 1 } },
+    { cell: 1, title: "Move to next cell", desc: "Advance the column so the scan does not read the same cell twice.", line: 5, state: { row: 0, column: 1 } },
+    { cell: 5, title: "Check the edge", desc: "After the last cell, the bounds check tells the loop to stop.", line: 6, state: { row: 1, column: 2, bounds: "last valid cell" } },
+    { cell: 5, title: "Return the answer", desc: "The final answer comes after every intended cell has been considered.", line: 7, state: { result: "answer" } },
+  ];
+  return phases.map((phase, index) => step({
+    concept: "matrix",
+    title: phase.title,
+    description: phase.desc,
+    nodes: withNodeState(nodes, [`cell-${phase.cell}`], index === phases.length - 1 ? "visited" : "active"),
+    edges: [],
+    highlights: { nodeIds: [`cell-${phase.cell}`], lineNumbers: [phase.line] },
+    code,
+    activeLine: phase.line,
+    state: phase.state,
+  }, index + 1));
 }
 
 export function generatePrefixSumSteps(context: GeneratorContext = {}): Step[] {

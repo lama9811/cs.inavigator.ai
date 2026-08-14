@@ -15,7 +15,12 @@ const conceptStepTargets = {
   "binary-search": 8,
   "sliding-window": 8,
   "prefix-sum": 8,
+  stack: 8,
   recursion: 8,
+  "two-pointers": 7,
+  "hash-map": 7,
+  "linked-list": 7,
+  matrix: 7,
   graph: 7,
   "binary-tree": 7,
   heap: 7,
@@ -28,6 +33,30 @@ const conceptStepTargets = {
 function targetStepCount(concept) {
   return conceptStepTargets[concept] || 6;
 }
+
+const generatedOverrideConcepts = new Set([
+  "array",
+  "conditional",
+  "stack",
+  "queue",
+  "hash-map",
+  "set",
+  "linked-list",
+  "binary-search",
+  "two-pointers",
+  "sliding-window",
+  "recursion",
+  "binary-tree",
+  "graph",
+  "matrix",
+  "heap",
+  "trie",
+  "union-find",
+  "dynamic-programming",
+  "prefix-sum",
+  "intervals",
+  "bit-manipulation",
+]);
 
 function difficultyFromFile(file) {
   return file.replace(/\.json$/i, "");
@@ -101,7 +130,7 @@ function compactVisualInput(problem, concept, state = {}) {
   if (title.includes("reverse only letters")) return "a-bC-d";
   if (title.includes("first repeated")) return "cocoa";
   if (title.includes("edit distance")) return "cat -> cut";
-  if (concept === "stack") return "commands=[push 3, push +, pop +]";
+  if (concept === "stack") return "expression=3+2*2";
   if (concept === "queue") return "commands=[join Ana, join Bo, serve Ana]";
   if (concept === "hash-map") {
     if (/two sum|complement/.test(title)) return "nums=[2, 7], target=9";
@@ -148,6 +177,7 @@ function compactVisualInput(problem, concept, state = {}) {
 }
 
 function valuesFromVisualSample(sample) {
+  if (/expression\s*=\s*3\s*\+\s*2\s*\*\s*2/i.test(sample)) return [3, "+", 2, "*", 2];
   const namedLists = parseAllNamedLists(sample);
   const firstNamed = Object.values(namedLists)[0];
   if (firstNamed?.length) return firstNamed;
@@ -155,6 +185,15 @@ function valuesFromVisualSample(sample) {
   if (firstList.length) return firstList;
   if (sample && !sample.includes("=")) return [...sample].map((char) => char === " " ? "space" : char);
   return [];
+}
+
+function usesGeneratedRuntimeTrace(problem, concept, rawSteps = []) {
+  if (!generatedOverrideConcepts.has(concept)) return false;
+  if (!rawSteps.length || rawSteps.length >= targetStepCount(concept)) return false;
+  if (rawSteps.length < Math.min(targetStepCount(concept), 6)) return true;
+  const genericText = rawSteps.map((step) => `${step.title || ""} ${step.body || ""} ${step.action || ""}`).join(" ").toLowerCase();
+  return /load the example|set the sample|predict the next state|connect the visual|return only what the prompt asks|movement pattern/.test(genericText)
+    || /animated practice trace|visual walkthrough/i.test(`${problem.visualizer?.title || ""} ${problem.visualizer?.caption || ""}`);
 }
 
 function runtimeVisualText(problem, concept, sample) {
@@ -236,6 +275,7 @@ for (const file of fs.readdirSync(questionDir).filter((item) => item.endsWith(".
     const effectiveStepCount = rawStepCount > 0 ? Math.max(rawStepCount, targetSteps) : 0;
     const banned = containsBannedPhrase(problem, concept, sample);
     const rawSteps = Array.isArray(problem.visualizer.steps) ? problem.visualizer.steps : [];
+    const runtimeGenerated = usesGeneratedRuntimeTrace(problem, concept, rawSteps);
     const duplicateLabels = duplicateGenericStepLabels(rawSteps);
     const noStateChangeCount = adjacentNoStateChanges(rawSteps);
 
@@ -247,6 +287,7 @@ for (const file of fs.readdirSync(questionDir).filter((item) => item.endsWith(".
       targetSteps,
       rawStepCount,
       effectiveStepCount,
+      runtimeGenerated,
       sample,
       itemCount,
     });
@@ -255,6 +296,9 @@ for (const file of fs.readdirSync(questionDir).filter((item) => item.endsWith(".
     if (effectiveStepCount < targetSteps) warnings.push(`${problem.id} ${problem.title}: visualizer has only ${effectiveStepCount} effective steps; target is ${targetSteps}`);
     if ((difficulty === "medium" || difficulty === "hard") && effectiveStepCount < targetSteps) {
       warnings.push(`${problem.id} ${problem.title}: medium/hard visualizer is below ${concept} target depth`);
+    }
+    if ((difficulty === "medium" || difficulty === "hard") && rawStepCount > 0 && rawStepCount < Math.min(targetSteps, 6) && !runtimeGenerated) {
+      warnings.push(`${problem.id} ${problem.title}: authored medium/hard visualizer has only ${rawStepCount} raw steps before runtime expansion`);
     }
     if (duplicateLabels.length) warnings.push(`${problem.id} ${problem.title}: duplicate generic step label(s): ${duplicateLabels.join(", ")}`);
     if (noStateChangeCount > 1) warnings.push(`${problem.id} ${problem.title}: ${noStateChangeCount} adjacent authored step(s) have no state/code change`);
@@ -279,6 +323,7 @@ console.table(rows.map((row) => ({
   target: row.targetSteps,
   steps: row.effectiveStepCount,
   rawSteps: row.rawStepCount,
+  runtime: row.runtimeGenerated ? "generated" : "authored",
   items: row.itemCount,
   sample: row.sample,
   compactedFrom: row.compactedFrom || "",
