@@ -1964,6 +1964,7 @@ body:not(.coding-dark) .coding-app .cq-prompt {
   border: 1px solid var(--ct-border-strong);
   border-radius: 8px;
   cursor: grab;
+  min-width: 0;
 }
 .cq-parsons-line.locked {
   cursor: default;
@@ -1973,29 +1974,46 @@ body:not(.coding-dark) .coding-app .cq-prompt {
   cursor: grabbing;
 }
 .cq-parsons-grip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
   color: var(--ct-soft);
-  font-size: 0.9rem;
+  font-size: 0.78rem;
 }
 .cq-parsons-line code {
   flex: 1;
+  min-width: 0;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 0.86rem;
-  white-space: pre;
-  overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .cq-parsons-controls {
   display: flex;
   gap: 0.2rem;
+  flex: 0 0 auto;
 }
 .cq-parsons-controls button {
   width: 24px;
   height: 24px;
-  border-radius: 6px;
+  border-radius: 999px;
   border: 1px solid var(--ct-border);
   background: var(--ct-panel);
   color: var(--ct-text);
   cursor: pointer;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+}
+.cq-parsons-controls button:not(:disabled):hover {
+  border-color: var(--ct-primary);
+  color: var(--ct-primary);
+  background: color-mix(in srgb, var(--ct-primary) 9%, var(--ct-panel));
 }
 .cq-parsons-controls button:disabled {
   opacity: 0.35;

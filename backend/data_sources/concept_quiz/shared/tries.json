@@ -8,7 +8,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Prefix path",
-      "code": null,
+      "code": "Stored words:\ncat\ncar\ndog\n\nPaths:\nc -> a -> t\nc -> a -> r\nd -> o -> g",
       "prompt": "A trie stores cat, car, and dog. Which first letter path is shared by cat and car?",
       "choices": [
         "c",
@@ -31,7 +31,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Word ending marker",
-      "code": null,
+      "code": "Stored words:\napp\napple\n\nPath:\na -> p -> p -> l -> e\n     app ends here",
       "prompt": "Why does a trie node need an end-of-word marker?",
       "choices": [
         "A prefix can also be a complete word",

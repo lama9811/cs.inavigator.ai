@@ -4300,6 +4300,13 @@ body.coding-dark .floating-rewrite-lang {
   padding: 7px 14px;
 }
 
+.floating-apply-code-btn {
+  background: color-mix(in srgb, var(--ct-panel, #ffffff) 88%, var(--ct-primary, #002d72));
+  box-shadow: none;
+  font-weight: 700;
+  padding: 6px 12px;
+}
+
 .floating-undo-code-btn {
   border-color: color-mix(in srgb, var(--ct-accent, #f58220) 48%, transparent);
   background: color-mix(in srgb, var(--ct-accent, #f58220) 12%, transparent);
@@ -4368,7 +4375,7 @@ body.coding-dark .floating-rewrite-lang {
 
 body.coding-dark .floating-apply-code-btn {
   border-color: color-mix(in srgb, var(--ct-primary, #789dca) 48%, transparent);
-  background: color-mix(in srgb, var(--ct-primary, #789dca) 18%, transparent);
+  background: color-mix(in srgb, var(--ct-panel, #1e293b) 82%, var(--ct-primary, #789dca));
   color: color-mix(in srgb, var(--ct-primary, #789dca) 84%, #fff);
 }
 

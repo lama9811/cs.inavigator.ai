@@ -8,7 +8,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Coordinates",
-      "code": null,
+      "code": "grid:\nrow 0: [2, 3]\nrow 1: [4, 5]\n\nrow = 1\ncol = 0",
       "prompt": "In a matrix, what do row and column indexes identify together?",
       "choices": [
         "One cell",
@@ -31,7 +31,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Neighbor check",
-      "code": null,
+      "code": "center cell: row 1, col 1\n\ncandidates:\nup    = (0, 1)\ndown  = (2, 1)\nleft  = (1, 0)\nright = (1, 2)",
       "prompt": "Which neighbors usually count in a four-direction grid search?",
       "choices": [
         "Up, down, left, and right",

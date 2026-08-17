@@ -8,7 +8,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Overlap rule",
-      "code": null,
+      "code": "Half-open ranges:\nA = [1, 4)\nB = [4, 6)\n\nA includes 1, 2, 3\nB starts at 4",
       "prompt": "For half-open intervals [start, end), when do [1, 4) and [4, 6) overlap?",
       "choices": [
         "They do not overlap because one ends where the other starts",
@@ -31,7 +31,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Sort first",
-      "code": null,
+      "code": "Unsorted:\n[5, 7], [1, 3], [2, 6]\n\nSort by start:\n[1, 3], [2, 6], [5, 7]",
       "prompt": "Why sort intervals by start before merging?",
       "choices": [
         "Nearby overlaps become neighbors in the scan",

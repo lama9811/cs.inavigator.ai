@@ -3,10 +3,13 @@ import {
   FaRegQuestionCircle,
   FaBookOpen,
   FaArrowRight,
+  FaArrowUp,
+  FaArrowDown,
   FaCheckCircle,
   FaTimesCircle,
   FaVolumeUp,
   FaStopCircle,
+  FaGripVertical,
 } from "react-icons/fa";
 import {
   clearQuizLastResult,
@@ -295,25 +298,27 @@ function ParsonsBoard({ question, value, onChange, disabled = false }) {
             }}
           >
             <span className="cq-parsons-grip" aria-hidden="true">
-              drag
+              <FaGripVertical />
             </span>
             <code>{line || " "}</code>
             <span className="cq-parsons-controls">
               <button
                 type="button"
                 aria-label="Move line up"
+                title="Move line up"
                 disabled={disabled || index === 0}
                 onClick={() => move(index, index - 1)}
               >
-                Up
+                <FaArrowUp aria-hidden="true" />
               </button>
               <button
                 type="button"
                 aria-label="Move line down"
+                title="Move line down"
                 disabled={disabled || index === order.length - 1}
                 onClick={() => move(index, index + 1)}
               >
-                Down
+                <FaArrowDown aria-hidden="true" />
               </button>
             </span>
           </li>

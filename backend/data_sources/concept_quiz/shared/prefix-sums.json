@@ -8,7 +8,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Prefix meaning",
-      "code": null,
+      "code": "nums   = [3, 1, 4]\nprefix = [0, 3, 4, 8]\n\nprefix[2] stores 3 + 1",
       "prompt": "What does prefix[i] usually store?",
       "choices": [
         "The sum before or through position i, depending on the convention",
@@ -31,7 +31,7 @@
       "difficulty": "medium",
       "kind": "mcq-output",
       "title": "Range formula",
-      "code": null,
+      "code": "nums   = [3, 1, 4, 2]\nprefix = [0, 3, 4, 8, 10]\nleft = 1, right = 2\n\nwanted values: 1 + 4",
       "prompt": "Using prefix where prefix[0]=0 and prefix[i+1] is the sum through i, how do you get sum left..right?",
       "choices": [
         "prefix[right + 1] - prefix[left]",

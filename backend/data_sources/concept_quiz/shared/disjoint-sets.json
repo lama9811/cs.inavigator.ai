@@ -8,7 +8,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Group representative",
-      "code": null,
+      "code": "parent:\nA -> A\nB -> A\nC -> C\n\nfind(B) follows B -> A",
       "prompt": "In a disjoint set, what does find(x) return?",
       "choices": [
         "The representative for x group",
@@ -31,7 +31,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Union meaning",
-      "code": null,
+      "code": "Before union(A, C):\ngroup 1: A, B\ngroup 2: C\n\nAfter union(A, C):\none group: A, B, C",
       "prompt": "What does union(a, b) mean?",
       "choices": [
         "Merge the groups containing a and b",

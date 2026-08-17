@@ -8,7 +8,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Heap root",
-      "code": null,
+      "code": "Max-heap array: [7, 5, 3, 2]\n\n      7\n     / \\\n    5   3\n   /\n  2",
       "prompt": "A max-heap stores priorities 7, 5, 3, and 2. Which value must be at the root?",
       "choices": [
         "7",
@@ -31,7 +31,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Insert bubble-up",
-      "code": null,
+      "code": "Before insert: [7, 5, 3]\nAppend 9 as newest leaf:\n[7, 5, 3, 9]\n\nparent of 9 = 5",
       "prompt": "After inserting priority 9 into a max-heap whose root is 7, what has to happen?",
       "choices": [
         "9 compares with parents and can move upward",

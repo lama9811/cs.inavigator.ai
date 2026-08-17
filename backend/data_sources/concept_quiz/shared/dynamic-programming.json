@@ -8,7 +8,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "DP state",
-      "code": null,
+      "code": "climb stairs:\ndp[0] = 1\ndp[1] = 1\ndp[2] = 2\n\ndp[i] stores ways to reach step i",
       "prompt": "What does a DP state usually represent?",
       "choices": [
         "One smaller version of the problem",
@@ -31,7 +31,7 @@
       "difficulty": "medium",
       "kind": "mcq-output",
       "title": "Base case",
-      "code": null,
+      "code": "ways[0] = 1\nways[1] = 1\n\nways[2] = ways[1] + ways[0]",
       "prompt": "For climb stairs with 1 or 2 steps at a time, why define ways[0] = 1?",
       "choices": [
         "There is one way to do nothing before starting",

@@ -8,7 +8,7 @@
       "difficulty": "medium",
       "kind": "mcq-output",
       "title": "Odd bit",
-      "code": null,
+      "code": "n = 13\nbinary n = 1101\nmask = 0001\n\nn & mask = 0001",
       "prompt": "What does n & 1 tell you about an integer n?",
       "choices": [
         "Whether n is odd",
@@ -31,7 +31,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Mask meaning",
-      "code": null,
+      "code": "n    = 1010\nmask = 0010\n\nselected bit:\nn & mask = 0010",
       "prompt": "What does a bit mask usually do?",
       "choices": [
         "Select or change specific bit positions",

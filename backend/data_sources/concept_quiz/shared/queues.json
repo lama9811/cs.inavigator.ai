@@ -123,7 +123,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Deque meaning",
-      "code": "Deque idea:\nfront <-> [A, B, C] <-> back\n\nThe arrows show that front and back are both active endpoints.",
+      "code": "Deque state:\nfront <-> [A, B, C] <-> back\n\nAvailable operations:\naddFront, addBack, removeFront, removeBack",
       "prompt": "What is a deque?",
       "choices": [
         "A double-ended queue that can add or remove at both ends",
@@ -146,7 +146,7 @@
       "difficulty": "medium",
       "kind": "mcq-behavior",
       "title": "Priority queue",
-      "code": "Waiting tasks:\n{name: \"print\", priority: 1}\n{name: \"alarm\", priority: 5}\n\nWhich rule decides what leaves first?",
+      "code": "Waiting tasks:\n{name: \"print\", priority: 1}\n{name: \"alarm\", priority: 5}\n\nRemoval candidates:\noldest = print\nhighest priority = alarm",
       "prompt": "How is a priority queue different from a regular FIFO queue?",
       "choices": [
         "Priority decides what leaves first",
