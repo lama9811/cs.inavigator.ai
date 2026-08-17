@@ -116,7 +116,16 @@ type VisualizerFamily =
   | "math-last-digit"
   | "math-round-groups"
   | "matrix-traverse"
+  | "prefix-balance-index"
+  | "prefix-balanced-split"
+  | "prefix-index-total"
   | "prefix-range"
+  | "prefix-range-queries"
+  | "prefix-running-totals"
+  | "prefix-single-range"
+  | "prefix-subarray-count"
+  | "prefix-subarray-k"
+  | "prefix-subarray-longest"
   | "queue-help-desk"
   | "queue-line-commands"
   | "queue-serve-count"
@@ -178,6 +187,19 @@ function visualizerFamilyText(context: GeneratorContext = {}): string {
 export function detectVisualizerFamily(concept: string, context: GeneratorContext = {}): VisualizerFamily {
   const text = visualizerFamilyText(context);
   if (concept === "conditional" || concept === "decision-flow" || /\bconditionals?\b|if\/else|if else/.test(text)) return "conditional-flow";
+  if (concept === "prefix-sum") {
+    if (/running prefix totals/.test(text)) return "prefix-running-totals";
+    if (/single range sum/.test(text)) return "prefix-single-range";
+    if (/prefix sum at index/.test(text)) return "prefix-index-total";
+    if (/one range sum/.test(text)) return "prefix-single-range";
+    if (/range sum queries/.test(text)) return "prefix-range-queries";
+    if (/prefix balance index/.test(text)) return "prefix-balance-index";
+    if (/balanced prefix split/.test(text)) return "prefix-balanced-split";
+    if (/subarray sum equals k/.test(text)) return "prefix-subarray-k";
+    if (/longest subarray sum k/.test(text)) return "prefix-subarray-longest";
+    if (/subarray sum count/.test(text)) return "prefix-subarray-count";
+    return "prefix-range";
+  }
   if (/maximum score/.test(text)) return "array-maximum-score";
   if (/sum even numbers/.test(text)) return "array-sum-even";
   if (/remove duplicates keep order/.test(text)) return "array-dedupe-order";
@@ -256,7 +278,6 @@ export function detectVisualizerFamily(concept: string, context: GeneratorContex
   }
   if (concept === "recursion") return /nested|depth|flatten|list.*sum|sum.*list/.test(text) ? "recursion-nested-list" : "recursion-stack";
   if (concept === "matrix") return "matrix-traverse";
-  if (concept === "prefix-sum") return "prefix-range";
   if (concept === "intervals") return "interval-merge";
   if (concept === "heap") return "heap-priority";
   if (concept === "trie") return "trie-prefix";
@@ -482,6 +503,16 @@ function teachingSampleOverride(context: GeneratorContext, concept: string, stat
     case "matrix":
       return "grid=[[1,2],[3,4]]";
     case "prefix-sum":
+      if (title.includes("running prefix totals")) return "nums=[2,4,1]";
+      if (title.includes("single range sum")) return "nums=[2,4,1,5], left=1, right=3";
+      if (title.includes("prefix sum at index")) return "nums=[2,4,1], index=1";
+      if (title.includes("one range sum")) return "nums=[2,4,1,3], left=1, right=2";
+      if (title.includes("range sum queries")) return "nums=[2,4,1,3], queries=[[0,1],[1,3]]";
+      if (title.includes("prefix balance index")) return "nums=[2,3,1,1,4]";
+      if (title.includes("balanced prefix split")) return "nums=[1,2,3]";
+      if (title.includes("subarray sum equals k")) return "values=[1,1,1], k=2";
+      if (title.includes("longest subarray sum k")) return "nums=[1,-1,5,-2,3], k=3";
+      if (title.includes("subarray sum count")) return "nums=[1,2,1,2], target=3";
       return "values=[2, 4, 1]";
     case "intervals":
       return "intervals=[[1,3],[2,5]]";
@@ -2307,6 +2338,7 @@ function shouldUseGeneratedTrace(concept: string, rawSteps: Array<Record<string,
   if (concept === "binary-search") return true;
   if (concept === "two-pointers") return true;
   if (concept === "sliding-window") return true;
+  if (concept === "prefix-sum") return true;
   if (rawSteps.length >= targetStepCount(concept)) return false;
   if (rawSteps.length < Math.min(targetStepCount(concept), 6)) return true;
   const genericText = rawSteps.map((step) => `${step.title || ""} ${step.body || ""} ${step.action || ""}`).join(" ").toLowerCase();
@@ -6107,24 +6139,193 @@ export function generateMatrixSteps(context: GeneratorContext = {}): Step[] {
 }
 
 export function generatePrefixSumSteps(context: GeneratorContext = {}): Step[] {
-  const code = ["running = 0", "running += value", "prefix[index] = running", "left_saved = prefix[left - 1]", "right_saved = prefix[right]", "range_sum = right_saved - left_saved", "return range_sum"];
-  const values = exampleNumbers(context);
-  const usable = values.length ? [...values] : [2, 4, 1, 3];
-  while (usable.length < 4) usable.push([2, 4, 1, 3][usable.length]);
-  const phases = [
-    { active: 0, total: 0, title: context.title || "Prefix sum", desc: "Start with a running total of 0 before reading the list.", line: 1 },
-    { active: 0, total: 2, title: "Add index 0", desc: "Add the first value. The running total now covers index 0.", line: 2 },
-    { active: 0, total: 2, title: "Save prefix 0", desc: "Store that total so future range questions can reuse it.", line: 3 },
-    { active: 1, total: 6, title: "Add index 1", desc: "Add the next value to the same running total.", line: 2 },
-    { active: 2, total: 7, title: "Save more prefixes", desc: "Repeat add, then save. Each prefix cell records the sum up to that index.", line: 3 },
-    { active: 3, total: 10, title: "Finish prefix table", desc: "Once the table is filled, range answers become lookups.", line: 3 },
-    { active: 2, total: 10, title: "Read range endpoints", desc: "For a middle range, read the saved total at the right edge and before the left edge.", line: 4 },
-    { active: 2, total: 5, title: "Subtract and return", desc: "Subtract the saved prefix before the range. The result is the range sum.", line: 6 },
-  ];
-  return phases.map((phase, index) => {
-    const visual = authoredPrefixSumVisual({ items: usable }, context, phase.active);
-    return step({ concept: "prefix-sum", title: phase.title, description: phase.desc, nodes: visual.nodes, edges: visual.edges, highlights: { nodeIds: visual.highlights, edgeIds: visual.edges.filter((edge) => edge.state === "active").map((edge) => edge.id || `${edge.from}-${edge.to}`), lineNumbers: [phase.line] }, code, activeLine: phase.line, state: { running_total: phase.total } }, index + 1);
+  const family = detectVisualizerFamily("prefix-sum", context);
+  type PrefixPhase = {
+    active: number;
+    prefixActive?: number;
+    prefixValues: Array<string | number>;
+    title: string;
+    desc: string;
+    line: number;
+    state: Record<string, string | number | boolean>;
+  };
+  const build = (
+    values: Array<string | number>,
+    phases: PrefixPhase[],
+    code: string[],
+    prefixLabel = "sum",
+  ): Step[] => phases.map((phase, index) => {
+    const stepNodes: Node[] = [];
+    values.forEach((value, nodeIndex) => {
+      const x = 170 + nodeIndex * Math.min(94, 600 / Math.max(values.length - 1, 1));
+      stepNodes.push({
+        id: `num-${nodeIndex}`,
+        x,
+        y: 205,
+        value,
+        type: "array-cell",
+        label: `num ${nodeIndex}`,
+        state: nodeIndex === phase.active ? "active" : nodeIndex < phase.active ? "visited" : "default",
+        meta: { role: "compact-cell" },
+      });
+      stepNodes.push({
+        id: `prefix-${nodeIndex}`,
+        x,
+        y: 330,
+        value: phase.prefixValues[nodeIndex] ?? "",
+        type: "array-cell",
+        label: `${prefixLabel} ${nodeIndex}`,
+        state: nodeIndex === (phase.prefixActive ?? phase.active) ? "active" : phase.prefixValues[nodeIndex] === "" ? "inactive" : "visited",
+        meta: { role: "prefix-cell" },
+      });
+    });
+    const highlights = [`num-${phase.active}`, `prefix-${phase.prefixActive ?? phase.active}`].filter((id) => stepNodes.some((node) => node.id === id));
+    return step({
+      concept: "prefix-sum",
+      title: phase.title,
+      description: phase.desc,
+      nodes: stepNodes,
+      edges: [],
+      highlights: { nodeIds: highlights, lineNumbers: [phase.line] },
+      code,
+      activeLine: phase.line,
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: phase.state,
+    }, index + 1);
   });
+
+  if (family === "prefix-running-totals") {
+    const values = [2, 4, 1];
+    const code = ["start the running total at 0", "add the current number", "save that total in the same index", "move to the next number", "repeat add and save", "read the finished saved totals", "return the saved list", "finish"];
+    return build(values, [
+      { active: 0, prefixValues: ["", "", ""], line: 1, title: context.title || "Running Prefix Totals", desc: "Start before any values are added.", state: { example: "nums=[2,4,1]", target: "running total after each number", running_total: 0, result: "[]" } },
+      { active: 0, prefixValues: [2, "", ""], line: 2, title: "Add 2", desc: "The first running total is just the first value.", state: { example: "nums=[2,4,1]", target: "running total after each number", current: 2, running_total: 2, result: "[2]" } },
+      { active: 1, prefixValues: [2, "", ""], line: 4, title: "Move to 4", desc: "Keep the saved total 2 and read the next value.", state: { example: "nums=[2,4,1]", target: "running total after each number", current: 4, running_total: 2, result: "[2]" } },
+      { active: 1, prefixValues: [2, 6, ""], line: 3, title: "Save 6", desc: "2 + 4 gives the prefix total through index 1.", state: { example: "nums=[2,4,1]", target: "running total after each number", running_total: 6, result: "[2,6]" } },
+      { active: 2, prefixValues: [2, 6, ""], line: 4, title: "Move to 1", desc: "The running total carries forward to the last value.", state: { example: "nums=[2,4,1]", target: "running total after each number", current: 1, running_total: 6, result: "[2,6]" } },
+      { active: 2, prefixValues: [2, 6, 7], line: 5, title: "Save 7", desc: "6 + 1 gives the final saved prefix total.", state: { example: "nums=[2,4,1]", target: "running total after each number", running_total: 7, result: "[2,6,7]" } },
+      { active: 2, prefixValues: [2, 6, 7], line: 7, title: "Return saved list", desc: "The answer is every running total in order.", state: { example: "nums=[2,4,1]", target: "running total after each number", result: "[2,6,7]" } },
+      { active: 2, prefixValues: [2, 6, 7], line: 8, title: "Trace complete", desc: "Each output cell matches the sum from index 0 through that position.", state: { example: "nums=[2,4,1]", target: "running total after each number", final_result: "[2,6,7]" } },
+    ], code);
+  }
+
+  if (family === "prefix-single-range") {
+    const isOneRange = /one range sum/i.test(context.title || "");
+    const values = isOneRange ? [2, 4, 1, 3] : [2, 4, 1, 5];
+    const example = isOneRange ? "nums=[2,4,1,3], left=1, right=2" : "nums=[2,4,1,5], left=1, right=3";
+    const rightTotal = isOneRange ? 7 : 12;
+    const answer = isOneRange ? 5 : 10;
+    const code = ["build saved prefix totals", "read the total at the right edge", "read the total before the left edge", "subtract the before-left total", "the difference is the inclusive range", "save the range sum", "return the range sum", "finish"];
+    return build(values, [
+      { active: 0, prefixValues: [2, "", "", ""], line: 1, title: context.title || "Range Sum", desc: "Prefix totals let a range answer use two saved numbers.", state: { example, target: "inclusive range sum", running_total: 2, result: "none yet" } },
+      { active: 1, prefixValues: [2, 6, "", ""], line: 1, title: "Save through index 1", desc: "The saved total at index 1 is 6.", state: { example, target: "inclusive range sum", running_total: 6 } },
+      { active: 2, prefixValues: [2, 6, 7, ""], line: 1, title: "Save through index 2", desc: "Continue filling the saved prefix totals.", state: { example, target: "inclusive range sum", running_total: 7 } },
+      { active: 3, prefixValues: isOneRange ? [2, 6, 7, 10] : [2, 6, 7, 12], line: 1, title: "Finish prefix totals", desc: "Now the right edge and before-left totals are both available.", state: { example, target: "inclusive range sum", running_total: isOneRange ? 10 : 12 } },
+      { active: isOneRange ? 2 : 3, prefixActive: isOneRange ? 2 : 3, prefixValues: isOneRange ? [2, 6, 7, 10] : [2, 6, 7, 12], line: 2, title: "Read right edge total", desc: `The saved total at the right edge is ${rightTotal}.`, state: { example, target: "inclusive range sum", right_saved: rightTotal } },
+      { active: 0, prefixActive: 0, prefixValues: isOneRange ? [2, 6, 7, 10] : [2, 6, 7, 12], line: 3, title: "Read before-left total", desc: "The range starts at index 1, so subtract the prefix total at index 0.", state: { example, target: "inclusive range sum", before_left: 2, right_saved: rightTotal } },
+      { active: isOneRange ? 2 : 3, prefixActive: isOneRange ? 2 : 3, prefixValues: isOneRange ? [2, 6, 7, 10] : [2, 6, 7, 12], line: 6, title: `Range sum is ${answer}`, desc: `${rightTotal} minus 2 gives ${answer}.`, state: { example, target: "inclusive range sum", calculation: `${rightTotal} - 2`, result: answer } },
+      { active: isOneRange ? 2 : 3, prefixActive: isOneRange ? 2 : 3, prefixValues: isOneRange ? [2, 6, 7, 10] : [2, 6, 7, 12], line: 7, title: `Return ${answer}`, desc: "Return the inclusive range sum.", state: { example, target: "inclusive range sum", final_result: answer } },
+    ], code);
+  }
+
+  if (family === "prefix-index-total") {
+    const values = [2, 4, 1];
+    const code = ["build saved prefix totals", "stop at the requested index", "read that saved total", "that total covers index 0 through index", "return the saved total", "finish", "done", "complete"];
+    return build(values, [
+      { active: 0, prefixValues: [2, "", ""], line: 1, title: context.title || "Prefix Sum At Index", desc: "Start saving totals from the beginning.", state: { example: "nums=[2,4,1], index=1", target: "sum from index 0 through index 1", running_total: 2 } },
+      { active: 1, prefixValues: [2, "", ""], line: 2, title: "Stop at index 1", desc: "The requested index is 1, so the answer will come from prefix cell 1.", state: { example: "nums=[2,4,1], index=1", target: "sum from index 0 through index 1", requested_index: 1 } },
+      { active: 1, prefixValues: [2, 6, ""], line: 3, title: "Save 6", desc: "2 + 4 is the sum through index 1.", state: { example: "nums=[2,4,1], index=1", target: "sum from index 0 through index 1", running_total: 6, result: 6 } },
+      { active: 1, prefixValues: [2, 6, ""], line: 4, title: "Read saved total", desc: "No range subtraction is needed because the range starts at 0.", state: { example: "nums=[2,4,1], index=1", target: "sum from index 0 through index 1", saved_total: 6 } },
+      { active: 2, prefixValues: [2, 6, 7], line: 4, title: "Later totals are not needed", desc: "The visual can show the next prefix, but the requested answer already came from index 1.", state: { example: "nums=[2,4,1], index=1", target: "sum from index 0 through index 1", saved_total: 6 } },
+      { active: 1, prefixValues: [2, 6, 7], line: 5, title: "Return 6", desc: "The saved prefix at index 1 is the output.", state: { example: "nums=[2,4,1], index=1", target: "sum from index 0 through index 1", result: 6 } },
+      { active: 1, prefixValues: [2, 6, 7], line: 6, title: "Trace complete", desc: "Prefix-at-index is a direct lookup after totals are saved.", state: { example: "nums=[2,4,1], index=1", target: "sum from index 0 through index 1", final_result: 6 } },
+      { active: 1, prefixValues: [2, 6, 7], line: 8, title: "Done", desc: "The compact example returns 6.", state: { example: "nums=[2,4,1], index=1", target: "sum from index 0 through index 1", final_result: 6 } },
+    ], code);
+  }
+
+  if (family === "prefix-range-queries") {
+    const values = [2, 4, 1, 3];
+    const prefix = [2, 6, 7, 10];
+    const code = ["build prefix totals once", "read the next query", "right total minus before-left total gives one answer", "save that answer", "reuse the same prefix totals for the next query", "save the next answer", "return all query answers", "finish"];
+    return build(values, [
+      { active: 0, prefixValues: [2, "", "", ""], line: 1, title: context.title || "Range Sum Queries", desc: "Build prefix totals once so multiple queries can reuse them.", state: { example: "nums=[2,4,1,3], queries=[[0,1],[1,3]]", target: "answer each inclusive query", running_total: 2, result: "[]" } },
+      { active: 3, prefixValues: prefix, line: 1, title: "Finish saved totals", desc: "The completed prefix totals are [2, 6, 7, 10].", state: { example: "nums=[2,4,1,3], queries=[[0,1],[1,3]]", target: "answer each inclusive query", prefix_totals: "[2,6,7,10]" } },
+      { active: 1, prefixActive: 1, prefixValues: prefix, line: 2, title: "Query [0,1]", desc: "A range starting at 0 uses the right-edge total directly.", state: { example: "nums=[2,4,1,3], queries=[[0,1],[1,3]]", target: "answer each inclusive query", query: "[0,1]", right_saved: 6 } },
+      { active: 1, prefixActive: 1, prefixValues: prefix, line: 4, title: "Save 6", desc: "The first query result is 6.", state: { example: "nums=[2,4,1,3], queries=[[0,1],[1,3]]", target: "answer each inclusive query", result: "[6]" } },
+      { active: 3, prefixActive: 3, prefixValues: prefix, line: 5, title: "Query [1,3]", desc: "The second query reuses the same saved prefix table.", state: { example: "nums=[2,4,1,3], queries=[[0,1],[1,3]]", target: "answer each inclusive query", query: "[1,3]", right_saved: 10 } },
+      { active: 0, prefixActive: 0, prefixValues: prefix, line: 3, title: "Subtract before left", desc: "Subtract prefix[0] = 2 because the query starts at index 1.", state: { example: "nums=[2,4,1,3], queries=[[0,1],[1,3]]", target: "answer each inclusive query", calculation: "10 - 2", result: "[6]" } },
+      { active: 3, prefixActive: 3, prefixValues: prefix, line: 6, title: "Save 8", desc: "The second query sum is 8.", state: { example: "nums=[2,4,1,3], queries=[[0,1],[1,3]]", target: "answer each inclusive query", result: "[6,8]" } },
+      { active: 3, prefixActive: 3, prefixValues: prefix, line: 7, title: "Return [6,8]", desc: "Return the answers in the same order as the queries.", state: { example: "nums=[2,4,1,3], queries=[[0,1],[1,3]]", target: "answer each inclusive query", final_result: "[6,8]" } },
+    ], code);
+  }
+
+  if (family === "prefix-balance-index" || family === "prefix-balanced-split") {
+    const balanceIndex = family === "prefix-balance-index";
+    const values = balanceIndex ? [2, 3, 1, 1, 4] : [1, 2, 3];
+    const example = balanceIndex ? "nums=[2,3,1,1,4]" : "nums=[1,2,3]";
+    const target = balanceIndex ? "first index with equal before/after sums" : "count equal left/right splits";
+    const code = balanceIndex
+      ? ["find the total sum", "walk each index", "left sum is what came before", "right sum is total minus left and current", "compare left and right", "return the first balance index", "return -1 if none", "finish"]
+      : ["find the total sum", "move the split after each index", "left sum grows by current value", "right sum is total minus left", "count when both sides match", "continue through valid splits", "return the count", "finish"];
+    return build(values, balanceIndex ? [
+      { active: 0, prefixValues: [2, "", "", "", ""], line: 1, title: context.title || "Prefix Balance Index", desc: "First find the total so each index can compare left and right sides.", state: { example, target, total_sum: 11, result: "none yet" } },
+      { active: 0, prefixValues: [2, "", "", "", ""], line: 2, title: "Check index 0", desc: "Left side is 0; right side is 9, so this is not balanced.", state: { example, target, left_sum: 0, right_sum: 9, decision: "not equal" } },
+      { active: 1, prefixValues: [2, 5, "", "", ""], line: 3, title: "Move to index 1", desc: "Left side now includes the value before index 1.", state: { example, target, left_sum: 2, right_sum: 6, decision: "not equal" } },
+      { active: 2, prefixValues: [2, 5, 6, "", ""], line: 4, title: "Check index 2", desc: "Before index 2 the left sum is 5; after index 2 the right sum is 5.", state: { example, target, left_sum: 5, right_sum: 5, decision: "match" } },
+      { active: 2, prefixValues: [2, 5, 6, "", ""], line: 5, title: "Save index 2", desc: "This is the first balance index, so no later index can be earlier.", state: { example, target, result: 2 } },
+      { active: 2, prefixValues: [2, 5, 6, 7, 11], line: 6, title: "Return first match", desc: "Return index 2 immediately.", state: { example, target, result: 2 } },
+      { active: 2, prefixValues: [2, 5, 6, 7, 11], line: 8, title: "Trace complete", desc: "The answer is the first place where both sides are equal.", state: { example, target, final_result: 2 } },
+      { active: 2, prefixValues: [2, 5, 6, 7, 11], line: 8, title: "Done", desc: "The compact example returns 2.", state: { example, target, final_result: 2 } },
+    ] : [
+      { active: 0, prefixValues: [1, "", ""], line: 1, title: context.title || "Balanced Prefix Split", desc: "First know the total sum, then test splits between items.", state: { example, target, total_sum: 6, count: 0 } },
+      { active: 0, prefixValues: [1, "", ""], line: 2, title: "Split after index 0", desc: "Left is 1 and right is 5, so the split does not count.", state: { example, target, left_sum: 1, right_sum: 5, count: 0 } },
+      { active: 1, prefixValues: [1, 3, ""], line: 3, title: "Move split after index 1", desc: "Add the next value to the left side before comparing again.", state: { example, target, left_sum: 3, right_sum: 3, count: 0 } },
+      { active: 1, prefixValues: [1, 3, ""], line: 5, title: "Balanced split found", desc: "Left and right are both 3, so this split counts.", state: { example, target, left_sum: 3, right_sum: 3, count: 1, result: 1 } },
+      { active: 2, prefixValues: [1, 3, 6], line: 6, title: "Do not split after last", desc: "A valid split needs values on both sides, so the last position is not tested.", state: { example, target, count: 1 } },
+      { active: 1, prefixValues: [1, 3, 6], line: 6, title: "Keep count 1", desc: "Only one valid split position had equal left and right totals.", state: { example, target, count: 1 } },
+      { active: 1, prefixValues: [1, 3, 6], line: 7, title: "Return 1", desc: "Return the number of balanced split positions.", state: { example, target, result: 1 } },
+      { active: 1, prefixValues: [1, 3, 6], line: 8, title: "Trace complete", desc: "The compact example has one equal split.", state: { example, target, final_result: 1 } },
+    ], code);
+  }
+
+  if (family === "prefix-subarray-k" || family === "prefix-subarray-count" || family === "prefix-subarray-longest") {
+    const longest = family === "prefix-subarray-longest";
+    const countVariant = family === "prefix-subarray-count";
+    const values = longest ? [1, -1, 5, -2, 3] : countVariant ? [1, 2, 1, 2] : [1, 1, 1];
+    const example = longest ? "nums=[1,-1,5,-2,3], k=3" : countVariant ? "nums=[1,2,1,2], target=3" : "values=[1,1,1], k=2";
+    const target = longest ? "longest subarray sum equal to k" : "count subarrays that sum to target";
+    const code = longest
+      ? ["keep the earliest index for each prefix total", "add the current value to prefix", "look for prefix minus k", "if found, measure the subarray length", "keep the longest length", "save this prefix only if first seen", "return the longest length", "finish"]
+      : ["keep counts of earlier prefix totals", "add the current value to prefix", "look for prefix minus target", "add that count to the answer", "store the current prefix total", "repeat for each value", "return the count", "finish"];
+    return build(values, longest ? [
+      { active: 0, prefixValues: [1, "", "", "", ""], line: 1, title: context.title || "Longest Subarray Sum K", desc: "Save where each prefix total first appeared.", state: { example, target, prefix_total: 0, earliest: "0 at before start", best_length: 0 } },
+      { active: 0, prefixValues: [1, "", "", "", ""], line: 2, title: "Prefix becomes 1", desc: "No earlier prefix makes a sum of 3 yet.", state: { example, target, prefix_total: 1, need: -2, best_length: 0 } },
+      { active: 1, prefixValues: [1, 0, "", "", ""], line: 6, title: "Prefix returns to 0", desc: "Keep the earliest 0 from before the list, because earlier makes longer ranges.", state: { example, target, prefix_total: 0, earliest: "0 already saved" } },
+      { active: 2, prefixValues: [1, 0, 5, "", ""], line: 3, title: "Prefix becomes 5", desc: "5 minus k=3 needs prefix 2, which has not appeared.", state: { example, target, prefix_total: 5, need: 2, best_length: 0 } },
+      { active: 3, prefixValues: [1, 0, 5, 3, ""], line: 4, title: "Prefix becomes 3", desc: "3 minus 3 needs prefix 0, found before the list, so length is 4.", state: { example, target, prefix_total: 3, need: 0, length: 4, best_length: 4 } },
+      { active: 4, prefixValues: [1, 0, 5, 3, 6], line: 5, title: "Check last value", desc: "The last prefix also has a matching earlier prefix, but the length is shorter.", state: { example, target, prefix_total: 6, need: 3, length: 1, best_length: 4 } },
+      { active: 3, prefixValues: [1, 0, 5, 3, 6], line: 7, title: "Return 4", desc: "The longest matching subarray is from index 0 through 3.", state: { example, target, result: 4 } },
+      { active: 3, prefixValues: [1, 0, 5, 3, 6], line: 8, title: "Trace complete", desc: "Prefix sums work with negative numbers because they compare saved totals, not a sliding window.", state: { example, target, final_result: 4 } },
+    ] : [
+      { active: 0, prefixValues: [values[0], "", "", ""].slice(0, values.length), line: 1, title: context.title || "Subarray Sum Count", desc: "Start with prefix total 0 saved once before reading values.", state: { example, target, prefix_total: 0, saved_counts: "{0:1}", count: 0 } },
+      { active: 0, prefixValues: [values[0], "", "", ""].slice(0, values.length), line: 2, title: "Read first value", desc: "Update the prefix total with the first number.", state: { example, target, prefix_total: values[0], need: countVariant ? -2 : -1, count: 0 } },
+      { active: 1, prefixValues: countVariant ? [1, 3, "", ""] : [1, 2, ""], line: 3, title: "Find a matching earlier prefix", desc: countVariant ? "Prefix 3 needs earlier prefix 0, so [1,2] counts." : "Prefix 2 needs earlier prefix 0, so the first two values count.", state: { example, target, prefix_total: countVariant ? 3 : 2, need: 0, count: 1 } },
+      { active: 1, prefixValues: countVariant ? [1, 3, "", ""] : [1, 2, ""], line: 5, title: "Store current prefix", desc: "Save the current prefix total so later subarrays can end after this point.", state: { example, target, saved_counts: countVariant ? "{0:1,1:1,3:1}" : "{0:1,1:1,2:1}", count: 1 } },
+      { active: 2, prefixValues: countVariant ? [1, 3, 4, ""] : [1, 2, 3], line: 4, title: "Next ending position", desc: countVariant ? "Prefix 4 needs earlier prefix 1, so [2,1] counts." : "Prefix 3 needs earlier prefix 1, so the last two values count.", state: { example, target, prefix_total: countVariant ? 4 : 3, need: 1, count: 2 } },
+      { active: countVariant ? 3 : 2, prefixValues: countVariant ? [1, 3, 4, 6] : [1, 2, 3], line: 6, title: countVariant ? "Check final value" : "Finish scan", desc: countVariant ? "Prefix 6 needs earlier prefix 3, so [1,2] at the end counts." : "All ending positions have been checked.", state: { example, target, prefix_total: countVariant ? 6 : 3, need: countVariant ? 3 : 1, count: countVariant ? 3 : 2 } },
+      { active: countVariant ? 3 : 2, prefixValues: countVariant ? [1, 3, 4, 6] : [1, 2, 3], line: 7, title: `Return ${countVariant ? 3 : 2}`, desc: "Return the number of matching contiguous subarrays.", state: { example, target, result: countVariant ? 3 : 2 } },
+      { active: countVariant ? 3 : 2, prefixValues: countVariant ? [1, 3, 4, 6] : [1, 2, 3], line: 8, title: "Trace complete", desc: "Each count came from comparing the current prefix against earlier saved prefixes.", state: { example, target, final_result: countVariant ? 3 : 2 } },
+    ], code);
+  }
+
+  const values = [2, 4, 1];
+  const code = ["build saved prefix totals", "read needed saved totals", "subtract when the range starts after zero", "return the requested answer", "finish", "done", "complete", "end"];
+  return build(values, [
+    { active: 0, prefixValues: [2, "", ""], line: 1, title: context.title || "Prefix sum", desc: "Start by saving the first running total.", state: { example: "values=[2,4,1]", target: "reuse prefix totals", running_total: 2 } },
+    { active: 1, prefixValues: [2, 6, ""], line: 1, title: "Save next total", desc: "Each prefix cell stores the sum so far.", state: { example: "values=[2,4,1]", target: "reuse prefix totals", running_total: 6 } },
+    { active: 2, prefixValues: [2, 6, 7], line: 4, title: "Return saved result", desc: "The saved totals now answer prefix questions directly.", state: { example: "values=[2,4,1]", target: "reuse prefix totals", result: "[2,6,7]" } },
+    { active: 2, prefixValues: [2, 6, 7], line: 8, title: "Trace complete", desc: "The compact prefix table is complete.", state: { example: "values=[2,4,1]", target: "reuse prefix totals", final_result: "[2,6,7]" } },
+  ], code);
 }
 
 export function generateIntervalsSteps(context: GeneratorContext = {}): Step[] {

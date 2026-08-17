@@ -542,12 +542,51 @@ function PrefixSumRows({ step }: { step: Step }) {
   const nums = sortedByX(step.nodes.filter((node) => node.id.startsWith("num-")));
   const prefixes = sortedByX(step.nodes.filter((node) => node.id.startsWith("prefix-")));
   const count = Math.max(nums.length, prefixes.length, 1);
+  const state = step.state || {};
+  const example = formatArrayStateValue(state.example);
+  const target = formatArrayStateValue(state.target ?? "reuse saved prefix totals");
+  const resultSoFar = formatArrayStateValue(state.result ?? state.answer ?? state.final_result ?? state.running_total);
+  const hidden = new Set(["answer", "example", "final_result", "result", "returned", "target", "visual_family"]);
+  const variables = Object.entries(state).filter(([key, value]) => !hidden.has(key) && typeof value !== "undefined" && value !== "");
   return (
-    <div className="ucv-prefix-shell" style={{ "--ucv-array-count": count } as CSSProperties}>
-      <span>Original values</span>
-      <ArrayRow step={step} nodes={nums} />
-      <span>Saved running totals</span>
-      <ArrayRow step={step} nodes={prefixes} />
+    <div className="ucv-prefix-layout" aria-label="Prefix sum visualizer">
+      <aside className="ucv-array-state-panel ucv-prefix-state-panel" aria-label="Prefix sum trace memory">
+        {example ? (
+          <div className="ucv-array-state-panel-section">
+            <span className="ucv-array-state-panel-label">example</span>
+            <strong className="ucv-array-state-panel-value">{example}</strong>
+          </div>
+        ) : null}
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">target</span>
+          <strong className="ucv-array-state-panel-value">{target}</strong>
+        </div>
+        {variables.length ? (
+          <div className="ucv-array-state-panel-section">
+            <span className="ucv-array-state-panel-label">variables</span>
+            <div className="ucv-array-state-panel-list">
+              {variables.map(([key, value]) => (
+                <div className="ucv-array-state-panel-row" key={key}>
+                  <span>{arrayStateLabel(key)}</span>
+                  <strong>{formatArrayStateValue(value)}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        {resultSoFar ? (
+          <div className="ucv-array-state-panel-section ucv-array-state-panel-section--result">
+            <span className="ucv-array-state-panel-label">result so far</span>
+            <strong className="ucv-array-state-panel-value">{resultSoFar}</strong>
+          </div>
+        ) : null}
+      </aside>
+      <div className="ucv-prefix-shell" style={{ "--ucv-array-count": count } as CSSProperties}>
+        <span>Original values</span>
+        <ArrayRow step={step} nodes={nums} />
+        <span>Saved prefix state</span>
+        <ArrayRow step={step} nodes={prefixes} />
+      </div>
     </div>
   );
 }

@@ -1608,8 +1608,38 @@ body.coding-dark .ucv-reverse-result-token {
   gap: 0.55rem;
 }
 
+.ucv-prefix-layout {
+  display: grid;
+  grid-template-columns: minmax(11rem, 14rem) minmax(0, 1fr);
+  align-items: center;
+  justify-self: center;
+  gap: clamp(0.7rem, 1.8vw, 1.1rem);
+  width: min(900px, 100%);
+  padding-inline: clamp(0.25rem, 1vw, 0.65rem);
+  box-sizing: border-box;
+}
+
+.ucv-prefix-state-panel {
+  min-width: 11rem;
+}
+
 .ucv-prefix-shell .ucv-array-row {
+  grid-template-columns: repeat(var(--ucv-array-count), minmax(3.2rem, 5.4rem));
   padding-block: 0.2rem 0.8rem;
+  max-width: min(640px, 100%);
+}
+
+.ucv-prefix-shell .ucv-array-cell {
+  min-height: 58px;
+  border-radius: 11px;
+}
+
+.ucv-prefix-shell .ucv-array-cell strong {
+  font-size: clamp(0.82rem, 1vw, 1rem);
+}
+
+.ucv-prefix-shell .ucv-array-cell span {
+  font-size: 0.6rem;
 }
 
 .ucv-tuple-shell {

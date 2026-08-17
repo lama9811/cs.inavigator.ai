@@ -46,7 +46,8 @@ const CONCEPTS: Array<{ id: ConceptType; label: string }> = [
 function conceptFromProblem(problem: any): ConceptType {
   const topic = String(problem?.topic || "").toLowerCase();
   const visualConcept = String(problem?.visualizer?.concept || "").toLowerCase();
-  const raw = `${visualConcept} ${topic}`.toLowerCase();
+  const title = String(problem?.title || "").toLowerCase();
+  const raw = `${visualConcept} ${topic} ${title}`.toLowerCase();
   if (raw.includes("linked")) return "linked-list";
   if (raw.includes("two pointer")) return "two-pointers";
   if (raw.includes("sliding")) return "sliding-window";
@@ -65,7 +66,7 @@ function conceptFromProblem(problem: any): ConceptType {
   if (raw.includes("condition") || raw.includes("decision")) return "conditional";
   if (raw.includes("math") || raw.includes("arithmetic")) return "math";
   if (raw.includes("matrix")) return "matrix";
-  if (raw.includes("prefix")) return "prefix-sum";
+  if (/\bprefix sums?\b|running prefix|range sum|subarray sum|balance index|balanced prefix split/.test(raw)) return "prefix-sum";
   if (raw.includes("interval")) return "intervals";
   if (raw.includes("dynamic")) return "dynamic-programming";
   if (raw.includes("bit")) return "bit-manipulation";
@@ -115,6 +116,7 @@ function StateStrip({ step }: { step: Step }) {
   if (step.concept === "two-pointers") return null;
   if (step.concept === "sliding-window") return null;
   if (step.concept === "binary-search") return null;
+  if (step.concept === "prefix-sum") return null;
   if (isStringVisualStep(step)) {
     const hasReturned = step.state?.returned === true;
     const finalResult = hasReturned

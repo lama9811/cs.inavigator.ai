@@ -123,10 +123,19 @@ const familyStepTargets = {
   "sliding-window-short-blocks": 8,
   "sliding-window-three-day": 8,
   "sliding-window": 8,
+  "prefix-balance-index": 8,
+  "prefix-balanced-split": 8,
+  "prefix-index-total": 8,
+  "prefix-range": 8,
+  "prefix-range-queries": 8,
+  "prefix-running-totals": 8,
+  "prefix-single-range": 8,
+  "prefix-subarray-count": 8,
+  "prefix-subarray-k": 8,
+  "prefix-subarray-longest": 8,
   "matrix-traverse": 7,
   "dp-table": 8,
   "graph-traversal": 7,
-  "prefix-range": 8,
   "recursion-stack": 9,
   "recursion-nested-list": 8,
   "heap-priority": 7,
@@ -257,6 +266,19 @@ const trueSlidingWindowFamilies = {
   "medium-53": { family: "sliding-window-longest-under-limit", sample: "minutes=[20,30,10,40], limit=60", expected: "3" },
 };
 
+const truePrefixSumFamilies = {
+  "easy-64": { family: "prefix-running-totals", sample: "nums=[2,4,1]", expected: "[2,6,7]" },
+  "easy-65": { family: "prefix-single-range", sample: "nums=[2,4,1,5], left=1, right=3", expected: "10" },
+  "easy-89": { family: "prefix-index-total", sample: "nums=[2,4,1], index=1", expected: "6" },
+  "easy-90": { family: "prefix-single-range", sample: "nums=[2,4,1,3], left=1, right=2", expected: "5" },
+  "medium-25": { family: "prefix-range-queries", sample: "nums=[2,4,1,3], queries=[[0,1],[1,3]]", expected: "[6,8]" },
+  "medium-43": { family: "prefix-balance-index", sample: "nums=[2,3,1,1,4]", expected: "2" },
+  "medium-58": { family: "prefix-balanced-split", sample: "nums=[1,2,3]", expected: "1" },
+  "medium-59": { family: "prefix-subarray-count", sample: "nums=[1,2,1,2], target=3", expected: "3" },
+  "hard-18": { family: "prefix-subarray-k", sample: "values=[1,1,1], k=2", expected: "2" },
+  "hard-32": { family: "prefix-subarray-longest", sample: "nums=[1,-1,5,-2,3], k=3", expected: "4" },
+};
+
 function visualizerFamilyText(problem) {
   return `${problem?.title || ""} ${problem?.topic || ""} ${problem?.prompt || ""} ${problem?.visualizer?.title || ""} ${problem?.visualizer?.caption || ""} ${problem?.visualizer?.concept || ""}`.toLowerCase();
 }
@@ -268,6 +290,19 @@ function isTupleSwapProblem(problem) {
 function detectVisualizerFamily(problem, concept) {
   const text = visualizerFamilyText(problem);
   if (concept === "conditional" || concept === "decision-flow" || /\bconditionals?\b|if\/else|if else/.test(text)) return "conditional-flow";
+  if (concept === "prefix-sum") {
+    if (/running prefix totals/.test(text)) return "prefix-running-totals";
+    if (/single range sum/.test(text)) return "prefix-single-range";
+    if (/prefix sum at index/.test(text)) return "prefix-index-total";
+    if (/one range sum/.test(text)) return "prefix-single-range";
+    if (/range sum queries/.test(text)) return "prefix-range-queries";
+    if (/prefix balance index/.test(text)) return "prefix-balance-index";
+    if (/balanced prefix split/.test(text)) return "prefix-balanced-split";
+    if (/subarray sum equals k/.test(text)) return "prefix-subarray-k";
+    if (/longest subarray sum k/.test(text)) return "prefix-subarray-longest";
+    if (/subarray sum count/.test(text)) return "prefix-subarray-count";
+    return "prefix-range";
+  }
   if (/maximum score/.test(text)) return "array-maximum-score";
   if (/sum even numbers/.test(text)) return "array-sum-even";
   if (/remove duplicates keep order/.test(text)) return "array-dedupe-order";
@@ -346,7 +381,6 @@ function detectVisualizerFamily(problem, concept) {
   }
   if (concept === "recursion") return /nested|depth|flatten|list.*sum|sum.*list/.test(text) ? "recursion-nested-list" : "recursion-stack";
   if (concept === "matrix") return "matrix-traverse";
-  if (concept === "prefix-sum") return "prefix-range";
   if (concept === "intervals") return "interval-merge";
   if (concept === "heap") return "heap-priority";
   if (concept === "trie") return "trie-prefix";
@@ -442,7 +476,8 @@ function parseAllNamedLists(input = "") {
 function conceptFromProblem(problem) {
   const topic = String(problem?.topic || "").toLowerCase();
   const visualConcept = String(problem?.visualizer?.concept || "").toLowerCase();
-  const raw = `${visualConcept} ${topic}`.toLowerCase();
+  const title = String(problem?.title || "").toLowerCase();
+  const raw = `${visualConcept} ${topic} ${title}`.toLowerCase();
   if (raw.includes("linked")) return "linked-list";
   if (raw.includes("two pointer")) return "two-pointers";
   if (raw.includes("sliding")) return "sliding-window";
@@ -461,7 +496,7 @@ function conceptFromProblem(problem) {
   if (raw.includes("condition") || raw.includes("decision")) return "conditional";
   if (raw.includes("math") || raw.includes("arithmetic")) return "math";
   if (raw.includes("matrix")) return "matrix";
-  if (raw.includes("prefix")) return "prefix-sum";
+  if (/\bprefix sums?\b|running prefix|range sum|subarray sum|balance index|balanced prefix split/.test(raw)) return "prefix-sum";
   if (raw.includes("interval")) return "intervals";
   if (raw.includes("dynamic")) return "dynamic-programming";
   if (raw.includes("bit")) return "bit-manipulation";
@@ -510,6 +545,7 @@ function compactVisualInput(problem, concept, state = {}) {
   if (trueBinarySearchFamilies[problem.id]) return trueBinarySearchFamilies[problem.id].sample;
   if (trueTwoPointerFamilies[problem.id]) return trueTwoPointerFamilies[problem.id].sample;
   if (trueSlidingWindowFamilies[problem.id]) return trueSlidingWindowFamilies[problem.id].sample;
+  if (truePrefixSumFamilies[problem.id]) return truePrefixSumFamilies[problem.id].sample;
   if (title.includes("vowel")) return "Code";
   if (title.includes("palindrome")) return "level";
   if (title.includes("reverse words")) return "red blue";
@@ -578,6 +614,7 @@ function usesGeneratedRuntimeTrace(problem, concept, rawSteps = []) {
   if (concept === "binary-search") return true;
   if (concept === "two-pointers") return true;
   if (concept === "sliding-window") return true;
+  if (concept === "prefix-sum") return true;
   const target = targetStepCountFor(problem, concept);
   if (!rawSteps.length || rawSteps.length >= target) return false;
   if (rawSteps.length < Math.min(target, 6)) return true;
@@ -790,6 +827,18 @@ for (const file of fs.readdirSync(questionDir).filter((item) => item.endsWith(".
       }
       if (family === "sliding-window") {
         warnings.push(`${problem.id} ${problem.title}: Sliding Window visualizer still uses shared generic family`);
+      }
+    }
+    const requiredPrefixSum = truePrefixSumFamilies[problem.id];
+    if (requiredPrefixSum) {
+      if (family !== requiredPrefixSum.family) {
+        warnings.push(`${problem.id} ${problem.title}: Prefix Sum visualizer routes to "${family}", expected "${requiredPrefixSum.family}"`);
+      }
+      if (sample !== requiredPrefixSum.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Prefix Sum sample is "${sample}", expected "${requiredPrefixSum.sample}"`);
+      }
+      if (family === "prefix-range") {
+        warnings.push(`${problem.id} ${problem.title}: Prefix Sum visualizer still uses shared generic family`);
       }
     }
     const requiredString = trueStringFamilies[problem.id];
