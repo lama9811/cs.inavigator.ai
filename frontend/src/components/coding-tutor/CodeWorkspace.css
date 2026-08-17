@@ -687,7 +687,7 @@ body.ct-guide-resizing * {
   position: absolute;
   top: var(--guide-top, 0);
   height: var(--guide-height, 0);
-  left: calc(16px + (var(--guide-level, 0) * 4ch) - 0.75ch);
+  left: calc(16px + (var(--guide-level, 0) * 4ch) - 0.75ch - var(--guide-scroll-left, 0px));
   width: 1px;
   border-radius: 999px;
   background: linear-gradient(

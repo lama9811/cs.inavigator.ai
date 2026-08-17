@@ -118,12 +118,6 @@ function buildSolutionInsights(studentCode = "", referenceCode = "", diffLines =
 function TerminalOutputPane({ output, tests, onExplainError }) {
   const capturedOutput = [output.stdout, output.stderr].filter(Boolean).join("\n");
   const hasRunResults = ["passed", "failed", "error"].includes(output.status) && tests.length > 0;
-  const returnOutput = hasRunResults
-    ? tests.map((test) => {
-        if (test.error) return test.error;
-        return formatValue(test.actual);
-      }).join("\n")
-    : "";
   // An actual crash/runtime/syntax error: status "error" or stderr present.
   const hasError = output.status === "error" || Boolean(output.stderr);
 
@@ -142,11 +136,10 @@ function TerminalOutputPane({ output, tests, onExplainError }) {
           <span className="terminal-output-kind">Program output</span>
           <pre>{capturedOutput}</pre>
         </>
-      ) : returnOutput ? (
-        <>
-          <span className="terminal-output-kind">Return value</span>
-          <pre>{returnOutput}</pre>
-        </>
+      ) : hasRunResults ? (
+        <div className="terminal-panel-empty">
+          No program output. The grader called your function for the tests below.
+        </div>
       ) : (
         <div className="terminal-panel-empty">
           No output yet.

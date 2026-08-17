@@ -28,6 +28,7 @@ import {
   hasAdvisingPanel, stripAdvisingPanel, parseAdvisingPrefill,
 } from "./coding-tutor/advisingPanelMarker";
 import SearchSuggestions from "./chatbox/SearchSuggestions";
+import { isChatHistoryNavigationLocked } from "../lib/chatHistoryNavigation";
 import { getYouTubeVideoId } from "../lib/youtube";
 import { ENABLE_LEGACY_ADVISING_FORM } from "../config/features";
 import "./Chatbox.css";
@@ -644,6 +645,7 @@ export default function Chatbox({
   useEffect(() => {
     if (
       !isCodingWorkspaceRoute
+      || isChatHistoryNavigationLocked()
       || sessionStorage.getItem(REGULAR_CHAT_RESET_KEY) === "1"
       || String(sessionId || "").startsWith("coding-")
       || !onCreateSession

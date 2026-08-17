@@ -47,6 +47,7 @@ import { gradeMockSummary, scoreFromGraded } from "./interviewGrade";
 import { appendInterviewAttempt, summarizeInterviewHistory } from "./interviewHistory";
 import { clearInterviewSolved, fetchInterviewProgress, markInterviewSolved, saveInterviewProgress, useInterviewReviewed, useInterviewSolved } from "./interviewProgress";
 import { currentUserStorageScope, scopedStorageKey } from "./storageScope";
+import { isChatHistoryNavigationLocked } from "../../lib/chatHistoryNavigation";
 import {
   saveDraft,
   readDraftEntry,
@@ -3802,6 +3803,7 @@ export default function CodingTutor({
   // Guards: never hijack a running mock; open each problem id only once.
   useEffect(() => {
     if (activePage !== "workspace") return;
+    if (isChatHistoryNavigationLocked()) return;
     const target = workspaceTargetFromPath(location.pathname);
 
     if (target.kind === "personal") {
@@ -3844,6 +3846,7 @@ export default function CodingTutor({
   useEffect(() => {
     if (autoReopenedRef.current) return;
     if (activePage !== "workspace") return;
+    if (isChatHistoryNavigationLocked()) return;
     if (activeProblem || isPersonalMode) return;
     if (mockSession && activeProblem?.mock) return;
     if (workspaceTargetFromPath(location.pathname).kind !== "none") return; // a specific target owns it

@@ -8,7 +8,7 @@ import TerminalPanel from "./TerminalPanel";
 import { WorkspaceVisualizerModal, WorkspaceVisualizerPanel } from "./WorkspaceVisualizer";
 import { handleHorizontalRovingKeyDown } from "./keyboardNavigation";
 import useFocusTrap from "./useFocusTrap";
-import { FaTimes } from "react-icons/fa";
+import { FaFastBackward, FaFastForward, FaPause, FaPlay, FaStepBackward, FaStepForward, FaTimes } from "react-icons/fa";
 import "./CodeWorkspace.css";
 import "./TerminalPanel.css";
 
@@ -307,24 +307,70 @@ function TraceV2Value({ binding, objects = {} }) {
   return <code className={`code-trace-value code-trace-value-${binding.type || "scalar"}`}>{v2ScalarDisplay(binding)}</code>;
 }
 
-function TraceV2ObjectCell({ value }) {
+function TraceV2ObjectCell({ value, objects = {}, objectLabels = new Map() }) {
   if (!value) return <strong>?</strong>;
-  if (value.kind === "reference") return <strong>{value.object_id}</strong>;
+  if (value.kind === "reference") {
+    const object = objects[value.object_id];
+    return <strong>{objectLabels.get(value.object_id)?.[0] || v2ObjectSummary(object) || "stored value"}</strong>;
+  }
   return <strong>{v2ScalarDisplay(value)}</strong>;
 }
 
-function TraceV2ObjectCard({ object, isChanged }) {
+function buildTraceObjectLabels(frames = [], objects = {}) {
+  const labels = new Map();
+
+  const addLabel = (objectId, label) => {
+    if (!objectId || !label) return;
+    const existing = labels.get(objectId) || [];
+    if (!existing.includes(label)) labels.set(objectId, [...existing, label]);
+  };
+
+  frames.forEach((frame) => {
+    Object.entries(frame.bindings || {}).forEach(([name, binding]) => {
+      if (binding?.kind === "reference") addLabel(binding.object_id, name);
+    });
+  });
+
+  Object.entries(objects || {}).forEach(([objectId, object]) => {
+    const primaryName = labels.get(objectId)?.[0];
+    if (!primaryName || !Array.isArray(object?.entries)) return;
+    object.entries.forEach((entry) => {
+      if (entry?.value?.kind !== "reference") return;
+      addLabel(entry.value.object_id, `${primaryName}[${v2ScalarDisplay(entry.key)}]`);
+    });
+  });
+
+  return labels;
+}
+
+function friendlyTraceObjectType(object) {
+  if (!object?.type) return "stored value";
+  if (object.type === "dict") return "dictionary";
+  if (object.type === "tuple") return "tuple";
+  if (object.type === "set") return "set";
+  if (object.type === "list") return "list";
+  return object.class_name || object.type;
+}
+
+function isTraceCollectionBinding(binding, objects = {}) {
+  if (binding?.kind !== "reference") return false;
+  const object = objects[binding.object_id];
+  return ["dict", "list", "set", "tuple"].includes(object?.type);
+}
+
+function TraceV2ObjectCard({ object, isChanged, label, objects = {}, objectLabels = new Map() }) {
   const entries = Array.isArray(object?.entries) ? object.entries : [];
   const items = Array.isArray(object?.items) ? object.items : [];
   const attributes = object?.attributes && typeof object.attributes === "object" ? Object.entries(object.attributes) : [];
-  const title = object?.class_name || object?.type || "object";
+  const typeLabel = friendlyTraceObjectType(object);
+  const title = label || `${typeLabel} value`;
   const showSlots = items.length || entries.length || attributes.length;
 
   return (
     <article className={`code-trace-v2-object ${isChanged ? "is-changed" : ""}`}>
       <div className="code-trace-object-head">
-        <span>{title}</span>
-        <strong>{object?.object_id}</strong>
+        <span>{typeLabel}</span>
+        <strong>{title}</strong>
       </div>
       <div className="code-trace-object-meta">
         <span>{v2ObjectSummary(object)}</span>
@@ -335,7 +381,7 @@ function TraceV2ObjectCard({ object, isChanged }) {
           {items.slice(0, 12).map((item, index) => (
             <span key={`${object.object_id}-${index}`}>
               <em>{index}</em>
-              <TraceV2ObjectCell value={item} />
+              <TraceV2ObjectCell value={item} objects={objects} objectLabels={objectLabels} />
             </span>
           ))}
           {object.truncated ? <span className="is-more">more</span> : null}
@@ -346,7 +392,7 @@ function TraceV2ObjectCard({ object, isChanged }) {
           {entries.slice(0, 10).map((entry, index) => (
             <span key={`${object.object_id}-entry-${index}`}>
               <em>{v2ScalarDisplay(entry.key)}</em>
-              <TraceV2ObjectCell value={entry.value} />
+              <TraceV2ObjectCell value={entry.value} objects={objects} objectLabels={objectLabels} />
             </span>
           ))}
           {object.truncated ? <span className="is-more">more</span> : null}
@@ -357,7 +403,7 @@ function TraceV2ObjectCard({ object, isChanged }) {
           {attributes.slice(0, 10).map(([key, value]) => (
             <span key={`${object.object_id}-attr-${key}`}>
               <em>{key}</em>
-              <TraceV2ObjectCell value={value} />
+              <TraceV2ObjectCell value={value} objects={objects} objectLabels={objectLabels} />
             </span>
           ))}
         </div>
@@ -492,14 +538,26 @@ function CodeTraceModal({
   }, [traceResult]);
   const [stepIndex, setStepIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const lineRefs = useRef(new Map());
   const activeStep = trace[stepIndex] || null;
   const previousStep = stepIndex > 0 ? trace[stepIndex - 1] : null;
-  const activeFrames = Array.isArray(activeStep?.frames) ? activeStep.frames : [];
-  const activeObjects = activeStep?.objects && typeof activeStep.objects === "object" ? activeStep.objects : {};
-  const activeCallStack = activeFrames.length
-    ? activeFrames.map((frame) => frame.function).filter(Boolean)
-    : Array.isArray(activeStep?.call_stack) ? activeStep.call_stack : [];
+  const activeFrames = useMemo(
+    () => (Array.isArray(activeStep?.frames) ? activeStep.frames : []),
+    [activeStep?.frames]
+  );
+  const activeObjects = useMemo(
+    () => (activeStep?.objects && typeof activeStep.objects === "object" ? activeStep.objects : {}),
+    [activeStep?.objects]
+  );
+  const activeCallStack = useMemo(
+    () => (
+      activeFrames.length
+        ? activeFrames.map((frame) => frame.function).filter(Boolean)
+        : Array.isArray(activeStep?.call_stack) ? activeStep.call_stack : []
+    ),
+    [activeFrames, activeStep?.call_stack]
+  );
   const hasTraceError = traceResult?.status === "error" || Boolean(traceResult?.stderr);
   const codeLines = useMemo(() => {
     const sourceLines = String(code || "").replace(/\r\n/g, "\n").split("\n");
@@ -582,9 +640,53 @@ function CodeTraceModal({
     });
     return ids;
   }, [activeStep?.object_changes]);
+  const currentFrameIndex = useMemo(() => {
+    if (!activeFrames.length) return -1;
+    const matchingIndex = activeFrames.findIndex((frame) => frame.function === activeStep?.function);
+    return matchingIndex >= 0 ? matchingIndex : activeFrames.length - 1;
+  }, [activeFrames, activeStep?.function]);
+  const currentFrame = currentFrameIndex >= 0 ? activeFrames[currentFrameIndex] : null;
+  const hiddenFrames = currentFrameIndex >= 0
+    ? activeFrames.filter((_, index) => index !== currentFrameIndex)
+    : [];
+  const objectLabels = useMemo(
+    () => buildTraceObjectLabels(activeFrames, activeObjects),
+    [activeFrames, activeObjects]
+  );
+  const activeObjectList = useMemo(
+    () => Object.values(activeObjects).map((object) => ({
+      object,
+      label: objectLabels.get(object.object_id)?.[0] || "",
+    })),
+    [activeObjects, objectLabels]
+  );
+  const showMoreTraceDetails = activeCallStack.length > 1 || hiddenFrames.length > 0 || activeObjectList.length > 0;
   const currentLineNo = traceLineNo(activeStep);
   const currentLineDisplay = stripLineComment(activeStep?.line, traceLanguage).trim() || activeStep?.line?.trim() || "";
   const lineCardLabel = activeStep?.phase === "after_previous_line" ? "Next line" : activeStep?.event === "return" ? "Return line" : activeStep?.event === "exception" ? "Error line" : "Current line";
+  const currentFrameBindings = useMemo(
+    () => Object.entries(currentFrame?.bindings || {}),
+    [currentFrame]
+  );
+  const currentFrameLocalNames = useMemo(
+    () => Object.fromEntries(currentFrameBindings.map(([name]) => [name, true])),
+    [currentFrameBindings]
+  );
+  const currentLineBindingNames = useMemo(
+    () => new Set(extractLineVariableNames(currentLineDisplay || activeStep?.line || "", currentFrameLocalNames)),
+    [activeStep?.line, currentFrameLocalNames, currentLineDisplay]
+  );
+  const visibleCurrentFrameBindings = useMemo(
+    () => currentFrameBindings.filter(([name, binding]) => {
+      const changeKey = `${currentFrame?.function || ""}:${name}`;
+      const isChanged = changedBindings.has(changeKey);
+      const isUsedOnCurrentLine = currentLineBindingNames.has(name);
+      const isCollection = isTraceCollectionBinding(binding, activeObjects);
+      return !isCollection || isChanged || isUsedOnCurrentLine;
+    }),
+    [activeObjects, changedBindings, currentFrame?.function, currentFrameBindings, currentLineBindingNames]
+  );
+  const hiddenCurrentCollectionCount = Math.max(0, currentFrameBindings.length - visibleCurrentFrameBindings.length);
   const modalRef = useFocusTrap(true, { onEscape: onClose });
   const traceTitle = hasTraceSteps
     ? `${traceLanguage} execution trace`
@@ -619,9 +721,9 @@ function CodeTraceModal({
       setIsPlaying(false);
       return undefined;
     }
-    const timer = window.setTimeout(() => goToStep(stepIndex + 1), 900);
+    const timer = window.setTimeout(() => goToStep(stepIndex + 1), Math.max(250, Math.round(900 / playbackSpeed)));
     return () => window.clearTimeout(timer);
-  }, [canGoNext, goToStep, isPlaying, stepIndex]);
+  }, [canGoNext, goToStep, isPlaying, playbackSpeed, stepIndex]);
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -714,18 +816,6 @@ function CodeTraceModal({
                     <span>Current step</span>
                     <h4>{activeExplanation}</h4>
                   </div>
-                  {activeCallStack.length ? (
-                    <div className="code-trace-call-stack">
-                      <span>Call stack</span>
-                      <ol>
-                        {activeCallStack.map((name, index) => (
-                          <li key={`${name}-${index}`} className={index === activeCallStack.length - 1 ? "is-current" : ""}>
-                            {name}
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  ) : null}
                   {activeStep?.line ? (
                     <div className="code-trace-current-line">
                       <span>{lineCardLabel}</span>
@@ -755,65 +845,110 @@ function CodeTraceModal({
                     </div>
                   ) : null}
                   <div className="code-trace-variable-updates" aria-label="Variable updates for this trace step">
-                    <span>{isTraceV2 ? "Variables" : "Variable updates"}</span>
+                    <span>{isTraceV2 ? "Variables used now" : "Variable updates"}</span>
                     {isTraceV2 ? (
-                      activeFrames.length ? (
+                      currentFrame ? (
                         <div className="code-trace-v2-graph">
-                          <section className="code-trace-v2-frames" aria-label="Function frames">
-                            <div className="code-trace-frame-head">
-                              <span>{activeFrames.length > 1 ? "Function calls" : "Current variables"}</span>
-                              <strong>{activeFrames.length}</strong>
-                            </div>
-                            {activeFrames.map((frame, frameIndex) => {
-                              const isCurrentFrame = frame.function === activeStep?.function || frameIndex === activeFrames.length - 1;
-                              const bindings = Object.entries(frame.bindings || {});
-                              return (
-                                <article
-                                  key={`${frame.frame_id}-${frameIndex}`}
-                                  className={`code-trace-v2-frame ${isCurrentFrame ? "is-current" : ""}`}
-                                >
-                                  <div className="code-trace-frame-head">
-                                    <span>{isCurrentFrame ? "Current function" : "Waiting function"}</span>
-                                    <strong>{frame.function}</strong>
-                                  </div>
-                                  <div className="code-trace-frame-locals">
-                                    {bindings.length ? bindings.map(([name, binding]) => {
-                                      const changeKey = `${frame.function}:${name}`;
-                                      const isChanged = changedBindings.has(changeKey);
-                                      return (
-                                        <div
-                                          key={`${frame.frame_id}-${name}`}
-                                          className={`code-trace-frame-local ${isChanged ? "is-changed" : "is-same"} ${binding?.kind === "reference" ? "is-reference" : "is-scalar"}`}
-                                        >
-                                          <strong>{name}</strong>
-                                          <span>{isChanged ? "changed" : "stored"}</span>
-                                          <TraceV2Value binding={binding} objects={activeObjects} />
-                                        </div>
-                                      );
-                                    }) : (
-                                      <p className="code-trace-no-declared-vars">No variables captured in this frame yet.</p>
-                                    )}
-                                  </div>
-                                </article>
-                              );
-                            })}
-                          </section>
-                          {Object.values(activeObjects).length ? (
-                            <section className="code-trace-v2-heap" aria-label="Lists and objects">
+                          <section className="code-trace-v2-frames" aria-label="Current variables">
+                            <article className="code-trace-v2-frame is-current">
                               <div className="code-trace-frame-head">
-                                <span>Lists and objects</span>
-                                <strong>{Object.keys(activeObjects).length}</strong>
+                                <span>Current function</span>
+                                <strong>{currentFrame.function}</strong>
                               </div>
-                              <div className="code-trace-v2-object-grid">
-                                {Object.values(activeObjects).map((object) => (
-                                  <TraceV2ObjectCard
-                                    key={object.object_id}
-                                    object={object}
-                                    isChanged={changedObjects.has(object.object_id)}
-                                  />
-                                ))}
+                              <div className="code-trace-frame-locals">
+                                {visibleCurrentFrameBindings.length ? visibleCurrentFrameBindings.map(([name, binding]) => {
+                                  const changeKey = `${currentFrame.function}:${name}`;
+                                  const isChanged = changedBindings.has(changeKey);
+                                  return (
+                                    <div
+                                      key={`${currentFrame.frame_id}-${name}`}
+                                      className={`code-trace-frame-local ${isChanged ? "is-changed" : "is-same"} ${binding?.kind === "reference" ? "is-reference" : "is-scalar"}`}
+                                    >
+                                      <strong>{name}</strong>
+                                      <span>{isChanged ? "changed" : "stored"}</span>
+                                      <TraceV2Value binding={binding} objects={activeObjects} />
+                                    </div>
+                                  );
+                                }) : (
+                                  <p className="code-trace-no-declared-vars">
+                                    {currentFrameBindings.length
+                                      ? "Stored lists and dictionaries are under More trace details."
+                                      : "No variables captured in this frame yet."}
+                                  </p>
+                                )}
+                                {hiddenCurrentCollectionCount ? (
+                                  <p className="code-trace-no-declared-vars">
+                                    {hiddenCurrentCollectionCount} stored collection{hiddenCurrentCollectionCount === 1 ? "" : "s"} tucked under More trace details.
+                                  </p>
+                                ) : null}
                               </div>
-                            </section>
+                            </article>
+                          </section>
+                          {showMoreTraceDetails ? (
+                            <details className="code-trace-more-details">
+                              <summary>More trace details</summary>
+                              {activeCallStack.length > 1 ? (
+                                <div className="code-trace-call-stack">
+                                  <span>Function path</span>
+                                  <ol>
+                                    {activeCallStack.map((name, index) => (
+                                      <li key={`${name}-${index}`} className={index === activeCallStack.length - 1 ? "is-current" : ""}>
+                                        {name}
+                                      </li>
+                                    ))}
+                                  </ol>
+                                </div>
+                              ) : null}
+                              {hiddenFrames.length ? (
+                                <section className="code-trace-v2-frames" aria-label="Waiting function variables">
+                                  {hiddenFrames.map((frame, frameIndex) => (
+                                    <article
+                                      key={`${frame.frame_id}-${frameIndex}`}
+                                      className="code-trace-v2-frame"
+                                    >
+                                      <div className="code-trace-frame-head">
+                                        <span>Waiting function</span>
+                                        <strong>{frame.function}</strong>
+                                      </div>
+                                      <div className="code-trace-frame-locals">
+                                        {Object.entries(frame.bindings || {}).length ? Object.entries(frame.bindings || {}).map(([name, binding]) => (
+                                          <div
+                                            key={`${frame.frame_id}-${name}`}
+                                            className={`code-trace-frame-local is-same ${binding?.kind === "reference" ? "is-reference" : "is-scalar"}`}
+                                          >
+                                            <strong>{name}</strong>
+                                            <span>stored</span>
+                                            <TraceV2Value binding={binding} objects={activeObjects} />
+                                          </div>
+                                        )) : (
+                                          <p className="code-trace-no-declared-vars">No variables captured in this frame yet.</p>
+                                        )}
+                                      </div>
+                                    </article>
+                                  ))}
+                                </section>
+                              ) : null}
+                              {activeObjectList.length ? (
+                                <section className="code-trace-v2-heap" aria-label="Lists and objects">
+                                  <div className="code-trace-frame-head">
+                                    <span>Lists and objects</span>
+                                    <strong>{activeObjectList.length}</strong>
+                                  </div>
+                                  <div className="code-trace-v2-object-grid">
+                                    {activeObjectList.map(({ object, label }) => (
+                                      <TraceV2ObjectCard
+                                        key={object.object_id}
+                                        object={object}
+                                        label={label}
+                                        objects={activeObjects}
+                                        objectLabels={objectLabels}
+                                        isChanged={changedObjects.has(object.object_id)}
+                                      />
+                                    ))}
+                                  </div>
+                                </section>
+                              ) : null}
+                            </details>
                           ) : null}
                         </div>
                       ) : (
@@ -871,22 +1006,72 @@ function CodeTraceModal({
               <footer className="code-trace-controls">
                 <div className="code-trace-footer-status">
                   <strong>Step {stepIndex + 1} of {trace.length}</strong>
-                  <span>{isTraceV2 ? "Variable trace" : "Classic trace"}</span>
                 </div>
                 <div className="code-trace-footer-actions">
-                  <button type="button" onClick={() => { setIsPlaying(false); goToStep(0); }}>
-                    Reset
+                  <button
+                    type="button"
+                    className="code-trace-icon-button"
+                    disabled={!canGoBack}
+                    onClick={() => { setIsPlaying(false); goToStep(0); }}
+                    aria-label="Go to first step"
+                    title="First step"
+                  >
+                    <FaFastBackward aria-hidden="true" />
                   </button>
-                  <button type="button" disabled={!canGoBack} onClick={() => { setIsPlaying(false); goToStep(stepIndex - 1); }}>
-                    Previous
+                  <button
+                    type="button"
+                    className="code-trace-icon-button"
+                    disabled={!canGoBack}
+                    onClick={() => { setIsPlaying(false); goToStep(stepIndex - 1); }}
+                    aria-label="Go to previous step"
+                    title="Previous step"
+                  >
+                    <FaStepBackward aria-hidden="true" />
                   </button>
-                  <button type="button" disabled={!canGoNext && !isPlaying} onClick={() => setIsPlaying((current) => !current)}>
-                    {isPlaying ? "Pause" : "Play"}
+                  <button
+                    type="button"
+                    className="code-trace-icon-button code-trace-play-toggle"
+                    disabled={!canGoNext && !isPlaying}
+                    onClick={() => setIsPlaying((current) => !current)}
+                    aria-label={isPlaying ? "Pause trace" : "Play trace"}
+                    title={isPlaying ? "Pause" : "Play"}
+                  >
+                    {isPlaying ? <FaPause aria-hidden="true" /> : <FaPlay aria-hidden="true" />}
                   </button>
-                  <button type="button" disabled={!canGoNext} onClick={() => { setIsPlaying(false); goToStep(stepIndex + 1); }}>
-                    Next
+                  <button
+                    type="button"
+                    className="code-trace-icon-button"
+                    disabled={!canGoNext}
+                    onClick={() => { setIsPlaying(false); goToStep(stepIndex + 1); }}
+                    aria-label="Go to next step"
+                    title="Next step"
+                  >
+                    <FaStepForward aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    className="code-trace-icon-button"
+                    disabled={!canGoNext}
+                    onClick={() => { setIsPlaying(false); goToStep(trace.length - 1); }}
+                    aria-label="Go to last step"
+                    title="Last step"
+                  >
+                    <FaFastForward aria-hidden="true" />
                   </button>
                 </div>
+                <label className="code-trace-speed-control">
+                  <span>Speed</span>
+                  <select
+                    value={playbackSpeed}
+                    onChange={(event) => setPlaybackSpeed(Number(event.target.value))}
+                    aria-label="Trace playback speed"
+                  >
+                    <option value={0.75}>0.75x</option>
+                    <option value={1}>1x</option>
+                    <option value={1.5}>1.5x</option>
+                    <option value={2}>2x</option>
+                  </select>
+                </label>
               </footer>
             </>
           ) : (

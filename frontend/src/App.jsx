@@ -28,6 +28,7 @@ import "./index.css";
 
 import { getApiBase } from "./lib/apiBase";
 import { generateChatTitle, shouldAutoRenameSession } from "./lib/chatTitles";
+import { startChatHistoryNavigationLock } from "./lib/chatHistoryNavigation";
 import { ENABLE_LEGACY_ADVISING_FORM } from "./config/features";
 const API_BASE = getApiBase();
 const ACTIVE_CHAT_SESSION_KEY = "active_chat_session_id";
@@ -550,13 +551,12 @@ export default function App() {
         ? "/chat/coding"
         : "/chat";
 
-    // Leave workspace routes before swapping Chatbox's keyed session. If the
-    // session changes while /coding/workspace/problem/:id is still mounted,
-    // CodingTutor's workspace restore effects can pull the URL back.
+    // Sidebar history owns this navigation. Workspace restore/bootstrap effects
+    // check this short lock so they cannot pull the route back while the chat
+    // history view is opening.
+    startChatHistoryNavigationLock(targetRoute);
+    setActiveId(id);
     navigate(targetRoute);
-    window.setTimeout(() => {
-      if (activeSelectionRef.current === id) setActiveId(id);
-    }, 0);
   };
 
   // Header/brand click: start a fresh regular chat so the student lands on the
