@@ -257,36 +257,9 @@ export function LinkedListVisualizer({ step }: { step: Step }) {
   );
 }
 
-function contiguousRange(step: Step, nodes: VisualNode[]): [number, number] | null {
-  if (step.concept === "binary-search") {
-    const possible = nodes
-      .map((node, index) => ({ node, index }))
-      .filter(({ node }) => node.state !== "inactive")
-      .map(({ index }) => index);
-    if (possible.length) return [Math.min(...possible), Math.max(...possible)];
-  }
-  const active = nodes
-    .map((node, index) => ({ node, index }))
-    .filter(({ node }) => node.state === "active" || node.state === "comparing" || isHighlighted(step, node.id))
-    .map(({ index }) => index);
-  if (!active.length) return null;
-  return [Math.min(...active), Math.max(...active)];
-}
-
 function ArrayRow({ step, nodes }: { step: Step; nodes: VisualNode[] }) {
-  const range = step.concept === "binary-search" ? contiguousRange(step, nodes) : null;
   return (
     <div className="ucv-array-row" style={{ "--ucv-array-count": nodes.length } as CSSProperties}>
-      {range ? (
-        <motion.span
-          className={`ucv-array-overlay ucv-array-overlay--${step.concept}`}
-          layout
-          style={{
-            gridColumn: `${range[0] + 1} / ${range[1] + 2}`,
-          }}
-          aria-hidden="true"
-        />
-      ) : null}
       {nodes.map((node) => (
         <StatusBlock key={node.id} node={node} step={step} className="ucv-array-cell" />
       ))}
@@ -848,6 +821,7 @@ function SetView({ step }: { step: Step }) {
 
 function ArrayTraceState({ step, nodes }: { step: Step; nodes: VisualNode[] }) {
   if (!["array", "search", "sort", "binary-search", "two-pointers", "sliding-window"].includes(step.concept)) return null;
+  if (step.concept === "binary-search") return null;
   if (step.concept === "two-pointers") return null;
   if (step.concept === "sliding-window") return null;
   const activeIndex = activeNodeIndex(step, nodes.length);
@@ -949,7 +923,7 @@ const ARRAY_STATE_PANEL_EXCLUDED = new Set([
 ]);
 
 function shouldShowArrayStatePanel(step: Step): boolean {
-  return step.concept === "array" || step.concept === "search" || step.concept === "sort" || step.concept === "two-pointers" || step.concept === "sliding-window";
+  return step.concept === "array" || step.concept === "search" || step.concept === "sort" || step.concept === "two-pointers" || step.concept === "sliding-window" || step.concept === "binary-search";
 }
 
 function ArrayStatePanel({ step }: { step: Step }) {
@@ -1002,6 +976,79 @@ const TWO_POINTER_STATE_EXCLUDED = new Set([
   "target",
   "visual_family",
 ]);
+
+const BINARY_SEARCH_STATE_EXCLUDED = new Set([
+  "answer",
+  "example",
+  "final_result",
+  "left",
+  "mid",
+  "mid_value",
+  "candidate_index",
+  "result",
+  "returned",
+  "right",
+  "target",
+  "visual_family",
+]);
+
+function BinarySearchStatePanel({ step }: { step: Step }) {
+  const state = step.state || {};
+  const variables = Object.entries(state).filter(([key, value]) => !BINARY_SEARCH_STATE_EXCLUDED.has(key) && typeof value !== "undefined" && value !== "");
+  const example = formatArrayStateValue(state.example);
+  const target = formatArrayStateValue(state.target ?? "find the requested boundary");
+  const resultSoFar = formatArrayStateValue(state.result ?? state.answer ?? state.final_result);
+  return (
+    <aside className="ucv-array-state-panel ucv-binary-search-state-panel" aria-label="Binary search trace memory">
+      {example ? (
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">example</span>
+          <strong className="ucv-array-state-panel-value">{example}</strong>
+        </div>
+      ) : null}
+      <div className="ucv-array-state-panel-section">
+        <span className="ucv-array-state-panel-label">target</span>
+        <strong className="ucv-array-state-panel-value">{target}</strong>
+      </div>
+      <div className="ucv-array-state-panel-section">
+        <span className="ucv-array-state-panel-label">range</span>
+        <div className="ucv-array-state-panel-list">
+          <div className="ucv-array-state-panel-row">
+            <span>left</span>
+            <strong>{formatArrayStateValue(state.left)}</strong>
+          </div>
+          <div className="ucv-array-state-panel-row">
+            <span>mid</span>
+            <strong>{formatArrayStateValue(state.mid_value ?? state.mid)}</strong>
+          </div>
+          <div className="ucv-array-state-panel-row">
+            <span>right</span>
+            <strong>{formatArrayStateValue(state.right)}</strong>
+          </div>
+        </div>
+      </div>
+      {variables.length ? (
+        <div className="ucv-array-state-panel-section">
+          <span className="ucv-array-state-panel-label">variables</span>
+          <div className="ucv-array-state-panel-list">
+            {variables.map(([key, value]) => (
+              <div className="ucv-array-state-panel-row" key={key}>
+                <span>{arrayStateLabel(key)}</span>
+                <strong>{formatArrayStateValue(value)}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {resultSoFar ? (
+        <div className="ucv-array-state-panel-section ucv-array-state-panel-section--result">
+          <span className="ucv-array-state-panel-label">result so far</span>
+          <strong className="ucv-array-state-panel-value">{resultSoFar}</strong>
+        </div>
+      ) : null}
+    </aside>
+  );
+}
 
 function TwoPointerStatePanel({ step }: { step: Step }) {
   const state = step.state || {};
@@ -1143,7 +1190,7 @@ export function ArrayVisualizer({ step }: { step: Step }) {
       {step.concept === "sliding-window" ? <div className="ucv-pointer-guide"><span>left edge</span><span>right edge</span></div> : null}
       {showStatePanel ? (
         <div className="ucv-array-visual-layout">
-          {step.concept === "two-pointers" ? <TwoPointerStatePanel step={step} /> : step.concept === "sliding-window" ? <SlidingWindowStatePanel step={step} /> : <ArrayStatePanel step={step} />}
+          {step.concept === "binary-search" ? <BinarySearchStatePanel step={step} /> : step.concept === "two-pointers" ? <TwoPointerStatePanel step={step} /> : step.concept === "sliding-window" ? <SlidingWindowStatePanel step={step} /> : <ArrayStatePanel step={step} />}
           <div className="ucv-array-main-region">
             <ArrayRow step={step} nodes={nodes} />
             <ArrayTraceState step={step} nodes={nodes} />
@@ -1155,7 +1202,7 @@ export function ArrayVisualizer({ step }: { step: Step }) {
           <ArrayTraceState step={step} nodes={nodes} />
         </>
       )}
-      {step.concept === "binary-search" ? <div className="ucv-array-caption">Only the bright range can still contain the target.</div> : null}
+      {step.concept === "binary-search" ? <div className="ucv-array-caption">Highlighted values are being checked or saved; dimmed values are outside the current search range.</div> : null}
       {step.concept === "sliding-window" ? <div className="ucv-array-caption">The window moves as one visible block.</div> : null}
     </Canvas>
   );

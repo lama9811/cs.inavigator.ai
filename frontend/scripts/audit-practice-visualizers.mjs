@@ -97,6 +97,14 @@ const familyStepTargets = {
   "queue-window-count": 5,
   "queue-fifo": 6,
   "binary-search": 8,
+  "binary-search-exact": 8,
+  "binary-search-first-at-least": 8,
+  "binary-search-first-bad": 8,
+  "binary-search-first-one": 8,
+  "binary-search-first-passing": 8,
+  "binary-search-insert-position": 8,
+  "binary-search-last-at-most": 8,
+  "binary-search-median-two-lists": 8,
   "two-pointer-closest": 7,
   "two-pointer-count-ends": 7,
   "two-pointer-edge-pairs": 7,
@@ -227,6 +235,17 @@ const trueTwoPointerFamilies = {
   "medium-69": { family: "two-pointer-remove-pair", sample: "values=[1, 2, 4, 5], target=6", expected: "[2,4]" },
 };
 
+const trueBinarySearchFamilies = {
+  "easy-39": { family: "binary-search-first-at-least", sample: "scores=[60,70,70,85], target=70", expected: "1" },
+  "easy-47": { family: "binary-search-first-one", sample: "flags=[0,0,1,1]", expected: "2" },
+  "easy-61": { family: "binary-search-first-passing", sample: "scores=[55,61,70], passingScore=60", expected: "61" },
+  "hard-06": { family: "binary-search-median-two-lists", sample: "left=[1,3], right=[2]", expected: "2" },
+  "medium-13": { family: "binary-search-insert-position", sample: "values=[1,3,5,6], target=2", expected: "1" },
+  "medium-22": { family: "binary-search-exact", sample: "values=[2,4,6,8], target=6", expected: "2" },
+  "medium-36": { family: "binary-search-first-bad", sample: "versions=[0,0,1,1]", expected: "2" },
+  "medium-56": { family: "binary-search-last-at-most", sample: "scores=[50,60,60,70], target=60", expected: "2" },
+};
+
 const trueSlidingWindowFamilies = {
   "easy-43": { family: "sliding-window-short-blocks", sample: "minutes=[20,30,45], limit=60", expected: "1" },
   "easy-58": { family: "sliding-window-three-day", sample: "minutes=[30,45,25,20]", expected: "[100,90]" },
@@ -292,7 +311,17 @@ function detectVisualizerFamily(problem, concept) {
     return "queue-fifo";
   }
   if (concept === "linked-list") return "linked-list-traverse";
-  if (concept === "binary-search") return "binary-search";
+  if (concept === "binary-search") {
+    if (/first score at least/.test(text)) return "binary-search-first-at-least";
+    if (/first one index/.test(text)) return "binary-search-first-one";
+    if (/first passing score value/.test(text)) return "binary-search-first-passing";
+    if (/median of two sorted lists/.test(text)) return "binary-search-median-two-lists";
+    if (/insert position/.test(text)) return "binary-search-insert-position";
+    if (/binary search exact/.test(text)) return "binary-search-exact";
+    if (/first bad version/.test(text)) return "binary-search-first-bad";
+    if (/last score at most/.test(text)) return "binary-search-last-at-most";
+    return "binary-search";
+  }
   if (concept === "two-pointers") {
     if (/edge pair matches/.test(text)) return "two-pointer-edge-pairs";
     if (/symmetric roster|palindrome|roster/.test(text)) return "two-pointer-symmetric";
@@ -478,6 +507,7 @@ function compactVisualInput(problem, concept, state = {}) {
     return "times=[1,2,8,12], window=5";
   }
   if (family === "queue-ticket-rounds") return "names=[Ana, Bo, Cy], tickets=[1,2,1]";
+  if (trueBinarySearchFamilies[problem.id]) return trueBinarySearchFamilies[problem.id].sample;
   if (trueTwoPointerFamilies[problem.id]) return trueTwoPointerFamilies[problem.id].sample;
   if (trueSlidingWindowFamilies[problem.id]) return trueSlidingWindowFamilies[problem.id].sample;
   if (title.includes("vowel")) return "Code";
@@ -545,6 +575,7 @@ function valuesFromVisualSample(sample) {
 
 function usesGeneratedRuntimeTrace(problem, concept, rawSteps = []) {
   if (!generatedOverrideConcepts.has(concept)) return false;
+  if (concept === "binary-search") return true;
   if (concept === "two-pointers") return true;
   if (concept === "sliding-window") return true;
   const target = targetStepCountFor(problem, concept);
@@ -724,6 +755,18 @@ for (const file of fs.readdirSync(questionDir).filter((item) => item.endsWith(".
     const requiredStackQueue = trueStackQueueFamilies[problem.id];
     if (requiredStackQueue && family !== requiredStackQueue.family) {
       warnings.push(`${problem.id} ${problem.title}: Stack/Queue visualizer routes to "${family}", expected "${requiredStackQueue.family}"`);
+    }
+    const requiredBinarySearch = trueBinarySearchFamilies[problem.id];
+    if (requiredBinarySearch) {
+      if (family !== requiredBinarySearch.family) {
+        warnings.push(`${problem.id} ${problem.title}: Binary Search visualizer routes to "${family}", expected "${requiredBinarySearch.family}"`);
+      }
+      if (sample !== requiredBinarySearch.sample) {
+        warnings.push(`${problem.id} ${problem.title}: Binary Search sample is "${sample}", expected "${requiredBinarySearch.sample}"`);
+      }
+      if (family === "binary-search") {
+        warnings.push(`${problem.id} ${problem.title}: Binary Search visualizer still uses shared generic family`);
+      }
     }
     const requiredTwoPointer = trueTwoPointerFamilies[problem.id];
     if (requiredTwoPointer) {

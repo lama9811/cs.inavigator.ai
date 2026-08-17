@@ -1037,6 +1037,34 @@
   font-size: 0.62rem;
 }
 
+.ucv-canvas--binary-search .ucv-array-visual-layout {
+  grid-template-columns: minmax(11.25rem, 14rem) minmax(0, 1fr);
+  width: min(880px, 100%);
+}
+
+.ucv-canvas--binary-search .ucv-array-row {
+  grid-template-columns: repeat(var(--ucv-array-count), minmax(3.15rem, 5.4rem));
+  max-width: min(610px, 100%);
+  padding: 1rem clamp(0.7rem, 2vw, 1.25rem);
+}
+
+.ucv-binary-search-state-panel {
+  min-width: 11.25rem;
+}
+
+.ucv-canvas--binary-search .ucv-array-cell {
+  min-height: 58px;
+  border-radius: 11px;
+}
+
+.ucv-canvas--binary-search .ucv-array-cell strong {
+  font-size: clamp(0.78rem, 1vw, 1rem);
+}
+
+.ucv-canvas--binary-search .ucv-array-cell span {
+  font-size: 0.6rem;
+}
+
 .ucv-array-cell {
   position: relative;
   z-index: 1;

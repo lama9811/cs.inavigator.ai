@@ -114,6 +114,7 @@ function StateStrip({ step }: { step: Step }) {
   if (step.concept === "queue") return null;
   if (step.concept === "two-pointers") return null;
   if (step.concept === "sliding-window") return null;
+  if (step.concept === "binary-search") return null;
   if (isStringVisualStep(step)) {
     const hasReturned = step.state?.returned === true;
     const finalResult = hasReturned

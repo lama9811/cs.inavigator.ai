@@ -91,6 +91,14 @@ type VisualizerFamily =
   | "array-threshold-count"
   | "array-truthy-count"
   | "binary-search"
+  | "binary-search-exact"
+  | "binary-search-first-at-least"
+  | "binary-search-first-bad"
+  | "binary-search-first-one"
+  | "binary-search-first-passing"
+  | "binary-search-insert-position"
+  | "binary-search-last-at-most"
+  | "binary-search-median-two-lists"
   | "bit-count"
   | "conditional-flow"
   | "dp-table"
@@ -213,7 +221,17 @@ export function detectVisualizerFamily(concept: string, context: GeneratorContex
     return "queue-fifo";
   }
   if (concept === "linked-list") return "linked-list-traverse";
-  if (concept === "binary-search") return "binary-search";
+  if (concept === "binary-search") {
+    if (/first score at least/.test(text)) return "binary-search-first-at-least";
+    if (/first one index/.test(text)) return "binary-search-first-one";
+    if (/first passing score value/.test(text)) return "binary-search-first-passing";
+    if (/median of two sorted lists/.test(text)) return "binary-search-median-two-lists";
+    if (/insert position/.test(text)) return "binary-search-insert-position";
+    if (/binary search exact/.test(text)) return "binary-search-exact";
+    if (/first bad version/.test(text)) return "binary-search-first-bad";
+    if (/last score at most/.test(text)) return "binary-search-last-at-most";
+    return "binary-search";
+  }
   if (concept === "two-pointers") {
     if (/edge pair matches/.test(text)) return "two-pointer-edge-pairs";
     if (/symmetric roster|palindrome|roster/.test(text)) return "two-pointer-symmetric";
@@ -426,6 +444,14 @@ function teachingSampleOverride(context: GeneratorContext, concept: string, stat
       if (/count|frequency|anagram/.test(title)) return "items=[A, B, A]";
       return "keys=[Ana, Bo], values=[90, 82], lookup=Ana";
     case "binary-search":
+      if (title.includes("first score at least")) return "scores=[60,70,70,85], target=70";
+      if (title.includes("first one index")) return "flags=[0,0,1,1]";
+      if (title.includes("first passing score value")) return "scores=[55,61,70], passingScore=60";
+      if (title.includes("median of two sorted lists")) return "left=[1,3], right=[2]";
+      if (title.includes("insert position")) return "values=[1,3,5,6], target=2";
+      if (title.includes("binary search exact")) return "values=[2,4,6,8], target=6";
+      if (title.includes("first bad version")) return "versions=[0,0,1,1]";
+      if (title.includes("last score at most")) return "scores=[50,60,60,70], target=60";
       return "values=[1, 3, 5], target=3";
     case "two-pointers":
       if (title.includes("edge pair matches")) return "words=[lab, quiz, lab]";
@@ -2278,6 +2304,7 @@ function shouldUseGeneratedTrace(concept: string, rawSteps: Array<Record<string,
     "sort",
   ]);
   if (!generatedConcepts.has(concept)) return false;
+  if (concept === "binary-search") return true;
   if (concept === "two-pointers") return true;
   if (concept === "sliding-window") return true;
   if (rawSteps.length >= targetStepCount(concept)) return false;
@@ -5296,48 +5323,183 @@ export function generateLinkedListSteps(context: GeneratorContext = {}): Step[] 
 }
 
 export function generateBinarySearchSteps(context: GeneratorContext = {}): Step[] {
-  const code = [
-    "left = 0; right = len(values) - 1",
-    "mid = (left + right) // 2",
-    "if values[mid] < target: left = mid + 1",
-    "if values[mid] > target: right = mid - 1",
-    "if values[mid] == target: return mid",
-    "return left",
-  ];
-  const values = [1, 3, 5, 7, 9, 11, 13];
-  const phases = [
-    { left: 0, mid: 3, right: 6, target: 5, result: "", desc: "Start with the full sorted range. Only sorted data lets us remove half at a time.", line: 1, title: context.title || "Binary search" },
-    { left: 0, mid: 3, right: 6, target: 5, result: "", desc: "Check the middle value, 7, before moving either boundary.", line: 2, title: "Check middle" },
-    { left: 0, mid: 3, right: 6, target: 5, result: "", desc: "Target 5 is smaller than 7, so indexes 3 through 6 cannot be the answer.", line: 4, title: "Discard right half" },
-    { left: 0, mid: 1, right: 2, target: 5, result: "", desc: "The range shrinks to indexes 0 through 2.", line: 1, title: "Use new range" },
-    { left: 0, mid: 1, right: 2, target: 5, result: "", desc: "The new middle value is 3.", line: 2, title: "Check new middle" },
-    { left: 2, mid: 2, right: 2, target: 5, result: "", desc: "3 is too small, so move left to index 2. One candidate remains.", line: 3, title: "Discard left value" },
-    { left: 2, mid: 2, right: 2, target: 5, result: "match at index 2", desc: "The remaining value is 5, which matches the target.", line: 5, title: "Final check" },
-    { left: 2, mid: 2, right: 2, target: 5, result: "return index 2", desc: "Return index 2 because values[2] is the target.", line: 5, title: "Return index 2" },
-  ];
-  return phases.map((phase, index) => {
+  const family = detectVisualizerFamily("binary-search", context);
+  type BinaryPhase = {
+    left: number;
+    mid: number;
+    right: number;
+    title: string;
+    desc: string;
+    line: number;
+    state: Record<string, string | number | boolean>;
+  };
+  const build = (
+    values: Array<string | number>,
+    phases: BinaryPhase[],
+    code: string[],
+    labels: string[] = [],
+  ): Step[] => phases.map((phase, index) => {
+    const candidateIndex = typeof phase.state.candidate_index === "number" ? phase.state.candidate_index : null;
     const nodes = layoutArray(values).map((node, nodeIndex) => ({
       ...node,
-      state: nodeIndex < phase.left || nodeIndex > phase.right ? "inactive" as const : nodeIndex === phase.mid ? "active" as const : "default" as const,
-      label: nodeIndex === phase.left ? "left" : nodeIndex === phase.mid ? "mid" : nodeIndex === phase.right ? "right" : String(nodeIndex),
+      state: nodeIndex === phase.mid
+        ? "active" as const
+        : nodeIndex === candidateIndex
+          ? "matched" as const
+          : nodeIndex < phase.left || nodeIndex > phase.right
+            ? "inactive" as const
+            : "default" as const,
+      label: nodeIndex === phase.left && nodeIndex === phase.right
+        ? "left/mid/right"
+        : nodeIndex === phase.left && nodeIndex === phase.mid
+          ? "left/mid"
+          : nodeIndex === phase.mid && nodeIndex === phase.right
+            ? "mid/right"
+            : nodeIndex === phase.left
+              ? "left"
+              : nodeIndex === phase.mid
+                ? "mid"
+                : nodeIndex === phase.right
+                  ? "right"
+                  : labels[nodeIndex] || String(nodeIndex),
     }));
-    nodes.push(
-      { id: "target-card", x: 260, y: 430, value: phase.target, type: "logic-node", label: "target", state: "default", meta: { role: "memory" } },
-      { id: "range-card", x: 480, y: 430, value: `${phase.left} to ${phase.right}`, type: "logic-node", label: "search range", state: "default", meta: { role: "memory" } },
-      { id: "result-card", x: 700, y: 430, value: phase.result || "not returned yet", type: "logic-node", label: "result", state: phase.result ? "matched" : "default", meta: { role: "result" } },
-    );
     return step({
       concept: "binary-search",
       title: phase.title,
       description: phase.desc,
       nodes,
-      edges: phase.result ? [{ id: "match-result", from: `item-${phase.mid}`, to: "result-card", type: "pointer", state: "active" }] : [],
-      highlights: { nodeIds: [`item-${phase.mid}`, ...(phase.result ? ["result-card"] : [])], edgeIds: phase.result ? ["match-result"] : [], lineNumbers: [phase.line] },
+      edges: [],
+      highlights: { nodeIds: [`item-${phase.mid}`], lineNumbers: [phase.line] },
       code,
       activeLine: phase.line,
-      state: { left: phase.left, mid: phase.mid, right: phase.right, target: phase.target, ...(phase.result ? { result: phase.result } : {}) },
+      workflow: workflowFromLabels(phases.map((item) => item.title), index),
+      state: {
+        left: phase.left,
+        mid: phase.mid,
+        right: phase.right,
+        mid_value: values[phase.mid] ?? "none",
+        ...phase.state,
+      },
     }, index + 1);
   });
+
+  if (family === "binary-search-first-at-least") {
+    const values = [60, 70, 70, 85];
+    const code = ["keep a possible sorted range", "check the middle score", "if score is high enough, save index and search left", "if score is too low, search right", "repeat with the smaller range", "stop when the range is empty", "return the saved first index", "finish"];
+    return build(values, [
+      { left: 0, mid: 1, right: 3, line: 1, title: context.title || "First Score At Least", desc: "The whole sorted score list can still contain the first score at least 70.", state: { example: "scores=[60,70,70,85], target=70", target: "first index with score >= 70", candidate: "none", result: "none yet" } },
+      { left: 0, mid: 1, right: 3, line: 2, title: "Check score 70", desc: "Index 1 is high enough, but it might not be the first high-enough score.", state: { example: "scores=[60,70,70,85], target=70", target: "first index with score >= 70", decision: "high enough", candidate: 1, candidate_index: 1 } },
+      { left: 0, mid: 1, right: 0, line: 3, title: "Save 1 and search left", desc: "Keep index 1 as the best answer so far, then look left for an earlier valid score.", state: { example: "scores=[60,70,70,85], target=70", target: "first index with score >= 70", candidate: 1, candidate_index: 1, action: "right moves left" } },
+      { left: 0, mid: 0, right: 0, line: 5, title: "New range is index 0", desc: "Only score 60 remains to test before index 1 can be trusted.", state: { example: "scores=[60,70,70,85], target=70", target: "first index with score >= 70", candidate: 1, candidate_index: 1 } },
+      { left: 0, mid: 0, right: 0, line: 2, title: "Check score 60", desc: "60 is too low, so it cannot be the answer.", state: { example: "scores=[60,70,70,85], target=70", target: "first index with score >= 70", decision: "too low", candidate: 1, candidate_index: 1 } },
+      { left: 1, mid: 0, right: 0, line: 4, title: "Range becomes empty", desc: "Move left past right because the last unchecked value was too small.", state: { example: "scores=[60,70,70,85], target=70", target: "first index with score >= 70", candidate: 1, candidate_index: 1, action: "stop" } },
+      { left: 1, mid: 1, right: 0, line: 7, title: "Return index 1", desc: "Index 1 is the earliest score that reaches 70.", state: { example: "scores=[60,70,70,85], target=70", target: "first index with score >= 70", result: 1, candidate_index: 1 } },
+      { left: 1, mid: 1, right: 0, line: 8, title: "Trace complete", desc: "This boundary search returns a saved candidate, not just the first match seen.", state: { example: "scores=[60,70,70,85], target=70", target: "first index with score >= 70", final_result: 1, candidate_index: 1 } },
+    ], code);
+  }
+
+  if (family === "binary-search-first-one" || family === "binary-search-first-bad") {
+    const values = [0, 0, 1, 1];
+    const firstBad = family === "binary-search-first-bad";
+    const example = firstBad ? "versions=[0,0,1,1]" : "flags=[0,0,1,1]";
+    const target = firstBad ? "first bad version index" : "first index containing 1";
+    const code = ["keep a possible sorted range", "check the middle flag", "if middle is 1, save it and search left", "if middle is 0, search right", "repeat until the range is empty", "return saved index or -1", "finish", "done"];
+    return build(values, [
+      { left: 0, mid: 1, right: 3, line: 1, title: context.title || (firstBad ? "First Bad Version" : "First One Index"), desc: "The list is sorted, so all zeros come before the first 1.", state: { example, target, candidate: "none", result: "none yet" } },
+      { left: 0, mid: 1, right: 3, line: 2, title: "Check middle 0", desc: "A 0 means the first 1 must be to the right.", state: { example, target, decision: "0 means move right", candidate: "none" } },
+      { left: 2, mid: 2, right: 3, line: 4, title: "Search right half", desc: "Indexes 0 and 1 are ruled out because they are good/zero values.", state: { example, target, candidate: "none", action: "left moves to 2" } },
+      { left: 2, mid: 2, right: 3, line: 2, title: "Check middle 1", desc: "Index 2 is a valid answer, but there might be an earlier 1 inside the current range.", state: { example, target, decision: "found 1", candidate: 2 } },
+      { left: 2, mid: 2, right: 1, line: 3, title: "Save 2 and search left", desc: "Keep 2, then move right leftward to prove no earlier 1 remains.", state: { example, target, candidate: 2, action: "right moves left" } },
+      { left: 2, mid: 2, right: 1, line: 5, title: "Range is empty", desc: "Left is now past right, so the saved candidate is final.", state: { example, target, candidate: 2, decision: "stop" } },
+      { left: 2, mid: 2, right: 1, line: 6, title: "Return 2", desc: firstBad ? "Version 2 is the first bad version." : "Index 2 is the first position containing 1.", state: { example, target, result: 2 } },
+      { left: 2, mid: 2, right: 1, line: 8, title: "Trace complete", desc: "The answer is a boundary index, so saving the candidate matters.", state: { example, target, final_result: 2 } },
+    ], code);
+  }
+
+  if (family === "binary-search-first-passing") {
+    const values = [55, 61, 70];
+    const code = ["keep a possible score range", "check the middle score", "if score passes, save the value and search left", "if score fails, search right", "stop when no candidates remain", "return saved score or -1", "finish", "done"];
+    return build(values, [
+      { left: 0, mid: 1, right: 2, line: 1, title: context.title || "First Passing Score Value", desc: "The goal is the score value, not the index.", state: { example: "scores=[55,61,70], passingScore=60", target: "first score >= 60", candidate: "none", result: "none yet" } },
+      { left: 0, mid: 1, right: 2, line: 2, title: "Check 61", desc: "61 passes, so save the value before searching left.", state: { example: "scores=[55,61,70], passingScore=60", target: "first score >= 60", decision: "passes", candidate: 61 } },
+      { left: 0, mid: 0, right: 0, line: 3, title: "Search left for earlier pass", desc: "A smaller passing score could still exist before index 1.", state: { example: "scores=[55,61,70], passingScore=60", target: "first score >= 60", candidate: 61 } },
+      { left: 0, mid: 0, right: 0, line: 2, title: "Check 55", desc: "55 does not pass, so it cannot replace the saved value.", state: { example: "scores=[55,61,70], passingScore=60", target: "first score >= 60", decision: "fails", candidate: 61 } },
+      { left: 1, mid: 0, right: 0, line: 4, title: "Range becomes empty", desc: "After ruling out 55, no unchecked score remains to the left.", state: { example: "scores=[55,61,70], passingScore=60", target: "first score >= 60", candidate: 61 } },
+      { left: 1, mid: 1, right: 0, line: 5, title: "Keep saved score", desc: "The saved passing score is still 61.", state: { example: "scores=[55,61,70], passingScore=60", target: "first score >= 60", candidate: 61 } },
+      { left: 1, mid: 1, right: 0, line: 6, title: "Return 61", desc: "Return the score value 61, not its index.", state: { example: "scores=[55,61,70], passingScore=60", target: "first score >= 60", result: 61 } },
+      { left: 1, mid: 1, right: 0, line: 8, title: "Trace complete", desc: "The boundary search returns the first value that satisfies the passing rule.", state: { example: "scores=[55,61,70], passingScore=60", target: "first score >= 60", final_result: 61 } },
+    ], code);
+  }
+
+  if (family === "binary-search-insert-position") {
+    const values = [1, 3, 5, 6];
+    const code = ["keep the possible insert range", "check the middle value", "if middle is too small, move left rightward", "if middle is big enough, move right leftward", "repeat until left passes right", "left is the insert position", "return left", "finish"];
+    return build(values, [
+      { left: 0, mid: 1, right: 3, line: 1, title: context.title || "Binary Search Insert Position", desc: "The insert position for target 2 must be somewhere in this sorted list.", state: { example: "values=[1,3,5,6], target=2", target: "index where 2 belongs", result: "none yet" } },
+      { left: 0, mid: 1, right: 3, line: 2, title: "Check 3", desc: "3 is bigger than 2, so the insert spot is at index 1 or earlier.", state: { example: "values=[1,3,5,6], target=2", target: "index where 2 belongs", decision: "too high" } },
+      { left: 0, mid: 0, right: 0, line: 4, title: "Search left side", desc: "Move right to index 0 and keep the earlier half.", state: { example: "values=[1,3,5,6], target=2", target: "index where 2 belongs", action: "right moves to 0" } },
+      { left: 0, mid: 0, right: 0, line: 2, title: "Check 1", desc: "1 is smaller than 2, so the insert spot must be after it.", state: { example: "values=[1,3,5,6], target=2", target: "index where 2 belongs", decision: "too low" } },
+      { left: 1, mid: 0, right: 0, line: 3, title: "Left becomes 1", desc: "Left moves to the first position where 2 could fit.", state: { example: "values=[1,3,5,6], target=2", target: "index where 2 belongs", insert_position: 1 } },
+      { left: 1, mid: 1, right: 0, line: 5, title: "Range is empty", desc: "Left has crossed right, so binary search is done.", state: { example: "values=[1,3,5,6], target=2", target: "index where 2 belongs", insert_position: 1 } },
+      { left: 1, mid: 1, right: 0, line: 7, title: "Return 1", desc: "Target 2 belongs before 3 at index 1.", state: { example: "values=[1,3,5,6], target=2", target: "index where 2 belongs", result: 1 } },
+      { left: 1, mid: 1, right: 0, line: 8, title: "Trace complete", desc: "Insert-position search returns left after the range closes.", state: { example: "values=[1,3,5,6], target=2", target: "index where 2 belongs", final_result: 1 } },
+    ], code);
+  }
+
+  if (family === "binary-search-exact") {
+    const values = [2, 4, 6, 8];
+    const code = ["keep the possible sorted range", "check the middle value", "if middle is too small, search right", "if middle is too large, search left", "if middle equals target, return its index", "if range empties, return -1", "finish", "done"];
+    return build(values, [
+      { left: 0, mid: 1, right: 3, line: 1, title: context.title || "Binary Search Exact", desc: "Exact search returns the index only when the target is actually found.", state: { example: "values=[2,4,6,8], target=6", target: "find value 6", result: "none yet" } },
+      { left: 0, mid: 1, right: 3, line: 2, title: "Check 4", desc: "4 is less than 6, so the answer cannot be at index 1 or left of it.", state: { example: "values=[2,4,6,8], target=6", target: "find value 6", decision: "too low" } },
+      { left: 2, mid: 2, right: 3, line: 3, title: "Search right half", desc: "Move left to index 2.", state: { example: "values=[2,4,6,8], target=6", target: "find value 6", action: "left moves to 2" } },
+      { left: 2, mid: 2, right: 3, line: 2, title: "Check 6", desc: "The middle value is now the target.", state: { example: "values=[2,4,6,8], target=6", target: "find value 6", decision: "match" } },
+      { left: 2, mid: 2, right: 3, line: 5, title: "Return immediately", desc: "Exact search can stop as soon as values[mid] equals the target.", state: { example: "values=[2,4,6,8], target=6", target: "find value 6", result: 2 } },
+      { left: 2, mid: 2, right: 3, line: 7, title: "No boundary scan", desc: "Unlike first/last searches, exact search does not need to prove an earlier duplicate.", state: { example: "values=[2,4,6,8], target=6", target: "find value 6", result: 2 } },
+      { left: 2, mid: 2, right: 3, line: 7, title: "Answer is index 2", desc: "Index 2 holds value 6.", state: { example: "values=[2,4,6,8], target=6", target: "find value 6", result: 2 } },
+      { left: 2, mid: 2, right: 3, line: 8, title: "Trace complete", desc: "The compact example returns 2.", state: { example: "values=[2,4,6,8], target=6", target: "find value 6", final_result: 2 } },
+    ], code);
+  }
+
+  if (family === "binary-search-last-at-most") {
+    const values = [50, 60, 60, 70];
+    const code = ["keep a possible sorted range", "check the middle score", "if score is at most target, save index and search right", "if score is too high, search left", "repeat until the range is empty", "return saved last index", "finish", "done"];
+    return build(values, [
+      { left: 0, mid: 1, right: 3, line: 1, title: context.title || "Last Score At Most", desc: "The answer is the last index whose score is at most 60.", state: { example: "scores=[50,60,60,70], target=60", target: "last index with score <= 60", candidate: "none", result: "none yet" } },
+      { left: 0, mid: 1, right: 3, line: 2, title: "Check first 60", desc: "Index 1 qualifies, but a later qualifying score may exist.", state: { example: "scores=[50,60,60,70], target=60", target: "last index with score <= 60", decision: "qualifies", candidate: 1 } },
+      { left: 2, mid: 2, right: 3, line: 3, title: "Save 1 and search right", desc: "To find the last qualifying index, move left to the right side.", state: { example: "scores=[50,60,60,70], target=60", target: "last index with score <= 60", candidate: 1 } },
+      { left: 2, mid: 2, right: 3, line: 2, title: "Check second 60", desc: "Index 2 also qualifies and is farther right.", state: { example: "scores=[50,60,60,70], target=60", target: "last index with score <= 60", decision: "qualifies", candidate: 2 } },
+      { left: 3, mid: 3, right: 3, line: 3, title: "Search right again", desc: "Move rightward once more to make sure no later score also qualifies.", state: { example: "scores=[50,60,60,70], target=60", target: "last index with score <= 60", candidate: 2 } },
+      { left: 3, mid: 3, right: 3, line: 2, title: "Check 70", desc: "70 is too high, so the last valid index stays 2.", state: { example: "scores=[50,60,60,70], target=60", target: "last index with score <= 60", decision: "too high", candidate: 2 } },
+      { left: 3, mid: 3, right: 2, line: 6, title: "Return 2", desc: "The saved candidate is the last score at most 60.", state: { example: "scores=[50,60,60,70], target=60", target: "last index with score <= 60", result: 2 } },
+      { left: 3, mid: 2, right: 2, line: 8, title: "Trace complete", desc: "This boundary search intentionally continues after the first matching 60.", state: { example: "scores=[50,60,60,70], target=60", target: "last index with score <= 60", final_result: 2 } },
+    ], code);
+  }
+
+  if (family === "binary-search-median-two-lists") {
+    const values = ["cut 0", "cut 1", "cut 2"];
+    const labels = ["too far left", "balanced", "too far right"];
+    const code = ["binary search the smaller list's cut", "pair that cut with the matching cut in the other list", "compare left-side max with right-side min", "if left side is too big, move cut left", "if right side is too big, move cut right", "when both sides fit, read the middle value", "return the median", "finish"];
+    return build(values, [
+      { left: 0, mid: 1, right: 2, line: 1, title: context.title || "Median of Two Sorted Lists", desc: "Binary search chooses a partition cut in the shorter list, not a target value.", state: { example: "left=[1,3], right=[2]", target: "median of merged order", partition: "left cut 1", result: "none yet" } },
+      { left: 0, mid: 1, right: 2, line: 2, title: "Pair the cuts", desc: "Cutting left after 1 pairs with cutting right after 2, making left side [1,2].", state: { example: "left=[1,3], right=[2]", target: "median of merged order", left_side: "[1,2]", right_side: "[3]" } },
+      { left: 0, mid: 1, right: 2, line: 3, title: "Check partition order", desc: "The biggest value on the left side is 2, and the smallest on the right is 3, so the cut is valid.", state: { example: "left=[1,3], right=[2]", target: "median of merged order", decision: "partition fits" } },
+      { left: 0, mid: 1, right: 2, line: 6, title: "Read middle value", desc: "The combined length is odd, so the median is the largest value on the left side.", state: { example: "left=[1,3], right=[2]", target: "median of merged order", middle_value: 2 } },
+      { left: 0, mid: 1, right: 2, line: 6, title: "Median is 2", desc: "The partition proves the merged order would be [1, 2, 3] without building it.", state: { example: "left=[1,3], right=[2]", target: "median of merged order", result: 2 } },
+      { left: 0, mid: 1, right: 2, line: 7, title: "Return 2", desc: "Return the median value.", state: { example: "left=[1,3], right=[2]", target: "median of merged order", result: 2 } },
+      { left: 0, mid: 1, right: 2, line: 8, title: "Trace complete", desc: "This tracer shows the partition idea instead of a normal exact lookup.", state: { example: "left=[1,3], right=[2]", target: "median of merged order", final_result: 2 } },
+      { left: 0, mid: 1, right: 2, line: 8, title: "No merge needed", desc: "The final answer comes from the valid cut, not from scanning both lists.", state: { example: "left=[1,3], right=[2]", target: "median of merged order", final_result: 2 } },
+    ], code, labels);
+  }
+
+  const values = [1, 3, 5];
+  const code = ["keep the possible sorted range", "check the middle value", "move left or right based on the comparison", "repeat with the smaller range", "return the requested result", "finish", "done", "complete"];
+  return build(values, [
+    { left: 0, mid: 1, right: 2, line: 1, title: context.title || "Binary search", desc: "Start with the full sorted range.", state: { example: "values=[1, 3, 5], target=3", target: "find 3", result: "none yet" } },
+    { left: 0, mid: 1, right: 2, line: 2, title: "Check middle", desc: "The middle value is 3.", state: { example: "values=[1, 3, 5], target=3", target: "find 3", decision: "match" } },
+    { left: 0, mid: 1, right: 2, line: 5, title: "Return match", desc: "The target was found at the middle index.", state: { example: "values=[1, 3, 5], target=3", target: "find 3", result: 1 } },
+    { left: 0, mid: 1, right: 2, line: 8, title: "Trace complete", desc: "The compact example returns the found index.", state: { example: "values=[1, 3, 5], target=3", target: "find 3", final_result: 1 } },
+  ], code);
 }
 
 export function generateTwoPointerSteps(context: GeneratorContext = {}): Step[] {
