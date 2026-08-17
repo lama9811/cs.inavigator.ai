@@ -2866,12 +2866,12 @@ export function generateStringScanSteps(context: GeneratorContext = {}): Step[] 
         "return the reversed sentence",
       ],
       phases: [
-        { active: [0, 1], title: context.title || "Split words", desc: "The sentence becomes two word pieces: red and blue.", line: 1, result: "not changed yet", state: { words: "[red, blue]", result_sentence: "" } },
-        { active: [1], visited: [1], title: "Read blue", desc: "Start from the last word because the output is reversed.", line: 2, result: "blue", state: { result_sentence: "blue" } },
-        { active: [1], visited: [1], title: "Add blue", desc: "blue becomes the first word in the result.", line: 3, result: "blue", state: { result_sentence: "blue" } },
-        { active: [0], visited: [1], title: "Read red", desc: "Move left to the remaining word.", line: 4, result: "blue", state: { result_sentence: "blue" } },
-        { active: [0], visited: [0, 1], title: "Add red", desc: "Add red after blue.", line: 5, result: "blue red", state: { result_sentence: "blue red" } },
-        { active: [0, 1], visited: [0, 1], title: "Return blue red", desc: "Every word has moved into reversed order.", line: 6, result: "blue red", state: { result_sentence: "blue red" } },
+        { active: [0, 1], title: context.title || "Split words", desc: "The sentence becomes two word pieces: red and blue.", line: 1, result: "not changed yet", state: { visual_family: "string-reverse-words", words: "[red, blue]", result_words: "", result_active_index: -1 } },
+        { active: [1], visited: [1], title: "Read blue", desc: "Start from the last word because the output is reversed.", line: 2, result: "not changed yet", state: { visual_family: "string-reverse-words", result_words: "", result_active_index: 0, moving_word: "blue" } },
+        { active: [1], visited: [1], title: "Place blue", desc: "blue becomes the first word in the result.", line: 3, result: "blue", state: { visual_family: "string-reverse-words", result_words: "blue", result_active_index: 0, moving_word: "blue" } },
+        { active: [0], visited: [1], title: "Read red", desc: "Move left to the remaining word.", line: 4, result: "blue", state: { visual_family: "string-reverse-words", result_words: "blue", result_active_index: 1, moving_word: "red" } },
+        { active: [0], visited: [0, 1], title: "Place red", desc: "Add red after blue.", line: 5, result: "blue red", state: { visual_family: "string-reverse-words", result_words: "blue|red", result_active_index: 1, moving_word: "red" } },
+        { active: [0, 1], visited: [0, 1], title: "Return blue red", desc: "Every word has moved into reversed order.", line: 6, result: "blue red", state: { visual_family: "string-reverse-words", result_words: "blue|red", result_active_index: 1, moving_word: "done" } },
       ],
     });
   }

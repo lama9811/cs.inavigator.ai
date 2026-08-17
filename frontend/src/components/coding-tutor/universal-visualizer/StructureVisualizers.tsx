@@ -257,10 +257,14 @@ const STRING_STATE_PANEL_EXCLUDED = new Set([
   "expected",
   "final_result",
   "index",
+  "moving_word",
   "output",
   "result",
+  "result_active_index",
+  "result_words",
   "returned",
   "text",
+  "visual_family",
 ]);
 
 function StringStatePanel({ step, example, resultNode }: { step: Step; example: string; resultNode?: VisualNode }) {
@@ -299,6 +303,81 @@ function StringStatePanel({ step, example, resultNode }: { step: Step; example: 
   );
 }
 
+function parseStringResultWords(value: unknown): string[] {
+  if (typeof value !== "string") return [];
+  return value
+    .split("|")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function ReverseWordsVisualizer({
+  step,
+  visibleTokens,
+  activeIndex,
+}: {
+  step: Step;
+  visibleTokens: string[];
+  activeIndex: number;
+}) {
+  const resultWords = parseStringResultWords(step.state?.result_words);
+  const activeResultIndex = Number(step.state?.result_active_index ?? -1);
+  const resultSlots = visibleTokens.map((_, index) => resultWords[index] || "");
+  return (
+    <div className="ucv-reverse-words-region" aria-label="Reverse words visualizer">
+      <div className="ucv-reverse-row ucv-reverse-row--source" style={{ "--ucv-array-count": visibleTokens.length } as CSSProperties}>
+        <span className="ucv-reverse-row-label">original words</span>
+        {visibleTokens.map((token, index) => (
+          <StatusBlock
+            key={`source-${token}-${index}`}
+            node={{
+              id: `reverse-source-${index}`,
+              x: index,
+              y: 0,
+              value: token,
+              type: "array-cell",
+              label: `word ${index}`,
+              state: index === activeIndex ? "active" : index > activeIndex ? "visited" : "default",
+            }}
+            step={step}
+            className="ucv-string-token ucv-reverse-word-token"
+          />
+        ))}
+      </div>
+      <div className="ucv-reverse-transfer" style={{ "--ucv-array-count": visibleTokens.length } as CSSProperties}>
+        {visibleTokens.map((token, index) => {
+          const targetIndex = visibleTokens.length - 1 - index;
+          const isMoving = index === activeIndex && activeResultIndex === targetIndex;
+          return (
+            <span key={`move-${token}-${index}`} className={isMoving ? "is-moving" : ""}>
+              {isMoving ? "moves down" : ""}
+            </span>
+          );
+        })}
+      </div>
+      <div className="ucv-reverse-row ucv-reverse-row--result" style={{ "--ucv-array-count": visibleTokens.length } as CSSProperties}>
+        <span className="ucv-reverse-row-label">reversed result</span>
+        {resultSlots.map((token, index) => (
+          <StatusBlock
+            key={`result-${index}-${token || "empty"}`}
+            node={{
+              id: `reverse-result-${index}`,
+              x: index,
+              y: 0,
+              value: token || "waiting",
+              type: "array-cell",
+              label: `slot ${index}`,
+              state: token ? (index === activeResultIndex ? "matched" : "visited") : index === activeResultIndex ? "active" : "inactive",
+            }}
+            step={step}
+            className="ucv-string-token ucv-reverse-result-token"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function StringScanVisualizer({ step }: { step: Step }) {
   const example = stepExample(step);
   const charNodes = sortedByX(step.nodes).filter((node) => node.id.startsWith("char-") || node.meta?.role === "string-cell");
@@ -312,32 +391,39 @@ function StringScanVisualizer({ step }: { step: Step }) {
   const activeCharIndex = charNodes.findIndex((node) => node.state === "active" || node.state === "comparing" || isHighlighted(step, node.id));
   const activeIndex = Math.min(Math.max(activeCharIndex < 0 ? activeNodeIndex(step, visibleTokens.length) : activeCharIndex, 0), Math.max(visibleTokens.length - 1, 0));
   const resultNode = step.nodes.find((node) => node.id === "string-result" || node.meta?.role === "result");
+  const isReverseWords = step.state?.visual_family === "string-reverse-words";
   return (
     <Canvas concept={step.concept} className="ucv-structure-canvas ucv-string-canvas">
       <div className="ucv-string-visual-layout" aria-label="String scan visualizer">
         <StringStatePanel step={step} example={example || visibleTokens.join(useWords ? " " : "")} resultNode={resultNode} />
         <div className="ucv-string-main-region">
-          <div className="ucv-string-ribbon" style={{ "--ucv-array-count": visibleTokens.length } as CSSProperties}>
-            {visibleTokens.map((token, index) => (
-              <StatusBlock
-                key={`${token}-${index}`}
-                node={{
-                  id: `string-${index}`,
-                  x: index,
-                  y: 0,
-                  value: token === " " ? "space" : token,
-                  type: "array-cell",
-                  label: useWords ? `word ${index}` : String(index),
-                  state: index === activeIndex ? "active" : index < activeIndex ? "visited" : "default",
-                }}
-                step={step}
-                className="ucv-string-token"
-              />
-            ))}
-          </div>
-          <div className="ucv-string-cursor" style={{ "--ucv-cursor-index": activeIndex, "--ucv-token-count": Math.max(visibleTokens.length, 1) } as CSSProperties}>
-            <span>scan cursor</span>
-          </div>
+          {isReverseWords ? (
+            <ReverseWordsVisualizer step={step} visibleTokens={visibleTokens} activeIndex={activeIndex} />
+          ) : (
+            <>
+              <div className={`ucv-string-ribbon${useWords ? " ucv-string-ribbon--words" : ""}`} style={{ "--ucv-array-count": visibleTokens.length } as CSSProperties}>
+                {visibleTokens.map((token, index) => (
+                  <StatusBlock
+                    key={`${token}-${index}`}
+                    node={{
+                      id: `string-${index}`,
+                      x: index,
+                      y: 0,
+                      value: token === " " ? "space" : token,
+                      type: "array-cell",
+                      label: useWords ? `word ${index}` : String(index),
+                      state: index === activeIndex ? "active" : index < activeIndex ? "visited" : "default",
+                    }}
+                    step={step}
+                    className="ucv-string-token"
+                  />
+                ))}
+              </div>
+              <div className="ucv-string-cursor" style={{ "--ucv-cursor-index": activeIndex, "--ucv-token-count": Math.max(visibleTokens.length, 1) } as CSSProperties}>
+                <span>scan cursor</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </Canvas>

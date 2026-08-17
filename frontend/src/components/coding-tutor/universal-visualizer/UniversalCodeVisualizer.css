@@ -1138,11 +1138,153 @@ body.coding-dark .ucv-array-state-panel-section--result {
   padding: 0.65rem 0.3rem 1rem;
 }
 
+.ucv-string-ribbon--words {
+  grid-template-columns: repeat(var(--ucv-array-count), minmax(6.6rem, 8.8rem));
+}
+
+.ucv-string-ribbon--words .ucv-string-token {
+  min-width: 6.6rem;
+}
+
+.ucv-string-ribbon--words .ucv-string-token strong {
+  font-size: clamp(0.96rem, 1.8vw, 1.16rem);
+  line-height: 1.1;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+
 .ucv-string-token {
   min-width: 0;
   min-height: 66px;
   border-radius: 10px;
   margin-inline: -1px;
+}
+
+.ucv-reverse-words-region {
+  display: grid;
+  gap: 0.45rem;
+  justify-items: center;
+  width: min(680px, 100%);
+  padding: 0.2rem 0.25rem;
+}
+
+.ucv-reverse-row {
+  --ucv-array-count: 2;
+  display: grid;
+  grid-template-columns: repeat(var(--ucv-array-count), minmax(7.25rem, 9rem));
+  justify-content: center;
+  position: relative;
+  width: 100%;
+  overflow-x: auto;
+  padding: 1.45rem 0.5rem 0.4rem;
+}
+
+.ucv-reverse-row-label {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  color: var(--ct-muted, #5d6b82);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ucv-reverse-word-token,
+.ucv-reverse-result-token {
+  min-width: 7.25rem;
+}
+
+.ucv-reverse-word-token strong,
+.ucv-reverse-result-token strong {
+  font-size: clamp(0.98rem, 1.9vw, 1.18rem);
+  line-height: 1.1;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+
+.ucv-reverse-word-token span,
+.ucv-reverse-result-token span {
+  font-size: 0.66rem;
+}
+
+.ucv-reverse-transfer {
+  --ucv-array-count: 2;
+  display: grid;
+  grid-template-columns: repeat(var(--ucv-array-count), minmax(7.25rem, 9rem));
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 2.35rem;
+  padding-inline: 0.5rem;
+}
+
+.ucv-reverse-transfer span {
+  justify-self: center;
+  position: relative;
+  min-height: 2rem;
+  color: color-mix(in srgb, var(--ct-accent, #f97316) 76%, var(--ct-text, #082343));
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+  opacity: 0;
+}
+
+.ucv-reverse-transfer span.is-moving {
+  opacity: 1;
+}
+
+.ucv-reverse-transfer span.is-moving::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -0.15rem;
+  width: 4px;
+  height: 1.65rem;
+  border-radius: 999px;
+  background: var(--ct-accent, #f97316);
+  box-shadow: 0 0 0 7px color-mix(in srgb, var(--ct-accent, #f97316) 13%, transparent);
+  transform: translateX(-50%);
+}
+
+.ucv-reverse-transfer span.is-moving::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 1.25rem;
+  width: 0;
+  height: 0;
+  border-left: 0.38rem solid transparent;
+  border-right: 0.38rem solid transparent;
+  border-top: 0.5rem solid var(--ct-accent, #f97316);
+  transform: translateX(-50%);
+}
+
+.ucv-reverse-result-token {
+  border-color: color-mix(in srgb, #7c3aed 48%, var(--ct-border, #c7d6ea));
+  background: linear-gradient(135deg,
+    color-mix(in srgb, #ede9fe 50%, var(--ct-panel, #fff)),
+    color-mix(in srgb, var(--ct-success, #16a34a) 12%, var(--ct-panel, #fff))
+  );
+}
+
+.ucv-reverse-result-token[data-state="inactive"] {
+  border-style: dashed;
+  color: var(--ct-muted, #5d6b82);
+}
+
+body.coding-dark .ucv-reverse-result-token {
+  border-color: color-mix(in srgb, #a78bfa 58%, var(--ct-border, #3f5d85));
+  background: linear-gradient(135deg,
+    color-mix(in srgb, #7c3aed 24%, var(--ct-raised, #17365c)),
+    color-mix(in srgb, #16a34a 18%, #061526)
+  );
+  box-shadow: 0 18px 38px rgba(124, 58, 237, 0.2);
 }
 
 .ucv-string-cursor {
